@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 2.8)
+project(Tasmanian_Examples)
+
+include(@TasExportCMake@)
+
+add_executable(example_sparse_grids example_sparse_grids.cpp)
+add_executable(example_dream example_dream.cpp)
+
+if (TARGET libtsg_static)
+    target_link_libraries(example_sparse_grids libtsg_static)
+    target_link_libraries(example_dream libtdr_static)
+else()
+    target_link_libraries(example_sparse_grids libtsg_shared)
+    target_link_libraries(example_dream libtdr_shared)
+endif()
+
+# For consistency with the Tasmanian CXX flags
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=native -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
+elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
+elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=native -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
+elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Ox /EHsc -D_SCL_SECURE_NO_WARNINGS")
+endif()

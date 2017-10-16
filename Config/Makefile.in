@@ -1,0 +1,47 @@
+# Default GCC
+UNAME = $(shell uname)
+ifeq ($(UNAME), Linux)
+COMPILE_OPTIONS = -fopenmp
+else
+COMPILE_OPTIONS = -Wno-unknown-pragmas
+endif
+
+CC = g++
+OPTC = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic 
+OPTL = $(OPTC)
+CommonIADD =
+CommonLADD =
+CommonLIBS = -lm
+
+# To Enable/Disable advanced options:
+# set the compiler in the CC variable
+# set the compiler flags, including the -D directives to the OPTC and OPTL variables
+# set the -I directives to the CommonIADD variables
+# set the -L directives to the CommonLADD variables
+# set the -l directives to the CommonLIBS variables
+#
+# The -D directives list:
+#
+# BLAS: -DTASMANIAN_CPU_BLAS
+# CUDA: -DTASMANIAN_CUDA
+#
+#  MPI: no -D directive needed
+#       but you must manually edit ./DREAM/tdrEnableMPI.hpp and uncomment
+#       //#include <mpi.h>
+
+# Example that enables BLAS
+#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic
+#OPTC = $(CXXFLAGS) -DTASMANIAN_CPU_BLAS
+#CommonLIBS = -lblas -lm
+
+# Example that enables CUDA cuBLAS
+#CC = nvcc
+#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic
+#OPTC = --compiler-options "-std=c++11 $(CXXFLAGS)" -DTASMANIAN_CUBLAS
+#CommonLIBS = -lcublas
+
+# Example that enables MPI: need to manually edit /DREAM/tdrEnableMPI.hpp and uncomment #include <mpi.h>
+#CC = mpic++
+#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic
+#OPTC = -std=c++11 $(CXXFLAGS) 
+#CommonLIBS = -lm

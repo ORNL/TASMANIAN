@@ -1,0 +1,566 @@
+#!/usr/bin/env bash
+
+tty -s;
+if [ $? == 1 ]; then
+# start a terminal session
+    if [[ `uname -s` == "Linux" ]]; then
+        if [[ ! -z `ps -e | grep unity` ]] || [[ ! -z `ps -e | grep gnome-shell` ]] || [[ ! -z `ps -e | grep metacity` ]]; then
+            # if Gnome based system
+            if [[ ! -z `which gnome-terminal` ]]; then
+                gnome-terminal -e "./install.sh -holdend"
+            elif [[ ! -z `which konsole` ]]; then
+                konsole -e "./install.sh -holdend"
+            elif [[ ! -z `which xfce4-terminal` ]]; then
+                xfce4-terminal -e "./install.sh -holdend"
+            elif [[ ! -z `which lxterminal` ]]; then
+                lxterminal -e "./install.sh -holdend"
+            fi
+        elif [[ ! -z `ps -e | grep kwin` ]]; then
+            # if KDE based system
+            if [[ ! -z `which konsole` ]]; then
+                konsole -e "./install.sh -holdend"
+            elif [[ ! -z `which gnome-terminal` ]]; then
+                gnome-terminal -e "./install.sh -holdend"
+            elif [[ ! -z `which xfce4-terminal` ]]; then
+                xfce4-terminal -e "./install.sh -holdend"
+            elif [[ ! -z `which lxterminal` ]]; then
+                lxterminal -e "./install.sh -holdend"
+            fi
+        elif [[ ! -z `ps -e | grep xfwm4` ]]; then
+            # if XFCE4 based system
+            if [[ ! -z `which xfce4-terminal` ]]; then
+                xfce4-terminal -e "./install.sh -holdend"
+            elif [[ ! -z `which gnome-terminal` ]]; then
+                gnome-terminal -e "./install.sh -holdend"
+            elif [[ ! -z `which konsole` ]]; then
+                konsole -e "./install.sh -holdend"
+            elif [[ ! -z `which lxterminal` ]]; then
+                lxterminal -e "./install.sh -holdend"
+            fi
+        fi
+    fi
+fi
+
+echo ""
+echo "--------------------------------------------------------------------------------"
+echo "   TASMANIAN INSTALL SCRIPT"
+echo "--------------------------------------------------------------------------------"
+echo ""
+
+bShowHelp=0
+if (( ${#@} > 0 )); then
+    if [[ $1 == *"help" ]]; then
+        bShowHelp=1
+    fi
+fi
+
+if (( bShowHelp == 1 )); then
+    echo "Usage: ./install.sh <install path> <matlab work folder> <optinos>"
+    echo ""
+    echo "       <install path>: optional"
+    echo "                       the install prefix"
+    echo "                       passed on -D CMAKE_INSTALL_PREFIX"
+    echo "                       if missing, the script will ask for folder"
+    echo ""
+    echo " <matlab work folder>: optional"
+    echo "                       work folder for the matab interface"
+    echo "                       if missing but you want to use matlab"
+    echo "                       manually edit <install path>/matlab/tsgGetPaths.m"
+    echo ""
+    echo "            <options>: optional"
+    echo "                       can disable default features, useful for testing"
+    echo "               -noomp: disable OpenMP support"
+    echo "              -noblas: disable BLAS support"
+    echo "            -nocublas: disable Nvidia cuBlas and cuSparse support"
+    echo "              -nocuda: disable Nvidia CUDA support"
+    echo "            -nopython: disable Python support"
+    echo "            -noshared: do not build shared libraries"
+    echo "            -nostatic: do not build static libraries"
+    echo "              -notest: do not execute any of the tests"
+    echo "               -debug: build with Debug flags"
+    echo "           -noinstall: skip the make install command, compile only"
+    echo ""
+    echo "  if the build process fails or you want to reset, just delete ./Build"
+    exit 0
+fi
+
+########################################################################
+# Check if we are in the correct folder
+########################################################################
+sProperFolder=1
+sPWD=`pwd`
+if [ ! -d "$sPWD/SparseGrids/" ]; then
+    sProperFolder=0
+fi
+if [ ! -d "$sPWD/DREAM/" ]; then
+    sProperFolder=0
+fi
+if [ ! -d "$sPWD/Testing/" ]; then
+    sProperFolder=0
+fi
+if [ ! -d "$sPWD/Config/" ]; then
+    sProperFolder=0
+fi
+if [ ! -d "$sPWD/InterfacePython/" ]; then
+    sProperFolder=0
+fi
+
+if (( $sProperFolder == 0 )); then
+    echo ""
+    echo "ERROR: must run ./install.sh inside the Tasmanian source folder"
+    echo ""
+    exit 1;
+fi
+
+########################################################################
+# process options, 
+# Development options: -make-j calls make -j
+#                      -nobashrc calls skips the .bashrc section
+########################################################################
+sEnableOpenMP="ON"
+sEnableBLAS="ON"
+sEnableCUBLAS="ON"
+sEnableCUDA="ON"
+sEnablePython="ON"
+sEnableShared="ON"
+sEnableStatic="ON"
+sEnableMakeJobs=""
+bEnableTests=1
+sBuildType="Release"
+bVerbose=0
+bSkilBashrc=0
+bHoldEnd=0
+bInstall=1
+
+for sOption in "$@"; do
+    if [[ $sOption == "-noomp" ]]; then
+        sEnableOpenMP="OFF"
+    elif [[ $sOption == "-noblas" ]]; then
+        sEnableBLAS="OFF"
+    elif [[ $sOption == "-nocuda" ]]; then
+        sEnableCUDA="OFF"
+    elif [[ $sOption == "-nocublas" ]]; then
+        sEnableBLAS="OFF"
+    elif [[ $sOption == "-nopython" ]] || [[ $sOption == "-nospam" ]]; then
+        sEnablePython="OFF"
+    elif [[ $sOption == "-noshared" ]]; then
+        sEnableShared="OFF"
+    elif [[ $sOption == "-nostatic" ]]; then
+        sEnableStatic="OFF"
+    elif [[ $sOption == "-make-j" ]]; then
+        sEnableMakeJobs="-j"
+    elif [[ $sOption == "-notest" ]]; then
+        bEnableTests=0
+    elif [[ $sOption == "-debug" ]]; then
+        sBuildType="Debug"
+    elif [[ $sOption == "-verbose" ]]; then
+        bVerbose=1
+    elif [[ $sOption == "-nobashrc" ]]; then
+        bSkilBashrc=1
+    elif [[ $sOption == "-holdend" ]]; then
+        bHoldEnd=1
+    elif [[ $sOption == "-noinstall" ]]; then
+        bInstall=0
+    fi
+done
+
+echo "Looking for cmake ..."
+cmake --version || { echo "ERROR: Could not find cmake command, make sure it is included in your path."; exit 1; }
+
+# lazy way to check cmake versionm, FindCUDA exists only on version 3.x
+sCMAKEversion=`cmake --version | head -n 1 | sed 's/[[:alpha:]|(|[:space:]]//g'`
+sCMAKEversion=${sCMAKEversion:0:1}
+
+if (( $sCMAKEversion < 2 )); then
+    echo "ERROR: Tasmanian requires cmake version 2.8 or newer!"
+    exit 1;
+fi
+
+if [[ $sEnableCUDA == "ON" ]] || [[ $sEnableBLAS == "ON" ]]; then
+    if (( $sCMAKEversion < 3 )); then
+        sEnableCUDA="OFF"
+        sEnableBLAS="OFF"
+        echo ""
+        echo "WARNING: found cmake version $sCMAKEversion"
+        echo "         recommended version is 3.0 or newer"
+        echo "         Disabling Nvidia CUDA support"
+        echo "         CUDA support can be enabled in manually with cmake"
+        echo "         options TPL_CUDA_INCLUDE_DIR and TPL_CUDA_LIBRARIES"
+        echo ""
+    fi
+fi
+echo ""
+
+#if [[ $sEnableCUDA == "ON" ]] && [[ $sEnableMakeJobs == "-j" ]]; then
+#    echo "There seems to be a bug with cmake FindCuda, parallel compilation sometimes fails. Disable: -make-j"
+#    echo ""
+#    sEnableMakeJobs=""
+#fi
+
+# check if python exists
+sPythonVersion=""
+if [[ $sEnablePython == "ON" ]]; then
+    if (( $bEnableTests == 1 )); then
+        echo "Looking for python ..."
+        bPythonFound=0
+        if [[ ! -z `which python` ]]; then
+            echo "Found Python"
+            bPythonFound=1
+            sPythonVersion=""
+        elif [[ ! -z `which python3` ]]; then
+            echo "Found Python 3"
+            bPythonFound=1
+            sPythonVersion="-D Tasmanian_PYTHON_ENV:STRING=python3"
+        fi
+        if (( $bPythonFound == 0 )); then
+            echo ""
+            echo "WARNING: can't seem to find python."
+            echo "         If python is missing, then tests will fail and"
+            echo "         Tasmanian will NOT install."
+            echo "         use either -notest or -nopython options"
+            echo "         see ./install.sh -help"
+            echo ""
+            read -p "Do you wish to continue? (y/N)" sProceed
+            if [[ $sProceed == "y" ]] || [[ $sProceed == "Y" ]] || [[ $sProceed == "Yes" ]] || [[ $sProceed == "yes" ]]; then
+                echo "proceeding ..."
+                echo ""
+            else
+                echo "Canceled!"
+                echo ""
+                exit 0;
+            fi
+        fi
+    fi
+fi
+
+echo ""
+echo ""
+
+########################################################################
+# set install path and matlab folder
+########################################################################
+bInstallPrefix=1
+if (( ${#@} < 1 )); then
+    bInstallPrefix=0
+elif [[ $1 == "-"* ]]; then
+    bInstallPrefix=0
+fi
+
+bMatlabWork=1
+if (( $bInstallPrefix == 0 )); then
+    bMatlabWork=0
+elif (( ${#@} < 2 )); then
+    bMatlabWork=0
+elif [[ $2 == "-"* ]]; then
+    bMatlabWork=0
+fi
+
+sInstallPrefix=""
+if (( $bInstallPrefix == 0 )); then
+    echo "Enter path to install Tasmanian"
+    read -p "install path: " sInstallPrefix
+else
+    sInstallPrefix=$1
+fi
+
+sMatlabWork="NO_MATLAB"
+sUseMatlab="OFF"
+if (( $bMatlabWork == 0 )); then
+    if (( $bInstallPrefix == 0 )); then
+        echo "Enter path for MATLAB work file (leave empty to disable MATLAB)"
+        read -p "matlab work path: " sMatlabWork
+        if [ -z $sMatlabWork ]; then
+            sUseMatlab="OFF"
+            sMatlabWork="NO_MATLAB"
+        else
+            sUseMatlab="ON"
+        fi
+    fi
+else
+    sUseMatlab="ON"
+    sMatlabWork=$2
+fi
+
+echo ""
+
+if [[ $sUseMatlab == "ON" ]]; then
+    if (( $bInstallPrefix == 0 )); then
+        if [ ! -d $sMatlabWork ]; then
+            echo "Matlab work folder $sMatlabWork doesn't exit"
+            read -p "create the folder: (y/N) " sCreate
+            if [ -z $sCreate ]; then
+                sCreate="n"
+            fi
+            if [[ $sCreate == "y" ]] || [[ $sCreate == "Y" ]] || [[ $sCreate == "Yes" ]] || [[ $sCreate == "yes" ]]; then
+                mkdir -p $sMatlabWork
+                if [ ! $? == 0 ]; then
+                    echo "ERROR: could not create folder $sMatlabWork"
+                    if (( $bHoldEnd == 1 )); then
+                        read -p "Press ENTER to end this process"
+                    fi
+                    exit 1;
+                fi
+                # ensure absolute path in $sMatlabWork
+                sPWD=`pwd`
+                cd $sMatlabWork
+                sMatlabWork=`pwd`
+                cd $sPWD
+            else
+                echo "The Matlab interace requires the Matlab work folder,"
+                echo "you must create this or disable Matlab"
+                if (( $bHoldEnd == 1 )); then
+                    read -p "Press ENTER to end this process"
+                fi
+                exit 1;
+            fi
+        else
+            sPWD=`pwd`
+            cd $sMatlabWork
+            if [ ! $? == 0 ]; then
+                echo "ERROR: could not access matlab folder $sMatlabWork"
+                if (( $bHoldEnd == 1 )); then
+                    read -p "Press ENTER to end this process"
+                fi
+                exit 1;
+            fi
+            sMatlabWork=`pwd`
+            cd $sPWD
+        fi
+    else # automatically create $sMatlabWork
+        mkdir -p $sMatlabWork
+        if [ ! $? == 0 ]; then
+            echo "ERROR: could not create folder $sMatlabWork"
+            if (( $bHoldEnd == 1 )); then
+                read -p "Press ENTER to end this process"
+            fi
+            exit 1;
+        fi
+        # ensure absolute path in $sMatlabWork
+        sPWD=`pwd`
+        cd $sMatlabWork
+        sMatlabWork=`pwd`
+        cd $sPWD
+    fi
+fi
+
+
+#######################################
+# final pre-Build setup message
+#######################################
+echo ""
+echo "Installing Tasmanian with options:"
+echo " - install path: $sInstallPrefix"
+
+if [[ $sUseMatlab == "ON" ]]; then
+    echo " - matlab work folder: $sMatlabWork"
+fi
+
+if [[ $sEnableOpenMP == "OFF" ]]; then
+    echo "    -noomp: disable OpenMP support"
+fi
+if [[ $sEnableBLAS == "OFF" ]]; then
+    echo "   -noblas: disable BLAS support"
+fi
+if [[ $sEnableCUBLAS == "OFF" ]]; then
+    echo " -nocublas: disable Nvidia cuBlas and cuSparse support"
+fi
+if [[ $sEnableCUDA == "OFF" ]]; then
+    echo "   -nocuda: disable Nvidia CUDA support"
+fi
+if [[ $sEnablePython == "OFF" ]]; then
+    echo " -nopython: disable Python"
+fi
+if [[ $sEnableShared == "OFF" ]]; then
+    echo " -noshared: do not build shared libraries"
+fi
+if [[ $sEnableStatic == "OFF" ]]; then
+    echo " -nostatic: do not build static libraries"
+fi
+if [[ $sBuildType == "Debug" ]]; then
+    echo "    -debug: build with Debug flags"
+fi
+if (( $bEnableTests == 0 )); then
+    echo "   -notest: do not execute any of the tests"
+fi
+
+echo ""
+
+if (( $bInstallPrefix == 0 )); then
+    read -p "proceed with installation: (y/N) " sCreate
+    if [ -z $sCreate ]; then
+        sCreate="n"
+    fi
+    if [[ $sCreate == "y" ]] || [[ $sCreate == "Y" ]] || [[ $sCreate == "Yes" ]] || [[ $sCreate == "yes" ]]; then
+        echo "Configuring..."
+    else
+        echo "Canceled!"
+        exit 0;
+    fi
+else
+    echo "Configuring..."
+fi
+
+echo ""
+
+#######################################
+# here we go!
+#######################################
+if [[ ! $sInstallPrefix == "/"* ]] && [[ ! $sInstallPrefix == "~/"* ]]; then # reinterpret relative paths
+    sInstallPrefix=`pwd`/$sInstallPrefix
+fi
+
+if (( $bVerbose == 1 )); then
+    set -x
+fi
+
+mkdir -p Build
+
+cd Build
+
+if [[ $sUseMatlab == "ON" ]]; then
+    sMatlabWork="-D Tasmanian_MATLAB_WORK_FOLDER:PATH=$sMatlabWork"
+else
+    sMatlabWork=""
+fi
+
+cmake \
+  -D CMAKE_BUILD_TYPE=$sBuildType \
+  -D CMAKE_INSTALL_PREFIX=$sInstallPrefix \
+  -D Tasmanian_ENABLE_OPENMP:BOOL=$sEnableOpenMP \
+  -D Tasmanian_ENABLE_BLAS:BOOL=$sEnableBLAS \
+  -D Tasmanian_ENABLE_MPI:BOOL=OFF \
+  -D Tasmanian_ENABLE_CUBLAS:BOOL=$sEnableCUBLAS \
+  -D Tasmanian_ENABLE_CUDA:BOOL=$sEnableCUDA \
+  -D Tasmanian_ENABLE_MATLAB:BOOL=$sUseMatlab \
+  -D Tasmanian_ENABLE_PYTHON:BOOL=$sEnablePython \
+  $sPythonVersion \
+  -D Tasmanian_SHARED_LIBRARY:BOOL=$sEnableShared \
+  -D Tasmanian_STATIC_LIBRARY:BOOL=$sEnableStatic \
+  $sMatlabWork \
+  ../
+
+if [ ! $? == 0 ]; then
+    echo "ERROR: could not execute the cmake build command!"
+    if (( $bHoldEnd == 1 )); then
+        read -p "Press ENTER to end this process"
+    fi
+    exit 1;
+fi
+
+if [[ $sEnableCUDA == "ON" ]]; then
+    # work around the problem with make -j trying to build shared cuda kernels twice (make builds them only once)
+    make -f CMakeFiles/libtsg_shared.dir/build.make CMakeFiles/libtsg_shared.dir/SparseGrids/libtsg_shared_generated_tasCudaKernels.cu.o || { sEnableMakeJobs = ""; }
+fi
+
+make $sEnableMakeJobs
+
+if [ ! $? == 0 ]; then
+    echo "ERROR: could not execute the 'make' command!"
+    if (( $bHoldEnd == 1 )); then
+        read -p "Press ENTER to end this process"
+    fi
+    exit 1;
+fi
+
+bFailedTests=0
+if (( $bEnableTests == 1 )); then
+    make test || { echo "ERROR: the 'make test command' failed!"; bFailedTests=1; }
+fi
+
+if (( bInstall == 0 )); then
+    echo ""
+    echo "Build successful!"
+    echo ""
+    echo "Skipping installation due to the -noisntall switch"
+    echo ""
+fi
+
+make install
+
+if [ ! $? == 0 ]; then
+    echo "ERROR: the 'make install' command failed!"
+    if (( $bHoldEnd == 1 )); then
+        read -p "Press ENTER to end this process"
+    fi
+    exit 1;
+fi
+
+if (( $bEnableTests == 1 )); then
+    ./test_post_install.sh || { echo "ERROR: the post install test failed!"; bFailedTests=1; }
+fi
+
+# write out the build log
+set -x
+cat $sInstallPrefix/config/Tasmanian.log
+# if you get here, it means things went well
+
+#######################################
+# post install, edit .bashrc
+#######################################
+set +x
+if (( $bSkilBashrc == 0 )); then
+# check if $sInstallPrefix is absolute or relative
+    cd $sInstallPrefix/config/
+    if [ ! $? -eq 0 ] || [ ! -f ./TasmanianENVsetup.sh ]; then
+        echo "Very odd! There were no previous errors but cannot find $sInstallPrefix/config/TasmanianENVsetup.sh"
+        echo "This must be a bug!"
+        echo "At any rate, cannot automatically edit .bashrc, thus exising"
+        echo ""
+        if (( $bHoldEnd == 1 )); then
+            read -p "Press ENTER to end this process"
+        fi
+        exit 1;
+    fi
+    sConfigPath=`pwd`
+
+    echo ""
+    echo ""
+    echo "Using the executable and shared library requires the following command:"
+    echo ""
+    echo "source $sConfigPath/TasmanianENVsetup.sh"
+    echo ""
+    read -p "Append the command to ~/.bashrc? (y/N)" sAppend
+    if [[ $sAppend == "y" ]] || [[ $sAppend == "Y" ]] || [[ $sAppend == "Yes" ]] || [[ $sAppend == "yes" ]]; then
+        echo "source $sConfigPath/TasmanianENVsetup.sh" >> ~/.bashrc
+    fi
+    echo ""
+    echo "Compiling against Tasmanian libraries without the use of cmake"
+    echo "requires the following command:"
+    echo ""
+    echo "source $sConfigPath/TasmanianDEVsetup.sh"
+    echo ""
+    echo "If you are not using Tasmanian through C/C++ or if you are using cmake,"
+    echo "then you don't need this!"
+    read -p "Append command to ~/.bashrc? (y/N)" sAppend
+    if [[ $sAppend == "y" ]] || [[ $sAppend == "Y" ]] || [[ $sAppend == "Yes" ]] || [[ $sAppend == "yes" ]]; then
+        echo "source $sConfigPath/TasmanianDEVsetup.sh" >> ~/.bashrc
+    fi
+fi
+
+if (( $bFailedTests == 1 )); then
+    echo ""
+    echo ""
+    echo "WARNING: some of the tests failed!"
+    echo "         This could be just a fluke in the seed of the random number"
+    echo "         generator used by both Sparse Grids and DREAM testers."
+    echo "         This could also indicate a problem with the installation."
+    echo "         try testing with different seed:"
+    echo "             tasgrid  -test random"
+    echo "             tasdream -test random"
+    if (( $bHoldEnd == 1 )); then
+        read -p "Press ENTER to end this process"
+    fi
+    exit 1;
+fi
+
+echo ""
+echo "--------------------------------------------------------------------------------"
+echo "   TASMANIAN INSTALL COMPLETED SUCCESSFULLY"
+echo "--------------------------------------------------------------------------------"
+echo ""
+
+if (( $bHoldEnd == 1 )); then
+    read -p "Press ENTER to end this process"
+fi
+
+exit 0;
