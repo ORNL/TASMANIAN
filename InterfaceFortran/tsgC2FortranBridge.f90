@@ -27,29 +27,39 @@
 ! THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
-SUBROUTINE tsgc2fmat(r, c, M)
-  USE TasmanianSG, only: tsgReceiveMatrix
-  INTEGER, INTENT(IN) :: r, c
-  DOUBLE PRECISION, INTENT(IN) :: M(r*c)
-  CALL tsgReceiveMatrix(r, c, M)
-END SUBROUTINE tsgc2fmat
+!SUBROUTINE tsgc2fmat(r, c, M)
+!  USE TasmanianSG, only: tsgReceiveMatrix
+!  INTEGER, INTENT(IN) :: r, c
+!  DOUBLE PRECISION, INTENT(IN) :: M(r*c)
+!  CALL tsgReceiveMatrix(r, c, M)
+!END SUBROUTINE tsgc2fmat
+!! =========================================
+!SUBROUTINE tsgc2fvec(s, V)
+!  USE TasmanianSG, only: tsgReceiveVector
+!  INTEGER, INTENT(IN) :: s
+!  DOUBLE PRECISION, INTENT(IN) :: V(s)
+!  CALL tsgReceiveVector(s, V)
+!END SUBROUTINE tsgc2fvec
+!! =========================================
+!SUBROUTINE tsgc2fdouble(d)
+!  USE TasmanianSG, only: tsgReceiveScalar
+!  DOUBLE PRECISION, INTENT(IN) :: d
+!  CALL tsgReceiveScalar(d)
+!END SUBROUTINE tsgc2fdouble
+!! =========================================
+!SUBROUTINE tsgc2fint(i)
+!  USE TasmanianSG, only: tsgReceiveInt
+!  INTEGER, INTENT(IN) :: i
+!  CALL tsgReceiveInt(i)
+!END SUBROUTINE tsgc2fint
+!! =========================================
+
 ! =========================================
-SUBROUTINE tsgc2fvec(s, V)
-  USE TasmanianSG, only: tsgReceiveVector
-  INTEGER, INTENT(IN) :: s
-  DOUBLE PRECISION, INTENT(IN) :: V(s)
-  CALL tsgReceiveVector(s, V)
-END SUBROUTINE tsgc2fvec
-! =========================================
-SUBROUTINE tsgc2fdouble(d)
-  USE TasmanianSG, only: tsgReceiveScalar
-  DOUBLE PRECISION, INTENT(IN) :: d
-  CALL tsgReceiveScalar(d)
-END SUBROUTINE tsgc2fdouble
-! =========================================
-SUBROUTINE tsgc2fint(i)
-  USE TasmanianSG, only: tsgReceiveInt
-  INTEGER, INTENT(IN) :: i
-  CALL tsgReceiveInt(i)
-END SUBROUTINE tsgc2fint
+SUBROUTINE tsgc2fstr(l, S)
+  USE TasmanianSG, only: tsgReceiveString
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: l
+  CHARACTER, INTENT(IN) :: S(l)
+  CALL tsgReceiveString(l, S)
+END SUBROUTINE tsgc2fstr
 ! =========================================

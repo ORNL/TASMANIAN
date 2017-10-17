@@ -686,6 +686,24 @@ TypeDepth OneDimensionalMeta::getIOTypeString(const char *name){
         return type_none;
     }
 }
+TypeDepth OneDimensionalMeta::getIOTypeInt(int type){
+    switch (type){
+        case  1: return type_level;
+        case  2: return type_curved;
+        case  3: return type_iptotal;
+        case  4: return type_ipcurved;
+        case  5: return type_qptotal;
+        case  6: return type_qpcurved;
+        case  7: return type_hyperbolic;
+        case  8: return type_iphyperbolic;
+        case  9: return type_qphyperbolic;
+        case 10: return type_tensor;
+        case 11: return type_iptensor;
+        case 12: return type_qptensor;
+        default:
+            return type_none;
+    }
+}
 
 TypeRefinement OneDimensionalMeta::getIOTypeRefinementString(const char *name){
     if (strcmp(name, "classic") == 0){
@@ -698,6 +716,16 @@ TypeRefinement OneDimensionalMeta::getIOTypeRefinementString(const char *name){
         return refine_fds;
     }else{
         return refine_none;
+    }
+}
+TypeRefinement OneDimensionalMeta::getIOTypeRefinementInt(int ref){
+    switch (ref){
+        case  1: return refine_classic;
+        case  2: return refine_parents_first;
+        case  3: return refine_direction_selective;
+        case  4: return refine_fds;
+        default:
+            return refine_none;
     }
 }
 

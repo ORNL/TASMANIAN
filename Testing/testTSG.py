@@ -170,6 +170,7 @@ class TestTasmanian(unittest.TestCase):
             gridB = TasmanianSG.TasmanianSparseGrid()
 
             gridA.makeGlobalGrid(lT[0], lT[1], lT[2], lT[3], lT[4], [], lT[5], lT[6])
+            #gridA.printStats()
             if (lT[7]):
                 gridA.setDomainTransform(aTransform)
             if (lT[8]):
@@ -177,6 +178,10 @@ class TestTasmanian(unittest.TestCase):
             
             gridA.write("testSave")
             gridB.read("testSave")
+            self.compareGrids(gridA, gridB)
+            
+            gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
             
         # test an error message from wrong read
@@ -207,6 +212,10 @@ class TestTasmanian(unittest.TestCase):
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
             
+            gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave", bUseBinaryFormat = True)
+            self.compareGrids(gridA, gridB)
+            
         # test I/O for Local Polynomial Grids
         # iDimension, iOutputs, iDepth, sType, sRule, useTransform, loadFunciton
         lGrids = [[3, 2, 2, 0, "localp", False, False],
@@ -228,6 +237,10 @@ class TestTasmanian(unittest.TestCase):
             
             gridA.write("testSave")
             gridB.read("testSave")
+            self.compareGrids(gridA, gridB)
+            
+            gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
             
         # test I/O for Local Wavelet Grids
@@ -253,6 +266,10 @@ class TestTasmanian(unittest.TestCase):
                 gridB.read("testSave")
                 self.compareGrids(gridA, gridB)
                 
+                gridA.write("testSave", bUseBinaryFormat = True)
+                gridB.read("testSave", bUseBinaryFormat = True)
+                self.compareGrids(gridA, gridB)
+                
         lGrids = ['gridA.makeGlobalGrid(3, 2, 4, "level", "clenshaw-curtis"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([3,4,5]))',
                   'gridA.makeGlobalGrid(3, 2, 4, "level", "gauss-legendre"); gridA.setConformalTransformASIN(np.array([3,5,1]))',
                   'gridA.makeSequenceGrid(2, 2, 5, "level", "leja"); gridA.setConformalTransformASIN(np.array([0,4]))',
@@ -265,6 +282,10 @@ class TestTasmanian(unittest.TestCase):
             exec(sGrid)
             gridA.write("testSave")
             gridB.read("testSave")
+            self.compareGrids(gridA, gridB)
+            
+            gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
         
                 

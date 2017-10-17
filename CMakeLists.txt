@@ -38,6 +38,7 @@ option(Tasmanian_ENABLE_BLAS "Enable CPU Blas support for Tasmanian" ON)
 option(Tasmanian_ENABLE_MPI "Enable MPI support for Tasmanian" OFF)
 option(Tasmanian_ENABLE_MATLAB "Enable MATLAB interface for Tasmanian" ON)
 option(Tasmanian_ENABLE_PYTHON "Enable Python interface for Tasmanian" ON)
+option(Tasmanian_ENABLE_FORTRAN "Enable Fortran interface for Tasmanian" ON)
 option(Tasmanian_ENABLE_CUBLAS "Enable Nvidia GPU acceleration using cuBLAS for Tasmanian" ON)
 option(Tasmanian_ENABLE_CUDA "Enable Nvidia GPU acceleration using CUDA kernels for Tasmanian" ON)
 option(Tasmanian_STATIC_LIBRARY "Compile static library and the executables with static linkage" ON)
@@ -155,6 +156,13 @@ set(tasmat_src tsgCancelRefine.m
                tsgWriteCustomRuleFile.m
                tsgWriteMatrix.m)
 
+set(libfor_src InterfaceFortran/TasmanianSG.f90
+               InterfaceFortran/tsgC2FortranBridge.f90
+               InterfaceFortran/tsgC2Fortran.cpp)
+
+set(tasfor_src Testing/fortester.f90)
+               
+
 ########################################################################
 # sanity check and xSDK compatibility
 ########################################################################
@@ -266,8 +274,23 @@ if (Tasmanian_ENABLE_CUBLAS)
     add_definitions(-DTASMANIAN_CUBLAS)
 endif()
 
+if (Tasmanian_ENABLE_FORTRAN)
+    enable_language(Fortran)
+    if(NOT CMAKE_Fortran_COMPILER)
+        if (USE_XSDK_DEFAULTS)
+            message(FATAL_ERROR "Cannot find Fortran!")
+        else()
+            message(WARNING "Cannot find Fortran\noverwritting option: -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF")
+            set(Tasmanian_ENABLE_FORTRAN OFF)
+        endif()
+    endif()
+endif()
+
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     add_definitions(-D_TASMANIAN_DEBUG_)
+    if (Tasmanian_ENABLE_FORTRAN)
+        set(CMAKE_Fortran_FLAGS_DEBUG "-fno-f2c -g")
+    endif()
 else()
     # this is a bug in some versions of CUDA
     if (Tasmanian_USING_FINDCUDA AND (${CUDA_VERSION_MAJOR} LESS 8))
@@ -312,13 +335,16 @@ include_directories("${PROJECT_SOURCE_DIR}/SparseGrids/")
 
 set(TSGBaseLibName "tasmaniansparsegrid")
 set(TDRBaseLibName "tasmaniandream")
+set(FortranBaseLibName "tasmanianfortran")
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(TSGStaticLibName "${TSGBaseLibName}_static") # Unix uses .a and .so to distinguish static and shared
     set(TDRStaticLibName "${TDRBaseLibName}_static") # Windows uses .lib in both cases, append _static
+    set(FortranStaticLibName "${FortranBaseLibName}_static")
 else()
     set(TSGStaticLibName ${TSGBaseLibName})
     set(TDRStaticLibName ${TDRBaseLibName})
+    set(FortranStaticLibName ${FortranBaseLibName})
 endif()
 
 if (Tasmanian_USING_FINDCUDA)
@@ -331,6 +357,11 @@ endif()
 
 set(tas_target_list tasgrid tasdream)
 set(install_targets tasgrid tasdream)
+
+if (Tasmanian_ENABLE_FORTRAN)
+    add_executable(fortester ${tasfor_src})
+    set(tas_target_list ${tas_target_list} fortester)
+endif()
 
 if (Tasmanian_SHARED_LIBRARY)
     if (Tasmanian_USING_FINDCUDA)
@@ -351,6 +382,13 @@ if (Tasmanian_SHARED_LIBRARY)
 
     set_property(TARGET libtsg_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/include/")
     set_property(TARGET libtdr_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/include/")
+    
+    if (Tasmanian_ENABLE_FORTRAN)
+        add_library(libtasfor_shared SHARED ${libfor_src})
+        target_link_libraries(libtasfor_shared libtsg_shared)
+        set(tas_target_list ${tas_target_list} libtasfor_shared)
+        set_target_properties(libtasfor_shared PROPERTIES OUTPUT_NAME "${FortranBaseLibName}")
+    endif()
 endif()
 
 if (Tasmanian_STATIC_LIBRARY)
@@ -375,9 +413,20 @@ if (Tasmanian_STATIC_LIBRARY)
 
     set_property(TARGET libtsg_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/include/")
     set_property(TARGET libtdr_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/include/")
+    
+    if (Tasmanian_ENABLE_FORTRAN)
+        add_library(libtasfor_static STATIC ${libfor_src})
+        target_link_libraries(libtasfor_static libtsg_static)
+        set(tas_target_list ${tas_target_list} libtasfor_static)
+        set_target_properties(libtasfor_static PROPERTIES OUTPUT_NAME "${FortranStaticLibName}")
+        target_link_libraries(fortester libtasfor_static)
+    endif()
 else()
     target_link_libraries(tasgrid libtsg_shared)
     target_link_libraries(tasdream libtdr_shared libtsg_shared)
+    if (Tasmanian_ENABLE_FORTRAN)
+        target_link_libraries(fortester libtasfor_shared)
+    endif()
 endif()
 
 # for development purposes, compile the exmaples together with everything else
@@ -397,6 +446,16 @@ if (DEFINED Tasmanian_DEVELOPMENT_EXAMPLES AND Tasmanian_DEVELOPMENT_EXAMPLES)
     else()
         target_link_libraries(example_sparse_grids libtsg_shared)
         target_link_libraries(example_dream libtdr_shared)
+    endif()
+    if (Tasmanian_ENABLE_FORTRAN)
+        add_executable(example_sparse_grids_f90 "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.f90")
+        set_target_properties(example_sparse_grids_f90 PROPERTIES OUTPUT_NAME "example_sparse_grids_fortran")
+        set(tas_target_list ${tas_target_list} example_sparse_grids_f90)
+        if (Tasmanian_STATIC_LIBRARY)
+            target_link_libraries(example_sparse_grids_f90 libtasfor_static libtsg_static)
+        else()
+            target_link_libraries(example_sparse_grids_f90 libtasfor_shared libtsg_shared)
+        endif()
     endif()
 endif()
 
@@ -628,6 +687,12 @@ if (NOT DEFINED Tasmanian_CXX_FLAGS)
     endif()
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Tasmanian_CXX_FLAGS}")
+endif()
+
+if (Tasmanian_ENABLE_FORTRAN)
+    if (${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -mtune=native -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
+    endif()
 endif()
 
 if (DEFINED Tasmanian_EXTRA_CXX_FLAGS)

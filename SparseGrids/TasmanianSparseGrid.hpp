@@ -96,15 +96,15 @@ public:
     int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
 
     double* getLoadedPoints() const;
-    void getLoadedPoints(double *x) const;
     double* getNeededPoints() const;
+    double* getPoints() const; // returns the loaded points unless no points are loaded, then returns the needed points
+    void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
-    double* getPoints() const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
     double* getQuadratureWeights() const;
-    void getQuadratureWeights(double weights[]) const;
     double* getInterpolationWeights(const double x[]) const;
+    void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
 
     void loadNeededPoints(const double *vals);

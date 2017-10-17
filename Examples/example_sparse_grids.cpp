@@ -251,9 +251,9 @@ int main(int argc, const char ** argv){
     grid.evaluate(x_desired, &res);
 
     cout << "  using polynomials of total degree up to: " << prec << endl;
-    cout << "                 the grid has: " << num_points << " poitns" << endl;
+    cout << "                     the grid has: " << num_points << " poitns" << endl;
     cout << "         interpolant at (0.3,0.7): " << res << endl;
-    cout << "                    error: " << fabs(res - exact) << endl << endl;
+    cout << "                            error: " << fabs(res - exact) << endl << endl;
     delete[] points;
     delete[] vals;
 
@@ -275,9 +275,9 @@ int main(int argc, const char ** argv){
     grid.evaluate(x_desired, &res);
 
     cout << "  using polynomials of total degree up to: " << prec << endl;
-    cout << "                 the grid has: " << num_points << " poitns" << endl;
-    cout << "         interpolant at (0.3,0.7): " << res << endl;
-    cout << "                    error: " << fabs(res - exact) << endl;
+    cout << "                      the grid has: " << num_points << " poitns" << endl;
+    cout << "          interpolant at (0.3,0.7): " << res << endl;
+    cout << "                             error: " << fabs(res - exact) << endl;
     delete[] points;
     delete[] vals;
 }
@@ -762,9 +762,9 @@ int main(int argc, const char ** argv){
     }
     grid2.loadNeededPoints(vals);
 
-            TasGrid::TasmanianSparseGrid gridc;
-            gridc.copyGrid(&grid2);
-            grid2.copyGrid(&gridc);
+    //TasGrid::TasmanianSparseGrid gridc;
+    //gridc.copyGrid(&grid2);
+    //grid2.copyGrid(&gridc);
 
     delete[] points;
     delete[] vals;
