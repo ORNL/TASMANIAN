@@ -29,6 +29,7 @@
 !==================================================================================================================================================================================
 PROGRAM FORTESTER
   USE TasmanianSG, ONLY: tsgInitialize, tsgFinalize, tsgNewGridID, tsgFreeGridID, &
+       tsgGetVersionMajor, tsgGetVersionMinor, &
        tsgMakeGlobalGrid, tsgMakeSequenceGrid, tsgMakeLocalPolynomialGrid, tsgMakeWaveletGrid, &
        tsgGetAlpha, tsgGetBeta, tsgGetOrder, tsgGetNumDimensions, tsgGetNumOutputs, tsgGetRule, &
        tsgGetNumLoaded, tsgGetNumNeeded, tsgGetNumPoints, &
@@ -38,11 +39,12 @@ PROGRAM FORTESTER
        tsgGetInterpolationWeights, tsgGetInterpolationWeightsStatic
 IMPLICIT NONE
   INTEGER :: gridID, dims, level
-  INTEGER :: N, i
+  INTEGER :: N, i, verm, vern
   INTEGER :: aweights(3)
   DOUBLE PRECISION :: alpha, beta
   DOUBLE PRECISION, pointer :: points(:,:), weights(:)
   DOUBLE PRECISION :: x, y, integ, E
+  DOUBLE PRECISION, allocatable :: transformA(:), transformB(:)
 
 ! This is the sound "Glaucodon Ballaratensis" makes :)
 !  WRITE(*,*) "Ghurrrrrphurrr"
@@ -54,21 +56,25 @@ IMPLICIT NONE
 ! must call tsgInitialize() once per program
   CALL tsgInitialize()
   
+  verm = tsgGetVersionMajor()
+  vern = tsgGetVersionMinor()
+  WRITE(*,*) "Tasmanian Sparse Grid module: ", verm, vern
+  
   WRITE(*,*) "-------------------------------------------------------------------------------------------------"
   WRITE(*,*) "Example 1:  integrate f(x,y) = exp(-x^2) * cos(y), using clenshaw-curtis level nodes"
   
   dims = 2
   level = 6
   
-  ! before you use a grid, you must ask for a new valid grid ID
+! before you use a grid, you must ask for a new valid grid ID
   gridID = tsgNewGridID()
   
+! clenshaw-curtis = 1, type_level = 1
   CALL tsgMakeGlobalGrid(gridID, dims, 0, level, 1, 1)
   
   points => tsgGetPoints(gridID)
   weights => tsgGetQuadratureWeights(gridID)
   
-  !CALL tsgGetNumPoints(gridID, N)
   N = tsgGetNumPoints(gridID)
   integ = 0.0
   
@@ -89,10 +95,12 @@ IMPLICIT NONE
 ! no need to ask for a new ID when remaking an existing grid
   CALL tsgMakeGlobalGrid(gridID, dims, 0, level, 1, 1)
   
+! do not forget to release the memory associated with points and weights
+  DEALLOCATE(points)
+  DEALLOCATE(weights)
   points => tsgGetPoints(gridID)
   weights => tsgGetQuadratureWeights(gridID)
   
-  !CALL tsgGetNumPoints(gridID, N)
   N = tsgGetNumPoints(gridID)
   integ = 0.0
   
@@ -109,8 +117,34 @@ IMPLICIT NONE
   WRITE(*,*) "      error:        ", E
   WRITE(*,*)
   
-
+  DEALLOCATE(points)
+  DEALLOCATE(weights)
+  
+! after calling tsgFreeGridID(), we can no longer use this gridID
+! until we call tsgNewGridID()
   CALL tsgFreeGridID(gridID)
+
+! ==================================================================== !
+! EXAMPLE 2: integrate: f(x,y) = exp(-x^2) * cos(y) over (x,y) in [-5,5] x [-2,3]
+! using Gauss-Patterson rules chosen to integrate exactly polynomials of
+! total degree up to degree specified by prec
+
+  WRITE(*,*) "-------------------------------------------------------------------------------------------------"
+  WRITE(*,*) "Example 2: integrate f(x,y) = exp(-x^2) * cos(y) over [-5,5] x [-2,3] using  Gauss-Patterson nodes"
+
+  dims = 2
+  level = 20
+  
+  ALLOCATE(transformA(dims))
+  ALLOCATE(transformB(dims))
+  transformA(1) = -5.0
+  transformA(2) = -2.0
+  transformB(1) =  5.0
+  transformB(2) =  3.0
+  
+! clenshaw-curtis = 1, type_level = 1
+  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, 1, 1)
+  
 
   CALL tsgFinalize()
 
