@@ -9,6 +9,11 @@ endif
 CC = g++
 OPTC = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic 
 OPTL = $(OPTC)
+
+FF = gfortran
+OPTF = -O3 -fno-f2c -mtune=native $(COMPILE_OPTIONS) -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic -fPIC
+OPTLFF = $(OPTF)
+
 CommonIADD =
 CommonLADD =
 CommonLIBS = -lm

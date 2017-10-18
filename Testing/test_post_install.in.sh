@@ -36,6 +36,8 @@ echo 'Compiling "make"'
 make > /dev/null || { echo "ERROR: Could not compile the C++ examples"; exit 1; }
 echo 'Executing "./example_sparse_grids"'
 ./example_sparse_grids -fast >/dev/null || { echo "ERROR: Could not run the C++ Sparse Grid example"; exit 1; }
+echo 'Executing "./example_sparse_grids_fortran"'
+./example_sparse_grids_fortran -fast >/dev/null || { echo "ERROR: Could not run the Fortran Sparse Grid example"; exit 1; }
 echo 'Executing "./example_dream"'
 ./example_dream -fast >/dev/null || { echo "ERROR: Could not run the C++ DREAM example"; exit 1; }
 

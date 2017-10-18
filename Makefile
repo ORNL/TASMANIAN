@@ -3,6 +3,7 @@ include Config/Makefile.in
 IADD = -I./include $(CommonIADD)
 LADD = -L./ $(CommonLADD)
 LIBS = ./libtasmaniansparsegrid.a ./libtasmaniandream.a $(CommonLIBS)
+FFLIBS = ./libtasmanianfortran.a ./libtasmaniansparsegrid.a ./libtasmaniandream.a $(CommonLIBS)
 
 TSG_SOURCE = $(wildcard ./SparseGrids/*.cpp) $(wildcard ./SparseGrids/*.hpp) $(wildcard ./SparseGrids/*.h)
 TDR_SOURCE = $(wildcard ./DREAM/*.cpp) $(wildcard ./DREAM/*.hpp)
@@ -165,6 +166,33 @@ python3: ./InterfacePython/TasmanianSG.py ./Testing/testTSG.py ./Examples/exampl
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' example_sparse_grids.py
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' testTSG.py
 
+# Fortran
+.PHONY: fortran
+fortran: example_sparse_grids_fortran libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
+
+example_sparse_grids_fortran: libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
+	cp Examples/example_sparse_grids.f90 .
+	$(FF) $(OPTF) $(IADD) -c example_sparse_grids.f90 -o example_sparse_grids_fortran.o
+	$(FF) $(OPTLFF) $(LADD) example_sparse_grids_fortran.o -o example_sparse_grids_fortran $(FFLIBS) -lstdc++
+
+tasmaniansg.mod: InterfaceFortran/tasmaniansg.mod
+	cp InterfaceFortran/tasmaniansg.mod .
+
+InterfaceFortran/tasmaniansg.mod: libtasmanianfortran.a libtasmanianfortran.so
+	cd InterfaceFortran/; make
+
+libtasmanianfortran.so: InterfaceFortran/libtasmanianfortran.so
+	cp InterfaceFortran/libtasmanianfortran.so .
+
+libtasmanianfortran.a: InterfaceFortran/libtasmanianfortran.a
+	cp InterfaceFortran/libtasmanianfortran.a .
+
+InterfaceFortran/libtasmanianfortran.so: libtasmanianfortran.a
+	cd InterfaceFortran/; make
+
+InterfaceFortran/libtasmanianfortran.a:
+	cd InterfaceFortran/; make
+
 # Testing and examples
 .PHONY: test
 test: $(ALL_TARGETS)
@@ -186,6 +214,9 @@ clean:
 	rm -fr libtasmaniansparsegrid.a
 	rm -fr libtasmaniandream.so
 	rm -fr libtasmaniandream.a
+	rm -fr libtasmanianfortran.so
+	rm -fr libtasmanianfortran.a
+	rm -fr tasmaniansg.mod
 	rm -fr tasgrid
 	rm -fr tasdream
 	rm -fr TasmanianSG.py
@@ -198,6 +229,9 @@ clean:
 	rm -fr example_dream
 	rm -fr example_dream.o
 	rm -fr example_dream.cpp
+	rm -fr example_sparse_grids.f90
+	rm -fr example_sparse_grids_fortran.o
+	rm -fr example_sparse_grids_fortran
 	rm -fr testSave
 	rm -fr testTSG.py
 	rm -fr sandbox.py
@@ -206,3 +240,4 @@ clean:
 	rm -fr ./DREAM/tdrEnableMPI.hpp
 	cd SparseGrids; make clean
 	cd DREAM; make clean
+	cd InterfaceFortran; make clean

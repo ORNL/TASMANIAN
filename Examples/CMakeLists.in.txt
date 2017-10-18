@@ -14,6 +14,16 @@ else()
     target_link_libraries(example_dream libtdr_shared)
 endif()
 
+if (TARGET libtasfor_static)
+    enable_language(Fortran)
+    add_executable(example_sparse_grids_fortran example_sparse_grids.f90)
+    target_link_libraries(example_sparse_grids_fortran libtasfor_static)
+elseif (TARGET libtasfor_shared)
+    enable_language(Fortran)
+    add_executable(example_sparse_grids_fortran example_sparse_grids.f90)
+    target_link_libraries(example_sparse_grids_fortran libtasfor_shared)
+endif()
+
 # For consistency with the Tasmanian CXX flags
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=native -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")

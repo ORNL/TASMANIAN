@@ -11,21 +11,24 @@ PROGRAM TasmanianSGExample
        tsgGetQuadratureWeights, tsgGetQuadratureWeightsStatic, &
        tsgGetInterpolationWeights, tsgGetInterpolationWeightsStatic, &
        tsgSetDomainTransform, tsgIsSetDomainTransfrom, tsgClearDomainTransform, tsgGetDomainTransform, &
-       tsgSetAnisotropicRefinement, tsgSetGlobalSurplusRefinement, tsgSetLocalSurplusRefinement, tsgClearRefinement
+       tsgSetAnisotropicRefinement, tsgSetGlobalSurplusRefinement, tsgSetLocalSurplusRefinement, tsgClearRefinement, &
+       tsgSetConformalTransformASIN, tsgIsSetConformalTransformASIN, &
+       tsgClearConformalTransform, tsgGetConformalTransformASIN, &
+       tsgPrintStats
 IMPLICIT NONE
   INTEGER :: gridID, dims, outs, level
   INTEGER :: gridID1, gridID2, gridID3, N1, N2, N3
   INTEGER :: N, i, j, verm, vern
-  DOUBLE PRECISION :: err1, err2, err3, exact
+  DOUBLE PRECISION :: err1, err2, err3, err4, exact
   REAL :: cpuStart, cpuEnd, stages(2,3)
-  !INTEGER :: aweights(3)
+  INTEGER :: conformal(3)
   CHARACTER, pointer :: string(:)
   DOUBLE PRECISION, pointer :: points(:,:), weights(:)
   DOUBLE PRECISION :: x, y, integ, E
   DOUBLE PRECISION, allocatable :: transformA(:), transformB(:), values(:,:), tvalues(:,:)
   DOUBLE PRECISION, allocatable :: res(:), res2(:,:)
   DOUBLE PRECISION :: desired_x(2)
-  DOUBLE PRECISION :: randPoints(4,1000), randPoints2(2,1000)
+  DOUBLE PRECISION :: randPoints(4,1000), randPoints2(2,1000), randPoints3(3,1000)
   DOUBLE PRECISION :: PI = 4.D0*DATAN(1.D0)
   
 
@@ -65,6 +68,10 @@ IMPLICIT NONE
 ! ============ reference table of refinement types ============ !
 !  1: classic            2: parents first
 !  3: directional        4: FDS (both parents and directions)
+
+! ============ reference table of acceleration types ============ !
+!  0: none       1: CPU BLAS    2: GPU cuBLAS   
+!  3: GPU CUDA   4: GPU MAGMA
 
 ! ==================================================================== !  
 ! EXAMPLE 1: integrate: f(x,y) = exp(-x^2) * cos(y) over [-1,1] x [-1,1]
@@ -383,6 +390,11 @@ IMPLICIT NONE
   WRITE(*,*)
 
 ! ==================================================================== !
+! Some examples take long time, fast test will exit here
+  IF (iargc() .GT. 0)then
+    STOP 0
+  ENDIF
+
 ! prepare random smaples for future tests
   call srand(TIME())
 
@@ -392,77 +404,76 @@ IMPLICIT NONE
     END DO
   END DO
 
-!! ==================================================================== !
-!! EXAMPLE 5:
-!! interpolate: f(x1,x2,x3,x4) = exp(-x1^2) * cos(x2) * exp(-x3^2) * cos(x4)
-!! with Global and Sequence Leja rules
-!  
-!  dims = 4
-!  outs = 1
-!  level = 15
-!  
-!  ! 8: rule leja,    1: type level
-!  CALL cpu_time(cpuStart)
-!  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, 1, 8)
-!  CALL cpu_time(cpuEnd)
-!  stages(1,1) = cpuEnd - cpuStart
-!  
-!  N = tsgGetNumPoints(gridID)
-!  
-!  WRITE(*,*) "-------------------------------------------------------------------------------------------------"
-!  WRITE(*,*) "Example 5: interpolate f(x1,x2,x3,x4) = exp(-x1^2) * cos(x2) * exp(-x3^2) * cos(x4)"
-!  WRITE(*,*) "       comparign the performance of Global and Sequence grids with leja nodes"
-!  WRITE(*,"(A,I4)") "       using polynomials of total degree up to: ", level
-!  WRITE(*,"(A,I4,A)") "      the grids have:                   ", N, " points"
-!  WRITE(*,*) "       both grids are evaluated at 1000 random points "
-!  WRITE(*,*)
-!  
-!  points => tsgGetNeededPoints(gridID)
-!  ALLOCATE(values(outs,N))
-!  DO i = 1, N
-!    values(1,i) = exp(-points(1,i)**2) * cos(points(2,i)) * exp(-points(3,i)**2) * cos(points(4,i))
-!  END DO
-!  DEALLOCATE(points)
-!  
-!  CALL cpu_time(cpuStart)
-!  CALL tsgLoadNeededPoints(gridID, values)
-!  CALL cpu_time(cpuEnd)
-!  stages(1,2) = cpuEnd - cpuStart
-!  
-!  ALLOCATE(res2(outs,1000)) ! 2-D result
-!  
-!  CALL cpu_time(cpuStart)
-!  CALL tsgEvaluateBatch(gridID, randPoints, 1000, res2)
-!  CALL cpu_time(cpuEnd)
-!  stages(1,3) = cpuEnd - cpuStart
-!  
-!  ! 8: rule leja,    1: type level
-!  CALL cpu_time(cpuStart)
-!  CALL tsgMakeSequenceGrid(gridID, dims, outs, level, 1, 8)
-!  CALL cpu_time(cpuEnd)
-!  stages(2,1) = cpuEnd - cpuStart
-!  
-!  ! points are the same, no need to recompue values
-!  CALL cpu_time(cpuStart)
-!  CALL tsgLoadNeededPoints(gridID, values)
-!  CALL cpu_time(cpuEnd)
-!  stages(2,2) = cpuEnd - cpuStart
-!  
-!  DEALLOCATE(values)
-!  
-!  CALL cpu_time(cpuStart)
-!  CALL tsgEvaluateBatch(gridID, randPoints, 1000, res2)
-!  CALL cpu_time(cpuEnd)
-!  stages(2,3) = cpuEnd - cpuStart
-!  
-!  WRITE(*,*) "Stage        Global Grid      Sequence Grid"
-!  WRITE(*,"(A,E20.8,E20.8)") " make grid  ", stages(1,1), stages(2,1)
-!  WRITE(*,"(A,E20.8,E20.8)") " load needed  ", stages(1,2), stages(2,2)
-!  WRITE(*,"(A,E20.8,E20.8)") " evaluate  ", stages(1,3), stages(2,3)
-!  WRITE(*,*) "WARNING: I have not figured out how to time execution under Fortran"
-!  
-!  CALL tsgFreeGridID(gridID)
-!  DEALLOCATE(res2)
+! ==================================================================== !
+! EXAMPLE 5:
+! interpolate: f(x1,x2,x3,x4) = exp(-x1^2) * cos(x2) * exp(-x3^2) * cos(x4)
+! with Global and Sequence Leja rules
+  
+  dims = 4
+  outs = 1
+  level = 15
+  
+  ! 8: rule leja,    1: type level
+  CALL cpu_time(cpuStart)
+  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, 1, 8)
+  CALL cpu_time(cpuEnd)
+  stages(1,1) = cpuEnd - cpuStart
+  
+  N = tsgGetNumPoints(gridID)
+  
+  WRITE(*,*) "-------------------------------------------------------------------------------------------------"
+  WRITE(*,*) "Example 5: interpolate f(x1,x2,x3,x4) = exp(-x1^2) * cos(x2) * exp(-x3^2) * cos(x4)"
+  WRITE(*,*) "       comparign the performance of Global and Sequence grids with leja nodes"
+  WRITE(*,"(A,I4)") "       using polynomials of total degree up to: ", level
+  WRITE(*,"(A,I4,A)") "      the grids have:                   ", N, " points"
+  WRITE(*,*) "       both grids are evaluated at 1000 random points "
+  WRITE(*,*)
+  
+  points => tsgGetNeededPoints(gridID)
+  ALLOCATE(values(outs,N))
+  DO i = 1, N
+    values(1,i) = exp(-points(1,i)**2) * cos(points(2,i)) * exp(-points(3,i)**2) * cos(points(4,i))
+  END DO
+  DEALLOCATE(points)
+  
+  CALL cpu_time(cpuStart)
+  CALL tsgLoadNeededPoints(gridID, values)
+  CALL cpu_time(cpuEnd)
+  stages(1,2) = cpuEnd - cpuStart
+  
+  ALLOCATE(res2(outs,1000)) ! 2-D result
+  
+  CALL cpu_time(cpuStart)
+  CALL tsgEvaluateBatch(gridID, randPoints, 1000, res2)
+  CALL cpu_time(cpuEnd)
+  stages(1,3) = cpuEnd - cpuStart
+  
+  ! 8: rule leja,    1: type level
+  CALL cpu_time(cpuStart)
+  CALL tsgMakeSequenceGrid(gridID, dims, outs, level, 1, 8)
+  CALL cpu_time(cpuEnd)
+  stages(2,1) = cpuEnd - cpuStart
+  
+  ! points are the same, no need to recompue values
+  CALL cpu_time(cpuStart)
+  CALL tsgLoadNeededPoints(gridID, values)
+  CALL cpu_time(cpuEnd)
+  stages(2,2) = cpuEnd - cpuStart
+  
+  DEALLOCATE(values)
+  
+  CALL cpu_time(cpuStart)
+  CALL tsgEvaluateBatch(gridID, randPoints, 1000, res2)
+  CALL cpu_time(cpuEnd)
+  stages(2,3) = cpuEnd - cpuStart
+  
+  WRITE(*,*) "Stage            Global Grid         Sequence Grid"
+  WRITE(*,"(A,E20.8,E20.8)") " make grid  ", stages(1,1), stages(2,1)
+  WRITE(*,"(A,E20.8,E20.8)") " load needed", stages(1,2), stages(2,2)
+  WRITE(*,"(A,E20.8,E20.8)") " evaluate   ", stages(1,3), stages(2,3)
+  
+  CALL tsgFreeGridID(gridID)
+  DEALLOCATE(res2)
 
 ! ==================================================================== !
 ! EXAMPLE 6:
@@ -889,19 +900,154 @@ IMPLICIT NONE
   END DO
   WRITE(*,*)
   
+  CALL tsgFreeGridID(gridID1)
+  CALL tsgFreeGridID(gridID2)
+
+! ==================================================================== !
+! EXAMPLE 11: interpolate: f(x,y,z) = 1/((1+4x^2)*(1+5y^2)*(1+6z^2))
+! using classical and conformal transformation
+
+  WRITE(*,*) "-------------------------------------------------------------------------------------------------"
+  WRITE(*,*) "Example 11: interpolate f(x,y,z) = 1/((1+4x^2)*(1+5y^2)*(1+6z^2))"
+  WRITE(*,*) "            using conformal transformation"
+  WRITE(*,*) "            the error is estimated as the maximum from 1000 random points"
   
+  dims = 3
+  outs = 1
+  level = 12
+  conformal(1) = 4
+  conformal(2) = 4
+  conformal(3) = 4
+  
+  DO i = 1, 1000
+    randPoints3(1,i) = randPoints(1,i)
+    randPoints3(2,i) = randPoints(2,i)
+    randPoints3(3,i) = randPoints(3,i)
+    tvalues(1,i) = 1.0 / ((1.0 + 4.0 * randPoints3(1,i)**2) * &
+                          (1.0 + 5.0 * randPoints3(2,i)**2) * &
+                          (1.0 + 6.0 * randPoints3(3,i)**2))
+  END DO
+  
+  gridID1 = tsgNewGridID()
+  
+  ! iptotal: 3, clenshaw-curtis: 1
+  CALL tsgMakeGlobalGrid(gridID1, dims, outs, level, 3, 1)
+  
+  N = tsgGetNumNeeded(gridID1)
+  points => tsgGetNeededPoints(gridID1)
+  ALLOCATE(values(outs,N))
+  DO i = 1, N
+    values(1,i) = 1.0 / ((1.0 + 4.0 * points(1,i)**2) * &
+                          (1.0 + 5.0 * points(2,i)**2) * &
+                          (1.0 + 6.0 * points(3,i)**2))
+  END DO
+  CALL tsgLoadNeededPoints(gridID1, values)
+  DEALLOCATE(values)
+  DEALLOCATE(points)
+  
+  CALL tsgEvaluateBatch(gridID1, randPoints3, 1000, res2)
+  err1 = 0.0
+  DO i = 1, 1000
+    IF(abs(res2(1,i) - tvalues(1,i)) .GT. err1)then
+      err1 = abs(res2(1,i) - tvalues(1,i))
+    ENDIF
+  END DO
+  N1 = tsgGetNumPoints(gridID1)
+  
+  ! iptotal: 3, clenshaw-curtis: 1
+  CALL tsgMakeGlobalGrid(gridID1, dims, outs, level, 3, 1)
+  CALL tsgSetConformalTransformASIN(gridID1, conformal)
+  
+  N = tsgGetNumNeeded(gridID1)
+  points => tsgGetNeededPoints(gridID1)
+  ALLOCATE(values(outs,N))
+  DO i = 1, N
+    values(1,i) = 1.0 / ((1.0 + 4.0 * points(1,i)**2) * &
+                          (1.0 + 5.0 * points(2,i)**2) * &
+                          (1.0 + 6.0 * points(3,i)**2))
+  END DO
+  CALL tsgLoadNeededPoints(gridID1, values)
+  DEALLOCATE(values)
+  DEALLOCATE(points)
+  
+  CALL tsgEvaluateBatch(gridID1, randPoints3, 1000, res2)
+  err2 = 0.0
+  DO i = 1, 1000
+    IF(abs(res2(1,i) - tvalues(1,i)) .GT. err2)then
+      err2 = abs(res2(1,i) - tvalues(1,i))
+    ENDIF
+  END DO
+  
+  ! localp: 37
+  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, level-4, 2, 37)
+  
+  N = tsgGetNumNeeded(gridID1)
+  points => tsgGetNeededPoints(gridID1)
+  ALLOCATE(values(outs,N))
+  DO i = 1, N
+    values(1,i) = 1.0 / ((1.0 + 4.0 * points(1,i)**2) * &
+                          (1.0 + 5.0 * points(2,i)**2) * &
+                          (1.0 + 6.0 * points(3,i)**2))
+  END DO
+  CALL tsgLoadNeededPoints(gridID1, values)
+  DEALLOCATE(values)
+  DEALLOCATE(points)
+  
+  CALL tsgEvaluateBatch(gridID1, randPoints3, 1000, res2)
+  err3 = 0.0
+  DO i = 1, 1000
+    IF(abs(res2(1,i) - tvalues(1,i)) .GT. err3)then
+      err3 = abs(res2(1,i) - tvalues(1,i))
+    ENDIF
+  END DO
+  N2 = tsgGetNumPoints(gridID1)
+  
+  ! localp: 37
+  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, level-4, 2, 37)
+  CALL tsgSetConformalTransformASIN(gridID1, conformal)
+  
+  N = tsgGetNumNeeded(gridID1)
+  points => tsgGetNeededPoints(gridID1)
+  ALLOCATE(values(outs,N))
+  DO i = 1, N
+    values(1,i) = 1.0 / ((1.0 + 4.0 * points(1,i)**2) * &
+                          (1.0 + 5.0 * points(2,i)**2) * &
+                          (1.0 + 6.0 * points(3,i)**2))
+  END DO
+  CALL tsgLoadNeededPoints(gridID1, values)
+  DEALLOCATE(values)
+  DEALLOCATE(points)
+  
+  CALL tsgEvaluateBatch(gridID1, randPoints3, 1000, res2)
+  err4 = 0.0
+  DO i = 1, 1000
+    IF(abs(res2(1,i) - tvalues(1,i)) .GT. err4)then
+      err4 = abs(res2(1,i) - tvalues(1,i))
+    ENDIF
+  END DO
+  
+  WRITE(*,*) "Grid Type    nodes     error regular   error conformal"
+  WRITE(*,"(A,I8,E18.4,E18.4)") " Global    ", N1, err1, err2
+  WRITE(*,"(A,I8,E18.4,E18.4)") " Localp    ", N2, err3, err4
+  WRITE(*,*)
+  WRITE(*,*) "Note: conformal maps address specific problems with the region of analyticity of a function"
+  WRITE(*,*) "      the map can accelerate or slow down convergence depending on the problem"
+  WRITE(*,*)
+  
+  CALL tsgFreeGridID(gridID1)
+! ==================================================================== !
+
+! cleanup
   DEALLOCATE(res2)
   DEALLOCATE(tvalues)
-
-! Add Example 11
-
-
-
-
+  
 ! no need to free grid IDs before tsgFinalize(),
 ! all memory will be freed regardless
 ! must deallocate points, weights, etc.
   CALL tsgFinalize()
+  
+  WRITE(*,*) "-------------------------------------------------------------------------------------------------"
+  WRITE(*,*)
 
 END PROGRAM TasmanianSGExample
 

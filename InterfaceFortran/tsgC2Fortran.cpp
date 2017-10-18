@@ -171,12 +171,49 @@ void tsgint_(int *id, double *q){ _tsg_grid_list[*id]->integrate(q); }
 void tsgsar_(int *id, int *type, int *min_growth, int *output){
     _tsg_grid_list[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output);
 }
-//estimateAnisotropicCoefficients
+void tsgeac_(int *id, int *type, int *output, int *result){
+    int *coeff = _tsg_grid_list[*id]->estimateAnisotropicCoefficients(OneDimensionalMeta::getIOTypeInt(*type), *output);
+    int num_coeff = _tsg_grid_list[*id]->getNumDimensions();
+    if ((*type == 2) || (*type == 4) || (*type == 6)) num_coeff *= 2;
+    for(int i=0; i<num_coeff; i++) result[i] = coeff[i];
+    delete[] coeff;
+}
 void tsgssr_(int *id, double *tol, int *output){ _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output); }
 void tsgshr_(int *id, double *tol, int *type, int *output){ 
     _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), *output); 
 }
 void tsgcre_(int *id){ _tsg_grid_list[*id]->clearRefinement(); }
+
+// set/is/clear/getConformalTransform
+void tsgsca_(int *id, int *trunc){ _tsg_grid_list[*id]->setConformalTransformASIN(trunc); }
+void tsgica_(int *id, int *result){ *result = (_tsg_grid_list[*id]->isSetConformalTransformASIN()) ? 1 : 0; }
+void tsgcct_(int *id){ _tsg_grid_list[*id]->clearConformalTransform(); }
+void tsggca_(int *id, int *trunc){ _tsg_grid_list[*id]->getConformalTransformASIN(trunc); }
+
+// print stats
+void tsgpri_(int *id){ _tsg_grid_list[*id]->printStats(); }
+
+// get/enableAcceleration
+void tsgacc_(int *id, int *acc){
+    TypeAcceleration accel = accel_none;
+    if (*acc == 1){ accel = accel_cpu_blas;   }else
+    if (*acc == 2){ accel = accel_gpu_cublas; }else
+    if (*acc == 3){ accel = accel_gpu_cuda;   }else
+    if (*acc == 4){ accel = accel_gpu_magma;  }
+    _tsg_grid_list[*id]->enableAcceleration(accel);
+}
+void tsggac_(int *id, int *acc){
+    TypeAcceleration accel = _tsg_grid_list[*id]->getAccelerationType();
+    if (accel == accel_none){       *acc = 0; }else
+    if (accel == accel_cpu_blas){   *acc = 1; }else
+    if (accel == accel_gpu_cublas){ *acc = 2; }else
+    if (accel == accel_gpu_cuda){   *acc = 3; }else
+    if (accel == accel_gpu_magma){  *acc = 4; }
+}
+void tsgsgi_(int *id, int *gpuID){ _tsg_grid_list[*id]->setGPUID(*gpuID); }
+void tsgggi_(int *id, int *gpuID){ *gpuID = _tsg_grid_list[*id]->getGPUID(); }
+void tsggng_(int *gpus){ *gpus = TasmanianSparseGrid::getNumGPUs(); }
+void tsgggm_(int *gpuID, int *mem){ *mem = TasmanianSparseGrid::getGPUmemory(*gpuID); }
 
 }
 #endif

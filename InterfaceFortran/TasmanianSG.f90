@@ -75,10 +75,16 @@ PUBLIC :: tsgInitialize,        &
           tsgIsSetDomainTransfrom, &
           tsgClearDomainTransform, &
           tsgGetDomainTransform,   &
-          tsgSetAnisotropicRefinement,   &
-          tsgSetGlobalSurplusRefinement, &
-          tsgSetLocalSurplusRefinement,  &
-          tsgClearRefinement,            &
+          tsgSetAnisotropicRefinement,        &
+          tsgEstimateAnisotropicCoefficients, &
+          tsgSetGlobalSurplusRefinement,      &
+          tsgSetLocalSurplusRefinement,       &
+          tsgClearRefinement,                 &
+          tsgSetConformalTransformASIN,   &
+          tsgIsSetConformalTransformASIN, &
+          tsgClearConformalTransform,     &
+          tsgGetConformalTransformASIN,   &
+          tsgPrintStats, &
 !===== DO NOT USE THESE FUNCTIONS DIRECTLY ======!
 !===== THESE ARE NEEDED TO LINK TO C++ ==========!
           !tsgReceiveInt,    &
@@ -490,6 +496,18 @@ SUBROUTINE tsgSetAnisotropicRefinement(gridID, gtype, minGrowth, output)
   CALL tsgsar(gridID, gtype, minGrowth, output)
 END SUBROUTINE tsgSetAnisotropicRefinement
 !=======================================================================
+FUNCTION tsgEstimateAnisotropicCoefficients(gridID, gtype, output) &
+                                              result(coeff)
+  INTEGER :: gridID, gtype, output, N
+  INTEGER, allocatable :: coeff(:)
+  N = tsgGetNumDimensions(gridID)
+  IF ((gtype .EQ. 2) .OR. (gtype .EQ. 4) .OR. (gtype .EQ. 6))then
+    N = N * 2
+  ENDIF
+  ALLOCATE(coeff(N))
+  CALL tsgeac(gridID, gtype, output, coeff)
+END FUNCTION tsgEstimateAnisotropicCoefficients
+!=======================================================================
 SUBROUTINE tsgSetGlobalSurplusRefinement(gridID, tolerance, output)
   INTEGER :: gridID, output
   DOUBLE PRECISION :: tolerance
@@ -512,6 +530,40 @@ SUBROUTINE tsgClearRefinement(gridID)
   INTEGER :: gridID
   CALL tsgcre(gridID)
 END SUBROUTINE tsgClearRefinement
+!=======================================================================
+SUBROUTINE tsgSetConformalTransformASIN(gridID, truncate)
+  INTEGER :: gridID, truncate(:)
+  CALL tsgsca(gridID, truncate)
+END SUBROUTINE tsgSetConformalTransformASIN
+!=======================================================================
+FUNCTION tsgIsSetConformalTransformASIN(gridID) result(isset)
+  INTEGER :: gridID, res
+  LOGICAL :: isset
+  CALL tsgica(gridID, res)
+  IF (res .EQ. 0)then
+    isset = .FALSE.
+  ELSE
+    isset = .TRUE.
+  ENDIF
+END FUNCTION tsgIsSetConformalTransformASIN
+!=======================================================================
+SUBROUTINE tsgClearConformalTransform(gridID)
+  INTEGER :: gridID
+  CALL tsgcct(gridID)
+END SUBROUTINE tsgClearConformalTransform
+!=======================================================================
+FUNCTION tsgGetConformalTransformASIN(gridID) result(truncate)
+  INTEGER :: gridID, N
+  INTEGER, allocatable :: truncate(:)
+  N = tsgGetNumDimensions(gridID)
+  ALLOCATE(truncate(N))
+  CALL tsgcre(gridID, truncate)
+END FUNCTION tsgGetConformalTransformASIN
+!=======================================================================
+SUBROUTINE tsgPrintStats(gridID)
+  INTEGER :: gridID
+  CALL tsgpri(gridID)
+END SUBROUTINE tsgPrintStats
 !=======================================================================
 ! DO NOT CALL THOSE FUNCTIONS DIRECTLY !
 !=======================================================================

@@ -1355,7 +1355,7 @@ double* tsgGetNeededPoints(void *grid){
     return x;
 }
 void tsgGetPointsStatic(void *grid, double *x){ return ((TasmanianSparseGrid*) grid)->getPoints(x); }
-double* tsgGetPoints(void *grid){ 
+double* tsgGetPoints(void *grid){
     if (((TasmanianSparseGrid*) grid)->getNumPoints() == 0){
         return 0;
     }
@@ -1388,7 +1388,7 @@ void tsgEvaluateBatch(void *grid, const double *x, int num_x, double *y){ ((Tasm
 double* tsgBatchGetInterpolationWeights(void *grid, const double *x, int num_x){
     TasmanianSparseGrid* tsg = (TasmanianSparseGrid*) grid;
     int iNumDim = tsg->getNumDimensions(), iNumPoints = tsg->getNumPoints();
-    double *weights = new double[num_x * iNumPoints];
+    double *weights = (double*) malloc(num_x * iNumPoints * sizeof(double));
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
         double *w = tsg->getInterpolationWeights(&(x[i*iNumDim]));
@@ -1432,7 +1432,11 @@ int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int outp
     }else{
         *num_coefficients = ((TasmanianSparseGrid*) grid)->getNumDimensions();
     }
-    return ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
+    int *coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
+    int *result = (int*) malloc((*num_coefficients) * sizeof(int));
+    for(int i=0; i<*num_coefficients; i++) result[i] = coeff[i];
+    delete[] coeff;
+    return result;
 }
 void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output){
     ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, output);

@@ -55,7 +55,6 @@ set(Tasmanian_VersionMinor 1)
 set(Tasmanian_VersionString "${Tasmanian_VersionMajor}.${Tasmanian_VersionMinor}")
 set(Tasmanian_License "BSD 3-Clause with UT-Battelle disclamer")
 
-
 ########################################################################
 # list all source files
 ########################################################################
@@ -289,7 +288,7 @@ endif()
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     add_definitions(-D_TASMANIAN_DEBUG_)
     if (Tasmanian_ENABLE_FORTRAN)
-        set(CMAKE_Fortran_FLAGS_DEBUG "-fno-f2c -g")
+        set(CMAKE_Fortran_FLAGS_DEBUG "-g")
     endif()
 else()
     # this is a bug in some versions of CUDA
@@ -380,12 +379,14 @@ if (Tasmanian_SHARED_LIBRARY)
 
     set(install_targets ${install_targets} libtsg_shared libtdr_shared)
 
-    set_property(TARGET libtsg_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/include/")
-    set_property(TARGET libtdr_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/include/")
+    set_property(TARGET libtsg_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
+    set_property(TARGET libtdr_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
     
     if (Tasmanian_ENABLE_FORTRAN)
         add_library(libtasfor_shared SHARED ${libfor_src})
         target_link_libraries(libtasfor_shared libtsg_shared)
+        set(install_targets ${install_targets} libtasfor_shared)
+        set_property(TARGET libtasfor_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
         set(tas_target_list ${tas_target_list} libtasfor_shared)
         set_target_properties(libtasfor_shared PROPERTIES OUTPUT_NAME "${FortranBaseLibName}")
     endif()
@@ -411,13 +412,15 @@ if (Tasmanian_STATIC_LIBRARY)
     target_link_libraries(tasgrid libtsg_static)
     target_link_libraries(tasdream libtdr_static libtsg_static)
 
-    set_property(TARGET libtsg_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/include/")
-    set_property(TARGET libtdr_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/include/")
+    set_property(TARGET libtsg_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
+    set_property(TARGET libtdr_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
     
     if (Tasmanian_ENABLE_FORTRAN)
         add_library(libtasfor_static STATIC ${libfor_src})
         target_link_libraries(libtasfor_static libtsg_static)
         set(tas_target_list ${tas_target_list} libtasfor_static)
+        set(install_targets ${install_targets} libtasfor_static)
+        set_property(TARGET libtasfor_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
         set_target_properties(libtasfor_static PROPERTIES OUTPUT_NAME "${FortranStaticLibName}")
         target_link_libraries(fortester libtasfor_static)
     endif()
@@ -690,8 +693,10 @@ else()
 endif()
 
 if (Tasmanian_ENABLE_FORTRAN)
-    if (${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -mtune=native -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
+    if (DEFINED Tasmanian_Fortran_FLAGS)
+        set(CMAKE_Fortran_FLAGS ${Tasmanian_Fortran_FLAGS})
+    elseif (${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fno-f2c -mtune=native -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
     endif()
 endif()
 
@@ -893,6 +898,14 @@ if (Tasmanian_ENABLE_MATLAB)
             PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 endif()
 
+if (Tasmanian_ENABLE_FORTRAN)
+    install(FILES "${CMAKE_BINARY_DIR}/tasmaniansg.mod"
+            DESTINATION "include"
+            PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+    install(FILES "${CMAKE_SOURCE_DIR}/Examples/example_sparse_grids.f90"
+            DESTINATION "examples"
+            PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+endif()
 
 ########################################################################
 # Setup Message
