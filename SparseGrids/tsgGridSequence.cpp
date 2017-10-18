@@ -261,9 +261,11 @@ void GridSequence::updateGrid(IndexSet* &update){
             IndexManipulator IM(num_dimensions);
             int max_level; IM.getMaxLevels(update, 0, max_level);
             delete[] nodes; delete[] coeff;
+            nodes = 0; coeff = 0;
             prepareSequence(max_level+1);
-        }else if (needed->getNumIndexes() == 0){
+        }else if ((needed != 0) && (needed->getNumIndexes() == 0)){
             delete needed;
+            needed = 0;
         }
 
         delete update;
@@ -274,9 +276,9 @@ int GridSequence::getNumDimensions() const{ return num_dimensions; }
 int GridSequence::getNumOutputs() const{ return num_outputs; }
 TypeOneDRule GridSequence::getRule() const{ return rule; }
 
-int GridSequence::getNumLoaded() const{ return ((points == 0) ? 0 : points->getNumIndexes()); }
+int GridSequence::getNumLoaded() const{ return (((points == 0) || (num_outputs == 0)) ? 0 : points->getNumIndexes()); }
 int GridSequence::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
-int GridSequence::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : getNumLoaded()); }
+int GridSequence::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
 double* GridSequence::getLoadedPoints() const{
     if (points == 0) return 0;

@@ -94,6 +94,7 @@ void tsgEvaluateFast(void *grid, const double *x, double *y);
 void tsgIntegrate(void * grid, double *q);
 void tsgEvaluateBatch(void * grid, const double *x, int num_x, double *y);
 double* tsgBatchGetInterpolationWeights(void * grid, const double *x, int num_x);
+void tsgBatchGetInterpolationWeightsStatic(void *grid, const double *x, int num_x, double *weights);
 
 int tsgIsGlobal(void * grid);
 int tsgIsSequence(void * grid);

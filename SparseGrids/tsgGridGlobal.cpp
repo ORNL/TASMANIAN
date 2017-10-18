@@ -448,9 +448,9 @@ const char* GridGlobal::getCustomRuleDescription() const{ return (custom != 0) ?
 double GridGlobal::getAlpha() const{ return alpha; }
 double GridGlobal::getBeta() const{ return beta; }
 
-int GridGlobal::getNumLoaded() const{ return ((points == 0) ? 0 : points->getNumIndexes()); }
+int GridGlobal::getNumLoaded() const{ return (((points == 0) || (num_outputs == 0)) ? 0 : points->getNumIndexes()); }
 int GridGlobal::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
-int GridGlobal::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : getNumLoaded()); }
+int GridGlobal::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
 double* GridGlobal::getLoadedPoints() const{
     if (points == 0) return 0;

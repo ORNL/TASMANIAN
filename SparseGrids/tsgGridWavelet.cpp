@@ -207,14 +207,14 @@ void GridWavelet::setNodes(IndexSet* &nodes, int cnum_outputs, int corder){
     buildInterpolationMatrix();
 }
 
-int GridWavelet::getNumDimensions() const{  return num_dimensions;  }
-int GridWavelet::getNumOutputs() const{  return num_outputs;  }
-TypeOneDRule GridWavelet::getRule() const{  return rule_wavelet;  }
-int GridWavelet::getOrder() const{  return order;  }
+int GridWavelet::getNumDimensions() const{ return num_dimensions;  }
+int GridWavelet::getNumOutputs() const{ return num_outputs;  }
+TypeOneDRule GridWavelet::getRule() const{ return rule_wavelet;  }
+int GridWavelet::getOrder() const{ return order;  }
 
-int GridWavelet::getNumLoaded() const{  return ((points == 0) ? 0 : points->getNumIndexes());  }
-int GridWavelet::getNumNeeded() const{  return ((needed == 0) ? 0 : needed->getNumIndexes());  }
-int GridWavelet::getNumPoints() const{  return ((points == 0) ? getNumNeeded() : getNumLoaded());  }
+int GridWavelet::getNumLoaded() const{ return (((points == 0) || (num_outputs == 0)) ? 0 : points->getNumIndexes()); }
+int GridWavelet::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
+int GridWavelet::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
 double* GridWavelet::getLoadedPoints() const{
     if (points == 0) return 0;

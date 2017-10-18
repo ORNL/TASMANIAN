@@ -14,6 +14,23 @@ function [mat] = tsgReadMatrix(filename)
 
 fid = fopen(filename);
 
+TSG = fread(fid, [1, 3], '*char');
+
+if (TSG == 'TSG')
+    D = fread(fid, [1, 2], '*int');
+    Rows = D(1);
+    Cols = D(2);
+    mat = fread(fid, [Cols, Rows], '*double')';
+    fclose(fid);
+    return;
+else
+    fclose(fid);
+end
+
+% not binary format, keep this for old support
+
+fid = fopen(filename);
+
 [s] = fscanf(fid, ' %d ', [1, 2]); % load the number of points
 
 Ni = s(1);

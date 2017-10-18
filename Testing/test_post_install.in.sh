@@ -96,6 +96,29 @@ else
     echo "Could not find g++ command, cannot test this. If you are using cmake exported targets, you don't need this anyway."
 fi
 
+if [ -f @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.f90 ]; then
+    if [[ ! -z `which gfortran` ]]; then
+        echo 'PROGRAM FortranSGExample' > dummy.f90
+        echo 'USE TasmanianSG, ONLY: tsgInitialize, tsgFinalize, tsgNewGridID, tsgGetLicense' >> dummy.f90
+        echo 'IMPLICIT NONE' >> dummy.f90
+        echo 'INTEGER :: gridID' >> dummy.f90
+        echo 'CHARACTER, pointer :: string(:)' >> dummy.f90
+        echo '' >> dummy.f90
+        echo 'string => tsgGetLicense()' >> dummy.f90
+        echo 'WRITE(*,*) "Licence: ", string' >> dummy.f90
+        echo 'CALL tsgInitialize()' >> dummy.f90
+        echo 'gridID = tsgNewGridID()' >> dummy.f90
+        echo 'CALL tsgFinalize()' >> dummy.f90
+        echo 'END PROGRAM FortranSGExample' >> dummy.f90
+        gfortran -I@CMAKE_INSTALL_PREFIX@/include dummy.f90 -o dummy_fort -ltasmanianfortran -ltasmaniansparsegrid
+        ./dummy_fort || { sSuccess=0; }
+    else
+        echo "Could not find gfortran command, cannot test this. If you are using cmake exported targets, you don't need this anyway."
+    fi
+fi
+
+  
+
 if (( $sPSuccess == 0 )) || (( $sSuccess == 0 )); then
     echo ""
     echo "--------------------------------------------------------------------------------"

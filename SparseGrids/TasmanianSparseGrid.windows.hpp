@@ -253,6 +253,7 @@ extern "C" TSG_API void tsgEvaluateFast(void *grid, const double *x, double *y);
 extern "C" TSG_API void tsgIntegrate(void * grid, double *q);
 extern "C" TSG_API void tsgEvaluateBatch(void * grid, const double *x, int num_x, double *y);
 extern "C" TSG_API double* tsgBatchGetInterpolationWeights(void * grid, const double *x, int num_x);
+extern "C" TSG_API void tsgBatchGetInterpolationWeightsStatic(void *grid, const double *x, int num_x, double *weights);
 
 extern "C" TSG_API int tsgIsGlobal(void * grid);
 extern "C" TSG_API int tsgIsSequence(void * grid);

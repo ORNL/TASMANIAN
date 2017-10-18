@@ -390,7 +390,7 @@ void TasgridWrapper::outputPoints(bool useNeeded) const{
         num_p = grid->getNumPoints();
         points = grid->getPoints();
     }
-    if (outfilename != 0) writeMatrix(outfilename, num_p, num_d, points);
+    if (outfilename != 0) writeMatrix(outfilename, num_p, num_d, points, useASCII);
     if (printCout) printMatrix(num_p, num_d, points);
     delete[] points;
 }
@@ -408,7 +408,7 @@ void TasgridWrapper::outputQuadrature() const{
         for(int j=0; j<num_d; j++) combined[i * offset + j + 1] = points[i*num_d + j];
     }
     if (outfilename != 0){
-        writeMatrix(outfilename, num_p, offset, combined);
+        writeMatrix(outfilename, num_p, offset, combined, useASCII);
     }
     if (printCout){
         printMatrix(num_p, offset, combined);
@@ -478,7 +478,7 @@ bool TasgridWrapper::getInterWeights(){
         delete[] r;
     }
     if (outfilename != 0){
-        writeMatrix(outfilename, rows, num_p, res);
+        writeMatrix(outfilename, rows, num_p, res, useASCII);
     }
     if (printCout){
         printMatrix(rows, num_p, res);
@@ -513,7 +513,7 @@ bool TasgridWrapper::getEvaluate(){
     grid->evaluateBatch(x, rows, res);
 
     if (outfilename != 0){
-        writeMatrix(outfilename, rows, num_out, res);
+        writeMatrix(outfilename, rows, num_out, res, useASCII);
     }
     if (printCout){
         printMatrix(rows, num_out, res);
@@ -535,7 +535,7 @@ bool TasgridWrapper::getIntegrate(){
     double *q = new double[num_out];
     grid->integrate(q);
     if (outfilename != 0){
-        writeMatrix(outfilename, 1, num_out, q);
+        writeMatrix(outfilename, 1, num_out, q, useASCII);
     }
     if (printCout){
         printMatrix(1, num_out, q);
@@ -577,7 +577,7 @@ bool TasgridWrapper::getAnisoCoeff(){
         coeff[i] = (double) ab[i];
     }
     if (outfilename != 0){
-        writeMatrix(outfilename, num_coeff, 1, coeff);
+        writeMatrix(outfilename, num_coeff, 1, coeff, useASCII);
     }
     if (printCout){
         printMatrix(num_coeff, 1, coeff);
@@ -677,7 +677,7 @@ bool TasgridWrapper::getPoly(){
         double *double_poly = new double[n * num_d];
         for(int i=0; i<num_d * n; i++)  double_poly[i] = (double) poly[i];
         if (outfilename != 0){
-            writeMatrix(outfilename, n, num_d, double_poly);
+            writeMatrix(outfilename, n, num_d, double_poly, useASCII);
         }
         if (printCout){
             printMatrix(n, num_d, double_poly);
@@ -699,7 +699,7 @@ bool TasgridWrapper::getSurpluses(){
     int num_p = grid->getNumLoaded();
     int num_o = grid->getNumOutputs();
     if (outfilename != 0){
-        writeMatrix(outfilename, num_p, num_o, surp);
+        writeMatrix(outfilename, num_p, num_o, surp, useASCII);
     }
     if (printCout){
         printMatrix(num_p, num_o, surp);
@@ -728,7 +728,7 @@ bool TasgridWrapper::getEvalHierarchy(){
         delete[] r;
     }
     if (outfilename != 0){
-        writeMatrix(outfilename, rows, num_p, res);
+        writeMatrix(outfilename, rows, num_p, res, useASCII);
     }
     if (printCout){
         printMatrix(rows, num_p, res);
@@ -763,7 +763,7 @@ bool TasgridWrapper::getPointsIndexes(){
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
     if (outfilename != 0){
-        writeMatrix(outfilename, num_p, num_d, pv);
+        writeMatrix(outfilename, num_p, num_d, pv, useASCII);
     }
     if (printCout){
         printMatrix(num_p, num_d, pv);
@@ -779,7 +779,7 @@ bool TasgridWrapper::getNeededIndexes(){
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
     if (outfilename != 0){
-        writeMatrix(outfilename, num_p, num_d, pv);
+        writeMatrix(outfilename, num_p, num_d, pv, useASCII);
     }
     if (printCout){
         printMatrix(num_p, num_d, pv);
@@ -832,39 +832,66 @@ double* TasgridWrapper::readTransform() const{
 
 void TasgridWrapper::readMatrix(const char *filename, int &rows, int &cols, double* &mat){
     if (mat == 0) delete[] mat;
-    std::ifstream ifs; ifs.open(filename);
+    std::ifstream ifs;
+    ifs.open(filename, std::ios::in | std::ios::binary);
     if (!(ifs.good())){
         cerr << "ERROR: could not open file " << filename << endl;
         mat = 0;
         ifs.close();
         return;
     }
-    ifs >> rows >> cols;
-    if ((rows == 0) && (cols == 0)){
-        cerr << "WARNING: empty file " << filename << endl;
-        mat = 0;
+    char tsg[3] = {'A', 'A', 'A'};
+    ifs.read(tsg, 3*sizeof(char));
+    if ((tsg[0] == 'T') && (tsg[1] == 'S') && (tsg[2] == 'G')){
+        ifs.read((char*) &rows, sizeof(int));
+        ifs.read((char*) &cols, sizeof(int));
+        if ((rows == 0) && (cols == 0)){
+            cerr << "WARNING: empty file " << filename << endl;
+            mat = 0;
+            ifs.close();
+            return;
+        }
+        mat = new double[rows*cols];
+        ifs.read((char*) mat, rows * cols * sizeof(double));
+    }else{ // not a binary file
         ifs.close();
-        return;
-    }
-    mat = new double[rows*cols];
-    for(int i=0; i<rows; i++){
-        for(int j=0; j<cols; j++){
-            ifs >> mat[i*cols + j];
+        ifs.open(filename);
+        ifs >> rows >> cols;
+        if ((rows == 0) && (cols == 0)){
+            cerr << "WARNING: empty file " << filename << endl;
+            mat = 0;
+            ifs.close();
+            return;
+        }
+        mat = new double[rows*cols];
+        for(int i=0; i<rows; i++){
+            for(int j=0; j<cols; j++){
+                ifs >> mat[i*cols + j];
+            }
         }
     }
     ifs.close();
 }
-void TasgridWrapper::writeMatrix(const char *filename, int rows, int cols, const double mat[]){
+void TasgridWrapper::writeMatrix(const char *filename, int rows, int cols, const double mat[], bool ascii){
     std::ofstream ofs;
-    ofs.open(filename);
-    ofs << rows << " " << cols << endl;
-    ofs.precision(17);
-    ofs << std::scientific;
-    for(int i=0; i<rows; i++){
-        for(int j=0; j<cols; j++){
-            ofs << setw(25) << mat[i*cols + j] << " ";
+    if (ascii){
+        ofs.open(filename);
+        ofs << rows << " " << cols << endl;
+        ofs.precision(17);
+        ofs << std::scientific;
+        for(int i=0; i<rows; i++){
+            for(int j=0; j<cols; j++){
+                ofs << setw(25) << mat[i*cols + j] << " ";
+            }
+            ofs << endl;
         }
-        ofs << endl;
+    }else{
+        ofs.open(filename, std::ios::out | std::ios::binary);
+        char tsg[3] = {'T', 'S', 'G'};
+        ofs.write(tsg, 3*sizeof(char));
+        ofs.write((char*) &rows, sizeof(int));
+        ofs.write((char*) &cols, sizeof(int));
+        ofs.write((char*) mat, rows * cols * sizeof(double));
     }
     ofs.close();
 }

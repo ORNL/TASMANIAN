@@ -312,9 +312,9 @@ int GridLocalPolynomial::getNumOutputs() const{  return num_outputs;  }
 TypeOneDRule GridLocalPolynomial::getRule() const{  return rule->getType();  }
 int GridLocalPolynomial::getOrder() const{  return order;  }
 
-int GridLocalPolynomial::getNumLoaded() const{  return ((points == 0) ? 0 : points->getNumIndexes());  }
+int GridLocalPolynomial::getNumLoaded() const{  return (((points == 0) || (num_outputs == 0)) ? 0 : points->getNumIndexes());  }
 int GridLocalPolynomial::getNumNeeded() const{  return ((needed == 0) ? 0 : needed->getNumIndexes());  }
-int GridLocalPolynomial::getNumPoints() const{  return ((points == 0) ? getNumNeeded() : getNumLoaded());  }
+int GridLocalPolynomial::getNumPoints() const{  return ((points == 0) ? getNumNeeded() : points->getNumIndexes());  }
 
 double* GridLocalPolynomial::getLoadedPoints() const{
     if (points == 0) return 0;
@@ -723,6 +723,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
 
     delete[] dagUp;
     delete[] level;
+    //for(int i=0; i<num_ponits; i++){ cout << surpluses[i] << "  " << points->getIndex(i)[0] << "   " << points->getIndex(i)[1] << endl; }
 }
 
 double GridLocalPolynomial::evalBasisRaw(const int point[], const double x[]) const{

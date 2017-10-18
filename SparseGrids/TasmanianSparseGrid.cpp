@@ -1257,9 +1257,9 @@ const char* tsgGetVersion(){ return TasmanianSparseGrid::getVersion(); }
 const char* tsgGetLicense(){ return TasmanianSparseGrid::getLicense(); }
 int tsgGetVersionMajor(){ return TasmanianSparseGrid::getVersionMajor(); }
 int tsgGetVersionMinor(){ return TasmanianSparseGrid::getVersionMinor(); }
-int tsgIsCudaEnabled(){ return (TasmanianSparseGrid::isCudaEnabled()) ? 0 : 1; }
-int tsgIsBLASEnabled(){ return (TasmanianSparseGrid::isBLASEnabled()) ? 0 : 1; }
-int tsgIsOpenMPEnabled(){ return (TasmanianSparseGrid::isOpenMPEnabled()) ? 0 : 1; }
+int tsgIsCudaEnabled(){ return (TasmanianSparseGrid::isCudaEnabled()) ? 1 : 0; }
+int tsgIsBLASEnabled(){ return (TasmanianSparseGrid::isBLASEnabled()) ? 1 : 0; }
+int tsgIsOpenMPEnabled(){ return (TasmanianSparseGrid::isOpenMPEnabled()) ? 1 : 0; }
 
 void tsgErrorLogCerr(void *grid){ ((TasmanianSparseGrid*) grid)->setErrorLog(&cerr); }
 void tsgDisableErrorLog(void *grid){ ((TasmanianSparseGrid*) grid)->disableLog(); }
@@ -1385,16 +1385,17 @@ void tsgIntegrate(void *grid, double *q){ ((TasmanianSparseGrid*) grid)->integra
 
 void tsgEvaluateBatch(void *grid, const double *x, int num_x, double *y){ ((TasmanianSparseGrid*) grid)->evaluateBatch(x, num_x, y); }
 
-double* tsgBatchGetInterpolationWeights(void *grid, const double *x, int num_x){
+void tsgBatchGetInterpolationWeightsStatic(void *grid, const double *x, int num_x, double *weights){
     TasmanianSparseGrid* tsg = (TasmanianSparseGrid*) grid;
     int iNumDim = tsg->getNumDimensions(), iNumPoints = tsg->getNumPoints();
-    double *weights = (double*) malloc(num_x * iNumPoints * sizeof(double));
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        double *w = tsg->getInterpolationWeights(&(x[i*iNumDim]));
-        std::copy(w, w + iNumPoints, &(weights[i*iNumPoints]));
-        delete[] w;
+        tsg->getInterpolationWeights(&(x[i*iNumDim]), &(weights[i*iNumPoints]));
     }
+}
+double* tsgBatchGetInterpolationWeights(void *grid, const double *x, int num_x){
+    double *weights = (double*) malloc(num_x * ((TasmanianSparseGrid*) grid)->getNumPoints() * sizeof(double));
+    tsgBatchGetInterpolationWeightsStatic(grid, x, num_x, weights);
     return weights;
 }
 

@@ -174,14 +174,20 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetLoadedPoints.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNeededPoints.argtypes = [c_void_p]
         self.pLibTSG.tsgGetPoints.argtypes = [c_void_p]
-        self.pLibTSG.tsgGetQuadratureWeights.argtypes = [c_void_p]
+        self.pLibTSG.tsgGetLoadedPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetNeededPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetQuadratureWeights.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetQuadratureWeightsStatic.argtypes = [c_void_p]
         self.pLibTSG.tsgGetInterpolationWeights.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgLoadNeededPoints.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgEvaluate.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgEvaluateFast.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgIntegrate.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgEvaluateBatch.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
         self.pLibTSG.tsgBatchGetInterpolationWeights.argtypes = [c_void_p, POINTER(c_double), c_int]
+        self.pLibTSG.tsgBatchGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
         self.pLibTSG.tsgIsGlobal.argtypes = [c_void_p]
         self.pLibTSG.tsgIsSequence.argtypes = [c_void_p]
         self.pLibTSG.tsgIsLocalPolynomial.argtypes = [c_void_p]
@@ -264,19 +270,19 @@ class TasmanianSparseGrid:
         '''
         returns True if the library has been compiled with CUDA support
         '''
-        return (self.pLibTSG.tsgIsCudaEnabled() == 0)
+        return (self.pLibTSG.tsgIsCudaEnabled() != 0)
         
     def isBLASEnabled(self):
         '''
         returns True if the library has been compiled with BLAS support
         '''
-        return (self.pLibTSG.tsgIsBLASEnabled() == 0)
+        return (self.pLibTSG.tsgIsBLASEnabled() != 0)
         
     def isOpenMPEnabled(self):
         '''
         returns True if the library has been compiled with OpenMP support
         '''
-        return (self.pLibTSG.tsgIsOpenMPEnabled() == 0)
+        return (self.pLibTSG.tsgIsOpenMPEnabled() != 0)
     
     def setErrorLogCerr(self):
         '''
@@ -447,16 +453,18 @@ class TasmanianSparseGrid:
             if (len(liAnisotropicWeights) != iNumWeights):
                 raise TasmanianInputError("liAnisotropicWeights", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
             else:
-                pAnisoWeights = (c_int*iNumWeights)()
-                for iI in range(iNumWeights):
-                    pAnisoWeights[iI] = liAnisotropicWeights[iI]
-        pCustomRule = None
-        if (sCustomFilename):
-            pCustomRule = c_char_p(sCustomFilename)
+                aAWeights = np.array([liAnisotropicWeights[i] for i in range(iNumWeights)], np.int32)
+                pAnisoWeights = np.ctypeslib.as_ctypes(aAWeights)
 
         if (sys.version_info.major == 3):
             sType = bytes(sType, encoding='utf8')
             sRule = bytes(sRule, encoding='utf8')
+            if (sCustomFilename):
+                sCustomFilename = bytes(sCustomFilename, encoding='utf8')
+
+        pCustomRule = None
+        if (sCustomFilename):
+            pCustomRule = c_char_p(sCustomFilename)
 
         self.pLibTSG.tsgMakeGlobalGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), c_char_p(sRule), pAnisoWeights, c_double(fAlpha), c_double(fBeta), pCustomRule)
 
@@ -797,17 +805,13 @@ class TasmanianSparseGrid:
             if (getNumLoaded() == 0): returns numpy.empty([0,0])
 
         '''
-        pPoints = self.pLibTSG.tsgGetLoadedPoints(self.pGrid)
-        iDimensions = self.getNumDimensions()
+        iNumDims = self.getNumDimensions()
         iNumPoints = self.getNumLoaded()
         if (iNumPoints == 0):
             return np.empty([0, 0], np.float64)
-        llfPoints = np.empty([iNumPoints, iDimensions], np.float64)
-        for iI in range(iNumPoints):
-            for iJ in range(iDimensions):
-                llfPoints[iI][iJ] = pPoints[iI*iDimensions + iJ]
-        self.pLibTSG.tsgDeleteDoubles(pPoints)
-        return llfPoints
+        aPoints = np.empty([iNumPoints * iNumDims], np.float64)
+        self.pLibTSG.tsgGetLoadedPointsStatic(self.pGrid, np.ctypeslib.as_ctypes(aPoints))
+        return aPoints.reshape([iNumPoints, iNumDims])
 
     def getNeededPoints(self):
         '''
@@ -819,15 +823,13 @@ class TasmanianSparseGrid:
             if (getNumNeeded() == 0): returns numpy.empty([0,0])
 
         '''
-        pPoints = self.pLibTSG.tsgGetNeededPoints(self.pGrid)
-        iDimensions = self.getNumDimensions()
+        iNumDims = self.getNumDimensions()
         iNumPoints = self.getNumNeeded()
-        llfPoints = np.empty([iNumPoints, iDimensions], np.float64)
-        for iI in range(iNumPoints):
-            for iJ in range(iDimensions):
-                llfPoints[iI][iJ] = pPoints[iI*iDimensions + iJ]
-        self.pLibTSG.tsgDeleteDoubles(pPoints)
-        return llfPoints
+        if (iNumPoints == 0):
+            return np.empty([0, 0], np.float64)
+        aPoints = np.empty([iNumPoints * iNumDims], np.float64)
+        self.pLibTSG.tsgGetNeededPointsStatic(self.pGrid, np.ctypeslib.as_ctypes(aPoints))
+        return aPoints.reshape([iNumPoints, iNumDims])
 
     def getPoints(self):
         '''
@@ -835,15 +837,13 @@ class TasmanianSparseGrid:
         otherwise, returns the same as getNeededPoints()
 
         '''
-        pPoints = self.pLibTSG.tsgGetPoints(self.pGrid)
-        iDimensions = self.getNumDimensions()
+        iNumDims = self.getNumDimensions()
         iNumPoints = self.getNumPoints()
-        llfPoints = np.empty([iNumPoints, iDimensions], np.float64)
-        for iI in range(iNumPoints):
-            for iJ in range(iDimensions):
-                llfPoints[iI][iJ] = pPoints[iI*iDimensions + iJ]
-        self.pLibTSG.tsgDeleteDoubles(pPoints)
-        return llfPoints
+        if (iNumPoints == 0):
+            return np.empty([0, 0], np.float64)
+        aPoints = np.empty([iNumPoints * iNumDims], np.float64)
+        self.pLibTSG.tsgGetPointsStatic(self.pGrid, np.ctypeslib.as_ctypes(aPoints))
+        return aPoints.reshape([iNumPoints, iNumDims])
 
     def getQuadratureWeights(self):
         '''
@@ -855,13 +855,13 @@ class TasmanianSparseGrid:
                 the order in getPoints()
 
         '''
-        pWeights = self.pLibTSG.tsgGetQuadratureWeights(self.pGrid)
+        
         iNumPoints = self.getNumPoints()
-        lfWeights = np.empty([iNumPoints,], np.float64)
-        for iI in range(iNumPoints):
-            lfWeights[iI] = pWeights[iI]
-        self.pLibTSG.tsgDeleteDoubles(pWeights)
-        return lfWeights
+        if (iNumPoints == 0):
+            return np.empty([0], np.float64)
+        aWeights = np.empty([iNumPoints], np.float64)
+        self.pLibTSG.tsgGetQuadratureWeightsStatic(self.pGrid, np.ctypeslib.as_ctypes(aWeights))
+        return aWeights
 
     def getInterpolationWeights(self, lfX):
         '''
@@ -878,16 +878,12 @@ class TasmanianSparseGrid:
         iNumX = len(lfX)
         if (iNumX != self.getNumDimensions()):
                 raise TasmanianInputError("lfX", "ERROR: len(lfX) should equal {0:1d} instead it equals {1:1d}".format(self.getNumDimensions(), iNumX))
-        pX = (c_double*iNumX)()
-        for iI in range(iNumX):
-            pX[iI] = lfX[iI]
-        pWeights = self.pLibTSG.tsgGetInterpolationWeights(self.pGrid, pX)
         iNumPoints = self.getNumPoints()
-        lfWeights = np.empty([iNumPoints], np.float64)
-        for iI in range(iNumPoints):
-            lfWeights[iI] = pWeights[iI]
-        self.pLibTSG.tsgDeleteDoubles(pWeights)
-        return lfWeights
+        if (iNumPoints == 0):
+            return np.empty([0], np.float64)
+        aWeights = np.empty([iNumPoints], np.float64)
+        self.pLibTSG.tsgGetInterpolationWeightsStatic(self.pGrid, np.ctypeslib.as_ctypes(lfX), np.ctypeslib.as_ctypes(aWeights))
+        return aWeights
 
     def getInterpolationWeightsBatch(self, llfX):
         '''
@@ -913,18 +909,14 @@ class TasmanianSparseGrid:
         iNumDim = llfX.shape[1]
         if (iNumDim != self.getNumDimensions()):
             raise TasmanianInputError("llfX", "ERROR: llfX.shape[1] should equal {0:1d} instead it equals {1:1d}".format(self.getNumDimensions(), iNumDim))
-        pX = (c_double*(iNumX*iNumDim))()
-        for iI in range(iNumX):
-            for iJ in range(iNumDim):
-                pX[iI*iNumDim + iJ] = llfX[iI][iJ]
         iNumPoints = self.getNumPoints()
-        pWeights = self.pLibTSG.tsgBatchGetInterpolationWeights(self.pGrid, pX, iNumX)
-        llfWeights = np.empty([iNumX, iNumPoints], np.float64)
-        for iI in range(iNumX):
-            for iJ in range(iNumPoints):
-                llfWeights[iI][iJ] = pWeights[iI*iNumPoints + iJ]
-        self.pLibTSG.tsgDeleteDoubles(pWeights)
-        return llfWeights
+        if (iNumPoints == 0):
+            return np.empty([0, 0], np.float64)
+        aWeights = np.empty([iNumX, iNumPoints], np.float64)
+        self.pLibTSG.tsgBatchGetInterpolationWeightsStatic(self.pGrid,
+            np.ctypeslib.as_ctypes(lfX.reshape([iNumX * iNumDim])),
+            np.ctypeslib.as_ctypes(aWeights.reshape([iNumX * iNumPoints])))
+        return aWeights
 
     def loadNeededPoints(self, llfVals):
         '''
@@ -952,14 +944,9 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfVals", "ERROR: second dimension of llfVals is {0:1d} but the number of outputs is set to {1:1d}".format(llfVals.shape[1], self.getNumOutputs()))
         iNumPoints = llfVals.shape[0]
         iNumDims = llfVals.shape[1]
-        pVals = (c_double*(iNumPoints*iNumDims))()
-        for iI in range(iNumPoints):
-            for iJ in range(iNumDims):
-                pVals[iI*iNumDims + iJ] = llfVals[iI][iJ]
-        self.pLibTSG.tsgLoadNeededPoints(self.pGrid, pVals)
+        self.pLibTSG.tsgLoadNeededPoints(self.pGrid, np.ctypeslib.as_ctypes(llfVals.reshape([iNumPoints * iNumDims])))
 
     def evaluateThreadSafe(self, lfX):
-    #def evaluate(self, lfX):
         '''
         evaluates the intepolant at a single points of interest and
         returns the result

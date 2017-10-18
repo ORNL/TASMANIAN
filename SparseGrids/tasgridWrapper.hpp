@@ -177,7 +177,7 @@ protected:
     double* readTransform() const;
 
     static void readMatrix(const char *filename, int &rows, int &cols, double* &mat);
-    static void writeMatrix(const char *filename, int rows, int cols, const double mat[]);
+    static void writeMatrix(const char *filename, int rows, int cols, const double mat[], bool ascii);
     static void printMatrix(int rows, int cols, const double mat[]);
 
 private:

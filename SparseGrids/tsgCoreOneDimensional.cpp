@@ -92,8 +92,10 @@ bool CustomTabulated::read(std::ifstream &ifs){
     reset();
 
     std::string T;
+    char dummy;
     ifs >> T;
     if (!(T.compare("description:") == 0)){ if (logstream != 0) (*logstream) << "ERROR: wrong file format of custom tables on line 1" << endl; ifs.close(); return false; }
+    ifs.get(dummy);
     description = new std::string;
     getline(ifs, *description);
 
@@ -565,46 +567,46 @@ TypeOneDRule OneDimensionalMeta::getIORuleString(const char *name){
 }
 TypeOneDRule OneDimensionalMeta::getIORuleInt(int index){
     switch (index){
-        case  1: return rule_clenshawcurtis;     
-        case  2: return rule_clenshawcurtis0;    
-        case  3: return rule_chebyshev;          
-        case  4: return rule_chebyshevodd;       
-        case  5: return rule_gausslegendre;      
-        case  6: return rule_gausslegendreodd;   
-        case  7: return rule_gausspatterson;     
-        case  8: return rule_leja;               
-        case  9: return rule_lejaodd;            
-        case 10: return rule_rleja;              
-        case 11: return rule_rlejaodd;           
-        case 12: return rule_rlejadouble2;       
-        case 13: return rule_rlejadouble4;       
-        case 14: return rule_rlejashifted;       
-        case 15: return rule_rlejashiftedeven;   
-        case 16: return rule_rlejashifteddouble; 
-        case 17: return rule_maxlebesgue;        
-        case 18: return rule_maxlebesgueodd;     
-        case 19: return rule_minlebesgue;        
-        case 20: return rule_minlebesgueodd;     
-        case 21: return rule_mindelta;           
-        case 22: return rule_mindeltaodd;        
-        case 23: return rule_gausschebyshev1;    
-        case 24: return rule_gausschebyshev1odd; 
-        case 25: return rule_gausschebyshev2;    
-        case 26: return rule_gausschebyshev2odd; 
-        case 27: return rule_fejer2;             
-        case 28: return rule_gaussgegenbauer;    
-        case 29: return rule_gaussgegenbauerodd; 
-        case 30: return rule_gaussjacobi;        
-        case 31: return rule_gaussjacobiodd;     
-        case 32: return rule_gausslaguerre;      
-        case 33: return rule_gausslaguerreodd;   
-        case 34: return rule_gausshermite;       
-        case 35: return rule_gausshermiteodd;    
-        case 36: return rule_customtabulated;    
-        case 37: return rule_localp;             
-        case 38: return rule_localp0;            
-        case 39: return rule_semilocalp;         
-        case 40: return rule_wavelet;            
+        case  1: return rule_clenshawcurtis;
+        case  2: return rule_clenshawcurtis0;
+        case  3: return rule_chebyshev;
+        case  4: return rule_chebyshevodd;
+        case  5: return rule_gausslegendre;
+        case  6: return rule_gausslegendreodd;
+        case  7: return rule_gausspatterson;
+        case  8: return rule_leja;
+        case  9: return rule_lejaodd;
+        case 10: return rule_rleja;
+        case 11: return rule_rlejaodd;
+        case 12: return rule_rlejadouble2;
+        case 13: return rule_rlejadouble4;
+        case 14: return rule_rlejashifted;
+        case 15: return rule_rlejashiftedeven;
+        case 16: return rule_rlejashifteddouble;
+        case 17: return rule_maxlebesgue;
+        case 18: return rule_maxlebesgueodd;
+        case 19: return rule_minlebesgue;
+        case 20: return rule_minlebesgueodd;
+        case 21: return rule_mindelta;
+        case 22: return rule_mindeltaodd;
+        case 23: return rule_gausschebyshev1;
+        case 24: return rule_gausschebyshev1odd;
+        case 25: return rule_gausschebyshev2;
+        case 26: return rule_gausschebyshev2odd;
+        case 27: return rule_fejer2;
+        case 28: return rule_gaussgegenbauer;
+        case 29: return rule_gaussgegenbauerodd;
+        case 30: return rule_gaussjacobi;
+        case 31: return rule_gaussjacobiodd;
+        case 32: return rule_gausslaguerre;
+        case 33: return rule_gausslaguerreodd;
+        case 34: return rule_gausshermite;
+        case 35: return rule_gausshermiteodd;
+        case 36: return rule_customtabulated;
+        case 37: return rule_localp;
+        case 38: return rule_localp0;
+        case 39: return rule_semilocalp;
+        case 40: return rule_wavelet;
         default:
             return rule_none;
     }

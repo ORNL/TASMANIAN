@@ -101,16 +101,16 @@ int IndexManipulator::getHyperbolic(const int index[], const int weights[]) cons
     return ((int) ceil(l));
 }
 int IndexManipulator::getIPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const{
-    double l = pow((double) (meta->getIExact(index[0]-1, rule) + 2), ((double) weights[0]) / ((double) weights[num_dimensions]));
+    double l = (index[0] > 0) ? pow((double) (meta->getIExact(index[0]-1, rule) + 2), ((double) weights[0]) / ((double) weights[num_dimensions])) : 1.0;
     for(int j=1; j<num_dimensions; j++){
-        l *= pow((double) (meta->getIExact(index[j]-1, rule) + 2), ((double) weights[j]) / ((double) weights[num_dimensions]));
+        l *= (index[j] > 0) ? pow((double) (meta->getIExact(index[j]-1, rule) + 2), ((double) weights[j]) / ((double) weights[num_dimensions])) : 1.0;
     }
     return ((int) ceil(l));
 }
 int IndexManipulator::getQPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const{
-    double l = pow((double) (meta->getQExact(index[0]-1, rule) + 2), ((double) weights[0]) / ((double) weights[num_dimensions]));
+    double l = (index[0] > 0) ? pow((double) (meta->getQExact(index[0]-1, rule) + 2), ((double) weights[0]) / ((double) weights[num_dimensions])) : 1.0;
     for(int j=1; j<num_dimensions; j++){
-        l *= pow((double) (meta->getQExact(index[j]-1, rule) + 2), ((double) weights[j]) / ((double) weights[num_dimensions]));
+        l *= (index[j] > 0) ? pow((double) (meta->getQExact(index[j]-1, rule) + 2), ((double) weights[j]) / ((double) weights[num_dimensions])) : 1.0;
     }
     return ((int) ceil(l));
 }

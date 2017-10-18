@@ -40,8 +40,6 @@ PROGRAM FORTESTER
 IMPLICIT NONE
   INTEGER :: gridID, dims, level
   INTEGER :: N, i, verm, vern
-  INTEGER :: aweights(3)
-  DOUBLE PRECISION :: alpha, beta
   DOUBLE PRECISION, pointer :: points(:,:), weights(:)
   DOUBLE PRECISION :: x, y, integ, E
   DOUBLE PRECISION, allocatable :: transformA(:), transformB(:)
