@@ -39,7 +39,7 @@ BaseFunction::~BaseFunction(){}
 
 OneOneP0::OneOneP0(){} OneOneP0::~OneOneP0(){} int OneOneP0::getNumInputs() const{ return 1; } int OneOneP0::getNumOutputs() const{ return 1; }
 const char* OneOneP0::getDescription() const{ return "f(x) = 1"; }
-void OneOneP0::eval(const double x[], double y[]) const{ y[0] = 1.0; } void OneOneP0::getIntegral(double y[]) const{ y[0] = 2.0; }
+void OneOneP0::eval(const double*, double y[]) const{ y[0] = 1.0; } void OneOneP0::getIntegral(double y[]) const{ y[0] = 2.0; }
 
 OneOneP3::OneOneP3(){} OneOneP3::~OneOneP3(){} int OneOneP3::getNumInputs() const{ return 1; } int OneOneP3::getNumOutputs() const{ return 1; }
 const char* OneOneP3::getDescription() const{ return "f(x) = x^3 + 2 x^2 + x + 3"; }

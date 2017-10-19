@@ -207,7 +207,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
     return R;
 }
 
-bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, const bool interpolation, const int depths[], const double tols[], const char *custom_rule_filename) const{
+bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, const bool interpolation, const int depths[], const double tols[]) const{
     TasGrid::TasmanianSparseGrid grid;
     TestResults R;
     int num_global_tests = (interpolation) ? 3 : 1;
@@ -1054,7 +1054,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
         int np[10] = { 10, 12, 17, 24, 32, 34, 41, 42, 57, 59 };
         double errs[10] = { 9.48e-03, 9.50e-03, 6.85e-03, 5.11e-04, 6.26e-05, 7.11e-06, 5.07e-06, 5.19e-06, 1.17e-08, 1.86e-08 };
-        if (!testAnisotropicRefinement(f, &grid, type_ipcurved, 1, np, errs, 10)){
+        if (!testAnisotropicRefinement(f, &grid, type_ipcurved, 1, np, errs, 7)){
             cout << "ERROR: failed anisotropic refinement using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }{
@@ -1070,7 +1070,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
         int np[10] = { 10, 12, 17, 24, 32, 34, 41, 42, 57, 59 };
         double errs[10] = { 9.48e-03, 9.50e-03, 6.85e-03, 5.11e-04, 6.26e-05, 7.11e-06, 5.07e-06, 5.19e-06, 1.17e-08, 1.86e-08 };
-        if (!testAnisotropicRefinement(f, &grid, type_ipcurved, 1, np, errs, 10)){
+        if (!testAnisotropicRefinement(f, &grid, type_ipcurved, 1, np, errs, 7)){
             cout << "ERROR: failed anisotropic refinement using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }
@@ -1402,27 +1402,39 @@ bool ExternalTester::testAllAcceleration() const{
     return pass;
 }
 
-
+int W(int *I, int d){
+    int s = 0; for(int j=0; j<d; j++) s += I[j];
+    return s;
+}
 void ExternalTester::debugTest(){
     cout << "Debug Test" << endl;
     cout << "Put here testing code and call this with ./tasgrid -test debug" << endl;
 
-    RuleWavelet wave;
-    for(int i=3; i<9; i++){
-        int l = wave.getLevel(i);
-        int j=i+1;
-        cout << "i = " << i << " supp =";
-        while(wave.getLevel(j) <= l+1){
-            if (wave.getLevel(j) == l+1){
-                double x = wave.getNode(j);
-                double v = wave.eval(i, x);
-                if (v != 0.0){
-                    cout << " " << j;
-                }
-            }
-            j++;
+    int d = 3;
+    int N = 4;
+    int ID[10];
+    for(int i=0; i<d; i++) ID[i] = 0;
+
+    int c = 0;
+
+
+    while( !((W(ID, d) > N) && (c == 0)) ){
+        if (W(ID, d) > N){
+            for(int k=c; k<d; k++) ID[k] = 0;
+            c--;
+            ID[c]++;
+        }else{
+            for(int k=0; k<d; k++) cout << ID[k] << " ";
+            cout << endl;
+            c = d-1;
+            ID[c]++;
+            //if (c < d-1){
+            //   c++;
+            //   for(int k=c+1; k<d; k++) ID[k] = 0;
+            //}else{
+            //    ID[c]++;
+            //}
         }
-        cout << endl;
     }
 
 }

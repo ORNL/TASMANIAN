@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_SPARSE_GRID_HPP
 #define __TASMANIAN_SPARSE_GRID_HPP
 
+#include "tsgVersion.hpp"
+
 #include "tsgEnumerates.hpp"
 
 #include "tsgGridGlobal.hpp"
@@ -39,11 +41,6 @@
 #include "tsgGridWavelet.hpp"
 
 #include <iomanip> // only needed for printStats()
-
-#define TASMANIAN_VERSION_MAJOR 5
-#define TASMANIAN_VERSION_MINOR 0
-#define TASMANIAN_VERSION_STRING "5.0"
-#define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclamer"
 
 #ifdef TSG_DLL
 #define TSG_API __declspec(dllexport)
@@ -272,6 +269,7 @@ extern "C" TSG_API void tsgGetConformalTransformASIN(void * grid, int truncation
 
 extern "C" TSG_API void tsgSetAnisotropicRefinement(void * grid, const char * sType, int min_growth, int output);
 extern "C" TSG_API int* tsgEstimateAnisotropicCoefficients(void * grid, const char * sType, int output, int *num_coefficients);
+extern "C" TSG_API void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char *sType, int output, int *coefficients);
 extern "C" TSG_API void tsgSetGlobalSurplusRefinement(void * grid, double tolerance, int output);
 extern "C" TSG_API void tsgSetLocalSurplusRefinement(void * grid, double tolerance, const char * sRefinementType, int output);
 extern "C" TSG_API void tsgClearRefinement(void * grid);
@@ -282,7 +280,7 @@ extern "C" TSG_API double* tsgBatchEvalHierarchicalFunctions(void * grid, const 
 extern "C" TSG_API void tsgSetHierarchicalCoefficients(void * grid, const double *c);
 extern "C" TSG_API const double* tsgGetSurpluses(void *grid);
 
-extern "C" TSG_API int* tsgGetGlobalPolynomialSpace(void * grid, int interpolation, int *num_indexes);
+//extern "C" TSG_API int* tsgGetGlobalPolynomialSpace(void * grid, int interpolation, int *num_indexes);
 
 extern "C" TSG_API void tsgPrintStats(void *grid);
 

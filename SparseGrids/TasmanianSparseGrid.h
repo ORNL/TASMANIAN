@@ -33,9 +33,9 @@
 
 // ------------ C Interface for TasmanianSparseGrid -------------- //
 // NOTE: you need to explicitly call the constructor and destructor
-//       in all cases, void * grid is a pointer to a C++ class
+//       in all cases, void *grid is a pointer to a C++ class
 void* tsgConstructTasmanianSparseGrid();
-void tsgDestructTasmanianSparseGrid(void * grid);
+void tsgDestructTasmanianSparseGrid(void *grid);
 
 void tsgCopyGrid(void * destination, void * source);
 
@@ -50,79 +50,80 @@ int tsgIsOpenMPEnabled();
 void tsgErrorLogCerr(void *grid);
 void tsgDisableErrorLog(void *grid);
 
-void tsgWrite(void * grid, const char* filename);
-int tsgRead(void * grid, const char* filename);
-void tsgWriteBinary(void * grid, const char* filename);
-int tsgReadBinary(void * grid, const char* filename);
+void tsgWrite(void *grid, const char* filename);
+int tsgRead(void *grid, const char* filename);
+void tsgWriteBinary(void *grid, const char* filename);
+int tsgReadBinary(void *grid, const char* filename);
 
-void tsgMakeGlobalGrid(void * grid, int dimensions, int outputs, int depth, const char * sType, const char * sRule, int * anisotropic_weights, double alpha, double beta, const char* custom_filename);
-void tsgMakeSequenceGrid(void * grid, int dimensions, int outputs, int depth, const char * sType, const char * sRule, int * anisotropic_weights);
-void tsgMakeLocalPolynomialGrid(void * grid, int dimensions, int outputs, int depth, int order, const char * sRule);
-void tsgMakeWaveletGrid(void * grid, int dimensions, int outputs, int depth, int order);
+void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const char *sRule, int *anisotropic_weights, double alpha, double beta, const char *custom_filename);
+void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const char *sRule, int *anisotropic_weights);
+void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int depth, int order, const char *sRule);
+void tsgMakeWaveletGrid(void *grid, int dimensions, int outputs, int depth, int order);
 
-void tsgUpdateGlobalGrid(void * grid, int depth, const char * sType, const int *anisotropic_weights);
-void tsgUpdateSequenceGrid(void * grid, int depth, const char * sType, const int *anisotropic_weights);
+void tsgUpdateGlobalGrid(void *grid, int depth, const char *sType, const int *anisotropic_weights);
+void tsgUpdateSequenceGrid(void *grid, int depth, const char *sType, const int *anisotropic_weights);
 
-double tsgGetAlpha(void * grid);
-double tsgGetBeta(void * grid);
-int tsgGetOrder(void * grid);
-int tsgGetNumDimensions(void * grid);
-int tsgGetNumOutputs(void * grid);
-const char * tsgGetRule(void * grid);
-const char * tsgGetCustomRuleDescription(void * grid);
+double tsgGetAlpha(void *grid);
+double tsgGetBeta(void *grid);
+int tsgGetOrder(void *grid);
+int tsgGetNumDimensions(void *grid);
+int tsgGetNumOutputs(void *grid);
+const char* tsgGetRule(void *grid);
+const char* tsgGetCustomRuleDescription(void *grid);
 
-int tsgGetNumLoaded(void * grid);
-int tsgGetNumNeeded(void * grid);
-int tsgGetNumPoints(void * grid);
+int tsgGetNumLoaded(void *grid);
+int tsgGetNumNeeded(void *grid);
+int tsgGetNumPoints(void *grid);
 
-double* tsgGetLoadedPoints(void * grid);
-void tsgGetLoadedPointsStatic(void * grid, double *x);
-double* tsgGetNeededPoints(void * grid);
-void tsgGetNeededPointsStatic(void * grid, double *x);
-double* tsgGetPoints(void * grid);
-void tsgGetPointsStatic(void * grid, double *x);
+double* tsgGetLoadedPoints(void *grid);
+void tsgGetLoadedPointsStatic(void *grid, double *x);
+double* tsgGetNeededPoints(void *grid);
+void tsgGetNeededPointsStatic(void *grid, double *x);
+double* tsgGetPoints(void *grid);
+void tsgGetPointsStatic(void *grid, double *x);
 
-double* tsgGetQuadratureWeights(void * grid);
-void tsgGetQuadratureWeights(void * grid, double *weights);
-double* tsgGetInterpolationWeights(void * grid, const double *x);
-void tsgGetInterpolationWeights(void * grid, const double *x, double *weights);
+double* tsgGetQuadratureWeights(void *grid);
+void tsgGetQuadratureWeights(void *grid, double *weights);
+double* tsgGetInterpolationWeights(void *grid, const double *x);
+void tsgGetInterpolationWeights(void *grid, const double *x, double *weights);
 
-void tsgLoadNeededPoints(void * grid, const double *vals);
+void tsgLoadNeededPoints(void *grid, const double *vals);
 
-void tsgEvaluate(void * grid, const double *x, double *y);
+void tsgEvaluate(void *grid, const double *x, double *y);
 void tsgEvaluateFast(void *grid, const double *x, double *y);
-void tsgIntegrate(void * grid, double *q);
-void tsgEvaluateBatch(void * grid, const double *x, int num_x, double *y);
-double* tsgBatchGetInterpolationWeights(void * grid, const double *x, int num_x);
+void tsgIntegrate(void *grid, double *q);
+void tsgEvaluateBatch(void *grid, const double *x, int num_x, double *y);
+double* tsgBatchGetInterpolationWeights(void *grid, const double *x, int num_x);
 void tsgBatchGetInterpolationWeightsStatic(void *grid, const double *x, int num_x, double *weights);
 
-int tsgIsGlobal(void * grid);
-int tsgIsSequence(void * grid);
-int tsgIsLocalPolynomial(void * grid);
-int tsgIsWavelet(void * grid);
+int tsgIsGlobal(void *grid);
+int tsgIsSequence(void *grid);
+int tsgIsLocalPolynomial(void *grid);
+int tsgIsWavelet(void *grid);
 
-void tsgSetDomainTransform(void * grid, const double a[], const double b[]);
-int tsgIsSetDomainTransfrom(void * grid);
-void tsgClearDomainTransform(void * grid);
-void tsgGetDomainTransform(void * grid, double a[], double b[]);
+void tsgSetDomainTransform(void *grid, const double a[], const double b[]);
+int tsgIsSetDomainTransfrom(void *grid);
+void tsgClearDomainTransform(void *grid);
+void tsgGetDomainTransform(void *grid, double a[], double b[]);
 
-void tsgSetConformalTransformASIN(void * grid, const int truncation[]);
-int tsgIsSetConformalTransformASIN(void * grid);
-void tsgClearConformalTransform(void * grid);
-void tsgGetConformalTransformASIN(void * grid, int truncation[]);
+void tsgSetConformalTransformASIN(void *grid, const int truncation[]);
+int tsgIsSetConformalTransformASIN(void *grid);
+void tsgClearConformalTransform(void *grid);
+void tsgGetConformalTransformASIN(void *grid, int truncation[]);
 
-void tsgSetAnisotropicRefinement(void * grid, const char * sType, int min_growth, int output);
-int* tsgEstimateAnisotropicCoefficients(void * grid, const char * sType, int output, int *num_coefficients);
-void tsgSetGlobalSurplusRefinement(void * grid, double tolerance, int output);
-void tsgSetLocalSurplusRefinement(void * grid, double tolerance, const char * sRefinementType, int output);
-void tsgClearRefinement(void * grid);
+void tsgSetAnisotropicRefinement(void *grid, const char *sType, int min_growth, int output);
+int* tsgEstimateAnisotropicCoefficients(void *grid, const char *sType, int output, int *num_coefficients);
+void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char *sType, int output, int *coefficients);
+void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output);
+void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char *sRefinementType, int output);
+void tsgClearRefinement(void *grid);
 
-double* tsgEvalHierarchicalFunctions(void * grid, const double *x);
-double* tsgBatchEvalHierarchicalFunctions(void * grid, const double *x, int num_x);
-void tsgSetHierarchicalCoefficients(void * grid, const double *c);
+double* tsgEvalHierarchicalFunctions(void *grid, const double *x);
+double* tsgBatchEvalHierarchicalFunctions(void *grid, const double *x, int num_x);
+void tsgSetHierarchicalCoefficients(void *grid, const double *c);
 const double* tsgGetSurpluses(void *grid);
 
-int* tsgGetGlobalPolynomialSpace(void * grid, int interpolation, int *num_indexes);
+//int* tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes);
 
 void tsgPrintStats(void *grid);
 

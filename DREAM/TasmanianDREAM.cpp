@@ -317,7 +317,7 @@ void LikelihoodTSG::getDomainBounds(double* lower_bound, double* upper_bound){
 TasmanianDREAM::TasmanianDREAM(std::ostream *os): num_dimensions(-1), num_chains(-1),
     pdf(0), jump(1.0), corrections(0), chain_state(0), pdf_values(0), old_state(0), new_pdf_values(0),
     isBoudnedBelow(0), isBoudnedAbove(0), boundBelow(0), boundAbove(0), num_pdf_history(0),
-    pdf_history(0), logstream(0)
+    pdf_history(0), logstream(os)
 {
     #ifndef TASMANIAN_XSDK
     if (logstream == 0) logstream = &cerr;

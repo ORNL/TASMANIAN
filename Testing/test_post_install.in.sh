@@ -31,13 +31,15 @@ echo "--------------------------------------------------------------------------
 echo " Test 2: compile and run the C++ examples"
 echo "--------------------------------------------------------------------------------"
 echo 'Building  "cmake @CMAKE_INSTALL_PREFIX@/examples"'
-cmake @CMAKE_INSTALL_PREFIX@/examples > /dev/null || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
+cmake $1 @CMAKE_INSTALL_PREFIX@/examples > /dev/null || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
 echo 'Compiling "make"'
 make > /dev/null || { echo "ERROR: Could not compile the C++ examples"; exit 1; }
 echo 'Executing "./example_sparse_grids"'
 ./example_sparse_grids -fast >/dev/null || { echo "ERROR: Could not run the C++ Sparse Grid example"; exit 1; }
-echo 'Executing "./example_sparse_grids_fortran"'
-./example_sparse_grids_fortran -fast >/dev/null || { echo "ERROR: Could not run the Fortran Sparse Grid example"; exit 1; }
+if [ -f @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.f90 ]; then
+    echo 'Executing "./example_sparse_grids_fortran"'
+    ./example_sparse_grids_fortran -fast >/dev/null || { echo "ERROR: Could not run the Fortran Sparse Grid example"; exit 1; }
+fi
 echo 'Executing "./example_dream"'
 ./example_dream -fast >/dev/null || { echo "ERROR: Could not run the C++ DREAM example"; exit 1; }
 

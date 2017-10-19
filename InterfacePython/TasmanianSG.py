@@ -69,8 +69,8 @@ class TasmanianInputError(Exception):
         prints information for the incorect function or variable
 
         '''
-        print("Incorrect input for: {0:s}".format(tsgError.sVariable))
-        print(tsgError.sMessage)
+        print("Incorrect input for: {0:s}".format(self.sVariable))
+        print(self.sMessage)
 
 
 class TasmanianSparseGrid:
@@ -101,6 +101,11 @@ class TasmanianSparseGrid:
         '''
         if (isinstance(tasmanian_library, int)):
             self.pLibTSG = cdll.LoadLibrary("./libtasmaniansparsegrid.so")
+        elif (sys.version_info.major == 3):
+            if (isinstance(tasmanian_library, str)):
+                self.pLibTSG = cdll.LoadLibrary(tasmanian_library)
+            else:
+                self.pLibTSG = tasmanian_library
         elif (isinstance(tasmanian_library, basestring)):
             self.pLibTSG = cdll.LoadLibrary(tasmanian_library)
         else:
@@ -140,7 +145,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgEvalHierarchicalFunctions.restype = POINTER(c_double)
         self.pLibTSG.tsgBatchEvalHierarchicalFunctions.restype = POINTER(c_double)
         self.pLibTSG.tsgGetSurpluses.restype = POINTER(c_double)
-        self.pLibTSG.tsgGetGlobalPolynomialSpace.restype = POINTER(c_int)
+        #self.pLibTSG.tsgGetGlobalPolynomialSpace.restype = POINTER(c_int)
         self.pLibTSG.tsgGetAccelerationType.restype = POINTER(c_int)
         self.pLibTSG.tsgGetGPUID.restype = POINTER(c_int)
         self.pLibTSG.tsgGetNumGPUs.restype = c_int
@@ -174,14 +179,20 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetLoadedPoints.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNeededPoints.argtypes = [c_void_p]
         self.pLibTSG.tsgGetPoints.argtypes = [c_void_p]
-        self.pLibTSG.tsgGetQuadratureWeights.argtypes = [c_void_p]
+        self.pLibTSG.tsgGetLoadedPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetNeededPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetQuadratureWeights.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetQuadratureWeightsStatic.argtypes = [c_void_p]
         self.pLibTSG.tsgGetInterpolationWeights.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgLoadNeededPoints.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgEvaluate.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgEvaluateFast.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgIntegrate.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgEvaluateBatch.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
         self.pLibTSG.tsgBatchGetInterpolationWeights.argtypes = [c_void_p, POINTER(c_double), c_int]
+        self.pLibTSG.tsgBatchGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
         self.pLibTSG.tsgIsGlobal.argtypes = [c_void_p]
         self.pLibTSG.tsgIsSequence.argtypes = [c_void_p]
         self.pLibTSG.tsgIsLocalPolynomial.argtypes = [c_void_p]
@@ -196,6 +207,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetConformalTransformASIN.argtypes = [c_void_p, POINTER(c_int)]
         self.pLibTSG.tsgSetAnisotropicRefinement.argtypes = [c_void_p, c_char_p, c_int, c_int]
         self.pLibTSG.tsgEstimateAnisotropicCoefficients.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
+        self.pLibTSG.tsgEstimateAnisotropicCoefficientsStatic.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgSetGlobalSurplusRefinement.argtypes = [c_void_p, c_double, c_int]
         self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int]
         self.pLibTSG.tsgClearRefinement.argtypes = [c_void_p]
@@ -204,7 +216,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgBatchEvalHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgSetHierarchicalCoefficients.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgGetSurpluses.argtypes = [c_void_p]
-        self.pLibTSG.tsgGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
+        #self.pLibTSG.tsgGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgPrintStats.argtypes = [c_void_p]
         self.pLibTSG.tsgEnableAcceleration.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgGetAccelerationType.argtypes = [c_void_p]
@@ -264,19 +276,19 @@ class TasmanianSparseGrid:
         '''
         returns True if the library has been compiled with CUDA support
         '''
-        return (self.pLibTSG.tsgIsCudaEnabled() == 0)
+        return (self.pLibTSG.tsgIsCudaEnabled() != 0)
         
     def isBLASEnabled(self):
         '''
         returns True if the library has been compiled with BLAS support
         '''
-        return (self.pLibTSG.tsgIsBLASEnabled() == 0)
+        return (self.pLibTSG.tsgIsBLASEnabled() != 0)
         
     def isOpenMPEnabled(self):
         '''
         returns True if the library has been compiled with OpenMP support
         '''
-        return (self.pLibTSG.tsgIsOpenMPEnabled() == 0)
+        return (self.pLibTSG.tsgIsOpenMPEnabled() != 0)
     
     def setErrorLogCerr(self):
         '''
@@ -447,16 +459,18 @@ class TasmanianSparseGrid:
             if (len(liAnisotropicWeights) != iNumWeights):
                 raise TasmanianInputError("liAnisotropicWeights", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
             else:
-                pAnisoWeights = (c_int*iNumWeights)()
-                for iI in range(iNumWeights):
-                    pAnisoWeights[iI] = liAnisotropicWeights[iI]
-        pCustomRule = None
-        if (sCustomFilename):
-            pCustomRule = c_char_p(sCustomFilename)
+                aAWeights = np.array([liAnisotropicWeights[i] for i in range(iNumWeights)], np.int32)
+                pAnisoWeights = np.ctypeslib.as_ctypes(aAWeights)
 
         if (sys.version_info.major == 3):
             sType = bytes(sType, encoding='utf8')
             sRule = bytes(sRule, encoding='utf8')
+            if (sCustomFilename):
+                sCustomFilename = bytes(sCustomFilename, encoding='utf8')
+
+        pCustomRule = None
+        if (sCustomFilename):
+            pCustomRule = c_char_p(sCustomFilename)
 
         self.pLibTSG.tsgMakeGlobalGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), c_char_p(sRule), pAnisoWeights, c_double(fAlpha), c_double(fBeta), pCustomRule)
 
@@ -601,18 +615,19 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgMakeWaveletGrid(self.pGrid, iDimension, iOutputs, iDepth, iOrder)
 
     def copyGrid(self, pGrid):
-            '''
-            accepts an instance of TasmanianSparseGrid class and creates
-            a hard copy of the class and all included data
-            original class is not modified
-
-            pGrid: instance of TasmanianSparseGrid class
-                   the source for the copy
-
-            '''
-            if (not isinstance(pGrid, TasmanianSparseGrid)):
-                    raise TasmanianInputError("pGrid", "ERROR: pGrid must be an instance of TasmanianSparseGrid")
-            self.pLibTSG.tsgCopyGrid(self.pGrid, pGrid.pGrid)
+        '''
+        accepts an instance of TasmanianSparseGrid class and creates
+        a hard copy of the class and all included data
+        original class is not modified
+        
+        pGrid: instance of TasmanianSparseGrid class
+            the source for the copy
+        
+        '''
+        if (not isinstance(pGrid, TasmanianSparseGrid)):
+            raise TasmanianInputError("pGrid", "ERROR: pGrid must be an instance of TasmanianSparseGrid")
+            
+        self.pLibTSG.tsgCopyGrid(self.pGrid, pGrid.pGrid)
 
     def updateGlobalGrid(self, iDepth, sType, liAnisotropicWeights=[]):
         '''
@@ -797,17 +812,13 @@ class TasmanianSparseGrid:
             if (getNumLoaded() == 0): returns numpy.empty([0,0])
 
         '''
-        pPoints = self.pLibTSG.tsgGetLoadedPoints(self.pGrid)
-        iDimensions = self.getNumDimensions()
+        iNumDims = self.getNumDimensions()
         iNumPoints = self.getNumLoaded()
         if (iNumPoints == 0):
             return np.empty([0, 0], np.float64)
-        llfPoints = np.empty([iNumPoints, iDimensions], np.float64)
-        for iI in range(iNumPoints):
-            for iJ in range(iDimensions):
-                llfPoints[iI][iJ] = pPoints[iI*iDimensions + iJ]
-        self.pLibTSG.tsgDeleteDoubles(pPoints)
-        return llfPoints
+        aPoints = np.empty([iNumPoints * iNumDims], np.float64)
+        self.pLibTSG.tsgGetLoadedPointsStatic(self.pGrid, np.ctypeslib.as_ctypes(aPoints))
+        return aPoints.reshape([iNumPoints, iNumDims])
 
     def getNeededPoints(self):
         '''
@@ -819,15 +830,13 @@ class TasmanianSparseGrid:
             if (getNumNeeded() == 0): returns numpy.empty([0,0])
 
         '''
-        pPoints = self.pLibTSG.tsgGetNeededPoints(self.pGrid)
-        iDimensions = self.getNumDimensions()
+        iNumDims = self.getNumDimensions()
         iNumPoints = self.getNumNeeded()
-        llfPoints = np.empty([iNumPoints, iDimensions], np.float64)
-        for iI in range(iNumPoints):
-            for iJ in range(iDimensions):
-                llfPoints[iI][iJ] = pPoints[iI*iDimensions + iJ]
-        self.pLibTSG.tsgDeleteDoubles(pPoints)
-        return llfPoints
+        if (iNumPoints == 0):
+            return np.empty([0, 0], np.float64)
+        aPoints = np.empty([iNumPoints * iNumDims], np.float64)
+        self.pLibTSG.tsgGetNeededPointsStatic(self.pGrid, np.ctypeslib.as_ctypes(aPoints))
+        return aPoints.reshape([iNumPoints, iNumDims])
 
     def getPoints(self):
         '''
@@ -835,15 +844,13 @@ class TasmanianSparseGrid:
         otherwise, returns the same as getNeededPoints()
 
         '''
-        pPoints = self.pLibTSG.tsgGetPoints(self.pGrid)
-        iDimensions = self.getNumDimensions()
+        iNumDims = self.getNumDimensions()
         iNumPoints = self.getNumPoints()
-        llfPoints = np.empty([iNumPoints, iDimensions], np.float64)
-        for iI in range(iNumPoints):
-            for iJ in range(iDimensions):
-                llfPoints[iI][iJ] = pPoints[iI*iDimensions + iJ]
-        self.pLibTSG.tsgDeleteDoubles(pPoints)
-        return llfPoints
+        if (iNumPoints == 0):
+            return np.empty([0, 0], np.float64)
+        aPoints = np.empty([iNumPoints * iNumDims], np.float64)
+        self.pLibTSG.tsgGetPointsStatic(self.pGrid, np.ctypeslib.as_ctypes(aPoints))
+        return aPoints.reshape([iNumPoints, iNumDims])
 
     def getQuadratureWeights(self):
         '''
@@ -855,13 +862,13 @@ class TasmanianSparseGrid:
                 the order in getPoints()
 
         '''
-        pWeights = self.pLibTSG.tsgGetQuadratureWeights(self.pGrid)
+        
         iNumPoints = self.getNumPoints()
-        lfWeights = np.empty([iNumPoints,], np.float64)
-        for iI in range(iNumPoints):
-            lfWeights[iI] = pWeights[iI]
-        self.pLibTSG.tsgDeleteDoubles(pWeights)
-        return lfWeights
+        if (iNumPoints == 0):
+            return np.empty([0], np.float64)
+        aWeights = np.empty([iNumPoints], np.float64)
+        self.pLibTSG.tsgGetQuadratureWeightsStatic(self.pGrid, np.ctypeslib.as_ctypes(aWeights))
+        return aWeights
 
     def getInterpolationWeights(self, lfX):
         '''
@@ -877,17 +884,13 @@ class TasmanianSparseGrid:
         '''
         iNumX = len(lfX)
         if (iNumX != self.getNumDimensions()):
-                raise TasmanianInputError("lfX", "ERROR: len(lfX) should equal {0:1d} instead it equals {1:1d}".format(self.getNumDimensions(), iNumX))
-        pX = (c_double*iNumX)()
-        for iI in range(iNumX):
-            pX[iI] = lfX[iI]
-        pWeights = self.pLibTSG.tsgGetInterpolationWeights(self.pGrid, pX)
+            raise TasmanianInputError("lfX", "ERROR: len(lfX) should equal {0:1d} instead it equals {1:1d}".format(self.getNumDimensions(), iNumX))
         iNumPoints = self.getNumPoints()
-        lfWeights = np.empty([iNumPoints], np.float64)
-        for iI in range(iNumPoints):
-            lfWeights[iI] = pWeights[iI]
-        self.pLibTSG.tsgDeleteDoubles(pWeights)
-        return lfWeights
+        if (iNumPoints == 0):
+            return np.empty([0], np.float64)
+        aWeights = np.empty([iNumPoints], np.float64)
+        self.pLibTSG.tsgGetInterpolationWeightsStatic(self.pGrid, np.ctypeslib.as_ctypes(lfX), np.ctypeslib.as_ctypes(aWeights))
+        return aWeights
 
     def getInterpolationWeightsBatch(self, llfX):
         '''
@@ -909,22 +912,18 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfX", "ERROR: llfX should be a 2-D numpy.array instread it has dimension {0:1d}".format(len(llfX.shape)))
         iNumX = llfX.shape[0]
         if (iNumX == 0):
-            return numpy.empty([0, self.getNumPoints()], np.float64)
+            return np.empty([0, self.getNumPoints()], np.float64)
         iNumDim = llfX.shape[1]
         if (iNumDim != self.getNumDimensions()):
             raise TasmanianInputError("llfX", "ERROR: llfX.shape[1] should equal {0:1d} instead it equals {1:1d}".format(self.getNumDimensions(), iNumDim))
-        pX = (c_double*(iNumX*iNumDim))()
-        for iI in range(iNumX):
-            for iJ in range(iNumDim):
-                pX[iI*iNumDim + iJ] = llfX[iI][iJ]
         iNumPoints = self.getNumPoints()
-        pWeights = self.pLibTSG.tsgBatchGetInterpolationWeights(self.pGrid, pX, iNumX)
-        llfWeights = np.empty([iNumX, iNumPoints], np.float64)
-        for iI in range(iNumX):
-            for iJ in range(iNumPoints):
-                llfWeights[iI][iJ] = pWeights[iI*iNumPoints + iJ]
-        self.pLibTSG.tsgDeleteDoubles(pWeights)
-        return llfWeights
+        if (iNumPoints == 0):
+            return np.empty([0, 0], np.float64)
+        aWeights = np.empty([iNumX, iNumPoints], np.float64)
+        self.pLibTSG.tsgBatchGetInterpolationWeightsStatic(self.pGrid,
+            np.ctypeslib.as_ctypes(llfX.reshape([iNumX * iNumDim])), iNumX,
+            np.ctypeslib.as_ctypes(aWeights.reshape([iNumX * iNumPoints])))
+        return aWeights
 
     def loadNeededPoints(self, llfVals):
         '''
@@ -952,14 +951,9 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfVals", "ERROR: second dimension of llfVals is {0:1d} but the number of outputs is set to {1:1d}".format(llfVals.shape[1], self.getNumOutputs()))
         iNumPoints = llfVals.shape[0]
         iNumDims = llfVals.shape[1]
-        pVals = (c_double*(iNumPoints*iNumDims))()
-        for iI in range(iNumPoints):
-            for iJ in range(iNumDims):
-                pVals[iI*iNumDims + iJ] = llfVals[iI][iJ]
-        self.pLibTSG.tsgLoadNeededPoints(self.pGrid, pVals)
+        self.pLibTSG.tsgLoadNeededPoints(self.pGrid, np.ctypeslib.as_ctypes(llfVals.reshape([iNumPoints * iNumDims])))
 
     def evaluateThreadSafe(self, lfX):
-    #def evaluate(self, lfX):
         '''
         evaluates the intepolant at a single points of interest and
         returns the result
@@ -1049,7 +1043,7 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfX", "ERROR: llfX should be a 2-D numpy.array instread it has dimension {0:1d}".format(len(llfX.shape)))
         iNumX = llfX.shape[0]
         if (iNumX == 0):
-            return numpy.empty([0, self.getNumPoints()], np.float64)
+            return np.empty([0, self.getNumOutputs()], np.float64)
         iNumDim = llfX.shape[1]
         if (iNumDim != self.getNumDimensions()):
             raise TasmanianInputError("llfX", "ERROR: llfX.shape[1] should equal {0:1d} instead it equals {1:1d}".format(self.getNumDimensions(), iNumDim))
@@ -1263,13 +1257,11 @@ class TasmanianSparseGrid:
              sequence grids accept -1 to indicate all outputs
 
         '''
-        if (self.getNumLoaded() == 0):
-            raise TasmanianInputError("setAnisotropicRefinement", "ERROR: cannot call setAnisotropicRefinement for a grid before any points are loaded, i.e., call loadNeededPoints first!")
         if (self.getNumOutputs() == 0):
             raise TasmanianInputError("setAnisotropicRefinement", "ERROR: cannot set refinement for grid with iOutput = 0")
         if (self.getNumLoaded() == 0):
-            raise TasmanianInputError("setAnisotropicRefinement", "ERROR: cannot set refinement before values are loaded")
-        if (not iMinGrowth > 0):
+            raise TasmanianInputError("setAnisotropicRefinement", "ERROR: cannot call setAnisotropicRefinement for a grid before any points are loaded, i.e., call loadNeededPoints first!")
+        if (iMinGrowth <= 0):
             raise TasmanianInputError("iMinGrowth", "ERROR: the number of growth should be positive integer")
         if (iOutput == -1):
             if (not self.isSequence()):
@@ -1277,7 +1269,7 @@ class TasmanianSparseGrid:
         if (iOutput < -1):
             raise TasmanianInputError("iOutput", "ERROR: iOutput should be -1 or a non-negative integer")
         if (iOutput >= self.getNumOutputs()):
-            raise TasmanianInputError("iOutput", "ERROR: iOutput cannot exceed the index of the last output {0:1d}".format(getNumOutputs() - 1))
+            raise TasmanianInputError("iOutput", "ERROR: iOutput cannot exceed the index of the last output {0:1d}".format(self.getNumOutputs() - 1))
         if (sType not in lsTsgGlobalTypes):
             raise TasmanianInputError("sType", "ERROR: invalid type, see TasmanianSG.lsTsgGlobalTypes for list of accepted types")
 
@@ -1307,29 +1299,28 @@ class TasmanianSparseGrid:
                                                  to the eta coefficients
 
         '''
+        if (self.getNumOutputs() == 0):
+            raise TasmanianInputError("estimateAnisotropicCoefficients", "ERROR: cannot set refinement for grid with iOutput = 0")
         if (self.getNumLoaded() == 0):
             raise TasmanianInputError("estimateAnisotropicCoefficients", "ERROR: cannot call estimateAnisotropicCoefficients for a grid before any points are loaded, i.e., call loadNeededPoints first!")
-        if (getNumOutputs() == 0):
-            raise TasmanianInputError("setAnisotropicRefinement", "ERROR: cannot set refinement for grid with iOutput = 0")
-        if (getNumLoaded() == 0):
-            raise TasmanianInputError("setAnisotropicRefinement", "ERROR: cannot set refinement before values are loaded")
         if (iOutput == -1):
             if (not self.isSequence()):
                 raise TasmanianInputError("iOutput", "ERROR: iOutput = -1 can be used only for sequence grids")
         if (iOutput < -1):
             raise TasmanianInputError("iOutput", "ERROR: iOutput should be -1 or a non-negative integer")
-        if (iOutput >= getNumOutputs()):
-            raise TasmanianInputError("iOutput", "ERROR: iOutput cannot exceed the index of the last output {0:1d}".format(getNumOutputs() - 1))
+        if (iOutput >= self.getNumOutputs()):
+            raise TasmanianInputError("iOutput", "ERROR: iOutput cannot exceed the index of the last output {0:1d}".format(self.getNumOutputs() - 1))
         if (sType not in lsTsgGlobalTypes):
             raise TasmanianInputError("sType", "ERROR: invalid type, see TasmanianSG.lsTsgGlobalTypes for list of accepted types")
 
-        pNumCoefficients = (c_int*1)()
-        pCoefficients = self.pLibTSG.tsgEstimateAnisotropicCoefficients(self.pGrid, c_char_p(sType), iOutput, pNumCoefficients)
-        liCoefficients = np.empty([pNumCoefficients[0], ], np.int)
-        for iI in range(pNumCoefficients[0]):
-            liCoefficients[iI] = pCoefficients[iI]
-        self.pLibTSG.tsgDeleteInts(pCoefficients)
-        return liCoefficients
+        iNumCoeffs = self.getNumDimensions()
+        if ("curved" in sType):
+            iNumCoeffs = iNumCoeffs * 2
+        
+        aCoeff = np.empty([iNumCoeffs], np.int32) 
+        self.pLibTSG.tsgEstimateAnisotropicCoefficients(self.pGrid, c_char_p(sType), iOutput, np.ctypeslib.as_ctypes(aCoeff))
+
+        return aCoeff
 
     def setSurplusRefinement(self, fTolerance, iOutput, sCriteria=""):
         '''
@@ -1530,37 +1521,37 @@ class TasmanianSparseGrid:
                 llfS[iI][iJ] = pSurp[iI*iNumOut + iJ]
         return llfS
 
-    def getGlobalPolynomialSpace(self, bInterpolation):
-        '''
-        returns a matrix corresponding to the polynomial space that is
-        integrated or interpolated exactly by the current grid
-
-        bInterpolation: boolean
-                indicates whether to give the space associated
-                with integration or interpolation
-
-        output: is a 2-D numpy.array of integers
-            output.shape[0] indicates the cardinality of the space
-            output.shape[1] is equal to iDimension
-            each row corresponds to a multi-index associated with a
-            polynomial in a hierarchical tensor basis, for example,
-            monomials
-
-            see the manual for details
-
-        '''
-        iInterp = 1
-        if (bInterpolation):
-            iInterp = 0
-        pNumIndexes = (c_int*1)()
-        pIndexes = self.pLibTSG.tsgGetGlobalPolynomialSpace(self.pGrid, iInterp, pNumIndexes)
-        iNumDimensions = self.getNumDimensions()
-        lliPolynomials = np.empty([pNumIndexes[0], iNumDimensions], np.int)
-        for iI in range(pNumIndexes[0]):
-            for iJ in range(iNumDimensions):
-                lliPolynomials[iI][iJ] = pIndexes[iI*iNumDimensions + iJ]
-        self.pLibTSG.tsgDeleteInts(pIndexes)
-        return lliPolynomials
+#    def getGlobalPolynomialSpace(self, bInterpolation):
+#        '''
+#        returns a matrix corresponding to the polynomial space that is
+#        integrated or interpolated exactly by the current grid
+#
+#        bInterpolation: boolean
+#                indicates whether to give the space associated
+#                with integration or interpolation
+#
+#        output: is a 2-D numpy.array of integers
+#            output.shape[0] indicates the cardinality of the space
+#            output.shape[1] is equal to iDimension
+#            each row corresponds to a multi-index associated with a
+#            polynomial in a hierarchical tensor basis, for example,
+#            monomials
+#
+#            see the manual for details
+#
+#        '''
+#        iInterp = 1
+#        if (bInterpolation):
+#            iInterp = 0
+#        pNumIndexes = (c_int*1)()
+#        pIndexes = self.pLibTSG.tsgGetGlobalPolynomialSpace(self.pGrid, iInterp, pNumIndexes)
+#        iNumDimensions = self.getNumDimensions()
+#        lliPolynomials = np.empty([pNumIndexes[0], iNumDimensions], np.int)
+#        for iI in range(pNumIndexes[0]):
+#            for iJ in range(iNumDimensions):
+#                lliPolynomials[iI][iJ] = pIndexes[iI*iNumDimensions + iJ]
+#        self.pLibTSG.tsgDeleteInts(pIndexes)
+#        return lliPolynomials
 
     def enableAcceleration(self, sAccelerationType):
         '''

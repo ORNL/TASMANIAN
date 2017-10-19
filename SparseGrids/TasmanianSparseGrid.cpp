@@ -1224,12 +1224,13 @@ int TasmanianSparseGrid::getGPUmemory(int gpu){
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, gpu);
     unsigned long int memB = prop.totalGlobalMem;
-    return (int) (memB / (1048576));
+    return (int) (memB / 1048576);
     #else
     return 0;
     #endif // TASMANIAN_CUBLAS
 }
 const char* TasmanianSparseGrid::getGPUname(int gpu){
+    // THIS IS VERY WRONG!
     #ifdef TASMANIAN_CUBLAS
     if (gpu < 0) return "";
     int gpu_count = 0;
@@ -1428,16 +1429,29 @@ int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int outp
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // _TASMANIAN_DEBUG_
     if (depth_type == type_none){ depth_type = type_iptotal; }
+    *num_coefficients = ((TasmanianSparseGrid*) grid)->getNumDimensions();
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
-        *num_coefficients = 2 * (((TasmanianSparseGrid*) grid)->getNumDimensions());
-    }else{
-        *num_coefficients = ((TasmanianSparseGrid*) grid)->getNumDimensions();
+        *num_coefficients *= 2;
     }
     int *coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
     int *result = (int*) malloc((*num_coefficients) * sizeof(int));
     for(int i=0; i<*num_coefficients; i++) result[i] = coeff[i];
     delete[] coeff;
     return result;
+}
+void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, int output, int *coefficients){
+    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    #ifdef _TASMANIAN_DEBUG_
+    if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
+    #endif // _TASMANIAN_DEBUG_
+    if (depth_type == type_none){ depth_type = type_iptotal; }
+    int num_coefficients = ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
+        num_coefficients *= 2;
+    }
+    int *coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
+    for(int i=0; i<num_coefficients; i++) coefficients[i] = coeff[i];
+    delete[] coeff;
 }
 void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output){
     ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, output);
@@ -1479,11 +1493,11 @@ const double* tsgGetSurpluses(void *grid){
     return ((TasmanianSparseGrid*) grid)->getSurpluses();
 }
 
-int* tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes){
-    int ni, *idx = ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation == 0), ni);
-    *num_indexes = ni;
-    return idx;
-}
+//int* tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes){
+//    int ni, *idx = ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation == 0), ni);
+//    *num_indexes = ni;
+//    return idx;
+//}
 
 void tsgPrintStats(void *grid){ ((TasmanianSparseGrid*) grid)->printStats(); }
 

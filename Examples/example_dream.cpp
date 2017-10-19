@@ -8,7 +8,7 @@
 
 using namespace std;
 
-int main(int argc, const char ** argv){
+int main(int argc, const char**){
 /*
  * The purpose of this file is to demonstrate the proper way to call
  * functions from the TASMANIAN DREAM Library.

@@ -55,7 +55,7 @@ int IndexManipulator::getCurved(const int index[], const int weights[]) const{
         l += index[j] * weights[j];
         c += weights[j] * log1p(index[j]);
     }
-    return l + (int)(c);
+    return ((int)ceil(((double) l) + c));
 }
 int IndexManipulator::getIPTotal(const int index[], const int weights[], TypeOneDRule rule) const{
     int l = ((index[0] > 0) ? (meta->getIExact(index[0]-1, rule) + 1) : 0) * weights[0];
@@ -68,12 +68,13 @@ int IndexManipulator::getIPCurved(const int index[], const int weights[], TypeOn
     int pex = (index[0] > 0) ? meta->getIExact(index[0]-1, rule) + 1 : 0;
     int l = pex * weights[0];
     double c = (weights[num_dimensions]) * log1p((double) (pex));
+    //cout << "c = " << c << "   " << weights[num_dimensions] << "    " << pex << "   " << log1p((double) (pex)) << endl;
     for(int j=1; j<num_dimensions; j++){
         pex = (index[j] > 0) ? meta->getIExact(index[j]-1, rule) + 1 : 0;
         l += pex * weights[j];
         c += (weights[num_dimensions+j]) * log1p((double) (pex));
     }
-    return l + (int)(c);
+    return ((int)ceil(((double) l) + c));
 }
 int IndexManipulator::getQPTotal(const int index[], const int weights[], TypeOneDRule rule) const{
     int l = ((index[0] > 0) ? (meta->getQExact(index[0]-1, rule) + 1) : 0) * weights[0];
@@ -91,7 +92,7 @@ int IndexManipulator::getQPCurved(const int index[], const int weights[], TypeOn
         l += pex * weights[j];
         c += (weights[num_dimensions+j]) * log((double) (pex+1));
     }
-    return l + (int)(c);
+    return ((int)ceil(((double) l) + c));
 }
 int IndexManipulator::getHyperbolic(const int index[], const int weights[]) const{
     double l = pow((double) (index[0]+1), ((double) weights[0]) / ((double) weights[num_dimensions]));
@@ -117,8 +118,8 @@ int IndexManipulator::getQPHyperbolic(const int index[], const int weights[], Ty
 
 int IndexManipulator::getIndexWeight(const int index[], TypeDepth type, const int weights[], TypeOneDRule rule) const{
     switch (type){
-        case type_level:     return getLevel(index, weights);
-        case type_curved:    return getCurved(index, weights);
+        case type_level:         return getLevel(index, weights);
+        case type_curved:        return getCurved(index, weights);
         case type_iptotal:       return getIPTotal(index, weights, rule);
         case type_ipcurved:      return getIPCurved(index, weights, rule);
         case type_qptotal:       return getQPTotal(index, weights, rule);
@@ -134,13 +135,13 @@ int IndexManipulator::getIndexWeight(const int index[], TypeDepth type, const in
 IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int *anisotropic_weights, TypeOneDRule rule) const{
 
     // if using isotropic total degree space for single node growth we can use a faster algorithm thanks to a simple formula
-    if ((anisotropic_weights == 0) &&
-        ((type == type_level) || ((type == type_iptotal) && (OneDimensionalMeta::isSingleNodeGrowth(rule)))) ){
-        UnsortedIndexSet *unsorted = getToalDegreeDeltas(offset);
-        IndexSet *tensors = new IndexSet(unsorted);
-        delete unsorted;
-        return tensors;
-    }
+//    if ((anisotropic_weights == 0) &&
+//        ((type == type_level) || ((type == type_iptotal) && (OneDimensionalMeta::isSingleNodeGrowth(rule)))) ){
+//        UnsortedIndexSet *unsorted = getToalDegreeDeltas(offset);
+//        IndexSet *tensors = new IndexSet(unsorted);
+//        delete unsorted;
+//        return tensors;
+//    }
 
     // This cheats a bit, but it handles the special case when we want a full tensor grid
     // instead of computing the grid in the standard gradual level by level way,
@@ -184,77 +185,117 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
 
     int *weights = getProperWeights(type, anisotropic_weights);
 
+    // compute normalization and check if heavily curved
     int normalized_offset = weights[0];
-    for(int i=1; i<num_dimensions; i++){  if (normalized_offset > weights[i]) normalized_offset = weights[i];  }
+    for(int i=1; i<num_dimensions; i++){
+        if (normalized_offset > weights[i]) normalized_offset = weights[i];
+    }
+    bool known_lower = true;
+    if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+        for(int i=0; i<num_dimensions; i++) if (weights[i] + weights[i+num_dimensions] < 0) known_lower = false;
+    }
     normalized_offset *= offset;
+    IndexSet *total = 0;
 
-    GranulatedIndexSet **sets;
-    int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
-    GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root);  delete[] root;
-    IndexSet *total = new IndexSet(num_dimensions);
-    bool adding = true;
+    if (known_lower){ // use fast algorithm, but only works for sets guaranteed to be lower
+        //cout << "Compute fast" << endl;
+        int c = num_dimensions -1;
+        bool outside = false;
+        int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
+        DumpIndexSet *index_dump = new DumpIndexSet(num_dimensions, 256);
+        //cout << "This alg" << endl;
+        while( !(outside && (c == 0)) ){
+            if (outside){
+                for(int k=c; k<num_dimensions; k++) root[k] = 0;
+                c--;
+                root[c]++;
+            }else{
+                index_dump->addIndex(root);
+                c = num_dimensions-1;
+                root[c]++;
+            }
+            outside = (getIndexWeight(root, type, weights, rule) > normalized_offset);
+            //cout << root[0] << "  " << root[1] << "  " << getIndexWeight(root, type, weights, rule) << "  " << normalized_offset << endl;
+        }
+        //if (!index_dump->isSorted()) cout << "NOT SORTED!" << endl;
+        delete[] root;
+        int num_loaded = index_dump->getNumLoaded();
+        int *res = index_dump->ejectIndexes();
+        total = new IndexSet(num_dimensions, num_loaded, res);
+        delete index_dump;
 
-    while(adding){
-        int num_sets = (set_level->getNumIndexes() / 8) + 1;
+    }else{ // use slower algorithm
+        //cout << "Compute stable" << endl;
 
-        sets = new GranulatedIndexSet*[num_sets];
+        GranulatedIndexSet **sets;
+        int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
+        GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root);  delete[] root;
+        total = new IndexSet(num_dimensions);
+        bool adding = true;
+        while(adding){
+            int num_sets = (set_level->getNumIndexes() / 8) + 1;
 
-        //#pragma omp parallel for schedule(dynamic)
-        for(int me=0; me<num_sets; me++){
+            sets = new GranulatedIndexSet*[num_sets];
 
-            sets[me] = new GranulatedIndexSet(num_dimensions);
-            int *newp = new int[num_dimensions];
-            for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
-                const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp);
-                for(int j=0; j<num_dimensions; j++){
-                    newp[j]++;
-                    if ((getIndexWeight(newp, type, weights, rule) <= normalized_offset) && (set_level->getSlot(newp) == -1) && (total->getSlot(newp) == -1)){
-                        sets[me]->addIndex(newp);
+            //#pragma omp parallel for schedule(dynamic)
+            for(int me=0; me<num_sets; me++){
+
+                sets[me] = new GranulatedIndexSet(num_dimensions);
+                int *newp = new int[num_dimensions];
+                for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
+                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp);
+                    for(int j=0; j<num_dimensions; j++){
+                        newp[j]++;
+                        if ((getIndexWeight(newp, type, weights, rule) <= normalized_offset) && (set_level->getSlot(newp) == -1) && (total->getSlot(newp) == -1)){
+                            sets[me]->addIndex(newp);
+                        }
+                        newp[j]--;
                     }
-                    newp[j]--;
                 }
-            }
-            delete[] newp;
+                delete[] newp;
 
+            }
+
+            int warp = num_sets;
+            while(warp > 1){
+                #pragma omp parallel for schedule(dynamic)
+                for(int i=0; i<warp-1; i+=2){
+                    sets[i]->addGranulatedSet(sets[i+1]);
+                    delete sets[i+1];
+                    sets[i+1] = 0;
+                }
+
+                for(int i=1; i<warp/2; i++){
+                    sets[i] = sets[2*i];
+                    sets[2*i] = 0;
+                }
+                if (warp % 2 == 1){ sets[warp/2] = sets[warp-1]; sets[warp-1] = 0; }
+                warp = warp / 2 + warp % 2;
+            }
+
+            adding = (sets[0]->getNumIndexes() > 0);
+            total->addGranulatedSet(set_level);
+            delete set_level;
+            set_level = sets[0];
+            sets[0] = 0;
+            delete[] sets;
         }
 
-        int warp = num_sets;
-        while(warp > 1){
-            #pragma omp parallel for schedule(dynamic)
-            for(int i=0; i<warp-1; i+=2){
-                sets[i]->addGranulatedSet(sets[i+1]);
-                delete sets[i+1];
-                sets[i+1] = 0;
-            }
-
-            for(int i=1; i<warp/2; i++){
-                sets[i] = sets[2*i];
-                sets[2*i] = 0;
-            }
-            if (warp % 2 == 1){ sets[warp/2] = sets[warp-1]; sets[warp-1] = 0; }
-            warp = warp / 2 + warp % 2;
+        if (total == 0){
+            total = new IndexSet(set_level);
+        }else{
+            total->addGranulatedSet(set_level);
         }
-
-        adding = (sets[0]->getNumIndexes() > 0);
-        total->addGranulatedSet(set_level);
         delete set_level;
-        set_level = sets[0];
-        sets[0] = 0;
-        delete[] sets;
-    }
+        //for(int i=0; i<total->getNumIndexes(); i++) cout << total->getIndex(i)[0] << "  " << total->getIndex(i)[1] << "   " << getIndexWeight(total->getIndex(i), type, weights, rule) << "  " << normalized_offset << endl;
 
-    if (total == 0){
-        total = new IndexSet(set_level);
-    }else{
-        total->addGranulatedSet(set_level);
-    }
-    delete set_level;
-
-    if ((type == type_ipcurved) || (type == type_curved) || (type == type_qpcurved)){
-        IndexSet* completion = getLowerCompletion(total);
-        if ((completion != 0) && (completion->getNumIndexes() > 0)){
-            total->addIndexSet(completion);
-            delete completion;
+        // needed to preserved lower property
+        if ((type == type_ipcurved) || (type == type_curved) || (type == type_qpcurved)){
+            IndexSet* completion = getLowerCompletion(total);
+            if ((completion != 0) && (completion->getNumIndexes() > 0)){
+                total->addIndexSet(completion);
+                delete completion;
+            }
         }
     }
 
@@ -264,6 +305,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
 }
 
 IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool integration, TypeOneDRule rule) const{
+    // Is this even called?
     GranulatedIndexSet **sets;
     int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
     GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root);  delete[] root;
@@ -516,7 +558,7 @@ int* IndexManipulator::makeTensorWeights(const IndexSet* set) const{
 
 IndexSet* IndexManipulator::nonzeroSubset(const IndexSet* set, const int weights[]) const{
     int nz_weights = 0;
-    for(int i=0; i<set->getNumIndexes(); i++){  if (weights[i] != 0) nz_weights++;  }
+    for(int i=0; i<set->getNumIndexes(); i++){ if (weights[i] != 0) nz_weights++; }
 
     int *index = new int[nz_weights * num_dimensions];
     nz_weights = 0;
@@ -739,6 +781,7 @@ int* IndexManipulator::referenceNestedPoints(const int levels[], const OneDimens
 }
 
 IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneDRule rule, bool iexact) const{
+    // may optimize this to consider deltas only
     int num_tensors = tensors->getNumIndexes();
     IndexSet **sets = new IndexSet*[num_tensors];
 
@@ -782,11 +825,6 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
         if (warp % 2 == 1){ sets[warp/2] = sets[warp-1];  };
         warp = warp / 2 + warp % 2;
     }
-
-    //int *poly = new int[num_dimensions * (sets[0]->getNumIndexes())];
-    //const int* p = sets[0]->getIndex(0);
-
-    //std::copy(p, p + num_dimensions * (sets[0]->getNumIndexes()), poly);
 
     IndexSet *s = sets[0];
     delete[] sets;
@@ -989,7 +1027,7 @@ int* IndexManipulator::computeDAGupLocal(const IndexSet *set, const BaseRuleLoca
             std::copy(p, p + num_dimensions, dad);
             for(int j=0; j<num_dimensions; j++){
                 if (dad[j] == 0){
-                    parents[i*max_parents + 2*j   ] = -1;
+                    parents[i*max_parents + 2*j    ] = -1;
                     parents[i*max_parents + 2*j + 1] = -1;
                 }else{
                     int current = p[j];

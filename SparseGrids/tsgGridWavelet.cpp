@@ -337,9 +337,9 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
 }
 
 void GridWavelet::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
-void GridWavelet::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{ evaluate(x, y); }
-void GridWavelet::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{ evaluate(x, y); }
-void GridWavelet::evaluateFastGPUmagma(const double x[], double y[], std::ostream *os) const{ evaluate(x, y); }
+void GridWavelet::evaluateFastGPUcublas(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
+void GridWavelet::evaluateFastGPUcuda(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
+void GridWavelet::evaluateFastGPUmagma(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
 
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
@@ -350,13 +350,13 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
 void GridWavelet::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     evaluateBatch(x, num_x, y);
 }
-void GridWavelet::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
+void GridWavelet::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream*) const{
     evaluateBatch(x, num_x, y);
 }
-void GridWavelet::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
+void GridWavelet::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream*) const{
     evaluateBatch(x, num_x, y);
 }
-void GridWavelet::evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const{
+void GridWavelet::evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream*) const{
     evaluateBatch(x, num_x, y);
 }
 

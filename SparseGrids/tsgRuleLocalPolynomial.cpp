@@ -42,22 +42,22 @@ int BaseRuleLocalPolynomial::getMaxOrder() const{ return max_order; }
 void BaseRuleLocalPolynomial::setMaxOrder(int order){ max_order = order; }
 TypeOneDRule BaseRuleLocalPolynomial::getType() const{ return rule_none; }
 
-double BaseRuleLocalPolynomial::getNode(int point) const{ return 0.0; }
-int BaseRuleLocalPolynomial::getLevel(int point) const{  return 0;  }
-double BaseRuleLocalPolynomial::getSupport(int point) const{  return 0;  }
+double BaseRuleLocalPolynomial::getNode(int) const{ return 0.0; }
+int BaseRuleLocalPolynomial::getLevel(int) const{ return 0; }
+double BaseRuleLocalPolynomial::getSupport(int) const{ return 0; }
 //bool BaseRuleLocalPolynomial::isSemiLocal() const{  return false;  }
-int BaseRuleLocalPolynomial::getMaxNumKids() const{  return 0;  }
-int BaseRuleLocalPolynomial::getMaxNumParents() const{  return 0;  }
+int BaseRuleLocalPolynomial::getMaxNumKids() const{ return 0; }
+int BaseRuleLocalPolynomial::getMaxNumParents() const{ return 0; }
 
-int BaseRuleLocalPolynomial::getParent(int point) const{  return 0;  }
-int BaseRuleLocalPolynomial::getStepParent(int point) const{  return 0;  }
+int BaseRuleLocalPolynomial::getParent(int) const{ return 0; }
+int BaseRuleLocalPolynomial::getStepParent(int) const{ return 0; }
 //int BaseRuleLocalPolynomial::getKidLeft(int point) const{  return 0;  }
 //int BaseRuleLocalPolynomial::getKidRight(int point) const{  return 0;  }
-int BaseRuleLocalPolynomial::getKid(int point, int kid_number) const{ return 0; }
+int BaseRuleLocalPolynomial::getKid(int, int) const{ return 0; }
 
-double BaseRuleLocalPolynomial::evalRaw(int point, double x) const{  return 0.0;  }
-double BaseRuleLocalPolynomial::evalSupport(int point, double x, bool &isSupported) const{  return 0.0;  }
-double BaseRuleLocalPolynomial::getArea(int point, int n, const double w[], const double x[]) const{  return 0.0;  }
+double BaseRuleLocalPolynomial::evalRaw(int, double) const{ return 0.0; }
+double BaseRuleLocalPolynomial::evalSupport(int, double, bool&) const{ return 0.0; }
+double BaseRuleLocalPolynomial::getArea(int, int, const double*, const double*) const{ return 0.0; }
 
 int BaseRuleLocalPolynomial::intlog2(int i){ // this is effectively: floor(log_2(i))
     int result = 0;
@@ -94,15 +94,15 @@ int RuleLocalPolynomial::getLevel(int point) const{
     return (point == 0) ? 0 : (point == 1) ? 1 : intlog2(point - 1) + 1;
 }
 
-int RuleLocalPolynomial::getMaxNumKids() const{  return 2;  }
-int RuleLocalPolynomial::getMaxNumParents() const{  return 1;  }
+int RuleLocalPolynomial::getMaxNumKids() const{ return 2; }
+int RuleLocalPolynomial::getMaxNumParents() const{ return 1; }
 
 int RuleLocalPolynomial::getParent(int point) const{
     int dad = (point + 1) / 2;
     if (point < 4) dad--;
     return dad;
 }
-int RuleLocalPolynomial::getStepParent(int point) const{  return -1;  }
+int RuleLocalPolynomial::getStepParent(int) const{ return -1; }
 
 int RuleLocalPolynomial::getKid(int point, int kid_number) const{
     if (kid_number == 0){
@@ -281,7 +281,7 @@ double RuleSemiLocalPolynomial::getSupport(int point) const{
 double RuleSemiLocalPolynomial::scaleX(int point, double x) const{
     return ((double) int2log2(point - 1) * (x + 3.0) + 1.0 - (double) (2*point));
 }
-double RuleSemiLocalPolynomial::evalPWQuadratic(int point, double x) const{
+double RuleSemiLocalPolynomial::evalPWQuadratic(int, double x) const{
     return (1.0 - x) * (1.0 + x);
 }
 double RuleSemiLocalPolynomial::evalPWCubic(int point, double x) const{
@@ -330,7 +330,7 @@ int RuleLocalPolynomialZero::getParent(int point) const{
     if (point == 0) return -1;
     return (point - 1) / 2;
 }
-int RuleLocalPolynomialZero::getStepParent(int point) const{  return -1;  }
+int RuleLocalPolynomialZero::getStepParent(int) const{  return -1;  }
 
 int RuleLocalPolynomialZero::getKid(int point, int kid_number) const{
     return 2*point + ((kid_number == 0) ? 1 : 2);
@@ -405,7 +405,7 @@ RuleLocalPolynomialConstant::~RuleLocalPolynomialConstant(){}
 int RuleLocalPolynomialConstant::getMaxOrder() const{ return max_order; }
 void RuleLocalPolynomialConstant::setMaxOrder(int order){ max_order = order; }
 
-TypeOneDRule RuleLocalPolynomialConstant::getType() const{  return rule_localp; }
+TypeOneDRule RuleLocalPolynomialConstant::getType() const{ return rule_localp; }
 
 int RuleLocalPolynomialConstant::getNumPoints(int level) const{
     int n = 1; while (level-- > 0) n *= 3; return n;
@@ -432,8 +432,8 @@ int RuleLocalPolynomialConstant::getLevel(int point) const{
 double RuleLocalPolynomialConstant::getSupport(int point) const{
     return 1.0 / (double) int3log3(point);
 }
-int RuleLocalPolynomialConstant::getMaxNumKids() const{  return 4;  }
-int RuleLocalPolynomialConstant::getMaxNumParents() const{  return 2;  }
+int RuleLocalPolynomialConstant::getMaxNumKids() const{ return 4; }
+int RuleLocalPolynomialConstant::getMaxNumParents() const{ return 2; }
 
 int RuleLocalPolynomialConstant::getParent(int point) const{
     return (point == 0) ? -1 : point / 3;
@@ -465,7 +465,7 @@ double RuleLocalPolynomialConstant::evalSupport(int point, double x, bool &isSup
     isSupported = (distance <= (2.0) * support);
     return (distance > support) ? 0.0 : 1.0;
 }
-double RuleLocalPolynomialConstant::getArea(int point, int n, const double w[], const double x[]) const{
+double RuleLocalPolynomialConstant::getArea(int point, int, const double*, const double*) const{
     return 2.0 * getSupport(point);
 }
 

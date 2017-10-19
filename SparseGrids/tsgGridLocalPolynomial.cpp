@@ -426,9 +426,9 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
 }
 
 void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
-void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{ evaluate(x, y); }
-void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{ evaluate(x, y); }
-void GridLocalPolynomial::evaluateFastGPUmagma(const double x[], double y[], std::ostream *os) const{ evaluate(x, y); }
+void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
+void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
+void GridLocalPolynomial::evaluateFastGPUmagma(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
 
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for

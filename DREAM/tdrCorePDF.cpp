@@ -63,8 +63,8 @@ bool UniformPDF::isBoundedAbove() const{ return true; }
 double UniformPDF::getBoundBelow() const{ return lower; }
 double UniformPDF::getBoundAbove() const{ return upper; }
 double UniformPDF::getSample() const{ return lower + core->getSample01() * slope; }
-double UniformPDF::getDensity(double x) const{ return 1.0 / slope; }
-double UniformPDF::getDensityLog(double x) const{ return -log(slope); }
+double UniformPDF::getDensity(double) const{ return 1.0 / slope; }
+double UniformPDF::getDensityLog(double) const{ return -log(slope); }
 TypeDistribution UniformPDF::getType() const{ return dist_uniform; }
 
 
@@ -343,7 +343,7 @@ GaussianLikelihood::~GaussianLikelihood(){
     if (data_cache != 0){ delete[] data_cache; data_cache = 0; }
 }
 
-double* GaussianLikelihood::getLikelihood(int num_model, const double *model, int num_data, const double *data, double *likelihood, bool useLogForm){
+double* GaussianLikelihood::getLikelihood(int num_model, const double *model, int, const double*, double *likelihood, bool useLogForm){
     double *result = (likelihood != 0) ? likelihood : (new double[num_model]);
     switch (likely_type){
     case likely_gauss_scale:{

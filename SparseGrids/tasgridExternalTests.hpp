@@ -69,7 +69,7 @@ public:
 
     bool Test() const;
 
-    bool testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, bool interpolation, const int depths[], const double tols[], const char *custom_rule_filename = 0) const;
+    bool testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, bool interpolation, const int depths[], const double tols[]) const;
     bool performGLobalTest(const TasGrid::TypeOneDRule rule) const;
 
     bool testLocalPolynomialRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const;

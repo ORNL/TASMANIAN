@@ -73,7 +73,9 @@ if (( bShowHelp == 1 )); then
     echo "              -noblas: disable BLAS support"
     echo "            -nocublas: disable Nvidia cuBlas and cuSparse support"
     echo "              -nocuda: disable Nvidia CUDA support"
-    echo "            -nopython: disable Python support"
+    echo "           -nofortran: disable Fortran interface"
+    echo "            -nopython: disable Python interface"
+    echo "             -python3: switch to '/usr/env python3'"
     echo "            -noshared: do not build shared libraries"
     echo "            -nostatic: do not build static libraries"
     echo "              -notest: do not execute any of the tests"
@@ -122,6 +124,7 @@ sEnableBLAS="ON"
 sEnableCUBLAS="ON"
 sEnableCUDA="ON"
 sEnablePython="ON"
+sEnableFortran="ON"
 sEnableShared="ON"
 sEnableStatic="ON"
 sEnableMakeJobs=""
@@ -131,6 +134,8 @@ bVerbose=0
 bSkilBashrc=0
 bHoldEnd=0
 bInstall=1
+sPythonVersion=""
+sExtraCommand=""
 
 for sOption in "$@"; do
     if [[ $sOption == "-noomp" ]]; then
@@ -143,6 +148,10 @@ for sOption in "$@"; do
         sEnableBLAS="OFF"
     elif [[ $sOption == "-nopython" ]] || [[ $sOption == "-nospam" ]]; then
         sEnablePython="OFF"
+    elif [[ $sOption == "-python3" ]]; then
+        sPythonVersion="-D Tasmanian_PYTHON_ENV:STRING=python3"
+    elif [[ $sOption == "-nofortran" ]]; then
+        sEnableFortran="OFF"
     elif [[ $sOption == "-noshared" ]]; then
         sEnableShared="OFF"
     elif [[ $sOption == "-nostatic" ]]; then
@@ -161,8 +170,15 @@ for sOption in "$@"; do
         bHoldEnd=1
     elif [[ $sOption == "-noinstall" ]]; then
         bInstall=0
+    elif [[ $sOption == "-cmake="* ]]; then
+        sExtraCommand=${sOption:7}
     fi
 done
+
+if [[ $sEnablePython == "OFF" ]] && [[ ! -z $sPythonVersion ]]; then
+    echo "WARNING: using simultanously -python3 and -nopython"
+    sPythonVersion=""
+fi
 
 echo "Looking for cmake ..."
 cmake --version || { echo "ERROR: Could not find cmake command, make sure it is included in your path."; exit 1; }
@@ -198,12 +214,11 @@ echo ""
 #fi
 
 # check if python exists
-sPythonVersion=""
 if [[ $sEnablePython == "ON" ]]; then
     if (( $bEnableTests == 1 )); then
         echo "Looking for python ..."
         bPythonFound=0
-        if [[ ! -z `which python` ]]; then
+        if [[ -z $sPythonVersion ]] && [[ ! -z `which python` ]]; then
             echo "Found Python"
             bPythonFound=1
             sPythonVersion=""
@@ -370,6 +385,9 @@ fi
 if [[ $sEnablePython == "OFF" ]]; then
     echo " -nopython: disable Python"
 fi
+if [[ $sEnableFortran == "OFF" ]]; then
+    echo "-nofortran: disable Fortran"
+fi
 if [[ $sEnableShared == "OFF" ]]; then
     echo " -noshared: do not build shared libraries"
 fi
@@ -433,10 +451,12 @@ cmake \
   -D Tasmanian_ENABLE_CUDA:BOOL=$sEnableCUDA \
   -D Tasmanian_ENABLE_MATLAB:BOOL=$sUseMatlab \
   -D Tasmanian_ENABLE_PYTHON:BOOL=$sEnablePython \
+  -D Tasmanian_ENABLE_FORTRAN:BOOL=$sEnableFortran \
   $sPythonVersion \
   -D Tasmanian_SHARED_LIBRARY:BOOL=$sEnableShared \
   -D Tasmanian_STATIC_LIBRARY:BOOL=$sEnableStatic \
   $sMatlabWork \
+  $sExtraCommand \
   ../
 
 if [ ! $? == 0 ]; then
@@ -448,7 +468,7 @@ if [ ! $? == 0 ]; then
 fi
 
 if [[ $sEnableCUDA == "ON" ]]; then
-    # work around the problem with make -j trying to build shared cuda kernels twice (make builds them only once)
+    # work around the problem with make -j where the shared cuda kernels are build twice (make no j builds them only once)
     make -f CMakeFiles/libtsg_shared.dir/build.make CMakeFiles/libtsg_shared.dir/SparseGrids/libtsg_shared_generated_tasCudaKernels.cu.o || { sEnableMakeJobs = ""; }
 fi
 
@@ -486,7 +506,7 @@ if [ ! $? == 0 ]; then
 fi
 
 if (( $bEnableTests == 1 )); then
-    ./test_post_install.sh || { echo "ERROR: the post install test failed!"; bFailedTests=1; }
+    ./test_post_install.sh $sExtraCommand || { echo "ERROR: the post install test failed!"; bFailedTests=1; }
 fi
 
 # write out the build log

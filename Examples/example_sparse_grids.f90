@@ -452,10 +452,10 @@ IMPLICIT NONE
   
   WRITE(*,*) "-------------------------------------------------------------------------------------------------"
   WRITE(*,*) "Example 5: interpolate f(x1,x2,x3,x4) = exp(-x1^2) * cos(x2) * exp(-x3^2) * cos(x4)"
-  WRITE(*,*) "       comparign the performance of Global and Sequence grids with leja nodes"
-  WRITE(*,"(A,I4)") "       using polynomials of total degree up to: ", level
-  WRITE(*,"(A,I4,A)") "      the grids have:                   ", N, " points"
-  WRITE(*,*) "       both grids are evaluated at 1000 random points "
+  WRITE(*,*) "           comparign the performance of Global and Sequence grids with leja nodes"
+  WRITE(*,"(A,I4)") "            using polynomials of total degree up to: ", level
+  WRITE(*,"(A,I4,A)") "            the grids have:                          ", N, " points"
+  WRITE(*,*) "           both grids are evaluated at 1000 random points "
   WRITE(*,*)
   
   points => tsgGetNeededPoints(gridID)

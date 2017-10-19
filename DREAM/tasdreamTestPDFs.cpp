@@ -36,7 +36,7 @@
 UnscaledUniform1D::UnscaledUniform1D(){}
 UnscaledUniform1D::~UnscaledUniform1D(){}
 int UnscaledUniform1D::getNumDimensions() const{ return 1; }
-void UnscaledUniform1D::evaluate(int num_points, const double x[], double y[], bool useLogForm){ for(int i=0; i<num_points; i++) y[i] = 1.0; }
+void UnscaledUniform1D::evaluate(int num_points, const double*, double y[], bool){ for(int i=0; i<num_points; i++) y[i] = 1.0; }
 void UnscaledUniform1D::getDomainBounds(bool* lower_bound, bool* upper_bound){ lower_bound[0] = true; upper_bound[0] = true; }
 void UnscaledUniform1D::getDomainBounds(double* lower_bound, double* upper_bound){ lower_bound[0] = -1.0; upper_bound[0] = 1.0; }
 void UnscaledUniform1D::getInitialSample(double y[]){ y[0] = -1.0 + 2.0 * u.getSample01(); }
