@@ -60,8 +60,6 @@ public:
     static int getVersionMajor();
     static int getVersionMinor();
     static const char* getLicense(); // human readable
-    static bool isCudaEnabled();
-    static bool isBLASEnabled();
     static bool isOpenMPEnabled();
 
     void setErrorLog(std::ostream *os);
@@ -135,20 +133,21 @@ public:
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1); // -1 indicates using all outputs
     void clearRefinement();
 
-    int* getGlobalPolynomialSpace(bool interpolation, int &num_indexes) const;
+    void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
     void printStats() const;
     void printStatsLog() const;
 
     void enableAcceleration(TypeAcceleration acc);
     TypeAcceleration getAccelerationType() const;
+    static bool isAccelerationAvailable(TypeAcceleration acc);
 
     // CUDA management functions
     void setGPUID(int new_gpuID);
     int getGPUID() const;
     static int getNumGPUs();
-    static int getGPUmemory(int gpu); // returns the MB of a given GPU
-    static const char* getGPUname(int gpu);
+    static int getGPUMemory(int gpu); // returns the MB of a given GPU
+    static char* getGPUName(int gpu); // returns a null-terminated char array
 
     // WARNING: the functions below are mostly for debugging and research purposes
     //      modifying the returned pointers will result in undefined behavior

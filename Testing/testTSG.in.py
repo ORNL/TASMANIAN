@@ -18,17 +18,17 @@ _TestWavelets = True
 # python-coverage report
 
 class TestTasmanian(unittest.TestCase):
-        
+
 #    def tsgReadMatrix(self, sFilename):
 #        with open(sFilename, 'r') as infile:
 #            lsLines = infile.readlines()
-#        
+#
 #        sLine = lsLines.pop(0)
 #        liDims = [int(s) for s in sLine.split() if s.isdigit()]
-#        
+#
 #        if (len(liDims) != 2):
 #            return []
-#            
+#
 #        M = np.empty(liDims)
 #        iI = 0
 #        for sLine in lsLines:
@@ -37,97 +37,97 @@ class TestTasmanian(unittest.TestCase):
 #            for fV in lfRow:
 #                M[iI,iJ] = fV
 #                iJ += 1
-#                
+#
 #        return M
-        
+
     def compareGrids(self, gridA, gridB, bTestRuleNames = True):
         self.assertEqual(gridA.getNumDimensions(), gridB.getNumDimensions(), "error in getNumDimensions()")
         self.assertEqual(gridA.getNumOutputs(), gridB.getNumOutputs(), "error in getNumOutputs()")
         self.assertEqual(gridA.getNumPoints(), gridB.getNumPoints(), "error in getNumPoints()")
         self.assertEqual(gridA.getNumLoaded(), gridB.getNumLoaded(), "error in getNumLoaded()")
         self.assertEqual(gridA.getNumNeeded(), gridB.getNumNeeded(), "error in getNumNeeded()")
-        
+
         mX1 = np.array([1.0/3.0, 1.0/6.0])
         mX2 = np.array([-1.0/3.0, 1.0/6.0])
         mX3 = np.array([-1.0/5.0, -1.0/7.0])
         mX4 = np.array([1.0/7.0, 1.0/5.0])
         mX5 = np.array([-1.0/7.0, -1.0/13.0])
-        
+
         if (gridA.getNumDimensions() == 3):
             mX1 = np.array([1.0/3.0, 1.0/6.0, -1.0/5.0])
             mX2 = np.array([-1.0/3.0, 1.0/6.0, 1.0/6.0])
             mX3 = np.array([-1.0/5.0, -1.0/7.0, 1.0/3.0])
             mX4 = np.array([1.0/7.0, 1.0/5.0, 2.0/3.0])
             mX5 = np.array([-1.0/7.0, -1.0/13.0, -2.0/3.0])
-        
+
         pA = gridA.getPoints()
         pB = gridB.getPoints()
         np.testing.assert_equal(pA, pB, "Points not equal", True)
-        
+
         pA = gridA.getLoadedPoints()
         pB = gridB.getLoadedPoints()
         np.testing.assert_equal(pA, pB, "Loaded not equal", True)
-        
+
         pA = gridA.getNeededPoints()
         pB = gridB.getNeededPoints()
         np.testing.assert_equal(pA, pB, "Needed not equal", True)
-        
+
         self.assertEqual(gridA.getAlpha(), gridB.getAlpha(), "error in getAlpha()")
         self.assertEqual(gridA.getBeta(), gridB.getBeta(), "error in getBeta()")
         self.assertEqual(gridA.getOrder(), gridB.getOrder(), "error in getOrder()")
-        
+
         if (bTestRuleNames):
             self.assertEqual(gridA.getRule(), gridB.getRule(), "error in getRule()")
             self.assertEqual(gridA.getCustomRuleDescription(), gridB.getCustomRuleDescription(), "error in getCustomRuleDescription()")
-        
+
         pA = gridA.getQuadratureWeights()
         pB = gridB.getQuadratureWeights()
         np.testing.assert_equal(pA, pB, "Quadrature not equal", True)
-        
+
         pA = gridA.getInterpolationWeights(mX1)
         pB = gridB.getInterpolationWeights(mX1)
         np.testing.assert_equal(pA, pB, "Interpolation test 1 not equal", True)
-        
+
         pA = gridA.getInterpolationWeights(mX2)
         pB = gridB.getInterpolationWeights(mX2)
         np.testing.assert_equal(pA, pB, "Interpolation test 2 not equal", True)
-        
+
         pA = gridA.getInterpolationWeights(mX3)
         pB = gridB.getInterpolationWeights(mX3)
         np.testing.assert_equal(pA, pB, "Interpolation test 3 not equal", True)
-        
+
         if (gridA.getNumLoaded() > 0):
             pA = gridA.evaluate(mX4)
             pB = gridB.evaluate(mX4)
             #print "{0:2.20e}   {1:2.20e}".format(pA[0], pB[0])
             #np.testing.assert_equal(pA, pB, "Interpolation test 4 not equal", True)
             np.testing.assert_almost_equal(pA, pB, 15, "Interpolation test 4 not equal", True)
-            
+
             pA = gridA.evaluate(mX5)
             pB = gridB.evaluate(mX5)
             np.testing.assert_almost_equal(pA, pB, 15, "Interpolation test 5 not equal", True)
-            
+
             pA = gridA.integrate()
             pB = gridB.integrate()
             np.testing.assert_almost_equal(pA, pB, 15, "Integration test not equal", True)
-        
+
         self.assertEqual(gridA.isGlobal(), gridB.isGlobal(), "error in isGlobal()")
         self.assertEqual(gridA.isSequence(), gridB.isSequence(), "error in isSequence()")
         self.assertEqual(gridA.isLocalPolynomial(), gridB.isLocalPolynomial(), "error in isLocalPolynomial()")
         self.assertEqual(gridA.isWavelet(), gridB.isWavelet(), "error in isWavelet()")
-        
+
         self.assertEqual(gridA.isSetDomainTransfrom(), gridB.isSetDomainTransfrom(), "error in isSetDomainTransfrom()")
-        
+
         pA = gridA.getDomainTransform()
         pB = gridB.getDomainTransform()
         np.testing.assert_equal(pA, pB, "Domain test no equal", True)
-        
+
         self.assertEqual(gridA.isSetConformalTransformASIN(), gridB.isSetConformalTransformASIN(), "error in isSetConformalTransformASIN()")
 
         pA = gridA.getConformalTransformASIN()
         pB = gridB.getConformalTransformASIN()
         np.testing.assert_equal(pA, pB, "Conformal transform ASIN not equal", True)
-        
+
     def loadExpN2(self, grid):
         if (grid.getNumNeeded() == 0): return
         mPoints = grid.getNeededPoints()
@@ -135,7 +135,7 @@ class TestTasmanian(unittest.TestCase):
         iDim = grid.getNumDimensions()
         lVals = [[math.exp(-sum([mPoints[i,j]**2 for j in range(iDim)])) for k in range(iOut)] for i in range(mPoints.shape[0])]
         grid.loadNeededPoints(np.array(lVals))
-    
+
     def testAABasicLibMeta(self): # the AA is so that this test goes first
         print("\nLibrary core check, read the library meta")
         grid = TasmanianSG.TasmanianSparseGrid()
@@ -143,22 +143,28 @@ class TestTasmanian(unittest.TestCase):
         print("                 version major: {0:1d}".format(grid.getVersionMajor()))
         print("                 version minor: {0:1d}".format(grid.getVersionMinor()))
         print("                       License: {0:1s}".format(grid.getLicense()))
-        if (grid.isCudaEnabled()):
-            sStatus = "Enabled"
-        else:
-            sStatus = "Disabled"
-        print("                   Nvidia CUDA: {0:1s}".format(sStatus))
-        if (grid.isBLASEnabled()):
-            sStatus = "Enabled"
-        else:
-            sStatus = "Disabled"
-        print("                          BLAS: {0:1s}".format(sStatus))
         if (grid.isOpenMPEnabled()):
             sStatus = "Enabled"
         else:
             sStatus = "Disabled"
         print("                        OpenMP: {0:1s}".format(sStatus))
-    
+        sAvailableAcceleration = ""
+        for s in ["cpu-blas", "gpu-cublas", "gpu-cuda", "gpu-default"]:
+            if (grid.isAccelerationAvailable(s)):
+                sAvailableAcceleration += " " + s
+        print("        Available acceleration:{0:1s}".format(sAvailableAcceleration))
+
+        print("        Available GPUs:")
+        if (grid.getNumGPUs() > 0):
+            for iGPU in range(grid.getNumGPUs()):
+                sName = grid.getGPUName(iGPU)
+                sMem = grid.getGPUMemory(iGPU)
+                print("     {0:2d}: {1:20s} with{2:6d}MB RAM".format(iGPU, sName, sMem))
+        else:
+            print("            none")
+
+        grid.printStats() # Miro: silence this for a release
+
     def testIO(self):
         print("\nRunning core I/O test")
         # test I/O for Global Grids
@@ -171,7 +177,7 @@ class TestTasmanian(unittest.TestCase):
                   [2, 1, 5, "qptotal", "gauss-hermite", 1.0, 3.0, False, False],
                   [2, 1, 3, "level", "gauss-laguerre", 3.0, 0.0, False, False],]
         aTransform = np.array([[0.0,1.0],[0.0,1.0],[-2.0,-1.0]])
-        
+
         for lT in lGrids:
             gridA = TasmanianSG.TasmanianSparseGrid()
             gridB = TasmanianSG.TasmanianSparseGrid()
@@ -182,25 +188,25 @@ class TestTasmanian(unittest.TestCase):
                 gridA.setDomainTransform(aTransform)
             if (lT[8]):
                 self.loadExpN2(gridA)
-            
+
             gridA.write("testSave")
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
-            
+
             gridA.write("testSave", bUseBinaryFormat = True)
             gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
-            
+
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
-            
+
         # test an error message from wrong read
         #print("Attempting a bogus read to see if error would be properly registered")
         gridB.disableLog()
         self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
         gridB.setErrorLogCerr()
-        
+
         # custom rule test
         grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "GaussPattersonRule.table")
         grid1 = TasmanianSG.TasmanianSparseGrid()
@@ -214,7 +220,7 @@ class TestTasmanian(unittest.TestCase):
         grid1.makeGlobalGrid(3, 0, 4, 'level', 'leja')
         grid1.read("testSave", bUseBinaryFormat = True)
         self.compareGrids(grid, grid1)
-        
+
         # test I/O for Sequence Grids
         # iDimension, iOutputs, iDepth, sType, sRule, useTransform, loadFunciton
         lGrids = [[3, 2, 2, "level", "leja", False, False],
@@ -222,7 +228,7 @@ class TestTasmanian(unittest.TestCase):
                   [3, 1, 3, "level", "rleja", True, False],
                   [3, 1, 2, "iptotal", "min-delta", False, True],
                   [3, 1, 3, "level", "leja", True, True],]
-                  
+
         for lT in lGrids:
             gridA = TasmanianSG.TasmanianSparseGrid()
             gridB = TasmanianSG.TasmanianSparseGrid()
@@ -232,19 +238,19 @@ class TestTasmanian(unittest.TestCase):
                 gridA.setDomainTransform(aTransform)
             if (lT[6]):
                 self.loadExpN2(gridA)
-            
+
             gridA.write("testSave")
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
-            
+
             gridA.write("testSave", bUseBinaryFormat = True)
             gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
-            
+
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
-            
+
         # test I/O for Local Polynomial Grids
         # iDimension, iOutputs, iDepth, sType, sRule, useTransform, loadFunciton
         lGrids = [[3, 2, 2, 0, "localp", False, False],
@@ -253,7 +259,7 @@ class TestTasmanian(unittest.TestCase):
                   [3, 1, 2, 3, "localp-zero", False, True],
                   [3, 1, 3, 4, "semi-localp", True, True],
                   [3, 1, 3, -1, "semi-localp", True, True],]
-                  
+
         for lT in lGrids:
             gridA = TasmanianSG.TasmanianSparseGrid()
             gridB = TasmanianSG.TasmanianSparseGrid()
@@ -263,15 +269,15 @@ class TestTasmanian(unittest.TestCase):
                 gridA.setDomainTransform(aTransform)
             if (lT[6]):
                 self.loadExpN2(gridA)
-            
+
             gridA.write("testSave")
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
-            
+
             gridA.write("testSave", bUseBinaryFormat = True)
             gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
-            
+
         # test I/O for Local Wavelet Grids
         # iDimension, iOutputs, iDepth, sType, sRule, useTransform, loadFunciton
         if (_TestWavelets):
@@ -280,58 +286,58 @@ class TestTasmanian(unittest.TestCase):
                       [3, 1, 1, 3, True, False],
                       [3, 1, 2, 1, False, True],
                       [3, 1, 2, 3, True, True],]
-            
+
             for lT in lGrids:
                 gridA = TasmanianSG.TasmanianSparseGrid()
                 gridB = TasmanianSG.TasmanianSparseGrid()
-            
+
                 gridA.makeWaveletGrid(lT[0], lT[1], lT[2], lT[3])
                 if (lT[4]):
                     gridA.setDomainTransform(aTransform)
                 if (lT[5]):
                     self.loadExpN2(gridA)
-                
+
                 gridA.write("testSave")
                 gridB.read("testSave")
                 self.compareGrids(gridA, gridB)
-                
+
                 gridA.write("testSave", bUseBinaryFormat = True)
                 gridB.read("testSave", bUseBinaryFormat = True)
                 self.compareGrids(gridA, gridB)
-                
+
                 gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
                 gridB.copyGrid(gridA)
                 self.compareGrids(gridA, gridB)
-                
+
         lGrids = ['gridA.makeGlobalGrid(3, 2, 4, "level", "clenshaw-curtis"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([3,4,5]))',
                   'gridA.makeGlobalGrid(3, 2, 4, "level", "gauss-legendre"); gridA.setConformalTransformASIN(np.array([3,5,1]))',
                   'gridA.makeSequenceGrid(2, 2, 5, "level", "leja"); gridA.setConformalTransformASIN(np.array([0,4]))',
                   'gridA.makeLocalPolynomialGrid(3, 1, 4, 2, "localp"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([5,3,0]))',]
-        
+
         for sGrid in lGrids:
             gridA = TasmanianSG.TasmanianSparseGrid()
             gridB = TasmanianSG.TasmanianSparseGrid()
-            
+
             exec(sGrid)
             gridA.write("testSave")
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
-            
+
             gridA.write("testSave", bUseBinaryFormat = True)
             gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
-        
+
     def testAcceleratedEvaluate(self):
         print("\nAccelerated evaluate consistency test")
         # consistency with evaluate, not a timing test
         grid = TasmanianSG.TasmanianSparseGrid()
-        
+
         aTestPointsCanonical = np.array([[ uniform(-1.0, 1.0) for j in range(2) ] for i in range(100) ])
         aTestPointsTransformed = np.array([[ uniform(3.0, 5.0) for j in range(2) ] for i in range(100) ])
         aDomainTransform = np.array([[3.0, 5.0],[3.0, 5.0]])
-        
+
         iFastEvalSubtest = 6
-        
+
         lTests = [ 'grid.makeGlobalGrid(2, 2, 4, "level", "clenshaw-curtis")',
                    'grid.makeGlobalGrid(2, 2, 4, "level", "chebyshev")',
                    'grid.makeSequenceGrid(2, 2, 4, "level", "leja")',
@@ -341,10 +347,10 @@ class TestTasmanian(unittest.TestCase):
                    'grid.makeLocalPolynomialGrid(2, 1, 4, 4, "semi-localp")',
                    'grid.makeWaveletGrid(2, 1, 3, 1)',
                    'grid.makeWaveletGrid(2, 1, 3, 3)' ]
-        
+
         iNumGPUs = grid.getNumGPUs()
-        lsAccelTypes = ["none", "cpu-blas", "gpu-fullmem"]
-        
+        lsAccelTypes = ["none", "cpu-blas", "gpu-cuda", "gpu-cublas"]
+
         for sTest in lTests:
             for iI in range(2):
                 iC = 0
@@ -357,21 +363,22 @@ class TestTasmanian(unittest.TestCase):
                     else:
                         aTestPoints = aTestPointsTransformed
                         grid.setDomainTransform(aDomainTransform)
-                    
+
                     grid.enableAcceleration(sAcc)
-                    if (sAcc == "gpu-fullmem"):
-                        grid.setGPUID(iGPU)
-                    
+                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas")):
+                        if (iGPU < grid.getNumGPUs()): # without cuda or cublas, NumGPUs is 0 and cannot set GPU
+                            grid.setGPUID(iGPU)
+
                     self.loadExpN2(grid)
-                    
+
                     aRegular = np.array([ grid.evaluateThreadSafe(aTestPoints[i,:]) for i in range(aTestPoints.shape[0]) ])
                     aBatched = grid.evaluateBatch(aTestPoints)
                     np.testing.assert_almost_equal(aRegular, aBatched, 14, "Batch evaluation test not equal: {0:1s}, acceleration: {1:1s}, gpu: {2:1d}".format(sTest, sAcc, iGPU), True)
-                    
+
                     aFast = np.array([ grid.evaluate(aTestPoints[i,:]) for i in range(iFastEvalSubtest) ])
                     np.testing.assert_almost_equal(aRegular[0:iFastEvalSubtest,:], aFast, 14, "Batch evaluation test not equal: {0:1s}, acceleration: {1:1s}, gpu: {2:1d}".format(sTest, sAcc, iGPU), True)
-                    
-                    if (sAcc == "gpu-fullmem"):
+
+                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas")):
                         iGPU += 1
                         if (iGPU >= iNumGPUs):
                             iC += 1
@@ -383,7 +390,7 @@ class TestTasmanian(unittest.TestCase):
         print("\nTesting error handling")
         grid = TasmanianSG.TasmanianSparseGrid()
         #print("\nAttempting bogus grid construction, should see many errors")
-        
+
         llTests = [["grid.makeGlobalGrid(-1, 1,  4, 'level', 'clenshaw-curtis')", "iDimension"],
                    ["grid.makeGlobalGrid(2, -1,  4, 'level', 'clenshaw-curtis')", "iOutputs"],
                    ["grid.makeGlobalGrid(2,  1, -4, 'level', 'clenshaw-curtis')", "iDepth"],
@@ -468,69 +475,82 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, -2);", "iOutput"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, 3);", "iOutput"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, 0);", "removePointsBySurplus"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.removePointsBySurplus(1.E-4, 0);", "notError"],]
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.removePointsBySurplus(1.E-4, 0);", "notError"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-wrong');", "sAccelerationType"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-default');", "notError"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.isAccelerationAvailable('cpu-wrong');", "sAccelerationType"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.isAccelerationAvailable('cpu-blas');", "notError"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUMemory(-1);", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUMemory(1000000);", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUMemory(grid1.getNumGPUs());", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUName(-1);", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUName(1000000);", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUName(grid1.getNumGPUs());", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.setGPUID(-1);", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.setGPUID(1000000);", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.setGPUID(grid1.getNumGPUs());", "iGPUID"],]
 
         for lTest in llTests:
             try:
                 exec(lTest[0])
                 self.assertEqual(lTest[1], "notError", "failed to raise exception for invalid '{0:1s}' using test\n '{1:1s}'".format(lTest[1],lTest[0]))
-            except TasmanianSG.TasmanianInputError as TSGError: 
+            except TasmanianSG.TasmanianInputError as TSGError:
                 self.assertEqual(TSGError.sVariable, lTest[1], "error raising exception for '{0:1s}' using test\n '{1:1s}'\n Error.sVariable = '{2:1s}'".format(lTest[1],lTest[0],TSGError.sVariable))
-    
+
     def testAAAAFullCoverage(self):
         print("\nTesting all Python functions")
-        
+
         grid = TasmanianSG.TasmanianSparseGrid("@TSGLibShared@")
         sVersion = grid.getVersion()
         self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
-        
+
         pLibTSG = cdll.LoadLibrary("@TSGLibShared@")
         grid = TasmanianSG.TasmanianSparseGrid(pLibTSG)
         sVersion = grid.getVersion()
         self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
-        
+
         grid = TasmanianSG.TasmanianSparseGrid()
-        
+
         sVersion = grid.getVersion()
         self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
         sLicense = grid.getLicense()
         self.assertEqual(sLicense, TasmanianSG.__license__, "license mismatch")
-        
+
         iVM = int(sVersion.split('.')[0])
         iVm = int(sVersion.split('.')[1])
         self.assertEqual(iVM, grid.getVersionMajor(), "version major mismatch")
         self.assertEqual(iVm, grid.getVersionMinor(), "version minor mismatch")
-        
+
         # TODO: CUDA and BLAS enabled?
-        
+
         # Not sure how to test the log
-        
+
         # read/write covered in I/O tests (expensive)
-        
+
         grid.makeGlobalGrid(1, 0, 4, 'level', 'gauss-hermite', [], 2.0)
         aW = grid.getQuadratureWeights()
         self.assertTrue((sum(aW) - 0.5 * np.pi < 1.E-14), "Gauss-Hermite Alpha")
-        
+
         grid.makeGlobalGrid(2, 0, 2, 'level', 'leja', [2, 1])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [1.0, 0.0]])
         aP = grid.getPoints()
         np.testing.assert_equal(aA, aP, "Anisotropy Global not equal", True)
-        
+
         grid.makeGlobalGrid(2, 0, 4, 'ipcurved', 'leja', [20, 10, 0, 7])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [0.0, math.sqrt(1.0/3.0)], [1.0, 0.0], [1.0, 1.0], [-1.0, 0.0]])
         aP = grid.getPoints()
         np.testing.assert_equal(aA, aP, "Anisotropy Global not equal", True)
-        
+
         grid.makeSequenceGrid(2, 1, 2, 'level', 'leja', [2, 1])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [1.0, 0.0]])
         aP = grid.getPoints()
         np.testing.assert_equal(aA, aP, "Anisotropy Sequence not equal", True)
-        
+
         grid.makeSequenceGrid(2, 1, 4, 'ipcurved', 'leja', [20, 10, 0, 7])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [0.0, math.sqrt(1.0/3.0)], [1.0, 0.0], [1.0, 1.0], [-1.0, 0.0]])
         aP = grid.getPoints()
         np.testing.assert_equal(aA, aP, "Anisotropy Sequence not equal", True)
-        
+
         #grid.makeSequenceGrid(2, 1, 1, 'ipcurved', 'rleja', [10, 10, -22, -22])
         grid.makeGlobalGrid(2, 1, 1, 'ipcurved', 'rleja', [10, 10, -21, -21])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, 0.5], [0.0, 0.25], [0.0, 0.75], [0.0, 0.125],
@@ -542,7 +562,7 @@ class TestTasmanian(unittest.TestCase):
         aA = np.cos(math.pi * aA)
         aP = grid.getPoints()
         np.testing.assert_almost_equal(aA, aP, 12, "Anisotropy heavily curved not equal", True) # 12 is the number of dec places
-        
+
         # Make a grid with every possible rule (catches false-positive and memory crashes)
         for sType in TasmanianSG.lsTsgGlobalTypes:
             for sRule in TasmanianSG.lsTsgGlobalRules:
@@ -550,11 +570,11 @@ class TestTasmanian(unittest.TestCase):
                     grid.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
                 else:
                     grid.makeGlobalGrid(2, 0, 2, sType, sRule)
-        
+
         for sType in TasmanianSG.lsTsgGlobalTypes:
             for sRule in TasmanianSG.lsTsgSequenceRules:
                 grid.makeSequenceGrid(2, 1, 3, sType, sRule)
-        
+
         for sRule in TasmanianSG.lsTsgLocalRules:
             grid.makeLocalPolynomialGrid(3, 1, 3, 0, sRule)
             self.assertEqual(grid.getAlpha(), 0.0, "failed alpha")
@@ -568,7 +588,7 @@ class TestTasmanian(unittest.TestCase):
             self.assertEqual(grid.getAlpha(), 0.0, "failed alpha")
             self.assertEqual(grid.getBeta(), 0.0, "failed beta")
             self.assertEqual(grid.getOrder(), 2, "failed order")
-        
+
         grid.makeWaveletGrid(3, 1, 2, 1)
         self.assertEqual(grid.getAlpha(), 0.0, "failed alpha")
         self.assertEqual(grid.getBeta(), 0.0, "failed beta")
@@ -577,7 +597,7 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(grid.getAlpha(), 0.0, "failed alpha")
         self.assertEqual(grid.getBeta(), 0.0, "failed beta")
         self.assertEqual(grid.getOrder(), 3, "failed order")
-        
+
         try:
             grid.copyGrid([])
         except TasmanianSG.TasmanianInputError as TsgError:
@@ -585,7 +605,7 @@ class TestTasmanian(unittest.TestCase):
                 sys.stdout = devnul
                 TsgError.printInfo() # Miro: silence this for a release
                 sys.stdout = sys.__stdout__
-        
+
         for iI in range(2):
             if (iI == 0):
                 sMake = "grid.makeGlobalGrid(2, 1, 2, 'level', 'leja', [2, 1])"
@@ -650,7 +670,7 @@ class TestTasmanian(unittest.TestCase):
             aA = np.array([[-1.0, 0.0]])
             aP = grid.getNeededPoints()
             np.testing.assert_equal(aA, aP, "Update Global not equal", True)
-        
+
         grid.makeGlobalGrid(2, 0, 2, 'level', 'leja', [2, 1])
         self.assertEqual(grid.getAlpha(), 0.0, "failed alpha")
         self.assertEqual(grid.getBeta(), 0.0, "failed beta")
@@ -663,16 +683,16 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(grid.getAlpha(), 3.0, "failed alpha")
         self.assertEqual(grid.getBeta(), 2.0, "failed beta")
         self.assertEqual(grid.getOrder(), -1, "failed order")
-        
+
         grid.makeSequenceGrid(2, 1, 1, 'level', 'leja', [2, 1])
         self.assertEqual(grid.getAlpha(), 0.0, "failed alpha")
         self.assertEqual(grid.getBeta(), 0.0, "failed beta")
         self.assertEqual(grid.getOrder(), -1, "failed order")
-        
+
         # localp and wavelets tested above
-        
+
         # getDim, outs, rule, desc tested in I/O
-        
+
         grid.makeLocalPolynomialGrid(2, 1, 2, 2, "localp")
         iNN = grid.getNumNeeded()
         iNL = grid.getNumLoaded()
@@ -708,7 +728,7 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(iNN,  0, "num needed")
         self.assertEqual(iNL, 29, "num loaded")
         self.assertEqual(iNP, iNL, "num points")
-        
+
         # test empty returns
         dummy_ans = np.empty([0, 0], np.float64)
         grid_dummy = TasmanianSG.TasmanianSparseGrid()
@@ -729,8 +749,8 @@ class TestTasmanian(unittest.TestCase):
         dummy_ans = np.empty([0, 1], np.float64)
         aX = np.empty([0, 2], np.float64)
         np.testing.assert_equal(dummy_ans, grid.evaluateBatch(aX), "Empty batch eval", True)
-        
-        
+
+
         # test weights
         aX = np.array([[0.0, -0.3], [-0.44, 0.7], [0.82, -0.01]])
         grid.makeGlobalGrid(2, 0, 4, 'level', 'chebyshev')
@@ -743,7 +763,7 @@ class TestTasmanian(unittest.TestCase):
         aW3 = grid.getInterpolationWeights(aX3)
         aWW = np.row_stack([aW1, aW2, aW3])
         np.testing.assert_equal(aW, aWW, "Batch weights", True)
-        
+
         # TODO: test clear domain and conformal transforms
         grid.makeGlobalGrid(3, 0, 1, 'level', 'chebyshev')
         aTrans = np.array([[-1.0, -4.0], [2.0, 5.0], [-3.0, 5]])
@@ -753,7 +773,7 @@ class TestTasmanian(unittest.TestCase):
         np.testing.assert_equal(aB, grid.getPoints(), "Original equal", True)
         grid.clearDomainTransform()
         np.testing.assert_equal(aA, grid.getPoints(), "Tansformed equal", True)
-        
+
         grid.makeGlobalGrid(3, 0, 1, 'level', 'fejer2')
         aA = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, -0.707106781186548], [0.0, 0.0, 0.707106781186548], [0.0, -0.707106781186548, 0.0], [0.0, 0.707106781186548, 0.0], [-0.707106781186548, 0.0, 0.0], [0.707106781186548, 0.0, 0.0]])
         np.testing.assert_almost_equal(aA, grid.getPoints(), 14, "Original equal", True)
@@ -763,7 +783,7 @@ class TestTasmanian(unittest.TestCase):
         grid.clearConformalTransform()
         aA = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, -0.707106781186548], [0.0, 0.0, 0.707106781186548], [0.0, -0.707106781186548, 0.0], [0.0, 0.707106781186548, 0.0], [-0.707106781186548, 0.0, 0.0], [0.707106781186548, 0.0, 0.0]])
         np.testing.assert_almost_equal(aA, grid.getPoints(), 14, "Original equal", True)
-        
+
         # TODO: MATH: test the refinement
         grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
         self.loadExpN2(grid)
@@ -772,23 +792,75 @@ class TestTasmanian(unittest.TestCase):
         self.assertTrue((grid.getNumNeeded() > 0), "num needed")
         grid.clearRefinement()
         self.assertEqual(grid.getNumNeeded(), 0, "num needed")
+
+        aA = np.array([[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2], [3, 0], [4, 0]])
+        grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis')
+        aP = grid.getGlobalPolynomialSpace(True)
+        np.testing.assert_equal(aP, aA, "poly space mismatch", True)
+
+        aA = np.array([[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 2], [2, 3], [3, 0], [3, 1], [3, 2], [3, 3], [4, 0], [4, 1], [5, 0], [5, 1]])
+        grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis')
+        aP = grid.getGlobalPolynomialSpace(False)
+        np.testing.assert_equal(aP, aA, "poly space mismatch", True)
+
+        aA = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [2, 0]])
+        grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja')
+        aP = grid.getGlobalPolynomialSpace(True)
+        np.testing.assert_equal(aP, aA, "poly space mismatch", True)
         
-        
+        grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja')
+        aP = grid.getGlobalPolynomialSpace(False)
+        np.testing.assert_equal(aP, aA, "poly space mismatch", True)
+
+        aA = np.array([[0, 0], [0, 1], [0, 2], [0, 3], [1, 0], [1, 1], [1, 2], [1, 3], [2, 0], [2, 1], [3, 0], [3, 1]])
+        grid.makeGlobalGrid(2, 1, 1, 'level', 'leja-odd')
+        aP = grid.getGlobalPolynomialSpace(False)
+        np.testing.assert_equal(aP, aA, "poly space mismatch", True)
+
+        grid.makeSequenceGrid(2, 1, 2, 'level', 'leja')
+        aP = grid.getGlobalPolynomialSpace(False)
+        np.testing.assert_equal(aP, aA, "poly space mismatch", True)
+
         # TODO: remove points by surplus
-        
+
         # TODO: eval hierarchical basis and Batch
-        
+
         # TODO: set hierarchical coefficients, get surplusses, get global poly
-        
-        # TODO: python acceleration (error checking and update rules)
-        
+
+        grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
+        for accel in TasmanianSG.lsTsgAccelTypes:
+            grid.enableAcceleration(accel)
+            sA = grid.getAccelerationType()
+            bTest = ((accel not in sA) or (sA not in accel))
+            self.assertFalse(bTest, "set/get Acceleration")
+
+        if (@TSGEnableCmakeSyncTest@):
+            bHasBlas = @TSGLibPyWithBlas@
+            bHasCuBlas = @TSGLibPyWithCublas@
+            bHasCuda = @TSGLibPyWithCuda@
+            self.assertTrue((grid.isAccelerationAvailable("cpu-blas") == bHasBlas), "failed to match blas")
+            self.assertTrue((grid.isAccelerationAvailable("gpu-cublas") == bHasCuBlas), "failed to match cublas")
+            self.assertTrue((grid.isAccelerationAvailable("gpu-cuda") == bHasCuda), "failed to match cuda")
+            self.assertTrue((grid.isAccelerationAvailable("gpu-default") == (bHasCuBlas or bHasCuda)), "failed to match cuda")
+
+        self.assertTrue((grid.getGPUID() == 0), "did not default to gpu 0")
+
+        if (grid.getNumGPUs() > 1):
+            grid.setGPUID(1)
+            self.assertTrue((grid.getGPUID() == 1), "did not set to gpu 1")
+            sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
+
+        if (grid.getNumGPUs() > 0):
+            grid.setGPUID(0)
+            self.assertTrue((grid.getGPUID() == 0), "did not set to gpu 0")
+            sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
+
         # this gives us 5% coverage
-        #grid.makeGlobalGrid(2, 1, 20, 'level', 'leja')
-        #self.loadExpN2(grid)
-        #grid.plotResponse2D()
-        #grid.plotPoints2D(iNumFigure = 2)
-        
-        
+        if (TasmanianSG.bTsgPlotting):
+            grid.makeGlobalGrid(2, 1, 20, 'level', 'leja')
+            self.loadExpN2(grid)
+            grid.plotResponse2D(bShow = False)
+            grid.plotPoints2D(iNumFigure = 2, bShow = False)
 
 if __name__ == '__main__':
     unittest.main()

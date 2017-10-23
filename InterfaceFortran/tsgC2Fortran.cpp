@@ -92,7 +92,7 @@ void tsggvn_(int *ver){ *ver = TasmanianSparseGrid::getVersionMinor(); }
 void tsggli_(){
     // this is clumsy, may have to think of something else
     const char *lic = TasmanianSparseGrid::getLicense();
-    int l = 0; 
+    int l = 0;
     while(lic[l] != '\0') l++;
     tsgc2fstr_(&l, lic);
 }
@@ -106,7 +106,7 @@ void tsgrea_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->r
 // create
 void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights, double *alpha, double *beta){
     _tsg_grid_list[*id]->makeGlobalGrid(*dimensions, *outputs, *depth,
-        OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule), 
+        OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule),
         anisotropic_weights, *alpha, *beta);
 }
 void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights){
@@ -179,8 +179,8 @@ void tsgeac_(int *id, int *type, int *output, int *result){
     delete[] coeff;
 }
 void tsgssr_(int *id, double *tol, int *output){ _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output); }
-void tsgshr_(int *id, double *tol, int *type, int *output){ 
-    _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), *output); 
+void tsgshr_(int *id, double *tol, int *type, int *output){
+    _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), *output);
 }
 void tsgcre_(int *id){ _tsg_grid_list[*id]->clearRefinement(); }
 
@@ -213,7 +213,7 @@ void tsggac_(int *id, int *acc){
 void tsgsgi_(int *id, int *gpuID){ _tsg_grid_list[*id]->setGPUID(*gpuID); }
 void tsgggi_(int *id, int *gpuID){ *gpuID = _tsg_grid_list[*id]->getGPUID(); }
 void tsggng_(int *gpus){ *gpus = TasmanianSparseGrid::getNumGPUs(); }
-void tsgggm_(int *gpuID, int *mem){ *mem = TasmanianSparseGrid::getGPUmemory(*gpuID); }
+void tsgggm_(int *gpuID, int *mem){ *mem = TasmanianSparseGrid::getGPUMemory(*gpuID); }
 
 }
 #endif

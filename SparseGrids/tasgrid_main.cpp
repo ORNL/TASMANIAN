@@ -77,23 +77,42 @@ int main(int argc, const char ** argv){
         }else{
             cout << "          OpenMP multithreading: Disabled" << endl;
         }
-        if (TasmanianSparseGrid::isBLASEnabled()){
-            cout << "              BLAS acceleration: Enabled" << endl;
-        }else{
-            cout << "              BLAS acceleration: Disabled" << endl;
+        cout << "         Available acceleration:";
+        bool anyAcc = false, anyGPU = false;
+        if (TasmanianSparseGrid::isAccelerationAvailable(accel_cpu_blas)){
+            cout << " cpu_blas";
+            anyAcc = true;
         }
-        if (TasmanianSparseGrid::isCudaEnabled()){
-            cout << "       Nvidia CUDA Acceleration: Enabled" << endl;
-            int num_gpus = TasmanianSparseGrid::getNumGPUs();
-            cout << "            Available Cuda GPUs: " << num_gpus << endl;
-            for(int i=0; i<num_gpus; i++){
-                cout << "           GPU Device " << i << ":" << std::setw(17) << TasmanianSparseGrid::getGPUname(i)
-                                     << " with" <<std::setw(6) << TasmanianSparseGrid::getGPUmemory(i) << "MB of RAM" << endl;
+        if (TasmanianSparseGrid::isAccelerationAvailable(accel_gpu_cublas)){
+            cout << " gpu_cublas";
+            anyAcc = true;
+            anyGPU = true;
+        }
+        if (TasmanianSparseGrid::isAccelerationAvailable(accel_gpu_cuda)){
+            cout << " cpu_cuda";
+            anyAcc = true;
+            anyGPU = true;
+        }
+        if (!anyAcc){
+            cout << " none";
+        }
+        cout << endl;
+        if (anyGPU){
+            int numGPUs = TasmanianSparseGrid::getNumGPUs();
+            if (numGPUs > 0){
+                cout << "                 Available GPUs:" << endl;
+                for(int i=0; i<numGPUs; i++){
+                    char *name = TasmanianSparseGrid::getGPUName(i);
+                    int memory = TasmanianSparseGrid::getGPUMemory(i);
+                    cout << setw(11) << i << ":" << setw(20) << name << " with" << setw(7) << memory << "MB of RAM" << endl;
+                    delete[] name;
+                }
+            }else{
+                cout << "        Available GPUs: none" << endl;
             }
-            cout << endl;
-        }else{
-            cout << "       Nvidia CUDA Acceleration: Disabled" << endl << endl;
         }
+
+        cout << endl;
         return 0;
     }
 

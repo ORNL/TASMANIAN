@@ -338,15 +338,15 @@ int OneDimensionalMeta::getQExact(int level, TypeOneDRule rule) const{
         case rule_leja:
         case rule_maxlebesgue:
         case rule_minlebesgue:
-        case rule_mindelta:           return (level == 0) ? 1 : level;
+        case rule_mindelta:           return ((level == 0) ? 1 : level) + ((level == 2) ? 1 : 0);
 
         case rule_lejaodd:
         case rule_maxlebesgueodd:
         case rule_minlebesgueodd:
-        case rule_mindeltaodd:        return (level == 0) ? 1 : 2*level;
-        case rule_rlejaodd:           return 2*level+1; // the symmetry in rlejaodd gives us one extra power
+        case rule_mindeltaodd:        return ((level == 0) ? 1 : 2*level) + ((level == 1) ? 1 : 0);
+        case rule_rlejaodd:           return 2*level;
 
-        case rule_rlejashiftedeven:   return 2*level + 1;
+        case rule_rlejashiftedeven:   return 2*level;
 
         case rule_rlejashifteddouble: return ((1 << (level+1)) -1);
 

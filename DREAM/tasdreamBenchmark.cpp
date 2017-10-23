@@ -126,7 +126,7 @@ void sharedBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int n
         cout << "none";
     }else{
         cout << gpuID;
-        if (!grid->isCudaEnabled()) cout << " (cuda disabled)";
+        //if (!grid->isCudaEnabled()) cout << " (cuda disabled)";
     }
     if (outfilename != 0){
         cout << ", outfile=" << endl;
@@ -134,7 +134,8 @@ void sharedBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int n
         cout << endl;
     }
 
-    if (grid->isCudaEnabled() && (gpuID > -1)){
+    //if (grid->isCudaEnabled() && (gpuID > -1)){
+    if (gpuID > -1){
         grid->enableAcceleration(accel_gpu_cublas);
         if (gpuID+1 > grid->getNumGPUs()){
             cout << "GPU " << gpuID << " is not available";

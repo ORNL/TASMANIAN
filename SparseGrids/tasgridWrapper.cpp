@@ -673,9 +673,10 @@ bool TasgridWrapper::getPoly(){
     if ((grid->isGlobal()) || (grid->isSequence())){
         int num_d = grid->getNumDimensions();
         bool integrate = ((depth_type == type_iptotal) || (depth_type == type_ipcurved) || (depth_type == type_iptensor) || (depth_type == type_iphyperbolic));
-        int n, *poly = grid->getGlobalPolynomialSpace(integrate, n);
+        int n, *poly = 0;
+        grid->getGlobalPolynomialSpace(integrate, n, poly);
         double *double_poly = new double[n * num_d];
-        for(int i=0; i<num_d * n; i++)  double_poly[i] = (double) poly[i];
+        for(int i=0; i<num_d * n; i++) double_poly[i] = (double) poly[i];
         if (outfilename != 0){
             writeMatrix(outfilename, n, num_d, double_poly, useASCII);
         }

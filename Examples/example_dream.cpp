@@ -57,7 +57,7 @@ int main(int argc, const char**){
             upper_bound[0] = false;
         }
         void getDomainBounds(double* lower_bound, double* upper_bound){
-            lower_bound[0] = 0.0; // since bounds above give false, 
+            lower_bound[0] = 0.0; // since bounds above give false,
             upper_bound[0] = 0.0; // those here are dummy values
         }
         void getInitialSample(double x[]){
@@ -313,7 +313,7 @@ int main(int argc, const char**){
     // if BLAS is enabled on compile time, the grid will use BLAS by default
     // GPU acceleration can be enabled here using
     // if (grid.isCudaEnabled()){
-    //     grid.enableAcceleration(TasGrid::accel_gpu_fullmemory);
+    //     grid.enableAcceleration(TasGrid::accel_gpu_cublas);
     //     grid.setGPUID(0);
     // }
 
@@ -750,7 +750,7 @@ int main(int argc, const char**){
 	}
 	double best_sample[6];
 	for(int k=0; k<6; k++) best_sample[k] = samples[6*best_index + k];
-	
+
 	cout << "Large sample size results, N = 36" << endl;
 	cout << "Using least-squares mean fit:" << endl;
 	cout << "coefficient: ";
@@ -759,7 +759,7 @@ int main(int argc, const char**){
     cout << "      error: ";
     for(int k=0; k<6; k++) cout << setw(13) << fabs(best_sample[k] - true_coefficients[k]);
     cout << endl << endl;
-    
+
     // define custom likelihood and use L1 minimization
     class L1Likelihood : public TasDREAM::BaseLikelihood{
     public:
@@ -787,21 +787,21 @@ int main(int argc, const char**){
 		int N;
 		double scale;
     };
-    
+
     L1Likelihood *likely1 = new L1Likelihood(N, ((double) N));
     // the model is already set in the posterior, set the new likelihood and data
     post->setLikelihood(likely1);
     // the l1 problem does not rely on precomputing values for speedup
     // we will feed raw data to each call to L1Likelihood::getLikelihood()
-    post->setData(1, data); 
-    
+    post->setData(1, data);
+
     dream->setProbabilityWeightFunction(post);
     dream->setNumChains(num_chains);
     dream->setCorrectionAll(&gauss);
 
 	delete[] samples;
     samples = dream->collectSamples(num_burnup_iterations, num_sample_iterations, true);
-    
+
     delete[] values;
     values = dream->getPDFHistory();
     best_index = 0;
@@ -813,7 +813,7 @@ int main(int argc, const char**){
 		}
 	}
 	for(int k=0; k<6; k++) best_sample[k] = samples[6*best_index + k];
-	
+
 	cout << "Using l1 minimization fit:" << endl;
 	cout << "coefficient: ";
     for(int k=0; k<6; k++) cout << setw(13) << best_sample[k];
@@ -821,7 +821,7 @@ int main(int argc, const char**){
     cout << "      error: ";
     for(int k=0; k<6; k++) cout << setw(13) << fabs(best_sample[k] - true_coefficients[k]);
     cout << endl << endl;
-    
+
     //////////////  using small data fit and reusing already defined variables //////////////
     N = 12;
 
@@ -869,7 +869,7 @@ int main(int argc, const char**){
 		}
 	}
 	for(int k=0; k<6; k++) best_sample[k] = samples[6*best_index + k];
-	
+
 	cout << "Small sample size results, N = 6" << endl;
 	cout << "Using least-squares mean fit:" << endl;
 	cout << "coefficient: ";
@@ -878,28 +878,28 @@ int main(int argc, const char**){
     cout << "      error: ";
     for(int k=0; k<6; k++) cout << setw(13) << fabs(best_sample[k] - true_coefficients[k]);
     cout << endl << endl;
-    
-    
+
+
     delete likely1;
     likely1 = new L1Likelihood(N, ((double)(2*N)));
     // the model is already set in the posterior, set the new likelihood and data
     post->setLikelihood(likely1);
     // the l1 problem does not rely on precomputing values for speedup
     // we will feed raw data to each call to L1Likelihood::getLikelihood()
-    post->setData(1, data); 
-    
+    post->setData(1, data);
+
     dream->setProbabilityWeightFunction(post);
     dream->setNumChains(num_chains);
     dream->setCorrectionAll(&gauss);
 
 	delete[] samples;
     samples = dream->collectSamples(num_burnup_iterations, num_sample_iterations, true);
-    
+
     // could adjust the jump scale here, but did not see much difference
     //delete[] samples;
     //dream->setJumpScale(0.5);
     //samples = dream->collectSamples(0, num_sample_iterations, true);
-    
+
     delete[] values;
     values = dream->getPDFHistory();
     best_index = 0;
@@ -911,7 +911,7 @@ int main(int argc, const char**){
 		}
 	}
 	for(int k=0; k<6; k++) best_sample[k] = samples[6*best_index + k];
-	
+
 	cout << "Using l1 minimization fit:" << endl;
 	cout << "coefficient: ";
     for(int k=0; k<6; k++) cout << setw(13) << best_sample[k];
@@ -919,11 +919,11 @@ int main(int argc, const char**){
     cout << "      error: ";
     for(int k=0; k<6; k++) cout << setw(13) << fabs(best_sample[k] - true_coefficients[k]);
     cout << endl << endl;
-    
+
     cout << "  Note: the l1 method is expected to be a bit better when the sample size is small" << endl;
     cout << "        and the solution x is sparse, i.e., most of the components are zeros." << endl;
     cout << "        This example demonstrates how to set a custom likelihood, not make l1 vs. l2 comparison." << endl << endl;
-    
+
 
     delete prior_wide_gaussian;
     delete custom_model;

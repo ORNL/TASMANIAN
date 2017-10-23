@@ -116,7 +116,7 @@ public:
 
     void clearAccelerationData();
 
-    int* getPolynomialSpace(bool interpolation, int &n) const;
+    void getPolynomialSpace(bool interpolation, int &n, int* &poly) const;
 
     const int* getPointIndexes() const;
 

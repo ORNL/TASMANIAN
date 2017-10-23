@@ -160,7 +160,7 @@ set(libfor_src InterfaceFortran/TasmanianSG.f90
                InterfaceFortran/tsgC2Fortran.cpp)
 
 set(tasfor_src Testing/fortester.f90)
-               
+
 
 ########################################################################
 # sanity check and xSDK compatibility
@@ -242,7 +242,7 @@ if (Tasmanian_ENABLE_CUBLAS OR Tasmanian_ENABLE_CUDA)
             set(TPL_CUBLAS_INCLUDE_DIRS ${CUDA_INCLUDE_DIR})
             set(TPL_CUBLAS_LIBRARIES ${CUDA_CUBLAS_LIBRARIES} ${CUDA_cusparse_LIBRARY})
             if (Tasmanian_ENABLE_CUDA)
-                set(libtsg_src SparseGrids/tasCudaKernels.cu ${libtsg_src})
+                set(libtsg_src SparseGrids/tsgCudaKernels.cu ${libtsg_src})
                 add_definitions(-DTASMANIAN_CUDA)
             endif()
         else()
@@ -324,7 +324,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     # put RPATH in the build three (stage 1, see below)
 	set(CMAKE_SKIP_BUILD_RPATH OFF)
 	# use the build as opposed install RPATH
-	set(CMAKE_BUILD_WITH_INSTALL_RPATH OFF) 
+	set(CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
 	set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON) # needed by TPL
@@ -381,7 +381,7 @@ if (Tasmanian_SHARED_LIBRARY)
 
     set_property(TARGET libtsg_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
     set_property(TARGET libtdr_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
-    
+
     if (Tasmanian_ENABLE_FORTRAN)
         add_library(libtasfor_shared SHARED ${libfor_src})
         target_link_libraries(libtasfor_shared libtsg_shared)
@@ -414,7 +414,7 @@ if (Tasmanian_STATIC_LIBRARY)
 
     set_property(TARGET libtsg_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
     set_property(TARGET libtdr_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
-    
+
     if (Tasmanian_ENABLE_FORTRAN)
         add_library(libtasfor_static STATIC ${libfor_src})
         target_link_libraries(libtasfor_static libtsg_static)
@@ -730,14 +730,18 @@ endif()
 #set(Tasmanian_DEVELOPMENT_BACKWARDS "1")
 if (DEFINED Tasmanian_DEVELOPMENT_BACKWARDS AND Tasmanian_DEVELOPMENT_BACKWARDS)
     configure_file("${PROJECT_SOURCE_DIR}/Config/tsgVersion.in.hpp"  "${PROJECT_SOURCE_DIR}/Config/tsgVersion.hpp")
-    set(tdrIncludeMPIBackup tdrIncludeMPI)
+    set(tdrIncludeMPIBackup ${tdrIncludeMPI})
     set(tdrIncludeMPI "//#include <mpi.h>")
     configure_file("${PROJECT_SOURCE_DIR}/Config/tdrEnableMPI.in.hpp"  "${PROJECT_SOURCE_DIR}/Config/tdrEnableMPI.hpp")
-    set(tdrIncludeMPI tdrIncludeMPIBackup)
+    set(tdrIncludeMPI ${tdrIncludeMPIBackup})
     set(tsgPython "python")
     if (DEFINED Tasmanian_PYTHON_ENV)
         set(tsgPython ${Tasmanian_PYTHON_ENV})
     endif()
+    set(TSGLibPyWithBlas "False")
+    set(TSGLibPyWithCublas "False")
+    set(TSGLibPyWithCuda "False")
+    set(TSGEnableCmakeSyncTest "False")
     set(TSGLibShared "./libtasmaniansparsegrid.so")
     configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.py")
     configure_file("${PROJECT_SOURCE_DIR}/Testing/testTSG.in.py" "${PROJECT_SOURCE_DIR}/Testing/testTSG.py")
@@ -759,6 +763,18 @@ set(TDRLibStatic "${TSGLibPath}/${CMAKE_STATIC_LIBRARY_PREFIX}${TDRStaticLibName
 set(TSGExecutable "${CMAKE_BINARY_DIR}/tasgrid")
 set(TDRExecutable "${CMAKE_BINARY_DIR}/tasdream")
 set(tsgPython "python")
+set(TSGLibPyWithBlas "False")
+if (Tasmanian_ENABLE_BLAS)
+    set(TSGLibPyWithBlas "True")
+endif()
+set(TSGLibPyWithCublas "False")
+if (Tasmanian_ENABLE_CUBLAS)
+    set(TSGLibPyWithCublas "True")
+endif()
+set(TSGLibPyWithCuda "False")
+if (Tasmanian_ENABLE_CUDA)
+    set(TSGLibPyWithCuda "True")
+endif()
 if (DEFINED Tasmanian_PYTHON_ENV)
     set(tsgPython ${Tasmanian_PYTHON_ENV})
 endif()
@@ -773,6 +789,7 @@ configure_file("${PROJECT_SOURCE_DIR}/Config/tsgVersion.in.hpp"  "${CMAKE_BINARY
 configure_file("${PROJECT_SOURCE_DIR}/Config/tdrEnableMPI.in.hpp"  "${CMAKE_BINARY_DIR}/configured/tdrEnableMPI.hpp")
 configure_file("${PROJECT_SOURCE_DIR}/SparseGrids/GaussPattersonRule.table"  "${CMAKE_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
 if (Tasmanian_ENABLE_PYTHON)
+    set(TSGEnableCmakeSyncTest "True")
     configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${CMAKE_BINARY_DIR}/TasmanianSG.py")
     configure_file("${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.in.py" "${CMAKE_BINARY_DIR}/example_sparse_grids.py")
     configure_file("${PROJECT_SOURCE_DIR}/Testing/sandbox.py" "${CMAKE_BINARY_DIR}/sandbox.py" COPYONLY)
@@ -918,8 +935,8 @@ message("TASMANIAN: summary of all compile options")
 if (USE_XSDK_DEFAULTS)
 else()
     message(" -D CMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
-    foreach(TAS_OPTIONS Tasmanian_ENABLE_OPENMP Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_MPI 
-                        Tasmanian_ENABLE_MATLAB Tasmanian_ENABLE_PYTHON 
+    foreach(TAS_OPTIONS Tasmanian_ENABLE_OPENMP Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_MPI
+                        Tasmanian_ENABLE_MATLAB Tasmanian_ENABLE_PYTHON
                         Tasmanian_ENABLE_CUBLAS Tasmanian_ENABLE_CUDA
                         Tasmanian_SHARED_LIBRARY Tasmanian_STATIC_LIBRARY)
         if (${TAS_OPTIONS})

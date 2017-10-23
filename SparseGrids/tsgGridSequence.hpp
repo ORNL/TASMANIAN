@@ -110,7 +110,7 @@ public:
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
     void setHierarchicalCoefficients(const double c[]);
 
-    int* getPolynomialSpace(bool interpolation, int &n) const;
+    void getPolynomialSpace(bool interpolation, int &n, int* &poly) const;
 
     const double* getSurpluses() const;
     const int* getPointIndexes() const;

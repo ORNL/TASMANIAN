@@ -30,7 +30,7 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, cdll
+from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, cdll, create_string_buffer
 import numpy as np
 import sys
 
@@ -50,7 +50,7 @@ lsTsgGlobalTypes = ["level", "curved", "iptotal", "ipcurved", "qptotal", "qpcurv
 lsTsgCurvedTypes = ["curved", "ipcurved", "qpcurved"]
 lsTsgSequenceRules = ["leja", "rleja", "rleja-shifted", "max-lebesgue", "min-lebesgue", "min-delta"]
 lsTsgLocalRules = ["localp", "semi-localp", "localp-zero"]
-lsTsgAccelTypes = ["none", "cpu-blas", "gpu-fullmem"]
+lsTsgAccelTypes = ["none", "cpu-blas", "gpu-fullmem", "gpu-default", "gpu-cublas", "gpu-cuda"]
 
 class TasmanianInputError(Exception):
     '''Exception raised for incorret input to Tasmanian
@@ -62,7 +62,7 @@ class TasmanianInputError(Exception):
     '''
     def __init__(self, sVar, sMess):
         self.sVariable = sVar
-        self.sMessage = sMess        
+        self.sMessage = sMess
 
     def printInfo(self):
         '''
@@ -118,8 +118,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetLicense.restype = c_char_p
         self.pLibTSG.tsgGetVersionMajor.restype = c_int
         self.pLibTSG.tsgGetVersionMinor.restype = c_int
-        self.pLibTSG.tsgIsCudaEnabled.restype = c_int
-        self.pLibTSG.tsgIsBLASEnabled.restype = c_int
         self.pLibTSG.tsgIsOpenMPEnabled.restype = c_int
         self.pLibTSG.tsgGetNumDimensions.restype = c_int
         self.pLibTSG.tsgGetNumOutputs.restype = c_int
@@ -145,9 +143,12 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgEvalHierarchicalFunctions.restype = POINTER(c_double)
         self.pLibTSG.tsgBatchEvalHierarchicalFunctions.restype = POINTER(c_double)
         self.pLibTSG.tsgGetSurpluses.restype = POINTER(c_double)
-        #self.pLibTSG.tsgGetGlobalPolynomialSpace.restype = POINTER(c_int)
-        self.pLibTSG.tsgGetAccelerationType.restype = POINTER(c_int)
-        self.pLibTSG.tsgGetGPUID.restype = POINTER(c_int)
+        ##########
+        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
+        ##########
+        self.pLibTSG.tsgGetAccelerationType.restype = c_char_p
+        self.pLibTSG.tsgIsAccelerationAvailable.restype = c_int
+        self.pLibTSG.tsgGetGPUID.restype = c_int
         self.pLibTSG.tsgGetNumGPUs.restype = c_int
         self.pLibTSG.tsgGetGPUmemory.restype = c_int
         self.pLibTSG.tsgGetGPUname.restype = c_char_p
@@ -216,14 +217,17 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgBatchEvalHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgSetHierarchicalCoefficients.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgGetSurpluses.argtypes = [c_void_p]
-        #self.pLibTSG.tsgGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
+        ##########
+        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
+        ##########
         self.pLibTSG.tsgPrintStats.argtypes = [c_void_p]
         self.pLibTSG.tsgEnableAcceleration.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgGetAccelerationType.argtypes = [c_void_p]
+        self.pLibTSG.tsgIsAccelerationAvailable.argtypes = [c_char_p]
         self.pLibTSG.tsgSetGPUID.argtypes = [c_void_p, c_int]
         self.pLibTSG.tsgGetGPUID.argtypes = [c_void_p]
         self.pLibTSG.tsgGetGPUmemory.argtypes = [c_int]
-        self.pLibTSG.tsgGetGPUname.argtypes = [c_int]
+        self.pLibTSG.tsgGetGPUname.argtypes = [c_int, c_int, c_char_p, POINTER(c_int)] # not really const here
 
         self.pLibTSG.tsgDeleteDoubles.argtypes = [POINTER(c_double)]
         self.pLibTSG.tsgDeleteInts.argtypes = [POINTER(c_int)]
@@ -259,46 +263,46 @@ class TasmanianSparseGrid:
         if (sys.version_info.major == 3):
             sLicense = str(sLicense, encoding='utf8')
         return sLicense
-        
+
     def getVersionMajor(self):
         '''
         returns the hardcoded version major int
         '''
         return self.pLibTSG.tsgGetVersionMajor()
-        
+
     def getVersionMinor(self):
         '''
         returns the hardcoded version minor int
         '''
         return self.pLibTSG.tsgGetVersionMinor()
-        
-    def isCudaEnabled(self):
-        '''
-        returns True if the library has been compiled with CUDA support
-        '''
-        return (self.pLibTSG.tsgIsCudaEnabled() != 0)
-        
-    def isBLASEnabled(self):
-        '''
-        returns True if the library has been compiled with BLAS support
-        '''
-        return (self.pLibTSG.tsgIsBLASEnabled() != 0)
-        
+
+#    def isCudaEnabled(self):
+#        '''
+#        returns True if the library has been compiled with CUDA support
+#        '''
+#        return (self.pLibTSG.tsgIsCudaEnabled() != 0)
+#
+#    def isBLASEnabled(self):
+#        '''
+#        returns True if the library has been compiled with BLAS support
+#        '''
+#        return (self.pLibTSG.tsgIsBLASEnabled() != 0)
+
     def isOpenMPEnabled(self):
         '''
         returns True if the library has been compiled with OpenMP support
         '''
         return (self.pLibTSG.tsgIsOpenMPEnabled() != 0)
-    
+
     def setErrorLogCerr(self):
         '''
-        sets the error log from the C++ library to the cerr stream
+        sets the error log of the C++ class to the cerr stream
         '''
         self.pLibTSG.tsgErrorLogCerr(self.pGrid)
-        
+
     def disableLog(self):
         '''
-        disables the errors from the C++ library
+        disables the errors from the C++ class
         '''
         self.pLibTSG.tsgDisableErrorLog(self.pGrid)
 
@@ -310,7 +314,7 @@ class TasmanianSparseGrid:
         sFilename: string indicating a grid file where a grid was
                    already written using write from Python or any other
                    Tasmanian interface
-                   
+
         bUseBinaryFormat: boolean
                 True: read from a binary file
                 False: read from an ASCII file
@@ -334,7 +338,7 @@ class TasmanianSparseGrid:
 
         sFilename: string indicating a grid file where a grid will
                    be written
-        
+
         bUseBinaryFormat: boolean
                 True: write to a binary file
                 False: write to an ASCII file
@@ -619,14 +623,14 @@ class TasmanianSparseGrid:
         accepts an instance of TasmanianSparseGrid class and creates
         a hard copy of the class and all included data
         original class is not modified
-        
+
         pGrid: instance of TasmanianSparseGrid class
             the source for the copy
-        
+
         '''
         if (not isinstance(pGrid, TasmanianSparseGrid)):
             raise TasmanianInputError("pGrid", "ERROR: pGrid must be an instance of TasmanianSparseGrid")
-            
+
         self.pLibTSG.tsgCopyGrid(self.pGrid, pGrid.pGrid)
 
     def updateGlobalGrid(self, iDepth, sType, liAnisotropicWeights=[]):
@@ -685,7 +689,7 @@ class TasmanianSparseGrid:
         '''
         if (not self.isSequence()):
             raise TasmanianInputError("updateSequenceGrid", "ERROR: calling updateSequenceGrid for a grid that is not a sequence grid")
-            
+
         if (iDepth < 0):
             raise TasmanianInputError("iDepth", "ERROR: depth should be a non-negative integer")
 
@@ -862,7 +866,7 @@ class TasmanianSparseGrid:
                 the order in getPoints()
 
         '''
-        
+
         iNumPoints = self.getNumPoints()
         if (iNumPoints == 0):
             return np.empty([0], np.float64)
@@ -957,7 +961,7 @@ class TasmanianSparseGrid:
         '''
         evaluates the intepolant at a single points of interest and
         returns the result
-        This is the thread safe version, but it does not use 
+        This is the thread safe version, but it does not use
         acceleration of any type
 
         this should be called after the grid has been created and after
@@ -985,7 +989,7 @@ class TasmanianSparseGrid:
         for iI in range(iNumOutputs):
             lfY[iI] = pY[iI]
         return lfY
-    
+
     def evaluate(self, lfX):
         '''
         evaluates the intepolant at a single points of interest and
@@ -1179,16 +1183,16 @@ class TasmanianSparseGrid:
             llfTransform[iI][0] = pA[iI]
             llfTransform[iI][1] = pB[iI]
         return llfTransform
-        
+
     def setConformalTransformASIN(self, liTruncation):
         '''
-        sets conformal domain transform based on truncated 
+        sets conformal domain transform based on truncated
         Maclaurin series of arcsin()
-        
+
         liTruncation: 1-D numpy.array of non-negative integers
                       indicating the truncation order in each direction
                       0 indicates no transform applied to this direction
-        
+
         '''
         lShape = liTruncation.shape
         if (len(lShape) != 1):
@@ -1200,17 +1204,17 @@ class TasmanianSparseGrid:
         for iI in range(iNumDimensions):
             pTruncation[iI] = liTruncation[iI]
         self.pLibTSG.tsgSetConformalTransformASIN(self.pGrid, pTruncation)
-            
+
     def isSetConformalTransformASIN(self):
         '''
         returns True if conformal transform is set
         returns False otherwise
-        
+
         see: setConformalTransformASIN()
 
         '''
         return (self.pLibTSG.tsgIsSetConformalTransformASIN(self.pGrid) == 0)
-            
+
     def clearConformalTransform(self):
         '''
         resets the conformal domain transform
@@ -1219,7 +1223,7 @@ class TasmanianSparseGrid:
 
         '''
         self.pLibTSG.tsgClearConformalTransform(self.pGrid)
-            
+
     def getConformalTransformASIN(self):
         '''
         returns liTruncation from the call to setConformalTransformASIN()
@@ -1231,7 +1235,7 @@ class TasmanianSparseGrid:
         '''
         if (not self.isSetConformalTransformASIN()):
             return np.empty([0,], np.int)
-            
+
         iNumDimensions = self.getNumDimensions()
         pTruncation = (c_int*iNumDimensions)()
         self.pLibTSG.tsgGetConformalTransformASIN(self.pGrid, pTruncation)
@@ -1316,8 +1320,10 @@ class TasmanianSparseGrid:
         iNumCoeffs = self.getNumDimensions()
         if ("curved" in sType):
             iNumCoeffs = iNumCoeffs * 2
-        
-        aCoeff = np.empty([iNumCoeffs], np.int32) 
+        if (sys.version_info.major == 3):
+            sType = bytes(sType, encoding='utf8')
+
+        aCoeff = np.empty([iNumCoeffs], np.int32)
         self.pLibTSG.tsgEstimateAnisotropicCoefficients(self.pGrid, c_char_p(sType), iOutput, np.ctypeslib.as_ctypes(aCoeff))
 
         return aCoeff
@@ -1521,42 +1527,42 @@ class TasmanianSparseGrid:
                 llfS[iI][iJ] = pSurp[iI*iNumOut + iJ]
         return llfS
 
-#    def getGlobalPolynomialSpace(self, bInterpolation):
-#        '''
-#        returns a matrix corresponding to the polynomial space that is
-#        integrated or interpolated exactly by the current grid
-#
-#        bInterpolation: boolean
-#                indicates whether to give the space associated
-#                with integration or interpolation
-#
-#        output: is a 2-D numpy.array of integers
-#            output.shape[0] indicates the cardinality of the space
-#            output.shape[1] is equal to iDimension
-#            each row corresponds to a multi-index associated with a
-#            polynomial in a hierarchical tensor basis, for example,
-#            monomials
-#
-#            see the manual for details
-#
-#        '''
-#        iInterp = 1
-#        if (bInterpolation):
-#            iInterp = 0
-#        pNumIndexes = (c_int*1)()
-#        pIndexes = self.pLibTSG.tsgGetGlobalPolynomialSpace(self.pGrid, iInterp, pNumIndexes)
-#        iNumDimensions = self.getNumDimensions()
-#        lliPolynomials = np.empty([pNumIndexes[0], iNumDimensions], np.int)
-#        for iI in range(pNumIndexes[0]):
-#            for iJ in range(iNumDimensions):
-#                lliPolynomials[iI][iJ] = pIndexes[iI*iNumDimensions + iJ]
-#        self.pLibTSG.tsgDeleteInts(pIndexes)
-#        return lliPolynomials
+    def getGlobalPolynomialSpace(self, bInterpolation):
+        '''
+        returns a matrix corresponding to the polynomial space that is
+        integrated or interpolated exactly by the current grid
+
+        bInterpolation: boolean
+                indicates whether to give the space associated
+                with integration or interpolation
+
+        output: is a 2-D numpy.array of integers
+            output.shape[0] indicates the cardinality of the space
+            output.shape[1] is equal to iDimension
+            each row corresponds to a multi-index associated with a
+            polynomial in a hierarchical tensor basis, for example,
+            monomials
+
+            see the manual for details
+
+        '''
+        iInterp = 0
+        if (bInterpolation):
+            iInterp = 1
+        pNumIndexes = (c_int*1)()
+        pIndexes = self.pLibTSG.tsgPythonGetGlobalPolynomialSpace(self.pGrid, iInterp, pNumIndexes)
+        iNumDimensions = self.getNumDimensions()
+        lliPolynomials = np.empty([pNumIndexes[0], iNumDimensions], np.int)
+        for iI in range(pNumIndexes[0]):
+            for iJ in range(iNumDimensions):
+                lliPolynomials[iI][iJ] = pIndexes[iI*iNumDimensions + iJ]
+        self.pLibTSG.tsgDeleteInts(pIndexes)
+        return lliPolynomials
 
     def enableAcceleration(self, sAccelerationType):
         '''
         enables the use of acceleration, for example GPU
-        must specify acceleration type and perhaps additional 
+        must specify acceleration type and perhaps additional
         parameters, if needed by the acceleration type
         currently, acceleration pertains primarily to batch evaluations
         of global interpolants
@@ -1565,7 +1571,7 @@ class TasmanianSparseGrid:
 
         sAccelerationType: string
 
-          'none' 
+          'none'
               fallback mode, relies on sequential implementation
               if compiled with Tasmanian_ENABLE_OPENMP this will use
               simple "omp parallel for" to take advantage of multicore
@@ -1576,12 +1582,15 @@ class TasmanianSparseGrid:
               requires Tasmanian_ENABLE_BLAS switched ON
               if enabled, this is the default mode
 
-          'gpu-fullmem'
-              uses CUDA cuBlas library for accelerated matrix 
-              multiplication, i.e., cublasDgemm
-              requires Tasmanian_ENABLE_CUDA
+          'gpu-fullmem' -> same as gpu_default
+          'gpu-default'
+              uses CUDA kernels, cuBlas and cuSparse libraries for
+              accelerated matrix operations, e.g., cublasDgemm
+              selects the first available gpu acceleration in the
+              following order:
+              1. gpu_cublas, 2. gpu_cuda
               this mode assumes that all data structures will fit in
-              GPU memory, mainly the matrix of loaded values, 
+              GPU memory, mainly the matrix of loaded values,
               the matrix of interpolation weights, and the result matrix
               total storage (in doubles) =
                   getNumOutputs() * getNumPoints()
@@ -1591,18 +1600,43 @@ class TasmanianSparseGrid:
               may have to split the batch into smaller units to work
               around memory constraints
 
+          'gpu_cublas'
+              uses the Nvidia cuBlas and cuSparse libraries
+              (see 'gpu-default' for memory constraints)
+
+          'gpu-cuda'
+              uses custom CUDA kernels, usually slower but more memory
+              convervarive than 'gpu-cublas'
+              (see 'gpu-default' for memory constraints)
         '''
         if (sAccelerationType not in lsTsgAccelTypes):
             raise TasmanianInputError("sAccelerationType", "ERROR: invalid acceleration type")
         if (sys.version_info.major == 3):
             sAccelerationType = bytes(sAccelerationType, encoding='utf8')
         self.pLibTSG.tsgEnableAcceleration(self.pGrid, c_char_p(sAccelerationType))
-        
+
     def getAccelerationType(self):
         '''
         returns the type of acceleration set by enableAcceleration
         '''
-        return lsTsgAccelTypes[self.pLibTSG.tsgGetAccelerationType(self.pGrid)]
+        sAccType = self.pLibTSG.tsgGetAccelerationType(self.pGrid)
+        if (sys.version_info.major == 3):
+            sAccType = str(sAccType, encoding='utf8')
+        return sAccType
+
+    def isAccelerationAvailable(self, sAccelerationType):
+        '''
+           returns True if the library has been compiled with support
+           for sAccelerationType.
+           Even if this returns False, you can use the type for
+           enableAcceleration, but the library will default to the next
+           available type (see the Manual)
+        '''
+        if (sAccelerationType not in lsTsgAccelTypes):
+            raise TasmanianInputError("sAccelerationType", "ERROR: invalid acceleration type")
+        if (sys.version_info.major == 3):
+            sAccelerationType = bytes(sAccelerationType, encoding='utf8')
+        return (self.pLibTSG.tsgIsAccelerationAvailable(sAccelerationType) != 0)
 
     def setGPUID(self, iGPUID):
         '''
@@ -1614,16 +1648,18 @@ class TasmanianSparseGrid:
         iGPUID can be changed at any time, however, this will cause
         some of the internal cache to be invalidated and it may lead
         to extraneous data movement
-        
+
         calling read or make***Grid will reset the selected GPU
-        
+
         defaults to 0
-        
+
         this doesn't do anything unless enableAcceleration is called
         using a "gpu-" acceleration type
         '''
+        if ((iGPUID < 0) or (iGPUID >= self.getNumGPUs())):
+            raise TasmanianInputError("iGPUID", "ERROR: invalid GPU ID number")
         self.pLibTSG.tsgSetGPUID(self.pGrid, iGPUID)
-        
+
     def getGPUID(self):
         '''
         returns the GPU ID set using setGPUID
@@ -1633,18 +1669,18 @@ class TasmanianSparseGrid:
     def getNumGPUs(self):
         '''
         returns the number of available GPUs according to cuda
-        
-        this is one of several functions designed to allow basic 
+
+        this is one of several functions designed to allow basic
         management of multi-gpu setup with only Tasmanian module
         '''
         return self.pLibTSG.tsgGetNumGPUs()
 
-    def getGPUmemory(self, iGPUID):
+    def getGPUMemory(self, iGPUID):
         '''
         returns the total memory (in MegaBytes, 1024**2 bytes) of the
         corresponding GPU
-        
-        this is one of several functions designed to allow basic 
+
+        this is one of several functions designed to allow basic
         management of multi-gpu setup with only Tasmanian module
         '''
         if ((iGPUID < 0) or (iGPUID >= self.getNumGPUs())):
@@ -1654,18 +1690,29 @@ class TasmanianSparseGrid:
     def getGPUname(self, iGPUID):
         '''
         return the cuda name ID of the corresponding GPU
-        
-        this is one of several functions designed to allow basic 
+
+        this is one of several functions designed to allow basic
         management of multi-gpu setup with only Tasmanian module
         '''
         if ((iGPUID < 0) or (iGPUID >= self.getNumGPUs())):
             raise TasmanianInputError("iGPUID", "ERROR: invalid GPU ID number")
-        # the pointer returned here has to be deleted
-        pName = self.pLibTSG.tsgGetGPUname(iGPUID)
+        pName = create_string_buffer(256)
+        iNumChars = np.array([0], np.int32)
+        self.pLibTSG.tsgGetGPUname(iGPUID, 256, pName, np.ctypeslib.as_ctypes(iNumChars))
+        iNumChars = iNumChars[0]
         if (sys.version_info.major == 3):
-            sName = str(pName, encoding='utf8')
+            #sName = str(pName, encoding='utf8')
+            S = [s for s in pName]
+            sName = ""
+            for iI in range(iNumChars):
+                sName += str(S[iI], encoding='utf8')
+            #print(len(sName))
         else:
-            sName = pName # create a copy to release the pointer
+            S = [s for s in pName]
+            sName = ""
+            for iI in range(iNumChars):
+                sName += S[iI]
+            #print(len(sName))
         return sName
 
     def printStats(self):
@@ -1679,6 +1726,19 @@ class TasmanianSparseGrid:
         '''
         plots the points in a 2D plot using matplotlib.pyplot
         applicable only for grids with iDimensions == 2
+
+        sStyle: string
+                the matplotlib.pyplot style
+
+        iNumFigure: positive integer
+                    used for the call to matplotlib.pyplot.figure()
+
+        iMarkerSize: positive integer
+                     the marker size for plotting the points
+
+        bShow: boolean
+               if True,  matplotlib.pyplot.show() is called
+               in blocking mode
 
         returns an instance of matplotlib.pyplot
 
@@ -1708,7 +1768,7 @@ class TasmanianSparseGrid:
             tsgPlot.show()
         return tsgPlot
 
-    def plotResponse2D(self, iOutput=0, iNumDim0=100, iNumDim1=100, sStyle="bo", iNumFigure=1, iMarkerSize=3, bShow=True):
+    def plotResponse2D(self, iOutput=0, iNumDim0=100, iNumDim1=100, iNumFigure=1, bShow=True):
         '''
         plots the response in a 2D plot using matplotlib.pyplot
         applicable only for grids with iDimensions == 2
@@ -1718,6 +1778,11 @@ class TasmanianSparseGrid:
                the points for the plot are selected on a dense grid with
                number of points iNumDim0 and iNumDim1 in dimensions
                0 and 1
+        iNumFigure: positive integer
+                    used for the call to matplotlib.pyplot.figure()
+        bShow: boolean
+               if True,  matplotlib.pyplot.show() is called
+               in blocking mode
 
         returns an instance of matplotlib.pyplot
 

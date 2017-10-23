@@ -52,20 +52,20 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     return false;
     #endif // _OPENMP
 }
-bool TasmanianSparseGrid::isCudaEnabled(){
-    #ifdef TASMANIAN_CUBLAS
-    return true;
-    #else
-    return false;
-    #endif // TASMANIAN_CUBLAS
-}
-bool TasmanianSparseGrid::isBLASEnabled(){
-    #ifdef TASMANIAN_CPU_BLAS
-    return true;
-    #else
-    return false;
-    #endif // TASMANIAN_CPU_BLAS
-}
+//bool TasmanianSparseGrid::isCudaEnabled(){
+//    #ifdef TASMANIAN_CUBLAS
+//    return true;
+//    #else
+//    return false;
+//    #endif // TASMANIAN_CUBLAS
+//}
+//bool TasmanianSparseGrid::isBLASEnabled(){
+//    #ifdef TASMANIAN_CPU_BLAS
+//    return true;
+//    #else
+//    return false;
+//    #endif // TASMANIAN_CPU_BLAS
+//}
 
 TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), domain_transform_a(0), domain_transform_b(0),
                                              conformal_asin_power(0), acceleration(accel_none), gpuID(0), logstream(0){
@@ -849,15 +849,14 @@ void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
     base->setHierarchicalCoefficients(c);
 }
 
-int* TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_indexes) const{
+void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const{
     if (global != 0){
-        return global->getPolynomialSpace(interpolation, num_indexes);
+        global->getPolynomialSpace(interpolation, num_indexes, poly);
     }else if (sequence != 0){
-        return sequence->getPolynomialSpace(interpolation, num_indexes);
+        sequence->getPolynomialSpace(interpolation, num_indexes, poly);
     }else{
         if (logstream != 0){ (*logstream) << "ERROR: getGlobalPolynomialSpace() called for a grid that is neither Global nor Sequence." << endl; }
         num_indexes = 0;
-        return 0;
     }
 }
 const double* TasmanianSparseGrid::getSurpluses() const{
@@ -1195,6 +1194,43 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
 TypeAcceleration TasmanianSparseGrid::getAccelerationType() const{
     return acceleration;
 }
+bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
+    switch (acc){
+        case accel_none:   return true;
+        #ifdef TASMANIAN_CPU_BLAS
+        case accel_cpu_blas:   return true;
+        #else
+        case accel_cpu_blas:   return false;
+        #endif // TASMANIAN_CPU_BLAS
+
+        #ifdef TASMANIAN_CUBLAS
+        case accel_gpu_cublas:   return true;
+        #else
+        case accel_gpu_cublas:   return false;
+        #endif // TASMANIAN_CUBLAS
+
+        #ifdef TASMANIAN_CUDA
+        case accel_gpu_cuda:   return true;
+        #else
+        case accel_gpu_cuda:   return false;
+        #endif // TASMANIAN_CUDA
+
+        #ifdef TASMANIAN_MAGMA
+        case accel_gpu_magma:   return true;
+        #else
+        case accel_gpu_magma:   return false;
+        #endif // TASMANIAN_CUDA
+
+        #if defined(TASMANIAN_CUDA) or defined(TASMANIAN_CUBLAS) or defined(TASMANIAN_MAGMA)
+        case accel_gpu_default:   return true;
+        case accel_gpu_fullmemory:   return true;
+        #else
+        case accel_gpu_default:   return false;
+        case accel_gpu_fullmemory:   return false;
+        #endif // TASMANIAN_GPU
+        default: return false;
+    }
+}
 
 void TasmanianSparseGrid::setGPUID(int new_gpuID){
     if (new_gpuID != gpuID){
@@ -1207,16 +1243,17 @@ void TasmanianSparseGrid::setGPUID(int new_gpuID){
 int TasmanianSparseGrid::getGPUID() const{ return gpuID; }
 
 int TasmanianSparseGrid::getNumGPUs(){
-    #ifdef TASMANIAN_CUBLAS
+    #if defined(TASMANIAN_CUDA) or defined(TASMANIAN_CUBLAS)
     int gpu_count = 0;
     cudaGetDeviceCount(&gpu_count);
     return gpu_count;
     #else
     return 0;
-    #endif // TASMANIAN_CUBLAS
+    #endif // TASMANIAN_CUDA || TASMANIAN_CUBLAS
 }
-int TasmanianSparseGrid::getGPUmemory(int gpu){
-    #ifdef TASMANIAN_CUBLAS
+
+#if defined(TASMANIAN_CUDA) or defined(TASMANIAN_CUBLAS)
+int TasmanianSparseGrid::getGPUMemory(int gpu){
     if (gpu < 0) return 0;
     int gpu_count = 0;
     cudaGetDeviceCount(&gpu_count);
@@ -1225,27 +1262,32 @@ int TasmanianSparseGrid::getGPUmemory(int gpu){
     cudaGetDeviceProperties(&prop, gpu);
     unsigned long int memB = prop.totalGlobalMem;
     return (int) (memB / 1048576);
-    #else
-    return 0;
-    #endif // TASMANIAN_CUBLAS
 }
-const char* TasmanianSparseGrid::getGPUname(int gpu){
-    // THIS IS VERY WRONG!
-    #ifdef TASMANIAN_CUBLAS
-    if (gpu < 0) return "";
+char* TasmanianSparseGrid::getGPUName(int gpu){
+    char *name = new char[1];
+    name[0] = '\0';
+    if (gpu < 0) return name;
     int gpu_count = 0;
     cudaGetDeviceCount(&gpu_count);
-    if (gpu >= gpu_count) return "";
+    if (gpu >= gpu_count) return name;
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, gpu);
-    char *name = new char[257];
-    for(int i=0; i<256; i++) name[i] = prop.name[i];
-    name[256] = '\0';
+
+    int c = 0; while(prop.name[c] != '\0') c++;
+    delete[] name;
+    name = new char[c+1];
+    for(int i=0; i<c; i++) name[i] = prop.name[i];
+    name[c] = '\0';
     return name;
-    #else
-    return "";
-    #endif // TASMANIAN_CUBLAS
 }
+#else
+int TasmanianSparseGrid::getGPUMemory(int){ return 0; }
+char* TasmanianSparseGrid::getGPUName(int){
+    char *name = new char[1];
+    name[0] = '\0';
+    return name;
+}
+#endif // TASMANIAN_CUDA || TASMANIAN_CUBLAS
 
 // ------------ C Interface for use with Python ctypes and potentially other C codes -------------- //
 extern "C" {
@@ -1258,8 +1300,8 @@ const char* tsgGetVersion(){ return TasmanianSparseGrid::getVersion(); }
 const char* tsgGetLicense(){ return TasmanianSparseGrid::getLicense(); }
 int tsgGetVersionMajor(){ return TasmanianSparseGrid::getVersionMajor(); }
 int tsgGetVersionMinor(){ return TasmanianSparseGrid::getVersionMinor(); }
-int tsgIsCudaEnabled(){ return (TasmanianSparseGrid::isCudaEnabled()) ? 1 : 0; }
-int tsgIsBLASEnabled(){ return (TasmanianSparseGrid::isBLASEnabled()) ? 1 : 0; }
+//int tsgIsCudaEnabled(){ return (TasmanianSparseGrid::isCudaEnabled()) ? 1 : 0; }
+//int tsgIsBLASEnabled(){ return (TasmanianSparseGrid::isBLASEnabled()) ? 1 : 0; }
 int tsgIsOpenMPEnabled(){ return (TasmanianSparseGrid::isOpenMPEnabled()) ? 1 : 0; }
 
 void tsgErrorLogCerr(void *grid){ ((TasmanianSparseGrid*) grid)->setErrorLog(&cerr); }
@@ -1347,12 +1389,12 @@ double* tsgGetLoadedPoints(void *grid){
     return x;
 }
 void tsgGetNeededPointsStatic(void *grid, double *x){ return ((TasmanianSparseGrid*) grid)->getNeededPoints(x); }
-double* tsgGetNeededPoints(void *grid){ 
+double* tsgGetNeededPoints(void *grid){
     if (((TasmanianSparseGrid*) grid)->getNumNeeded() == 0){
         return 0;
     }
     double *x = (double*) malloc(((TasmanianSparseGrid*) grid)->getNumNeeded() * ((TasmanianSparseGrid*) grid)->getNumDimensions() * sizeof(double));
-    ((TasmanianSparseGrid*) grid)->getNeededPoints(x); 
+    ((TasmanianSparseGrid*) grid)->getNeededPoints(x);
     return x;
 }
 void tsgGetPointsStatic(void *grid, double *x){ return ((TasmanianSparseGrid*) grid)->getPoints(x); }
@@ -1361,20 +1403,20 @@ double* tsgGetPoints(void *grid){
         return 0;
     }
     double *x = (double*) malloc(((TasmanianSparseGrid*) grid)->getNumPoints() * ((TasmanianSparseGrid*) grid)->getNumDimensions() * sizeof(double));
-    ((TasmanianSparseGrid*) grid)->getPoints(x); 
+    ((TasmanianSparseGrid*) grid)->getPoints(x);
     return x;
 }
 
 void tsgGetQuadratureWeightsStatic(void *grid, double *weights){ return ((TasmanianSparseGrid*) grid)->getQuadratureWeights(weights); }
 double* tsgGetQuadratureWeights(void *grid){
     double *w = (double*) malloc(((TasmanianSparseGrid*) grid)->getNumPoints() * sizeof(double));
-    ((TasmanianSparseGrid*) grid)->getQuadratureWeights(w); 
+    ((TasmanianSparseGrid*) grid)->getQuadratureWeights(w);
     return w;
 }
 void tsgGetInterpolationWeightsStatic(void *grid, const double *x, double *weights){ ((TasmanianSparseGrid*) grid)->getInterpolationWeights(x, weights); }
 double* tsgGetInterpolationWeights(void *grid, const double *x){
     double *w = (double*) malloc(((TasmanianSparseGrid*) grid)->getNumPoints() * sizeof(double));
-    ((TasmanianSparseGrid*) grid)->getInterpolationWeights(x, w); 
+    ((TasmanianSparseGrid*) grid)->getInterpolationWeights(x, w);
     return w;
 }
 
@@ -1483,8 +1525,8 @@ double* tsgBatchEvalHierarchicalFunctions(void *grid, const double *x, int num_x
         double *v = tsg->evalHierarchicalFunctions(&(x[i*iNumDim]));
         std::copy(v, v + iNumPoints, &(vals[i*iNumPoints]));
         delete[] v;
-   }
-        return vals;
+    }
+    return vals;
 }
 void tsgSetHierarchicalCoefficients(void *grid, const double *c){
     ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
@@ -1493,22 +1535,62 @@ const double* tsgGetSurpluses(void *grid){
     return ((TasmanianSparseGrid*) grid)->getSurpluses();
 }
 
-//int* tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes){
-//    int ni, *idx = ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation == 0), ni);
-//    *num_indexes = ni;
-//    return idx;
+// to be used in Python, requires internal copy of data and two calls (two merge sorts of all indexes)
+// can't figure out how to do this without calling separate delete pointer
+//int tsgGetGlobalPolynomialSpaceSize(void *grid, int interpolation){
+//    int *indx = 0, num_indexes;
+//    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), num_indexes, indx);
+//    if (indx != 0) delete[] indx;
+//    return num_indexes;
 //}
+//void tsgGetGlobalPolynomialSpaceStatic(void *grid, int interpolation, int *indexes){
+//    int *indx = 0, num_ind, num_dims = ((TasmanianSparseGrid*) grid)->getNumDimensions();
+//    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), num_ind, indx);
+//    if (indx != 0){
+//        for(int i=0; i<(num_ind * num_dims); i++) indexes[i] = indx[i];
+//        delete[] indx;
+//    }
+//}
+// to be called from Python only, must later call delete[] on the pointer
+int* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes){
+    int *indx = 0;;
+    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), *num_indexes, indx);
+    return indx;
+}
+// to be used in C, creates a C pointer (requires internal copy of data)
+void tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes, int **indexes){
+    int *indx = 0, num_ind, num_dims = ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), num_ind, indx);
+    *num_indexes = num_ind;
+    if (indx != 0){
+        *indexes = (int*) malloc(((*num_indexes) * num_dims) * sizeof(int));
+        for(int i=0; i<((*num_indexes) * num_dims); i++) *indexes[i] = indx[i];
+        delete[] indx;
+    }
+}
 
 void tsgPrintStats(void *grid){ ((TasmanianSparseGrid*) grid)->printStats(); }
 
 void tsgEnableAcceleration(void *grid, const char *accel){ ((TasmanianSparseGrid*) grid)->enableAcceleration(AccelerationMeta::getIOAccelerationString(accel)); }
-int tsgGetAccelerationType(void *grid){ return AccelerationMeta::getIOAccelerationInt(((TasmanianSparseGrid*) grid)->getAccelerationType()); } // int to acceleration type
+//int tsgGetAccelerationTypeInt(void *grid){ return AccelerationMeta::getIOAccelerationInt(((TasmanianSparseGrid*) grid)->getAccelerationType()); } // int to acceleration type
+const char* tsgGetAccelerationType(void *grid){ return AccelerationMeta::getIOAccelerationString(((TasmanianSparseGrid*) grid)->getAccelerationType()); }
 
 void tsgSetGPUID(void *grid, int gpuID){ ((TasmanianSparseGrid*) grid)->setGPUID(gpuID); }
 int tsgGetGPUID(void *grid){ return ((TasmanianSparseGrid*) grid)->getGPUID(); }
 int tsgGetNumGPUs(){ return TasmanianSparseGrid::getNumGPUs(); }
-int tsgGetGPUmemory(int gpu){ return TasmanianSparseGrid::getGPUmemory(gpu); }
-const char* tsgGetGPUname(int gpu){ return TasmanianSparseGrid::getGPUname(gpu); }
+int tsgGetGPUMemory(int gpu){ return TasmanianSparseGrid::getGPUMemory(gpu); }
+int tsgIsAccelerationAvailable(const char *accel){ return (TasmanianSparseGrid::isAccelerationAvailable(AccelerationMeta::getIOAccelerationString(accel))) ? 1 : 0; }
+void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual){
+    // gpu is the gpuID, num_buffer is the size of *buffer, num_actual returns the actual number of chars
+    char* name = TasmanianSparseGrid::getGPUName(gpu);
+    int c = 0;
+    while ((name[c] != '\0') && (c < num_buffer-1)){
+        buffer[c] = name[c];
+        c++;
+    }
+    buffer[c] = '\0';
+    *num_actual = c;
+}
 
 void tsgDeleteDoubles(double *p){ free(p); }
 void tsgDeleteInts(int *p){ delete[] p; }

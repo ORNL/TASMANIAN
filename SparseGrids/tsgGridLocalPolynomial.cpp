@@ -453,9 +453,8 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
         }
     }
 }
+#ifdef TASMANIAN_CUBLAS
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
-    //evaluateBatchBLAS(x, num_x, y);
-    #ifdef TASMANIAN_CUBLAS
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas, os);
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
@@ -470,10 +469,10 @@ void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, do
     delete[] svals;
     delete[] sindx;
     delete[] spntr;
-    #else
-    evaluateBatchCPUblas(x, num_x, y);
-    #endif // TASMANIAN_CUDA
 }
+#else
+void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *) const{ evaluateBatchCPUblas(x, num_x, y); }
+#endif // TASMANIAN_CUDA
 void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
     #ifdef TASMANIAN_CUDA
     int num_points = points->getNumIndexes();
@@ -1461,8 +1460,8 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[]){
     std::copy(c, c + num_ponits * num_outputs, surpluses);
 }
 
+#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
 void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const{
-    #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
     if (AccelerationMeta::isAccTypeFullMemoryGPU(acc)){
         if ((accel != 0) && (!accel->isCompatible(acc))){
             delete accel;
@@ -1474,8 +1473,10 @@ void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration acc, std::o
         double *gpu_values = gpu->getGPUValues();
         if (gpu_values == 0) gpu->loadGPUValues(points->getNumIndexes() * values->getNumOutputs(), surpluses);
     }
-    #endif // TASMANIAN_CUBLAS
 }
+#else
+void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration, std::ostream *) const{}
+#endif // TASMANIAN_CUBLAS
 
 void GridLocalPolynomial::clearAccelerationData(){
     if (accel != 0){

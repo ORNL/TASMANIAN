@@ -97,18 +97,20 @@ void AccelerationDataGPUFull::setLogStream(std::ostream *os){ logstream = os; }
 TypeAcceleration AccelerationDataGPUFull::getType() const{ return accel_gpu_fullmemory; }
 bool AccelerationDataGPUFull::isCompatible(TypeAcceleration acc) const{ return AccelerationMeta::isAccTypeFullMemoryGPU(acc); }
 
+#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
 void AccelerationDataGPUFull::loadGPUValues(int total_entries, const double *cpu_values){
-    #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
     cudaError_t cudaStat = cudaMalloc(((void**) &gpu_values), total_entries * sizeof(double));
     AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_values", logstream);
     cudaStat = cudaMemcpy(gpu_values, cpu_values, total_entries * sizeof(double), cudaMemcpyHostToDevice);
     AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_values", logstream);
-    #endif // TASMANIAN_CUBLAS or TASMANIAN_CUDA
 }
+#else
+void AccelerationDataGPUFull::loadGPUValues(int, const double *){}
+#endif // TASMANIAN_CUBLAS or TASMANIAN_CUDA
 double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }
 
+#ifdef TASMANIAN_CUBLAS
 void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
-    #ifdef TASMANIAN_CUBLAS
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
     double *gpu_weights = 0;
     cudaError_t cudaStat = cudaMalloc(((void**) &gpu_weights), num_points * sizeof(double));
@@ -132,11 +134,13 @@ void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const
     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_result in dgemv", logstream);)
     cudaStat = cudaFree(gpu_weights);
     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_weights in dgemv", logstream);)
-    #endif // TASMANIAN_CUBLAS
 }
+#else
+void AccelerationDataGPUFull::cublasDGEMV(int, int, const double *, double *){}
+#endif // TASMANIAN_CUBLAS
 
+#ifdef TASMANIAN_CUBLAS
 void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_points, int num_x, const double cpu_weights[], double *cpu_result){
-    #ifdef TASMANIAN_CUBLAS
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
     double *gpu_weights = 0;
     cudaError_t cudaStat = cudaMalloc(((void**) &gpu_weights), num_points * num_x * sizeof(double));
@@ -160,10 +164,8 @@ void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_points, int n
     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_result in dgemm", logstream);)
     cudaStat = cudaFree(gpu_weights);
     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_weights in dgemm", logstream);)
-    #endif // TASMANIAN_CUBLAS
 }
 void AccelerationDataGPUFull::cusparseDCRMM2(int num_points, int num_outputs, int num_x, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, double *cpu_result){
-    #ifdef TASMANIAN_CUBLAS
     makeCuSparseHandle(); // creates a handle only if one doesn't exist
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
     cudaError_t cudaStat;
@@ -226,8 +228,11 @@ void AccelerationDataGPUFull::cusparseDCRMM2(int num_points, int num_outputs, in
     cudaStat = cudaFree(gpu_vals);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_vals in DCRMM2", logstream);)
     cudaStat = cudaFree(gpu_indx);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_indx in DCRMM2", logstream);)
     cudaStat = cudaFree(gpu_pntr);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_pntr in DCRMM2", logstream);)
-    #endif // TASMANIAN_CUBLAS
 }
+#else
+void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double *){}
+void AccelerationDataGPUFull::cusparseDCRMM2(int, int, int, const int *, const int *, const double *, double *){}
+#endif // TASMANIAN_CUBLAS
 
 AccelerationMeta::AccelerationMeta(){}
 AccelerationMeta::~AccelerationMeta(){}
@@ -296,8 +301,8 @@ bool AccelerationMeta::isAccTypeGPU(TypeAcceleration accel){
     }
 }
 
+#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
 void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::ostream *os){
-    #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
     if (*((cudaError_t*) cudaStatus) != cudaSuccess){
         if (os != 0){
             if (*((cudaError_t*) cudaStatus) == cudaErrorMemoryAllocation){
@@ -311,10 +316,13 @@ void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::o
             }
         }
     }
-    #endif // TASMANIAN_CUBLAS or TASMANIAN_CUDA
 }
+#else
+void AccelerationMeta::cudaCheckError(void *, const char *, std::ostream *){}
+#endif // TASMANIAN_CUBLAS or TASMANIAN_CUDA
+
+#ifdef TASMANIAN_CUBLAS
 void AccelerationMeta::cublasCheckError(void *cublasStatus, const char *info, std::ostream *os){
-    #ifdef TASMANIAN_CUBLAS
     if (*((cublasStatus_t*) cublasStatus) != CUBLAS_STATUS_SUCCESS){
         if (os != 0){
             if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_EXECUTION_FAILED){
@@ -326,18 +334,18 @@ void AccelerationMeta::cublasCheckError(void *cublasStatus, const char *info, st
             }
         }
     }
-    #endif // TASMANIAN_CUBLAS
 }
 void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os){
-    #ifdef TASMANIAN_CUBLAS
     if (*((cusparseStatus_t*) cusparseStatus) != CUSPARSE_STATUS_SUCCESS){
         if (os != 0){
             (*os)  << "ERROR: cusparse failed at " << info << endl;
         }
     }
-    #endif // TASMANIAN_CUBLAS
 }
-
+#else
+void AccelerationMeta::cublasCheckError(void *, const char *, std::ostream *){}
+void AccelerationMeta::cusparseCheckError(void *, const char *, std::ostream *){}
+#endif // TASMANIAN_CUBLAS
 }
 
 #endif
