@@ -121,7 +121,8 @@ void tsgClearRefinement(void *grid);
 double* tsgEvalHierarchicalFunctions(void *grid, const double *x);
 double* tsgBatchEvalHierarchicalFunctions(void *grid, const double *x, int num_x);
 void tsgSetHierarchicalCoefficients(void *grid, const double *c);
-const double* tsgGetSurpluses(void *grid);
+const double* tsgGetHierarchicalCoefficients(void *grid);
+void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff);
 
 //int* tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes);
 

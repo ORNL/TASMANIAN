@@ -64,13 +64,15 @@ AccelerationDataGPUFull::~AccelerationDataGPUFull(){
     #endif // TASMANIAN_CUBLAS || TASMANIAN_CUDA
     #ifdef TASMANIAN_CUBLAS
     if (cublasHandle != 0){
-        cublasDestroy(*((cublasHandle_t*) cublasHandle));
-        delete ((cublasHandle_t*) cublasHandle);
+        cublasDestroy((cublasHandle_t) cublasHandle);
+        //cublasDestroy(*((cublasHandle_t*) cublasHandle));
+        //delete ((cublasHandle_t*) cublasHandle);
         cublasHandle = 0;
     }
     if (cusparseHandle != 0){
-        cusparseDestroy(*((cusparseHandle_t*) cusparseHandle));
-        delete ((cusparseHandle_t*) cusparseHandle);
+        cusparseDestroy((cusparseHandle_t) cusparseHandle);
+        //cusparseDestroy(*((cusparseHandle_t*) cusparseHandle));
+        //delete ((cusparseHandle_t*) cusparseHandle);
         cusparseHandle = 0;
     }
     #endif // TASMANIAN_CUBLAS
@@ -78,16 +80,22 @@ AccelerationDataGPUFull::~AccelerationDataGPUFull(){
 void AccelerationDataGPUFull::makeCuBlasHandle(){
     #ifdef TASMANIAN_CUBLAS
     if (cublasHandle == 0){
-        cublasHandle = (void*) new cublasHandle_t;
-        cublasCreate((cublasHandle_t*) cublasHandle);
+        cublasHandle_t cbh;
+        cublasCreate(&cbh);
+        cublasHandle = (void*) cbh;
+        //cublasHandle = (void*) new cublasHandle_t;
+        //cublasCreate((cublasHandle_t) cublasHandle);
     }
     #endif // TASMANIAN_CUBLAS
 }
 void AccelerationDataGPUFull::makeCuSparseHandle(){
     #ifdef TASMANIAN_CUBLAS
     if (cusparseHandle == 0){
-        cusparseHandle = (void*) new cusparseHandle_t;
-        cusparseCreate((cusparseHandle_t*) cusparseHandle);
+        cusparseHandle_t csh;
+        cusparseCreate(&csh);
+        cusparseHandle = (void*) csh;
+        //cusparseHandle = (void*) new cusparseHandle_t;
+        //cusparseCreate((cusparseHandle_t*) cusparseHandle);
     }
     #endif // TASMANIAN_CUBLAS
 }
@@ -124,7 +132,7 @@ void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const
 
     double alpha = 1.0, beta = 0.0;
     cublasStatus_t stat;
-    stat = cublasDgemv(*((cublasHandle_t*) cublasHandle), CUBLAS_OP_N, num_outputs, num_points, &alpha, gpu_values, num_outputs, gpu_weights, 1, &beta, gpu_result, 1);
+    stat = cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, num_outputs, num_points, &alpha, gpu_values, num_outputs, gpu_weights, 1, &beta, gpu_result, 1);
     AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in dgemv", logstream);
 
     cudaStat = cudaMemcpy(cpu_result, gpu_result, num_outputs * sizeof(double), cudaMemcpyDeviceToHost);
@@ -154,7 +162,7 @@ void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_points, int n
 
     double alpha = 1.0, beta = 0.0;
     cublasStatus_t stat;
-    stat = cublasDgemm(*((cublasHandle_t*) cublasHandle), CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points, &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
+    stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points, &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
     AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in dgemm", logstream);
 
     cudaStat = cudaMemcpy(cpu_result, gpu_result, num_outputs * num_x * sizeof(double), cudaMemcpyDeviceToHost);
@@ -206,7 +214,7 @@ void AccelerationDataGPUFull::cusparseDCRMM2(int num_points, int num_outputs, in
     cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
     //mat_desc->MatrixType = CUSPARSE_MATRIX_TYPE_GENERAL;
 
-    stat = cusparseDcsrmm2(*((cusparseHandle_t*) cusparseHandle),
+    stat = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
             CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, num_x, num_outputs, num_points, num_nz,
             &alpha, mat_desc, gpu_vals, gpu_pntr, gpu_indx, gpu_values, num_outputs, &beta, gpu_result_t, num_x);
     AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrmm2 in DCRMM2", logstream);
@@ -215,7 +223,7 @@ void AccelerationDataGPUFull::cusparseDCRMM2(int num_points, int num_outputs, in
 
     // transpose the result! (incomplete sparse standard)
     cublasStatus_t bstat;
-    bstat = cublasDgeam(*((cublasHandle_t*) cublasHandle),
+    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
                         CUBLAS_OP_T, CUBLAS_OP_T, num_outputs, num_x,
                         &alpha, gpu_result_t, num_x, &beta, gpu_result_t, num_x, gpu_result, num_outputs);
     AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam in DCRMM2", logstream);
@@ -229,10 +237,95 @@ void AccelerationDataGPUFull::cusparseDCRMM2(int num_points, int num_outputs, in
     cudaStat = cudaFree(gpu_indx);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_indx in DCRMM2", logstream);)
     cudaStat = cudaFree(gpu_pntr);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_pntr in DCRMM2", logstream);)
 }
+void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses){
+    makeCuSparseHandle(); // creates a handle only if one doesn't exist
+    makeCuBlasHandle(); // creates a handle only if one doesn't exist
+    cudaError_t cudaStat;
+    int *gpu_pntr, *gpu_indx;
+    double *gpu_vals;
+    double *gpu_a, *gpu_b;
+    double alpha = 1.0, beta = 0.0;
+
+    int num_nz = cpu_pntr[num_points];
+
+    cudaStat = cudaMalloc(((void**) &gpu_pntr), (num_points+1) * sizeof(int));
+    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_pntr in DCRSMM", logstream);)
+    cudaStat = cudaMemcpy(gpu_pntr, cpu_pntr, (num_points+1) * sizeof(int), cudaMemcpyHostToDevice);
+    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_pntr in DCRSMM", logstream);)
+
+    cudaStat = cudaMalloc(((void**) &gpu_indx), num_nz * sizeof(int));
+    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_indx in DCRSMM", logstream);)
+    cudaStat = cudaMemcpy(gpu_indx, cpu_indx, num_nz * sizeof(int), cudaMemcpyHostToDevice);
+    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_indx in DCRSMM", logstream);)
+
+    cudaStat = cudaMalloc(((void**) &gpu_vals), num_nz * sizeof(double));
+    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_vals in DCRSMM", logstream);)
+    cudaStat = cudaMemcpy(gpu_vals, cpu_vals, num_nz * sizeof(double), cudaMemcpyHostToDevice);
+    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_vals in DCRSMM", logstream);)
+
+    cudaStat = cudaMalloc(((void**) &gpu_a), num_points * num_outputs * sizeof(double));
+    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_result in DCRSMM", logstream);)
+    cudaStat = cudaMalloc(((void**) &gpu_b), num_points * num_outputs * sizeof(double));
+    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_result_t in DCRSMM", logstream);)
+
+    // Load values
+    cudaStat = cudaMemcpy(gpu_a, values, num_points * num_outputs * sizeof(double), cudaMemcpyHostToDevice); // gpu_a = values
+
+    // Transpose values
+    cublasStatus_t bstat;
+    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
+                        CUBLAS_OP_T, CUBLAS_OP_T, num_points, num_outputs,
+                        &alpha, gpu_a, num_outputs, &beta, gpu_a, num_outputs, gpu_b, num_points); // gpu_b = gpu_a^T = values^T
+    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam first in DCRSMM", logstream);
+
+    // Set matrix properties
+    cusparseStatus_t stat;
+    cusparseMatDescr_t mat_desc;
+    stat = cusparseCreateMatDescr(&mat_desc);
+    _IF_DEBUG_MACRO(AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRSMM", logstream);)
+    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_TRIANGULAR);
+    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
+    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_UNIT);
+    cusparseSetMatFillMode(mat_desc, CUSPARSE_FILL_MODE_LOWER);
+
+    // Analyze matrix
+    cusparseSolveAnalysisInfo_t info;
+    cusparseCreateSolveAnalysisInfo(&info);
+    stat = cusparseDcsrsm_analysis((cusparseHandle_t) cusparseHandle,
+                                   CUSPARSE_OPERATION_NON_TRANSPOSE, num_points, num_nz,
+                                   mat_desc, gpu_vals, gpu_pntr, gpu_indx, info);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrsm_analysis in DCRSMM", logstream);
+
+    // Solve
+    stat = cusparseDcsrsm_solve((cusparseHandle_t) cusparseHandle,
+                                 CUSPARSE_OPERATION_NON_TRANSPOSE, num_points, num_outputs,
+                                 &alpha, mat_desc, gpu_vals, gpu_pntr, gpu_indx, info,
+                                 gpu_b, num_points, gpu_a, num_points);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrsm_solve in DCRSMM", logstream); // gpu_a = S * gpu_b = s^{-T} values^T
+
+    // transpose back
+    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
+                        CUBLAS_OP_T, CUBLAS_OP_T, num_outputs, num_points,
+                        &alpha, gpu_a, num_points, &beta, gpu_a, num_points, gpu_b, num_outputs); // gpu_b = gpu_a^T = values * s^{-1}
+    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam second in DCRSMM", logstream);
+
+    cudaStat = cudaMemcpy(surpluses, gpu_b, num_points * num_outputs * sizeof(double), cudaMemcpyDeviceToHost); // gpu_a = values
+
+    cusparseDestroyMatDescr(mat_desc);
+
+    cudaStat = cudaFree(gpu_a);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_a in cusparseDCRSMM", logstream);)
+    cudaStat = cudaFree(gpu_b);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_b in cusparseDCRSMM", logstream);)
+    cudaStat = cudaFree(gpu_vals);  _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_vals in cusparseDCRSMM", logstream);)
+    cudaStat = cudaFree(gpu_indx);  _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_indx in cusparseDCRSMM", logstream);)
+    cudaStat = cudaFree(gpu_pntr);  _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_pntr in cusparseDCRSMM", logstream);)
+}
 #else
 void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double *){}
 void AccelerationDataGPUFull::cusparseDCRMM2(int, int, int, const int *, const int *, const double *, double *){}
+void AccelerationDataGPUFull::cusparseDCRSMM(int, int, const int*, const int*, const double*, const double*, double*){}
 #endif // TASMANIAN_CUBLAS
+
+
 
 AccelerationMeta::AccelerationMeta(){}
 AccelerationMeta::~AccelerationMeta(){}

@@ -303,7 +303,8 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
     if (pwpoly->values != 0) values = new StorageSet(pwpoly->values);
 
     if ((points != 0) && (num_outputs > 0)){ // points are loaded
-        recomputeSurpluses();
+        surpluses = new double[points->getNumIndexes() * num_outputs];
+        std::copy(pwpoly->surpluses, pwpoly->surpluses + points->getNumIndexes() * num_outputs, surpluses);
     }
 }
 
@@ -445,13 +446,28 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
     buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
 
     // how do you optimize sparse BLAS? This is slower
+//    for(int i=0; i<num_x; i++){
+//        double *this_y = &(y[i*num_outputs]);
+//        std::fill(this_y, this_y + num_outputs, 0.0);
+//        for(int j=spntr[i]; j<spntr[i+1]; j++){
+//            TasBLAS::daxpy(num_outputs, svals[j], &(surpluses[sindx[j] * num_outputs]), this_y);
+//        }
+//    }
+
+    #pragma omp parallel for
     for(int i=0; i<num_x; i++){
         double *this_y = &(y[i*num_outputs]);
-        std::fill(this_y, this_y + num_outputs, 0.0);
-        for(int j=spntr[i]; j<spntr[i+1]; j++){
-            TasBLAS::daxpy(num_outputs, svals[j], &(surpluses[sindx[j] * num_outputs]), this_y);
+        for(int s=0; s<num_outputs; s+=64){
+            int s_end = s + 64;
+            if (s_end >= num_outputs) s_end = num_outputs;
+            for(int k=s; k<s_end; k++) this_y[k] = 0.0;
+            for(int j=spntr[i]; j<spntr[i+1]; j++){
+                double v = svals[j];
+                for(int k=s; k<s_end; k++) this_y[k] += v * surpluses[sindx[j] * num_outputs + k];
+            }
         }
     }
+
 }
 #ifdef TASMANIAN_CUBLAS
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
@@ -475,7 +491,7 @@ void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, do
 #endif // TASMANIAN_CUDA
 void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
     #ifdef TASMANIAN_CUDA
-    int num_points = points->getNumIndexes();
+    //int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cuda, os);
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
@@ -483,7 +499,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
     double *svals;
     buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
 
-    TasCUDA::d3gecs(num_outputs, num_x, num_points, gpu_acc->getGPUValues(), spntr, sindx, svals, y, &cerr);
+    TasCUDA::d3gecs(num_outputs, num_x, gpu_acc->getGPUValues(), spntr, sindx, svals, y, &cerr);
     //gpu_acc->cusparseDCRMM2(num_points, num_outputs, num_x, spntr, sindx, svals, y);
 
     delete[] svals;
@@ -497,7 +513,7 @@ void GridLocalPolynomial::evaluateBatchGPUmagma(const double x[], int num_x, dou
     evaluateBatchGPUcublas(x, num_x, y, os);
 }
 
-void GridLocalPolynomial::loadNeededPoints(const double *vals){
+void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration acc){
     if (points == 0){
         values->setValues(vals);
         points = needed;
@@ -510,7 +526,13 @@ void GridLocalPolynomial::loadNeededPoints(const double *vals){
         delete needed; needed = 0;
         buildTree();
     }
-    recomputeSurpluses();
+    if (acc == accel_gpu_cublas){
+        recomputeSurplusesGPUcublas();
+    }else if (acc == accel_gpu_cuda){
+        recomputeSurplusesGPUcuda();
+    }else{
+        recomputeSurpluses();
+    }
 }
 double* GridLocalPolynomial::getInterpolationWeights(const double x[]) const{
     IndexSet *work = (points == 0) ? needed : points;
@@ -642,21 +664,127 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     }
 }
 
-void GridLocalPolynomial::recomputeSurpluses(){
-    int num_ponits = points->getNumIndexes();
+void GridLocalPolynomial::recomputeSurplusesGPUcublas(){
+#ifdef TASMANIAN_CUBLAS
+    int num_points = points->getNumIndexes();
     if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[num_ponits * num_outputs];
+    surpluses = new double[num_points * num_outputs];
 
-    if (num_outputs > 2){
-        #pragma omp parallel for schedule(static)
-        for(int i=0; i<num_ponits; i++){
-            const double* v = values->getValues(i);
-            std::copy(v, v + num_outputs, &(surpluses[i*num_outputs]));
-        }
-    }else{
-        const double* v = values->getValues(0);
-        std::copy(v, v + num_ponits * num_outputs, surpluses);
+    if ((accel != 0) && (!accel->isCompatible(accel_gpu_cublas))){
+        delete accel;
+        accel = 0;
     }
+    if (accel == 0){ accel = (BaseAccelerationData*) (new AccelerationDataGPUFull()); }
+    AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
+    gpu->setLogStream(&cerr); // debug mode
+
+    double *x = getPoints();
+
+    int *sindx, *spntr;
+    double *svals;
+    buildSpareBasisMatrix(x, num_points, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
+    delete[] x;
+
+    int *rindx, *rpntr;
+    double *rvals;
+    int c = 0;
+    for(int i=0; i<spntr[num_points]; i++) if (svals[i] != 0.0) c++;
+    rindx = new int[c];
+    rvals = new double[c];
+    rpntr = new int[num_points + 1];
+    rpntr[0] = 0;
+    c = 0;
+    for(int i=0; i<num_points; i++){
+        for(int j=spntr[i]; j<spntr[i+1]; j++){
+            if ((svals[j] != 0.0) && (sindx[j] != i)){
+            //if (svals[j] != 0.0){
+                rindx[c] = sindx[j];
+                rvals[c] = svals[j];
+                c++;
+            }
+        }
+        rindx[c] = i;
+        rvals[c] = 1.0;
+        c++;
+        rpntr[i+1] = c;
+    }
+
+    gpu->cusparseDCRSMM(num_points, num_outputs, rpntr, rindx, rvals, values->getValues(0), surpluses);
+
+    delete[] sindx;
+    delete[] svals;
+    delete[] spntr;
+    delete[] rindx;
+    delete[] rvals;
+    delete[] rpntr;
+#else
+    recomputeSurpluses();
+#endif // TASMANIAN_CUBLAS
+}
+void GridLocalPolynomial::recomputeSurplusesGPUcuda(){
+#ifdef TASMANIAN_CUDA
+    int num_points = points->getNumIndexes();
+    if (surpluses != 0) delete[] surpluses;
+    surpluses = new double[num_points * num_outputs];
+
+    int *level = new int[num_points];
+    #pragma omp parallel for schedule(static)
+    for(int i=0; i<num_points; i++){
+        const int *p = points->getIndex(i);
+        level[i] = rule->getLevel(p[0]);
+        for(int j=1; j<num_dimensions; j++){
+            level[i] += rule->getLevel(p[j]);
+        }
+    }
+
+    double *x = getPoints();
+
+    int *sindx, *spntr;
+    double *svals;
+    buildSpareBasisMatrix(x, num_points, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
+    delete[] x;
+
+    int *rindx, *rpntr;
+    double *rvals;
+    int c = 0;
+    for(int i=0; i<spntr[num_points]; i++) if (svals[i] != 0.0) c++;
+    rindx = new int[c];
+    rvals = new double[c];
+    rpntr = new int[num_points + 1];
+    rpntr[0] = 0;
+    c = 0;
+    for(int i=0; i<num_points; i++){
+        for(int j=spntr[i]; j<spntr[i+1]; j++){
+            if ((svals[j] != 0.0) && (sindx[j] != i)){
+                rindx[c] = sindx[j];
+                rvals[c] = svals[j];
+                c++;
+            }
+        }
+        rpntr[i+1] = c;
+    }
+
+    TasCUDA::d3gecss(num_outputs, num_points, level, top_level, rpntr, rindx, rvals, values->getValues(0), surpluses, &cerr);
+
+    delete[] sindx;
+    delete[] svals;
+    delete[] spntr;
+    delete[] rindx;
+    delete[] rvals;
+    delete[] rpntr;
+    delete[] level;
+#else
+    recomputeSurpluses();
+#endif // TASMANIAN_CUDA
+}
+
+void GridLocalPolynomial::recomputeSurpluses(){
+    int num_points = points->getNumIndexes();
+    if (surpluses != 0) delete[] surpluses;
+    surpluses = new double[num_points * num_outputs];
+
+    const double* v = values->getValues(0);
+    std::copy(v, v + num_points * num_outputs, surpluses);
 
     IndexManipulator IM(num_dimensions);
     int *dagUp = IM.computeDAGupLocal(points, rule);
@@ -664,9 +792,9 @@ void GridLocalPolynomial::recomputeSurpluses(){
     //int max_parents = (rule->isSemiLocal()) ? 2*num_dimensions : num_dimensions;
     int max_parents = rule->getMaxNumParents() * num_dimensions;
 
-    int *level = new int[num_ponits];
+    int *level = new int[num_points];
     #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_ponits; i++){
+    for(int i=0; i<num_points; i++){
         const int *p = points->getIndex(i);
         level[i] = rule->getLevel(p[0]);
         for(int j=1; j<num_dimensions; j++){
@@ -676,7 +804,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
 
     for(int l=1; l<=top_level; l++){
         #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<num_ponits; i++){
+        for(int i=0; i<num_points; i++){
             if (level[i] == l){
                 const int* p = points->getIndex(i);
                 double *x = new double[num_dimensions];
@@ -684,8 +812,8 @@ void GridLocalPolynomial::recomputeSurpluses(){
 
                 int *monkey_count = new int[top_level + 1];
                 int *monkey_tail = new int[top_level + 1];
-                bool *used = new bool[num_ponits];
-                std::fill(used, used + num_ponits, false);
+                bool *used = new bool[num_points];
+                std::fill(used, used + num_points, false);
 
                 int current = 0;
 
@@ -722,7 +850,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
 
     delete[] dagUp;
     delete[] level;
-    //for(int i=0; i<num_ponits; i++){ cout << surpluses[i] << "  " << points->getIndex(i)[0] << "   " << points->getIndex(i)[1] << endl; }
+    //for(int i=0; i<num_points; i++){ cout << surpluses[i] << "  " << points->getIndex(i)[0] << "   " << points->getIndex(i)[1] << "   " << values->getValues(0)[i] << endl; }
 }
 
 double GridLocalPolynomial::evalBasisRaw(const int point[], const double x[]) const{

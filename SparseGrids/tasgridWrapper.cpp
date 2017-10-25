@@ -696,7 +696,7 @@ bool TasgridWrapper::getSummary(){
     return true;
 }
 bool TasgridWrapper::getSurpluses(){
-    const double *surp = grid->getSurpluses();
+    const double *surp = grid->getHierarchicalCoefficients();
     int num_p = grid->getNumLoaded();
     int num_o = grid->getNumOutputs();
     if (outfilename != 0){

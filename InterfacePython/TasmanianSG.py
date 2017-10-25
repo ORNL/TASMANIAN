@@ -150,8 +150,8 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgIsAccelerationAvailable.restype = c_int
         self.pLibTSG.tsgGetGPUID.restype = c_int
         self.pLibTSG.tsgGetNumGPUs.restype = c_int
-        self.pLibTSG.tsgGetGPUmemory.restype = c_int
-        self.pLibTSG.tsgGetGPUname.restype = c_char_p
+        self.pLibTSG.tsgGetGPUMemory.restype = c_int
+        self.pLibTSG.tsgGetGPUName.restype = c_char_p
 
         self.pLibTSG.tsgDestructTasmanianSparseGrid.argtypes = [c_void_p]
         self.pLibTSG.tsgCopyGrid.argtypes = [c_void_p, c_void_p]
@@ -226,8 +226,8 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgIsAccelerationAvailable.argtypes = [c_char_p]
         self.pLibTSG.tsgSetGPUID.argtypes = [c_void_p, c_int]
         self.pLibTSG.tsgGetGPUID.argtypes = [c_void_p]
-        self.pLibTSG.tsgGetGPUmemory.argtypes = [c_int]
-        self.pLibTSG.tsgGetGPUname.argtypes = [c_int, c_int, c_char_p, POINTER(c_int)] # not really const here
+        self.pLibTSG.tsgGetGPUMemory.argtypes = [c_int]
+        self.pLibTSG.tsgGetGPUName.argtypes = [c_int, c_int, c_char_p, POINTER(c_int)] # not really const here
 
         self.pLibTSG.tsgDeleteDoubles.argtypes = [POINTER(c_double)]
         self.pLibTSG.tsgDeleteInts.argtypes = [POINTER(c_int)]
@@ -1685,9 +1685,9 @@ class TasmanianSparseGrid:
         '''
         if ((iGPUID < 0) or (iGPUID >= self.getNumGPUs())):
             raise TasmanianInputError("iGPUID", "ERROR: invalid GPU ID number")
-        return self.pLibTSG.tsgGetGPUmemory(iGPUID)
+        return self.pLibTSG.tsgGetGPUMemory(iGPUID)
 
-    def getGPUname(self, iGPUID):
+    def getGPUName(self, iGPUID):
         '''
         return the cuda name ID of the corresponding GPU
 
@@ -1698,7 +1698,7 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("iGPUID", "ERROR: invalid GPU ID number")
         pName = create_string_buffer(256)
         iNumChars = np.array([0], np.int32)
-        self.pLibTSG.tsgGetGPUname(iGPUID, 256, pName, np.ctypeslib.as_ctypes(iNumChars))
+        self.pLibTSG.tsgGetGPUName(iGPUID, 256, pName, np.ctypeslib.as_ctypes(iNumChars))
         iNumChars = iNumChars[0]
         if (sys.version_info.major == 3):
             #sName = str(pName, encoding='utf8')

@@ -87,6 +87,8 @@ public:
     bool testAllDomain() const;
     bool testAllAcceleration() const;
 
+    void benchmark(int argc, const char **argv);
+
     void debugTest(); // call this with -test debug
     void debugTestII(); // call this with -test debug
 

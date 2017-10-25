@@ -355,7 +355,7 @@ void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weig
     }
 }
 
-void TasmanianSparseGrid::loadNeededPoints(const double *vals){ base->loadNeededPoints(vals); }
+void TasmanianSparseGrid::loadNeededPoints(const double *vals){ base->loadNeededPoints(vals, acceleration); }
 
 void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
     const double *x_effective = x;
@@ -859,15 +859,16 @@ void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_
         num_indexes = 0;
     }
 }
-const double* TasmanianSparseGrid::getSurpluses() const{
+const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
     if (pwpoly != 0){
         return pwpoly->getSurpluses();
     }else if (wavelet != 0){
         return wavelet->getSurpluses();
     }else if (sequence != 0){
         return sequence->getSurpluses();
+    }else if (global != 0){
+        return global->getLoadedValues();
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: getSurplusses() called for a grid that is neither local polynomial nor wavelet nor sequence." << endl; }
         return 0;
     }
 }
@@ -1442,18 +1443,18 @@ double* tsgBatchGetInterpolationWeights(void *grid, const double *x, int num_x){
     return weights;
 }
 
-int tsgIsGlobal(void *grid){ return (((TasmanianSparseGrid*) grid)->isGlobal() ? 0 : 1); }
-int tsgIsSequence(void *grid){ return (((TasmanianSparseGrid*) grid)->isSequence() ? 0 : 1); }
-int tsgIsLocalPolynomial(void *grid){ return (((TasmanianSparseGrid*) grid)->isLocalPolynomial() ? 0 : 1); }
-int tsgIsWavelet(void *grid){ return (((TasmanianSparseGrid*) grid)->isWavelet() ? 0 : 1); }
+int tsgIsGlobal(void *grid){ return (((TasmanianSparseGrid*) grid)->isGlobal() ? 1 : 0); }
+int tsgIsSequence(void *grid){ return (((TasmanianSparseGrid*) grid)->isSequence() ? 1 : 0); }
+int tsgIsLocalPolynomial(void *grid){ return (((TasmanianSparseGrid*) grid)->isLocalPolynomial() ? 1 : 0); }
+int tsgIsWavelet(void *grid){ return (((TasmanianSparseGrid*) grid)->isWavelet() ? 1 : 0); }
 
 void tsgSetDomainTransform(void *grid, const double a[], const double b[]){ ((TasmanianSparseGrid*) grid)->setDomainTransform(a, b); }
-int tsgIsSetDomainTransfrom(void *grid){ return (((TasmanianSparseGrid*) grid)->isSetDomainTransfrom() ? 0 : 1); }
+int tsgIsSetDomainTransfrom(void *grid){ return (((TasmanianSparseGrid*) grid)->isSetDomainTransfrom() ? 1 : 0); }
 void tsgClearDomainTransform(void *grid){ ((TasmanianSparseGrid*) grid)->clearDomainTransform(); }
 void tsgGetDomainTransform(void *grid, double a[], double b[]){ ((TasmanianSparseGrid*) grid)->getDomainTransform(a, b); }
 
 void tsgSetConformalTransformASIN(void *grid, const int truncation[]){ ((TasmanianSparseGrid*) grid)->setConformalTransformASIN(truncation); }
-int tsgIsSetConformalTransformASIN(void *grid){ return (((TasmanianSparseGrid*) grid)->isSetConformalTransformASIN()) ? 0 : 1; }
+int tsgIsSetConformalTransformASIN(void *grid){ return (((TasmanianSparseGrid*) grid)->isSetConformalTransformASIN()) ? 1 : 0; }
 void tsgClearConformalTransform(void *grid){ ((TasmanianSparseGrid*) grid)->clearConformalTransform(); }
 void tsgGetConformalTransformASIN(void *grid, int truncation[]){ ((TasmanianSparseGrid*) grid)->getConformalTransformASIN(truncation); }
 
@@ -1531,8 +1532,15 @@ double* tsgBatchEvalHierarchicalFunctions(void *grid, const double *x, int num_x
 void tsgSetHierarchicalCoefficients(void *grid, const double *c){
     ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
 }
-const double* tsgGetSurpluses(void *grid){
-    return ((TasmanianSparseGrid*) grid)->getSurpluses();
+const double* tsgGetHierarchicalCoefficients(void *grid){
+    return ((TasmanianSparseGrid*) grid)->getHierarchicalCoefficients();
+}
+void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff){
+    int num_points = ((TasmanianSparseGrid*) grid)->getNumPoints();
+    int num_outputs = ((TasmanianSparseGrid*) grid)->getNumOutputs();
+    if ((num_points == 0) || (num_outputs == 0)) return;
+    const double *surp = ((TasmanianSparseGrid*) grid)->getHierarchicalCoefficients();
+    std::copy(surp, surp + num_outputs * num_points, coeff);
 }
 
 // to be used in Python, requires internal copy of data and two calls (two merge sorts of all indexes)

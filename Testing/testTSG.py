@@ -157,9 +157,9 @@ class TestTasmanian(unittest.TestCase):
         print("        Available GPUs:")
         if (grid.getNumGPUs() > 0):
             for iGPU in range(grid.getNumGPUs()):
-                sName = grid.getGPUname(iGPU)
+                sName = grid.getGPUName(iGPU)
                 sMem = grid.getGPUMemory(iGPU)
-                print("     {0:2d}: {1:1s} with{2:6d}MB RAM".format(iGPU, sName, sMem))
+                print("     {0:2d}: {1:20s} with{2:6d}MB RAM".format(iGPU, sName, sMem))
         else:
             print("            none")
 
@@ -483,9 +483,9 @@ class TestTasmanian(unittest.TestCase):
                    ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUMemory(-1);", "iGPUID"],
                    ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUMemory(1000000);", "iGPUID"],
                    ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUMemory(grid1.getNumGPUs());", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUname(-1);", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUname(1000000);", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUname(grid1.getNumGPUs());", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUName(-1);", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUName(1000000);", "iGPUID"],
+                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUName(grid1.getNumGPUs());", "iGPUID"],
                    ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.setGPUID(-1);", "iGPUID"],
                    ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.setGPUID(1000000);", "iGPUID"],
                    ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.setGPUID(grid1.getNumGPUs());", "iGPUID"],]
@@ -807,8 +807,7 @@ class TestTasmanian(unittest.TestCase):
         grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja')
         aP = grid.getGlobalPolynomialSpace(True)
         np.testing.assert_equal(aP, aA, "poly space mismatch", True)
-
-        #aA = np.array([[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 2], [2, 3], [3, 0], [3, 1], [3, 2], [3, 3], [4, 0], [4, 1], [5, 0], [5, 1]])
+        
         grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja')
         aP = grid.getGlobalPolynomialSpace(False)
         np.testing.assert_equal(aP, aA, "poly space mismatch", True)
@@ -849,10 +848,12 @@ class TestTasmanian(unittest.TestCase):
         if (grid.getNumGPUs() > 1):
             grid.setGPUID(1)
             self.assertTrue((grid.getGPUID() == 1), "did not set to gpu 1")
+            sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
 
         if (grid.getNumGPUs() > 0):
             grid.setGPUID(0)
             self.assertTrue((grid.getGPUID() == 0), "did not set to gpu 0")
+            sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
 
         # this gives us 5% coverage
         if (TasmanianSG.bTsgPlotting):

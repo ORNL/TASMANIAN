@@ -615,7 +615,7 @@ void GridGlobal::getInterpolationWeights(const double x[], double weights[]) con
     delete lcache;
 }
 
-void GridGlobal::loadNeededPoints(const double *vals){
+void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
     if (points == 0){
         values->setValues(vals);
         points = needed;
@@ -649,6 +649,10 @@ void GridGlobal::loadNeededPoints(const double *vals){
             }
         }
     }
+}
+const double* GridGlobal::getLoadedValues() const{
+    if (getNumLoaded() == 0) return 0;
+    return values->getValues(0);
 }
 
 void GridGlobal::evaluate(const double x[], double y[]) const{

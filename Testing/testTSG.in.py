@@ -277,6 +277,10 @@ class TestTasmanian(unittest.TestCase):
             gridA.write("testSave", bUseBinaryFormat = True)
             gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
+            
+            gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.copyGrid(gridA)
+            self.compareGrids(gridA, gridB)
 
         # test I/O for Local Wavelet Grids
         # iDimension, iOutputs, iDepth, sType, sRule, useTransform, loadFunciton
@@ -347,9 +351,11 @@ class TestTasmanian(unittest.TestCase):
                    'grid.makeLocalPolynomialGrid(2, 1, 4, 4, "semi-localp")',
                    'grid.makeWaveletGrid(2, 1, 3, 1)',
                    'grid.makeWaveletGrid(2, 1, 3, 3)' ]
+        lTests = ['grid.makeLocalPolynomialGrid(2, 3, 4, 1, "localp")']
 
         iNumGPUs = grid.getNumGPUs()
         lsAccelTypes = ["none", "cpu-blas", "gpu-cuda", "gpu-cublas"]
+        #lsAccelTypes = ["gpu-cuda"]
 
         for sTest in lTests:
             for iI in range(2):
@@ -371,8 +377,13 @@ class TestTasmanian(unittest.TestCase):
 
                     self.loadExpN2(grid)
 
-                    aRegular = np.array([ grid.evaluateThreadSafe(aTestPoints[i,:]) for i in range(aTestPoints.shape[0]) ])
+                    aRegular = np.array([grid.evaluateThreadSafe(aTestPoints[i,:]) for i in range(aTestPoints.shape[0]) ])
                     aBatched = grid.evaluateBatch(aTestPoints)
+                    #print(grid.evaluateThreadSafe(aTestPoints[0,:]))
+                    #print("Regular")
+                    #print(aRegular)
+                    #print("Batched")
+                    #print(aBatched)
                     np.testing.assert_almost_equal(aRegular, aBatched, 14, "Batch evaluation test not equal: {0:1s}, acceleration: {1:1s}, gpu: {2:1d}".format(sTest, sAcc, iGPU), True)
 
                     aFast = np.array([ grid.evaluate(aTestPoints[i,:]) for i in range(iFastEvalSubtest) ])
@@ -431,9 +442,11 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([5,2]))", "llfVals"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2])); grid.loadNeededPoints(np.ones([5,2]))", "llfVals"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.evaluate(np.zeros([1,2]))", "evaluate"],
-                   ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.evaluateThreadSafe(np.zeros([1,2]))", "evaluate"],
+                   ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.evaluateThreadSafe(np.zeros(np.array([1,2])))", "evaluateThreadSafe"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2])); grid.evaluate(np.zeros([1,3]))", "lfX"],
+                   ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2])); grid.evaluate(np.zeros([3]))", "lfX"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2])); grid.evaluateThreadSafe(np.zeros([1,3]))", "lfX"],
+                   ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2])); grid.evaluateThreadSafe(np.zeros([3]))", "lfX"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.evaluateBatch(np.zeros([1,2]))", "evaluateBatch"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2])); grid.evaluateBatch(np.zeros([1,3]))", "llfX"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2])); grid.evaluateBatch(np.zeros([2,]))", "llfX"],
@@ -824,6 +837,19 @@ class TestTasmanian(unittest.TestCase):
         # TODO: remove points by surplus
 
         # TODO: eval hierarchical basis and Batch
+        grid.makeLocalPolynomialGrid(2, 2, 1, 1, 'localp')
+        aT = np.empty([0,2], np.float64)
+        np.testing.assert_equal(aT, grid.getHierarchicalCoefficients(), "coeff mismatch", True)
+        grid.makeLocalPolynomialGrid(2, 0, 1, 1, 'localp')
+        aT = np.empty([0,0], np.float64)
+        np.testing.assert_equal(aT, grid.getHierarchicalCoefficients(), "coeff mismatch", True)
+        grid.makeLocalPolynomialGrid(2, 2, 1, 1, 'localp')
+        aPoints = grid.getPoints()
+        aV = np.column_stack([np.exp(2.0 * aPoints[:,0] + aPoints[:,1]), np.sin(3.0 * aPoints[:,0] + aPoints[:,1])])
+        grid.loadNeededPoints(aV)
+        aS = grid.getHierarchicalCoefficients()
+        aT = np.array([[1.0, 0.0], [math.exp(-1.0)-1.0, math.sin(-1.0)], [math.exp(1.0)-1.0, math.sin(1.0)], [math.exp(-2.0)-1.0, math.sin(-3.0)], [math.exp(2.0)-1.0, math.sin(3.0)]])
+        np.testing.assert_almost_equal(aS, aT, 14, "Surplusses equal", True)
 
         # TODO: set hierarchical coefficients, get surplusses, get global poly
 

@@ -133,6 +133,8 @@ public:
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1); // -1 indicates using all outputs
     void clearRefinement();
 
+    const double* getHierarchicalCoefficients() const;
+
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
     void printStats() const;
@@ -156,7 +158,6 @@ public:
     double* evalHierarchicalFunctions(const double x[]) const;
     void setHierarchicalCoefficients(const double c[]);
 
-    const double* getSurpluses() const;
     const int* getPointsIndexes() const;
     const int* getNeededIndexes() const;
 

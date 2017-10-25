@@ -560,7 +560,7 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
     }else if (rule == TasGrid::rule_gausschebyshev1odd){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_gausschebyshev1odd;
         const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 1.E-14, 1.E-05, 1.E-05 };
+        const double tols1[3] = { 2.E-14, 1.E-05, 1.E-05 };
         if (testGlobalRule(&f21constGC1, oned, 0, alpha, beta, true, depths1, tols1)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
@@ -724,6 +724,8 @@ bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::Typ
     bool bPass = true;
     for(int i=0; i<18; i++){
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3], rule);
+        //grid.enableAcceleration(accel_gpu_cuda);
+        //grid.setGPUID(0);
         R = getError(f, &grid, tests[i%3], x);
         if (R.error > tols[i]){
             bPass = false;
@@ -1402,47 +1404,181 @@ bool ExternalTester::testAllAcceleration() const{
     return pass;
 }
 
-int W(int *I, int d){
-    int s = 0; for(int j=0; j<d; j++) s += I[j];
-    return s;
+#include <sys/time.h>
+extern "C" double gettime(){
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    return t.tv_sec + t.tv_usec * 1.0E-6;
 }
+void loadGridValues(TasmanianSparseGrid *grid){
+    int dims = grid->getNumDimensions(), num_outputs = grid->getNumOutputs();
+    int num_points = grid->getNumNeeded();
+    if (num_points == 0) return;
+    double *x = grid->getNeededPoints();
+    double *v = new double[num_outputs * num_points];
+    double s = 1.0 / ((double) (dims*dims));
+    //#pragma omp parallel for
+    for(int i=0; i<num_points; i++){
+        double nx2 = 0.0;
+        for(int k=0; k<dims; k++) nx2 += x[i*dims +k] * x[i*dims +k];
+        nx2 *= s;
+        for(int j=0; j<num_outputs-1; j+=2){
+            v[i*num_outputs + j]     = exp(-nx2);
+            v[i*num_outputs + j + 1] = sin(nx2);
+        }
+        if (num_outputs % 2 == 1){
+            v[i*num_outputs + num_outputs - 1] = exp(-nx2);
+        }
+        //cout << exp(-nx2) << "   " << sin(nx2) << endl;
+        //cout << x[2*i] << "   " << x[2*i+1] << endl;
+    }
+    //cout << "Computing surplusses = " << num_outputs << endl;
+    //double start = gettime();
+    grid->loadNeededPoints(v);
+    //cout << gettime() - start << endl;
+}
+
+void ExternalTester::benchmark(int argc, const char **argv){
+    if (strcmp(argv[2],"alpha") == 0){
+        cout << "./tasgrid -bench alpha <dims> <outs> <depth> <type> <rule> <batch size> <iterations> <gpu>" << endl;
+        cout << "Compare acceleration: if batch size is 0 use surpluses, otherwise use evaluateBatch()";
+        if (argc < 11){ cout << endl; return; }
+        int dims = atoi(argv[3]), outs = atoi(argv[4]), depth = atoi(argv[5]);
+        TypeDepth d = OneDimensionalMeta::getIOTypeString(argv[6]);
+        TypeOneDRule r = OneDimensionalMeta::getIORuleString(argv[7]);
+        int num_x = atoi(argv[8]), num_runs = atoi(argv[9]), gpu = atoi(argv[10]);
+        TasmanianSparseGrid *grid = new TasmanianSparseGrid();
+        if (OneDimensionalMeta::isLocalPolynomial(r)){
+            grid->makeLocalPolynomialGrid(dims, outs, depth, 2, r);
+        }else if (OneDimensionalMeta::isSequence(r)){
+            grid->makeSequenceGrid(dims, outs, depth, d, r);
+        }else{
+            grid->makeGlobalGrid(dims, outs, depth, d, r);
+        }
+
+        int np = grid->getNumPoints();
+        cout << " with " << np << " points." << endl;
+        int width = 15;
+        cout << setw(24) << "CPU";
+        if (gpu > -1){
+            char *name = grid->getGPUName(gpu);
+            cout << setw(2*width + width/2) << name;
+            delete[] name;
+        }else{
+            cout << setw(width + width/2) << "CPU";
+        }
+        cout << endl;
+        cout << setw(width) << "num outputs";
+        TypeAcceleration cpu_tests[2] = {accel_none, accel_cpu_blas};
+        TypeAcceleration gpu_tests[3] = {accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda};
+        TypeAcceleration *tests;
+        int num_tests;
+        if (gpu > -1){
+            num_tests = 3;
+            tests = gpu_tests;
+            //cout << setw(width) << "cpu_blas" << setw(width) << "gpu_cublas" << setw(width) << "gpu_cuda" << setw(width) << "gpu_magma" << endl;
+            cout << setw(width) << "cpu_blas" << setw(width) << "gpu_cublas" << setw(width) << "gpu_cuda" << endl;
+        }else{
+            num_tests = 2;
+            tests = cpu_tests;
+            cout << setw(width) << "none" << setw(width) << "cpu_blas" << endl;
+        }
+        if (num_x > 0){
+            double *x = new double[dims * num_x];
+            cout << std::scientific;
+            cout.precision(5);
+            setRandomX(dims * num_x, x);
+            for(int s=0; s<5; s++){
+                if (OneDimensionalMeta::isLocalPolynomial(r)){
+                    grid->makeLocalPolynomialGrid(dims, outs, depth, 2, r);
+                }else if (OneDimensionalMeta::isSequence(r)){
+                    grid->makeSequenceGrid(dims, outs, depth, d, r);
+                }else{
+                    grid->makeGlobalGrid(dims, outs, depth, d, r);
+                }
+                loadGridValues(grid);
+                double *y = new double[outs * num_x];
+                cout << setw(width) << outs;
+                double start;
+
+                for(int t=0; t<num_tests; t++){
+                    grid->enableAcceleration(tests[t]);
+                    if ((gpu > -1) && (t > 0)) grid->setGPUID(gpu);
+                    grid->evaluateFast(x, y);
+                    start = gettime();
+                    if ((num_tests == 2) || (t > 0))
+                    for(int i=0; i<num_runs; i++){
+                        grid->evaluateBatch(x, num_x, y);
+                    }
+                    cout << setw(width) << ((int) ((gettime() - start) * 100.0));
+                }
+                outs *= 2;
+                cout << setw(width) << "seconds^{-2}" << endl;
+                delete[] y;
+            }
+            delete[] x;
+        }else{ // compare compute surpluses
+            double *v = new double[np * outs * 16];
+            cout << std::scientific;
+            cout.precision(5);
+            setRandomX(np * outs * 16, v);
+            for(int s=0; s<5; s++){
+                if (OneDimensionalMeta::isLocalPolynomial(r)){
+                    grid->makeLocalPolynomialGrid(dims, outs, depth, 2, r);
+                }else if (OneDimensionalMeta::isSequence(r)){
+                    grid->makeSequenceGrid(dims, outs, depth, d, r);
+                }else{
+                    grid->makeGlobalGrid(dims, outs, depth, d, r);
+                }
+                cout << setw(width) << outs;
+                double start;
+
+                for(int t=0; t<num_tests; t++){
+                    grid->enableAcceleration(tests[t]);
+                    if ((gpu > -1) && (t > 0)) grid->setGPUID(gpu);
+                    start = gettime();
+                    if ((num_tests == 2) || (t > 0) || (num_x == 0))
+                    for(int i=0; i<num_runs; i++){
+                        grid->loadNeededPoints(v);
+                    }
+                    cout << setw(width) << ((int) ((gettime() - start) * 100.0));
+                }
+                outs *= 2;
+                cout << setw(width) << "seconds^{-2}" << endl;
+            }
+            delete[] v;
+        }
+    }
+}
+
 void ExternalTester::debugTest(){
     cout << "Debug Test" << endl;
     cout << "Put here testing code and call this with ./tasgrid -test debug" << endl;
 
-    int d = 3;
-    int N = 4;
-    int ID[10];
-    for(int i=0; i<d; i++) ID[i] = 0;
+    double x[2] = { 0.33, -0.1133 };
+    double y1[1], y2[1];
 
-    int c = 0;
+    TasmanianSparseGrid *grid = new TasmanianSparseGrid();
+    grid->makeLocalPolynomialGrid(2, 1, 3, 1, rule_localp);
+    grid->enableAcceleration(accel_gpu_cublas);
+    grid->setGPUID(0);
+    loadGridValues(grid);
+    grid->evaluate(x, y1);
 
+    cout << "-------------" << endl;
+    grid->makeLocalPolynomialGrid(2, 1, 3, 1, rule_localp);
+    loadGridValues(grid);
+    grid->evaluate(x, y2);
 
-    while( !((W(ID, d) > N) && (c == 0)) ){
-        if (W(ID, d) > N){
-            for(int k=c; k<d; k++) ID[k] = 0;
-            c--;
-            ID[c]++;
-        }else{
-            for(int k=0; k<d; k++) cout << ID[k] << " ";
-            cout << endl;
-            c = d-1;
-            ID[c]++;
-            //if (c < d-1){
-            //   c++;
-            //   for(int k=c+1; k<d; k++) ID[k] = 0;
-            //}else{
-            //    ID[c]++;
-            //}
-        }
-    }
+    cout << std::scientific;
+    cout.precision(16);
+    cout << y1[0] - y2[0] << endl;
 
 }
 
 void ExternalTester::debugTestII(){
     cout << "Debug Test II" << endl;
     cout << "Put here testing code and call this with ./tasgrid -test db" << endl;
-
 
 }
 

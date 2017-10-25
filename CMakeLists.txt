@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(Tasmanian)
+project(Tasmanian LANGUAGES CXX)
 
 ########################################################################
 #  User specified options:
@@ -38,7 +38,7 @@ option(Tasmanian_ENABLE_BLAS "Enable CPU Blas support for Tasmanian" ON)
 option(Tasmanian_ENABLE_MPI "Enable MPI support for Tasmanian" OFF)
 option(Tasmanian_ENABLE_MATLAB "Enable MATLAB interface for Tasmanian" ON)
 option(Tasmanian_ENABLE_PYTHON "Enable Python interface for Tasmanian" ON)
-option(Tasmanian_ENABLE_FORTRAN "Enable Fortran interface for Tasmanian" ON)
+option(Tasmanian_ENABLE_FORTRAN "Enable Fortran interface for Tasmanian" OFF)
 option(Tasmanian_ENABLE_CUBLAS "Enable Nvidia GPU acceleration using cuBLAS for Tasmanian" ON)
 option(Tasmanian_ENABLE_CUDA "Enable Nvidia GPU acceleration using CUDA kernels for Tasmanian" ON)
 option(Tasmanian_STATIC_LIBRARY "Compile static library and the executables with static linkage" ON)
@@ -674,7 +674,8 @@ endif()
 ########################################################################
 if (NOT DEFINED Tasmanian_CXX_FLAGS)
     if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=native -Wall -Wextra -Wshadow -pedantic") # -Wno-unused-parameter
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic")
+        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=native -Wall -Wextra -Wshadow -pedantic") # -Wno-unused-parameter
         #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage") # ./tasgrid -test; gcov CMakeFiles/libtsg_static.dir/SparseGrids/tsgIndexSets.cpp.; geany tsgIndexSets.cpp.gcov
         if (TAS_SUPPRESS_OMP_WARN)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")

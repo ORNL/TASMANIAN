@@ -414,7 +414,7 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
     applyTransformationTransposed(weights);
 }
 
-void GridSequence::loadNeededPoints(const double *vals){
+void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
     if (points == 0){
         values->setValues(vals);
         points = needed;

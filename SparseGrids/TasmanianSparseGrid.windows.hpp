@@ -278,7 +278,8 @@ extern "C" TSG_API void tsgRemovePointsBySurplus(void * grid, double tolerance, 
 extern "C" TSG_API double* tsgEvalHierarchicalFunctions(void * grid, const double *x);
 extern "C" TSG_API double* tsgBatchEvalHierarchicalFunctions(void * grid, const double *x, int num_x);
 extern "C" TSG_API void tsgSetHierarchicalCoefficients(void * grid, const double *c);
-extern "C" TSG_API const double* tsgGetSurpluses(void *grid);
+extern "C" TSG_API const double* tsgGetHierarchicalCoefficients(void *grid);
+extern "C" TSG_API void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff);
 
 //extern "C" TSG_API int* tsgGetGlobalPolynomialSpace(void * grid, int interpolation, int *num_indexes);
 

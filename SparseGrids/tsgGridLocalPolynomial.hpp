@@ -77,7 +77,7 @@ public:
     double* getInterpolationWeights(const double x[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
 
-    void loadNeededPoints(const double *vals);
+    void loadNeededPoints(const double *vals, TypeAcceleration acc = accel_none);
 
     void evaluate(const double x[], double y[]) const;
     void integrate(double q[], double *conformal_correction) const;
@@ -115,6 +115,8 @@ protected:
     void buildTree();
 
     void recomputeSurpluses();
+    void recomputeSurplusesGPUcublas();
+    void recomputeSurplusesGPUcuda();
 
     double evalBasisRaw(const int point[], const double x[]) const;
     double evalBasisSupported(const int point[], const double x[], bool &isSupported) const;

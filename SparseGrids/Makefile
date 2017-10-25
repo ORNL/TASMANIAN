@@ -1,20 +1,9 @@
 include ../Config/Makefile.in
 
+# use the common libs
 IADD = $(CommonIADD)
 LADD = $(CommonLADD)
 LIBS = $(CommonLIBS)
-
-# Uncomment below to enable clang + OpenMP
-# Note: this needs libiomp to be symlinked as libomp in the current folder
-#CC = clang++-3.7
-#COMPILE_OPTIONS = -fopenmp=libomp
-# End cland + OpenMP
-
-# Uncomment below for intel icc compiler
-#CC = icc
-#COMPILE_OPTIONS = -fopenmp -diag-disable 11074 -diag-disable 11076
-#OPTC = -O3 -mtune=native $(COMPILE_OPTIONS) -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic
-# End icc
 
 
 LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp tsgGridGlobal.hpp tsgCacheLagrange.hpp tsgSequenceOptimizer.hpp \
@@ -28,7 +17,7 @@ LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp ts
 LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlobal.o tsgCacheLagrange.o tsgSequenceOptimizer.o tsgOneDimensionalWrapper.o \
          tsgGridCore.o tsgLinearSolvers.o tsgGridSequence.o tsgRuleLocalPolynomial.o tsgHardCodedTabulatedRules.o \
          tsgGridLocalPolynomial.o tsgRuleWavelet.o tsgGridWavelet.o \
-         tsgAcceleratedDataStructures.o \
+         tsgAcceleratedDataStructures.o $(TSG_CUDA_KERNELS) \
          TasmanianSparseGrid.o
 
 WROBJ = tasgrid_main.o tasgridTestFunctions.o tasgridExternalTests.o tasgridWrapper.o
@@ -38,6 +27,8 @@ SHAREDNAME = libtasmaniansparsegrid.so
 
 EXECNAME = tasgrid
 
+%.cu.o: %.cu $(LHEADERS)
+	$(NVCC) $(NVCC_OPT) -c $< -o $@
 
 %.o: %.cpp $(LHEADERS)
 	$(CC) $(OPTC) $(IADD) -c $< -o $@

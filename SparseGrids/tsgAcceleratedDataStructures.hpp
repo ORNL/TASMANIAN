@@ -62,6 +62,8 @@ public:
 
     void cusparseDCRMM2(int num_points, int num_outputs, int num_x, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, double *cpu_result);
 
+    void cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses);
+
 protected:
     void makeCuBlasHandle();
     void makeCuSparseHandle();
@@ -82,7 +84,11 @@ public:
     // matrix multuply double-precision (d), level 3, general (ge), column compressed sparse (cs): C = A * B
     // A is N by K, B is K by M, C is N by M
     // A and C are stored in column format, B is sparse column compresses
-    static void d3gecs(int N, int M, int K, const double *gpuA, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, double *cpuC, std::ostream *os = 0);
+    static void d3gecs(int N, int M, const double *gpuA, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, double *cpuC, std::ostream *os = 0);
+    // matrix solve double-precision (d), level 3, general (ge), column compressed sparse (cs) (solve): C = A * B
+    // A is N by M, B is M by M, C is N by M
+    // A and C are stored in column format, B is sparse column compresses and unit triangular (the diagonal entry is no include in the pattern)
+    static void d3gecss(int N, int M, int *levels, int top_level, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, const double *cpuA, double *cpuC, std::ostream *os);
 
 };
 

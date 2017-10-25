@@ -142,7 +142,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgEstimateAnisotropicCoefficients.restype = POINTER(c_int)
         self.pLibTSG.tsgEvalHierarchicalFunctions.restype = POINTER(c_double)
         self.pLibTSG.tsgBatchEvalHierarchicalFunctions.restype = POINTER(c_double)
-        self.pLibTSG.tsgGetSurpluses.restype = POINTER(c_double)
+        #self.pLibTSG.tsgGetSurpluses.restype = POINTER(c_double)
         ##########
         self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
         ##########
@@ -216,9 +216,10 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgEvalHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgBatchEvalHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgSetHierarchicalCoefficients.argtypes = [c_void_p, POINTER(c_double)]
-        self.pLibTSG.tsgGetSurpluses.argtypes = [c_void_p]
+        #self.pLibTSG.tsgGetSurpluses.argtypes = [c_void_p]
         ##########
         self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
+        self.pLibTSG.tsgGetHierarchicalCoefficientsStatic.argtypes = [c_void_p, POINTER(c_double)]
         ##########
         self.pLibTSG.tsgPrintStats.argtypes = [c_void_p]
         self.pLibTSG.tsgEnableAcceleration.argtypes = [c_void_p, c_char_p]
@@ -975,20 +976,16 @@ class TasmanianSparseGrid:
 
         '''
         if (self.getNumLoaded() == 0):
-            raise TasmanianInputError("evaluate", "ERROR: cannot call evaluate for a grid before any points are loaded, i.e., call loadNeededPoints first!")
-        iNumX = len(lfX)
+            raise TasmanianInputError("evaluateThreadSafe", "ERROR: cannot call evaluate for a grid before any points are loaded, i.e., call loadNeededPoints first!")
+        if (len(lfX.shape) != 1):
+            raise TasmanianInputError("lfX", "ERROR: lfX should be 1D numpy array")
+        iNumX = lfX.shape[0]
         if (iNumX != self.getNumDimensions()):
             raise TasmanianInputError("lfX", "ERROR: lfX should have lenth {0:1d} instead it has length {1:1d}".format(self.getNumDimensions(),iNumX))
-        pX = (c_double*iNumX)()
-        for iI in range(iNumX):
-            pX[iI] = lfX[iI]
         iNumOutputs = self.getNumOutputs()
-        pY = (c_double*iNumOutputs)()
-        self.pLibTSG.tsgEvaluate(self.pGrid, pX, pY)
-        lfY = np.empty([iNumOutputs,], np.float64)
-        for iI in range(iNumOutputs):
-            lfY[iI] = pY[iI]
-        return lfY
+        aY = np.empty([iNumOutputs], np.float64)
+        self.pLibTSG.tsgEvaluate(self.pGrid, np.ctypeslib.as_ctypes(lfX), np.ctypeslib.as_ctypes(aY))
+        return aY
 
     def evaluate(self, lfX):
         '''
@@ -1009,19 +1006,15 @@ class TasmanianSparseGrid:
         '''
         if (self.getNumLoaded() == 0):
             raise TasmanianInputError("evaluate", "ERROR: cannot call evaluate for a grid before any points are loaded, i.e., call loadNeededPoints first!")
-        iNumX = len(lfX)
+        if (len(lfX.shape) != 1):
+            raise TasmanianInputError("lfX", "ERROR: lfX should be 1D numpy array")
+        iNumX = lfX.shape[0]
         if (iNumX != self.getNumDimensions()):
             raise TasmanianInputError("lfX", "ERROR: lfX should have lenth {0:1d} instead it has length {1:1d}".format(self.getNumDimensions(),iNumX))
-        pX = (c_double*iNumX)()
-        for iI in range(iNumX):
-            pX[iI] = lfX[iI]
         iNumOutputs = self.getNumOutputs()
-        pY = (c_double*iNumOutputs)()
-        self.pLibTSG.tsgEvaluateFast(self.pGrid, pX, pY)
-        lfY = np.empty([iNumOutputs,], np.float64)
-        for iI in range(iNumOutputs):
-            lfY[iI] = pY[iI]
-        return lfY
+        aY = np.empty([iNumOutputs], np.float64)
+        self.pLibTSG.tsgEvaluateFast(self.pGrid, np.ctypeslib.as_ctypes(lfX), np.ctypeslib.as_ctypes(aY))
+        return aY
 
     def evaluateBatch(self, llfX):
         '''
@@ -1051,19 +1044,10 @@ class TasmanianSparseGrid:
         iNumDim = llfX.shape[1]
         if (iNumDim != self.getNumDimensions()):
             raise TasmanianInputError("llfX", "ERROR: llfX.shape[1] should equal {0:1d} instead it equals {1:1d}".format(self.getNumDimensions(), iNumDim))
-        iNumDim = llfX.shape[1]
-        pX = (c_double*(iNumX*iNumDim))()
-        for iI in range(iNumX):
-            for iJ in range(iNumDim):
-                pX[iI*iNumDim + iJ] = llfX[iI][iJ]
         iNumOutputs = self.getNumOutputs()
-        pY = (c_double*(iNumOutputs*iNumX))()
-        self.pLibTSG.tsgEvaluateBatch(self.pGrid, pX, iNumX, pY)
-        llfY = np.empty([iNumX, iNumOutputs], np.float64)
-        for iI in range(iNumX):
-            for iJ in range(iNumOutputs):
-                llfY[iI][iJ] = pY[iI*iNumOutputs + iJ]
-        return llfY
+        aY = np.empty([iNumX, iNumOutputs], np.float64)
+        self.pLibTSG.tsgEvaluateBatch(self.pGrid, np.ctypeslib.as_ctypes(llfX.reshape([iNumX*iNumDim])), iNumX, np.ctypeslib.as_ctypes(aY.reshape([iNumX*iNumOutputs])))
+        return aY
 
     def integrate(self):
         '''
@@ -1076,40 +1060,37 @@ class TasmanianSparseGrid:
         if (self.getNumLoaded() == 0):
             raise TasmanianInputError("integrate", "ERROR: cannot call integrate for a grid before any points are loaded, i.e., call loadNeededPoints first!")
         iNumOutputs = self.getNumOutputs()
-        pQ = (c_double*iNumOutputs)()
-        self.pLibTSG.tsgIntegrate(self.pGrid, pQ)
-        lfQ = np.empty([iNumOutputs,], np.float64)
-        for iI in range(iNumOutputs):
-            lfQ[iI] = pQ[iI]
-        return lfQ
+        aQ = np.empty([iNumOutputs], np.float64)
+        self.pLibTSG.tsgIntegrate(self.pGrid, np.ctypeslib.as_ctypes(aQ))
+        return aQ
 
     def isGlobal(self):
         '''
         returns True if using a global grid
 
         '''
-        return (self.pLibTSG.tsgIsGlobal(self.pGrid) == 0)
+        return (self.pLibTSG.tsgIsGlobal(self.pGrid) != 0)
 
     def isSequence(self):
         '''
         returns True if using a sequence grid
 
         '''
-        return (self.pLibTSG.tsgIsSequence(self.pGrid) == 0)
+        return (self.pLibTSG.tsgIsSequence(self.pGrid) != 0)
 
     def isLocalPolynomial(self):
         '''
         returns True if using a local polynomial grid
 
         '''
-        return (self.pLibTSG.tsgIsLocalPolynomial(self.pGrid) == 0)
+        return (self.pLibTSG.tsgIsLocalPolynomial(self.pGrid) != 0)
 
     def isWavelet(self):
         '''
         returns True if using a local wavelet grid
 
         '''
-        return (self.pLibTSG.tsgIsWavelet(self.pGrid) == 0)
+        return (self.pLibTSG.tsgIsWavelet(self.pGrid) != 0)
 
     def setDomainTransform(self, llfTransform):
         '''
@@ -1151,7 +1132,7 @@ class TasmanianSparseGrid:
         returns False if using a canonical domain
 
         '''
-        return (self.pLibTSG.tsgIsSetDomainTransfrom(self.pGrid) == 0)
+        return (self.pLibTSG.tsgIsSetDomainTransfrom(self.pGrid) != 0)
 
     def clearDomainTransform(self):
         '''
@@ -1202,7 +1183,7 @@ class TasmanianSparseGrid:
         iNumDimensions = lShape[0]
         pTruncation = (c_int*iNumDimensions)()
         for iI in range(iNumDimensions):
-            pTruncation[iI] = liTruncation[iI]
+            pTruncation[iI] = liTruncation[iI] # this converts Python longs to c_int
         self.pLibTSG.tsgSetConformalTransformASIN(self.pGrid, pTruncation)
 
     def isSetConformalTransformASIN(self):
@@ -1213,7 +1194,7 @@ class TasmanianSparseGrid:
         see: setConformalTransformASIN()
 
         '''
-        return (self.pLibTSG.tsgIsSetConformalTransformASIN(self.pGrid) == 0)
+        return (self.pLibTSG.tsgIsSetConformalTransformASIN(self.pGrid) != 0)
 
     def clearConformalTransform(self):
         '''
@@ -1241,7 +1222,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetConformalTransformASIN(self.pGrid, pTruncation)
         liTruncation = np.empty([iNumDimensions,], np.int)
         for iI in range(iNumDimensions):
-            liTruncation[iI] = pTruncation[iI]
+            liTruncation[iI] = pTruncation[iI] # convert c_int to python long
         return liTruncation
 
     def setAnisotropicRefinement(self, sType, iMinGrowth, iOutput):
@@ -1384,6 +1365,8 @@ class TasmanianSparseGrid:
 
     def removePointsBySurplus(self, fTolerance, iOutput):
         '''
+        EXPERIMENTAL CAPABILITY
+        
         removes any points in the grid with relative surplus that
         exceeds the tolerance
         applies only to local polynomial grids
@@ -1409,6 +1392,25 @@ class TasmanianSparseGrid:
         if (self.getNumLoaded() == 0):
             raise TasmanianInputError("removePointsBySurplus", "ERROR: calling removePointsBySurplus when no points are loades")
         self.pLibTSG.tsgRemovePointsBySurplus(self.pGrid, fTolerance, iOutput)
+
+    def getHierarchicalCoefficients(self):
+        '''
+        For global grids, this just returns the values loaded using the
+        call to loadNeededPoints().
+        In all other cases, this returns the list of hierarchical
+        coefficients, i.e., surpluses.
+        
+        returns a 2-D numpy array getNumPoints() by getNumOutputs()
+        '''
+        iNumOuts = self.getNumOutputs()
+        if (iNumOuts == 0):
+            return np.empty([0,0], np.float64)
+        iNumPoints = self.getNumLoaded()
+        if (iNumPoints == 0):
+            return np.empty([0,iNumOuts], np.float64)
+        aSurp = np.empty([iNumOuts * iNumPoints], np.float64)
+        self.pLibTSG.tsgGetHierarchicalCoefficientsStatic(self.pGrid, np.ctypeslib.as_ctypes(aSurp))
+        return aSurp.reshape([iNumPoints, iNumOuts])
 
     def evalHierarchicalFunctions(self, lfX):
         '''
@@ -1513,19 +1515,6 @@ class TasmanianSparseGrid:
             for iJ in range(iNumDims):
                 pCoefficients[iI*iNumDims + iJ] = llfCoefficients[iI][iJ]
         self.pLibTSG.tsgSetHierarchicalCoefficients(self.pGrid, pCoefficients)
-
-    def getSurpuses(self):
-        '''
-        EXPERIMENTAL CAPABILITY
-        '''
-        iNumOut = self.getNumOutputs()
-        iNumPoints = self.getNumPoints()
-        pSurp = self.pLibTSG.tsgGetSurpluses(self.pGrid)
-        llfS = np.empty([iNumPoints, iNumOut], np.float64)
-        for iI in range(iNumPoints):
-            for iJ in range(iNumOut):
-                llfS[iI][iJ] = pSurp[iI*iNumOut + iJ]
-        return llfS
 
     def getGlobalPolynomialSpace(self, bInterpolation):
         '''
