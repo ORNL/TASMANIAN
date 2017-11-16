@@ -728,7 +728,6 @@ endif()
 ########################################################################
 
 # stage 0: for support of simple GNU-Make, ignore for release and intermediate builds
-#set(Tasmanian_DEVELOPMENT_BACKWARDS "1")
 if (DEFINED Tasmanian_DEVELOPMENT_BACKWARDS AND Tasmanian_DEVELOPMENT_BACKWARDS)
     configure_file("${PROJECT_SOURCE_DIR}/Config/tsgVersion.in.hpp"  "${PROJECT_SOURCE_DIR}/Config/tsgVersion.hpp")
     set(tdrIncludeMPIBackup ${tdrIncludeMPI})

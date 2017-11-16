@@ -432,6 +432,27 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
     }
     recomputeSurpluses();
 }
+void GridSequence::mergeRefinement(){
+    if (needed == 0) return; // nothing to do
+    int num_all_points = getNumLoaded() + getNumNeeded();
+    double *vals = new double[num_all_points * num_outputs];
+    std::fill(vals, vals + num_all_points * num_outputs, 0.0);
+    values->setValuesPointer(vals, num_all_points);
+    if (points == 0){
+        points = needed;
+        needed = 0;
+    }else{
+        points->addIndexSet(needed);
+        delete needed; needed = 0;
+        delete[] parents;
+        IndexManipulator IM(num_dimensions);
+        parents = IM.computeDAGup(points);
+        int m; IM.getMaxLevels(points, max_levels, m);
+    }
+    if (surpluses != 0) delete[] surpluses;
+    surpluses = new double[num_all_points * num_outputs];
+    std::fill(surpluses, surpluses + num_all_points * num_outputs, 0.0);
+}
 
 void GridSequence::evaluate(const double x[], double y[]) const{
     double **cache = cacheBasisValues(x);
@@ -581,6 +602,14 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     }
 }
 
+void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
+    IndexSet *work = (points == 0) ? needed : points;
+    int num_points = work->getNumIndexes();
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++){
+        evalHierarchicalFunctions(&(x[i*num_dimensions]), &(y[i*num_points]));
+    }
+}
 double* GridSequence::evalHierarchicalFunctions(const double x[]) const{
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
@@ -618,11 +647,34 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
     for(int j=0; j<num_dimensions; j++) delete[] cache[j];
     delete[] cache;
 }
-void GridSequence::setHierarchicalCoefficients(const double c[]){
+void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
+    if (accel != 0) accel->resetValuesAndSurpluses();
+    double *vals = 0;
+    bool aliased = false;
+    if (points != 0){
+        clearRefinement();
+        vals = values->aliasValues();
+        aliased = true;
+    }else{
+        points = needed;
+        needed = 0;
+    }
     int num_ponits = points->getNumIndexes();
     if (surpluses != 0) delete[] surpluses;
     surpluses = new double[num_ponits * num_outputs];
     std::copy(c, c + num_ponits * num_outputs, surpluses);
+    double *x = getPoints();
+    if (acc == accel_cpu_blas){
+        evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
+    }else if (acc == accel_gpu_cublas){
+        evaluateBatchGPUcublas(x, points->getNumIndexes(), vals, os);
+    }else if (acc == accel_gpu_cuda){
+        evaluateBatchGPUcuda(x, points->getNumIndexes(), vals, os);
+    }else{
+        evaluateBatch(x, points->getNumIndexes(), vals);
+    }
+    delete[] x;
+    if (! aliased) values->setValuesPointer(vals, num_ponits);
 }
 
 int* GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output) const{

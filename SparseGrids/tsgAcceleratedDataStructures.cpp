@@ -117,6 +117,14 @@ void AccelerationDataGPUFull::loadGPUValues(int, const double *){}
 #endif // TASMANIAN_CUBLAS or TASMANIAN_CUDA
 double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }
 
+#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
+void AccelerationDataGPUFull::resetValuesAndSurpluses(){
+    if (gpu_values != 0){ cudaFree(gpu_values); gpu_values = 0; }
+}
+#else
+void AccelerationDataGPUFull::resetValuesAndSurpluses(){}
+#endif
+
 #ifdef TASMANIAN_CUBLAS
 void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
@@ -270,6 +278,7 @@ void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, co
 
     // Load values
     cudaStat = cudaMemcpy(gpu_a, values, num_points * num_outputs * sizeof(double), cudaMemcpyHostToDevice); // gpu_a = values
+    AccelerationMeta::cudaCheckError((void*) &cudaStat, "send matrix to gpu in cusparseDCRSMM", logstream);
 
     // Transpose values
     cublasStatus_t bstat;
@@ -310,6 +319,7 @@ void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, co
     AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam second in DCRSMM", logstream);
 
     cudaStat = cudaMemcpy(surpluses, gpu_b, num_points * num_outputs * sizeof(double), cudaMemcpyDeviceToHost); // gpu_a = values
+    AccelerationMeta::cudaCheckError((void*) &cudaStat, "retrieve answer from gpu in cusparseDCRSMM", logstream);
 
     cusparseDestroyMatDescr(mat_desc);
 

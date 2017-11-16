@@ -73,9 +73,9 @@ if (( bShowHelp == 1 )); then
     echo "              -noblas: disable BLAS support"
     echo "            -nocublas: disable Nvidia cuBlas and cuSparse support"
     echo "              -nocuda: disable Nvidia CUDA support"
-    echo "           -nofortran: disable Fortran interface"
     echo "            -nopython: disable Python interface"
     echo "             -python3: switch to '/usr/env python3'"
+    echo "             -fortran: enable Fortran interface"
     echo "            -noshared: do not build shared libraries"
     echo "            -nostatic: do not build static libraries"
     echo "              -notest: do not execute any of the tests"
@@ -124,7 +124,7 @@ sEnableBLAS="ON"
 sEnableCUBLAS="ON"
 sEnableCUDA="ON"
 sEnablePython="ON"
-sEnableFortran="ON"
+sEnableFortran="OFF"
 sEnableShared="ON"
 sEnableStatic="ON"
 sEnableMakeJobs=""
@@ -150,8 +150,8 @@ for sOption in "$@"; do
         sEnablePython="OFF"
     elif [[ $sOption == "-python3" ]]; then
         sPythonVersion="-D Tasmanian_PYTHON_ENV:STRING=python3"
-    elif [[ $sOption == "-nofortran" ]]; then
-        sEnableFortran="OFF"
+    elif [[ $sOption == "-fortran" ]]; then
+        sEnableFortran="ON"
     elif [[ $sOption == "-noshared" ]]; then
         sEnableShared="OFF"
     elif [[ $sOption == "-nostatic" ]]; then
@@ -172,6 +172,9 @@ for sOption in "$@"; do
         bInstall=0
     elif [[ $sOption == "-cmake="* ]]; then
         sExtraCommand=${sOption:7}
+    elif [[ $sOption == "-"* ]]; then
+        echo "ERROR: unrecognized options $sOption"
+        exit 1;
     fi
 done
 
@@ -386,7 +389,7 @@ if [[ $sEnablePython == "OFF" ]]; then
     echo " -nopython: disable Python"
 fi
 if [[ $sEnableFortran == "OFF" ]]; then
-    echo "-nofortran: disable Fortran"
+    echo "  -fortran: enable Fortran"
 fi
 if [[ $sEnableShared == "OFF" ]]; then
     echo " -noshared: do not build shared libraries"
@@ -399,6 +402,9 @@ if [[ $sBuildType == "Debug" ]]; then
 fi
 if (( $bEnableTests == 0 )); then
     echo "   -notest: do not execute any of the tests"
+fi
+if [[ ! -z $sExtraCommand ]]; then
+    echo " -cmake=$sExtraCommand"
 fi
 
 echo ""
@@ -469,7 +475,7 @@ fi
 
 if [[ $sEnableCUDA == "ON" ]]; then
     # work around the problem with make -j where the shared cuda kernels are build twice (make no j builds them only once)
-    make -f CMakeFiles/libtsg_shared.dir/build.make CMakeFiles/libtsg_shared.dir/SparseGrids/libtsg_shared_generated_tasCudaKernels.cu.o || { sEnableMakeJobs = ""; }
+    make -f CMakeFiles/libtsg_shared.dir/build.make CMakeFiles/libtsg_shared.dir/SparseGrids/libtsg_shared_generated_tsgCudaKernels.cu.o || { sEnableMakeJobs=""; }
 fi
 
 make $sEnableMakeJobs

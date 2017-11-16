@@ -95,9 +95,12 @@ public:
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1);
     void clearRefinement();
+    void mergeRefinement();
+
+    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
     double* evalHierarchicalFunctions(const double x[]) const;
-    void setHierarchicalCoefficients(const double c[]);
+    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
 
     const double* getSurpluses() const;
     const int* getPointIndexes() const;

@@ -724,7 +724,8 @@ bool TasgridWrapper::getEvalHierarchy(){
     res = new double[num_p * rows];
     #pragma omp parallel for
     for(int i=0; i<rows; i++){
-        double *r = grid->evalHierarchicalFunctions(&(x[i*cols]));
+        //double *r = grid->evalHierarchicalFunctions(&(x[i*cols]));
+        double *r = new double[num_p];
         std::copy(r, r + num_p, &(res[i * num_p]));
         delete[] r;
     }

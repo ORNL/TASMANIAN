@@ -650,6 +650,42 @@ void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
         }
     }
 }
+void GridGlobal::mergeRefinement(){
+    if (needed == 0) return; // nothing to do
+    int num_all_points = getNumLoaded() + getNumNeeded();
+    double *vals = new double[num_all_points * num_outputs];
+    std::fill(vals, vals + num_all_points * num_outputs, 0.0);
+    values->setValuesPointer(vals, num_all_points);
+    if (points == 0){
+        points = needed;
+        needed = 0;
+    }else{
+        points->addIndexSet(needed);
+        delete needed; needed = 0;
+        for(int i=0; i<active_tensors->getNumIndexes(); i++){ delete[] tensor_refs[i]; } delete[] tensor_refs;
+
+        delete tensors; tensors = updated_tensors; updated_tensors = 0;
+        delete active_tensors; active_tensors = updated_active_tensors; updated_active_tensors = 0;
+        delete[] active_w; active_w = updated_active_w; updated_active_w = 0;
+
+        int nz_weights = active_tensors->getNumIndexes();
+        IndexManipulator IM(num_dimensions, custom);
+        int m; IM.getMaxLevels(tensors, max_levels, m);
+        if (OneDimensionalMeta::isNonNested(rule)){
+            tensor_refs = new int*[nz_weights];
+            #pragma omp parallel for schedule(dynamic)
+            for(int i=0; i<nz_weights; i++){
+                tensor_refs[i] = IM.referenceGenericPoints(active_tensors->getIndex(i), wrapper, points);
+            }
+        }else{
+            tensor_refs = new int*[nz_weights];
+            #pragma omp parallel for schedule(dynamic)
+            for(int i=0; i<nz_weights; i++){
+                tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, points);
+            }
+        }
+    }
+}
 const double* GridGlobal::getLoadedValues() const{
     if (getNumLoaded() == 0) return 0;
     return values->getValues(0);
@@ -776,6 +812,14 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
         }
     }
     delete[] w;
+}
+
+void GridGlobal::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
+    int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++){
+        getInterpolationWeights(&(x[i*num_dimensions]), &(y[i*num_points]));
+    }
 }
 
 double* GridGlobal::computeSurpluses(int output, bool normalize) const{
@@ -928,7 +972,7 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
 }
 
 int* GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output) const{
-    double tol = 1000 * TSG_NUM_TOL;
+    double tol = 1000.0 * TSG_NUM_TOL;
     double *surp = computeSurpluses(output, false);
 
     int num_points = points->getNumIndexes();
@@ -1107,12 +1151,9 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output){
     delete[] flagged;
     delete[] surp;
 }
-
-double* GridGlobal::evalHierarchicalFunctions(const double x[]) const{
-    return getInterpolationWeights(x);
-}
-void GridGlobal::setHierarchicalCoefficients(const double c[]){
-    loadNeededPoints(c);
+void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream*){
+    if (points != 0) clearRefinement();
+    loadNeededPoints(c, acc);
 }
 
 double GridGlobal::legendre(int n, double x){
@@ -1126,13 +1167,13 @@ double GridGlobal::legendre(int n, double x){
     }
     return l;
 }
-void GridGlobal::createParEval(){
-}
 
-void GridGlobal::clearParEval(){
+//void GridGlobal::createParEval(){
+//}
+//void GridGlobal::clearParEval(){
 //    if (par_eval_index == 0) delete[] par_eval_index;
 //    if (par_eval_pntrs == 0) delete[] par_eval_pntrs;
-}
+//}
 
 void GridGlobal::clearAccelerationData(){
     if (accel != 0){

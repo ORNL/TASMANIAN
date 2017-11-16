@@ -355,7 +355,14 @@ void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weig
     }
 }
 
-void TasmanianSparseGrid::loadNeededPoints(const double *vals){ base->loadNeededPoints(vals, acceleration); }
+void TasmanianSparseGrid::loadNeededPoints(const double *vals){
+    #if defined(TASMANIAN_CUBLAS) or defined(TASMANIAN_CUDA)
+    if (AccelerationMeta::isAccTypeGPU(acceleration)){
+        _TASMANIAN_SETGPU
+    }
+    #endif
+    base->loadNeededPoints(vals, acceleration);
+}
 
 void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
     const double *x_effective = x;
@@ -831,6 +838,9 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
 void TasmanianSparseGrid::clearRefinement(){
     base->clearRefinement();
 }
+void TasmanianSparseGrid::mergeRefinement(){
+    base->mergeRefinement();
+}
 void TasmanianSparseGrid::removePointsBySurplus(double tolerance, int output){
     if (pwpoly == 0){
         if (logstream != 0){ (*logstream) << "ERROR: removePointsBySurplus() called for a grid that is not local polynomial." << endl; }
@@ -842,11 +852,93 @@ void TasmanianSparseGrid::removePointsBySurplus(double tolerance, int output){
     }
 }
 
-double* TasmanianSparseGrid::evalHierarchicalFunctions(const double x[]) const{
-    return base->evalHierarchicalFunctions(x);
+void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{ base->evaluateHierarchicalFunctions(x, num_x, y); }
+void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const{
+    if (pwpoly != 0){
+        pwpoly->buildSpareBasisMatrix(x, num_x, 32, pntr, indx, vals);
+    }else if (wavelet != 0){
+        int num_points = base->getNumPoints();
+        double *dense_vals = new double[num_points * num_x];
+        wavelet->evaluateHierarchicalFunctions(x, num_x, dense_vals);
+        int num_nz = 0;
+        for(int i=0; i<num_points*num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
+        pntr = new int[num_x+1];
+        indx = new int[num_nz];
+        vals = new double[num_nz];
+        num_nz = 0;
+        for(int i=0; i<num_x; i++){
+            pntr[i] = num_nz;
+            for(int j=0; j<num_points; j++){
+                if (dense_vals[i*num_points + j] != 0){
+                    indx[num_nz] = j;
+                    vals[num_nz++] = dense_vals[i*num_points + j];
+                }
+            }
+        }
+        pntr[num_x] = num_nz;
+        delete[] dense_vals;
+    }else{
+        int num_points = base->getNumPoints();
+        vals = new double[num_x * num_points];
+        base->evaluateHierarchicalFunctions(x, num_x, vals);
+        pntr = new int[num_x + 1];
+        pntr[0] = 0;
+        for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + num_points;
+        indx  = new int[num_x * num_points];
+        for(int i=0; i<num_x; i++){
+            for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
+        }
+    }
 }
+int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const{
+    if (pwpoly != 0){
+        return pwpoly->getSpareBasisMatrixNZ(x, num_x, 32);
+    }else if (wavelet != 0){
+        int num_points = base->getNumPoints();
+        double *dense_vals = new double[num_points * num_x];
+        wavelet->evaluateHierarchicalFunctions(x, num_x, dense_vals);
+        int num_nz = 0;
+        for(int i=0; i<num_points*num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
+        delete[] dense_vals;
+        return num_nz;
+    }else{
+        return num_x * base->getNumPoints();
+    }
+}
+void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const{
+    if (pwpoly != 0){
+        pwpoly->buildSpareBasisMatrixStatic(x, num_x, 32, pntr, indx, vals);
+    }else if (wavelet != 0){
+        int num_points = base->getNumPoints();
+        double *dense_vals = new double[num_points * num_x];
+        wavelet->evaluateHierarchicalFunctions(x, num_x, dense_vals);
+        int num_nz = 0;
+        for(int i=0; i<num_points*num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
+        num_nz = 0;
+        for(int i=0; i<num_x; i++){
+            pntr[i] = num_nz;
+            for(int j=0; j<num_points; j++){
+                if (dense_vals[i*num_points + j] != 0){
+                    indx[num_nz] = j;
+                    vals[num_nz++] = dense_vals[i*num_points + j];
+                }
+            }
+        }
+        pntr[num_x] = num_nz;
+        delete[] dense_vals;
+    }else{
+        int num_points = base->getNumPoints();
+        base->evaluateHierarchicalFunctions(x, num_x, vals);
+        pntr[0] = 0;
+        for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + num_points;
+        for(int i=0; i<num_x; i++){
+            for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
+        }
+    }
+}
+
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
-    base->setHierarchicalCoefficients(c);
+    base->setHierarchicalCoefficients(c, acceleration, logstream);
 }
 
 void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const{
@@ -1510,27 +1602,28 @@ void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRe
 void tsgClearRefinement(void *grid){
     ((TasmanianSparseGrid*) grid)->clearRefinement();
 }
+void tsgMergeRefinement(void *grid){
+    ((TasmanianSparseGrid*) grid)->mergeRefinement();
+}
 void tsgRemovePointsBySurplus(void *grid, double tolerance, int output){
     ((TasmanianSparseGrid*) grid)->removePointsBySurplus(tolerance, output);
 }
 
-double* tsgEvalHierarchicalFunctions(void *grid, const double *x){
-    return ((TasmanianSparseGrid*) grid)->evalHierarchicalFunctions(x);
+void tsgEvaluateHierarchicalFunctions(void *grid, const double *x, int num_x, double *y){
+    ((TasmanianSparseGrid*) grid)->evaluateHierarchicalFunctions(x, num_x, y);
 }
-double* tsgBatchEvalHierarchicalFunctions(void *grid, const double *x, int num_x){
-    TasmanianSparseGrid* tsg = (TasmanianSparseGrid*) grid;
-    int iNumDim = tsg->getNumDimensions(), iNumPoints = tsg->getNumPoints();
-    double *vals = new double[num_x * iNumPoints];
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        double *v = tsg->evalHierarchicalFunctions(&(x[i*iNumDim]));
-        std::copy(v, v + iNumPoints, &(vals[i*iNumPoints]));
-        delete[] v;
-    }
-    return vals;
+void tsgEvaluateSparseHierarchicalFunctions(void *grid, const double x[], int num_x, int **pntr, int **indx, double **vals){
+    int num_nz = ((TasmanianSparseGrid*) grid)->evaluateSparseHierarchicalFunctionsGetNZ(x, num_x);
+    *pntr = (int*) malloc((num_x+1) * sizeof(int));
+    *indx = (int*) malloc(num_nz * sizeof(int));
+    *vals = (double*) malloc(num_nz * sizeof(double));
+    ((TasmanianSparseGrid*) grid)->evaluateSparseHierarchicalFunctionsStatic(x, num_x, *pntr, *indx, *vals);
 }
-void tsgSetHierarchicalCoefficients(void *grid, const double *c){
-    ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
+int tsgEvaluateSparseHierarchicalFunctionsGetNZ(void *grid, const double x[], int num_x){
+    return ((TasmanianSparseGrid*) grid)->evaluateSparseHierarchicalFunctionsGetNZ(x, num_x);
+}
+void tsgEvaluateSparseHierarchicalFunctionsStatic(void *grid, const double x[], int num_x, int *pntr, int *indx, double *vals){
+    ((TasmanianSparseGrid*) grid)->evaluateSparseHierarchicalFunctionsStatic(x, num_x, pntr, indx, vals);
 }
 const double* tsgGetHierarchicalCoefficients(void *grid){
     return ((TasmanianSparseGrid*) grid)->getHierarchicalCoefficients();
@@ -1541,6 +1634,9 @@ void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff){
     if ((num_points == 0) || (num_outputs == 0)) return;
     const double *surp = ((TasmanianSparseGrid*) grid)->getHierarchicalCoefficients();
     std::copy(surp, surp + num_outputs * num_points, coeff);
+}
+void tsgSetHierarchicalCoefficients(void *grid, const double *c){
+    ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
 }
 
 // to be used in Python, requires internal copy of data and two calls (two merge sorts of all indexes)
@@ -1603,6 +1699,7 @@ void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual){
 void tsgDeleteDoubles(double *p){ free(p); }
 void tsgDeleteInts(int *p){ delete[] p; }
 void tsgDeleteChars(char *p){ delete[] p; }
+
 }
 }
 

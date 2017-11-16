@@ -111,9 +111,10 @@ public:
     void setAnisotropicRefinement(TypeDepth type, int min_growth = 1, int output = 0);
     void setSurplusRefinement(double tolerance, int output = 0);
     void clearRefinement();
+    void mergeRefinement();
 
-    double* evalHierarchicalFunctions(const double x[]) const;
-    void setHierarchicalCoefficients(const double c[]);
+    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
+    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
 
     void clearAccelerationData();
 
@@ -128,8 +129,8 @@ protected:
 
     static double legendre(int n, double x);
 
-    void clearParEval();
-    void createParEval();
+    //void clearParEval();
+    //void createParEval();
 
     void makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const;
 

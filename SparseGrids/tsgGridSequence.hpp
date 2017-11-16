@@ -101,14 +101,15 @@ public:
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const;
     void evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const;
 
+    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
+
     int* estimateAnisotropicCoefficients(TypeDepth type, int output) const;
     void setAnisotropicRefinement(TypeDepth type, int min_growth = 1, int output = -1);
     void setSurplusRefinement(double tolerance, int output);
     void clearRefinement();
+    void mergeRefinement();
 
-    double* evalHierarchicalFunctions(const double x[]) const;
-    void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
-    void setHierarchicalCoefficients(const double c[]);
+    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
 
     void getPolynomialSpace(bool interpolation, int &n, int* &poly) const;
 
@@ -119,6 +120,9 @@ public:
 
 protected:
     void reset();
+
+    double* evalHierarchicalFunctions(const double x[]) const;
+    void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 
     void prepareSequence(int n);
     double** cacheBasisValues(const double x[]) const;

@@ -599,16 +599,19 @@ void StorageSet::readBinary(std::ifstream &ifs){
 }
 
 int StorageSet::getNumOutputs() const{ return num_outputs; }
-const double* StorageSet::getValues(int i) const{  return &(values[i*num_outputs]);  }
+const double* StorageSet::getValues(int i) const{ return &(values[i*num_outputs]); }
+double* StorageSet::aliasValues() const{ return values; }
 
 void StorageSet::setValues(const double vals[]){
-    if (values == 0){  values = new double[num_outputs * num_values];  }
+    if (values == 0){ values = new double[num_outputs * num_values]; }
     std::copy(vals, vals + num_values * num_outputs, values);
 }
-//void StorageSet::setValue(int i, const double val[]){
-//    if (values == 0){  values = new double[num_outputs * num_values];  }
-//    std::copy(val, val + num_outputs, &(values[i * num_outputs]));
-//}
+void StorageSet::setValuesPointer(double* &vals, int cnum_values){
+    num_values = cnum_values;
+    if (values != 0) delete[] values;
+    values = vals;
+    vals = 0;
+}
 
 void StorageSet::addValues(const IndexSet *old_set, const IndexSet *new_set, const double new_vals[]){
     double *old_vals = values;

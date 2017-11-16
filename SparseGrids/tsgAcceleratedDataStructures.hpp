@@ -42,6 +42,8 @@ public:
 
     virtual TypeAcceleration getType() const = 0;
     virtual bool isCompatible(TypeAcceleration acc) const = 0;
+
+    virtual void resetValuesAndSurpluses() = 0;
 };
 
 class AccelerationDataGPUFull : public BaseAccelerationData{
@@ -56,12 +58,12 @@ public:
 
     double* getGPUValues() const;
     void loadGPUValues(int total_entries, const double *cpu_values);
+    void resetValuesAndSurpluses();
 
     void cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result);
     void cublasDGEMM(int num_outputs, int num_points, int num_x, const double cpu_weights[], double *cpu_result);
 
     void cusparseDCRMM2(int num_points, int num_outputs, int num_x, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, double *cpu_result);
-
     void cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses);
 
 protected:

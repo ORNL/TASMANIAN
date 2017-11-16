@@ -290,13 +290,13 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
         //for(int i=0; i<total->getNumIndexes(); i++) cout << total->getIndex(i)[0] << "  " << total->getIndex(i)[1] << "   " << getIndexWeight(total->getIndex(i), type, weights, rule) << "  " << normalized_offset << endl;
 
         // needed to preserved lower property
-        if ((type == type_ipcurved) || (type == type_curved) || (type == type_qpcurved)){
-            IndexSet* completion = getLowerCompletion(total);
-            if ((completion != 0) && (completion->getNumIndexes() > 0)){
-                total->addIndexSet(completion);
-                delete completion;
-            }
+        //if ((type == type_ipcurved) || (type == type_curved) || (type == type_qpcurved)){
+        IndexSet* completion = getLowerCompletion(total);
+        if ((completion != 0) && (completion->getNumIndexes() > 0)){
+            total->addIndexSet(completion);
+            delete completion;
         }
+        //}
     }
 
     delete[] weights;

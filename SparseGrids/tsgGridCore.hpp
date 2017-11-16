@@ -80,9 +80,10 @@ public:
     virtual void evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const = 0;
 
     virtual void clearRefinement() = 0;
+    virtual void mergeRefinement() = 0;
 
-    virtual double* evalHierarchicalFunctions(const double x[]) const = 0;
-    virtual void setHierarchicalCoefficients(const double c[]) = 0;
+    virtual void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const = 0; // add acceleration here
+    virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os) = 0;
 
     virtual void clearAccelerationData() = 0;
 };

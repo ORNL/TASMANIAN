@@ -95,10 +95,11 @@ public:
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1);
     void clearRefinement();
+    void mergeRefinement();
     int removePointsBySurplus(double tolerance, int output = -1); // returns the number of points kept
 
-    double* evalHierarchicalFunctions(const double x[]) const;
-    void setHierarchicalCoefficients(const double c[]);
+    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
+    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
 
     void clearAccelerationData();
 
@@ -106,8 +107,9 @@ public:
     const int* getPointIndexes() const;
     const int* getNeededIndexes() const;
 
-    // move to protected
     void buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, int* &spntr, int* &sindx, double* &svals) const;
+    void buildSpareBasisMatrixStatic(const double x[], int num_x, int num_chunk, int *spntr, int *sindx, double *svals) const;
+    int getSpareBasisMatrixNZ(const double x[], int num_x, int num_chunk) const;
 
 protected:
     void reset(bool clear_rule = true);
@@ -117,6 +119,9 @@ protected:
     void recomputeSurpluses();
     void recomputeSurplusesGPUcublas();
     void recomputeSurplusesGPUcuda();
+
+    void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, int &num_blocks, int &num_last, int &stripe_size,
+                                    int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
 
     double evalBasisRaw(const int point[], const double x[]) const;
     double evalBasisSupported(const int point[], const double x[], bool &isSupported) const;

@@ -132,8 +132,12 @@ public:
     void setSurplusRefinement(double tolerance, int output);
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1); // -1 indicates using all outputs
     void clearRefinement();
+    void mergeRefinement();
 
-    const double* getHierarchicalCoefficients() const;
+    const double* getHierarchicalCoefficients() const; // formerly getSurpluses();
+    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
+    void evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const;
+    void setHierarchicalCoefficients(const double c[]);
 
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
@@ -151,18 +155,20 @@ public:
     static int getGPUMemory(int gpu); // returns the MB of a given GPU
     static char* getGPUName(int gpu); // returns a null-terminated char array
 
+    // Do not use these functions within C++, not as efficient as the one above
+    // these functions are needed for interfaces with other languages
+    int evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const;
+    void evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const;
+
     // WARNING: the functions below are mostly for debugging and research purposes
     //      modifying the returned pointers will result in undefined behavior
-    void removePointsBySurplus(double tolerance, int output = -1);
+    void removePointsBySurplus(double tolerance, int output = -1); // have python error tests, but needs math consistency test
 
-    double* evalHierarchicalFunctions(const double x[]) const;
-    void setHierarchicalCoefficients(const double c[]);
+    // TODO
+    // int* getIndexOfRefinedPoints(); // tells you the index of the refined points in the big vector after mergeRefinement (or loadNeededPoints())
 
     const int* getPointsIndexes() const;
     const int* getNeededIndexes() const;
-
-    // remove
-    GridLocalPolynomial* getLocalP(){ return pwpoly; }
 
 protected:
     void clear();

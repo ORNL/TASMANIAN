@@ -318,6 +318,24 @@ void GridWavelet::loadNeededPoints(const double *vals, TypeAcceleration){
     }
     recomputeCoefficients();
 }
+void GridWavelet::mergeRefinement(){
+    if (needed == 0) return; // nothing to do
+    int num_all_points = getNumLoaded() + getNumNeeded();
+    double *vals = new double[num_all_points * num_outputs];
+    std::fill(vals, vals + num_all_points * num_outputs, 0.0);
+    values->setValuesPointer(vals, num_all_points);
+    if (points == 0){
+        points = needed;
+        needed = 0;
+    }else{
+        points->addIndexSet(needed);
+        delete needed; needed = 0;
+        buildInterpolationMatrix();
+    }
+    if (coefficients != 0) delete[] coefficients;
+    coefficients = new double[num_all_points * num_outputs];
+    std::fill(coefficients, coefficients + num_all_points * num_outputs, 0.0);
+}
 void GridWavelet::evaluate(const double x[], double y[]) const{
     int num_points = points->getNumIndexes();
 	double *basis_values = new double[num_points];
@@ -416,6 +434,7 @@ double GridWavelet::evalIntegral(const int p[]) const{
 }
 
 void GridWavelet::buildInterpolationMatrix(){
+    // change the logic here, build the matrix only if num_outputs are zero or if there is need (load surpluses etc)
 	/*
 	 * Using the IndexSet points, constructs the interpolation matrix needed for methods
 	 * such as recomputeCoefficients, solveTransposed, etc.
@@ -669,10 +688,26 @@ void GridWavelet::addChild(const int point[], int direction, GranulatedIndexSet 
 }
 
 void GridWavelet::clearRefinement(){
-    if (needed != 0){  delete needed;  needed = 0;  }
+    if (needed != 0){ delete needed;  needed = 0; }
 }
 const double* GridWavelet::getSurpluses() const{
     return coefficients;
+}
+
+void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
+    IndexSet *work = (points == 0) ? needed : points;
+    int num_points = work->getNumIndexes();
+    for(int i=0; i<num_x; i++){
+        double *vals = &(y[i*num_points]);
+        for(int j=0; j<num_points; j++){
+            const int* p = work->getIndex(j);
+            vals[j] = 1.0;
+            for(int k=0; k<num_dimensions; k++){
+                vals[j] *= rule1D.eval(p[k], x[k]);
+                if (vals[j] == 0.0){ break; }; // MIRO: evaluating the wavelets is expensive, stop if any one of them is zero
+            }
+        }
+    }
 }
 
 double* GridWavelet::evalHierarchicalFunctions(const double x[]) const{
@@ -690,11 +725,34 @@ double* GridWavelet::evalHierarchicalFunctions(const double x[]) const{
     }
     return vals;
 }
-void GridWavelet::setHierarchicalCoefficients(const double c[]){
+void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
+//    if (accel != 0) accel->resetValuesAndSurpluses();
+    double *vals = 0;
+    bool aliased = false;
+    if (points != 0){
+        clearRefinement();
+        vals = values->aliasValues();
+        aliased = true;
+    }else{
+        points = needed;
+        needed = 0;
+    }
     int num_ponits = points->getNumIndexes();
     if (coefficients != 0) delete[] coefficients;
     coefficients = new double[num_ponits * num_outputs];
     std::copy(c, c + num_ponits * num_outputs, coefficients);
+    double *x = getPoints();
+    if (acc == accel_cpu_blas){
+        evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
+    }else if (acc == accel_gpu_cublas){
+        evaluateBatchGPUcublas(x, points->getNumIndexes(), vals, os);
+    }else if (acc == accel_gpu_cuda){
+        evaluateBatchGPUcuda(x, points->getNumIndexes(), vals, os);
+    }else{
+        evaluateBatch(x, points->getNumIndexes(), vals);
+    }
+    delete[] x;
+    if (! aliased) values->setValuesPointer(vals, num_ponits);
 }
 
 const int* GridWavelet::getPointIndexes() const{

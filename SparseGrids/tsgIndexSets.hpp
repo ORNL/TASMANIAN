@@ -167,9 +167,11 @@ public:
     void readBinary(std::ifstream &ifs);
 
     const double* getValues(int i) const;
+    double* aliasValues() const;
     int getNumOutputs() const;
 
     void setValues(const double vals[]);
+    void setValuesPointer(double* &vals, int num_values);
     //void setValue(int i, const double val[]);
     void addValues(const IndexSet *old_set, const IndexSet *new_set, const double new_vals[]);
 
