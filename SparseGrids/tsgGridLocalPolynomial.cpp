@@ -1864,6 +1864,7 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
     }else{
         points = needed;
         needed = 0;
+        vals = new double[points->getNumIndexes() * num_outputs];
     }
     int num_ponits = points->getNumIndexes();
     if (surpluses != 0) delete[] surpluses;
@@ -1880,7 +1881,9 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
         evaluateBatch(x, points->getNumIndexes(), vals);
     }
     delete[] x;
-    if (! aliased) values->setValuesPointer(vals, num_ponits);
+    if (! aliased){
+        values->setValuesPointer(vals, num_ponits);
+    }
 }
 
 #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)

@@ -736,6 +736,7 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     }else{
         points = needed;
         needed = 0;
+        vals = new double[points->getNumIndexes() * num_outputs];
     }
     int num_ponits = points->getNumIndexes();
     if (coefficients != 0) delete[] coefficients;

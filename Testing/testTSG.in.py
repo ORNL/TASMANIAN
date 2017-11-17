@@ -138,8 +138,7 @@ class TestTasmanian(unittest.TestCase):
         mPoints = grid.getNeededPoints()
         iOut = grid.getNumOutputs()
         iDim = grid.getNumDimensions()
-        lVals = [[math.exp(-sum([mPoints[i,j]**2 for j in range(iDim)])) for k in range(iOut)] for i in range(mPoints.shape[0])]
-        grid.loadNeededPoints(np.array(lVals))
+        grid.loadNeededPoints(np.column_stack([np.exp(-np.sum(mPoints**2, axis=1)) for i in range(iOut)]))
 
     def testAABasicLibMeta(self): # the AA is so that this test goes first
         print("\nTesting library, basic read the library meta")
@@ -499,6 +498,10 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.evaluateSparseHierarchicalFunctions(np.array([[1.0, 1.0], [0.5, 0.3]]));", "notError"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.evaluateSparseHierarchicalFunctions(np.array([[1.0,], [0.5,]]));", "llfX"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.evaluateSparseHierarchicalFunctions(np.array([1.0, 1.0]));", "llfX"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.setHierarchicalCoefficients(np.array([1.0, 1.0]));", "llfCoefficients"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.setHierarchicalCoefficients(np.array([[1.0, 1.0],]));", "llfCoefficients"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 1, 1, 'localp'); grid.setHierarchicalCoefficients(np.array([[1.0, 1.0],[1.0, 1.0],[1.0, 1.0],[1.0, 1.0],[1.0, 1.0],]));", "llfCoefficients"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 1, 1, 'localp'); grid.setHierarchicalCoefficients(np.array([[1.0,],[1.0,],[1.0,],[1.0,],[1.0,]]));", "notError"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-wrong');", "sAccelerationType"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-default');", "notError"],
                    ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.isAccelerationAvailable('cpu-wrong');", "sAccelerationType"],
@@ -930,13 +933,75 @@ class TestTasmanian(unittest.TestCase):
         pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
         np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
 
-        # TODO: set hierarchical coefficients (hard actually, beware of acceleration and such, must make the function essentially equivalent to loadNeededPoints())
-        #grid.makeLocalPolynomialGrid(2, 1, 4, 1, 'localp')
-        #self.loadExpN2(grid)
-        #aCoeff = grid.getHierarchicalCoefficients()
-        #grid2 = TasmanianSG.TasmanianSparseGrid()
-        #grid2.makeLocalPolynomialGrid(2, 1, 4, 1, 'localp')
-        #grid2.setHierarchicalCoefficients(aCoeff)
+        gridA = TasmanianSG.TasmanianSparseGrid()
+        gridB = TasmanianSG.TasmanianSparseGrid()
+        gridA.makeGlobalGrid(2, 1, 4, 'level', 'chebyshev')
+        gridB.makeGlobalGrid(2, 1, 4, 'level', 'chebyshev')
+        self.loadExpN2(gridA)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+        
+        gridA = TasmanianSG.TasmanianSparseGrid()
+        gridB = TasmanianSG.TasmanianSparseGrid()
+        gridA.makeGlobalGrid(2, 1, 4, 'level', 'fejer2')
+        gridB.makeGlobalGrid(2, 1, 4, 'level', 'fejer2')
+        self.loadExpN2(gridA)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+        gridA.setAnisotropicRefinement('iptotal', 10, 0)
+        gridB.setAnisotropicRefinement('iptotal', 10, 0)
+        self.loadExpN2(gridA)
+        gridB.mergeRefinement()
+        self.assertEqual(gridA.getNumPoints(), gridB.getNumPoints(), 'different number of points after merge refinement')
+        aRes = gridB.evaluateBatch(aPoints)
+        np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+        
+        gridA.makeSequenceGrid(2, 1, 5, 'ipcurved', 'min-delta')
+        gridB.makeSequenceGrid(2, 1, 5, 'ipcurved', 'min-delta')
+        self.loadExpN2(gridA)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+        gridA.setAnisotropicRefinement('iptotal', 30, 0)
+        gridB.setAnisotropicRefinement('iptotal', 30, 0)
+        self.loadExpN2(gridA)
+        gridB.mergeRefinement()
+        self.assertEqual(gridA.getNumPoints(), gridB.getNumPoints(), 'different number of points after merge refinement')
+        aRes = gridB.evaluateBatch(aPoints)
+        np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+        
+        gridA.makeLocalPolynomialGrid(2, 1, 4, 2, 'semi-localp')
+        gridB.makeLocalPolynomialGrid(2, 1, 4, 2, 'semi-localp')
+        self.loadExpN2(gridA)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+        gridA.setSurplusRefinement(1.E-4, 0, 'classic')
+        gridB.setSurplusRefinement(1.E-4, 0, 'classic')
+        self.loadExpN2(gridA)
+        gridB.mergeRefinement()
+        self.assertEqual(gridA.getNumPoints(), gridB.getNumPoints(), 'different number of points after merge refinement')
+        aRes = gridB.evaluateBatch(aPoints)
+        np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+        
+        gridA.makeWaveletGrid(2, 1, 2, 1)
+        gridB.makeWaveletGrid(2, 1, 2, 1)
+        self.loadExpN2(gridA)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+        gridA.setSurplusRefinement(1.E-3, 0, 'classic')
+        gridB.setSurplusRefinement(1.E-3, 0, 'classic')
+        self.loadExpN2(gridA)
+        gridB.mergeRefinement()
+        self.assertEqual(gridA.getNumPoints(), gridB.getNumPoints(), 'different number of points after merge refinement')
+        aRes = gridB.evaluateBatch(aPoints)
+        np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
 
     def testFullCoverageD(self):
         print("\nTesting core acceleration")

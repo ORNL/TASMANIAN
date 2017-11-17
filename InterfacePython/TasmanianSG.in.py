@@ -1473,20 +1473,25 @@ class TasmanianSparseGrid:
     def evaluateSparseHierarchicalFunctions(self, llfX):
         '''
         evaluates the hierarchical functions at a set of points in the
-        domain. The distingtion between this function and
+        domain. The distinction between this function and
         evaluateHierarchicalFunctions() lies in the type of the returned
-        result, namely dense vs sparse matrix.
+        result, namely a sparse vs a dense matrix.
 
         The motivation for this function is that Local Polynomial and
-        Wavelet grids usually result in sparse grids
+        Wavelet grids usually result in sparse matrices
 
         llfX: a 2-D numpy.ndarray with llfX.shape[1] == iDimensions
               the entries indicate the points for evaluating
 
         output: returns a TasmanianSimpleSparseMatrix class
                 which is a simple class with three fields:
-                aPntr, aIndx, and aVals that are numpy.ndarray of types
+                aPntr, aIndx, and aVals which are numpy.ndarray of types
                 int32, int32, and float64
+                iNumRows and iNumCols are meta fields and have values
+                iNumRows = llfX.shape[0]
+                iNumCols = self.getNumPoints()
+                The sparse matrix is compressed along the llfX.shape[0]
+                dimension, i.e., using column compressed format
         '''
         if (len(llfX.shape) != 2):
             raise TasmanianInputError("llfX", "ERROR: calling evaluateSparseHierarchicalFunctions(), llfX should be a 2-D numpy array")
@@ -1506,22 +1511,31 @@ class TasmanianSparseGrid:
 
     def setHierarchicalCoefficients(self, llfCoefficients):
         '''
-        EXPERIMENTAL CAPABILITY
-
-        loads the hierarchical surplus coefficients associated with the
-        target function
-
-        this must be calles after dummy values have been loaded (see
-        loadNeededPoints())
-
-        the coefficients will overwrite the existing values
+        Local polynomial, Wavelet, and Sequence grids construct 
+        approximation using hierarchical coefficients based on the
+        loaded values. This function does the opposite, the hierarchical
+        coefficients are loaded directly and the values are computed
+        based on the coefficients. The coefficients can be computed, 
+        e.g., by solving least-squares or compressed sensing problem 
+                   min || A c - f ||
+        where A is a matrix returned by evaluateHierarchicalFunctions()
+        or evaluateSparseHierarchicalFunctions() for a set of points
+        llfX; f are the values of the target function at the llfX
+        points; and c is the vector with corresponding hierarchical
+        coefficients.
+        
+        If there is a pending refinement, i.e., getNumLoaded() != 0 and
+        getNumNeeded() != 0, then the refinement is discarded (since it
+        was computed based on the old and now obsolete values)
 
         llfCoefficients: a 2-D numpy.ndarray
                          with dimensions getNumPoints() X iOutputs
                          each row corresponds to the values of the
-                         outputs at the corresponding needed point.
+                         coefficients at the corresponding point.
                          The order and leading dimension must match the
-                         points obtained form getPoints()
+                         points obtained form getPoints(), the same
+                         order as the second dimension of 
+                         evaluateHierarchicalFunctions()
         '''
         if (len(llfCoefficients.shape) != 2):
             raise TasmanianInputError("llfCoefficients", "ERROR: llfCoefficients should be a 2-D numpy.ndarray, instead it has {0:1d} dimensions".format(len(llfCoefficients.shape)))
@@ -1531,7 +1545,7 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfCoefficients", "ERROR: second dimension of llfCoefficients is {0:1d} but the number of outputs is set to {1:1d}".format(llfCoefficients.shape[1], self.getNumOutputs()))
         iNumPoints = llfCoefficients.shape[0]
         iNumDims = llfCoefficients.shape[1]
-        self.pLibTSG.tsgSetHierarchicalCoefficients(self.pGrid, np.ctypeslib.as_ctypes(llfCoefficients))
+        self.pLibTSG.tsgSetHierarchicalCoefficients(self.pGrid, np.ctypeslib.as_ctypes(llfCoefficients.reshape([iNumPoints * iNumDims,])))
 
     def getGlobalPolynomialSpace(self, bInterpolation):
         '''
@@ -1707,18 +1721,15 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetGPUName(iGPUID, 256, pName, np.ctypeslib.as_ctypes(iNumChars))
         iNumChars = iNumChars[0]
         if (sys.version_info.major == 3):
-            #sName = str(pName, encoding='utf8')
             S = [s for s in pName]
             sName = ""
             for iI in range(iNumChars):
                 sName += str(S[iI], encoding='utf8')
-            #print(len(sName))
         else:
             S = [s for s in pName]
             sName = ""
             for iI in range(iNumChars):
                 sName += S[iI]
-            #print(len(sName))
         return sName
 
     def printStats(self):
@@ -1748,7 +1759,6 @@ class TasmanianSparseGrid:
         if (self.getNumDimensions() != 2):
             raise TasmanianInputError("plotPoints2D", "ERROR: cannot plot a grid with other than 2 dimensions")
 
-        #tsgPlot.figure(iNumFigure)
         aPoints = self.getPoints()
 
         fXmin = min(aPoints[:,0])

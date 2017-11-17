@@ -367,10 +367,10 @@ fi
 #######################################
 echo ""
 echo "Installing Tasmanian with options:"
-echo " - install path: $sInstallPrefix"
+echo "   install path: $sInstallPrefix"
 
 if [[ $sUseMatlab == "ON" ]]; then
-    echo " - matlab work folder: $sMatlabWork"
+    echo "   matlab work folder: $sMatlabWork"
 fi
 
 if [[ $sEnableOpenMP == "OFF" ]]; then
