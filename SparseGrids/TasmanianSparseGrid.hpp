@@ -45,7 +45,7 @@
 //#define TASMANIAN_VERSION_MAJOR 5
 //#define TASMANIAN_VERSION_MINOR 0
 //#define TASMANIAN_VERSION_STRING "5.0"
-//#define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclamer"
+//#define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
 
 
 namespace TasGrid{

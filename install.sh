@@ -145,7 +145,7 @@ for sOption in "$@"; do
     elif [[ $sOption == "-nocuda" ]]; then
         sEnableCUDA="OFF"
     elif [[ $sOption == "-nocublas" ]]; then
-        sEnableBLAS="OFF"
+        sEnableCUBLAS="OFF"
     elif [[ $sOption == "-nopython" ]] || [[ $sOption == "-nospam" ]]; then
         sEnablePython="OFF"
     elif [[ $sOption == "-python3" ]]; then
@@ -388,7 +388,7 @@ fi
 if [[ $sEnablePython == "OFF" ]]; then
     echo " -nopython: disable Python"
 fi
-if [[ $sEnableFortran == "OFF" ]]; then
+if [[ $sEnableFortran == "ON" ]]; then
     echo "  -fortran: enable Fortran"
 fi
 if [[ $sEnableShared == "OFF" ]]; then

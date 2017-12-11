@@ -292,7 +292,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     endif()
 else()
     # this is a bug in some versions of CUDA
-    if (Tasmanian_USING_FINDCUDA AND (${CUDA_VERSION_MAJOR} LESS 8))
+    if (Tasmanian_USING_FINDCUDA AND ("${CUDA_VERSION_MAJOR}" LESS 8))
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORCE_INLINES")
     endif()
 endif()

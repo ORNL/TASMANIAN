@@ -39,6 +39,7 @@ try:
     import matplotlib.pyplot as tsgPlot
 except:
     bTsgPlotting = False
+    tsgPlot = []
 
 __version__ = "@Tasmanian_VersionString@"
 __license__ = "@Tasmanian_License@"
