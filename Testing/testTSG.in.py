@@ -15,28 +15,6 @@ grid = TasmanianSG.TasmanianSparseGrid()
 # python-coverage report
 
 class TestTasmanian(unittest.TestCase):
-
-#    def tsgReadMatrix(self, sFilename):
-#        with open(sFilename, 'r') as infile:
-#            lsLines = infile.readlines()
-#
-#        sLine = lsLines.pop(0)
-#        liDims = [int(s) for s in sLine.split() if s.isdigit()]
-#
-#        if (len(liDims) != 2):
-#            return []
-#
-#        M = np.empty(liDims)
-#        iI = 0
-#        for sLine in lsLines:
-#            lfRow = [float(s) for s in sLine.split() if s.isdigit()]
-#            iJ = 0
-#            for fV in lfRow:
-#                M[iI,iJ] = fV
-#                iJ += 1
-#
-#        return M
-
     def compareGrids(self, gridA, gridB, bTestRuleNames = True):
         self.assertEqual(gridA.getNumDimensions(), gridB.getNumDimensions(), "error in getNumDimensions()")
         self.assertEqual(gridA.getNumOutputs(), gridB.getNumOutputs(), "error in getNumOutputs()")
@@ -56,7 +34,7 @@ class TestTasmanian(unittest.TestCase):
             mX3 = np.array([-1.0/5.0, -1.0/7.0, 1.0/3.0])
             mX4 = np.array([1.0/7.0, 1.0/5.0, 2.0/3.0])
             mX5 = np.array([-1.0/7.0, -1.0/13.0, -2.0/3.0])
-            
+
         aBatchPoints = np.row_stack([mX1, mX2, mX3, mX4, mX5])
 
         pA = gridA.getPoints()
@@ -107,11 +85,11 @@ class TestTasmanian(unittest.TestCase):
             pA = gridA.integrate()
             pB = gridB.integrate()
             np.testing.assert_almost_equal(pA, pB, 15, "Integration test not equal", True)
-            
+
             pA = gridA.evaluateBatch(aBatchPoints)
             pB = gridB.evaluateBatch(aBatchPoints)
             np.testing.assert_almost_equal(pA, pB, 15, "Interpolation test 6 (batch) not equal", True)
-            
+
             pA = gridA.getHierarchicalCoefficients()
             pB = gridB.getHierarchicalCoefficients()
             np.testing.assert_almost_equal(pA, pB, 15, "getHierarchicalCoefficients() not equal", True)
@@ -382,11 +360,6 @@ class TestTasmanian(unittest.TestCase):
 
                     aRegular = np.array([grid.evaluateThreadSafe(aTestPoints[i,:]) for i in range(aTestPoints.shape[0]) ])
                     aBatched = grid.evaluateBatch(aTestPoints)
-                    #print(grid.evaluateThreadSafe(aTestPoints[0,:]))
-                    #print("Regular")
-                    #print(aRegular)
-                    #print("Batched")
-                    #print(aBatched)
                     np.testing.assert_almost_equal(aRegular, aBatched, 14, "Batch evaluation test not equal: {0:1s}, acceleration: {1:1s}, gpu: {2:1d}".format(sTest, sAcc, iGPU), True)
 
                     aFast = np.array([ grid.evaluate(aTestPoints[i,:]) for i in range(iFastEvalSubtest) ])
@@ -546,8 +519,6 @@ class TestTasmanian(unittest.TestCase):
         iVm = int(sVersion.split('.')[1])
         self.assertEqual(iVM, grid.getVersionMajor(), "version major mismatch")
         self.assertEqual(iVm, grid.getVersionMinor(), "version minor mismatch")
-
-        # Not sure how to test the log (I guess implicitly, do I see errors or not)
 
         grid.makeGlobalGrid(1, 0, 4, 'level', 'gauss-hermite', [], 2.0)
         aW = grid.getQuadratureWeights()
@@ -940,7 +911,7 @@ class TestTasmanian(unittest.TestCase):
         self.loadExpN2(gridA)
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         self.compareGrids(gridA, gridB)
-        
+
         gridA = TasmanianSG.TasmanianSparseGrid()
         gridB = TasmanianSG.TasmanianSparseGrid()
         gridA.makeGlobalGrid(2, 1, 4, 'level', 'fejer2')
@@ -957,7 +928,7 @@ class TestTasmanian(unittest.TestCase):
         np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         self.compareGrids(gridA, gridB)
-        
+
         gridA.makeSequenceGrid(2, 1, 5, 'ipcurved', 'min-delta')
         gridB.makeSequenceGrid(2, 1, 5, 'ipcurved', 'min-delta')
         self.loadExpN2(gridA)
@@ -972,7 +943,7 @@ class TestTasmanian(unittest.TestCase):
         np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         self.compareGrids(gridA, gridB)
-        
+
         gridA.makeLocalPolynomialGrid(2, 1, 4, 2, 'semi-localp')
         gridB.makeLocalPolynomialGrid(2, 1, 4, 2, 'semi-localp')
         self.loadExpN2(gridA)
@@ -987,7 +958,7 @@ class TestTasmanian(unittest.TestCase):
         np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         self.compareGrids(gridA, gridB)
-        
+
         gridA.makeWaveletGrid(2, 1, 2, 1)
         gridB.makeWaveletGrid(2, 1, 2, 1)
         self.loadExpN2(gridA)
@@ -1005,7 +976,7 @@ class TestTasmanian(unittest.TestCase):
 
     def testFullCoverageD(self):
         print("\nTesting core acceleration")
-        
+
         grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
         for accel in TasmanianSG.lsTsgAccelTypes:
             grid.enableAcceleration(accel)
@@ -1041,12 +1012,12 @@ class TestTasmanian(unittest.TestCase):
             self.loadExpN2(grid)
             grid.plotResponse2D()
             grid.plotPoints2D()
-            
+
             grid.makeGlobalGrid(2, 1, 0, 'level', 'leja')
             self.loadExpN2(grid)
             grid.plotResponse2D()
             grid.plotPoints2D()
-            
+
             grid.makeGlobalGrid(3, 1, 3, 'level', 'leja')
             try:
                 grid.plotPoints2D()
@@ -1058,7 +1029,7 @@ class TestTasmanian(unittest.TestCase):
                 self.assertTrue(False, "failed to flag plot exception when when using a grid with other than 2D")
             except TasmanianSG.TasmanianInputError as TSGError:
                 self.assertEqual(TSGError.sVariable, "plotResponse2D", "error raising exception for plotResponse2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
-            
+
             grid.makeGlobalGrid(2, 2, 2, 'level', 'leja')
             try:
                 grid.plotResponse2D(iOutput = -1)

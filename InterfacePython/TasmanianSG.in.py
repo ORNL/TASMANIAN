@@ -161,9 +161,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgIsSetConformalTransformASIN.restype = c_int
         self.pLibTSG.tsgEstimateAnisotropicCoefficients.restype = POINTER(c_int)
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.restype = c_int
-        #self.pLibTSG.tsgEvalHierarchicalFunctions.restype = POINTER(c_double)
-        #self.pLibTSG.tsgBatchEvalHierarchicalFunctions.restype = POINTER(c_double)
-        #self.pLibTSG.tsgGetSurpluses.restype = POINTER(c_double)
         ##########
         self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
         ##########
@@ -235,13 +232,10 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgClearRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgMergeRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgRemovePointsBySurplus.argtypes = [c_void_p, c_double, c_int]
-        #self.pLibTSG.tsgEvalHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double)]
-        #self.pLibTSG.tsgBatchEvalHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgEvaluateHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
         self.pLibTSG.tsgSetHierarchicalCoefficients.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_int), POINTER(c_int), POINTER(c_double)]
-        #self.pLibTSG.tsgGetSurpluses.argtypes = [c_void_p]
         ##########
         self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgGetHierarchicalCoefficientsStatic.argtypes = [c_void_p, POINTER(c_double)]
@@ -301,18 +295,6 @@ class TasmanianSparseGrid:
         returns the hardcoded version minor int
         '''
         return self.pLibTSG.tsgGetVersionMinor()
-
-#    def isCudaEnabled(self):
-#        '''
-#        returns True if the library has been compiled with CUDA support
-#        '''
-#        return (self.pLibTSG.tsgIsCudaEnabled() != 0)
-#
-#    def isBLASEnabled(self):
-#        '''
-#        returns True if the library has been compiled with BLAS support
-#        '''
-#        return (self.pLibTSG.tsgIsBLASEnabled() != 0)
 
     def isOpenMPEnabled(self):
         '''
@@ -445,15 +427,15 @@ class TasmanianSparseGrid:
 
               'gauss-jacobi'
                 approximation using roots of polynomials orthogonal in
-                measure (1-x)^alpha*(1+x)^beta
+                measure (1-x)^alpha * (1+x)^beta
 
               'gauss-laguerre'
                 approximation using roots of polynomials orthogonal in
-                measure x^alpha*epx(-x)
+                measure x^alpha * epx(-x)
 
               'gauss-hermite'  'gauss-hermite-odd'
                 approximation using roots of polynomials orthogonal in
-                measure |x|^alpha*epx(-x^2)
+                measure |x|^alpha * epx(-x^2)
 
         liAnisotropicWeights: list or numpy.ndarray of weights
                               length must be iDimension or 2*iDimension
@@ -892,7 +874,6 @@ class TasmanianSparseGrid:
                 the order in getPoints()
 
         '''
-
         iNumPoints = self.getNumPoints()
         if (iNumPoints == 0):
             return np.empty([0], np.float64)
@@ -1144,6 +1125,7 @@ class TasmanianSparseGrid:
         if (lShape[1] != 2):
             raise TasmanianInputError("llfTransform", "ERROR: the second dimension of llfTransform is {0:1d} and it should be 2".format(lShape[1]))
         iNumDimensions = llfTransform.shape[0]
+        # NOTE: this is deliberately left in a way that can work with both ndarray and regular list-of-lists
         pA = (c_double*iNumDimensions)()
         pB = (c_double*iNumDimensions)()
         for iI in range(iNumDimensions):

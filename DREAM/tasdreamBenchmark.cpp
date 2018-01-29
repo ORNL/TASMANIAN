@@ -39,8 +39,8 @@ TasmanianSparseGrid* prepareGrid(int num_outputs, int depth, int mpi_me, int mpi
 
     double delta_x = 1.0 / ((double) (num_outputs * mpi_all)), delta_x2 = delta_x / 2.0;
 
-    //grid->makeGlobalGrid(2, num_outputs, depth, type_iptotal, rule_clenshawcurtis);
-    grid->makeLocalPolynomialGrid(2, num_outputs, depth, 1, rule_localp);
+    grid->makeGlobalGrid(2, num_outputs, depth, type_iptotal, rule_clenshawcurtis);
+    //grid->makeLocalPolynomialGrid(2, num_outputs, depth, 1, rule_localp);
 
     double x_root = ((double) mpi_me) / ((double) mpi_all);
 
@@ -190,6 +190,14 @@ void mpiBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int num_
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_all);
 
     TasmanianSparseGrid *grid = prepareGrid(num_outputs, depth, mpi_me, mpi_all);
+    if (mpi_me == 0){
+        cout << "basic-alpha-mpi, out="    << num_outputs
+                            << ", nodes="  << grid->getNumPoints()
+                            << ", chains=" << num_chains
+                            << ", burnup=" << num_burnup
+                            << ", mcmc="   << num_mcmc
+                            << ", mpi="    << mpi_all << endl;
+    }
 
     PosteriorFromModel *post = new PosteriorFromModel(grid);
 
@@ -204,7 +212,7 @@ void mpiBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int num_
 
     DistributedPosteriorTSGModel *dist = new DistributedPosteriorTSGModel(MPI_COMM_WORLD, post, &cerr);
     dist->setNumChanis(num_chains);
-    bool useLogForm = false;
+    bool useLogForm = true;
 
     if (mpi_me == 0){
 

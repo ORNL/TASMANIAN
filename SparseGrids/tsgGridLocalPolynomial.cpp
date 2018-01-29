@@ -381,16 +381,12 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
 
     std::fill(y, y + num_outputs, 0.0);
 
-    //int count_support = 0;
-    //int count_tested = 0;
-
     for(int r=0; r<num_roots; r++){
         double basis_value = evalBasisSupported(points->getIndex(roots[r]), x, isSupported);
 
         if (isSupported){
             offset = roots[r] * num_outputs;
             for(int k=0; k<num_outputs; k++) y[k] += basis_value * surpluses[offset + k];
-            //cout << roots[r] << "   " << basis_value << endl;
 
             int current = 0;
             monkey_tail[0] = roots[r];
@@ -398,15 +394,12 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
 
             while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                 if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                    //count_tested++;
                     offset = indx[monkey_count[current]];
                     basis_value = evalBasisSupported(points->getIndex(offset), x, isSupported);
                     if (isSupported){
-                        //count_support++;
                         offset *= num_outputs;
                         for(int k=0; k<num_outputs; k++) y[k] += basis_value * surpluses[offset + k];
                         offset /= num_outputs;
-                        //cout << offset << "   " << basis_value << endl;
 
                         monkey_tail[++current] = offset;
                         monkey_count[current] = pntr[offset];
@@ -419,8 +412,6 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
             }
         }
     }
-
-    //cout << count_tested << "   " << count_support << endl;
 
     delete[] monkey_count;
     delete[] monkey_tail;
@@ -439,34 +430,34 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
 }
 void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     evaluateBatch(x, num_x, y);
-    return;
+    //return;
 
-    int *sindx, *spntr;
-    double *svals;
-    buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
-
-    // how do you optimize sparse BLAS? This is slower
+//    int *sindx, *spntr;
+//    double *svals;
+//    buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
+//
+//    // how do you optimize sparse BLAS? This is slower
+////    for(int i=0; i<num_x; i++){
+////        double *this_y = &(y[i*num_outputs]);
+////        std::fill(this_y, this_y + num_outputs, 0.0);
+////        for(int j=spntr[i]; j<spntr[i+1]; j++){
+////            TasBLAS::daxpy(num_outputs, svals[j], &(surpluses[sindx[j] * num_outputs]), this_y);
+////        }
+////    }
+//
+//    #pragma omp parallel for
 //    for(int i=0; i<num_x; i++){
 //        double *this_y = &(y[i*num_outputs]);
-//        std::fill(this_y, this_y + num_outputs, 0.0);
-//        for(int j=spntr[i]; j<spntr[i+1]; j++){
-//            TasBLAS::daxpy(num_outputs, svals[j], &(surpluses[sindx[j] * num_outputs]), this_y);
+//        for(int s=0; s<num_outputs; s+=64){
+//            int s_end = s + 64;
+//            if (s_end >= num_outputs) s_end = num_outputs;
+//            for(int k=s; k<s_end; k++) this_y[k] = 0.0;
+//            for(int j=spntr[i]; j<spntr[i+1]; j++){
+//                double v = svals[j];
+//                for(int k=s; k<s_end; k++) this_y[k] += v * surpluses[sindx[j] * num_outputs + k];
+//            }
 //        }
 //    }
-
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        double *this_y = &(y[i*num_outputs]);
-        for(int s=0; s<num_outputs; s+=64){
-            int s_end = s + 64;
-            if (s_end >= num_outputs) s_end = num_outputs;
-            for(int k=s; k<s_end; k++) this_y[k] = 0.0;
-            for(int j=spntr[i]; j<spntr[i+1]; j++){
-                double v = svals[j];
-                for(int k=s; k<s_end; k++) this_y[k] += v * surpluses[sindx[j] * num_outputs + k];
-            }
-        }
-    }
 
 }
 #ifdef TASMANIAN_CUBLAS
@@ -479,7 +470,6 @@ void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, do
     double *svals;
     buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
 
-    //TasCUDA::d3gecs(num_outputs, num_x, num_points, gpu_acc->getGPUValues(), spntr, sindx, svals, y, &cerr);
     gpu_acc->cusparseDCRMM2(num_points, num_outputs, num_x, spntr, sindx, svals, y);
 
     delete[] svals;
@@ -491,7 +481,6 @@ void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, do
 #endif // TASMANIAN_CUDA
 void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
     #ifdef TASMANIAN_CUDA
-    //int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cuda, os);
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
@@ -500,7 +489,6 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
     buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
 
     TasCUDA::d3gecs(num_outputs, num_x, gpu_acc->getGPUValues(), spntr, sindx, svals, y, &cerr);
-    //gpu_acc->cusparseDCRMM2(num_points, num_outputs, num_x, spntr, sindx, svals, y);
 
     delete[] svals;
     delete[] sindx;
@@ -1478,7 +1466,6 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
     bool *used = new bool[work->getNumIndexes()];
     double *node = new double[num_dimensions];
-    //int max_parents = (rule->isSemiLocal()) ? 2*num_dimensions : num_dimensions;
     int max_parents = rule->getMaxNumParents() * num_dimensions;
 
     for(int l=top_level; l>0; l--){

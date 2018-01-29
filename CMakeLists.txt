@@ -938,6 +938,7 @@ else()
     foreach(TAS_OPTIONS Tasmanian_ENABLE_OPENMP Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_MPI
                         Tasmanian_ENABLE_MATLAB Tasmanian_ENABLE_PYTHON
                         Tasmanian_ENABLE_CUBLAS Tasmanian_ENABLE_CUDA
+                        Tasmanian_ENABLE_FORTRAN
                         Tasmanian_SHARED_LIBRARY Tasmanian_STATIC_LIBRARY)
         if (${TAS_OPTIONS})
             message(" -D ${TAS_OPTIONS}:BOOL=ON")

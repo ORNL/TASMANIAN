@@ -1439,6 +1439,11 @@ void loadGridValues(TasmanianSparseGrid *grid){
 }
 
 void ExternalTester::benchmark(int argc, const char **argv){
+    if ((argc < 3) || (strcmp(argv[2],"help") == 0)){
+        cout << "Accepted benchmarks:" << endl;
+        cout << "./tasgrid -bench alpha <dims> <outs> <depth> <type> <rule> <batch size> <iterations> <gpu>" << endl;
+        return;
+    }
     if (strcmp(argv[2],"alpha") == 0){
         cout << "./tasgrid -bench alpha <dims> <outs> <depth> <type> <rule> <batch size> <iterations> <gpu>" << endl;
         cout << "Compare acceleration: if batch size is 0 use surpluses, otherwise use evaluateBatch()";
@@ -1471,6 +1476,7 @@ void ExternalTester::benchmark(int argc, const char **argv){
         cout << setw(width) << "num outputs";
         TypeAcceleration cpu_tests[2] = {accel_none, accel_cpu_blas};
         TypeAcceleration gpu_tests[3] = {accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda};
+        //TypeAcceleration gpu_tests[3] = {accel_none, accel_gpu_cublas, accel_gpu_cuda};
         TypeAcceleration *tests;
         int num_tests;
         if (gpu > -1){
@@ -1488,7 +1494,7 @@ void ExternalTester::benchmark(int argc, const char **argv){
             cout << std::scientific;
             cout.precision(5);
             setRandomX(dims * num_x, x);
-            for(int s=0; s<5; s++){
+            for(int s=0; s<7; s++){
                 if (OneDimensionalMeta::isLocalPolynomial(r)){
                     grid->makeLocalPolynomialGrid(dims, outs, depth, 2, r);
                 }else if (OneDimensionalMeta::isSequence(r)){
@@ -1506,14 +1512,14 @@ void ExternalTester::benchmark(int argc, const char **argv){
                     if ((gpu > -1) && (t > 0)) grid->setGPUID(gpu);
                     grid->evaluateFast(x, y);
                     start = gettime();
-                    if ((num_tests == 2) || (t > 0))
+                    if ((num_tests == 2) || (t > -1))
                     for(int i=0; i<num_runs; i++){
                         grid->evaluateBatch(x, num_x, y);
                     }
                     cout << setw(width) << ((int) ((gettime() - start) * 100.0));
                 }
                 outs *= 2;
-                cout << setw(width) << "seconds^{-2}" << endl;
+                cout << setw(width+5) << "seconds * 10^{-2}" << endl;
                 delete[] y;
             }
             delete[] x;
@@ -1544,35 +1550,61 @@ void ExternalTester::benchmark(int argc, const char **argv){
                     cout << setw(width) << ((int) ((gettime() - start) * 100.0));
                 }
                 outs *= 2;
-                cout << setw(width) << "seconds^{-2}" << endl;
+                cout << setw(width+5) << "seconds * 10^{-2}" << endl;
             }
             delete[] v;
         }
     }
 }
 
+//#include "tsgHiddenExternals.hpp"
+//#include <cuda_runtime_api.h>
+//#include <cuda.h>
+//#include <cublas_v2.h>
+
 void ExternalTester::debugTest(){
     cout << "Debug Test" << endl;
     cout << "Put here testing code and call this with ./tasgrid -test debug" << endl;
 
-    double x[2] = { 0.33, -0.1133 };
-    double y1[1], y2[1];
-
-    TasmanianSparseGrid *grid = new TasmanianSparseGrid();
-    grid->makeLocalPolynomialGrid(2, 1, 3, 1, rule_localp);
-    grid->enableAcceleration(accel_gpu_cublas);
-    grid->setGPUID(0);
-    loadGridValues(grid);
-    grid->evaluate(x, y1);
-
-    cout << "-------------" << endl;
-    grid->makeLocalPolynomialGrid(2, 1, 3, 1, rule_localp);
-    loadGridValues(grid);
-    grid->evaluate(x, y2);
-
-    cout << std::scientific;
-    cout.precision(16);
-    cout << y1[0] - y2[0] << endl;
+//    int N = 2000;
+//    int K = 30;
+//    double *A = new double[K*N*N];
+//    double *B = new double[K*N*N];
+//    double *C = new double[K*N*N];
+//    setRandomX(K*N*N, A);
+//    setRandomX(K*N*N, B);
+//    setRandomX(K*N*N, C);
+//
+//    double start = gettime();
+//    #pragma omp parallel for num_threads(6)
+//    for(int k=0; k<K; k++){
+//        TasBLAS::dgemm(N, N, N, 1.0, &(A[k*N*N]), &(B[k*N*N]), 0.0, &(C[k*N*N]));
+//    }
+//    cout << "CPU Run time: " << setw(20) << ((int) ((gettime() - start) * 100.0)) << "    seconds x 10^{-2}" << endl;
+//
+//    start = gettime();
+//    cudaSetDevice(1);
+//    double *gpuA, *gpuB, *gpuC;
+//    cublasHandle_t cublasH;
+//    cublasCreate(&cublasH);
+//    cudaMalloc(((void**) &gpuA), N*N * sizeof(double));
+//    cudaMalloc(((void**) &gpuB), N*N * sizeof(double));
+//    cudaMalloc(((void**) &gpuC), N*N * sizeof(double));
+//
+//    double alpha = 1.0, beta = 0.0;
+//    //#pragma omp parallel for num_threads(2)
+//    for(int k=0; k<K; k++){
+//        //TasBLAS::dgemm(N, N, N, 1.0, &(A[k*N*N]), &(B[k*N*N]), 0.0, &(C[k*N*N]));
+//        cudaMemcpy(gpuA, &(A[k*N*N]), N*N * sizeof(double), cudaMemcpyHostToDevice);
+//        cudaMemcpy(gpuB, &(B[k*N*N]), N*N * sizeof(double), cudaMemcpyHostToDevice);
+//        cublasDgemm(cublasH, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha, gpuA, N, gpuB, N, &beta, gpuC, N);
+//        cudaMemcpy(&(C[k*N*N]), gpuC, N*N * sizeof(double), cudaMemcpyDeviceToHost);
+//    }
+//    cublasDestroy(cublasH);
+//    cudaFree(gpuA);
+//    cudaFree(gpuB);
+//    cudaFree(gpuC);
+//    cout << "GPU Run time: " << setw(20) << ((int) ((gettime() - start) * 100.0)) << "    seconds x 10^{-2}" << endl;
 
 }
 

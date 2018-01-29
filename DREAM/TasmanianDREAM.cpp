@@ -173,19 +173,19 @@ int DistributedPosteriorTSGModel::getNumDimensions() const{ return posterior->ge
 void DistributedPosteriorTSGModel::evaluate(int num_points, const double x[], double y[], bool useLogForm){
     // MPI witchcraft
     double *local_y = new double[num_chains];
-    double *x_extended = new double[num_chains*num_dimensions + 1]; std::copy(x, x+num_dimensions*num_chains, x_extended);
+    double *x_extended = new double[num_chains*num_dimensions + 2]; std::copy(x, x+num_dimensions*num_points, x_extended);
     x_extended[num_dimensions*num_chains] = 1.0; // send message: keep working
     x_extended[num_dimensions*num_chains+1] = (double) num_points; // send message: with number of points
-    MPI_Bcast((void*) x_extended, num_dimensions*num_chains+1, MPI_DOUBLE, 0, comm);
+    MPI_Bcast((void*) x_extended, num_dimensions*num_chains+2, MPI_DOUBLE, 0, comm);
 
     posterior->evaluate(num_points, x, local_y, useLogForm);
 
     for(int i=num_points; i<num_chains; i++) local_y[i] = 0.0;
 
     if (useLogForm){
-        MPI_Reduce(local_y, y, num_chains, MPI_DOUBLE, MPI_SUM, 0, comm);
+        MPI_Reduce(local_y, y, num_points, MPI_DOUBLE, MPI_SUM, 0, comm);
     }else{
-        MPI_Reduce(local_y, y, num_chains, MPI_DOUBLE, MPI_PROD, 0, comm);
+        MPI_Reduce(local_y, y, num_points, MPI_DOUBLE, MPI_PROD, 0, comm);
     }
 }
 
@@ -201,13 +201,13 @@ void DistributedPosteriorTSGModel::getDomainBounds(double* lower_bound, double* 
 }
 
 void DistributedPosteriorTSGModel::workerLoop(bool useLogForm){
-    double *x = new double[num_dimensions*num_chains+1];
+    double *x = new double[num_dimensions*num_chains+2];
     double *local_y = new double[num_chains];
 
     bool keep_working = true;
 
     while(keep_working){
-        MPI_Bcast((void*) x, num_dimensions*num_chains+1, MPI_DOUBLE, 0, comm);
+        MPI_Bcast((void*) x, num_dimensions*num_chains+2, MPI_DOUBLE, 0, comm);
 
         if (x[num_dimensions*num_chains] == 1.0){ // received message: keep working
 
@@ -218,9 +218,9 @@ void DistributedPosteriorTSGModel::workerLoop(bool useLogForm){
             for(int i=num_points; i<num_chains; i++) local_y[i] = 0.0;
 
             if (useLogForm){
-                MPI_Reduce(local_y, 0, num_chains, MPI_DOUBLE, MPI_SUM, 0, comm);
+                MPI_Reduce(local_y, 0, num_points, MPI_DOUBLE, MPI_SUM, 0, comm);
             }else{
-                MPI_Reduce(local_y, 0, num_chains, MPI_DOUBLE, MPI_PROD, 0, comm);
+                MPI_Reduce(local_y, 0, num_points, MPI_DOUBLE, MPI_PROD, 0, comm);
             }
         }else{
             keep_working = false;
@@ -231,9 +231,9 @@ void DistributedPosteriorTSGModel::workerLoop(bool useLogForm){
 }
 void DistributedPosteriorTSGModel::endWorkerLoop(){
     if (comm_me == 0){
-        double *x = new double[num_dimensions*num_chains+1];
-        std::fill(x, x + num_dimensions*num_chains+1, 0.0); // send message: stop working
-        MPI_Bcast((void*) x, num_dimensions*num_chains+1, MPI_DOUBLE, 0, comm);
+        double *x = new double[num_dimensions*num_chains+2];
+        std::fill(x, x + num_dimensions*num_chains+2, 0.0); // send message: stop working
+        MPI_Bcast((void*) x, num_dimensions*num_chains+2, MPI_DOUBLE, 0, comm);
         delete[] x;
     }
 }

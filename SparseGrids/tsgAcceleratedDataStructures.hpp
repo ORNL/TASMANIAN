@@ -83,7 +83,7 @@ public:
     TasCUDA();
     ~TasCUDA();
 
-    // matrix multuply double-precision (d), level 3, general (ge), column compressed sparse (cs): C = A * B
+    // matrix multiply double-precision (d), level 3, general (ge), column compressed sparse (cs): C = A * B
     // A is N by K, B is K by M, C is N by M
     // A and C are stored in column format, B is sparse column compresses
     static void d3gecs(int N, int M, const double *gpuA, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, double *cpuC, std::ostream *os = 0);

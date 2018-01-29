@@ -408,15 +408,17 @@ bool AccelerationMeta::isAccTypeGPU(TypeAcceleration accel){
 void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::ostream *os){
     if (*((cudaError_t*) cudaStatus) != cudaSuccess){
         if (os != 0){
-            if (*((cudaError_t*) cudaStatus) == cudaErrorMemoryAllocation){
-                (*os) << "ERROR: cuda failed with code: cudaErrorMemoryAllocation at " << info << endl;
-            }else if (*((cudaError_t*) cudaStatus) == cudaErrorIllegalAddress){
-                (*os) << "ERROR: cuda failed with code: cudaErrorIllegalAddress at " << info << endl;
-            }else if (*((cudaError_t*) cudaStatus) == cudaErrorInvalidValue){
-                (*os) << "ERROR: cuda failed with code: cudaErrorInvalidValue at " << info << endl;
-            }else{
-                (*os) << "ERROR: cuda failed with code: " << *((cudaError_t*) cudaStatus) << endl;
-            }
+            (*os) << "ERROR: cuda failed at " << info << " with error: " << endl;
+            (*os) << cudaGetErrorString(*((cudaError_t*) cudaStatus)) << endl;
+//            if (*((cudaError_t*) cudaStatus) == cudaErrorMemoryAllocation){
+//                (*os) << "ERROR: cuda failed with code: cudaErrorMemoryAllocation at " << info << endl;
+//            }else if (*((cudaError_t*) cudaStatus) == cudaErrorIllegalAddress){
+//                (*os) << "ERROR: cuda failed with code: cudaErrorIllegalAddress at " << info << endl;
+//            }else if (*((cudaError_t*) cudaStatus) == cudaErrorInvalidValue){
+//                (*os) << "ERROR: cuda failed with code: cudaErrorInvalidValue at " << info << endl;
+//            }else{
+//                (*os) << "ERROR: cuda failed with code: " << *((cudaError_t*) cudaStatus) << endl;
+//            }
         }
     }
 }
@@ -428,13 +430,29 @@ void AccelerationMeta::cudaCheckError(void *, const char *, std::ostream *){}
 void AccelerationMeta::cublasCheckError(void *cublasStatus, const char *info, std::ostream *os){
     if (*((cublasStatus_t*) cublasStatus) != CUBLAS_STATUS_SUCCESS){
         if (os != 0){
-            if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_EXECUTION_FAILED){
-                (*os) << "ERROR: cublas failed with code: CUBLAS_STATUS_EXECUTION_FAILED at " << info << endl;
+            (*os) << "ERROR: cublas failed with code: ";
+            if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_NOT_INITIALIZED){
+                (*os) << "CUBLAS_STATUS_NOT_INITIALIZED";
+            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_ALLOC_FAILED){
+                (*os) << "CUBLAS_STATUS_ALLOC_FAILED";
             }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_INVALID_VALUE){
-                (*os) << "ERROR: cublas failed with code: CUBLAS_STATUS_INVALID_VALUE at " << info << endl;
+                (*os) << "CUBLAS_STATUS_INVALID_VALUE";
+            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_ARCH_MISMATCH){
+                (*os) << "CUBLAS_STATUS_ARCH_MISMATCH";
+            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_MAPPING_ERROR){
+                (*os) << "CUBLAS_STATUS_MAPPING_ERROR";
+            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_EXECUTION_FAILED){
+                (*os) << "CUBLAS_STATUS_EXECUTION_FAILED";
+            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_INTERNAL_ERROR){
+                (*os) << "CUBLAS_STATUS_INTERNAL_ERROR";
+            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_NOT_SUPPORTED){
+                (*os) << "CUBLAS_STATUS_NOT_SUPPORTED";
+            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_LICENSE_ERROR){
+                (*os) << "CUBLAS_STATUS_LICENSE_ERROR";
             }else{
-                (*os) << "ERROR: cublas failed at " << info << endl;
+                (*os) << "UNKNOWN";
             }
+            (*os) << " at " << info << endl;
         }
     }
 }
