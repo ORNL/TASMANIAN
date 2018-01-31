@@ -144,6 +144,13 @@ function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDep
 %                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, 
 %                    sConformalMap, vConfromalWeights)%
 
+if (~isnumeric(iDim) || ~isreal(iDim) || ~(rem(iDim,1) == 0) || ~(size(iDim) == [1,1]) || ~(iDim > 0))
+    error('iDim must be a positive integer')
+end
+if (~isnumeric(iOut) || ~isreal(iOut) || ~(rem(iOut,1) == 0) || ~(size(iOut) == [1,1]) || ~(iOut > 0))
+    error('iOut must be a positive integer')
+end
+
 % create lGrid object
 lGrid.sName = sGridName;
 lGrid.iDim  = iDim;
@@ -190,12 +197,12 @@ if (exist('vAnisotropy') && (max(size(vAnisotropy)) ~= 0))
         error(' vAnisotropy must be a vector of size iDim');
     end
     if (size(vAnisotropy, 1) > size(vAnisotropy, 2))
-        tsgWriteMatrix(sFileW, vAnisotropy);
-    else
         tsgWriteMatrix(sFileW, vAnisotropy');
+    else
+        tsgWriteMatrix(sFileW, vAnisotropy);
     end
     lClean.sFileW = 1;
-    sCommand = [sCommand, ' -anisotropyfile ',sFileW];
+    sCommand = [sCommand, ' -anisotropyfile ', sFileW];
 end
 
 % set alpha and beta

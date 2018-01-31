@@ -14,6 +14,9 @@ grid = TasmanianSG.TasmanianSparseGrid()
 # python-coverage html
 # python-coverage report
 
+# TODO: test the math of the refinement
+#       test the math of the anisotropic coefficients
+
 class TestTasmanian(unittest.TestCase):
     def compareGrids(self, gridA, gridB, bTestRuleNames = True):
         self.assertEqual(gridA.getNumDimensions(), gridB.getNumDimensions(), "error in getNumDimensions()")
@@ -522,7 +525,7 @@ class TestTasmanian(unittest.TestCase):
 
         grid.makeGlobalGrid(1, 0, 4, 'level', 'gauss-hermite', [], 2.0)
         aW = grid.getQuadratureWeights()
-        self.assertTrue((sum(aW) - 0.5 * np.pi < 1.E-14), "Gauss-Hermite Alpha")
+        self.assertTrue(np.abs(sum(aW) - 0.5 * np.sqrt(np.pi)) < 1.E-14, "Gauss-Hermite Alpha")
 
         grid.makeGlobalGrid(2, 0, 2, 'level', 'leja', [2, 1])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [1.0, 0.0]])
@@ -544,6 +547,7 @@ class TestTasmanian(unittest.TestCase):
         aP = grid.getPoints()
         np.testing.assert_equal(aA, aP, "Anisotropy Sequence not equal", True)
 
+        # this is a very important test
         grid.makeGlobalGrid(2, 1, 1, 'ipcurved', 'rleja', [10, 10, -21, -21])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, 0.5], [0.0, 0.25], [0.0, 0.75], [0.0, 0.125],
                        [1.0, 0.0], [1.0, 1.0], [1.0, 0.5], [1.0, 0.25], [1.0, 0.75], [1.0, 0.125],
@@ -772,7 +776,6 @@ class TestTasmanian(unittest.TestCase):
 
     def testAAAAFullCoverageB(self):
         print("\nTesting core refine grid")
-        # TODO: MATH: test the refinement
         grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
         self.loadExpN2(grid)
         self.assertEqual(grid.getNumNeeded(), 0, "num needed")
@@ -780,6 +783,21 @@ class TestTasmanian(unittest.TestCase):
         self.assertTrue((grid.getNumNeeded() > 0), "num needed")
         grid.clearRefinement()
         self.assertEqual(grid.getNumNeeded(), 0, "num needed")
+        
+        grid.makeGlobalGrid(2, 1, 9, 'level', 'rleja')
+        aP = grid.getPoints()
+        aV = np.exp(aP[:,0] + aP[:,1]**2)
+        grid.loadNeededPoints(aV.reshape([aP.shape[0], 1]))
+        aC = grid.estimateAnisotropicCoefficients('iptotal', 0)
+        self.assertEqual(len(aC.shape), 1, 'dimensions of the estimated anisotropic weight')
+        self.assertEqual(aC.shape[0], 2, 'dimensions of the estimated anisotropic weight')
+        self.assertLess(np.abs(float(aC[0]) / float(aC[1]) - 2.0), 0.2, 'wrong anisotropic weights estimated')
+        aC = grid.estimateAnisotropicCoefficients('ipcurved', 0)
+        self.assertEqual(len(aC.shape), 1, 'dimensions of the estimated anisotropic weight')
+        self.assertEqual(aC.shape[0], 4, 'dimensions of the estimated anisotropic weight')
+        self.assertLess(np.abs(float(aC[0]) / float(aC[1]) - 2.0), 0.2, 'wrong anisotropic weights estimated, alpha curved')
+        self.assertLess(aC[2], 0.0, 'wrong anisotropic weights estimated, beta 1')
+        self.assertLess(aC[3], 0.0, 'wrong anisotropic weights estimated, beta 2')
 
         aA = np.array([[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2], [3, 0], [4, 0]])
         grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis')
@@ -811,7 +829,6 @@ class TestTasmanian(unittest.TestCase):
 
     def testAAAAFullCoverageC(self):
         print("\nTesting core learning from random samples")
-        # TODO: remove points by surplus (done with the exceptions and error checking)
 
         # evalHierarchicalBasis (all done in batch)
         grid.makeLocalPolynomialGrid(2, 2, 1, 1, 'localp')

@@ -128,6 +128,7 @@ set(tasmat_src tsgCancelRefine.m
                tsgEvaluateHierarchy.m
                tsgEvaluate.m
                tsgExample.m
+               tsgGetHCoefficients.m
                tsgGetInterpolationWeights.m
                tsgGetNeededIndexes.m
                tsgGetNeededPoints.m
@@ -135,10 +136,9 @@ set(tasmat_src tsgCancelRefine.m
                tsgGetPoints.m
                tsgGetPolynomialSpaces.m
                tsgGetQuadrature.m
-               tsgGetSurpluses.m
                tsgIntegrate.m
                tsgListGridsByName.m
-               tsgLoadHierarchical.m
+               tsgLoadHCoefficients.m
                tsgLoadValues.m
                tsgMakeFilenames.m
                tsgMakeGlobal.m
@@ -146,12 +146,14 @@ set(tasmat_src tsgCancelRefine.m
                tsgMakeQuadrature.m
                tsgMakeSequence.m
                tsgMakeWavelet.m
+               tsgMergeRefine.m
                tsgPlotPoints2D.m
                tsgReadMatrix.m
                tsgRefineAnisotropic.m
                tsgRefineSurplus.m
                tsgReloadGrid.m
                tsgSummary.m
+               tsgCoreTests.m
                tsgWriteCustomRuleFile.m
                tsgWriteMatrix.m)
 

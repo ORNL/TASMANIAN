@@ -12,7 +12,7 @@ function tsgCleanTempFiles(lGrid, lFiles)
 % should never have to worry about this.
 %
 % INPUT:
-%       lGrid:  a grid list created by a tsgMakeXXX(...) command (i.e., an
+%       lGrid:  a grid list created by a tsgMake***(...) command (i.e., an
 %               existing grid)
 %
 %       lFiles: object with fields sFileX, sFileV, sFileO, sFileW, sFileC

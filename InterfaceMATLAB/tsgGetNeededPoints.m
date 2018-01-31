@@ -19,7 +19,7 @@ function [points] = tsgGetNeededPoints(lGrid)
 [sFiles, sTasGrid] = tsgGetPaths();
 [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
 
-sCommand = [sTasGrid,' -getneededpoints'];
+sCommand = [sTasGrid,' -getneeded'];
 
 sCommand = [sCommand, ' -gridfile ', sFileG];
 

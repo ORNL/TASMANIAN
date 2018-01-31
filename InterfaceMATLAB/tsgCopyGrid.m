@@ -8,7 +8,7 @@ function  [lNewGrid] = tsgCopyGrid(lOldGrid, sNewGridName)
 %
 % INPUT:
 %
-% lGrid: a grid list created by tsgMakeXXX(...)
+% lGrid: a grid list created by tsgMake***(...)
 %
 % sNewGridName: the name for the new grid, the new grid will be identical
 % to the old one in every other way

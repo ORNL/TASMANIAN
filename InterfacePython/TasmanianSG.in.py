@@ -159,7 +159,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgBatchGetInterpolationWeights.restype = POINTER(c_double)
         self.pLibTSG.tsgIsSetDomainTransfrom.restype = c_int
         self.pLibTSG.tsgIsSetConformalTransformASIN.restype = c_int
-        self.pLibTSG.tsgEstimateAnisotropicCoefficients.restype = POINTER(c_int)
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.restype = c_int
         ##########
         self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
@@ -225,7 +224,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgClearConformalTransform.argtypes = [c_void_p]
         self.pLibTSG.tsgGetConformalTransformASIN.argtypes = [c_void_p, POINTER(c_int)]
         self.pLibTSG.tsgSetAnisotropicRefinement.argtypes = [c_void_p, c_char_p, c_int, c_int]
-        self.pLibTSG.tsgEstimateAnisotropicCoefficients.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgEstimateAnisotropicCoefficientsStatic.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgSetGlobalSurplusRefinement.argtypes = [c_void_p, c_double, c_int]
         self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int]
@@ -1312,8 +1310,8 @@ class TasmanianSparseGrid:
             sType = bytes(sType, encoding='utf8')
 
         aCoeff = np.empty([iNumCoeffs], np.int32)
-        self.pLibTSG.tsgEstimateAnisotropicCoefficients(self.pGrid, c_char_p(sType), iOutput, np.ctypeslib.as_ctypes(aCoeff))
-
+        self.pLibTSG.tsgEstimateAnisotropicCoefficientsStatic(self.pGrid, c_char_p(sType), iOutput, np.ctypeslib.as_ctypes(aCoeff))
+        
         return aCoeff
 
     def setSurplusRefinement(self, fTolerance, iOutput, sCriteria=""):

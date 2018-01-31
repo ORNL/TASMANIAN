@@ -200,20 +200,21 @@ bool TasgridWrapper::checkSane() const{
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (conformal == conformal_none){  cerr << "ERROR: must specify valid -conformaltype" << endl; pass = false;  }
         if (conformalfilename == 0){ cerr << "ERROR: must specify valid -conformalfile" << endl; pass = false; }
-    }else if ((command == command_getquadrature) || (command == command_getpoints) || (command == command_getneeded)){
+    }else if ((command == command_getquadrature) || (command == command_getpoints) || (command == command_getneeded) ||
+              (command == command_getcoefficients)){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if ((outfilename == 0) && (printCout == false)){
             cerr << "ERROR: no means of output are specified, you should specify -outfile or -print" << endl; pass = false;
         }
         return pass;
-    }else if (command == command_loadvalues){
+    }else if ((command == command_loadvalues) || (command == command_setcoefficients)){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (valsfilename == 0){ cerr << "ERROR: must specify valid -valsfile" << endl; pass = false; }
         return pass;
-    }else if (command == command_sethierarchical){
-        if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
-        if (valsfilename == 0){ cerr << "ERROR: must specify valid -valsfile" << endl; pass = false; }
-        return pass;
+//    }else if (command == command_sethierarchical){
+//        if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+//        if (valsfilename == 0){ cerr << "ERROR: must specify valid -valsfile" << endl; pass = false; }
+//        return pass;
     }else if ((command == command_getinterweights) || (command == command_evaluate) || (command == command_evalhierarchical)){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (xfilename == 0){ cerr << "ERROR: must specify valid -pointsfile" << endl; pass = false; }
@@ -240,7 +241,7 @@ bool TasgridWrapper::checkSane() const{
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
     }else if (command == command_refine_surp){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
-    }else if (command == command_refine_clear){
+    }else if ((command == command_refine_clear) || (command == command_refine_merge)){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
     }else if (command == command_getrefcoeff){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
@@ -256,10 +257,14 @@ bool TasgridWrapper::checkSane() const{
         }
     }else if (command == command_summary){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
-    }else if (command == command_getsurpluses){
+    }else if (command == command_getcoefficients){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
-        // ask for an output file
     }
+
+    // if (command == command_getsurpluses){
+    //    if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+        // ask for an output file
+    //}
 
     return pass;
 }
@@ -416,6 +421,17 @@ void TasgridWrapper::outputQuadrature() const{
     delete[] combined;
     delete[] weights;
     delete[] points;
+}
+void TasgridWrapper::outputHierarchicalCoefficients() const{
+    const double *coeff = grid->getHierarchicalCoefficients();
+    int num_p = grid->getNumPoints();
+    int num_d = grid->getNumOutputs();
+    if (outfilename != 0){
+        writeMatrix(outfilename, num_p, num_d, coeff, useASCII);
+    }
+    if (printCout){
+        printMatrix(num_p, num_d, coeff);
+    }
 }
 bool TasgridWrapper::setConformalTransformation(){
     if (conformal == conformal_asin){
@@ -669,6 +685,10 @@ bool TasgridWrapper::cancelRefine(){
     grid->clearRefinement();
     return true;
 }
+bool TasgridWrapper::mergeRefine(){
+    grid->mergeRefinement();
+    return true;
+}
 bool TasgridWrapper::getPoly(){
     if ((grid->isGlobal()) || (grid->isSequence())){
         int num_d = grid->getNumDimensions();
@@ -751,7 +771,6 @@ bool TasgridWrapper::setHierarchy(){
         cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
         return false;
     }
-    cout << "Setting up hierach" << endl;
     grid->setHierarchicalCoefficients(vals);
     delete[] vals;
     return true;
@@ -947,6 +966,8 @@ bool TasgridWrapper::executeCommand(){
             cerr << "ERROR: could not set the conformal grid" << endl;
             return false;
         }
+    }else if (command == command_getcoefficients){
+        outputHierarchicalCoefficients();
     }else if (command == command_getquadrature){
         outputQuadrature();
     }else if (command == command_getpoints){
@@ -993,17 +1014,17 @@ bool TasgridWrapper::executeCommand(){
             cerr << "ERROR: could not evaluate the hierarchical basis functions" << endl;
             return false;
         }
-    }else if (command == command_sethierarchical){
+    }else if (command == command_setcoefficients){
         if (setHierarchy()){
             writeGrid();
         }else{
-            cerr << "ERROR: could not set the hierarchical surpluses" << endl;
+            cerr << "ERROR: could not set the hierarchical coefficients" << endl;
             return false;
         }
-    }else if (command == command_getsurpluses){
-        if (!getSurpluses()){
-            cerr << "ERROR: could not get the surpluses" << endl;
-        }
+    //}else if (command == command_getsurpluses){
+    //    if (!getSurpluses()){
+    //        cerr << "ERROR: could not get the surpluses" << endl;
+    //    }
     }else if (command == command_getpointsindex){
         if (!getPointsIndexes()){
             cerr << "ERROR: could not get the indexes" << endl;

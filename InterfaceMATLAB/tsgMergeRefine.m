@@ -1,28 +1,24 @@
-function [result] = tsgIntegrate(lGrid)
+function tsgMergeRefine(lGrid)
 %
-% [result] = tsgEvaluate(lGrid, points)
+% tsgMergeRefine(lGrid)
 %
-% returns the integral of the interpolant
+% merges the points and loaded points and discards the loaded values
 %
 % INPUT:
 %
-% lGrid: a grid list created by tsgMakeXXX(...)
+% lGrid: a grid list created by tsgMake***(...)
 %
 % OUTPUT:
 %
-% result: a vector of size [iOut]
-%         the values of the integrals of each output
+% The grid file associated with lGrid is modified
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
 [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
 
-sCommand = [sTasGrid,' -integrate'];
+sCommand = [sTasGrid,' -mergerefine'];
 
 sCommand = [sCommand, ' -gridfile ', sFileG];
-
-sCommand = [sCommand, ' -of ', sFileO];
-lClean.sFileO = 1;
 
 [status, cmdout] = system(sCommand);
 
@@ -35,9 +31,6 @@ else
         fprintf(1,['Warning: Command had non-empty output:\n']);
         disp(cmdout);
     end
-    [result] = tsgReadMatrix(sFileO);
 end
-
-tsgCleanTempFiles(lGrid, lClean);
 
 end

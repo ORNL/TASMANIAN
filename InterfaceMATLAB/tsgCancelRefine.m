@@ -7,7 +7,7 @@ function tsgCancelRefine(lGrid)
 %
 % INPUT:
 %
-% lGrid: a grid list created by tsgMakeXXX(...)
+% lGrid: a grid list created by tsgMake***(...)
 %
 % OUTPUT:
 %

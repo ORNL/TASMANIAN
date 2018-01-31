@@ -1,19 +1,18 @@
-function tsgLoadHierarchical(lGrid, mValues)
+function tsgLoadHCoefficients(lGrid, mValues)
 %
-% tsgLoadValues(lGrid, mValues)
+% tsgLoadHCoefficients(lGrid, mValues)
 %
 % loads the values of the target function at the needed points
 %
 % INPUT:
 %
-% lGrid: a grid list created by tsgMakeXXX(...) command
+% lGrid: a grid list created by tsgMake***(...) command
 %
-% mValues: a matrix with dimension [num_points, iOut]
+% mValues: a matrix with dimension [num_needed_points, iOut]
 %          each row corresponds to the values of the hierarchical
-%          surpluses associated with the basis function.
-%
-%       Note: The order and leading dimension must
-%             match the points obtained form tsgGetPoints(...) command
+%          coefficients at the corresponding needed point. 
+%          The order and leading dimension must match the points 
+%          obtained form tsgGetNeededPoints(...) command
 %
 % OUTPUT:
 %
@@ -23,7 +22,7 @@ function tsgLoadHierarchical(lGrid, mValues)
 [sFiles, sTasGrid] = tsgGetPaths();
 [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
 
-sCommand = [sTasGrid,' -loadhierarchy'];
+sCommand = [sTasGrid,' -setcoefficients'];
 
 sCommand = [sCommand, ' -gridfile ', sFileG];
 
@@ -39,7 +38,7 @@ if (size(findstr('ERROR', cmdout)) ~= [0, 0])
     error('The tasgrid execurable returned an error, see above');
     return;
 else
-    if (~isempty(cmdout))
+    if (~ isempty(cmdout))
         fprintf(1,['Warning: Command had non-empty output:\n']);
         disp(cmdout);
     end

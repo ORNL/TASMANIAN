@@ -75,17 +75,21 @@ enum TypeCommand{
     command_refine_aniso,
     command_refine,
     command_refine_clear,
+    command_refine_merge,
 
     command_getpoly,
 
     command_summary,
 
-    command_getsurpluses, // mostly a debug command
+    command_getcoefficients, // ML section
+    command_setcoefficients, // ML section
+
+    //command_getsurpluses, // mostly a debug command
     command_getpointsindex,
     command_getneededindex,
 
-    command_evalhierarchical, // experimental
-    command_sethierarchical
+    command_evalhierarchical // experimental
+    //command_sethierarchical
 };
 
 enum TypeConformalMap{
@@ -149,6 +153,7 @@ protected:
 
     void outputPoints(bool useNeeded) const;
     void outputQuadrature() const;
+    void outputHierarchicalCoefficients() const;
 
     bool setConformalTransformation();
 
@@ -161,6 +166,7 @@ protected:
 
     bool refineGrid();
     bool cancelRefine();
+    bool mergeRefine();
 
     bool getEvalHierarchy();
     bool setHierarchy();

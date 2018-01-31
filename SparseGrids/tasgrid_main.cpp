@@ -201,7 +201,7 @@ int main(int argc, const char ** argv){
     }else if ((strcmp(argv[1],"-evaluate") == 0) || (strcmp(argv[1],"-e") == 0)){
         wrap.setCommand(command_evaluate);
     }else if ((strcmp(argv[1],"-integrate") == 0) || (strcmp(argv[1],"-i") == 0)){
-        wrap.setCommand(command_getanisocoeff);
+        wrap.setCommand(command_integrate);
     }else if ((strcmp(argv[1],"-getanisotropy") == 0) || (strcmp(argv[1],"-ga") == 0)){
         wrap.setCommand(command_getanisocoeff);
     }else if ((strcmp(argv[1],"-refinesurp") == 0) || (strcmp(argv[1],"-rs") == 0)){
@@ -212,16 +212,22 @@ int main(int argc, const char ** argv){
         wrap.setCommand(command_refine);
     }else if ((strcmp(argv[1],"-cancelrefine") == 0) || (strcmp(argv[1],"-cr") == 0)){
         wrap.setCommand(command_refine_clear);
-    }else if ((strcmp(argv[1],"-evalhierarchy") == 0) || (strcmp(argv[1],"-eh") == 0)){
-        wrap.setCommand(command_evalhierarchical);
-    }else if ((strcmp(argv[1],"-loadhierarchy") == 0) || (strcmp(argv[1],"-lh") == 0)){
-        wrap.setCommand(command_sethierarchical);
+    }else if ((strcmp(argv[1],"-mergerefine") == 0) || (strcmp(argv[1],"-mr") == 0)){
+        wrap.setCommand(command_refine_merge);
+    //}else if ((strcmp(argv[1],"-evalhierarchy") == 0) || (strcmp(argv[1],"-eh") == 0)){
+    //    wrap.setCommand(command_evalhierarchical);
+    //}else if ((strcmp(argv[1],"-loadhierarchy") == 0) || (strcmp(argv[1],"-lh") == 0)){
+    //    wrap.setCommand(command_sethierarchical);
     }else if (strcmp(argv[1],"-getpoly") == 0){
         wrap.setCommand(command_getpoly);
     }else if ((strcmp(argv[1],"-summary") == 0) || (strcmp(argv[1],"-s") == 0)){
         wrap.setCommand(command_summary);
-    }else if (strcmp(argv[1],"-getsurpluses") == 0){
-        wrap.setCommand(command_getsurpluses);
+    }else if ((strcmp(argv[1],"-getcoefficients") == 0) || (strcmp(argv[1],"-gc") == 0)) {
+        wrap.setCommand(command_getcoefficients);
+    }else if ((strcmp(argv[1],"-setcoefficients") == 0) || (strcmp(argv[1],"-sc") == 0)) {
+        wrap.setCommand(command_setcoefficients);
+    //}else if (strcmp(argv[1],"-getsurpluses") == 0){
+    //    wrap.setCommand(command_getsurpluses);
     }else if (strcmp(argv[1],"-getpointsindexes") == 0){
         wrap.setCommand(command_getpointsindex);
     }else if (strcmp(argv[1],"-getneededindexes") == 0){
@@ -529,7 +535,10 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -refinesurp\t"       << "\t-rs"     << "\t\trefines the grid" << endl;
         cout << " -refine\t"       << "\t-r"      << "\t\trefines the grid" << endl;
         cout << " -cancelrefine\t"     << "\t-cr"     << "\t\tdiscards the last refinement (unless values are already loaded)" << endl;
-        cout << " -getpoly\t"      << "\t\t"      << "\t\tget polynomial space" << endl;
+        cout << " -mergerefine\t"     << "\t-mr"     << "\t\tcombines the loaded and needed points and discards the loaded values" << endl;
+        cout << " -getcoefficients"    << "\t-gc"     << "\t\tget the hierarchical coefficients of the grid" << endl;
+        cout << " -setcoefficients"    << "\t-sc"     << "\t\tset the hierarchical coefficients of the grid" << endl;
+        cout << " -getpoly\t"      << "\t"      << "\t\tget polynomial space" << endl;
         cout << " -summary\t"      << "\t-s"      << "\t\twrites short description" << endl << endl;
 
         cout << "Options\t\t"    << "\tShorthand"  << "\tValue"    << "\t\tAction" << endl;
@@ -705,6 +714,26 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
             cout << "Note: -outputfile or -print output the points and weights of the grid" << endl;
             cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output" << endl << endl;
+        }else if (com == command_getcoefficients){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
+            cout << " -getcoefficients"    << "\t-gc"     << "\t\tget the hierarchical coefficients" << endl << endl;
+            cout << "Accepted options:"  << endl;
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
+            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file" << endl;
+            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
+            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
+            cout << "Note: -outputfile or -print output the hierarchical coefficients of the sparse grid" << endl;
+            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output" << endl << endl;
+        }else if (com == command_setcoefficients){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
+            cout << " -setcoefficients"    << "\t-sc"     << "\t\tset the hierarchical coefficients" << endl << endl;
+            cout << "Accepted options:"  << endl;
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
+            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file" << endl;
+            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
+            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
+            cout << "Note: -outputfile or -print output the hierarchical coefficients of the sparse grid" << endl;
+            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output" << endl << endl;
         }else if (com == command_getinterweights){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
             cout << " -getinterweights"  << "\t-gi"     << "\t\toutput the interpolation weights" << endl << endl;
@@ -815,6 +844,12 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_refine_clear){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
             cout << " -cancelrefine\t"   << "\t-cr"     << "\t\tdiscards the last refinement (unless values are already loaded)" << endl << endl;
+            cout << "Accepted options:"  << endl;
+            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file" << endl;
+            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl << endl;
+        }else if (com == command_refine_merge){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
+            cout << " -mergerefine\t"   << "\t-mr"     << "\t\tmerges the loaded and needed points and discards any loaded values" << endl << endl;
             cout << "Accepted options:"  << endl;
             cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file" << endl;
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl << endl;

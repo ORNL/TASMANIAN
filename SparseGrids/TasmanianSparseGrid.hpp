@@ -142,6 +142,7 @@ public:
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
     void printStats() const;
+
     void printStatsLog() const;
 
     void enableAcceleration(TypeAcceleration acc);

@@ -113,16 +113,16 @@ end
 
 % set anisotropy
 if (exist('vAnisotropy') && (max(size(vAnisotropy)) ~= 0))
-    if (min(size(vAlphaBeta)) ~= 1)
+    if (min(size(vAnisotropy)) ~= 1)
         error(' vAnisotropy must be a vector, i.e., one row or one column');
     end
-    if (max(size(vAlphaBeta)) ~= lGrid.iDim)
+    if (max(size(vAnisotropy)) ~= lGrid.iDim)
         error(' vAnisotropy must be a vector of size iDim');
     end
     if (size(vAnisotropy, 1) > size(vAnisotropy, 2))
-        tsgWriteMatrix(sFileW, vAnisotropy);
-    else
         tsgWriteMatrix(sFileW, vAnisotropy');
+    else
+        tsgWriteMatrix(sFileW, vAnisotropy);
     end
     lClean.sFileW = 1;
     sCommand = [sCommand, ' -anisotropyfile ',sFileW];
