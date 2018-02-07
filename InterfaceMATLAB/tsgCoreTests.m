@@ -394,6 +394,38 @@ tsgDeleteGrid(lGrid);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgEvaluateHierarchy()                       %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[lGrid, p] = tsgMakeGlobal('_tsgcoretests_ml', 3, 1, 'fejer2', 'level', 4);
+[V] = tsgEvaluateHierarchy(lGrid, p);
+if (norm(V - eye(size(p,1))) > 1.E-11)
+    error(['Mismatch in tsgEvaluateHierarchy: lagrange polynomials do not form identity']);
+end
+
+[lGrid, p] = tsgMakeSequence('_tsgcoretests_ml', 2, 1, 'leja', 'level', 2);
+pnts = [0.33, 0.25; -0.27, 0.39; 0.97, -0.76; -0.44, 0.21; -0.813, 0.03; -0.666, 0.666];
+tres = [ones(size(pnts, 1), 1), pnts(:,2), 0.5 * pnts(:,2) .* (pnts(:,2) - 1.0), pnts(:,1), pnts(:,1) .* pnts(:,2), 0.5 * pnts(:,1) .* (pnts(:,1) - 1.0)];
+[res] = tsgEvaluateHierarchy(lGrid, pnts);
+if (norm(res - tres) > 1.E-11)
+    error(['Mismatch in tsgEvaluateHierarchy: sequence grid test']);
+end
+
+[lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_ml', 2, 1, 'localp', 2, 1);
+v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
+tsgLoadValues(lGrid, v);
+pnts = [-1.0 + 2.0 * rand(13, 2)];
+[tres] = tsgEvaluate(lGrid, pnts);
+[mVan] = tsgEvaluateHierarchy(lGrid, pnts);
+[coef] = tsgGetHCoefficients(lGrid);
+res = mVan * coef;
+if (norm(tres - res) > 1.E-11)
+    error(['Mismatch in tsgEvaluateHierarchy: localp grid test']);
+end
+
+tsgDeleteGrid(lGrid);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgIntegrate()                               %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [lGrid, p] = tsgMakeGlobal('_tsgcoretests_int', 1, 1, 'gauss-hermite', 'level', 2, [], [0.0, 0.0]);
@@ -413,6 +445,7 @@ if (abs(I - sqrt(2.0) * pi^0.5 / 2.0) > 1.E-11)
 end
 
 disp(['Core I/O and evaluate:    PASS']);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgEstimateAnisotropicCoefficients()         %%%
@@ -465,6 +498,16 @@ if (norm(vA - vB) > 1.E-11)
 end
 tsgDeleteGrid(lGridA);
 tsgDeleteGrid(lGridB);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgGetHCoefficients()                        %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% covered in tsgMergeRefine()
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgLoadHCoefficients()                       %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% covered in tsgMergeRefine()
 
 disp(['Refinement functions:     PASS']);
 

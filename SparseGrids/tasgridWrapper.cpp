@@ -86,7 +86,7 @@ void TasgridWrapper::setUseASCII(bool ascii){ useASCII = ascii; }
 bool TasgridWrapper::checkSane() const{
     bool pass = true;
     if (command == command_none){
-        cerr << "ERROR: no command specified" << endl;  return false;
+        cerr << "ERROR: checkSane(), no command specified" << endl;  return false;
     }else if (command == command_makeglobal){
         if (num_dimensions < 1){ cerr << "ERROR: must specify number of dimensions" << endl; pass = false; }
         if (num_outputs < 0){ cerr << "ERROR: must specify number of outputs (could use zero)" << endl; pass = false; }
@@ -211,11 +211,8 @@ bool TasgridWrapper::checkSane() const{
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (valsfilename == 0){ cerr << "ERROR: must specify valid -valsfile" << endl; pass = false; }
         return pass;
-//    }else if (command == command_sethierarchical){
-//        if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
-//        if (valsfilename == 0){ cerr << "ERROR: must specify valid -valsfile" << endl; pass = false; }
-//        return pass;
-    }else if ((command == command_getinterweights) || (command == command_evaluate) || (command == command_evalhierarchical)){
+    }else if ((command == command_getinterweights) || (command == command_evaluate)
+              || (command == command_evalhierarchical_dense) || (command == command_evalhierarchical_sparse)){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (xfilename == 0){ cerr << "ERROR: must specify valid -pointsfile" << endl; pass = false; }
         if ((outfilename == 0) && (printCout == false)){
@@ -728,7 +725,7 @@ bool TasgridWrapper::getSurpluses(){
     return true;
 }
 
-bool TasgridWrapper::getEvalHierarchy(){
+bool TasgridWrapper::getEvalHierarchyDense(){
     int rows, cols;
     double *x = 0, *res;
     readMatrix(xfilename, rows, cols, x);
@@ -742,13 +739,7 @@ bool TasgridWrapper::getEvalHierarchy(){
     }
     int num_p = grid->getNumPoints();
     res = new double[num_p * rows];
-    #pragma omp parallel for
-    for(int i=0; i<rows; i++){
-        //double *r = grid->evalHierarchicalFunctions(&(x[i*cols]));
-        double *r = new double[num_p];
-        std::copy(r, r + num_p, &(res[i * num_p]));
-        delete[] r;
-    }
+    grid->evaluateHierarchicalFunctions(x, rows, res);
     if (outfilename != 0){
         writeMatrix(outfilename, rows, num_p, res, useASCII);
     }
@@ -757,6 +748,70 @@ bool TasgridWrapper::getEvalHierarchy(){
     }
     delete[] x;
     delete[] res;
+    return true;
+}
+bool TasgridWrapper::getEvalHierarchySparse(){
+    int rows, cols;
+    double *x = 0;
+    readMatrix(xfilename, rows, cols, x);
+    if (cols != grid->getNumDimensions()){
+        cerr << "ERROR: grid is set for " << grid->getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
+        return false;
+    }
+    if (rows < 1){
+        cerr << "ERROR: no points specified in " << xfilename << endl;
+        return false;
+    }
+    int *pntr = 0, *indx = 0;
+    double *vals = 0;
+    grid->evaluateSparseHierarchicalFunctions(x, rows, pntr, indx, vals);
+    int num_p = grid->getNumPoints();
+    int num_nz = pntr[rows];
+    if (outfilename != 0){
+        if (useASCII){
+            std::ofstream ofs;
+            ofs.open(outfilename);
+            ofs << std::scientific; ofs.precision(17);
+            ofs << rows << " " << num_p << " " << num_nz;
+            ofs << endl << pntr[0];
+            for(int i=1; i<rows+1; i++) ofs << " " << pntr[i];
+            ofs << endl << indx[0];
+            for(int i=1; i<num_nz; i++) ofs << " " << indx[i];
+            ofs << endl << vals[0];
+            for(int i=1; i<num_nz; i++) ofs << " " << vals[i];
+            ofs << endl;
+            ofs.close();
+        }else{
+            std::ofstream ofs;
+            ofs.open(outfilename, std::ios::out | std::ios::binary);
+            char charTSG[3] = {'T', 'S', 'G'};
+            ofs.write(charTSG, 3*sizeof(char));
+            int matrix_dims[3];
+            matrix_dims[0] = rows;
+            matrix_dims[1] = num_p;
+            matrix_dims[2] = num_nz;
+            ofs.write((char*) matrix_dims, 3*sizeof(int));
+            ofs.write((char*) pntr, (rows+1)*sizeof(int));
+            ofs.write((char*) indx, num_nz*sizeof(int));
+            ofs.write((char*) vals, num_nz*sizeof(double));
+            ofs.close();
+        }
+    }
+    if (printCout){
+        cout << std::scientific; cout.precision(17);
+        cout << rows << " " << num_p << " " << num_nz;
+        cout << endl << pntr[0];
+        for(int i=1; i<rows+1; i++) cout << " " << pntr[i];
+        cout << endl << indx[0];
+        for(int i=1; i<num_nz; i++) cout << " " << indx[i];
+        cout << endl << vals[0];
+        for(int i=1; i<num_nz; i++) cout << " " << vals[i];
+        cout << endl;
+    }
+    delete[] pntr;
+    delete[] indx;
+    delete[] vals;
+    delete[] x;
     return true;
 }
 bool TasgridWrapper::setHierarchy(){
@@ -1009,9 +1064,14 @@ bool TasgridWrapper::executeCommand(){
         }
     }else if (command == command_summary){
         getSummary();
-    }else if (command == command_evalhierarchical){
-        if (!getEvalHierarchy()){
-            cerr << "ERROR: could not evaluate the hierarchical basis functions" << endl;
+    }else if (command == command_evalhierarchical_dense){
+        if (!getEvalHierarchyDense()){
+            cerr << "ERROR: could not evaluate the (dense) hierarchical basis functions" << endl;
+            return false;
+        }
+    }else if (command == command_evalhierarchical_sparse){
+        if (!getEvalHierarchySparse()){
+            cerr << "ERROR: could not evaluate the (sparse) hierarchical basis functions" << endl;
             return false;
         }
     }else if (command == command_setcoefficients){
@@ -1021,10 +1081,6 @@ bool TasgridWrapper::executeCommand(){
             cerr << "ERROR: could not set the hierarchical coefficients" << endl;
             return false;
         }
-    //}else if (command == command_getsurpluses){
-    //    if (!getSurpluses()){
-    //        cerr << "ERROR: could not get the surpluses" << endl;
-    //    }
     }else if (command == command_getpointsindex){
         if (!getPointsIndexes()){
             cerr << "ERROR: could not get the indexes" << endl;

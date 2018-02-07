@@ -18,15 +18,23 @@ function [vals] = tsgEvaluateHierarchy(lGrid, mX)
 %
 % OUTPUT:
 %
-% vals: an array of size [num_x, number_of_points]
-%          the values associated with the hierarchical basis funcitons
+% vals: if lGrid is Global or Sequence
+%          vals is an array of size [num_x, number_of_points]
+%       if lGrid is LocalPolynomial or Wavelet
+%          vals is a sparse matrix of size [num_x, number_of_points]
 %
+%       in both cases, vals returns
+%       the values associated with the hierarchical basis funcitons
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
 [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
 
-sCommand = [sTasGrid,' -evalhierarchy'];
+if (strcmp(lGrid.sType, 'global') || strcmp(lGrid.sType, 'sequence'))
+    sCommand = [sTasGrid,' -evalhierarchyd'];
+else
+    sCommand = [sTasGrid,' -evalhierarchys'];
+end
 
 sCommand = [sCommand, ' -gridfile ', sFileG];
 
@@ -49,7 +57,30 @@ else
         fprintf(1,['Warning: Command had non-empty output:\n']);
         disp(cmdout);
     end
-    [vals] = tsgReadMatrix(sFileO);
+    if (strcmp(lGrid.sType, 'global') || strcmp(lGrid.sType, 'sequence'))
+        [vals] = tsgReadMatrix(sFileO);
+    else
+        fid = fopen(sFileO);
+        TSG = fread(fid, [1, 3], '*char');
+        if (TSG == 'TSG')
+            D = fread(fid, [1, 3], '*int');
+            Rows = D(1);
+            Cols = D(2);
+            NNZ = D(3);
+            pntr = fread(fid, [Rows+1], '*int')';
+            indx = fread(fid, [NNZ], '*int')';
+            vals = fread(fid, [NNZ], '*double')';
+            rindx = ones(NNZ, 1);
+            for i = 1:Rows
+                rindx((pntr(i)+1):(pntr(i+1))) = i;
+            end
+            NNZ
+            vals = sparse(rindx, indx + 1, vals, Rows, Cols, NNZ);
+        else
+            frewind(fid);
+        end
+        fclose(fid);
+    end
 end
 
 tsgCleanTempFiles(lGrid, lClean);

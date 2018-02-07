@@ -83,13 +83,11 @@ enum TypeCommand{
 
     command_getcoefficients, // ML section
     command_setcoefficients, // ML section
+    command_evalhierarchical_sparse, // ML section
+    command_evalhierarchical_dense, // ML section
 
-    //command_getsurpluses, // mostly a debug command
     command_getpointsindex,
     command_getneededindex,
-
-    command_evalhierarchical // experimental
-    //command_sethierarchical
 };
 
 enum TypeConformalMap{
@@ -168,8 +166,9 @@ protected:
     bool cancelRefine();
     bool mergeRefine();
 
-    bool getEvalHierarchy();
     bool setHierarchy();
+    bool getEvalHierarchyDense();
+    bool getEvalHierarchySparse();
 
     bool getPoly();
 

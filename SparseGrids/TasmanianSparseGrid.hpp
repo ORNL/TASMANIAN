@@ -42,12 +42,6 @@
 
 #include <iomanip> // only needed for printStats()
 
-//#define TASMANIAN_VERSION_MAJOR 5
-//#define TASMANIAN_VERSION_MINOR 0
-//#define TASMANIAN_VERSION_STRING "5.0"
-//#define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
-
-
 namespace TasGrid{
 
 class TasmanianSparseGrid{
@@ -71,10 +65,10 @@ public:
     void write(std::ofstream &ofs, bool binary = false) const;
     bool read(std::ifstream &ifs, bool binary = false);
 
-    void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0);
-    void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0);
-    void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp);
-    void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1);
+    void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const int *level_limits = 0);
+    void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, const int *level_limits = 0);
+    void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp, const int *level_limits = 0);
+    void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, const int *level_limits = 0);
     void copyGrid(const TasmanianSparseGrid *source);
 
     void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0);
@@ -156,7 +150,7 @@ public:
     static int getGPUMemory(int gpu); // returns the MB of a given GPU
     static char* getGPUName(int gpu); // returns a null-terminated char array
 
-    // Do not use these functions within C++, not as efficient as the one above
+    // Do not use these functions within C++, not as efficient as evaluateSparseHierarchicalFunctions()
     // these functions are needed for interfaces with other languages
     int evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const;
     void evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const;
@@ -201,6 +195,7 @@ private:
 
     double *domain_transform_a, *domain_transform_b;
     int *conformal_asin_power;
+    int *llimits;
 
     TypeAcceleration acceleration;
     int gpuID;

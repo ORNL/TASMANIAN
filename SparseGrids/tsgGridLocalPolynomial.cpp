@@ -241,7 +241,7 @@ void GridLocalPolynomial::readBinary(std::ifstream &ifs){
     }
 }
 
-void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule){
+void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const int *level_limits){
     reset();
     num_dimensions = cnum_dimensions;
     num_outputs = cnum_outputs;
@@ -262,6 +262,26 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
 
     IndexManipulator IM(num_dimensions);
     UnsortedIndexSet* deltas = IM.getToalDegreeDeltas(depth);
+
+    // Limits come here
+    if (level_limits != 0){
+        UnsortedIndexSet* unlimited = deltas;
+        int lower_indexes = 0;
+        for(int i=0; i<unlimited->getNumIndexes(); i++){
+            const int *idx = unlimited->getIndex(i);
+            bool obeys = true;
+            for(int j=0; j<num_dimensions; j++) if (idx[j] > level_limits[j]) obeys = false;
+            if (obeys) lower_indexes++;
+        }
+        deltas = new UnsortedIndexSet(num_dimensions, lower_indexes);
+        for(int i=0; i<unlimited->getNumIndexes(); i++){
+            const int *idx = unlimited->getIndex(i);
+            bool obeys = true;
+            for(int j=0; j<num_dimensions; j++) if (idx[j] > level_limits[j]) obeys = false;
+            if (obeys) deltas->addIndex(idx);
+        }
+        delete unlimited;
+    }
 
     needed = IM.generatePointsFromDeltas(deltas, rule);
     delete deltas;
@@ -429,36 +449,50 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
     }
 }
 void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    evaluateBatch(x, num_x, y);
+    //evaluateBatch(x, num_x, y);
     //return;
 
-//    int *sindx, *spntr;
-//    double *svals;
-//    buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
-//
-//    // how do you optimize sparse BLAS? This is slower
-////    for(int i=0; i<num_x; i++){
-////        double *this_y = &(y[i*num_outputs]);
-////        std::fill(this_y, this_y + num_outputs, 0.0);
-////        for(int j=spntr[i]; j<spntr[i+1]; j++){
-////            TasBLAS::daxpy(num_outputs, svals[j], &(surpluses[sindx[j] * num_outputs]), this_y);
-////        }
-////    }
-//
-//    #pragma omp parallel for
-//    for(int i=0; i<num_x; i++){
-//        double *this_y = &(y[i*num_outputs]);
-//        for(int s=0; s<num_outputs; s+=64){
-//            int s_end = s + 64;
-//            if (s_end >= num_outputs) s_end = num_outputs;
-//            for(int k=s; k<s_end; k++) this_y[k] = 0.0;
-//            for(int j=spntr[i]; j<spntr[i+1]; j++){
-//                double v = svals[j];
-//                for(int k=s; k<s_end; k++) this_y[k] += v * surpluses[sindx[j] * num_outputs + k];
+    int *sindx, *spntr;
+    double *svals;
+    buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
+
+    int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
+    double nnz = (double) spntr[num_x];
+    double total_size = ((double) num_x) * ((double) num_points);
+
+    if (nnz / total_size > 0.1){
+    //if (true){
+        //cout << "Using BLAS" << endl;
+        double *A = new double[num_x * num_points];
+        std::fill(A, A + num_x * num_points, 0.0);
+        for(int i=0; i<num_x; i++){
+            for(int j=spntr[i]; j<spntr[i+1]; j++){
+                A[i*num_points + sindx[j]] = svals[j];
+            }
+        }
+        TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses, A, 0.0, y);
+        delete[] A;
+    }else{
+        evaluateBatch(x, num_x, y);
+
+//        #pragma omp parallel for
+//        for(int i=0; i<num_x; i++){
+//            double *this_y = &(y[i*num_outputs]);
+//            for(int s=0; s<num_outputs; s+=64){
+//                int s_end = s + 64;
+//                if (s_end >= num_outputs) s_end = num_outputs;
+//                for(int k=s; k<s_end; k++) this_y[k] = 0.0;
+//                for(int j=spntr[i]; j<spntr[i+1]; j++){
+//                    double v = svals[j];
+//                    for(int k=s; k<s_end; k++) this_y[k] += v * surpluses[sindx[j] * num_outputs + k];
+//                }
 //            }
 //        }
-//    }
+    }
 
+    delete[] sindx;
+    delete[] spntr;
+    delete[] svals;
 }
 #ifdef TASMANIAN_CUBLAS
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{

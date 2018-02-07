@@ -52,23 +52,9 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     return false;
     #endif // _OPENMP
 }
-//bool TasmanianSparseGrid::isCudaEnabled(){
-//    #ifdef TASMANIAN_CUBLAS
-//    return true;
-//    #else
-//    return false;
-//    #endif // TASMANIAN_CUBLAS
-//}
-//bool TasmanianSparseGrid::isBLASEnabled(){
-//    #ifdef TASMANIAN_CPU_BLAS
-//    return true;
-//    #else
-//    return false;
-//    #endif // TASMANIAN_CPU_BLAS
-//}
 
 TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), domain_transform_a(0), domain_transform_b(0),
-                                             conformal_asin_power(0), acceleration(accel_none), gpuID(0), logstream(0){
+                                             conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), logstream(0){
 #ifndef TASMANIAN_XSDK
     logstream = &cerr;
 #endif
@@ -77,7 +63,8 @@ TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pw
 #endif // TASMANIAN_XSDK
 }
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0),
-                                    domain_transform_a(0), domain_transform_b(0), conformal_asin_power(0), acceleration(accel_none), gpuID(0), logstream(0)
+                                    domain_transform_a(0), domain_transform_b(0), conformal_asin_power(0), llimits(0),
+                                    acceleration(accel_none), gpuID(0), logstream(0)
 {
     copyGrid(&source);
 #ifndef TASMANIAN_XSDK
@@ -100,6 +87,7 @@ void TasmanianSparseGrid::clear(){
     if (domain_transform_a != 0){ delete[] domain_transform_a; domain_transform_a = 0; }
     if (domain_transform_b != 0){ delete[] domain_transform_b; domain_transform_b = 0; }
     if (conformal_asin_power != 0){ delete[] conformal_asin_power; conformal_asin_power = 0; }
+    if (llimits != 0){ delete[] llimits; llimits = 0; }
     base = 0;
 #ifndef TASMANIAN_XSDK
     logstream = &cerr;
@@ -159,13 +147,13 @@ bool TasmanianSparseGrid::read(std::ifstream &ifs, bool binary){
     }
 }
 
-void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename){
+void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int*){
     clear();
     global = new GridGlobal();
     global->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename);
     base = global;
 }
-void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights){
+void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int*){
     if (outputs < 1){
         if (logstream != 0){ (*logstream) << "ERROR: makeSequenceGrid is called with zero outputs, for zero outputs use makeGlobalGrid instead" << endl; }
         return;
@@ -179,7 +167,7 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
         if (logstream != 0){ (*logstream) << "ERROR: makeSequenceGrid is called with rule " << OneDimensionalMeta::getIORuleString(rule) << " which is not a sequence rule" << endl; }
     }
 }
-void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule){
+void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
     if ((rule != rule_localp) && (rule != rule_localp0) && (rule != rule_semilocalp)){
         if (logstream != 0){
             (*logstream) << "ERROR: makeLocalPolynomialGrid is called with rule " << OneDimensionalMeta::getIORuleString(rule) << " which is not a local polynomial rule" << endl;
@@ -194,10 +182,14 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
     }
     clear();
     pwpoly = new GridLocalPolynomial();
-    pwpoly->makeGrid(dimensions, outputs, depth, order, rule);
+    pwpoly->makeGrid(dimensions, outputs, depth, order, rule, level_limits);
     base = pwpoly;
+    if (level_limits != 0){
+        llimits = new int[dimensions];
+        std::copy(level_limits, level_limits + dimensions, llimits);
+    }
 }
-void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order){
+void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int*){
     if ((order != 1) && (order != 3)){
         if (logstream != 0){ (*logstream) << "ERROR: makeWaveletGrid is called with order " << order << ", but wavelets are implemented only for orders 1 and 3." << endl; }
         return;
@@ -1091,6 +1083,14 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     }else{
         ofs << "nonconformal" << endl;
     }
+    if (llimits != 0){
+        ofs << "limited" << endl;
+        ofs << llimits[0];
+        for(int j=1; j<base->getNumDimensions(); j++) ofs << " " << llimits[j];
+        ofs << endl;
+    }else{
+        ofs << "unlimited" << endl;
+    }
     ofs << "TASMANIAN SG end" << endl;
 }
 void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
@@ -1132,6 +1132,13 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     }else{
         flag = 'n'; ofs.write(&flag, sizeof(char));
     }
+    if (llimits != 0){
+        flag = 'y'; ofs.write(&flag, sizeof(char));
+        ofs.write((char*) llimits, base->getNumDimensions() * sizeof(int));
+    }else{
+        flag = 'n'; ofs.write(&flag, sizeof(char));
+    }
+    flag = 'e'; ofs.write(&flag, sizeof(char)); // E stands for END
 }
 bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     std::string T;
@@ -1173,6 +1180,7 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     getline(ifs, T);
     bool using_v3_format = false; // for compatibility with version 3.0
     bool using_v4_format = false; // for compatibility with version 3.1 and 4.0
+    bool using_v5_format = false; // for compatibility with version 3.1 and 4.0
     if (T.compare("custom") == 0){
         domain_transform_a = new double[base->getNumDimensions()];
         domain_transform_b = new double[base->getNumDimensions()];
@@ -1197,7 +1205,6 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
             conformal_asin_power = new int[base->getNumDimensions()];
             for(int j=0; j<base->getNumDimensions(); j++){
                 ifs >> conformal_asin_power[j];
-                //cout << conformal_asin_power[j] << endl;
             }
             getline(ifs, T);
         }else if (T.compare("TASMANIAN SG end") == 0){
@@ -1209,7 +1216,22 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         }
         if (!using_v4_format){
             getline(ifs, T);
-            if (!(T.compare("TASMANIAN SG end") == 0)){ if (logstream != 0){ (*logstream) << "WARNING: file did not end with 'TASMANIAN SG end', this may result in undefined behavior" << endl; } }
+            if (T.compare("limited") == 0){
+                llimits = new int[base->getNumDimensions()];
+                for(int j=0; j<base->getNumDimensions(); j++) ifs >> llimits[j];
+            }else if (T.compare("unlimited") == 0){
+                llimits = 0;
+            }else if (T.compare("TASMANIAN SG end") == 0){
+                using_v5_format = true;
+            }else{
+                if (logstream != 0){ (*logstream) << "WARNING: file did not end with 'TASMANIAN SG end', this may result in undefined behavior (v5)" << endl; }
+            }
+            if (!using_v5_format){
+                getline(ifs, T);
+                if (!(T.compare("TASMANIAN SG end") == 0)){
+                    if (logstream != 0){ (*logstream) << "WARNING: file did not end with 'TASMANIAN SG end', this may result in undefined behavior (v51)" << endl; }
+                }
+            }
         }
     }
 
@@ -1273,6 +1295,18 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }else if (TSG[0] != 'n'){
         if (logstream != 0){ (*logstream) << "ERROR: wrong conformal transform, wrong file format!" << endl; }
         return false;
+    }
+    ifs.read(TSG, sizeof(char)); // limits
+    if (TSG[0] == 'y'){
+        llimits = new int[base->getNumDimensions()];
+        ifs.read((char*) llimits, base->getNumDimensions() * sizeof(int));
+    }else if (TSG[0] != 'n'){
+        if (logstream != 0){ (*logstream) << "ERROR: wrong level limits, wrong file format!" << endl; }
+        return false;
+    }
+    ifs.read(TSG, sizeof(char)); // end character
+    if (TSG[0] != 'e'){
+        if (logstream != 0){ (*logstream) << "WARNING: the file did not terminate properly! Possibly undefined behavior." << endl; }
     }
     delete[] TSG;
     return true;
@@ -1431,13 +1465,13 @@ void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, con
     if (rule == rule_none){ rule = rule_clenshawcurtis; }
     ((TasmanianSparseGrid*) grid)->makeSequenceGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights);
 }
-void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int depth, int order, const char * sRule){
+void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int depth, int order, const char *sRule, const int *limit_levels){
     TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
     #ifdef _TASMANIAN_DEBUG_
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sRule << ", defaulting to localp." << endl; }
     #endif // _TASMANIAN_DEBUG_
     if (rule == rule_none){ rule = rule_localp; }
-    ((TasmanianSparseGrid*) grid)->makeLocalPolynomialGrid(dimensions, outputs, depth, order, rule);
+    ((TasmanianSparseGrid*) grid)->makeLocalPolynomialGrid(dimensions, outputs, depth, order, rule, limit_levels);
 }
 void tsgMakeWaveletGrid(void *grid, int dimensions, int outputs, int depth, int order){
     ((TasmanianSparseGrid*) grid)->makeWaveletGrid(dimensions, outputs, depth, order);

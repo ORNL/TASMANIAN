@@ -1566,6 +1566,20 @@ void ExternalTester::debugTest(){
     cout << "Debug Test" << endl;
     cout << "Put here testing code and call this with ./tasgrid -test debug" << endl;
 
+    TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
+    int limits[2] = {1, 3};
+    grid->makeLocalPolynomialGrid(2, 1, 4, 1, TasGrid::rule_localp, limits);
+    //grid->makeLocalPolynomialGrid(2, 1, 3, 1, TasGrid::rule_localp, 0);
+
+    double *x = grid->getPoints();
+    cout << "Number of points: " << grid->getNumPoints() << endl;
+
+    for(int i=0; i<grid->getNumPoints(); i++){
+        cout << x[2*i] << "  " << x[2*i+1] << endl;
+    }
+
+    delete grid;
+
 //    int N = 2000;
 //    int K = 30;
 //    double *A = new double[K*N*N];

@@ -783,7 +783,7 @@ class TestTasmanian(unittest.TestCase):
         self.assertTrue((grid.getNumNeeded() > 0), "num needed")
         grid.clearRefinement()
         self.assertEqual(grid.getNumNeeded(), 0, "num needed")
-        
+
         grid.makeGlobalGrid(2, 1, 9, 'level', 'rleja')
         aP = grid.getPoints()
         aV = np.exp(aP[:,0] + aP[:,1]**2)
@@ -836,6 +836,7 @@ class TestTasmanian(unittest.TestCase):
         np.testing.assert_equal(aT, grid.getHierarchicalCoefficients(), "coeff mismatch", True)
         grid.makeLocalPolynomialGrid(2, 0, 1, 1, 'localp')
         aT = np.empty([0,0], np.float64)
+
         np.testing.assert_equal(aT, grid.getHierarchicalCoefficients(), "coeff mismatch", True)
         grid.makeLocalPolynomialGrid(2, 2, 1, 1, 'localp')
         aPoints = grid.getPoints()

@@ -200,6 +200,10 @@ int main(int argc, const char ** argv){
         wrap.setCommand(command_loadvalues);
     }else if ((strcmp(argv[1],"-evaluate") == 0) || (strcmp(argv[1],"-e") == 0)){
         wrap.setCommand(command_evaluate);
+    }else if ((strcmp(argv[1],"-evalhierarchyd") == 0) || (strcmp(argv[1],"-ehd") == 0)){
+        wrap.setCommand(command_evalhierarchical_dense);
+    }else if ((strcmp(argv[1],"-evalhierarchys") == 0) || (strcmp(argv[1],"-ehs") == 0)){
+        wrap.setCommand(command_evalhierarchical_sparse);
     }else if ((strcmp(argv[1],"-integrate") == 0) || (strcmp(argv[1],"-i") == 0)){
         wrap.setCommand(command_integrate);
     }else if ((strcmp(argv[1],"-getanisotropy") == 0) || (strcmp(argv[1],"-ga") == 0)){
@@ -214,10 +218,6 @@ int main(int argc, const char ** argv){
         wrap.setCommand(command_refine_clear);
     }else if ((strcmp(argv[1],"-mergerefine") == 0) || (strcmp(argv[1],"-mr") == 0)){
         wrap.setCommand(command_refine_merge);
-    //}else if ((strcmp(argv[1],"-evalhierarchy") == 0) || (strcmp(argv[1],"-eh") == 0)){
-    //    wrap.setCommand(command_evalhierarchical);
-    //}else if ((strcmp(argv[1],"-loadhierarchy") == 0) || (strcmp(argv[1],"-lh") == 0)){
-    //    wrap.setCommand(command_sethierarchical);
     }else if (strcmp(argv[1],"-getpoly") == 0){
         wrap.setCommand(command_getpoly);
     }else if ((strcmp(argv[1],"-summary") == 0) || (strcmp(argv[1],"-s") == 0)){
@@ -226,12 +226,14 @@ int main(int argc, const char ** argv){
         wrap.setCommand(command_getcoefficients);
     }else if ((strcmp(argv[1],"-setcoefficients") == 0) || (strcmp(argv[1],"-sc") == 0)) {
         wrap.setCommand(command_setcoefficients);
-    //}else if (strcmp(argv[1],"-getsurpluses") == 0){
-    //    wrap.setCommand(command_getsurpluses);
     }else if (strcmp(argv[1],"-getpointsindexes") == 0){
         wrap.setCommand(command_getpointsindex);
     }else if (strcmp(argv[1],"-getneededindexes") == 0){
         wrap.setCommand(command_getneededindex);
+    }else{
+        cout << "ERROR: unknown command " << argv[1] << endl;
+        printHelp();
+        return 1;
     }
 
     // parse the parameters
@@ -529,6 +531,8 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -getneededpoints"    << "\t-gn"     << "\t\toutputs the points needing values to build an interpolant" << endl;
         cout << " -loadvalues\t"       << "\t-l"      << "\t\tload the values of the interpolated function" << endl;
         cout << " -evaluate\t"     << "\t-e"      << "\t\tevaluates the interpolant" << endl;
+        cout << " -evalhierarchyd"     << "\t-ehd"      << "\t\tevaluates the hierarchical basis (dense output)" << endl;
+        cout << " -evalhierarchys"     << "\t-ehs"      << "\t\tevaluates the hierarchical basis (sparse output)" << endl;
         cout << " -integrate\t"    << "\t-i"      << "\t\toutput the integral" << endl;
         cout << " -getanisotropy\t"    << "\t-ga"     << "\t\testimates the anisotropic coefficients" << endl;
         cout << " -refineaniso\t"      << "\t-ra"     << "\t\trefines the grid" << endl;
@@ -781,7 +785,29 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points" << endl;
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
-            cout << "Note: -outputfile or -print output values of the interpolant at the points specified in the xfile, see equation (1.1) in the manual" << endl;
+            cout << "Note: -outputfile or -print output values of the interpolant at the points specified in the xfile" << endl;
+            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output" << endl << endl;
+        }else if (com == command_evalhierarchical_dense){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
+            cout << " -evalhierarchyd"       << "\t-ehd"      << "\t\tevaluates the hierarchical basis (dense output)" << endl << endl;
+            cout << "Accepted options:"  << endl;
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
+            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file" << endl;
+            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points" << endl;
+            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
+            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
+            cout << "Note: -outputfile or -print output values of the hierarchical basis functions in the xfile" << endl;
+            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output" << endl << endl;
+        }else if (com == command_evalhierarchical_sparse){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
+            cout << " -evalhierarchys"       << "\t-ehs"      << "\t\tevaluates the hierarchical basis (sparse output)" << endl << endl;
+            cout << "Accepted options:"  << endl;
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
+            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file" << endl;
+            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points" << endl;
+            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
+            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
+            cout << "Note: -outputfile or -print output values of the hierarchical basis functions in the xfile" << endl;
             cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output" << endl << endl;
         }else if (com == command_integrate){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
