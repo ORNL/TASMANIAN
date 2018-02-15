@@ -14,27 +14,49 @@ function tsgWriteMatrix(filename, mat)
 % 9 10 11 12
 %
 
-fid = fopen(filename, 'w');
+if (prod(size(mat)) < 1000) # small matrix, use ascii format
 
-fprintf(fid, '%d  %d\n', size(mat, 1), size(mat, 2)); % load the number of points
+    fid = fopen(filename, 'w');
 
-%format long;
+    fprintf(fid, '%d  %d\n', size(mat, 1), size(mat, 2)); % load the number of points
 
-Ni = size(mat, 1);
-Nj = size(mat, 2);
+    %format long;
 
-fmt = [''];
+    Ni = size(mat, 1);
+    Nj = size(mat, 2);
 
-for i = 1:Nj
-    fmt = [fmt, '%2.20e '];
+    fmt = [''];
+
+    for i = 1:Nj
+        fmt = [fmt, '%2.20e '];
+    end
+
+    fmt = [fmt(1:end-1), '\n'];
+
+    for i = 1:Ni
+        fprintf(fid, fmt, mat(i,:));
+    end
+
+    fclose(fid);
+
+else
+
+    fid = fopen(filename, 'wb');
+    
+    Ni = size(mat, 1);
+    Nj = size(mat, 2);
+    
+    fwrite(fid, ['TSG']);
+    fwrite(fid, [Ni, Nj], 'integer*4');
+    fwrite(fid, mat', 'double');
+    
+    #if (size(mat, 1) > 10)
+    #    size(mat)
+    #    mat(1:10, :)
+    #end
+    
+    fclose(fid);
+
 end
-
-fmt = [fmt(1:end-1), '\n'];
-
-for i = 1:Ni
-    fprintf(fid, fmt, mat(i,:));
-end
-
-fclose(fid);
 
 end

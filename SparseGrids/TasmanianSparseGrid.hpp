@@ -71,8 +71,8 @@ public:
     void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, const int *level_limits = 0);
     void copyGrid(const TasmanianSparseGrid *source);
 
-    void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0);
-    void updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0);
+    void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
+    void updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
 
     double getAlpha() const;
     double getBeta() const;
@@ -120,6 +120,9 @@ public:
     bool isSetConformalTransformASIN() const;
     void clearConformalTransform();
     void getConformalTransformASIN(int truncation[]) const;
+
+    void clearLevelLimits(); // level limits will be set anew if non-null vector is given to refine command
+    void getLevelLimits(int *limits) const; // static, assume limits is already allocated with length getNumDimensions()
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output);
     int* estimateAnisotropicCoefficients(TypeDepth type, int output);

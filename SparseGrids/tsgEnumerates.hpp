@@ -147,9 +147,9 @@ enum TypeAcceleration{
 //  On the other hand, every application is different and the usage of the code will change
 //  over time. It is unreasonable to believe that one single value would work for absolutely
 //  everyone. Instead of "hiding" hardcoded constant throughout the code, all such constants
-//  will be exposed here so the used can make adjustments in compile time.
+//  will be exposed here so the user can make adjustments in compile time.
 //
-//  Long story short, do not adjust those variables unless you have a good reason.
+//  Long story short: do not adjust those variables unless you have a good reason.
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -164,6 +164,14 @@ enum TypeAcceleration{
 // this defines the maximum number of secant method iterations to be used for finding Leja, Lebesgue, and Delta points
 // this is a safeguard criteria to prevent "hanging" in a loop
 #define TSG_MAX_SECANT_ITERATIONS 1000 // to move in hardcoded constants
+
+// this defines the threshold for switching between sparse and dense version of batch evaluate for Local Polynomial Grids
+// generally, because of caching and reuse of data, dense operations have 10x more flops per second than sparse ops
+// unless the sparse version of the algorithm can cut total flops by 10x (i.e., fill is less than 10%), then it
+// is faster to convert the sparse matrix into a dense one. This assumes matrix-matrix product, which happens only
+// if the number of outputs is sufficiently large, if the outputs are few, there is very little caching anyway
+// hence use the sparse version regardless
+#define TSG_LOCALP_BLAS_NUM_OUTPUTS 128
 
 }
 

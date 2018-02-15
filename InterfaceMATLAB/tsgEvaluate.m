@@ -37,9 +37,6 @@ lClean.sFileX = 1;
 sCommand = [sCommand, ' -of ', sFileO];
 lClean.sFileO = 1;
 
-%sCommand
-%return;
-
 [status, cmdout] = system(sCommand);
 
 if (size(findstr('ERROR', cmdout)) ~= [0, 0])

@@ -265,23 +265,30 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
 
     // Limits come here
     if (level_limits != 0){
-        UnsortedIndexSet* unlimited = deltas;
-        int lower_indexes = 0;
-        for(int i=0; i<unlimited->getNumIndexes(); i++){
-            const int *idx = unlimited->getIndex(i);
-            bool obeys = true;
-            for(int j=0; j<num_dimensions; j++) if (idx[j] > level_limits[j]) obeys = false;
-            if (obeys) lower_indexes++;
+        UnsortedIndexSet *limited = IM.removeIndexesByLimit(deltas, level_limits);
+        if (limited != 0){
+            delete deltas;
+            deltas = limited;
         }
-        deltas = new UnsortedIndexSet(num_dimensions, lower_indexes);
-        for(int i=0; i<unlimited->getNumIndexes(); i++){
-            const int *idx = unlimited->getIndex(i);
-            bool obeys = true;
-            for(int j=0; j<num_dimensions; j++) if (idx[j] > level_limits[j]) obeys = false;
-            if (obeys) deltas->addIndex(idx);
-        }
-        delete unlimited;
     }
+//    if (level_limits != 0){
+//        UnsortedIndexSet* unlimited = deltas;
+//        int lower_indexes = 0;
+//        for(int i=0; i<unlimited->getNumIndexes(); i++){
+//            const int *idx = unlimited->getIndex(i);
+//            bool obeys = true;
+//            for(int j=0; j<num_dimensions; j++) if ((level_limits[j] > -1) && (idx[j] > level_limits[j])) obeys = false;
+//            if (obeys) lower_indexes++;
+//        }
+//        deltas = new UnsortedIndexSet(num_dimensions, lower_indexes);
+//        for(int i=0; i<unlimited->getNumIndexes(); i++){
+//            const int *idx = unlimited->getIndex(i);
+//            bool obeys = true;
+//            for(int j=0; j<num_dimensions; j++) if ((level_limits[j] > -1) && (idx[j] > level_limits[j])) obeys = false;
+//            if (obeys) deltas->addIndex(idx);
+//        }
+//        delete unlimited;
+//    }
 
     needed = IM.generatePointsFromDeltas(deltas, rule);
     delete deltas;
@@ -449,8 +456,10 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
     }
 }
 void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    //evaluateBatch(x, num_x, y);
-    //return;
+    if (num_outputs < TSG_LOCALP_BLAS_NUM_OUTPUTS){
+        evaluateBatch(x, num_x, y);
+        return;
+    }
 
     int *sindx, *spntr;
     double *svals;
@@ -461,8 +470,7 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
     double total_size = ((double) num_x) * ((double) num_points);
 
     if (nnz / total_size > 0.1){
-    //if (true){
-        //cout << "Using BLAS" << endl;
+        // potentially wastes a lot of memory
         double *A = new double[num_x * num_points];
         std::fill(A, A + num_x * num_points, 0.0);
         for(int i=0; i<num_x; i++){

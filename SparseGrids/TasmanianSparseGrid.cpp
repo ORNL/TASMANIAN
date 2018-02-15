@@ -147,13 +147,17 @@ bool TasmanianSparseGrid::read(std::ifstream &ifs, bool binary){
     }
 }
 
-void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int*){
+void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int *level_limits){
     clear();
     global = new GridGlobal();
-    global->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename);
+    global->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, level_limits);
     base = global;
+    if (level_limits != 0){
+        llimits = new int[dimensions];
+        std::copy(level_limits, level_limits + dimensions, llimits);
+    }
 }
-void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int*){
+void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int *level_limits){
     if (outputs < 1){
         if (logstream != 0){ (*logstream) << "ERROR: makeSequenceGrid is called with zero outputs, for zero outputs use makeGlobalGrid instead" << endl; }
         return;
@@ -161,8 +165,12 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     if (OneDimensionalMeta::isSequence(rule)){
         clear();
         sequence = new GridSequence();
-        sequence->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights);
+        sequence->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, level_limits);
         base = sequence;
+        if (level_limits != 0){
+            llimits = new int[dimensions];
+            std::copy(level_limits, level_limits + dimensions, llimits);
+        }
     }else{
         if (logstream != 0){ (*logstream) << "ERROR: makeSequenceGrid is called with rule " << OneDimensionalMeta::getIORuleString(rule) << " which is not a sequence rule" << endl; }
     }
@@ -189,15 +197,19 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
         std::copy(level_limits, level_limits + dimensions, llimits);
     }
 }
-void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int*){
+void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
     if ((order != 1) && (order != 3)){
         if (logstream != 0){ (*logstream) << "ERROR: makeWaveletGrid is called with order " << order << ", but wavelets are implemented only for orders 1 and 3." << endl; }
         return;
     }
     clear();
     wavelet = new GridWavelet();
-    wavelet->makeGrid(dimensions, outputs, depth, order);
+    wavelet->makeGrid(dimensions, outputs, depth, order, level_limits);
     base = wavelet;
+    if (level_limits != 0){
+        llimits = new int[dimensions];
+        std::copy(level_limits, level_limits + dimensions, llimits);
+    }
 }
 void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
     clear();
@@ -222,16 +234,24 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
     }
 }
 
-void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights){
+void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
     if (global != 0){
-        global->updateGrid(depth, type, anisotropic_weights);
+        global->updateGrid(depth, type, anisotropic_weights, level_limits);
+        if (level_limits != 0){
+            if (llimits == 0) llimits = new int[global->getNumDimensions()];
+            std::copy(level_limits, level_limits + global->getNumDimensions(), llimits);
+        }
     }else{
         if (logstream != 0){ (*logstream) << "ERROR: updateGlobalGrid called, but the grid is not global" << endl; }
     }
 }
-void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights){
+void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
     if (sequence != 0){
-        sequence->updateGrid(depth, type, anisotropic_weights);
+        sequence->updateGrid(depth, type, anisotropic_weights, level_limits);
+        if (level_limits != 0){
+            if (llimits == 0) llimits = new int[sequence->getNumDimensions()];
+            std::copy(level_limits, level_limits + sequence->getNumDimensions(), llimits);
+        }
     }else{
         if (logstream != 0){ (*logstream) << "ERROR: updateSequenceGrid called, but the grid is not sequence" << endl; }
     }
@@ -778,6 +798,18 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
     }
 }
 
+void TasmanianSparseGrid::clearLevelLimits(){
+    if (llimits != 0){ delete[] llimits; llimits = 0; }
+}
+void TasmanianSparseGrid::getLevelLimits(int *limits) const{
+    if (llimits == 0){
+        if ((base != 0) && (base->getNumDimensions() > 0))
+            std::fill(limits, limits + base->getNumDimensions(), -1);
+    }else{
+        std::copy(llimits, llimits + base->getNumDimensions(), limits);
+    }
+}
+
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output){
     if (sequence != 0){
         sequence->setAnisotropicRefinement(type, min_growth);
@@ -844,14 +876,33 @@ void TasmanianSparseGrid::removePointsBySurplus(double tolerance, int output){
     }
 }
 
-void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{ base->evaluateHierarchicalFunctions(x, num_x, y); }
+void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
+    const double *x_effective = x;
+    if ((domain_transform_a != 0) || (conformal_asin_power != 0)){
+        int num_dimensions = base->getNumDimensions();
+        double *x_canonical = new double[num_dimensions*num_x]; std::copy(x, x + num_dimensions*num_x, x_canonical);
+        mapConformalTransformedToCanonical(num_dimensions, num_x, x_canonical);
+        if (domain_transform_a != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_canonical);
+        x_effective = x_canonical;
+    }
+    base->evaluateHierarchicalFunctions(x_effective, num_x, y);
+    if (x_effective != x) delete[] x_effective;
+}
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const{
+    const double *x_effective = x;
+    if ((domain_transform_a != 0) || (conformal_asin_power != 0)){
+        int num_dimensions = base->getNumDimensions();
+        double *x_canonical = new double[num_dimensions*num_x]; std::copy(x, x + num_dimensions*num_x, x_canonical);
+        mapConformalTransformedToCanonical(num_dimensions, num_x, x_canonical);
+        if (domain_transform_a != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_canonical);
+        x_effective = x_canonical;
+    }
     if (pwpoly != 0){
-        pwpoly->buildSpareBasisMatrix(x, num_x, 32, pntr, indx, vals);
+        pwpoly->buildSpareBasisMatrix(x_effective, num_x, 32, pntr, indx, vals);
     }else if (wavelet != 0){
         int num_points = base->getNumPoints();
         double *dense_vals = new double[num_points * num_x];
-        wavelet->evaluateHierarchicalFunctions(x, num_x, dense_vals);
+        wavelet->evaluateHierarchicalFunctions(x_effective, num_x, dense_vals);
         int num_nz = 0;
         for(int i=0; i<num_points*num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
         pntr = new int[num_x+1];
@@ -872,7 +923,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
     }else{
         int num_points = base->getNumPoints();
         vals = new double[num_x * num_points];
-        base->evaluateHierarchicalFunctions(x, num_x, vals);
+        base->evaluateHierarchicalFunctions(x_effective, num_x, vals);
         pntr = new int[num_x + 1];
         pntr[0] = 0;
         for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + num_points;
@@ -881,6 +932,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
             for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
         }
     }
+    if (x_effective != x) delete[] x_effective;
 }
 int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const{
     if (pwpoly != 0){
@@ -1445,16 +1497,16 @@ int tsgReadBinary(void *grid, const char* filename){
     return result ? 0 : 1;
 }
 
-void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const char * sType, const char * sRule, int * anisotropic_weights, double alpha, double beta, const char* custom_filename){
+void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const char * sType, const char *sRule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
     TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
     #ifdef _TASMANIAN_DEBUG_
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sType << ", defaulting to clenshaw-curtis." << endl; }
     #endif // _TASMANIAN_DEBUG_
-    ((TasmanianSparseGrid*) grid)->makeGlobalGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights, alpha, beta, custom_filename);
+    ((TasmanianSparseGrid*) grid)->makeGlobalGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights, alpha, beta, custom_filename, limit_levels);
 }
-void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, const char * sType, const char * sRule, int * anisotropic_weights){
+void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const char *sRule, const int *anisotropic_weights, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
     TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
     #ifdef _TASMANIAN_DEBUG_
@@ -1463,7 +1515,7 @@ void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, con
     #endif // _TASMANIAN_DEBUG_
     if (depth_type == type_none){ depth_type = type_iptotal; }
     if (rule == rule_none){ rule = rule_clenshawcurtis; }
-    ((TasmanianSparseGrid*) grid)->makeSequenceGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights);
+    ((TasmanianSparseGrid*) grid)->makeSequenceGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights, limit_levels);
 }
 void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int depth, int order, const char *sRule, const int *limit_levels){
     TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
@@ -1473,25 +1525,25 @@ void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int dep
     if (rule == rule_none){ rule = rule_localp; }
     ((TasmanianSparseGrid*) grid)->makeLocalPolynomialGrid(dimensions, outputs, depth, order, rule, limit_levels);
 }
-void tsgMakeWaveletGrid(void *grid, int dimensions, int outputs, int depth, int order){
-    ((TasmanianSparseGrid*) grid)->makeWaveletGrid(dimensions, outputs, depth, order);
+void tsgMakeWaveletGrid(void *grid, int dimensions, int outputs, int depth, int order, const int *limit_levels){
+    ((TasmanianSparseGrid*) grid)->makeWaveletGrid(dimensions, outputs, depth, order, limit_levels);
 }
 
-void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights){
+void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
     #ifdef _TASMANIAN_DEBUG_
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // _TASMANIAN_DEBUG_
     if (depth_type == type_none){ depth_type = type_iptotal; }
-    ((TasmanianSparseGrid*) grid)->updateGlobalGrid(depth, depth_type, anisotropic_weights);
+    ((TasmanianSparseGrid*) grid)->updateGlobalGrid(depth, depth_type, anisotropic_weights, limit_levels);
 }
-void tsgUpdateSequenceGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights){
+void tsgUpdateSequenceGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
     #ifdef _TASMANIAN_DEBUG_
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // _TASMANIAN_DEBUG_
     if (depth_type == type_none){ depth_type = type_iptotal; }
-    ((TasmanianSparseGrid*) grid)->updateSequenceGrid(depth, depth_type, anisotropic_weights);
+    ((TasmanianSparseGrid*) grid)->updateSequenceGrid(depth, depth_type, anisotropic_weights, limit_levels);
 }
 
 double tsgGetAlpha(void *grid){ return ((TasmanianSparseGrid*) grid)->getAlpha(); }
@@ -1583,6 +1635,9 @@ void tsgSetConformalTransformASIN(void *grid, const int truncation[]){ ((Tasmani
 int tsgIsSetConformalTransformASIN(void *grid){ return (((TasmanianSparseGrid*) grid)->isSetConformalTransformASIN()) ? 1 : 0; }
 void tsgClearConformalTransform(void *grid){ ((TasmanianSparseGrid*) grid)->clearConformalTransform(); }
 void tsgGetConformalTransformASIN(void *grid, int truncation[]){ ((TasmanianSparseGrid*) grid)->getConformalTransformASIN(truncation); }
+
+void tsgClearLevelLimits(void *grid){ ((TasmanianSparseGrid*) grid)->clearLevelLimits(); }
+void tsgGetLevelLimits(void *grid, int *limits){ ((TasmanianSparseGrid*) grid)->getLevelLimits(limits); }
 
 void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth, int output){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);

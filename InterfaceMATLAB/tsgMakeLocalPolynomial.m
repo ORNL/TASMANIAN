@@ -1,8 +1,9 @@
-function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iDepth, iOrder, mTransformAB, sConformalMap, vConfromalWeights)
+function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iDepth, iOrder, mTransformAB, sConformalMap, vConfromalWeights, vLimitLevels)
 %
 % [lGrid, points] 
 %     tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iDepth, iOrder,
-%                        mTransformAB, sConformalMap, vConfromalWeights)
+%                        mTransformAB, sConformalMap, vConfromalWeights,
+%                        vLimitLevels)
 %
 % creates a new sparse grid using a sequence rule
 %
@@ -39,6 +40,28 @@ function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iD
 %               change the weight to 
 %               exp(-b (x - a))  and  exp(-b (x - a)^2)
 %
+% sConformalMap: (optional non-linear domain transformation)
+%                currently only implemented transformation based on the
+%                truncated Taylor series of arcsin()
+%
+%                'asin' (only accepted value)
+%
+% vConfromalWeights: (optional matrix indicating conformal weights)
+%
+%            'asin': vector of integers of size iDim indicating 
+%                    truncation power of the Taylor series in each 
+%                    direction
+%
+% vLimitLevels: (optional vector of size iDim)
+%               limit the level in each direction, no points beyond the
+%               specified limit will be used, e.g., in 2D [1, 99] forces
+%               the grid to have only 3 possible values in the first
+%               variable and ~2^99 (practicallyt infinite) number in the
+%               second direction. vLimitLevels works in conjunction with
+%               iDepth, for each direction, we chose the lesser of the
+%               vLimitLevels and iDepth
+% 
+%
 % OUTPUT:
 %
 % lGrid: list containing information about the sparse grid, can be used
@@ -49,7 +72,8 @@ function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iD
 %
 % [lGrid, points] 
 %     tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iDepth, iOrder,
-%                        mTransformAB, sConformalMap, vConfromalWeights)
+%                        mTransformAB, sConformalMap, vConfromalWeights,
+%                        vLimitLevels)
 %
 
 % create lGrid object
@@ -65,7 +89,7 @@ end
 
 % generate filenames
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
 
 sCommand = [sTasGrid,' -makelocalpoly'];
 
@@ -102,6 +126,23 @@ if (exist('sConformalMap')  && (max(size(sConformalMap)) ~= 0))
     end
     lClean.sFileC = 1;
     sCommand = [sCommand, ' -conformalfile ',sFileC];
+end
+
+% set anisotropy
+if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
+    if (min(size(vLimitLevels)) ~= 1)
+        error(' vLimitLevels must be a vector, i.e., one row or one column');
+    end
+    if (max(size(vLimitLevels)) ~= lGrid.iDim)
+        error(' vLimitLevels must be a vector of size iDim');
+    end
+    if (size(vLimitLevels, 1) > size(vLimitLevels, 2))
+        tsgWriteMatrix(sFileL, vLimitLevels');
+    else
+        tsgWriteMatrix(sFileL, vLimitLevels);
+    end
+    lClean.sFileW = 1;
+    sCommand = [sCommand, ' -levellimitsfile ', sFileL];
 end
 
 % read the points for the grid

@@ -387,21 +387,29 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeGlobalGrid(2,  1,  4, 'wrong', 'clenshaw-curtis')", "sType"],
                    ["grid.makeGlobalGrid(2,  1,  4, 'level', 'clenshaw-wrong')", "sRule"],
                    ["grid.makeGlobalGrid(2,  1,  4, 'level', 'clenshaw-curtis', [1,2,3])", "liAnisotropicWeights"],
+                   ["grid.makeGlobalGrid(2,  1,  4, 'level', 'clenshaw-curtis', [1,2], liLevelLimits = [1, 2, 3])", "liLevelLimits"],
+                   ["grid.makeGlobalGrid(2,  1,  4, 'level', 'clenshaw-curtis', [1,2], liLevelLimits = [1, 2])", "notError"],
                    ["grid.makeSequenceGrid(-1, 1,  4, 'level', 'leja')", "iDimension"],
                    ["grid.makeSequenceGrid(2, -1,  4, 'level', 'leja')", "iOutputs"],
                    ["grid.makeSequenceGrid(2,  1, -4, 'level', 'leja')", "iDepth"],
                    ["grid.makeSequenceGrid(2,  1,  4, 'wrong', 'leja')", "sType"],
                    ["grid.makeSequenceGrid(2,  1,  4, 'level', 'weja')", "sRule"],
-                   ["grid.makeSequenceGrid(2,  1,  4, 'level', 'leja', [1,2,3])", "liAnisotropicWeights"],
+                   ["grid.makeSequenceGrid(2,  1,  4, 'level', 'leja', [1, 2, 3])", "liAnisotropicWeights"],
+                   ["grid.makeSequenceGrid(2,  1,  4, 'level', 'leja', [1, 2], [1, 2, 3])", "liLevelLimits"],
+                   ["grid.makeSequenceGrid(2,  1,  4, 'level', 'leja', liLevelLimits = [1, 2])", "notError"],
                    ["grid.makeLocalPolynomialGrid(-1, 1,  4,  2, 'localp')", "iDimension"],
                    ["grid.makeLocalPolynomialGrid(2, -1,  4,  2, 'localp')", "iOutputs"],
                    ["grid.makeLocalPolynomialGrid(2,  1, -4,  2, 'localp')", "iDepth"],
                    ["grid.makeLocalPolynomialGrid(2,  1,  4, -2, 'localp')", "iOrder"],
                    ["grid.makeLocalPolynomialGrid(2,  1,  4,  2, 'lowrong')", "sRule"],
+                   ["grid.makeLocalPolynomialGrid(2,  1,  4,  2, 'localp', [1, 2, 3])", "liLevelLimits"],
+                   ["grid.makeLocalPolynomialGrid(2,  1,  4,  2, 'localp', [1, 2])", "notError"],
                    ["grid.makeWaveletGrid(-1, 1,  4,  1)", "iDimension"],
                    ["grid.makeWaveletGrid(2, -1,  4,  1)", "iOutputs"],
                    ["grid.makeWaveletGrid(2,  1, -4,  3)", "iDepth"],
                    ["grid.makeWaveletGrid(2,  1,  4,  2)", "iOrder"],
+                   ["grid.makeWaveletGrid(2,  1,  4,  1, [1, 2, 3])", "liLevelLimits"],
+                   ["grid.makeWaveletGrid(2,  1,  4,  1, [2, 1])", "notError"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja')", "notError"], # notError tests here are needed to ensure that the multi-statement commands fail for the right function
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev')", "notError"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2]))", "notError"],
@@ -409,10 +417,14 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev'); grid.updateGlobalGrid(-1,'iptotal')", "iDepth"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev'); grid.updateGlobalGrid(4,'wrong')", "sType"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev'); grid.updateGlobalGrid(4,'iptotal',[1,2,3])", "liAnisotropicWeights"],
+                   ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev'); grid.updateGlobalGrid(4,'iptotal',liLevelLimits = [1,2,3])", "liLevelLimits"],
+                   ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev'); grid.updateGlobalGrid(4,'iptotal',liLevelLimits = [1,2])", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'rleja'); grid.updateSequenceGrid(4,'iptotal')", "updateSequenceGrid"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja'); grid.updateSequenceGrid(-1,'iptotal')", "iDepth"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja'); grid.updateSequenceGrid(4,'wrong')", "sType"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja'); grid.updateSequenceGrid(4,'iptotal',[1,2,3])", "liAnisotropicWeights"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja'); grid.updateSequenceGrid(4,'iptotal',liLevelLimits = [1,2,3])", "liLevelLimits"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja'); grid.updateSequenceGrid(4,'iptotal',liLevelLimits = [2,3])", "notError"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja'); aW = grid.getInterpolationWeights(np.array([1,2,3]))", "lfX"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja'); aW = grid.getInterpolationWeightsBatch(np.array([1,2,3]))", "llfX"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja'); aW = grid.getInterpolationWeightsBatch(np.array([[1,2,3],[1,2,3]]))", "llfX"],
@@ -774,7 +786,7 @@ class TestTasmanian(unittest.TestCase):
         aA = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, -0.707106781186548], [0.0, 0.0, 0.707106781186548], [0.0, -0.707106781186548, 0.0], [0.0, 0.707106781186548, 0.0], [-0.707106781186548, 0.0, 0.0], [0.707106781186548, 0.0, 0.0]])
         np.testing.assert_almost_equal(aA, grid.getPoints(), 14, "Original equal", True)
 
-    def testAAAAFullCoverageB(self):
+    def testFullCoverageB(self):
         print("\nTesting core refine grid")
         grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
         self.loadExpN2(grid)
@@ -845,6 +857,27 @@ class TestTasmanian(unittest.TestCase):
         aS = grid.getHierarchicalCoefficients()
         aT = np.array([[1.0, 0.0], [math.exp(-1.0)-1.0, math.sin(-1.0)], [math.exp(1.0)-1.0, math.sin(1.0)], [math.exp(-2.0)-1.0, math.sin(-3.0)], [math.exp(2.0)-1.0, math.sin(3.0)]])
         np.testing.assert_almost_equal(aS, aT, 14, "Surplusses equal", True)
+
+        # check that nodes from level 2 (+-0.5) and 3 (+-0.25, +-0.75) appear only in the proper dimension
+        grid.makeLocalPolynomialGrid(3, 1, 3, 1, 'localp', [1, 2, 3])
+        aPoints = grid.getPoints()
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] - 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - A')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] - 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - B')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - C')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - D')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] - 0.5) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - E')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 0.5) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - F')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] - 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - A')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] - 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - B')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] + 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - C')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] + 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - D')
+        
+        aLimits = grid.getLevelLimits()
+        np.testing.assert_almost_equal(aLimits, np.array([1, 2, 3]), 14, "Could not read level limits", True)
+        
+        grid.clearLevelLimits()
+        aLimits = grid.getLevelLimits()
+        np.testing.assert_almost_equal(aLimits, np.array([-1, -1, -1]), 14, "Could not read level limits", True)
 
         grid.makeGlobalGrid(3, 1, 4, 'level', 'fejer2')
         aPoints = grid.getPoints()

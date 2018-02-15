@@ -39,6 +39,7 @@ try:
     import matplotlib.pyplot as tsgPlot
 except:
     bTsgPlotting = False
+    tsgPlot = []
 
 __version__ = "5.1"
 __license__ = "BSD 3-Clause with UT-Battelle disclamer"
@@ -158,11 +159,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgBatchGetInterpolationWeights.restype = POINTER(c_double)
         self.pLibTSG.tsgIsSetDomainTransfrom.restype = c_int
         self.pLibTSG.tsgIsSetConformalTransformASIN.restype = c_int
-        self.pLibTSG.tsgEstimateAnisotropicCoefficients.restype = POINTER(c_int)
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.restype = c_int
-        #self.pLibTSG.tsgEvalHierarchicalFunctions.restype = POINTER(c_double)
-        #self.pLibTSG.tsgBatchEvalHierarchicalFunctions.restype = POINTER(c_double)
-        #self.pLibTSG.tsgGetSurpluses.restype = POINTER(c_double)
         ##########
         self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
         ##########
@@ -181,12 +178,12 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgWriteBinary.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgRead.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgReadBinary.argtypes = [c_void_p, c_char_p]
-        self.pLibTSG.tsgMakeGlobalGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_char_p, POINTER(c_int), c_double, c_double, c_char_p]
-        self.pLibTSG.tsgMakeSequenceGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_char_p, POINTER(c_int)]
-        self.pLibTSG.tsgMakeLocalPolynomialGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, c_char_p]
-        self.pLibTSG.tsgMakeWaveletGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int]
-        self.pLibTSG.tsgUpdateGlobalGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int)]
-        self.pLibTSG.tsgUpdateSequenceGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int)]
+        self.pLibTSG.tsgMakeGlobalGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_char_p, POINTER(c_int), c_double, c_double, c_char_p, POINTER(c_int)]
+        self.pLibTSG.tsgMakeSequenceGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_char_p, POINTER(c_int), POINTER(c_int)]
+        self.pLibTSG.tsgMakeLocalPolynomialGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, c_char_p, POINTER(c_int)]
+        self.pLibTSG.tsgMakeWaveletGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, POINTER(c_int)]
+        self.pLibTSG.tsgUpdateGlobalGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
+        self.pLibTSG.tsgUpdateSequenceGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgGetAlpha.argtypes = [c_void_p]
         self.pLibTSG.tsgGetBeta.argtypes = [c_void_p]
         self.pLibTSG.tsgGetOrder.argtypes = [c_void_p]
@@ -226,21 +223,19 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgIsSetConformalTransformASIN.argtypes = [c_void_p]
         self.pLibTSG.tsgClearConformalTransform.argtypes = [c_void_p]
         self.pLibTSG.tsgGetConformalTransformASIN.argtypes = [c_void_p, POINTER(c_int)]
+        self.pLibTSG.tsgClearLevelLimits.argtypes = [c_void_p]
+        self.pLibTSG.tsgGetLevelLimits.argtypes = [c_void_p, POINTER(c_int)]
         self.pLibTSG.tsgSetAnisotropicRefinement.argtypes = [c_void_p, c_char_p, c_int, c_int]
-        self.pLibTSG.tsgEstimateAnisotropicCoefficients.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgEstimateAnisotropicCoefficientsStatic.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgSetGlobalSurplusRefinement.argtypes = [c_void_p, c_double, c_int]
         self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int]
         self.pLibTSG.tsgClearRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgMergeRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgRemovePointsBySurplus.argtypes = [c_void_p, c_double, c_int]
-        #self.pLibTSG.tsgEvalHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double)]
-        #self.pLibTSG.tsgBatchEvalHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgEvaluateHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
         self.pLibTSG.tsgSetHierarchicalCoefficients.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_int), POINTER(c_int), POINTER(c_double)]
-        #self.pLibTSG.tsgGetSurpluses.argtypes = [c_void_p]
         ##########
         self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgGetHierarchicalCoefficientsStatic.argtypes = [c_void_p, POINTER(c_double)]
@@ -300,18 +295,6 @@ class TasmanianSparseGrid:
         returns the hardcoded version minor int
         '''
         return self.pLibTSG.tsgGetVersionMinor()
-
-#    def isCudaEnabled(self):
-#        '''
-#        returns True if the library has been compiled with CUDA support
-#        '''
-#        return (self.pLibTSG.tsgIsCudaEnabled() != 0)
-#
-#    def isBLASEnabled(self):
-#        '''
-#        returns True if the library has been compiled with BLAS support
-#        '''
-#        return (self.pLibTSG.tsgIsBLASEnabled() != 0)
 
     def isOpenMPEnabled(self):
         '''
@@ -376,7 +359,7 @@ class TasmanianSparseGrid:
         else:
             self.pLibTSG.tsgWrite(self.pGrid, c_char_p(sFilename))
 
-    def makeGlobalGrid(self, iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], fAlpha=0.0, fBeta=0.0, sCustomFilename=""):
+    def makeGlobalGrid(self, iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], fAlpha=0.0, fBeta=0.0, sCustomFilename="", liLevelLimits=[]):
         '''
         creates a new sparse grid using a global rule
         discards any existing grid held by this class
@@ -444,15 +427,15 @@ class TasmanianSparseGrid:
 
               'gauss-jacobi'
                 approximation using roots of polynomials orthogonal in
-                measure (1-x)^alpha*(1+x)^beta
+                measure (1-x)^alpha * (1+x)^beta
 
               'gauss-laguerre'
                 approximation using roots of polynomials orthogonal in
-                measure x^alpha*epx(-x)
+                measure x^alpha * epx(-x)
 
               'gauss-hermite'  'gauss-hermite-odd'
                 approximation using roots of polynomials orthogonal in
-                measure |x|^alpha*epx(-x^2)
+                measure |x|^alpha * epx(-x^2)
 
         liAnisotropicWeights: list or numpy.ndarray of weights
                               length must be iDimension or 2*iDimension
@@ -500,10 +483,18 @@ class TasmanianSparseGrid:
         pCustomRule = None
         if (sCustomFilename):
             pCustomRule = c_char_p(sCustomFilename)
+        
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
 
-        self.pLibTSG.tsgMakeGlobalGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), c_char_p(sRule), pAnisoWeights, c_double(fAlpha), c_double(fBeta), pCustomRule)
+        self.pLibTSG.tsgMakeGlobalGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), c_char_p(sRule), pAnisoWeights, c_double(fAlpha), c_double(fBeta), pCustomRule, pLevelLimits)
 
-    def makeSequenceGrid(self, iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[]):
+    def makeSequenceGrid(self, iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], liLevelLimits=[]):
         '''
         creates a new sparse grid using a sequence rule
         discards any existing grid held by this class
@@ -563,14 +554,22 @@ class TasmanianSparseGrid:
                 pAnisoWeights = (c_int*iNumWeights)()
                 for iI in range(iNumWeights):
                     pAnisoWeights[iI] = liAnisotropicWeights[iI]
+        
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
 
         if (sys.version_info.major == 3):
             sType = bytes(sType, encoding='utf8')
             sRule = bytes(sRule, encoding='utf8')
 
-        self.pLibTSG.tsgMakeSequenceGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), c_char_p(sRule), pAnisoWeights)
+        self.pLibTSG.tsgMakeSequenceGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), c_char_p(sRule), pAnisoWeights, pLevelLimits)
 
-    def makeLocalPolynomialGrid(self, iDimension, iOutputs, iDepth, iOrder=1, sRule="localp"):
+    def makeLocalPolynomialGrid(self, iDimension, iOutputs, iDepth, iOrder=1, sRule="localp", liLevelLimits=[]):
         '''
         creates a new sparse grid using a local polynomial rule
         discards any existing grid held by this class
@@ -607,13 +606,21 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("iOrder", "ERROR: order should be a non-negative integer")
         if (sRule not in lsTsgLocalRules):
             raise TasmanianInputError("sRule", "ERROR: invalid local polynomial rule, see TasmanianSG.lsTsgLocalRules for list of accepted sequence rules")
+        
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
 
         if (sys.version_info.major == 3):
             sRule = bytes(sRule, encoding='utf8')
 
-        self.pLibTSG.tsgMakeLocalPolynomialGrid(self.pGrid, iDimension, iOutputs, iDepth, iOrder, c_char_p(sRule))
+        self.pLibTSG.tsgMakeLocalPolynomialGrid(self.pGrid, iDimension, iOutputs, iDepth, iOrder, c_char_p(sRule), pLevelLimits)
 
-    def makeWaveletGrid(self, iDimension, iOutputs, iDepth, iOrder=1):
+    def makeWaveletGrid(self, iDimension, iOutputs, iDepth, iOrder=1, liLevelLimits=[]):
         '''
         creates a new sparse grid using a wavelet rule
         discards any existing grid held by this class
@@ -640,8 +647,16 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("iDepth", "ERROR: depth should be a non-negative integer")
         if (iOrder not in [1, 3]):
             raise TasmanianInputError("iOrder", "ERROR: order should be either 1 or 3 (only linear and cubic wavelets are available)")
+        
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
 
-        self.pLibTSG.tsgMakeWaveletGrid(self.pGrid, iDimension, iOutputs, iDepth, iOrder)
+        self.pLibTSG.tsgMakeWaveletGrid(self.pGrid, iDimension, iOutputs, iDepth, iOrder, pLevelLimits)
 
     def copyGrid(self, pGrid):
         '''
@@ -658,7 +673,7 @@ class TasmanianSparseGrid:
 
         self.pLibTSG.tsgCopyGrid(self.pGrid, pGrid.pGrid)
 
-    def updateGlobalGrid(self, iDepth, sType, liAnisotropicWeights=[]):
+    def updateGlobalGrid(self, iDepth, sType, liAnisotropicWeights=[], liLevelLimits=[]):
         '''
         adds the points defined by depth, type and anisotropy
         to the existing grid
@@ -696,10 +711,18 @@ class TasmanianSparseGrid:
 
         if (sys.version_info.major == 3):
             sType = bytes(sType, encoding='utf8')
+        
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
 
-        self.pLibTSG.tsgUpdateGlobalGrid(self.pGrid, iDepth, sType, pAnisoWeights)
+        self.pLibTSG.tsgUpdateGlobalGrid(self.pGrid, iDepth, sType, pAnisoWeights, pLevelLimits)
 
-    def updateSequenceGrid(self, iDepth, sType, liAnisotropicWeights=[]):
+    def updateSequenceGrid(self, iDepth, sType, liAnisotropicWeights=[], liLevelLimits=[]):
         '''
         adds the points defined by depth, type and anisotropy
         to the existing grid
@@ -722,7 +745,7 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("sType", "ERROR: invalid type, see TasmanianSG.lsTsgGlobalTypes for list of accepted types")
 
         iDimension = self.getNumDimensions()
-        pAnisoWeights = c_void_p(0)
+        pAnisoWeights = None
         if (len(liAnisotropicWeights) > 0):
             if (sType in lsTsgCurvedTypes):
                 iNumWeights = 2*iDimension
@@ -737,8 +760,16 @@ class TasmanianSparseGrid:
 
         if (sys.version_info.major == 3):
             sType = bytes(sType, encoding='utf8')
+        
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
 
-        self.pLibTSG.tsgUpdateSequenceGrid(self.pGrid, iDepth, sType, pAnisoWeights)
+        self.pLibTSG.tsgUpdateSequenceGrid(self.pGrid, iDepth, sType, pAnisoWeights, pLevelLimits)
 
     def getAlpha(self):
         '''
@@ -891,7 +922,6 @@ class TasmanianSparseGrid:
                 the order in getPoints()
 
         '''
-
         iNumPoints = self.getNumPoints()
         if (iNumPoints == 0):
             return np.empty([0], np.float64)
@@ -1143,6 +1173,7 @@ class TasmanianSparseGrid:
         if (lShape[1] != 2):
             raise TasmanianInputError("llfTransform", "ERROR: the second dimension of llfTransform is {0:1d} and it should be 2".format(lShape[1]))
         iNumDimensions = llfTransform.shape[0]
+        # NOTE: this is deliberately left in a way that can work with both ndarray and regular list-of-lists
         pA = (c_double*iNumDimensions)()
         pB = (c_double*iNumDimensions)()
         for iI in range(iNumDimensions):
@@ -1248,6 +1279,27 @@ class TasmanianSparseGrid:
         for iI in range(iNumDimensions):
             liTruncation[iI] = pTruncation[iI] # convert c_int to python long
         return liTruncation
+    
+    def clearLevelLimits(self):
+        '''
+        clears the limits set by the last make***Grid or refine command
+        if no limits are set, this has no effect
+        '''
+        self.pLibTSG.tsgClearLevelLimits(self.pGrid)
+    
+    def getLevelLimits(self):
+        '''
+        returns the limits set by the last call to make***Grid or refine
+        returns a vector of integers correspoding to the limits for each
+        direction, -1 indicates no limit
+        '''
+        iNumDimensions = self.getNumDimensions()
+        pTruncation = (c_int*iNumDimensions)()
+        self.pLibTSG.tsgGetLevelLimits(self.pGrid, pTruncation)
+        liLimits = np.empty([iNumDimensions,], np.int)
+        for iI in range(iNumDimensions):
+            liLimits[iI] = pTruncation[iI] # convert c_int to python long
+        return liLimits
 
     def setAnisotropicRefinement(self, sType, iMinGrowth, iOutput):
         '''
@@ -1329,8 +1381,8 @@ class TasmanianSparseGrid:
             sType = bytes(sType, encoding='utf8')
 
         aCoeff = np.empty([iNumCoeffs], np.int32)
-        self.pLibTSG.tsgEstimateAnisotropicCoefficients(self.pGrid, c_char_p(sType), iOutput, np.ctypeslib.as_ctypes(aCoeff))
-
+        self.pLibTSG.tsgEstimateAnisotropicCoefficientsStatic(self.pGrid, c_char_p(sType), iOutput, np.ctypeslib.as_ctypes(aCoeff))
+        
         return aCoeff
 
     def setSurplusRefinement(self, fTolerance, iOutput, sCriteria=""):

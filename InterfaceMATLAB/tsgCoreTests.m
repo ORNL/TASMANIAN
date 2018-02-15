@@ -410,7 +410,7 @@ if (norm(res - tres) > 1.E-11)
     error(['Mismatch in tsgEvaluateHierarchy: sequence grid test']);
 end
 
-[lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_ml', 2, 1, 'localp', 2, 1);
+[lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_ml', 2, 1, 'localp', 4, 1);
 v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
 tsgLoadValues(lGrid, v);
 pnts = [-1.0 + 2.0 * rand(13, 2)];
@@ -424,6 +424,50 @@ end
 
 tsgDeleteGrid(lGrid);
 
+[lGridA, p] = tsgMakeLocalPolynomial('_tsgcoretests_mlA', 2, 1, 'semi-localp', 5, 1);
+[lGridB, p] = tsgMakeLocalPolynomial('_tsgcoretests_mlB', 2, 1, 'semi-localp', 5, 1);
+v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
+tsgLoadValues(lGridA, v);
+[mVan] = tsgEvaluateHierarchy(lGridB, p);
+Coeff = mVan \ v;
+tsgLoadHCoefficients(lGridB, Coeff);
+pnts = [-1.0 + 2.0 * rand(13, 2)];
+[tres] = tsgEvaluate(lGridA, pnts);
+[res] = tsgEvaluate(lGridB, pnts);
+if (norm(tres - res) > 1.E-11)
+    error(['Mismatch in tsgEvaluateHierarchy: localp grid solve']);
+end
+
+[lGridA, p] = tsgMakeLocalPolynomial('_tsgcoretests_mlA', 2, 1, 'semi-localp', 5, 1, [-1 2; 7 9;]);
+[lGridB, p] = tsgMakeLocalPolynomial('_tsgcoretests_mlB', 2, 1, 'semi-localp', 5, 1, [-1 2; 7 9;]);
+v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
+tsgLoadValues(lGridA, v);
+[mVan] = tsgEvaluateHierarchy(lGridB, p);
+Coeff = mVan \ v;
+tsgLoadHCoefficients(lGridB, Coeff);
+pnts = [-1.0 + 3.0 * rand(13, 1), 7.0 + 2.0 * rand(13, 1)];
+[tres] = tsgEvaluate(lGridA, pnts);
+[res] = tsgEvaluate(lGridB, pnts);
+if (norm(tres - res) > 1.E-11)
+    error(['Mismatch in tsgEvaluateHierarchy: localp grid solve']);
+end
+
+[lGridA, p] = tsgMakeSequence('_tsgcoretests_mlA', 2, 1, 'rleja', 'level', 5, [1 2; 1 2;]);
+[lGridB, p] = tsgMakeSequence('_tsgcoretests_mlB', 2, 1, 'rleja', 'level', 5, [1 2; 1 2;]);
+v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
+tsgLoadValues(lGridA, v);
+[mVan] = tsgEvaluateHierarchy(lGridB, p);
+Coeff = mVan \ v;
+tsgLoadHCoefficients(lGridB, Coeff);
+pnts = [1.0 + rand(32, 2)];
+[tres] = tsgEvaluate(lGridA, pnts);
+[res] = tsgEvaluate(lGridB, pnts);
+if (norm(tres - res) > 1.E-11)
+    error(['Mismatch in tsgEvaluateHierarchy: sequence solve']);
+end
+
+tsgDeleteGrid(lGridA);
+tsgDeleteGrid(lGridB);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgIntegrate()                               %%%
@@ -464,6 +508,7 @@ end
 if ((abs(c(1) / c(2) - 2.0) > 0.2) || (c(3) > 0.0) || (c(4) > 0.0))
     error('Mismatch in tsgEstimateAnisotropicCoefficients(): curved');
 end
+tsgDeleteGrid(lGrid);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -477,6 +522,24 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgCancelRefine()                            %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_cref', 3, 1, 'localp', 4, 2);
+v = [exp(-p(:,1).^2 -0.5 * p(:,2).^2 -2.0 * p(:,3).^2)];
+tsgLoadValues(lGrid, v);
+[p] = tsgGetNeededPoints(lGrid);
+if (max(size(p)) > 0)
+    error('Mismatch in cancel refine: did not load values');
+end
+tsgRefineSurplus(lGrid, 1.E-4, 'direction');
+[p] = tsgGetNeededPoints(lGrid);
+if (max(size(p)) == 0)
+    error('Mismatch in cancel refine: did not set refinement');
+end
+tsgCancelRefine(lGrid);
+[p] = tsgGetNeededPoints(lGrid);
+if (max(size(p)) > 0)
+    error('Mismatch in cancel refine: did not cancel the refinement');
+end
+tsgDeleteGrid(lGrid);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgMergeRefine()                             %%%
@@ -502,12 +565,12 @@ tsgDeleteGrid(lGridB);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgGetHCoefficients()                        %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% covered in tsgMergeRefine()
+% covered in tsgMergeRefine() and tsgEvaluateHierarchy()
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgLoadHCoefficients()                       %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% covered in tsgMergeRefine()
+% covered in tsgMergeRefine() and tsgEvaluateHierarchy()
 
 disp(['Refinement functions:     PASS']);
 

@@ -310,6 +310,13 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide conformal transform file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
+        }else if ((strcmp(argv[k],"-levellimitsfile") == 0) || (strcmp(argv[k],"-lf") == 0)){
+            if (k+1 < argc){
+                wrap.setLevelLimitsFilename(argv[++k]);
+            }else{
+                cerr << "ERROR: must provide conformal transform file name!!!  For help see: ./tasgrid -help" << endl << endl;
+                return 1;
+            }
         }else if ((strcmp(argv[k],"-cf") == 0)||(strcmp(argv[k],"-customfile") == 0)){
             if (k+1 < argc){
                 wrap.setCustomFilename(argv[++k]);
@@ -568,6 +575,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -anisotropyfile"   << "\t-af\t"      << "\t<filename>"   << "\tset the anisotropic weights" << endl;
         cout << " -transformfile\t"  << "\t-tf\t"      << "\t<filename>"   << "\tset the transformation of the domain" << endl;
         cout << " -conformalfile\t"  << "\t-tf\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain" << endl;
+        cout << " -levellimitsfile"  << "\t-lf\t"      << "\t<filename>"   << "\tset the limits for the levels" << endl;
         cout << " -customfile\t"     << "\t-cf\t"      << "\t<filename>"   << "\tset the file with the custom-tabulated rule" << endl;
         cout << " -print\t\t"    << "\t-p\t"       << "\t<none>"       << "\t\tprint to standard output" << endl;
         cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl;
@@ -597,6 +605,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map" << endl;
             cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain" << endl;
             cout << " \t\t\t\t\t"    << "\t\trequired for custom-tabulated rule" << endl;
+            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels" << endl;
             cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output" << endl;
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl << endl;
             cout << "Note: -outputfile or -print output the points of the grid" << endl;
@@ -618,6 +627,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -transformfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the transformation of the domain" << endl;
             cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map" << endl;
             cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain" << endl;
+            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels" << endl;
             cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output" << endl;
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl << endl;
             cout << "Note: -outputfile or -print output the points of the grid" << endl;
@@ -638,6 +648,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -transformfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the transformation of the domain" << endl;
             cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map" << endl;
             cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain" << endl;
+            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels" << endl;
             cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output" << endl;
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl << endl;
             cout << "Note: -outputfile or -print output the points of the grid" << endl;
@@ -656,6 +667,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -transformfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the transformation of the domain" << endl;
             cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map" << endl;
             cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain" << endl;
+            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels" << endl;
             cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output" << endl;
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl << endl;
             cout << "Note: -outputfile or -print output the points of the grid" << endl;

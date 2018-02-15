@@ -662,6 +662,44 @@ int* IndexManipulator::referenceGenericPoints(const int levels[], const OneDimen
     return refs;
 }
 
+IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *set, const int limits[]) const{
+    int c = 0, dims = set->getNumDimensions();
+    for(int i=0; i<set->getNumIndexes(); i++){
+        const int *idx = set->getIndex(i);
+        bool obeys = true;
+        for(int j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
+        if (obeys) c++;
+    }
+    if (c == set->getNumIndexes()) return 0;
+    int *new_idx = new int[dims * c];
+    c = 0;
+    for(int i=0; i<set->getNumIndexes(); i++){
+        const int *idx = set->getIndex(i);
+        bool obeys = true;
+        for(int j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
+        if (obeys) std::copy(idx, idx + dims, &(new_idx[dims * (c++)]));
+    }
+    return (new IndexSet(dims, c, new_idx));
+}
+UnsortedIndexSet* IndexManipulator::removeIndexesByLimit(UnsortedIndexSet *set, const int limits[]) const{
+    int c = 0, dims = set->getNumDimensions();
+    for(int i=0; i<set->getNumIndexes(); i++){
+        const int *idx = set->getIndex(i);
+        bool obeys = true;
+        for(int j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
+        if (obeys) c++;
+    }
+    if (c == set->getNumIndexes()) return 0;
+    UnsortedIndexSet* restricted = new UnsortedIndexSet(dims, c);
+    for(int i=0; i<set->getNumIndexes(); i++){
+        const int *idx = set->getIndex(i);
+        bool obeys = true;
+        for(int j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
+        if (obeys) restricted->addIndex(idx);
+    }
+    return restricted;
+}
+
 /*int* IndexManipulator::computeDAGdown(const IndexSet *set) const{
     int n = set->getNumIndexes();
     int *kids = new int[n * num_dimensions];

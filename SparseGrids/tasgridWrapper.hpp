@@ -87,7 +87,7 @@ enum TypeCommand{
     command_evalhierarchical_dense, // ML section
 
     command_getpointsindex,
-    command_getneededindex,
+    command_getneededindex
 };
 
 enum TypeConformalMap{
@@ -129,6 +129,7 @@ public:
     void setTransformFilename(const char *filename);
     void setConformalFilename(const char *filename);
     void setCustomFilename(const char *filename);
+    void setLevelLimitsFilename(const char *filename);
 
     void setPrintPoints(bool pp);
     void setUseASCII(bool ascii);
@@ -180,6 +181,7 @@ protected:
 
     int* readAnisotropicFile(int num_weights) const;
     double* readTransform() const;
+    int* readLevelLimits(int num_weights) const;
 
     static void readMatrix(const char *filename, int &rows, int &cols, double* &mat);
     static void writeMatrix(const char *filename, int rows, int cols, const double mat[], bool ascii);
@@ -213,6 +215,7 @@ private:
     const char *transformfilename;
     const char *conformalfilename;
     const char *customfilename;
+    const char *levellimitfilename;
 
     bool printCout;
     bool useASCII;

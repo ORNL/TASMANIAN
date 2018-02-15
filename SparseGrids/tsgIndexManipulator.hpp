@@ -59,6 +59,9 @@ public:
     IndexSet* generateGenericPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const;
     int* referenceGenericPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const;
 
+    IndexSet* removeIndexesByLimit(IndexSet *set, const int limits[]) const;
+    UnsortedIndexSet* removeIndexesByLimit(UnsortedIndexSet *set, const int limits[]) const;
+
     //int* computeDAGdown(const IndexSet *set) const;
     int* computeDAGup(const IndexSet *set) const;
 

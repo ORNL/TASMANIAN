@@ -38,6 +38,7 @@ TasgridWrapper::TasgridWrapper() : grid(0), command(command_none), num_dimension
     conformal(conformal_none), alpha(0.0), beta(0.0), set_alpha(false), set_beta(false), tolerance(0.0), set_tolerance(false),
     ref_output(-1), min_growth(-1), tref(refine_fds), set_tref(false),
     gridfilename(0), outfilename(0), valsfilename(0), xfilename(0), anisofilename(0), transformfilename(0), conformalfilename(0), customfilename(0),
+    levellimitfilename(0),
     printCout(false), useASCII(false)
 {}
 TasgridWrapper::~TasgridWrapper(){
@@ -80,6 +81,7 @@ void TasgridWrapper::setAnisoFilename(const char *filename){ anisofilename = fil
 void TasgridWrapper::setTransformFilename(const char *filename){ transformfilename = filename; }
 void TasgridWrapper::setConformalFilename(const char *filename){ conformalfilename = filename; }
 void TasgridWrapper::setCustomFilename(const char *filename){ customfilename = filename; }
+void TasgridWrapper::setLevelLimitsFilename(const char *filename){ levellimitfilename = filename; }
 void TasgridWrapper::setPrintPoints(bool pp){ printCout = pp; }
 void TasgridWrapper::setUseASCII(bool ascii){ useASCII = ascii; }
 
@@ -274,7 +276,8 @@ void TasgridWrapper::createGlobalGird(){
         weights = readAnisotropicFile(num_dimensions);
     }
     if (grid == 0) grid = new TasmanianSparseGrid();
-    grid->makeGlobalGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, alpha, beta, customfilename);
+    int* llimits = readLevelLimits(num_dimensions);
+    grid->makeGlobalGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, alpha, beta, customfilename, llimits);
     if (weights == 0) delete[] weights;
     if (transformfilename != 0){
         double *transforms = readTransform();
@@ -286,6 +289,7 @@ void TasgridWrapper::createGlobalGird(){
             cerr << "ERROR: could not set conformal transform" << endl;
         }
     }
+    if (llimits != 0) delete[] llimits;
 }
 void TasgridWrapper::createSequenceGird(){
     int *weights = 0;
@@ -295,7 +299,8 @@ void TasgridWrapper::createSequenceGird(){
         weights = readAnisotropicFile(num_dimensions);
     }
     if (grid == 0) grid = new TasmanianSparseGrid();
-    grid->makeSequenceGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights);
+    int* llimits = readLevelLimits(num_dimensions);
+    grid->makeSequenceGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, llimits);
     if (weights == 0) delete[] weights;
     if (transformfilename != 0){
         double *transforms = readTransform();
@@ -307,10 +312,12 @@ void TasgridWrapper::createSequenceGird(){
             cerr << "ERROR: could not set conformal transform" << endl;
         }
     }
+    if (llimits != 0) delete[] llimits;
 }
 void TasgridWrapper::createLocalPolynomialGird(){
     if (grid == 0) grid = new TasmanianSparseGrid();
-    grid->makeLocalPolynomialGrid(num_dimensions, num_outputs, depth, order, rule);
+    int* llimits = readLevelLimits(num_dimensions);
+    grid->makeLocalPolynomialGrid(num_dimensions, num_outputs, depth, order, rule, llimits);
     if (transformfilename != 0){
         double *transforms = readTransform();
         grid->setDomainTransform(transforms, &(transforms[num_dimensions]));
@@ -321,10 +328,12 @@ void TasgridWrapper::createLocalPolynomialGird(){
             cerr << "ERROR: could not set conformal transform" << endl;
         }
     }
+    if (llimits != 0) delete[] llimits;
 }
 void TasgridWrapper::createWaveletGird(){
     if (grid == 0) grid = new TasmanianSparseGrid();
-    grid->makeWaveletGrid(num_dimensions, num_outputs, depth, order);
+    int* llimits = readLevelLimits(num_dimensions);
+    grid->makeWaveletGrid(num_dimensions, num_outputs, depth, order, llimits);
     if (transformfilename != 0){
         double *transforms = readTransform();
         grid->setDomainTransform(transforms, &(transforms[num_dimensions]));
@@ -335,6 +344,7 @@ void TasgridWrapper::createWaveletGird(){
             cerr << "ERROR: could not set conformal transform" << endl;
         }
     }
+    if (llimits != 0) delete[] llimits;
 }
 void TasgridWrapper::createQuadrature(){
     if (num_outputs != 0) num_outputs = 0;
@@ -905,6 +915,25 @@ double* TasgridWrapper::readTransform() const{
     delete[] mat;
     return transforms;
 }
+int* TasgridWrapper::readLevelLimits(int num_weights) const{
+    if (levellimitfilename == 0) return 0;
+    int rows, cols;
+    double* mat;
+    readMatrix(levellimitfilename, rows, cols, mat);
+    if (rows != 1){
+        cerr << "ERROR: anisotropy file must contain only one row" << endl;
+        delete[] mat;
+        exit(1);
+    }
+    if (cols != num_weights){
+        cerr << "ERROR: anisotropy file has wrong number of entries, " << num_weights << " expected " << cols << " found." << endl;
+        delete[] mat;
+        exit(1);
+    }
+    int *weights = new int[num_weights];
+    for(int i=0; i<num_weights; i++) weights[i] = (int)(mat[i] + 0.3);
+    return weights;
+}
 
 void TasgridWrapper::readMatrix(const char *filename, int &rows, int &cols, double* &mat){
     if (mat == 0) delete[] mat;
@@ -929,6 +958,7 @@ void TasgridWrapper::readMatrix(const char *filename, int &rows, int &cols, doub
         }
         mat = new double[rows*cols];
         ifs.read((char*) mat, rows * cols * sizeof(double));
+        //if (rows > 10) for(int i=0; i<10; i++) cout << mat[i] << endl;
     }else{ // not a binary file
         ifs.close();
         ifs.open(filename);
@@ -1056,7 +1086,11 @@ bool TasgridWrapper::executeCommand(){
         refineGrid();
         outputPoints(true);
     }else if (command == command_refine_clear){
-        cancelRefine();
+        if (cancelRefine()){
+            writeGrid();
+        }else{
+            cerr << "ERROR: could not clear th refinement" << endl;
+        }
     }else if (command == command_getpoly){
         if (!getPoly()){
             cerr << "ERROR: could not get polynomial basis" << endl;

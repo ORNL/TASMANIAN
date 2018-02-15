@@ -142,7 +142,7 @@ void GridWavelet::readBinary(std::ifstream &ifs){
     buildInterpolationMatrix();
 }
 
-void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder){
+void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const int *level_limits){
     reset();
     num_dimensions = cnum_dimensions;
     num_outputs = cnum_outputs;
@@ -152,6 +152,13 @@ void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int
 
     IndexManipulator IM(num_dimensions);
     UnsortedIndexSet* deltas = IM.getToalDegreeDeltas(depth);
+    if (level_limits != 0){
+        UnsortedIndexSet *limited = IM.removeIndexesByLimit(deltas, level_limits);
+        if (limited != 0){
+            delete deltas;
+            deltas = limited;
+        }
+    }
 
     WaveletLevels wavelevels(order); // describes the wavelet hierarchy, namely points per delta
 

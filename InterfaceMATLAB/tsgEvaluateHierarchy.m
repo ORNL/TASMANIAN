@@ -74,7 +74,7 @@ else
             for i = 1:Rows
                 rindx((pntr(i)+1):(pntr(i+1))) = i;
             end
-            NNZ
+            %[Rows, Cols, NNZ]
             vals = sparse(rindx, indx + 1, vals, Rows, Cols, NNZ);
         else
             frewind(fid);

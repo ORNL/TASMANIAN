@@ -188,10 +188,17 @@ void GridSequence::clearRefinement(){
     if (needed != 0){ delete needed; needed = 0; }
 }
 
-void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights){
+void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights, const int *level_limits){
     IndexManipulator IM(cnum_dimensions);
 
     IndexSet *pset = IM.selectTensors(depth, type, anisotropic_weights, crule);
+    if (level_limits != 0){
+        IndexSet *limited = IM.removeIndexesByLimit(pset, level_limits);
+        if (limited != 0){
+            delete pset;
+            pset = limited;
+        }
+    }
     setPoints(pset, cnum_outputs, crule);
 }
 void GridSequence::copyGrid(const GridSequence *seq){
@@ -241,10 +248,17 @@ void GridSequence::setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule cru
     }
 }
 
-void GridSequence::updateGrid(int depth, TypeDepth type, const int *anisotropic_weights){
+void GridSequence::updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
     IndexManipulator IM(num_dimensions);
 
     IndexSet *pset = IM.selectTensors(depth, type, anisotropic_weights, rule);
+    if (level_limits != 0){
+        IndexSet *limited = IM.removeIndexesByLimit(pset, level_limits);
+        if (limited != 0){
+            delete pset;
+            pset = limited;
+        }
+    }
     updateGrid(pset);
 }
 
