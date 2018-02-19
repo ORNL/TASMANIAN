@@ -1,4 +1,4 @@
-function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDepth, mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, sConformalMap, vConfromalWeights)
+function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDepth, mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, sConformalMap, vConfromalWeights, vLimitLevels)
 %
 % [lGrid, points] = 
 %               tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDepth, 
@@ -118,18 +118,28 @@ function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDep
 %                  see help tsgWriteCustomRuleFile.m for definition of 
 %                  each field of the structure
 %
-% sConformalMap: (optional non-linear domain transformation)
-%                currently only implemented transformation based on the
-%                truncated Taylor series of arcsin()
+% sConformalMap: (optional string giving the type of transform)
+%                conformal maps provide a non-linear domain transform,
+%                approximation (quadrature or interpolation) is done
+%                on the composition of f and the transform. A suitable
+%                transform could reduce the error by as much as an 
+%                order of magnitude.
 %
-%                'asin' (only accepted value)
+%                'asin': truncated MacLaurin series of arch-sin
 %
-% vConfromalWeights: (optional matrix indicating conformal weights)
+% vConfromalWeights: (optional parameters for the conformal trnasform)
+%               'asin': indicate the number of terms to keep after
+%                       truncation
 %
-%            'asin': vector of integers of size iDim indicating 
-%                    truncation power of the Taylor series in each 
-%                    direction
-%
+% vLimitLevels: (optional vector of integers of size iDim)
+%               limit the level in each direction, no points beyond the
+%               specified limit will be used, e.g., in 2D using
+%               clenshaw-curtis rule, [1, 99] forces the grid to have 
+%               at most 3 possible values in the first variable and 
+%               ~2^99 (practicallyt infinite) number in the second 
+%               direction. vLimitLevels works in conjunction with
+%               iDepth and sType, the points added to the grid will
+%               obey both bounds
 %
 % OUTPUT:
 %
@@ -164,7 +174,7 @@ end
 
 % generate filenames
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
 
 sCommand = [sTasGrid,' -makeglobal'];
 
@@ -213,9 +223,9 @@ if (exist('vAlphaBeta') && (max(size(vAlphaBeta)) ~= 0))
     if (max(size(vAlphaBeta)) > 2)
         error(' vAlphaBeta must be a vector of size at most 2');
     end
-    sCommand = [sCommand, ' -alpha ',num2str(vAlphaBeta(1),16)];
+    sCommand = [sCommand, ' -alpha ',num2str(vAlphaBeta(1), 16)];
     if (max(size(vAlphaBeta)) > 1)
-        sCommand = [sCommand, ' -beta ',num2str(vAlphaBeta(2),16)];
+        sCommand = [sCommand, ' -beta ',num2str(vAlphaBeta(2), 16)];
     end
 end
 
@@ -251,12 +261,29 @@ if (exist('sConformalMap')  && (max(size(sConformalMap)) ~= 0))
         tsgWriteMatrix(sFileC, vConfromalWeights);
     end
     lClean.sFileC = 1;
-    sCommand = [sCommand, ' -conformalfile ',sFileC];
+    sCommand = [sCommand, ' -conformalfile ', sFileC];
+end
+
+% set level limits
+if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
+    if (min(size(vLimitLevels)) ~= 1)
+        error(' vLimitLevels must be a vector, i.e., one row or one column');
+    end
+    if (max(size(vLimitLevels)) ~= lGrid.iDim)
+        error(' vLimitLevels must be a vector of size iDim');
+    end
+    if (size(vLimitLevels, 1) > size(vLimitLevels, 2))
+        tsgWriteMatrix(sFileL, vLimitLevels');
+    else
+        tsgWriteMatrix(sFileL, vLimitLevels);
+    end
+    lClean.sFileW = 1;
+    sCommand = [sCommand, ' -levellimitsfile ', sFileL];
 end
 
 % read the points for the grid
 if (nargout > 1)
-    sCommand = [sCommand, ' -of ',sFileO];
+    sCommand = [sCommand, ' -of ', sFileO];
     lClean.sFileO = 1;
 end
 

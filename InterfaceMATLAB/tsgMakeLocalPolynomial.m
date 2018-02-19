@@ -40,27 +40,27 @@ function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iD
 %               change the weight to 
 %               exp(-b (x - a))  and  exp(-b (x - a)^2)
 %
-% sConformalMap: (optional non-linear domain transformation)
-%                currently only implemented transformation based on the
-%                truncated Taylor series of arcsin()
+% sConformalMap: (optional string giving the type of transform)
+%                conformal maps provide a non-linear domain transform,
+%                approximation (quadrature or interpolation) is done
+%                on the composition of f and the transform. A suitable
+%                transform could reduce the error by as much as an 
+%                order of magnitude.
 %
-%                'asin' (only accepted value)
+%                'asin': truncated MacLaurin series of arch-sin
 %
-% vConfromalWeights: (optional matrix indicating conformal weights)
+% vConfromalWeights: (optional parameters for the conformal trnasform)
+%               'asin': indicate the number of terms to keep after
+%                       truncation
 %
-%            'asin': vector of integers of size iDim indicating 
-%                    truncation power of the Taylor series in each 
-%                    direction
-%
-% vLimitLevels: (optional vector of size iDim)
+% vLimitLevels: (optional vector of integers of size iDim)
 %               limit the level in each direction, no points beyond the
 %               specified limit will be used, e.g., in 2D [1, 99] forces
-%               the grid to have only 3 possible values in the first
+%               the grid to have at most 3 possible values in the first
 %               variable and ~2^99 (practicallyt infinite) number in the
 %               second direction. vLimitLevels works in conjunction with
 %               iDepth, for each direction, we chose the lesser of the
 %               vLimitLevels and iDepth
-% 
 %
 % OUTPUT:
 %
@@ -70,7 +70,7 @@ function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iD
 % points: (optional) the points of the grid in an array 
 %                    of dimension [num_poits, dim]
 %
-% [lGrid, points] 
+% [lGrid, points] =
 %     tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iDepth, iOrder,
 %                        mTransformAB, sConformalMap, vConfromalWeights,
 %                        vLimitLevels)
@@ -128,7 +128,7 @@ if (exist('sConformalMap')  && (max(size(sConformalMap)) ~= 0))
     sCommand = [sCommand, ' -conformalfile ',sFileC];
 end
 
-% set anisotropy
+% set level limits
 if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
     if (min(size(vLimitLevels)) ~= 1)
         error(' vLimitLevels must be a vector, i.e., one row or one column');

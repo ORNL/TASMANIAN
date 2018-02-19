@@ -1,4 +1,4 @@
-function [lGrid, points] = tsgMakeWavelet(sGridName, iDim, iOut, iDepth, iOrder, mTransformAB, sConformalMap, vConfromalWeights)
+function [lGrid, points] = tsgMakeWavelet(sGridName, iDim, iOut, iDepth, iOrder, mTransformAB, sConformalMap, vConfromalWeights, vLimitLevels)
 %
 % [lGrid, points] = tsgMakeWavelet(sGridName, iDim, iOut, iDepth, iOrder,
 %                        mTransformAB, sConformalMap, vConfromalWeights)
@@ -31,6 +31,28 @@ function [lGrid, points] = tsgMakeWavelet(sGridName, iDim, iOut, iDepth, iOrder,
 %               grids, the transform gives the a and b parameters that
 %               change the weight to 
 %               exp(-b (x - a))  and  exp(-b (x - a)^2)
+%
+% sConformalMap: (optional string giving the type of transform)
+%                conformal maps provide a non-linear domain transform,
+%                approximation (quadrature or interpolation) is done
+%                on the composition of f and the transform. A suitable
+%                transform could reduce the error by as much as an 
+%                order of magnitude.
+%
+%                'asin': truncated MacLaurin series of arch-sin
+%
+% vConfromalWeights: (optional parameters for the conformal trnasform)
+%               'asin': indicate the number of terms to keep after
+%                       truncation
+%
+% vLimitLevels: (optional vector of integers of size iDim)
+%               limit the level in each direction, no points beyond the
+%               specified limit will be used, e.g., in 2D [1, 99] forces
+%               the grid to have at most 3 possible values in the first
+%               variable and ~2^99 (practicallyt infinite) number in the
+%               second direction. vLimitLevels works in conjunction with
+%               iDepth, for each direction, we chose the lesser of the
+%               vLimitLevels and iDepth
 %
 % OUTPUT:
 %
@@ -93,6 +115,23 @@ if (exist('sConformalMap')  && (max(size(sConformalMap)) ~= 0))
     end
     lClean.sFileC = 1;
     sCommand = [sCommand, ' -conformalfile ',sFileC];
+end
+
+% set level limits
+if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
+    if (min(size(vLimitLevels)) ~= 1)
+        error(' vLimitLevels must be a vector, i.e., one row or one column');
+    end
+    if (max(size(vLimitLevels)) ~= lGrid.iDim)
+        error(' vLimitLevels must be a vector of size iDim');
+    end
+    if (size(vLimitLevels, 1) > size(vLimitLevels, 2))
+        tsgWriteMatrix(sFileL, vLimitLevels');
+    else
+        tsgWriteMatrix(sFileL, vLimitLevels);
+    end
+    lClean.sFileW = 1;
+    sCommand = [sCommand, ' -levellimitsfile ', sFileL];
 end
 
 % read the points for the grid

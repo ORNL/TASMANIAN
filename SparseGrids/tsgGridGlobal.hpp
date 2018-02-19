@@ -108,8 +108,8 @@ public:
 
     int* estimateAnisotropicCoefficients(TypeDepth type, int output) const;
 
-    void setAnisotropicRefinement(TypeDepth type, int min_growth = 1, int output = 0);
-    void setSurplusRefinement(double tolerance, int output = 0);
+    void setAnisotropicRefinement(TypeDepth type, int min_growth = 1, int output = 0, const int *level_limits = 0);
+    void setSurplusRefinement(double tolerance, int output = 0, const int *level_limits = 0);
     void clearRefinement();
     void mergeRefinement();
 

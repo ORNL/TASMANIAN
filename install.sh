@@ -475,7 +475,16 @@ fi
 
 if [[ $sEnableCUDA == "ON" ]]; then
     # work around the problem with make -j where the shared cuda kernels are build twice (make no j builds them only once)
-    make -f CMakeFiles/libtsg_shared.dir/build.make CMakeFiles/libtsg_shared.dir/SparseGrids/libtsg_shared_generated_tsgCudaKernels.cu.o || { sEnableMakeJobs=""; }
+    # if the make -f command tries to build the cuda kernels, which ensures that make -j will not try to compile again
+    # if the make -f command fails, this can be due to CUDA being disabled by cmake, check if Tasmanian_ENABLE_CUDA:BOOL=OFF is set
+    # if cuda is disabled, then just continue as normal, but if cuda is not off, then force sequential build
+    sCudaDoOnce = "TRY"
+    make -f CMakeFiles/libtsg_shared.dir/build.make CMakeFiles/libtsg_shared.dir/SparseGrids/libtsg_shared_generated_tsgCudaKernels.cu.o || { sCudaDoOnce="FAIL"; }
+    if [[ $sCudaDoOnce == "FAIL" ]]; then
+        if [[ ! -z `cmake -LA -N . | grep Tasmanian_ENABLE_CUDA:BOOL=OFF` ]]; then
+            sEnableMakeJobs = ""
+        fi
+    fi
 fi
 
 make $sEnableMakeJobs

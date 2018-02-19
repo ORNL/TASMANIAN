@@ -1069,7 +1069,7 @@ int* GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output) con
     return weights;
 }
 
-void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int output){
+void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
     clearRefinement();
     int *weights = estimateAnisotropicCoefficients(type, output); //for(int i=0; i<2*num_dimensions; i++) cout << weights[i] << "  "; cout << endl;
 
@@ -1077,6 +1077,13 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     int level = IM.getMinChildLevel(tensors, type, weights, rule);
 
     updated_tensors = IM.selectTensors(level, type, weights, rule);
+    if (level_limits != 0){
+        IndexSet *limited = IM.removeIndexesByLimit(updated_tensors, level_limits);
+        if (limited != 0){
+            delete updated_tensors;
+            updated_tensors = limited;
+        }
+    }
     needed = updated_tensors->diffSets(tensors); // this exploits the 1-1 correspondence between points and tensors for sequence rules (see the correction below)
 
     while((needed == 0) || (needed->getNumIndexes() < min_growth)){ // for CC min_growth is lots of points
@@ -1115,7 +1122,7 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     delete[] updates_tensor_w;
 }
 
-void GridGlobal::setSurplusRefinement(double tolerance, int output){
+void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *level_limits){
     clearRefinement();
     double *surp = computeSurpluses(output, true);
 
@@ -1140,6 +1147,14 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output){
         }else{
             updated_tensors->addIndexSet(kids);
             delete kids;
+        }
+        // this is valid only for a sequence rule, where tensor is equivalent to a point
+        if (level_limits != 0){
+            IndexSet *limited = IM.removeIndexesByLimit(updated_tensors, level_limits);
+            if (limited != 0){
+                delete updated_tensors;
+                updated_tensors = limited;
+            }
         }
 
         OneDimensionalMeta meta(custom);

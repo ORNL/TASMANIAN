@@ -29,8 +29,6 @@ disp(cmdout(1:k));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgMakeQuadrature()                          %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO: custom and conformal
-
 % Basic quadrature calls and check for correct points and weight
 [weights, points] = tsgMakeQuadrature(2, 'clenshaw-curtis', 'level', 1, 0);
 tw = [4.0/3.0, 2.0/3.0, 2.0/3.0, 2.0/3.0, 2.0/3.0]';
@@ -79,11 +77,55 @@ if ((abs(sum(w) - 4.0) > 1.E-11) || (norm(p - tp) > 1.E-11))
     error('Mismatch in points and weights of simple quadrature: anisotropy');
 end
 
+% test custom rule
+vNodes = [];
+vWeights = [];
+for iL = 0:4
+    [w, p] = tsgMakeQuadrature(1, 'gauss-legendre', 'level', iL, -1);
+    vNodes = [vNodes; p];
+    vWeights = [vWeights; w];
+end
+lCustomRule.sDescription = 'Test Gauss-Legendre';
+lCustomRule.iMaxLevel = 5;
+lCustomRule.vLevels = 1:5;
+lCustomRule.vPrecision = 2 * lCustomRule.vLevels - 1;
+lCustomRule.vNodes = vNodes;
+lCustomRule.vWeights = vWeights;
+[tw, tp] = tsgMakeQuadrature(2, 'gauss-legendre', 'level', 3, 0, [], [], [2, 1]');
+[w, p] = tsgMakeQuadrature(2, 'custom-tabulated', 'level', 3, 0, [], [], [2, 1]', lCustomRule);
+if ((norm(tw - w) > 1.E-11) || (norm(tp - p) > 1.E-11))
+    error('Mismatch in points and weights of simple quadrature: custom rule');
+end
+
+% test conformal
+for iL = 7:8
+    [w, p] = tsgMakeQuadrature(2, 'gauss-patterson', 'qptotal', iL, -1);
+    [wc, pc] = tsgMakeQuadrature(2, 'gauss-patterson', 'qptotal', iL, -1, [], [], [], [], 'asin', [4, 4]);
+    
+    I  = sum(w  .* (1.0 ./ ((1.0 + 5.0 .* p(:,1).^2)  .* (1.0 + 5.0 .* p(:,2).^2))));
+    Ic = sum(wc .* (1.0 ./ ((1.0 + 5.0 .* pc(:,1).^2) .* (1.0 + 5.0 .* pc(:,2).^2))));
+    %[abs(I - 1.028825601981092^2), abs(Ic - 1.028825601981092^2)]
+
+    if (abs(I - 1.028825601981092^2) < abs(Ic - 1.028825601981092^2))
+        error('Mismatch in points and weights of simple quadrature: conformal map');
+    end
+end
+
+% test level limits
+[w, p] = tsgMakeQuadrature(2, 'clenshaw-curtis', 'qptotal', 20, -1, [], [], [], [], [], [], [1, 3]);
+[tw, tp] = tsgMakeQuadrature(2, 'clenshaw-curtis', 'tensor', 1, -1, [], [], [1, 3], [], [], [], []);
+% when the limitation of iDepth far exceeds the level limits, the grid converges to a full tensor grid
+if (abs(sum(w) - 4.0) > 1.E-11)
+    error('Mismatch in points and weights of simple quadrature: level limit, sum of weights');
+end
+if ((norm(w - tw) > 1.E-11) || (norm(p - tp) > 1.E-11))
+    error('Mismatch in points and weights of simple quadrature: level limit, points and weights');
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgMakeGlobal()                              %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO: custom and conformal
 [lGrid, p] = tsgMakeGlobal('_tsgcoretests_lgrid', 2, 1, 'clenshaw-curtis', 'level', 1);
 tp = [0.0, 0.0; 0.0, -1.0; 0.0, 1.0; -1.0, 0.0; 1.0, 0.0;];
 if (norm(tp - p) > 1.E-11)
@@ -128,6 +170,57 @@ if ((abs(sum(w) - 4.0) > 1.E-11) || (norm(p - tp) > 1.E-11))
     error('Mismatch in tsgMakeGlobal: anisotropy');
 end
 
+% test custom rule
+vNodes = [];
+vWeights = [];
+for iL = 0:4
+    [w, p] = tsgMakeQuadrature(1, 'gauss-legendre', 'level', iL, -1);
+    vNodes = [vNodes; p];
+    vWeights = [vWeights; w];
+end
+lCustomRule.sDescription = 'Test Gauss-Legendre';
+lCustomRule.iMaxLevel = 5;
+lCustomRule.vLevels = 1:5;
+lCustomRule.vPrecision = 2 * lCustomRule.vLevels - 1;
+lCustomRule.vNodes = vNodes;
+lCustomRule.vWeights = vWeights;
+[tw, tp] = tsgMakeQuadrature(2, 'gauss-legendre', 'level', 3, 0, [], [], [2, 1]');
+[lGrid] = tsgMakeGlobal('_tsgcoretests_lgrid', 2, 1, 'custom-tabulated', 'level', 3, [], [], [2, 1]', lCustomRule);
+w = []; p = [];
+[w, p] = tsgGetQuadrature(lGrid);
+if ((norm(tw - w) > 1.E-11) || (norm(tp - p) > 1.E-11))
+    error('Mismatch in tsgMakeGlobal: custom rule');
+end
+
+% test conformal
+pnts = [-1.0 + 2.0 * rand(100, 2)];
+tres = 1.0 ./ ((1.0 + 5.0 .* pnts(:,1).^2) .* (1.0 + 5.0 .* pnts(:,2).^2));
+for iL = 7:8
+    [lGrid, p] = tsgMakeGlobal('_tsgcoretests_lgrid', 2, 1, 'clenshaw-curtis', 'iptotal', iL, [], [], [], [], 'asin', [4, 4]);
+    n1 = size(p, 1);
+    v = 1.0 ./ ((1.0 + 5.0 .* p(:,1).^2) .* (1.0 + 5.0 .* p(:,2).^2));
+    tsgLoadValues(lGrid, v);
+    [resc] = tsgEvaluate(lGrid, pnts);
+    p = [];
+    [lGrid, p] = tsgMakeGlobal('_tsgcoretests_lgrid', 2, 1, 'clenshaw-curtis', 'iptotal', iL);
+    v = 1.0 ./ ((1.0 + 5.0 .* p(:,1).^2) .* (1.0 + 5.0 .* p(:,2).^2));
+    tsgLoadValues(lGrid, v);
+    [resn] = tsgEvaluate(lGrid, pnts);
+    if (size(p, 1) ~= n1)
+        error('Mismatch in tsgMakeGlobal: conformal number of points');
+    end
+    if (norm(tres - resc) > norm(tres - resn))
+        error('Mismatch in tsgMakeGlobal: conformal error');
+    end
+end
+
+% test level limits
+[lGrid, p1] = tsgMakeGlobal('_tsgcoretests_lgrid', 2, 1, 'clenshaw-curtis', 'iptotal', 20, [], [], [], [], [], [], [1, 3]);
+[lGrid, p2] = tsgMakeGlobal('_tsgcoretests_lgrid', 2, 1, 'clenshaw-curtis', 'tensor', 1, [], [], [1, 3]);
+if (norm(p1 - p2) > 1.E-11)
+    error('Mismatch in tsgMakeGlobal: level limits');
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgDeleteGrid()                              %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -144,7 +237,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgMakeSequence()                            %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO: custom and conformal
 [lGrid, p] = tsgMakeSequence('_tsgcoretests_lgrid2', 2, 1, 'min-lebesgue', 'level', 3);
 tp = [0.0, 0.0; 0.0, 1.0; 0.0, -1.0; 0.0, sqrt(1.0/3.0); 1.0, 0.0; 1.0, 1.0; 1.0, -1.0; -1.0, 0.0; -1.0, 1.0; sqrt(1.0/3.0), 0.0;];
 if (norm(tp - p) > 1.E-11)
@@ -172,14 +264,43 @@ w = []; p = [];
 [w, p] = tsgGetQuadrature(lGrid);
 tp = [0.0 0.0; 0.0 1.0; 0.0 -1.0; 1.0 0.0;];
 if ((abs(sum(w) - 4.0) > 1.E-11) || (norm(p - tp) > 1.E-11))
-    error('Mismatch in tsgMakeGlobal: anisotropy');
+    error('Mismatch in tsgMakeSequence: anisotropy');
 end
 [lGrid] = tsgMakeSequence('_tsgcoretests_lgrid2', 2, 1, 'leja', 'level', 2, [], [2, 1]');
 w = []; p = [];
 [w, p] = tsgGetQuadrature(lGrid);
 tp = [0.0 0.0; 0.0 1.0; 0.0 -1.0; 1.0 0.0;];
 if ((abs(sum(w) - 4.0) > 1.E-11) || (norm(p - tp) > 1.E-11))
-    error('Mismatch in tsgMakeGlobal: anisotropy');
+    error('Mismatch in tsgMakeSequence: anisotropy');
+end
+
+% test conformal
+pnts = [-1.0 + 2.0 * rand(100, 2)];
+tres = 1.0 ./ ((1.0 + 5.0 .* pnts(:,1).^2) .* (1.0 + 5.0 .* pnts(:,2).^2));
+for iL = 7:8
+    [lGrid, p] = tsgMakeSequence('_tsgcoretests_lgrid', 2, 1, 'rleja', 'iptotal', iL, [], [], 'asin', [4, 4]);
+    n1 = size(p, 1);
+    v = 1.0 ./ ((1.0 + 5.0 .* p(:,1).^2) .* (1.0 + 5.0 .* p(:,2).^2));
+    tsgLoadValues(lGrid, v);
+    [resc] = tsgEvaluate(lGrid, pnts);
+    p = [];
+    [lGrid, p] = tsgMakeSequence('_tsgcoretests_lgrid', 2, 1, 'rleja', 'iptotal', iL);
+    v = 1.0 ./ ((1.0 + 5.0 .* p(:,1).^2) .* (1.0 + 5.0 .* p(:,2).^2));
+    tsgLoadValues(lGrid, v);
+    [resn] = tsgEvaluate(lGrid, pnts);
+    if (size(p, 1) ~= n1)
+        error('Mismatch in tsgMakeSequence: conformal number of points');
+    end
+    if (norm(tres - resc) > norm(tres - resn))
+        error('Mismatch in tsgMakeSequence: conformal error');
+    end
+end
+
+% test level limits
+[lGrid, p1] = tsgMakeSequence('_tsgcoretests_lgrid', 2, 1, 'min-delta', 'iptotal', 20, [], [], [], [], [1, 3]);
+[lGrid, p2] = tsgMakeSequence('_tsgcoretests_lgrid', 2, 1, 'min-delta', 'tensor', 1, [], [1, 3]);
+if (norm(p1 - p2) > 1.E-11)
+    error('Mismatch in tsgMakeSequence: level limits');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -197,7 +318,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgMakeLocalPolynomial()                     %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO: conformal
 % test transform
 [lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_lgrid2', 3, 1, 'localp', 2, 2, [3.0 5.0; -7.0 -6.0; -12.0 17.0]);
 if ((abs(max(p(:, 1)) - 5.0) > 1.E-11) || (abs(min(p(:, 1)) - 3.0) > 1.E-11) ...
@@ -213,12 +333,47 @@ if ((abs(norm(sum(w)) - 58.0) > 1.E-11) || (abs(max(p(:, 1)) - 5.0) > 1.E-11) ..
     error('Mismatch in tsgMakeLocalPolynomial: getQuadrature');
 end
 tsgDeleteGrid(lGrid);
+
+% test conformal
+pnts = [-1.0 + 2.0 * rand(100, 2)];
+tres = 1.0 ./ ((1.0 + 5.0 .* pnts(:,1).^2) .* (1.0 + 5.0 .* pnts(:,2).^2));
+for iL = 3:4
+    [lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_lgrid', 2, 1, 'semi-localp', iL, 2, [], 'asin', [4, 4]);
+    n1 = size(p, 1);
+    v = 1.0 ./ ((1.0 + 5.0 .* p(:,1).^2) .* (1.0 + 5.0 .* p(:,2).^2));
+    tsgLoadValues(lGrid, v);
+    [resc] = tsgEvaluate(lGrid, pnts);
+    p = [];
+    [lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_lgrid', 2, 1, 'semi-localp', iL, 2);
+    v = 1.0 ./ ((1.0 + 5.0 .* p(:,1).^2) .* (1.0 + 5.0 .* p(:,2).^2));
+    tsgLoadValues(lGrid, v);
+    [resn] = tsgEvaluate(lGrid, pnts);
+    if (size(p, 1) ~= n1)
+        error('Mismatch in tsgMakeLocalPolynomial: conformal number of points');
+    end
+    if (norm(tres - resc) > norm(tres - resn))
+        error('Mismatch in tsgMakeLocalPolynomial: conformal error');
+    end
+end
+tsgDeleteGrid(lGrid);
 # polynomial order is tested in tsgEvaluate()
+
+% level limits
+[lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_lgrid', 3, 1, 'semi-localp', 3, 2, [], [], [], [1, 2, 3]);
+if (min(abs(p(:,1) - 0.5)) < 1.E-8)
+    error('Mismatch in tsgMakeLocalPolynomial: level limit, dim 1');
+end
+if (min(abs(p(:,2) - 0.75)) < 1.E-8)
+    error('Mismatch in tsgMakeLocalPolynomial: level limit, dim 2');
+end
+if (min(abs(p(:,3) - 0.125)) < 1.E-8)
+    error('Mismatch in tsgMakeLocalPolynomial: level limit, dim 3');
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgMakeWavelet()                             %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO: correctness and conformal
 % test transform
 [lGrid, p] = tsgMakeWavelet('_tsgcoretests_lgrid', 3, 1, 2, 1, [3.0 5.0; -7.0 -6.0; -12.0 17.0]);
 if ((abs(max(p(:, 1)) - 5.0) > 1.E-11) || (abs(min(p(:, 1)) - 3.0) > 1.E-11) ...
@@ -234,7 +389,32 @@ if ((abs(norm(sum(w)) - 58.0) > 1.E-11) || (abs(max(p(:, 1)) - 5.0) > 1.E-11) ..
     error('Mismatch in tsgMakeWavelet: getQuadrature');
 end
 
+% correctness of 1-D
+[lGrid, pw] = tsgMakeWavelet('_tsgcoretests_lgrid', 1, 1, 2, 1);
+[lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_lgrid', 1, 1, 'localp', 3, 1);
+if (norm(pw - p) > 1.E-11)
+    error('Mismatch in tsgMakeWavelet: points');
+end
+
+% test conformal
+for iL = 3:4
+    [lGrid, p] = tsgMakeWavelet('_tsgcoretests_lgrid', 2, 1, iL, 1, [], 'asin', [4, 4]);
+    [w, p] = tsgGetQuadrature(lGrid);
+    [lGrid, p] = tsgMakeWavelet('_tsgcoretests_lgrid', 2, 1, iL, 1);
+    [wc, pc] = tsgGetQuadrature(lGrid);
+    
+    I  = sum(w  .* (1.0 ./ ((1.0 + 5.0 .* p(:,1).^2)  .* (1.0 + 5.0 .* p(:,2).^2))));
+    Ic = sum(wc .* (1.0 ./ ((1.0 + 5.0 .* pc(:,1).^2) .* (1.0 + 5.0 .* pc(:,2).^2))));
+
+    if (abs(I - 1.028825601981092^2) < abs(Ic - 1.028825601981092^2))
+        error('Mismatch in points and weights of simple quadrature: conformal map');
+    end
+    
+end
+tsgDeleteGrid(lGrid);
+
 disp(['tsgMake* functions:       PASS']);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgGetPoints()                               %%%
@@ -541,6 +721,7 @@ if (max(size(p)) > 0)
 end
 tsgDeleteGrid(lGrid);
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgMergeRefine()                             %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -561,6 +742,7 @@ if (norm(vA - vB) > 1.E-11)
 end
 tsgDeleteGrid(lGridA);
 tsgDeleteGrid(lGridB);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgGetHCoefficients()                        %%%

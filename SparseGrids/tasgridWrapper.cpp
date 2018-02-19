@@ -260,11 +260,6 @@ bool TasgridWrapper::checkSane() const{
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
     }
 
-    // if (command == command_getsurpluses){
-    //    if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
-        // ask for an output file
-    //}
-
     return pass;
 }
 

@@ -106,8 +106,8 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                 f->eval(&(points[i*num_dimensions]), y_local);
                 for(int j=0; j<num_outputs; j++){
                     r_local[j] += weights[i] * y_local[j];
-                };
-            };
+                }
+            }
 
             #pragma omp critical
             {
@@ -1214,7 +1214,7 @@ bool ExternalTester::testAllDomain() const{
     {
         TasmanianSparseGrid gridc;
         const BaseFunction *f = &f21conformal;
-        int asin_conformal[2] = { 4, 4 };
+        int asin_conformal[2] = {4, 4};
         for(int l=0; l<6; l++){
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
             gridc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
@@ -1237,7 +1237,7 @@ bool ExternalTester::testAllDomain() const{
         TasmanianSparseGrid gridc;
         const BaseFunction *f = &f21conformal;
         int asin_conformal[2] = { 4, 4 };
-        for(int l=0; l<15; l++){
+        for(int l=0; l<1; l++){
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
             gridc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
             gridc.setConformalTransformASIN(asin_conformal);

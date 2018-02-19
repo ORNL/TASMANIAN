@@ -27,9 +27,9 @@ function tsgWriteCustomRuleFile(sFilename, lCustomRule)
 %         defines the precision (in polynomial order) or each level of the
 %         quadrature rule, e.g., for Gauss-Legendre rule 
 %         custom_rule.precision = 2*custom_rule.levels-1
-%         NOTE: grids of type other than basis and qexact will ignore the 
-%               precision, in which case, precision can be set to a vector
-%               of zeros
+%         NOTE: grids of type other than ip* and qp* will ignore the 
+%               precision, in which case, precision can be set to a 
+%               vector of zeros
 %
 % lCustomRule.vNodes:
 %         a vector of length sum(lCustomRule.vLevels) (floats)
@@ -46,14 +46,14 @@ function tsgWriteCustomRuleFile(sFilename, lCustomRule)
 
 fid = fopen(sFilename, 'w');
 
-if (isfield(custom_rule, 'sDescription'))
+if (isfield(lCustomRule, 'sDescription'))
     sDesc = ['description: ', lCustomRule.sDescription,'\n'];
 else
     sDesc = ['description: ', lCustomRule.description,'\n'];
 end
 fprintf(fid, sDesc);
 
-if (isfield(custom_rule, 'iMaxLevel'))
+if (isfield(lCustomRule, 'iMaxLevel'))
     sLevels = ['levels: ',num2str(lCustomRule.iMaxLevel),'\n'];
 else
     sLevels = ['levels: ',num2str(lCustomRule.max_level),'\n'];
@@ -61,7 +61,7 @@ end
 
 fprintf(fid, sLevels);
 
-if (isfield(custom_rule, 'vLevels'))
+if (isfield(lCustomRule, 'vLevels'))
     for i = 1:lCustomRule.iMaxLevel
         fprintf(fid, '%d %d\n', [lCustomRule.vLevels(i), lCustomRule.vPrecision(i)]);
     end
@@ -71,7 +71,7 @@ else
     end
 end
 
-if (isfield(custom_rule, 'vWeights'))
+if (isfield(lCustomRule, 'vWeights'))
     for i = 1:sum(lCustomRule.vLevels)
         fprintf(fid, '%2.20e %2.20e\n', [lCustomRule.vWeights(i), lCustomRule.vNodes(i)]);
     end

@@ -232,6 +232,10 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
     if (source->conformal_asin_power != 0){
         setConformalTransformASIN(source->conformal_asin_power);
     }
+    if (source->llimits != 0){
+        llimits = new int[base->getNumDimensions()];
+        std::copy(source->llimits, source->llimits + base->getNumDimensions(), llimits);
+    }
 }
 
 void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
@@ -1271,6 +1275,7 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
             if (T.compare("limited") == 0){
                 llimits = new int[base->getNumDimensions()];
                 for(int j=0; j<base->getNumDimensions(); j++) ifs >> llimits[j];
+                getline(ifs, T);
             }else if (T.compare("unlimited") == 0){
                 llimits = 0;
             }else if (T.compare("TASMANIAN SG end") == 0){
@@ -1282,6 +1287,7 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
                 getline(ifs, T);
                 if (!(T.compare("TASMANIAN SG end") == 0)){
                     if (logstream != 0){ (*logstream) << "WARNING: file did not end with 'TASMANIAN SG end', this may result in undefined behavior (v51)" << endl; }
+                    exit(1);
                 }
             }
         }

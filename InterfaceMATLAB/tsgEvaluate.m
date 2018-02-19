@@ -45,7 +45,7 @@ if (size(findstr('ERROR', cmdout)) ~= [0, 0])
     return;
 else
     if (~ isempty(cmdout))
-        fprintf(1,['Warning: Command had non-empty output:\n']);
+        fprintf(1, ['Warning: Command had non-empty output:\n']);
         disp(cmdout);
     end
     [result] = tsgReadMatrix(sFileO);
