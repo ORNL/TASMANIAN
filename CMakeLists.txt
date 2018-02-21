@@ -858,7 +858,7 @@ enable_testing()
 add_test(Tasgrid tasgrid -test)
 add_test(Tasdream tasdream -test)
 if (Tasmanian_ENABLE_PYTHON)
-    add_test(LibSG testTSG.py)
+    add_test(NAME LibSG COMMAND ${PYTHON_EXECUTABLE} testTSG.py)
 endif()
 
 
