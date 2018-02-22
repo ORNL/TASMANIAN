@@ -72,9 +72,9 @@ if (( bShowHelp == 1 )); then
     echo "               -noomp: disable OpenMP support"
     echo "              -noblas: disable BLAS support"
     echo "            -nocublas: disable Nvidia cuBlas and cuSparse support"
-    echo "              -nocuda: disable Nvidia CUDA support"
+    echo "                -cuda: enable Nvidia CUDA kernels"
     echo "            -nopython: disable Python interface"
-    echo "             -python3: switch to '/usr/env python3'"
+    echo "             -python3: switch to '/usr/bin/env python3'"
     echo "             -fortran: enable Fortran interface"
     echo "            -noshared: do not build shared libraries"
     echo "            -nostatic: do not build static libraries"
@@ -122,8 +122,9 @@ fi
 sEnableOpenMP="ON"
 sEnableBLAS="ON"
 sEnableCUBLAS="ON"
-sEnableCUDA="ON"
+sEnableCUDA="OFF"
 sEnablePython="ON"
+sManualPythonInterp=""
 sEnableFortran="OFF"
 sEnableShared="ON"
 sEnableStatic="ON"
@@ -142,14 +143,14 @@ for sOption in "$@"; do
         sEnableOpenMP="OFF"
     elif [[ $sOption == "-noblas" ]]; then
         sEnableBLAS="OFF"
-    elif [[ $sOption == "-nocuda" ]]; then
-        sEnableCUDA="OFF"
+    elif [[ $sOption == "-cuda" ]]; then
+        sEnableCUDA="ON"
     elif [[ $sOption == "-nocublas" ]]; then
         sEnableCUBLAS="OFF"
     elif [[ $sOption == "-nopython" ]] || [[ $sOption == "-nospam" ]]; then
         sEnablePython="OFF"
-    elif [[ $sOption == "-python3" ]]; then
-        sPythonVersion="-D Tasmanian_PYTHON_ENV:STRING=python3"
+    elif [[ $sOption == "-python="* ]]; then
+        sManualPythonInterp=${sOption:8}
     elif [[ $sOption == "-fortran" ]]; then
         sEnableFortran="ON"
     elif [[ $sOption == "-noshared" ]]; then
@@ -178,9 +179,15 @@ for sOption in "$@"; do
     fi
 done
 
-if [[ $sEnablePython == "OFF" ]] && [[ ! -z $sPythonVersion ]]; then
-    echo "WARNING: using simultanously -python3 and -nopython"
-    sPythonVersion=""
+if [[ $sEnableShared == "OFF" ]] && [[ $sEnableStatic == "OFF" ]]; then
+    echo "ERROR: cannot use -noshared and -nostatic at the same time"
+    echo "       at least one type of library has to be build"
+    exit 1;
+fi
+
+if [[ $sEnablePython == "OFF" ]] && [[ ! -z $sManualPythonInterp ]]; then
+    echo "WARNING: using simultanously -nopython and -python=$sManualPythonInterp, -python=$sManualPythonInterp will be ignored!"
+    sEnablePython3="OFF"
 fi
 
 echo "Looking for cmake ..."
@@ -208,7 +215,7 @@ if [[ $sEnableCUDA == "ON" ]] || [[ $sEnableBLAS == "ON" ]]; then
         echo ""
     fi
 fi
-echo ""
+#echo ""
 
 #if [[ $sEnableCUDA == "ON" ]] && [[ $sEnableMakeJobs == "-j" ]]; then
 #    echo "There seems to be a bug with cmake FindCuda, parallel compilation sometimes fails. Disable: -make-j"
@@ -217,39 +224,52 @@ echo ""
 #fi
 
 # check if python exists
-if [[ $sEnablePython == "ON" ]]; then
-    if (( $bEnableTests == 1 )); then
-        echo "Looking for python ..."
-        bPythonFound=0
-        if [[ -z $sPythonVersion ]] && [[ ! -z `which python` ]]; then
-            echo "Found Python"
-            bPythonFound=1
-            sPythonVersion=""
-        elif [[ ! -z `which python3` ]]; then
-            echo "Found Python 3"
-            bPythonFound=1
-            sPythonVersion="-D Tasmanian_PYTHON_ENV:STRING=python3"
-        fi
-        if (( $bPythonFound == 0 )); then
-            echo ""
-            echo "WARNING: can't seem to find python."
-            echo "         If python is missing, then tests will fail and"
-            echo "         Tasmanian will NOT install."
-            echo "         use either -notest or -nopython options"
-            echo "         see ./install.sh -help"
-            echo ""
-            read -p "Do you wish to continue? (y/N)" sProceed
-            if [[ $sProceed == "y" ]] || [[ $sProceed == "Y" ]] || [[ $sProceed == "Yes" ]] || [[ $sProceed == "yes" ]]; then
-                echo "proceeding ..."
-                echo ""
-            else
-                echo "Canceled!"
-                echo ""
-                exit 0;
-            fi
-        fi
-    fi
-fi
+#if [[ $sEnablePython == "ON" ]]; then
+#    if (( $bEnableTests == 1 )); then
+#        echo "Looking for python ..."
+#        bPythonFound=0
+#        if [[ $sEnablePython3 == "OFF" ]]; then
+#            # python not set manually, try to find it automatically
+#            /usr/bin/python --version
+#            if [ $? -eq 0 ]; then
+#                echo "Found Python"
+#                bPythonFound=1
+#            else
+#                /usr/bin/python3 --version
+#                if [ $? -eq 0 ]; then
+#                    echo "Found Python 3"
+#                    bPythonFound=1
+#                fi
+#            fi
+#        else
+#            /usr/bin/python3 --version
+#            if [ ! $? -eq 0 ]; then
+#                echo "Using -python3, but '/usr/bin/env python3' doesn't seem to work"
+#                bPythonFound=0
+#            else
+#                bPythonFound=1
+#            fi
+#        fi
+#        if (( $bPythonFound == 0 )); then
+#            echo ""
+#            echo "WARNING: can't seem to find python."
+#            echo "         If python is missing, then tests will fail and"
+#            echo "         Tasmanian will NOT install."
+#            echo "         use either -notest or -nopython options"
+#            echo "         see: ./install.sh -help"
+#            echo ""
+#            read -p "Do you wish to continue? (y/N)" sProceed
+#            if [[ $sProceed == "y" ]] || [[ $sProceed == "Y" ]] || [[ $sProceed == "Yes" ]] || [[ $sProceed == "yes" ]]; then
+#                echo "proceeding ..."
+#                echo ""
+#            else
+#                echo "Canceled!"
+#                echo ""
+#                exit 0;
+#            fi
+#        fi
+#    fi
+#fi
 
 echo ""
 echo ""
@@ -382,11 +402,14 @@ fi
 if [[ $sEnableCUBLAS == "OFF" ]]; then
     echo " -nocublas: disable Nvidia cuBlas and cuSparse support"
 fi
-if [[ $sEnableCUDA == "OFF" ]]; then
-    echo "   -nocuda: disable Nvidia CUDA support"
+if [[ $sEnableCUDA == "ON" ]]; then
+    echo "     -cuda: enable Nvidia CUDA kernels"
 fi
 if [[ $sEnablePython == "OFF" ]]; then
     echo " -nopython: disable Python"
+fi
+if [[ ! -z $sManualPythonInterp ]]; then
+    echo " -python=$sManualPythonInterp"
 fi
 if [[ $sEnableFortran == "ON" ]]; then
     echo "  -fortran: enable Fortran"
@@ -478,10 +501,12 @@ if [[ $sEnableCUDA == "ON" ]]; then
     # if the make -f command tries to build the cuda kernels, which ensures that make -j will not try to compile again
     # if the make -f command fails, this can be due to CUDA being disabled by cmake, check if Tasmanian_ENABLE_CUDA:BOOL=OFF is set
     # if cuda is disabled, then just continue as normal, but if cuda is not off, then force sequential build
-    sCudaDoOnce = "TRY"
+    sCudaDoOnce="TRY"
     make -f CMakeFiles/libtsg_shared.dir/build.make CMakeFiles/libtsg_shared.dir/SparseGrids/libtsg_shared_generated_tsgCudaKernels.cu.o || { sCudaDoOnce="FAIL"; }
     if [[ $sCudaDoOnce == "FAIL" ]]; then
-        if [[ ! -z `cmake -LA -N . | grep Tasmanian_ENABLE_CUDA:BOOL=OFF` ]]; then
+        if [[ -z `cmake -LA -N . | grep Tasmanian_ENABLE_CUDA:BOOL=ON` ]]; then
+        # CUDA enabled, but the do once "libtsg_shared_generated_tsgCudaKernels.cu.o" failed
+        # fallback to sequential build
             sEnableMakeJobs = ""
         fi
     fi
@@ -502,12 +527,13 @@ if (( $bEnableTests == 1 )); then
     make test || { echo "ERROR: the 'make test command' failed!"; bFailedTests=1; }
 fi
 
-if (( bInstall == 0 )); then
+if (( $bInstall == 0 )); then
     echo ""
     echo "Build successful!"
     echo ""
     echo "Skipping installation due to the -noisntall switch"
     echo ""
+    exit 0;
 fi
 
 make install
@@ -518,6 +544,22 @@ if [ ! $? == 0 ]; then
         read -p "Press ENTER to end this process"
     fi
     exit 1;
+fi
+
+# when linking to the static library, a list of extra libraries is needed
+# use the cmake command from the examles to get that list
+if [[ $sEnableStatic == "ON" ]]; then
+    mkdir ExampleCmakeBuild
+    cd ExampleCmakeBuild
+    cmake $1 $sInstallPrefix/examples > /dev/null || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
+    sLinkCommand=`cat CMakeFiles/example_sparse_grids.dir/link.txt`
+    sLinkCommand=${sLinkCommand#*example_sparse_grids}
+    sLinkCommand=${sLinkCommand#*example_sparse_grids}
+    sLinkCommand=${sLinkCommand#*example_sparse_grids}
+    echo "export TasmanianSparseGrids_CXX_LINK='$sLinkCommand'" >> $sInstallPrefix/config/TasmanianDEVsetup.sh
+    cd ..
+else
+    echo "export TasmanianSparseGrids_CXX_LINK=''" >> $sInstallPrefix/config/TasmanianDEVsetup.sh
 fi
 
 if (( $bEnableTests == 1 )); then
@@ -564,7 +606,7 @@ if (( $bSkilBashrc == 0 )); then
     echo ""
     echo "source $sConfigPath/TasmanianDEVsetup.sh"
     echo ""
-    echo "If you are not using Tasmanian through C/C++ or if you are using cmake,"
+    echo "If you are not using Tasmanian through C/C++ and Fortran, or if you are using cmake,"
     echo "then you don't need this!"
     read -p "Append command to ~/.bashrc? (y/N)" sAppend
     if [[ $sAppend == "y" ]] || [[ $sAppend == "Y" ]] || [[ $sAppend == "Yes" ]] || [[ $sAppend == "yes" ]]; then

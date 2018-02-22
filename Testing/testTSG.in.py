@@ -1,4 +1,4 @@
-#!/usr/bin/env @tsgPython@
+#!@tsgPython@
 
 import unittest
 import TasmanianSG
@@ -1186,4 +1186,5 @@ class TestTasmanian(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
 

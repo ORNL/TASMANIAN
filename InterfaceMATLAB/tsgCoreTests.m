@@ -413,6 +413,18 @@ for iL = 3:4
 end
 tsgDeleteGrid(lGrid);
 
+% level limits
+[lGrid, p] = tsgMakeWavelet('_tsgcoretests_lgrid', 3, 1, 2, 1, [], [], [], [0, 1, 2]);
+if (min(abs(p(:,1) - 0.5)) < 1.E-8)
+    error('Mismatch in tsgMakeLocalPolynomial: level limit, dim 1');
+end
+if (min(abs(p(:,2) - 0.75)) < 1.E-8)
+    error('Mismatch in tsgMakeLocalPolynomial: level limit, dim 2');
+end
+if (min(abs(p(:,3) - 0.125)) < 1.E-8)
+    error('Mismatch in tsgMakeLocalPolynomial: level limit, dim 3');
+end
+
 disp(['tsgMake* functions:       PASS']);
 
 

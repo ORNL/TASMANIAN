@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+#TasmanianPostInstallTest
 
 sPWD=`pwd`
 if [ $sPWD != @CMAKE_BINARY_DIR@ ]; then
@@ -63,68 +65,71 @@ else
 fi
 
 
-echo "--------------------------------------------------------------------------------"
-echo " Test 4: source the CPLUS_INCLUDE_PATH and LIBRARY_PATH and compile a dummy test"
-echo "--------------------------------------------------------------------------------"
+# check is running on a MacOSX, mac installs can be tricky, hence we don't test CPLUS_INCLUDE_PATH and LIBRARY_PATH
+# we do test builds using cmake export
+sUname="$(uname -s)"
+if [[ $sUname == "Linux" ]]; then
+    echo "--------------------------------------------------------------------------------"
+    echo " Test 4: source the CPLUS_INCLUDE_PATH and LIBRARY_PATH and compile a dummy test"
+    echo "--------------------------------------------------------------------------------"
 
-sSuccess=1
-if [[ ! -z `which g++` ]]; then
+    sSuccess=1
 
-    source @CMAKE_INSTALL_PREFIX@/config/TasmanianDEVsetup.sh || { echo "ERROR: Could not source <install_prefix>/config/TasmanianDEVsetup.sh"; exit 1; }
+    #if [ -f @CMAKE_INSTALL_PREFIX@/lib/libtasmaniansparsegrid.so ] || [ -f @CMAKE_INSTALL_PREFIX@/lib/libtasmaniansparsegrid.dylib ]; then
+    /usr/bin/env g++ --version
+    if (( $? == 0 )); then
 
-    echo '#include <iostream>' > dummy.cpp
-    echo '#include "TasmanianSparseGrid.hpp"' >> dummy.cpp
-    echo 'using namespace std;' >> dummy.cpp
-    echo 'int main(int argc, const char ** argv){' >> dummy.cpp
-    echo 'cout << "Tasmanian Sparse Grids  version: " << TasGrid::TasmanianSparseGrid::getVersion() << endl;' >> dummy.cpp
-    echo 'return 0;' >> dummy.cpp
-    echo '}' >> dummy.cpp
+        source @CMAKE_INSTALL_PREFIX@/config/TasmanianDEVsetup.sh || { echo "ERROR: Could not source <install_prefix>/config/TasmanianDEVsetup.sh"; exit 1; }
 
-    # check is running on mac
-    sUname="$(uname -s)"
-    
-    if [ $sUname == Linux ]; then
-        g++ -fopenmp dummy.cpp -o dummy_test -ltasmaniansparsegrid || { sSuccess=0; }
+        echo '#include <iostream>' > dummy.cpp
+        echo '#include "TasmanianSparseGrid.hpp"' >> dummy.cpp
+        echo 'using namespace std;' >> dummy.cpp
+        echo 'int main(int argc, const char ** argv){' >> dummy.cpp
+        echo 'cout << "Tasmanian Sparse Grids  version: " << TasGrid::TasmanianSparseGrid::getVersion() << endl;' >> dummy.cpp
+        echo 'return 0;' >> dummy.cpp
+        echo '}' >> dummy.cpp
+
+        g++ -fopenmp dummy.cpp -o dummy_test -ltasmaniansparsegrid $TasmanianSparseGrids_CXX_LINK || { sSuccess=0; }
         ./dummy_test || { sSuccess=0; }
+
+        if (( $sSuccess == 0 )); then
+            echo "ERROR: could not compile simple g++ test, but cmake exmaples worked."
+            echo "       This is probably an issue with the compiler or the simple compile command."
+            echo "       If you use cmake exported targets to link to the libraries, you don't need this anyway."
+        fi
+
+        # if g++ is missing, don't check for fortran
+        if [ -f @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.f90 ]; then
+            /usr/bin/env gfortran --version
+            if (( $? == 0 )); then
+                echo 'PROGRAM FortranSGExample' > dummy.f90
+                echo 'USE TasmanianSG, ONLY: tsgInitialize, tsgFinalize, tsgNewGridID, tsgGetLicense' >> dummy.f90
+                echo 'IMPLICIT NONE' >> dummy.f90
+                echo 'INTEGER :: gridID' >> dummy.f90
+                echo 'CHARACTER, pointer :: string(:)' >> dummy.f90
+                echo '' >> dummy.f90
+                echo 'string => tsgGetLicense()' >> dummy.f90
+                echo 'WRITE(*,*) "Licence: ", string' >> dummy.f90
+                echo 'CALL tsgInitialize()' >> dummy.f90
+                echo 'gridID = tsgNewGridID()' >> dummy.f90
+                echo 'CALL tsgFinalize()' >> dummy.f90
+                echo 'END PROGRAM FortranSGExample' >> dummy.f90
+                gfortran -fopenmp -I@CMAKE_INSTALL_PREFIX@/include dummy.f90 -o dummy_fort -ltasmanianfortran -ltasmaniansparsegrid $TasmanianSparseGrids_CXX_LINK -lstdc++ || { sSuccess=0; }
+                ./dummy_fort || { sSuccess=0; }
+            else
+                echo "Could not find gfortran command, cannot test this. If you are using cmake exported targets, you don't need this anyway."
+            fi
+        fi
     else
-        g++ dummy.cpp -o dummy_test -ltasmaniansparsegrid || { sSuccess=0; }
+        echo "Could not find g++ command, cannot test this. If you are using cmake exported targets, you don't need this anyway."
     fi
-    if (( $sSuccess == 0 )); then
-        echo "ERROR: could not compile simple g++ test, but cmake exmaples worked."
-        echo "       This is probably an issue with the compiler or the simple compile command."
-        echo "       If you use cmake exported targets to link to the libraries, you don't need this anyway."
-    fi
-else
-    echo "Could not find g++ command, cannot test this. If you are using cmake exported targets, you don't need this anyway."
 fi
 
-if [ -f @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.f90 ]; then
-    if [[ ! -z `which gfortran` ]]; then
-        echo 'PROGRAM FortranSGExample' > dummy.f90
-        echo 'USE TasmanianSG, ONLY: tsgInitialize, tsgFinalize, tsgNewGridID, tsgGetLicense' >> dummy.f90
-        echo 'IMPLICIT NONE' >> dummy.f90
-        echo 'INTEGER :: gridID' >> dummy.f90
-        echo 'CHARACTER, pointer :: string(:)' >> dummy.f90
-        echo '' >> dummy.f90
-        echo 'string => tsgGetLicense()' >> dummy.f90
-        echo 'WRITE(*,*) "Licence: ", string' >> dummy.f90
-        echo 'CALL tsgInitialize()' >> dummy.f90
-        echo 'gridID = tsgNewGridID()' >> dummy.f90
-        echo 'CALL tsgFinalize()' >> dummy.f90
-        echo 'END PROGRAM FortranSGExample' >> dummy.f90
-        gfortran -I@CMAKE_INSTALL_PREFIX@/include dummy.f90 -o dummy_fort -ltasmanianfortran -ltasmaniansparsegrid
-        ./dummy_fort || { sSuccess=0; }
-    else
-        echo "Could not find gfortran command, cannot test this. If you are using cmake exported targets, you don't need this anyway."
-    fi
-fi
-
-  
 
 if (( $sPSuccess == 0 )) || (( $sSuccess == 0 )); then
     echo ""
     echo "--------------------------------------------------------------------------------"
-    echo "   SOME TESTS FAILED, but the install is probably OK"
+    echo "   SOME TESTS FAILED, but the install may be OK"
     echo "--------------------------------------------------------------------------------"
     echo ""
     exit 1;
@@ -136,4 +141,5 @@ else
     echo "--------------------------------------------------------------------------------"
     echo ""
 fi
+
 exit 0;

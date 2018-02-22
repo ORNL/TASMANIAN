@@ -72,7 +72,7 @@ public:
 
     const int* getIndex(int j) const;
 
-    void addUnsortedSet(const UnsortedIndexSet *set);
+    //void addUnsortedSet(const UnsortedIndexSet *set);
     void addGranulatedSet(const GranulatedIndexSet *set);
 
     const int* getIndexes() const;
@@ -81,7 +81,7 @@ public:
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
 
-    void merge(const int newIndex[], int sizeNew);
+    //void merge(const int newIndex[], int sizeNew);
     void mergeMapped(const int newIndex[], const int newMap[], int sizeNew);
 
 private:

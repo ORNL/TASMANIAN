@@ -77,19 +77,19 @@ int main(int argc, const char ** argv){
         }else{
             cout << "          OpenMP multithreading: Disabled" << endl;
         }
-        cout << "         Available acceleration:";
+        cout << "         Available acceleration: ";
         bool anyAcc = false, anyGPU = false;
         if (TasmanianSparseGrid::isAccelerationAvailable(accel_cpu_blas)){
-            cout << " cpu_blas";
+            cout << AccelerationMeta::getIOAccelerationString(accel_cpu_blas);
             anyAcc = true;
         }
         if (TasmanianSparseGrid::isAccelerationAvailable(accel_gpu_cublas)){
-            cout << " gpu_cublas";
+            cout << " " << AccelerationMeta::getIOAccelerationString(accel_gpu_cublas);
             anyAcc = true;
             anyGPU = true;
         }
         if (TasmanianSparseGrid::isAccelerationAvailable(accel_gpu_cuda)){
-            cout << " cpu_cuda";
+            cout << " " << AccelerationMeta::getIOAccelerationString(accel_gpu_cuda);
             anyAcc = true;
             anyGPU = true;
         }

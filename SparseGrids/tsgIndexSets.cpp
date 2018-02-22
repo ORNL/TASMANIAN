@@ -202,12 +202,12 @@ void GranulatedIndexSet::addIndex(const int p[]){
     num_indexes++;
 }
 
-void GranulatedIndexSet::addUnsortedSet(const UnsortedIndexSet *set){
-    int *set_index = set->getIndexesSorted();
-    int set_num_indexes = set->getNumIndexes();
-    merge(set_index, set_num_indexes);
-    delete[] set_index;
-}
+//void GranulatedIndexSet::addUnsortedSet(const UnsortedIndexSet *set){
+//    int *set_index = set->getIndexesSorted();
+//    int set_num_indexes = set->getNumIndexes();
+//    merge(set_index, set_num_indexes);
+//    delete[] set_index;
+//}
 void GranulatedIndexSet::addGranulatedSet(const GranulatedIndexSet *set){
     mergeMapped(set->getIndexes(), set->getMap(), set->getNumIndexes());
 }
@@ -226,41 +226,41 @@ TypeIndexRelation GranulatedIndexSet::compareIndexes(const int a[], const int b[
     return type_asameb;
 }
 
-void GranulatedIndexSet::merge(const int newIndex[], int sizeNew){
-    int *oldIndex = index;
-    int sizeOld = num_indexes;
-    num_slots = sizeOld + sizeNew;
-
-    index = new int[num_dimensions * num_slots];
-
-    TypeIndexRelation relation;
-    num_indexes = 0;
-    int offsetNew = 0, offsetOld = 0;
-    while( (offsetNew < sizeNew) || (offsetOld < sizeOld) ){
-        if (offsetNew >= sizeNew){ // new is a
-            relation = type_bbeforea;
-        }else if (offsetOld >= sizeOld){ // old is b
-            relation = type_abeforeb;
-        }else{
-            relation = compareIndexes(&(newIndex[offsetNew * num_dimensions]), &(oldIndex[map[offsetOld] * num_dimensions]));
-        }
-        if (relation == type_abeforeb){
-            std::copy(&(newIndex[offsetNew * num_dimensions]), &(newIndex[offsetNew * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
-            offsetNew++;
-        }
-        if ((relation == type_bbeforea) || (relation == type_asameb)){
-            std::copy(&(oldIndex[map[offsetOld] * num_dimensions]), &(oldIndex[map[offsetOld] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
-            offsetOld++;
-            offsetNew += (relation == type_asameb) ? 1 : 0;
-        }
-    }
-
-    delete[] oldIndex;
-    delete[] map;
-
-    map = new int[num_slots];
-    for(int i=0; i<num_indexes; i++){  map[i] = i;  }
-}
+//void GranulatedIndexSet::merge(const int newIndex[], int sizeNew){
+//    int *oldIndex = index;
+//    int sizeOld = num_indexes;
+//    num_slots = sizeOld + sizeNew;
+//
+//    index = new int[num_dimensions * num_slots];
+//
+//    TypeIndexRelation relation;
+//    num_indexes = 0;
+//    int offsetNew = 0, offsetOld = 0;
+//    while( (offsetNew < sizeNew) || (offsetOld < sizeOld) ){
+//        if (offsetNew >= sizeNew){ // new is a
+//            relation = type_bbeforea;
+//        }else if (offsetOld >= sizeOld){ // old is b
+//            relation = type_abeforeb;
+//        }else{
+//            relation = compareIndexes(&(newIndex[offsetNew * num_dimensions]), &(oldIndex[map[offsetOld] * num_dimensions]));
+//        }
+//        if (relation == type_abeforeb){
+//            std::copy(&(newIndex[offsetNew * num_dimensions]), &(newIndex[offsetNew * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
+//            offsetNew++;
+//        }
+//        if ((relation == type_bbeforea) || (relation == type_asameb)){
+//            std::copy(&(oldIndex[map[offsetOld] * num_dimensions]), &(oldIndex[map[offsetOld] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
+//            offsetOld++;
+//            offsetNew += (relation == type_asameb) ? 1 : 0;
+//        }
+//    }
+//
+//    delete[] oldIndex;
+//    delete[] map;
+//
+//    map = new int[num_slots];
+//    for(int i=0; i<num_indexes; i++){  map[i] = i;  }
+//}
 void GranulatedIndexSet::mergeMapped(const int newIndex[], const int newMap[], int sizeNew){
     int *oldIndex = index;
     int sizeOld = num_indexes;
