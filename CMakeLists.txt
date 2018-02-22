@@ -817,7 +817,7 @@ set(FortranLibShared "${TSGLibPath}/${CMAKE_STATIC_LIBRARY_PREFIX}${FortranBaseL
 set(FortranLibStatic "${TSGLibPath}/${CMAKE_STATIC_LIBRARY_PREFIX}${FortranStaticLibName}${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set(TSGExecutable "${CMAKE_INSTALL_PREFIX}/bin/tasgrid")
 set(TDRExecutable "${CMAKE_INSTALL_PREFIX}/bin/tasdream")
-set(TSGPythonPath "${CMAKE_INSTALL_PREFIX}/python")
+set(TSGPythonPath "${TSGLibPath}/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages")
 set(TSGMatlabPath "${CMAKE_INSTALL_PREFIX}/matlab")
 set(TSGMatlabWork "${Tasmanian_MATLAB_WORK_FOLDER}/")
 set(TSGLibOPTC "${CMAKE_CXX_FLAGS}")
@@ -904,8 +904,10 @@ install(DIRECTORY "${CMAKE_BINARY_DIR}/install/config/"
 
 if (Tasmanian_ENABLE_PYTHON)
     install(FILES "${CMAKE_BINARY_DIR}/install/python/TasmanianSG.py"
-            DESTINATION "python"
+            DESTINATION "${TSGPythonPath}"
             PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+    # Create symlink for backward compatibility
+    install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${TSGPythonPath} ${CMAKE_INSTALL_PREFIX}/python )" )
     install(FILES "${CMAKE_BINARY_DIR}/install/examples/example_sparse_grids.py"
             DESTINATION "examples"
             PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
@@ -1014,7 +1016,7 @@ else()
 endif()
 
 if (Tasmanian_ENABLE_PYTHON)
-    set(TAS_POST_INSTALL "${TAS_POST_INSTALL}python module:  ${CMAKE_INSTALL_PREFIX}/python/TasmanianSG.py\n")
+    set(TAS_POST_INSTALL "${TAS_POST_INSTALL}python module:  ${TSGPythonPath}/TasmanianSG.py\n")
     set(TAS_POST_INSTALL "${TAS_POST_INSTALL}python example: ${CMAKE_INSTALL_PREFIX}/examples/example_sparse_grids.py\n")
     set(TAS_POST_INSTALL "${TAS_POST_INSTALL}                to call the python module\n\n")
     set(TAS_POST_INSTALL "${TAS_POST_INSTALL}                import sys\n")
