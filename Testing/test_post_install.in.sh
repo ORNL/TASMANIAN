@@ -53,7 +53,7 @@ sPSuccess=1
 if [ "@TSGPythonPath@" == "@CMAKE_INSTALL_PREFIX@/python" ]; then
     echo 'Executing "@CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.py"'
     @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.py -fast > /dev/null || { echo "ERROR: could not run the python example post install!"; sPSuccess=0; }
-    head -n 1 @CMAKE_INSTALL_PREFIX@/python/TasmanianSG.py > dummy.py
+    head -n 1 @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.py > dummy.py
     echo 'import sys' >> dummy.py
     echo 'sys.path.append("@CMAKE_INSTALL_PREFIX@/python")' >> dummy.py
     echo 'import TasmanianSG' >> dummy.py
