@@ -91,7 +91,8 @@ PUBLIC :: tsgInitialize,        &
           !tsgReceiveScalar, &
           tsgReceiveString, &
           tsgReceiveVector, &
-          tsgReceiveMatrix
+          tsgReceiveMatrix, tsgRuleClenshawCurtis
+  INTEGER, PARAMETER :: tsgRuleClenshawCurtis = 1, tsgRuleClenshawCurtisZero = 2
 PRIVATE
   INTEGER :: rows, cols, length
   DOUBLE PRECISION, pointer :: matrix(:,:), vector(:)

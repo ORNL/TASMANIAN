@@ -28,22 +28,18 @@
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
 PROGRAM FORTESTER
-  USE TasmanianSG, ONLY: tsgInitialize, tsgFinalize, tsgNewGridID, tsgFreeGridID, &
-       tsgGetVersionMajor, tsgGetVersionMinor, tsgGetLicense, &
-       tsgMakeGlobalGrid, tsgMakeSequenceGrid, tsgMakeLocalPolynomialGrid, tsgMakeWaveletGrid, &
-       tsgGetAlpha, tsgGetBeta, tsgGetOrder, tsgGetNumDimensions, tsgGetNumOutputs, tsgGetRule, &
-       tsgGetNumLoaded, tsgGetNumNeeded, tsgGetNumPoints, &
-       tsgGetLoadedPoints, tsgGetNeededPoints, tsgGetPoints, &
-       tsgGetLoadedPointsStatic, tsgGetNeededPointsStatic, tsgGetPointsStatic, &
-       tsgGetQuadratureWeights, tsgGetQuadratureWeightsStatic, &
-       tsgGetInterpolationWeights, tsgGetInterpolationWeightsStatic
+  USE TasmanianSG
 IMPLICIT NONE
-  INTEGER :: gridID, dims, level
-  INTEGER :: N, i, verm, vern
+  INTEGER :: verm, vern
   CHARACTER, pointer :: licence(:)
-  DOUBLE PRECISION, pointer :: points(:,:), weights(:)
-  DOUBLE PRECISION :: x, y, integ, E
-  DOUBLE PRECISION, allocatable :: transformA(:), transformB(:)
+  INTEGER :: gridID
+  DOUBLE PRECISION :: tp1(2, 5)
+  DOUBLE PRECISION, pointer :: points(:,:)
+  DOUBLE PRECISION :: getError
+!  INTEGER :: N, i, 
+!  DOUBLE PRECISION, pointer :: points(:,:), weights(:)
+!  DOUBLE PRECISION :: x, y, integ, E
+!  DOUBLE PRECISION, allocatable :: transformA(:), transformB(:)
 
 ! This is the sound "Glaucodon Ballaratensis" makes :)
 !  WRITE(*,*) "Ghurrrrrphurrr"
@@ -59,9 +55,29 @@ IMPLICIT NONE
   WRITE(*,"(A,40A)") "Licence: ", licence
   
   gridID = tsgNewGridID()
-  
+  CALL tsgMakeGlobalGrid(gridID, 2, 1, 1, 1, tsgRuleClenshawCurtis)
+  tp1 = reshape((/ 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 0.0 /), shape(tp1))
+  points => tsgGetPoints(gridID)
+  IF (getError(2, 5, tp1, points) > 1.0E-11) THEN
+    WRITE(*,*) "Mismatch in tsgMakeGlobal: core case 1", getError(2, 5, tp1, points)
+    STOP 1
+  END IF
 
+
+! Tasmanian holds to some RAN until tsgFinalize() is called
   CALL tsgFinalize()
 
 END PROGRAM FORTESTER
 
+FUNCTION getError(m, n, x, y) result(error)
+  INTEGER, intent(in) :: m, n
+  INTEGER :: i, j
+  DOUBLE PRECISION :: x(m, n), y(m, n)
+  DOUBLE PRECISION :: error
+  error = 0.0
+  DO i = 1, m
+    DO j = 1, n
+      error = error + abs(x(i,j) - y(i,j))
+    END DO
+  END DO
+END FUNCTION getError
