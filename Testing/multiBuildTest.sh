@@ -153,14 +153,27 @@ if (( $sGfortran == 1 )); then
     sDashFort="-fortran"
 fi
 
+sTestRoot=$2
+cd $sTestRoot
+cp -r $1 ./TempTasmanian
+cd TempTasmanian
+sTempSource=`pwd`
+cd ..
+mkdir Run
+cd Run
+sTempBuild=`pwd`
+cd $sTestRoot
+
+echo $sTempSource
+echo $sTempBuild
 
 ########################################################################
 # Test: simpel GNU Make build system
 ########################################################################
 if (( $bGCC == 1 )); then
     #unzip $1 || { exit 1; }
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     make -j || { echo "Legacy build failed!"; exit 1; }
     ./tasgrid -test || { echo "Legacy tasgrid failed!"; exit 1; }
     ./tasdream -test || { echo "Legacy tasdream failed!"; exit 1; }
@@ -176,12 +189,13 @@ if (( $bGCC == 1 )); then
     fi
     if (( $bOctave == 1 )); then
         make matlab
-        octave --eval "addpath('$2/Tasmanian/InterfaceMATLAB/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/InterfaceMATLAB/'); tsgCoreTests()" || { exit 1; }
     else
         echo "No octave executable, skipping GNU Make MATLAB test" >> $sMultibuildLogFile
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "===========================================================================================" >> $sMultibuildLogFile
     echo "======= PASSED: simpel GNU Make build system" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
@@ -189,10 +203,10 @@ fi
 
 
 ########################################################################
-# Test: default install
+# Test: default install, install.sh
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder  -make-j -verbose -nobashrc || { exit 1; }
 if [[ ! -z `./TasInstall/bin/tasgrid -v | grep gpu-cuda` ]]; then
@@ -200,19 +214,43 @@ if [[ ! -z `./TasInstall/bin/tasgrid -v | grep gpu-cuda` ]]; then
     exit 1;
 fi
 if (( $bOctave == 1 )); then
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
-echo "======= PASSED: default install" >> $sMultibuildLogFile
+cd $sTestRoot
+echo "======= PASSED: default install, using install.sh" >> $sMultibuildLogFile
+echo "===========================================================================================" >> $sMultibuildLogFile
+
+
+#########################################################################
+## Test: default install, pure cmake
+#########################################################################
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/ || { exit 1; }
+mkdir Build || { exit 1; }
+cd Build || { exit 1; }
+cmake -D CMAKE_INSTALL_PREFIX="$sTempBuild/Install" $sTempBuild/Tasmanian || { exit 1; }
+make -j || { exit 1; }
+make test || { exit 1; }
+make install || { exit 1; }
+./test_post_install.sh || { exit 1; }
+if [ ! -f $sTempBuild/Install/lib/libtasmaniansparsegrid.so ]; then
+    echo "cmake did not install correctly"
+    exit 1;
+fi
+cd $sTempBuild
+rm -fr Tasmanian/
+cd $sTestRoot
+echo "======= PASSED: default install, using pure cmake" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
 
 ########################################################################
 # Test: -noomp
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder  -make-j -noomp -verbose -nobashrc || { exit 1; }
 if [[ ! -z `./TasInstall/bin/tasgrid -v | grep 'multithreading: Enabled'` ]]; then
@@ -220,10 +258,11 @@ if [[ ! -z `./TasInstall/bin/tasgrid -v | grep 'multithreading: Enabled'` ]]; th
     exit 1;
 fi
 if (( $bOctave == 1 )); then
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: no OpenMP install" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -231,8 +270,8 @@ echo "==========================================================================
 ########################################################################
 # Test: -noblas
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -make-j -noblas -verbose -nobashrc || { exit 1; }
 if [[ ! -z `./TasInstall/bin/tasgrid -v | grep cpu-blas` ]]; then
@@ -240,10 +279,11 @@ if [[ ! -z `./TasInstall/bin/tasgrid -v | grep cpu-blas` ]]; then
     exit 1;
 fi
 if (( $bOctave == 1 )); then
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: no BLAS install" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -251,8 +291,8 @@ echo "==========================================================================
 ########################################################################
 # Test: -nocublas
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -make-j -nocublas -verbose -nobashrc || { exit 1; }
 if [[ ! -z `./TasInstall/bin/tasgrid -v | grep gpu-cublas` ]]; then
@@ -260,10 +300,11 @@ if [[ ! -z `./TasInstall/bin/tasgrid -v | grep gpu-cublas` ]]; then
     exit 1;
 fi
 if (( $bOctave == 1 )); then
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: no cuBLAS install" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -272,8 +313,8 @@ echo "==========================================================================
 # Test: -cuda
 ########################################################################
 if (( $bNVCC == 1 )); then
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -make-j -cuda -verbose -nobashrc || { exit 1; }
     if [[ -z `./TasInstall/bin/tasgrid -v | grep gpu-cuda` ]]; then
@@ -281,10 +322,11 @@ if (( $bNVCC == 1 )); then
         exit 1;
     fi
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "======= PASSED: with CUDA install" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
@@ -296,8 +338,8 @@ fi
 ########################################################################
 # Test: -nopython
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -make-j -nopython -verbose -nobashrc || { exit 1; }
 if [ -f ./TasInstall/python/TasmanianSG.py ]]; then
@@ -305,18 +347,19 @@ if [ -f ./TasInstall/python/TasmanianSG.py ]]; then
     exit 1;
 fi
 if (( $bOctave == 1 )); then
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: no python install" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
 ########################################################################
 # Test: -nospam
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -make-j -nospam -verbose -nobashrc || { exit 1; }
 if [ -f ./TasInstall/python/TasmanianSG.py ]]; then
@@ -324,10 +367,11 @@ if [ -f ./TasInstall/python/TasmanianSG.py ]]; then
     exit 1;
 fi
 if (( $bOctave == 1 )); then
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: no spam (python) install" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -336,8 +380,8 @@ echo "==========================================================================
 # Test: -python=/usr/bin/python3
 ########################################################################
 if (( $bPython3 == 1 )); then
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -make-j -python=/usr/bin/python3 -verbose -nobashrc || { exit 1; }
     ./TasInstall/examples/example_sparse_grids.py -fast || { echo "Could not run python3 version of examples"; exit 1; }
@@ -346,10 +390,11 @@ if (( $bPython3 == 1 )); then
         exit 1;
     fi
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "======= PASSED: python3 install" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
@@ -362,8 +407,8 @@ fi
 # Test: -fortran
 ########################################################################
 if (( $bGfortran == 1 )); then
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -make-j -fortran -verbose -nobashrc || { exit 1; }
     ./TasInstall/examples/example_sparse_grids.py -fast || { echo "Could not run python3 version of examples"; exit 1; }
@@ -372,10 +417,11 @@ if (( $bGfortran == 1 )); then
         exit 1;
     fi
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "======= PASSED: fortran install" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
@@ -388,8 +434,8 @@ fi
 # Test: -fortran -noshared -nopython
 ########################################################################
 if (( $bGfortran == 1 )); then
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -make-j -fortran -noshared -nospam -verbose -nobashrc || { exit 1; }
     if [ ! -f ./TasInstall/lib/libtasmanianfortran.a ]; then
@@ -397,10 +443,11 @@ if (( $bGfortran == 1 )); then
         exit 1;
     fi
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "======= PASSED: fortran static install" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
@@ -412,16 +459,17 @@ fi
 ########################################################################
 # Test: default install, reject -noshared and -nostatic
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -make-j -noshared -nostatic -verbose -nobashrc
 if (( $? == 0 )); then
     echo "Failed to reject install with both -noshared and -nostatic"
     exit 1;
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: reject simultaneous -noshared and -nostatic" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -429,13 +477,13 @@ echo "==========================================================================
 ########################################################################
 # Test: default install, -nostatic and environment setup
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -nostatic -make-j -verbose -nobashrc || { exit 1; }
 # MacOSX always finds the dynamic libs as they are hardcoded with absolute path
 if (( $bMacOS == 0 )); then
-    $2/Tasmanian/TasInstall/bin/tasgrid -v
+    $sTempBuild/Tasmanian/TasInstall/bin/tasgrid -v
     if [ $? -eq 0 ]; then
         echo "Tasgrid is supposed to give an error here!"
         exit 1;
@@ -443,7 +491,7 @@ if (( $bMacOS == 0 )); then
         echo "Tasgrid is supposed to fail above"
     fi
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()"
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()"
         if [ $? -eq 0 ]; then
             echo "Octave is supposed to give an error here!"
             exit 1;
@@ -451,35 +499,35 @@ if (( $bMacOS == 0 )); then
             echo "Octave is supposed to fail above."
         fi
     fi
-    if [ -f $2/Tasmanian/TasInstall/libtasmaniansparsegrid.a ]; then
+    if [ -f $sTempBuild/Tasmanian/TasInstall/libtasmaniansparsegrid.a ]; then
         echo "Failed to apply -nostatic"
         exit 1;
     fi
-    if [ ! -f $2/Tasmanian/TasInstall/lib/libtasmaniansparsegrid.so ]; then
+    if [ ! -f $sTempBuild/Tasmanian/TasInstall/lib/libtasmaniansparsegrid.so ]; then
         echo "Tasmanian shared library is missing"
         exit 1;
     fi
 else
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { echo "Failed Octave test build with shared lib (MacOSX)!"; exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { echo "Failed Octave test build with shared lib (MacOSX)!"; exit 1; }
     fi
-    $2/Tasmanian/TasInstall/bin/tasgrid -v || { echo "Failed Tasgrid build with shared lib (MacOSX)!"; exit 1; }
+    $sTempBuild/Tasmanian/TasInstall/bin/tasgrid -v || { echo "Failed Tasgrid build with shared lib (MacOSX)!"; exit 1; }
 fi
 # save the environment
 SAVE_PATH=$PATH
 SAVE_LD_LIB_PATH=$LD_LIBRARY_PATH
 # source the new environment (any OS above should work fine)
-source $2/Tasmanian/TasInstall/config/TasmanianENVsetup.sh
+source $sTempBuild/Tasmanian/TasInstall/config/TasmanianENVsetup.sh
 tasgrid -v || { echo "Failed Tasgrid test build with shared lib (loaded setup.sh)!"; exit 1; }
 if (( $bOctave == 1 )); then
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { echo "Failed Octave test build with shared lib (loaded setup.sh)!"; exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { echo "Failed Octave test build with shared lib (loaded setup.sh)!"; exit 1; }
 fi
 # restore the environment
 export PATH=$SAVE_PATH
 export LD_LIBRARY_PATH=$SAVE_LD_LIB_PATH
 # should be back to the case of MacOSX working and Linux failing to find the shared libs
 if (( $bMacOS == 0 )); then
-    $2/Tasmanian/TasInstall/bin/tasgrid -v
+    $sTempBuild/Tasmanian/TasInstall/bin/tasgrid -v
     if [ $? -eq 0 ]; then
         echo "Tasgrid is supposed to give an error here!"
         exit 1;
@@ -488,11 +536,12 @@ if (( $bMacOS == 0 )); then
     fi
 else
     #echo "MacOSX should find the dynamic libraries regardless of LD_LIBRARY_PATH"
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { echo "Failed Octave test build with shared lib (MacOSX v2)!"; exit 1; }
-    $2/Tasmanian/TasInstall/bin/tasgrid -v || { echo "Failed Octave test build with shared lib (MacOSX v2)!"; exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { echo "Failed Octave test build with shared lib (MacOSX v2)!"; exit 1; }
+    $sTempBuild/Tasmanian/TasInstall/bin/tasgrid -v || { echo "Failed Octave test build with shared lib (MacOSX v2)!"; exit 1; }
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: -nostatic" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -500,26 +549,27 @@ echo "==========================================================================
 ########################################################################
 # Test: default install, -noshared, which is overwritten due to python
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -noshared -make-j -verbose -nobashrc || { exit 1; }
 if (( $bOctave == 1 )); then
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
 if (( $bMacOS == 0 )); then
-    if [ ! -f $2/Tasmanian/TasInstall/lib/libtasmaniansparsegrid.so ]; then
+    if [ ! -f $sTempBuild/Tasmanian/TasInstall/lib/libtasmaniansparsegrid.so ]; then
         echo "Tasmanian shared library is missing even though enabling python should have overwritten -noshared"
         exit 1;
     fi
 else
-    if [ ! -f $2/Tasmanian/TasInstall/lib/libtasmaniansparsegrid.dylib ]; then
+    if [ ! -f $sTempBuild/Tasmanian/TasInstall/lib/libtasmaniansparsegrid.dylib ]; then
         echo "Tasmanian shared library is missing even though enabling python should have overwritten -noshared"
         exit 1;
     fi
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: -noshared" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -527,23 +577,24 @@ echo "==========================================================================
 ########################################################################
 # Test: -noshared and -nopython
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -noshared -nopython -make-j -verbose -nobashrc || { exit 1; }
 if (( $bOctave == 1 )); then
-    octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
-if [ -f $2/Tasmanian/TasInstall/lib/libtasmaniansparsegrid.so ]; then
+if [ -f $sTempBuild/Tasmanian/TasInstall/lib/libtasmaniansparsegrid.so ]; then
     echo "Tasmanian shared library is present even though it should be disabled"
     exit 1;
 fi
-if [ -d $2/Tasmanian/TasInstall/python ]; then
+if [ -d $sTempBuild/Tasmanian/TasInstall/python ]; then
     echo "Failed to disable python and shared libraries"
     exit 1;
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: -noshared -nopython" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -551,10 +602,10 @@ echo "==========================================================================
 ########################################################################
 # Test: default install, no MATLAB
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 ./install.sh ./TasInstall -make-j -verbose -nobashrc || { exit 1; }
-octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()"
+octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()"
 if [ $? -eq 0 ]; then
     echo "Ocatve is not supposed to work here"
     exit 1;
@@ -563,8 +614,9 @@ if [ -d ./TasInstall/matlab ]; then
     echo "Failed to disable MATLAB"
     exit 1;
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: no MATLAB" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -572,16 +624,17 @@ echo "==========================================================================
 ########################################################################
 # Test: -noinstall
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -noinstall -make-j -verbose -nobashrc || { exit 1; }
-if [ -d $2/Tasmanian/TasInstall/lib ] || [ -d $2/Tasmanian/TasInstall/bin ]; then
+if [ -d $sTempBuild/Tasmanian/TasInstall/lib ] || [ -d $sTempBuild/Tasmanian/TasInstall/bin ]; then
     echo "Failed to disable the install command."
     exit 1;
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: -noinstall" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -589,15 +642,16 @@ echo "==========================================================================
 ########################################################################
 # Test: -notest
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 # break the test, so if it executes it will break the install
 echo "(" >> ./Testing/testTSG.in.py
 sed -i -e 's/\#TasmanianPostInstallTest/exit\ 1/g' ./Testing/test_post_install.in.sh
 ./install.sh ./TasInstall ./tsgWorkFolder -notest -make-j -verbose -nobashrc || { echo "Failed to disable testing"; exit 1; }
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: -notest" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -605,16 +659,17 @@ echo "==========================================================================
 ########################################################################
 # Test: -debug
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder $sDashFort -debug -cuda -make-j -verbose -nobashrc || { echo "Failed to make a debug release"; exit 1; }
 if [[ -z `cmake -LA -N Build/ | grep CMAKE_BUILD_TYPE:STRING=Debug` ]]; then
     echo "Failed to set a debug build"
     exit 1;
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: -debug" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -622,16 +677,17 @@ echo "==========================================================================
 ########################################################################
 # Test: -wrong
 ########################################################################
-cp -r $1 . || { exit 1; }
-cd Tasmanian || { exit 1; }
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -cuda -make-j -verbose -nobashrc -wrong
 if [ $? -eq 0 ]; then
     echo "Failed to exit on wrong install input"
     exit 1;
 fi
-cd ..
+cd $sTempBuild
 rm -fr Tasmanian/
+cd $sTestRoot
 echo "======= PASSED: -wrong" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
@@ -640,8 +696,8 @@ echo "==========================================================================
 # Alternative compiler tests: cuda versions, clang, etc.
 ########################################################################
 if [ -f /usr/bin/clang++-4.0 ]; then
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     if (( $bMacOS == 1 )); then
         ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-4.0" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
@@ -649,7 +705,7 @@ if [ -f /usr/bin/clang++-4.0 ]; then
         ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-4.0" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     fi
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
     if (( $bMacOS == 0 )); then
         if [ -z `./TasInstall/bin/tasgrid -v | grep 'OpenMP multithreading: Enabled'` ]; then
@@ -657,8 +713,9 @@ if [ -f /usr/bin/clang++-4.0 ]; then
             exit 1;
         fi
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "======= PASSED: Clang 4.0" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
@@ -667,15 +724,16 @@ else
 fi
 
 if [ -f /usr/bin/clang++-3.8 ]; then
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-3.8" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "======= PASSED: Clang 3.8" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
@@ -684,15 +742,16 @@ else
 fi
 
 if [ -d /usr/local/cuda-8.0 ]; then
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-8.0/" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "======= PASSED: CUDA 8.0" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
@@ -701,15 +760,16 @@ else
 fi
 
 if [ -d /usr/local/cuda-9.0 ]; then
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.0/" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "======= PASSED: CUDA 9.0" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
@@ -718,15 +778,16 @@ else
 fi
 
 if [ -d /usr/local/cuda-9.1 ]; then
-    cp -r $1 . || { exit 1; }
-    cd Tasmanian || { exit 1; }
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.1/" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
-        octave --eval "addpath('$2/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
-    cd ..
+    cd $sTempBuild
     rm -fr Tasmanian/
+    cd $sTestRoot
     echo "======= PASSED: CUDA 9.1" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
