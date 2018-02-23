@@ -74,12 +74,13 @@ if (( bShowHelp == 1 )); then
     echo "            -nocublas: disable Nvidia cuBlas and cuSparse support"
     echo "                -cuda: enable Nvidia CUDA kernels"
     echo "            -nopython: disable Python interface"
-    echo "             -python3: switch to '/usr/bin/env python3'"
+    echo "       -python=<path>: provide a path to the python interpreter"
     echo "             -fortran: enable Fortran interface"
     echo "            -noshared: do not build shared libraries"
     echo "            -nostatic: do not build static libraries"
     echo "              -notest: do not execute any of the tests"
     echo "               -debug: build with Debug flags"
+    echo "      -cmake=<string>: pass a string directly to cmake (useful for testing)"
     echo "           -noinstall: skip the make install command, compile only"
     echo ""
     echo "  if the build process fails or you want to reset, just delete ./Build"
@@ -135,7 +136,6 @@ bVerbose=0
 bSkilBashrc=0
 bHoldEnd=0
 bInstall=1
-sPythonVersion=""
 sExtraCommand=""
 
 for sOption in "$@"; do
@@ -187,7 +187,7 @@ fi
 
 if [[ $sEnablePython == "OFF" ]] && [[ ! -z $sManualPythonInterp ]]; then
     echo "WARNING: using simultanously -nopython and -python=$sManualPythonInterp, -python=$sManualPythonInterp will be ignored!"
-    sEnablePython3="OFF"
+    sManualPythonInterp=""
 fi
 
 echo "Looking for cmake ..."
@@ -470,6 +470,10 @@ else
     sMatlabWork=""
 fi
 
+if [[ ! -z $sManualPythonInterp ]]; then
+    sManualPythonInterp="-D PYTHON_EXECUTABLE:FILEPATH=$sManualPythonInterp"
+fi
+
 cmake \
   -D CMAKE_BUILD_TYPE=$sBuildType \
   -D CMAKE_INSTALL_PREFIX=$sInstallPrefix \
@@ -481,9 +485,9 @@ cmake \
   -D Tasmanian_ENABLE_MATLAB:BOOL=$sUseMatlab \
   -D Tasmanian_ENABLE_PYTHON:BOOL=$sEnablePython \
   -D Tasmanian_ENABLE_FORTRAN:BOOL=$sEnableFortran \
-  $sPythonVersion \
   -D Tasmanian_SHARED_LIBRARY:BOOL=$sEnableShared \
   -D Tasmanian_STATIC_LIBRARY:BOOL=$sEnableStatic \
+  $sManualPythonInterp \
   $sMatlabWork \
   $sExtraCommand \
   ../

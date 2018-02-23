@@ -153,6 +153,7 @@ if (( $sGfortran == 1 )); then
     sDashFort="-fortran"
 fi
 
+
 ########################################################################
 # Test: simpel GNU Make build system
 ########################################################################
@@ -340,8 +341,8 @@ if (( $bPython3 == 1 )); then
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -make-j -python=/usr/bin/python3 -verbose -nobashrc || { exit 1; }
     ./TasInstall/examples/example_sparse_grids.py -fast || { echo "Could not run python3 version of examples"; exit 1; }
-    if [ -f ./TasInstall/python/TasmanianSG.py ]]; then
-        echo "Failed to disable Python"
+    if [[ -z `head -n 1 ./TasInstall/examples/example_sparse_grids.py | grep python3` ]]; then
+        echo "Failed to set python3 in the hash-bang of the examples"
         exit 1;
     fi
     if (( $bOctave == 1 )); then
