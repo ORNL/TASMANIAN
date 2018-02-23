@@ -43,24 +43,24 @@ extern "C" void tsgc2fmat_(int *rows, int *cols, double *mat);
 
 
 TasmanianSparseGrid **_tsg_grid_list;
-int _num_grids;
+int _tsg_num_grids;
 
 extern "C"{
 
 void tsgbeg_(){
-    _num_grids = 4; // assume we are working with 4 grids
-    _tsg_grid_list = new TasmanianSparseGrid*[_num_grids];
-    for(int i=0; i<_num_grids; i++) _tsg_grid_list[i] = 0;
+    _tsg_num_grids = 4; // assume we are working with 4 grids
+    _tsg_grid_list = new TasmanianSparseGrid*[_tsg_num_grids];
+    for(int i=0; i<_tsg_num_grids; i++) _tsg_grid_list[i] = 0;
 }
 void tsgnew_(int *returnID){
     int id = 0;
-    while((id < _num_grids) && (_tsg_grid_list[id] != 0)) id++;
-    if (id == _num_grids){
+    while((id < _tsg_num_grids) && (_tsg_grid_list[id] != 0)) id++;
+    if (id == _tsg_num_grids){
         TasmanianSparseGrid **_tsg_grid_list_old = _tsg_grid_list;
-        _num_grids *= 2;
-        _tsg_grid_list = new TasmanianSparseGrid*[_num_grids];
-        for(int i=0; i<_num_grids/2; i++) _tsg_grid_list[i] = _tsg_grid_list_old[i];
-        for(int i=_num_grids/2; i<_num_grids; i++) _tsg_grid_list_old[i] = 0;
+        _tsg_num_grids *= 2;
+        _tsg_grid_list = new TasmanianSparseGrid*[_tsg_num_grids];
+        for(int i=0; i<_tsg_num_grids/2; i++) _tsg_grid_list[i] = _tsg_grid_list_old[i];
+        for(int i=_tsg_num_grids/2; i<_tsg_num_grids; i++) _tsg_grid_list_old[i] = 0;
         delete[] _tsg_grid_list_old;
         _tsg_grid_list_old = 0;
     }
@@ -68,7 +68,7 @@ void tsgnew_(int *returnID){
     *returnID = id;
 }
 void tsgfre_(int *id){
-    if (*id < _num_grids){
+    if (*id < _tsg_num_grids){
         if (_tsg_grid_list[*id] != 0){
             delete _tsg_grid_list[*id];
             _tsg_grid_list[*id] = 0;
@@ -76,12 +76,12 @@ void tsgfre_(int *id){
     }
 }
 void tsgend_(){
-    for(int i=0; i<_num_grids; i++){
+    for(int i=0; i<_tsg_num_grids; i++){
         if (_tsg_grid_list[i] != 0) delete _tsg_grid_list[i];
     }
     delete[] _tsg_grid_list;
     _tsg_grid_list = 0;
-    _num_grids = 0;
+    _tsg_num_grids = 0;
 }
 ////////////////////////////////////////////////////////////////////////
 //   MAIN INTERFACE
