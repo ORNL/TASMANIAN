@@ -55,7 +55,7 @@ IMPLICIT NONE
   WRITE(*,"(A,40A)") "Licence: ", licence
   
   gridID = tsgNewGridID()
-  CALL tsgMakeGlobalGrid(gridID, 2, 1, 1, 1, tsgRuleClenshawCurtis)
+  CALL tsgMakeGlobalGrid(gridID, 2, 1, 1, 1, tsg_clenshaw_curtis)
   tp1 = reshape((/ 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 0.0 /), shape(tp1))
   points => tsgGetPoints(gridID)
   IF (getError(2, 5, tp1, points) > 1.0E-11) THEN

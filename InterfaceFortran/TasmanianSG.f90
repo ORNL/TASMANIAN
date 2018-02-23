@@ -91,8 +91,28 @@ PUBLIC :: tsgInitialize,        &
           !tsgReceiveScalar, &
           tsgReceiveString, &
           tsgReceiveVector, &
-          tsgReceiveMatrix, tsgRuleClenshawCurtis
-  INTEGER, PARAMETER :: tsgRuleClenshawCurtis = 1, tsgRuleClenshawCurtisZero = 2
+          tsgReceiveMatrix, &
+          tsg_clenshaw_curtis
+  INTEGER, PARAMETER :: tsg_clenshaw_curtis      =  1,  tsg_rule_clenshaw_curtis_zero = 2, &
+                        tsg_chebyshev            =  3,  tsg_chebyshev_odd         =  4, &
+                        tsg_gauss_legendre       =  5,  tsg_gauss_legendreodd     =  6, & 
+                        tsg_gauss_patterson      =  7,  tsg_leja                  =  8, &
+                        tsg_lejaodd              =  9,  tsg_rleja                 = 10, &
+                        tsg_rleja_odd            = 11,  tsg_rleja_double_2        = 12, &
+                        tsg_rleja_double_4       = 13,  tsg_rleja_shifted         = 14, &
+                        tsg_rleja_shifted_even   = 15,  tsg_rleja_shifted_double  = 16, &
+                        tsg_max_lebesgue         = 17,  tsg_max_lebesgue_odd      = 18, &
+                        tsg_min_lebesgue         = 19,  tsg_min_lebesgue_odd      = 20, &
+                        tsg_min_delta            = 21,  tsg_min_delta_odd         = 22, &
+                        tsg_gauss_chebyshev_1    = 23,  tsg_gauss_chebyshev_1_odd = 24, &
+                        tsg_gauss_chebyshev_2    = 25,  tsg_gauss_chebyshev_2_odd = 26, &
+                        tsg_fejer2               = 27,  tsg_gauss_gegenbauer      = 28, &
+                        tsg_gauss_gegenbauer_odd = 29,  tsg_gauss_jacobi          = 30, &
+                        tsg_gauss_jacobi_odd     = 31,  tsg_gauss_laguerre        = 32, &
+                        tsg_gauss_laguerre_odd   = 33,  tsg_gauss_hermite         = 34, &
+                        tsg_gauss_hermite_odd    = 35,  tsg_custom_tabulated      = 36, &
+                        tsg_localp               = 37,  tsg_localp_zero           = 38, &
+                        tsg_semi_localp          = 39,  tsg_wavelet               = 40  
 PRIVATE
   INTEGER :: rows, cols, length
   DOUBLE PRECISION, pointer :: matrix(:,:), vector(:)
