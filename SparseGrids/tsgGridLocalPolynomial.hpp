@@ -93,7 +93,7 @@ public:
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const;
     void evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const;
 
-    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1);
+    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0);
     void clearRefinement();
     void mergeRefinement();
     int removePointsBySurplus(double tolerance, int output = -1); // returns the number of points kept
@@ -133,7 +133,8 @@ protected:
     int* buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const;
 
     bool addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
-    void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude)const;
+    void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
+    void addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const int *level_limits) const;
 
     void makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const;
 

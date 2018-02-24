@@ -104,8 +104,8 @@ public:
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
     int* estimateAnisotropicCoefficients(TypeDepth type, int output) const;
-    void setAnisotropicRefinement(TypeDepth type, int min_growth = 1, int output = -1);
-    void setSurplusRefinement(double tolerance, int output);
+    void setAnisotropicRefinement(TypeDepth type, int min_growth = 1, int output = -1, const int *level_limits = 0);
+    void setSurplusRefinement(double tolerance, int output, const int *level_limits = 0);
     void clearRefinement();
     void mergeRefinement();
 

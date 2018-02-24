@@ -1077,13 +1077,6 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     int level = IM.getMinChildLevel(tensors, type, weights, rule);
 
     updated_tensors = IM.selectTensors(level, type, weights, rule);
-    if (level_limits != 0){
-        IndexSet *limited = IM.removeIndexesByLimit(updated_tensors, level_limits);
-        if (limited != 0){
-            delete updated_tensors;
-            updated_tensors = limited;
-        }
-    }
     needed = updated_tensors->diffSets(tensors); // this exploits the 1-1 correspondence between points and tensors for sequence rules (see the correction below)
 
     while((needed == 0) || (needed->getNumIndexes() < min_growth)){ // for CC min_growth is lots of points
@@ -1094,6 +1087,13 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     }
     delete[] weights;
 
+    if (level_limits != 0){
+        IndexSet *limited = IM.removeIndexesByLimit(updated_tensors, level_limits);
+        if (limited != 0){
+            delete updated_tensors;
+            updated_tensors = limited;
+        }
+    }
     updated_tensors->addIndexSet(tensors); // avoids the case where existing points in tensor are not included in the update
 
     OneDimensionalMeta meta(custom);
@@ -1135,7 +1135,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *l
     }
 
     IndexManipulator IM(num_dimensions);
-    IndexSet *kids = IM.selectFlaggedChildren(points, flagged);
+    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits);
 
     if ((kids != 0) && (kids->getNumIndexes() > 0)){
         kids->addIndexSet(points);
@@ -1147,14 +1147,6 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *l
         }else{
             updated_tensors->addIndexSet(kids);
             delete kids;
-        }
-        // this is valid only for a sequence rule, where tensor is equivalent to a point
-        if (level_limits != 0){
-            IndexSet *limited = IM.removeIndexesByLimit(updated_tensors, level_limits);
-            if (limited != 0){
-                delete updated_tensors;
-                updated_tensors = limited;
-            }
         }
 
         OneDimensionalMeta meta(custom);

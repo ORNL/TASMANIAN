@@ -907,20 +907,36 @@ int IndexManipulator::getMinChildLevel(const IndexSet *set, TypeDepth type, cons
     return min_level;
 }
 
-IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *set, const bool flagged[]) const{
+IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *set, const bool flagged[], const int *level_limits) const{
     GranulatedIndexSet *next_level = new GranulatedIndexSet(num_dimensions);
     int *kid = new int[num_dimensions];
 
-    for(int i=0; i<set->getNumIndexes(); i++){
-        if (flagged[i]){
-            const int* p = set->getIndex(i);
-            std::copy(p, p + num_dimensions, kid);
-            for(int j=0; j<num_dimensions; j++){
-                kid[j]++;
-                if (set->getSlot(kid) == -1){
-                    next_level->addIndex(kid);
+    if (level_limits == 0){
+        for(int i=0; i<set->getNumIndexes(); i++){
+            if (flagged[i]){
+                const int* p = set->getIndex(i);
+                std::copy(p, p + num_dimensions, kid);
+                for(int j=0; j<num_dimensions; j++){
+                    kid[j]++;
+                    if (set->getSlot(kid) == -1){
+                        next_level->addIndex(kid);
+                    }
+                    kid[j]--;
                 }
-                kid[j]--;
+            }
+        }
+    }else{
+        for(int i=0; i<set->getNumIndexes(); i++){
+            if (flagged[i]){
+                const int* p = set->getIndex(i);
+                std::copy(p, p + num_dimensions, kid);
+                for(int j=0; j<num_dimensions; j++){
+                    kid[j]++;
+                    if ((kid[j] <= level_limits[j]) && (set->getSlot(kid) == -1)){
+                        next_level->addIndex(kid);
+                    }
+                    kid[j]--;
+                }
             }
         }
     }

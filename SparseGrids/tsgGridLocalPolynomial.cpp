@@ -1755,14 +1755,19 @@ void GridLocalPolynomial::addChild(const int point[], int direction, GranulatedI
             destination->addIndex(kid);
         }
     }
-//    kid[direction] = rule->getKidLeft(point[direction]);
-//    if ((kid[direction] != -1) && (exclude->getSlot(kid) == -1)){
-//        destination->addIndex(kid);
-//    }
-//    kid[direction] = rule->getKidRight(point[direction]);
-//    if ((kid[direction] != -1) && (exclude->getSlot(kid) == -1)){
-//        destination->addIndex(kid);
-//    }
+    delete[] kid;
+}
+void GridLocalPolynomial::addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const int *level_limits) const{
+    int *kid = new int[num_dimensions];  std::copy(point, point + num_dimensions, kid);
+    int max_1d_kids = rule->getMaxNumKids();
+    for(int i=0; i<max_1d_kids; i++){
+        kid[direction] = rule->getKid(point[direction], i);
+        if (rule->getLevel(kid[direction]) <= level_limits[direction]){
+            if ((kid[direction] != -1) && (exclude->getSlot(kid) == -1)){
+                destination->addIndex(kid);
+            }
+        }
+    }
     delete[] kid;
 }
 
@@ -1779,7 +1784,7 @@ const int* GridLocalPolynomial::getNeededIndexes() const{
     //cout << "HERE " << needed->getNumIndexes() << endl;
     return ((needed != 0) ? needed->getIndex(0) : 0);
 }
-void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output){
+void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits){
     clearRefinement();
 
     int *map = buildUpdateMap(tolerance, criteria, output);
@@ -1790,11 +1795,23 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
 
     int num_points = points->getNumIndexes();
 
-    for(int i=0; i<num_points; i++){
-        for(int j=0; j<num_dimensions; j++){
-            if (map[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
-                if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
-                    addChild(points->getIndex(i), j, refined, points);
+    if (level_limits == 0){
+        for(int i=0; i<num_points; i++){
+            for(int j=0; j<num_dimensions; j++){
+                if (map[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                    if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
+                        addChild(points->getIndex(i), j, refined, points);
+                    }
+                }
+            }
+        }
+    }else{
+        for(int i=0; i<num_points; i++){
+            for(int j=0; j<num_dimensions; j++){
+                if (map[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                    if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
+                        addChildLimited(points->getIndex(i), j, refined, points, level_limits);
+                    }
                 }
             }
         }

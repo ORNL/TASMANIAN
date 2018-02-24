@@ -73,7 +73,7 @@ public:
 
     int getMinChildLevel(const IndexSet *set, TypeDepth type, const int weights[], TypeOneDRule rule);
 
-    IndexSet* selectFlaggedChildren(const IndexSet *set, const bool flagged[]) const;
+    IndexSet* selectFlaggedChildren(const IndexSet *set, const bool flagged[], const int *level_limits = 0) const;
 
     void getMaxLevels(const IndexSet *set, int max_levels[], int &total_max) const;
 
