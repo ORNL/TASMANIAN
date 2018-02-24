@@ -7,7 +7,8 @@ project(Tasmanian LANGUAGES CXX)
 #    -D Tasmanian_ENABLE_BLAS:BOOL=ON
 #    -D Tasmanian_ENABLE_MPI:BOOL=OFF
 #    -D Tasmanian_ENABLE_CUBLAS:BOOL=ON
-#    -D Tasmanian_ENABLE_MATLAB:BOOL=ON
+#    -D Tasmanian_ENABLE_CUDA:BOOL=OFF
+#    -D Tasmanian_ENABLE_MATLAB:BOOL=OFF
 #    -D Tasmanian_ENABLE_PYTHON:BOOL=ON
 #    -D Tasmanian_SHARED_LIBRARY:BOOL=ON
 #    -D Tasmanian_STATIC_LIBRARY:BOOL=ON
@@ -237,9 +238,7 @@ if (Tasmanian_ENABLE_PYTHON AND (NOT Tasmanian_SHARED_LIBRARY))
 endif()
 
 if (NOT DEFINED Tasmanian_MATLAB_WORK_FOLDER)
-    #set(TSGMatlabWork "${CMAKE_INSTALL_PREFIX}/tsgMatlabWork/")
     if (Tasmanian_ENABLE_MATLAB)
-        #message(WARNING "Tasmanian_MATLAB_WORK_FOLDER is not defined, defaulting to \"${TSGMatlabWork}\" which may not be desirable\nconsider using option -D Tasmanian_MATLAB_WORK_FOLDER:PATH=")
         message(FATAL_ERROR "Tasmanian_ENABLE_MATLAB is ON, but Tasmanian_MATLAB_WORK_FOLDER is missing\nIn order to enable the MATLAB interface, you must specify -D Tasmanian_MATLAB_WORK_FOLDER:PATH=")
     endif()
 else()
@@ -732,9 +731,6 @@ if (DEFINED Tasmanian_DEVELOPMENT_BACKWARDS AND Tasmanian_DEVELOPMENT_BACKWARDS)
     configure_file("${PROJECT_SOURCE_DIR}/Config/tdrEnableMPI.in.hpp"  "${PROJECT_SOURCE_DIR}/Config/tdrEnableMPI.hpp")
     set(tdrIncludeMPI ${tdrIncludeMPIBackup})
     set(tsgPython "/usr/bin/env python")
-    #if (DEFINED Tasmanian_PYTHON_ENV)
-    #    set(tsgPython ${Tasmanian_PYTHON_ENV})
-    #endif()
     set(TSGLibPyWithBlas "False")
     set(TSGLibPyWithCublas "False")
     set(TSGLibPyWithCuda "False")
@@ -772,9 +768,6 @@ set(TSGLibPyWithCuda "False")
 if (Tasmanian_ENABLE_CUDA)
     set(TSGLibPyWithCuda "True")
 endif()
-#if (DEFINED Tasmanian_PYTHON_ENV)
-#    set(tsgPython ${Tasmanian_PYTHON_ENV})
-#endif()
 set(TSGPythonPath "${CMAKE_BINARY_DIR}")
 set(TSGMatlabWork "${CMAKE_BINARY_DIR}/tempMATLAB/")
 set(TSGLibOPTC "${CMAKE_CXX_FLAGS}")
