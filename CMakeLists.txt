@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(Tasmanian LANGUAGES CXX)
 
-# Test push
 ########################################################################
 #  User specified options:
 #    -D Tasmanian_ENABLE_OPENMP:BOOL=ON
