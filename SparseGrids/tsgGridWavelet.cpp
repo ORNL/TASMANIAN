@@ -680,7 +680,7 @@ bool GridWavelet::addParent(const int point[], int direction, GranulatedIndexSet
     delete[] dad;
     return added;
 }
-void GridWavelet::addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude)const{
+void GridWavelet::addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const{
     int *kid = new int[num_dimensions];  std::copy(point, point + num_dimensions, kid);
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
@@ -689,6 +689,19 @@ void GridWavelet::addChild(const int point[], int direction, GranulatedIndexSet 
     }
     kid[direction] = R;
     if ((kid[direction] != -1) && (exclude->getSlot(kid) == -1)){
+        destination->addIndex(kid);
+    }
+    delete[] kid;
+}
+void GridWavelet::addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const int *level_limits) const{
+    int *kid = new int[num_dimensions];  std::copy(point, point + num_dimensions, kid);
+    int L, R; rule1D.getChildren(point[direction], L, R);
+    kid[direction] = L;
+    if ((kid[direction] != -1) && (rule1D.getLevel(L) <= level_limits[direction]) && (exclude->getSlot(kid) == -1)){
+        destination->addIndex(kid);
+    }
+    kid[direction] = R;
+    if ( (kid[direction] != -1) && (rule1D.getLevel(R) <= level_limits[direction]) && (exclude->getSlot(kid) == -1)){
         destination->addIndex(kid);
     }
     delete[] kid;
@@ -766,7 +779,7 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
 const int* GridWavelet::getPointIndexes() const{
     return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
 }
-void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output){
+void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits){
     clearRefinement();
 
     int *map = buildUpdateMap(tolerance, criteria, output);
@@ -777,11 +790,23 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
 
     int num_points = points->getNumIndexes();
 
-    for(int i=0; i<num_points; i++){
-        for(int j=0; j<num_dimensions; j++){
-            if (map[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
-                if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
-                    addChild(points->getIndex(i), j, refined, points);
+    if (level_limits == 0){
+        for(int i=0; i<num_points; i++){
+            for(int j=0; j<num_dimensions; j++){
+                if (map[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                    if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
+                        addChild(points->getIndex(i), j, refined, points);
+                    }
+                }
+            }
+        }
+    }else{
+        for(int i=0; i<num_points; i++){
+            for(int j=0; j<num_dimensions; j++){
+                if (map[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                    if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
+                        addChildLimited(points->getIndex(i), j, refined, points, level_limits);
+                    }
                 }
             }
         }
