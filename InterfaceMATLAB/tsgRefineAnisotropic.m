@@ -1,4 +1,4 @@
-function [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew, iOut)
+function [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew, iOut, vLimitLevels)
 %
 % [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew, iOut)
 %
@@ -22,6 +22,16 @@ function [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew, iOut)
 % iOut: (integer giving the output to be used for the refinement)
 %       selects which output to use for refinement
 %
+% vLimitLevels: (optional vector of integers of size iDim)
+%               limit the level in each direction, no points beyond the
+%               specified limit will be used, e.g., in 2D using
+%               clenshaw-curtis rule, [1, 99] forces the grid to have
+%               at most 3 possible values in the first variable and
+%               ~2^99 (practicallyt infinite) number in the second
+%               direction. vLimitLevels works in conjunction with
+%               iDepth and sType, the points added to the grid will
+%               obey both bounds
+%
 % OUTPUT:
 %
 % new_points: (optional) array
@@ -29,7 +39,7 @@ function [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew, iOut)
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
 
 sCommand = [sTasGrid,' -refineaniso'];
 
@@ -40,6 +50,23 @@ sCommand = [sCommand, ' -ming ', num2str(iMinNew)];
 
 if (exist('iOut'))
     sCommand = [sCommand, ' -refout ', num2str(iOut)];
+end
+
+% set level limits
+if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
+    if (min(size(vLimitLevels)) ~= 1)
+        error(' vLimitLevels must be a vector, i.e., one row or one column');
+    end
+    if (max(size(vLimitLevels)) ~= lGrid.iDim)
+        error(' vLimitLevels must be a vector of size iDim');
+    end
+    if (size(vLimitLevels, 1) > size(vLimitLevels, 2))
+        tsgWriteMatrix(sFileL, vLimitLevels');
+    else
+        tsgWriteMatrix(sFileL, vLimitLevels);
+    end
+    lClean.sFileW = 1;
+    sCommand = [sCommand, ' -levellimitsfile ', sFileL];
 end
 
 % read the points for the grid

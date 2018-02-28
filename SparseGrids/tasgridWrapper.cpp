@@ -616,6 +616,7 @@ bool TasgridWrapper::refineGrid(){
         cerr << "ERROR: cannot refine a grid with no loaded values!" << endl;
         return false;
     }
+    int* llimits = readLevelLimits(num_dimensions);
     TypeCommand effective_command = command;
     if (command == command_refine){
         if (grid->isGlobal() || grid->isSequence()){
@@ -641,7 +642,7 @@ bool TasgridWrapper::refineGrid(){
         }
         if (min_growth < 1) min_growth = 1;
         if (grid->isSequence()){
-            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output);
+            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
         }else{
             if (ref_output >= grid->getNumOutputs()){
                 cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid->getNumOutputs() << " outputs!" << endl;
@@ -652,7 +653,7 @@ bool TasgridWrapper::refineGrid(){
                 cerr << "ERROR: must specify a refinement output with -ref_output option!" << endl;
                 return false;
             }else if (ref_output == -1) ref_output = 0;
-            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output);
+            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
         }
     }else{ // using surplus refinement
         if (!set_tolerance){
@@ -664,9 +665,9 @@ bool TasgridWrapper::refineGrid(){
                 cerr << "ERROR: must specify -reftype option!" << endl;
                 return false;
             }
-            grid->setSurplusRefinement(tolerance, tref, ref_output);
+            grid->setSurplusRefinement(tolerance, tref, ref_output, llimits);
         }else if (grid->isSequence()){
-            grid->setSurplusRefinement(tolerance, ref_output);
+            grid->setSurplusRefinement(tolerance, ref_output, llimits);
         }else{
             if (ref_output >= grid->getNumOutputs()){
                 cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid->getNumOutputs() << " outputs!" << endl;
@@ -677,7 +678,7 @@ bool TasgridWrapper::refineGrid(){
                 cerr << "ERROR: must specify a refinement output with -ref_output option!" << endl;
                 return false;
             }else if (ref_output == -1) ref_output = 0;
-            grid->setSurplusRefinement(tolerance, ref_output);
+            grid->setSurplusRefinement(tolerance, ref_output, llimits);
         }
     }
     writeGrid();

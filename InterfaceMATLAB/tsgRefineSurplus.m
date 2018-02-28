@@ -1,11 +1,11 @@
-function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOut)
+function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOut, vLimitLevels)
 %
 % [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOut)
 %
 % adds new points to the grid in the neighbourhood of existing points
 % associated with large hierarchical surplus
 %
-% This function works for Local Polynomial and Wavelet grids only 
+% This function works for Local Polynomial and Wavelet grids only
 %
 % INPUT:
 %
@@ -25,6 +25,16 @@ function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOu
 %
 % iOut: (integer giving the output to be used for the refinement)
 %       selects which output to use for refinement, only for Global lGrid
+%
+% vLimitLevels: (optional vector of integers of size iDim)
+%               limit the level in each direction, no points beyond the
+%               specified limit will be used, e.g., in 2D using
+%               clenshaw-curtis rule, [1, 99] forces the grid to have
+%               at most 3 possible values in the first variable and
+%               ~2^99 (practicallyt infinite) number in the second
+%               direction. vLimitLevels works in conjunction with
+%               iDepth and sType, the points added to the grid will
+%               obey both bounds
 %
 % OUTPUT:
 %
@@ -47,6 +57,23 @@ end
 
 if (exist('iOut'))
     sCommand = [sCommand, ' -refout ', num2str(iOut)];
+end
+
+% set level limits
+if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
+    if (min(size(vLimitLevels)) ~= 1)
+        error(' vLimitLevels must be a vector, i.e., one row or one column');
+    end
+    if (max(size(vLimitLevels)) ~= lGrid.iDim)
+        error(' vLimitLevels must be a vector of size iDim');
+    end
+    if (size(vLimitLevels, 1) > size(vLimitLevels, 2))
+        tsgWriteMatrix(sFileL, vLimitLevels');
+    else
+        tsgWriteMatrix(sFileL, vLimitLevels);
+    end
+    lClean.sFileW = 1;
+    sCommand = [sCommand, ' -levellimitsfile ', sFileL];
 end
 
 % read the points for the grid
