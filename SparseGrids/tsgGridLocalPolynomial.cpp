@@ -1762,10 +1762,8 @@ void GridLocalPolynomial::addChildLimited(const int point[], int direction, Gran
     int max_1d_kids = rule->getMaxNumKids();
     for(int i=0; i<max_1d_kids; i++){
         kid[direction] = rule->getKid(point[direction], i);
-        if (rule->getLevel(kid[direction]) <= level_limits[direction]){
-            if ((kid[direction] != -1) && (exclude->getSlot(kid) == -1)){
-                destination->addIndex(kid);
-            }
+        if ((kid[direction] != -1) && (rule->getLevel(kid[direction]) <= level_limits[direction]) && (exclude->getSlot(kid) == -1)){
+            destination->addIndex(kid);
         }
     }
     delete[] kid;
