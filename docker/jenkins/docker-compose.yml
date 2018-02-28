@@ -1,0 +1,15 @@
+version: '3'
+services:
+  build_tasmanian:
+    image: dalg24/tasmanian_stack
+    environment:
+      - NPROC=4
+    volumes:
+        - jenkins_data:${WORKSPACE}/../..
+    working_dir: $WORKSPACE
+    command: $WORKSPACE/docker/jenkins/build.sh
+volumes:
+  jenkins_data:
+    external:
+      name: $JENKINS_DATA_VOLUME
+
