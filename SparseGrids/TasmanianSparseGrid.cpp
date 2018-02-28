@@ -814,14 +814,18 @@ void TasmanianSparseGrid::getLevelLimits(int *limits) const{
     }
 }
 
-void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output){
+void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
+    if (level_limits != 0){
+        if (llimits == 0) llimits = new int[base->getNumDimensions()];
+        std::copy(level_limits, level_limits + base->getNumDimensions(), llimits);
+    }
     if (sequence != 0){
-        sequence->setAnisotropicRefinement(type, min_growth);
+        sequence->setAnisotropicRefinement(type, min_growth, output, llimits);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
             if (logstream != 0){ (*logstream) << "ERROR: setAnisotropicRefinement called for a global grid with non-nested rule" << endl; }
         }else{
-            global->setAnisotropicRefinement(type, min_growth, output);
+            global->setAnisotropicRefinement(type, min_growth, output, llimits);
         }
     }else{
         if (logstream != 0){ (*logstream) << "ERROR: setAnisotropicRefinement called for grid that is neither sequence nor Global with sequence rule" << endl; }
@@ -841,12 +845,16 @@ int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
     }
     return 0;
 }
-void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output){
+void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const int *level_limits){
+    if (level_limits != 0){
+        if (llimits == 0) llimits = new int[base->getNumDimensions()];
+        std::copy(level_limits, level_limits + base->getNumDimensions(), llimits);
+    }
     if (sequence != 0){
-        sequence->setSurplusRefinement(tolerance, output);
+        sequence->setSurplusRefinement(tolerance, output, llimits);
     }else if (global != 0){
         if (OneDimensionalMeta::isSequence(global->getRule())){
-            global->setSurplusRefinement(tolerance, output);
+            global->setSurplusRefinement(tolerance, output, llimits);
         }else{
             if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement called for a global grid with non-sequence rule" << endl; }
         }
@@ -854,11 +862,15 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output){
         if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement(double, int) called for grid that is neither sequence nor Global with sequence rule" << endl; }
     }
 }
-void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output){
+void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits){
+    if (level_limits != 0){
+        if (llimits == 0) llimits = new int[base->getNumDimensions()];
+        std::copy(level_limits, level_limits + base->getNumDimensions(), llimits);
+    }
     if (pwpoly != 0){
-        pwpoly->setSurplusRefinement(tolerance, criteria, output);
+        pwpoly->setSurplusRefinement(tolerance, criteria, output, llimits);
     }else if (wavelet != 0){
-        wavelet->setSurplusRefinement(tolerance, criteria, output);
+        wavelet->setSurplusRefinement(tolerance, criteria, output, llimits);
     }else{
         if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement(double, TypeRefinement) called for grid that is neither local polynomial nor wavelet" << endl; }
     }
