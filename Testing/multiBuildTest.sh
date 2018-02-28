@@ -799,13 +799,13 @@ fi
 ########################################################################
 # Clean up
 ########################################################################
-cd $sTempRoot
+cd $sTestRoot
 sPWD=`pwd`
-if [[ "$sPWD" == "$sTempRoot" ]] || [[ "$sPWD/" == "$sTempRoot" ]]; then
+if [[ "$sPWD" == "$sTestRoot" ]] || [[ "$sPWD/" == "$sTestRoot" ]]; then
     rm -fr *
 else
     echo "$sPWD"
-    echo "$sTempRoot"
+    echo "$sTestRoot"
     echo "ERROR: WHERE THE HELL AM I?"
     exit 1
 fi
