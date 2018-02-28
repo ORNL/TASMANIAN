@@ -1657,13 +1657,13 @@ void tsgGetConformalTransformASIN(void *grid, int truncation[]){ ((TasmanianSpar
 void tsgClearLevelLimits(void *grid){ ((TasmanianSparseGrid*) grid)->clearLevelLimits(); }
 void tsgGetLevelLimits(void *grid, int *limits){ ((TasmanianSparseGrid*) grid)->getLevelLimits(limits); }
 
-void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth, int output){
+void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth, int output, const int *level_limits){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
     #ifdef _TASMANIAN_DEBUG_
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // _TASMANIAN_DEBUG_
     if (depth_type == type_none){ depth_type = type_iptotal; }
-    ((TasmanianSparseGrid*) grid)->setAnisotropicRefinement(depth_type, min_growth, output);
+    ((TasmanianSparseGrid*) grid)->setAnisotropicRefinement(depth_type, min_growth, output, level_limits);
 }
 int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int output, int *num_coefficients){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
@@ -1695,16 +1695,16 @@ void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, in
     for(int i=0; i<num_coefficients; i++) coefficients[i] = coeff[i];
     delete[] coeff;
 }
-void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output){
-    ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, output);
+void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output, const int *level_limits){
+    ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, output, level_limits);
 }
-void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output){
+void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output, const int *level_limits){
     TypeRefinement ref_type = OneDimensionalMeta::getIOTypeRefinementString(sRefinementType);
     #ifdef _TASMANIAN_DEBUG_
     if (ref_type == refine_none){ cerr << "WARNING: incorrect refinement type: " << sRefinementType << ", defaulting to type_classic." << endl; }
     #endif // _TASMANIAN_DEBUG_
     if (ref_type == refine_none){ ref_type = refine_classic; }
-    ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, ref_type, output);
+    ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, ref_type, output, level_limits);
 }
 void tsgClearRefinement(void *grid){
     ((TasmanianSparseGrid*) grid)->clearRefinement();
