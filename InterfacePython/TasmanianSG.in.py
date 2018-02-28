@@ -1334,6 +1334,7 @@ class TasmanianSparseGrid:
 
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
+            iDimension = self.getNumDimensions()
             if (len(liLevelLimits) != iDimension):
                 raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
             pLevelLimits = (c_int*iDimension)()
@@ -1426,6 +1427,7 @@ class TasmanianSparseGrid:
 
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
+            iDimension = self.getNumDimensions()
             if (len(liLevelLimits) != iDimension):
                 raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
             pLevelLimits = (c_int*iDimension)()
