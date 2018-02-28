@@ -223,10 +223,10 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetConformalTransformASIN.argtypes = [c_void_p, POINTER(c_int)]
         self.pLibTSG.tsgClearLevelLimits.argtypes = [c_void_p]
         self.pLibTSG.tsgGetLevelLimits.argtypes = [c_void_p, POINTER(c_int)]
-        self.pLibTSG.tsgSetAnisotropicRefinement.argtypes = [c_void_p, c_char_p, c_int, c_int]
+        self.pLibTSG.tsgSetAnisotropicRefinement.argtypes = [c_void_p, c_char_p, c_int, c_int, POINTER(c_int)]
         self.pLibTSG.tsgEstimateAnisotropicCoefficientsStatic.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
-        self.pLibTSG.tsgSetGlobalSurplusRefinement.argtypes = [c_void_p, c_double, c_int]
-        self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int]
+        self.pLibTSG.tsgSetGlobalSurplusRefinement.argtypes = [c_void_p, c_double, c_int, POINTER(c_int)]
+        self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgClearRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgMergeRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgRemovePointsBySurplus.argtypes = [c_void_p, c_double, c_int]
@@ -481,7 +481,7 @@ class TasmanianSparseGrid:
         pCustomRule = None
         if (sCustomFilename):
             pCustomRule = c_char_p(sCustomFilename)
-        
+
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
             if (len(liLevelLimits) != iDimension):
@@ -552,7 +552,7 @@ class TasmanianSparseGrid:
                 pAnisoWeights = (c_int*iNumWeights)()
                 for iI in range(iNumWeights):
                     pAnisoWeights[iI] = liAnisotropicWeights[iI]
-        
+
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
             if (len(liLevelLimits) != iDimension):
@@ -604,7 +604,7 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("iOrder", "ERROR: order should be a non-negative integer")
         if (sRule not in lsTsgLocalRules):
             raise TasmanianInputError("sRule", "ERROR: invalid local polynomial rule, see TasmanianSG.lsTsgLocalRules for list of accepted sequence rules")
-        
+
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
             if (len(liLevelLimits) != iDimension):
@@ -645,7 +645,7 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("iDepth", "ERROR: depth should be a non-negative integer")
         if (iOrder not in [1, 3]):
             raise TasmanianInputError("iOrder", "ERROR: order should be either 1 or 3 (only linear and cubic wavelets are available)")
-        
+
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
             if (len(liLevelLimits) != iDimension):
@@ -709,7 +709,7 @@ class TasmanianSparseGrid:
 
         if (sys.version_info.major == 3):
             sType = bytes(sType, encoding='utf8')
-        
+
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
             if (len(liLevelLimits) != iDimension):
@@ -758,7 +758,7 @@ class TasmanianSparseGrid:
 
         if (sys.version_info.major == 3):
             sType = bytes(sType, encoding='utf8')
-        
+
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
             if (len(liLevelLimits) != iDimension):
@@ -1277,14 +1277,14 @@ class TasmanianSparseGrid:
         for iI in range(iNumDimensions):
             liTruncation[iI] = pTruncation[iI] # convert c_int to python long
         return liTruncation
-    
+
     def clearLevelLimits(self):
         '''
         clears the limits set by the last make***Grid or refine command
         if no limits are set, this has no effect
         '''
         self.pLibTSG.tsgClearLevelLimits(self.pGrid)
-    
+
     def getLevelLimits(self):
         '''
         returns the limits set by the last call to make***Grid or refine
@@ -1299,7 +1299,7 @@ class TasmanianSparseGrid:
             liLimits[iI] = pTruncation[iI] # convert c_int to python long
         return liLimits
 
-    def setAnisotropicRefinement(self, sType, iMinGrowth, iOutput):
+    def setAnisotropicRefinement(self, sType, iMinGrowth, iOutput, liLevelLimits = []):
         '''
         estimates anisotropic coefficients from the current set of
         loaded points and updates the grid with the best points
@@ -1332,9 +1332,18 @@ class TasmanianSparseGrid:
         if (sType not in lsTsgGlobalTypes):
             raise TasmanianInputError("sType", "ERROR: invalid type, see TasmanianSG.lsTsgGlobalTypes for list of accepted types")
 
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            iDimension = self.getNumDimensions()
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
+
         if (sys.version_info.major == 3):
             sType = bytes(sType, encoding='utf8')
-        self.pLibTSG.tsgSetAnisotropicRefinement(self.pGrid, c_char_p(sType), iMinGrowth, iOutput)
+        self.pLibTSG.tsgSetAnisotropicRefinement(self.pGrid, c_char_p(sType), iMinGrowth, iOutput, pLevelLimits)
 
     def estimateAnisotropicCoefficients(self, sType, iOutput):
         '''
@@ -1380,10 +1389,10 @@ class TasmanianSparseGrid:
 
         aCoeff = np.empty([iNumCoeffs], np.int32)
         self.pLibTSG.tsgEstimateAnisotropicCoefficientsStatic(self.pGrid, c_char_p(sType), iOutput, np.ctypeslib.as_ctypes(aCoeff))
-        
+
         return aCoeff
 
-    def setSurplusRefinement(self, fTolerance, iOutput, sCriteria=""):
+    def setSurplusRefinement(self, fTolerance, iOutput, sCriteria = "", liLevelLimits = []):
         '''
         using hierarchical surplusses as an error indicator, the surplus
         refinement adds points to the grid to improve accuracy
@@ -1415,16 +1424,26 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("setSurplusRefinement", "ERROR: cannot call setSurplusRefinement for a grid before any points are loaded, i.e., call loadNeededPoints first!")
         if (fTolerance < 0.0):
             raise TasmanianInputError("fTolerance", "ERROR: fTolerance must be non-negative")
+
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            iDimension = self.getNumDimensions()
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
+
         if (len(sCriteria) == 0):
             if (not self.isSequence()):
                 raise TasmanianInputError("sCriteria", "ERROR: sCriteria must be specified")
-            self.pLibTSG.tsgSetGlobalSurplusRefinement(self.pGrid, c_double(fTolerance), iOutput)
+            self.pLibTSG.tsgSetGlobalSurplusRefinement(self.pGrid, c_double(fTolerance), iOutput, pLevelLimits)
         else:
             if (self.isSequence()):
                 raise TasmanianInputError("sCriteria", "ERROR: sCriteria cannot be used for sequence grids")
             if (sys.version_info.major == 3):
                 sCriteria = bytes(sCriteria, encoding='utf8')
-            self.pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput)
+            self.pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput, pLevelLimits)
 
     def clearRefinement(self):
         '''
@@ -1561,19 +1580,19 @@ class TasmanianSparseGrid:
 
     def setHierarchicalCoefficients(self, llfCoefficients):
         '''
-        Local polynomial, Wavelet, and Sequence grids construct 
+        Local polynomial, Wavelet, and Sequence grids construct
         approximation using hierarchical coefficients based on the
         loaded values. This function does the opposite, the hierarchical
         coefficients are loaded directly and the values are computed
-        based on the coefficients. The coefficients can be computed, 
-        e.g., by solving least-squares or compressed sensing problem 
+        based on the coefficients. The coefficients can be computed,
+        e.g., by solving least-squares or compressed sensing problem
                    min || A c - f ||
         where A is a matrix returned by evaluateHierarchicalFunctions()
         or evaluateSparseHierarchicalFunctions() for a set of points
         llfX; f are the values of the target function at the llfX
         points; and c is the vector with corresponding hierarchical
         coefficients.
-        
+
         If there is a pending refinement, i.e., getNumLoaded() != 0 and
         getNumNeeded() != 0, then the refinement is discarded (since it
         was computed based on the old and now obsolete values)
@@ -1584,7 +1603,7 @@ class TasmanianSparseGrid:
                          coefficients at the corresponding point.
                          The order and leading dimension must match the
                          points obtained form getPoints(), the same
-                         order as the second dimension of 
+                         order as the second dimension of
                          evaluateHierarchicalFunctions()
         '''
         if (len(llfCoefficients.shape) != 2):
@@ -1797,7 +1816,7 @@ class TasmanianSparseGrid:
         pAxisObject: axis object from the matplotlib.pyplot package
 
         sStyle: string
-                the matplotlib.pyplot style, e.g., 
+                the matplotlib.pyplot style, e.g.,
                 'ko' will make black cirlces, 'rx' will use red crosses
 
         iMarkerSize: positive integer
@@ -1805,7 +1824,7 @@ class TasmanianSparseGrid:
         '''
         if (not bTsgPlotting):
             raise TasmanianInputError("plotPoints2D", "ERROR: could not load matplotlib.pyplot")
-        
+
         if (self.getNumDimensions() != 2):
             raise TasmanianInputError("plotPoints2D", "ERROR: cannot plot a grid with other than 2 dimensions")
 
@@ -1831,14 +1850,14 @@ class TasmanianSparseGrid:
         applicable only for grids with iDimensions == 2
 
         iOutput is the output to use for plotting
-        
+
         iNumDim0, iNumDim1: positive integers
                the points for the plot are selected on a dense grid with
                number of points iNumDim0 and iNumDim1 in dimensions
                0 and 1 respectively
-        
+
         pAxisObject: axis object from the matplotlib.pyplot package
-        
+
         sCmap: string indicating the map to use, e.g., "jet" or "heat"
         '''
         if (not bTsgPlotting):
@@ -1853,7 +1872,7 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("iNumDim0", "ERROR: the number of points should be at least 1")
         if (iNumDim1 < 1):
             raise TasmanianInputError("iNumDim1", "ERROR: the number of points should be at least 1")
-        
+
         aPoints = self.getPoints()
 
         fXmin = min(aPoints[:,0])

@@ -107,9 +107,9 @@ class TestTasmanian(unittest.TestCase):
         pA = gridA.getDomainTransform()
         pB = gridB.getDomainTransform()
         np.testing.assert_equal(pA, pB, "Domain test no equal", True)
-        
+
         self.assertEqual(gridA.isSetConformalTransformASIN(), gridB.isSetConformalTransformASIN(), "error in isSetConformalTransformASIN()")
-        
+
         pA = gridA.getLevelLimits()
         pB = gridB.getLevelLimits()
         np.testing.assert_equal(pA, pB, "Level limit test no equal", True)
@@ -189,7 +189,7 @@ class TestTasmanian(unittest.TestCase):
             gridA.write("testSave", bUseBinaryFormat = True)
             gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
-            
+
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
@@ -479,10 +479,15 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeGlobalGrid(2, 0, 2, 'level', 'clenshaw-curtis'); grid.setAnisotropicRefinement('iptotal', 10, 1);", "setAnisotropicRefinement"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'fejer2'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', -2, 1);", "iMinGrowth"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', 10, -1);", "iOutput"],
+                   ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', 10, 0);", "notError"],
+                   ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', 10, 0, [2, 3]);", "notError"],
+                   ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', 10, 0, [2, 3, 3]);", "liLevelLimits"],
                    ["grid.makeSequenceGrid(2, 1, 3, 'iptotal', 'leja'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', 10, -1);", "notError"],
                    ["grid.makeSequenceGrid(2, 1, 3, 'iptotal', 'leja'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', 10, -2);", "iOutput"],
                    ["grid.makeSequenceGrid(2, 1, 3, 'iptotal', 'leja'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', 10, 5);", "iOutput"],
                    ["grid.makeSequenceGrid(2, 1, 3, 'iptotal', 'leja'); self.loadExpN2(grid); grid.setAnisotropicRefinement('wrong', 10, 0);", "sType"],
+                   ["grid.makeSequenceGrid(2, 1, 3, 'iptotal', 'leja'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', 10, -1, [3, 4]);", "notError"],
+                   ["grid.makeSequenceGrid(2, 1, 3, 'iptotal', 'leja'); self.loadExpN2(grid); grid.setAnisotropicRefinement('iptotal', 10, -1, [3, 4, 5]);", "liLevelLimits"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'rleja'); grid.estimateAnisotropicCoefficients('iptotal', 1);", "estimateAnisotropicCoefficients"],
                    ["grid.makeGlobalGrid(2, 0, 2, 'level', 'clenshaw-curtis'); grid.estimateAnisotropicCoefficients('iptotal', 1);", "estimateAnisotropicCoefficients"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); self.loadExpN2(grid); grid.estimateAnisotropicCoefficients('iptotal', -1);", "iOutput"],
@@ -496,8 +501,12 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); self.loadExpN2(grid); grid.setSurplusRefinement(-1.E-4, 0, 'classic');", "fTolerance"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic');", "sCriteria"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0);", "notError"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, '', [2, 3, 4]);", "liLevelLimits"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, '', [2, 3]);", "notError"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0);", "sCriteria"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic');", "notError"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic', [2, 3, 4]);", "liLevelLimits"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic', [2, 3]);", "notError"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.removePointsBySurplus(1.E-4, 0);", "removePointsBySurplus"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(-1.E-4, 0);", "fTolerance"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, -2);", "iOutput"],
@@ -810,7 +819,7 @@ class TestTasmanian(unittest.TestCase):
         grid.clearConformalTransform()
         aA = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, -0.707106781186548], [0.0, 0.0, 0.707106781186548], [0.0, -0.707106781186548, 0.0], [0.0, 0.707106781186548, 0.0], [-0.707106781186548, 0.0, 0.0], [0.707106781186548, 0.0, 0.0]])
         np.testing.assert_almost_equal(aA, grid.getPoints(), 14, "Original equal", True)
-        
+
         # Level Limits
         grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis', liLevelLimits = [1, 4])
         aPoints = grid.getPoints()
@@ -818,7 +827,13 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 1.0 / np.sqrt(2.0)) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - B')
         self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] - 1.0 / np.sqrt(2.0)) < 0.001, 1, 0)), 1, 'did not properly limit level, dim 1 - A')
         self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] + 1.0 / np.sqrt(2.0)) < 0.001, 1, 0)), 1, 'did not properly limit level, dim 1 - B')
-        
+        self.loadExpN2(grid)
+        grid.setAnisotropicRefinement('iptotal', 20, 0, [1, 4])
+        self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')
+        aPoints = grid.getNeededPoints()
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] - 1.0 / np.sqrt(2.0)) < 0.001, 1, 0)), 0, 'did not properly limit level on refine, dim 0 - A')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 1.0 / np.sqrt(2.0)) < 0.001, 1, 0)), 0, 'did not properly limit level on refine, dim 0 - B')
+
         grid.makeSequenceGrid(3, 1, 3, 'level', 'leja', liLevelLimits = [3, 2, 1])
         aPoints = grid.getPoints()
         self.assertTrue((np.sum(np.where(np.abs(aPoints[:,0]      ) < 0.001, 1, 0)) > 0), 'did not properly limit level, dim 0 - A')
@@ -833,7 +848,28 @@ class TestTasmanian(unittest.TestCase):
         self.assertTrue((np.sum(np.where(np.abs(aPoints[:,2] - 1.0) < 0.001, 1, 0)) > 0), 'did not properly limit level, dim 2 - B')
         self.assertTrue((np.sum(np.where(np.abs(aPoints[:,2] + 1.0) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 2 - C')
         self.assertTrue((np.sum(np.where(np.abs(aPoints[:,2] - 1.0/np.sqrt(3.0)) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 2 - D')
-        
+        self.loadExpN2(grid)
+        grid.setAnisotropicRefinement('iptotal', 30, 0)
+        self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')
+        aPoints = grid.getNeededPoints()
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,1] - 1.0/np.sqrt(3.0)) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 1 - D')
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,2] + 1.0) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 2 - C')
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,2] - 1.0/np.sqrt(3.0)) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 2 - D')
+        grid.clearRefinement()
+        grid.setAnisotropicRefinement('iptotal', 30, 0, [3, 2, 2])
+        self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')
+        aPoints = grid.getNeededPoints()
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,1] - 1.0/np.sqrt(3.0)) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 1 - D')
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,2] + 1.0) < 0.001, 1, 0)) > 0), 'did not properly limit level, dim 2 - C')
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,2] - 1.0/np.sqrt(3.0)) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 2 - D')
+        grid.clearRefinement()
+        grid.setSurplusRefinement(1.E-8, 0, '', [3, 2, 1])
+        self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')
+        aPoints = grid.getNeededPoints()
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,1] - 1.0/np.sqrt(3.0)) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 1 - D')
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,2] + 1.0) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 2 - C')
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,2] - 1.0/np.sqrt(3.0)) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 2 - D')
+
         # check that nodes from level 2 (+-0.5) and 3 (+-0.25, +-0.75) appear only in the proper dimension
         grid.makeLocalPolynomialGrid(3, 1, 3, 1, 'localp', [1, 2, 3])
         aPoints = grid.getPoints()
@@ -847,7 +883,34 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] - 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - B')
         self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] + 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - C')
         self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] + 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - D')
-        
+        self.loadExpN2(grid)
+        grid.setSurplusRefinement(1.E-8, 0, 'classic')
+        self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')
+        aPoints = grid.getNeededPoints()
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] - 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - A')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] - 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - B')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - C')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - D')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] - 0.5) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - E')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 0.5) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - F')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] - 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - A')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] - 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - B')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] + 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - C')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] + 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - D')
+        grid.clearRefinement()
+        grid.setSurplusRefinement(1.E-8, 0, 'classic', [2, 2, 3])
+        aPoints = grid.getNeededPoints()
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] - 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - A')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] - 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - B')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - C')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,0] + 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 0 - D')
+        self.assertTrue(np.sum(np.where(np.abs(aPoints[:,0] - 0.5) < 0.001, 1, 0)) > 0, 'did not properly limit level, dim 0 - E')
+        self.assertTrue(np.sum(np.where(np.abs(aPoints[:,0] + 0.5) < 0.001, 1, 0)) > 0, 'did not properly limit level, dim 0 - F')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] - 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - A')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] - 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - B')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] + 0.25) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - C')
+        self.assertEqual(np.sum(np.where(np.abs(aPoints[:,1] + 0.75) < 0.001, 1, 0)), 0, 'did not properly limit level, dim 1 - D')
+
         grid.makeWaveletGrid(2, 1, 3, 1, [0, 2])
         aPoints = grid.getPoints()
         self.assertTrue((np.sum(np.where(np.abs(aPoints[:,0]      ) < 0.001, 1, 0)) > 0), 'did not properly limit level, dim 0 - A')
@@ -866,11 +929,23 @@ class TestTasmanian(unittest.TestCase):
         self.assertTrue((np.sum(np.where(np.abs(aPoints[:,1] + 0.75) < 0.001, 1, 0)) > 0), 'did not properly limit level, dim 1 - I')
         self.assertTrue((np.sum(np.where(np.abs(aPoints[:,1] - 0.125) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 1 - J')
         self.assertTrue((np.sum(np.where(np.abs(aPoints[:,1] + 0.125) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 1 - K')
-        
+        self.loadExpN2(grid)
+        grid.setSurplusRefinement(1.E-8, 0, 'classic')
+        self.assertTrue((grid.getNumNeeded() == 0), 'added points even though it should not have');
+        grid.setSurplusRefinement(1.E-8, 0, 'classic', [1, 2])
+        aPoints = grid.getNeededPoints()
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,0] - 0.5) < 0.001, 1, 0)) > 0), 'did not properly limit level, dim 0 - D')
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,0] + 0.5) < 0.001, 1, 0)) > 0), 'did not properly limit level, dim 0 - E')
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,1] - 0.125) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 1 - J')
+        self.assertTrue((np.sum(np.where(np.abs(aPoints[:,1] + 0.125) < 0.001, 1, 0)) == 0), 'did not properly limit level, dim 1 - K')
+
+
+
+
         grid.makeLocalPolynomialGrid(3, 1, 3, 1, 'localp', [1, 2, 3])
         aLimits = grid.getLevelLimits()
         np.testing.assert_almost_equal(aLimits, np.array([1, 2, 3]), 14, "Could not read level limits", True)
-        
+
         grid.clearLevelLimits()
         aLimits = grid.getLevelLimits()
         np.testing.assert_almost_equal(aLimits, np.array([-1, -1, -1]), 14, "Could not read level limits", True)
