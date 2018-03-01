@@ -28,9 +28,10 @@ function [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew, iOut, vLimit
 %               clenshaw-curtis rule, [1, 99] forces the grid to have
 %               at most 3 possible values in the first variable and
 %               ~2^99 (practicallyt infinite) number in the second
-%               direction. vLimitLevels works in conjunction with
-%               iDepth and sType, the points added to the grid will
-%               obey both bounds
+%               direction. vLimitLevels overwrites iMinNew, if using
+%               vLimitLevels the number of new points may be less than
+%               iMinNew, increase iMinNew until a desired number of
+%               points is selected
 %
 % OUTPUT:
 %
