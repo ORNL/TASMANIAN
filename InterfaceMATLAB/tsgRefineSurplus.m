@@ -29,12 +29,10 @@ function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOu
 % vLimitLevels: (optional vector of integers of size iDim)
 %               limit the level in each direction, no points beyond the
 %               specified limit will be used, e.g., in 2D using
-%               clenshaw-curtis rule, [1, 99] forces the grid to have
+%               localp rule, [1, 99] forces the grid to have
 %               at most 3 possible values in the first variable and
 %               ~2^99 (practicallyt infinite) number in the second
-%               direction. vLimitLevels works in conjunction with
-%               iDepth and sType, the points added to the grid will
-%               obey both bounds
+%               direction.
 %
 % OUTPUT:
 %
@@ -43,7 +41,7 @@ function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOu
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
 
 sCommand = [sTasGrid,' -refinesurp'];
 
