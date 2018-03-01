@@ -28,22 +28,7 @@
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
 PROGRAM TasmanianSGExample
-  USE TasmanianSG, ONLY: tsgInitialize, tsgFinalize, tsgNewGridID, tsgFreeGridID, &
-       tsgGetVersionMajor, tsgGetVersionMinor, tsgGetLicense, &
-       tsgMakeGlobalGrid, tsgMakeSequenceGrid, tsgMakeLocalPolynomialGrid, tsgMakeWaveletGrid, &
-       tsgUpdateGlobalGrid, tsgUpdateSequenceGrid, tsgRead, tsgWrite, &
-       tsgGetAlpha, tsgGetBeta, tsgGetOrder, tsgGetNumDimensions, tsgGetNumOutputs, tsgGetRule, &
-       tsgGetNumLoaded, tsgGetNumNeeded, tsgGetNumPoints, &
-       tsgGetLoadedPoints, tsgGetNeededPoints, tsgGetPoints, &
-       tsgGetLoadedPointsStatic, tsgGetNeededPointsStatic, tsgGetPointsStatic, &
-       tsgLoadNeededPoints, tsgEvaluate, tsgEvaluateFast, tsgEvaluateBatch, tsgIntegrate, &
-       tsgGetQuadratureWeights, tsgGetQuadratureWeightsStatic, &
-       tsgGetInterpolationWeights, tsgGetInterpolationWeightsStatic, &
-       tsgSetDomainTransform, tsgIsSetDomainTransfrom, tsgClearDomainTransform, tsgGetDomainTransform, &
-       tsgSetAnisotropicRefinement, tsgSetGlobalSurplusRefinement, tsgSetLocalSurplusRefinement, tsgClearRefinement, &
-       tsgSetConformalTransformASIN, tsgIsSetConformalTransformASIN, &
-       tsgClearConformalTransform, tsgGetConformalTransformASIN, &
-       tsgPrintStats
+  USE TasmanianSG
 IMPLICIT NONE
   INTEGER :: gridID, dims, outs, level
   INTEGER :: gridID1, gridID2, gridID3, N1, N2, N3
@@ -130,9 +115,7 @@ IMPLICIT NONE
 ! before you use a grid, you must ask for a new valid grid ID
   gridID = tsgNewGridID()
   
-! clenshaw-curtis = 1, type_level = 1
-  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, 1, 1)
-  
+  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, tsg_level, tsg_clenshaw_curtis)  
   points => tsgGetPoints(gridID)
   weights => tsgGetQuadratureWeights(gridID)
   
@@ -155,7 +138,7 @@ IMPLICIT NONE
   
   level = 7
 ! no need to ask for a new ID when remaking an existing grid
-  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, 1, 1)
+  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, tsg_level, tsg_clenshaw_curtis)
   
 ! do not forget to release the memory associated with points and weights
   DEALLOCATE(points)
@@ -209,7 +192,7 @@ IMPLICIT NONE
   gridID = tsgNewGridID()
   
 ! gauss-patterson = 7, type_qptotal = 5
-  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, 5, 7)
+  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, tsg_qptotal, tsg_gauss_patterson)
   CALL tsgSetDomainTransform(gridID, transformA, transformB)
   
   points => tsgGetPoints(gridID)
@@ -233,7 +216,7 @@ IMPLICIT NONE
   
   level = 40
 ! no need to ask for a new ID when remaking an existing grid
-  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, 5, 7)
+  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, tsg_qptotal, tsg_gauss_patterson)
   CALL tsgSetDomainTransform(gridID, transformA, transformB)
   
 ! do not forget to release the memory associated with points and weights
@@ -280,13 +263,11 @@ IMPLICIT NONE
   WRITE(*,*) " precision    points     error    points     error    points     error"
   
   DO level = 9, 30, 4
-    ! clenshaw-curtis = 1, gauss-legendre = 5, gauss-patterson = 7
-    ! type_qptotal = 5
-    CALL tsgMakeGlobalGrid(gridID1, dims, 0, level, 5, 1)
+    CALL tsgMakeGlobalGrid(gridID1, dims, 0, level, tsg_qptotal, tsg_clenshaw_curtis)
     CALL tsgSetDomainTransform(gridID1, transformA, transformB)
-    CALL tsgMakeGlobalGrid(gridID2, dims, 0, level, 5, 5)
+    CALL tsgMakeGlobalGrid(gridID2, dims, 0, level, tsg_qptotal, tsg_gauss_legendre)
     CALL tsgSetDomainTransform(gridID2, transformA, transformB)
-    CALL tsgMakeGlobalGrid(gridID3, dims, 0, level, 5, 7)
+    CALL tsgMakeGlobalGrid(gridID3, dims, 0, level, tsg_qptotal, tsg_gauss_patterson)
     CALL tsgSetDomainTransform(gridID3, transformA, transformB)
     
     points => tsgGetPoints(gridID1)
@@ -361,8 +342,7 @@ IMPLICIT NONE
   ! desired value
   exact = exp(-desired_x(1)**2) * cos(desired_x(2))
   
-  ! iptotal = 3, clenshaw-curtis = 1
-  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, 3, 1)
+  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
   
   N = tsgGetNumNeeded(gridID)
   points => tsgGetNeededPoints(gridID)
@@ -384,15 +364,14 @@ IMPLICIT NONE
   
   WRITE(*,"(A,I4)")   "  using polynomials of total degree:  ", level
   WRITE(*,"(A,I4,A)") "      the grid has:                   ", N, " points"
-  WRITE(*,"(A,E25.16)") "      interpolant at (0.3,0.7):    ", integ
+  WRITE(*,"(A,E25.16)") "      interpolant at (0.3,0.7):    ", res(1)
   WRITE(*,"(A,E25.16)") "      error:                       ", E
   WRITE(*,*)
   
   ! do the same with level = 12
   level = 12
   
-  ! iptotal = 3, clenshaw-curtis = 1
-  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, 3, 1)
+  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
   
   N = tsgGetNumNeeded(gridID)
   points => tsgGetNeededPoints(gridID)
@@ -410,13 +389,13 @@ IMPLICIT NONE
   
   CALL tsgEvaluate(gridID, desired_x, res)
   E = abs(res(1) - exact)
-  DEALLOCATE(res)
   
   WRITE(*,"(A,I4)")   "  using polynomials of total degree:  ", level
   WRITE(*,"(A,I4,A)") "      the grid has:                   ", N, " points"
-  WRITE(*,"(A,E25.16)") "      interpolant at (0.3,0.7):    ", integ
+  WRITE(*,"(A,E25.16)") "      interpolant at (0.3,0.7):    ", res(1)
   WRITE(*,"(A,E25.16)") "      error:                       ", E
   WRITE(*,*)
+  DEALLOCATE(res)
 
 ! ==================================================================== !
 ! Some examples take long time, fast test will exit here
@@ -442,9 +421,8 @@ IMPLICIT NONE
   outs = 1
   level = 15
   
-  ! 8: rule leja,    1: type level
   CALL cpu_time(cpuStart)
-  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, 1, 8)
+  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, tsg_level, tsg_leja)
   CALL cpu_time(cpuEnd)
   stages(1,1) = cpuEnd - cpuStart
   
@@ -477,9 +455,8 @@ IMPLICIT NONE
   CALL cpu_time(cpuEnd)
   stages(1,3) = cpuEnd - cpuStart
   
-  ! 8: rule leja,    1: type level
   CALL cpu_time(cpuStart)
-  CALL tsgMakeSequenceGrid(gridID, dims, outs, level, 1, 8)
+  CALL tsgMakeSequenceGrid(gridID, dims, outs, level, tsg_level, tsg_leja)
   CALL cpu_time(cpuEnd)
   stages(2,1) = cpuEnd - cpuStart
   
@@ -522,10 +499,10 @@ IMPLICIT NONE
   
   dims = 2
   outs = 1
-  ! 8: rule leja,    1: type level
-  CALL tsgMakeGlobalGrid(gridID1, dims, outs, 3, 1, 8)
-  CALL tsgMakeGlobalGrid(gridID2, dims, outs, 3, 1, 8)
-  CALL tsgMakeGlobalGrid(gridID3, dims, outs, 3, 1, 8)
+
+  CALL tsgMakeGlobalGrid(gridID1, dims, outs, 3, tsg_iptotal, tsg_leja)
+  CALL tsgMakeGlobalGrid(gridID2, dims, outs, 3, tsg_iptotal, tsg_leja)
+  CALL tsgMakeGlobalGrid(gridID3, dims, outs, 3, tsg_iptotal, tsg_leja)
 
   N = tsgGetNumNeeded(gridID1)
   points => tsgGetNeededPoints(gridID1)
@@ -551,7 +528,7 @@ IMPLICIT NONE
   
   ! iptotal: 3, ipcurved: 4
   DO j = 1, 10
-    CALL tsgSetAnisotropicRefinement(gridID1, 3, 10, 0)
+    CALL tsgSetAnisotropicRefinement(gridID1, tsg_iptotal, 10, 0)
   
     N = tsgGetNumNeeded(gridID1)
     points => tsgGetNeededPoints(gridID1)
@@ -571,7 +548,7 @@ IMPLICIT NONE
       ENDIF
     END DO
     
-    CALL tsgSetAnisotropicRefinement(gridID2, 4, 10, 0)
+    CALL tsgSetAnisotropicRefinement(gridID2, tsg_ipcurved, 10, 0)
   
     N = tsgGetNumNeeded(gridID2)
     points => tsgGetNeededPoints(gridID2)
@@ -634,15 +611,14 @@ IMPLICIT NONE
   WRITE(*,*) "       the error is estimated as the maximum from 1000 random points"
   WRITE(*,*)
   
-  ! localp: 37, semi-localp: 39
   gridID1 = tsgNewGridID()
   gridID2 = tsgNewGridID()
   
   dims = 2
   outs = 1
   
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 7, 2, 37)
-  CALL tsgMakeLocalPolynomialGrid(gridID2, dims, outs, 7, 2, 39)
+  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 7, 2, tsg_localp)
+  CALL tsgMakeLocalPolynomialGrid(gridID2, dims, outs, 7, 2, tsg_semi_localp)
   
   N = tsgGetNumNeeded(gridID1)
   points => tsgGetNeededPoints(gridID1)
@@ -702,12 +678,11 @@ IMPLICIT NONE
   WRITE(*,*) "       the error is estimated as the maximum from 1000 random points"
   WRITE(*,*)
   
-  ! localp: 37, localp-zero: 38
   dims = 2
   outs = 1
   
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 7, 2, 37)
-  CALL tsgMakeLocalPolynomialGrid(gridID2, dims, outs, 6, 2, 38)
+  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 7, 2, tsg_localp)
+  CALL tsgMakeLocalPolynomialGrid(gridID2, dims, outs, 6, 2, tsg_localp_zero)
   
   N = tsgGetNumNeeded(gridID1)
   points => tsgGetNeededPoints(gridID1)
@@ -767,9 +742,8 @@ IMPLICIT NONE
   dims = 2
   outs = 1
   
-  ! localp: 37,  classic: 1, FDS: 4
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 2, -1, 37)
-  CALL tsgMakeLocalPolynomialGrid(gridID2, dims, outs, 2, -1, 37)
+  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 2, -1, tsg_localp)
+  CALL tsgMakeLocalPolynomialGrid(gridID2, dims, outs, 2, -1, tsg_localp)
   
   N = tsgGetNumNeeded(gridID1)
   points => tsgGetNeededPoints(gridID1)
@@ -793,7 +767,7 @@ IMPLICIT NONE
   
   DO j = 1, 7
     ! 1 below corresponds to classic refinement
-    CALL tsgSetLocalSurplusRefinement(gridID1, 1.D-5, 1)
+    CALL tsgSetLocalSurplusRefinement(gridID1, 1.D-5, tsg_classic)
     
     N = tsgGetNumNeeded(gridID1)
     points => tsgGetNeededPoints(gridID1)
@@ -813,7 +787,7 @@ IMPLICIT NONE
       ENDIF
     END DO
     
-    CALL tsgSetLocalSurplusRefinement(gridID2, 1.D-5, 4)
+    CALL tsgSetLocalSurplusRefinement(gridID2, 1.D-5, tsg_fds)
   
     N = tsgGetNumNeeded(gridID2)
     points => tsgGetNeededPoints(gridID2)
@@ -848,8 +822,7 @@ IMPLICIT NONE
   dims = 2
   outs = 1
   
-  ! localp: 37
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 3, 1, 37)
+  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 3, 1, tsg_localp)
   CALL tsgMakeWaveletGrid(gridID2, dims, outs, 1, 1)
   
   N = tsgGetNumNeeded(gridID1)
@@ -882,7 +855,7 @@ IMPLICIT NONE
   WRITE(*,*) "iteration  points     error     points     error"
   
   DO j = 1, 8
-    CALL tsgSetLocalSurplusRefinement(gridID1, 1.D-5, 4)
+    CALL tsgSetLocalSurplusRefinement(gridID1, 1.D-5, tsg_fds)
   
     N = tsgGetNumNeeded(gridID1)
     points => tsgGetNeededPoints(gridID1)
@@ -902,7 +875,7 @@ IMPLICIT NONE
       ENDIF
     END DO
     
-    CALL tsgSetLocalSurplusRefinement(gridID2, 1.D-5, 4)
+    CALL tsgSetLocalSurplusRefinement(gridID2, 1.D-5, tsg_fds)
   
     N = tsgGetNumNeeded(gridID2)
     points => tsgGetNeededPoints(gridID2)
@@ -959,8 +932,7 @@ IMPLICIT NONE
   
   gridID1 = tsgNewGridID()
   
-  ! iptotal: 3, clenshaw-curtis: 1
-  CALL tsgMakeGlobalGrid(gridID1, dims, outs, level, 3, 1)
+  CALL tsgMakeGlobalGrid(gridID1, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
   
   N = tsgGetNumNeeded(gridID1)
   points => tsgGetNeededPoints(gridID1)
@@ -983,8 +955,7 @@ IMPLICIT NONE
   END DO
   N1 = tsgGetNumPoints(gridID1)
   
-  ! iptotal: 3, clenshaw-curtis: 1
-  CALL tsgMakeGlobalGrid(gridID1, dims, outs, level, 3, 1)
+  CALL tsgMakeGlobalGrid(gridID1, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
   CALL tsgSetConformalTransformASIN(gridID1, conformal)
   
   N = tsgGetNumNeeded(gridID1)
@@ -1007,8 +978,7 @@ IMPLICIT NONE
     ENDIF
   END DO
   
-  ! localp: 37
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, level-4, 2, 37)
+  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, level-4, 2, tsg_localp)
   
   N = tsgGetNumNeeded(gridID1)
   points => tsgGetNeededPoints(gridID1)
@@ -1031,8 +1001,7 @@ IMPLICIT NONE
   END DO
   N2 = tsgGetNumPoints(gridID1)
   
-  ! localp: 37
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, level-4, 2, 37)
+  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, level-4, 2, tsg_localp)
   CALL tsgSetConformalTransformASIN(gridID1, conformal)
   
   N = tsgGetNumNeeded(gridID1)

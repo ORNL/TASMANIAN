@@ -63,7 +63,7 @@ int main(int argc, const char**){
     int dim = 2;
     int level = 6;
 
-    grid.makeGlobalGrid(dim, 0, level, TasGrid::type_level,TasGrid::rule_clenshawcurtis);
+    grid.makeGlobalGrid(dim, 0, level, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
     double *points = grid.getPoints();
     double *weights = grid.getQuadratureWeights();
     int num_points = grid.getNumPoints();
@@ -86,7 +86,7 @@ int main(int argc, const char**){
 
     level = 7;
 
-    grid.makeGlobalGrid(dim, 0, level, TasGrid::type_level,TasGrid::rule_clenshawcurtis);
+    grid.makeGlobalGrid(dim, 0, level, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
     points = grid.getPoints();
     weights = grid.getQuadratureWeights();
     num_points = grid.getNumPoints();
