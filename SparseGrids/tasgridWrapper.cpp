@@ -236,10 +236,13 @@ bool TasgridWrapper::checkSane() const{
         }
     }else if (command == command_refine){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+        // additional checks in refineGrid() since checks depend on the type of grid
     }else if (command == command_refine_aniso){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+        // additional checks in refineGrid() since checks depend on the type of grid
     }else if (command == command_refine_surp){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+        // additional checks in refineGrid() since checks depend on the type of grid
     }else if ((command == command_refine_clear) || (command == command_refine_merge)){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
     }else if (command == command_getrefcoeff){
@@ -464,8 +467,10 @@ bool TasgridWrapper::loadValues(){
     double *vals = 0;
     readMatrix(valsfilename, rows, cols, vals);
     if (rows != grid->getNumNeeded()){
-        cerr << "ERROR: grid is awaiting " << grid->getNumNeeded() << " new values, but " << valsfilename << " specifies " << rows << endl;
-        return false;
+        if (rows != grid->getNumLoaded()){
+            cerr << "ERROR: grid is awaiting " << grid->getNumNeeded() << " new values, but " << valsfilename << " specifies " << rows << endl;
+            return false;
+        }
     }
     if (cols != grid->getNumOutputs()){
         cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
@@ -1085,7 +1090,13 @@ bool TasgridWrapper::executeCommand(){
         if (cancelRefine()){
             writeGrid();
         }else{
-            cerr << "ERROR: could not clear th refinement" << endl;
+            cerr << "ERROR: could not clear the refinement" << endl;
+        }
+    }else if (command == command_refine_merge){
+        if (mergeRefine()){
+            writeGrid();
+        }else{
+            cerr << "ERROR: could not merge the refinement" << endl;
         }
     }else if (command == command_getpoly){
         if (!getPoly()){

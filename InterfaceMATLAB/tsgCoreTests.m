@@ -741,16 +741,31 @@ tsgDeleteGrid(lGrid);
 [lGridB, p] = tsgMakeGlobal('_tsgcoretests_refB', 2, 1, 'fejer2', 'level', 4);
 v = [exp(-p(:,1).^2 -p(:,2).^2)];
 tsgLoadValues(lGridA, v);
-[c] = tsgGetHCoefficients(lGridA);
-if (norm(c - v) > 1.E-11)
-    error('Mismatch in tsgMergeRefine(): case 1, tsgGetHCoefficients()');
+tsgLoadValues(lGridB, v);
+tsgRefineAnisotropic(lGridA, 'iptotal', 10, 0);
+tsgRefineAnisotropic(lGridB, 'iptotal', 10, 0);
+[p] = tsgGetNeededPoints(lGridA);
+v = [exp(-p(:,1).^2 -p(:,2).^2)];
+tsgLoadValues(lGridA, v);
+tsgMergeRefine(lGridB)
+[p1] = tsgGetPoints(lGridA);
+[p2] = tsgGetPoints(lGridB);
+if (norm(p1 - p2) > 1.E-11)
+    error('Mismatch in tsgMergeRefine(): case 2, tsgGetPoints()')
 end
-tsgLoadHCoefficients(lGridB, c);
-p = [-1.0 + 2.0 * rand(1000,2)];
+p = [-1.0 + 2.0 * rand(20, 2)];
+[vB] = tsgEvaluate(lGridB, p);
+if (norm(vB) > 1.E-11)
+    error('Mismatch in tsgMergeRefine(): case 3, tsgEvaluate() not zero');
+end
+[p] = tsgGetPoints(lGridB);
+v = [exp(-p(:,1).^2 -p(:,2).^2)];
+tsgLoadValues(lGridB, v);
+p = [-1.0 + 2.0 * rand(30, 2)];
 [vA] = tsgEvaluate(lGridA, p);
 [vB] = tsgEvaluate(lGridB, p);
 if (norm(vA - vB) > 1.E-11)
-    error('Mismatch in tsgMergeRefine(): case 1, tsgLoadHCoefficients()');
+    error('Mismatch in tsgMergeRefine(): case 3, tsgEvaluate() not equal');
 end
 tsgDeleteGrid(lGridA);
 tsgDeleteGrid(lGridB);
