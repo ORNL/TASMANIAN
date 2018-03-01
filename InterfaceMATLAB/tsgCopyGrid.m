@@ -23,7 +23,7 @@ function  [lNewGrid] = tsgCopyGrid(lOldGrid, sNewGridName)
 
 lNewGrid = lOldGrid;
 lNewGrid.sName = sNewGridName;
-[sFileGNew, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lNewGrid.sName);
+[sFileGNew, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lNewGrid.sName);
 
 
 sCommand = ['cp ',sFileG,' ',sFileGNew];

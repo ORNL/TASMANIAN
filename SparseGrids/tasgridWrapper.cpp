@@ -621,7 +621,7 @@ bool TasgridWrapper::refineGrid(){
         cerr << "ERROR: cannot refine a grid with no loaded values!" << endl;
         return false;
     }
-    int* llimits = readLevelLimits(num_dimensions);
+    int* llimits = readLevelLimits(grid->getNumDimensions());
     TypeCommand effective_command = command;
     if (command == command_refine){
         if (grid->isGlobal() || grid->isSequence()){
@@ -922,12 +922,12 @@ int* TasgridWrapper::readLevelLimits(int num_weights) const{
     double* mat;
     readMatrix(levellimitfilename, rows, cols, mat);
     if (rows != 1){
-        cerr << "ERROR: anisotropy file must contain only one row" << endl;
+        cerr << "ERROR: level limits file must contain only one row" << endl;
         delete[] mat;
         exit(1);
     }
     if (cols != num_weights){
-        cerr << "ERROR: anisotropy file has wrong number of entries, " << num_weights << " expected " << cols << " found." << endl;
+        cerr << "ERROR: level limits file has wrong number of entries, " << num_weights << " expected " << cols << " found." << endl;
         delete[] mat;
         exit(1);
     }
