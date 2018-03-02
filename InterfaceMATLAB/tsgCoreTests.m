@@ -1,5 +1,8 @@
 function tsgCoreTests()
 
+# Indexes and polynomial spaces are experimental
+# ListGridsByName(), Summary(), and PlotPoins2D() require human
+
 disp(['']);
 disp(['Testing TASMANIAN MATLAB interface']);
 [sFiles, sTasGrid] = tsgGetPaths();
@@ -221,6 +224,7 @@ if (norm(p1 - p2) > 1.E-11)
     error('Mismatch in tsgMakeGlobal: level limits');
 end
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgDeleteGrid()                              %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -233,6 +237,18 @@ if (exist([sFiles,'_tsgcoretests_lgrid_FileG'], 'file'))
     error('Mismatch in tsgDeleteGrid: did not delete the file');
 end
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgCopyGrid()                                %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[lGridA, p] = tsgMakeGlobal('_tsgcoretests_lgridA', 2, 1, 'clenshaw-curtis', 'iptotal', 3, [], [], [], [], 'asin', [4, 4]);
+[lGridB] = tsgCopyGrid(lGridA, '_tsgcoretests_lgridB');
+tsgDeleteGrid(lGridA);
+[p2] = tsgGetPoints(lGridB);
+if (norm(p - p2) > 1.E-11)
+    error('Mismatch in tsgCopyGrid: did not delete the file');
+end
+tsgDeleteGrid(lGridB);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgMakeSequence()                            %%%
@@ -684,6 +700,37 @@ disp(['Core I/O and evaluate:    PASS']);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgGetInterpolationWeights()                 %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[lGridA, p] = tsgMakeGlobal('_tsgcoretests_IntA', 2, 1, 'fejer2', 'level', 4);
+[lGridB, p] = tsgMakeGlobal('_tsgcoretests_IntB', 2, 1, 'fejer2', 'level', 4);
+v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
+tsgLoadValues(lGridA, v);
+pnts = [1.0 + rand(32, 2)];
+[tres] = tsgEvaluate(lGridA, pnts);
+[A] = tsgGetInterpolationWeights(lGridB, pnts);
+res = A * v;
+if (norm(tres - res) > 1.E-11)
+    error(['Mismatch in tsgGetInterpolationWeights: global case']);
+end
+
+[lGridA, p] = tsgMakeSequence('_tsgcoretests_IntA', 2, 1, 'min-delta', 'level', 7);
+[lGridB, p] = tsgMakeSequence('_tsgcoretests_IntB', 2, 1, 'min-delta', 'level', 7);
+v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
+tsgLoadValues(lGridA, v);
+pnts = [1.0 + rand(32, 2)];
+[tres] = tsgEvaluate(lGridA, pnts);
+[A] = tsgGetInterpolationWeights(lGridB, pnts);
+res = A * v;
+if (norm(tres - res) > 1.E-11)
+    error(['Mismatch in tsgGetInterpolationWeights: global case']);
+end
+
+tsgDeleteGrid(lGridA);
+tsgDeleteGrid(lGridB);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgEstimateAnisotropicCoefficients()         %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [lGrid, p] = tsgMakeGlobal('_tsgcoretests_ans', 2, 1, 'rleja', 'level', 9);
@@ -706,10 +753,57 @@ tsgDeleteGrid(lGrid);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgRefineAnisotropic()                       %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[lGrid, p] = tsgMakeSequence('_tsgcoretests_refA', 3, 1, 'leja', 'level', 3, [], [], [], [], [3, 2, 1]);
+if ((sum((abs(p(:,1) - sqrt(1.0/3.0)) < 0.0001)) == 0) || (sum((abs(p(:,2) - sqrt(1.0/3.0)) < 0.0001)) > 0) || (sum((abs(p(:,3) - sqrt(1.0/3.0)) < 0.0001)) > 0))
+    error('Mismatch in tsgRefineAnisotropic(): limits in make');
+end
+v = [exp(-p(:,1).^2 - p(:,2).^2)];
+tsgLoadValues(lGrid, v);
+tsgRefineAnisotropic(lGrid, 'iptotal', 30, 0);
+[p] = tsgGetNeededPoints(lGrid);
+if (size(p, 1) == 0)
+    error('Mismatch in tsgRefineAnisotropic(): did not refine');
+end
+if ((sum((abs(p(:,2) - sqrt(1.0/3.0)) < 0.0001)) > 0) || (sum((abs(p(:,3) - sqrt(1.0/3.0)) < 0.0001)) > 0))
+    error('Mismatch in tsgRefineAnisotropic(): limits refine using existing limits');
+end
+tsgRefineAnisotropic(lGrid, 'iptotal', 30, 0, [3, 2, 2]);
+[p] = tsgGetNeededPoints(lGrid);
+if (size(p, 1) == 0)
+    error('Mismatch in tsgRefineAnisotropic(): did not refine');
+end
+if ((sum((abs(p(:,2) - sqrt(1.0/3.0)) < 0.0001)) > 0) || (sum((abs(p(:,3) - 1.0) < 0.0001)) == 0) || (sum((abs(p(:,3) - sqrt(1.0/3.0)) < 0.0001)) > 0))
+    error('Mismatch in tsgRefineAnisotropic(): limits refine using new limits');
+end
+tsgDeleteGrid(lGrid);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgRefineSurplus()                           %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_refS', 3, 1, 'localp', 3, 1, [], [], [], [1, 2, 3]);
+if ((sum((abs(p(:,1) - 0.5) < 0.0001)) > 0) || (sum((abs(p(:,2) - 0.25) < 0.0001)) > 0))
+    error('Mismatch in tsgRefineSurplus(): limits in make');
+end
+v = [exp(-p(:,1).^2 - p(:,2).^2)];
+tsgLoadValues(lGrid, v);
+tsgRefineSurplus(lGrid, 1.E-8, 'classic', 0);
+[p] = tsgGetNeededPoints(lGrid);
+if (size(p, 1) == 0)
+    error('Mismatch in tsgRefineSurplus(): did not refine');
+end
+if ((sum((abs(p(:,1) - 0.5) < 0.0001)) > 0) || (sum((abs(p(:,2) - 0.25) < 0.0001)) > 0))
+    error('Mismatch in tsgRefineSurplus(): limits refine using existing limits');
+end
+tsgRefineSurplus(lGrid, 1.E-8, 'classic', 0, [2, 2, 3]);
+[p] = tsgGetNeededPoints(lGrid);
+if (size(p, 1) == 0)
+    error('Mismatch in tsgRefineSurplus(): did not refine');
+end
+if ((sum((abs(p(:,1) - 0.5) < 0.0001)) == 0) || (sum((abs(p(:,1) - 0.25) < 0.0001)) > 0) || (sum((abs(p(:,2) - 0.25) < 0.0001)) > 0))
+    error('Mismatch in tsgRefineSurplus(): limits refine using new limits');
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgCancelRefine()                            %%%
@@ -741,16 +835,31 @@ tsgDeleteGrid(lGrid);
 [lGridB, p] = tsgMakeGlobal('_tsgcoretests_refB', 2, 1, 'fejer2', 'level', 4);
 v = [exp(-p(:,1).^2 -p(:,2).^2)];
 tsgLoadValues(lGridA, v);
-[c] = tsgGetHCoefficients(lGridA);
-if (norm(c - v) > 1.E-11)
-    error('Mismatch in tsgMergeRefine(): case 1, tsgGetHCoefficients()');
+tsgLoadValues(lGridB, v);
+tsgRefineAnisotropic(lGridA, 'iptotal', 10, 0);
+tsgRefineAnisotropic(lGridB, 'iptotal', 10, 0);
+[p] = tsgGetNeededPoints(lGridA);
+v = [exp(-p(:,1).^2 -p(:,2).^2)];
+tsgLoadValues(lGridA, v);
+tsgMergeRefine(lGridB)
+[p1] = tsgGetPoints(lGridA);
+[p2] = tsgGetPoints(lGridB);
+if (norm(p1 - p2) > 1.E-11)
+    error('Mismatch in tsgMergeRefine(): case 2, tsgGetPoints()')
 end
-tsgLoadHCoefficients(lGridB, c);
-p = [-1.0 + 2.0 * rand(1000,2)];
+p = [-1.0 + 2.0 * rand(20, 2)];
+[vB] = tsgEvaluate(lGridB, p);
+if (norm(vB) > 1.E-11)
+    error('Mismatch in tsgMergeRefine(): case 3, tsgEvaluate() not zero');
+end
+[p] = tsgGetPoints(lGridB);
+v = [exp(-p(:,1).^2 -p(:,2).^2)];
+tsgLoadValues(lGridB, v);
+p = [-1.0 + 2.0 * rand(30, 2)];
 [vA] = tsgEvaluate(lGridA, p);
 [vB] = tsgEvaluate(lGridB, p);
 if (norm(vA - vB) > 1.E-11)
-    error('Mismatch in tsgMergeRefine(): case 1, tsgLoadHCoefficients()');
+    error('Mismatch in tsgMergeRefine(): case 3, tsgEvaluate() not equal');
 end
 tsgDeleteGrid(lGridA);
 tsgDeleteGrid(lGridB);
@@ -759,12 +868,12 @@ tsgDeleteGrid(lGridB);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgGetHCoefficients()                        %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% covered in tsgMergeRefine() and tsgEvaluateHierarchy()
+% covered in tsgEvaluateHierarchy()
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgLoadHCoefficients()                       %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% covered in tsgMergeRefine() and tsgEvaluateHierarchy()
+% covered in tsgEvaluateHierarchy()
 
 disp(['Refinement functions:     PASS']);
 

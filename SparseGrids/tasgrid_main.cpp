@@ -853,6 +853,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -mingrowth\t"      << "\tno\t"      << "\t<int>"    << "\t\tminimum number of new points (defaults to 1)" << endl;
             cout << " -refout\t"     << "\tsometimes" << "\t<int>"    << "\t\tselect the output to use for the refinement" << endl;
             cout << " \t\t\t\t\t"    << "\t\trequired by global grids, for sequence grids defaults to -1 (use all outputs)" << endl;
+            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels" << endl;
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl;
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl << endl;
@@ -868,6 +869,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " \t\t\t\t\t"    << "\t\trequired by local polynomial and wavelet grids" << endl;
             cout << " -refout\t"     << "\tsometimes" << "\t<int>"    << "\t\tselect the output to use for the refinement" << endl;
             cout << " \t\t\t\t\t"    << "\t\trequired by global grids, for sequence grids defaults to -1 (use all outputs)" << endl;
+            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels" << endl;
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl;
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl << endl;

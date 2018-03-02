@@ -92,7 +92,37 @@ PUBLIC :: tsgInitialize,        &
           tsgReceiveString, &
           tsgReceiveVector, &
           tsgReceiveMatrix, &
-          tsg_clenshaw_curtis
+          tsg_clenshaw_curtis     ,  tsg_rule_clenshaw_curtis_zero, &
+          tsg_chebyshev           ,  tsg_chebyshev_odd        , &
+          tsg_gauss_legendre      ,  tsg_gauss_legendreodd    , & 
+          tsg_gauss_patterson     ,  tsg_leja                 , &
+          tsg_lejaodd             ,  tsg_rleja                , &
+          tsg_rleja_odd           ,  tsg_rleja_double_2       , &
+          tsg_rleja_double_4      ,  tsg_rleja_shifted        , &
+          tsg_rleja_shifted_even  ,  tsg_rleja_shifted_double , &
+          tsg_max_lebesgue        ,  tsg_max_lebesgue_odd     , &
+          tsg_min_lebesgue        ,  tsg_min_lebesgue_odd     , &
+          tsg_min_delta           ,  tsg_min_delta_odd        , &
+          tsg_gauss_chebyshev_1   ,  tsg_gauss_chebyshev_1_odd, &
+          tsg_gauss_chebyshev_2   ,  tsg_gauss_chebyshev_2_odd, &
+          tsg_fejer2              ,  tsg_gauss_gegenbauer     , &
+          tsg_gauss_gegenbauer_odd,  tsg_gauss_jacobi         , &
+          tsg_gauss_jacobi_odd    ,  tsg_gauss_laguerre       , &
+          tsg_gauss_laguerre_odd  ,  tsg_gauss_hermite        , &
+          tsg_gauss_hermite_odd   ,  tsg_custom_tabulated     , &
+          tsg_localp              ,  tsg_localp_zero          , &
+          tsg_semi_localp         ,  tsg_wavelet              , &
+          tsg_level       ,  tsg_curved      , &
+          tsg_iptotal     ,  tsg_ipcurved    , &
+          tsg_qptotal     ,  tsg_qpcurved    , &
+          tsg_hyperbolic  ,  tsg_iphyperbolic, &
+          tsg_qphyperbolic,  tsg_tensor      , &
+          tsg_iptensor    ,  tsg_qptensor    , &
+          tsg_classic    ,  tsg_parents_first, &
+          tsg_directional,  tsg_fds          , &
+          tsg_acc_none    , tsg_acc_cpu_blas , tsg_acc_gpu_cublas, &
+          tsg_acc_gpu_cuda, tsg_acc_gpu_magma
+                        
   INTEGER, PARAMETER :: tsg_clenshaw_curtis      =  1,  tsg_rule_clenshaw_curtis_zero = 2, &
                         tsg_chebyshev            =  3,  tsg_chebyshev_odd         =  4, &
                         tsg_gauss_legendre       =  5,  tsg_gauss_legendreodd     =  6, & 
@@ -112,7 +142,17 @@ PUBLIC :: tsgInitialize,        &
                         tsg_gauss_laguerre_odd   = 33,  tsg_gauss_hermite         = 34, &
                         tsg_gauss_hermite_odd    = 35,  tsg_custom_tabulated      = 36, &
                         tsg_localp               = 37,  tsg_localp_zero           = 38, &
-                        tsg_semi_localp          = 39,  tsg_wavelet               = 40  
+                        tsg_semi_localp          = 39,  tsg_wavelet               = 40, &
+                        tsg_level        =   1,  tsg_curved       =  2, &
+                        tsg_iptotal      =   3,  tsg_ipcurved     =  4, &
+                        tsg_qptotal      =   5,  tsg_qpcurved     =  6, &
+                        tsg_hyperbolic   =   7,  tsg_iphyperbolic =  8, &
+                        tsg_qphyperbolic =   9,  tsg_tensor       = 10, &
+                        tsg_iptensor     =  11,  tsg_qptensor     = 12, &
+                        tsg_classic     = 1,  tsg_parents_first = 2, &
+                        tsg_directional = 3,  tsg_fds           = 4, &
+                        tsg_acc_none     = 0, tsg_acc_cpu_blas  = 1, tsg_acc_gpu_cublas = 2, &
+                        tsg_acc_gpu_cuda = 3, tsg_acc_gpu_magma = 4
 PRIVATE
   INTEGER :: rows, cols, length
   DOUBLE PRECISION, pointer :: matrix(:,:), vector(:)
@@ -156,25 +196,36 @@ FUNCTION tsgGetLicense() result(lic)
 END FUNCTION tsgGetLicense
 !=======================================================================
 SUBROUTINE tsgMakeGlobalGrid(gridID, dims, outs, depth, gtype, rule, &
-                             aweights, alpha, beta)
+                             aweights, alpha, beta, levelLimits)
   INTEGER, intent(in) :: gridID, dims, outs, depth, gtype, rule
   INTEGER :: i
-  INTEGER, optional :: aweights(*)
+  INTEGER, optional :: aweights(*), levelLimits(dims)
   DOUBLE PRECISION, optional :: alpha, beta
   DOUBLE PRECISION :: al, be
   INTEGER, allocatable :: aw(:)
+  INTEGER, allocatable :: ll(:)
   IF(PRESENT(alpha))then
     al = alpha
-  else
+  ELSE
     al = 0.0
-  endif
+  ENDIF
   IF(PRESENT(beta))then
     be = beta
-  else
+  ELSE
     be = 0.0
-  endif
+  ENDIF
+  ALLOCATE(ll(dims))
+  IF(PRESENT(levelLimits))then
+    DO i = 1, dims
+      ll(i) = levelLimits(i)
+    END DO
+  ELSE
+    DO i = 1, dims
+      ll(i) = -1
+    END DO
+  ENDIF
   IF(PRESENT(aweights))then
-    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be)
+    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be, ll)
   ELSE
     ALLOCATE(aw(2*dims))
     DO i = 1, dims
@@ -183,9 +234,10 @@ SUBROUTINE tsgMakeGlobalGrid(gridID, dims, outs, depth, gtype, rule, &
     DO i = dims+1, 2*dims
       aw(i) = 0
     END DO
-    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be)
+    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be, ll)
     DEALLOCATE(aw)
   ENDIF
+  DEALLOCATE(ll)
 END SUBROUTINE tsgMakeGlobalGrid
 !=======================================================================
 SUBROUTINE tsgMakeSequenceGrid(gridID, dims, outs, depth, gtype, rule, &

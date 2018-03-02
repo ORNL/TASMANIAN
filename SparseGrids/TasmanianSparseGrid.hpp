@@ -124,10 +124,10 @@ public:
     void clearLevelLimits(); // level limits will be set anew if non-null vector is given to refine command
     void getLevelLimits(int *limits) const; // static, assume limits is already allocated with length getNumDimensions()
 
-    void setAnisotropicRefinement(TypeDepth type, int min_growth, int output);
+    void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = 0);
     int* estimateAnisotropicCoefficients(TypeDepth type, int output);
-    void setSurplusRefinement(double tolerance, int output);
-    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1); // -1 indicates using all outputs
+    void setSurplusRefinement(double tolerance, int output, const int *level_limits = 0);
+    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0); // -1 indicates using all outputs
     void clearRefinement();
     void mergeRefinement();
 

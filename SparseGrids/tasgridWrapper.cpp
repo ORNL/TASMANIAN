@@ -236,10 +236,13 @@ bool TasgridWrapper::checkSane() const{
         }
     }else if (command == command_refine){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+        // additional checks in refineGrid() since checks depend on the type of grid
     }else if (command == command_refine_aniso){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+        // additional checks in refineGrid() since checks depend on the type of grid
     }else if (command == command_refine_surp){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+        // additional checks in refineGrid() since checks depend on the type of grid
     }else if ((command == command_refine_clear) || (command == command_refine_merge)){
         if (gridfilename == 0){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
     }else if (command == command_getrefcoeff){
@@ -464,8 +467,10 @@ bool TasgridWrapper::loadValues(){
     double *vals = 0;
     readMatrix(valsfilename, rows, cols, vals);
     if (rows != grid->getNumNeeded()){
-        cerr << "ERROR: grid is awaiting " << grid->getNumNeeded() << " new values, but " << valsfilename << " specifies " << rows << endl;
-        return false;
+        if (rows != grid->getNumLoaded()){
+            cerr << "ERROR: grid is awaiting " << grid->getNumNeeded() << " new values, but " << valsfilename << " specifies " << rows << endl;
+            return false;
+        }
     }
     if (cols != grid->getNumOutputs()){
         cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
@@ -616,6 +621,7 @@ bool TasgridWrapper::refineGrid(){
         cerr << "ERROR: cannot refine a grid with no loaded values!" << endl;
         return false;
     }
+    int* llimits = readLevelLimits(grid->getNumDimensions());
     TypeCommand effective_command = command;
     if (command == command_refine){
         if (grid->isGlobal() || grid->isSequence()){
@@ -641,7 +647,7 @@ bool TasgridWrapper::refineGrid(){
         }
         if (min_growth < 1) min_growth = 1;
         if (grid->isSequence()){
-            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output);
+            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
         }else{
             if (ref_output >= grid->getNumOutputs()){
                 cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid->getNumOutputs() << " outputs!" << endl;
@@ -652,7 +658,7 @@ bool TasgridWrapper::refineGrid(){
                 cerr << "ERROR: must specify a refinement output with -ref_output option!" << endl;
                 return false;
             }else if (ref_output == -1) ref_output = 0;
-            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output);
+            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
         }
     }else{ // using surplus refinement
         if (!set_tolerance){
@@ -664,9 +670,9 @@ bool TasgridWrapper::refineGrid(){
                 cerr << "ERROR: must specify -reftype option!" << endl;
                 return false;
             }
-            grid->setSurplusRefinement(tolerance, tref, ref_output);
+            grid->setSurplusRefinement(tolerance, tref, ref_output, llimits);
         }else if (grid->isSequence()){
-            grid->setSurplusRefinement(tolerance, ref_output);
+            grid->setSurplusRefinement(tolerance, ref_output, llimits);
         }else{
             if (ref_output >= grid->getNumOutputs()){
                 cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid->getNumOutputs() << " outputs!" << endl;
@@ -677,7 +683,7 @@ bool TasgridWrapper::refineGrid(){
                 cerr << "ERROR: must specify a refinement output with -ref_output option!" << endl;
                 return false;
             }else if (ref_output == -1) ref_output = 0;
-            grid->setSurplusRefinement(tolerance, ref_output);
+            grid->setSurplusRefinement(tolerance, ref_output, llimits);
         }
     }
     writeGrid();
@@ -916,12 +922,12 @@ int* TasgridWrapper::readLevelLimits(int num_weights) const{
     double* mat;
     readMatrix(levellimitfilename, rows, cols, mat);
     if (rows != 1){
-        cerr << "ERROR: anisotropy file must contain only one row" << endl;
+        cerr << "ERROR: level limits file must contain only one row" << endl;
         delete[] mat;
         exit(1);
     }
     if (cols != num_weights){
-        cerr << "ERROR: anisotropy file has wrong number of entries, " << num_weights << " expected " << cols << " found." << endl;
+        cerr << "ERROR: level limits file has wrong number of entries, " << num_weights << " expected " << cols << " found." << endl;
         delete[] mat;
         exit(1);
     }
@@ -1084,7 +1090,13 @@ bool TasgridWrapper::executeCommand(){
         if (cancelRefine()){
             writeGrid();
         }else{
-            cerr << "ERROR: could not clear th refinement" << endl;
+            cerr << "ERROR: could not clear the refinement" << endl;
+        }
+    }else if (command == command_refine_merge){
+        if (mergeRefine()){
+            writeGrid();
+        }else{
+            cerr << "ERROR: could not merge the refinement" << endl;
         }
     }else if (command == command_getpoly){
         if (!getPoly()){
