@@ -104,10 +104,10 @@ void tsgwri_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->w
 void tsgrea_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->read(filename, (*binary != 0)); }
 
 // create
-void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights, double *alpha, double *beta){
+void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights, double *alpha, double *beta, const int *llimits){
     _tsg_grid_list[*id]->makeGlobalGrid(*dimensions, *outputs, *depth,
         OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule),
-        anisotropic_weights, *alpha, *beta);
+        anisotropic_weights, *alpha, *beta, 0, llimits);
 }
 void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights){
     _tsg_grid_list[*id]->makeSequenceGrid(*dimensions, *outputs, *depth,
