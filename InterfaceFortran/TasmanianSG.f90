@@ -196,25 +196,36 @@ FUNCTION tsgGetLicense() result(lic)
 END FUNCTION tsgGetLicense
 !=======================================================================
 SUBROUTINE tsgMakeGlobalGrid(gridID, dims, outs, depth, gtype, rule, &
-                             aweights, alpha, beta)
+                             aweights, alpha, beta, levelLimits)
   INTEGER, intent(in) :: gridID, dims, outs, depth, gtype, rule
   INTEGER :: i
-  INTEGER, optional :: aweights(*)
+  INTEGER, optional :: aweights(*), levelLimits(dims)
   DOUBLE PRECISION, optional :: alpha, beta
   DOUBLE PRECISION :: al, be
   INTEGER, allocatable :: aw(:)
+  INTEGER, allocatable :: ll(:)
   IF(PRESENT(alpha))then
     al = alpha
-  else
+  ELSE
     al = 0.0
-  endif
+  ENDIF
   IF(PRESENT(beta))then
     be = beta
-  else
+  ELSE
     be = 0.0
-  endif
+  ENDIF
+  ALLOCATE(ll(dims))
+  IF(PRESENT(levelLimits))then
+    DO i = 1, dims
+      ll(i) = levelLimits(i)
+    END DO
+  ELSE
+    DO i = 1, dims
+      ll(i) = -1
+    END DO
+  ENDIF
   IF(PRESENT(aweights))then
-    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be)
+    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be, ll)
   ELSE
     ALLOCATE(aw(2*dims))
     DO i = 1, dims
@@ -223,9 +234,10 @@ SUBROUTINE tsgMakeGlobalGrid(gridID, dims, outs, depth, gtype, rule, &
     DO i = dims+1, 2*dims
       aw(i) = 0
     END DO
-    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be)
+    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be, ll)
     DEALLOCATE(aw)
   ENDIF
+  DEALLOCATE(ll)
 END SUBROUTINE tsgMakeGlobalGrid
 !=======================================================================
 SUBROUTINE tsgMakeSequenceGrid(gridID, dims, outs, depth, gtype, rule, &
