@@ -27,7 +27,7 @@ project(Tasmanian LANGUAGES CXX)
 #    -D Tasmanian_EXTRA_LINK_DIRS:PATH="appends more link paths"
 #
 # Development only options:
-#    -D Tasmanian_DEVELOPMENT_EXAMPLES:BOOL=OFF
+#    -D Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS:BOOL=OFF
 #    -D Tasmanian_DEVELOPMENT_BACKWARDS:BOOL=OFF
 #
 # xSDK options:
@@ -429,7 +429,7 @@ else()
 endif()
 
 # for development purposes, compile the exmaples together with everything else
-if (DEFINED Tasmanian_DEVELOPMENT_EXAMPLES AND Tasmanian_DEVELOPMENT_EXAMPLES)
+if (DEFINED Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS AND Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS)
     if (Tasmanian_USING_FINDCUDA)
         cuda_add_executable(example_sparse_grids "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.cpp")
         cuda_add_executable(example_dream "${PROJECT_SOURCE_DIR}/Examples/example_dream.cpp")
@@ -669,20 +669,17 @@ endif()
 # Compiler specific flags: Intel hasn't been tested in a while
 ########################################################################
 if (NOT DEFINED Tasmanian_CXX_FLAGS)
-    if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic")
-        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=native -Wall -Wextra -Wshadow -pedantic") # -Wno-unused-parameter
+    if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang"))
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
         #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage") # ./tasgrid -test; gcov CMakeFiles/libtsg_static.dir/SparseGrids/tsgIndexSets.cpp.; geany tsgIndexSets.cpp.gcov
-        if (TAS_SUPPRESS_OMP_WARN)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+        if (Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS)
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic")
+            if (TAS_SUPPRESS_OMP_WARN)
+                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+            endif()
         endif()
     elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
-    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -mtune=native -Wall -Wextra -Wshadow -pedantic")
-        if (TAS_SUPPRESS_OMP_WARN)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
-        endif()
     elseif (MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Ox /EHsc -D_SCL_SECURE_NO_WARNINGS")
     endif()
