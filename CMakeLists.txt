@@ -844,20 +844,20 @@ configure_file("${PROJECT_SOURCE_DIR}/Examples/CMakeLists.in.txt" "${CMAKE_BINAR
 enable_testing()
 add_test(Tasgrid tasgrid -test)
 add_test(Tasdream tasdream -test)
+set(tas_tests_list Tasgrid Tasdream)
 if (Tasmanian_ENABLE_PYTHON)
     add_test(NAME LibSG COMMAND ${PYTHON_EXECUTABLE} testTSG.py)
+    set(tas_tests_list ${tas_tests_list} LibSG)
 endif()
 if (Tasmanian_ENABLE_FORTRAN)
     add_test(Fortran fortester)
+    set(tas_tests_list ${tas_tests_list} Fortran)
 endif()
-include(ProcessorCount)
-ProcessorCount(NUM_PROCS)
-set(Tasmanian_TESTS_OMP_NUM_THREADS ${NUM_PROCS} CACHE STRING "Number of OpenMP threads to use in the tests (default is all available cores)")
-set_tests_properties( Tasgrid Tasdream PROPERTIES
-    PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
-    ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}
-)
-
+if (Tasmanian_TESTS_OMP_NUM_THREADS)
+    set_tests_properties(${tas_tests_list} PROPERTIES
+        PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
+        ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
+endif()
 
 ########################################################################
 # Installing
