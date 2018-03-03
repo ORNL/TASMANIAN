@@ -238,7 +238,7 @@ bool ExternalTester::testGamma1D(){
 }
 
 bool ExternalTester::testGaussian2D(){
-    int num_cells1d = 5; double delta = 2.0 / ((double) num_cells1d);
+    int num_cells1d = 4; double delta = 2.0 / ((double) num_cells1d);
     int num_cells = num_cells1d * num_cells1d;
     int num_chains = 100;
     double *samples_true = new double[2*num_mc];
@@ -462,6 +462,7 @@ bool ExternalTester::testChi(int num_cells, const int count_a[], const int count
 double ExternalTester::getChiValue(int num_degrees){
     switch(num_degrees){
         case   9: return  21.666;
+        case  15: return  30.578;
         case  19: return  36.191;
         case  20: return  37.566;
         case  24: return  42.980;
