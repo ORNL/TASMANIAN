@@ -112,6 +112,7 @@ IMPLICIT NONE
   anisoWeights(1) = 1
   CALL tsgMakeGlobalGrid(gridID, 1, 0, 4, tsg_level, tsg_gauss_hermite, anisoWeights, 2.0D+0)
   weights => tsgGetQuadratureWeights(gridID)
+  n = tsgGetNumPoints(gridID)
   IF ((abs(sumVec(n, weights) - 0.5D+0 * sqrt(4.0D+0 * atan(1.0D+0))) > 1.D-11) .OR. (abs(tsgGetBeta(gridID)) > 1.D-11))then
     WRITE(*,*) "Mismatch in tsgMakeGlobal: core case 5", sumVec(n, weights), tsgGetBeta(gridID)
     STOP 1

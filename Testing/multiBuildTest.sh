@@ -46,7 +46,6 @@ fi
 sPWD=`pwd`
 sMultibuildLogFile="$sPWD\multiBuildLog.log"
 
-
 bShowHelp=1
 
 if (( ${#@} < 1 )); then
@@ -362,7 +361,7 @@ cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
 ./install.sh ./TasInstall ./tsgWorkFolder -make-j -nospam -verbose -nobashrc || { exit 1; }
-if [ -f ./TasInstall/python/TasmanianSG.py ]]; then
+if [[ -f ./TasInstall/python/TasmanianSG.py ]]; then
     echo "Failed to disable Spam (python)"
     exit 1;
 fi
@@ -411,7 +410,6 @@ if (( $bGfortran == 1 )); then
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install.sh ./TasInstall ./tsgWorkFolder -make-j -fortran -verbose -nobashrc || { exit 1; }
-    ./TasInstall/examples/example_sparse_grids.py -fast || { echo "Could not run python3 version of examples"; exit 1; }
     if [ ! -f ./TasInstall/lib/libtasmanianfortran.so ] && [ ! -f ./TasInstall/lib/libtasmanianfortran.dylib ]; then
         echo "Failed to enable Fortran"
         exit 1;
@@ -695,6 +693,34 @@ echo "==========================================================================
 ########################################################################
 # Alternative compiler tests: cuda versions, clang, etc.
 ########################################################################
+if [ -f /usr/bin/clang++-5.0 ]; then
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
+    mkdir -p tsgWorkFolder
+    if (( $bMacOS == 1 )); then
+        ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-5.0" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
+    else
+        ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-5.0" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    fi
+    if (( $bOctave == 1 )); then
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    fi
+    if (( $bMacOS == 0 )); then
+        if [ -z `./TasInstall/bin/tasgrid -v | grep 'OpenMP multithreading: Enabled'` ]; then
+            echo "OpenMP is supposed to work with clang++-5.0, but it failed somehow"
+            exit 1;
+        fi
+    fi
+    cd $sTempBuild
+    rm -fr Tasmanian/
+    cd $sTestRoot
+    echo "======= PASSED: Clang 5.0" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+else
+    echo "======= SKIPPED: Clang 5.0" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+fi
+
 if [ -f /usr/bin/clang++-4.0 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
@@ -738,6 +764,78 @@ if [ -f /usr/bin/clang++-3.8 ]; then
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
     echo "======= SKIPPED: Clang 3.8" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+fi
+
+if [ -f /usr/bin/g++-7 ]; then
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
+    mkdir -p tsgWorkFolder
+    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-7" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    if (( $bOctave == 1 )); then
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    fi
+    cd $sTempBuild
+    rm -fr Tasmanian/
+    cd $sTestRoot
+    echo "======= PASSED: GCC 7" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+else
+    echo "======= SKIPPED: GCC 7" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+fi
+
+if [ -f /usr/bin/g++-6 ]; then
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
+    mkdir -p tsgWorkFolder
+    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-6" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    if (( $bOctave == 1 )); then
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    fi
+    cd $sTempBuild
+    rm -fr Tasmanian/
+    cd $sTestRoot
+    echo "======= PASSED: GCC 6" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+else
+    echo "======= SKIPPED: GCC 6" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+fi
+
+if [ -f /usr/bin/g++-5 ]; then
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
+    mkdir -p tsgWorkFolder
+    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-5" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    if (( $bOctave == 1 )); then
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    fi
+    cd $sTempBuild
+    rm -fr Tasmanian/
+    cd $sTestRoot
+    echo "======= PASSED: GCC 5" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+else
+    echo "======= SKIPPED: GCC 5" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+fi
+
+if [ -f /usr/bin/g++-4.8 ]; then
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
+    mkdir -p tsgWorkFolder
+    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-4.8" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    if (( $bOctave == 1 )); then
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    fi
+    cd $sTempBuild
+    rm -fr Tasmanian/
+    cd $sTestRoot
+    echo "======= PASSED: GCC 4.8" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+else
+    echo "======= SKIPPED: GCC 4.8" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 fi
 
