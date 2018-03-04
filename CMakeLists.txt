@@ -429,7 +429,7 @@ else()
 endif()
 
 # for development purposes, compile the exmaples together with everything else
-if (DEFINED Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS AND Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS)
+if (Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS)
     if (Tasmanian_USING_FINDCUDA)
         cuda_add_executable(example_sparse_grids "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.cpp")
         cuda_add_executable(example_dream "${PROJECT_SOURCE_DIR}/Examples/example_dream.cpp")
