@@ -706,7 +706,7 @@ disp(['Core I/O and evaluate:    PASS']);
 [lGridB, p] = tsgMakeGlobal('_tsgcoretests_IntB', 2, 1, 'fejer2', 'level', 4);
 v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
 tsgLoadValues(lGridA, v);
-pnts = [1.0 + rand(32, 2)];
+pnts = [-1.0 + 2.0 * rand(32, 2)];
 [tres] = tsgEvaluate(lGridA, pnts);
 [A] = tsgGetInterpolationWeights(lGridB, pnts);
 res = A * v;
@@ -718,7 +718,7 @@ end
 [lGridB, p] = tsgMakeSequence('_tsgcoretests_IntB', 2, 1, 'min-delta', 'level', 7);
 v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
 tsgLoadValues(lGridA, v);
-pnts = [1.0 + rand(32, 2)];
+pnts = [-1.0 + 2.0 * rand(32, 2)];
 [tres] = tsgEvaluate(lGridA, pnts);
 [A] = tsgGetInterpolationWeights(lGridB, pnts);
 res = A * v;
