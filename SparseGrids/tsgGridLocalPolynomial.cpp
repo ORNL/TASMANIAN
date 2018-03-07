@@ -718,9 +718,10 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
 void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
-    bool dummy;
+    #pragma omp parallel for
     for(int i=0; i<num_x; i++){
         const double *this_x = &(x[i*num_dimensions]);
+        bool dummy;
         for(int j=0; j<num_points; j++){
             y[i*num_points + j] = evalBasisSupported(work->getIndex(j), this_x, dummy);
         }

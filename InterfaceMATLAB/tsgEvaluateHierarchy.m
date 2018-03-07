@@ -2,8 +2,6 @@ function [vals] = tsgEvaluateHierarchy(lGrid, mX)
 %
 % [vals] = tsgEvaluateHierarchy(lGrid, mX)
 %
-% WARNING: this is an experimental feature
-%
 % it gives the weights for interpolation (or approximation)
 %
 % INPUT:

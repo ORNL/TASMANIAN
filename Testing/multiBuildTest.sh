@@ -900,7 +900,8 @@ fi
 cd $sTestRoot
 sPWD=`pwd`
 if [[ "$sPWD" == "$sTestRoot" ]] || [[ "$sPWD/" == "$sTestRoot" ]]; then
-    rm -fr *
+    rm -fr TempTasmanian
+    rm -fr Run
 else
     echo "$sPWD"
     echo "$sTestRoot"
