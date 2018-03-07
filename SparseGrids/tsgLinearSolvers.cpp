@@ -306,42 +306,10 @@ SparseMatrix::SparseMatrix(TsgSparseCOO &M) : tol(TSG_NUM_TOL), num_rows(0), pnt
 	//#endif // TASMANIAN_CHOLMOD
 }
 
-SparseMatrix::SparseMatrix(std::ifstream &ifs) : tol(TSG_NUM_TOL), num_rows(0), pntr(0), indx(0), indxD(0), vals(0), ilu(0) {
-    read(ifs);
-}
-
 SparseMatrix::~SparseMatrix(){
     clear();
 }
 
-void SparseMatrix::write(std::ofstream &ofs) const{
-    ofs << std::scientific; ofs.precision(17);
-    ofs << num_rows << endl;
-    ofs << pntr[0]; for(int i=1; i<=num_rows; i++){  ofs << " " << pntr[i];  } ofs << endl;
-    if (num_rows > 0){
-        ofs << indx[0];  for(int i=1; i<pntr[num_rows]; i++){  ofs << " " << indx[i];  } ofs << endl;
-        ofs << vals[0];  for(int i=1; i<pntr[num_rows]; i++){  ofs << " " << vals[i];  } ofs << endl;
-        ofs << indxD[0]; for(int i=1; i<num_rows; i++){    ofs << " " << indxD[i]; } ofs << endl;
-        ofs << ilu[0];   for(int i=1; i<pntr[num_rows]; i++){  ofs << " " << ilu[i];   } ofs << endl;
-    }
-}
-bool SparseMatrix::read(std::ifstream &ifs){
-    clear();
-    ifs >> num_rows;
-    if (num_rows > 0){
-        pntr = new int[num_rows+1];
-        for(int i=0; i<=num_rows; i++){  ifs >> pntr[i];  }
-        indx = new int[pntr[num_rows]];
-        for(int i=0; i<pntr[num_rows]; i++){  ifs >> indx[i];  }
-        vals = new double[pntr[num_rows]];
-        for(int i=0; i<pntr[num_rows]; i++){  ifs >> vals[i];  }
-        indxD = new int[num_rows];
-        for(int i=0; i<num_rows; i++){  ifs >> indxD[i];  }
-        ilu = new double[pntr[num_rows]];
-        for(int i=0; i<pntr[num_rows]; i++){  ifs >> ilu[i];  }
-    }
-    return true;
-}
 
 void SparseMatrix::clear(){
     if (pntr != 0){ delete[] pntr; pntr=0; }

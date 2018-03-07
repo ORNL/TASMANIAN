@@ -1158,6 +1158,9 @@ class TestTasmanian(unittest.TestCase):
     def testFullCoverageZ(self):
         print("\nTesting plotting and other misc")
         if (TasmanianSG.bTsgPlotting):
+            if ((os.name == "posix") and (os.environ.get('DISPLAY') is None)):
+                print("NOTE: there is no display, cannot run plotting tests.")
+                return
             grid.makeGlobalGrid(2, 1, 20, 'level', 'leja')
             self.loadExpN2(grid)
             grid.plotResponse2D()

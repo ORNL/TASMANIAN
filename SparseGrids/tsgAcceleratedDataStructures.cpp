@@ -65,14 +65,10 @@ AccelerationDataGPUFull::~AccelerationDataGPUFull(){
     #ifdef TASMANIAN_CUBLAS
     if (cublasHandle != 0){
         cublasDestroy((cublasHandle_t) cublasHandle);
-        //cublasDestroy(*((cublasHandle_t*) cublasHandle));
-        //delete ((cublasHandle_t*) cublasHandle);
         cublasHandle = 0;
     }
     if (cusparseHandle != 0){
         cusparseDestroy((cusparseHandle_t) cusparseHandle);
-        //cusparseDestroy(*((cusparseHandle_t*) cusparseHandle));
-        //delete ((cusparseHandle_t*) cusparseHandle);
         cusparseHandle = 0;
     }
     #endif // TASMANIAN_CUBLAS
@@ -83,8 +79,6 @@ void AccelerationDataGPUFull::makeCuBlasHandle(){
         cublasHandle_t cbh;
         cublasCreate(&cbh);
         cublasHandle = (void*) cbh;
-        //cublasHandle = (void*) new cublasHandle_t;
-        //cublasCreate((cublasHandle_t) cublasHandle);
     }
     #endif // TASMANIAN_CUBLAS
 }
@@ -94,8 +88,6 @@ void AccelerationDataGPUFull::makeCuSparseHandle(){
         cusparseHandle_t csh;
         cusparseCreate(&csh);
         cusparseHandle = (void*) csh;
-        //cusparseHandle = (void*) new cusparseHandle_t;
-        //cusparseCreate((cusparseHandle_t*) cusparseHandle);
     }
     #endif // TASMANIAN_CUBLAS
 }
@@ -337,8 +329,6 @@ void AccelerationDataGPUFull::cusparseDCRSMM(int, int, const int*, const int*, c
 
 
 
-AccelerationMeta::AccelerationMeta(){}
-AccelerationMeta::~AccelerationMeta(){}
 
 TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
     if (strcmp(name, "cpu-blas") == 0){
@@ -380,7 +370,6 @@ int AccelerationMeta::getIOAccelerationInt(TypeAcceleration accel){
     }
 }
 bool AccelerationMeta::isAccTypeFullMemoryGPU(TypeAcceleration accel){
-    //cout << AccelerationMeta::getIOAccelerationString(accel) << endl;
     switch (accel){
         case accel_gpu_default:
         case accel_gpu_cublas:
@@ -392,7 +381,6 @@ bool AccelerationMeta::isAccTypeFullMemoryGPU(TypeAcceleration accel){
     }
 }
 bool AccelerationMeta::isAccTypeGPU(TypeAcceleration accel){
-    //cout << AccelerationMeta::getIOAccelerationString(accel) << endl;
     switch (accel){
         case accel_gpu_default:
         case accel_gpu_cublas:
@@ -410,15 +398,6 @@ void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::o
         if (os != 0){
             (*os) << "ERROR: cuda failed at " << info << " with error: " << endl;
             (*os) << cudaGetErrorString(*((cudaError_t*) cudaStatus)) << endl;
-//            if (*((cudaError_t*) cudaStatus) == cudaErrorMemoryAllocation){
-//                (*os) << "ERROR: cuda failed with code: cudaErrorMemoryAllocation at " << info << endl;
-//            }else if (*((cudaError_t*) cudaStatus) == cudaErrorIllegalAddress){
-//                (*os) << "ERROR: cuda failed with code: cudaErrorIllegalAddress at " << info << endl;
-//            }else if (*((cudaError_t*) cudaStatus) == cudaErrorInvalidValue){
-//                (*os) << "ERROR: cuda failed with code: cudaErrorInvalidValue at " << info << endl;
-//            }else{
-//                (*os) << "ERROR: cuda failed with code: " << *((cudaError_t*) cudaStatus) << endl;
-//            }
         }
     }
 }

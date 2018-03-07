@@ -78,37 +78,28 @@ private:
     std::ostream *logstream;
 };
 
-class TasCUDA{
-public:
-    TasCUDA();
-    ~TasCUDA();
-
+namespace TasCUDA{
     // matrix multiply double-precision (d), level 3, general (ge), column compressed sparse (cs): C = A * B
     // A is N by K, B is K by M, C is N by M
     // A and C are stored in column format, B is sparse column compresses
-    static void d3gecs(int N, int M, const double *gpuA, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, double *cpuC, std::ostream *os = 0);
+    void d3gecs(int N, int M, const double *gpuA, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, double *cpuC, std::ostream *os = 0);
     // matrix solve double-precision (d), level 3, general (ge), column compressed sparse (cs) (solve): C = A * B
     // A is N by M, B is M by M, C is N by M
     // A and C are stored in column format, B is sparse column compresses and unit triangular (the diagonal entry is no include in the pattern)
-    static void d3gecss(int N, int M, int *levels, int top_level, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, const double *cpuA, double *cpuC, std::ostream *os);
+    void d3gecss(int N, int M, int *levels, int top_level, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, const double *cpuA, double *cpuC, std::ostream *os);
+}
 
-};
+namespace AccelerationMeta{
+    TypeAcceleration getIOAccelerationString(const char * name);
+    const char* getIOAccelerationString(TypeAcceleration accel);
+    int getIOAccelerationInt(TypeAcceleration accel);
+    bool isAccTypeFullMemoryGPU(TypeAcceleration accel);
+    bool isAccTypeGPU(TypeAcceleration accel);
 
-class AccelerationMeta{ // keeps I/O strings and such
-public:
-    AccelerationMeta();
-    ~AccelerationMeta();
-
-    static TypeAcceleration getIOAccelerationString(const char * name);
-    static const char* getIOAccelerationString(TypeAcceleration accel);
-    static int getIOAccelerationInt(TypeAcceleration accel);
-    static bool isAccTypeFullMemoryGPU(TypeAcceleration accel);
-    static bool isAccTypeGPU(TypeAcceleration accel);
-
-    static void cudaCheckError(void *cudaStatus, const char *info, std::ostream *os);
-    static void cublasCheckError(void *cublasStatus, const char *info, std::ostream *os);
-    static void cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os);
-};
+    void cudaCheckError(void *cudaStatus, const char *info, std::ostream *os);
+    void cublasCheckError(void *cublasStatus, const char *info, std::ostream *os);
+    void cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os);
+}
 
 }
 

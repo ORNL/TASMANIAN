@@ -205,7 +205,7 @@ fi
 if [[ $sEnableCUDA == "ON" ]] || [[ $sEnableBLAS == "ON" ]]; then
     if (( $sCMAKEversion < 3 )); then
         sEnableCUDA="OFF"
-        sEnableBLAS="OFF"
+        sEnableCUBLAS="OFF"
         echo ""
         echo "WARNING: found cmake version $sCMAKEversion"
         echo "         recommended version is 3.0 or newer"

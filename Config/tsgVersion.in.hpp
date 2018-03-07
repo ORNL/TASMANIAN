@@ -31,8 +31,8 @@
 #ifndef __TASMANIAN_SPARSE_GRID_VERSION_HPP
 #define __TASMANIAN_SPARSE_GRID_VERSION_HPP
 
-#define TASMANIAN_VERSION_MAJOR @Tasmanian_VersionMajor@
-#define TASMANIAN_VERSION_MINOR @Tasmanian_VersionMinor@
+#define TASMANIAN_VERSION_MAJOR @Tasmanian_VERSION_MAJOR@
+#define TASMANIAN_VERSION_MINOR @Tasmanian_VERSION_MINOR@
 #define TASMANIAN_VERSION_STRING "@Tasmanian_VersionString@"
 #define TASMANIAN_LICENSE "@Tasmanian_License@"
 

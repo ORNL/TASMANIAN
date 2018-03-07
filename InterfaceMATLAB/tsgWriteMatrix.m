@@ -14,7 +14,7 @@ function tsgWriteMatrix(filename, mat)
 % 9 10 11 12
 %
 
-if (prod(size(mat)) < 1000) # small matrix, use ascii format
+if (prod(size(mat)) < 1000) % small matrix, use ascii format
 
     fid = fopen(filename, 'w');
 
@@ -50,10 +50,10 @@ else
     fwrite(fid, [Ni, Nj], 'integer*4');
     fwrite(fid, mat', 'double');
     
-    #if (size(mat, 1) > 10)
-    #    size(mat)
-    #    mat(1:10, :)
-    #end
+    %if (size(mat, 1) > 10)
+    %    size(mat)
+    %    mat(1:10, :)
+    %end
     
     fclose(fid);
 

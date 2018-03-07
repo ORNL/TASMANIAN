@@ -111,23 +111,20 @@ void TasmanianSparseGrid::write(const char *filename, bool binary) const{
     std::ofstream ofs;
     if (binary){
         ofs.open(filename, std::ios::out | std::ios::binary);
-        writeBinary(ofs);
     }else{
         ofs.open(filename);
-        writeAscii(ofs);
     }
+    write(ofs, binary);
     ofs.close();
 }
 bool TasmanianSparseGrid::read(const char *filename, bool binary){
     std::ifstream ifs;
-    bool isGood;
     if (binary){
         ifs.open(filename, std::ios::in | std::ios::binary);
-        isGood = readBinary(ifs);
     }else{
         ifs.open(filename);
-        isGood = readAscii(ifs);
     }
+    bool isGood = read(ifs, binary);
     ifs.close();
     return isGood;
 }
@@ -1497,8 +1494,6 @@ const char* tsgGetVersion(){ return TasmanianSparseGrid::getVersion(); }
 const char* tsgGetLicense(){ return TasmanianSparseGrid::getLicense(); }
 int tsgGetVersionMajor(){ return TasmanianSparseGrid::getVersionMajor(); }
 int tsgGetVersionMinor(){ return TasmanianSparseGrid::getVersionMinor(); }
-//int tsgIsCudaEnabled(){ return (TasmanianSparseGrid::isCudaEnabled()) ? 1 : 0; }
-//int tsgIsBLASEnabled(){ return (TasmanianSparseGrid::isBLASEnabled()) ? 1 : 0; }
 int tsgIsOpenMPEnabled(){ return (TasmanianSparseGrid::isOpenMPEnabled()) ? 1 : 0; }
 
 void tsgErrorLogCerr(void *grid){ ((TasmanianSparseGrid*) grid)->setErrorLog(&cerr); }
@@ -1803,9 +1798,7 @@ void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual){
     *num_actual = c;
 }
 
-void tsgDeleteDoubles(double *p){ free(p); }
 void tsgDeleteInts(int *p){ delete[] p; }
-void tsgDeleteChars(char *p){ delete[] p; }
 
 }
 }

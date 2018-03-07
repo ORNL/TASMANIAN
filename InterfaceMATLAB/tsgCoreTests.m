@@ -1,7 +1,7 @@
 function tsgCoreTests()
 
-# Indexes and polynomial spaces are experimental
-# ListGridsByName(), Summary(), and PlotPoins2D() require human
+% Indexes and polynomial spaces are experimental
+% ListGridsByName(), Summary(), and PlotPoins2D() require human
 
 disp(['']);
 disp(['Testing TASMANIAN MATLAB interface']);
@@ -372,7 +372,7 @@ for iL = 3:4
     end
 end
 tsgDeleteGrid(lGrid);
-# polynomial order is tested in tsgEvaluate()
+% polynomial order is tested in tsgEvaluate()
 
 % level limits
 [lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_lgrid', 3, 1, 'semi-localp', 3, 2, [], [], [], [1, 2, 3]);

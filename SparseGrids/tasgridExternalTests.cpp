@@ -1199,7 +1199,7 @@ bool ExternalTester::testAllDomain() const{
             grid.setDomainTransform(transform_a, transform_b);
             TestResults R = getError(f, &grid, type_integration);
             if (R.error>errs[i]){
-                cout << "Using gauss-legendre rule" << endl;
+                cout << "Using localp rule" << endl;
                 cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }

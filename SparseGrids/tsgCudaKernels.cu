@@ -136,8 +136,8 @@ void tasgpu_d3gecs_1_v2(int N, int M, int num_nz, const double *gpuA, const int*
 #define _IF_DEBUG_MACRO(x) 
 #endif
 
-TasCUDA::TasCUDA(){}
-TasCUDA::~TasCUDA(){}
+//TasCUDA::TasCUDA(){}
+//TasCUDA::~TasCUDA(){}
 
 void TasCUDA::d3gecs(int N, int M, const double *gpuA, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, double *cpuC, std::ostream *os){
     cudaError_t cudaStat;

@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
-project(Tasmanian LANGUAGES CXX)
+if (${CMAKE_MAJOR_VERSION} LESS 3)
+    project(Tasmanian)
+    set(Tasmanian_VERSION_MAJOR 5)
+    set(Tasmanian_VERSION_MINOR 1)
+    set(Tasmanian_VERSION_PATCH 0)
+else()
+    cmake_policy(VERSION 3.0.2)
+    project(Tasmanian VERSION 5.1.0 LANGUAGES CXX)
+endif()
 
 ########################################################################
 #  User specified options:
@@ -51,118 +59,13 @@ if ((NOT DEFINED CMAKE_BUILD_TYPE) OR (NOT CMAKE_BUILD_TYPE))
 endif()
 
 # version and license
-set(Tasmanian_VersionMajor 5)
-set(Tasmanian_VersionMinor 1)
-set(Tasmanian_VersionString "${Tasmanian_VersionMajor}.${Tasmanian_VersionMinor}")
+#set(Tasmanian_VersionMajor 5)
+#set(Tasmanian_VersionMinor 1)
+set(Tasmanian_VersionString "${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
 set(Tasmanian_License "BSD 3-Clause with UT-Battelle disclamer")
 
-########################################################################
-# list all source files
-########################################################################
-set(tasgrid_src SparseGrids/tasgrid_main.cpp
-                SparseGrids/TasmanianSparseGrid.hpp
-                SparseGrids/tasgridExternalTests.hpp
-                SparseGrids/tasgridExternalTests.cpp
-                SparseGrids/tasgridTestFunctions.hpp
-                SparseGrids/tasgridTestFunctions.cpp
-                SparseGrids/tasgridWrapper.hpp
-                SparseGrids/tasgridWrapper.cpp)
-
-set(libtsg_src SparseGrids/TasmanianSparseGrid.hpp
-               SparseGrids/TasmanianSparseGrid.cpp
-               SparseGrids/tsgAcceleratedDataStructures.hpp
-               SparseGrids/tsgAcceleratedDataStructures.cpp
-               SparseGrids/tsgCacheLagrange.hpp
-               SparseGrids/tsgCacheLagrange.cpp
-               SparseGrids/tsgCoreOneDimensional.hpp
-               SparseGrids/tsgCoreOneDimensional.cpp
-               SparseGrids/tsgEnumerates.hpp
-               SparseGrids/tsgGridCore.hpp
-               SparseGrids/tsgGridCore.cpp
-               SparseGrids/tsgGridGlobal.hpp
-               SparseGrids/tsgGridGlobal.cpp
-               SparseGrids/tsgGridWavelet.hpp
-               SparseGrids/tsgGridWavelet.cpp
-               SparseGrids/tsgHardCodedTabulatedRules.hpp
-               SparseGrids/tsgHardCodedTabulatedRules.cpp
-               SparseGrids/tsgHiddenExternals.hpp
-               SparseGrids/tsgGridLocalPolynomial.hpp
-               SparseGrids/tsgGridLocalPolynomial.cpp
-               SparseGrids/tsgGridSequence.hpp
-               SparseGrids/tsgGridSequence.cpp
-               SparseGrids/tsgIndexManipulator.hpp
-               SparseGrids/tsgIndexManipulator.cpp
-               SparseGrids/tsgIndexSets.hpp
-               SparseGrids/tsgIndexSets.cpp
-               SparseGrids/tsgLinearSolvers.hpp
-               SparseGrids/tsgLinearSolvers.cpp
-               SparseGrids/tsgOneDimensionalWrapper.hpp
-               SparseGrids/tsgOneDimensionalWrapper.cpp
-               SparseGrids/tsgRuleLocalPolynomial.hpp
-               SparseGrids/tsgRuleLocalPolynomial.cpp
-               SparseGrids/tsgRuleWavelet.hpp
-               SparseGrids/tsgRuleWavelet.cpp
-               SparseGrids/tsgSequenceOptimizer.hpp
-               SparseGrids/tsgSequenceOptimizer.cpp)
-
-set(libtdr_src DREAM/TasmanianDREAM.hpp
-               DREAM/TasmanianDREAM.cpp
-               DREAM/tdrEnumerates.hpp
-               DREAM/tdrCorePDF.hpp
-               DREAM/tdrCorePDF.cpp
-               SparseGrids/TasmanianSparseGrid.hpp)
-
-set(tasdre_src DREAM/tasdream_main.cpp
-               DREAM/tasdreamExternalTests.hpp
-               DREAM/tasdreamExternalTests.cpp
-               DREAM/tasdreamTestPDFs.hpp
-               DREAM/tasdreamTestPDFs.cpp
-               DREAM/tasdreamBenchmark.hpp
-               DREAM/tasdreamBenchmark.cpp)
-
-set(tasmat_src tsgCancelRefine.m
-               tsgCleanTempFiles.m
-               tsgCopyGrid.m
-               tsgDeleteGridByName.m
-               tsgDeleteGrid.m
-               tsgEstimateAnisotropicCoefficients.m
-               tsgEvaluateHierarchy.m
-               tsgEvaluate.m
-               tsgExample.m
-               tsgGetHCoefficients.m
-               tsgGetInterpolationWeights.m
-               tsgGetNeededIndexes.m
-               tsgGetNeededPoints.m
-               tsgGetPointsIndexes.m
-               tsgGetPoints.m
-               tsgGetPolynomialSpaces.m
-               tsgGetQuadrature.m
-               tsgIntegrate.m
-               tsgListGridsByName.m
-               tsgLoadHCoefficients.m
-               tsgLoadValues.m
-               tsgMakeFilenames.m
-               tsgMakeGlobal.m
-               tsgMakeLocalPolynomial.m
-               tsgMakeQuadrature.m
-               tsgMakeSequence.m
-               tsgMakeWavelet.m
-               tsgMergeRefine.m
-               tsgPlotPoints2D.m
-               tsgReadMatrix.m
-               tsgRefineAnisotropic.m
-               tsgRefineSurplus.m
-               tsgReloadGrid.m
-               tsgSummary.m
-               tsgCoreTests.m
-               tsgWriteCustomRuleFile.m
-               tsgWriteMatrix.m)
-
-set(libfor_src InterfaceFortran/TasmanianSG.f90
-               InterfaceFortran/tsgC2FortranBridge.f90
-               InterfaceFortran/tsgC2Fortran.cpp)
-
-set(tasfor_src Testing/fortester.f90)
+# Define the source files
+include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/source_file_list.cmake)
 
 
 ########################################################################
@@ -652,66 +555,8 @@ if (TPL_ENABLE_CHOLMOD OR (DEFINED TPL_CHOLMOD_INCLUDE_DIRS) OR (DEFINED TPL_CHO
     endforeach()
 endif()
 
-########################################################################
-# C++ 2011 support
-########################################################################
-if (NOT DEFINED Tasmanian_FORCE_C11)
-    set(Tasmanian_FORCE_C11 Tasmanian_PREFER_C11)
-endif()
-
-if (Tasmanian_FORCE_C11)
-    foreach(tas_target ${tas_target_list})
-        set_property(TARGET ${tas_target} PROPERTY CXX_STANDARD 11)
-    endforeach()
-endif()
-
-########################################################################
-# Compiler specific flags: Intel hasn't been tested in a while
-########################################################################
-if (NOT DEFINED Tasmanian_CXX_FLAGS)
-    if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang"))
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage") # ./tasgrid -test; gcov CMakeFiles/libtsg_static.dir/SparseGrids/tsgIndexSets.cpp.; geany tsgIndexSets.cpp.gcov
-        if (Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic")
-            if (TAS_SUPPRESS_OMP_WARN)
-                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
-            endif()
-        endif()
-    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
-    elseif (MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Ox /EHsc -D_SCL_SECURE_NO_WARNINGS")
-    endif()
-else()
-    set(CMAKE_CXX_FLAGS ${Tasmanian_CXX_FLAGS})
-endif()
-
-if (Tasmanian_ENABLE_FORTRAN)
-    if (DEFINED Tasmanian_Fortran_FLAGS)
-        set(CMAKE_Fortran_FLAGS ${Tasmanian_Fortran_FLAGS})
-    elseif (${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O3 -fno-f2c -mtune=native -Wall -Wextra -Wshadow -pedantic")
-    endif()
-endif()
-
-if (DEFINED Tasmanian_EXTRA_CXX_FLAGS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Tasmanian_EXTRA_CXX_FLAGS}")
-endif()
-
-if (DEFINED Tasmanian_EXTRA_LIBRARIES)
-    foreach(tas_target ${tas_target_list})
-        target_link_libraries(${tas_target} ${Tasmanian_EXTRA_LIBRARIES})
-    endforeach()
-endif()
-
-if (DEFINED Tasmanian_EXTRA_INCLUDE_DIRS)
-    include_directories(${Tasmanian_EXTRA_INCLUDE_DIRS})
-endif()
-
-if (DEFINED Tasmanian_EXTRA_LINK_DIRS)
-    link_directories(${Tasmanian_EXTRA_LINK_DIRS})
-endif()
+# compiler flags and target extra libs
+include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/compiler_flags_extras.cmake)
 
 ########################################################################
 # Configure the .in. files
@@ -855,6 +700,10 @@ if (Tasmanian_TESTS_OMP_NUM_THREADS)
         PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
         ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
 endif()
+
+#if (${CMAKE_MAJOR_VERSION} GREATER 2)
+#    add_custom_target(test_install
+#endif()
 
 ########################################################################
 # Installing

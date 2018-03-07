@@ -154,10 +154,10 @@ function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDep
 %                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, 
 %                    sConformalMap, vConfromalWeights)%
 
-if (~isnumeric(iDim) || ~isreal(iDim) || ~(rem(iDim,1) == 0) || ~(size(iDim) == [1,1]) || ~(iDim > 0))
+if (~isnumeric(iDim) || ~isreal(iDim) || ~(rem(iDim,1) == 0) || ~(sum(size(iDim) == [1,1])) || ~(iDim > 0))
     error('iDim must be a positive integer')
 end
-if (~isnumeric(iOut) || ~isreal(iOut) || ~(rem(iOut,1) == 0) || ~(size(iOut) == [1,1]) || ~(iOut > 0))
+if (~isnumeric(iOut) || ~isreal(iOut) || ~(rem(iOut,1) == 0) || ~(sum(size(iOut) == [1,1])) || ~(iOut > 0))
     error('iOut must be a positive integer')
 end
 
