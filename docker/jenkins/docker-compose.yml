@@ -4,6 +4,7 @@ services:
     image: dalg24/tasmanian_stack
     environment:
       - NPROC=4
+      - BUILD_TYPE=$BUILD_TYPE
     volumes:
         - jenkins_data:${WORKSPACE}/../..
     working_dir: $WORKSPACE
