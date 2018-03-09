@@ -7,6 +7,7 @@ services:
       - BUILD_TYPE=$BUILD_TYPE
     volumes:
         - jenkins_data:${WORKSPACE}/../..
+    network_mode: host
     working_dir: $WORKSPACE
     command: $WORKSPACE/docker/jenkins/build.sh
 volumes:
