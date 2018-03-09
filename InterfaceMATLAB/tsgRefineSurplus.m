@@ -1,6 +1,7 @@
 function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOut, vLimitLevels)
 %
-% [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOut)
+% [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType,
+%                                 iOut, vLimitLevels)
 %
 % adds new points to the grid in the neighbourhood of existing points
 % associated with large hierarchical surplus
@@ -70,7 +71,7 @@ if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
     else
         tsgWriteMatrix(sFileL, vLimitLevels);
     end
-    lClean.sFileW = 1;
+    lClean.sFileL = 1;
     sCommand = [sCommand, ' -levellimitsfile ', sFileL];
 end
 

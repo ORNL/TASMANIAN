@@ -40,7 +40,6 @@ public:
     BaseAccelerationData();
     virtual ~BaseAccelerationData();
 
-    virtual TypeAcceleration getType() const = 0;
     virtual bool isCompatible(TypeAcceleration acc) const = 0;
 
     virtual void resetValuesAndSurpluses() = 0;
@@ -53,7 +52,6 @@ public:
 
     void setLogStream(std::ostream *os);
 
-    TypeAcceleration getType() const;
     bool isCompatible(TypeAcceleration acc) const;
 
     double* getGPUValues() const;

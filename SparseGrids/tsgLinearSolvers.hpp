@@ -40,21 +40,13 @@
 
 namespace TasGrid{
 
-class TasmanianDenseSolver{
-public:
-    TasmanianDenseSolver();
-    ~TasmanianDenseSolver();
+namespace TasmanianDenseSolver{
+    void solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x);
+}
 
-    static void solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x);
-};
-
-class TasmanianTridiagonalSolver{
-public:
-    TasmanianTridiagonalSolver();
-    ~TasmanianTridiagonalSolver();
-
-    static void decompose(int n, double d[], double e[], double z[]);
-};
+namespace TasmanianTridiagonalSolver{
+    void decompose(int n, double d[], double e[], double z[]);
+}
 
 }
 

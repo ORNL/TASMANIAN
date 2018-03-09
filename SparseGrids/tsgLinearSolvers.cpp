@@ -39,8 +39,8 @@
 
 namespace TasGrid{
 
-TasmanianDenseSolver::TasmanianDenseSolver(){}
-TasmanianDenseSolver::~TasmanianDenseSolver(){}
+//TasmanianDenseSolver::TasmanianDenseSolver(){}
+//TasmanianDenseSolver::~TasmanianDenseSolver(){}
 
 void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x){
     // form Ar = A' * A
@@ -97,8 +97,8 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
     delete[] Ar;
 }
 
-TasmanianTridiagonalSolver::TasmanianTridiagonalSolver(){}
-TasmanianTridiagonalSolver::~TasmanianTridiagonalSolver(){}
+//TasmanianTridiagonalSolver::TasmanianTridiagonalSolver(){}
+//TasmanianTridiagonalSolver::~TasmanianTridiagonalSolver(){}
 
 void TasmanianTridiagonalSolver::decompose(int n, double d[], double e[], double z[]){
     const double tol = TSG_NUM_TOL;
@@ -448,6 +448,7 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
         for(int i=0; i<num_rows; i++){  W[i] /= Z[0]; };
 
         double inner_res = Z[0]; // first residual
+        //std::cout << Z[0] << std::endl;
         int inner_itr = 0; // counts the size of the basis
 
         while ((inner_res > tol) && (inner_itr < max_inner-1)){
@@ -503,8 +504,8 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
                 }
             };
 
-            h_k = 0.0;  for(int i=0; i<num_rows; i++){  h_k += W[inner_itr*num_rows+i]*W[inner_itr*num_rows+i];  }; h_k = sqrt(h_k); //cout << "h_k = " << h_k << endl;
-            for(int i=0; i<num_rows; i++){  W[inner_itr*num_rows+i] /= h_k;  };
+            h_k = 0.0;  for(int i=0; i<num_rows; i++){  h_k += W[inner_itr*num_rows+i]*W[inner_itr*num_rows+i];  }; h_k = sqrt(h_k); //std::cout << "h_k = " << h_k << "  itr = " << inner_itr << std::endl;
+            if (h_k > 0.0) for(int i=0; i<num_rows; i++){ W[inner_itr*num_rows+i] /= h_k; };
 
             for (int i=0; i<inner_itr-1; i++){ // form the next row of the transformation
                 alpha = H[i*max_inner + inner_itr-1];

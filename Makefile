@@ -162,13 +162,18 @@ python3: ./InterfacePython/TasmanianSG.py ./Testing/testTSG.py ./Examples/exampl
 	cp ./InterfacePython/TasmanianSG.py .
 	cp ./Examples/example_sparse_grids.py .
 	cp ./Testing/testTSG.py .
-	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' TasmanianSG.py
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' example_sparse_grids.py
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' testTSG.py
 
 # Fortran
 .PHONY: fortran
-fortran: example_sparse_grids_fortran libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
+fortran: example_sparse_grids_fortran fortran_tester libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
+	./fortester
+
+fortran_tester: libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
+	cp Testing/fortester.f90 .
+	$(FF) $(OPTF) $(IADD) -c fortester.f90 -o fortester.o
+	$(FF) $(OPTLFF) $(LADD) fortester.o -o fortester $(FFLIBS) -lstdc++
 
 example_sparse_grids_fortran: libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
 	cp Examples/example_sparse_grids.f90 .

@@ -94,7 +94,6 @@ void AccelerationDataGPUFull::makeCuSparseHandle(){
 
 void AccelerationDataGPUFull::setLogStream(std::ostream *os){ logstream = os; }
 
-TypeAcceleration AccelerationDataGPUFull::getType() const{ return accel_gpu_fullmemory; }
 bool AccelerationDataGPUFull::isCompatible(TypeAcceleration acc) const{ return AccelerationMeta::isAccTypeFullMemoryGPU(acc); }
 
 #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)

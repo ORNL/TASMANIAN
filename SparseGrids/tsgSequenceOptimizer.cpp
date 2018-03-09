@@ -535,7 +535,8 @@ double Optimizer::argMaxLocalSecant(const Functional *F, double left, double rig
         t = d; d = dm; dm = t;
     }
     int itr = 0;
-    while((fabs(d) > TSG_NUM_TOL) && (itr < TSG_MAX_SECANT_ITERATIONS)){
+    while((fabs(d) > 3*TSG_NUM_TOL) && (itr < TSG_MAX_SECANT_ITERATIONS)){
+        if (d == dm) std::cout << itr << "  " << fabs(d) << "  " << left << "  " << right << "  " << x << endl;
         double xp = x - d * (x - xm) / (d - dm);
         xm = x; dm = d; x = xp;
 

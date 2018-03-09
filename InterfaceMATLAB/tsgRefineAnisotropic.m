@@ -1,6 +1,7 @@
 function [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew, iOut, vLimitLevels)
 %
-% [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew, iOut)
+% [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew,
+%                                     iOut, vLimitLevels)
 %
 % computes anisotropic weights corresponding to sType and refines the grid
 % so that at least iMinNew points are added to the grid while respecting
@@ -66,7 +67,7 @@ if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
     else
         tsgWriteMatrix(sFileL, vLimitLevels);
     end
-    lClean.sFileW = 1;
+    lClean.sFileL = 1;
     sCommand = [sCommand, ' -levellimitsfile ', sFileL];
 end
 

@@ -174,13 +174,16 @@ protected:
     void printGridStats(std::ostream *os) const;
 
     void mapCanonicalToTransformed(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
-    void mapTransformedToCanonical(int num_dimensions, TypeOneDRule rule, double x[]) const;
     void mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
     double getQuadratureScale(int num_dimensions, TypeOneDRule rule) const;
 
     void mapConformalCanonicalToTransformed(int num_dimensions, int num_points, double x[]) const;
     void mapConformalTransformedToCanonical(int num_dimensions, int num_points, double x[]) const;
     void mapConformalWeights(int num_dimensions, int num_points, double weights[]) const;
+
+    const double* formCanonicalPoints(const double *x, double* &x_temp, int num_x) const;
+    void clearCanonicalPoints(double* &x_temp) const;
+    void formTransformedPoints(int num_points, double x[]) const;
 
     void writeAscii(std::ofstream &ofs) const;
     bool readAscii(std::ifstream &ifs);

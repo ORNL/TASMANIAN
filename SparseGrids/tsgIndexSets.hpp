@@ -113,7 +113,7 @@ public:
     IndexSet(const UnsortedIndexSet *set);
     IndexSet(const GranulatedIndexSet *set);
     IndexSet(const IndexSet *set);
-    IndexSet(int cnum_dimensions, const int cindex[]);
+    //IndexSet(int cnum_dimensions, const int cindex[]);
     IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex);
     ~IndexSet();
 

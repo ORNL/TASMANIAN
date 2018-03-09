@@ -59,7 +59,7 @@ bool ExternalTester::Test() const{
     bool passWavelet = testAllWavelet();
 
     bool pass = passGlobal && passLocal && passWavelet && passRefine && passDomain && passAccel;
-    //bool pass = passAccel;
+    //bool pass = true;
 
     cout << endl;
     if (pass){
@@ -240,6 +240,38 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             }
             cout << "   failed function: " << f->getDescription();
             cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
+        }
+    }
+    if (rule == rule_customtabulated){
+        TasGrid::TasmanianSparseGrid *grid_copy;
+        for(int i=0; i<num_global_tests; i++){
+            if (interpolation){
+                grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+                grid_copy = new TasGrid::TasmanianSparseGrid(grid);
+                R = getError(f, grid_copy, tests[i], x);
+            }else{
+                grid.makeGlobalGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+                grid_copy = new TasGrid::TasmanianSparseGrid(grid);
+                R = getError(f, grid_copy, type_integration);
+            }
+            if (R.error > tols[i]){
+                bPass = false;
+                cout << setw(18) << "ERROR: FAILED global" << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
+                if (interpolation){
+                    if (tests[i%3] == type_integration){
+                        cout << setw(25) << "integration test";
+                    }else if (tests[i%3] == type_nodal_interpolation){
+                        cout << setw(25) << "w-interpolation";
+                    }else{
+                        cout << setw(25) << "interpolation";
+                    }
+                }else{
+                    cout << setw(25) << "integration test";
+                }
+                cout << "   failed function: " << f->getDescription();
+                cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
+            }
+            delete grid_copy;
         }
     }
     //cout << "HERE 1" << TasGrid::OneDimensionalMeta::getIORuleString(rule) << endl;
@@ -556,7 +588,29 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
+        }
+        // Gauss-Chebyshev-1 translated to [4, 7], area = M_PI, integral of f(x) = 1 / x is M_PI * sqrt(7.0) / 14.0
+        TasGrid::TasmanianSparseGrid grid;
+        grid.makeGlobalGrid(1, 1, 6, type_level, rule_gausschebyshev1);
+        double transa = 4.0, transb = 7.0;
+        grid.setDomainTransform(&transa, &transb);
+        double *w = grid.getQuadratureWeights();
+        double *p = grid.getNeededPoints();
+        int num_p = grid.getNumNeeded();
+        double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
+        if (fabs(sum - M_PI) > TSG_NUM_TOL){
+            cout << sum << "     " << M_PI << endl;
+            cout << "ERROR: sum of weight in transformed gauss-chebyshev-1 rule is off by: " << fabs(sum - M_PI) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] / p[i];
+        //cout << "error in integral of 1/x is = " << fabs(sum - M_PI * sqrt(7.0) / 14.0) << endl;
+        if (fabs(sum - M_PI * sqrt(7.0) / 14.0) > 1.E-11){
+            cout << "ERROR: disrepancy in transformed gauss-chebyshev-1 rule is: " << fabs(sum - M_PI * sqrt(7.0) / 14.0) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        delete[] w;
+        delete[] p; }
     }else if (rule == TasGrid::rule_gausschebyshev1odd){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_gausschebyshev1odd;
         const int depths1[3] = { 20, 20, 20 };
@@ -574,7 +628,29 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
+        }
+        // Gauss-Chebyshev-2 translated to [4, 7], area = 9.0 * M_PI / 2.0, integral of f(x) = (7 - x)^0.5 (x - 4)^0.5 is 9.0 / 2.0
+        TasGrid::TasmanianSparseGrid grid;
+        grid.makeGlobalGrid(1, 1, 10, type_level, rule_gausschebyshev2);
+        double transa = 4.0, transb = 7.0;
+        grid.setDomainTransform(&transa, &transb);
+        double *w = grid.getQuadratureWeights();
+        double *p = grid.getNeededPoints();
+        int num_p = grid.getNumNeeded();
+        double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
+        if (fabs(sum - 9.0 * M_PI / 8.0) > TSG_NUM_TOL){
+            cout << sum << "     " << 9.0 * M_PI / 8.0 << endl;
+            cout << "ERROR: sum of weight in transformed gauss-chebyshev-2 rule is off by: " << fabs(sum - 9.0 * M_PI / 8.0) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * sqrt(7.0 - p[i]) * sqrt(p[i] - 4.0);
+        //cout << "error in integral of (7 - x)^0.5 (x - 4)^0.5 is = " << fabs(sum - 4.5) << endl;
+        if (fabs(sum - 4.5) > 1.E-3){
+            cout << "ERROR: disrepancy in transformed gauss-chebyshev-2 rule is: " << fabs(sum - 4.5) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        delete[] w;
+        delete[] p; }
     }else if (rule == TasGrid::rule_gausschebyshev2odd){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_gausschebyshev2odd;
         const int depths1[3] = { 20, 20, 20 };
@@ -592,7 +668,29 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
+        }
+        // Gauss-Gegenbauer translated to [4, 7], area = 8.1, integral of f(x) = x^3 is 389367.0 / 280.0
+        TasGrid::TasmanianSparseGrid grid;
+        grid.makeGlobalGrid(1, 1, 10, type_level, rule_gaussgegenbauer, 0, 2.0);
+        double transa = 4.0, transb = 7.0;
+        grid.setDomainTransform(&transa, &transb);
+        double *w = grid.getQuadratureWeights();
+        double *p = grid.getNeededPoints();
+        int num_p = grid.getNumNeeded();
+        double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
+        if (fabs(sum - 8.1) > TSG_NUM_TOL){
+            cout << sum << "     " << 8.1 << endl;
+            cout << "ERROR: sum of weight in transformed gauss-genebauer rule is off by: " << fabs(sum - 8.1) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * p[i] * p[i] * p[i];
+        //cout << "error in integral of x^3 is = " << fabs(sum - 389367.0 / 280.0) << endl;
+        if (fabs(sum - 389367.0 / 280.0) > 1.E-10){
+            cout << "ERROR: disrepancy in transformed gauss-gegenbauer rule is: " << fabs(sum - 389367.0 / 280.0) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        delete[] w;
+        delete[] p; }
     }else if (rule == TasGrid::rule_gaussgegenbauerodd){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_gaussgegenbauerodd;
         const int depths1[3] = { 20, 20, 20 };
@@ -610,7 +708,29 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
+        }
+        // Gauss-Jacobi translated to [4, 7], area = 12.15, integral of f(x) = x^3 is 389367.0 / 280.0
+        TasGrid::TasmanianSparseGrid grid;
+        grid.makeGlobalGrid(1, 1, 10, type_level, rule_gaussjacobi, 0, 3.0, 2.0);
+        double transa = 4.0, transb = 7.0;
+        grid.setDomainTransform(&transa, &transb);
+        double *w = grid.getQuadratureWeights();
+        double *p = grid.getNeededPoints();
+        int num_p = grid.getNumNeeded();
+        double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
+        if (fabs(sum - 12.15) > TSG_NUM_TOL){
+            cout << sum << "     " << 12.15 << endl;
+            cout << "ERROR: sum of weight in transformed gauss-jacobi rule is off by: " << fabs(sum - 12.15) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * sin(M_PI * p[i]);
+        //cout << "error in integral of sin(pi * x) is = " << fabs(sum + 18.0 * (3.0 * M_PI * M_PI - 4.0) / pow(M_PI, 5.0)) << endl;
+        if (fabs(sum + 18.0 * (3.0 * M_PI * M_PI - 4.0) / pow(M_PI, 5.0)) > 1.E-11){
+            cout << "ERROR: disrepancy in transformed gauss-jacobi rule is: " << fabs(sum + 18.0 * (3.0 * M_PI * M_PI - 4.0) / pow(M_PI, 5.0)) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        delete[] w;
+        delete[] p; }
     }else if (rule == TasGrid::rule_gaussjacobiodd){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_gaussjacobiodd;
         const int depths1[3] = { 20, 20, 20 };
@@ -624,11 +744,39 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = TasGrid::rule_gausslaguerre;
         const int depths1[1] = { 20 };
         const double tols1[1] = { 1.E-08 };
-        if (testGlobalRule(&f21constGGL, oned, 0, alpha, beta, false, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
+        if (!testGlobalRule(&f21constGGL, oned, 0, alpha, beta, false, depths1, tols1)){
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
+        }
+        TasGrid::TasmanianSparseGrid grid;
+        grid.makeGlobalGrid(2, 1, 6, type_level, rule_gausslaguerre, 0, 3.0);
+        double transa[2] = {4.0, 3.0}, transb[2] = {0.5, 0.75};
+        grid.setDomainTransform(transa, transb);
+        double *w = grid.getQuadratureWeights();
+        double *p = grid.getNeededPoints();
+        int num_p = grid.getNumNeeded();
+        double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
+        if (fabs(sum - 96.0 * 512.0 / 27.0) > TSG_NUM_TOL){
+            cout << sum << "     " << 96.0 * 512.0 / 27.0 << endl;
+            cout << "ERROR: sum of weight in transformed gauss-laguerr rule is off by: " << fabs(sum - 96.0 * 512.0 / 27.0) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]);
+        if (fabs(sum - 15360.0 * 3573248.0 / 243.0) > 8.E-8){
+            cout << "ERROR: disrepancy in transformed gauss-laguerr rule is: " << fabs(sum - 15360.0 * 3573248.0 / 243.0) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        double test_x[2] = {3.0 + sqrt(2.0), 2.0 + sqrt(2.0)};
+        double *iw = grid.getInterpolationWeights(test_x);
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += iw[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]);
+        if (fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) > 1.E-9){
+            cout << "ERROR: nodal interpolation using gauss-laguerre: " << fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        if (pass && verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
+        delete[] p;
+        delete[] w;
+        delete[] iw;
+        }
     }else if (rule == TasGrid::rule_gausslaguerreodd){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_gausslaguerreodd;
         const int depths1[1] = { 20 };
@@ -642,11 +790,39 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = TasGrid::rule_gausshermite;
         const int depths1[1] = { 20 };
         const double tols1[1] = { 1.E-09 };
-        if (testGlobalRule(&f21constGH, oned, 0, alpha, beta, false, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
+        if (!testGlobalRule(&f21constGH, oned, 0, alpha, beta, false, depths1, tols1)){
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
+        }
+        TasGrid::TasmanianSparseGrid grid;
+        grid.makeGlobalGrid(2, 1, 6, type_level, rule_gausshermite, 0, 4.0);
+        double transa[2] = {4.0, 3.0}, transb[2] = {0.5, 0.75};
+        grid.setDomainTransform(transa, transb);
+        double *w = grid.getQuadratureWeights();
+        double *p = grid.getNeededPoints();
+        int num_p = grid.getNumNeeded();
+        double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
+        if (fabs(sum - (8.0 * M_PI / 3.0) * sqrt(6.0)) > TSG_NUM_TOL){
+            cout << sum << "     " << 96.0 * 512.0 / 27.0 << endl;
+            cout << "ERROR: sum of weight in transformed gauss-hermite rule is off by: " << fabs(sum - (8.0 * M_PI / 3.0) * sqrt(6.0)) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]*p[2*i+1]);
+        if (fabs(sum - (63.0 * 19912.0 * M_PI / 81.0) * sqrt(6.0)) > 4.E-8){
+            cout << "ERROR: disrepancy in transformed gauss-hermite rule is: " << fabs(sum - 15360.0 * 3573248.0 / 243.0) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        double test_x[2] = {3.0 + sqrt(2.0), 2.0 + sqrt(2.0)};
+        double *iw = grid.getInterpolationWeights(test_x);
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += iw[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]*p[2*i+1]);
+        if (fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1] * test_x[1]) > 1.E-9){
+            cout << "ERROR: nodal interpolation using gauss-hermite: " << fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) << endl;
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }
+        if (pass && verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
+        delete[] p;
+        delete[] w;
+        delete[] iw;
+        }
     }else if (rule == TasGrid::rule_gausshermiteodd){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_gausshermiteodd;
         const int depths1[1] = { 20 };
@@ -705,6 +881,28 @@ bool ExternalTester::testAllGlobal() const{
         if (!performGLobalTest(rules[i])){
             pass = false;
         }
+    }
+    { TasGrid::TasmanianSparseGrid grid; grid.makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_fejer2);
+        int *indx = 0, *pntr = 0;
+        double *vals = 0;
+        double *pnts = new double[20]; setRandomX(20, pnts);
+        grid.evaluateSparseHierarchicalFunctions(pnts, 10, pntr, indx, vals);
+        getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
+        const double *coeff = grid.getHierarchicalCoefficients();
+        double *y = new double[10];
+        grid.evaluateBatch(pnts, 10, y);
+        for(int i=0; i<10; i++){
+            for(int j=pntr[i]; j<pntr[i+1]; j++){
+                y[i] -= coeff[indx[j]] * vals[j];
+            }
+        }
+        for(int i=0; i<10; i++){
+            if (fabs(y[i]) > TSG_NUM_TOL){
+                cout << "Error in evaluateSparseHierarchicalFunctions() (global)" << endl;
+                pass = false;
+            }
+        }
+        delete[] indx; delete[] pntr; delete[] vals; delete[] pnts; delete[] y;
     }
     int wfirst = 11, wsecond = 34, wthird = 15;
     if (pass){
@@ -787,7 +985,7 @@ bool ExternalTester::testAnisotropicRefinement(const BaseFunction *f, TasmanianS
 bool ExternalTester::testAllPWLocal() const{
     bool pass = true;
     int wfirst = 10, wsecond = 35, wthird = 15;
-    // TODO: double-check the piece-wise constant rule, why it fails on Windows
+
     { TasGrid::TypeOneDRule oned = TasGrid::rule_semilocalp;
     const int depths1[18] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
     const double tols1[18] = { 1.E-03, 5.E-01, 5.E-01, 1.E-03, 1.E-03, 1.E-03, 1.E-07, 1.E-04, 1.E-04, 1.E-07, 1.E-05, 1.E-05, 1.E-07, 4.E-06, 4.E-06, 1.E-07, 4.E-06, 4.E-06 };
@@ -812,6 +1010,28 @@ bool ExternalTester::testAllPWLocal() const{
     }else{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
     }}
+    { TasGrid::TasmanianSparseGrid grid; grid.makeLocalPolynomialGrid(2, 1, 4, 1);
+        int *indx = 0, *pntr = 0;
+        double *vals = 0;
+        double *pnts = new double[20]; setRandomX(20, pnts);
+        grid.evaluateSparseHierarchicalFunctions(pnts, 10, pntr, indx, vals);
+        getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
+        const double *coeff = grid.getHierarchicalCoefficients();
+        double *y = new double[10];
+        grid.evaluateBatch(pnts, 10, y);
+        for(int i=0; i<10; i++){
+            for(int j=pntr[i]; j<pntr[i+1]; j++){
+                y[i] -= coeff[indx[j]] * vals[j];
+            }
+        }
+        for(int i=0; i<10; i++){
+            if (fabs(y[i]) > TSG_NUM_TOL){
+                cout << "Error in evaluateSparseHierarchicalFunctions() (localp)" << endl;
+                pass = false;
+            }
+        }
+        delete[] indx; delete[] pntr; delete[] vals; delete[] pnts; delete[] y;
+    }
     wfirst = 11; wsecond = 34;
     if (pass){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "local polynomial" << setw(wthird) << "Pass" << endl;
@@ -863,6 +1083,40 @@ bool ExternalTester::testAllWavelet() const{
     }else{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(rule_wavelet) << setw(wthird) << "FAIL" << endl; pass = false;
     }
+    //{ TasGrid::TasmanianSparseGrid grid; grid.makeWaveletGrid(2, 1, 2, 1);
+    //    int *indx = 0, *pntr = 0;
+    //    double *vals = 0;
+    //    double *pnts = new double[20]; setRandomX(20, pnts);
+    //    //grid.evaluateSparseHierarchicalFunctions(pnts, 10, pntr, indx, vals);
+    //    //getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
+    //    //const double *coeff = grid.getHierarchicalCoefficients();
+    //    //double *y = new double[10];
+    //    //grid.evaluateBatch(pnts, 10, y);
+    //    //for(int i=0; i<10; i++){
+    //    //    for(int j=pntr[i]; j<pntr[i+1]; j++){
+    //    //        y[i] -= coeff[indx[j]] * vals[j];
+    //    //    }
+    //    //}
+    //    double *v = new double[10 * grid.getNumPoints()];
+    //    getError(&f21nx2, &grid, type_internal_interpolation);
+    //    grid.evaluateHierarchicalFunctions(pnts, 10, v);
+    //    const double *coeff = grid.getHierarchicalCoefficients();
+    //    double *y = new double[10];
+    //    grid.evaluateBatch(pnts, 10, y);
+    //    for(int i=0; i<10; i++){
+    //        for(int j=0; j<grid.getNumPoints(); j++){
+    //            y[i] -= coeff[j] * v[i*grid.getNumPoints() + j];
+    //        }
+    //    }
+    //    for(int i=0; i<10; i++){
+    //        if (fabs(y[i]) > TSG_NUM_TOL){
+    //            cout << "Error in evaluateSparseHierarchicalFunctions() (wavelet)" << endl;
+    //            cout << y[i] << endl;
+    //            pass = false;
+    //        }
+    //    }
+    //    delete[] indx; delete[] pntr; delete[] vals; delete[] pnts; delete[] y;
+    //}
     return pass;
 }
 
@@ -1144,18 +1398,43 @@ bool ExternalTester::testAllDomain() const{
     {
         const BaseFunction *f = &f21expDomain;
         double errs[5] = {3.E-5, 2.E-7, 2.E-8, 6.E-10, 4.E-11 };
+        double errs2[5] = {1.E-5, 2.E-6, 6.E-8, 6.E-9, 8.E-11 };
+        double errs3[5] = {6.E-2, 1.E-2, 5.E-3, 6.E-4, 6.E-5 };
         double transform_a[2] = { 3.0, -3.0 };
         double transform_b[2] = { 4.0,  2.0 };
         for(int i=0; i<5; i++){
             grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), i+5, TasGrid::type_level, TasGrid::rule_leja);
             grid.setDomainTransform(transform_a, transform_b);
+            double *needed_points = grid.getNeededPoints();
+            int num_needed = grid.getNumNeeded();
             TestResults R = getError(f, &grid, type_integration);
-            if (R.error>errs[i]){
+            if (R.error > errs[i]){
                 cout << "Using leja rule" << endl;
                 cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
-            //cout << "  error = " << R.error << endl;
+            double test_x[2] = {3.314, -1.71732};
+            R = getError(f, &grid, type_nodal_interpolation, test_x);
+            if (R.error > errs2[i]){
+                cout << "Using leja rule" << endl;
+                cout << "Failed domain transform test interpolation for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                     pass2 = false;
+            }
+            R = getError(f, &grid, type_internal_interpolation, test_x);
+            if (R.error > errs3[i]){
+                cout << "Using leja rule" << endl;
+                cout << "Failed domain transform test interpolation for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                     pass2 = false;
+            }
+            double *loaded_points = grid.getLoadedPoints();
+            for(int j=0; j<num_needed * f->getNumInputs(); j++){
+                if (fabs(needed_points[j] - loaded_points[j]) > TSG_NUM_TOL){
+                    cout << "Mismatch between needed and loaded points" << endl;
+                    pass2 = false;
+                }
+            }
+            delete[] loaded_points;
+            delete[] needed_points;
         }
     }{
         const BaseFunction *f = &f21expDomain;
@@ -1219,9 +1498,10 @@ bool ExternalTester::testAllDomain() const{
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
             gridc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
             gridc.setConformalTransformASIN(asin_conformal);
+            double *needed_points = grid.getNeededPoints();
+            int num_needed = grid.getNumNeeded();
             TestResults R1 = getError(f, &grid, type_internal_interpolation);
             TestResults R2 = getError(f, &gridc, type_internal_interpolation);
-            //cout << R1.num_points << "  " << R2.num_points << endl;
             if (R1.num_points != R2.num_points){
                 cout << "Failed in number of points for conformal mapping and clenshaw-curtis rule" << endl;
                 pass3 = false;
@@ -1232,6 +1512,25 @@ bool ExternalTester::testAllDomain() const{
                 cout << " conformal error = " << R2.error << endl;
                 pass3 = false;
             }
+            double y1, y2, y_true;
+            grid.integrate(&y1);
+            gridc.integrate(&y2);
+            f->getIntegral(&y_true);
+            if (fabs(y1 - y_true) < fabs(y2 - y_true)){
+                cout << "Failed in error for conformal mapping and clenshaw-curtis rule" << endl;
+                cout << "  standard error = " << fabs(y1 - y_true) << endl;
+                cout << " conformal error = " << fabs(y2 - y_true) << endl;
+                pass3 = false;
+            }
+            double *loaded_points = grid.getLoadedPoints();
+            for(int j=0; j<num_needed * f->getNumInputs(); j++){
+                if (fabs(needed_points[j] - loaded_points[j]) > TSG_NUM_TOL){
+                    cout << "Mismatch between needed and loaded points" << endl;
+                    pass2 = false;
+                }
+            }
+            delete[] loaded_points;
+            delete[] needed_points;
         }
     }{
         TasmanianSparseGrid gridc;
@@ -1254,6 +1553,14 @@ bool ExternalTester::testAllDomain() const{
                 cout << " conformal error = " << R2.error << endl;
                 pass3 = false;
             }
+            R1 = getError(f, &grid, type_integration);
+            R2 = getError(f, &gridc, type_integration);
+            if (R1.error < R2.error){
+                cout << "Failed in error for conformal mapping and gauss-patterson rule (integration)" << endl;
+                cout << "  standard error = " << R1.error << endl;
+                cout << " conformal error = " << R2.error << endl;
+                pass3 = false;
+            }
         }
     }{
         TasmanianSparseGrid gridc;
@@ -1272,6 +1579,14 @@ bool ExternalTester::testAllDomain() const{
             }
             if (R1.error < R2.error){
                 cout << "Failed in error for conformal mapping and local polynomial rule" << endl;
+                cout << "  standard error = " << R1.error << endl;
+                cout << " conformal error = " << R2.error << endl;
+                pass3 = false;
+            }
+            R1 = getError(f, &grid, type_integration);
+            R2 = getError(f, &gridc, type_integration);
+            if (R1.error < R2.error){
+                cout << "Failed in error for conformal mapping and local polynomial rule (integration)" << endl;
                 cout << "  standard error = " << R1.error << endl;
                 cout << " conformal error = " << R2.error << endl;
                 pass3 = false;

@@ -338,6 +338,34 @@ class TestTasmanian(unittest.TestCase):
             gridB.read("testSave", bUseBinaryFormat = True)
             self.compareGrids(gridA, gridB)
 
+            gridB.makeSequenceGrid(1, 1, 0, "level", "leja");
+            gridB.copyGrid(gridA)
+            self.compareGrids(gridA, gridB)
+
+        # Make a grid with every possible rule (catches false-positive and memory crashes)
+        for sType in TasmanianSG.lsTsgGlobalTypes:
+            for sRule in TasmanianSG.lsTsgGlobalRules:
+                if ("custom-tabulated" in sRule):
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
+                else:
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule)
+                gridA.write("testSave", bUseBinaryFormat = False)
+                gridB.read("testSave", bUseBinaryFormat = False)
+                self.compareGrids(gridA, gridB)
+                gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
+                gridA.write("testSave", bUseBinaryFormat = True)
+                gridB.read("testSave", bUseBinaryFormat = True)
+
+        for sType in TasmanianSG.lsTsgGlobalTypes:
+            for sRule in TasmanianSG.lsTsgSequenceRules:
+                gridA.makeSequenceGrid(2, 1, 3, sType, sRule)
+                gridA.write("testSave")
+                gridB.read("testSave")
+                self.compareGrids(gridA, gridB)
+                gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
+                gridA.write("testSave", bUseBinaryFormat = True)
+                gridB.read("testSave", bUseBinaryFormat = True)
+
     def testAcceleratedEvaluate(self):
         print("\nTesting accelerated evaluate consistency")
         # consistency with evaluate, not a timing test
@@ -614,18 +642,6 @@ class TestTasmanian(unittest.TestCase):
         aA = np.cos(math.pi * aA)
         aP = grid.getPoints()
         np.testing.assert_almost_equal(aA, aP, 12, 'Anisotropy heavily curved not equal', True) # 12 is the number of dec places
-
-        # Make a grid with every possible rule (catches false-positive and memory crashes)
-        for sType in TasmanianSG.lsTsgGlobalTypes:
-            for sRule in TasmanianSG.lsTsgGlobalRules:
-                if ("custom-tabulated" in sRule):
-                    grid.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
-                else:
-                    grid.makeGlobalGrid(2, 0, 2, sType, sRule)
-
-        for sType in TasmanianSG.lsTsgGlobalTypes:
-            for sRule in TasmanianSG.lsTsgSequenceRules:
-                grid.makeSequenceGrid(2, 1, 3, sType, sRule)
 
         for sRule in TasmanianSG.lsTsgLocalRules:
             grid.makeLocalPolynomialGrid(3, 1, 3, 0, sRule)

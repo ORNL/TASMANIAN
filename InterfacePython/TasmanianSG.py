@@ -247,9 +247,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetGPUMemory.argtypes = [c_int]
         self.pLibTSG.tsgGetGPUName.argtypes = [c_int, c_int, c_char_p, POINTER(c_int)] # not really const here
 
-        self.pLibTSG.tsgDeleteDoubles.argtypes = [POINTER(c_double)]
         self.pLibTSG.tsgDeleteInts.argtypes = [POINTER(c_int)]
-        self.pLibTSG.tsgDeleteChars.argtypes = [c_char_p]
 
         self.pGrid = self.pLibTSG.tsgConstructTasmanianSparseGrid()
 
