@@ -59,8 +59,6 @@ if ((NOT DEFINED CMAKE_BUILD_TYPE) OR (NOT CMAKE_BUILD_TYPE))
 endif()
 
 # version and license
-#set(Tasmanian_VersionMajor 5)
-#set(Tasmanian_VersionMinor 1)
 set(Tasmanian_VersionString "${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
 set(Tasmanian_License "BSD 3-Clause with UT-Battelle disclamer")
 
@@ -183,6 +181,10 @@ if (Tasmanian_ENABLE_CUBLAS OR Tasmanian_ENABLE_CUDA)
     endif()
 else()
     set(Tasmanian_USING_FINDCUDA OFF)
+endif()
+
+if (Tasmanian_ENABLE_CUBLAS OR Tasmanian_ENABLE_CUDA)
+    set(libtsg_src SparseGrids/tsgCudaMacros.hpp ${libtsg_src})
 endif()
 
 if (Tasmanian_ENABLE_CUBLAS)
@@ -702,7 +704,7 @@ if (Tasmanian_TESTS_OMP_NUM_THREADS)
 endif()
 
 #if (${CMAKE_MAJOR_VERSION} GREATER 2)
-#    add_custom_target(test_install
+add_custom_target(test_install COMMAND ${CMAKE_BINARY_DIR}/test_post_install.sh)
 #endif()
 
 ########################################################################

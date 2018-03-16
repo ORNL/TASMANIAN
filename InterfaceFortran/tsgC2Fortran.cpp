@@ -101,7 +101,7 @@ void tsgcer_(int *id){ _tsg_grid_list[*id]->setErrorLog(&cerr); }
 
 // read/write
 void tsgwri_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->write(filename, (*binary != 0)); }
-void tsgrea_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->read(filename, (*binary != 0)); }
+void tsgrea_(int *id, const char *filename){ _tsg_grid_list[*id]->read(filename); }
 
 // create
 void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights, double *alpha, double *beta, const int *llimits){

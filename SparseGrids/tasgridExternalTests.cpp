@@ -33,6 +33,8 @@
 
 #include "tasgridExternalTests.hpp"
 
+#include "tsgCudaMacros.hpp"
+
 ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false){ /*srand(time(0));*/ srand(10); }
 ExternalTester::~ExternalTester(){}
 void ExternalTester::resetRandomSeed(){ srand(time(0)); }
@@ -89,7 +91,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
         double *y = new double[num_outputs];
         double *r = new double[num_outputs];  std::fill(r, r + num_outputs, 0.0);
-//      Sequential version
+//      Sequential version: integration
 //        for(int i=0; i<num_points; i++){
 //            f->eval(&(points[i*num_dimensions]), y);
 //            for(int k=0; k<num_outputs; k++){
@@ -274,9 +276,8 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             delete grid_copy;
         }
     }
-    //cout << "HERE 1" << TasGrid::OneDimensionalMeta::getIORuleString(rule) << endl;
+
     if (TasGrid::OneDimensionalMeta::isSequence(rule)){
-        //cout << "HERE 2" << TasGrid::OneDimensionalMeta::getIORuleString(rule) << endl;
         for(int i=0; i<num_global_tests; i++){
             if (interpolation){
                 grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic);
@@ -761,14 +762,14 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]);
-        if (fabs(sum - 15360.0 * 3573248.0 / 243.0) > 8.E-8){
+        if (fabs(sum - 15360.0 * 3573248.0 / 243.0) > 1.E-7){
             cout << "ERROR: disrepancy in transformed gauss-laguerr rule is: " << fabs(sum - 15360.0 * 3573248.0 / 243.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         double test_x[2] = {3.0 + sqrt(2.0), 2.0 + sqrt(2.0)};
         double *iw = grid.getInterpolationWeights(test_x);
         sum = 0.0; for(int i=0; i<num_p; i++) sum += iw[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]);
-        if (fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) > 1.E-9){
+        if (fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) > 2.E-9){
             cout << "ERROR: nodal interpolation using gauss-laguerre: " << fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
@@ -1644,10 +1645,15 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         for(int i=0; i<outs*num_x; i++) if (fabs(test_y[i] - baseline_y[i]) > err) err = fabs(test_y[i] - baseline_y[i]);
 
         if (err > 1.E-11){
+            int tm = 0; err = 0.0;
+            for(int i=0; i<outs*num_x; i++){ if (fabs(test_y[i] - baseline_y[i]) > err){ err = fabs(test_y[i] - baseline_y[i]); tm = i; }}
+            cout << tm << "  " << test_y[tm] << "    " << baseline_y[tm] << endl;
+
             pass = false;
             cout << "Failed Batch evaluation for acceleration c = " << c << " gpuID = " << gpuID << endl;
             cout << "Observed error: " << err << " for function: " << f->getDescription() << endl;
             grid->printStats();
+            exit(1);
         }
 
         for(int i=0; i<num_fast; i++){
@@ -1682,6 +1688,126 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     return pass;
 }
 
+bool ExternalTester::testGPU2GPUevaluations() const{
+    #ifdef TASMANIAN_CUDA
+    // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
+    TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
+    int num_tests = 6;
+    int dims = 3;
+    TasGrid::TypeOneDRule pwp_rule[3] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp};
+    double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
+
+    bool pass = true;
+    for(int gpuID=0; gpuID < grid->getNumGPUs(); gpuID++){
+        for(int t=0; t<num_tests; t++){
+            bool dense_pass = true;
+            if (t < 6){ // local poly rule
+                grid->makeLocalPolynomialGrid(dims, 1, 7, t / 3 + 1, pwp_rule[t % 3]);
+            }
+            grid->setDomainTransform(a, b);
+
+            int nump = 3000;
+            double *x = new double[dims*nump];
+            double *xt = new double[dims*nump];
+            setRandomX(dims*nump, x);
+            for(int i=0; i<nump; i++){
+                for(int j=0; j<dims; j++){
+                    xt[dims*i + j] = 0.5 * (b[j] - a[j]) * x[dims*i+j] + 0.5 * (b[j] + a[j]);
+                }
+            }
+            //grid->printStats();
+            //cout << "Memory requirements = " << (grid->getNumPoints() * nump * 8) / (1024 * 1024) << "MB" << endl;
+
+            // Dense version:
+            double *y_true = new double[grid->getNumPoints() * nump];
+            grid->evaluateHierarchicalFunctions(xt, nump, y_true);
+
+            double *gpux = TasGrid::TasCUDA::cudaSend(dims * nump, xt, &cerr);
+            double *gpuy = TasGrid::TasCUDA::cudaNew<double>(grid->getNumPoints() * nump, &cerr);
+
+            grid->enableAcceleration(TasGrid::accel_gpu_cuda);
+            grid->setGPUID(gpuID);
+            grid->evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
+
+            double *y = new double[grid->getNumPoints() * nump];
+            TasGrid::TasCUDA::cudaRecv<double>(grid->getNumPoints() * nump, gpuy, y, &cerr);
+
+            for(int i=0; i<grid->getNumPoints() * nump; i++){
+                if (fabs(y[i] - y_true[i]) > 1.E-11){
+                    dense_pass = false;
+                }
+            }
+
+            if (!dense_pass){
+                cout << "Failed when using grid: " << endl;
+                grid->printStats();
+            }
+            pass = pass && dense_pass;
+
+            TasGrid::TasCUDA::cudaDel<double>(gpuy);
+            delete[] y_true;
+            delete[] y;
+
+            // Sparse version:
+            bool sparse_pass = true;
+            int *gpu_indx = 0, *gpu_pntr = 0, num_nz = 0;
+            double *gpu_vals = 0;
+            grid->enableAcceleration(TasGrid::accel_gpu_cuda);
+            grid->setGPUID(gpuID);
+            grid->evaluateSparseHierarchicalFunctionsGPU(gpux, nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
+            //cout << "Done eval, nnz = " << num_nz << endl;
+
+            int *cpntr = new int[nump+1]; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr, &cerr);
+            int *cindx = new int[num_nz]; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
+            double *cvals = new double[num_nz]; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals, &cerr);
+
+            int *pntr = 0, *indx = 0;
+            double *vals = 0;
+            grid->enableAcceleration(TasGrid::accel_none);
+            grid->evaluateSparseHierarchicalFunctions(xt, nump, pntr, indx, vals);
+            if (pntr[nump] != num_nz){
+                cout << "ERROR: mismatch in the numn from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
+                grid->printStats();
+                sparse_pass = false;
+            }
+            if (sparse_pass){
+                for(int i=0; i<nump; i++){
+                    for(int j=pntr[i]; j<pntr[i+1]; j++){
+                        if (indx[j] != cindx[j]){
+                            cout << "ERROR: mismatch in index i = " << i << "   j = " << j << "  indx[j] = " << indx[j] << "  cindx[j] = " << cindx[j] << endl;
+                            sparse_pass = false;
+                        }
+                        if (fabs(vals[i] - cvals[i]) > 1.E-12){
+                            cout << "ERROR: i = " << i << "  " << fabs(vals[i] - cvals[i]) << endl;
+                            sparse_pass = false;
+                        }
+                        //cout << ": mismatch in index i = " << i << "   j = " << j << "  indx[j] = " << indx[j] << "  cindx[j] = " << cindx[j] << endl;
+                        //cout << ": i = " << i << "  " << fabs(vals[i] - cvals[i]) << endl;
+                    }
+                }
+            }
+            pass = pass && sparse_pass;
+
+            delete[] cpntr; delete[] pntr;
+            delete[] cindx; delete[] indx;
+            delete[] cvals; delete[] vals;
+            TasGrid::TasCUDA::cudaDel<double>(gpux);
+            TasGrid::TasCUDA::cudaDel<int>(gpu_pntr);
+            TasGrid::TasCUDA::cudaDel<int>(gpu_indx);
+            TasGrid::TasCUDA::cudaDel<double>(gpu_vals);
+
+            delete[] x;
+            delete[] xt;
+        }
+    }
+
+    return pass;
+
+    #else
+    return true;
+    #endif // TASMANIAN_CUDA
+}
+
 bool ExternalTester::testAllAcceleration() const{
     const BaseFunction *f = &f23Kexpsincos;
     TasmanianSparseGrid grid;
@@ -1712,6 +1838,17 @@ bool ExternalTester::testAllAcceleration() const{
     }else{
         cout << "      Accelerated" << setw(wsecond) << "local polynomial" << setw(wthird) << "FAIL" << endl;
     }
+
+    #ifdef TASMANIAN_CUDA
+    pass = pass && testGPU2GPUevaluations();
+    if (pass){
+        if (verbose) cout << "      Accelerated" << setw(wsecond) << "gpu-to-gpu" << setw(wthird) << "Pass" << endl;
+    }else{
+        cout << "      Accelerated" << setw(wsecond) << "gpu-to-gpu" << setw(wthird) << "FAIL" << endl;
+    }
+    #else
+    if (verbose) cout << "      Accelerated" << setw(wsecond) << "gpu-to-gpu" << setw(wthird) << "Skipped (needs Tasmanian_ENABLE_CUDA=ON)" << endl;
+    #endif // TASMANIAN_CUDA
 
     //cout << "      Domain                      anisotropic" << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;
     cout << "      Acceleration                        all" << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;
@@ -1791,7 +1928,7 @@ void ExternalTester::benchmark(int argc, const char **argv){
         cout << setw(width) << "num outputs";
         TypeAcceleration cpu_tests[2] = {accel_none, accel_cpu_blas};
         TypeAcceleration gpu_tests[3] = {accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda};
-        //TypeAcceleration gpu_tests[3] = {accel_none, accel_gpu_cublas, accel_gpu_cuda};
+        //TypeAcceleration gpu_tests[3] = {accel_cpu_blas, accel_gpu_cuda, accel_gpu_cuda};
         TypeAcceleration *tests;
         int num_tests;
         if (gpu > -1){
@@ -1831,10 +1968,10 @@ void ExternalTester::benchmark(int argc, const char **argv){
                     for(int i=0; i<num_runs; i++){
                         grid->evaluateBatch(x, num_x, y);
                     }
-                    cout << setw(width) << ((int) ((gettime() - start) * 100.0));
+                    cout << setw(width) << ((int) ((gettime() - start) * 1000.0));
                 }
                 outs *= 2;
-                cout << setw(width+5) << "seconds * 10^{-2}" << endl;
+                cout << setw(width+5) << "miliseconds" << endl;
                 delete[] y;
             }
             delete[] x;
@@ -1862,84 +1999,196 @@ void ExternalTester::benchmark(int argc, const char **argv){
                     for(int i=0; i<num_runs; i++){
                         grid->loadNeededPoints(v);
                     }
-                    cout << setw(width) << ((int) ((gettime() - start) * 100.0));
+                    cout << setw(width) << ((int) ((gettime() - start) * 1000.0));
                 }
                 outs *= 2;
-                cout << setw(width+5) << "seconds * 10^{-2}" << endl;
+                cout << setw(width+5) << "miliseconds" << endl;
             }
             delete[] v;
         }
     }
 }
 
-//#include "tsgHiddenExternals.hpp"
-//#include <cuda_runtime_api.h>
-//#include <cuda.h>
-//#include <cublas_v2.h>
-
 void ExternalTester::debugTest(){
     cout << "Debug Test" << endl;
     cout << "Put here testing code and call this with ./tasgrid -test debug" << endl;
 
+#ifdef TASMANIAN_CUDA
+    int dims = 3;
     TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
-    int limits[2] = {1, 3};
-    grid->makeLocalPolynomialGrid(2, 1, 4, 1, TasGrid::rule_localp, limits);
-    //grid->makeLocalPolynomialGrid(2, 1, 3, 1, TasGrid::rule_localp, 0);
+    grid->makeLocalPolynomialGrid(dims, 1, 7, 1, TasGrid::rule_localp);
+    double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
+    grid->setDomainTransform(a, b);
 
-    double *x = grid->getPoints();
-    cout << "Number of points: " << grid->getNumPoints() << endl;
+    cout << "Grid points = " << grid->getNumPoints() << endl;
 
-    for(int i=0; i<grid->getNumPoints(); i++){
-        cout << x[2*i] << "  " << x[2*i+1] << endl;
+    int nump = 3000;
+    double *x = new double[dims*nump];
+    double *xt = new double[dims*nump];
+    setRandomX(dims*nump, x);
+    for(int i=0; i<nump; i++){
+        for(int j=0; j<dims; j++){
+            //cout << "   " << x[dims*i+j];
+            xt[dims*i + j] = 0.5 * (b[j] - a[j]) * x[dims*i+j] + 0.5 * (b[j] + a[j]);
+        }
+        //cout << endl;
     }
 
+    cout << "Memory used by gpu_y = " << (grid->getNumPoints() * nump * 8) / (1024 * 1024) << "MB" << endl;
+
+    double *y_true = new double[grid->getNumPoints() * nump];
+    grid->evaluateHierarchicalFunctions(xt, nump, y_true);
+
+
+    double *gpux = TasGrid::TasCUDA::cudaSend<double>(dims * nump, xt, &cerr);
+    double *gpuy = 0;
+    double *y = 0;
+
+    grid->enableAcceleration(TasGrid::accel_gpu_cuda);
+    grid->setGPUID(0);
+
+    bool pass = true;
+    if (false){
+        gpuy = TasGrid::TasCUDA::cudaNew<double>(grid->getNumPoints() * nump, &cerr);
+        grid->evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
+        cout << "GPU done" << endl;
+        y = new double[grid->getNumPoints() * nump];
+        TasGrid::TasCUDA::cudaRecv<double>(grid->getNumPoints() * nump, gpuy, y, &cerr);
+
+        for(int i=0; i<grid->getNumPoints() * nump; i++){
+            if (fabs(y[i] - y_true[i]) > 1.E-12){
+                cout << "ERROR: i = " << i << "  " << fabs(y[i] - y_true[i]) << endl;
+                pass = false;
+            }
+        }
+    }else{
+        int *gpu_indx = 0, *gpu_pntr = 0, num_nz = 0;
+        double *gpu_vals = 0;
+        grid->evaluateSparseHierarchicalFunctionsGPU(gpux, nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
+        cout << "Done eval, nnz = " << num_nz << endl;
+
+        int *cpntr = new int[nump+1]; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr, &cerr);
+        int *cindx = new int[num_nz]; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
+        double *cvals = new double[num_nz]; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals, &cerr);
+
+        int *pntr = 0, *indx = 0;
+        double *vals = 0;
+        grid->enableAcceleration(TasGrid::accel_none);
+        grid->evaluateSparseHierarchicalFunctions(xt, nump, pntr, indx, vals);
+        if (pntr[nump] != num_nz){
+            cout << "ERROR: mismatch in the numn from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
+            pass = false;
+        }
+        if (pass){
+            for(int i=0; i<nump; i++){
+                for(int j=pntr[i]; j<pntr[i+1]; j++){
+                    if (indx[j] != cindx[j]){
+                        cout << "ERROR: mismatch in index i = " << i << "   j = " << j << "  indx[j] = " << indx[j] << "  cindx[j] = " << cindx[j] << endl;
+                        pass = false;
+                    }
+                    if (fabs(vals[i] - cvals[i]) > 1.E-12){
+                        cout << "ERROR: i = " << i << "  " << fabs(vals[i] - cvals[i]) << endl;
+                        pass = false;
+                    }
+                    //cout << ": mismatch in index i = " << i << "   j = " << j << "  indx[j] = " << indx[j] << "  cindx[j] = " << cindx[j] << endl;
+                    //cout << ": i = " << i << "  " << fabs(vals[i] - cvals[i]) << endl;
+                }
+            }
+        }
+    }
+
+    if (pass){
+        cout << "OK" << endl;
+    }else{
+        cout << "ERROR: " << endl;
+    }
+
+
+    TasGrid::TasCUDA::cudaDel<double>(gpux);
+
+    delete[] x;
+    delete[] y;
     delete grid;
-
-//    int N = 2000;
-//    int K = 30;
-//    double *A = new double[K*N*N];
-//    double *B = new double[K*N*N];
-//    double *C = new double[K*N*N];
-//    setRandomX(K*N*N, A);
-//    setRandomX(K*N*N, B);
-//    setRandomX(K*N*N, C);
-//
-//    double start = gettime();
-//    #pragma omp parallel for num_threads(6)
-//    for(int k=0; k<K; k++){
-//        TasBLAS::dgemm(N, N, N, 1.0, &(A[k*N*N]), &(B[k*N*N]), 0.0, &(C[k*N*N]));
-//    }
-//    cout << "CPU Run time: " << setw(20) << ((int) ((gettime() - start) * 100.0)) << "    seconds x 10^{-2}" << endl;
-//
-//    start = gettime();
-//    cudaSetDevice(1);
-//    double *gpuA, *gpuB, *gpuC;
-//    cublasHandle_t cublasH;
-//    cublasCreate(&cublasH);
-//    cudaMalloc(((void**) &gpuA), N*N * sizeof(double));
-//    cudaMalloc(((void**) &gpuB), N*N * sizeof(double));
-//    cudaMalloc(((void**) &gpuC), N*N * sizeof(double));
-//
-//    double alpha = 1.0, beta = 0.0;
-//    //#pragma omp parallel for num_threads(2)
-//    for(int k=0; k<K; k++){
-//        //TasBLAS::dgemm(N, N, N, 1.0, &(A[k*N*N]), &(B[k*N*N]), 0.0, &(C[k*N*N]));
-//        cudaMemcpy(gpuA, &(A[k*N*N]), N*N * sizeof(double), cudaMemcpyHostToDevice);
-//        cudaMemcpy(gpuB, &(B[k*N*N]), N*N * sizeof(double), cudaMemcpyHostToDevice);
-//        cublasDgemm(cublasH, CUBLAS_OP_N, CUBLAS_OP_N, N, N, N, &alpha, gpuA, N, gpuB, N, &beta, gpuC, N);
-//        cudaMemcpy(&(C[k*N*N]), gpuC, N*N * sizeof(double), cudaMemcpyDeviceToHost);
-//    }
-//    cublasDestroy(cublasH);
-//    cudaFree(gpuA);
-//    cudaFree(gpuB);
-//    cudaFree(gpuC);
-//    cout << "GPU Run time: " << setw(20) << ((int) ((gettime() - start) * 100.0)) << "    seconds x 10^{-2}" << endl;
-
+#endif // TASMANIAN_CUDA
 }
 
 void ExternalTester::debugTestII(){
     cout << "Debug Test II" << endl;
     cout << "Put here testing code and call this with ./tasgrid -test db" << endl;
+
+#ifdef TASMANIAN_CUDA
+    //const BaseFunction *f = &f23Kexpsincos;
+    //int dims = f->getNumInputs();
+    //int outs = f->getNumOutputs();
+    int dims = 2;
+    int outs = 3077;
+    TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
+    grid->makeLocalPolynomialGrid(dims, outs, 8, 1, TasGrid::rule_localp);
+    double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
+    //grid->setDomainTransform(a, b);
+
+    double *p = grid->getPoints();
+    double *v = new double[outs * grid->getNumPoints()];
+    for(int i=0; i<grid->getNumPoints(); i++){
+        for(int k=0; k<outs; k++){
+            v[i * outs + k] = ((double)(k + 1)) * exp(p[2*i] + p[2*i+1] - 9.5);
+            //cout << v[i * outs + k] << endl;
+        }
+        //f->eval(&(p[dims * i]), &(v[outs*i]));
+    }
+    grid->loadNeededPoints(v);
+
+    cout << "Grid points = " << grid->getNumPoints() << endl;
+
+    int nump = 4050;
+    double *x = new double[dims*nump];
+    double *xt = new double[dims*nump];
+    setRandomX(dims*nump, x);
+    for(int i=0; i<nump; i++){
+        for(int j=0; j<dims; j++){
+            //cout << "   " << x[dims*i+j];
+            xt[dims*i + j] = 0.5 * (b[j] - a[j]) * x[dims*i+j] + 0.5 * (b[j] + a[j]);
+            //cout << "   " << xt[dims*i+j];
+        }
+        //cout << endl;
+    }
+
+    cout << "Memory used by gpu_y = " << (grid->getNumPoints() * nump * 8 + nump * outs * 8) / (1024 * 1024) << "MB" << endl;
+
+    double *y_true = new double[outs * nump]; std::fill(y_true, y_true + outs * nump, 0.0);
+    double *y      = new double[outs * nump]; std::fill(y, y + outs * nump, 0.0);
+    grid->evaluateBatch(x, nump, y_true);
+
+    grid->enableAcceleration(TasGrid::accel_gpu_cuda);
+    grid->setGPUID(1);
+    grid->evaluateBatch(x, nump, y);
+
+    cout << "GPU done" << endl;
+
+    cout << std::scientific; cout.precision(16);
+
+    bool pass = true;
+    for(int i=0; i<outs * nump; i++){
+        //cout << y[i] << "    " << y_true[i] << "    " << i << endl;
+        if (pass && (fabs(y[i] - y_true[i]) > 1.E-11)){
+            cout << "ERROR: i = " << i << "  " << fabs(y[i] - y_true[i]) << " | " << y[i] << " -- " << y_true[i] << endl;
+            pass = false;
+        }
+    }
+
+    if (pass){
+        cout << "OK" << endl;
+    }else{
+        cout << "ERROR: " << endl;
+    }
+
+    delete[] x;
+    delete[] y;
+    delete[] y_true;
+    delete[] p;
+    delete[] v;
+    delete grid;
+#endif // TASMANIAN_CUDA
 
 }
 

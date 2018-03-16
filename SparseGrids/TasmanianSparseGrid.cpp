@@ -33,9 +33,9 @@
 
 #include "TasmanianSparseGrid.hpp"
 
+#include "tsgCudaMacros.hpp"
+
 #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
-#include <cuda_runtime_api.h>
-#include <cuda.h>
 #define _TASMANIAN_SETGPU cudaSetDevice(gpuID);
 #endif // defined
 
@@ -54,7 +54,7 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
 }
 
 TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), domain_transform_a(0), domain_transform_b(0),
-                                             conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), logstream(0){
+                                             conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0){
 #ifndef TASMANIAN_XSDK
     logstream = &cerr;
 #endif
@@ -64,7 +64,7 @@ TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pw
 }
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0),
                                     domain_transform_a(0), domain_transform_b(0), conformal_asin_power(0), llimits(0),
-                                    acceleration(accel_none), gpuID(0), logstream(0)
+                                    acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0)
 {
     copyGrid(&source);
 #ifndef TASMANIAN_XSDK
@@ -99,9 +99,10 @@ void TasmanianSparseGrid::clear(){
 #else
     acceleration = accel_none;
 #endif // TASMANIAN_CPU_BLAS
-#ifdef TASMANIAN_CUBLAS
+#if defined (TASMANIAN_CUBLAS) or defined (TASMANIAN_CUDA)
     gpuID = 0;
-#endif // TASMANIAN_CUBLAS
+#endif // TASMANIAN_CUBLAS || TASMANIAN_CUDA
+    if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
 }
 
 void TasmanianSparseGrid::setErrorLog(std::ostream *os){ logstream = os; }
@@ -117,14 +118,22 @@ void TasmanianSparseGrid::write(const char *filename, bool binary) const{
     write(ofs, binary);
     ofs.close();
 }
-bool TasmanianSparseGrid::read(const char *filename, bool binary){
+bool TasmanianSparseGrid::read(const char *filename){
     std::ifstream ifs;
-    if (binary){
+    char TSG[3];
+    bool binary_format = false;
+    ifs.open(filename, std::ios::in | std::ios::binary);
+    ifs.read(TSG, 3 * sizeof(char));
+    if ((TSG[0] == 'T') && (TSG[1] == 'S') && (TSG[2] == 'G')){
+        binary_format = true;
+    }
+    ifs.close();
+    if (binary_format){
         ifs.open(filename, std::ios::in | std::ios::binary);
     }else{
         ifs.open(filename);
     }
-    bool isGood = read(ifs, binary);
+    bool isGood = read(ifs, binary_format);
     ifs.close();
     return isGood;
 }
@@ -452,6 +461,7 @@ void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[])
         return;
     }
     clearDomainTransform();
+    if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     int num_dimensions = base->getNumDimensions();
     domain_transform_a = new double[num_dimensions];  std::copy(a, a + num_dimensions, domain_transform_a);
     domain_transform_b = new double[num_dimensions];  std::copy(b, b + num_dimensions, domain_transform_b);
@@ -753,6 +763,20 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
     }
 }
 
+#ifdef TASMANIAN_CUDA
+const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, double* &gpu_x_temp, int num_x) const{
+    if (domain_transform_a != 0){
+        if (acc_domain == 0) acc_domain = new AccelerationDomainTransform(base->getNumDimensions(), domain_transform_a, domain_transform_b, logstream);
+        gpu_x_temp = acc_domain->getCanonicalPoints(base->getNumDimensions(), num_x, gpu_x);
+        return gpu_x_temp;
+    }else{
+        return gpu_x;
+    }
+}
+#else
+const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *, double* &, int) const{ return 0; }
+#endif // TASMANIAN_CUDA
+
 void TasmanianSparseGrid::clearLevelLimits(){
     if (llimits != 0){ delete[] llimits; llimits = 0; }
 }
@@ -813,13 +837,13 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
         if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement(double, int) called for grid that is neither sequence nor Global with sequence rule" << endl; }
     }
 }
-void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits){
+void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
     if (level_limits != 0){
         if (llimits == 0) llimits = new int[base->getNumDimensions()];
         std::copy(level_limits, level_limits + base->getNumDimensions(), llimits);
     }
     if (pwpoly != 0){
-        pwpoly->setSurplusRefinement(tolerance, criteria, output, llimits);
+        pwpoly->setSurplusRefinement(tolerance, criteria, output, llimits, scale_correction);
     }else if (wavelet != 0){
         wavelet->setSurplusRefinement(tolerance, criteria, output, llimits);
     }else{
@@ -848,6 +872,28 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int nu
     base->evaluateHierarchicalFunctions(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
     clearCanonicalPoints(x_tmp);
 }
+#ifdef TASMANIAN_CUDA
+void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+    double *gpu_temp_x = 0;
+    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
+    pwpoly->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y, logstream);
+    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x);
+}
+void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const{
+    double *gpu_temp_x = 0;
+    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
+    pwpoly->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_pntr, gpu_indx, gpu_vals, num_nz, logstream);
+    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x);
+}
+#else
+void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double*, int, double*) const{
+    if (logstream != 0) (*logstream) << "ERROR: evaluateHierarchicalFunctionsGPU() called, but the library wasn't compiled with Tasmanian_ENABLE_CUDA=ON!" << endl;
+}
+void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double*, int, int*&, int*&, double*&, int&) const{
+    if (logstream != 0) (*logstream) << "ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library wasn't compiled with Tasmanian_ENABLE_CUDA=ON!" << endl;
+}
+#endif
+
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const{
     double *x_tmp = 0;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
@@ -1330,6 +1376,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     if (acc != acceleration){
         if (base != 0) base->clearAccelerationData();
         acceleration = acc;
+        if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     }
 }
 TypeAcceleration TasmanianSparseGrid::getAccelerationType() const{
@@ -1447,13 +1494,9 @@ void tsgErrorLogCerr(void *grid){ ((TasmanianSparseGrid*) grid)->setErrorLog(&ce
 void tsgDisableErrorLog(void *grid){ ((TasmanianSparseGrid*) grid)->disableLog(); }
 
 void tsgWrite(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename); }
+void tsgWriteBinary(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename, true); }
 int tsgRead(void *grid, const char* filename){
     bool result = ((TasmanianSparseGrid*) grid)->read(filename);
-    return result ? 0 : 1;
-}
-void tsgWriteBinary(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename, true); }
-int tsgReadBinary(void *grid, const char* filename){
-    bool result = ((TasmanianSparseGrid*) grid)->read(filename, true);
     return result ? 0 : 1;
 }
 

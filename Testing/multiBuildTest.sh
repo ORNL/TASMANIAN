@@ -148,7 +148,7 @@ else
 fi
 
 sDashFort=""
-if (( $sGfortran == 1 )); then
+if (( $bGfortran == 1 )); then
     sDashFort="-fortran"
 fi
 

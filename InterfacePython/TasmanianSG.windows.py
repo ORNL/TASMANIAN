@@ -143,7 +143,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetNumNeeded.restype = c_int
         self.pLibTSG.tsgGetNumPoints.restype = c_int
         self.pLibTSG.tsgRead.restype = c_int
-        self.pLibTSG.tsgReadBinary.restype = c_int
         self.pLibTSG.tsgGetAlpha.restype = c_double
         self.pLibTSG.tsgGetBeta.restype = c_double
         self.pLibTSG.tsgGetOrder.restype = c_int
@@ -175,7 +174,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgWrite.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgWriteBinary.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgRead.argtypes = [c_void_p, c_char_p]
-        self.pLibTSG.tsgReadBinary.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgMakeGlobalGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_char_p, POINTER(c_int), c_double, c_double, c_char_p, POINTER(c_int)]
         self.pLibTSG.tsgMakeSequenceGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgMakeLocalPolynomialGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, c_char_p, POINTER(c_int)]
@@ -310,7 +308,7 @@ class TasmanianSparseGrid:
         '''
         self.pLibTSG.tsgDisableErrorLog(self.pGrid)
 
-    def read(self, sFilename, bUseBinaryFormat = False):
+    def read(self, sFilename):
         '''
         reads the grid from a file
         discards any existing grid held by this class
@@ -318,10 +316,6 @@ class TasmanianSparseGrid:
         sFilename: string indicating a grid file where a grid was
                    already written using write from Python or any other
                    Tasmanian interface
-
-        bUseBinaryFormat: boolean
-                True: read from a binary file
-                False: read from an ASCII file
 
         output: boolean
                 True: the read was successful
@@ -331,10 +325,7 @@ class TasmanianSparseGrid:
         '''
         if (sys.version_info.major == 3):
             sFilename = bytes(sFilename, encoding='utf8')
-        if (bUseBinaryFormat):
-            return (self.pLibTSG.tsgReadBinary(self.pGrid, c_char_p(sFilename)) == 0)
-        else:
-            return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) == 0)
+        return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) == 0)
 
     def write(self, sFilename, bUseBinaryFormat = False):
         '''

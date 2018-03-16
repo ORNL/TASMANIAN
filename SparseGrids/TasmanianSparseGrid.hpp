@@ -60,7 +60,7 @@ public:
     void disableLog();
 
     void write(const char *filename, bool binary = false) const;
-    bool read(const char *filename, bool binary = false);
+    bool read(const char *filename);
 
     void write(std::ofstream &ofs, bool binary = false) const;
     bool read(std::ifstream &ifs, bool binary = false);
@@ -127,7 +127,7 @@ public:
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = 0);
     int* estimateAnisotropicCoefficients(TypeDepth type, int output);
     void setSurplusRefinement(double tolerance, int output, const int *level_limits = 0);
-    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0); // -1 indicates using all outputs
+    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0, const double *scale_correction = 0); // -1 indicates using all outputs
     void clearRefinement();
     void mergeRefinement();
 
@@ -164,6 +164,8 @@ public:
 
     // TODO
     // int* getIndexOfRefinedPoints(); // tells you the index of the refined points in the big vector after mergeRefinement (or loadNeededPoints())
+    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // EXPERIMENTAL, works only for localPolynomial with order 1 or 2
+    void evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const;
 
     const int* getPointsIndexes() const;
     const int* getNeededIndexes() const;
@@ -182,8 +184,10 @@ protected:
     void mapConformalWeights(int num_dimensions, int num_points, double weights[]) const;
 
     const double* formCanonicalPoints(const double *x, double* &x_temp, int num_x) const;
+    const double* formCanonicalPointsGPU(const double *gpu_x, double* &gpu_x_temp, int num_x) const;
     void clearCanonicalPoints(double* &x_temp) const;
-    void formTransformedPoints(int num_points, double x[]) const;
+    void clearCanonicalPointsGPU(double* &x_temp) const;
+    void formTransformedPoints(int num_points, double x[]) const; // when calling get***Points()
 
     void writeAscii(std::ofstream &ofs) const;
     bool readAscii(std::ifstream &ifs);
@@ -205,6 +209,7 @@ private:
 
     TypeAcceleration acceleration;
     int gpuID;
+    mutable AccelerationDomainTransform *acc_domain;
 
     std::ostream *logstream;
 };

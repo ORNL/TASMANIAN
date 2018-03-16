@@ -378,16 +378,7 @@ bool TasgridWrapper::updateGrid(){
 void TasgridWrapper::writeGrid() const{ grid->write(gridfilename, !useASCII); }
 bool TasgridWrapper::readGrid(){
     if (grid == 0) grid = new TasmanianSparseGrid();
-    char s[3];
-    std::ifstream ifs;
-    ifs.open(gridfilename, std::ios::in | std::ios::binary);
-    ifs.read(s, 3 * sizeof(char));
-    ifs.close();
-    if ((s[0] == 'T') && (s[1] == 'S') && (s[2] == 'G')){
-        return grid->read(gridfilename, true);
-    }else{
-        return grid->read(gridfilename, false);
-    }
+    return grid->read(gridfilename);
 }
 void TasgridWrapper::outputPoints(bool useNeeded) const{
     int num_p, num_d = grid->getNumDimensions();

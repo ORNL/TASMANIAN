@@ -34,6 +34,7 @@
 #include "tsgGridLocalPolynomial.hpp"
 
 #include "tsgHiddenExternals.hpp"
+#include "tsgCudaMacros.hpp" // remove later
 
 namespace TasGrid{
 
@@ -171,11 +172,11 @@ void GridLocalPolynomial::read(std::ifstream &ifs){
         }
         rule->setMaxOrder(order);
 
-        ifs >> flag;  if (flag == 1){  points    = new IndexSet(num_dimensions);   points->read(ifs);  }
-        ifs >> flag;  if (flag == 1){  surpluses = new double[points->getNumIndexes() * num_outputs]; for(int i=0; i<points->getNumIndexes() * num_outputs; i++){  ifs >> surpluses[i];  }  }
-        ifs >> flag;  if (flag == 1){  needed    = new IndexSet(num_dimensions);   needed->read(ifs);  }
+        ifs >> flag; if (flag == 1){ points    = new IndexSet(num_dimensions);   points->read(ifs); }
+        ifs >> flag; if (flag == 1){ surpluses = new double[points->getNumIndexes() * num_outputs]; for(int i=0; i<points->getNumIndexes() * num_outputs; i++){  ifs >> surpluses[i]; } }
+        ifs >> flag; if (flag == 1){ needed    = new IndexSet(num_dimensions);   needed->read(ifs); }
         //ifs >> flag;  if (flag == 1){  int num_parents = ((rule->isSemiLocal()) ? 2 : 1) * points->getNumIndexes();  parents = new int[num_parents];  for(int i=0; i<num_parents; i++){  ifs >> parents[i];  }  }
-        ifs >> flag;  if (flag == 1){  int num_parents = rule->getMaxNumParents() * points->getNumIndexes();  parents = new int[num_parents];  for(int i=0; i<num_parents; i++){  ifs >> parents[i];  }  }
+        ifs >> flag;  if (flag == 1){ int num_parents = rule->getMaxNumParents() * points->getNumIndexes();  parents = new int[num_parents];  for(int i=0; i<num_parents; i++){ ifs >> parents[i]; } }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
 
@@ -188,7 +189,7 @@ void GridLocalPolynomial::read(std::ifstream &ifs){
             indx  = new int[1];  ifs >> indx[0]; // there is a special case when the grid has only one point without any children
         }
 
-        if (num_outputs > 0){  values = new StorageSet(0, 0); values->read(ifs);  }
+        if (num_outputs > 0){ values = new StorageSet(0, 0); values->read(ifs); }
     }
 }
 void GridLocalPolynomial::readBinary(std::ifstream &ifs){
@@ -271,24 +272,6 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
             deltas = limited;
         }
     }
-//    if (level_limits != 0){
-//        UnsortedIndexSet* unlimited = deltas;
-//        int lower_indexes = 0;
-//        for(int i=0; i<unlimited->getNumIndexes(); i++){
-//            const int *idx = unlimited->getIndex(i);
-//            bool obeys = true;
-//            for(int j=0; j<num_dimensions; j++) if ((level_limits[j] > -1) && (idx[j] > level_limits[j])) obeys = false;
-//            if (obeys) lower_indexes++;
-//        }
-//        deltas = new UnsortedIndexSet(num_dimensions, lower_indexes);
-//        for(int i=0; i<unlimited->getNumIndexes(); i++){
-//            const int *idx = unlimited->getIndex(i);
-//            bool obeys = true;
-//            for(int j=0; j<num_dimensions; j++) if ((level_limits[j] > -1) && (idx[j] > level_limits[j])) obeys = false;
-//            if (obeys) deltas->addIndex(idx);
-//        }
-//        delete unlimited;
-//    }
 
     needed = IM.generatePointsFromDeltas(deltas, rule);
     delete deltas;
@@ -469,7 +452,7 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
     double nnz = (double) spntr[num_x];
     double total_size = ((double) num_x) * ((double) num_points);
 
-    if (nnz / total_size > 0.1){
+    if (nnz / total_size > 0.2){
         // potentially wastes a lot of memory
         double *A = new double[num_x * num_points];
         std::fill(A, A + num_x * num_points, 0.0);
@@ -506,13 +489,15 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas, os);
+    checkAccelerationGPUValues();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
     int *sindx, *spntr;
     double *svals;
     buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
 
-    gpu_acc->cusparseDCRMM2(num_points, num_outputs, num_x, spntr, sindx, svals, y);
+    //gpu_acc->cusparseDCRMM2(num_points, num_outputs, num_x, spntr, sindx, svals, y);
+    gpu_acc->cusparseMatmul(true, num_points, num_outputs, num_x, spntr, sindx, svals, 0, y);
 
     delete[] svals;
     delete[] sindx;
@@ -521,20 +506,62 @@ void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, do
 #else
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *) const{ evaluateBatchCPUblas(x, num_x, y); }
 #endif // TASMANIAN_CUDA
+
 void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
     #ifdef TASMANIAN_CUDA
+    int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cuda, os);
+    checkAccelerationGPUValues();
+    checkAccelerationGPUNodes();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
-    int *sindx, *spntr;
-    double *svals;
-    buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
+    bool favor_dense = false;
 
-    TasCUDA::d3gecs(num_outputs, num_x, gpu_acc->getGPUValues(), spntr, sindx, svals, y, &cerr);
+    if (favor_dense){
+        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
+        double *gpu_weights = TasCUDA::cudaNew<double>(num_x * points->getNumIndexes(), os);
+        double *gpu_result = TasCUDA::cudaNew<double>(num_x * values->getNumOutputs(), os);
 
-    delete[] svals;
-    delete[] sindx;
-    delete[] spntr;
+        buildDenseBasisMatrixGPU(gpu_x, num_x, gpu_weights, os);
+        #ifdef TASMANIAN_CUBLAS
+        gpu_acc->cublasDGEMM(values->getNumOutputs(), points->getNumIndexes(), num_x, gpu_weights, gpu_result);
+        //TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, points->getNumIndexes(), gpu_acc->getGPUValues(), gpu_weights, gpu_result);
+        #else
+        TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, points->getNumIndexes(), gpu_acc->getGPUValues(), gpu_weights, gpu_result);
+        #endif // TASMANIAN_CUBLAS
+
+        TasCUDA::cudaRecv<double>(num_x * values->getNumOutputs(), gpu_result, y);
+
+        TasCUDA::cudaDel<double>(gpu_result, os);
+        TasCUDA::cudaDel<double>(gpu_weights, os);
+        TasCUDA::cudaDel<double>(gpu_x, os);
+    }else{
+        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
+        double *gpu_y = TasCUDA::cudaNew<double>(num_x * num_outputs, os);
+
+        int *gpu_spntr, *gpu_sindx, num_nz = 0;
+        double *gpu_svals;
+        buildSparseBasisMatrixGPU(gpu_x, num_x, gpu_spntr, gpu_sindx, gpu_svals, num_nz, os);
+
+        gpu_acc->cusparseMatmul(false, num_points, num_outputs, num_x, gpu_spntr, gpu_sindx, gpu_svals, num_nz, gpu_y);
+        TasCUDA::cudaRecv<double>(num_x * num_outputs, gpu_y, y);
+
+        TasCUDA::cudaDel<int>(gpu_spntr, os);
+        TasCUDA::cudaDel<int>(gpu_sindx, os);
+        TasCUDA::cudaDel<double>(gpu_svals, os);
+        TasCUDA::cudaDel<double>(gpu_y, os);
+        TasCUDA::cudaDel<double>(gpu_x, os);
+    }
+
+//    int *sindx, *spntr;
+//    double *svals;
+//    buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
+//
+//    TasCUDA::d3gecs(num_outputs, num_x, gpu_acc->getGPUValues(), spntr, sindx, svals, y, &cerr);
+//
+//    delete[] svals;
+//    delete[] sindx;
+//    delete[] spntr;
     #else
     evaluateBatchGPUcublas(x, num_x, y, os);
     #endif // TASMANIAN_CUDA
@@ -556,7 +583,7 @@ void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration 
         delete needed; needed = 0;
         buildTree();
     }
-    if (accel != 0) accel->resetValuesAndSurpluses();
+    if (accel != 0) accel->resetGPULoadedData();
     if (acc == accel_gpu_cublas){
         recomputeSurplusesGPUcublas();
     }else if (acc == accel_gpu_cuda){
@@ -1328,6 +1355,32 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
     }
 }
 
+#ifdef TASMANIAN_CUDA
+void GridLocalPolynomial::buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[], std::ostream *os) const{
+    int num_points = getNumPoints();
+    makeCheckAccelerationData(accel_gpu_cuda, os);
+    checkAccelerationGPUNodes();
+    AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
+    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, gpu_acc->getGPUNodes(), gpu_acc->getGPUSupport(), gpu_y);
+}
+void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz, std::ostream *os) const{
+    int num_points = getNumPoints();
+    makeCheckAccelerationData(accel_gpu_cuda, os);
+    checkAccelerationGPUNodes();
+    checkAccelerationGPUHierarchy();
+    AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
+    TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, gpu_acc->getGPUNodes(), gpu_acc->getGPUSupport(),
+                                gpu_acc->getGPUpntr(), gpu_acc->getGPUindx(), num_roots, gpu_acc->getGPUroots(),
+                                gpu_spntr, gpu_sindx, gpu_svals, num_nz);
+}
+
+//TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
+//                                 int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz)
+#else
+void GridLocalPolynomial::buildDenseBasisMatrixGPU(const double*, int, double*, std::ostream*) const{}
+void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double*, int, int*&, int*&, double*&, int&, std::ostream*) const{}
+#endif // TASMANIAN_CUDA
+
 void GridLocalPolynomial::buildTree(){
     if (roots != 0) delete[] roots;
     if (pntr != 0) delete[] pntr;
@@ -1594,11 +1647,18 @@ double* GridLocalPolynomial::getNormalization() const{
     return norm;
 }
 
-int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const{
+int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const{
     int num_points = points->getNumIndexes();
     int *map = new int[num_points * num_dimensions];  std::fill(map, map + num_points * num_dimensions, 0);
 
     double *norm = getNormalization();
+
+    const double *scale = scale_correction;
+    double *temp_scale = 0;
+    if (scale == 0){
+        temp_scale = new double[num_points * num_outputs]; std::fill(temp_scale, temp_scale + num_points * num_outputs, 1.0);
+        scale = temp_scale;
+    }
 
     // scaling for L^1 and L^2 norms
     //double *supports = new double[num_points];
@@ -1616,10 +1676,10 @@ int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
             bool small = true;
             if (output == -1){
                 for(int k=0; k<num_outputs; k++){
-                    if (small && ((fabs(surpluses[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
+                    if (small && ((scale[i*num_outputs + k] * fabs(surpluses[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
                 }
             }else{
-                small = !((fabs(surpluses[i*num_outputs + output]) / norm[output]) > tolerance);
+                small = !((scale[i] * fabs(surpluses[i*num_outputs + output]) / norm[output]) > tolerance);
             }
             //small = false; // MIRO: FIX THIS!
             if (!small){
@@ -1627,6 +1687,7 @@ int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
             }
         }
     }else{
+        // construct a series of 1D interpolants and use a refinement criteria that is a combination of the two hierarchical coefficients
         IndexManipulator IM(num_dimensions);
         int *dagUp = IM.computeDAGupLocal(points, rule);
 
@@ -1636,7 +1697,7 @@ int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
         SplitDirections split(points);
 
         #pragma omp parallel for
-        for(int s=0; s<split.getNumJobs(); s++){
+        for(int s=0; s<split.getNumJobs(); s++){ // split.getNumJobs() gives the number of 1D interpolants to construct
             int d = split.getJobDirection(s);
             int nump = split.getJobNumPoints(s);
             const int *pnts = split.getJobPoints(s);
@@ -1710,10 +1771,10 @@ int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
                 bool small = true;
                 if (output == -1){
                     for(int k=0; k<num_outputs; k++){
-                        if (small && ((fabs(surpluses[pnts[i]*num_outputs + k]) / norm[k]) > tolerance) && ((fabs(vals[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
+                        if (small && ((scale[i*num_outputs + k] * fabs(surpluses[pnts[i]*num_outputs + k]) / norm[k]) > tolerance) && ((scale[i*num_outputs + k] * fabs(vals[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
                     }
                 }else{
-                    if (((fabs(surpluses[pnts[i]*num_outputs + output]) / norm[output]) > tolerance) && ((fabs(vals[i]) / norm[output]) > tolerance)) small = false;
+                    if (((scale[i] * fabs(surpluses[pnts[i]*num_outputs + output]) / norm[output]) > tolerance) && ((scale[i] * fabs(vals[i]) / norm[output]) > tolerance)) small = false;
                 }
                 map[pnts[i]*num_dimensions + d] = (small) ? 0 : 1;;
             }
@@ -1727,6 +1788,7 @@ int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
     }
 
     delete[] norm;
+    if (temp_scale != 0) delete[] temp_scale;
 
     return map;
 }
@@ -1783,10 +1845,10 @@ const int* GridLocalPolynomial::getNeededIndexes() const{
     //cout << "HERE " << needed->getNumIndexes() << endl;
     return ((needed != 0) ? needed->getIndex(0) : 0);
 }
-void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits){
+void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
     clearRefinement();
 
-    int *map = buildUpdateMap(tolerance, criteria, output);
+    int *map = buildUpdateMap(tolerance, criteria, output, scale_correction);
 
     bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
 
@@ -1817,6 +1879,7 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
     }
 
     //////////// NEW CODE /////////////////////
+    // complete the set of points to ensure no missing parents
 //    if (refined->getNumIndexes() > 0){
 //        IndexManipulator IM(num_dimensions);
 //        IndexSet* total = new IndexSet(refined);
@@ -1899,7 +1962,7 @@ int GridLocalPolynomial::removePointsBySurplus(double tolerance, int output){
 }
 
 void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
-    if (accel != 0) accel->resetValuesAndSurpluses();
+    if (accel != 0) accel->resetGPULoadedData();
     double *vals = 0;
     bool aliased = false;
     if (points != 0){
@@ -1939,14 +2002,55 @@ void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration acc, std::o
             accel = 0;
         }
         if (accel == 0){ accel = (BaseAccelerationData*) (new AccelerationDataGPUFull()); }
-        AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-        gpu->setLogStream(os);
-        double *gpu_values = gpu->getGPUValues();
-        if (gpu_values == 0) gpu->loadGPUValues(points->getNumIndexes() * values->getNumOutputs(), surpluses);
+        ((AccelerationDataGPUFull*) accel)->setLogStream(os);
+//        AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
+//        double *gpu_values = gpu->getGPUValues();
+//        if (gpu_values == 0) gpu->loadGPUValues(points->getNumIndexes() * values->getNumOutputs(), surpluses);
     }
+}
+void GridLocalPolynomial::checkAccelerationGPUValues() const{
+    AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
+    double *gpu_values = gpu->getGPUValues();
+    if (gpu_values == 0) gpu->loadGPUValues(points->getNumIndexes() * values->getNumOutputs(), surpluses);
+}
+void GridLocalPolynomial::checkAccelerationGPUNodes() const{
+    AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
+    if (gpu->getGPUNodes() == 0){
+        IndexSet *work = (points == 0) ? needed : points;
+        int num_entries = num_dimensions * work->getNumIndexes();
+        double *cpu_nodes = getPoints();
+        double *cpu_support = new double[num_entries];
+        if (rule->getType() == rule_localp){
+            switch(order){
+            case 2: encodeSupportForGPU<2, rule_localp>(work, cpu_support); break;
+            default:
+                encodeSupportForGPU<1, rule_localp>(work, cpu_support);
+            }
+        }else if (rule->getType() == rule_semilocalp){
+            encodeSupportForGPU<2, rule_semilocalp>(work, cpu_support);
+        }else{
+            switch(order){
+            case 2: encodeSupportForGPU<2, rule_localp0>(work, cpu_support); break;
+            default:
+                encodeSupportForGPU<1, rule_localp0>(work, cpu_support);
+            }
+        }
+        //for(int i=0; i<num_entries; i++) cout << cpu_nodes[i] << "  " << cpu_support[i] << endl;
+        gpu->loadGPUNodesSupport(num_entries, cpu_nodes, cpu_support);
+        delete[] cpu_nodes;
+        delete[] cpu_support;
+    }
+}
+void GridLocalPolynomial::checkAccelerationGPUHierarchy() const{
+    AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
+    int num_points = getNumPoints();
+    gpu->loadGPUHierarchy(num_points, pntr, indx, num_roots, roots);
 }
 #else
 void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration, std::ostream *) const{}
+void GridLocalPolynomial::checkAccelerationGPUValues() const{}
+void GridLocalPolynomial::checkAccelerationGPUNodes() const{}
+void GridLocalPolynomial::checkAccelerationGPUHierarchy() const{}
 #endif // TASMANIAN_CUBLAS
 
 void GridLocalPolynomial::clearAccelerationData(){

@@ -42,7 +42,7 @@ public:
 
     virtual bool isCompatible(TypeAcceleration acc) const = 0;
 
-    virtual void resetValuesAndSurpluses() = 0;
+    virtual void resetGPULoadedData() = 0;
 };
 
 class AccelerationDataGPUFull : public BaseAccelerationData{
@@ -56,12 +56,24 @@ public:
 
     double* getGPUValues() const;
     void loadGPUValues(int total_entries, const double *cpu_values);
-    void resetValuesAndSurpluses();
+
+    double* getGPUNodes() const;
+    double* getGPUSupport() const;
+    void loadGPUNodesSupport(int total_entries, const double *cpu_nodes, const double *cpu_support);
+
+    int* getGPUpntr() const;
+    int* getGPUindx() const;
+    int* getGPUroots() const;
+    void loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots);
+
+    void resetGPULoadedData();
 
     void cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result);
-    void cublasDGEMM(int num_outputs, int num_points, int num_x, const double cpu_weights[], double *cpu_result);
+    void cublasDGEMM(int num_outputs, int num_points, int num_x, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
 
-    void cusparseDCRMM2(int num_points, int num_outputs, int num_x, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, double *cpu_result);
+    // cusparseDCRMM2 multiplies, cusparseDCRSMM solves for the coefficients
+    void cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
+
     void cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses);
 
 protected:
@@ -70,6 +82,9 @@ protected:
 
 private:
     double *gpu_values;
+    double *gpu_nodes, *gpu_support; // support is half support and encodes the level of the function, i.e., constant, linear, or quadratic
+    int *gpu_hpntr, *gpu_hindx, *gpu_roots;
+
     void *cublasHandle;
     void *cusparseHandle;
 
@@ -85,6 +100,20 @@ namespace TasCUDA{
     // A is N by M, B is M by M, C is N by M
     // A and C are stored in column format, B is sparse column compresses and unit triangular (the diagonal entry is no include in the pattern)
     void d3gecss(int N, int M, int *levels, int top_level, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, const double *cpuA, double *cpuC, std::ostream *os);
+
+    // convert transformed points to the canonical domain, all inputs live on the GPU
+    void dtrans2can(int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b, const double *gpu_x_transformed, double *gpu_x_canonical);
+
+    // evaluate local polynomial rules
+    void devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y);
+    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
+                            int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz);
+
+    // lazy cuda dgemm
+    void cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c);
+
+    // lazy cuda sparse dgemm (more memory conservative then cusparse)
+    //void cudaSparseMatmul()
 }
 
 namespace AccelerationMeta{
@@ -98,6 +127,21 @@ namespace AccelerationMeta{
     void cublasCheckError(void *cublasStatus, const char *info, std::ostream *os);
     void cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os);
 }
+
+class AccelerationDomainTransform{
+public:
+    AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b, std::ostream *os);
+    ~AccelerationDomainTransform();
+
+    double* getCanonicalPoints(int num_dimensions, int num_x, const double *gpu_transformed_x);
+
+private:
+    // these actually store the rate and shift and not the hard upper/lower limits
+    double *gpu_trans_a, *gpu_trans_b;
+    int padded_size;
+
+    std::ostream *logstream;
+};
 
 }
 

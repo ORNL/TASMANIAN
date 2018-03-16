@@ -187,7 +187,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
@@ -211,7 +211,7 @@ class TestTasmanian(unittest.TestCase):
         self.compareGrids(grid, grid1)
         grid.write("testSave", bUseBinaryFormat = True)
         grid1.makeGlobalGrid(3, 0, 4, 'level', 'leja')
-        grid1.read("testSave", bUseBinaryFormat = True)
+        grid1.read("testSave")
         self.compareGrids(grid, grid1)
 
         # test I/O for Sequence Grids
@@ -242,7 +242,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
@@ -278,7 +278,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
@@ -313,7 +313,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
@@ -335,7 +335,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeSequenceGrid(1, 1, 0, "level", "leja");
@@ -354,11 +354,11 @@ class TestTasmanian(unittest.TestCase):
                 else:
                     gridA.makeGlobalGrid(2, 0, 2, sType, sRule)
                 gridA.write("testSave", bUseBinaryFormat = False)
-                gridB.read("testSave", bUseBinaryFormat = False)
+                gridB.read("testSave")
                 self.compareGrids(gridA, gridB)
                 gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
                 gridA.write("testSave", bUseBinaryFormat = True)
-                gridB.read("testSave", bUseBinaryFormat = True)
+                gridB.read("testSave")
 
         for sType in TasmanianSG.lsTsgGlobalTypes:
             for sRule in TasmanianSG.lsTsgSequenceRules:
@@ -368,7 +368,7 @@ class TestTasmanian(unittest.TestCase):
                 self.compareGrids(gridA, gridB)
                 gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
                 gridA.write("testSave", bUseBinaryFormat = True)
-                gridB.read("testSave", bUseBinaryFormat = True)
+                gridB.read("testSave")
 
     def testAcceleratedEvaluate(self):
         print("\nTesting accelerated evaluate consistency")
