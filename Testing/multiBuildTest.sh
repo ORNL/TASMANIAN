@@ -749,7 +749,7 @@ else
     echo "===========================================================================================" >> $sMultibuildLogFile
 fi
 
-if [ -f /usr/bin/clang++-3.8 ]; then
+if [ -f /usr/bin/clang++-3.8 ] && [ ! -f /usr/bin/g++-7 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder

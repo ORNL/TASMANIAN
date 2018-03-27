@@ -272,11 +272,11 @@ void AccelerationDataGPUFull::cusparseDCRSMM(int, int, const int*, const int*, c
 void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
     makeCuSparseHandle(); // creates a handle only if one doesn't exist
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    const int *gpu_pntr, *gpu_indx;
-    const double *gpu_vals;
-    int *tempp, *tempi;
-    double *tempv, *tempr;
-    double *gpu_result;
+    const int *gpu_pntr = 0, *gpu_indx = 0;
+    const double *gpu_vals = 0;
+    int *tempp = 0, *tempi = 0;
+    double *tempv = 0, *tempr = 0;
+    double *gpu_result = 0;
     if (cpu_pointers){
         num_nz = spntr[num_x];
         tempp = TasCUDA::cudaSend<int>(num_x + 1, spntr, logstream);

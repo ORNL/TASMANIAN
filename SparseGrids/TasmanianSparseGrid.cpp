@@ -856,12 +856,12 @@ void TasmanianSparseGrid::clearRefinement(){
 void TasmanianSparseGrid::mergeRefinement(){
     base->mergeRefinement();
 }
-void TasmanianSparseGrid::removePointsBySurplus(double tolerance, int output){
+void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     if (pwpoly == 0){
         if (logstream != 0){ (*logstream) << "ERROR: removePointsBySurplus() called for a grid that is not local polynomial." << endl; }
         return;
     }else{
-        if (pwpoly->removePointsBySurplus(tolerance, output) == 0){
+        if (pwpoly->removePointsByHierarchicalCoefficient(tolerance, output, scale_correction) == 0){
             clear();
         }
     }
@@ -1697,8 +1697,8 @@ void tsgClearRefinement(void *grid){
 void tsgMergeRefinement(void *grid){
     ((TasmanianSparseGrid*) grid)->mergeRefinement();
 }
-void tsgRemovePointsBySurplus(void *grid, double tolerance, int output){
-    ((TasmanianSparseGrid*) grid)->removePointsBySurplus(tolerance, output);
+void tsgRemovePointsByHierarchicalCoefficient(void *grid, double tolerance, int output, const double *scale_correction){
+    ((TasmanianSparseGrid*) grid)->removePointsByHierarchicalCoefficient(tolerance, output, scale_correction);
 }
 
 void tsgEvaluateHierarchicalFunctions(void *grid, const double *x, int num_x, double *y){

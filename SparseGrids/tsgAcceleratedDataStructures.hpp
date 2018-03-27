@@ -92,10 +92,6 @@ private:
 };
 
 namespace TasCUDA{
-    // matrix multiply double-precision (d), level 3, general (ge), column compressed sparse (cs): C = A * B
-    // A is N by K, B is K by M, C is N by M
-    // A and C are stored in column format, B is sparse column compresses
-    void d3gecs(int N, int M, const double *gpuA, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, double *cpuC, std::ostream *os = 0);
     // matrix solve double-precision (d), level 3, general (ge), column compressed sparse (cs) (solve): C = A * B
     // A is N by M, B is M by M, C is N by M
     // A and C are stored in column format, B is sparse column compresses and unit triangular (the diagonal entry is no include in the pattern)
@@ -108,12 +104,21 @@ namespace TasCUDA{
     void devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y);
     void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
                             int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz);
+    void devalpwpoly_sparse_dense(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
+                                 int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, double *gpu_dense);
 
-    // lazy cuda dgemm
+    // lazy cuda dgemm, nowhere near as powerful as cuBlas, but does not depend on cuBlas
+    // gpu_a is M by K, gpu_b is K by N, gpu_c is M by N, all in column-major format
+    // on exit gpu_c = gpu_a * gpu_b
     void cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c);
 
-    // lazy cuda sparse dgemm (more memory conservative then cusparse)
-    //void cudaSparseMatmul()
+    // lazy cuda sparse dgemm, less efficient (especially for large N), but more memory conservative then cusparse as there is no need for a transpose
+    // C is M x N, B is K x N (K is max(gpu_sindx)), both are given in row-major format, num_nz/spntr/sindx/svals describe row compressed A which is M by K
+    // on exit C = A * B
+    void cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C);
+
+    // converts a sparse matrix to a dense representation (all data sits on the gpu and is pre-allocated)
+    void convert_sparse_to_dense(int num_rows, int num_columns, const int *gpu_pntr, const int *gpu_indx, const double *gpu_vals, double *gpu_destination);
 }
 
 namespace AccelerationMeta{

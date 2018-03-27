@@ -2121,7 +2121,7 @@ void ExternalTester::debugTestII(){
     //int dims = f->getNumInputs();
     //int outs = f->getNumOutputs();
     int dims = 2;
-    int outs = 3077;
+    int outs = 3700;
     TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
     grid->makeLocalPolynomialGrid(dims, outs, 8, 1, TasGrid::rule_localp);
     double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
@@ -2140,7 +2140,7 @@ void ExternalTester::debugTestII(){
 
     cout << "Grid points = " << grid->getNumPoints() << endl;
 
-    int nump = 4050;
+    int nump = 30048;
     double *x = new double[dims*nump];
     double *xt = new double[dims*nump];
     setRandomX(dims*nump, x);
@@ -2161,9 +2161,10 @@ void ExternalTester::debugTestII(){
 
     grid->enableAcceleration(TasGrid::accel_gpu_cuda);
     grid->setGPUID(1);
+    double start = gettime();
     grid->evaluateBatch(x, nump, y);
-
-    cout << "GPU done" << endl;
+    double endt = gettime();
+    cout << "GPU done in " << (int)((endt - start) * 1000.0) << " milliseconds." << endl;
 
     cout << std::scientific; cout.precision(16);
 

@@ -96,7 +96,7 @@ public:
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction);
     void clearRefinement();
     void mergeRefinement();
-    int removePointsBySurplus(double tolerance, int output = -1); // returns the number of points kept
+    int removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction); // returns the number of points kept
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
@@ -115,6 +115,8 @@ public:
     void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[], std::ostream *os) const;
     void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz, std::ostream *os) const;
 
+    // EXPERIMENTAL: mostly for tuning and testing purposes, force certain backend behavior
+    inline void setBackendFlavor(TypeLocalPolynomialBackendFlavor new_flavor){ backend_flavor = new_flavor; }
 
 protected:
     void reset(bool clear_rule = true);
@@ -166,6 +168,26 @@ protected:
         }
     }
 
+    template<int order, TypeOneDRule crule>
+    void encodeSupportForGPU(const IndexSet *work, double *cpu_support) const{
+        for(int i=0; i<work->getNumIndexes(); i++){
+            const int* p = work->getIndex(i);
+            for(int j=0; j<num_dimensions; j++){
+                cpu_support[i*num_dimensions + j] = rule->getSupport(p[j]);
+                if (order == 2) cpu_support[i*num_dimensions + j] *= cpu_support[i*num_dimensions + j];
+                if ((crule == rule_localp) || (crule == rule_semilocalp)) if (p[j] == 0) cpu_support[i*num_dimensions + j] = -1.0; // constant function
+                if ((crule == rule_localp) && (order == 2)){
+                    if (p[j] == 1) cpu_support[i*num_dimensions + j] = -2.0;
+                    else if (p[j] == 2) cpu_support[i*num_dimensions + j] = -3.0;
+                }
+                if ((crule == rule_semilocalp) && (order == 2)){
+                    if (p[j] == 1) cpu_support[i*num_dimensions + j] = -4.0;
+                    else if (p[j] == 2) cpu_support[i*num_dimensions + j] = -5.0;
+                }
+            }
+        }
+    }
+
 private:
     int num_dimensions, num_outputs, order, top_level;
 
@@ -189,6 +211,7 @@ private:
     templRuleLocalPolynomial<rule_localp, true> rpolyc;
 
     mutable BaseAccelerationData *accel;
+    TypeLocalPolynomialBackendFlavor backend_flavor;
 };
 
 }

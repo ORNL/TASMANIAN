@@ -158,17 +158,25 @@ public:
     int evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const;
     void evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const;
 
-    // WARNING: the functions below are mostly for debugging and research purposes
-    //      modifying the returned pointers will result in undefined behavior
-    void removePointsBySurplus(double tolerance, int output = -1); // have python error tests, but needs math consistency test
 
-    // TODO
-    // int* getIndexOfRefinedPoints(); // tells you the index of the refined points in the big vector after mergeRefinement (or loadNeededPoints())
+    // EXPERIMENTAL: works only for LocalPolynomial grids (will be moved to sequences and others)
+    void removePointsByHierarchicalCoefficient(double tolerance, int output = -1, const double *scale_correction = 0); // have python error tests, but needs math consistency test
+
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // EXPERIMENTAL, works only for localPolynomial with order 1 or 2
     void evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const;
 
+    // TODO
+    // int* getIndexOfRefinedPoints(); // tells you the index of the refined points in the big vector after mergeRefinement (or loadNeededPoints())
+
+    // WARNING: the functions below are mostly for debugging and research purposes
+    // do not modify the returned pointers, unless you really know what you are doing
     const int* getPointsIndexes() const;
     const int* getNeededIndexes() const;
+
+    // Expose the internal pointers, for testing and debugging only, must be suppressed for an official release
+    inline GridGlobal*          getGridGlobalPointer(){ return global; }
+    inline GridSequence*        getGridSequencePointer(){ return sequence; }
+    inline GridLocalPolynomial* getGridLocalPolyPointer(){ return pwpoly; }
 
 protected:
     void clear();

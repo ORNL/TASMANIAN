@@ -341,11 +341,31 @@ class TestTasmanian(unittest.TestCase):
             gridB.makeSequenceGrid(1, 1, 0, "level", "leja");
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
-<<<<<<< eb9a775823bbe766ac560857d71f4855e745330d
+        
+        # Make a grid with every possible rule (catches false-positive and memory crashes)
+        for sType in TasmanianSG.lsTsgGlobalTypes:
+            for sRule in TasmanianSG.lsTsgGlobalRules:
+                if ("custom-tabulated" in sRule):
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
+                else:
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule)
+                gridA.write("testSave", bUseBinaryFormat = False)
+                gridB.read("testSave")
+                self.compareGrids(gridA, gridB)
+                gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
+                gridA.write("testSave", bUseBinaryFormat = True)
+                gridB.read("testSave")
 
-=======
+        for sType in TasmanianSG.lsTsgGlobalTypes:
+            for sRule in TasmanianSG.lsTsgSequenceRules:
+                gridA.makeSequenceGrid(2, 1, 3, sType, sRule)
+                gridA.write("testSave")
+                gridB.read("testSave")
+                self.compareGrids(gridA, gridB)
+                gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
+                gridA.write("testSave", bUseBinaryFormat = True)
+                gridB.read("testSave")
 
->>>>>>> improved some tests when dealing with domain transforms
         # Make a grid with every possible rule (catches false-positive and memory crashes)
         for sType in TasmanianSG.lsTsgGlobalTypes:
             for sRule in TasmanianSG.lsTsgGlobalRules:
@@ -539,12 +559,12 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic');", "notError"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic', [2, 3, 4]);", "liLevelLimits"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic', [2, 3]);", "notError"],
-                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.removePointsBySurplus(1.E-4, 0);", "removePointsBySurplus"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(-1.E-4, 0);", "fTolerance"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, -2);", "iOutput"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, 3);", "iOutput"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, 0);", "removePointsBySurplus"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.removePointsBySurplus(1.E-4, 0);", "notError"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.removePointsByHierarchicalCoefficient(1.E-4, 0);", "removePointsByHierarchicalCoefficient"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsByHierarchicalCoefficient(-1.E-4, 0);", "fTolerance"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsByHierarchicalCoefficient(1.E-4, -2);", "iOutput"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsByHierarchicalCoefficient(1.E-4, 3);", "iOutput"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsByHierarchicalCoefficient(1.E-4, 0);", "removePointsByHierarchicalCoefficient"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.removePointsByHierarchicalCoefficient(1.E-4, 0);", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); grid.evaluateHierarchicalFunctions(np.array([[1.0, 1.0], [0.5, 0.3]]));", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); grid.evaluateHierarchicalFunctions(np.array([[1.0,], [0.5,]]));", "llfX"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); grid.evaluateHierarchicalFunctions(np.array([1.0, 1.0]));", "llfX"],

@@ -40,10 +40,10 @@ namespace TasGrid{
 
 GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0),
                          surpluses(0), points(0), needed(0), values(0), parents(0), num_roots(0), roots(0), pntr(0), indx(0), rule(0),
-                         accel(0)  {}
+                         accel(0), backend_flavor(flavor_auto)  {}
 GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0),
                          surpluses(0), points(0), needed(0), values(0), parents(0), num_roots(0), roots(0), pntr(0), indx(0), rule(0),
-                         accel(0)
+                         accel(0), backend_flavor(flavor_auto)
 {
     copyGrid(&pwpoly);
 }
@@ -63,6 +63,8 @@ void GridLocalPolynomial::reset(bool clear_rule){
     if (pntr != 0){ delete[] pntr;  pntr = 0; }
     if (indx != 0){ delete[] indx;  indx = 0; }
     if (clear_rule){ rule = 0; order = 1; }
+    backend_flavor = flavor_auto;
+    //backend_flavor = flavor_sparse_dense;
 }
 
 void GridLocalPolynomial::write(std::ofstream &ofs) const{
@@ -439,7 +441,7 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
     }
 }
 void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    if (num_outputs < TSG_LOCALP_BLAS_NUM_OUTPUTS){
+    if (((backend_flavor == flavor_auto) || (backend_flavor == flavor_sparse_sparse)) && (num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS)){
         evaluateBatch(x, num_x, y);
         return;
     }
@@ -451,8 +453,9 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
     int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
     double nnz = (double) spntr[num_x];
     double total_size = ((double) num_x) * ((double) num_points);
+    //cout << " fill = " << nnz / total_size << "  " << endl;
 
-    if (nnz / total_size > 0.2){
+    if ((backend_flavor == flavor_sparse_dense) || ((backend_flavor == flavor_auto) && (nnz / total_size > 0.1))){
         // potentially wastes a lot of memory
         double *A = new double[num_x * num_points];
         std::fill(A, A + num_x * num_points, 0.0);
@@ -464,21 +467,16 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
         TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses, A, 0.0, y);
         delete[] A;
     }else{
-        evaluateBatch(x, num_x, y);
-
-//        #pragma omp parallel for
-//        for(int i=0; i<num_x; i++){
-//            double *this_y = &(y[i*num_outputs]);
-//            for(int s=0; s<num_outputs; s+=64){
-//                int s_end = s + 64;
-//                if (s_end >= num_outputs) s_end = num_outputs;
-//                for(int k=s; k<s_end; k++) this_y[k] = 0.0;
-//                for(int j=spntr[i]; j<spntr[i+1]; j++){
-//                    double v = svals[j];
-//                    for(int k=s; k<s_end; k++) this_y[k] += v * surpluses[sindx[j] * num_outputs + k];
-//                }
-//            }
-//        }
+        #pragma omp parallel for
+        for(int i=0; i<num_x; i++){
+            double *this_y = &(y[i*num_outputs]);
+            std::fill(this_y, this_y + num_outputs, 0.0);
+            for(int j=spntr[i]; j<spntr[i+1]; j++){
+                double v = svals[j];
+                double *this_surp = &(surpluses[sindx[j] * num_outputs]);
+                for(int k=0; k<num_outputs; k++) this_y[k] += v * this_surp[k];
+            }
+        }
     }
 
     delete[] sindx;
@@ -515,19 +513,19 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
     checkAccelerationGPUNodes();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
-    bool favor_dense = false;
-
-    if (favor_dense){
+    TypeLocalPolynomialBackendFlavor flv = backend_flavor;
+    //flv = flavor_sparse_dense;
+    if (flv == flavor_dense_dense){
         double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
         double *gpu_weights = TasCUDA::cudaNew<double>(num_x * points->getNumIndexes(), os);
         double *gpu_result = TasCUDA::cudaNew<double>(num_x * values->getNumOutputs(), os);
 
         buildDenseBasisMatrixGPU(gpu_x, num_x, gpu_weights, os);
         #ifdef TASMANIAN_CUBLAS
-        gpu_acc->cublasDGEMM(values->getNumOutputs(), points->getNumIndexes(), num_x, gpu_weights, gpu_result);
+        gpu_acc->cublasDGEMM(values->getNumOutputs(), num_points, num_x, gpu_weights, gpu_result);
         //TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, points->getNumIndexes(), gpu_acc->getGPUValues(), gpu_weights, gpu_result);
         #else
-        TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, points->getNumIndexes(), gpu_acc->getGPUValues(), gpu_weights, gpu_result);
+        TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
         #endif // TASMANIAN_CUBLAS
 
         TasCUDA::cudaRecv<double>(num_x * values->getNumOutputs(), gpu_result, y);
@@ -535,7 +533,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         TasCUDA::cudaDel<double>(gpu_result, os);
         TasCUDA::cudaDel<double>(gpu_weights, os);
         TasCUDA::cudaDel<double>(gpu_x, os);
-    }else{
+    }else if ((flv == flavor_sparse_sparse) || (flv == flavor_auto)){
         double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
         double *gpu_y = TasCUDA::cudaNew<double>(num_x * num_outputs, os);
 
@@ -543,13 +541,46 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         double *gpu_svals;
         buildSparseBasisMatrixGPU(gpu_x, num_x, gpu_spntr, gpu_sindx, gpu_svals, num_nz, os);
 
+        #ifdef TASMANIAN_CUBLAS
         gpu_acc->cusparseMatmul(false, num_points, num_outputs, num_x, gpu_spntr, gpu_sindx, gpu_svals, num_nz, gpu_y);
+        #else
+        TasCUDA::cudaSparseMatmul(num_x, num_outputs, num_nz, gpu_spntr, gpu_sindx, gpu_svals, gpu_acc->getGPUValues(), gpu_y);
+        #endif // TASMANIAN_CUBLAS
         TasCUDA::cudaRecv<double>(num_x * num_outputs, gpu_y, y);
 
         TasCUDA::cudaDel<int>(gpu_spntr, os);
         TasCUDA::cudaDel<int>(gpu_sindx, os);
         TasCUDA::cudaDel<double>(gpu_svals, os);
         TasCUDA::cudaDel<double>(gpu_y, os);
+        TasCUDA::cudaDel<double>(gpu_x, os);
+    }else if (flv == flavor_sparse_dense){
+        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
+        double *gpu_weights = TasCUDA::cudaNew<double>(num_x * points->getNumIndexes(), os);
+        double *gpu_result = TasCUDA::cudaNew<double>(num_x * values->getNumOutputs(), os);
+
+//        int *gpu_spntr, *gpu_sindx, num_nz = 0;
+//        double *gpu_svals;
+//        buildSparseBasisMatrixGPU(gpu_x, num_x, gpu_spntr, gpu_sindx, gpu_svals, num_nz, os);
+//        TasCUDA::convert_sparse_to_dense(num_x, num_points, gpu_spntr, gpu_sindx, gpu_svals, gpu_weights);
+        checkAccelerationGPUHierarchy();
+        TasCUDA::devalpwpoly_sparse_dense(order, rule->getType(), num_dimensions, num_x, num_points, gpu_x, gpu_acc->getGPUNodes(), gpu_acc->getGPUSupport(),
+                                gpu_acc->getGPUpntr(), gpu_acc->getGPUindx(), num_roots, gpu_acc->getGPUroots(), gpu_weights);
+
+
+        #ifdef TASMANIAN_CUBLAS
+        gpu_acc->cublasDGEMM(values->getNumOutputs(), num_points, num_x, gpu_weights, gpu_result);
+        //TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, points->getNumIndexes(), gpu_acc->getGPUValues(), gpu_weights, gpu_result);
+        #else
+        TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
+        #endif // TASMANIAN_CUBLAS
+
+        TasCUDA::cudaRecv<double>(num_x * values->getNumOutputs(), gpu_result, y);
+
+//        TasCUDA::cudaDel<int>(gpu_spntr, os);
+//        TasCUDA::cudaDel<int>(gpu_sindx, os);
+//        TasCUDA::cudaDel<double>(gpu_svals, os);
+        TasCUDA::cudaDel<double>(gpu_result, os);
+        TasCUDA::cudaDel<double>(gpu_weights, os);
         TasCUDA::cudaDel<double>(gpu_x, os);
     }
 
@@ -1901,32 +1932,46 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
 
     delete[] map;
 }
-int GridLocalPolynomial::removePointsBySurplus(double tolerance, int output){
+int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
+    clearRefinement();
     int num_points = points->getNumIndexes();
-    bool *map = new bool[num_points]; //std::fill(map, map + num_points, false);
+    bool *pmap = new bool[num_points]; // point map, set to true if the point is to be kept, false otherwise
 
     double *norm = getNormalization();
+
+    const double *scale = scale_correction;
+    double *temp_scale = 0;
+    if (scale == 0){
+        temp_scale = new double[num_points * num_outputs]; std::fill(temp_scale, temp_scale + num_points * num_outputs, 1.0);
+        scale = temp_scale;
+    }
 
     //#pragma omp parallel for
     for(int i=0; i<num_points; i++){
         bool small = true;
         if (output == -1){
             for(int k=0; k<num_outputs; k++){
-                if (small && ((fabs(surpluses[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
+                if (small && ((scale[i*num_outputs + k] * fabs(surpluses[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
             }
         }else{
-            small = !((fabs(surpluses[i*num_outputs + output]) / norm[output]) > tolerance);
+            small = !((scale[i] * fabs(surpluses[i*num_outputs + output]) / norm[output]) > tolerance);
         }
-        map[i] = !small;
+        pmap[i] = !small;
         //if (!small) cout << "keep " << i << endl;
     }
 
-    int num_kept = 0; for(int i=0; i<num_points; i++) num_kept += (map[i]) ? 1 : 0;
+    int num_kept = 0; for(int i=0; i<num_points; i++) num_kept += (pmap[i]) ? 1 : 0;
     //cout << "num kept = " << num_kept << endl;
     if (num_kept == 0){
         delete[] norm;
-        delete[] map;
+        delete[] pmap;
         return 0;
+    }
+
+    if (num_kept == num_points){
+        delete[] norm;
+        delete[] pmap;
+        return num_points;
     }
 
     // save a copy of the points and the values
@@ -1935,7 +1980,7 @@ int GridLocalPolynomial::removePointsBySurplus(double tolerance, int output){
 
     num_kept = 0;
     for(int i=0; i<num_points; i++){
-        if (map[i]){
+        if (pmap[i]){
             std::copy(points->getIndex(i), points->getIndex(i) + num_dimensions, &(point_kept[num_kept*num_dimensions]));
             std::copy(values->getValues(i), values->getValues(i) + num_outputs, &(values_kept[num_kept*num_outputs]));
             num_kept++;
@@ -1956,7 +2001,8 @@ int GridLocalPolynomial::removePointsBySurplus(double tolerance, int output){
     recomputeSurpluses();
 
     delete[] norm;
-    delete[] map;
+    delete[] pmap;
+    if (temp_scale == 0) delete[] temp_scale;
 
     return points->getNumIndexes();
 }
