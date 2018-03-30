@@ -130,7 +130,7 @@ if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
     else
         tsgWriteMatrix(sFileL, vLimitLevels);
     end
-    lClean.sFileW = 1;
+    lClean.sFileL = 1;
     sCommand = [sCommand, ' -levellimitsfile ', sFileL];
 end
 

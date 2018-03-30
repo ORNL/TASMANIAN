@@ -23,7 +23,7 @@ function tsgCleanTempFiles(lGrid, lFiles)
 
 % generate filenames
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
 
 if (isfield(lFiles, 'all'))
     if (exist(sFileX, 'file') == 2)
@@ -40,6 +40,9 @@ if (isfield(lFiles, 'all'))
     end
     if (exist(sFileC, 'file') == 2)
         delete(sFileC);
+    end
+    if (exist(sFileL, 'file') == 2)
+        delete(sFileL);
     end
 else
     if (isfield(lFiles, 'sFileX'))
@@ -65,6 +68,11 @@ else
     if (isfield(lFiles, 'sFileC'))
         if (exist(sFileC, 'file') == 2)
             delete(sFileC);
+        end
+    end
+    if (isfield(lFiles, 'sFileL'))
+        if (exist(sFileL, 'file') == 2)
+            delete(sFileL);
         end
     end
 end

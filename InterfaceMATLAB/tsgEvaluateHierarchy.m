@@ -2,8 +2,6 @@ function [vals] = tsgEvaluateHierarchy(lGrid, mX)
 %
 % [vals] = tsgEvaluateHierarchy(lGrid, mX)
 %
-% WARNING: this is an experimental feature
-%
 % it gives the weights for interpolation (or approximation)
 %
 % INPUT:
@@ -75,7 +73,7 @@ else
                 rindx((pntr(i)+1):(pntr(i+1))) = i;
             end
             %[Rows, Cols, NNZ]
-            vals = sparse(rindx, indx + 1, vals, Rows, Cols, NNZ);
+            vals = sparse(rindx, double(indx + 1.0), vals, double(Rows), double(Cols), double(NNZ));
         else
             frewind(fid);
         end

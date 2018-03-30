@@ -40,10 +40,9 @@ public:
     BaseAccelerationData();
     virtual ~BaseAccelerationData();
 
-    virtual TypeAcceleration getType() const = 0;
     virtual bool isCompatible(TypeAcceleration acc) const = 0;
 
-    virtual void resetValuesAndSurpluses() = 0;
+    virtual void resetGPULoadedData() = 0;
 };
 
 class AccelerationDataGPUFull : public BaseAccelerationData{
@@ -53,17 +52,28 @@ public:
 
     void setLogStream(std::ostream *os);
 
-    TypeAcceleration getType() const;
     bool isCompatible(TypeAcceleration acc) const;
 
     double* getGPUValues() const;
     void loadGPUValues(int total_entries, const double *cpu_values);
-    void resetValuesAndSurpluses();
+
+    double* getGPUNodes() const;
+    double* getGPUSupport() const;
+    void loadGPUNodesSupport(int total_entries, const double *cpu_nodes, const double *cpu_support);
+
+    int* getGPUpntr() const;
+    int* getGPUindx() const;
+    int* getGPUroots() const;
+    void loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots);
+
+    void resetGPULoadedData();
 
     void cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result);
-    void cublasDGEMM(int num_outputs, int num_points, int num_x, const double cpu_weights[], double *cpu_result);
+    void cublasDGEMM(int num_outputs, int num_points, int num_x, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
 
-    void cusparseDCRMM2(int num_points, int num_outputs, int num_x, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, double *cpu_result);
+    // cusparseDCRMM2 multiplies, cusparseDCRSMM solves for the coefficients
+    void cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
+
     void cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses);
 
 protected:
@@ -72,42 +82,70 @@ protected:
 
 private:
     double *gpu_values;
+    double *gpu_nodes, *gpu_support; // support is half support and encodes the level of the function, i.e., constant, linear, or quadratic
+    int *gpu_hpntr, *gpu_hindx, *gpu_roots;
+
     void *cublasHandle;
     void *cusparseHandle;
 
     std::ostream *logstream;
 };
 
-class TasCUDA{
-public:
-    TasCUDA();
-    ~TasCUDA();
-
-    // matrix multiply double-precision (d), level 3, general (ge), column compressed sparse (cs): C = A * B
-    // A is N by K, B is K by M, C is N by M
-    // A and C are stored in column format, B is sparse column compresses
-    static void d3gecs(int N, int M, const double *gpuA, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, double *cpuC, std::ostream *os = 0);
+namespace TasCUDA{
     // matrix solve double-precision (d), level 3, general (ge), column compressed sparse (cs) (solve): C = A * B
     // A is N by M, B is M by M, C is N by M
     // A and C are stored in column format, B is sparse column compresses and unit triangular (the diagonal entry is no include in the pattern)
-    static void d3gecss(int N, int M, int *levels, int top_level, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, const double *cpuA, double *cpuC, std::ostream *os);
+    void d3gecss(int N, int M, int *levels, int top_level, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, const double *cpuA, double *cpuC, std::ostream *os);
 
-};
+    // convert transformed points to the canonical domain, all inputs live on the GPU
+    void dtrans2can(int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b, const double *gpu_x_transformed, double *gpu_x_canonical);
 
-class AccelerationMeta{ // keeps I/O strings and such
+    // evaluate local polynomial rules
+    void devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y);
+    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
+                            int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz);
+    void devalpwpoly_sparse_dense(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
+                                 int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, double *gpu_dense);
+
+    // lazy cuda dgemm, nowhere near as powerful as cuBlas, but does not depend on cuBlas
+    // gpu_a is M by K, gpu_b is K by N, gpu_c is M by N, all in column-major format
+    // on exit gpu_c = gpu_a * gpu_b
+    void cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c);
+
+    // lazy cuda sparse dgemm, less efficient (especially for large N), but more memory conservative then cusparse as there is no need for a transpose
+    // C is M x N, B is K x N (K is max(gpu_sindx)), both are given in row-major format, num_nz/spntr/sindx/svals describe row compressed A which is M by K
+    // on exit C = A * B
+    void cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C);
+
+    // converts a sparse matrix to a dense representation (all data sits on the gpu and is pre-allocated)
+    void convert_sparse_to_dense(int num_rows, int num_columns, const int *gpu_pntr, const int *gpu_indx, const double *gpu_vals, double *gpu_destination);
+}
+
+namespace AccelerationMeta{
+    TypeAcceleration getIOAccelerationString(const char * name);
+    const char* getIOAccelerationString(TypeAcceleration accel);
+    int getIOAccelerationInt(TypeAcceleration accel);
+    bool isAccTypeFullMemoryGPU(TypeAcceleration accel);
+    bool isAccTypeGPU(TypeAcceleration accel);
+
+    void cudaCheckError(void *cudaStatus, const char *info, std::ostream *os);
+    void cublasCheckError(void *cublasStatus, const char *info, std::ostream *os);
+    void cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os);
+}
+
+class AccelerationDomainTransform{
 public:
-    AccelerationMeta();
-    ~AccelerationMeta();
+    AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b, std::ostream *os);
+    ~AccelerationDomainTransform();
 
-    static TypeAcceleration getIOAccelerationString(const char * name);
-    static const char* getIOAccelerationString(TypeAcceleration accel);
-    static int getIOAccelerationInt(TypeAcceleration accel);
-    static bool isAccTypeFullMemoryGPU(TypeAcceleration accel);
-    static bool isAccTypeGPU(TypeAcceleration accel);
+    double* getCanonicalPoints(int num_dimensions, int num_x, const double *gpu_transformed_x);
 
-    static void cudaCheckError(void *cudaStatus, const char *info, std::ostream *os);
-    static void cublasCheckError(void *cublasStatus, const char *info, std::ostream *os);
-    static void cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os);
+private:
+    // these actually store the rate and shift and not the hard upper/lower limits
+    double *gpu_trans_a, *gpu_trans_b;
+    int padded_size;
+
+    std::ostream *logstream;
 };
 
 }

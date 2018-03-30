@@ -33,46 +33,33 @@
 
 #include "tsgAcceleratedDataStructures.hpp"
 
-#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
-#include <cuda_runtime_api.h>
-#include <cuda.h>
-#endif
-
-#ifdef TASMANIAN_CUBLAS
-#include <cublas_v2.h>
-#include <cusparse.h>
-#endif // TASMANIAN_CUBLAS
-
-#ifdef _TASMANIAN_DEBUG_
-#define _IF_DEBUG_MACRO(x) x
-#else
-#define _IF_DEBUG_MACRO(x)
-#endif
+#include "tsgCudaMacros.hpp"
 
 namespace TasGrid{
 
 BaseAccelerationData::BaseAccelerationData(){}
 BaseAccelerationData::~BaseAccelerationData(){}
 
-AccelerationDataGPUFull::AccelerationDataGPUFull() : gpu_values(0), cublasHandle(0), cusparseHandle(0), logstream(0){}
+AccelerationDataGPUFull::AccelerationDataGPUFull() :
+    gpu_values(0), gpu_nodes(0), gpu_support(0),
+    gpu_hpntr(0), gpu_hindx(0), gpu_roots(0),
+    cublasHandle(0), cusparseHandle(0), logstream(0){}
 AccelerationDataGPUFull::~AccelerationDataGPUFull(){
     #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
-    if (gpu_values != 0){
-        cudaFree(gpu_values);
-        gpu_values = 0;
-    }
+    if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values); gpu_values = 0; }
+    if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes); gpu_nodes = 0; }
+    if (gpu_support != 0){ TasCUDA::cudaDel<double>(gpu_support); gpu_support = 0; }
+    if (gpu_hpntr != 0){ TasCUDA::cudaDel<int>(gpu_hpntr); gpu_hpntr = 0; }
+    if (gpu_hindx != 0){ TasCUDA::cudaDel<int>(gpu_hindx); gpu_hindx = 0; }
+    if (gpu_roots != 0){ TasCUDA::cudaDel<int>(gpu_roots); gpu_roots = 0; }
     #endif // TASMANIAN_CUBLAS || TASMANIAN_CUDA
     #ifdef TASMANIAN_CUBLAS
     if (cublasHandle != 0){
         cublasDestroy((cublasHandle_t) cublasHandle);
-        //cublasDestroy(*((cublasHandle_t*) cublasHandle));
-        //delete ((cublasHandle_t*) cublasHandle);
         cublasHandle = 0;
     }
     if (cusparseHandle != 0){
         cusparseDestroy((cusparseHandle_t) cusparseHandle);
-        //cusparseDestroy(*((cusparseHandle_t*) cusparseHandle));
-        //delete ((cusparseHandle_t*) cusparseHandle);
         cusparseHandle = 0;
     }
     #endif // TASMANIAN_CUBLAS
@@ -83,8 +70,6 @@ void AccelerationDataGPUFull::makeCuBlasHandle(){
         cublasHandle_t cbh;
         cublasCreate(&cbh);
         cublasHandle = (void*) cbh;
-        //cublasHandle = (void*) new cublasHandle_t;
-        //cublasCreate((cublasHandle_t) cublasHandle);
     }
     #endif // TASMANIAN_CUBLAS
 }
@@ -94,23 +79,17 @@ void AccelerationDataGPUFull::makeCuSparseHandle(){
         cusparseHandle_t csh;
         cusparseCreate(&csh);
         cusparseHandle = (void*) csh;
-        //cusparseHandle = (void*) new cusparseHandle_t;
-        //cusparseCreate((cusparseHandle_t*) cusparseHandle);
     }
     #endif // TASMANIAN_CUBLAS
 }
 
 void AccelerationDataGPUFull::setLogStream(std::ostream *os){ logstream = os; }
 
-TypeAcceleration AccelerationDataGPUFull::getType() const{ return accel_gpu_fullmemory; }
 bool AccelerationDataGPUFull::isCompatible(TypeAcceleration acc) const{ return AccelerationMeta::isAccTypeFullMemoryGPU(acc); }
 
 #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
 void AccelerationDataGPUFull::loadGPUValues(int total_entries, const double *cpu_values){
-    cudaError_t cudaStat = cudaMalloc(((void**) &gpu_values), total_entries * sizeof(double));
-    AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_values", logstream);
-    cudaStat = cudaMemcpy(gpu_values, cpu_values, total_entries * sizeof(double), cudaMemcpyHostToDevice);
-    AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_values", logstream);
+    gpu_values = TasCUDA::cudaSend(total_entries, cpu_values);
 }
 #else
 void AccelerationDataGPUFull::loadGPUValues(int, const double *){}
@@ -118,167 +97,122 @@ void AccelerationDataGPUFull::loadGPUValues(int, const double *){}
 double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }
 
 #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
-void AccelerationDataGPUFull::resetValuesAndSurpluses(){
-    if (gpu_values != 0){ cudaFree(gpu_values); gpu_values = 0; }
+void AccelerationDataGPUFull::resetGPULoadedData(){
+    if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values); gpu_values = 0; }
+    if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes); gpu_nodes = 0; }
+    if (gpu_support != 0){ TasCUDA::cudaDel<double>(gpu_support); gpu_support = 0; }
 }
 #else
-void AccelerationDataGPUFull::resetValuesAndSurpluses(){}
+void AccelerationDataGPUFull::resetGPULoadedData(){}
 #endif
+
+double* AccelerationDataGPUFull::getGPUNodes() const{ return gpu_nodes; }
+double* AccelerationDataGPUFull::getGPUSupport() const{ return gpu_support; }
+#ifdef TASMANIAN_CUDA
+void AccelerationDataGPUFull::loadGPUNodesSupport(int total_entries, const double *cpu_nodes, const double *cpu_support){
+    gpu_nodes = TasCUDA::cudaSend(total_entries, cpu_nodes);
+    gpu_support = TasCUDA::cudaSend(total_entries, cpu_support);
+}
+#else
+void AccelerationDataGPUFull::loadGPUNodesSupport(int, const double *, const double *){}
+#endif // TASMANIAN_CUDA
+
+int* AccelerationDataGPUFull::getGPUpntr() const{ return gpu_hpntr; }
+int* AccelerationDataGPUFull::getGPUindx() const{ return gpu_hindx; }
+int* AccelerationDataGPUFull::getGPUroots() const{ return gpu_roots; }
+#ifdef TASMANIAN_CUDA
+void AccelerationDataGPUFull::loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots){
+    gpu_hpntr = TasCUDA::cudaSend<int>(num_points + 1, pntr);
+    gpu_hindx = TasCUDA::cudaSend<int>(pntr[num_points], indx);
+    gpu_roots = TasCUDA::cudaSend<int>(num_roots, roots);
+}
+#else
+void AccelerationDataGPUFull::loadGPUHierarchy(int, int*, int*, int, int*){}
+#endif
+
 
 #ifdef TASMANIAN_CUBLAS
 void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    double *gpu_weights = 0;
-    cudaError_t cudaStat = cudaMalloc(((void**) &gpu_weights), num_points * sizeof(double));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_weights in dgemv", logstream);)
-    cudaStat = cudaMemcpy(gpu_weights, cpu_weights, num_points * sizeof(double), cudaMemcpyHostToDevice);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_weights in dgemv", logstream);)
-
-    double *gpu_result = 0;
-    cudaStat = cudaMalloc(((void**) &gpu_result), num_outputs * sizeof(double));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_result in dgemv", logstream);)
+    double *gpu_weights = TasCUDA::cudaSend(num_points, cpu_weights, logstream);
+    double *gpu_result = TasCUDA::cudaNew<double>(num_outputs, logstream);
 
     double alpha = 1.0, beta = 0.0;
-    cublasStatus_t stat;
-    stat = cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, num_outputs, num_points, &alpha, gpu_values, num_outputs, gpu_weights, 1, &beta, gpu_result, 1);
+    cublasStatus_t stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, num_outputs, num_points,
+                                     &alpha, gpu_values, num_outputs, gpu_weights, 1, &beta, gpu_result, 1);
     AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in dgemv", logstream);
 
-    cudaStat = cudaMemcpy(cpu_result, gpu_result, num_outputs * sizeof(double), cudaMemcpyDeviceToHost);
-    AccelerationMeta::cudaCheckError((void*) &cudaStat, "retrieve gpu_result in dgemv", logstream);
+    TasCUDA::cudaRecv<double>(num_outputs, gpu_result, cpu_result, logstream);
 
-    cudaStat = cudaFree(gpu_result);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_result in dgemv", logstream);)
-    cudaStat = cudaFree(gpu_weights);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_weights in dgemv", logstream);)
+    TasCUDA::cudaDel<double>(gpu_result, logstream);
+    TasCUDA::cudaDel<double>(gpu_weights, logstream);
 }
 #else
 void AccelerationDataGPUFull::cublasDGEMV(int, int, const double *, double *){}
 #endif // TASMANIAN_CUBLAS
 
 #ifdef TASMANIAN_CUBLAS
-void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_points, int num_x, const double cpu_weights[], double *cpu_result){
+void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_points, int num_x, const double gpu_weights[], double *gpu_result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    double *gpu_weights = 0;
-    cudaError_t cudaStat = cudaMalloc(((void**) &gpu_weights), num_points * num_x * sizeof(double));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_weights in dgemm", logstream);)
-    cudaStat = cudaMemcpy(gpu_weights, cpu_weights, num_points * num_x * sizeof(double), cudaMemcpyHostToDevice);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_weights in dgemm", logstream);)
-
-    double *gpu_result = 0;
-    cudaStat = cudaMalloc(((void**) &gpu_result), num_outputs * num_x * sizeof(double));
-    AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_result in dgemm", logstream);
 
     double alpha = 1.0, beta = 0.0;
-    cublasStatus_t stat;
-    stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points, &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
+    cublasStatus_t stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points,
+                                      &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
     AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in dgemm", logstream);
-
-    cudaStat = cudaMemcpy(cpu_result, gpu_result, num_outputs * num_x * sizeof(double), cudaMemcpyDeviceToHost);
-    AccelerationMeta::cudaCheckError((void*) &cudaStat, "retrieve gpu_result in dgemm", logstream);
-
-    cudaStat = cudaFree(gpu_result);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_result in dgemm", logstream);)
-    cudaStat = cudaFree(gpu_weights);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_weights in dgemm", logstream);)
 }
-void AccelerationDataGPUFull::cusparseDCRMM2(int num_points, int num_outputs, int num_x, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, double *cpu_result){
-    makeCuSparseHandle(); // creates a handle only if one doesn't exist
-    makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    cudaError_t cudaStat;
-    int *gpu_pntr, *gpu_indx;
-    double *gpu_vals;
-    double *gpu_result, *gpu_result_t;
-
-    int num_nz = cpu_pntr[num_x];
-
-    cudaStat = cudaMalloc(((void**) &gpu_pntr), (num_x+1) * sizeof(int));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_pntr in DCRMM2", logstream);)
-    cudaStat = cudaMemcpy(gpu_pntr, cpu_pntr, (num_x+1) * sizeof(int), cudaMemcpyHostToDevice);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_pntr in DCRMM2", logstream);)
-
-    cudaStat = cudaMalloc(((void**) &gpu_indx), num_nz * sizeof(int));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_indx in DCRMM2", logstream);)
-    cudaStat = cudaMemcpy(gpu_indx, cpu_indx, num_nz * sizeof(int), cudaMemcpyHostToDevice);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_indx in DCRMM2", logstream);)
-
-    cudaStat = cudaMalloc(((void**) &gpu_vals), num_nz * sizeof(double));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_vals in DCRMM2", logstream);)
-    cudaStat = cudaMemcpy(gpu_vals, cpu_vals, num_nz * sizeof(double), cudaMemcpyHostToDevice);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_vals in DCRMM2", logstream);)
-
-    cudaStat = cudaMalloc(((void**) &gpu_result), num_x * num_outputs * sizeof(double));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_result in DCRMM2", logstream);)
-    cudaStat = cudaMalloc(((void**) &gpu_result_t), num_x * num_outputs * sizeof(double));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_result_t in DCRMM2", logstream);)
-
-    // call cusparse
-    cusparseStatus_t stat;
-    double alpha = 1.0, beta = 0.0;
-    cusparseMatDescr_t mat_desc;
-    stat = cusparseCreateMatDescr(&mat_desc);
-    _IF_DEBUG_MACRO(AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRMM2", logstream);)
-    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
-    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
-    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
-    //mat_desc->MatrixType = CUSPARSE_MATRIX_TYPE_GENERAL;
-
-    stat = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
-            CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, num_x, num_outputs, num_points, num_nz,
-            &alpha, mat_desc, gpu_vals, gpu_pntr, gpu_indx, gpu_values, num_outputs, &beta, gpu_result_t, num_x);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrmm2 in DCRMM2", logstream);
-
-    cusparseDestroyMatDescr(mat_desc);
-
-    // transpose the result! (incomplete sparse standard)
-    cublasStatus_t bstat;
-    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
-                        CUBLAS_OP_T, CUBLAS_OP_T, num_outputs, num_x,
-                        &alpha, gpu_result_t, num_x, &beta, gpu_result_t, num_x, gpu_result, num_outputs);
-    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam in DCRMM2", logstream);
-
-    cudaStat = cudaMemcpy(cpu_result, gpu_result, num_x * num_outputs * sizeof(double), cudaMemcpyDeviceToHost);
-    AccelerationMeta::cudaCheckError((void*) &cudaStat, "retrieve gpu_result in DCRMM2", logstream);
-
-    cudaStat = cudaFree(gpu_result_t); _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_result_t in DCRMM2", logstream);)
-    cudaStat = cudaFree(gpu_result);   _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_result in DCRMM2", logstream);)
-    cudaStat = cudaFree(gpu_vals);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_vals in DCRMM2", logstream);)
-    cudaStat = cudaFree(gpu_indx);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_indx in DCRMM2", logstream);)
-    cudaStat = cudaFree(gpu_pntr);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_pntr in DCRMM2", logstream);)
-}
+//void AccelerationDataGPUFull::cusparseDCRMM2(int num_points, int num_outputs, int num_x, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, double *cpu_result){
+//    makeCuSparseHandle(); // creates a handle only if one doesn't exist
+//    makeCuBlasHandle(); // creates a handle only if one doesn't exist
+//    int num_nz = cpu_pntr[num_x];
+//    int *gpu_pntr = TasCUDA::cudaSend(num_x + 1, cpu_pntr, logstream);
+//    int *gpu_indx = TasCUDA::cudaSend(num_nz, cpu_indx, logstream);
+//    double *gpu_vals = TasCUDA::cudaSend(num_nz, cpu_vals, logstream);
+//    double *gpu_result = TasCUDA::cudaNew<double>(num_x * num_outputs, logstream);
+//    double *gpu_result_t = TasCUDA::cudaNew<double>(num_x * num_outputs, logstream);
+//
+//    // call cusparse
+//    cusparseStatus_t stat;
+//    double alpha = 1.0, beta = 0.0;
+//    cusparseMatDescr_t mat_desc;
+//    stat = cusparseCreateMatDescr(&mat_desc);
+//    _IF_DEBUG_MACRO(AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRMM2", logstream);)
+//    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
+//    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
+//    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
+//    //mat_desc->MatrixType = CUSPARSE_MATRIX_TYPE_GENERAL;
+//
+//    stat = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
+//            CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, num_x, num_outputs, num_points, num_nz,
+//            &alpha, mat_desc, gpu_vals, gpu_pntr, gpu_indx, gpu_values, num_outputs, &beta, gpu_result_t, num_x);
+//    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrmm2 in DCRMM2", logstream);
+//
+//    cusparseDestroyMatDescr(mat_desc);
+//
+//    // transpose the result! (incomplete sparse standard)
+//    cublasStatus_t bstat;
+//    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
+//                        CUBLAS_OP_T, CUBLAS_OP_T, num_outputs, num_x,
+//                        &alpha, gpu_result_t, num_x, &beta, gpu_result_t, num_x, gpu_result, num_outputs);
+//    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam in DCRMM2", logstream);
+//
+//    TasCUDA::cudaRecv<double>(num_x * num_outputs, gpu_result, cpu_result, logstream);
+//
+//    TasCUDA::cudaDel<double>(gpu_result_t, logstream);
+//    TasCUDA::cudaDel<double>(gpu_result, logstream);
+//    TasCUDA::cudaDel<double>(gpu_vals, logstream);
+//    TasCUDA::cudaDel<int>(gpu_indx, logstream);
+//    TasCUDA::cudaDel<int>(gpu_pntr, logstream);
+//}
 void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses){
     makeCuSparseHandle(); // creates a handle only if one doesn't exist
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    cudaError_t cudaStat;
-    int *gpu_pntr, *gpu_indx;
-    double *gpu_vals;
-    double *gpu_a, *gpu_b;
-    double alpha = 1.0, beta = 0.0;
-
     int num_nz = cpu_pntr[num_points];
-
-    cudaStat = cudaMalloc(((void**) &gpu_pntr), (num_points+1) * sizeof(int));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_pntr in DCRSMM", logstream);)
-    cudaStat = cudaMemcpy(gpu_pntr, cpu_pntr, (num_points+1) * sizeof(int), cudaMemcpyHostToDevice);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_pntr in DCRSMM", logstream);)
-
-    cudaStat = cudaMalloc(((void**) &gpu_indx), num_nz * sizeof(int));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_indx in DCRSMM", logstream);)
-    cudaStat = cudaMemcpy(gpu_indx, cpu_indx, num_nz * sizeof(int), cudaMemcpyHostToDevice);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_indx in DCRSMM", logstream);)
-
-    cudaStat = cudaMalloc(((void**) &gpu_vals), num_nz * sizeof(double));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_vals in DCRSMM", logstream);)
-    cudaStat = cudaMemcpy(gpu_vals, cpu_vals, num_nz * sizeof(double), cudaMemcpyHostToDevice);
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "copy gpu_vals in DCRSMM", logstream);)
-
-    cudaStat = cudaMalloc(((void**) &gpu_a), num_points * num_outputs * sizeof(double));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_result in DCRSMM", logstream);)
-    cudaStat = cudaMalloc(((void**) &gpu_b), num_points * num_outputs * sizeof(double));
-    _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "alloc gpu_result_t in DCRSMM", logstream);)
-
-    // Load values
-    cudaStat = cudaMemcpy(gpu_a, values, num_points * num_outputs * sizeof(double), cudaMemcpyHostToDevice); // gpu_a = values
-    AccelerationMeta::cudaCheckError((void*) &cudaStat, "send matrix to gpu in cusparseDCRSMM", logstream);
+    int *gpu_pntr = TasCUDA::cudaSend(num_points + 1, cpu_pntr, logstream);
+    int *gpu_indx = TasCUDA::cudaSend(num_nz, cpu_indx, logstream);
+    double *gpu_vals = TasCUDA::cudaSend(num_nz, cpu_vals, logstream);
+    double *gpu_a = TasCUDA::cudaSend(num_points * num_outputs, values, logstream);
+    double *gpu_b = TasCUDA::cudaNew<double>(num_points * num_outputs, logstream);
+    double alpha = 1.0, beta = 0.0;
 
     // Transpose values
     cublasStatus_t bstat;
@@ -318,27 +252,87 @@ void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, co
                         &alpha, gpu_a, num_points, &beta, gpu_a, num_points, gpu_b, num_outputs); // gpu_b = gpu_a^T = values * s^{-1}
     AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam second in DCRSMM", logstream);
 
-    cudaStat = cudaMemcpy(surpluses, gpu_b, num_points * num_outputs * sizeof(double), cudaMemcpyDeviceToHost); // gpu_a = values
-    AccelerationMeta::cudaCheckError((void*) &cudaStat, "retrieve answer from gpu in cusparseDCRSMM", logstream);
+    TasCUDA::cudaRecv<double>(num_points * num_outputs, gpu_b, surpluses, logstream);
 
     cusparseDestroyMatDescr(mat_desc);
 
-    cudaStat = cudaFree(gpu_a);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_a in cusparseDCRSMM", logstream);)
-    cudaStat = cudaFree(gpu_b);     _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_b in cusparseDCRSMM", logstream);)
-    cudaStat = cudaFree(gpu_vals);  _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_vals in cusparseDCRSMM", logstream);)
-    cudaStat = cudaFree(gpu_indx);  _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_indx in cusparseDCRSMM", logstream);)
-    cudaStat = cudaFree(gpu_pntr);  _IF_DEBUG_MACRO(AccelerationMeta::cudaCheckError((void*) &cudaStat, "free gpu_pntr in cusparseDCRSMM", logstream);)
+    TasCUDA::cudaDel<double>(gpu_a, logstream);
+    TasCUDA::cudaDel<double>(gpu_b, logstream);
+    TasCUDA::cudaDel<double>(gpu_vals, logstream);
+    TasCUDA::cudaDel<int>(gpu_indx, logstream);
+    TasCUDA::cudaDel<int>(gpu_pntr, logstream);
 }
 #else
 void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double *){}
-void AccelerationDataGPUFull::cusparseDCRMM2(int, int, int, const int *, const int *, const double *, double *){}
+//void AccelerationDataGPUFull::cusparseDCRMM2(int, int, int, const int *, const int *, const double *, double *){}
 void AccelerationDataGPUFull::cusparseDCRSMM(int, int, const int*, const int*, const double*, const double*, double*){}
 #endif // TASMANIAN_CUBLAS
 
+#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
+void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
+    makeCuSparseHandle(); // creates a handle only if one doesn't exist
+    makeCuBlasHandle(); // creates a handle only if one doesn't exist
+    const int *gpu_pntr = 0, *gpu_indx = 0;
+    const double *gpu_vals = 0;
+    int *tempp = 0, *tempi = 0;
+    double *tempv = 0, *tempr = 0;
+    double *gpu_result = 0;
+    if (cpu_pointers){
+        num_nz = spntr[num_x];
+        tempp = TasCUDA::cudaSend<int>(num_x + 1, spntr, logstream);
+        gpu_pntr = tempp;
+        tempi = TasCUDA::cudaSend<int>(num_nz, sindx, logstream);
+        gpu_indx = tempi;
+        tempv = TasCUDA::cudaSend<double>(num_nz, svals, logstream);
+        gpu_vals = tempv;
+        tempr = TasCUDA::cudaNew<double>(num_x * num_outputs, logstream);
+        gpu_result = tempr;
+    }else{
+        gpu_pntr = spntr;
+        gpu_indx = sindx;
+        gpu_vals = svals;
+        gpu_result = result;
+    }
+    double *gpu_result_t = TasCUDA::cudaNew<double>(num_x * num_outputs, logstream);
 
+    // call cusparse
+    cusparseStatus_t stat;
+    double alpha = 1.0, beta = 0.0;
+    cusparseMatDescr_t mat_desc;
+    stat = cusparseCreateMatDescr(&mat_desc);
+    _IF_DEBUG_MACRO(AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRMM2", logstream);)
+    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
+    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
+    //mat_desc->MatrixType = CUSPARSE_MATRIX_TYPE_GENERAL;
 
-AccelerationMeta::AccelerationMeta(){}
-AccelerationMeta::~AccelerationMeta(){}
+    stat = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
+            CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, num_x, num_outputs, num_points, num_nz,
+            &alpha, mat_desc, gpu_vals, gpu_pntr, gpu_indx, gpu_values, num_outputs, &beta, gpu_result_t, num_x);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrmm2 in DCRMM2", logstream);
+
+    cusparseDestroyMatDescr(mat_desc);
+
+    // transpose the result! (incomplete sparse standard)
+    cublasStatus_t bstat;
+    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
+                        CUBLAS_OP_T, CUBLAS_OP_T, num_outputs, num_x,
+                        &alpha, gpu_result_t, num_x, &beta, gpu_result_t, num_x, gpu_result, num_outputs);
+    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam in DCRMM2", logstream);
+
+    TasCUDA::cudaDel<double>(gpu_result_t, logstream);
+    if (cpu_pointers){
+        TasCUDA::cudaRecv<double>(num_x * num_outputs, gpu_result, result, logstream);
+
+        TasCUDA::cudaDel<double>(tempr, logstream);
+        TasCUDA::cudaDel<double>(tempv, logstream);
+        TasCUDA::cudaDel<int>(tempi, logstream);
+        TasCUDA::cudaDel<int>(tempp, logstream);
+    }
+}
+#else
+void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
+#endif // defined TASMANIAN_CUBLAS || TASMANIAN_CUDA
 
 TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
     if (strcmp(name, "cpu-blas") == 0){
@@ -380,7 +374,6 @@ int AccelerationMeta::getIOAccelerationInt(TypeAcceleration accel){
     }
 }
 bool AccelerationMeta::isAccTypeFullMemoryGPU(TypeAcceleration accel){
-    //cout << AccelerationMeta::getIOAccelerationString(accel) << endl;
     switch (accel){
         case accel_gpu_default:
         case accel_gpu_cublas:
@@ -392,7 +385,6 @@ bool AccelerationMeta::isAccTypeFullMemoryGPU(TypeAcceleration accel){
     }
 }
 bool AccelerationMeta::isAccTypeGPU(TypeAcceleration accel){
-    //cout << AccelerationMeta::getIOAccelerationString(accel) << endl;
     switch (accel){
         case accel_gpu_default:
         case accel_gpu_cublas:
@@ -410,15 +402,6 @@ void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::o
         if (os != 0){
             (*os) << "ERROR: cuda failed at " << info << " with error: " << endl;
             (*os) << cudaGetErrorString(*((cudaError_t*) cudaStatus)) << endl;
-//            if (*((cudaError_t*) cudaStatus) == cudaErrorMemoryAllocation){
-//                (*os) << "ERROR: cuda failed with code: cudaErrorMemoryAllocation at " << info << endl;
-//            }else if (*((cudaError_t*) cudaStatus) == cudaErrorIllegalAddress){
-//                (*os) << "ERROR: cuda failed with code: cudaErrorIllegalAddress at " << info << endl;
-//            }else if (*((cudaError_t*) cudaStatus) == cudaErrorInvalidValue){
-//                (*os) << "ERROR: cuda failed with code: cudaErrorInvalidValue at " << info << endl;
-//            }else{
-//                (*os) << "ERROR: cuda failed with code: " << *((cudaError_t*) cudaStatus) << endl;
-//            }
         }
     }
 }
@@ -467,6 +450,48 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
 void AccelerationMeta::cublasCheckError(void *, const char *, std::ostream *){}
 void AccelerationMeta::cusparseCheckError(void *, const char *, std::ostream *){}
 #endif // TASMANIAN_CUBLAS
+
+
+#ifdef TASMANIAN_CUDA
+AccelerationDomainTransform::AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b, std::ostream *os) :
+    gpu_trans_a(0), gpu_trans_b(0), padded_size(0), logstream(os)
+{
+    padded_size = num_dimensions;
+    while(padded_size < TASMANIAN_CUDA_NUM_THREADS_SHORT / 2) padded_size += num_dimensions;
+
+    double *rate = new double[padded_size];
+    double *shift = new double[padded_size];
+    int c = 0;
+    for(int i=0; i<padded_size; i++){
+        double diff = transform_b[c] - transform_a[c];
+        rate[i] = 2.0 / diff;
+        shift[i] = (transform_b[c] + transform_a[c]) / diff;
+        c++;
+        c = (c % num_dimensions);
+    }
+
+    gpu_trans_a = TasCUDA::cudaSend(padded_size, rate);
+    gpu_trans_b = TasCUDA::cudaSend(padded_size, shift);
+
+    delete[] rate;
+    delete[] shift;
+}
+AccelerationDomainTransform::~AccelerationDomainTransform(){
+    TasCUDA::cudaDel<double>(gpu_trans_a);
+    TasCUDA::cudaDel<double>(gpu_trans_b);
+}
+double* AccelerationDomainTransform::getCanonicalPoints(int num_dimensions, int num_x, const double *gpu_transformed_x){
+    double *gpu_x_canonical = TasCUDA::cudaNew<double>(num_dimensions * num_x);
+    TasCUDA::dtrans2can(num_dimensions, num_x, padded_size, gpu_trans_a, gpu_trans_b, gpu_transformed_x, gpu_x_canonical);
+    return gpu_x_canonical;
+}
+#else
+AccelerationDomainTransform::AccelerationDomainTransform(int, const double*, const double*, std::ostream *) : gpu_trans_a(0), gpu_trans_b(0), logstream(0){}
+AccelerationDomainTransform::~AccelerationDomainTransform(){}
+double* AccelerationDomainTransform::getCanonicalPoints(int, int, const double*){ return 0; }
+#endif // TASMANIAN_CUDA
+
+
 }
 
 #endif

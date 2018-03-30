@@ -77,6 +77,7 @@ public:
     bool testSurplusRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const;
     bool testAnisotropicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const;
     bool testAcceleration(const BaseFunction *f, TasmanianSparseGrid *grid) const;
+    bool testGPU2GPUevaluations() const;
 
     TestResults getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid *grid, TestType type, const double *x = 0) const;
 

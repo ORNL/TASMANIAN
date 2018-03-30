@@ -39,8 +39,8 @@
 
 namespace TasGrid{
 
-TasmanianDenseSolver::TasmanianDenseSolver(){}
-TasmanianDenseSolver::~TasmanianDenseSolver(){}
+//TasmanianDenseSolver::TasmanianDenseSolver(){}
+//TasmanianDenseSolver::~TasmanianDenseSolver(){}
 
 void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x){
     // form Ar = A' * A
@@ -97,8 +97,8 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
     delete[] Ar;
 }
 
-TasmanianTridiagonalSolver::TasmanianTridiagonalSolver(){}
-TasmanianTridiagonalSolver::~TasmanianTridiagonalSolver(){}
+//TasmanianTridiagonalSolver::TasmanianTridiagonalSolver(){}
+//TasmanianTridiagonalSolver::~TasmanianTridiagonalSolver(){}
 
 void TasmanianTridiagonalSolver::decompose(int n, double d[], double e[], double z[]){
     const double tol = TSG_NUM_TOL;
@@ -306,42 +306,10 @@ SparseMatrix::SparseMatrix(TsgSparseCOO &M) : tol(TSG_NUM_TOL), num_rows(0), pnt
 	//#endif // TASMANIAN_CHOLMOD
 }
 
-SparseMatrix::SparseMatrix(std::ifstream &ifs) : tol(TSG_NUM_TOL), num_rows(0), pntr(0), indx(0), indxD(0), vals(0), ilu(0) {
-    read(ifs);
-}
-
 SparseMatrix::~SparseMatrix(){
     clear();
 }
 
-void SparseMatrix::write(std::ofstream &ofs) const{
-    ofs << std::scientific; ofs.precision(17);
-    ofs << num_rows << endl;
-    ofs << pntr[0]; for(int i=1; i<=num_rows; i++){  ofs << " " << pntr[i];  } ofs << endl;
-    if (num_rows > 0){
-        ofs << indx[0];  for(int i=1; i<pntr[num_rows]; i++){  ofs << " " << indx[i];  } ofs << endl;
-        ofs << vals[0];  for(int i=1; i<pntr[num_rows]; i++){  ofs << " " << vals[i];  } ofs << endl;
-        ofs << indxD[0]; for(int i=1; i<num_rows; i++){    ofs << " " << indxD[i]; } ofs << endl;
-        ofs << ilu[0];   for(int i=1; i<pntr[num_rows]; i++){  ofs << " " << ilu[i];   } ofs << endl;
-    }
-}
-bool SparseMatrix::read(std::ifstream &ifs){
-    clear();
-    ifs >> num_rows;
-    if (num_rows > 0){
-        pntr = new int[num_rows+1];
-        for(int i=0; i<=num_rows; i++){  ifs >> pntr[i];  }
-        indx = new int[pntr[num_rows]];
-        for(int i=0; i<pntr[num_rows]; i++){  ifs >> indx[i];  }
-        vals = new double[pntr[num_rows]];
-        for(int i=0; i<pntr[num_rows]; i++){  ifs >> vals[i];  }
-        indxD = new int[num_rows];
-        for(int i=0; i<num_rows; i++){  ifs >> indxD[i];  }
-        ilu = new double[pntr[num_rows]];
-        for(int i=0; i<pntr[num_rows]; i++){  ifs >> ilu[i];  }
-    }
-    return true;
-}
 
 void SparseMatrix::clear(){
     if (pntr != 0){ delete[] pntr; pntr=0; }
@@ -480,6 +448,7 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
         for(int i=0; i<num_rows; i++){  W[i] /= Z[0]; };
 
         double inner_res = Z[0]; // first residual
+        //std::cout << Z[0] << std::endl;
         int inner_itr = 0; // counts the size of the basis
 
         while ((inner_res > tol) && (inner_itr < max_inner-1)){
@@ -535,8 +504,8 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
                 }
             };
 
-            h_k = 0.0;  for(int i=0; i<num_rows; i++){  h_k += W[inner_itr*num_rows+i]*W[inner_itr*num_rows+i];  }; h_k = sqrt(h_k); //cout << "h_k = " << h_k << endl;
-            for(int i=0; i<num_rows; i++){  W[inner_itr*num_rows+i] /= h_k;  };
+            h_k = 0.0;  for(int i=0; i<num_rows; i++){  h_k += W[inner_itr*num_rows+i]*W[inner_itr*num_rows+i];  }; h_k = sqrt(h_k); //std::cout << "h_k = " << h_k << "  itr = " << inner_itr << std::endl;
+            if (h_k > 0.0) for(int i=0; i<num_rows; i++){ W[inner_itr*num_rows+i] /= h_k; };
 
             for (int i=0; i<inner_itr-1; i++){ // form the next row of the transformation
                 alpha = H[i*max_inner + inner_itr-1];

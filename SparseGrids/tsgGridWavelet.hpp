@@ -99,7 +99,7 @@ public:
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
-    double* evalHierarchicalFunctions(const double x[]) const;
+    //double* evalHierarchicalFunctions(const double x[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
 
     const double* getSurpluses() const;

@@ -148,7 +148,7 @@ else
 fi
 
 sDashFort=""
-if (( $sGfortran == 1 )); then
+if (( $bGfortran == 1 )); then
     sDashFort="-fortran"
 fi
 
@@ -749,7 +749,7 @@ else
     echo "===========================================================================================" >> $sMultibuildLogFile
 fi
 
-if [ -f /usr/bin/clang++-3.8 ]; then
+if [ -f /usr/bin/clang++-3.8 ] && [ ! -f /usr/bin/g++-7 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
@@ -900,7 +900,8 @@ fi
 cd $sTestRoot
 sPWD=`pwd`
 if [[ "$sPWD" == "$sTestRoot" ]] || [[ "$sPWD/" == "$sTestRoot" ]]; then
-    rm -fr *
+    rm -fr TempTasmanian
+    rm -fr Run
 else
     echo "$sPWD"
     echo "$sTestRoot"

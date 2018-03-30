@@ -221,11 +221,7 @@ double GreedySequences::getMinDeltaStored(int i) const{
 
 Functional::Functional(){}
 Functional::~Functional(){}
-double Functional::getValue(double) const{ return 0.0; }
-bool Functional::hasDerivative() const{ return false; }
-double Functional::getDiff(double) const{ return true; }
-int Functional::getNumIntervals() const{  return 0;  }
-double* Functional::getIntervals() const{  return 0;  }
+double Functional::getDiff(double) const{ return 0.0; }
 double* Functional::makeCoeff(int num_nodes, const double nodes[]){
     double* coeff = new double[num_nodes];
     for(int i=0; i<num_nodes; i++){
@@ -539,7 +535,8 @@ double Optimizer::argMaxLocalSecant(const Functional *F, double left, double rig
         t = d; d = dm; dm = t;
     }
     int itr = 0;
-    while((fabs(d) > TSG_NUM_TOL) && (itr < TSG_MAX_SECANT_ITERATIONS)){
+    while((fabs(d) > 3*TSG_NUM_TOL) && (itr < TSG_MAX_SECANT_ITERATIONS)){
+        if (d == dm) std::cout << itr << "  " << fabs(d) << "  " << left << "  " << right << "  " << x << endl;
         double xp = x - d * (x - xm) / (d - dm);
         xm = x; dm = d; x = xp;
 

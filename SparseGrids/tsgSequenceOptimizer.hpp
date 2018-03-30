@@ -58,13 +58,13 @@ public:
     Functional();
     ~Functional();
 
-    virtual double getValue(double x) const;
+    virtual double getValue(double x) const = 0;
 
-    virtual bool hasDerivative() const;
+    virtual bool hasDerivative() const = 0;
     virtual double getDiff(double x) const;
 
-    virtual int getNumIntervals() const;
-    virtual double* getIntervals() const;
+    virtual int getNumIntervals() const = 0;
+    virtual double* getIntervals() const = 0;
 
     static double* makeCoeff(int num_nodes, const double nodes[]); // may not be the best place to put this
     static double* evalLag(int num_nodes, const double nodes[], const double coeff[], double x);

@@ -352,10 +352,10 @@ IndexSet::IndexSet(const IndexSet *set){
     const int *p = set->getIndex(0);
     std::copy(p, p + num_dimensions * num_indexes, index);
 }
-IndexSet::IndexSet(int cnum_dimensions, const int cindex[]) : num_dimensions(cnum_dimensions), num_indexes(1), index(0){
-    index = new int[num_dimensions];
-    std::copy(cindex, cindex + num_dimensions, index);
-}
+//IndexSet::IndexSet(int cnum_dimensions, const int cindex[]) : num_dimensions(cnum_dimensions), num_indexes(1), index(0){
+//    index = new int[num_dimensions];
+//    std::copy(cindex, cindex + num_dimensions, index);
+//}
 IndexSet::IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex) : num_dimensions(cnum_dimensions), num_indexes(cnum_indexes), index(cindex) {
     cindex = 0;
 }

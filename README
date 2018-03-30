@@ -1,3 +1,23 @@
+Changelog for version 5.1:
+
+- visit us on github.com/ORNL/TASMANIAN
+
+- added functionality to access hierarchical functions and coefficients
+  which allows constructing sparse grids approximation from an arbitrary
+  cloud of samples, as opposed to requiring the use of the specific
+  points in the hypercube
+
+- added Fortran interface (still EXPERIMENTAL)
+
+- added several custom CUDA kernels, the cuda acceleration does not
+  outperform cublas, more to come in the future
+
+- significantly expanded the automated testing procedures and code
+  coverage
+
+- numerous bug fixes and performance enhancements
+
+
 Changelog for version 5.0:
 
 - added initial implementation of the DiffeRential Evolution Adaptive 
@@ -130,34 +150,3 @@ Changelog for version 3.1:
   All functions accept an output that specifies which output to be used
   Sequence, Local Polynomial, and Wavelet grids can now refine based on a specified output as opposed to all output
   to regain the old behavior use output = -1
-
-
-
-Changelog for version 3.0:
-
-- WARNING: grids saved with the old version of the library are incompatible with the new version (due to the new and more efficient data structures)
-- overall the new version of the library is faster and more memory efficient
-- added a new anisotropic refinement strategy for global grids
-- to achieve this, we have made numerous changes to the interface, see the updated manual
-- fixed several bugs, the library works more smootly now
-- added more sanity checking of the inputs, error messages are more informative now
-
-Notable changes to the interface:
-
-- the depth parameter accross all interfaces in all grid types now counts from zero, i.e., 
-
-Old:  grid.makeGlobalGrid( dim, out, 1, type_level, ... )
-New:  grid.makeGlobalGrid( dim, out, 0, type_level, ... )
-
-Old:  grid.makeLocalPolynomialGrid( dim, out, 5 ... )
-New:  grid.makeLocalPolynomialGrid( dim, out, 4 ... )
-
-- types iexact and qexact are renamed to iptotal and qptotal, when depth is combined with those types the new value remains the same, i.e.,
-
-Old:  grid.makeGlobalGrid( dim, out, 1, type_iexact, ... )
-New:  grid.makeGlobalGrid( dim, out, 1, type_iptotal, ... )
-
-- the points in the R-Leja sequence now start as 1, -1, 0 ...
-
-
-

@@ -187,7 +187,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
@@ -211,7 +211,7 @@ class TestTasmanian(unittest.TestCase):
         self.compareGrids(grid, grid1)
         grid.write("testSave", bUseBinaryFormat = True)
         grid1.makeGlobalGrid(3, 0, 4, 'level', 'leja')
-        grid1.read("testSave", bUseBinaryFormat = True)
+        grid1.read("testSave")
         self.compareGrids(grid, grid1)
 
         # test I/O for Sequence Grids
@@ -242,7 +242,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
@@ -278,7 +278,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
@@ -313,7 +313,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
@@ -335,8 +335,36 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
-            gridB.read("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
             self.compareGrids(gridA, gridB)
+
+            gridB.makeSequenceGrid(1, 1, 0, "level", "leja");
+            gridB.copyGrid(gridA)
+            self.compareGrids(gridA, gridB)
+
+        # Make a grid with every possible rule (catches false-positive and memory crashes)
+        for sType in TasmanianSG.lsTsgGlobalTypes:
+            for sRule in TasmanianSG.lsTsgGlobalRules:
+                if ("custom-tabulated" in sRule):
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
+                else:
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule)
+                gridA.write("testSave", bUseBinaryFormat = False)
+                gridB.read("testSave")
+                self.compareGrids(gridA, gridB)
+                gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
+                gridA.write("testSave", bUseBinaryFormat = True)
+                gridB.read("testSave")
+
+        for sType in TasmanianSG.lsTsgGlobalTypes:
+            for sRule in TasmanianSG.lsTsgSequenceRules:
+                gridA.makeSequenceGrid(2, 1, 3, sType, sRule)
+                gridA.write("testSave")
+                gridB.read("testSave")
+                self.compareGrids(gridA, gridB)
+                gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
+                gridA.write("testSave", bUseBinaryFormat = True)
+                gridB.read("testSave")
 
     def testAcceleratedEvaluate(self):
         print("\nTesting accelerated evaluate consistency")
@@ -507,12 +535,12 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic');", "notError"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic', [2, 3, 4]);", "liLevelLimits"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic', [2, 3]);", "notError"],
-                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.removePointsBySurplus(1.E-4, 0);", "removePointsBySurplus"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(-1.E-4, 0);", "fTolerance"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, -2);", "iOutput"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, 3);", "iOutput"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsBySurplus(1.E-4, 0);", "removePointsBySurplus"],
-                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.removePointsBySurplus(1.E-4, 0);", "notError"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.removePointsByHierarchicalCoefficient(1.E-4, 0);", "removePointsByHierarchicalCoefficient"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsByHierarchicalCoefficient(-1.E-4, 0);", "fTolerance"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsByHierarchicalCoefficient(1.E-4, -2);", "iOutput"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsByHierarchicalCoefficient(1.E-4, 3);", "iOutput"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.removePointsByHierarchicalCoefficient(1.E-4, 0);", "removePointsByHierarchicalCoefficient"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); self.loadExpN2(grid); grid.removePointsByHierarchicalCoefficient(1.E-4, 0);", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); grid.evaluateHierarchicalFunctions(np.array([[1.0, 1.0], [0.5, 0.3]]));", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); grid.evaluateHierarchicalFunctions(np.array([[1.0,], [0.5,]]));", "llfX"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); grid.evaluateHierarchicalFunctions(np.array([1.0, 1.0]));", "llfX"],
@@ -614,18 +642,6 @@ class TestTasmanian(unittest.TestCase):
         aA = np.cos(math.pi * aA)
         aP = grid.getPoints()
         np.testing.assert_almost_equal(aA, aP, 12, 'Anisotropy heavily curved not equal', True) # 12 is the number of dec places
-
-        # Make a grid with every possible rule (catches false-positive and memory crashes)
-        for sType in TasmanianSG.lsTsgGlobalTypes:
-            for sRule in TasmanianSG.lsTsgGlobalRules:
-                if ("custom-tabulated" in sRule):
-                    grid.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
-                else:
-                    grid.makeGlobalGrid(2, 0, 2, sType, sRule)
-
-        for sType in TasmanianSG.lsTsgGlobalTypes:
-            for sRule in TasmanianSG.lsTsgSequenceRules:
-                grid.makeSequenceGrid(2, 1, 3, sType, sRule)
 
         for sRule in TasmanianSG.lsTsgLocalRules:
             grid.makeLocalPolynomialGrid(3, 1, 3, 0, sRule)
@@ -1158,6 +1174,9 @@ class TestTasmanian(unittest.TestCase):
     def testFullCoverageZ(self):
         print("\nTesting plotting and other misc")
         if (TasmanianSG.bTsgPlotting):
+            if ((os.name == "posix") and (os.environ.get('DISPLAY') is None)):
+                print("NOTE: there is no display, cannot run plotting tests.")
+                return
             grid.makeGlobalGrid(2, 1, 20, 'level', 'leja')
             self.loadExpN2(grid)
             grid.plotResponse2D()

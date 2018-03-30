@@ -143,7 +143,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetNumNeeded.restype = c_int
         self.pLibTSG.tsgGetNumPoints.restype = c_int
         self.pLibTSG.tsgRead.restype = c_int
-        self.pLibTSG.tsgReadBinary.restype = c_int
         self.pLibTSG.tsgGetAlpha.restype = c_double
         self.pLibTSG.tsgGetBeta.restype = c_double
         self.pLibTSG.tsgGetOrder.restype = c_int
@@ -158,9 +157,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgIsSetDomainTransfrom.restype = c_int
         self.pLibTSG.tsgIsSetConformalTransformASIN.restype = c_int
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.restype = c_int
-        ##########
-        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
-        ##########
         self.pLibTSG.tsgGetAccelerationType.restype = c_char_p
         self.pLibTSG.tsgIsAccelerationAvailable.restype = c_int
         self.pLibTSG.tsgGetGPUID.restype = c_int
@@ -175,7 +171,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgWrite.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgWriteBinary.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgRead.argtypes = [c_void_p, c_char_p]
-        self.pLibTSG.tsgReadBinary.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgMakeGlobalGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_char_p, POINTER(c_int), c_double, c_double, c_char_p, POINTER(c_int)]
         self.pLibTSG.tsgMakeSequenceGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgMakeLocalPolynomialGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, c_char_p, POINTER(c_int)]
@@ -229,15 +224,12 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgClearRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgMergeRefinement.argtypes = [c_void_p]
-        self.pLibTSG.tsgRemovePointsBySurplus.argtypes = [c_void_p, c_double, c_int]
+        self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient.argtypes = [c_void_p, c_double, c_int, POINTER(c_double)]
         self.pLibTSG.tsgEvaluateHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
         self.pLibTSG.tsgSetHierarchicalCoefficients.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_int), POINTER(c_int), POINTER(c_double)]
-        ##########
-        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgGetHierarchicalCoefficientsStatic.argtypes = [c_void_p, POINTER(c_double)]
-        ##########
         self.pLibTSG.tsgPrintStats.argtypes = [c_void_p]
         self.pLibTSG.tsgEnableAcceleration.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgGetAccelerationType.argtypes = [c_void_p]
@@ -247,9 +239,12 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetGPUMemory.argtypes = [c_int]
         self.pLibTSG.tsgGetGPUName.argtypes = [c_int, c_int, c_char_p, POINTER(c_int)] # not really const here
 
-        self.pLibTSG.tsgDeleteDoubles.argtypes = [POINTER(c_double)]
+        ##########
+        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
+        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
+        ##########
+
         self.pLibTSG.tsgDeleteInts.argtypes = [POINTER(c_int)]
-        self.pLibTSG.tsgDeleteChars.argtypes = [c_char_p]
 
         self.pGrid = self.pLibTSG.tsgConstructTasmanianSparseGrid()
 
@@ -312,7 +307,7 @@ class TasmanianSparseGrid:
         '''
         self.pLibTSG.tsgDisableErrorLog(self.pGrid)
 
-    def read(self, sFilename, bUseBinaryFormat = False):
+    def read(self, sFilename):
         '''
         reads the grid from a file
         discards any existing grid held by this class
@@ -320,10 +315,6 @@ class TasmanianSparseGrid:
         sFilename: string indicating a grid file where a grid was
                    already written using write from Python or any other
                    Tasmanian interface
-
-        bUseBinaryFormat: boolean
-                True: read from a binary file
-                False: read from an ASCII file
 
         output: boolean
                 True: the read was successful
@@ -333,10 +324,7 @@ class TasmanianSparseGrid:
         '''
         if (sys.version_info.major == 3):
             sFilename = bytes(sFilename, encoding='utf8')
-        if (bUseBinaryFormat):
-            return (self.pLibTSG.tsgReadBinary(self.pGrid, c_char_p(sFilename)) == 0)
-        else:
-            return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) == 0)
+        return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) == 0)
 
     def write(self, sFilename, bUseBinaryFormat = False):
         '''
@@ -1469,7 +1457,7 @@ class TasmanianSparseGrid:
         '''
         self.pLibTSG.tsgMergeRefinement(self.pGrid)
 
-    def removePointsBySurplus(self, fTolerance, iOutput):
+    def removePointsByHierarchicalCoefficient(self, fTolerance, iOutput = -1, aScaleCorrection = []):
         '''
         EXPERIMENTAL CAPABILITY
 
@@ -1486,9 +1474,17 @@ class TasmanianSparseGrid:
                  selects which output to consider
                  accept -1 to indicate all outputs
 
+        lfScaleCorrection: numpy array of doubles, either 1D or 2D
+                           if iOutputs = -1 and getNumOutputs() > 1,
+                           then using 2D array with shape
+                           getNumLoaded() X getNumOutputs() with
+                           one weight per hierarchical coefficient
+                           if iOutputs > -1, then using 1D array with
+                           one weight per point
+
         '''
         if (not self.isLocalPolynomial()):
-            raise TasmanianInputError("removePointsBySurplus", "ERROR: calling removePointsBySurplus for a grid that isn't local polynomial")
+            raise TasmanianInputError("removePointsByHierarchicalCoefficient", "ERROR: calling removePointsByHierarchicalCoefficient for a grid that isn't local polynomial")
         if (fTolerance <= 0.0):
             raise TasmanianInputError("fTolerance", "ERROR: fTolerance must be a positive integer")
         if (iOutput < -1):
@@ -1496,8 +1492,25 @@ class TasmanianSparseGrid:
         if (iOutput >= self.getNumOutputs()):
             raise TasmanianInputError("iOutput", "ERROR: iOutput cannot exceed the index of the last output {0:1d}".format(self.getNumOutputs() - 1))
         if (self.getNumLoaded() == 0):
-            raise TasmanianInputError("removePointsBySurplus", "ERROR: calling removePointsBySurplus when no points are loades")
-        self.pLibTSG.tsgRemovePointsBySurplus(self.pGrid, fTolerance, iOutput)
+            raise TasmanianInputError("removePointsByHierarchicalCoefficient", "ERROR: calling removePointsByHierarchicalCoefficient when no points are loades")
+        if (len(aScaleCorrection) == 0):
+            pNullPointer = None
+            self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, pNullPointer)
+        else:
+            lShape = aScaleCorrection.shape
+            if ((iOutput == -1) and (getNumOutputs() > 1)):
+                if (len(lShape) != 2):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection should be a 2D array")
+                if (lShape[0] != getNumLoaded()):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[[0] should match getNumLoaded()")
+                if (lShape[1] != getNumOutputs()):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[[1] should match getNumOutputs()")
+            else:
+                if (len(lShape) != 1):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: calling aScaleCorrection should be a 1D array")
+                if (lShape[0] != getNumLoaded()):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[[0] should match getNumLoaded()")
+            self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, np.ctypeslib.as_ctypes(aScaleCorrection))
 
     def getHierarchicalCoefficients(self):
         '''

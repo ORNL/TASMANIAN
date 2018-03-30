@@ -336,10 +336,8 @@ SUBROUTINE tsgUpdateSequenceGrid(gridID, depth, gtype, aweights)
   ENDIF
 END SUBROUTINE tsgUpdateSequenceGrid
 !=======================================================================
-SUBROUTINE tsgRead(gridID, filename, useBinary)
+SUBROUTINE tsgRead(gridID, filename)
   INTEGER, intent(in) :: gridID
-  LOGICAL, intent(in), optional :: useBinary
-  INTEGER :: ubin
   CHARACTER(len=*), intent(in) :: filename
   INTEGER :: N, i
   CHARACTER, allocatable :: cfilename(:)
@@ -349,16 +347,7 @@ SUBROUTINE tsgRead(gridID, filename, useBinary)
     cfilename(i) = filename(i:i)
   END DO
   cfilename(N+1) = CHAR(0)
-  IF(PRESENT(useBinary))then
-    IF(useBinary)then
-      ubin = 1
-    ELSE
-      ubin = 0
-    ENDIF
-  ELSE
-    ubin = 0
-  ENDIF
-  CALL tsgrea(gridID, cfilename, ubin)
+  CALL tsgrea(gridID, cfilename)
   DEALLOCATE(cfilename)
 END SUBROUTINE tsgRead
 !=======================================================================

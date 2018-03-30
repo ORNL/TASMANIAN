@@ -40,6 +40,8 @@
 #include <cuda.h>
 #endif // TASMANIAN_CUBLAS
 
+#include "tsgCudaMacros.hpp"
+
 namespace TasGrid{
 
 //#ifdef TASMANIAN_CPU_BLAS
@@ -629,6 +631,7 @@ void GridGlobal::getInterpolationWeights(const double x[], double weights[]) con
 }
 
 void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
+    if (accel != 0) accel->resetGPULoadedData();
     if (points == 0){
         values->setValues(vals);
         points = needed;
@@ -777,12 +780,21 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[],
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     double *weights = new double[num_points * num_x];
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        getInterpolationWeights(&(x[i*num_dimensions]), &(weights[i*num_points]));
-    }
+    evaluateHierarchicalFunctions(x, num_x, weights);
+//    #pragma omp parallel for
+//    for(int i=0; i<num_x; i++){
+//        getInterpolationWeights(&(x[i*num_dimensions]), &(weights[i*num_points]));
+//    }
 
-    gpu->cublasDGEMM(num_outputs, num_points, num_x, weights, y);
+    double *gpu_weights = TasCUDA::cudaSend(num_points * num_x, weights, os);
+    double *gpu_result = TasCUDA::cudaNew<double>(num_outputs * num_x, os);
+
+    gpu->cublasDGEMM(num_outputs, num_points, num_x, gpu_weights, gpu_result);
+
+    TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, y);
+
+    TasCUDA::cudaDel<double>(gpu_result, os);
+    TasCUDA::cudaDel<double>(gpu_weights, os);
 
     delete[] weights;
 }
@@ -1172,6 +1184,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *l
     delete[] surp;
 }
 void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream*){
+    if (accel != 0) accel->resetGPULoadedData();
     if (points != 0) clearRefinement();
     loadNeededPoints(c, acc);
 }

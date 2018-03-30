@@ -1,7 +1,7 @@
 function tsgCoreTests()
 
-# Indexes and polynomial spaces are experimental
-# ListGridsByName(), Summary(), and PlotPoins2D() require human
+% Indexes and polynomial spaces are experimental
+% ListGridsByName(), Summary(), and PlotPoins2D() require human
 
 disp(['']);
 disp(['Testing TASMANIAN MATLAB interface']);
@@ -318,6 +318,7 @@ end
 if (norm(p1 - p2) > 1.E-11)
     error('Mismatch in tsgMakeSequence: level limits');
 end
+tsgDeleteGrid(lGrid);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgDeleteGridByName()                        %%%
@@ -372,7 +373,7 @@ for iL = 3:4
     end
 end
 tsgDeleteGrid(lGrid);
-# polynomial order is tested in tsgEvaluate()
+% polynomial order is tested in tsgEvaluate()
 
 % level limits
 [lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_lgrid', 3, 1, 'semi-localp', 3, 2, [], [], [], [1, 2, 3]);
@@ -385,6 +386,7 @@ end
 if (min(abs(p(:,3) - 0.125)) < 1.E-8)
     error('Mismatch in tsgMakeLocalPolynomial: level limit, dim 3');
 end
+tsgDeleteGrid(lGrid);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -440,6 +442,7 @@ end
 if (min(abs(p(:,3) - 0.125)) < 1.E-8)
     error('Mismatch in tsgMakeLocalPolynomial: level limit, dim 3');
 end
+tsgDeleteGrid(lGrid);
 
 disp(['tsgMake* functions:       PASS']);
 
@@ -484,6 +487,7 @@ end
 if (max(size(pn)) ~= 0)
     error('Mismatch in tsgLoadValues: tsgGetNeededPoints case 2');
 end
+tsgDeleteGrid(lGrid);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgEvaluate()                                %%%
@@ -695,6 +699,7 @@ tsgLoadValues(lGrid, v)
 if (abs(I - sqrt(2.0) * pi^0.5 / 2.0) > 1.E-11)
     error('Mismatch in tsgIntegrate(): case 2');
 end
+tsgDeleteGrid(lGrid);
 
 disp(['Core I/O and evaluate:    PASS']);
 
@@ -803,6 +808,7 @@ end
 if ((sum((abs(p(:,1) - 0.5) < 0.0001)) == 0) || (sum((abs(p(:,1) - 0.25) < 0.0001)) > 0) || (sum((abs(p(:,2) - 0.25) < 0.0001)) > 0))
     error('Mismatch in tsgRefineSurplus(): limits refine using new limits');
 end
+tsgDeleteGrid(lGrid);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -891,6 +897,7 @@ end
 if ((lGrid2.iDim ~= 3) || (lGrid2.iOut ~= 7))
     error('Mismatch in tsgReloadGrid() could not reload grid: iDim and iOut');
 end
+tsgDeleteGrid(lGrid);
 
 disp(['Utility functions:        PASS']);
 

@@ -40,21 +40,13 @@
 
 namespace TasGrid{
 
-class TasmanianDenseSolver{
-public:
-    TasmanianDenseSolver();
-    ~TasmanianDenseSolver();
+namespace TasmanianDenseSolver{
+    void solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x);
+}
 
-    static void solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x);
-};
-
-class TasmanianTridiagonalSolver{
-public:
-    TasmanianTridiagonalSolver();
-    ~TasmanianTridiagonalSolver();
-
-    static void decompose(int n, double d[], double e[], double z[]);
-};
+namespace TasmanianTridiagonalSolver{
+    void decompose(int n, double d[], double e[], double z[]);
+}
 
 }
 
@@ -125,11 +117,8 @@ private:
 class SparseMatrix{
 public:
     SparseMatrix(TsgSparseCOO &M);
-    SparseMatrix(std::ifstream &ifs);
+    //SparseMatrix(std::ifstream &ifs);
     ~SparseMatrix();
-
-    void write(std::ofstream &ofs) const;
-	bool read(std::ifstream &ifs);
 
     int getNumRows() const;
 

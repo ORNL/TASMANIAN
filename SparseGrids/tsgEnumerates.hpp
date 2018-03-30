@@ -117,8 +117,16 @@ enum TypeAcceleration{
     accel_gpu_magma
 };
 
-//accel_gpu_magcore, // out-of-core
-//accel_gpu_cucore, // out-of-core
+enum TypeLocalPolynomialBackendFlavor{
+    flavor_auto,
+    flavor_sparse_sparse,
+    flavor_sparse_dense,
+    flavor_dense_sparse,
+    flavor_dense_dense,
+    flavor_cuda
+};
+
+
 
 ////////////////////////////////////////////////////////////
 //                                                        //
@@ -171,7 +179,7 @@ enum TypeAcceleration{
 // is faster to convert the sparse matrix into a dense one. This assumes matrix-matrix product, which happens only
 // if the number of outputs is sufficiently large, if the outputs are few, there is very little caching anyway
 // hence use the sparse version regardless
-#define TSG_LOCALP_BLAS_NUM_OUTPUTS 128
+#define TSG_LOCALP_BLAS_NUM_OUTPUTS 2048
 
 }
 

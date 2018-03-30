@@ -730,21 +730,21 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
     }
 }
 
-double* GridWavelet::evalHierarchicalFunctions(const double x[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
-    double *vals = new double[num_points];
-    for(int i=0; i<num_points; i++){
-        const int* p = work->getIndex(i);
-        vals[i] = 1.0;
-        for(int k=0; k<num_dimensions; k++){
-            vals[i] *= rule1D.eval(p[k], x[k]);
-            if (vals[i] == 0.0){ break; }; // MIRO: evaluating the wavelets is expensive, stop if any one of them is zero
-        }
-
-    }
-    return vals;
-}
+//double* GridWavelet::evalHierarchicalFunctions(const double x[]) const{
+//    IndexSet *work = (points == 0) ? needed : points;
+//    int num_points = work->getNumIndexes();
+//    double *vals = new double[num_points];
+//    for(int i=0; i<num_points; i++){
+//        const int* p = work->getIndex(i);
+//        vals[i] = 1.0;
+//        for(int k=0; k<num_dimensions; k++){
+//            vals[i] *= rule1D.eval(p[k], x[k]);
+//            if (vals[i] == 0.0){ break; }; // MIRO: evaluating the wavelets is expensive, stop if any one of them is zero
+//        }
+//
+//    }
+//    return vals;
+//}
 void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
 //    if (accel != 0) accel->resetValuesAndSurpluses();
     double *vals = 0;

@@ -35,6 +35,8 @@
 
 #include "tsgHiddenExternals.hpp"
 
+#include "tsgCudaMacros.hpp"
+
 //#ifdef TASMANIAN_CPU_BLAS
 //extern "C" void dgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, const double *C, const int *ldc);
 //#endif
@@ -429,6 +431,7 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
 }
 
 void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
+    if (accel != 0) accel->resetGPULoadedData();
     if (points == 0){
         values->setValues(vals);
         points = needed;
@@ -550,12 +553,21 @@ void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
 
     double *fvalues = new double[num_points * num_x];
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evalHierarchicalFunctions(&(x[i*num_dimensions]), &(fvalues[i*num_points]));
-    }
+    evaluateHierarchicalFunctions(x, num_x, fvalues);
+//    #pragma omp parallel for
+//    for(int i=0; i<num_x; i++){
+//        evalHierarchicalFunctions(&(x[i*num_dimensions]), &(fvalues[i*num_points]));
+//    }
 
-    gpu->cublasDGEMM(num_outputs, num_points, num_x, fvalues, y);
+    double *gpu_weights = TasCUDA::cudaSend(num_points * num_x, fvalues, os);
+    double *gpu_result = TasCUDA::cudaNew<double>(num_outputs * num_x, os);
+
+    gpu->cublasDGEMM(num_outputs, num_points, num_x, gpu_weights, gpu_result);
+
+    TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, y);
+
+    TasCUDA::cudaDel<double>(gpu_result, os);
+    TasCUDA::cudaDel<double>(gpu_weights, os);
 
     delete[] fvalues;
 }
@@ -662,7 +674,7 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
     delete[] cache;
 }
 void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
-    if (accel != 0) accel->resetValuesAndSurpluses();
+    if (accel != 0) accel->resetGPULoadedData();
     double *vals = 0;
     bool aliased = false;
     if (points != 0){
