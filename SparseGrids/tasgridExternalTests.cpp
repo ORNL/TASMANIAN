@@ -47,18 +47,25 @@ void ExternalTester::setRandomX(int n, double x[]) const{
     }
 }
 
-bool ExternalTester::Test() const{
+bool ExternalTester::Test(TestList test) const{
     cout << endl << endl;
     cout << "---------------------------------------------------------------------" << endl;
     cout << "       Tasmanian Sparse Grids Module: Functionality Test" << endl;
     cout << "---------------------------------------------------------------------" << endl << endl;
 
-    bool passAccel   = testAllAcceleration();
-    bool passDomain  = testAllDomain();
-    bool passRefine  = testAllRefinement();
-    bool passGlobal  = testAllGlobal();
-    bool passLocal   = testAllPWLocal();
-    bool passWavelet = testAllWavelet();
+    bool passAccel   = true;
+    bool passDomain  = true;
+    bool passRefine  = true;
+    bool passGlobal  = true;
+    bool passLocal   = true;
+    bool passWavelet = true;
+    
+    if ((test == test_all) || (test == test_acceleration)) passAccel   = testAllAcceleration();
+    if ((test == test_all) || (test == test_domain)) passDomain  = testAllDomain();
+    if ((test == test_all) || (test == test_refinement)) passRefine  = testAllRefinement();
+    if ((test == test_all) || (test == test_global)) passGlobal  = testAllGlobal();
+    if ((test == test_all) || (test == test_local)) passLocal   = testAllPWLocal();
+    if ((test == test_all) || (test == test_wavelet)) passWavelet = testAllWavelet();
 
     bool pass = passGlobal && passLocal && passWavelet && passRefine && passDomain && passAccel;
     //bool pass = true;

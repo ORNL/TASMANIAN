@@ -27,13 +27,18 @@
  * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
- 
-#ifndef __TASMANIAN_SPARSE_GRID_VERSION_HPP
-#define __TASMANIAN_SPARSE_GRID_VERSION_HPP
+
+#ifndef __TASMANIAN_CONFIG_HPP
+#define __TASMANIAN_CONFIG_HPP
 
 #define TASMANIAN_VERSION_MAJOR @Tasmanian_VERSION_MAJOR@
 #define TASMANIAN_VERSION_MINOR @Tasmanian_VERSION_MINOR@
-#define TASMANIAN_VERSION_STRING "@Tasmanian_VersionString@"
-#define TASMANIAN_LICENSE "@Tasmanian_License@"
+#define TASMANIAN_VERSION_STRING "@Tasmanian_version_string@"
+#define TASMANIAN_LICENSE "@Tasmanian_license@"
+
+@Tasmanian_define_enable_blas@
+@Tasmanian_define_enable_cublas@
+@Tasmanian_define_enable_cuda@
+@Tasmanian_define_enable_mpi@
 
 #endif

@@ -8,7 +8,7 @@ function [sFiles, sTasGrid] = tsgGetPaths()
 %
 % it is recommended to use absolute path
 
-sFiles = ['ENTER THE PATH TO MATLAB WORK FOLDER'];
 sTasGrid = ['ENTER THE PATH TO tasgrid EXECUTABLE'];
+sFiles = ['ENTER THE PATH TO MATLAB WORK FOLDER'];
 
 end

@@ -15,7 +15,6 @@ grid = TasmanianSG.TasmanianSparseGrid()
 # python-coverage report
 
 # TODO: test the math of the refinement
-#       test the math of the anisotropic coefficients
 
 class TestTasmanian(unittest.TestCase):
     def compareGrids(self, gridA, gridB, bTestRuleNames = True):
@@ -1151,9 +1150,9 @@ class TestTasmanian(unittest.TestCase):
             self.assertFalse(bTest, "set/get Acceleration")
 
         if (False):
-            bHasBlas = False
-            bHasCuBlas = False
-            bHasCuda = False
+            bHasBlas = ("ON" == "ON")
+            bHasCuBlas = ("ON" == "ON")
+            bHasCuda = ("ON" == "ON")
             self.assertTrue((grid.isAccelerationAvailable("cpu-blas") == bHasBlas), "failed to match blas")
             self.assertTrue((grid.isAccelerationAvailable("gpu-cublas") == bHasCuBlas), "failed to match cublas")
             self.assertTrue((grid.isAccelerationAvailable("gpu-cuda") == bHasCuda), "failed to match cuda")

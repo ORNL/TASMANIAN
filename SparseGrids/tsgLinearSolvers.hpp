@@ -117,7 +117,6 @@ private:
 class SparseMatrix{
 public:
     SparseMatrix(TsgSparseCOO &M);
-    //SparseMatrix(std::ifstream &ifs);
     ~SparseMatrix();
 
     int getNumRows() const;

@@ -210,24 +210,19 @@ void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
     ifs.read((char*) num_dim_out, 2*sizeof(int));
     num_dimensions = num_dim_out[0];
     num_outputs = num_dim_out[1];
-    //cout << "dim = " << num_dimensions << "  " << num_outputs << endl;
     double alpha_beta[2];
     ifs.read((char*) alpha_beta, 2*sizeof(double));
     alpha = alpha_beta[0];
     beta = alpha_beta[1];
-    //cout << "alpha = " << alpha << "  " << beta << endl;
     if (num_dimensions > 0){
         ifs.read((char*) num_dim_out, sizeof(int));
         rule = OneDimensionalMeta::getIORuleInt(num_dim_out[0]);
-        //cout << "rule: " << OneDimensionalMeta::getIORuleString(rule) << " with index: " << num_dim_out[0] << endl;
         if (rule == rule_customtabulated){
             custom = new CustomTabulated(logstream);
             custom->readBinary(ifs);
         }
 
-        //cout << "reading tensor" << endl;
         tensors = new IndexSet(num_dimensions);  tensors->readBinary(ifs);
-        //cout << "read tensor 1" << endl;
         active_tensors = new IndexSet(num_dimensions);  active_tensors->readBinary(ifs);
         active_w = new int[active_tensors->getNumIndexes()];
         ifs.read((char*) active_w, active_tensors->getNumIndexes() * sizeof(int));
@@ -563,43 +558,17 @@ void GridGlobal::getQuadratureWeights(double weights[]) const{
 double* GridGlobal::getInterpolationWeights(const double x[]) const{
     IndexSet *work = (points == 0) ? needed : points;
 
-    CacheLagrange *lcache = new CacheLagrange(num_dimensions, max_levels, wrapper, x);
-
     int num_points = work->getNumIndexes();
     double *weights = new double[num_points];
-    std::fill(weights, weights + num_points, 0.0);
 
-    int *num_oned_points = new int[num_dimensions];
-    for(int n=0; n<active_tensors->getNumIndexes(); n++){
-        const int* levels = active_tensors->getIndex(n);
-        num_oned_points[0] = wrapper->getNumPoints(levels[0]);
-        int num_tensor_points = num_oned_points[0];
-        for(int j=1; j<num_dimensions; j++){
-            num_oned_points[j] = wrapper->getNumPoints(levels[j]);
-            num_tensor_points *= num_oned_points[j];
-        }
-        double tensor_weight = (double) active_w[n];
-        for(int i=0; i<num_tensor_points; i++){
-            int t = i;
-            double w = 1.0;
-            for(int j=num_dimensions-1; j>=0; j--){
-                w *= lcache->getLagrange(j, levels[j], t % num_oned_points[j]);
-                t /= num_oned_points[j];
-            }
-            weights[tensor_refs[n][i]] += tensor_weight * w;
-        }
-    }
-    delete[] num_oned_points;
-    work = 0;
-
-    delete lcache;
+    getInterpolationWeights(x, weights);
 
     return weights;
 }
 void GridGlobal::getInterpolationWeights(const double x[], double weights[]) const{
     IndexSet *work = (points == 0) ? needed : points;
 
-    CacheLagrange *lcache = new CacheLagrange(num_dimensions, max_levels, wrapper, x);
+    CacheLagrange<double> *lcache = new CacheLagrange<double>(num_dimensions, max_levels, wrapper, x);
 
     int num_points = work->getNumIndexes();
     std::fill(weights, weights + num_points, 0.0);
@@ -781,10 +750,6 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[],
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     double *weights = new double[num_points * num_x];
     evaluateHierarchicalFunctions(x, num_x, weights);
-//    #pragma omp parallel for
-//    for(int i=0; i<num_x; i++){
-//        getInterpolationWeights(&(x[i*num_dimensions]), &(weights[i*num_points]));
-//    }
 
     double *gpu_weights = TasCUDA::cudaSend(num_points * num_x, weights, os);
     double *gpu_result = TasCUDA::cudaNew<double>(num_outputs * num_x, os);
@@ -953,8 +918,6 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         }
         delete polynomial_set;
 
-        //gg->makeGrid(num_dimensions, 0, 2*ml, type_qptotal, rule_gausspatterson);
-
         int qn = gg->getNumPoints();
         double *w = gg->getQuadratureWeights();
         double *x = gg->getPoints();
@@ -987,7 +950,6 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
             surp[i] = c * nrm;
         }
 
-        //delete[] max_lvl;
         delete[] I;
         delete[] x;
         delete[] w;
@@ -1201,13 +1163,6 @@ double GridGlobal::legendre(int n, double x){
     return l;
 }
 
-//void GridGlobal::createParEval(){
-//}
-//void GridGlobal::clearParEval(){
-//    if (par_eval_index == 0) delete[] par_eval_index;
-//    if (par_eval_pntrs == 0) delete[] par_eval_pntrs;
-//}
-
 void GridGlobal::clearAccelerationData(){
     if (accel != 0){
         delete accel;
@@ -1216,7 +1171,6 @@ void GridGlobal::clearAccelerationData(){
 }
 
 void GridGlobal::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
-    //if (interpolation){ cout << "Interp" << endl; }else{ cout << "Quad" << endl; }
     IndexManipulator IM(num_dimensions, custom);
     IndexSet* set = IM.getPolynomialSpace(active_tensors, rule, interpolation);
 

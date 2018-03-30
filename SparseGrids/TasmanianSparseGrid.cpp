@@ -57,10 +57,10 @@ TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pw
                                              conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0){
 #ifndef TASMANIAN_XSDK
     logstream = &cerr;
-#endif
+#endif // TASMANIAN_XSDK
 #ifdef TASMANIAN_CPU_BLAS
     acceleration = accel_cpu_blas;
-#endif // TASMANIAN_XSDK
+#endif // TASMANIAN_CPU_BLAS
 }
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0),
                                     domain_transform_a(0), domain_transform_b(0), conformal_asin_power(0), llimits(0),
@@ -69,7 +69,7 @@ TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : ba
     copyGrid(&source);
 #ifndef TASMANIAN_XSDK
     logstream = &cerr;
-#endif
+#endif // TASMANIAN_XSDK
 #ifdef TASMANIAN_CPU_BLAS
     acceleration = accel_cpu_blas;
 #endif // TASMANIAN_CPU_BLAS
@@ -1731,22 +1731,6 @@ void tsgSetHierarchicalCoefficients(void *grid, const double *c){
     ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
 }
 
-// to be used in Python, requires internal copy of data and two calls (two merge sorts of all indexes)
-// can't figure out how to do this without calling separate delete pointer
-//int tsgGetGlobalPolynomialSpaceSize(void *grid, int interpolation){
-//    int *indx = 0, num_indexes;
-//    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), num_indexes, indx);
-//    if (indx != 0) delete[] indx;
-//    return num_indexes;
-//}
-//void tsgGetGlobalPolynomialSpaceStatic(void *grid, int interpolation, int *indexes){
-//    int *indx = 0, num_ind, num_dims = ((TasmanianSparseGrid*) grid)->getNumDimensions();
-//    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), num_ind, indx);
-//    if (indx != 0){
-//        for(int i=0; i<(num_ind * num_dims); i++) indexes[i] = indx[i];
-//        delete[] indx;
-//    }
-//}
 // to be called from Python only, must later call delete[] on the pointer
 int* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes){
     int *indx = 0;;

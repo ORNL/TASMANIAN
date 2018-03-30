@@ -1,59 +1,56 @@
 ########################################################################
 # C++ 2011 support
 ########################################################################
-if (NOT DEFINED Tasmanian_FORCE_C11)
-    set(Tasmanian_FORCE_C11 Tasmanian_PREFER_C11)
-endif()
-
-if (Tasmanian_FORCE_C11)
-    foreach(tas_target ${tas_target_list})
-        set_property(TARGET ${tas_target} PROPERTY CXX_STANDARD 11)
-    endforeach()
+if (DEFINED Tasmanian_ENABLE_CXX_2011)
+    if (Tasmanian_ENABLE_CXX_2011)
+        foreach(Tasmanian_loop_target ${Tasmanian_target_list})
+            set_property(TARGET ${Tasmanian_loop_target} PROPERTY CXX_STANDARD 11)
+        endforeach()
+    endif()
+else()
+    if (Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_CUBLAS OR Tasmanian_ENABLE_MPI)
+        foreach(Tasmanian_loop_target ${Tasmanian_target_list})
+            set_property(TARGET ${Tasmanian_loop_target} PROPERTY CXX_STANDARD 11)
+        endforeach()
+    endif()
 endif()
 
 ########################################################################
 # Compiler specific flags: Intel hasn't been tested in a while
 ########################################################################
-if (NOT DEFINED Tasmanian_CXX_FLAGS)
+if (NOT Tasmanian_STRICT_OPTIONS)
     if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang"))
-        SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
-        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage") # ./tasgrid -test; gcov CMakeFiles/libtsg_static.dir/SparseGrids/tsgIndexSets.cpp.; geany tsgIndexSets.cpp.gcov
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
+        if (Tasmanian_ENABLE_FORTRAN)
+            set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -O3 -fno-f2c")
+        endif()
         if (Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic")
-            if (TAS_SUPPRESS_OMP_WARN)
+            if (NOT Tasmanian_ENABLE_OPENMP)
                 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
             endif()
+            if (Tasmanian_ENABLE_FORTRAN)
+                set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wall -Wextra -Wshadow -pedantic")
+            endif()
         endif()
-    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
+#    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
     elseif (MSVC)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Ox /EHsc -D_SCL_SECURE_NO_WARNINGS")
     endif()
-else()
-    set(CMAKE_CXX_FLAGS ${Tasmanian_CXX_FLAGS})
 endif()
 
-if (Tasmanian_ENABLE_FORTRAN)
-    if (DEFINED Tasmanian_Fortran_FLAGS)
-        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${Tasmanian_Fortran_FLAGS}")
-    elseif (${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
-        SET(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -O3 -fno-f2c")
-        if (Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS)
-            set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wall -Wextra -Wshadow -pedantic")
-        endif()
-    endif()
-endif()
 
+########################################################################
+# Extra flags, libraries, and directories
+########################################################################
 if (DEFINED Tasmanian_EXTRA_CXX_FLAGS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Tasmanian_EXTRA_CXX_FLAGS}")
 endif()
 
-########################################################################
-# Extra libraries and directories
-########################################################################
 if (DEFINED Tasmanian_EXTRA_LIBRARIES)
-    foreach(tas_target ${tas_target_list})
-        target_link_libraries(${tas_target} ${Tasmanian_EXTRA_LIBRARIES})
+    foreach(Tasmanian_loop_target ${Tasmanian_target_list})
+        target_link_libraries(${Tasmanian_loop_target} ${Tasmanian_EXTRA_LIBRARIES})
     endforeach()
 endif()
 

@@ -1,4 +1,4 @@
-#!@tsgPython@
+#!@Tasmanian_string_python_hashbang@
 
 import unittest
 import TasmanianSG
@@ -15,7 +15,6 @@ grid = TasmanianSG.TasmanianSparseGrid()
 # python-coverage report
 
 # TODO: test the math of the refinement
-#       test the math of the anisotropic coefficients
 
 class TestTasmanian(unittest.TestCase):
     def compareGrids(self, gridA, gridB, bTestRuleNames = True):
@@ -586,11 +585,11 @@ class TestTasmanian(unittest.TestCase):
     def testFullCoverageA(self):
         print("\nTesting core make/update grid")
 
-        grid = TasmanianSG.TasmanianSparseGrid("@TSGLibShared@")
+        grid = TasmanianSG.TasmanianSparseGrid("@Tasmanian_libsparsegrid_path@")
         sVersion = grid.getVersion()
         self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
 
-        pLibTSG = cdll.LoadLibrary("@TSGLibShared@")
+        pLibTSG = cdll.LoadLibrary("@Tasmanian_libsparsegrid_path@")
         grid = TasmanianSG.TasmanianSparseGrid(pLibTSG)
         sVersion = grid.getVersion()
         self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
@@ -1150,10 +1149,10 @@ class TestTasmanian(unittest.TestCase):
             bTest = ((accel not in sA) or (sA not in accel))
             self.assertFalse(bTest, "set/get Acceleration")
 
-        if (@TSGEnableCmakeSyncTest@):
-            bHasBlas = @TSGLibPyWithBlas@
-            bHasCuBlas = @TSGLibPyWithCublas@
-            bHasCuda = @TSGLibPyWithCuda@
+        if (@Tasmanian_cmake_synctest_enable@):
+            bHasBlas = ("@Tasmanian_ENABLE_BLAS@" == "ON")
+            bHasCuBlas = ("@Tasmanian_ENABLE_CUBLAS@" == "ON")
+            bHasCuda = ("@Tasmanian_ENABLE_CUDA@" == "ON")
             self.assertTrue((grid.isAccelerationAvailable("cpu-blas") == bHasBlas), "failed to match blas")
             self.assertTrue((grid.isAccelerationAvailable("gpu-cublas") == bHasCuBlas), "failed to match cublas")
             self.assertTrue((grid.isAccelerationAvailable("gpu-cuda") == bHasCuda), "failed to match cuda")

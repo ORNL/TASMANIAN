@@ -56,12 +56,10 @@ void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 // R_i are the hits in cell i by first distribution
 // S_i are the hits in cell i by second distribution
 
-
 // test uniform, Beta and Gamma with different parameters, 1-D, 2-D, 3-D ...
 // test truncated Gaussian, too (harder test)
 // test vs interpolated pdf
-
-bool ExternalTester::Test(){
+bool ExternalTester::Test(TestList test){
     cout << endl << endl;
     cout << "---------------------------------------------------------------------" << endl;
     cout << "          Tasmanian DREAM Module: Functionality Test" << endl;
@@ -69,11 +67,22 @@ bool ExternalTester::Test(){
 
     bool pass = true;
 
-    bool passUniform1D = testUniform1D();
-    bool passBeta1D = testBeta1D();
-    bool passGamma1D = testGamma1D();
-    bool passGauss2D = testGaussian2D();
-    bool passInferAlpha = testModelLikelihoodAlpha();
+    bool passUniform1D = true;
+    bool passBeta1D = true;
+    bool passGamma1D = true;
+    bool passGauss2D = true;
+    bool passInferAlpha = true;
+    
+    if ((test == test_all) || (test == test_analytic)){
+        passUniform1D = testUniform1D();
+        passBeta1D = testBeta1D();
+        passGamma1D = testGamma1D();
+        passGauss2D = testGaussian2D();
+    }
+    if ((test == test_all) || (test == test_model)){
+        passInferAlpha = testModelLikelihoodAlpha();
+    }
+    
 
     pass = passUniform1D && passBeta1D && passGamma1D && passGauss2D && passInferAlpha;
 

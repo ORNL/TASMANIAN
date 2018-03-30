@@ -1,4 +1,4 @@
-#!@tsgPython@
+#!@Tasmanian_string_python_hashbang@
 
 ##############################################################################################################################################################################
 # Copyright (c) 2017, Miroslav Stoyanov
@@ -32,7 +32,7 @@
 
 # necessary import for every use of TASMANIAN
 import sys
-@TSGExampleImport@
+@Tasmanian_python_example_import@
 import TasmanianSG
 import numpy as np
 

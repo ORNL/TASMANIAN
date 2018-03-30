@@ -506,7 +506,7 @@ if [[ $sEnableCUDA == "ON" ]]; then
     # if the make -f command fails, this can be due to CUDA being disabled by cmake, check if Tasmanian_ENABLE_CUDA:BOOL=OFF is set
     # if cuda is disabled, then just continue as normal, but if cuda is not off, then force sequential build
     sCudaDoOnce="TRY"
-    make -f CMakeFiles/libtsg_shared.dir/build.make CMakeFiles/libtsg_shared.dir/SparseGrids/libtsg_shared_generated_tsgCudaKernels.cu.o || { sCudaDoOnce="FAIL"; }
+    make -f CMakeFiles/Tasmanian_libsparsegrid_shared.dir/build.make CMakeFiles/Tasmanian_libsparsegrid_shared.dir/SparseGrids/Tasmanian_libsparsegrid_shared_generated_tsgCudaKernels.cu.o || { sCudaDoOnce="FAIL"; }
     if [[ $sCudaDoOnce == "FAIL" ]]; then
         if [[ -z `cmake -LA -N . | grep Tasmanian_ENABLE_CUDA:BOOL=ON` ]]; then
         # CUDA enabled, but the do once "libtsg_shared_generated_tsgCudaKernels.cu.o" failed

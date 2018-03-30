@@ -137,6 +137,8 @@ int main(int argc, const char ** argv){
         bool debugII = false;
         bool verbose = false;
         bool seed_reset = false;
+        
+        TestList test = test_all;
 
         int k = 2;
         while (k < argc){
@@ -147,6 +149,12 @@ int main(int argc, const char ** argv){
             if ((strcmp(argv[k],"-v") == 0)) verbose = true;
             if ((strcmp(argv[k],"-random") == 0)) seed_reset = true;
             if ((strcmp(argv[k],"random") == 0)) seed_reset = true;
+            if ((strcmp(argv[k],"acceleration") == 0)) test = test_acceleration;
+            if ((strcmp(argv[k],"domain") == 0)) test = test_domain;
+            if ((strcmp(argv[k],"refinement") == 0)) test = test_refinement;
+            if ((strcmp(argv[k],"global") == 0)) test = test_global;
+            if ((strcmp(argv[k],"local") == 0)) test = test_local;
+            if ((strcmp(argv[k],"wavelet") == 0)) test = test_wavelet;
             k++;
         }
 
@@ -159,7 +167,7 @@ int main(int argc, const char ** argv){
         }else{
             if (verbose) tester.setVerbose(true);
             if (seed_reset) tester.resetRandomSeed();
-            pass = tester.Test();
+            pass = tester.Test(test);
         }
         return (pass) ? 0 : 1;
     }

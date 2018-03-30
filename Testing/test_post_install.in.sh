@@ -21,6 +21,7 @@ fi
 
 rm -fr *
 
+echo ""
 echo "--------------------------------------------------------------------------------"
 echo " Test 1: source the PATH and LD_LIBRARY_PATH and run the executable"
 echo "--------------------------------------------------------------------------------"
@@ -46,6 +47,7 @@ echo 'Executing "./example_dream"'
 ./example_dream -fast >/dev/null || { echo "ERROR: Could not run the C++ DREAM example"; exit 1; }
 
 
+echo ""
 echo "--------------------------------------------------------------------------------"
 echo " Test 3: run a basic python test"
 echo "--------------------------------------------------------------------------------"
@@ -55,7 +57,7 @@ if [[ "@Tasmanian_ENABLE_PYTHON@" == "ON" ]]; then
     @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.py -fast > /dev/null || { echo "ERROR: could not run the python example post install!"; sPSuccess=0; }
     head -n 1 @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.py > dummy.py
     echo 'import sys' >> dummy.py
-    echo 'sys.path.append("@CMAKE_INSTALL_PREFIX@/python")' >> dummy.py
+    echo '@Tasmanian_python_example_import@' >> dummy.py
     echo 'import TasmanianSG' >> dummy.py
     echo 'print("TasmanianSG Python module version: {0:1s}".format(TasmanianSG.__version__))' >> dummy.py
     chmod 755 dummy.py
@@ -135,7 +137,6 @@ if (( $sPSuccess == 0 )) || (( $sSuccess == 0 )); then
     echo ""
     exit 1;
 else
-    echo ""
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "   ALL POST INSTALL TESTS COMPLETED SUCCESSFULLY"

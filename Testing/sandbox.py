@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!@Tasmanian_string_python_hashbang@
 
 # necessary import for every use of TASMANIAN
 #

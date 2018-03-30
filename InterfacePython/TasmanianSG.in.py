@@ -39,8 +39,8 @@ except:
     bTsgPlotting = False
     tsgPlot = []
 
-__version__ = "@Tasmanian_VersionString@"
-__license__ = "@Tasmanian_License@"
+__version__ = "@Tasmanian_version_string@"
+__license__ = "@Tasmanian_license@"
 __author__ = "Miroslav Stoyanov"
 
 
@@ -118,7 +118,7 @@ class TasmanianSparseGrid:
 
         '''
         if (isinstance(tasmanian_library, int)):
-            self.pLibTSG = cdll.LoadLibrary("@TSGLibShared@")
+            self.pLibTSG = cdll.LoadLibrary("@Tasmanian_libsparsegrid_path@")
         elif (sys.version_info.major == 3):
             if (isinstance(tasmanian_library, str)):
                 self.pLibTSG = cdll.LoadLibrary(tasmanian_library)

@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_SPARSE_GRID_CUDA_MACROS_HPP
 #define __TASMANIAN_SPARSE_GRID_CUDA_MACROS_HPP
 
+#include "tasmanianConfig.hpp"
+
 #include <iostream>
 
 #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)

@@ -31,8 +31,6 @@
 #ifndef __TASMANIAN_DREAM_HPP
 #define __TASMANIAN_DREAM_HPP
 
-#include "tdrEnableMPI.hpp"
-
 #include "TasmanianSparseGrid.hpp"
 
 #include "tdrEnumerates.hpp"

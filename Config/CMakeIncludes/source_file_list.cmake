@@ -18,7 +18,6 @@ set(Tasmanian_source_libsparsegrid
                SparseGrids/tsgAcceleratedDataStructures.hpp
                SparseGrids/tsgAcceleratedDataStructures.cpp
                SparseGrids/tsgCacheLagrange.hpp
-               SparseGrids/tsgCacheLagrange.cpp
                SparseGrids/tsgCoreOneDimensional.hpp
                SparseGrids/tsgCoreOneDimensional.cpp
                SparseGrids/tsgCudaMacros.hpp
@@ -52,7 +51,9 @@ set(Tasmanian_source_libsparsegrid
                SparseGrids/tsgSequenceOptimizer.cpp)
 
 set(Tasmanian_source_libsparsegrid_cuda
-               SparseGrids/tsgCudaKernels.cu)
+               SparseGrids/tsgCudaKernels.cu
+               SparseGrids/tsgCudaBasisEvaluations.hpp
+               SparseGrids/tsgCudaLinearAlgebra.hpp)
 
 set(Tasmanian_source_libdream
                DREAM/TasmanianDREAM.hpp
