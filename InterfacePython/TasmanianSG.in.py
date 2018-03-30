@@ -238,11 +238,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetGPUID.argtypes = [c_void_p]
         self.pLibTSG.tsgGetGPUMemory.argtypes = [c_int]
         self.pLibTSG.tsgGetGPUName.argtypes = [c_int, c_int, c_char_p, POINTER(c_int)] # not really const here
-        
-        ##########
-        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
-        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
-        ##########
 
         ##########
         self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)

@@ -341,30 +341,6 @@ class TestTasmanian(unittest.TestCase):
             gridB.makeSequenceGrid(1, 1, 0, "level", "leja");
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
-        
-        # Make a grid with every possible rule (catches false-positive and memory crashes)
-        for sType in TasmanianSG.lsTsgGlobalTypes:
-            for sRule in TasmanianSG.lsTsgGlobalRules:
-                if ("custom-tabulated" in sRule):
-                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
-                else:
-                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule)
-                gridA.write("testSave", bUseBinaryFormat = False)
-                gridB.read("testSave")
-                self.compareGrids(gridA, gridB)
-                gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
-                gridA.write("testSave", bUseBinaryFormat = True)
-                gridB.read("testSave")
-
-        for sType in TasmanianSG.lsTsgGlobalTypes:
-            for sRule in TasmanianSG.lsTsgSequenceRules:
-                gridA.makeSequenceGrid(2, 1, 3, sType, sRule)
-                gridA.write("testSave")
-                gridB.read("testSave")
-                self.compareGrids(gridA, gridB)
-                gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
-                gridA.write("testSave", bUseBinaryFormat = True)
-                gridB.read("testSave")
 
         # Make a grid with every possible rule (catches false-positive and memory crashes)
         for sType in TasmanianSG.lsTsgGlobalTypes:

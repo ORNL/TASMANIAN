@@ -238,11 +238,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetGPUID.argtypes = [c_void_p]
         self.pLibTSG.tsgGetGPUMemory.argtypes = [c_int]
         self.pLibTSG.tsgGetGPUName.argtypes = [c_int, c_int, c_char_p, POINTER(c_int)] # not really const here
-        
-        ##########
-        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
-        self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.argtypes = [c_void_p, c_int, POINTER(c_int)]
-        ##########
 
         ##########
         self.pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
@@ -1478,14 +1473,6 @@ class TasmanianSparseGrid:
         iOutput: int (indicates the output to use)
                  selects which output to consider
                  accept -1 to indicate all outputs
-        
-        lfScaleCorrection: numpy array of doubles, either 1D or 2D
-                           if iOutputs = -1 and getNumOutputs() > 1, 
-                           then using 2D array with shape 
-                           getNumLoaded() X getNumOutputs() with
-                           one weight per hierarchical coefficient
-                           if iOutputs > -1, then using 1D array with
-                           one weight per point 
 
         lfScaleCorrection: numpy array of doubles, either 1D or 2D
                            if iOutputs = -1 and getNumOutputs() > 1,
