@@ -225,7 +225,7 @@ void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, co
     cusparseStatus_t stat;
     cusparseMatDescr_t mat_desc;
     stat = cusparseCreateMatDescr(&mat_desc);
-    _IF_DEBUG_MACRO(AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRSMM", logstream);)
+    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRSMM", logstream);
     cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_TRIANGULAR);
     cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
     cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_UNIT);
@@ -300,7 +300,7 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
     double alpha = 1.0, beta = 0.0;
     cusparseMatDescr_t mat_desc;
     stat = cusparseCreateMatDescr(&mat_desc);
-    _IF_DEBUG_MACRO(AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRMM2", logstream);)
+    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRMM2", logstream);
     cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
     cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);

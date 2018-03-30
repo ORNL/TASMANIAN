@@ -2,7 +2,8 @@
 # list all source files
 ########################################################################
 
-set(tasgrid_src SparseGrids/tasgrid_main.cpp
+set(Tasmanian_source_tasgrid
+                SparseGrids/tasgrid_main.cpp
                 SparseGrids/TasmanianSparseGrid.hpp
                 SparseGrids/tasgridExternalTests.hpp
                 SparseGrids/tasgridExternalTests.cpp
@@ -11,7 +12,8 @@ set(tasgrid_src SparseGrids/tasgrid_main.cpp
                 SparseGrids/tasgridWrapper.hpp
                 SparseGrids/tasgridWrapper.cpp)
 
-set(libtsg_src SparseGrids/TasmanianSparseGrid.hpp
+set(Tasmanian_source_libsparsegrid
+               SparseGrids/TasmanianSparseGrid.hpp
                SparseGrids/TasmanianSparseGrid.cpp
                SparseGrids/tsgAcceleratedDataStructures.hpp
                SparseGrids/tsgAcceleratedDataStructures.cpp
@@ -19,6 +21,7 @@ set(libtsg_src SparseGrids/TasmanianSparseGrid.hpp
                SparseGrids/tsgCacheLagrange.cpp
                SparseGrids/tsgCoreOneDimensional.hpp
                SparseGrids/tsgCoreOneDimensional.cpp
+               SparseGrids/tsgCudaMacros.hpp
                SparseGrids/tsgEnumerates.hpp
                SparseGrids/tsgGridCore.hpp
                SparseGrids/tsgGridCore.cpp
@@ -48,14 +51,19 @@ set(libtsg_src SparseGrids/TasmanianSparseGrid.hpp
                SparseGrids/tsgSequenceOptimizer.hpp
                SparseGrids/tsgSequenceOptimizer.cpp)
 
-set(libtdr_src DREAM/TasmanianDREAM.hpp
+set(Tasmanian_source_libsparsegrid_cuda
+               SparseGrids/tsgCudaKernels.cu)
+
+set(Tasmanian_source_libdream
+               DREAM/TasmanianDREAM.hpp
                DREAM/TasmanianDREAM.cpp
                DREAM/tdrEnumerates.hpp
                DREAM/tdrCorePDF.hpp
                DREAM/tdrCorePDF.cpp
                SparseGrids/TasmanianSparseGrid.hpp)
 
-set(tasdre_src DREAM/tasdream_main.cpp
+set(Tasmanian_source_tasdream
+               DREAM/tasdream_main.cpp
                DREAM/tasdreamExternalTests.hpp
                DREAM/tasdreamExternalTests.cpp
                DREAM/tasdreamTestPDFs.hpp
@@ -63,7 +71,8 @@ set(tasdre_src DREAM/tasdream_main.cpp
                DREAM/tasdreamBenchmark.hpp
                DREAM/tasdreamBenchmark.cpp)
 
-set(tasmat_src tsgCancelRefine.m
+set(Tasmanian_source_matlabsg
+               tsgCancelRefine.m
                tsgCleanTempFiles.m
                tsgCopyGrid.m
                tsgDeleteGridByName.m
@@ -101,8 +110,10 @@ set(tasmat_src tsgCancelRefine.m
                tsgWriteCustomRuleFile.m
                tsgWriteMatrix.m)
 
-set(libfor_src InterfaceFortran/TasmanianSG.f90
+set(Tasmanian_source_libsparsegrid_fortran
+               InterfaceFortran/TasmanianSG.f90
                InterfaceFortran/tsgC2FortranBridge.f90
                InterfaceFortran/tsgC2Fortran.cpp)
 
-set(tasfor_src Testing/fortester.f90)
+set(Tasmanian_source_fortester
+               Testing/fortester.f90)

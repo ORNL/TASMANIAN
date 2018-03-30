@@ -43,12 +43,6 @@
 #include <cusparse.h>
 #endif // TASMANIAN_CUBLAS
 
-#ifdef _TASMANIAN_DEBUG_
-#define _IF_DEBUG_MACRO(x) x
-#else
-#define _IF_DEBUG_MACRO(x)
-#endif
-
 #define TASMANIAN_CUDA_NUM_THREADS 1024
 #define TASMANIAN_CUDA_NUM_THREADS_SHORT 128
 
