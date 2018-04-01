@@ -84,7 +84,6 @@ option(Tasmanian_ENABLE_CUBLAS "Enable Nvidia GPU acceleration using cuBLAS for 
 option(Tasmanian_ENABLE_CUDA "Enable Nvidia GPU acceleration using CUDA kernels for Tasmanian" OFF)
 option(Tasmanian_STATIC_LIBRARY "Compile static library and the executables with static linkage (Tasmanian)" ON)
 option(Tasmanian_SHARED_LIBRARY "Compile dynamic library (Tasmanian)" ON)
-set(Tasmanian_PREFER_C11 OFF)
 
 # version and license
 set(Tasmanian_version_string "${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
@@ -144,7 +143,7 @@ set(Tasmanian_tests_list SparseGrids_Acceleration SparseGrids_Domain SparseGrids
                          SparseGrids_Global SparseGrids_Local SparseGrids_Wavelet
                          DREAM_Analytic DREAM_Model)
 if (Tasmanian_ENABLE_PYTHON)
-    add_test(NAME Generic_Comprehensive COMMAND ${PYTHON_EXECUTABLE} testTSG.py)
+    add_test(NAME GenericComprehensive COMMAND ${PYTHON_EXECUTABLE} testTSG.py)
     set(Tasmanian_tests_list ${Tasmanian_tests_list} LibSG)
 endif()
 if (Tasmanian_ENABLE_FORTRAN)

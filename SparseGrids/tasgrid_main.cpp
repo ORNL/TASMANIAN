@@ -137,7 +137,7 @@ int main(int argc, const char ** argv){
         bool debugII = false;
         bool verbose = false;
         bool seed_reset = false;
-        
+
         TestList test = test_all;
 
         int k = 2;

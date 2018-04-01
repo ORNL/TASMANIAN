@@ -7,8 +7,10 @@
 #   stage 2: everything should work after make install
 ########################################################################
 
-set(Tasmanian_define_enable_cuda "")
-set(Tasmanian_define_enable_cublas "")
+set(Tasmanian_define_enable_blas "//#define TASMANIAN_CPU_BLAS")
+set(Tasmanian_define_enable_cublas "//#define TASMANIAN_CUBLAS")
+set(Tasmanian_define_enable_cuda "//#define TASMANIAN_CUDA")
+set(Tasmanian_define_enable_mpi "//#define TASMANIAN_MPI")
 
 # stage 0: for support of simple GNU-Make, ignore for release and intermediate builds
 if (Tasmanian_DEVELOPMENT_BACKWARDS)
@@ -34,7 +36,6 @@ endif()
 
 
 # stage 1: build folder paths
-include_directories(${CMAKE_BINARY_DIR}/configured/)
 if (Tasmanian_ENABLE_BLAS)
     set(Tasmanian_define_enable_blas "#define TASMANIAN_CPU_BLAS")
 endif()

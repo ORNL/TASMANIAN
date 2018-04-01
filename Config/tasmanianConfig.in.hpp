@@ -36,6 +36,15 @@
 #define TASMANIAN_VERSION_STRING "@Tasmanian_version_string@"
 #define TASMANIAN_LICENSE "@Tasmanian_license@"
 
+////////////////////////////////////////////////////////////////////////
+// In order to enable advanced options for Tasmanian,
+// the corresponding #define line below has to be uncommented
+// Note: cmake takes care of this automatically, use the lines
+// below only for simple GNU-Make
+// The lines below are for references purposes mostly,
+// we support advanced options only though cmake
+////////////////////////////////////////////////////////////////////////
+
 @Tasmanian_define_enable_blas@
 @Tasmanian_define_enable_cublas@
 @Tasmanian_define_enable_cuda@

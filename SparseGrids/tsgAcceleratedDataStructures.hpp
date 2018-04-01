@@ -55,7 +55,7 @@ public:
     bool isCompatible(TypeAcceleration acc) const;
 
     double* getGPUValues() const;
-    void loadGPUValues(int total_entries, const double *cpu_values);
+    void loadGPUValues(size_t total_entries, const double *cpu_values);
 
     double* getGPUNodes() const;
     double* getGPUSupport() const;

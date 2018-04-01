@@ -7,13 +7,13 @@ COMPILE_OPTIONS = -Wno-unknown-pragmas
 endif
 
 # use only for CUDA support (see example below)
-TSG_CUDA_KERNELS = 
-NVCC = 
-NVCC_OPT = 
+TASMANIAN_CUDA_KERNELS =
+NVCC =
+NVCC_OPT =
 
 # Default C++ compiler
 CC = g++
-OPTC = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic 
+OPTC = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic
 OPTL = $(OPTC)
 
 # Default Fortran compiler
@@ -26,51 +26,57 @@ CommonIADD =
 CommonLADD =
 CommonLIBS = -lm
 
+
+########################################################################
+# ADVANCED OPTIONS
+########################################################################
+#
+# NOTE: advanced options for Tasmanian are not supported or tested in the simple GNU-Make engine
+#       cmake (or the install script) is the correct way to enable those options
+#       the instructions below are for reference purposes
+#
 # To Enable/Disable advanced options:
 # set the compiler in the CC variable
-# set the compiler flags, including the -D directives to the OPTC and OPTL variables
+# edit Config/tasmanianConfig.hpp to uncomment the corresponding #define directive
 # set the -I directives to the CommonIADD variables
 # set the -L directives to the CommonLADD variables
 # set the -l directives to the CommonLIBS variables
 #
-# The -D directives list:
+# The #define directives are:
 #
-# BLAS:   -DTASMANIAN_CPU_BLAS
-# CUDA:   -DTASMANIAN_CUDA
-# CUBLAS: -DTASMANIAN_CUBLAS
-#    MPI:  no -D directive needed
-#          but you must manually edit ./Config/tdrEnableMPI.hpp and uncomment
-#          //#include <mpi.h>
+# BLAS:   #define TASMANIAN_CPU_BLAS
+# CUDA:   #define TASMANIAN_CUDA
+# CUBLAS: #define TASMANIAN_CUBLAS
+# MPI:    #define TASMANIAN_MPI
 
-
-# Example that enables BLAS
-#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic 
-#OPTC = $(CXXFLAGS) -DTASMANIAN_CPU_BLAS
+# Example that enables BLAS, uncomment "#define TASMANIAN_CPU_BLAS" in Config/tasmanianConfig.hpp
+#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic
+#OPTC = $(CXXFLAGS)
 #CommonLIBS = -lblas -lm
 
 
-# Example that enables cuBlas and cuSparse
+# Example that enables cuBlas and cuSparse, uncomment "#define TASMANIAN_CUBLAS" in Config/tasmanianConfig.hpp
+# in principle, the standard compiler (e.g., gcc) can link to cuBlas,
+# the advantage of using nvcc is that it automatically adds paths to the libraries
 #CC = nvcc
-#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic 
-#OPTC = --compiler-options "-std=c++11 $(CXXFLAGS)" -DTASMANIAN_CUBLAS
+#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic
+#OPTC = --compiler-options "-std=c++11 $(CXXFLAGS)"
 #CommonLIBS = -lcublas -lcusparse
 
 
-# Example that enables cuBlas and cuSparse and CUDA
-# in principle, the standard compiler (e.g., gcc) can link to cuBlas, 
-# the advantage of using nvcc is that it automatically adds paths to the libraries
-# nvcc is required for the tsgCudaKernels.cu file
+# Example that enables cuBlas and cuSparse and CUDA, uncomment "#define TASMANIAN_CUBLAS" and "#define TASMANIAN_CUDA" in Config/tasmanianConfig.hpp
+# in this case, nvcc is required for the tsgCudaKernels.cu file
 #CC = nvcc
 #NVCC = nvcc
-#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic 
-#OPTC = --compiler-options "$(CXXFLAGS)" -DTASMANIAN_CUBLAS -DTASMANIAN_CUDA -D_FORCE_INLINES
-#NVCC_OPT = --compiler-options "$(CXXFLAGS)" -DTASMANIAN_CUBLAS -DTASMANIAN_CUDA -D_FORCE_INLINES
+#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic
+#OPTC = --compiler-options "$(CXXFLAGS)" -D_FORCE_INLINES
+#NVCC_OPT = --compiler-options "$(CXXFLAGS)" -D_FORCE_INLINES
 #CommonLIBS = -lcublas -lcusparse
-#TSG_CUDA_KERNELS = tsgCudaKernels.cu.o
+#TASMANIAN_CUDA_KERNELS = tsgCudaKernels.cu.o
 
 
-# Example that enables MPI: need to manually edit /Config/tdrEnableMPI.hpp and uncomment #include <mpi.h>
+# Example that enables MPI, uncomment "#define TASMANIAN_MPI" in Config/tasmanianConfig.hpp
 #CC = mpic++
-#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic 
-#OPTC = -std=c++11 $(CXXFLAGS) 
+#CXXFLAGS = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic
+#OPTC = -std=c++11 $(CXXFLAGS)
 #CommonLIBS = -lm

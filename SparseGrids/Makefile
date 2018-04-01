@@ -9,15 +9,15 @@ LIBS = $(CommonLIBS)
 LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp tsgGridGlobal.hpp tsgCacheLagrange.hpp tsgSequenceOptimizer.hpp \
            tsgEnumerates.hpp tsgOneDimensionalWrapper.hpp tsgGridSequence.hpp tsgGridCore.hpp tsgLinearSolvers.hpp \
            tsgRuleLocalPolynomial.hpp tsgHardCodedTabulatedRules.hpp tsgGridLocalPolynomial.hpp \
-           tsgRuleWavelet.hpp tsgGridWavelet.hpp \
+           tsgRuleWavelet.hpp tsgCudaMacros.hpp tsgGridWavelet.hpp \
+           tsgCudaLinearAlgebra.hpp tsgCudaBasisEvaluations.hpp tsgAcceleratedDataStructures.hpp \
            tasgridTestFunctions.hpp tasgridExternalTests.hpp tasgridWrapper.hpp \
-           tsgAcceleratedDataStructures.hpp \
            TasmanianSparseGrid.hpp
 
-LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlobal.o tsgCacheLagrange.o tsgSequenceOptimizer.o tsgOneDimensionalWrapper.o \
+LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlobal.o tsgSequenceOptimizer.o tsgOneDimensionalWrapper.o \
          tsgGridCore.o tsgLinearSolvers.o tsgGridSequence.o tsgRuleLocalPolynomial.o tsgHardCodedTabulatedRules.o \
          tsgGridLocalPolynomial.o tsgRuleWavelet.o tsgGridWavelet.o \
-         tsgAcceleratedDataStructures.o $(TSG_CUDA_KERNELS) \
+         tsgAcceleratedDataStructures.o $(TASMANIAN_CUDA_KERNELS) \
          TasmanianSparseGrid.o
 
 WROBJ = tasgrid_main.o tasgridTestFunctions.o tasgridExternalTests.o tasgridWrapper.o

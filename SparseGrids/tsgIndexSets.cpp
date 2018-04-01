@@ -49,7 +49,7 @@ void UnsortedIndexSet::addIndex(const int p[]){
     std::copy(p, p + num_dimensions, &(index[num_dimensions * num_indexes++]));
 }
 const int* UnsortedIndexSet::getIndex(int i) const{
-    return &(index[i*num_dimensions]);
+    return &(index[i * num_dimensions]);
 }
 
 int* UnsortedIndexSet::getIndexesSorted() const{
@@ -202,12 +202,6 @@ void GranulatedIndexSet::addIndex(const int p[]){
     num_indexes++;
 }
 
-//void GranulatedIndexSet::addUnsortedSet(const UnsortedIndexSet *set){
-//    int *set_index = set->getIndexesSorted();
-//    int set_num_indexes = set->getNumIndexes();
-//    merge(set_index, set_num_indexes);
-//    delete[] set_index;
-//}
 void GranulatedIndexSet::addGranulatedSet(const GranulatedIndexSet *set){
     mergeMapped(set->getIndexes(), set->getMap(), set->getNumIndexes());
 }
@@ -226,41 +220,6 @@ TypeIndexRelation GranulatedIndexSet::compareIndexes(const int a[], const int b[
     return type_asameb;
 }
 
-//void GranulatedIndexSet::merge(const int newIndex[], int sizeNew){
-//    int *oldIndex = index;
-//    int sizeOld = num_indexes;
-//    num_slots = sizeOld + sizeNew;
-//
-//    index = new int[num_dimensions * num_slots];
-//
-//    TypeIndexRelation relation;
-//    num_indexes = 0;
-//    int offsetNew = 0, offsetOld = 0;
-//    while( (offsetNew < sizeNew) || (offsetOld < sizeOld) ){
-//        if (offsetNew >= sizeNew){ // new is a
-//            relation = type_bbeforea;
-//        }else if (offsetOld >= sizeOld){ // old is b
-//            relation = type_abeforeb;
-//        }else{
-//            relation = compareIndexes(&(newIndex[offsetNew * num_dimensions]), &(oldIndex[map[offsetOld] * num_dimensions]));
-//        }
-//        if (relation == type_abeforeb){
-//            std::copy(&(newIndex[offsetNew * num_dimensions]), &(newIndex[offsetNew * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
-//            offsetNew++;
-//        }
-//        if ((relation == type_bbeforea) || (relation == type_asameb)){
-//            std::copy(&(oldIndex[map[offsetOld] * num_dimensions]), &(oldIndex[map[offsetOld] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
-//            offsetOld++;
-//            offsetNew += (relation == type_asameb) ? 1 : 0;
-//        }
-//    }
-//
-//    delete[] oldIndex;
-//    delete[] map;
-//
-//    map = new int[num_slots];
-//    for(int i=0; i<num_indexes; i++){  map[i] = i;  }
-//}
 void GranulatedIndexSet::mergeMapped(const int newIndex[], const int newMap[], int sizeNew){
     int *oldIndex = index;
     int sizeOld = num_indexes;
@@ -352,10 +311,7 @@ IndexSet::IndexSet(const IndexSet *set){
     const int *p = set->getIndex(0);
     std::copy(p, p + num_dimensions * num_indexes, index);
 }
-//IndexSet::IndexSet(int cnum_dimensions, const int cindex[]) : num_dimensions(cnum_dimensions), num_indexes(1), index(0){
-//    index = new int[num_dimensions];
-//    std::copy(cindex, cindex + num_dimensions, index);
-//}
+
 IndexSet::IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex) : num_dimensions(cnum_dimensions), num_indexes(cnum_indexes), index(cindex) {
     cindex = 0;
 }
@@ -480,7 +436,6 @@ void IndexSet::merge(const int newIndex[], int sizeNew){
     int sizeOld = num_indexes;
 
     index = new int[num_dimensions * (sizeOld + sizeNew)];
-    //map = new int[num_slots];
 
     TypeIndexRelation relation;
     num_indexes = 0;
@@ -554,7 +509,7 @@ void StorageSet::write(std::ofstream &ofs) const{
     if (values != 0){
         ofs << " 1";
         ofs << std::scientific; ofs.precision(17);
-        for(int i=0; i<num_outputs*num_values; i++){
+        for(size_t i=0; i<num_outputs*num_values; i++){
             ofs << " " << values[i];
         }
     }else{
@@ -568,15 +523,15 @@ void StorageSet::read(std::ifstream &ifs){
     ifs >> num_outputs >> num_values >> has_vals;
     if (has_vals == 1){
         values = new double[num_outputs * num_values];
-        for(int i=0; i<num_outputs*num_values; i++){
+        for(size_t i=0; i<num_outputs*num_values; i++){
             ifs >> values[i];
         }
     }
 }
 void StorageSet::writeBinary(std::ofstream &ofs) const{
     int num_out_vals[2];
-    num_out_vals[0] = num_outputs;
-    num_out_vals[1] = num_values;
+    num_out_vals[0] = (int) num_outputs;
+    num_out_vals[1] = (int) num_values;
     ofs.write((char*) num_out_vals, 2*sizeof(int));
     if (values != 0){
         char flag = 'y'; ofs.write((char*) &flag, sizeof(char));
@@ -589,8 +544,8 @@ void StorageSet::readBinary(std::ifstream &ifs){
     if (values != 0){ delete[] values;  values = 0; }
     int num_out_vals[2];
     ifs.read((char*) num_out_vals, 2*sizeof(int));
-    num_outputs = num_out_vals[0];
-    num_values = num_out_vals[1];
+    num_outputs = (size_t) num_out_vals[0];
+    num_values = (size_t) num_out_vals[1];
     char flag; ifs.read((char*) &flag, sizeof(char));
     if (flag == 'y'){
         values = new double[num_outputs * num_values];
@@ -615,13 +570,13 @@ void StorageSet::setValuesPointer(double* &vals, int cnum_values){
 
 void StorageSet::addValues(const IndexSet *old_set, const IndexSet *new_set, const double new_vals[]){
     double *old_vals = values;
-    int old_num_values = num_values;
-    int new_num_values = new_set->getNumIndexes();
+    size_t old_num_values = num_values;
+    size_t new_num_values = new_set->getNumIndexes();
     int num_dimensions = old_set->getNumDimensions();
 
     TypeIndexRelation relation;
     values = new double[num_outputs * (old_num_values + new_num_values)];
-    int offsetOld = 0, offsetNew = 0;
+    size_t offsetOld = 0, offsetNew = 0;
     num_values = 0;
     while( (offsetNew < new_num_values) || (offsetOld < old_num_values) ){
         if (offsetNew >= new_num_values){ // new is a

@@ -116,7 +116,7 @@ if (( $sProperFolder == 0 )); then
 fi
 
 ########################################################################
-# process options, 
+# process options,
 # Development options: -make-j calls make -j
 #                      -nobashrc calls skips the .bashrc section
 ########################################################################
@@ -204,72 +204,15 @@ fi
 
 if [[ $sEnableCUDA == "ON" ]] || [[ $sEnableBLAS == "ON" ]]; then
     if (( $sCMAKEversion < 3 )); then
-        sEnableCUDA="OFF"
-        sEnableCUBLAS="OFF"
         echo ""
         echo "WARNING: found cmake version $sCMAKEversion"
         echo "         recommended version is 3.0 or newer"
-        echo "         Disabling Nvidia CUDA support"
-        echo "         CUDA support can be enabled in manually with cmake"
-        echo "         options TPL_CUDA_INCLUDE_DIR and TPL_CUDA_LIBRARIES"
+        echo "         CuBLAS and CUDA support requies cmake 2.8 or newer"
+        echo "         on older versions of cmake,"
+        echo "         you must use the -cublas switch"
         echo ""
     fi
 fi
-#echo ""
-
-#if [[ $sEnableCUDA == "ON" ]] && [[ $sEnableMakeJobs == "-j" ]]; then
-#    echo "There seems to be a bug with cmake FindCuda, parallel compilation sometimes fails. Disable: -make-j"
-#    echo ""
-#    sEnableMakeJobs=""
-#fi
-
-# check if python exists
-#if [[ $sEnablePython == "ON" ]]; then
-#    if (( $bEnableTests == 1 )); then
-#        echo "Looking for python ..."
-#        bPythonFound=0
-#        if [[ $sEnablePython3 == "OFF" ]]; then
-#            # python not set manually, try to find it automatically
-#            /usr/bin/python --version
-#            if [ $? -eq 0 ]; then
-#                echo "Found Python"
-#                bPythonFound=1
-#            else
-#                /usr/bin/python3 --version
-#                if [ $? -eq 0 ]; then
-#                    echo "Found Python 3"
-#                    bPythonFound=1
-#                fi
-#            fi
-#        else
-#            /usr/bin/python3 --version
-#            if [ ! $? -eq 0 ]; then
-#                echo "Using -python3, but '/usr/bin/env python3' doesn't seem to work"
-#                bPythonFound=0
-#            else
-#                bPythonFound=1
-#            fi
-#        fi
-#        if (( $bPythonFound == 0 )); then
-#            echo ""
-#            echo "WARNING: can't seem to find python."
-#            echo "         If python is missing, then tests will fail and"
-#            echo "         Tasmanian will NOT install."
-#            echo "         use either -notest or -nopython options"
-#            echo "         see: ./install.sh -help"
-#            echo ""
-#            read -p "Do you wish to continue? (y/N)" sProceed
-#            if [[ $sProceed == "y" ]] || [[ $sProceed == "Y" ]] || [[ $sProceed == "Yes" ]] || [[ $sProceed == "yes" ]]; then
-#                echo "proceeding ..."
-#                echo ""
-#            else
-#                echo "Canceled!"
-#                echo ""
-#                exit 0;
-#            fi
-#        fi
-#    fi
-#fi
 
 echo ""
 echo ""
@@ -498,22 +441,6 @@ if [ ! $? == 0 ]; then
         read -p "Press ENTER to end this process"
     fi
     exit 1;
-fi
-
-if [[ $sEnableCUDA == "ON" ]]; then
-    # work around the problem with make -j where the shared cuda kernels are build twice (make no j builds them only once)
-    # if the make -f command tries to build the cuda kernels, which ensures that make -j will not try to compile again
-    # if the make -f command fails, this can be due to CUDA being disabled by cmake, check if Tasmanian_ENABLE_CUDA:BOOL=OFF is set
-    # if cuda is disabled, then just continue as normal, but if cuda is not off, then force sequential build
-    sCudaDoOnce="TRY"
-    make -f CMakeFiles/Tasmanian_libsparsegrid_shared.dir/build.make CMakeFiles/Tasmanian_libsparsegrid_shared.dir/SparseGrids/Tasmanian_libsparsegrid_shared_generated_tsgCudaKernels.cu.o || { sCudaDoOnce="FAIL"; }
-    if [[ $sCudaDoOnce == "FAIL" ]]; then
-        if [[ -z `cmake -LA -N . | grep Tasmanian_ENABLE_CUDA:BOOL=ON` ]]; then
-        # CUDA enabled, but the do once "libtsg_shared_generated_tsgCudaKernels.cu.o" failed
-        # fallback to sequential build
-            sEnableMakeJobs = ""
-        fi
-    fi
 fi
 
 make $sEnableMakeJobs

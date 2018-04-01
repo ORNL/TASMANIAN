@@ -26,6 +26,7 @@ set(Tasmanian_name_tasdream "tasdream")
 set(Tasmanian_name_fortester "fortester")
 
 include_directories("${PROJECT_SOURCE_DIR}/SparseGrids/") # compile time header files (needed by DREAM)
+include_directories("${CMAKE_BINARY_DIR}/configured/") # holds the additional headers configured by cmake
 
 if (Tasmanian_CUDA) # add executables
     cuda_add_executable(Tasmanian_tasgrid ${Tasmanian_source_tasgrid})
@@ -92,6 +93,11 @@ if (Tasmanian_STATIC_LIBRARY)
 
     set(Tasmanian_target_list ${Tasmanian_target_list} Tasmanian_libsparsegrid_static Tasmanian_libdream_static)
     target_link_libraries(Tasmanian_libdream_static Tasmanian_libsparsegrid_static)
+    if (Tasmanian_SHARED_LIBRARY)
+        # without this, if both static and shared libs are enabled, make -j tries to compile shared cuda kernels twice
+        # which creates a race condition and the build randomly fails
+        add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_libsparsegrid_static)
+    endif()
 
     set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES OUTPUT_NAME "${Tasmanian_name_libsparsegrid}")
     set_target_properties(Tasmanian_libdream_static PROPERTIES OUTPUT_NAME "${Tasmanian_name_libdream}")

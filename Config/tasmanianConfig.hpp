@@ -36,9 +36,18 @@
 #define TASMANIAN_VERSION_STRING "5.1"
 #define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclamer"
 
+////////////////////////////////////////////////////////////////////////
+// In order to enable advanced options for Tasmanian,
+// the corresponding #define line below has to be uncommented
+// Note: cmake takes care of this automatically, use the lines
+// below only for simple GNU-Make
+// The lines below are for references purposes mostly,
+// we support advanced options only though cmake
+////////////////////////////////////////////////////////////////////////
 
-
-
-
+//#define TASMANIAN_CPU_BLAS
+//#define TASMANIAN_CUBLAS
+//#define TASMANIAN_CUDA
+//#define TASMANIAN_MPI
 
 #endif
