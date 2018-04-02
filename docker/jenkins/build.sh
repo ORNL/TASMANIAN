@@ -7,7 +7,7 @@ mkdir build && cd build
 if [ "${BUILD_TYPE}" == "clang50-python3" ]
 then
     cmake \
-      -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
+      -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
       -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow -pedantic" \
       -D CMAKE_CXX_COMPILER=clang++ \
       -D PYTHON_EXECUTABLE=/usr/bin/python3 \
@@ -16,7 +16,7 @@ then
 elif [ "${BUILD_TYPE}" == "gcc73-python2" ]
 then
     cmake \
-      -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
+      -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
       -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow -pedantic" \
       -D CMAKE_CXX_COMPILER=g++ \
       -D PYTHON_EXECUTABLE=/usr/bin/python2 \
