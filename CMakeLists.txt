@@ -704,7 +704,7 @@ if (Tasmanian_TESTS_OMP_NUM_THREADS)
 endif()
 
 #if (${CMAKE_MAJOR_VERSION} GREATER 2)
-add_custom_target(test_install COMMAND ${CMAKE_BINARY_DIR}/test_post_install.sh)
+add_custom_target(test_install COMMAND ${CMAKE_BINARY_DIR}/test_post_install.sh -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 #endif()
 
 ########################################################################
