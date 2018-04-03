@@ -34,6 +34,7 @@
 // ------------ C Interface for TasmanianSparseGrid -------------- //
 // NOTE: you need to explicitly call the constructor and destructor
 //       in all cases, void *grid is a pointer to a C++ class
+
 void* tsgConstructTasmanianSparseGrid();
 void tsgDestructTasmanianSparseGrid(void *grid);
 void tsgCopyGrid(void *destination, void *source);
@@ -45,9 +46,8 @@ int tsgIsOpenMPEnabled();
 void tsgErrorLogCerr(void *grid);
 void tsgDisableErrorLog(void *grid);
 void tsgWrite(void *grid, const char* filename);
-int tsgRead(void *grid, const char* filename);
 void tsgWriteBinary(void *grid, const char* filename);
-int tsgReadBinary(void *grid, const char* filename);
+int tsgRead(void *grid, const char* filename);
 void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const char * sType, const char *sRule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int *limit_levels);
 void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const char *sRule, const int *anisotropic_weights, const int *limit_levels);
 void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int depth, int order, const char *sRule, const int *limit_levels);
@@ -95,14 +95,14 @@ void tsgClearConformalTransform(void *grid);
 void tsgGetConformalTransformASIN(void *grid, int truncation[]);
 void tsgClearLevelLimits(void *grid);
 void tsgGetLevelLimits(void *grid, int *limits);
-void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth, int output);
+void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth, int output, const int *level_limits);
 int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int output, int *num_coefficients);
 void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, int output, int *coefficients);
-void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output);
-void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output);
+void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output, const int *level_limits);
+void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output, const int *level_limits);
 void tsgClearRefinement(void *grid);
 void tsgMergeRefinement(void *grid);
-void tsgRemovePointsBySurplus(void *grid, double tolerance, int output);
+void tsgRemovePointsByHierarchicalCoefficient(void *grid, double tolerance, int output, const double *scale_correction);
 void tsgEvaluateHierarchicalFunctions(void *grid, const double *x, int num_x, double *y);
 void tsgEvaluateSparseHierarchicalFunctions(void *grid, const double x[], int num_x, int **pntr, int **indx, double **vals);
 int tsgEvaluateSparseHierarchicalFunctionsGetNZ(void *grid, const double x[], int num_x);
@@ -110,18 +110,20 @@ void tsgEvaluateSparseHierarchicalFunctionsStatic(void *grid, const double x[], 
 const double* tsgGetHierarchicalCoefficients(void *grid);
 void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff);
 void tsgSetHierarchicalCoefficients(void *grid, const double *c);
-// to be called from Python only, must later call delete[] on the pointerint* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes);
-// to be used in C, creates a C pointer (requires internal copy of data);
+// to be called from Python only, must later call delete[] on the pointer
+int* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes);
+// to be used in C, creates a C pointer (requires internal copy of data)
+void tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes, int **indexes);
 void tsgPrintStats(void *grid);
 void tsgEnableAcceleration(void *grid, const char *accel);
+//int tsgGetAccelerationTypeInt(void *grid){ return AccelerationMeta::getIOAccelerationInt(((TasmanianSparseGrid*) grid)->getAccelerationType()); } // int to acceleration type
+const char* tsgGetAccelerationType(void *grid);
 void tsgSetGPUID(void *grid, int gpuID);
 int tsgGetGPUID(void *grid);
 int tsgGetNumGPUs();
 int tsgGetGPUMemory(int gpu);
 int tsgIsAccelerationAvailable(const char *accel);
 void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual);
-void tsgDeleteDoubles(double *p);
 void tsgDeleteInts(int *p);
-void tsgDeleteChars(char *p);
 
 #endif
