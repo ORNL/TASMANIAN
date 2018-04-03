@@ -155,8 +155,8 @@ if (Tasmanian_TESTS_OMP_NUM_THREADS)
         PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
         ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
 endif()
+add_custom_target(test_install COMMAND ${CMAKE_BINARY_DIR}/test_post_install.sh -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
 
-add_custom_target(test_install COMMAND ${CMAKE_BINARY_DIR}/test_post_install.sh)
 
 
 ########################################################################

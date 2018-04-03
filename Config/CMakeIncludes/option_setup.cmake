@@ -62,8 +62,8 @@ if (Tasmanian_ENABLE_CUBLAS)
         target_link_libraries(${Tasmanian_loop_target} ${CUDA_cusparse_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_LIBRARIES})
     endforeach()
 
-    if (DEFINED CUDA_INCLUDE_DIR)
-        include_directories(${CUDA_INCLUDE_DIR})
+    if (DEFINED CUDA_INCLUDE_DIRS)
+        include_directories(${CUDA_INCLUDE_DIRS})
     endif()
 endif()
 
