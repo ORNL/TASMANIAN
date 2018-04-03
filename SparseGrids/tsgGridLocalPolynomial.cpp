@@ -169,29 +169,29 @@ void GridLocalPolynomial::read(std::ifstream &ifs){
         rule->setMaxOrder(order);
 
         ifs >> flag; if (flag == 1){ points = new IndexSet(num_dimensions); points->read(ifs); }
-        ifs >> flag; 
-        if (flag == 1){ 
-            surpluses = new double[((size_t) points->getNumIndexes()) * ((size_t) num_outputs)]; 
+        ifs >> flag;
+        if (flag == 1){
+            surpluses = new double[((size_t) points->getNumIndexes()) * ((size_t) num_outputs)];
             for(size_t i=0; i<((size_t) points->getNumIndexes()) * ((size_t) num_outputs); i++){ ifs >> surpluses[i]; }
         }
-        ifs >> flag; 
-        if (flag == 1){ 
-            needed = new IndexSet(num_dimensions);   
-            needed->read(ifs); 
+        ifs >> flag;
+        if (flag == 1){
+            needed = new IndexSet(num_dimensions);
+            needed->read(ifs);
         }
-        ifs >> flag;  
-        if (flag == 1){ 
-            int num_parents = rule->getMaxNumParents() * points->getNumIndexes();  
-            parents = new int[num_parents];  
-            for(int i=0; i<num_parents; i++){ ifs >> parents[i]; } 
+        ifs >> flag;
+        if (flag == 1){
+            int num_parents = rule->getMaxNumParents() * points->getNumIndexes();
+            parents = new int[num_parents];
+            for(int i=0; i<num_parents; i++){ ifs >> parents[i]; }
         }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
 
         ifs >> num_roots;
-        roots = new int[num_roots];     
+        roots = new int[num_roots];
         for(int i=0; i<num_roots; i++) ifs >> roots[i];
-        pntr  = new int[num_points + 1];    
+        pntr  = new int[num_points + 1];
         for(int i=0; i<=num_points; i++) ifs >> pntr[i];
         if (pntr[num_points] > 0){
             indx  = new int[pntr[num_points]];
@@ -230,16 +230,16 @@ void GridLocalPolynomial::readBinary(std::ifstream &ifs){
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ points = new IndexSet(num_dimensions); points->readBinary(ifs); }
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ needed = new IndexSet(num_dimensions); needed->readBinary(ifs); }
 
-        ifs.read((char*) &flag, sizeof(char)); 
-        if (flag == 'y'){ 
-            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())]; 
-            ifs.read((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double)); 
+        ifs.read((char*) &flag, sizeof(char));
+        if (flag == 'y'){
+            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())];
+            ifs.read((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
         }
-        
-        ifs.read((char*) &flag, sizeof(char)); 
-        if (flag == 'y'){ 
-            parents = new int[rule->getMaxNumParents() * points->getNumIndexes()]; 
-            ifs.read((char*) parents, rule->getMaxNumParents() * points->getNumIndexes() * sizeof(int)); 
+
+        ifs.read((char*) &flag, sizeof(char));
+        if (flag == 'y'){
+            parents = new int[rule->getMaxNumParents() * points->getNumIndexes()];
+            ifs.read((char*) parents, rule->getMaxNumParents() * points->getNumIndexes() * sizeof(int));
         }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
@@ -543,7 +543,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
         #endif // TASMANIAN_CUBLAS
 
-        TasCUDA::cudaRecv<double>(num_x * values->getNumOutputs(), gpu_result, y);
+        TasCUDA::cudaRecv<double>(num_x * values->getNumOutputs(), gpu_result, y, os);
 
         TasCUDA::cudaDel<double>(gpu_result, os);
         TasCUDA::cudaDel<double>(gpu_weights, os);
@@ -561,7 +561,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         #else
         TasCUDA::cudaSparseMatmul(num_x, num_outputs, num_nz, gpu_spntr, gpu_sindx, gpu_svals, gpu_acc->getGPUValues(), gpu_y);
         #endif // TASMANIAN_CUBLAS
-        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) num_outputs), gpu_y, y);
+        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) num_outputs), gpu_y, y, os);
 
         TasCUDA::cudaDel<int>(gpu_spntr, os);
         TasCUDA::cudaDel<int>(gpu_sindx, os);
@@ -584,7 +584,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
         #endif // TASMANIAN_CUBLAS
 
-        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) values->getNumOutputs()), gpu_result, y);
+        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) values->getNumOutputs()), gpu_result, y, os);
 
         TasCUDA::cudaDel<double>(gpu_result, os);
         TasCUDA::cudaDel<double>(gpu_weights, os);
@@ -1273,7 +1273,7 @@ void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cp
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
     TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, gpu_acc->getGPUNodes(), gpu_acc->getGPUSupport(),
                                 gpu_acc->getGPUpntr(), gpu_acc->getGPUindx(), num_roots, gpu_acc->getGPUroots(),
-                                gpu_spntr, gpu_sindx, gpu_svals, num_nz);
+                                gpu_spntr, gpu_sindx, gpu_svals, num_nz, os);
 }
 
 #else

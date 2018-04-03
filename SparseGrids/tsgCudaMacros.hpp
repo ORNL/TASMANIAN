@@ -54,47 +54,37 @@ namespace TasGrid{
 namespace TasCUDA{
     // general GPU/CPU I/O, new/delete vectors, send/recv data
     template <typename T>
-    inline T* cudaNew(size_t num_entries, std::ostream *os = 0){
+    inline T* cudaNew(size_t num_entries, std::ostream *os){
         T* x = 0;
         cudaError_t cudaStat = cudaMalloc(((void**) &x), num_entries * sizeof(T));
-        #ifdef _TASMANIAN_DEBUG_
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaNew()", os);
-        #endif
         return x;
     }
 
     template <typename T>
-    inline T* cudaSend(size_t num_entries, const T *cpu_array, std::ostream *os = 0){
+    inline T* cudaSend(size_t num_entries, const T *cpu_array, std::ostream *os){
         T *x = cudaNew<T>(num_entries, os);
         cudaError_t cudaStat = cudaMemcpy(x, cpu_array, num_entries * sizeof(T), cudaMemcpyHostToDevice);
-        #ifdef _TASMANIAN_DEBUG_
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type)", os);
-        #endif
         return x;
     }
 
     template <typename T>
-    inline void cudaSend(size_t num_entries, const T *cpu_array, T *gpu_array, std::ostream *os = 0){
+    inline void cudaSend(size_t num_entries, const T *cpu_array, T *gpu_array, std::ostream *os){
         cudaError_t cudaStat = cudaMemcpy(gpu_array, cpu_array, num_entries * sizeof(T), cudaMemcpyHostToDevice);
-        #ifdef _TASMANIAN_DEBUG_
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type, type)", os);
-        #endif
     }
 
     template <typename T>
-    inline void cudaRecv(size_t num_entries, const T *gpu_array, T *cpu_array, std::ostream *os = 0){
+    inline void cudaRecv(size_t num_entries, const T *gpu_array, T *cpu_array, std::ostream *os){
         cudaError_t cudaStat = cudaMemcpy(cpu_array, gpu_array, num_entries * sizeof(T), cudaMemcpyDeviceToHost);
-        #ifdef _TASMANIAN_DEBUG_
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaRecv(type, type)", os);
-        #endif
     }
 
     template <typename T>
-    inline void cudaDel(T *gpu_array, std::ostream *os = 0){
+    inline void cudaDel(T *gpu_array, std::ostream *os){
         cudaError_t cudaStat = cudaFree(gpu_array);
-        #ifdef _TASMANIAN_DEBUG_
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaDel(type)", os);
-        #endif
     }
 
 }

@@ -207,7 +207,7 @@ fi
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder  -make-j -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder  -make-j -verbose -nobashrc || { exit 1; }
 if [[ ! -z `./TasInstall/bin/tasgrid -v | grep gpu-cuda` ]]; then
     echo "CUDA not disabled by default"
     exit 1;
@@ -251,7 +251,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder  -make-j -noomp -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder  -make-j -noomp -verbose -nobashrc || { exit 1; }
 if [[ ! -z `./TasInstall/bin/tasgrid -v | grep 'multithreading: Enabled'` ]]; then
     echo "Failed to disable OpenMP"
     exit 1;
@@ -272,7 +272,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -make-j -noblas -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder -make-j -noblas -verbose -nobashrc || { exit 1; }
 if [[ ! -z `./TasInstall/bin/tasgrid -v | grep cpu-blas` ]]; then
     echo "Failed to disable BLAS"
     exit 1;
@@ -293,7 +293,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -make-j -nocublas -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder -make-j -nocublas -verbose -nobashrc || { exit 1; }
 if [[ ! -z `./TasInstall/bin/tasgrid -v | grep gpu-cublas` ]]; then
     echo "Failed to disable Nvidia cuBLAS"
     exit 1;
@@ -315,7 +315,7 @@ if (( $bNVCC == 1 )); then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -make-j -cuda -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -make-j -cuda -verbose -nobashrc || { exit 1; }
     if [[ -z `./TasInstall/bin/tasgrid -v | grep gpu-cuda` ]]; then
         echo "Failed to enable Nvidia CUDA"
         exit 1;
@@ -340,7 +340,7 @@ fi
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -make-j -nopython -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder -make-j -nopython -verbose -nobashrc || { exit 1; }
 if [ -f ./TasInstall/python/TasmanianSG.py ]]; then
     echo "Failed to disable Python"
     exit 1;
@@ -360,7 +360,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -make-j -nospam -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder -make-j -nospam -verbose -nobashrc || { exit 1; }
 if [[ -f ./TasInstall/python/TasmanianSG.py ]]; then
     echo "Failed to disable Spam (python)"
     exit 1;
@@ -382,7 +382,7 @@ if (( $bPython3 == 1 )); then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -make-j -python=/usr/bin/python3 -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -make-j -python=/usr/bin/python3 -verbose -nobashrc || { exit 1; }
     ./TasInstall/examples/example_sparse_grids.py -fast || { echo "Could not run python3 version of examples"; exit 1; }
     if [[ -z `head -n 1 ./TasInstall/examples/example_sparse_grids.py | grep python3` ]]; then
         echo "Failed to set python3 in the hash-bang of the examples"
@@ -409,7 +409,7 @@ if (( $bGfortran == 1 )); then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -make-j -fortran -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -make-j -fortran -verbose -nobashrc || { exit 1; }
     if [ ! -f ./TasInstall/lib/libtasmanianfortran.so ] && [ ! -f ./TasInstall/lib/libtasmanianfortran.dylib ]; then
         echo "Failed to enable Fortran"
         exit 1;
@@ -435,7 +435,7 @@ if (( $bGfortran == 1 )); then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -make-j -fortran -noshared -nospam -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -make-j -fortran -noshared -nospam -verbose -nobashrc || { exit 1; }
     if [ ! -f ./TasInstall/lib/libtasmanianfortran.a ]; then
         echo "Failed to enable Fortran"
         exit 1;
@@ -460,7 +460,7 @@ fi
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -make-j -noshared -nostatic -verbose -nobashrc
+./install ./TasInstall ./tsgWorkFolder -make-j -noshared -nostatic -verbose -nobashrc
 if (( $? == 0 )); then
     echo "Failed to reject install with both -noshared and -nostatic"
     exit 1;
@@ -478,7 +478,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -nostatic -make-j -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder -nostatic -make-j -verbose -nobashrc || { exit 1; }
 # MacOSX always finds the dynamic libs as they are hardcoded with absolute path
 if (( $bMacOS == 0 )); then
     $sTempBuild/Tasmanian/TasInstall/bin/tasgrid -v
@@ -550,7 +550,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -noshared -make-j -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder -noshared -make-j -verbose -nobashrc || { exit 1; }
 if (( $bOctave == 1 )); then
     octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
@@ -578,7 +578,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -noshared -nopython -make-j -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder -noshared -nopython -make-j -verbose -nobashrc || { exit 1; }
 if (( $bOctave == 1 )); then
     octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
 fi
@@ -602,7 +602,7 @@ echo "==========================================================================
 ########################################################################
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
-./install.sh ./TasInstall -make-j -verbose -nobashrc || { exit 1; }
+./install ./TasInstall -make-j -verbose -nobashrc || { exit 1; }
 octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()"
 if [ $? -eq 0 ]; then
     echo "Ocatve is not supposed to work here"
@@ -625,7 +625,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -noinstall -make-j -verbose -nobashrc || { exit 1; }
+./install ./TasInstall ./tsgWorkFolder -noinstall -make-j -verbose -nobashrc || { exit 1; }
 if [ -d $sTempBuild/Tasmanian/TasInstall/lib ] || [ -d $sTempBuild/Tasmanian/TasInstall/bin ]; then
     echo "Failed to disable the install command."
     exit 1;
@@ -646,7 +646,7 @@ mkdir -p tsgWorkFolder
 # break the test, so if it executes it will break the install
 echo "(" >> ./Testing/testTSG.in.py
 sed -i -e 's/\#TasmanianPostInstallTest/exit\ 1/g' ./Testing/test_post_install.in.sh
-./install.sh ./TasInstall ./tsgWorkFolder -notest -make-j -verbose -nobashrc || { echo "Failed to disable testing"; exit 1; }
+./install ./TasInstall ./tsgWorkFolder -notest -make-j -verbose -nobashrc || { echo "Failed to disable testing"; exit 1; }
 cd $sTempBuild
 rm -fr Tasmanian/
 cd $sTestRoot
@@ -660,7 +660,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder $sDashFort -debug -cuda -make-j -verbose -nobashrc || { echo "Failed to make a debug release"; exit 1; }
+./install ./TasInstall ./tsgWorkFolder $sDashFort -debug -cuda -make-j -verbose -nobashrc || { echo "Failed to make a debug release"; exit 1; }
 if [[ -z `cmake -LA -N Build/ | grep CMAKE_BUILD_TYPE:STRING=Debug` ]]; then
     echo "Failed to set a debug build"
     exit 1;
@@ -678,7 +678,7 @@ echo "==========================================================================
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
 mkdir -p tsgWorkFolder
-./install.sh ./TasInstall ./tsgWorkFolder -cuda -make-j -verbose -nobashrc -wrong
+./install ./TasInstall ./tsgWorkFolder -cuda -make-j -verbose -nobashrc -wrong
 if [ $? -eq 0 ]; then
     echo "Failed to exit on wrong install input"
     exit 1;
@@ -698,9 +698,9 @@ if [ -f /usr/bin/clang++-5.0 ]; then
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     if (( $bMacOS == 1 )); then
-        ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-5.0" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
+        ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-5.0" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
     else
-        ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-5.0" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+        ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-5.0" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     fi
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
@@ -726,9 +726,9 @@ if [ -f /usr/bin/clang++-4.0 ]; then
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     if (( $bMacOS == 1 )); then
-        ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-4.0" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
+        ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-4.0" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
     else
-        ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-4.0" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+        ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-4.0" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     fi
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
@@ -753,7 +753,7 @@ if [ -f /usr/bin/clang++-3.8 ] && [ ! -f /usr/bin/g++-7 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-3.8" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-3.8" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
@@ -771,7 +771,7 @@ if [ -f /usr/bin/g++-7 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-7" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-7" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
@@ -789,7 +789,7 @@ if [ -f /usr/bin/g++-6 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-6" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-6" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
@@ -807,7 +807,7 @@ if [ -f /usr/bin/g++-5 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-5" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-5" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
@@ -825,7 +825,7 @@ if [ -f /usr/bin/g++-4.8 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-4.8" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-4.8" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
@@ -843,7 +843,7 @@ if [ -d /usr/local/cuda-8.0 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-8.0/" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-8.0/" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
@@ -861,7 +861,7 @@ if [ -d /usr/local/cuda-9.0 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.0/" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.0/" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi
@@ -879,7 +879,7 @@ if [ -d /usr/local/cuda-9.1 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
-    ./install.sh ./TasInstall ./tsgWorkFolder -cmake="-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.1/" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCUDA_TOOLKIT_ROOT_DIR:PATH=/usr/local/cuda-9.1/" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
     if (( $bOctave == 1 )); then
         octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
     fi

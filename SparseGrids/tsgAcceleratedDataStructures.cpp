@@ -46,12 +46,12 @@ AccelerationDataGPUFull::AccelerationDataGPUFull() :
     cublasHandle(0), cusparseHandle(0), logstream(0){}
 AccelerationDataGPUFull::~AccelerationDataGPUFull(){
     #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
-    if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values); gpu_values = 0; }
-    if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes); gpu_nodes = 0; }
-    if (gpu_support != 0){ TasCUDA::cudaDel<double>(gpu_support); gpu_support = 0; }
-    if (gpu_hpntr != 0){ TasCUDA::cudaDel<int>(gpu_hpntr); gpu_hpntr = 0; }
-    if (gpu_hindx != 0){ TasCUDA::cudaDel<int>(gpu_hindx); gpu_hindx = 0; }
-    if (gpu_roots != 0){ TasCUDA::cudaDel<int>(gpu_roots); gpu_roots = 0; }
+    if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
+    if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes, logstream); gpu_nodes = 0; }
+    if (gpu_support != 0){ TasCUDA::cudaDel<double>(gpu_support, logstream); gpu_support = 0; }
+    if (gpu_hpntr != 0){ TasCUDA::cudaDel<int>(gpu_hpntr, logstream); gpu_hpntr = 0; }
+    if (gpu_hindx != 0){ TasCUDA::cudaDel<int>(gpu_hindx, logstream); gpu_hindx = 0; }
+    if (gpu_roots != 0){ TasCUDA::cudaDel<int>(gpu_roots, logstream); gpu_roots = 0; }
     #endif // TASMANIAN_CUBLAS || TASMANIAN_CUDA
     #ifdef TASMANIAN_CUBLAS
     if (cublasHandle != 0){
@@ -89,7 +89,7 @@ bool AccelerationDataGPUFull::isCompatible(TypeAcceleration acc) const{ return A
 
 #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
 void AccelerationDataGPUFull::loadGPUValues(size_t total_entries, const double *cpu_values){
-    gpu_values = TasCUDA::cudaSend(total_entries, cpu_values);
+    gpu_values = TasCUDA::cudaSend(total_entries, cpu_values, logstream);
 }
 #else
 void AccelerationDataGPUFull::loadGPUValues(size_t, const double *){}
@@ -98,9 +98,9 @@ double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }
 
 #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
 void AccelerationDataGPUFull::resetGPULoadedData(){
-    if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values); gpu_values = 0; }
-    if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes); gpu_nodes = 0; }
-    if (gpu_support != 0){ TasCUDA::cudaDel<double>(gpu_support); gpu_support = 0; }
+    if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
+    if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes, logstream); gpu_nodes = 0; }
+    if (gpu_support != 0){ TasCUDA::cudaDel<double>(gpu_support, logstream); gpu_support = 0; }
 }
 #else
 void AccelerationDataGPUFull::resetGPULoadedData(){}
@@ -110,8 +110,8 @@ double* AccelerationDataGPUFull::getGPUNodes() const{ return gpu_nodes; }
 double* AccelerationDataGPUFull::getGPUSupport() const{ return gpu_support; }
 #ifdef TASMANIAN_CUDA
 void AccelerationDataGPUFull::loadGPUNodesSupport(int total_entries, const double *cpu_nodes, const double *cpu_support){
-    gpu_nodes = TasCUDA::cudaSend(total_entries, cpu_nodes);
-    gpu_support = TasCUDA::cudaSend(total_entries, cpu_support);
+    gpu_nodes = TasCUDA::cudaSend(total_entries, cpu_nodes, logstream);
+    gpu_support = TasCUDA::cudaSend(total_entries, cpu_support, logstream);
 }
 #else
 void AccelerationDataGPUFull::loadGPUNodesSupport(int, const double *, const double *){}
@@ -122,9 +122,9 @@ int* AccelerationDataGPUFull::getGPUindx() const{ return gpu_hindx; }
 int* AccelerationDataGPUFull::getGPUroots() const{ return gpu_roots; }
 #ifdef TASMANIAN_CUDA
 void AccelerationDataGPUFull::loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots){
-    gpu_hpntr = TasCUDA::cudaSend<int>(num_points + 1, pntr);
-    gpu_hindx = TasCUDA::cudaSend<int>(pntr[num_points], indx);
-    gpu_roots = TasCUDA::cudaSend<int>(num_roots, roots);
+    gpu_hpntr = TasCUDA::cudaSend<int>(num_points + 1, pntr, logstream);
+    gpu_hindx = TasCUDA::cudaSend<int>(pntr[num_points], indx, logstream);
+    gpu_roots = TasCUDA::cudaSend<int>(num_roots, roots, logstream);
 }
 #else
 void AccelerationDataGPUFull::loadGPUHierarchy(int, int*, int*, int, int*){}
@@ -427,23 +427,23 @@ AccelerationDomainTransform::AccelerationDomainTransform(int num_dimensions, con
         c = (c % num_dimensions);
     }
 
-    gpu_trans_a = TasCUDA::cudaSend(padded_size, rate);
-    gpu_trans_b = TasCUDA::cudaSend(padded_size, shift);
+    gpu_trans_a = TasCUDA::cudaSend(padded_size, rate, logstream);
+    gpu_trans_b = TasCUDA::cudaSend(padded_size, shift, logstream);
 
     delete[] rate;
     delete[] shift;
 }
 AccelerationDomainTransform::~AccelerationDomainTransform(){
-    TasCUDA::cudaDel<double>(gpu_trans_a);
-    TasCUDA::cudaDel<double>(gpu_trans_b);
+    TasCUDA::cudaDel<double>(gpu_trans_a, logstream);
+    TasCUDA::cudaDel<double>(gpu_trans_b, logstream);
 }
 double* AccelerationDomainTransform::getCanonicalPoints(int num_dimensions, int num_x, const double *gpu_transformed_x){
-    double *gpu_x_canonical = TasCUDA::cudaNew<double>(num_dimensions * num_x);
+    double *gpu_x_canonical = TasCUDA::cudaNew<double>(num_dimensions * num_x, logstream);
     TasCUDA::dtrans2can(num_dimensions, num_x, padded_size, gpu_trans_a, gpu_trans_b, gpu_transformed_x, gpu_x_canonical);
     return gpu_x_canonical;
 }
 #else
-AccelerationDomainTransform::AccelerationDomainTransform(int, const double*, const double*, std::ostream *) : gpu_trans_a(0), gpu_trans_b(0), logstream(0){}
+AccelerationDomainTransform::AccelerationDomainTransform(int, const double*, const double*, std::ostream *){}
 AccelerationDomainTransform::~AccelerationDomainTransform(){}
 double* AccelerationDomainTransform::getCanonicalPoints(int, int, const double*){ return 0; }
 #endif // TASMANIAN_CUDA

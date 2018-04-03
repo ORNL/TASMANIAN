@@ -1,8 +1,8 @@
 ########################################################################
 # C++ 2011 support
 ########################################################################
-if (DEFINED Tasmanian_ENABLE_CXX_2011)
-    if (Tasmanian_ENABLE_CXX_2011)
+if (DEFINED Tasmanian_ENABLE_CXX_11)
+    if (Tasmanian_ENABLE_CXX_11)
         foreach(Tasmanian_loop_target ${Tasmanian_target_list})
             set_property(TARGET ${Tasmanian_loop_target} PROPERTY CXX_STANDARD 11)
         endforeach()

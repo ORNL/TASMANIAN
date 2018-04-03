@@ -59,7 +59,7 @@ bool ExternalTester::Test(TestList test) const{
     bool passGlobal  = true;
     bool passLocal   = true;
     bool passWavelet = true;
-    
+
     if ((test == test_all) || (test == test_acceleration)) passAccel   = testAllAcceleration();
     if ((test == test_all) || (test == test_domain)) passDomain  = testAllDomain();
     if ((test == test_all) || (test == test_refinement)) passRefine  = testAllRefinement();
@@ -1751,7 +1751,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             }
             pass = pass && dense_pass;
 
-            TasGrid::TasCUDA::cudaDel<double>(gpuy);
+            TasGrid::TasCUDA::cudaDel<double>(gpuy, &cerr);
             delete[] y_true;
             delete[] y;
 
@@ -1798,10 +1798,10 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             delete[] cpntr; delete[] pntr;
             delete[] cindx; delete[] indx;
             delete[] cvals; delete[] vals;
-            TasGrid::TasCUDA::cudaDel<double>(gpux);
-            TasGrid::TasCUDA::cudaDel<int>(gpu_pntr);
-            TasGrid::TasCUDA::cudaDel<int>(gpu_indx);
-            TasGrid::TasCUDA::cudaDel<double>(gpu_vals);
+            TasGrid::TasCUDA::cudaDel<double>(gpux, &cerr);
+            TasGrid::TasCUDA::cudaDel<int>(gpu_pntr, &cerr);
+            TasGrid::TasCUDA::cudaDel<int>(gpu_indx, &cerr);
+            TasGrid::TasCUDA::cudaDel<double>(gpu_vals, &cerr);
 
             delete[] x;
             delete[] xt;
@@ -2111,7 +2111,7 @@ void ExternalTester::debugTest(){
     }
 
 
-    TasGrid::TasCUDA::cudaDel<double>(gpux);
+    TasGrid::TasCUDA::cudaDel<double>(gpux, &cerr);
 
     delete[] x;
     delete[] y;

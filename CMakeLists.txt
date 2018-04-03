@@ -29,7 +29,7 @@ endif()
 #    -D Tasmanian_EXTRA_INCLUDE_DIRS:PATH="appends more include paths"
 #    -D Tasmanian_EXTRA_LIBRARIES:STRING="appends more link libraries"
 #    -D Tasmanian_EXTRA_LINK_DIRS:PATH="appends more link paths"
-#    -D Tasmanian_ENABLE_CXX_2011:BOOL=OFF
+#    -D Tasmanian_ENABLE_CXX_11:BOOL=OFF
 #      (note: unless manually specified, CUDA, CUBLAS, and MPI set this to ON)
 #
 # Development only options:
@@ -50,7 +50,6 @@ endif()
 #     -D OpenMP_CXX_FLAGS:STRING
 #     -D BLAS_LIBRARIES:STRING
 #     -D CUDA_CUBLAS_LIBRARIES:STRING
-#     -D CUDA_cusparse_LIBRARY:STRING
 #     -D MPI_CXX_LIBRARIES:STRING
 #
 # PYTHON_EXECUTABLE and CUDA_TOOLKIT_ROOT_DIR help cmake find a specific
@@ -59,7 +58,7 @@ endif()
 #
 # BLAS_LIBRARIES bypasses find_package(BLAS)
 # MPI_CXX_LIBRARIES bypasses find_package(MPI)
-# CUDA_CUBLAS_LIBRARIES bypasses find_package(CUDA)
+# CUDA_CUBLAS_LIBRARIES bypasses find_package(CUDA),
 #   but only if Tasmanian_ENABLE_CUDA=OFF,
 #   Tasmanian_ENABLE_CUDA=ON absolutely requires find_package(CUDA)
 #
@@ -67,7 +66,7 @@ endif()
 #     -D MPI_CXX_INCLUDE_PATH
 #     -D MPI_COMPILE_FLAGS
 #     -D MPI_LINK_FLAGS
-#     -D CUDA_INCLUDE_DIR
+#     -D CUDA_INCLUDE_DIRS
 #     -D CUDA_LIBRARIES
 #     -D CUDA_cusparse_LIBRARY
 #
@@ -143,8 +142,14 @@ set(Tasmanian_tests_list SparseGrids_Acceleration SparseGrids_Domain SparseGrids
                          SparseGrids_Global SparseGrids_Local SparseGrids_Wavelet
                          DREAM_Analytic DREAM_Model)
 if (Tasmanian_ENABLE_PYTHON)
-    add_test(NAME GenericComprehensive COMMAND ${PYTHON_EXECUTABLE} testTSG.py)
-    set(Tasmanian_tests_list ${Tasmanian_tests_list} LibSG)
+    add_test(NAME PythonIO COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testBasicIO)
+    add_test(NAME PythonAcceleration COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testAcceleratedEvaluate)
+    add_test(NAME PythonExceptions COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testBasicException)
+    add_test(NAME PythonMakeUpdate COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testFullCoverageA)
+    add_test(NAME PythonRefine COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testFullCoverageB)
+    add_test(NAME PythonLearning COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testFullCoverageC)
+    add_test(NAME PythonMisc COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testFullCoverageZ)
+    set(Tasmanian_tests_list ${Tasmanian_tests_list} PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc)
 endif()
 if (Tasmanian_ENABLE_FORTRAN)
     add_test(Fortran fortester)
@@ -156,8 +161,6 @@ if (Tasmanian_TESTS_OMP_NUM_THREADS)
         ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
 endif()
 add_custom_target(test_install COMMAND ${CMAKE_BINARY_DIR}/test_post_install.sh -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
-
-
 
 ########################################################################
 # Setup Message

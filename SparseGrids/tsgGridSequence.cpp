@@ -119,10 +119,10 @@ void GridSequence::read(std::ifstream &ifs){
         ifs >> flag;  if (flag == 1){  needed = new IndexSet(num_dimensions); needed->read(ifs);  }
         IndexManipulator IM(num_dimensions);
         parents = IM.computeDAGup(((points == 0) ? needed : points));
-        ifs >> flag;  
-        if (flag == 1){ 
-            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())]; 
-            for(size_t i=0; i<((size_t) num_outputs) * ((size_t) points->getNumIndexes()); i++) ifs >> surpluses[i]; 
+        ifs >> flag;
+        if (flag == 1){
+            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())];
+            for(size_t i=0; i<((size_t) num_outputs) * ((size_t) points->getNumIndexes()); i++) ifs >> surpluses[i];
         }
         values = new StorageSet(0, 0); values->read(ifs);
         int mp = 0, mn = 0, max_level;
@@ -156,10 +156,10 @@ void GridSequence::readBinary(std::ifstream &ifs){
         IndexManipulator IM(num_dimensions);
         parents = IM.computeDAGup(((points == 0) ? needed : points));
 
-        ifs.read((char*) &flag, sizeof(char)); 
-        if (flag == 'y'){ 
-            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())]; 
-            ifs.read((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double)); 
+        ifs.read((char*) &flag, sizeof(char));
+        if (flag == 'y'){
+            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())];
+            ifs.read((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
         }
 
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
@@ -551,7 +551,7 @@ void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[
 
     gpu->cublasDGEMM(num_outputs, num_points, num_x, gpu_weights, gpu_result);
 
-    TasCUDA::cudaRecv<double>(((size_t) num_outputs) * ((size_t) num_x), gpu_result, y);
+    TasCUDA::cudaRecv<double>(((size_t) num_outputs) * ((size_t) num_x), gpu_result, y, os);
 
     TasCUDA::cudaDel<double>(gpu_result, os);
     TasCUDA::cudaDel<double>(gpu_weights, os);
@@ -589,7 +589,7 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points->getNumIndexes();
     std::fill(q, q + num_outputs, 0.0);
 
-    // for sequence grids, quadraturre weights are expensive, 
+    // for sequence grids, quadraturre weights are expensive,
     // if using simple integration use the basis integral + surpluses, which is fast
     // if using conformal map, then we have to compute the expensive weights
     if (conformal_correction == 0){
@@ -956,8 +956,8 @@ void GridSequence::prepareSequence(int n){
 }
 
 double* GridSequence::cacheBasisIntegrals() const{
-    int max_level = max_levels[0];  
-    
+    int max_level = max_levels[0];
+
     for(int j=1; j<num_dimensions; j++) if (max_level < max_levels[j]) max_level = max_levels[j];
 
     double *integ = new double[++max_level]; // integrals of basis functions

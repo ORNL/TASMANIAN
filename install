@@ -60,7 +60,7 @@ if (( bShowHelp == 1 )); then
     echo "       <install path>: optional"
     echo "                       the install prefix"
     echo "                       passed on -D CMAKE_INSTALL_PREFIX"
-    echo "                       if missing, the script will ask for folder"
+    echo "                       if missing, the script will ask for a folder"
     echo ""
     echo " <matlab work folder>: optional"
     echo "                       work folder for the matab interface"
@@ -494,7 +494,7 @@ else
 fi
 
 if (( $bEnableTests == 1 )); then
-    ./test_post_install.sh $sExtraCommand || { echo "ERROR: the post install test failed!"; bFailedTests=1; }
+    make test_install || { echo "ERROR: the post install test failed!"; bFailedTests=1; }
 fi
 
 # write out the build log

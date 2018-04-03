@@ -77,8 +77,9 @@ void TasCUDA::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int
 }
 
 void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
-                                 int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz){
-    gpu_spntr = cudaNew<int>(num_x + 1);
+                                 int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz,
+                                 std::ostream *os){
+    gpu_spntr = cudaNew<int>(num_x + 1, os);
     int num_blocks = num_x / 64 + ((num_x % 64 == 0) ? 0 : 1);
     if (num_blocks >= 65536) num_blocks = 65536;
     // call with fill == false to count the non-zeros per row of the matrix
@@ -115,14 +116,14 @@ void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num
         }
     }
     int *cpu_spntr = new int[num_x+1];
-    cudaRecv(num_x+1, gpu_spntr, cpu_spntr);
+    cudaRecv(num_x+1, gpu_spntr, cpu_spntr, os);
     cpu_spntr[0] = 0;
     for(int i=1; i<=num_x; i++) cpu_spntr[i] += cpu_spntr[i-1];
     num_nz = cpu_spntr[num_x]; // save the number of non-zeros
-    cudaSend<int>(num_x + 1, cpu_spntr, gpu_spntr);
+    cudaSend<int>(num_x + 1, cpu_spntr, gpu_spntr, os);
     delete[] cpu_spntr;
-    gpu_sindx = cudaNew<int>(num_nz);
-    gpu_svals = cudaNew<double>(num_nz);
+    gpu_sindx = cudaNew<int>(num_nz, os);
+    gpu_svals = cudaNew<double>(num_nz, os);
     // call with fill == true to load the non-zeros
     if (rule == rule_localp){
         switch(order){
@@ -233,9 +234,9 @@ void TasCUDA::d3gecss(int N, int M, int *level, int top_level, const int *cpuBpn
     int *gpuBpntr, *gpuBindx, *gpu_order;
     double *gpuBvals;
     double *gpuX;
-    
+
     int num_nz = cpuBpntr[M];
-    
+
     int *order = new int[M], c = 0;
     for(int l=1; l<=top_level; l++){
         for(int i=0; i<M; i++){
@@ -245,7 +246,7 @@ void TasCUDA::d3gecss(int N, int M, int *level, int top_level, const int *cpuBpn
         }
     }
     while(c < M) order[c++] = 0;
-    
+
     gpu_order = TasCUDA::cudaSend<int>(M, order, os);
     gpuBpntr = TasCUDA::cudaSend<int>(M+1, cpuBpntr, os);
     gpuBindx = TasCUDA::cudaSend<int>(num_nz, cpuBindx, os);
@@ -259,11 +260,11 @@ void TasCUDA::d3gecss(int N, int M, int *level, int top_level, const int *cpuBpn
     TasCUDA::cudaRecv<double>(M*N, gpuX, cpuC, os);
 
     delete[] order;
-    TasCUDA::cudaDel<double>(gpuX);
-    TasCUDA::cudaDel<double>(gpuBvals);
-    TasCUDA::cudaDel<int>(gpuBindx);
-    TasCUDA::cudaDel<int>(gpuBpntr);
-    TasCUDA::cudaDel<int>(gpu_order);
+    TasCUDA::cudaDel<double>(gpuX, os);
+    TasCUDA::cudaDel<double>(gpuBvals, os);
+    TasCUDA::cudaDel<int>(gpuBindx, os);
+    TasCUDA::cudaDel<int>(gpuBpntr, os);
+    TasCUDA::cudaDel<int>(gpu_order, os);
 }
 
 void TasCUDA::convert_sparse_to_dense(int num_rows, int num_columns, const int *pntr, const int *indx, const double *vals, double *destination){
