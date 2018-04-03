@@ -1459,7 +1459,7 @@ char* TasmanianSparseGrid::getGPUName(int gpu){
     cudaGetDeviceCount(&gpu_count);
     if (gpu >= gpu_count) return name;
     cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, 0);
+    cudaGetDeviceProperties(&prop, gpu);
 
     int c = 0; while(prop.name[c] != '\0'){ c++; }
     delete[] name;
