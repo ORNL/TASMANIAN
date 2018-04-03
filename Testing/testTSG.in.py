@@ -623,14 +623,15 @@ class TestTasmanian(unittest.TestCase):
     def testFullCoverageA(self):
         print("\nTesting core make/update grid")
 
-        grid = TasmanianSG.TasmanianSparseGrid("@Tasmanian_libsparsegrid_path@")
-        sVersion = grid.getVersion()
-        self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
+        if (@Tasmanian_cmake_synctest_enable@):
+            grid = TasmanianSG.TasmanianSparseGrid("@Tasmanian_libsparsegrid_path@")
+            sVersion = grid.getVersion()
+            self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
 
-        pLibTSG = cdll.LoadLibrary("@Tasmanian_libsparsegrid_path@")
-        grid = TasmanianSG.TasmanianSparseGrid(pLibTSG)
-        sVersion = grid.getVersion()
-        self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
+            pLibTSG = cdll.LoadLibrary("@Tasmanian_libsparsegrid_path@")
+            grid = TasmanianSG.TasmanianSparseGrid(pLibTSG)
+            sVersion = grid.getVersion()
+            self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
 
         grid = TasmanianSG.TasmanianSparseGrid()
 

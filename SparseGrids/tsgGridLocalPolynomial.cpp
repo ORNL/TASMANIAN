@@ -1561,14 +1561,14 @@ int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
         std::fill(pmap, pmap + num_points * num_dimensions, 1);
     }else if ((criteria == refine_classic) || (criteria == refine_parents_first)){
         #pragma omp parallel for
-        for(size_t i=0; i<((size_t) num_points); i++){
+        for(int i=0; i<num_points; i++){
             bool small = true;
             if (output == -1){
                 for(size_t k=0; k<((size_t) num_outputs); k++){
-                    if (small && ((scale[i*num_outputs + k] * fabs(surpluses[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
+                    if (small && ((scale[((size_t)i) * ((size_t) num_outputs) + k] * fabs(surpluses[((size_t)i) * ((size_t) num_outputs) + k]) / norm[k]) > tolerance)) small = false;
                 }
             }else{
-                small = !((scale[i] * fabs(surpluses[i*num_outputs + output]) / norm[output]) > tolerance);
+                small = !((scale[i] * fabs(surpluses[((size_t)i) * ((size_t) num_outputs) + output]) / norm[output]) > tolerance);
             }
             if (!small){
                 std::fill(&(pmap[i*num_dimensions]), &(pmap[i*num_dimensions]) + num_dimensions, 1);

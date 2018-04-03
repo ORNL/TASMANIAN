@@ -39,8 +39,11 @@ using std::endl;
 using std::setw;
 
 ExternalTester::ExternalTester(int num_monte_carlo) : num_mc(num_monte_carlo){
-    //srand(time(0));
+    #ifdef _TASMANIAN_WINDOWS_
+    srand(15);
+    #else
     srand(10);
+    #endif
     wfirst = 15; wsecond = 30; wthird = 15;
     verbose = false;
 }
@@ -72,7 +75,7 @@ bool ExternalTester::Test(TestList test){
     bool passGamma1D = true;
     bool passGauss2D = true;
     bool passInferAlpha = true;
-    
+
     if ((test == test_all) || (test == test_analytic)){
         passUniform1D = testUniform1D();
         passBeta1D = testBeta1D();
@@ -82,7 +85,7 @@ bool ExternalTester::Test(TestList test){
     if ((test == test_all) || (test == test_model)){
         passInferAlpha = testModelLikelihoodAlpha();
     }
-    
+
 
     pass = passUniform1D && passBeta1D && passGamma1D && passGauss2D && passInferAlpha;
 
@@ -106,7 +109,7 @@ bool ExternalTester::Test(TestList test){
 }
 
 bool ExternalTester::testUniform1D(){
-    int num_cells = 20; double delta = 2.0 / ((double) num_cells);
+    int num_cells = 16; double delta = 2.0 / ((double) num_cells);
     int num_chains = 50;
     double *samples_true = new double[num_mc];
     for(int i=0; i<num_mc; i++) samples_true[i] = -1.0 + 2.0 * u.getSample01();

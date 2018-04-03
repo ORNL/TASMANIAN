@@ -486,9 +486,9 @@ bool TasgridWrapper::getInterWeights(){
     int num_p = grid->getNumPoints();
     res = new double[((size_t) num_p) * rows];
     #pragma omp parallel for
-    for(size_t i=0; i<((size_t) rows); i++){
+    for(int i=0; i<(int) rows; i++){ // in windows OpenMP loop counters must be signed ??
         double *r = grid->getInterpolationWeights(&(x[i*cols]));
-        std::copy(r, r + num_p, &(res[i * num_p]));
+        std::copy(r, r + num_p, &(res[i * ((size_t) num_p)]));
         delete[] r;
     }
     if (outfilename != 0){

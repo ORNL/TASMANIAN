@@ -191,5 +191,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     endif()
 
     add_definitions(-D_SCL_SECURE_NO_WARNINGS)
+    add_definitions(-D_TASMANIAN_WINDOWS_)
+    add_definitions(-D_USE_MATH_DEFINES)
 endif()
 

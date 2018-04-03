@@ -3,6 +3,8 @@
 
 @ECHO Compiling SparseGrids
 
+copy Config\tasmanianConfig.hpp SparseGrids\tasmanianConfig.hpp
+
 cd SparseGrids
 call WindowsMakeSG.bat
 cd..
@@ -43,7 +45,11 @@ cd SparseGrids
 call WindowsMakeSG.bat clean
 cd..
 
-del *.obj *.dll *.lib *.exe *.py *.pyc
+cd DREAM
+call WindowsMakeDREAM.bat clean
+cd ..
+
+del *.obj *.dll *.lib *.exe *.py *.pyc *.table
 del testSave
 
 @GOTO End

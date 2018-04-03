@@ -31,7 +31,6 @@
 #ifndef __TASMANIAN_DREAM_CPP
 #define __TASMANIAN_DREAM_CPP
 
-#define _USE_MATH_DEFINES
 #include "TasmanianDREAM.hpp"
 
 namespace TasDREAM{

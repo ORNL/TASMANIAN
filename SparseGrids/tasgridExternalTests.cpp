@@ -161,55 +161,38 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             delete[] needed_points;
         }
 
-        double *r = new double[num_outputs];  std::fill(r, r + num_outputs, 0.0);
+        double *e = new double[num_outputs];  std::fill(e, e + num_outputs, 0.0);
         double *n = new double[num_outputs];  std::fill(n, n + num_outputs, 0.0);
 
-        #pragma omp parallel
-        {
-        	double *x_local = new double[num_dimensions];
-        	double *n_local = new double[num_dimensions];
-        	double *r_local = new double[num_dimensions];
-        	double *y       = new double[num_dimensions];
-        	double *s       = new double[num_dimensions];
+		double *test_x = new double[num_dimensions * num_mc];
+		double *result_tasm = new double[num_mc * num_outputs];
+		double *result_true = new double[num_mc * num_outputs];
+		setRandomX(num_dimensions * num_mc, test_x);
 
-        	for(int i=0; i<num_outputs; i++){
-        		y[i] = s[i] = r_local[i] = n_local[i] = 0.0;
-        	}
-            #pragma omp for
-        	for(int k=0; k<num_mc; k++){
-        		setRandomX(num_dimensions, x_local);
-        		f->eval(x_local, y);
-        		//std::fill(s, s + num_dimensions, 0.0);
-        		grid->evaluate(x_local, s);
-        		for(int j=0; j<num_outputs; j++){
-                    double e = fabs(y[j] - s[j]);
-                    if (r_local[j] < e) r_local[j] = e;
-                    e = fabs(y[j]);
-                    if (n_local[j] < e) n_local[j] = e;
-        		}
-        	}
+		#pragma omp parallel for
+		for(int i=0; i<num_mc; i++){
+			grid->evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_outputs]));
+			f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_outputs]));
+		}
 
-            #pragma omp critical
-        	{
-        		for(int i=0; i<num_outputs; i++){
-        			if (r[i] < r_local[i]) r[i] = r_local[i];
-        			if (n[i] < n_local[i]) n[i] = n_local[i];
-        		}
-        	}
+		for(int i=0; i<num_mc; i++){
+			for(int k=0; k<num_outputs; k++){
+				if (n[k] < fabs(result_true[i * num_outputs + k])) n[k] = fabs(result_true[i * num_outputs + k]);
+				if (e[k] < fabs(result_true[i * num_outputs + k] - result_tasm[i * num_outputs + k]))
+					e[k] = fabs(result_true[i * num_outputs + k] - result_tasm[i * num_outputs + k]);
+			}
+		}
 
-        	delete[] x_local;
-        	delete[] n_local;
-        	delete[] r_local;
-        	delete[] y;
-        	delete[] s;
-        }
+		double err = 0.0;
+		for(int k=0; k<num_outputs; k++){
+			if (err < e[k] / n[k]) err = e[k] / n[k];
+		}
 
-        double err = r[0] / n[0];
-        for(int j=1; j<num_outputs; j++){
-            err = (err > r[j] / n[j]) ? err : r[j] / n[j];
-        }
+		delete[] test_x;
+		delete[] result_tasm;
+		delete[] result_true;
 
-        delete[] r;
+        delete[] e;
         delete[] n;
         R.error = err;
     }
@@ -1871,12 +1854,16 @@ bool ExternalTester::testAllAcceleration() const{
     return pass;
 }
 
+#ifndef _TASMANIAN_WINDOWS_
 #include <sys/time.h>
 extern "C" double gettime(){
     struct timeval t;
     gettimeofday(&t, NULL);
     return t.tv_sec + t.tv_usec * 1.0E-6;
 }
+#else
+    double gettime(){ return ((double) time(0) * 1.E+6); }
+#endif // _TASMANIAN_WINDOWS_
 void loadGridValues(TasmanianSparseGrid *grid){
     int dims = grid->getNumDimensions(), num_outputs = grid->getNumOutputs();
     int num_points = grid->getNumNeeded();
