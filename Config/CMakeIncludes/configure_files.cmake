@@ -12,6 +12,10 @@ set(Tasmanian_define_enable_cublas "//#define TASMANIAN_CUBLAS")
 set(Tasmanian_define_enable_cuda "//#define TASMANIAN_CUDA")
 set(Tasmanian_define_enable_mpi "//#define TASMANIAN_MPI")
 
+if (NOT DEFINED Tasmanian_TESTS_GPU_ID)
+    set(Tasmanian_TESTS_GPU_ID -1)
+endif()
+
 # stage 0: for support of simple GNU-Make, ignore for release and intermediate builds
 if (Tasmanian_DEVELOPMENT_BACKWARDS)
     configure_file("${PROJECT_SOURCE_DIR}/Config/tasmanianConfig.in.hpp"  "${PROJECT_SOURCE_DIR}/Config/tasmanianConfig.hpp")

@@ -70,6 +70,7 @@ public:
     void resetRandomSeed();
 
     void setVerbose(bool new_verbose);
+    void setGPUID(int gpu_id);
 
     bool Test(TestList test) const;
 
@@ -104,6 +105,7 @@ protected:
 private:
     int num_mc;
     bool verbose;
+    int gpuid;
 
     OneOneP3 f11p3;
 

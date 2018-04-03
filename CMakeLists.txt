@@ -25,6 +25,7 @@ endif()
 #
 # Additional options:
 #    -D Tasmanian_TESTS_OMP_NUM_THREADS:INT="sets OpenMP number of threads"
+#    -D Tasmanian_TESTS_GPU_ID:INT="specifies which GPU to use for testing"
 #    -D Tasmanian_EXTRA_CXX_FLAGS:STRING="appends to the default flags"
 #    -D Tasmanian_EXTRA_INCLUDE_DIRS:PATH="appends more include paths"
 #    -D Tasmanian_EXTRA_LIBRARIES:STRING="appends more link libraries"
@@ -130,7 +131,11 @@ include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/configure_files.cmake)
 # Testing
 ########################################################################
 enable_testing()
-add_test(SparseGridsAcceleration tasgrid -test acceleration)
+if (Tasmanian_TESTS_GPU_ID LESS 0)
+    add_test(SparseGridsAcceleration tasgrid -test acceleration)
+else()
+    add_test(SparseGridsAcceleration tasgrid -test acceleration -gpuid ${Tasmanian_TESTS_GPU_ID})
+endif()
 add_test(SparseGridsDomain tasgrid -test domain)
 add_test(SparseGridsRefinement tasgrid -test refinement)
 add_test(SparseGridsGlobal tasgrid -test global)

@@ -68,7 +68,7 @@ if (( bShowHelp == 1 )); then
     echo "                       manually edit <install path>/matlab/tsgGetPaths.m"
     echo ""
     echo "            <options>: optional"
-    echo "                       can disable default features, useful for testing"
+    echo "                       can overwrite default features, useful for testing"
     echo "               -noomp: disable OpenMP support"
     echo "              -noblas: disable BLAS support"
     echo "            -nocublas: disable Nvidia cuBlas and cuSparse support"

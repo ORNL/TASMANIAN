@@ -431,19 +431,19 @@ void TasgridWrapper::outputHierarchicalCoefficients() const{
 }
 bool TasgridWrapper::setConformalTransformation(){
     if (conformal == conformal_asin){
-        int rows, cols;
+        size_t rows, cols;
         double* mat;
         readMatrix(conformalfilename, rows, cols, mat);
         if (rows != 1){
             cerr << "ERROR: the conformal file for asin should contain only one row" << endl;
             return false;
         }
-        if (cols != grid->getNumDimensions()){
+        if (cols != (size_t) grid->getNumDimensions()){
             cerr << "ERROR: the conformal file for asin should contain " << grid->getNumDimensions() << " columns, instead it has " << cols << endl;
             return false;
         }
         int *coef = new int[cols];
-        for(int j=0; j<cols; j++) coef[j] = (int) mat[j];
+        for(size_t j=0; j<cols; j++) coef[j] = (int) mat[j];
         grid->setConformalTransformASIN(coef);
         delete[] mat;
         delete[] coef;
@@ -454,16 +454,16 @@ bool TasgridWrapper::setConformalTransformation(){
     }
 }
 bool TasgridWrapper::loadValues(){
-    int rows, cols;
+    size_t rows, cols;
     double *vals = 0;
     readMatrix(valsfilename, rows, cols, vals);
-    if (rows != grid->getNumNeeded()){
-        if (rows != grid->getNumLoaded()){
+    if (rows != (size_t) grid->getNumNeeded()){
+        if (rows != (size_t) grid->getNumLoaded()){
             cerr << "ERROR: grid is awaiting " << grid->getNumNeeded() << " new values, but " << valsfilename << " specifies " << rows << endl;
             return false;
         }
     }
-    if (cols != grid->getNumOutputs()){
+    if (cols != (size_t) grid->getNumOutputs()){
         cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
         return false;
     }
@@ -472,10 +472,10 @@ bool TasgridWrapper::loadValues(){
     return true;
 }
 bool TasgridWrapper::getInterWeights(){
-    int rows, cols;
+    size_t rows, cols;
     double *x = 0, *res;
     readMatrix(xfilename, rows, cols, x);
-    if (cols != grid->getNumDimensions()){
+    if (cols != (size_t) grid->getNumDimensions()){
         cerr << "ERROR: grid is set for " << grid->getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
         return false;
     }
@@ -484,9 +484,9 @@ bool TasgridWrapper::getInterWeights(){
         return false;
     }
     int num_p = grid->getNumPoints();
-    res = new double[num_p * rows];
+    res = new double[((size_t) num_p) * rows];
     #pragma omp parallel for
-    for(int i=0; i<rows; i++){
+    for(size_t i=0; i<((size_t) rows); i++){
         double *r = grid->getInterpolationWeights(&(x[i*cols]));
         std::copy(r, r + num_p, &(res[i * num_p]));
         delete[] r;
@@ -510,10 +510,10 @@ bool TasgridWrapper::getEvaluate(){
         cerr << "ERROR: no outputs set for the grid, nothing to evaluate!" << endl;
         return false;
     }
-    int rows, cols;
+    size_t rows, cols;
     double *x = 0, *res;
     readMatrix(xfilename, rows, cols, x);
-    if (cols != grid->getNumDimensions()){
+    if (cols != (size_t) grid->getNumDimensions()){
         cerr << "ERROR: grid is set for " << grid->getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
         return false;
     }
@@ -522,7 +522,7 @@ bool TasgridWrapper::getEvaluate(){
         return false;
     }
     int num_out = grid->getNumOutputs();
-    res = new double[num_out * rows];
+    res = new double[((size_t) num_out) * rows];
 
     grid->evaluateBatch(x, rows, res);
 
@@ -728,10 +728,10 @@ bool TasgridWrapper::getSurpluses(){
 }
 
 bool TasgridWrapper::getEvalHierarchyDense(){
-    int rows, cols;
+    size_t rows, cols;
     double *x = 0, *res;
     readMatrix(xfilename, rows, cols, x);
-    if (cols != grid->getNumDimensions()){
+    if (cols != (size_t) grid->getNumDimensions()){
         cerr << "ERROR: grid is set for " << grid->getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
         return false;
     }
@@ -740,10 +740,10 @@ bool TasgridWrapper::getEvalHierarchyDense(){
         return false;
     }
     int num_p = grid->getNumPoints();
-    res = new double[num_p * rows];
+    res = new double[((size_t) num_p) * ((size_t) rows)];
     grid->evaluateHierarchicalFunctions(x, rows, res);
     if (outfilename != 0){
-        writeMatrix(outfilename, rows, num_p, res, useASCII);
+        writeMatrix(outfilename, (int) rows, num_p, res, useASCII);
     }
     if (printCout){
         printMatrix(rows, num_p, res);
@@ -753,10 +753,10 @@ bool TasgridWrapper::getEvalHierarchyDense(){
     return true;
 }
 bool TasgridWrapper::getEvalHierarchySparse(){
-    int rows, cols;
+    size_t rows, cols;
     double *x = 0;
     readMatrix(xfilename, rows, cols, x);
-    if (cols != grid->getNumDimensions()){
+    if (cols != (size_t) grid->getNumDimensions()){
         cerr << "ERROR: grid is set for " << grid->getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
         return false;
     }
@@ -776,7 +776,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             ofs << std::scientific; ofs.precision(17);
             ofs << rows << " " << num_p << " " << num_nz;
             ofs << endl << pntr[0];
-            for(int i=1; i<rows+1; i++) ofs << " " << pntr[i];
+            for(size_t i=1; i<rows+1; i++) ofs << " " << pntr[i];
             ofs << endl << indx[0];
             for(int i=1; i<num_nz; i++) ofs << " " << indx[i];
             ofs << endl << vals[0];
@@ -787,15 +787,15 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             std::ofstream ofs;
             ofs.open(outfilename, std::ios::out | std::ios::binary);
             char charTSG[3] = {'T', 'S', 'G'};
-            ofs.write(charTSG, 3*sizeof(char));
+            ofs.write(charTSG, 3 * sizeof(char));
             int matrix_dims[3];
             matrix_dims[0] = rows;
             matrix_dims[1] = num_p;
             matrix_dims[2] = num_nz;
-            ofs.write((char*) matrix_dims, 3*sizeof(int));
-            ofs.write((char*) pntr, (rows+1)*sizeof(int));
-            ofs.write((char*) indx, num_nz*sizeof(int));
-            ofs.write((char*) vals, num_nz*sizeof(double));
+            ofs.write((char*) matrix_dims, 3 * sizeof(int));
+            ofs.write((char*) pntr, (rows+1) * sizeof(int));
+            ofs.write((char*) indx, num_nz * sizeof(int));
+            ofs.write((char*) vals, num_nz * sizeof(double));
             ofs.close();
         }
     }
@@ -803,7 +803,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
         cout << std::scientific; cout.precision(17);
         cout << rows << " " << num_p << " " << num_nz;
         cout << endl << pntr[0];
-        for(int i=1; i<rows+1; i++) cout << " " << pntr[i];
+        for(size_t i=1; i<rows+1; i++) cout << " " << pntr[i];
         cout << endl << indx[0];
         for(int i=1; i<num_nz; i++) cout << " " << indx[i];
         cout << endl << vals[0];
@@ -817,14 +817,14 @@ bool TasgridWrapper::getEvalHierarchySparse(){
     return true;
 }
 bool TasgridWrapper::setHierarchy(){
-    int rows, cols;
+    size_t rows, cols;
     double *vals = 0;
     readMatrix(valsfilename, rows, cols, vals);
-    if (rows != grid->getNumPoints()){
+    if (rows != (size_t) grid->getNumPoints()){
         cerr << "ERROR: grid is awaiting " << grid->getNumPoints() << " hierarchical surpluses, but " << valsfilename << " specifies " << rows << endl;
         return false;
     }
-    if (cols != grid->getNumOutputs()){
+    if (cols != (size_t) grid->getNumOutputs()){
         cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
         return false;
     }
@@ -868,7 +868,7 @@ bool TasgridWrapper::getNeededIndexes(){
 
 int* TasgridWrapper::readAnisotropicFile(int num_weights) const{
     if (anisofilename == 0) return 0;
-    int rows, cols;
+    size_t rows, cols;
     double* mat;
     readMatrix(anisofilename, rows, cols, mat);
     if (rows != 1){
@@ -876,7 +876,7 @@ int* TasgridWrapper::readAnisotropicFile(int num_weights) const{
         delete[] mat;
         exit(1);
     }
-    if (cols != num_weights){
+    if (cols != ((size_t) num_weights)){
         cerr << "ERROR: anisotropy file has wrong number of entries, " << num_weights << " expected " << cols << " found." << endl;
         delete[] mat;
         exit(1);
@@ -886,7 +886,7 @@ int* TasgridWrapper::readAnisotropicFile(int num_weights) const{
     return weights;
 }
 double* TasgridWrapper::readTransform() const{
-    int rows, cols;
+    size_t rows, cols;
     double* mat;
     readMatrix(transformfilename, rows, cols, mat);
     if (cols != 2){
@@ -894,7 +894,7 @@ double* TasgridWrapper::readTransform() const{
         delete mat;
         exit(1);
     }
-    if (rows != num_dimensions){
+    if (rows != ((size_t) num_dimensions)){
         cerr << "ERROR: file " << transformfilename << " has " << rows << " rows, instead of the number of dimensions " << num_dimensions << endl;
         delete mat;
         exit(1);
@@ -909,7 +909,7 @@ double* TasgridWrapper::readTransform() const{
 }
 int* TasgridWrapper::readLevelLimits(int num_weights) const{
     if (levellimitfilename == 0) return 0;
-    int rows, cols;
+    size_t rows, cols;
     double* mat;
     readMatrix(levellimitfilename, rows, cols, mat);
     if (rows != 1){
@@ -917,7 +917,7 @@ int* TasgridWrapper::readLevelLimits(int num_weights) const{
         delete[] mat;
         exit(1);
     }
-    if (cols != num_weights){
+    if (cols != ((size_t)  num_weights)){
         cerr << "ERROR: level limits file has wrong number of entries, " << num_weights << " expected " << cols << " found." << endl;
         delete[] mat;
         exit(1);
@@ -927,8 +927,9 @@ int* TasgridWrapper::readLevelLimits(int num_weights) const{
     return weights;
 }
 
-void TasgridWrapper::readMatrix(const char *filename, int &rows, int &cols, double* &mat){
+void TasgridWrapper::readMatrix(const char *filename, size_t &rows_t, size_t &cols_t, double* &mat){
     if (mat == 0) delete[] mat;
+    int rows, cols;
     std::ifstream ifs;
     ifs.open(filename, std::ios::in | std::ios::binary);
     if (!(ifs.good())){
@@ -948,8 +949,10 @@ void TasgridWrapper::readMatrix(const char *filename, int &rows, int &cols, doub
             ifs.close();
             return;
         }
-        mat = new double[rows*cols];
-        ifs.read((char*) mat, rows * cols * sizeof(double));
+        rows_t = (size_t) rows;
+        cols_t = (size_t) cols;
+        mat = new double[rows_t * cols_t];
+        ifs.read((char*) mat, rows_t * cols_t * sizeof(double));
         //if (rows > 10) for(int i=0; i<10; i++) cout << mat[i] << endl;
     }else{ // not a binary file
         ifs.close();
@@ -961,25 +964,29 @@ void TasgridWrapper::readMatrix(const char *filename, int &rows, int &cols, doub
             ifs.close();
             return;
         }
-        mat = new double[rows*cols];
-        for(int i=0; i<rows; i++){
-            for(int j=0; j<cols; j++){
-                ifs >> mat[i*cols + j];
+        rows_t = (size_t) rows;
+        cols_t = (size_t) cols;
+        mat = new double[rows_t * cols_t];
+        for(size_t i=0; i<rows_t; i++){
+            for(size_t j=0; j<cols_t; j++){
+                ifs >> mat[i*cols_t + j];
             }
         }
     }
     ifs.close();
 }
 void TasgridWrapper::writeMatrix(const char *filename, int rows, int cols, const double mat[], bool ascii){
+    size_t rows_t = (size_t) rows;
+    size_t cols_t = (size_t) cols;
     std::ofstream ofs;
     if (ascii){
         ofs.open(filename);
         ofs << rows << " " << cols << endl;
         ofs.precision(17);
         ofs << std::scientific;
-        for(int i=0; i<rows; i++){
-            for(int j=0; j<cols; j++){
-                ofs << setw(25) << mat[i*cols + j] << " ";
+        for(size_t i=0; i<rows_t; i++){
+            for(size_t j=0; j<cols_t; j++){
+                ofs << setw(25) << mat[i*cols_t + j] << " ";
             }
             ofs << endl;
         }
@@ -989,7 +996,7 @@ void TasgridWrapper::writeMatrix(const char *filename, int rows, int cols, const
         ofs.write(tsg, 3*sizeof(char));
         ofs.write((char*) &rows, sizeof(int));
         ofs.write((char*) &cols, sizeof(int));
-        ofs.write((char*) mat, rows * cols * sizeof(double));
+        ofs.write((char*) mat, rows_t * cols_t * sizeof(double));
     }
     ofs.close();
 }
@@ -997,9 +1004,9 @@ void TasgridWrapper::printMatrix(int rows, int cols, const double mat[]){
     cout << rows << " " << cols << endl;
     cout.precision(17);
     cout << std::scientific;
-    for(int i=0; i<rows; i++){
-        for(int j=0; j<cols; j++){
-            cout << setw(25) << mat[i*cols + j] << " ";
+    for(size_t i=0; i<((size_t) rows); i++){
+        for(size_t j=0; j<((size_t) cols); j++){
+            cout << setw(25) << mat[i* ((size_t) cols) + j] << " ";
         }
         cout << endl;
     }

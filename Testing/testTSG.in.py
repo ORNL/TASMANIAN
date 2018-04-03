@@ -126,7 +126,7 @@ class TestTasmanian(unittest.TestCase):
 
     def testBasicIO(self):
         print("\nTesting core I/O test")
-        
+
         # test library meta I/O
         grid = TasmanianSG.TasmanianSparseGrid()
         print("Tasmanian Sparse Grids version: {0:1s}".format(grid.getVersion()))
@@ -154,7 +154,7 @@ class TestTasmanian(unittest.TestCase):
             print("            none")
 
         grid.printStats()
-        
+
         # test I/O for Global Grids
         # iDimension, iOutputs, iDepth, sType, sRule, fAlpha, fBeta, useTransform, loadFunciton, limitLevels
         lGrids = [[3, 2, 2, "level", "leja", 0.0, 0.0, False, False, False],
@@ -367,7 +367,9 @@ class TestTasmanian(unittest.TestCase):
 
     def testAcceleratedEvaluate(self):
         print("\nTesting accelerated evaluate consistency")
-        
+
+        iGPUID = @Tasmanian_TESTS_GPU_ID@
+
         # acceleration meta-data
         grid = TasmanianSG.TasmanianSparseGrid()
         grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
@@ -397,7 +399,7 @@ class TestTasmanian(unittest.TestCase):
             grid.setGPUID(0)
             self.assertTrue((grid.getGPUID() == 0), "did not set to gpu 0")
             sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
-        
+
         # consistency with evaluate, not a timing test
         grid = TasmanianSG.TasmanianSparseGrid()
 
@@ -426,6 +428,8 @@ class TestTasmanian(unittest.TestCase):
             for iI in range(2):
                 iC = 0
                 iGPU = 0
+                if (iGPUID > -1):
+                    iGPU = iGPUID
                 while (iC < len(lsAccelTypes)):
                     sAcc = lsAccelTypes[iC]
                     exec(sTest)
@@ -450,10 +454,13 @@ class TestTasmanian(unittest.TestCase):
                     np.testing.assert_almost_equal(aRegular[0:iFastEvalSubtest,:], aFast, 14, "Batch evaluation test not equal: {0:1s}, acceleration: {1:1s}, gpu: {2:1d}".format(sTest, sAcc, iGPU), True)
 
                     if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas")):
-                        iGPU += 1
-                        if (iGPU >= iNumGPUs):
+                        if (iGPUID == -1):
+                            iGPU += 1
+                            if (iGPU >= iNumGPUs):
+                                iC += 1
+                                iGPU = 0
+                        else:
                             iC += 1
-                            iGPU = 0
                     else:
                         iC += 1
 

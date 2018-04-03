@@ -35,11 +35,12 @@
 
 #include "tsgCudaMacros.hpp"
 
-ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false){ /*srand(time(0));*/ srand(10); }
+ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1){ /*srand(time(0));*/ srand(10); }
 ExternalTester::~ExternalTester(){}
 void ExternalTester::resetRandomSeed(){ srand(time(0)); }
 
 void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
+void ExternalTester::setGPUID(int gpu_id){ gpuid = gpu_id; }
 
 void ExternalTester::setRandomX(int n, double x[]) const{
     for(int i=0; i<n; i++){
@@ -61,11 +62,11 @@ bool ExternalTester::Test(TestList test) const{
     bool passWavelet = true;
 
     if ((test == test_all) || (test == test_acceleration)) passAccel   = testAllAcceleration();
-    if ((test == test_all) || (test == test_domain)) passDomain  = testAllDomain();
-    if ((test == test_all) || (test == test_refinement)) passRefine  = testAllRefinement();
-    if ((test == test_all) || (test == test_global)) passGlobal  = testAllGlobal();
-    if ((test == test_all) || (test == test_local)) passLocal   = testAllPWLocal();
-    if ((test == test_all) || (test == test_wavelet)) passWavelet = testAllWavelet();
+    if ((test == test_all) || (test == test_domain))       passDomain  = testAllDomain();
+    if ((test == test_all) || (test == test_refinement))   passRefine  = testAllRefinement();
+    if ((test == test_all) || (test == test_global))       passGlobal  = testAllGlobal();
+    if ((test == test_all) || (test == test_local))        passLocal   = testAllPWLocal();
+    if ((test == test_all) || (test == test_wavelet))      passWavelet = testAllWavelet();
 
     bool pass = passGlobal && passLocal && passWavelet && passRefine && passDomain && passAccel;
     //bool pass = true;
@@ -1634,7 +1635,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
 
     bool pass = true;
     TypeAcceleration acc[4] = {accel_none, accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda};
-    int gpuID = 0;
+    int gpuID = (gpuid == -1) ? 0 : gpuid;
     int c = 0;
     while(c < 4){
         //cout << "Settin c = " << c << endl;
@@ -1678,9 +1679,13 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
 
         if (c > 1){ // gpu test
-            gpuID++;
-            if (gpuID >= grid->getNumGPUs()){
-                gpuID = 0;
+            if (gpuid == -1){ // gpuid is not set, then cycle trough all GPUs
+                gpuID++;
+                if (gpuID >= grid->getNumGPUs()){
+                    gpuID = 0;
+                    c++;
+                }
+            }else{
                 c++;
             }
         }else{
@@ -1705,7 +1710,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
 
     bool pass = true;
-    for(int gpuID=0; gpuID < grid->getNumGPUs(); gpuID++){
+    int gpu_index_first = (gpuid == -1) ? 0 : gpuid;
+    int gpu_end_gpus = (gpuid == -1) ? grid->getNumGPUs() : gpuid+1;
+    for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
         for(int t=0; t<num_tests; t++){
             bool dense_pass = true;
             if (t < 6){ // local poly rule
@@ -1734,6 +1741,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             grid->enableAcceleration(TasGrid::accel_gpu_cuda);
             grid->setGPUID(gpuID);
+            //cout << "GPU set: " << gpuID << endl;
             grid->evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
 
             double *y = new double[grid->getNumPoints() * nump];
