@@ -143,8 +143,8 @@ add_test(SparseGridsLocal tasgrid -test local)
 add_test(SparseGridsWavelet tasgrid -test wavelet)
 add_test(DREAM_Analytic tasdream -test analytic)
 add_test(DREAM_Model tasdream -test model)
-set(Tasmanian_tests_list SparseGrids_Acceleration SparseGrids_Domain SparseGrids_Refinement
-                         SparseGrids_Global SparseGrids_Local SparseGrids_Wavelet
+set(Tasmanian_tests_list SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement
+                         SparseGridsGlobal SparseGridsLocal SparseGridsWavelet
                          DREAM_Analytic DREAM_Model)
 if (Tasmanian_ENABLE_PYTHON)
     add_test(NAME PythonIO COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testBasicIO)
