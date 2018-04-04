@@ -39,11 +39,11 @@ using namespace std;
 int main(int argc, const char**){
 /*
  * The purpose of this file is to demonstrate the proper way to call
- * functions from the TASMANIAN Sparse Grids library. 
+ * functions from the TASMANIAN Sparse Grids library.
  * The 11 examples are for illustrative purposes only.
  *
  */
- 
+
     bool limit_examples = false;
     if (argc > 1){
         // some of the exmaples take long time, for post-install testing purposes
