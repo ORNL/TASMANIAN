@@ -87,7 +87,7 @@ option(Tasmanian_SHARED_LIBRARY "Compile dynamic library (Tasmanian)" ON)
 
 # version and license
 set(Tasmanian_version_string "${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
-set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclamer")
+set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer")
 
 
 ########################################################################

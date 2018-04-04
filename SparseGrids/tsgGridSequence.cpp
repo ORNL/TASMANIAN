@@ -589,7 +589,7 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points->getNumIndexes();
     std::fill(q, q + num_outputs, 0.0);
 
-    // for sequence grids, quadraturre weights are expensive,
+    // for sequence grids, quadrature weights are expensive,
     // if using simple integration use the basis integral + surpluses, which is fast
     // if using conformal map, then we have to compute the expensive weights
     if (conformal_correction == 0){
