@@ -7,11 +7,6 @@
 #   stage 2: everything should work after make install
 ########################################################################
 
-set(Tasmanian_define_enable_blas "//#define TASMANIAN_CPU_BLAS")
-set(Tasmanian_define_enable_cublas "//#define TASMANIAN_CUBLAS")
-set(Tasmanian_define_enable_cuda "//#define TASMANIAN_CUDA")
-set(Tasmanian_define_enable_mpi "//#define TASMANIAN_MPI")
-
 if (NOT DEFINED Tasmanian_TESTS_GPU_ID)
     set(Tasmanian_TESTS_GPU_ID -1)
 endif()
@@ -40,17 +35,18 @@ endif()
 
 
 # stage 1: build folder paths
+# this needs improvement, sync with stage 0 and the rest of the code
 if (Tasmanian_ENABLE_BLAS)
-    set(Tasmanian_define_enable_blas "#define TASMANIAN_CPU_BLAS")
+    set(TASMANIAN_CPU_BLAS 1)
 endif()
 if (Tasmanian_ENABLE_CUBLAS)
-    set(Tasmanian_define_enable_cublas "#define TASMANIAN_CUBLAS")
+    set(TASMANIAN_CUBLAS 1)
 endif()
 if (Tasmanian_ENABLE_CUDA)
-    set(Tasmanian_define_enable_cuda "#define TASMANIAN_CUDA")
+    set(TASMANIAN_CUDA 1)
 endif()
 if (Tasmanian_ENABLE_MPI)
-    set(Tasmanian_define_enable_mpi "#define TASMANIAN_MPI")
+    set(TASMANIAN_MPI 1)
 endif()
 configure_file("${PROJECT_SOURCE_DIR}/Config/tasmanianConfig.in.hpp"  "${CMAKE_BINARY_DIR}/configured/tasmanianConfig.hpp")
 

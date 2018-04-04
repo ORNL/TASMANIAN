@@ -34,7 +34,7 @@
 #define TASMANIAN_VERSION_MAJOR 5
 #define TASMANIAN_VERSION_MINOR 1
 #define TASMANIAN_VERSION_STRING "5.1"
-#define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclamer"
+#define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
 
 ////////////////////////////////////////////////////////////////////////
 // In order to enable advanced options for Tasmanian,
@@ -45,9 +45,9 @@
 // we support advanced options only though cmake
 ////////////////////////////////////////////////////////////////////////
 
-//#define TASMANIAN_CPU_BLAS
-//#define TASMANIAN_CUBLAS
-//#define TASMANIAN_CUDA
-//#define TASMANIAN_MPI
+/* #undef TASMANIAN_CPU_BLAS */
+/* #undef TASMANIAN_CUBLAS */
+/* #undef TASMANIAN_CUDA */
+/* #undef TASMANIAN_MPI */
 
 #endif

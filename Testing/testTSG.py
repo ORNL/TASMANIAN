@@ -124,8 +124,10 @@ class TestTasmanian(unittest.TestCase):
         iDim = grid.getNumDimensions()
         grid.loadNeededPoints(np.column_stack([np.exp(-np.sum(mPoints**2, axis=1)) for i in range(iOut)]))
 
-    def testAABasicLibMeta(self): # the AA is so that this test goes first
-        print("\nTesting library, basic read the library meta")
+    def testBasicIO(self):
+        print("\nTesting core I/O test")
+
+        # test library meta I/O
         grid = TasmanianSG.TasmanianSparseGrid()
         print("Tasmanian Sparse Grids version: {0:1s}".format(grid.getVersion()))
         print("                 version major: {0:1d}".format(grid.getVersionMajor()))
@@ -151,10 +153,8 @@ class TestTasmanian(unittest.TestCase):
         else:
             print("            none")
 
-        grid.printStats() # Miro: silence this for a release
+        grid.printStats()
 
-    def testBasicIO(self):
-        print("\nTesting core I/O test")
         # test I/O for Global Grids
         # iDimension, iOutputs, iDepth, sType, sRule, fAlpha, fBeta, useTransform, loadFunciton, limitLevels
         lGrids = [[3, 2, 2, "level", "leja", 0.0, 0.0, False, False, False],
@@ -367,6 +367,39 @@ class TestTasmanian(unittest.TestCase):
 
     def testAcceleratedEvaluate(self):
         print("\nTesting accelerated evaluate consistency")
+
+        iGPUID = -1
+
+        # acceleration meta-data
+        grid = TasmanianSG.TasmanianSparseGrid()
+        grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
+        for accel in TasmanianSG.lsTsgAccelTypes:
+            grid.enableAcceleration(accel)
+            sA = grid.getAccelerationType()
+            bTest = ((accel not in sA) or (sA not in accel))
+            self.assertFalse(bTest, "set/get Acceleration")
+
+        if (False):
+            bHasBlas = ("ON" == "ON")
+            bHasCuBlas = ("ON" == "ON")
+            bHasCuda = ("ON" == "ON")
+            self.assertTrue((grid.isAccelerationAvailable("cpu-blas") == bHasBlas), "failed to match blas")
+            self.assertTrue((grid.isAccelerationAvailable("gpu-cublas") == bHasCuBlas), "failed to match cublas")
+            self.assertTrue((grid.isAccelerationAvailable("gpu-cuda") == bHasCuda), "failed to match cuda")
+            self.assertTrue((grid.isAccelerationAvailable("gpu-default") == (bHasCuBlas or bHasCuda)), "failed to match cuda")
+
+        self.assertTrue((grid.getGPUID() == 0), "did not default to gpu 0")
+
+        if (grid.getNumGPUs() > 1):
+            grid.setGPUID(1)
+            self.assertTrue((grid.getGPUID() == 1), "did not set to gpu 1")
+            sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
+
+        if (grid.getNumGPUs() > 0):
+            grid.setGPUID(0)
+            self.assertTrue((grid.getGPUID() == 0), "did not set to gpu 0")
+            sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
+
         # consistency with evaluate, not a timing test
         grid = TasmanianSG.TasmanianSparseGrid()
 
@@ -395,6 +428,8 @@ class TestTasmanian(unittest.TestCase):
             for iI in range(2):
                 iC = 0
                 iGPU = 0
+                if (iGPUID > -1):
+                    iGPU = iGPUID
                 while (iC < len(lsAccelTypes)):
                     sAcc = lsAccelTypes[iC]
                     exec(sTest)
@@ -419,10 +454,13 @@ class TestTasmanian(unittest.TestCase):
                     np.testing.assert_almost_equal(aRegular[0:iFastEvalSubtest,:], aFast, 14, "Batch evaluation test not equal: {0:1s}, acceleration: {1:1s}, gpu: {2:1d}".format(sTest, sAcc, iGPU), True)
 
                     if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas")):
-                        iGPU += 1
-                        if (iGPU >= iNumGPUs):
+                        if (iGPUID == -1):
+                            iGPU += 1
+                            if (iGPU >= iNumGPUs):
+                                iC += 1
+                                iGPU = 0
+                        else:
                             iC += 1
-                            iGPU = 0
                     else:
                         iC += 1
 
@@ -974,7 +1012,7 @@ class TestTasmanian(unittest.TestCase):
         aP = grid.getGlobalPolynomialSpace(False)
         np.testing.assert_equal(aP, aA, "poly space mismatch", True)
 
-    def testAAAAFullCoverageC(self):
+    def testFullCoverageC(self):
         print("\nTesting core learning from random samples")
 
         # evalHierarchicalBasis (all done in batch)
@@ -1138,37 +1176,6 @@ class TestTasmanian(unittest.TestCase):
         np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         self.compareGrids(gridA, gridB)
-
-    def testFullCoverageD(self):
-        print("\nTesting core acceleration")
-
-        grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
-        for accel in TasmanianSG.lsTsgAccelTypes:
-            grid.enableAcceleration(accel)
-            sA = grid.getAccelerationType()
-            bTest = ((accel not in sA) or (sA not in accel))
-            self.assertFalse(bTest, "set/get Acceleration")
-
-        if (False):
-            bHasBlas = ("ON" == "ON")
-            bHasCuBlas = ("ON" == "ON")
-            bHasCuda = ("ON" == "ON")
-            self.assertTrue((grid.isAccelerationAvailable("cpu-blas") == bHasBlas), "failed to match blas")
-            self.assertTrue((grid.isAccelerationAvailable("gpu-cublas") == bHasCuBlas), "failed to match cublas")
-            self.assertTrue((grid.isAccelerationAvailable("gpu-cuda") == bHasCuda), "failed to match cuda")
-            self.assertTrue((grid.isAccelerationAvailable("gpu-default") == (bHasCuBlas or bHasCuda)), "failed to match cuda")
-
-        self.assertTrue((grid.getGPUID() == 0), "did not default to gpu 0")
-
-        if (grid.getNumGPUs() > 1):
-            grid.setGPUID(1)
-            self.assertTrue((grid.getGPUID() == 1), "did not set to gpu 1")
-            sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
-
-        if (grid.getNumGPUs() > 0):
-            grid.setGPUID(0)
-            self.assertTrue((grid.getGPUID() == 0), "did not set to gpu 0")
-            sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
 
     def testFullCoverageZ(self):
         print("\nTesting plotting and other misc")

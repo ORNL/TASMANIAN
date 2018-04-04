@@ -45,9 +45,9 @@
 // we support advanced options only though cmake
 ////////////////////////////////////////////////////////////////////////
 
-@Tasmanian_define_enable_blas@
-@Tasmanian_define_enable_cublas@
-@Tasmanian_define_enable_cuda@
-@Tasmanian_define_enable_mpi@
+#cmakedefine TASMANIAN_CPU_BLAS
+#cmakedefine TASMANIAN_CUBLAS
+#cmakedefine TASMANIAN_CUDA
+#cmakedefine TASMANIAN_MPI
 
 #endif
