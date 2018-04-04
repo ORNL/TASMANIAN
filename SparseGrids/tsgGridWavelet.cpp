@@ -117,18 +117,18 @@ void GridWavelet::read(std::ifstream &ifs){
         ifs >> flag;
         if (flag == 1){
             points = new IndexSet(num_dimensions);
-            points->read(ifs); 
+            points->read(ifs);
         }
-        ifs >> flag;  
+        ifs >> flag;
         if (flag == 1){
             size_t size_coeff = ((size_t) points->getNumIndexes()) * ((size_t) num_outputs);
-            coefficients = new double[size_coeff]; 
-            for(size_t i=0; i<size_coeff; i++) ifs >> coefficients[i];  
+            coefficients = new double[size_coeff];
+            for(size_t i=0; i<size_coeff; i++) ifs >> coefficients[i];
         }
-        ifs >> flag;  
-        if (flag == 1){  
-            needed = new IndexSet(num_dimensions);   
-            needed->read(ifs);  
+        ifs >> flag;
+        if (flag == 1){
+            needed = new IndexSet(num_dimensions);
+            needed->read(ifs);
         }
 
         if (num_outputs > 0){  values = new StorageSet(0, 0); values->read(ifs);  }
@@ -148,11 +148,11 @@ void GridWavelet::readBinary(std::ifstream &ifs){
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ points = new IndexSet(num_dimensions); points->readBinary(ifs); }
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ needed = new IndexSet(num_dimensions); needed->readBinary(ifs); }
 
-        ifs.read((char*) &flag, sizeof(char)); 
+        ifs.read((char*) &flag, sizeof(char));
         if (flag == 'y'){
-            size_t size_coeff = ((size_t) num_outputs) * ((size_t) points->getNumIndexes()); 
-            coefficients = new double[size_coeff]; 
-            ifs.read((char*) coefficients, size_coeff * sizeof(double)); 
+            size_t size_coeff = ((size_t) num_outputs) * ((size_t) points->getNumIndexes());
+            coefficients = new double[size_coeff];
+            ifs.read((char*) coefficients, size_coeff * sizeof(double));
         }
 
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
@@ -609,14 +609,14 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
     if ((criteria == refine_classic) || (criteria == refine_parents_first)){
         // classic refinement
         #pragma omp parallel for
-        for(size_t i=0; i<((size_t) num_points); i++){
+        for(int i=0; i<num_points; i++){
             bool small = true;
             if (output == -1){
                 for(size_t k=0; k<((size_t) num_outputs); k++){
-                    if (small && ((fabs(coefficients[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
+                    if (small && ((fabs(coefficients[((size_t) i) * ((size_t) num_outputs) + k]) / norm[k]) > tolerance)) small = false;
                 }
             }else{
-                small = !((fabs(coefficients[i*num_outputs + output]) / norm[output]) > tolerance);
+                small = !((fabs(coefficients[((size_t) i) * ((size_t) num_outputs) + output]) / norm[output]) > tolerance);
             }
             if (!small){
                 std::fill(&(pmap[i*num_dimensions]), &(pmap[i*num_dimensions]) + num_dimensions, 1);

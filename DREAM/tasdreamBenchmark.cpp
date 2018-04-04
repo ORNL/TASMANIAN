@@ -31,7 +31,6 @@
 #ifndef __TASMANIAN_TASDREAM_BENCHMARKS_CPP
 #define __TASMANIAN_TASDREAM_BENCHMARKS_CPP
 
-#define _USE_MATH_DEFINES
 #include "tasdreamBenchmark.hpp"
 
 TasmanianSparseGrid* prepareGrid(int num_outputs, int depth, int mpi_me, int mpi_all){

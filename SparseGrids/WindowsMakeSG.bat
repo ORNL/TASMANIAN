@@ -6,7 +6,7 @@ copy TasmanianSparseGrid.windows.hpp TasmanianSparseGrid.hpp
 
 del *.obj
 
-cl -c *.cpp /DTSG_STATIC /Ox /EHsc /openmp
+cl -c *.cpp /DTSG_STATIC /D_USE_MATH_DEFINES /D_TASMANIAN_WINDOWS_ /Ox /EHsc /openmp
 
 lib tsg*.obj Tasmanian*.obj /OUT:libtasmaniansparsegrid_static.lib
 
@@ -14,7 +14,9 @@ cl tasgrid*.obj libtasmaniansparsegrid_static.lib /Fe:tasgrid.exe
 
 del *.obj
 
-cl /EHsc /Ox /openmp /DTSG_DLL /LD tsg*.cpp TasmanianSparseGrid.cpp /Fe:libtasmaniansparsegrid.dll
+@ECHO Compiling shared library
+
+cl /EHsc /Ox /openmp /DTSG_DLL /D_USE_MATH_DEFINES /D_TASMANIAN_WINDOWS_ /LD tsg*.cpp TasmanianSparseGrid.cpp /Fe:libtasmaniansparsegrid.dll
 
 @GOTO End
 
@@ -22,7 +24,9 @@ cl /EHsc /Ox /openmp /DTSG_DLL /LD tsg*.cpp TasmanianSparseGrid.cpp /Fe:libtasma
 
 @ECHO Cleaning
 
-del *.obj *.dll *.lib *.exe
+del *.obj *.dll *.lib *.exe *.exp
+
+del tasmanianConfig.hpp
 
 @GOTO End
 

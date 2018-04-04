@@ -34,7 +34,6 @@
 #include <fstream>
 #include <iomanip>
 
-#define _USE_MATH_DEFINES
 #include <math.h>
 
 #include "TasmanianDREAM.hpp"

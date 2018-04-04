@@ -31,7 +31,6 @@
 #ifndef __TASMANIAN_DREAM_CORE_PDF_CPP
 #define __TASMANIAN_DREAM_CORE_PDF_CPP
 
-#define _USE_MATH_DEFINES
 #include "tdrCorePDF.hpp"
 
 #include "tsgHiddenExternals.hpp"

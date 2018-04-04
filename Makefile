@@ -8,12 +8,15 @@ FFLIBS = ./libtasmanianfortran.a ./libtasmaniansparsegrid.a ./libtasmaniandream.
 TSG_SOURCE = $(wildcard ./SparseGrids/*.cpp) $(wildcard ./SparseGrids/*.hpp) $(wildcard ./SparseGrids/*.h)
 TDR_SOURCE = $(wildcard ./DREAM/*.cpp) $(wildcard ./DREAM/*.hpp)
 
+# headers to be ignored in this build .in., .windows., executables, config files, etc.
 CMAKE_IN_HEADERS = $(wildcard ./DREAM/*.in.hpp) \
                    $(wildcard ./DREAM/tasdream*.hpp) \
                    $(wildcard ./SparseGrids/*.*.hpp) \
+                   $(wildcard ./SparseGrids/*.*.h) \
                    $(wildcard ./SparseGrids/tasgrid*.hpp) \
                    ./SparseGrids/tasmanianConfig.hpp \
 
+# header names with ./include as opposed to ./SparseGrids
 HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./DREAM/*.hpp))) \
           $(patsubst ./SparseGrids/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./SparseGrids/*.h*))) \
           ./include/tasmanianConfig.hpp
@@ -107,11 +110,11 @@ include/TasmanianSparseGrid.hpp: ./SparseGrids/TasmanianSparseGrid.hpp
 	mkdir -p ./include
 	cp ./SparseGrids/TasmanianSparseGrid.hpp ./include/
 
-include/tasgrid%.hpp: ./SparseGrids/tasgrid%.hpp 
+include/tasgrid%.hpp: ./SparseGrids/tasgrid%.hpp
 	mkdir -p ./include
 	cp ./$< ./$@
 
-include/tsg%.hpp: ./SparseGrids/tsg%.hpp 
+include/tsg%.hpp: ./SparseGrids/tsg%.hpp
 	mkdir -p ./include
 	cp ./$< ./$@
 
@@ -147,7 +150,7 @@ matlab:
 	@echo "Setting MATLAB work forlder to "`pwd`"/tsgMatlabWorkFolder/"
 	@echo "use MATLAB command: addpath('"`pwd`"/InterfaceMATLAB/');"
 	@echo ""
-	
+
 # Python 3
 .PHONY: python3
 python3: ./InterfacePython/TasmanianSG.py ./Testing/testTSG.py ./Examples/example_sparse_grids.py

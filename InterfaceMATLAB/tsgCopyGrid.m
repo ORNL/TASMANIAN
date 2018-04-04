@@ -25,10 +25,7 @@ lNewGrid = lOldGrid;
 lNewGrid.sName = sNewGridName;
 [sFileGNew, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lNewGrid.sName);
 
-
-sCommand = ['cp ',sFileG,' ',sFileGNew];
-
-[status, cmdout] = system(sCommand);
+[status, cmdout] = copyfile(sFileG, sFileGNew);
 
 if (~isempty(cmdout))
     fprintf(1,['WARNING: Command had non-empty output:\n']);

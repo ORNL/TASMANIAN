@@ -31,7 +31,6 @@
 #ifndef __TASMANIAN_TASGRID_FUNCTIONS_CPP
 #define __TASMANIAN_TASGRID_FUNCTIONS_CPP
 
-#define _USE_MATH_DEFINES
 #include "tasgridTestFunctions.hpp"
 
 BaseFunction::BaseFunction(){}

@@ -54,6 +54,10 @@ configure_file("${PROJECT_SOURCE_DIR}/SparseGrids/GaussPattersonRule.table"  "${
 
 if (Tasmanian_ENABLE_PYTHON)
     set(Tasmanian_libsparsegrid_path "${CMAKE_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    # windows puts the tmep .dll files in ${CMAKE_BUILD_TYPE} subfolder, as opposed to directly in ${CMAKE_BINARY_DIR}
+        set(Tasmanian_libsparsegrid_path "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    endif()
     configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${CMAKE_BINARY_DIR}/TasmanianSG.py")
 
     set(Tasmanian_string_python_hashbang "${PYTHON_EXECUTABLE}")

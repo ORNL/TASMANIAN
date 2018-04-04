@@ -31,7 +31,6 @@
 #ifndef __TSG_CORE_ONE_DIMENSIONAL_CPP
 #define __TSG_CORE_ONE_DIMENSIONAL_CPP
 
-#define _USE_MATH_DEFINES
 #include "tsgCoreOneDimensional.hpp"
 
 namespace TasGrid{
