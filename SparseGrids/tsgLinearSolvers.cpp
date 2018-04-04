@@ -39,9 +39,6 @@
 
 namespace TasGrid{
 
-//TasmanianDenseSolver::TasmanianDenseSolver(){}
-//TasmanianDenseSolver::~TasmanianDenseSolver(){}
-
 void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x){
     // form Ar = A' * A
     // form x = A' * b
@@ -96,9 +93,6 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
 
     delete[] Ar;
 }
-
-//TasmanianTridiagonalSolver::TasmanianTridiagonalSolver(){}
-//TasmanianTridiagonalSolver::~TasmanianTridiagonalSolver(){}
 
 void TasmanianTridiagonalSolver::decompose(int n, double d[], double e[], double z[]){
     const double tol = TSG_NUM_TOL;

@@ -57,10 +57,10 @@ TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pw
                                              conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0){
 #ifndef TASMANIAN_XSDK
     logstream = &cerr;
-#endif
+#endif // TASMANIAN_XSDK
 #ifdef TASMANIAN_CPU_BLAS
     acceleration = accel_cpu_blas;
-#endif // TASMANIAN_XSDK
+#endif // TASMANIAN_CPU_BLAS
 }
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0),
                                     domain_transform_a(0), domain_transform_b(0), conformal_asin_power(0), llimits(0),
@@ -69,7 +69,7 @@ TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : ba
     copyGrid(&source);
 #ifndef TASMANIAN_XSDK
     logstream = &cerr;
-#endif
+#endif // TASMANIAN_XSDK
 #ifdef TASMANIAN_CPU_BLAS
     acceleration = accel_cpu_blas;
 #endif // TASMANIAN_CPU_BLAS
@@ -99,7 +99,7 @@ void TasmanianSparseGrid::clear(){
 #else
     acceleration = accel_none;
 #endif // TASMANIAN_CPU_BLAS
-#if defined (TASMANIAN_CUBLAS) or defined (TASMANIAN_CUDA)
+#if defined (TASMANIAN_CUBLAS) || defined (TASMANIAN_CUDA)
     gpuID = 0;
 #endif // TASMANIAN_CUBLAS || TASMANIAN_CUDA
     if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
@@ -346,7 +346,7 @@ void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weig
 }
 
 void TasmanianSparseGrid::loadNeededPoints(const double *vals){
-    #if defined(TASMANIAN_CUBLAS) or defined(TASMANIAN_CUDA)
+    #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
     if (AccelerationMeta::isAccTypeGPU(acceleration)){
         _TASMANIAN_SETGPU
     }
@@ -877,13 +877,13 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[],
     double *gpu_temp_x = 0;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
     pwpoly->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y, logstream);
-    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x);
+    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x, logstream);
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const{
     double *gpu_temp_x = 0;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
     pwpoly->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_pntr, gpu_indx, gpu_vals, num_nz, logstream);
-    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x);
+    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x, logstream);
 }
 #else
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double*, int, double*) const{
@@ -1409,7 +1409,7 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
         case accel_gpu_magma:   return false;
         #endif // TASMANIAN_CUDA
 
-        #if defined(TASMANIAN_CUDA) or defined(TASMANIAN_CUBLAS) or defined(TASMANIAN_MAGMA)
+        #if defined(TASMANIAN_CUDA) || defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_MAGMA)
         case accel_gpu_default:   return true;
         case accel_gpu_fullmemory:   return true;
         #else
@@ -1431,7 +1431,7 @@ void TasmanianSparseGrid::setGPUID(int new_gpuID){
 int TasmanianSparseGrid::getGPUID() const{ return gpuID; }
 
 int TasmanianSparseGrid::getNumGPUs(){
-    #if defined(TASMANIAN_CUDA) or defined(TASMANIAN_CUBLAS)
+    #if defined(TASMANIAN_CUDA) || defined(TASMANIAN_CUBLAS)
     int gpu_count = 0;
     cudaGetDeviceCount(&gpu_count);
     return gpu_count;
@@ -1440,7 +1440,7 @@ int TasmanianSparseGrid::getNumGPUs(){
     #endif // TASMANIAN_CUDA || TASMANIAN_CUBLAS
 }
 
-#if defined(TASMANIAN_CUDA) or defined(TASMANIAN_CUBLAS)
+#if defined(TASMANIAN_CUDA) || defined(TASMANIAN_CUBLAS)
 int TasmanianSparseGrid::getGPUMemory(int gpu){
     if (gpu < 0) return 0;
     int gpu_count = 0;
@@ -1461,11 +1461,12 @@ char* TasmanianSparseGrid::getGPUName(int gpu){
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, gpu);
 
-    int c = 0; while(prop.name[c] != '\0') c++;
+    int c = 0; while(prop.name[c] != '\0'){ c++; }
     delete[] name;
     name = new char[c+1];
-    for(int i=0; i<c; i++) name[i] = prop.name[i];
+    for(int i=0; i<c; i++){ name[i] = prop.name[i]; }
     name[c] = '\0';
+
     return name;
 }
 #else
@@ -1731,22 +1732,6 @@ void tsgSetHierarchicalCoefficients(void *grid, const double *c){
     ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
 }
 
-// to be used in Python, requires internal copy of data and two calls (two merge sorts of all indexes)
-// can't figure out how to do this without calling separate delete pointer
-//int tsgGetGlobalPolynomialSpaceSize(void *grid, int interpolation){
-//    int *indx = 0, num_indexes;
-//    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), num_indexes, indx);
-//    if (indx != 0) delete[] indx;
-//    return num_indexes;
-//}
-//void tsgGetGlobalPolynomialSpaceStatic(void *grid, int interpolation, int *indexes){
-//    int *indx = 0, num_ind, num_dims = ((TasmanianSparseGrid*) grid)->getNumDimensions();
-//    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), num_ind, indx);
-//    if (indx != 0){
-//        for(int i=0; i<(num_ind * num_dims); i++) indexes[i] = indx[i];
-//        delete[] indx;
-//    }
-//}
 // to be called from Python only, must later call delete[] on the pointer
 int* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes){
     int *indx = 0;;

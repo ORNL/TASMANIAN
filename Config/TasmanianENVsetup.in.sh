@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 # source this file to execute tasgrid and tasdream after install
-@TasLine1@
-@TasLine2@
+@Tasmanian_config_line1@
+@Tasmanian_config_line2@

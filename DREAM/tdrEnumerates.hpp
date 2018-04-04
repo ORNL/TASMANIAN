@@ -5,6 +5,12 @@
 #include <cstdlib>
 #include <math.h>
 
+#include "tasmanianConfig.hpp"
+
+#ifdef TASMANIAN_MPI
+#include <mpi.h>
+#endif
+
 namespace TasDREAM{
 
 using std::cout; // for debugging purposes

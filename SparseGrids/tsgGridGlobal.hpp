@@ -129,9 +129,6 @@ protected:
 
     static double legendre(int n, double x);
 
-    //void clearParEval();
-    //void createParEval();
-
     void makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const;
 
 private:
@@ -159,10 +156,6 @@ private:
 
     CustomTabulated *custom;
 
-    //int *par_eval_index, *par_eval_pntrs;
-
-    //mutable double *cuda_values;
-    //mutable void *accelerated_data;
     mutable BaseAccelerationData *accel;
 };
 

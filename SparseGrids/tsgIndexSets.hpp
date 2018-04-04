@@ -72,7 +72,6 @@ public:
 
     const int* getIndex(int j) const;
 
-    //void addUnsortedSet(const UnsortedIndexSet *set);
     void addGranulatedSet(const GranulatedIndexSet *set);
 
     const int* getIndexes() const;
@@ -81,7 +80,6 @@ public:
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
 
-    //void merge(const int newIndex[], int sizeNew);
     void mergeMapped(const int newIndex[], const int newMap[], int sizeNew);
 
 private:
@@ -113,7 +111,6 @@ public:
     IndexSet(const UnsortedIndexSet *set);
     IndexSet(const GranulatedIndexSet *set);
     IndexSet(const IndexSet *set);
-    //IndexSet(int cnum_dimensions, const int cindex[]);
     IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex);
     ~IndexSet();
 
@@ -138,13 +135,6 @@ public:
 
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
-    //inline TypeIndexRelation compareIndexes(const int a[], const int b[]) const{
-    //    for(int i=0; i<num_dimensions; i++){
-    //        if (a[i] < b[i]) return type_abeforeb;
-    //        if (a[i] > b[i]) return type_bbeforea;
-    //    }
-    //    return type_asameb;
-    //}
 
     void merge(const int newIndex[], int sizeNew);
     void mergeMapped(const int newIndex[], const int map[], int sizeNew);
@@ -172,14 +162,13 @@ public:
 
     void setValues(const double vals[]);
     void setValuesPointer(double* &vals, int num_values);
-    //void setValue(int i, const double val[]);
     void addValues(const IndexSet *old_set, const IndexSet *new_set, const double new_vals[]);
 
 protected:
     TypeIndexRelation compareIndexes(int num_dimensions, const int a[], const int b[]) const;
 
 private:
-    int num_outputs, num_values;
+    size_t num_outputs, num_values;
     double *values;
 };
 

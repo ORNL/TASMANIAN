@@ -59,6 +59,10 @@ enum TestType{
     type_integration, type_nodal_interpolation, type_internal_interpolation
 };
 
+enum TestList{
+    test_all, test_acceleration, test_domain, test_refinement, test_global, test_local, test_wavelet
+};
+
 class ExternalTester{
 public:
     ExternalTester(int in_num_mc = 1);
@@ -66,8 +70,9 @@ public:
     void resetRandomSeed();
 
     void setVerbose(bool new_verbose);
+    void setGPUID(int gpu_id);
 
-    bool Test() const;
+    bool Test(TestList test) const;
 
     bool testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, bool interpolation, const int depths[], const double tols[]) const;
     bool performGLobalTest(const TasGrid::TypeOneDRule rule) const;
@@ -100,6 +105,7 @@ protected:
 private:
     int num_mc;
     bool verbose;
+    int gpuid;
 
     OneOneP3 f11p3;
 

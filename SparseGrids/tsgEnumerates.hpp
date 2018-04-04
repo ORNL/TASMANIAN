@@ -37,6 +37,8 @@
 #include <math.h>
 #include <string.h>
 
+#include "tasmanianConfig.hpp"
+
 namespace TasGrid{
 
 using std::cout; // for debugging purposes

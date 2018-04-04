@@ -125,8 +125,23 @@ protected:
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 
     void prepareSequence(int n);
-    double** cacheBasisValues(const double x[]) const;
     double* cacheBasisIntegrals() const;
+    
+    template<typename T>
+    T** cacheBasisValues(const T x[]) const{
+        T **cache = new T*[num_dimensions];
+        for(int j=0; j<num_dimensions; j++){
+            cache[j] = new T[max_levels[j] + 1];
+            cache[j][0] = 1.0;
+            for(int i=0; i<max_levels[j]; i++){
+                cache[j][i+1] = cache[j][i] * (x[j] - nodes[i]);
+            }
+            for(int i=1; i<=max_levels[j]; i++){
+                cache[j][i] /= coeff[i];
+            }
+        }
+        return cache;
+    }
 
     void recomputeSurpluses();
     void applyTransformationTransposed(double weights[]) const;

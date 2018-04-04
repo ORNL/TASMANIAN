@@ -12,17 +12,16 @@ CMAKE_IN_HEADERS = $(wildcard ./DREAM/*.in.hpp) \
                    $(wildcard ./DREAM/tasdream*.hpp) \
                    $(wildcard ./SparseGrids/*.*.hpp) \
                    $(wildcard ./SparseGrids/tasgrid*.hpp) \
-                   ./SparseGrids/tsgVersion.hpp \
-                   ./DREAM/tdrEnableMPI.hpp
+                   ./SparseGrids/tasmanianConfig.hpp \
 
 HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./DREAM/*.hpp))) \
           $(patsubst ./SparseGrids/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./SparseGrids/*.h*))) \
-          ./include/tsgVersion.hpp ./include/tdrEnableMPI.hpp
+          ./include/tasmanianConfig.hpp
 
 ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py testTSG.py sandbox.py example_sparse_grids.cpp example_dream.cpp \
               libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid tasdream $(HEADERS)
 
-CONFIGURED_HEADERS = ./SparseGrids/tsgVersion.hpp ./DREAM/tdrEnableMPI.hpp
+CONFIGURED_HEADERS = ./SparseGrids/tasmanianConfig.hpp
 
 # all target
 .PHONY: all
@@ -41,19 +40,12 @@ all: $(ALL_TARGETS)
 # the extra dependencies ensure only one subfoler make is called at a time
 
 # Common headers
-SparseGrids/tsgVersion.hpp: ./Config/tsgVersion.hpp
-	cp ./Config/tsgVersion.hpp ./SparseGrids/tsgVersion.hpp
+SparseGrids/tasmanianConfig.hpp: ./Config/tasmanianConfig.hpp
+	cp ./Config/tasmanianConfig.hpp ./SparseGrids/tasmanianConfig.hpp
 
-include/tsgVersion.hpp: ./SparseGrids/tsgVersion.hpp
+include/tasmanianConfig.hpp: ./SparseGrids/tasmanianConfig.hpp
 	mkdir -p ./include
-	cp ./SparseGrids/tsgVersion.hpp ./include/
-
-DREAM/tdrEnableMPI.hpp: ./Config/tdrEnableMPI.hpp
-	cp ./Config/tdrEnableMPI.hpp ./DREAM/tdrEnableMPI.hpp
-
-include/tdrEnableMPI.hpp: ./DREAM/tdrEnableMPI.hpp
-	mkdir -p ./include
-	cp ./DREAM/tdrEnableMPI.hpp ./include/
+	cp ./SparseGrids/tasmanianConfig.hpp ./include/
 
 # Sparse Grids
 libtasmaniansparsegrid.so: ./SparseGrids/libtasmaniansparsegrid.so
@@ -241,8 +233,7 @@ clean:
 	rm -fr testTSG.py
 	rm -fr sandbox.py
 	rm -fr include
-	rm -fr ./SparseGrids/tsgVersion.hpp
-	rm -fr ./DREAM/tdrEnableMPI.hpp
+	rm -fr ./SparseGrids/tasmanianConfig.hpp
 	cd SparseGrids; make clean
 	cd DREAM; make clean
 	cd InterfaceFortran; make clean

@@ -32,9 +32,6 @@
 #include <time.h>
 #include <string.h>
 
-//#include <mpi.h>
-//#include "tdrEnableMPI.hpp"
-
 #include "TasmanianDREAM.hpp"
 
 #include "TasmanianSparseGrid.hpp"
@@ -75,6 +72,8 @@ int main(int argc, const char ** argv){
         bool verbose = false;
         bool seed_reset = false;
 
+        TestList test = test_all;
+
         int k = 2;
         while (k < argc){
             if ((strcmp(argv[k],"debug") == 0)) debug = true;
@@ -84,19 +83,21 @@ int main(int argc, const char ** argv){
             if ((strcmp(argv[k],"-v") == 0)) verbose = true;
             if ((strcmp(argv[k],"-random") == 0)) seed_reset = true;
             if ((strcmp(argv[k],"random") == 0)) seed_reset = true;
+            if ((strcmp(argv[k],"analytic") == 0)) test = test_analytic;
+            if ((strcmp(argv[k],"model") == 0)) test = test_model;
             k++;
         }
 
         ExternalTester tester(1000);
         bool pass = true;
         if (debug){
-            tester.Test();
+            tester.Test(test);
         }else if (debugII){
-            tester.Test();
+            tester.Test(test);
         }else{
             if (verbose) tester.setVerbose(true);
             if (seed_reset) tester.resetRandomSeed();
-            pass = tester.Test();
+            pass = tester.Test(test);
         }
         return (pass) ? 0 : 1;
     }

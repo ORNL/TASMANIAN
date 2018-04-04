@@ -37,17 +37,57 @@
 
 namespace TasGrid{
 
+template <typename T>
 class CacheLagrange{
 public:
-    CacheLagrange(int num_dimensions, const int max_levels[], const OneDimensionalWrapper *crule, const double x[]);
-    ~CacheLagrange();
+    CacheLagrange(int num_dimensions, const int max_levels[], const OneDimensionalWrapper *crule, const double x[]) : rule(crule){
+        cache = new T*[num_dimensions];
+        int full_cache = rule->getPointsCount(max_levels[0] + 1);
+        for(int j=1; j<num_dimensions; j++){
+            full_cache += rule->getPointsCount(max_levels[j]+1);
+        }
+        cache[0] = new T[full_cache];
+        for(int j=0; j<num_dimensions-1; j++){
+            cache[j+1] = &(cache[j][rule->getPointsCount(max_levels[j]+1)]);
+        }
 
-    double getLagrange(int dimension, int level, int local) const;
+        for(int dim=0; dim<num_dimensions; dim++){
+            for(int level=0; level <= max_levels[dim]; level++){
+                const double *nodes = rule->getNodes(level);
+                const double *coeff = rule->getCoefficients(level);
+                int num_points = rule->getNumPoints(level);
+
+                T *c = &(cache[dim][rule->getPointsCount(level)]);
+                c[0] = 1.0;
+                for(int j=0; j<num_points-1; j++){
+                    c[j+1] = (x[dim] - nodes[j]) * c[j];
+                }
+                T w = (rule->getType() == rule_clenshawcurtis0) ? (x[dim] - 1.0) * (x[dim] + 1.0) : 1.0;
+                c[num_points-1] *= w * coeff[num_points-1];
+                for(int j=num_points-2; j>=0; j--){
+                    w *= (x[dim] - nodes[j+1]);
+                    c[j] *= w * coeff[j];
+                }
+            }
+        }
+    }
+    ~CacheLagrange(){
+        if (cache != 0){
+            delete[] cache[0];
+            delete[] cache;
+        }
+        rule = 0;
+    }
+
+    T getLagrange(int dimension, int level, int local) const{
+        return cache[dimension][rule->getPointsCount(level) + local];
+    }
 
 private:
-    double **cache;
+    T **cache;
     const OneDimensionalWrapper *rule;
 };
+
 
 }
 

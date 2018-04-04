@@ -40,7 +40,7 @@ except:
     tsgPlot = []
 
 __version__ = "5.1"
-__license__ = "BSD 3-Clause with UT-Battelle disclamer"
+__license__ = "BSD 3-Clause with UT-Battelle disclaimer"
 __author__ = "Miroslav Stoyanov"
 
 

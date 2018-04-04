@@ -43,6 +43,10 @@
 
 #include "tasdreamTestPDFs.hpp"
 
+enum TestList{
+    test_all, test_analytic, test_model
+};
+
 class ExternalTester{
 public:
     ExternalTester(int num_monte_carlo = 1);
@@ -51,7 +55,7 @@ public:
 
     void setVerbose(bool new_verbose);
 
-    bool Test();
+    bool Test(TestList test = test_all);
 
 protected:
     bool testChi(int num_cells, const int count_a[], const int count_b[]);

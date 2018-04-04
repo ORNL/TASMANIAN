@@ -27,13 +27,27 @@
  * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
- 
-#ifndef __TASMANIAN_SPARSE_GRID_VERSION_HPP
-#define __TASMANIAN_SPARSE_GRID_VERSION_HPP
 
-#define TASMANIAN_VERSION_MAJOR @Tasmanian_VERSION_MAJOR@
-#define TASMANIAN_VERSION_MINOR @Tasmanian_VERSION_MINOR@
-#define TASMANIAN_VERSION_STRING "@Tasmanian_VersionString@"
-#define TASMANIAN_LICENSE "@Tasmanian_License@"
+#ifndef __TASMANIAN_CONFIG_HPP
+#define __TASMANIAN_CONFIG_HPP
+
+#define TASMANIAN_VERSION_MAJOR 5
+#define TASMANIAN_VERSION_MINOR 1
+#define TASMANIAN_VERSION_STRING "5.1"
+#define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
+
+////////////////////////////////////////////////////////////////////////
+// In order to enable advanced options for Tasmanian,
+// the corresponding #define line below has to be uncommented
+// Note: cmake takes care of this automatically, use the lines
+// below only for simple GNU-Make
+// The lines below are for references purposes mostly,
+// we support advanced options only though cmake
+////////////////////////////////////////////////////////////////////////
+
+/* #undef TASMANIAN_CPU_BLAS */
+/* #undef TASMANIAN_CUBLAS */
+/* #undef TASMANIAN_CUDA */
+/* #undef TASMANIAN_MPI */
 
 #endif

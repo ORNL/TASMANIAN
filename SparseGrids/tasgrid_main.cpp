@@ -138,6 +138,9 @@ int main(int argc, const char ** argv){
         bool verbose = false;
         bool seed_reset = false;
 
+        TestList test = test_all;
+
+        int gpuid = -1;
         int k = 2;
         while (k < argc){
             if ((strcmp(argv[k],"debug") == 0)) debug = true;
@@ -147,10 +150,30 @@ int main(int argc, const char ** argv){
             if ((strcmp(argv[k],"-v") == 0)) verbose = true;
             if ((strcmp(argv[k],"-random") == 0)) seed_reset = true;
             if ((strcmp(argv[k],"random") == 0)) seed_reset = true;
+            if ((strcmp(argv[k],"acceleration") == 0)) test = test_acceleration;
+            if ((strcmp(argv[k],"domain") == 0)) test = test_domain;
+            if ((strcmp(argv[k],"refinement") == 0)) test = test_refinement;
+            if ((strcmp(argv[k],"global") == 0)) test = test_global;
+            if ((strcmp(argv[k],"local") == 0)) test = test_local;
+            if ((strcmp(argv[k],"wavelet") == 0)) test = test_wavelet;
+            if ((strcmp(argv[k],"-gpuid") == 0)){
+                if (k+1 >= argc){
+                    cerr << "ERROR: -gpuid required a valid number!" << endl;
+                    return 1;
+                }
+                gpuid = atoi(argv[k+1]);
+                k++;
+                if ((gpuid < 0) || (gpuid >= TasmanianSparseGrid::getNumGPUs())){
+                    cerr << "ERROR: -gpuid " << gpuid << " is not a valid gpuid!" << endl;
+                    cerr << "      see ./tasgrid -v for a list of detected GPUs." << endl;
+                    return 1;
+                }
+            }
             k++;
         }
 
         ExternalTester tester(1000);
+        tester.setGPUID(gpuid);
         bool pass = true;
         if (debug){
             tester.debugTest();
@@ -159,7 +182,7 @@ int main(int argc, const char ** argv){
         }else{
             if (verbose) tester.setVerbose(true);
             if (seed_reset) tester.resetRandomSeed();
-            pass = tester.Test();
+            pass = tester.Test(test);
         }
         return (pass) ? 0 : 1;
     }
