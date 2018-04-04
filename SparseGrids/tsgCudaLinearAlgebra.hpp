@@ -27,7 +27,7 @@
  * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
- 
+
 #ifndef __TASMANIAN_SPARSE_GRID_CUDA_LINEAR_ALGEBRA_HPP
 #define __TASMANIAN_SPARSE_GRID_CUDA_LINEAR_ALGEBRA_HPP
 
@@ -54,6 +54,116 @@ void tasgpu_d3gecss(int N, int M, int *order, int top_level, const int *gpuBpntr
         }
         k += k_stride;
     }
+}
+
+// really only works with 64 threads with double, but has to be launched with 2xTHREADS  size(T) * THREADS^2 + 4 * size(T) * THREADS shared memory
+template <typename T, int THREADS>
+__global__ void tasgpu_cudaTgemm_v3(int M, int N, int K, const T *gpu_a, const T *gpu_b, T *gpu_c){
+    __shared__ T cache_c[THREADS * THREADS];
+    __shared__ T a_flip[THREADS];
+    __shared__ T a_flop[THREADS];
+    __shared__ T b_flip[THREADS];
+    __shared__ T b_flop[THREADS];
+
+    int num_blocks_m = M / THREADS + ((M % THREADS == 0) ? 0 : 1);
+    int num_blocks_n = N / THREADS + ((N % THREADS == 0) ? 0 : 1);
+
+    int block = blockIdx.x;
+    int half_thread = threadIdx.x - THREADS;
+    int half_threadK = half_thread * K;
+
+    while(block < num_blocks_m * num_blocks_n){
+
+        // find out the current matrix block for this block of threads
+        int block_m = block / num_blocks_n;
+        int maxM = THREADS;
+        if (block_m * THREADS + maxM > M) maxM = M - block_m * THREADS;
+
+        int block_n = block % num_blocks_n;
+        int maxN = THREADS;
+        if (block_n * THREADS + maxN > N) maxN = N - block_n * THREADS;
+
+        int offsetm = block_m * THREADS; // identify row/column of C
+        int offsetn = block_n * THREADS * K;
+
+        // prepare cache
+        if (threadIdx.x < THREADS){
+            for(int i=0; i<THREADS; i++){
+                cache_c[i * THREADS + threadIdx.x] = 0.0;
+            }
+        }else{
+            if (half_thread < maxM)
+                a_flip[half_thread] = gpu_a[offsetm + half_thread];
+            if (half_thread < maxN)
+                b_flip[half_thread] = gpu_b[offsetn + half_threadK];
+                //printf(" b_flip[%d] = gpu_b[%d + %d] = %1.6e\n", half_thread, offsetn, half_threadK, b_flip[half_thread]);
+        }
+        __syncthreads();
+
+        // loop over K
+        for(int k=0; k<K; k++){
+            if (threadIdx.x < THREADS){ // these threads are computing
+                T *cached_a;
+                T *cached_b;
+                if (k % 2 == 0){
+                    cached_a = a_flip;
+                    cached_b = b_flip;
+                }else{
+                    cached_a = a_flop;
+                    cached_b = b_flop;
+                }
+                if (threadIdx.x < maxM){
+                    T val = cached_a[threadIdx.x];
+                    for(int n = 0; n < maxN; n++){
+                        cache_c[n * THREADS + threadIdx.x] += val * cached_b[n];
+                        //printf(" m = %d  n = %d  adding = %1.4e * %1.4e\n", threadIdx.x, n, val, cached_b[n]);
+                    }
+                }
+            }else{ // these threads are caching the next row/columns
+                offsetm += M; // move to next column of a
+                offsetn += 1; // move to next row of b
+
+                if (k+1 < K){
+                    T *cached_a;
+                    T *cached_b;
+                    if (k % 2 == 0){
+                        cached_a = a_flop;
+                        cached_b = b_flop;
+                    }else{
+                        cached_a = a_flip;
+                        cached_b = b_flip;
+                    }
+                    if (half_thread < maxM)
+                        cached_a[half_thread] = gpu_a[offsetm + half_thread];
+                    if (half_thread < maxN)
+                        cached_b[half_thread] = gpu_b[offsetn + half_threadK];
+                }
+            }
+            __syncthreads();
+        }
+
+        offsetm = block_n * THREADS * M + block_m * THREADS;
+
+        // everyone should write over to c
+        if (threadIdx.x < THREADS){
+            if (threadIdx.x < maxM){
+                for(int n=0; n<maxN; n+=2){
+                    gpu_c[offsetm + n * M + threadIdx.x] = cache_c[n * THREADS + threadIdx.x];
+                }
+            }
+        }else{
+            if (half_thread < maxM){
+                for(int n=1; n<maxN; n+=2){
+                    gpu_c[offsetm + n * M + half_thread] = cache_c[n * THREADS + half_thread];
+                }
+            }
+        }
+        __syncthreads();
+
+        block += gridDim.x;
+    }
+
+
 }
 
 // simple, but not efficient (can use with 64 threads, CN = 48, and CK = 61, which gives exactly 48K of shared memory for T = double)

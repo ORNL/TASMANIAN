@@ -69,7 +69,7 @@ public:
     void resetGPULoadedData();
 
     void cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result);
-    void cublasDGEMM(int num_outputs, int num_points, int num_x, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
+    void cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
 
     // cusparseDCRMM2 multiplies, cusparseDCRSMM solves for the coefficients
     void cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);

@@ -201,25 +201,31 @@ void TasCUDA::devalpwpoly_sparse_dense(int order, TypeOneDRule rule, int dims, i
 //       Linear Algebra
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void TasCUDA::cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c){ // gpu_c = gpu_a * gpu_b, gpu_c is M by N
-    const int num_threads = 32;
+    //const int num_threads = 32;
+    //
+    //int activeN = N;
+    //int blocks_n = (activeN / num_threads) + (((activeN % num_threads) == 0) ? 0 : 1);
+    //while(blocks_n > 65536){
+    //    activeN /= 2;
+    //    blocks_n = (activeN / num_threads) + (((activeN % num_threads) == 0) ? 0 : 1);
+    //}
+    //int blocks_m = 1;
+    //while((blocks_m * num_threads < M) && ((blocks_m + 1) * blocks_n < 65536)) blocks_m++;
+    //tasgpu_cudaTgemm<double, 32><<<blocks_m * blocks_n, num_threads>>>(blocks_m, blocks_n, M, N, K, gpu_a, gpu_b, gpu_c);
 
-    int activeN = N;
-    int blocks_n = (activeN / num_threads) + (((activeN % num_threads) == 0) ? 0 : 1);
-    while(blocks_n > 65536){
-        activeN /= 2;
-        blocks_n = (activeN / num_threads) + (((activeN % num_threads) == 0) ? 0 : 1);
-    }
-    int blocks_m = 1;
-    while((blocks_m * num_threads < M) && ((blocks_m + 1) * blocks_n < 65536)) blocks_m++;
-    tasgpu_cudaTgemm<double, 32><<<blocks_m * blocks_n, num_threads>>>(blocks_m, blocks_n, M, N, K, gpu_a, gpu_b, gpu_c);
+    int blocks = ((M * N) / 32) + ((((M * N) % 32) == 0) ? 0 : 1);
+    while(blocks > 65536) blocks = 65536;
+    cout << "blocks = " << blocks << endl;
+    //tasgpu_cudaTgemm_v3<double, 64><<<blocks, 128>>>(M, N, K, gpu_a, gpu_b, gpu_c);
+    tasgpu_cudaTgemm_v3<double, 32><<<blocks, 64>>>(M, N, K, gpu_a, gpu_b, gpu_c);
 
     // check the last error
     //cudaError_t cudaStat = cudaPeekAtLastError();
     //AccelerationMeta::cudaCheckError((void*) &cudaStat, "kernel()", &cerr);
 
     // pull out gpu_a and gpu_b for debugging purposes
-    //double *A = new double[M*K]; cudaRecv<double>(M * K, gpu_a, A);
-    //double *B = new double[N*K]; cudaRecv<double>(N * K, gpu_b, B);
+    //double *A = new double[M*K]; cudaRecv<double>(M * K, gpu_a, A, &cout);
+    //double *B = new double[N*K]; cudaRecv<double>(N * K, gpu_b, B, &cout);
     //double *C = new double[N*M];
 
     // print gpu_a and gpu_b
@@ -227,6 +233,8 @@ void TasCUDA::cudaDgemm(int M, int N, int K, const double *gpu_a, const double *
     //for(int i=0; i<1; i++){ for(int j=0; j<K; j++){ cout << A[j*M + i] << "   "; } cout << endl; }
     //cout << endl;
     //for(int i=0; i<K; i++){ for(int j=0; j<1; j++){ cout << B[j*K + i] << "   "; } cout << endl; }
+    //for(int i=0; i<M*K; i++) cout << A[i] << endl;
+    //for(int i=0; i<N*K; i++) cout << B[i] << endl;
 }
 
 // sparse triangular solve, usnig cuda kernels (as opposed to cusparse)

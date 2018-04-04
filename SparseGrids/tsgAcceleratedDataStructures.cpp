@@ -152,7 +152,7 @@ void AccelerationDataGPUFull::cublasDGEMV(int, int, const double *, double *){}
 #endif // TASMANIAN_CUBLAS
 
 #ifdef TASMANIAN_CUBLAS
-void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_points, int num_x, const double gpu_weights[], double *gpu_result){
+void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
 
     double alpha = 1.0, beta = 0.0;
@@ -225,7 +225,7 @@ void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double 
 void AccelerationDataGPUFull::cusparseDCRSMM(int, int, const int*, const int*, const double*, const double*, double*){}
 #endif // TASMANIAN_CUBLAS
 
-#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
+#ifdef TASMANIAN_CUBLAS
 void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
     makeCuSparseHandle(); // creates a handle only if one doesn't exist
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
@@ -289,7 +289,7 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
 }
 #else
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
-#endif // defined TASMANIAN_CUBLAS || TASMANIAN_CUDA
+#endif // defined TASMANIAN_CUBLAS
 
 TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
     if (strcmp(name, "cpu-blas") == 0){

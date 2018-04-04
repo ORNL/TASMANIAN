@@ -749,7 +749,7 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[],
     double *gpu_weights = TasCUDA::cudaSend(((size_t) num_points) * ((size_t) num_x), weights, os);
     double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x), os);
 
-    gpu->cublasDGEMM(num_outputs, num_points, num_x, gpu_weights, gpu_result);
+    gpu->cublasDGEMM(num_outputs, num_x, num_points, gpu_weights, gpu_result);
 
     TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, y, os);
 

@@ -538,7 +538,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
 
         buildDenseBasisMatrixGPU(gpu_x, num_x, gpu_weights, os);
         #ifdef TASMANIAN_CUBLAS
-        gpu_acc->cublasDGEMM(values->getNumOutputs(), num_points, num_x, gpu_weights, gpu_result);
+        gpu_acc->cublasDGEMM(values->getNumOutputs(), num_x, num_points, gpu_weights, gpu_result);
         #else
         TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
         #endif // TASMANIAN_CUBLAS
@@ -579,7 +579,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
 
 
         #ifdef TASMANIAN_CUBLAS
-        gpu_acc->cublasDGEMM(values->getNumOutputs(), num_points, num_x, gpu_weights, gpu_result);
+        gpu_acc->cublasDGEMM(values->getNumOutputs(), num_x, num_points, gpu_weights, gpu_result);
         #else
         TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
         #endif // TASMANIAN_CUBLAS

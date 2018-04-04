@@ -1618,13 +1618,13 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
 
     bool pass = true;
     TypeAcceleration acc[4] = {accel_none, accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda};
-    int gpuID = (gpuid == -1) ? 0 : gpuid;
+    int testGpuID = (gpuid == -1) ? 0 : gpuid;
     int c = 0;
     while(c < 4){
-        //cout << "Settin c = " << c << endl;
+        //cout << "Settin c = " << c << "  testGpuID = " << testGpuID << endl;
         grid->enableAcceleration(acc[c]);
         if (c > 1){ // gpu test
-            grid->setGPUID(gpuID);
+            grid->setGPUID(testGpuID);
         }
         //grid->printStats();
 
@@ -1641,7 +1641,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             cout << tm << "  " << test_y[tm] << "    " << baseline_y[tm] << endl;
 
             pass = false;
-            cout << "Failed Batch evaluation for acceleration c = " << c << " gpuID = " << gpuID << endl;
+            cout << "Failed Batch evaluation for acceleration c = " << c << " gpuID = " << testGpuID << endl;
             cout << "Observed error: " << err << " for function: " << f->getDescription() << endl;
             grid->printStats();
             exit(1);
@@ -1656,16 +1656,16 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
 
         if (err > 1.E-11){
             pass = false;
-            cout << "Failed Fast evaluation for acceleration c = " << c << " gpuID = " << gpuID << endl;
+            cout << "Failed Fast evaluation for acceleration c = " << c << " gpuID = " << testGpuID << endl;
             cout << "Observed error: " << err << " for function: " << f->getDescription() << endl;
             grid->printStats();
         }
 
         if (c > 1){ // gpu test
             if (gpuid == -1){ // gpuid is not set, then cycle trough all GPUs
-                gpuID++;
-                if (gpuID >= grid->getNumGPUs()){
-                    gpuID = 0;
+                testGpuID++;
+                if (testGpuID >= grid->getNumGPUs()){
+                    testGpuID = 0;
                     c++;
                 }
             }else{
@@ -2123,9 +2123,10 @@ void ExternalTester::debugTestII(){
     //int dims = f->getNumInputs();
     //int outs = f->getNumOutputs();
     int dims = 2;
-    int outs = 3700;
+    int outs = 12000;
     TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
-    grid->makeLocalPolynomialGrid(dims, outs, 8, 1, TasGrid::rule_localp);
+    //grid->makeLocalPolynomialGrid(dims, outs, 8, 1, TasGrid::rule_localp);
+    grid->makeSequenceGrid(dims, outs, 20, TasGrid::type_level, TasGrid::rule_leja);
     double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
     //grid->setDomainTransform(a, b);
 
@@ -2142,7 +2143,7 @@ void ExternalTester::debugTestII(){
 
     cout << "Grid points = " << grid->getNumPoints() << endl;
 
-    int nump = 30048;
+    int nump =12000;
     double *x = new double[dims*nump];
     double *xt = new double[dims*nump];
     setRandomX(dims*nump, x);
