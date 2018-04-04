@@ -1,19 +1,13 @@
 ########################################################################
 # C++ 2011 support
 ########################################################################
-if (DEFINED Tasmanian_ENABLE_CXX_11)
-    if (Tasmanian_ENABLE_CXX_11)
-        foreach(Tasmanian_loop_target ${Tasmanian_target_list})
-            set_property(TARGET ${Tasmanian_loop_target} PROPERTY CXX_STANDARD 11)
-        endforeach()
-    endif()
-else()
-    if (Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_CUBLAS OR Tasmanian_ENABLE_MPI)
-        foreach(Tasmanian_loop_target ${Tasmanian_target_list})
-            set_property(TARGET ${Tasmanian_loop_target} PROPERTY CXX_STANDARD 11)
-        endforeach()
-    endif()
+if (Tasmanian_ENABLE_CXX_11 OR Tasmanian_ENABLE_MPI OR
+    Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_CUBLAS)
+    foreach(Tasmanian_loop_target ${Tasmanian_target_list})
+        set_property(TARGET ${Tasmanian_loop_target} PROPERTY CXX_STANDARD 11)
+    endforeach()
 endif()
+
 
 ########################################################################
 # Compiler specific flags: Intel hasn't been tested in a while
