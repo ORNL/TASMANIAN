@@ -217,6 +217,7 @@ clean:
 	rm -fr libtasmanianfortran.so
 	rm -fr libtasmanianfortran.a
 	rm -fr tasmaniansg.mod
+	rm -fr fortester*
 	rm -fr tasgrid
 	rm -fr tasdream
 	rm -fr TasmanianSG.py

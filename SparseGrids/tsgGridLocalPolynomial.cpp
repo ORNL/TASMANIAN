@@ -1922,6 +1922,7 @@ void GridLocalPolynomial::checkAccelerationGPUNodes() const{
         double *cpu_support = new double[num_entries];
         if (rule->getType() == rule_localp){
             switch(order){
+            case 0: encodeSupportForGPU<0, rule_localp>(work, cpu_support); break;
             case 2: encodeSupportForGPU<2, rule_localp>(work, cpu_support); break;
             default:
                 encodeSupportForGPU<1, rule_localp>(work, cpu_support);

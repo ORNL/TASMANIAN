@@ -46,36 +46,35 @@ void TasCUDA::dtrans2can(int dims, int num_x, int pad_size, const double *gpu_tr
     tasgpu_transformed_to_canonical<double, double, TASMANIAN_CUDA_NUM_THREADS><<<num_blocks, TASMANIAN_CUDA_NUM_THREADS, (2*pad_size) * sizeof(double)>>>(dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
 }
 
+// local polynomial basis functions, DENSE algorithm
 void TasCUDA::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y){
-    int block_height = num_points / TASMANIAN_CUDA_NUM_THREADS_SHORT + ((num_points % TASMANIAN_CUDA_NUM_THREADS_SHORT == 0) ? 0 : 1);
-    // size of __shared__ 3 * dims * num_threads
-    // num_blocks has to be a multiple of block_stride
-    int block_width = num_x / TASMANIAN_CUDA_NUM_THREADS_SHORT + ((num_x % TASMANIAN_CUDA_NUM_THREADS_SHORT == 0) ? 0 : 1);
-    if (block_height * block_width >= 65536) block_width = 65536 / block_height;
+    // each block thread runs 1024 threads and processes 32 points (or basis functions)
+    int num_blocks = (num_points / 32) + ((num_points % 32 == 0) ? 0 : 1);
+    // order == 1 is considered "default" so that the compiler doesn't complain about missing default statement
+    // semilocalp cannot have order less than 2, only rule_localp can have order 0 (this gets overwrittein in makeLocalPolynomialGrid())
     if (rule == rule_localp0){
         switch(order){
-            case 2: tasgpu_devalpwpoly<double, 2, rule_localp0, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-                            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: tasgpu_devalpwpoly<double, 2, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<double, 1, rule_localp0, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-                            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    tasgpu_devalpwpoly<double, 1, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_localp){
         switch(order){
-            case 2: tasgpu_devalpwpoly<double, 2, rule_localp, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-                            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 0:
+                    tasgpu_devalpwpoly<double, 0, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    break;
+            case 2: tasgpu_devalpwpoly<double, 2, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<double, 1, rule_localp, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-                            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    tasgpu_devalpwpoly<double, 1, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
-    }else{
-        tasgpu_devalpwpoly<double, 2, rule_semilocalp, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+    }else{ // rule == rule_semilocalp
+        tasgpu_devalpwpoly<double, 2, rule_semilocalp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }
 }
 
+// local polynomial basis functions, SPARSE algorithm (2 passes, one pass to compue the non-zeros and one pass to evaluate)
 void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
                                  int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz,
                                  std::ostream *os){
@@ -197,44 +196,18 @@ void TasCUDA::devalpwpoly_sparse_dense(int order, TypeOneDRule rule, int dims, i
     }
 }
 
+void TasCUDA::devalseq(int dims, int num_x, int num_points, int num_nodes, const double *gpu_x, const double *gpu_nodes, const double *gpu_coeff, const int *points, double *gpu_dense){
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //       Linear Algebra
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void TasCUDA::cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c){ // gpu_c = gpu_a * gpu_b, gpu_c is M by N
-    //const int num_threads = 32;
-    //
-    //int activeN = N;
-    //int blocks_n = (activeN / num_threads) + (((activeN % num_threads) == 0) ? 0 : 1);
-    //while(blocks_n > 65536){
-    //    activeN /= 2;
-    //    blocks_n = (activeN / num_threads) + (((activeN % num_threads) == 0) ? 0 : 1);
-    //}
-    //int blocks_m = 1;
-    //while((blocks_m * num_threads < M) && ((blocks_m + 1) * blocks_n < 65536)) blocks_m++;
-    //tasgpu_cudaTgemm<double, 32><<<blocks_m * blocks_n, num_threads>>>(blocks_m, blocks_n, M, N, K, gpu_a, gpu_b, gpu_c);
-
-    int blocks = ((M * N) / 32) + ((((M * N) % 32) == 0) ? 0 : 1);
+    int blocks = (N / 96) + (((N % 96) == 0) ? 0 : 1);
+    blocks *= (M / 96) + (((M % 96) == 0) ? 0 : 1);
     while(blocks > 65536) blocks = 65536;
-    cout << "blocks = " << blocks << endl;
-    //tasgpu_cudaTgemm_v3<double, 64><<<blocks, 128>>>(M, N, K, gpu_a, gpu_b, gpu_c);
-    tasgpu_cudaTgemm_v3<double, 32><<<blocks, 64>>>(M, N, K, gpu_a, gpu_b, gpu_c);
-
-    // check the last error
-    //cudaError_t cudaStat = cudaPeekAtLastError();
-    //AccelerationMeta::cudaCheckError((void*) &cudaStat, "kernel()", &cerr);
-
-    // pull out gpu_a and gpu_b for debugging purposes
-    //double *A = new double[M*K]; cudaRecv<double>(M * K, gpu_a, A, &cout);
-    //double *B = new double[N*K]; cudaRecv<double>(N * K, gpu_b, B, &cout);
-    //double *C = new double[N*M];
-
-    // print gpu_a and gpu_b
-    //cout << std::scientific; cout.precision(16);
-    //for(int i=0; i<1; i++){ for(int j=0; j<K; j++){ cout << A[j*M + i] << "   "; } cout << endl; }
-    //cout << endl;
-    //for(int i=0; i<K; i++){ for(int j=0; j<1; j++){ cout << B[j*K + i] << "   "; } cout << endl; }
-    //for(int i=0; i<M*K; i++) cout << A[i] << endl;
-    //for(int i=0; i<N*K; i++) cout << B[i] << endl;
+    tasgpu_cudaTgemm<double, 32, 96><<<blocks, 1024>>>(M, N, K, gpu_a, gpu_b, gpu_c);
 }
 
 // sparse triangular solve, usnig cuda kernels (as opposed to cusparse)

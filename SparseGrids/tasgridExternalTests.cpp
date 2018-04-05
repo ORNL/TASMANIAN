@@ -753,7 +753,7 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]);
-        if (fabs(sum - 15360.0 * 3573248.0 / 243.0) > 1.E-7){
+        if (fabs(sum - 15360.0 * 3573248.0 / 243.0) > 2.E-7){
             cout << "ERROR: disrepancy in transformed gauss-laguerr rule is: " << fabs(sum - 15360.0 * 3573248.0 / 243.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
@@ -2018,13 +2018,13 @@ void ExternalTester::debugTest(){
 #ifdef TASMANIAN_CUDA
     int dims = 3;
     TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
-    grid->makeLocalPolynomialGrid(dims, 1, 7, 1, TasGrid::rule_localp);
+    grid->makeLocalPolynomialGrid(dims, 1, 6, 0, TasGrid::rule_localp);
     double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
-    grid->setDomainTransform(a, b);
+    //grid->setDomainTransform(a, b);
 
     cout << "Grid points = " << grid->getNumPoints() << endl;
 
-    int nump = 3000;
+    int nump = 6000;
     double *x = new double[dims*nump];
     double *xt = new double[dims*nump];
     setRandomX(dims*nump, x);
@@ -2032,6 +2032,7 @@ void ExternalTester::debugTest(){
         for(int j=0; j<dims; j++){
             //cout << "   " << x[dims*i+j];
             xt[dims*i + j] = 0.5 * (b[j] - a[j]) * x[dims*i+j] + 0.5 * (b[j] + a[j]);
+            xt[dims*i + j] = x[dims*i+j];
         }
         //cout << endl;
     }
@@ -2041,33 +2042,39 @@ void ExternalTester::debugTest(){
     double *y_true = new double[grid->getNumPoints() * nump];
     grid->evaluateHierarchicalFunctions(xt, nump, y_true);
 
-
+    int GPU_ID = 1;
+    cudaSetDevice(GPU_ID);
     double *gpux = TasGrid::TasCUDA::cudaSend<double>(dims * nump, xt, &cerr);
     double *gpuy = 0;
     double *y = 0;
 
     grid->enableAcceleration(TasGrid::accel_gpu_cuda);
-    grid->setGPUID(0);
+    grid->setGPUID(GPU_ID);
 
     bool pass = true;
-    if (false){
+    if (true){
         gpuy = TasGrid::TasCUDA::cudaNew<double>(grid->getNumPoints() * nump, &cerr);
+        double tstart = gettime();
         grid->evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
-        cout << "GPU done" << endl;
+        double tend = gettime();
+        cout << "GPU done: " << (int) (1000.0 * (tend - tstart)) << " milliseconds" << endl;
         y = new double[grid->getNumPoints() * nump];
         TasGrid::TasCUDA::cudaRecv<double>(grid->getNumPoints() * nump, gpuy, y, &cerr);
 
         for(int i=0; i<grid->getNumPoints() * nump; i++){
-            if (fabs(y[i] - y_true[i]) > 1.E-12){
-                cout << "ERROR: i = " << i << "  " << fabs(y[i] - y_true[i]) << endl;
+            //cout << "i = " << i << endl;
+            if (pass && (fabs(y[i] - y_true[i]) > 1.E-12)){
+                cout << "ERROR: i = " << i << "  gpu: " << y[i] << "   truth: " << y_true[i] << "  error= " << fabs(y[i] - y_true[i]) << endl;
                 pass = false;
             }
         }
     }else{
         int *gpu_indx = 0, *gpu_pntr = 0, num_nz = 0;
         double *gpu_vals = 0;
+        double tstart = gettime();
         grid->evaluateSparseHierarchicalFunctionsGPU(gpux, nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
-        cout << "Done eval, nnz = " << num_nz << endl;
+        double tend = gettime();
+        cout << "Done eval, nnz = " << num_nz << "   time = " << (int)(1000.0 * (tend - tstart)) << " milliseconds." << endl;
 
         int *cpntr = new int[nump+1]; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr, &cerr);
         int *cindx = new int[num_nz]; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
@@ -2123,10 +2130,10 @@ void ExternalTester::debugTestII(){
     //int dims = f->getNumInputs();
     //int outs = f->getNumOutputs();
     int dims = 2;
-    int outs = 12000;
+    int outs = 1024 * 2;
     TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
     //grid->makeLocalPolynomialGrid(dims, outs, 8, 1, TasGrid::rule_localp);
-    grid->makeSequenceGrid(dims, outs, 20, TasGrid::type_level, TasGrid::rule_leja);
+    grid->makeSequenceGrid(dims, outs, 40, TasGrid::type_level, TasGrid::rule_leja);
     double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
     //grid->setDomainTransform(a, b);
 
@@ -2143,7 +2150,7 @@ void ExternalTester::debugTestII(){
 
     cout << "Grid points = " << grid->getNumPoints() << endl;
 
-    int nump =12000;
+    int nump = 1024*10;
     double *x = new double[dims*nump];
     double *xt = new double[dims*nump];
     setRandomX(dims*nump, x);
@@ -2163,7 +2170,7 @@ void ExternalTester::debugTestII(){
     grid->evaluateBatch(x, nump, y_true);
 
     grid->enableAcceleration(TasGrid::accel_gpu_cuda);
-    grid->setGPUID(1);
+    grid->setGPUID(0);
     double start = gettime();
     grid->evaluateBatch(x, nump, y);
     double endt = gettime();
