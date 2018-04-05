@@ -22,6 +22,13 @@ then
       -D PYTHON_EXECUTABLE=/usr/bin/python2 \
       -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
       ..
+elif [ "${BUILD_TYPE}" == "gcc54-cuda90" ]
+then
+    cmake \
+      -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
+      -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow -pedantic" \
+      -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
+      ..
 else
     echo "Unknown BUILD_TYPE"
     exit 1
