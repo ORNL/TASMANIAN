@@ -34,16 +34,12 @@ then
 # MATLAB is "stable" but tested separately
 # MPI is "experimental", FORTRAN is "very experimental"
 #
-# NOTE: cmake doesnt seem to pass c++11 flag to cuda unless manually set in CMAKE_CXX_FLAGS
-#       with or without the c++11 flag, cuda generates a very long list of warning
+# NOTE: CUDA and -pedantic results in many warning messages
 #       as far as I can tell, this has nothing to do with Tasmanian
-#       (pending further investigation)
-#       CUDA_PROPAGATE_HOST_FLAGS=OFF will not give -W and -pedantic to nvcc
-#       wich may not be the correct solution here
     cmake \
       -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
-      -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow -pedantic" \
-      -D CUDA_PROPAGATE_HOST_FLAGS=OFF \
+      -D CMAKE_BUILD_TYPE=Release \
+      -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow" \
       -D Tasmanian_STRICT_OPTIONS=ON \
       -D Tasmanian_ENABLE_OPENMP=ON \
       -D Tasmanian_ENABLE_BLAS=ON \
