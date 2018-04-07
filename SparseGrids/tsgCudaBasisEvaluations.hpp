@@ -188,6 +188,15 @@ __device__ inline T tasgpu_devalpwpoly_basis_multid(int dims, int i, int ip, con
     return p;
 }
 
+template<typename T>
+__device__ inline T tasgpu_devalpwpoly_support_pwc_multid(int dims, int i, int ip, const T *x, const T *nodes, const T *support){
+    T p = 1.0;
+    for(int j=0; j<dims; j++){
+        p *= ((fabs(x[i * dims + j] - nodes[ip * dims + j]) > 2.0 * support[ip * dims + j]) ? 0.0 : 1.0);
+    }
+    return p;
+}
+
 // essentially the same as local polynomial evaluate, just repeated for many threads, this is SPARSE algorithm
 // at 64 threads and 46 TOPLEVEL, the 48K of shared memory is ehxausted with 4 byte integer
 // note that the resolution at level 46 is 1 / 2^46 = O(1.E-13), which is comparative to the precision, i.e., never use more than 46 levels, makes no sense
@@ -213,11 +222,19 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
 
         for(int r=0; r<num_roots; r++){
             int ip = roots[r];
-            T p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);
+            T p;
+            if (order > 0){
+                p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);
+            }else{
+                p = tasgpu_devalpwpoly_support_pwc_multid<T>(dims, i, ip, x, nodes, support);
+            }
 
             if (p != 0.0){
                 if (fill){
                     sindx[c] = ip;
+                    if (order == 0){
+                        p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);;
+                    }
                     svals[c] = p;
                 }
                 c++;
@@ -230,11 +247,18 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
                 while(mcount[0][threadIdx.x] < mstop[0][threadIdx.x]){
                     if (mcount[current][threadIdx.x] < mstop[current][threadIdx.x]){
                         ip = hindx[mcount[current][threadIdx.x]];
-                        p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);
+                        if (order > 0){
+                            p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);
+                        }else{
+                            p = tasgpu_devalpwpoly_support_pwc_multid<T>(dims, i, ip, x, nodes, support);
+                        }
 
                         if (p != 0.0){
                             if (fill){
                                 sindx[c] = ip;
+                                if (order == 0){
+                                    p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);;
+                                }
                                 svals[c] = p;
                             }
                             c++;
@@ -262,28 +286,6 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
     }
 }
 
-
-// 32 threads, 64 max_nodes (work in progress)
-template <typename T, int THREADS, int MAX_NODES>
-__global__ void tasgpu_evalseq(int dims, int num_x, int num_points, int num_nodes, const double *gpu_x, const double *gpu_nodes, const double *gpu_coeff, const int *points, double *gpu_dense){
-    __shared__ T cached_nodes[MAX_NODES];
-    __shared__ T cached_coeff[MAX_NODES];
-    __shared__ T cached_hvals[MAX_NODES][THREADS];
-    __shared__ T cached_result[MAX_NODES][THREADS];
-
-    int k = threadIdx.x;
-    while(k < num_nodes){
-        cached_nodes[k] = gpu_nodes[k];
-        cached_coeff[k] = gpu_coeff[k];
-        k += THREADS;
-    }
-    __syncthreads();
-
-    for(int j=0; j<dims; j++){
-
-    }
-
-}
 
 }
 

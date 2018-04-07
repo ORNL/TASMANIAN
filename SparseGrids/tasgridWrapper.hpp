@@ -133,6 +133,7 @@ public:
 
     void setPrintPoints(bool pp);
     void setUseASCII(bool ascii);
+    void setGPID(int gpuid);
 
     bool executeCommand();
 
@@ -219,6 +220,7 @@ private:
 
     bool printCout;
     bool useASCII;
+    int set_gpuid;
 };
 
 #endif

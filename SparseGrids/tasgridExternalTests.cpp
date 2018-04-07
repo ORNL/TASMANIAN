@@ -1687,9 +1687,12 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     #ifdef TASMANIAN_CUDA
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
     TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
-    int num_tests = 6;
+    int num_tests = 7;
     int dims = 3;
-    TasGrid::TypeOneDRule pwp_rule[3] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp};
+    TasGrid::TypeOneDRule pwp_rule[7] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp,
+                                         TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp,
+                                         TasGrid::rule_localp};
+    int order[7] = {1, 1, 1, 2, 2, 2, 0};
     double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
 
     bool pass = true;
@@ -1698,9 +1701,8 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
         for(int t=0; t<num_tests; t++){
             bool dense_pass = true;
-            if (t < 6){ // local poly rule
-                grid->makeLocalPolynomialGrid(dims, 1, 7, t / 3 + 1, pwp_rule[t % 3]);
-            }
+            grid->makeLocalPolynomialGrid(dims, 1, ((order[t] == 0) ? 4 : 7), order[t], pwp_rule[t]);
+
             grid->setDomainTransform(a, b);
 
             int nump = 3000;
@@ -1771,19 +1773,22 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             if (sparse_pass){
                 for(int i=0; i<nump; i++){
                     for(int j=pntr[i]; j<pntr[i+1]; j++){
-                        if (indx[j] != cindx[j]){
+                        if (sparse_pass && (indx[j] != cindx[j])){
                             cout << "ERROR: mismatch in index i = " << i << "   j = " << j << "  indx[j] = " << indx[j] << "  cindx[j] = " << cindx[j] << endl;
                             sparse_pass = false;
                         }
-                        if (fabs(vals[i] - cvals[i]) > 1.E-12){
-                            cout << "ERROR: i = " << i << "  " << fabs(vals[i] - cvals[i]) << endl;
+                        if (sparse_pass && (fabs(vals[i] - cvals[i]) > 1.E-12)){
+                            cout << "ERROR: i = " << i << "  cpu value = " << vals[i] << "  gpu value = " << cvals[i] << endl;
                             sparse_pass = false;
                         }
-                        //cout << ": mismatch in index i = " << i << "   j = " << j << "  indx[j] = " << indx[j] << "  cindx[j] = " << cindx[j] << endl;
-                        //cout << ": i = " << i << "  " << fabs(vals[i] - cvals[i]) << endl;
                     }
                 }
             }
+            if (!sparse_pass){
+                cout << "Failed when using grid: " << endl;
+                grid->printStats();
+            }
+
             pass = pass && sparse_pass;
 
             delete[] cpntr; delete[] pntr;
@@ -1829,8 +1834,16 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "sequence" << setw(wthird) << "FAIL" << endl;
     }
 
-    grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 7, 1, TasGrid::rule_localp);
-    pass = pass && testAcceleration(f, &grid);
+    // for the purpose of testing CUDA evaluations, test all three localp rules vs orders 0, 1, and 2
+    // for order 0, regardless of the selected rule, thegrid should switch to localp
+    TasGrid::TypeOneDRule pwp_rule[3] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp};
+    for(int t=0; t<9; t++){
+        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 3 == 0) ? 4 : 5), (t / 3), pwp_rule[t%3]);
+        pass = pass && testAcceleration(f, &grid);
+    }
+    // test cusparse sparse mat times dense vec used in accel_type cuda
+    grid.makeLocalPolynomialGrid(f21nx2.getNumInputs(), f21nx2.getNumOutputs(), 5, 1, TasGrid::rule_localp);
+    pass = pass && testAcceleration(&f21nx2, &grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "local polynomial" << setw(wthird) << "Pass" << endl;
     }else{

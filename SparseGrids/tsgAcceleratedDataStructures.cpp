@@ -287,8 +287,27 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
         TasCUDA::cudaDel<int>(tempp, logstream);
     }
 }
+void AccelerationDataGPUFull::cusparseMatvec(int num_points, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
+    makeCuSparseHandle(); // creates a handle only if one doesn't exist
+    cusparseStatus_t stat;
+    double alpha = 1.0, beta = 0.0;
+    cusparseMatDescr_t mat_desc;
+    stat = cusparseCreateMatDescr(&mat_desc);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRMM2", logstream);
+    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
+    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
+
+    stat = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
+            CUSPARSE_OPERATION_NON_TRANSPOSE, num_x, num_points, num_nz,
+            &alpha, mat_desc, svals, spntr, sindx, gpu_values, &beta, result);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrmm2 in DCRMM2", logstream);
+
+    cusparseDestroyMatDescr(mat_desc);
+}
 #else
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
+void AccelerationDataGPUFull::cusparseMatvec(int, int, const int*, const int*, const double*, int, double*){}
 #endif // defined TASMANIAN_CUBLAS
 
 TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){

@@ -16,17 +16,18 @@ if (status ~= 0)
     disp(cmdout);
     error('There was an error while executing tasgrid.');
 end
-k = 1;
-ll = 0;
-while(((k + 6) < length(cmdout)) && (ll < 9))
-    if ((cmdout(k) == ' ') && (cmdout(k+1) == ' ') && (cmdout(k+2) == ' ') && (cmdout(k+3) == ' '))
-        ll = ll + 1;
-        k = k + 4;
-    else
-        k = k + 1;
-    end
-end
-disp(cmdout(1:k));
+%k = 1;
+%ll = 0;
+%while(((k + 6) < length(cmdout)) && (ll < 9))
+%    if ((cmdout(k) == ' ') && (cmdout(k+1) == ' ') && (cmdout(k+2) == ' ') && (cmdout(k+3) == ' '))
+%        ll = ll + 1;
+%        k = k + 4;
+%    else
+%        k = k + 1;
+%    end
+%end
+%disp(cmdout(1:k));
+disp(cmdout);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

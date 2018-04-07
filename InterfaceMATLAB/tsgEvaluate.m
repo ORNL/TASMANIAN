@@ -37,6 +37,10 @@ lClean.sFileX = 1;
 sCommand = [sCommand, ' -of ', sFileO];
 lClean.sFileO = 1;
 
+if (isfield(lGrid, 'gpuDevice'))
+    sCommand = [sCommand, ' -gpuid ', num2str(lGrid.gpuDevice)];
+end
+
 [status, cmdout] = system(sCommand);
 
 if (size(findstr('ERROR', cmdout)) ~= [0, 0])

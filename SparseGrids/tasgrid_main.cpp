@@ -506,6 +506,15 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide valid -reftype!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
+        }else if (strcmp(argv[k],"-gpuid") == 0){
+            if (k+1 < argc){
+                k++;
+                int g = atoi(argv[k]);
+                wrap.setGPID(g);
+            }else{
+                cerr << "ERROR: must provide valid -gpuid  For help see: ./tasgrid -help" << endl << endl;
+                return 1;
+            }
         }
         k++;
     }
@@ -818,6 +827,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file" << endl;
             cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points" << endl;
+            cout << " -gpuid\t\t"    << "\tno\t"     << "\t<int>\t"   << "\tset the gpu to use for evaluations" << endl;
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
             cout << "Note: -outputfile or -print output values of the interpolant at the points specified in the xfile" << endl;
