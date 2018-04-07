@@ -117,6 +117,7 @@ public:
 
     // EXPERIMENTAL: mostly for tuning and testing purposes, force certain backend behavior
     inline void setBackendFlavor(TypeLocalPolynomialBackendFlavor new_flavor){ backend_flavor = new_flavor; }
+    inline void setForceSparse(){ force_sparse = true; }
 
 protected:
     void reset(bool clear_rule = true);
@@ -247,6 +248,7 @@ private:
 
     mutable BaseAccelerationData *accel;
     TypeLocalPolynomialBackendFlavor backend_flavor;
+    bool force_sparse;
 };
 
 }

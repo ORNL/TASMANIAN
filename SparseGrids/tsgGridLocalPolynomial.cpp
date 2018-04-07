@@ -40,10 +40,10 @@ namespace TasGrid{
 
 GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0),
                          surpluses(0), points(0), needed(0), values(0), parents(0), num_roots(0), roots(0), pntr(0), indx(0), rule(0),
-                         accel(0), backend_flavor(flavor_auto)  {}
+                         accel(0), backend_flavor(flavor_auto), force_sparse(false)  {}
 GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0),
                          surpluses(0), points(0), needed(0), values(0), parents(0), num_roots(0), roots(0), pntr(0), indx(0), rule(0),
-                         accel(0), backend_flavor(flavor_auto)
+                         accel(0), backend_flavor(flavor_auto), force_sparse(false)
 {
     copyGrid(&pwpoly);
 }
@@ -64,6 +64,7 @@ void GridLocalPolynomial::reset(bool clear_rule){
     if (indx != 0){ delete[] indx;  indx = 0; }
     if (clear_rule){ rule = 0; order = 1; }
     backend_flavor = flavor_auto;
+    force_sparse = false;
 }
 
 void GridLocalPolynomial::write(std::ofstream &ofs) const{
@@ -498,7 +499,7 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
     }
 }
 void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    if (((backend_flavor == flavor_auto) || (backend_flavor == flavor_sparse_sparse)) && (num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS)){
+    if (force_sparse || (((backend_flavor == flavor_auto) || (backend_flavor == flavor_sparse_sparse)) && (num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS))){
         evaluateBatch(x, num_x, y);
         return;
     }
@@ -576,6 +577,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
     if (backend_flavor == flavor_auto){
         flv = (num_points > 1024) ? flavor_sparse_sparse : flavor_dense_dense;
     }
+    if (force_sparse) flv = flavor_sparse_sparse;
     //flv = flavor_sparse_dense;
     if (flv == flavor_dense_dense){
         double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
