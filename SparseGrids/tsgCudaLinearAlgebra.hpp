@@ -27,7 +27,7 @@
  * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
- 
+
 #ifndef __TASMANIAN_SPARSE_GRID_CUDA_LINEAR_ALGEBRA_HPP
 #define __TASMANIAN_SPARSE_GRID_CUDA_LINEAR_ALGEBRA_HPP
 
@@ -56,137 +56,210 @@ void tasgpu_d3gecss(int N, int M, int *order, int top_level, const int *gpuBpntr
     }
 }
 
-// simple, but not efficient (can use with 64 threads, CN = 48, and CK = 61, which gives exactly 48K of shared memory for T = double)
-template <typename T, int THREADS, int CN, int CK>
-__global__ void tasgpu_cudaTgemm_v2(int M, int N, int K, const T *gpu_a, const T *gpu_b, T *gpu_c){
-    __shared__ T cache_c[THREADS * CN];
-    __shared__ T cache_b[CN * CK];
+// only works with SHORT = 32 and BLOCK = 96
+// using blocks, block in C has dims BLOCK by BLOCK = 3 * SHORT by 3 * SHORT,
+// blocks of A and B are both BLOCK by SHORT or 3 * SHORT by SHORT
+template <typename T, int SHORT, int BLOCK> // assuming ratio LONG = 2 * SHORT, THREADS = SHORT * SHORT
+__global__ void tasgpu_cudaTgemm(int M, int N, int K, const T *gpu_a, const T *gpu_b, T *gpu_c){
+    __shared__ T cache_a[SHORT * BLOCK];
+    __shared__ T cache_b[SHORT * BLOCK];
 
-    int m = blockIdx.x * THREADS + threadIdx.x;
+    int num_blocks_m = M / BLOCK + ((M % BLOCK == 0) ? 0 : 1); // number of total blocks in M direction
+    int num_blocks_n = N / BLOCK + ((N % BLOCK == 0) ? 0 : 1); // number of total blocks in N direction
+    num_blocks_m *= num_blocks_n; // num_blocks_m is never used without a product to num_blocks_n
 
-    int num_blockn = N / CN;
-    if (N % CN > 0) num_blockn++;
-    int num_blockk = K / CK;
-    if (K % CK > 0) num_blockk++;
+    int block = blockIdx.x; // keep track of the block being processed (each thread block takes on a block of C)
 
-    for(int blockn = 0; blockn < num_blockn; blockn++){
-        // cache C
-        for(int n=0; n<CN; n++){
-            cache_c[n * THREADS + threadIdx.x] = 0.0;
-        }
+    int height = threadIdx.x % SHORT; // threads are oranized logivally in a square of size SHORT by SHORT (relates to M and K)
+    int swidth = threadIdx.x / SHORT; // height and swidth are the indexes of this thread in the block (relates to N and K)
+    // sequential threads are adjacent in height (column major logic)
 
-        int maxN = N - blockn * CN;
-        if (maxN > CN) maxN = CN;
+    while(block < num_blocks_m){
 
-        for(int blockk = 0; blockk < num_blockk; blockk++){
-            // cache B
-            int maxK = K - blockk * CK;
-            if (maxK > CK) maxK = CK;
+        // find out the current matrix block for this block of threads
+        int block_m = block / num_blocks_n;
+        int maxM = BLOCK;
+        if (block_m * BLOCK + maxM > M) maxM = M - block_m * BLOCK;
 
-            if (threadIdx.x < maxK){
-                int offk = blockn * CN * K + blockk * CK + threadIdx.x;
-                for(int n=0; n<maxN; n++){
-                    cache_b[n * CK + threadIdx.x] = gpu_b[n * K + offk];
-                }
+        int block_n = block % num_blocks_n;
+        int maxN = BLOCK;
+        if (block_n * BLOCK + maxN > N) maxN = N - block_n * BLOCK;
+
+        int offsetm = block_m * BLOCK; // identify row/column of C
+
+        // prepare cache in c
+        T c11 = 0.0;    T c12 = 0.0;    T c13 = 0.0;
+        T c21 = 0.0;    T c22 = 0.0;    T c23 = 0.0;
+        T c31 = 0.0;    T c32 = 0.0;    T c33 = 0.0;
+
+        for(int k=0; k<K; k += SHORT){
+            int maxK = SHORT;
+            if (k + maxK > K) maxK = K - k;
+
+            // preload A
+            if (swidth < maxK){
+                int offseta  = k * M + swidth * M + offsetm + height;
+                int offsetl = swidth * SHORT + height;
+                if (height < maxM) cache_a[offsetl] = gpu_a[offseta];
+                offseta  += SHORT;
+                offsetl += SHORT*SHORT;
+                if (height + SHORT < maxM) cache_a[offsetl] = gpu_a[offseta];
+                offseta  += SHORT;
+                offsetl += SHORT*SHORT;
+                if (height + 2*SHORT < maxM) cache_a[offsetl] = gpu_a[offseta];
+            }
+
+            // preload B
+            if (height < maxK){
+                // start of the block + k processes so far + local column + the k for this thread
+                int offsetb = block_n * BLOCK * K + k + swidth * K + height;
+                if (swidth < maxN) cache_b[threadIdx.x] = gpu_b[offsetb];
+                offsetb += SHORT * K;
+                if (swidth + SHORT < maxN) cache_b[SHORT * SHORT + threadIdx.x] = gpu_b[offsetb];
+                offsetb += SHORT * K;
+                if (swidth + 2 * SHORT < maxN) cache_b[2 * SHORT * SHORT + threadIdx.x] = gpu_b[offsetb];
             }
             __syncthreads();
 
-            if (m < M){
-                int off = blockk * CK * M + m;
-                for(int k=0; k<maxK; k++){
-                    T a = gpu_a[off + k * M];
-                    for(int n=0; n<maxN; n++){
-                        cache_c[n * THREADS + threadIdx.x] += a * cache_b[n * CK + k];
-                    }
-                }
+            for(int local_k=0; local_k < maxK; local_k++){
+                // process the 4 blocks of C
+                int offa = height         + local_k * SHORT; // position in a cache
+                int offb = swidth * SHORT + local_k;         // position in b cache
+                // for memory in cache a threads read adjacent values, in bache b all threads read one valua at a time
+                T val = cache_a[offa];
+                c11 += val * cache_b[offb];
+                c12 += val * cache_b[offb +     SHORT * SHORT];
+                c13 += val * cache_b[offb + 2 * SHORT * SHORT];
 
-                off = blockn * CN * M + m;
-                for(int n=0; n<maxN; n++){
-                    gpu_c[off + n * M] = cache_c[n * THREADS + threadIdx.x];
-                }
+                val = cache_a[offa + SHORT * SHORT];
+                c21 += val * cache_b[offb];
+                c22 += val * cache_b[offb +     SHORT * SHORT];
+                c23 += val * cache_b[offb + 2 * SHORT * SHORT];
+
+                val = cache_a[offa + 2 * SHORT * SHORT];
+                c31 += val * cache_b[offb];
+                c32 += val * cache_b[offb +     SHORT * SHORT];
+                c33 += val * cache_b[offb + 2 * SHORT * SHORT];
             }
             __syncthreads();
         }
+
+        // write into C
+        //        block column          thread column        block row         thread row
+        offsetm = block_n * BLOCK * M + swidth * M + block_m * BLOCK + height;
+        if (swidth < maxN){
+            if (height             < maxM) gpu_c[offsetm            ] = c11;
+            if (height +     SHORT < maxM) gpu_c[offsetm +     SHORT] = c21;
+            if (height + 2 * SHORT < maxM) gpu_c[offsetm + 2 * SHORT] = c31;
+        }
+        offsetm += SHORT * M; // jump by short columns
+        if (swidth + SHORT < maxN){
+            if (height             < maxM) gpu_c[offsetm            ] = c12;
+            if (height +     SHORT < maxM) gpu_c[offsetm +     SHORT] = c22;
+            if (height + 2 * SHORT < maxM) gpu_c[offsetm + 2 * SHORT] = c32;
+        }
+        offsetm += SHORT * M; // jump by short columns
+        if (swidth + 2 * SHORT < maxN){
+            if (height             < maxM) gpu_c[offsetm            ] = c13;
+            if (height +     SHORT < maxM) gpu_c[offsetm +     SHORT] = c23;
+            if (height + 2 * SHORT < maxM) gpu_c[offsetm + 2 * SHORT] = c33;
+        }
+
+        block += gridDim.x;
     }
 }
 
-// really only works with 32 threads with double since we need size(T) * THREADS^2 * 3 bytes of shared memory
-template <typename T, int THREADS>
-__global__ void tasgpu_cudaTgemm(int num_cblocks_m, int num_cblocks_n, int M, int N, int K, const T *gpu_a, const T *gpu_b, T *gpu_c){
-    __shared__ T cache_a[THREADS * THREADS];
-    __shared__ T cache_b[THREADS * THREADS];
-    __shared__ T cache_c[THREADS * THREADS];
+// sparse matrix-matrix multiply
+// C = A * B, where A is in sparse row compressed form (pntr, indx, vals, num_nz) and C and B are in row major formats, C is M by N
+// threads in a block first cache indx and vals, then use the cached values to march accross N incrementing C contiguously
+template<typename T, int THREADS>
+__global__ void tasgpu_sparse_matmul(int M, int N, int num_nz, const int *pntr, const int *indx, const T *vals, const T *B, T *C){
+    __shared__ int cache_indx[THREADS];
+    __shared__ T cache_vals[THREADS];
+    int i = blockIdx.x * THREADS; // indexes rows of C
+    while(i < M){
+        int endi = i + THREADS;
+        if (endi > M) endi = M;
+        while(i < endi){
+            int c = threadIdx.x; // indexes columns of C
+            while(c < N){ // intialize C to zero
+                C[i * N + c] = 0.0;
+                c += THREADS;
+            }
+            int offj = pntr[i];
+            while(offj < pntr[i+1]){
+                if (offj + threadIdx.x < num_nz){ // cache a bunch of indx and vals
+                    cache_indx[threadIdx.x] = indx[offj + threadIdx.x];
+                    cache_vals[threadIdx.x] = vals[offj + threadIdx.x];
+                }
+                __syncthreads();
+                int endj = THREADS;
+                if (offj + endj > pntr[i+1]) endj = pntr[i+1] - offj; // stop when reaching the next i
+                c = threadIdx.x;
+                while(c < N){
+                    T sum = 0.0;
+                    for(int j=0; j<endj; j++){ // indexes non-zeros
+                        sum += cache_vals[j] * B[cache_indx[j] * N + c];
+                    }
+                    C[i * N + c] += sum;
+                    c += THREADS;
+                }
+                offj += endj;
+                __syncthreads();
+            }
+            i++;
+        }
+        i += gridDim.x * THREADS; // move to the next set of rows
+    }
+}
 
-    int num_cblocks_k = K / THREADS;
-    if (num_cblocks_k * THREADS < K) num_cblocks_k++;
+// dense row major matrix times a sparse vector, the result is a row-major matrix
+// indx, vals and num_nz descripbe the vector, A is M by N, C is M by 1, C = A * vector (M here is num_outputs)
+// each thread processes up to 4 entries of A increasing reuse of the cached vals and indx
+// NBLOCKS specifies how many entries
+template<typename T, int THREADS, int NBLOCKS>
+__global__ void tasgpu_sparse_matveci(int M, int N, int num_nz, const T *A, const int *indx, const T *vals, T *C){
+    __shared__ int cache_indx[THREADS];
+    __shared__ T cache_vals[THREADS];
+    int m = blockIdx.x * THREADS * NBLOCKS ; // m is the starting row of the block
+    while(m < M){
+        m += threadIdx.x; // the row this thread will process
 
-    int cblock_m = blockIdx.x / num_cblocks_n;
-    int maxM = THREADS;
-    if (cblock_m * THREADS + maxM > M) maxM = M - cblock_m * THREADS;
+        T c1 = 0.0;
+        T c2 = 0.0;
+        T c3 = 0.0;
+        T c4 = 0.0;
 
-    while(maxM > 0){
-
-        int cblock_n = blockIdx.x % num_cblocks_n;
-        int maxN = THREADS;
-        if (cblock_n * THREADS + maxN > N) maxN = N - cblock_n * THREADS;
-
-        while(maxN > 0){
-
-            // zero the c-block
-            for(int i=0; i<THREADS; i++){
-                cache_c[i * THREADS + threadIdx.x] = 0.0;
+        int sparse_row = 0;
+        while(sparse_row < num_nz){
+            int maxVals = THREADS;
+            if (sparse_row + maxVals > num_nz) maxVals = num_nz - sparse_row;
+            // cache the vector
+            if (threadIdx.x < maxVals){
+                cache_indx[threadIdx.x] = indx[sparse_row + threadIdx.x];
+                cache_vals[threadIdx.x] = vals[sparse_row + threadIdx.x];
             }
             __syncthreads();
 
-            for(int cblock_k=0; cblock_k < num_cblocks_k; cblock_k++){
-                // cache blocks of A and B
-                int maxK = THREADS;
-                if (cblock_k * THREADS + maxK > K) maxK = K - cblock_k * THREADS;
-
-                if (threadIdx.x < maxM){
-                    int a_row_offset = cblock_m * THREADS + cblock_k * THREADS * M + threadIdx.x;
-                    for(int i=0; i<maxK; i++){
-                        cache_a[i * THREADS + threadIdx.x] = gpu_a[i * M + a_row_offset];
-                    }
-                }
-
-                if (threadIdx.x < maxK){
-                    int b_row_offset = cblock_n * THREADS * K + cblock_k * THREADS + threadIdx.x;
-                    for(int i=0; i<maxN; i++){
-                        cache_b[i * THREADS + threadIdx.x] = gpu_b[i * K + b_row_offset];
-                    }
-                }
-                __syncthreads();
-
-                if (threadIdx.x < maxM){
-                    for(int i=0; i<maxN; i++){
-                        T sum = 0.0;
-                        for(int j=0; j<maxK; j++){
-                            sum += cache_a[j * THREADS + threadIdx.x] * cache_b[i * THREADS + j];
-                        }
-                        cache_c[i * THREADS + threadIdx.x] += sum;
-                    }
-                }
-
-                __syncthreads();
+            for(int i=0; i<maxVals; i++){
+                int off = cache_indx[i] * M + m;
+                T val = cache_vals[i];
+                c1 += cache_vals[i] * A[off];
+                if (NBLOCKS > 1) c2 += val * A[off +     THREADS];
+                if (NBLOCKS > 2) c3 += val * A[off + 2 * THREADS];
+                if (NBLOCKS > 3) c4 += val * A[off + 3 * THREADS];
             }
-
-            if (threadIdx.x < maxM){
-                int offset = cblock_n * THREADS * M + cblock_m * THREADS +  threadIdx.x;
-                for(int i=0; i<maxN; i++){
-                    gpu_c[i * M + offset] = cache_c[i * THREADS + threadIdx.x];
-                }
-            }
+            sparse_row += THREADS;
             __syncthreads();
-
-            cblock_n += num_cblocks_n;
-            maxN = THREADS;
-            if (cblock_n * THREADS + maxN > N) maxN = N - cblock_n * THREADS;
         }
 
-        cblock_m += num_cblocks_m;
-        maxM = THREADS;
-        if (cblock_m * THREADS + maxM > M) maxM = M - cblock_m * THREADS;
+        C[m] = c1;
+        if (NBLOCKS > 1) C[m +     THREADS] = c2;
+        if (NBLOCKS > 2) C[m + 2 * THREADS] = c3;
+        if (NBLOCKS > 3) C[m + 3 * THREADS] = c4;
+
+        m -= threadIdx.x;
+        m += THREADS * NBLOCKS; // the starting row of this block
     }
 }
 
@@ -220,6 +293,9 @@ __global__ void tascuda_sparse_to_dense(int num_rows, int num_columns, const int
         i += gridDim.x;
     }
 }
+
+
+
 
 }
 

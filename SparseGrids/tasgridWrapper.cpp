@@ -39,7 +39,7 @@ TasgridWrapper::TasgridWrapper() : grid(0), command(command_none), num_dimension
     ref_output(-1), min_growth(-1), tref(refine_fds), set_tref(false),
     gridfilename(0), outfilename(0), valsfilename(0), xfilename(0), anisofilename(0), transformfilename(0), conformalfilename(0), customfilename(0),
     levellimitfilename(0),
-    printCout(false), useASCII(false)
+    printCout(false), useASCII(false), set_gpuid(-1)
 {}
 TasgridWrapper::~TasgridWrapper(){
     if (grid != 0) delete grid;
@@ -84,6 +84,7 @@ void TasgridWrapper::setCustomFilename(const char *filename){ customfilename = f
 void TasgridWrapper::setLevelLimitsFilename(const char *filename){ levellimitfilename = filename; }
 void TasgridWrapper::setPrintPoints(bool pp){ printCout = pp; }
 void TasgridWrapper::setUseASCII(bool ascii){ useASCII = ascii; }
+void TasgridWrapper::setGPID(int gpuid){ set_gpuid = gpuid; }
 
 bool TasgridWrapper::checkSane() const{
     bool pass = true;
@@ -523,6 +524,15 @@ bool TasgridWrapper::getEvaluate(){
     }
     int num_out = grid->getNumOutputs();
     res = new double[((size_t) num_out) * rows];
+
+    if (set_gpuid > -1){
+        if (set_gpuid < grid->getNumGPUs()){
+            grid->enableAcceleration(accel_gpu_cuda);
+            grid->setGPUID(set_gpuid);
+        }else{
+            cerr << "WARNING: invalud GPU specified " << set_gpuid << endl;
+        }
+    }
 
     grid->evaluateBatch(x, rows, res);
 

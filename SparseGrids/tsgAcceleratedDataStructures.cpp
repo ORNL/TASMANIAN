@@ -42,8 +42,12 @@ BaseAccelerationData::~BaseAccelerationData(){}
 
 AccelerationDataGPUFull::AccelerationDataGPUFull() :
     gpu_values(0), gpu_nodes(0), gpu_support(0),
-    gpu_hpntr(0), gpu_hindx(0), gpu_roots(0),
-    cublasHandle(0), cusparseHandle(0), logstream(0){}
+    gpu_hpntr(0), gpu_hindx(0), gpu_roots(0), logstream(0){
+#ifdef TASMANIAN_CUBLAS
+    cublasHandle = 0;
+    cusparseHandle = 0;
+#endif
+}
 AccelerationDataGPUFull::~AccelerationDataGPUFull(){
     #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
     if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
@@ -152,7 +156,7 @@ void AccelerationDataGPUFull::cublasDGEMV(int, int, const double *, double *){}
 #endif // TASMANIAN_CUBLAS
 
 #ifdef TASMANIAN_CUBLAS
-void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_points, int num_x, const double gpu_weights[], double *gpu_result){
+void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
 
     double alpha = 1.0, beta = 0.0;
@@ -225,7 +229,7 @@ void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double 
 void AccelerationDataGPUFull::cusparseDCRSMM(int, int, const int*, const int*, const double*, const double*, double*){}
 #endif // TASMANIAN_CUBLAS
 
-#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
+#ifdef TASMANIAN_CUBLAS
 void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
     makeCuSparseHandle(); // creates a handle only if one doesn't exist
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
@@ -287,9 +291,39 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
         TasCUDA::cudaDel<int>(tempp, logstream);
     }
 }
+void AccelerationDataGPUFull::cusparseMatvec(int num_points, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
+    makeCuSparseHandle(); // creates a handle only if one doesn't exist
+    cusparseStatus_t stat;
+    double alpha = 1.0, beta = 0.0;
+    cusparseMatDescr_t mat_desc;
+    stat = cusparseCreateMatDescr(&mat_desc);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRMM2", logstream);
+    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
+    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
+
+    stat = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
+            CUSPARSE_OPERATION_NON_TRANSPOSE, num_x, num_points, num_nz,
+            &alpha, mat_desc, svals, spntr, sindx, gpu_values, &beta, result);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseMatvec in DCRMM2", logstream);
+
+    cusparseDestroyMatDescr(mat_desc);
+}
+void AccelerationDataGPUFull::cusparseMatveci(int num_outputs, int num_points, int num_nz, const int *sindx, const double *svals, double *result){
+    makeCuSparseHandle(); // creates a handle only if one doesn't exist
+    cusparseStatus_t stat;
+    double alpha = 1.0, beta = 0.0;
+
+    stat = cusparseDgemvi((cusparseHandle_t) cusparseHandle,
+            CUSPARSE_OPERATION_NON_TRANSPOSE, num_outputs, num_points, &alpha,
+            gpu_values, num_outputs, num_nz, svals, sindx, &beta, result, CUSPARSE_INDEX_BASE_ZERO, 0);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseMatvec in DCRMM2", logstream);
+}
 #else
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
-#endif // defined TASMANIAN_CUBLAS || TASMANIAN_CUDA
+void AccelerationDataGPUFull::cusparseMatvec(int, int, const int*, const int*, const double*, int, double*){}
+void AccelerationDataGPUFull::cusparseMatveci(int, int, int, const int*, const double*, double*){}
+#endif // defined TASMANIAN_CUBLAS
 
 TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
     if (strcmp(name, "cpu-blas") == 0){

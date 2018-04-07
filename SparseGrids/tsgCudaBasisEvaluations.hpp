@@ -27,7 +27,7 @@
  * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
- 
+
 #ifndef __TASMANIAN_SPARSE_GRID_CUDA_BASIS_EVALUATIONS_HPP
 #define __TASMANIAN_SPARSE_GRID_CUDA_BASIS_EVALUATIONS_HPP
 
@@ -66,195 +66,144 @@ __global__ void tasgpu_transformed_to_canonical(int dims, int num_x, int size_a,
     }
 }
 
-
-// sparse matrix-matrix multiply
-// C = A * B, where A is in sparse row compressed form (pntr, indx, vals, num_nz) and C and B are in row major formats, C is M by N
-// threads in a block first cache indx and vals, then use the cached values to march accross N incrementing C contiguously
-template<typename T, int THREADS>
-__global__ void tasgpu_sparse_matmul(int M, int N, int num_nz, const int *pntr, const int *indx, const T *vals, const T *B, T *C){
-    __shared__ int cache_indx[THREADS];
-    __shared__ T cache_vals[THREADS];
-    int i = blockIdx.x * THREADS; // indexes rows of C
-    while(i < M){
-        int endi = i + THREADS;
-        if (endi > M) endi = M;
-        while(i < endi){
-            int c = threadIdx.x; // indexes columns of C
-            while(c < N){ // intialize C to zero
-                C[i * N + c] = 0.0;
-                c += THREADS;
-            }
-            int offj = pntr[i];
-            while(offj < pntr[i+1]){
-                if (offj + threadIdx.x < num_nz){ // cache a bunch of indx and vals
-                    cache_indx[threadIdx.x] = indx[offj + threadIdx.x];
-                    cache_vals[threadIdx.x] = vals[offj + threadIdx.x];
-                }
-                __syncthreads();
-                int endj = THREADS;
-                if (offj + endj > pntr[i+1]) endj = pntr[i+1] - offj; // stop when reaching the next i
-                c = threadIdx.x;
-                while(c < N){
-                    T sum = 0.0;
-                    for(int j=0; j<endj; j++){ // indexes non-zeros
-                        sum += cache_vals[j] * B[cache_indx[j] * N + c];
-                    }
-                    C[i * N + c] += sum;
-                    c += THREADS;
-                }
-                offj += endj;
-                __syncthreads();
-            }
-            i++;
+// evaluates a single basis function
+// syncronize with GridLocalPolynomial::encodeSupportForGPU
+template <typename T, int order, TypeOneDRule rule>
+__device__ inline T tasgpu_devalpwpoly_feval(const double x, const double node, const double support){ // <- arrays are cached
+    T v;
+    if (rule == rule_localp){
+        if (order == 0){
+            v = (fabs(x - node) > support) ? 0.0 : 1.0;
+        }else if (order == 1){
+            v = 1.0 - fabs(x - node) / support;
+            if (support == -1.0) v = 1.0;
+            if (v < 0.0) v = 0.0;
+        }else if (order == 2){
+            v = x - node;
+            v *= v;
+            v = 1.0 - v / support;
+            if (support == -1.0) v = 1.0;
+            if (support == -2.0) v = -x;
+            if (support == -3.0) v =  x;
+            if (v < 0.0) v = 0.0;
         }
-        i += gridDim.x * THREADS; // move to the next set of rows
+    }else if (rule == rule_localp0){
+        if (order == 1){
+            v = 1.0 - fabs(x - node) / support;
+            if (v < 0.0) v = 0.0;
+        }else if (order == 2){
+            v = x - node;
+            v *= v;
+            v = 1.0 - v / support;
+            if (v < 0.0) v = 0.0;
+        }
+    }else{
+        if (order == 2){
+            v = x - node;
+            v *= v;
+            v = 1.0 - v / support;
+            if (v < 0.0) v = 0.0;
+            if (support == -1.0) v = 1.0;
+            if (support == -4.0) v = 0.5 * x * (x - 1.0);
+            if (support == -5.0) v = 0.5 * x * (x + 1.0);
+        }
     }
+    //printf(" v = %1.4e   order = %d   x = %1.4e  node = %1.4e  supp = %1.4e \n", v, order, x, node, support);
+    return v;
 }
 
-
 // evaluates the sparse grid functions for localp0, local0 and semilocalp rules using a DENSE algorithm
-// this kernel will fail if the sparse grid has more than 8388608 basis functions (i.e., num_points = getNumPoints()), at this stage, we should really use the sparse algorithm (see below)
-// the algorithm will also fail if the cache size: 3 * dims * num_threads * sizeof(T) exceeds the shared memory capacity (at 48K and 128 threads with 64-bit T, we can go up to 16 dimensions)
-// grid blocks form a 2D grid with size: block_height x block_width
-// block_height corresponds to the columns of gpu_y, i.e., the number of sparse grids nodes given by num_points = getNumPoints()
-// block_width corresponds to the rows of gpu_y, i.e., num_x
+// use with MAX_DIM = 64 and SHORT = 32
+// dims is num_dimensions, this kernel cannot handle more than 64-dimensions, which is plenty for a sparse grid
+// grid blocks take 32 points each, cache the points, then iteratively take successive blocks of 32 x values (32 x dims)
+// each block of 32 gpu_x values is cached and used to form a 32 by 32 block of the values matrix
+// thus, the nodes and support are reused and only the smaller array of x vlaues is read repeatedly (each thread-block reads the whole array once)
 // gpu_x is canonical x (same format as CPU, dim-major format)
-template <typename T, int order, TypeOneDRule rule, int THREADS> // rule: localp0, localp, semilocalp
-__global__ void tasgpu_devalpwpoly(int block_height, int block_width, int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
-    extern __shared__ T cache_nodes[];
-    T *cache_support = &(cache_nodes[dims * THREADS]);
-    T *cache_x = &(cache_support[dims * THREADS]);
+// use 1D thread-blocks with (num_points / 32) blocks
+template <typename T, int order, TypeOneDRule rule, int SHORT, int MAX_DIM> // rule: localp0, localp, semilocalp
+__global__ void tasgpu_devalpwpoly(int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
+    __shared__ T cache_nodes[SHORT * MAX_DIM];
+    __shared__ T cache_support[SHORT * MAX_DIM];
+    __shared__ T cache_x[SHORT * MAX_DIM];
 
-    // find out how many points (nodes this block of threads must process)
-    int my_point = (blockIdx.x % block_height) * THREADS; // my_point is block start point
-    int local_num_points = THREADS;
-    if (my_point + local_num_points > num_points)
-        local_num_points = num_points - my_point;
+    int height = threadIdx.x % SHORT; // threads are oranized logically in a square of size SHORT by SHORT
+    int swidth = threadIdx.x / SHORT; // height and swidth are the indexes of this thread in the block (relates to num_points and num_x respectively)
+    int max_p = dims * num_points; // maximum number of entries in nodes and support, avoid reading beyond
+    int max_x = dims * num_x; // maximum number of entries in gpu_x, avoid reading beyond
 
-    // cache the nodes and support values for this block of threads (never changes)
-    my_point *= dims; // my_point is the offset where block points start
-    for(int s=0; s<dims; s++){
-        int i = s * THREADS + threadIdx.x;
-        if (i < local_num_points * dims){
-            cache_nodes[i] = gpu_nodes[my_point + i];
-            cache_support[i] = gpu_support[my_point + i];
-        }
-    }
-    my_point /= dims;
-    my_point += threadIdx.x; // this is my sg point (or node)
-    __syncthreads();
+    int id_p = SHORT * blockIdx.x;
 
-    // find out which x-points will be given to this block
-    int block_x = (blockIdx.x / block_height) * THREADS; // index of the x value to be processed on this iteration (using square blocks)
-    int local_num_x = THREADS;
-    if (block_x + local_num_x > num_x)
-        local_num_x = num_x - block_x;
+    while(id_p < num_points){
 
-    while(local_num_x > 0){
-        T *local_y = &(gpu_y[block_x * num_points]);
-
-        // cache a humber of x-points
-        block_x *= dims; // my_point is the offset where block x start
-        for(int s=0; s<dims; s++){
-            int i = s * THREADS + threadIdx.x;
-            if (i < local_num_x * dims){
-                cache_x[i] = gpu_x[block_x + i];
+        // cache support and nodes (reused a lot)
+        int i = threadIdx.x;
+        while(i < SHORT * dims){
+            if (id_p * dims + i < max_p){
+                cache_nodes[(i % dims) * SHORT + (i / dims)] = gpu_nodes[id_p * dims + i];
+                cache_support[(i % dims) * SHORT + (i / dims)] = gpu_support[id_p * dims + i];
             }
+            i += SHORT * SHORT;
         }
-        block_x /= dims;
         __syncthreads();
 
-        if (my_point < num_points){
-            for(int i=0; i<local_num_x; i++){
-                T p = 1.0;
-                for(int j=0; j<dims; j++){
-                    T v;
-                    if (order == 1) v = fabs(cache_x[i*dims + j] - cache_nodes[threadIdx.x*dims + j]);
-                    if (order == 2){
-                        v = (cache_x[i*dims + j] - cache_nodes[threadIdx.x*dims + j]);
-                        v *= v;
-                    }
-                    v /= cache_support[threadIdx.x*dims + j];
-                    if (v > 1.0) p = 0.0; // special points make v negative, p will not be set to 0
-                    v = 1.0 - v;
-                    if ((rule == rule_localp) || (rule == rule_semilocalp)) if (cache_support[threadIdx.x*dims + j] == -1.0) v = 1.0; // localp and semilocalp, point 0 (constant)
-                    if ((rule == rule_localp) || (order == 2)){
-                        if (cache_support[threadIdx.x*dims + j] == -2.0) v = -cache_x[i*dims + j]; // localp, point 1 (left end of the domain)
-                        if (cache_support[threadIdx.x*dims + j] == -3.0) v =  cache_x[i*dims + j]; // localp, point 2 (right end of the domain)
-                        if (v < 0.0) v = 0.0; // set the localp and localp0 functions to 0 outside the support
-                    }
-                    if ((rule == rule_semilocalp) || (order == 2)){
-                        if (cache_support[threadIdx.x*dims + j] == -4.0) v = 0.5 * cache_x[i*dims + j] * (cache_x[i*dims + j] - 1.0); // semilocalp, point 1 (left end of the domain)
-                        if (cache_support[threadIdx.x*dims + j] == -5.0) v = 0.5 * cache_x[i*dims + j] * (cache_x[i*dims + j] + 1.0); // semilocalp, point 2 (left end of the domain)
-                    }
-                    p *= v;
-                }
-                local_y[my_point + i*num_points] = p;
-            }
-        }
+        int id_x = 0;
+        while(id_x < num_x){
 
-        block_x += block_width * THREADS + local_num_x;
-        local_num_x = THREADS;
-        if (block_x + local_num_x > num_x)
-            local_num_x = num_x - block_x;
-        __syncthreads();
+            // cache gpu_x (used only for this block)
+            i = threadIdx.x;
+            while(i < SHORT * dims){
+                if (id_x * dims + i < max_x)
+                    cache_x[i] = gpu_x[id_x * dims + i];
+                i += SHORT * SHORT;
+            }
+            __syncthreads();
+
+            T v = 1.0;
+            for(int j=0; j<dims; j++){
+                v *= tasgpu_devalpwpoly_feval<T, order, rule>(cache_x[swidth * dims + j], cache_nodes[height + SHORT * j], cache_support[height + SHORT * j]);
+            }
+
+            if ((id_p + height < num_points) && (id_x + swidth < num_x))
+                gpu_y[(id_x + swidth) * num_points + (id_p + height)] = v;
+            __syncthreads();
+
+            id_x += SHORT;
+
+        }
+        id_p += SHORT * gridDim.x;
     }
 }
 
 
 // evaluates a single basis function, for use with sparse evaluations
 template <typename T, int order, TypeOneDRule rule>
-__device__ inline T tasgpu_devalpwpoly_sparse_feval(int dims, int i, int ip, const T *x, const T *nodes, const T *support){
+__device__ inline T tasgpu_devalpwpoly_basis_multid(int dims, int i, int ip, const T *x, const T *nodes, const T *support){
     T p = 1.0;
     for(int j=0; j<dims; j++){
-        T v;
-        if (rule == rule_localp){
-            if (order == 1){
-                v = 1.0 - fabs(x[i * dims + j] - nodes[ip * dims + j]) / support[ip * dims + j];
-                if (support[ip * dims + j] == -1.0) v = 1.0;
-                if (v < 0.0) v = 0.0;
-            }else if (order == 2){
-                v = x[i * dims + j] - nodes[ip * dims + j];
-                v *= v;
-                v = 1.0 - v / support[ip * dims + j];
-                if (support[ip * dims + j] == -1.0) v = 1.0;
-                if (support[ip * dims + j] == -2.0) v = -x[i * dims + j];
-                if (support[ip * dims + j] == -3.0) v =  x[i * dims + j];
-                if (v < 0.0) v = 0.0;
-            }
-        }else if (rule == rule_localp0){
-            if (order == 1){
-                v = 1.0 - fabs(x[i * dims + j] - nodes[ip * dims + j]) / support[ip * dims + j];
-                if (v < 0.0) v = 0.0;
-            }else if (order == 2){
-                v = x[i * dims + j] - nodes[ip * dims + j];
-                v *= v;
-                v = 1.0 - v / support[ip * dims + j];
-                if (v < 0.0) v = 0.0;
-            }
-        }else{
-            if (order == 2){
-                v = x[i * dims + j] - nodes[ip * dims + j];
-                v *= v;
-                v = 1.0 - v / support[ip * dims + j];
-                if (v < 0.0) v = 0.0;
-                if (support[ip * dims + j] == -1.0) v = 1.0;
-                if (support[ip * dims + j] == -4.0) v = 0.5 * x[i * dims + j] * (x[i * dims + j] - 1.0);
-                if (support[ip * dims + j] == -5.0) v = 0.5 * x[i * dims + j] * (x[i * dims + j] + 1.0);
-            }
-        }
-        p *= v;
+        const T this_x = x[i * dims + j];
+        const T this_node = nodes[ip * dims + j];
+        const T this_supp = support[ip * dims + j];
+        p *= tasgpu_devalpwpoly_feval<T, order, rule>(this_x, this_node, this_supp);
     }
     return p;
 }
 
-// essentially the same as local polynomial evaluate, just repeated for many threads
+template<typename T>
+__device__ inline T tasgpu_devalpwpoly_support_pwc_multid(int dims, int i, int ip, const T *x, const T *nodes, const T *support){
+    T p = 1.0;
+    for(int j=0; j<dims; j++){
+        p *= ((fabs(x[i * dims + j] - nodes[ip * dims + j]) > 2.0 * support[ip * dims + j]) ? 0.0 : 1.0);
+    }
+    return p;
+}
+
+// essentially the same as local polynomial evaluate, just repeated for many threads, this is SPARSE algorithm
 // at 64 threads and 46 TOPLEVEL, the 48K of shared memory is ehxausted with 4 byte integer
 // note that the resolution at level 46 is 1 / 2^46 = O(1.E-13), which is comparative to the precision, i.e., never use more than 46 levels, makes no sense
 // the kernel is called twice with fill false and then true
 // false only counts the non-zeros, sindx and svals are ignored
-// true fills the non-zeros, sindx and svals are pre-allocated and will be filled
-// dense being true means that the algorithm will fill the dense matrix "dense" and ignore the sparse ones (call only with fill == false)
+// true fills the non-zeros in sindx and svals, sindx and svals must be pre-allocated
+// dense being true means that the algorithm will fill the dense matrix "dense" and ignore the sparse (spntr, sindx, svals) (call dense == true only when fill == false)
 template <typename T, int THREADS, int TOPLEVEL, int order, TypeOneDRule rule, bool fill, bool dense>
 __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
                                           const T *x, const T *nodes, const T *support,
@@ -273,11 +222,19 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
 
         for(int r=0; r<num_roots; r++){
             int ip = roots[r];
-            T p = tasgpu_devalpwpoly_sparse_feval<T, order, rule>(dims, i, ip, x, nodes, support);
+            T p;
+            if (order > 0){
+                p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);
+            }else{
+                p = tasgpu_devalpwpoly_support_pwc_multid<T>(dims, i, ip, x, nodes, support);
+            }
 
             if (p != 0.0){
                 if (fill){
                     sindx[c] = ip;
+                    if (order == 0){
+                        p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);;
+                    }
                     svals[c] = p;
                 }
                 c++;
@@ -290,11 +247,18 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
                 while(mcount[0][threadIdx.x] < mstop[0][threadIdx.x]){
                     if (mcount[current][threadIdx.x] < mstop[current][threadIdx.x]){
                         ip = hindx[mcount[current][threadIdx.x]];
-                        p = tasgpu_devalpwpoly_sparse_feval<T, order, rule>(dims, i, ip, x, nodes, support);
+                        if (order > 0){
+                            p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);
+                        }else{
+                            p = tasgpu_devalpwpoly_support_pwc_multid<T>(dims, i, ip, x, nodes, support);
+                        }
 
                         if (p != 0.0){
                             if (fill){
                                 sindx[c] = ip;
+                                if (order == 0){
+                                    p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);;
+                                }
                                 svals[c] = p;
                             }
                             c++;
@@ -321,6 +285,7 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
         i += gridDim.x * THREADS;
     }
 }
+
 
 }
 

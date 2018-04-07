@@ -117,6 +117,7 @@ public:
 
     // EXPERIMENTAL: mostly for tuning and testing purposes, force certain backend behavior
     inline void setBackendFlavor(TypeLocalPolynomialBackendFlavor new_flavor){ backend_flavor = new_flavor; }
+    inline void setForceSparse(){ force_sparse = true; }
 
 protected:
     void reset(bool clear_rule = true);
@@ -129,6 +130,58 @@ protected:
 
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, int &num_blocks, int &num_last, int &stripe_size,
                                     int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
+
+    template<bool fill>
+    void buildSparseVector(const double x[], int &num_nz, int *sindx, double *svals) const{
+        int *monkey_count = new int[top_level+1];
+        int *monkey_tail = new int[top_level+1];
+
+        bool isSupported;
+        size_t offset;
+
+        num_nz = 0;
+
+        for(int r=0; r<num_roots; r++){
+            double basis_value = evalBasisSupported(points->getIndex(roots[r]), x, isSupported);
+
+            if (isSupported){
+                offset = roots[r] * num_outputs;
+                if (fill){
+                    sindx[num_nz] = roots[r];
+                    svals[num_nz] = basis_value;
+                }
+                num_nz++;
+
+                int current = 0;
+                monkey_tail[0] = roots[r];
+                monkey_count[0] = pntr[roots[r]];
+
+                while(monkey_count[0] < pntr[monkey_tail[0]+1]){
+                    if (monkey_count[current] < pntr[monkey_tail[current]+1]){
+                        offset = indx[monkey_count[current]];
+                        basis_value = evalBasisSupported(points->getIndex(offset), x, isSupported);
+                        if (isSupported){
+                            if (fill){
+                                sindx[num_nz] = offset;
+                                svals[num_nz] = basis_value;
+                            }
+                            num_nz++;
+
+                            monkey_tail[++current] = offset;
+                            monkey_count[current] = pntr[offset];
+                        }else{
+                            monkey_count[current]++;
+                        }
+                    }else{
+                        monkey_count[--current]++;
+                    }
+                }
+            }
+        }
+
+        delete[] monkey_count;
+        delete[] monkey_tail;
+    }
 
     double evalBasisRaw(const int point[], const double x[]) const;
     double evalBasisSupported(const int point[], const double x[], bool &isSupported) const;
@@ -148,21 +201,24 @@ protected:
     void checkAccelerationGPUNodes() const;
     void checkAccelerationGPUHierarchy() const;
 
+    // synchronize with tasgpu_devalpwpoly_feval
     template<int order, TypeOneDRule crule>
     void encodeSupportForGPU(const IndexSet *work, double *cpu_support) const{
         for(int i=0; i<work->getNumIndexes(); i++){
             const int* p = work->getIndex(i);
             for(int j=0; j<num_dimensions; j++){
                 cpu_support[i*num_dimensions + j] = rule->getSupport(p[j]);
-                if (order == 2) cpu_support[i*num_dimensions + j] *= cpu_support[i*num_dimensions + j];
-                if ((crule == rule_localp) || (crule == rule_semilocalp)) if (p[j] == 0) cpu_support[i*num_dimensions + j] = -1.0; // constant function
-                if ((crule == rule_localp) && (order == 2)){
-                    if (p[j] == 1) cpu_support[i*num_dimensions + j] = -2.0;
-                    else if (p[j] == 2) cpu_support[i*num_dimensions + j] = -3.0;
-                }
-                if ((crule == rule_semilocalp) && (order == 2)){
-                    if (p[j] == 1) cpu_support[i*num_dimensions + j] = -4.0;
-                    else if (p[j] == 2) cpu_support[i*num_dimensions + j] = -5.0;
+                if (order != 0){
+                    if (order == 2) cpu_support[i*num_dimensions + j] *= cpu_support[i*num_dimensions + j];
+                    if ((crule == rule_localp) || (crule == rule_semilocalp)) if (p[j] == 0) cpu_support[i*num_dimensions + j] = -1.0; // constant function
+                    if ((crule == rule_localp) && (order == 2)){
+                        if (p[j] == 1) cpu_support[i*num_dimensions + j] = -2.0;
+                        else if (p[j] == 2) cpu_support[i*num_dimensions + j] = -3.0;
+                    }
+                    if ((crule == rule_semilocalp) && (order == 2)){
+                        if (p[j] == 1) cpu_support[i*num_dimensions + j] = -4.0;
+                        else if (p[j] == 2) cpu_support[i*num_dimensions + j] = -5.0;
+                    }
                 }
             }
         }
@@ -192,6 +248,7 @@ private:
 
     mutable BaseAccelerationData *accel;
     TypeLocalPolynomialBackendFlavor backend_flavor;
+    bool force_sparse;
 };
 
 }

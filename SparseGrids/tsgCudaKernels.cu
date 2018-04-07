@@ -46,36 +46,35 @@ void TasCUDA::dtrans2can(int dims, int num_x, int pad_size, const double *gpu_tr
     tasgpu_transformed_to_canonical<double, double, TASMANIAN_CUDA_NUM_THREADS><<<num_blocks, TASMANIAN_CUDA_NUM_THREADS, (2*pad_size) * sizeof(double)>>>(dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
 }
 
+// local polynomial basis functions, DENSE algorithm
 void TasCUDA::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y){
-    int block_height = num_points / TASMANIAN_CUDA_NUM_THREADS_SHORT + ((num_points % TASMANIAN_CUDA_NUM_THREADS_SHORT == 0) ? 0 : 1);
-    // size of __shared__ 3 * dims * num_threads
-    // num_blocks has to be a multiple of block_stride
-    int block_width = num_x / TASMANIAN_CUDA_NUM_THREADS_SHORT + ((num_x % TASMANIAN_CUDA_NUM_THREADS_SHORT == 0) ? 0 : 1);
-    if (block_height * block_width >= 65536) block_width = 65536 / block_height;
-    if (rule == rule_localp0){
+    // each block thread runs 1024 threads and processes 32 points (or basis functions)
+    int num_blocks = (num_points / 32) + ((num_points % 32 == 0) ? 0 : 1);
+    // order == 1 is considered "default" so that the compiler doesn't complain about missing default statement
+    // semilocalp cannot have order less than 2, only rule_localp can have order 0 (this gets overwrittein in makeLocalPolynomialGrid())
+    if (rule == rule_localp){
         switch(order){
-            case 2: tasgpu_devalpwpoly<double, 2, rule_localp0, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-                            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 0:
+                    tasgpu_devalpwpoly<double, 0, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    break;
+            case 2: tasgpu_devalpwpoly<double, 2, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<double, 1, rule_localp0, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-                            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    tasgpu_devalpwpoly<double, 1, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
-    }else if (rule == rule_localp){
+    }else if (rule == rule_localp0){
         switch(order){
-            case 2: tasgpu_devalpwpoly<double, 2, rule_localp, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-                            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: tasgpu_devalpwpoly<double, 2, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<double, 1, rule_localp, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-                            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    tasgpu_devalpwpoly<double, 1, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
-    }else{
-        tasgpu_devalpwpoly<double, 2, rule_semilocalp, TASMANIAN_CUDA_NUM_THREADS_SHORT><<<block_width * block_height, TASMANIAN_CUDA_NUM_THREADS_SHORT, 3 * dims * TASMANIAN_CUDA_NUM_THREADS_SHORT * sizeof(double)>>>
-            (block_height, block_width, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+    }else{ // rule == rule_semilocalp
+        tasgpu_devalpwpoly<double, 2, rule_semilocalp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }
 }
 
+// local polynomial basis functions, SPARSE algorithm (2 passes, one pass to compue the non-zeros and one pass to evaluate)
 void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
                                  int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz,
                                  std::ostream *os){
@@ -85,35 +84,31 @@ void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num
     // call with fill == false to count the non-zeros per row of the matrix
     if (rule == rule_localp){
         switch(order){
-        case 2:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp, false, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
-        default:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp, false, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
+            case 0:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 0, rule_localp, false, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, 0, 0);
+                break;
+            case 2:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp, false, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, 0, 0);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp, false, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, 0, 0);
         }
-    }else if (rule == rule_semilocalp){
+    }else if (rule == rule_localp0){
         switch(order){
-        case 2:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_semilocalp, false, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
-        default:
-        break;
+            case 2:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp0, false, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, 0, 0);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp0, false, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, 0, 0);
         }
-    }else{
-        switch(order){
-        case 2:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp0, false, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
-        default:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp0, false, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
-        }
+    }else{ // rule == rule_semilocalp
+        tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_semilocalp, false, false><<<num_blocks, 64>>>
+            (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, 0, 0);
     }
     int *cpu_spntr = new int[num_x+1];
     cudaRecv(num_x+1, gpu_spntr, cpu_spntr, os);
@@ -127,35 +122,31 @@ void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num
     // call with fill == true to load the non-zeros
     if (rule == rule_localp){
         switch(order){
-        case 2:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp, true, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
-        default:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp, true, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
+            case 0:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 0, rule_localp, true, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
+                break;
+            case 2:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp, true, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp, true, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
         }
-    }else if (rule == rule_semilocalp){
+    }else if (rule == rule_localp0){
         switch(order){
-        case 2:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_semilocalp, true, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
-        default:
-        break;
+            case 2:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp0, true, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp0, true, false><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
         }
-    }else{
-        switch(order){
-        case 2:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp0, true, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
-        default:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp0, true, false><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
-        break;
-        }
+    }else{ // rule == rule_semilocalp
+        tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_semilocalp, true, false><<<num_blocks, 64>>>
+            (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
     }
 }
 
@@ -165,35 +156,31 @@ void TasCUDA::devalpwpoly_sparse_dense(int order, TypeOneDRule rule, int dims, i
     if (num_blocks >= 65536) num_blocks = 65536;
     if (rule == rule_localp){
         switch(order){
-        case 2:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp, false, true><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
-        break;
-        default:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp, false, true><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
-        break;
+            case 0:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 0, rule_localp, false, true><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
+                break;
+            case 2:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp, false, true><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp, false, true><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
         }
-    }else if (rule == rule_semilocalp){
+    }else if (rule == rule_localp0){
         switch(order){
-        case 2:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_semilocalp, false, true><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
-        break;
-        default:
-        break;
+            case 2:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp0, false, true><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp0, false, true><<<num_blocks, 64>>>
+                    (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
         }
     }else{
-        switch(order){
-        case 2:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_localp0, false, true><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
-        break;
-        default:
-            tasgpu_devalpwpoly_sparse<double, 64, 46, 1, rule_localp0, false, true><<<num_blocks, 64>>>
-                (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
-        break;
-        }
+        tasgpu_devalpwpoly_sparse<double, 64, 46, 2, rule_semilocalp, false, true><<<num_blocks, 64>>>
+            (dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, 0, 0, 0, gpu_dense);
     }
 }
 
@@ -201,32 +188,10 @@ void TasCUDA::devalpwpoly_sparse_dense(int order, TypeOneDRule rule, int dims, i
 //       Linear Algebra
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void TasCUDA::cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c){ // gpu_c = gpu_a * gpu_b, gpu_c is M by N
-    const int num_threads = 32;
-
-    int activeN = N;
-    int blocks_n = (activeN / num_threads) + (((activeN % num_threads) == 0) ? 0 : 1);
-    while(blocks_n > 65536){
-        activeN /= 2;
-        blocks_n = (activeN / num_threads) + (((activeN % num_threads) == 0) ? 0 : 1);
-    }
-    int blocks_m = 1;
-    while((blocks_m * num_threads < M) && ((blocks_m + 1) * blocks_n < 65536)) blocks_m++;
-    tasgpu_cudaTgemm<double, 32><<<blocks_m * blocks_n, num_threads>>>(blocks_m, blocks_n, M, N, K, gpu_a, gpu_b, gpu_c);
-
-    // check the last error
-    //cudaError_t cudaStat = cudaPeekAtLastError();
-    //AccelerationMeta::cudaCheckError((void*) &cudaStat, "kernel()", &cerr);
-
-    // pull out gpu_a and gpu_b for debugging purposes
-    //double *A = new double[M*K]; cudaRecv<double>(M * K, gpu_a, A);
-    //double *B = new double[N*K]; cudaRecv<double>(N * K, gpu_b, B);
-    //double *C = new double[N*M];
-
-    // print gpu_a and gpu_b
-    //cout << std::scientific; cout.precision(16);
-    //for(int i=0; i<1; i++){ for(int j=0; j<K; j++){ cout << A[j*M + i] << "   "; } cout << endl; }
-    //cout << endl;
-    //for(int i=0; i<K; i++){ for(int j=0; j<1; j++){ cout << B[j*K + i] << "   "; } cout << endl; }
+    int blocks = (N / 96) + (((N % 96) == 0) ? 0 : 1);
+    blocks *= (M / 96) + (((M % 96) == 0) ? 0 : 1);
+    while(blocks > 65536) blocks = 65536;
+    tasgpu_cudaTgemm<double, 32, 96><<<blocks, 1024>>>(M, N, K, gpu_a, gpu_b, gpu_c);
 }
 
 // sparse triangular solve, usnig cuda kernels (as opposed to cusparse)
@@ -280,6 +245,23 @@ void TasCUDA::convert_sparse_to_dense(int num_rows, int num_columns, const int *
 void TasCUDA::cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C){
     int blocks = M / 64 + ((M % 64 == 0) ? 0 : 1);
     tasgpu_sparse_matmul<double, 64><<<blocks, 64>>>(M, N, num_nz, gpu_spntr, gpu_sindx, gpu_svals, gpu_B, gpu_C);
+}
+
+void TasCUDA::cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, const int *indx, const double *vals, double *C){
+    int num_blocks = N / TASMANIAN_CUDA_NUM_THREADS + ((N % TASMANIAN_CUDA_NUM_THREADS == 0) ? 0 : 1);
+    if (num_blocks< 65536){
+        tasgpu_sparse_matveci<double, TASMANIAN_CUDA_NUM_THREADS, 1><<<num_blocks, TASMANIAN_CUDA_NUM_THREADS>>>(M, N, num_nz, A, indx, vals, C);
+    }else{
+        num_blocks = N / (2 * TASMANIAN_CUDA_NUM_THREADS) + ((N % (2 * TASMANIAN_CUDA_NUM_THREADS) == 0) ? 0 : 1);
+        if (num_blocks< 65536){
+            tasgpu_sparse_matveci<double, TASMANIAN_CUDA_NUM_THREADS, 2><<<num_blocks, TASMANIAN_CUDA_NUM_THREADS>>>(M, N, num_nz, A, indx, vals, C);
+        }else{
+            num_blocks = N / (3 * TASMANIAN_CUDA_NUM_THREADS) + ((N % (3 * TASMANIAN_CUDA_NUM_THREADS) == 0) ? 0 : 1);
+            if (num_blocks< 65536){
+                tasgpu_sparse_matveci<double, TASMANIAN_CUDA_NUM_THREADS, 3><<<num_blocks, TASMANIAN_CUDA_NUM_THREADS>>>(M, N, num_nz, A, indx, vals, C);
+            }
+        }
+    }
 }
 
 }
