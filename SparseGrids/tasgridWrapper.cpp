@@ -846,7 +846,6 @@ bool TasgridWrapper::setHierarchy(){
 bool TasgridWrapper::getPointsIndexes(){
     const int *p = grid->getPointsIndexes();
     int num_p = grid->getNumPoints();
-    //num_p = (grid->getNumNeeded() > 0) ? grid->getNumNeeded() : num_p;
     int num_d = grid->getNumDimensions();
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
@@ -862,7 +861,6 @@ bool TasgridWrapper::getPointsIndexes(){
 bool TasgridWrapper::getNeededIndexes(){
     const int *p = grid->getNeededIndexes();
     int num_p = grid->getNumNeeded();
-    //num_p = (grid->getNumNeeded() > 0) ? grid->getNumNeeded() : num_p;
     int num_d = grid->getNumDimensions();
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);

@@ -45,6 +45,7 @@ public:
     virtual void resetGPULoadedData() = 0;
 };
 
+// wrapper around cublas handle and also that stores onto the gpu values, points, etc
 class AccelerationDataGPUFull : public BaseAccelerationData{
 public:
     AccelerationDataGPUFull();
@@ -99,6 +100,7 @@ private:
     std::ostream *logstream;
 };
 
+// namespace realized in tsgCudaKernels.cu, each function corresponds to a CUDA kernel for evaluations of basis matrix, domain transform, or fallback linear algebra
 namespace TasCUDA{
     // matrix solve double-precision (d), level 3, general (ge), column compressed sparse (cs) (solve): C = A * B
     // A is N by M, B is M by M, C is N by M
@@ -137,6 +139,7 @@ namespace TasCUDA{
     void convert_sparse_to_dense(int num_rows, int num_columns, const int *gpu_pntr, const int *gpu_indx, const double *gpu_vals, double *gpu_destination);
 }
 
+// generic error checking function and types I/O
 namespace AccelerationMeta{
     TypeAcceleration getIOAccelerationString(const char * name);
     const char* getIOAccelerationString(TypeAcceleration accel);
@@ -149,6 +152,7 @@ namespace AccelerationMeta{
     void cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os);
 }
 
+// stores domain transforms, to be used by the top class TasmanianSparseGrid
 class AccelerationDomainTransform{
 public:
     AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b, std::ostream *os);

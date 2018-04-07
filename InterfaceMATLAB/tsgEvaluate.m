@@ -16,6 +16,12 @@ function [result] = tsgEvaluate(lGrid, mX)
 %               here points are user specified points to evaluate the
 %               interpolant (or approximation)
 %
+% NOTE: if lGrid has a field gpuDevice and if Tasmanian is build with
+%       CUBLAS or CUDA options, then this will attempt to use the GPU
+%       for acceleration. The gpuDevice should be an integer corresponding
+%       to a valid Nvidia CUDA device, run tsgCoreTests() to see the
+%       device list visible to Tasmanian and the corresponding number
+%
 % OUTPUT:
 %
 % result: an array of size [num_x, iOut]

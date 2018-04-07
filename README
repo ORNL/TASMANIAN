@@ -3,14 +3,24 @@ Changelog for version 5.1:
 - visit us on github.com/ORNL/TASMANIAN
 
 - added functionality to access hierarchical functions and coefficients
-  which allows constructing sparse grids approximation from an arbitrary
+  which allows constructing model approximation from an arbitrary
   cloud of samples, as opposed to requiring the use of the specific
   points in the hypercube
 
-- added Fortran interface (still EXPERIMENTAL)
+- added custom CUDA kernels for evaluations for LocalPolynomial grids,
+  both sparse/dense basis of hierarchical functions and batch evaluations
+  can be performed with the CUDA kernels for extra speed.
+  evaluateFast for LocalPolynomial also benefits from acceleration
 
-- added several custom CUDA kernels, the cuda acceleration does not
-  outperform cublas, more to come in the future
+- CUDA accelerated evaluations can be triggered from MATLAB
+
+- added tweaks and simplifications to the build system, 
+  the main options remain the same, but check the manual for changes
+  to the additional options
+
+- added tsgCoreTests() script to MATLAB
+
+- added Fortran interface (still very EXPERIMENTAL)
 
 - significantly expanded the automated testing procedures and code
   coverage
@@ -44,7 +54,7 @@ Changelog for version 5.0:
      make
      make test
      make install
-     ./test_post_install.sh
+     ./test_post_install.sh (!replaced by "make test_install" in v5.1!)
 
   -- GNU make
 
@@ -73,7 +83,7 @@ Changelog for version 4.0:
 - support for cmake, starting with version 4.0 cmake is the preffered build system
   the simple GNU-Make will continue to be supported.
   
-  Example cmake call (Linux): (!DOES NOT WORK ON VERSION 5.0, SEE MANUAL)
+  Example cmake call (Linux): (!DOES NOT WORK ON VERSION 5.x, SEE MANUAL)
 
   cd /home/myself/TasmanianBuild
   cmake \

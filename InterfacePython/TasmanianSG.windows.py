@@ -1138,7 +1138,7 @@ class TasmanianSparseGrid:
 
         Note: gauss-laguerre and gauss-hermite rules are defined on
               unbounded domain, in which case  this sets the
-              shift and scale parameters
+              shift and scale parameters, consult the manual
 
         llfTransform: a 2-D numpy.ndarray of size iDimension X 2
                       transform specifies the lower and upper bound
@@ -1159,7 +1159,7 @@ class TasmanianSparseGrid:
         if (lShape[1] != 2):
             raise TasmanianInputError("llfTransform", "ERROR: the second dimension of llfTransform is {0:1d} and it should be 2".format(lShape[1]))
         iNumDimensions = llfTransform.shape[0]
-        # NOTE: this is deliberately left in a way that can work with both ndarray and regular list-of-lists
+        # NOTE: this is deliberately left in a way that can work with both ndarray and regular list-of-lists (but it will not because of lShape = llfTransform.shape)
         pA = (c_double*iNumDimensions)()
         pB = (c_double*iNumDimensions)()
         for iI in range(iNumDimensions):

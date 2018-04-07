@@ -265,7 +265,6 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
     cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
     cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
-    //mat_desc->MatrixType = CUSPARSE_MATRIX_TYPE_GENERAL;
 
     stat = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
             CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, num_x, num_outputs, num_points, num_nz,

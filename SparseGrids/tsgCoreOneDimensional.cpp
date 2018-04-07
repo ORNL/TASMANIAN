@@ -730,11 +730,8 @@ TypeRefinement OneDimensionalMeta::getIOTypeRefinementInt(int ref){
     }
 }
 
-OneDimensionalNodes::OneDimensionalNodes(){}
-OneDimensionalNodes::~OneDimensionalNodes(){}
-
 // Gauss-Legendre
-void OneDimensionalNodes::getGaussLegendre(int m, double* &w, double* &x) const{
+void OneDimensionalNodes::getGaussLegendre(int m, double* &w, double* &x){
     if (w != 0){ delete[] w; }; w = new double[m];
     if (x != 0){ delete[] x; }; x = new double[m];
 
@@ -752,7 +749,7 @@ void OneDimensionalNodes::getGaussLegendre(int m, double* &w, double* &x) const{
 }
 
 // Chebyshev
-void OneDimensionalNodes::getChebyshev(int m, double* &w, double* &x) const{
+void OneDimensionalNodes::getChebyshev(int m, double* &w, double* &x){
     // get Clanshaw-Curtis quadrature points
     if (w != 0){ delete[] w; }
     if (x != 0){ delete[] x; }
@@ -793,7 +790,7 @@ void OneDimensionalNodes::getChebyshev(int m, double* &w, double* &x) const{
 }
 
 // get Gauss-Chebyshev type 1 quadrature points
-void OneDimensionalNodes::getGaussChebyshev1(int m, double* &w, double* &x) const{
+void OneDimensionalNodes::getGaussChebyshev1(int m, double* &w, double* &x){
     if (w != 0){ delete[] w; }
     if (x != 0){ delete[] x; }
     w = new double[m];
@@ -805,7 +802,7 @@ void OneDimensionalNodes::getGaussChebyshev1(int m, double* &w, double* &x) cons
     }
 }
 // get Gauss-Chebyshev-type2 quadrature points
-void OneDimensionalNodes::getGaussChebyshev2(int m, double* &w, double* &x) const{
+void OneDimensionalNodes::getGaussChebyshev2(int m, double* &w, double* &x){
     if (w != 0){ delete[] w; }
     if (x != 0){ delete[] x; }
     w = new double[m];
@@ -818,7 +815,7 @@ void OneDimensionalNodes::getGaussChebyshev2(int m, double* &w, double* &x) cons
     }
 }
 // get Gauss-Jacobi quadrature points
-void OneDimensionalNodes::getGaussJacobi(int m, double* &w, double* &x, double alpha, double beta) const{
+void OneDimensionalNodes::getGaussJacobi(int m, double* &w, double* &x, double alpha, double beta){
     if (w != 0){ delete[] w; }
     if (x != 0){ delete[] x; }
     w = new double[m];
@@ -846,7 +843,7 @@ void OneDimensionalNodes::getGaussJacobi(int m, double* &w, double* &x, double a
     delete[] s;
 }
 // get Gauss-Hermite quadrature points
-void OneDimensionalNodes::getGaussHermite(int m, double* &w, double* &x, double alpha) const{
+void OneDimensionalNodes::getGaussHermite(int m, double* &w, double* &x, double alpha){
     if (w != 0){ delete[] w; }
     if (x != 0){ delete[] x; }
     w = new double[m];
@@ -869,7 +866,7 @@ void OneDimensionalNodes::getGaussHermite(int m, double* &w, double* &x, double 
     delete[] s;
 }
 // get Gauss-Laguerre quadrature points
-void OneDimensionalNodes::getGaussLaguerre(int m, double* &w, double* &x, double alpha) const{
+void OneDimensionalNodes::getGaussLaguerre(int m, double* &w, double* &x, double alpha){
     if (w != 0){ delete[] w; }
     if (x != 0){ delete[] x; }
     w = new double[m];
@@ -894,7 +891,7 @@ void OneDimensionalNodes::getGaussLaguerre(int m, double* &w, double* &x, double
 }
 
 // Clenshaw-Curtis
-double* OneDimensionalNodes::getClenshawCurtisNodes(int level) const{
+double* OneDimensionalNodes::getClenshawCurtisNodes(int level){
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level, rule_clenshawcurtis);
     double* x = new double[n];
@@ -911,7 +908,7 @@ double* OneDimensionalNodes::getClenshawCurtisNodes(int level) const{
     }
     return x;
 }
-double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point) const{
+double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     OneDimensionalMeta meta;
     int ieffective, n = meta.getNumPoints(level, rule_clenshawcurtis);
     if (level == 0){ return 2.0; }
@@ -940,7 +937,7 @@ double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point) const{
     return weight;
 }
 // Clenshaw-Curtis-Zero
-double* OneDimensionalNodes::getClenshawCurtisNodesZero(int level) const{
+double* OneDimensionalNodes::getClenshawCurtisNodesZero(int level){
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level+1, rule_clenshawcurtis);
     double* x = new double[n-2];
@@ -956,7 +953,7 @@ double* OneDimensionalNodes::getClenshawCurtisNodesZero(int level) const{
     }
     return x;
 }
-double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point) const{
+double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     // this should be equivalent to  return getClenshawCurtisWeight(level + 1, ((point == 0) ? 0 : point +2));
     OneDimensionalMeta meta;
     int ieffective, n = meta.getNumPoints(level+1, rule_clenshawcurtis);
@@ -981,7 +978,7 @@ double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point) co
     return weight;
 }
 // Fejer-2
-double* OneDimensionalNodes::getFejer2Nodes(int level) const{
+double* OneDimensionalNodes::getFejer2Nodes(int level){
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level, rule_fejer2);
     double *x = new double[n];
@@ -997,7 +994,7 @@ double* OneDimensionalNodes::getFejer2Nodes(int level) const{
     }
     return x;
 }
-double OneDimensionalNodes::getFejer2Weight(int level, int point) const{
+double OneDimensionalNodes::getFejer2Weight(int level, int point){
     if (level == 0){ return 2.0; }
     OneDimensionalMeta meta;
     int ieffective, n = meta.getNumPoints(level, rule_fejer2);
@@ -1022,7 +1019,7 @@ double OneDimensionalNodes::getFejer2Weight(int level, int point) const{
     return weight;
 }
 
-double* OneDimensionalNodes::getRLeja(int n) const{
+double* OneDimensionalNodes::getRLeja(int n){
     double* nodes = new double[n];
     nodes[0] = 0.0;
     if (n > 1){ nodes[1] = M_PI; }
@@ -1035,20 +1032,17 @@ double* OneDimensionalNodes::getRLeja(int n) const{
         }
     }
     for(int i=0; i<n; i++){  nodes[i] = cos(nodes[i]);  }
-    //nodes[0] = 0.0;
-    //if (n > 1){ nodes[1] = 1.0; }
-    //if (n > 2){ nodes[2] = -1.0; }
     if (n > 2){ nodes[2] = 0.0; } // not sure which version is better, starting at 0 or starting at 1
     return nodes;
 }
-double* OneDimensionalNodes::getRLejaCentered(int n) const{
+double* OneDimensionalNodes::getRLejaCentered(int n){
     double* nodes = getRLeja(n);
     nodes[0] = 0.0;
     if (n > 1){ nodes[1] = 1.0; }
     if (n > 2){ nodes[2] = -1.0; }
     return nodes;
 }
-double* OneDimensionalNodes::getRLejaShifted(int n) const{
+double* OneDimensionalNodes::getRLejaShifted(int n){
     double* nodes = new double[n];
     nodes[0] = -0.5;
     if (n > 1){ nodes[1] = 0.5; }

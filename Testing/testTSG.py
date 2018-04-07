@@ -14,8 +14,6 @@ grid = TasmanianSG.TasmanianSparseGrid()
 # python-coverage html
 # python-coverage report
 
-# TODO: test the math of the refinement
-
 class TestTasmanian(unittest.TestCase):
     def compareGrids(self, gridA, gridB, bTestRuleNames = True):
         self.assertEqual(gridA.getNumDimensions(), gridB.getNumDimensions(), "error in getNumDimensions()")
@@ -153,7 +151,7 @@ class TestTasmanian(unittest.TestCase):
         else:
             print("            none")
 
-        grid.printStats()
+        #grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
 
         # test I/O for Global Grids
         # iDimension, iOutputs, iDepth, sType, sRule, fAlpha, fBeta, useTransform, loadFunciton, limitLevels
@@ -422,7 +420,6 @@ class TestTasmanian(unittest.TestCase):
 
         iNumGPUs = grid.getNumGPUs()
         lsAccelTypes = ["none", "cpu-blas", "gpu-cuda", "gpu-cublas"]
-        #lsAccelTypes = ["gpu-cuda"]
 
         for sTest in lTests:
             for iI in range(2):
@@ -467,7 +464,6 @@ class TestTasmanian(unittest.TestCase):
     def testBasicException(self):
         print("\nTesting error handling")
         grid = TasmanianSG.TasmanianSparseGrid()
-        #print("\nAttempting bogus grid construction, should see many errors")
 
         # notError tests here are needed to ensure that the multi-statement commands fail for the right function
         llTests = [["grid.makeGlobalGrid(-1, 1,  4, 'level', 'clenshaw-curtis')", "iDimension"],
