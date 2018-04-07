@@ -1838,7 +1838,7 @@ bool ExternalTester::testAllAcceleration() const{
     // for order 0, regardless of the selected rule, thegrid should switch to localp
     TasGrid::TypeOneDRule pwp_rule[3] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp};
     for(int t=0; t<9; t++){
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 3 == 0) ? 4 : 5), (t / 3), pwp_rule[t%3]);
+        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 3 == 0) ? 4 : 5), (t / 3), pwp_rule[t % 3]);
         pass = pass && testAcceleration(f, &grid);
     }
     // test cusparse sparse mat times dense vec used in accel_type cuda
@@ -1875,7 +1875,7 @@ extern "C" double gettime(){
     return t.tv_sec + t.tv_usec * 1.0E-6;
 }
 #else
-    double gettime(){ return ((double) time(0) * 1.E+6); }
+    double gettime(){ return ((double) time(0)); }
 #endif // _TASMANIAN_WINDOWS_
 void loadGridValues(TasmanianSparseGrid *grid){
     int dims = grid->getNumDimensions(), num_outputs = grid->getNumOutputs();

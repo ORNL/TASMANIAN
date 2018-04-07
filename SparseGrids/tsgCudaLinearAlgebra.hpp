@@ -213,6 +213,56 @@ __global__ void tasgpu_sparse_matmul(int M, int N, int num_nz, const int *pntr, 
     }
 }
 
+// dense row major matrix times a sparse vector, the result is a row-major matrix
+// indx, vals and num_nz descripbe the vector, A is M by N, C is M by 1, C = A * vector (M here is num_outputs)
+// each thread processes up to 4 entries of A increasing reuse of the cached vals and indx
+// NBLOCKS specifies how many entries
+template<typename T, int THREADS, int NBLOCKS>
+__global__ void tasgpu_sparse_matveci(int M, int N, int num_nz, const T *A, const int *indx, const T *vals, T *C){
+    __shared__ int cache_indx[THREADS];
+    __shared__ T cache_vals[THREADS];
+    int m = blockIdx.x * THREADS * NBLOCKS ; // m is the starting row of the block
+    while(m < M){
+        m += threadIdx.x; // the row this thread will process
+
+        T c1 = 0.0;
+        T c2 = 0.0;
+        T c3 = 0.0;
+        T c4 = 0.0;
+
+        int sparse_row = 0;
+        while(sparse_row < num_nz){
+            int maxVals = THREADS;
+            if (sparse_row + maxVals > num_nz) maxVals = num_nz - sparse_row;
+            // cache the vector
+            if (threadIdx.x < maxVals){
+                cache_indx[threadIdx.x] = indx[sparse_row + threadIdx.x];
+                cache_vals[threadIdx.x] = vals[sparse_row + threadIdx.x];
+            }
+            __syncthreads();
+
+            for(int i=0; i<maxVals; i++){
+                int off = cache_indx[i] * M + m;
+                T val = cache_vals[i];
+                c1 += cache_vals[i] * A[off];
+                if (NBLOCKS > 1) c2 += val * A[off +     THREADS];
+                if (NBLOCKS > 2) c3 += val * A[off + 2 * THREADS];
+                if (NBLOCKS > 3) c4 += val * A[off + 3 * THREADS];
+            }
+            sparse_row += THREADS;
+            __syncthreads();
+        }
+
+        C[m] = c1;
+        if (NBLOCKS > 1) C[m +     THREADS] = c2;
+        if (NBLOCKS > 2) C[m + 2 * THREADS] = c3;
+        if (NBLOCKS > 3) C[m + 3 * THREADS] = c4;
+
+        m -= threadIdx.x;
+        m += THREADS * NBLOCKS; // the starting row of this block
+    }
+}
+
 // convert sparse matrix to dense format
 template <typename T, int THREADS>
 __global__ void tascuda_fill(int n, T value, T *destination){

@@ -247,6 +247,23 @@ void TasCUDA::cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, c
     tasgpu_sparse_matmul<double, 64><<<blocks, 64>>>(M, N, num_nz, gpu_spntr, gpu_sindx, gpu_svals, gpu_B, gpu_C);
 }
 
+void TasCUDA::cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, const int *indx, const double *vals, double *C){
+    int num_blocks = N / TASMANIAN_CUDA_NUM_THREADS + ((N % TASMANIAN_CUDA_NUM_THREADS == 0) ? 0 : 1);
+    if (num_blocks< 65536){
+        tasgpu_sparse_matveci<double, TASMANIAN_CUDA_NUM_THREADS, 1><<<num_blocks, TASMANIAN_CUDA_NUM_THREADS>>>(M, N, num_nz, A, indx, vals, C);
+    }else{
+        num_blocks = N / (2 * TASMANIAN_CUDA_NUM_THREADS) + ((N % (2 * TASMANIAN_CUDA_NUM_THREADS) == 0) ? 0 : 1);
+        if (num_blocks< 65536){
+            tasgpu_sparse_matveci<double, TASMANIAN_CUDA_NUM_THREADS, 2><<<num_blocks, TASMANIAN_CUDA_NUM_THREADS>>>(M, N, num_nz, A, indx, vals, C);
+        }else{
+            num_blocks = N / (3 * TASMANIAN_CUDA_NUM_THREADS) + ((N % (3 * TASMANIAN_CUDA_NUM_THREADS) == 0) ? 0 : 1);
+            if (num_blocks< 65536){
+                tasgpu_sparse_matveci<double, TASMANIAN_CUDA_NUM_THREADS, 3><<<num_blocks, TASMANIAN_CUDA_NUM_THREADS>>>(M, N, num_nz, A, indx, vals, C);
+            }
+        }
+    }
+}
+
 }
 
 #endif

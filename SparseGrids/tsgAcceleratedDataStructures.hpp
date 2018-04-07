@@ -76,6 +76,9 @@ public:
     // sparse matrix times a vector, makes sense only if the matrix already sits on the gpu
     // assumes num_points == 1 and vectors live on the gpu
     void cusparseMatvec(int num_points, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
+    // dense matrix A times a sparse vector defined by sindx and svals
+    // A is num_outputs by num_points, result is num_outputs
+    void cusparseMatveci(int num_outputs, int num_points, int num_nz, const int *sindx, const double *svals, double *result);
 
     void cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses);
 
@@ -88,8 +91,10 @@ private:
     double *gpu_nodes, *gpu_support; // support is half support and encodes the level of the function, i.e., constant, linear, or quadratic
     int *gpu_hpntr, *gpu_hindx, *gpu_roots;
 
+    #ifdef TASMANIAN_CUBLAS
     void *cublasHandle;
     void *cusparseHandle;
+    #endif
 
     std::ostream *logstream;
 };
@@ -122,6 +127,11 @@ namespace TasCUDA{
     // C is M x N, B is K x N (K is max(gpu_sindx)), both are given in row-major format, num_nz/spntr/sindx/svals describe row compressed A which is M by K
     // on exit C = A * B
     void cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C);
+
+    // dense matrix A (column major) times a sparse vector defiend by num_nz, indx, and vals
+    // A is M by N, C is M by 1,
+    // on exit C = A * (indx, vals)
+    void cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, const int *indx, const double *vals, double *C);
 
     // converts a sparse matrix to a dense representation (all data sits on the gpu and is pre-allocated)
     void convert_sparse_to_dense(int num_rows, int num_columns, const int *gpu_pntr, const int *gpu_indx, const double *gpu_vals, double *gpu_destination);

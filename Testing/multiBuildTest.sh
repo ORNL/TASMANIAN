@@ -233,15 +233,92 @@ cmake -D CMAKE_INSTALL_PREFIX="$sTempBuild/Install" $sTempBuild/Tasmanian || { e
 make -j || { exit 1; }
 make test || { exit 1; }
 make install || { exit 1; }
-./test_post_install.sh || { exit 1; }
+make test_install || { exit 1; }
 if [ ! -f $sTempBuild/Install/lib/libtasmaniansparsegrid.so ]; then
     echo "cmake did not install correctly"
     exit 1;
 fi
 cd $sTempBuild
 rm -fr Tasmanian/
+rm -fr Build/
 cd $sTestRoot
 echo "======= PASSED: default install, using pure cmake" >> $sMultibuildLogFile
+echo "===========================================================================================" >> $sMultibuildLogFile
+
+
+#########################################################################
+## Test: pure cmake with lots of warning flags, all options
+#########################################################################
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/ || { exit 1; }
+mkdir Build || { exit 1; }
+cd Build || { exit 1; }
+cmake -D CMAKE_INSTALL_PREFIX="$sTempBuild/Install" \
+      -D CMAKE_BUILD_TYPE=Release \
+      -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow" \
+      -D Tasmanian_STRICT_OPTIONS=ON \
+      -D Tasmanian_ENABLE_OPENMP=ON \
+      -D Tasmanian_ENABLE_BLAS=ON \
+      -D Tasmanian_ENABLE_CUBLAS=ON \
+      -D Tasmanian_ENABLE_CUDA=ON \
+      -D Tasmanian_ENABLE_PYTHON=ON \
+      -D Tasmanian_SHARED_LIBRARY=ON \
+      -D Tasmanian_STATIC_LIBRARY=ON \
+      -D Tasmanian_ENABLE_MATLAB=OFF \
+      -D Tasmanian_ENABLE_MPI=OFF \
+      -D Tasmanian_ENABLE_FORTRAN=OFF \
+      $sTempBuild/Tasmanian || { exit 1; }
+make -j || { exit 1; }
+make test || { exit 1; }
+make install || { exit 1; }
+make test_install || { exit 1; }
+if [ ! -f $sTempBuild/Install/lib/libtasmaniansparsegrid.so ]; then
+    echo "cmake did not install correctly"
+    exit 1;
+fi
+cd $sTempBuild
+rm -fr Tasmanian/
+rm -fr Build/
+cd $sTestRoot
+echo "======= PASSED: pure cmake with lots of warning flags, all options" >> $sMultibuildLogFile
+echo "===========================================================================================" >> $sMultibuildLogFile
+
+
+#########################################################################
+## Test: pure cmake with lots of warning flags, cuda + no cublas
+#########################################################################
+cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+cd $sTempBuild/ || { exit 1; }
+mkdir Build || { exit 1; }
+cd Build || { exit 1; }
+cmake -D CMAKE_INSTALL_PREFIX="$sTempBuild/Install" \
+      -D CMAKE_BUILD_TYPE=Release \
+      -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow" \
+      -D Tasmanian_STRICT_OPTIONS=ON \
+      -D Tasmanian_ENABLE_OPENMP=ON \
+      -D Tasmanian_ENABLE_BLAS=ON \
+      -D Tasmanian_ENABLE_CUBLAS=OFF \
+      -D Tasmanian_ENABLE_CUDA=ON \
+      -D Tasmanian_ENABLE_PYTHON=ON \
+      -D Tasmanian_SHARED_LIBRARY=ON \
+      -D Tasmanian_STATIC_LIBRARY=ON \
+      -D Tasmanian_ENABLE_MATLAB=OFF \
+      -D Tasmanian_ENABLE_MPI=OFF \
+      -D Tasmanian_ENABLE_FORTRAN=OFF \
+      $sTempBuild/Tasmanian || { exit 1; }
+make -j || { exit 1; }
+make test || { exit 1; }
+make install || { exit 1; }
+make test_install || { exit 1; }
+if [ ! -f $sTempBuild/Install/lib/libtasmaniansparsegrid.so ]; then
+    echo "cmake did not install correctly"
+    exit 1;
+fi
+cd $sTempBuild
+rm -fr Tasmanian/
+rm -fr Build/
+cd $sTestRoot
+echo "======= PASSED: pure cmake with lots of warning flags, cuda + no cublas" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
 

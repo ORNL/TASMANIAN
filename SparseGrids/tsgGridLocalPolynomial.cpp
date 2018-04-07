@@ -448,8 +448,47 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
 }
 
 void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); } // standard BLAS cannot accelerate dense matrix times a sparse vector
+#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
+void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{
+    if (num_outputs < 64){
+        evaluate(x, y);
+        return;
+    }
+
+    int num_points = points->getNumIndexes();
+    makeCheckAccelerationData(accel_gpu_cublas, os);
+    checkAccelerationGPUValues();
+    AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
+
+    int num_nz, *sindx = 0;
+    double *svals = 0;
+    buildSparseVector<false>(x, num_nz, 0, 0);
+    sindx = new int[num_nz];
+    svals = new double[num_nz];
+    buildSparseVector<true>(x, num_nz, sindx, svals);
+    int *gpu_sindx = TasCUDA::cudaSend<int>(num_nz, sindx, os);
+    double *gpu_svals = TasCUDA::cudaSend<double>(num_nz, svals, os);
+    double *gpu_y = TasCUDA::cudaNew<double>(num_outputs, os);
+
+    #ifdef TASMANIAN_CUBLAS
+    gpu_acc->cusparseMatveci(num_outputs, num_points, num_nz, gpu_sindx, gpu_svals, gpu_y);
+    #else
+    TasCUDA::cudaSparseVecDenseMat(num_outputs, num_points, num_nz, gpu_acc->getGPUValues(), gpu_sindx, gpu_svals, gpu_y);
+    #endif
+
+    TasCUDA::cudaRecv<double>(num_outputs, gpu_y, y, os);
+
+    TasCUDA::cudaDel<int>(gpu_sindx, os);
+    TasCUDA::cudaDel<double>(gpu_svals, os);
+    TasCUDA::cudaDel<double>(gpu_y, os);
+    delete[] sindx;
+    delete[] svals;
+}
+#else
 void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
-void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
+#endif
+// evaluation of a single x cannot be accelerated with a gpu (not parallelizable), do that on the CPU and use the GPU only for the case of many outputs
+void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[], std::ostream* os) const{ evaluateFastGPUcublas(x, y, os); }
 void GridLocalPolynomial::evaluateFastGPUmagma(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
 
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{

@@ -130,6 +130,58 @@ protected:
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, int &num_blocks, int &num_last, int &stripe_size,
                                     int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
 
+    template<bool fill>
+    void buildSparseVector(const double x[], int &num_nz, int *sindx, double *svals) const{
+        int *monkey_count = new int[top_level+1];
+        int *monkey_tail = new int[top_level+1];
+
+        bool isSupported;
+        size_t offset;
+
+        num_nz = 0;
+
+        for(int r=0; r<num_roots; r++){
+            double basis_value = evalBasisSupported(points->getIndex(roots[r]), x, isSupported);
+
+            if (isSupported){
+                offset = roots[r] * num_outputs;
+                if (fill){
+                    sindx[num_nz] = roots[r];
+                    svals[num_nz] = basis_value;
+                }
+                num_nz++;
+
+                int current = 0;
+                monkey_tail[0] = roots[r];
+                monkey_count[0] = pntr[roots[r]];
+
+                while(monkey_count[0] < pntr[monkey_tail[0]+1]){
+                    if (monkey_count[current] < pntr[monkey_tail[current]+1]){
+                        offset = indx[monkey_count[current]];
+                        basis_value = evalBasisSupported(points->getIndex(offset), x, isSupported);
+                        if (isSupported){
+                            if (fill){
+                                sindx[num_nz] = offset;
+                                svals[num_nz] = basis_value;
+                            }
+                            num_nz++;
+
+                            monkey_tail[++current] = offset;
+                            monkey_count[current] = pntr[offset];
+                        }else{
+                            monkey_count[current]++;
+                        }
+                    }else{
+                        monkey_count[--current]++;
+                    }
+                }
+            }
+        }
+
+        delete[] monkey_count;
+        delete[] monkey_tail;
+    }
+
     double evalBasisRaw(const int point[], const double x[]) const;
     double evalBasisSupported(const int point[], const double x[], bool &isSupported) const;
 

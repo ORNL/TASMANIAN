@@ -42,8 +42,12 @@ BaseAccelerationData::~BaseAccelerationData(){}
 
 AccelerationDataGPUFull::AccelerationDataGPUFull() :
     gpu_values(0), gpu_nodes(0), gpu_support(0),
-    gpu_hpntr(0), gpu_hindx(0), gpu_roots(0),
-    cublasHandle(0), cusparseHandle(0), logstream(0){}
+    gpu_hpntr(0), gpu_hindx(0), gpu_roots(0), logstream(0){
+#ifdef TASMANIAN_CUBLAS
+    cublasHandle = 0;
+    cusparseHandle = 0;
+#endif
+}
 AccelerationDataGPUFull::~AccelerationDataGPUFull(){
     #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
     if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
@@ -301,13 +305,24 @@ void AccelerationDataGPUFull::cusparseMatvec(int num_points, int num_x, const in
     stat = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
             CUSPARSE_OPERATION_NON_TRANSPOSE, num_x, num_points, num_nz,
             &alpha, mat_desc, svals, spntr, sindx, gpu_values, &beta, result);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrmm2 in DCRMM2", logstream);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseMatvec in DCRMM2", logstream);
 
     cusparseDestroyMatDescr(mat_desc);
+}
+void AccelerationDataGPUFull::cusparseMatveci(int num_outputs, int num_points, int num_nz, const int *sindx, const double *svals, double *result){
+    makeCuSparseHandle(); // creates a handle only if one doesn't exist
+    cusparseStatus_t stat;
+    double alpha = 1.0, beta = 0.0;
+
+    stat = cusparseDgemvi((cusparseHandle_t) cusparseHandle,
+            CUSPARSE_OPERATION_NON_TRANSPOSE, num_outputs, num_points, &alpha,
+            gpu_values, num_outputs, num_nz, svals, sindx, &beta, result, CUSPARSE_INDEX_BASE_ZERO, 0);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseMatvec in DCRMM2", logstream);
 }
 #else
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatvec(int, int, const int*, const int*, const double*, int, double*){}
+void AccelerationDataGPUFull::cusparseMatveci(int, int, int, const int*, const double*, double*){}
 #endif // defined TASMANIAN_CUBLAS
 
 TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
