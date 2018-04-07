@@ -3,7 +3,7 @@
 ########################################################################
 # if Tasmanian_ENABLE_CXX_11 is defined and set to off
 # then we do not enable c++11
-if ((NOT DEFINED Tasmanian_ENABLE_CXX_11) OR Tasmanian_ENABLE_CXX_11)
+if (NOT (Tasmanian_ENABLE_CXX_11 EQUAL "OFF"))
     if (Tasmanian_ENABLE_CXX_11 OR Tasmanian_ENABLE_MPI OR
         Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_CUBLAS)
         foreach(Tasmanian_loop_target ${Tasmanian_target_list})
