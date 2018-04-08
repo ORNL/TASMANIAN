@@ -164,7 +164,7 @@ void tsglnp_(int *id, const double *vals){ _tsg_grid_list[*id]->loadNeededPoints
 // evaluate/Fast/Batch/integrate
 void tsgeva_(int *id, const double *x, double *y){ _tsg_grid_list[*id]->evaluate(x, y); }
 void tsgevf_(int *id, const double *x, double *y){ _tsg_grid_list[*id]->evaluateFast(x, y); }
-void tsgevb_(int *id, const double *x, int *num_x, double *y){ _tsg_grid_list[*id]->evaluateBatch(x, *num_x, y); }
+void tsgevb_(int *id, const double *x, int *num_x, double *y){ _tsg_grid_list[*id]->evaluateBatch(x, (*num_x), y); }
 void tsgint_(int *id, double *q){ _tsg_grid_list[*id]->integrate(q); }
 
 // setAnisotropic/Surplus/Refinement
@@ -178,7 +178,7 @@ void tsgeac_(int *id, int *type, int *output, int *result){
     for(int i=0; i<num_coeff; i++) result[i] = coeff[i];
     delete[] coeff;
 }
-void tsgssr_(int *id, double *tol, int *output){ _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output); }
+void tsgssr_(int *id, double *tol, int *output){ _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output, 0); }
 void tsgshr_(int *id, double *tol, int *type, int *output){
     _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), *output);
 }

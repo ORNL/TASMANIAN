@@ -163,7 +163,7 @@ public:
     // EXPERIMENTAL: works only for LocalPolynomial grids (will be moved to sequences and others)
     void removePointsByHierarchicalCoefficient(double tolerance, int output = -1, const double *scale_correction = 0); // have python error tests, but needs math consistency test
 
-    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // EXPERIMENTAL, works only for localPolynomial with order 1 or 2
+    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // EXPERIMENTAL, works only for localPolynomial with order, 0 1 and 2
     void evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const;
 
     // TODO

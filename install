@@ -482,7 +482,7 @@ fi
 if [[ $sEnableStatic == "ON" ]]; then
     mkdir ExampleCmakeBuild
     cd ExampleCmakeBuild
-    cmake $1 $sInstallPrefix/examples > /dev/null || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
+    cmake $1 $sExtraCommand $sInstallPrefix/examples > /dev/null || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
     sLinkCommand=`cat CMakeFiles/example_sparse_grids.dir/link.txt`
     sLinkCommand=${sLinkCommand#*example_sparse_grids}
     sLinkCommand=${sLinkCommand#*example_sparse_grids}

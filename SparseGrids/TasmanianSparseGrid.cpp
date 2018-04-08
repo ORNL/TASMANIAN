@@ -396,6 +396,12 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
     double *x_tmp = 0;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
+    //for(int i=0; i<4; i++){
+    //    for(int j=0; j<base->getNumDimensions(); j++){
+    //        cout << x[i*base->getNumDimensions() + j] << "  ";
+    //    }
+    //    cout << endl;
+    //}
     switch (acceleration){
         case accel_gpu_default:
         case accel_gpu_fullmemory:
