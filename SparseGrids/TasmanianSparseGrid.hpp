@@ -175,9 +175,9 @@ public:
     const int* getNeededIndexes() const;
 
     // Expose the internal pointers, for testing and debugging only, must be suppressed for an official release
-    inline GridGlobal*          getGridGlobalPointer(){ return global; }
-    inline GridSequence*        getGridSequencePointer(){ return sequence; }
-    inline GridLocalPolynomial* getGridLocalPolyPointer(){ return pwpoly; }
+    //inline GridGlobal*          getGridGlobalPointer(){ return global; }
+    //inline GridSequence*        getGridSequencePointer(){ return sequence; }
+    //inline GridLocalPolynomial* getGridLocalPolyPointer(){ return pwpoly; }
 
 protected:
     void clear();
