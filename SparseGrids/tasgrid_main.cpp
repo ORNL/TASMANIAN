@@ -749,9 +749,6 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
             cout << " -conformaltype\t"  << "\tyes\t"      << "\t<type>"       << "\t\tset the type of the map" << endl;
             cout << " -conformalfile\t"  << "\tyes\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain" << endl;
-            //cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
-            //cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
-            //cout << "Note: -outputfile or -print output the transformed points of the grid" << endl;
         }else if (com == command_getquadrature){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
             cout << " -getquadrature"    << "\t-gq"     << "\t\tmake a quadrature" << endl << endl;
@@ -903,6 +900,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -refout\t"     << "\tsometimes" << "\t<int>"    << "\t\tselect the output to use for the refinement" << endl;
             cout << " \t\t\t\t\t"    << "\t\trequired by global grids, for sequence grids defaults to -1 (use all outputs)" << endl;
             cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels" << endl;
+            cout << " -valsfile\t"       << "\t-vf\t"      << "\t<filename>"   << "\tset the correction weights for the surpluses" << endl;
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl;
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl << endl;

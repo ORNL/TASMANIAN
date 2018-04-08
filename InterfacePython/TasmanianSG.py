@@ -1159,7 +1159,7 @@ class TasmanianSparseGrid:
         if (lShape[1] != 2):
             raise TasmanianInputError("llfTransform", "ERROR: the second dimension of llfTransform is {0:1d} and it should be 2".format(lShape[1]))
         iNumDimensions = llfTransform.shape[0]
-        # NOTE: this is deliberately left in a way that can work with both ndarray and regular list-of-lists (but it will not because of lShape = llfTransform.shape)
+        # NOTE: copy is done to convert 2-D ndarray to two 1-D arrays
         pA = (c_double*iNumDimensions)()
         pB = (c_double*iNumDimensions)()
         for iI in range(iNumDimensions):

@@ -796,7 +796,7 @@ tsgLoadValues(lGrid, v);
 tsgRefineSurplus(lGrid, 1.E-8, 'classic', 0);
 [p] = tsgGetNeededPoints(lGrid);
 if (size(p, 1) == 0)
-    error('Mismatch in tsgRefineSurplus(): did not refine');
+    error('Mismatch in tsgRefineSurplus(): did not refine local polynomial');
 end
 if ((sum((abs(p(:,1) - 0.5) < 0.0001)) > 0) || (sum((abs(p(:,2) - 0.25) < 0.0001)) > 0))
     error('Mismatch in tsgRefineSurplus(): limits refine using existing limits');
@@ -804,7 +804,7 @@ end
 tsgRefineSurplus(lGrid, 1.E-8, 'classic', 0, [2, 2, 3]);
 [p] = tsgGetNeededPoints(lGrid);
 if (size(p, 1) == 0)
-    error('Mismatch in tsgRefineSurplus(): did not refine');
+    error('Mismatch in tsgRefineSurplus(): did not refine on second pass');
 end
 if ((sum((abs(p(:,1) - 0.5) < 0.0001)) == 0) || (sum((abs(p(:,1) - 0.25) < 0.0001)) > 0) || (sum((abs(p(:,2) - 0.25) < 0.0001)) > 0))
     error('Mismatch in tsgRefineSurplus(): limits refine using new limits');
@@ -825,7 +825,7 @@ end
 tsgRefineSurplus(lGrid, 1.E-4, 'direction');
 [p] = tsgGetNeededPoints(lGrid);
 if (max(size(p)) == 0)
-    error('Mismatch in cancel refine: did not set refinement');
+    error('Mismatch in cancel refine: did not set refinement at output -1');
 end
 tsgCancelRefine(lGrid);
 [p] = tsgGetNeededPoints(lGrid);

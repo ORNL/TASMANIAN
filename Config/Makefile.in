@@ -13,12 +13,12 @@ NVCC_OPT =
 
 # Default C++ compiler
 CC = g++
-OPTC = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic
+OPTC = -O3 -ffast-math -mtune=native $(COMPILE_OPTIONS) -fPIC -Wstrict-aliasing
 OPTL = $(OPTC)
 
 # Default Fortran compiler
 FF = gfortran
-OPTF = -O3 -fno-f2c -mtune=native $(COMPILE_OPTIONS) -fPIC -Wall -Wextra -Wshadow -pedantic -Wuninitialized
+OPTF = -O3 -fno-f2c -mtune=native $(COMPILE_OPTIONS) -fPIC
 OPTLFF = $(OPTF)
 
 # Default common libraries

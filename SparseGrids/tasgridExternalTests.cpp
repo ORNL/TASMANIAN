@@ -676,7 +676,6 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * p[i] * p[i] * p[i];
-        //cout << "error in integral of x^3 is = " << fabs(sum - 389367.0 / 280.0) << endl;
         if (fabs(sum - 389367.0 / 280.0) > 1.E-10){
             cout << "ERROR: disrepancy in transformed gauss-gegenbauer rule is: " << fabs(sum - 389367.0 / 280.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -716,7 +715,6 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * sin(M_PI * p[i]);
-        //cout << "error in integral of sin(pi * x) is = " << fabs(sum + 18.0 * (3.0 * M_PI * M_PI - 4.0) / pow(M_PI, 5.0)) << endl;
         if (fabs(sum + 18.0 * (3.0 * M_PI * M_PI - 4.0) / pow(M_PI, 5.0)) > 1.E-11){
             cout << "ERROR: disrepancy in transformed gauss-jacobi rule is: " << fabs(sum + 18.0 * (3.0 * M_PI * M_PI - 4.0) / pow(M_PI, 5.0)) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -1072,42 +1070,52 @@ bool ExternalTester::testAllWavelet() const{
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(rule_wavelet) << setw(wthird) << "FAIL" << endl; pass = false;
+    }{ TasGrid::TasmanianSparseGrid grid; 
+        grid.makeWaveletGrid(2, 1, 2, 1);
+        int *indx = 0, *pntr = 0;
+        double *vals = 0;
+        double *pnts = new double[20]; setRandomX(20, pnts);
+        grid.evaluateSparseHierarchicalFunctions(pnts, 10, pntr, indx, vals);
+        getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
+        const double *coeff = grid.getHierarchicalCoefficients();
+        double *y = new double[10];
+        grid.evaluateBatch(pnts, 10, y);
+        for(int i=0; i<10; i++){
+            for(int j=pntr[i]; j<pntr[i+1]; j++){
+                y[i] -= coeff[indx[j]] * vals[j];
+            }
+        }
+        for(int i=0; i<10; i++){
+            if (fabs(y[i]) > TSG_NUM_TOL){
+                cout << "Error in evaluateSparseHierarchicalFunctions() (wavelet)" << endl;
+                cout << y[i] << endl;
+                pass = false;
+            }
+        }
+        double *v = new double[10 * grid.getNumPoints()];
+        getError(&f21nx2, &grid, type_internal_interpolation);
+        grid.evaluateHierarchicalFunctions(pnts, 10, v);
+        coeff = grid.getHierarchicalCoefficients();
+        grid.evaluateBatch(pnts, 10, y);
+        for(int i=0; i<10; i++){
+            for(int j=0; j<grid.getNumPoints(); j++){
+                y[i] -= coeff[j] * v[i*grid.getNumPoints() + j];
+            }
+        }
+        for(int i=0; i<10; i++){
+            if (fabs(y[i]) > TSG_NUM_TOL){
+                cout << "Error in getHierarchicalCoefficients() (wavelet)" << endl;
+                cout << y[i] << endl;
+                pass = false;
+            }
+        }
+        delete[] indx; 
+        delete[] pntr; 
+        delete[] vals; 
+        delete[] pnts; 
+        delete[] y;
+        delete[] v;
     }
-    //
-    //{ TasGrid::TasmanianSparseGrid grid; grid.makeWaveletGrid(2, 1, 2, 1);
-    //    int *indx = 0, *pntr = 0;
-    //    double *vals = 0;
-    //    double *pnts = new double[20]; setRandomX(20, pnts);
-    //    //grid.evaluateSparseHierarchicalFunctions(pnts, 10, pntr, indx, vals);
-    //    //getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
-    //    //const double *coeff = grid.getHierarchicalCoefficients();
-    //    //double *y = new double[10];
-    //    //grid.evaluateBatch(pnts, 10, y);
-    //    //for(int i=0; i<10; i++){
-    //    //    for(int j=pntr[i]; j<pntr[i+1]; j++){
-    //    //        y[i] -= coeff[indx[j]] * vals[j];
-    //    //    }
-    //    //}
-    //    double *v = new double[10 * grid.getNumPoints()];
-    //    getError(&f21nx2, &grid, type_internal_interpolation);
-    //    grid.evaluateHierarchicalFunctions(pnts, 10, v);
-    //    const double *coeff = grid.getHierarchicalCoefficients();
-    //    double *y = new double[10];
-    //    grid.evaluateBatch(pnts, 10, y);
-    //    for(int i=0; i<10; i++){
-    //        for(int j=0; j<grid.getNumPoints(); j++){
-    //            y[i] -= coeff[j] * v[i*grid.getNumPoints() + j];
-    //        }
-    //    }
-    //    for(int i=0; i<10; i++){
-    //        if (fabs(y[i]) > TSG_NUM_TOL){
-    //            cout << "Error in evaluateSparseHierarchicalFunctions() (wavelet)" << endl;
-    //            cout << y[i] << endl;
-    //            pass = false;
-    //        }
-    //    }
-    //    delete[] indx; delete[] pntr; delete[] vals; delete[] pnts; delete[] y;
-    //}
     return pass;
 }
 
