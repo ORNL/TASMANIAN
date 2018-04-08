@@ -190,8 +190,8 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         endif()
     endif()
 
-    add_definitions(-D_SCL_SECURE_NO_WARNINGS)
-    add_definitions(-D_TASMANIAN_WINDOWS_)
-    add_definitions(-D_USE_MATH_DEFINES)
+    add_definitions(-D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
+    add_definitions(-D_TASMANIAN_WINDOWS_) # overwrittes gettime() and sets a seed
+    add_definitions(-D_USE_MATH_DEFINES) # needed to include M_PI constant
 endif()
 

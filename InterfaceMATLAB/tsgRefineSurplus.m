@@ -1,4 +1,4 @@
-function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOut, vLimitLevels)
+function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOut, vLimitLevels, mCorrection)
 %
 % [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType,
 %                                 iOut, vLimitLevels)
@@ -25,7 +25,9 @@ function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOu
 %                  only for Local Polynomial and Wavelet grids
 %
 % iOut: (integer giving the output to be used for the refinement)
-%       selects which output to use for refinement, only for Global lGrid
+%       selects which output to use for refinement, must be specified for
+%       Global Grids, other grid can omit this or set it to [] to indicate
+%       the use of all outputs
 %
 % vLimitLevels: (optional vector of integers of size iDim)
 %               limit the level in each direction, no points beyond the
@@ -34,6 +36,13 @@ function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOu
 %               at most 3 possible values in the first variable and
 %               ~2^99 (practicallyt infinite) number in the second
 %               direction.
+%
+% mCorrection: (optional matrix with size num_points by num_outputs or 1)
+%              the surpluses in the refinement procedure will be multiplied
+%              by the correction
+%              if iOut is -1, then one weight must be given per output and
+%              the columns must match the number of outputs
+%              if iOut is specified, mCorrection must have one column
 %
 % OUTPUT:
 %
@@ -54,7 +63,7 @@ if ((exist('sRefinementType')) && (max(size(sRefinementType)) ~= 0))
     sCommand = [sCommand, ' -reftype ', sRefinementType];
 end
 
-if (exist('iOut'))
+if (exist('iOut') && (max(size(iOut)) ~= 0))
     sCommand = [sCommand, ' -refout ', num2str(iOut)];
 end
 
@@ -73,6 +82,16 @@ if (exist('vLimitLevels') && (max(size(vLimitLevels)) ~= 0))
     end
     lClean.sFileL = 1;
     sCommand = [sCommand, ' -levellimitsfile ', sFileL];
+end
+
+% set correction
+if (exist('mCorrection') && (max(size(mCorrection)) ~= 0))
+    if (min(size(mCorrection)) ~= 1)
+        error(' mCorrection must be a vector, i.e., one row or one column');
+    end
+    tsgWriteMatrix(sFileV, mCorrection);
+    lClean.sFileV = 1;
+    sCommand = [sCommand, ' -valsfile ', sFileV];
 end
 
 % read the points for the grid

@@ -93,7 +93,7 @@ public:
     static bool isSingleNodeGrowth(TypeOneDRule rule);
     static bool isLocalPolynomial(TypeOneDRule rule);
     static bool isWavelet(TypeOneDRule rule);
-    
+
     static TypeOneDRule getIORuleString(const char *name);
     static const char* getIORuleString(TypeOneDRule rule);
     static const char* getHumanString(TypeOneDRule rule);
@@ -102,7 +102,7 @@ public:
 
     static TypeDepth getIOTypeString(const char *name);
     static TypeDepth getIOTypeInt(int type);
-    
+
     static TypeRefinement getIOTypeRefinementString(const char *name);
     static TypeRefinement getIOTypeRefinementInt(int ref);
 
@@ -111,34 +111,30 @@ private:
     const CustomTabulated *custom;
 };
 
-class OneDimensionalNodes{
-public:
-    OneDimensionalNodes();
-    ~OneDimensionalNodes();
-
+namespace OneDimensionalNodes{
     // non-nested rules
-    void getGaussLegendre(int m, double* &w, double* &x) const;
-    void getChebyshev(int m, double* &w, double* &x) const;
-    void getGaussChebyshev1(int m, double* &w, double* &x) const;
-    void getGaussChebyshev2(int m, double* &w, double* &x) const;
-    void getGaussJacobi(int m, double* &w, double* &x, double alpha, double beta) const;
-    void getGaussHermite(int m, double* &w, double* &x, double alpha) const;
-    void getGaussLaguerre(int m, double* &w, double* &x, double alpha) const;
+    void getGaussLegendre(int m, double* &w, double* &x);
+    void getChebyshev(int m, double* &w, double* &x);
+    void getGaussChebyshev1(int m, double* &w, double* &x);
+    void getGaussChebyshev2(int m, double* &w, double* &x);
+    void getGaussJacobi(int m, double* &w, double* &x, double alpha, double beta);
+    void getGaussHermite(int m, double* &w, double* &x, double alpha);
+    void getGaussLaguerre(int m, double* &w, double* &x, double alpha);
 
     // nested rules
-    double* getClenshawCurtisNodes(int level) const;
-    double getClenshawCurtisWeight(int level, int point) const;
+    double* getClenshawCurtisNodes(int level);
+    double getClenshawCurtisWeight(int level, int point);
 
-    double* getClenshawCurtisNodesZero(int level) const; // assuming zero boundary
-    double getClenshawCurtisWeightZero(int level, int point) const; // assuming zero boundary
+    double* getClenshawCurtisNodesZero(int level); // assuming zero boundary
+    double getClenshawCurtisWeightZero(int level, int point); // assuming zero boundary
 
-    double* getFejer2Nodes(int level) const;
-    double getFejer2Weight(int level, int point) const;
+    double* getFejer2Nodes(int level);
+    double getFejer2Weight(int level, int point);
 
-    double* getRLeja(int n) const;
-    double* getRLejaCentered(int n) const;
-    double* getRLejaShifted(int n) const;
-};
+    double* getRLeja(int n);
+    double* getRLejaCentered(int n);
+    double* getRLejaShifted(int n);
+}
 
 }
 

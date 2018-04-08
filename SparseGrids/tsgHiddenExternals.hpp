@@ -169,6 +169,7 @@ public:
     }
 #endif // TASMANIAN_CPU_BLAS
 
+    // used to compute anisotropic weights (at most 2 * dims X 2 * dims, not worth adding lapack dependence for such small matrix)
     inline static void cholUTU(int N, double A[], int lda = -1){
         if (lda == -1) lda = N;
         for(int i=0; i<N; i++){

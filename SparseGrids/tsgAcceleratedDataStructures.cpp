@@ -265,7 +265,6 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
     cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
     cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
-    //mat_desc->MatrixType = CUSPARSE_MATRIX_TYPE_GENERAL;
 
     stat = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
             CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, num_x, num_outputs, num_points, num_nz,
@@ -448,7 +447,7 @@ AccelerationDomainTransform::AccelerationDomainTransform(int num_dimensions, con
     gpu_trans_a(0), gpu_trans_b(0), padded_size(0), logstream(os)
 {
     padded_size = num_dimensions;
-    while(padded_size < TASMANIAN_CUDA_NUM_THREADS_SHORT / 2) padded_size += num_dimensions;
+    while(padded_size < 512) padded_size += num_dimensions;
 
     double *rate = new double[padded_size];
     double *shift = new double[padded_size];

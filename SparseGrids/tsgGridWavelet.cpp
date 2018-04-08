@@ -737,14 +737,16 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
     for(int i=0; i<num_x; i++){
-        double *vals = &(y[i*num_points]);
+        double *this_y = &(y[i*num_points]);
+        const double *this_x = &(x[i*num_dimensions]);
         for(int j=0; j<num_points; j++){
             const int* p = work->getIndex(j);
-            vals[j] = 1.0;
+            double v = 1.0;
             for(int k=0; k<num_dimensions; k++){
-                vals[j] *= rule1D.eval(p[k], x[k]);
-                if (vals[j] == 0.0){ break; }; // MIRO: evaluating the wavelets is expensive, stop if any one of them is zero
+                v *= rule1D.eval(p[k], this_x[k]);
+                if (v == 0.0){ break; }; // MIRO: evaluating the wavelets is expensive, stop if any one of them is zero
             }
+            this_y[j] = v;
         }
     }
 }

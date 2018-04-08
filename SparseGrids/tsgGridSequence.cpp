@@ -865,7 +865,6 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
     }
     total->addIndexSet(points); // avoids the case where existing points in tensor are not included in the update
 
-    //OneDimensionalMeta meta;
     int max_level; IM.getMaxLevels(total, 0, max_level);
     delete[] nodes; delete[] coeff;
     prepareSequence(max_level+1);
@@ -970,11 +969,9 @@ void GridSequence::prepareSequence(int n){
     }else if (rule == rule_mindelta){
         nodes = greedy.getMinDeltaNodes(n);
     }else if (rule == rule_rleja){
-        OneDimensionalNodes core;
-        nodes = core.getRLeja(n);
+        nodes = OneDimensionalNodes::getRLeja(n);
     }else if (rule == rule_rlejashifted){
-        OneDimensionalNodes core;
-        nodes = core.getRLejaShifted(n);
+        nodes = OneDimensionalNodes::getRLejaShifted(n);
     }
     coeff = new double[n];
     coeff[0] = 1.0;
@@ -992,10 +989,9 @@ double* GridSequence::cacheBasisIntegrals() const{
     double *integ = new double[++max_level]; // integrals of basis functions
     std::fill(integ, integ + max_level, 0.0);
 
-    OneDimensionalNodes core;
     int n = 1 + max_level / 2; // number of Gauss-Legendre points needed to integrate the basis functions
     double *lag_x = 0, *lag_w = 0;
-    core.getGaussLegendre(n, lag_w, lag_x);
+    OneDimensionalNodes::getGaussLegendre(n, lag_w, lag_x);
 
     for(int i=0; i<n; i++){
         double v = 1.0;

@@ -1016,7 +1016,6 @@ const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
 }
 const int* TasmanianSparseGrid::getPointsIndexes() const{
     if (pwpoly != 0){
-        //return ((pwpoly->getNumNeeded()>0) ? pwpoly->getNeededIndexes() : pwpoly->getPointIndexes());
         return pwpoly->getPointIndexes();
     }else if (wavelet != 0){
         return wavelet->getPointIndexes();
@@ -1160,15 +1159,12 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
         flag = 'g'; ofs.write(&flag, sizeof(char));
         global->writeBinary(ofs);
     }else if (sequence != 0){
-        //cout << "Writing seq bin" << endl;
         flag = 's'; ofs.write(&flag, sizeof(char));
         sequence->writeBinary(ofs);
     }else if (pwpoly != 0){
-        //cout << "Writing pwp bin" << endl;
         flag = 'p'; ofs.write(&flag, sizeof(char));
         pwpoly->writeBinary(ofs);
     }else if (wavelet != 0){
-        //cout << "Writing wavelet bin" << endl;
         flag = 'w'; ofs.write(&flag, sizeof(char));
         wavelet->writeBinary(ofs);
     }else{
@@ -1184,7 +1180,6 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     }
     // conformal transforms: none 'n', asin 'a'
     if (conformal_asin_power != 0){
-        //cout << "Writing conformal" << endl;
         flag = 'a'; ofs.write(&flag, sizeof(char));
         ofs.write((char*) conformal_asin_power, base->getNumDimensions() * sizeof(int));
     }else{
@@ -1315,19 +1310,16 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
         base = global;
     }else if (TSG[0] == 's'){
         clear();
-        //cout << "Reading seq bin" << endl;
         sequence = new GridSequence();
         sequence->readBinary(ifs);
         base = sequence;
     }else if (TSG[0] == 'p'){
         clear();
-        //cout << "Reading pwp bin" << endl;
         pwpoly = new GridLocalPolynomial();
         pwpoly->readBinary(ifs);
         base = pwpoly;
     }else if (TSG[0] == 'w'){
         clear();
-        //cout << "Reading wavelet bin" << endl;
         wavelet = new GridWavelet();
         wavelet->readBinary(ifs);
         base = wavelet;
@@ -1349,7 +1341,6 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }
     ifs.read(TSG, sizeof(char)); // conformal domain transform?
     if (TSG[0] == 'a'){
-        //cout << "Reading conformal" << endl;
         conformal_asin_power = new int[base->getNumDimensions()];
         ifs.read((char*) conformal_asin_power, base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){

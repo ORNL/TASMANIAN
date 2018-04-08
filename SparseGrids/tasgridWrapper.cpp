@@ -671,7 +671,25 @@ bool TasgridWrapper::refineGrid(){
                 cerr << "ERROR: must specify -reftype option!" << endl;
                 return false;
             }
-            grid->setSurplusRefinement(tolerance, tref, ref_output, llimits);
+            double *mat = 0;
+            if (valsfilename != 0){
+                size_t rows, cols;
+                readMatrix(valsfilename, rows, cols, mat);
+                if (rows != ((size_t) grid->getNumPoints())){
+                    cerr << "ERROR: the number of weights must match the number of points." << endl;
+                    return false;
+                }
+                if ((ref_output == -1) && (cols != ((size_t) grid->getNumOutputs()))){
+                    cerr << "ERROR: the number of weights must match the number of outputs." << endl;
+                    return false;
+                }
+                if ((ref_output > -1) && (cols != 1)){
+                    cerr << "ERROR: there must be one weight per output." << endl;
+                    return false;
+                }
+            }
+            grid->setSurplusRefinement(tolerance, tref, ref_output, llimits, mat);
+            delete[] mat;
         }else if (grid->isSequence()){
             grid->setSurplusRefinement(tolerance, ref_output, llimits);
         }else{
@@ -846,7 +864,6 @@ bool TasgridWrapper::setHierarchy(){
 bool TasgridWrapper::getPointsIndexes(){
     const int *p = grid->getPointsIndexes();
     int num_p = grid->getNumPoints();
-    //num_p = (grid->getNumNeeded() > 0) ? grid->getNumNeeded() : num_p;
     int num_d = grid->getNumDimensions();
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
@@ -862,7 +879,6 @@ bool TasgridWrapper::getPointsIndexes(){
 bool TasgridWrapper::getNeededIndexes(){
     const int *p = grid->getNeededIndexes();
     int num_p = grid->getNumNeeded();
-    //num_p = (grid->getNumNeeded() > 0) ? grid->getNumNeeded() : num_p;
     int num_d = grid->getNumDimensions();
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);

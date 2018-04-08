@@ -45,9 +45,6 @@
 #include <cusparse.h>
 #endif // TASMANIAN_CUBLAS
 
-#define TASMANIAN_CUDA_NUM_THREADS 1024
-#define TASMANIAN_CUDA_NUM_THREADS_SHORT 128
-
 namespace TasGrid{
 
 #if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)

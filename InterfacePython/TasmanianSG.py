@@ -1138,7 +1138,7 @@ class TasmanianSparseGrid:
 
         Note: gauss-laguerre and gauss-hermite rules are defined on
               unbounded domain, in which case  this sets the
-              shift and scale parameters
+              shift and scale parameters, consult the manual
 
         llfTransform: a 2-D numpy.ndarray of size iDimension X 2
                       transform specifies the lower and upper bound
@@ -1159,7 +1159,7 @@ class TasmanianSparseGrid:
         if (lShape[1] != 2):
             raise TasmanianInputError("llfTransform", "ERROR: the second dimension of llfTransform is {0:1d} and it should be 2".format(lShape[1]))
         iNumDimensions = llfTransform.shape[0]
-        # NOTE: this is deliberately left in a way that can work with both ndarray and regular list-of-lists
+        # NOTE: copy is done to convert 2-D ndarray to two 1-D arrays
         pA = (c_double*iNumDimensions)()
         pB = (c_double*iNumDimensions)()
         for iI in range(iNumDimensions):
@@ -1498,19 +1498,22 @@ class TasmanianSparseGrid:
             self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, pNullPointer)
         else:
             lShape = aScaleCorrection.shape
-            if ((iOutput == -1) and (getNumOutputs() > 1)):
+            if ((iOutput == -1) and (self.getNumOutputs() > 1)):
                 if (len(lShape) != 2):
                     raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection should be a 2D array")
-                if (lShape[0] != getNumLoaded()):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[[0] should match getNumLoaded()")
-                if (lShape[1] != getNumOutputs()):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[[1] should match getNumOutputs()")
+                if (lShape[0] != self.getNumLoaded()):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[0] should match getNumLoaded()")
+                if (lShape[1] != self.getNumOutputs()):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[1] should match getNumOutputs()")
             else:
                 if (len(lShape) != 1):
                     raise TasmanianInputError("aScaleCorrection", "ERROR: calling aScaleCorrection should be a 1D array")
-                if (lShape[0] != getNumLoaded()):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[[0] should match getNumLoaded()")
-            self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, np.ctypeslib.as_ctypes(aScaleCorrection))
+                if (lShape[0] != self.getNumLoaded()):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[0] should match getNumLoaded()")
+            iNumWeights = lShape[0]
+            if (iOutput == -1):
+                iNumWeights *= lShape[1]
+            self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, np.ctypeslib.as_ctypes(aScaleCorrection.reshape([iNumWeights,])))
 
     def getHierarchicalCoefficients(self):
         '''

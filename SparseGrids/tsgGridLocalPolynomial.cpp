@@ -1456,9 +1456,8 @@ void GridLocalPolynomial::getBasisIntegrals(double *integrals) const{
     double *w = 0, *x = 0;
 
     if ((rule->getMaxOrder() == -1) || (rule->getMaxOrder() > 3) ){
-        OneDimensionalNodes GL;
         n = top_level / 2 + 1;
-        GL.getGaussLegendre(n, w, x);
+        OneDimensionalNodes::getGaussLegendre(n, w, x);
     }
 
     for(int i=0; i<work->getNumIndexes(); i++){

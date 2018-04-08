@@ -133,15 +133,12 @@ int IndexManipulator::getIndexWeight(const int index[], TypeDepth type, const in
 }
 
 IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int *anisotropic_weights, TypeOneDRule rule) const{
-
-    // if using isotropic total degree space for single node growth we can use a faster algorithm thanks to a simple formula
-//    if ((anisotropic_weights == 0) &&
-//        ((type == type_level) || ((type == type_iptotal) && (OneDimensionalMeta::isSingleNodeGrowth(rule)))) ){
-//        UnsortedIndexSet *unsorted = getToalDegreeDeltas(offset);
-//        IndexSet *tensors = new IndexSet(unsorted);
-//        delete unsorted;
-//        return tensors;
-//    }
+    // construct the minimum tensor set that covers the target_space defined by offset, type, and anisotropic weights
+    // consult the manual for the detailed definition of each case
+    // used for constructing Global and Sequence grids
+    // implements Corrolary 1 of Theorem 1 from
+    // Stoyanov, Webster: "A dynamically adaptive sparse grids method forquasi-optimal interpolation of multidimensional functions"
+    // Computers & Mathematics with Applications, 71(11):2449–2465, 2016
 
     // This cheats a bit, but it handles the special case when we want a full tensor grid
     // instead of computing the grid in the standard gradual level by level way,
@@ -183,6 +180,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
         return tensors;
     }
 
+    // non-tensor cases
     int *weights = getProperWeights(type, anisotropic_weights);
 
     // compute normalization and check if heavily curved
@@ -198,12 +196,10 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
     IndexSet *total = 0;
 
     if (known_lower){ // use fast algorithm, but only works for sets guaranteed to be lower
-        //cout << "Compute fast" << endl;
         int c = num_dimensions -1;
         bool outside = false;
         int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
         DumpIndexSet *index_dump = new DumpIndexSet(num_dimensions, 256);
-        //cout << "This alg" << endl;
         while( !(outside && (c == 0)) ){
             if (outside){
                 for(int k=c; k<num_dimensions; k++) root[k] = 0;
@@ -215,18 +211,14 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                 root[c]++;
             }
             outside = (getIndexWeight(root, type, weights, rule) > normalized_offset);
-            //cout << root[0] << "  " << root[1] << "  " << getIndexWeight(root, type, weights, rule) << "  " << normalized_offset << endl;
         }
-        //if (!index_dump->isSorted()) cout << "NOT SORTED!" << endl;
         delete[] root;
         int num_loaded = index_dump->getNumLoaded();
         int *res = index_dump->ejectIndexes();
         total = new IndexSet(num_dimensions, num_loaded, res);
         delete index_dump;
 
-    }else{ // use slower algorithm
-        //cout << "Compute stable" << endl;
-
+    }else{ // use slower algorithm, but more general
         GranulatedIndexSet **sets;
         int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
         GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root);  delete[] root;
@@ -287,16 +279,13 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
             total->addGranulatedSet(set_level);
         }
         delete set_level;
-        //for(int i=0; i<total->getNumIndexes(); i++) cout << total->getIndex(i)[0] << "  " << total->getIndex(i)[1] << "   " << getIndexWeight(total->getIndex(i), type, weights, rule) << "  " << normalized_offset << endl;
 
         // needed to preserved lower property
-        //if ((type == type_ipcurved) || (type == type_curved) || (type == type_qpcurved)){
         IndexSet* completion = getLowerCompletion(total);
         if ((completion != 0) && (completion->getNumIndexes() > 0)){
             total->addIndexSet(completion);
             delete completion;
         }
-        //}
     }
 
     delete[] weights;
@@ -305,7 +294,12 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
 }
 
 IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool integration, TypeOneDRule rule) const{
-    // Is this even called?
+    // construct the minimum tensor set that covers the target_space
+    // used when projecting the Global grid onto Lagendre polynomial basis
+    // implements the clean version of Theorem 1 from
+    // Stoyanov, Webster: "A dynamically adaptive sparse grids method forquasi-optimal interpolation of multidimensional functions"
+    // Computers & Mathematics with Applications, 71(11):2449–2465, 2016
+    // the other selectTensors() function cover the special caseof Corrolary 1
     GranulatedIndexSet **sets;
     int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
     GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root);  delete[] root;
@@ -700,23 +694,6 @@ UnsortedIndexSet* IndexManipulator::removeIndexesByLimit(UnsortedIndexSet *set, 
     return restricted;
 }
 
-/*int* IndexManipulator::computeDAGdown(const IndexSet *set) const{
-    int n = set->getNumIndexes();
-    int *kids = new int[n * num_dimensions];
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<n; i++){
-        const int *p = set->getIndex(i);
-        int *kid = new int[num_dimensions];
-        std::copy(p, p + num_dimensions, kid);
-        for(int j=0; j<num_dimensions; j++){
-            kid[j]++;
-            kids[i*num_dimensions + j] = set->getSlot(kid);
-            kid[j]--;
-        }
-        delete[] kid;
-    }
-    return kids;
-}*/
 int* IndexManipulator::computeDAGup(const IndexSet *set) const{
     int n = set->getNumIndexes();
     int *parents = new int[n * num_dimensions];

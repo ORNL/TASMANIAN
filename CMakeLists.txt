@@ -19,6 +19,7 @@ endif()
 #    -D Tasmanian_ENABLE_CUDA:BOOL=OFF
 #    -D Tasmanian_ENABLE_MATLAB:BOOL=OFF
 #    -D Tasmanian_ENABLE_PYTHON:BOOL=ON
+#    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF
 #    -D Tasmanian_SHARED_LIBRARY:BOOL=ON
 #    -D Tasmanian_STATIC_LIBRARY:BOOL=ON
 #    -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""
@@ -167,6 +168,7 @@ if (Tasmanian_TESTS_OMP_NUM_THREADS)
 endif()
 
 add_custom_target(test_install COMMAND ${CMAKE_BINARY_DIR}/test_post_install.sh -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+
 
 ########################################################################
 # Setup Message
