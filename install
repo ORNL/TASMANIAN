@@ -54,7 +54,7 @@ if (( ${#@} > 0 )); then
     fi
 fi
 
-if (( bShowHelp == 1 )); then
+if (( $bShowHelp == 1 )); then
     echo "Usage: ./install.sh <install path> <matlab work folder> <optinos>"
     echo ""
     echo "       <install path>: optional"

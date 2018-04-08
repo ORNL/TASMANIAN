@@ -43,6 +43,8 @@ namespace TasGrid{
 // num_x is the number of points that need converstion
 // T is the input type, i.e., the type of the transformed points
 // C is the output type, i.e., the type of the canonical points and the rate and shift arrays
+// THREADS can be as high as possible (e.g., 1024), but the algorithm will fail if num_dimensions exceeds THREADS (which is highly unlikely)
+// also see AccelerationDomainTransform::AccelerationDomainTransform(), where gpu_trans_a/b are encoded and size_a is computed
 template<typename T, typename C, int THREADS> // transformed and canonical types
 __global__ void tasgpu_transformed_to_canonical(int dims, int num_x, int size_a, const C *gpu_trans_a, const C *gpu_trans_b, const T *gpu_x_transformed, C *gpu_x_canonical){
     extern __shared__ C rate[];
@@ -67,7 +69,9 @@ __global__ void tasgpu_transformed_to_canonical(int dims, int num_x, int size_a,
 }
 
 // evaluates a single basis function
-// syncronize with GridLocalPolynomial::encodeSupportForGPU
+// syncronize with GridLocalPolynomial::encodeSupportForGPU() for the meaning of negative support
+// in essense, the formula is that feval = 1 - |x - node| / support, or feval = 1 - (x - node)^2 / support^2
+// there are exceptions for the constant function on level 0, the "half linear" functions on level 1 for localp, and the global functions on level 1 for semi-localp
 template <typename T, int order, TypeOneDRule rule>
 __device__ inline T tasgpu_devalpwpoly_feval(const double x, const double node, const double support){ // <- arrays are cached
     T v;
@@ -188,6 +192,10 @@ __device__ inline T tasgpu_devalpwpoly_basis_multid(int dims, int i, int ip, con
     return p;
 }
 
+// the refinement process for piece wise constant rule (pwc) should cover a region larger than the regular support
+// this is needed since refinement has to be performed between existing nodes and not just within the support
+// see: Miroslav Stoyanov, "Adaptive sparse grid construction in a context of local anisotropy and multiple hierarchical parents"
+// Sparse Grids with Applications, 2016 (pre-print)
 template<typename T>
 __device__ inline T tasgpu_devalpwpoly_support_pwc_multid(int dims, int i, int ip, const T *x, const T *nodes, const T *support){
     T p = 1.0;

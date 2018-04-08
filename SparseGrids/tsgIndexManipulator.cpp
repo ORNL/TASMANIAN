@@ -133,6 +133,12 @@ int IndexManipulator::getIndexWeight(const int index[], TypeDepth type, const in
 }
 
 IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int *anisotropic_weights, TypeOneDRule rule) const{
+    // construct the minimum tensor set that covers the target_space defined by offset, type, and anisotropic weights
+    // consult the manual for the detailed definition of each case
+    // used for constructing Global and Sequence grids
+    // implements Corrolary 1 of Theorem 1 from
+    // Stoyanov, Webster: "A dynamically adaptive sparse grids method forquasi-optimal interpolation of multidimensional functions"
+    // Computers & Mathematics with Applications, 71(11):2449–2465, 2016
 
     // This cheats a bit, but it handles the special case when we want a full tensor grid
     // instead of computing the grid in the standard gradual level by level way,
@@ -174,6 +180,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
         return tensors;
     }
 
+    // non-tensor cases
     int *weights = getProperWeights(type, anisotropic_weights);
 
     // compute normalization and check if heavily curved
@@ -287,7 +294,12 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
 }
 
 IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool integration, TypeOneDRule rule) const{
-    // Is this even called?
+    // construct the minimum tensor set that covers the target_space
+    // used when projecting the Global grid onto Lagendre polynomial basis
+    // implements the clean version of Theorem 1 from
+    // Stoyanov, Webster: "A dynamically adaptive sparse grids method forquasi-optimal interpolation of multidimensional functions"
+    // Computers & Mathematics with Applications, 71(11):2449–2465, 2016
+    // the other selectTensors() function cover the special caseof Corrolary 1
     GranulatedIndexSet **sets;
     int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
     GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root);  delete[] root;
