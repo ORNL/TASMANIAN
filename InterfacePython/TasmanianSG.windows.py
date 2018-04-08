@@ -1498,19 +1498,22 @@ class TasmanianSparseGrid:
             self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, pNullPointer)
         else:
             lShape = aScaleCorrection.shape
-            if ((iOutput == -1) and (getNumOutputs() > 1)):
+            if ((iOutput == -1) and (self.getNumOutputs() > 1)):
                 if (len(lShape) != 2):
                     raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection should be a 2D array")
-                if (lShape[0] != getNumLoaded()):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[[0] should match getNumLoaded()")
-                if (lShape[1] != getNumOutputs()):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[[1] should match getNumOutputs()")
+                if (lShape[0] != self.getNumLoaded()):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[0] should match getNumLoaded()")
+                if (lShape[1] != self.getNumOutputs()):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[1] should match getNumOutputs()")
             else:
                 if (len(lShape) != 1):
                     raise TasmanianInputError("aScaleCorrection", "ERROR: calling aScaleCorrection should be a 1D array")
-                if (lShape[0] != getNumLoaded()):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[[0] should match getNumLoaded()")
-            self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, np.ctypeslib.as_ctypes(aScaleCorrection))
+                if (lShape[0] != self.getNumLoaded()):
+                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[0] should match getNumLoaded()")
+            iNumWeights = lShape[0]
+            if (iOutput == -1):
+                iNumWeights *= lShape[1]
+            self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, np.ctypeslib.as_ctypes(aScaleCorrection.reshape([iNumWeights,])))
 
     def getHierarchicalCoefficients(self):
         '''
