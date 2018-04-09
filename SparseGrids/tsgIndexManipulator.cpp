@@ -909,7 +909,7 @@ IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *set, const boo
                 std::copy(p, p + num_dimensions, kid);
                 for(int j=0; j<num_dimensions; j++){
                     kid[j]++;
-                    if ((kid[j] <= level_limits[j]) && (set->getSlot(kid) == -1)){
+                    if (((level_limits[j] == -1) || (kid[j] <= level_limits[j])) && (set->getSlot(kid) == -1)){
                         next_level->addIndex(kid);
                     }
                     kid[j]--;

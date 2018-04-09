@@ -63,5 +63,4 @@ Note: cmake can be used under Windows and the projects compile from
       the command prompt using the msbuild.exe <project> command.
       The INSTALL.vcxproj works as intended, i.e., it install the
       source files as appropriate.
-      However, the optimization flags are not correct and the
-      performance is severely deteriorated.
+
