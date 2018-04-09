@@ -12,15 +12,20 @@ Changelog for version 5.1:
   can be performed with the CUDA kernels for extra speed.
   evaluateFast for LocalPolynomial also benefits from acceleration
 
-- CUDA accelerated evaluations can be triggered from MATLAB
+- grids can be written/read in either binary or ascii format,
+  MATLAB defaults to binary format now
 
-- added tweaks and simplifications to the build system, 
-  the main options remain the same, but check the manual for changes
-  to the additional options
+- CUDA accelerated evaluations can be triggered from MATLAB,
+  just specify lGrid.gpuDevice = X, where X is a valid CUDA device
+  run tsgCoreTests() to see a list of the available devices
 
 - added tsgCoreTests() script to MATLAB
 
-- added Fortran interface (still very EXPERIMENTAL)
+- added tweaks and simplifications to the build system,
+  the main options remain the same, but check the manual for changes
+  to the additional options
+
+- added Fortran 90/95 interface (still very EXPERIMENTAL)
 
 - significantly expanded the automated testing procedures and code
   coverage
@@ -30,23 +35,23 @@ Changelog for version 5.1:
 
 Changelog for version 5.0:
 
-- added initial implementation of the DiffeRential Evolution Adaptive 
+- added initial implementation of the DiffeRential Evolution Adaptive
   Metropolis (DREAM) capabilities (C++ only, for now)
 
-- batch evaluation in Global and Sequence grids can be accelerated using 
-  BLAS and Nvidia CUDA (cuBlas). Useful for interpolants with large 
+- batch evaluation in Global and Sequence grids can be accelerated using
+  BLAS and Nvidia CUDA (cuBlas). Useful for interpolants with large
   number of outputs.
 
 - overhaul of the folder structure and build system, consult the updated
   manual for all included build options. Shortlist is:
 
   -- install.sh using cmake, compile the code in TasmanianSource/Build
-     
+
      cd <tasmanian source folder>
      ./install.sh -help
      ./install.sh <install prefix> <matlab work folder>
 
-     
+
   -- Manual cmake: !use out-of-source build!
 
      cd <build folder>
@@ -65,24 +70,24 @@ Changelog for version 5.0:
      ./example_dream
      make matlab
 
-     
+
 
 Changelog for version 4.0:
 
 - the build scrips compile both shared (dynamic) and static libraries
 
-- added C-interface, the library compiles C++ and C functions and 
-  TasmanianSparseGrids.h header defines the C interface that is based 
+- added C-interface, the library compiles C++ and C functions and
+  TasmanianSparseGrids.h header defines the C interface that is based
   on a void-pointer that holds an instance of the C++ class
 
-- added Python module interface based on ctypes and the C interface. 
-  The Python module is called TasmanianSG.py and it defines the TasmanianSparseGrids 
+- added Python module interface based on ctypes and the C interface.
+  The Python module is called TasmanianSG.py and it defines the TasmanianSparseGrids
   python class which mimics closely the C++ class with enumerates replaced by strings
   The Python module raises TasmanianInputError exception on incorrect input
 
 - support for cmake, starting with version 4.0 cmake is the preffered build system
   the simple GNU-Make will continue to be supported.
-  
+
   Example cmake call (Linux): (!DOES NOT WORK ON VERSION 5.x, SEE MANUAL)
 
   cd /home/myself/TasmanianBuild
@@ -132,7 +137,7 @@ Changelog for version 4.0:
 - added functions to directly evaluate hierarhical functions for piece-wise
   polynomial, wavelet, and sequence grids. Also, the hierarchical surpluses
   associated with those functions can be overwritten. This functionality is
-  useful in constructing a grid that is the result of a projection of an 
+  useful in constructing a grid that is the result of a projection of an
   arbitrary data set, as opposed to interpolaiton at pre-defined nodes.
   However, the functionality currently intrudes into the data structures and
   is hence to fully complient with the rest of the workflow and codeflow, thus
@@ -152,7 +157,7 @@ Changelog for version 3.1:
 
 - added a windows bat script that mimics the make command but is compatible with Microsoft Visual C++
 
-- changed the signature of 
+- changed the signature of
    TasmanianSparseGrid::setAnisotropicRefinement
    TasmanianSparseGrid::estimateAnisotropicCoefficients
    TasmanianSparseGrid::setSurplusRefinement
