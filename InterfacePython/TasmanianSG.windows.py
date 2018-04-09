@@ -1086,7 +1086,9 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfX", "ERROR: llfX.shape[1] should equal {0:1d} instead it equals {1:1d}".format(self.getNumDimensions(), iNumDim))
         iNumOutputs = self.getNumOutputs()
         aY = np.empty([iNumX, iNumOutputs], np.float64)
-        self.pLibTSG.tsgEvaluateBatch(self.pGrid, np.ctypeslib.as_ctypes(llfX.reshape([iNumX*iNumDim])), iNumX, np.ctypeslib.as_ctypes(aY.reshape([iNumX*iNumOutputs])))
+        # np.ctypeslib.as_ctypes(llfX.reshape([iNumX*iNumDim,])) messes up, the first 4 entries randomly get set to machine eps (10^-310) and 0
+        lfX = llfX.reshape([iNumX*iNumDim,])
+        self.pLibTSG.tsgEvaluateBatch(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX, np.ctypeslib.as_ctypes(aY.reshape([iNumX*iNumOutputs,])))
         return aY
 
     def integrate(self):
@@ -1552,7 +1554,9 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfX", "ERROR: calling evaluateHierarchicalFunctions llfX.shape[1] is not equal to getNumDimensions()")
         iNumX = llfX.shape[0]
         aResult = np.empty([iNumX * self.getNumPoints()], np.float64)
-        self.pLibTSG.tsgEvaluateHierarchicalFunctions(self.pGrid, np.ctypeslib.as_ctypes(llfX.reshape([llfX.shape[0] * llfX.shape[1]])), iNumX, np.ctypeslib.as_ctypes(aResult))
+        # see evaluateBatch()
+        lfX = llfX.reshape([llfX.shape[0] * llfX.shape[1]])
+        self.pLibTSG.tsgEvaluateHierarchicalFunctions(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX, np.ctypeslib.as_ctypes(aResult))
         return aResult.reshape([iNumX, self.getNumPoints()])
 
     def evaluateSparseHierarchicalFunctions(self, llfX):
@@ -1590,7 +1594,9 @@ class TasmanianSparseGrid:
         pMat.aVals = np.empty([iNumNZ,], np.float64)
         pMat.iNumRows = iNumX
         pMat.iNumCols = self.getNumPoints()
-        self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic(self.pGrid, np.ctypeslib.as_ctypes(llfX.reshape([llfX.shape[0] * llfX.shape[1]])), iNumX,
+        # see evaluateBatch()
+        lfX = llfX.reshape([llfX.shape[0] * llfX.shape[1]])
+        self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX,
                                                         np.ctypeslib.as_ctypes(pMat.aPntr), np.ctypeslib.as_ctypes(pMat.aIndx), np.ctypeslib.as_ctypes(pMat.aVals))
         return pMat
 
