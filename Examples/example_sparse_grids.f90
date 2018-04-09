@@ -567,7 +567,7 @@ IMPLICIT NONE
         err2 = abs(res2(1,i) - tvalues(1,i))
       ENDIF
     END DO
-    
+
     CALL tsgSetGlobalSurplusRefinement(gridID3, 1.D-10, 0)
   
     N = tsgGetNumNeeded(gridID3)
