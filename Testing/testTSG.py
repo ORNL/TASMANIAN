@@ -142,7 +142,7 @@ class TestTasmanian(unittest.TestCase):
                 sAvailableAcceleration += " " + s
         print("        Available acceleration:{0:1s}".format(sAvailableAcceleration))
 
-        print("        Available GPUs:")
+        print("                Available GPUs:")
         if (grid.getNumGPUs() > 0):
             for iGPU in range(grid.getNumGPUs()):
                 sName = grid.getGPUName(iGPU)
