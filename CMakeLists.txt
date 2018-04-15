@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.2)
     
 cmake_policy(VERSION 3.2)
 project(Tasmanian VERSION 6.0.0 LANGUAGES C CXX)
-
+message(STATUS "This is a development version of Tasmanian")
 
 ########################################################################
 #  User specified options:
