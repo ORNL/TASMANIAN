@@ -1,13 +1,8 @@
-cmake_minimum_required(VERSION 2.8)
-if (${CMAKE_MAJOR_VERSION} LESS 3)
-    project(Tasmanian)
-    set(Tasmanian_VERSION_MAJOR 5)
-    set(Tasmanian_VERSION_MINOR 1)
-    set(Tasmanian_VERSION_PATCH 0)
-else()
-    cmake_policy(VERSION 3.0.2)
-    project(Tasmanian VERSION 5.1.0 LANGUAGES CXX)
-endif()
+cmake_minimum_required(VERSION 3.2)
+    
+cmake_policy(VERSION 3.2)
+project(Tasmanian VERSION 6.0.0 LANGUAGES C CXX)
+
 
 ########################################################################
 #  User specified options:
