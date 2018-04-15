@@ -37,7 +37,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "tasmanianConfig.hpp"
+#include "TasmanianConfig.hpp"
 
 namespace TasGrid{
 

@@ -31,7 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_CUDA_BASIS_EVALUATIONS_HPP
 #define __TASMANIAN_SPARSE_GRID_CUDA_BASIS_EVALUATIONS_HPP
 
-#include "tasmanianConfig.hpp"
+#include "TasmanianConfig.hpp"
 
 #ifdef TASMANIAN_CUDA
 

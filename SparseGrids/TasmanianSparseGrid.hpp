@@ -31,7 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_HPP
 #define __TASMANIAN_SPARSE_GRID_HPP
 
-#include "tasmanianConfig.hpp"
+#include "TasmanianConfig.hpp"
 
 #include "tsgEnumerates.hpp"
 

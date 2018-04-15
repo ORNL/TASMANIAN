@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <math.h>
 
-#include "tasmanianConfig.hpp"
+#include "TasmanianConfig.hpp"
 
 #ifdef TASMANIAN_MPI
 #include <mpi.h>
@@ -34,7 +34,6 @@ enum TypeLikelihood{
     likely_gauss_diagonal,
     likely_gauss_dense
 };
-
 
 }
 
