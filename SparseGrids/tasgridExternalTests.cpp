@@ -1673,7 +1673,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
 }
 
 bool ExternalTester::testGPU2GPUevaluations() const{
-    #ifdef TASMANIAN_CUDA
+    #ifdef Tasmanian_ENABLE_CUDA
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
     TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
     int num_tests = 7;
@@ -1795,7 +1795,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
     #else
     return true;
-    #endif // TASMANIAN_CUDA
+    #endif // Tasmanian_ENABLE_CUDA
 }
 
 bool ExternalTester::testAllAcceleration() const{
@@ -1837,7 +1837,7 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "local polynomial" << setw(wthird) << "FAIL" << endl;
     }
 
-    #ifdef TASMANIAN_CUDA
+    #ifdef Tasmanian_ENABLE_CUDA
     pass = pass && testGPU2GPUevaluations();
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "gpu-to-gpu" << setw(wthird) << "Pass" << endl;
@@ -1846,7 +1846,7 @@ bool ExternalTester::testAllAcceleration() const{
     }
     #else
     if (verbose) cout << "      Accelerated" << setw(wsecond) << "gpu-to-gpu" << setw(wthird) << "Skipped (needs Tasmanian_ENABLE_CUDA=ON)" << endl;
-    #endif // TASMANIAN_CUDA
+    #endif // Tasmanian_ENABLE_CUDA
 
     cout << "      Acceleration                        all" << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;
 

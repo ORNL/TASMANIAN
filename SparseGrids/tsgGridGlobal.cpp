@@ -35,10 +35,10 @@
 
 #include "tsgHiddenExternals.hpp"
 
-#ifdef TASMANIAN_CUBLAS
+#ifdef Tasmanian_ENABLE_CUBLAS
 #include <cuda_runtime_api.h>
 #include <cuda.h>
-#endif // TASMANIAN_CUBLAS
+#endif // Tasmanian_ENABLE_CUBLAS
 
 #include "tsgCudaMacros.hpp"
 
@@ -685,15 +685,15 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
 }
 
 void GridGlobal::evaluateFastCPUblas(const double x[], double y[]) const{
-    #ifdef TASMANIAN_CPU_BLAS
+    #ifdef Tasmanian_ENABLE_BLAS
     double *w = getInterpolationWeights(x);
     TasBLAS::dgemv(num_outputs, points->getNumIndexes(), values->getValues(0), w, y);
     delete[] w;
     #else
     evaluate(x, y);
-    #endif // TASMANIAN_CPU_BLAS
+    #endif // Tasmanian_ENABLE_BLAS
 }
-#ifdef TASMANIAN_CUBLAS
+#ifdef Tasmanian_ENABLE_CUBLAS
 void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{
     makeCheckAccelerationData(accel_gpu_cublas, os);
 
@@ -706,7 +706,7 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostrea
 }
 #else
 void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostream *) const{ evaluateFastCPUblas(x, y); }
-#endif // TASMANIAN_CUBLAS
+#endif // Tasmanian_ENABLE_CUBLAS
 void GridGlobal::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{
     evaluateFastGPUcublas(x, y, os);
 }
@@ -722,7 +722,7 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
 }
 
 void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    #ifdef TASMANIAN_CPU_BLAS
+    #ifdef Tasmanian_ENABLE_BLAS
     int num_points = points->getNumIndexes();
     double *weights = new double[num_points * num_x];
     #pragma omp parallel for
@@ -735,9 +735,9 @@ void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) c
     delete[] weights;
     #else
     evaluateBatch(x, num_x, y);
-    #endif // TASMANIAN_CPU_BLAS
+    #endif // Tasmanian_ENABLE_BLAS
 }
-#ifdef TASMANIAN_CUBLAS
+#ifdef Tasmanian_ENABLE_CUBLAS
 void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas, os);
@@ -760,14 +760,14 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[],
 }
 #else
 void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *) const{ evaluateBatchCPUblas(x, num_x, y); }
-#endif // TASMANIAN_CUBLAS
+#endif // Tasmanian_ENABLE_CUBLAS
 void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
     evaluateBatchGPUcublas(x, num_x, y, os);
 }
 void GridGlobal::evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const{
     evaluateBatchGPUcublas(x, num_x, y, os);
 }
-#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
+#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
 void GridGlobal::makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const{
     if (AccelerationMeta::isAccTypeFullMemoryGPU(acc)){
         if ((accel != 0) && (!accel->isCompatible(acc))){
@@ -783,7 +783,7 @@ void GridGlobal::makeCheckAccelerationData(TypeAcceleration acc, std::ostream *o
 }
 #else
 void GridGlobal::makeCheckAccelerationData(TypeAcceleration, std::ostream *) const{}
-#endif // TASMANIAN_CUBLAS || TASMANIAN_CUDA
+#endif // Tasmanian_ENABLE_CUBLAS || Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
     double *w = getQuadratureWeights();

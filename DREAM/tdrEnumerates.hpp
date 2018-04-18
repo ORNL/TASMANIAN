@@ -7,7 +7,7 @@
 
 #include "TasmanianConfig.hpp"
 
-#ifdef TASMANIAN_MPI
+#ifdef Tasmanian_ENABLE_MPI
 #include <mpi.h>
 #endif
 
