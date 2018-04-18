@@ -35,19 +35,19 @@
 
 #include <iostream>
 
-#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
+#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #endif
 
-#ifdef TASMANIAN_CUBLAS
+#ifdef Tasmanian_ENABLE_CUBLAS
 #include <cublas_v2.h>
 #include <cusparse.h>
-#endif // TASMANIAN_CUBLAS
+#endif // Tasmanian_ENABLE_CUBLAS
 
 namespace TasGrid{
 
-#if defined(TASMANIAN_CUBLAS) || defined(TASMANIAN_CUDA)
+#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
 namespace TasCUDA{
     // general GPU/CPU I/O, new/delete vectors, send/recv data
     template <typename T>

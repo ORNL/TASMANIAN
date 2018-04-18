@@ -121,8 +121,8 @@ include/tsg%.hpp: ./SparseGrids/tsg%.hpp
 GaussPattersonRule.table: ./SparseGrids/GaussPattersonRule.table
 	cp ./SparseGrids/GaussPattersonRule.table .
 
-TasmanianSG.py: ./InterfacePython/TasmanianSG.py
-	cp ./InterfacePython/TasmanianSG.py .
+TasmanianSG.py: ./Config/AltBuildSystems/TasmanianSG.py
+	cp ./Config/AltBuildSystems/TasmanianSG.py .
 
 example_sparse_grids.py: ./Examples/example_sparse_grids.py
 	cp ./Examples/example_sparse_grids.py .
@@ -142,6 +142,7 @@ example_dream.cpp: ./Examples/example_dream.cpp
 # Matlab
 .PHONY: matlab
 matlab:
+	cp Config/AltBuildSystems/tsgGetPaths.m InterfaceMATLAB/tsgGetPaths.m
 	mkdir -p tsgMatlabWorkFolder
 	sed -i -e 's|ENTER\ THE\ PATH\ TO\ MATLAB\ WORK\ FOLDER|'`pwd`/tsgMatlabWorkFolder/'|g' InterfaceMATLAB/tsgGetPaths.m
 	sed -i -e 's|ENTER\ THE\ PATH\ TO\ tasgrid\ EXECUTABLE|'`pwd`/tasgrid'|g' InterfaceMATLAB/tsgGetPaths.m

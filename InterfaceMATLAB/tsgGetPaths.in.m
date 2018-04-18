@@ -9,6 +9,6 @@ function [sFiles, sTasGrid] = tsgGetPaths()
 % it is recommended to use absolute path
 
 sTasGrid = ['@Tasmanian_tasgrid_path@'];
-sFiles = ['@Tasmanian_string_matlab_work@'];
+sFiles = ['@Tasmanian_MATLAB_WORK_FOLDER@'];
 
 end
