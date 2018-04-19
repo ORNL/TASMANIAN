@@ -28,6 +28,8 @@ copy Examples\example_sparse_grids.py example_sparse_grids.py
 copy Testing\testTSG.py testTSG.py
 copy Testing\sandbox.py sandbox.py
 
+copy Config\AltBuildSystems\tsgGetPaths.m InterfaceMATLAB\tsgGetPaths.m
+
 @ECHO To enable MATLAB interface
 @ECHO edit InterfaceMATLAB\tsgGetPaths.m
 @ECHO add InterfaceMATLAB to the MATLAB path

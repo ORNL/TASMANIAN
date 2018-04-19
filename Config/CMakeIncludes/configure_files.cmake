@@ -14,10 +14,10 @@ endif()
 # stage 0: for support of simple GNU-Make, ignore for release and intermediate builds
 if (Tasmanian_DEVELOPMENT_BACKWARDS)
     set(Tasmanian_libsparsegrid_path "libtasmaniansparsegrid.dll")
-    configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.windows.py")
+    configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/Config/AltBuildSystems/TasmanianSG.windows.py")
 
     set(Tasmanian_libsparsegrid_path "./libtasmaniansparsegrid.so")
-    configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.py")
+    configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/Config/AltBuildSystems/TasmanianSG.py")
 
     set(Tasmanian_string_python_hashbang "/usr/bin/env python")
     set(Tasmanian_cmake_synctest_enable "False")
@@ -25,10 +25,6 @@ if (Tasmanian_DEVELOPMENT_BACKWARDS)
 
     set(Tasmanian_python_example_import "#")
     configure_file("${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.in.py" "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
-
-    set(Tasmanian_tasgrid_path "ENTER THE PATH TO tasgrid EXECUTABLE")
-    set(Tasmanian_string_matlab_work "ENTER THE PATH TO MATLAB WORK FOLDER")
-    configure_file("${PROJECT_SOURCE_DIR}/InterfaceMATLAB/tsgGetPaths.in.m" "${PROJECT_SOURCE_DIR}/InterfaceMATLAB/tsgGetPaths.m")
 endif()
 
 
@@ -82,7 +78,6 @@ endif()
 
 if (Tasmanian_ENABLE_MATLAB)
     set(Tasmanian_tasgrid_path "${CMAKE_INSTALL_PREFIX}/bin/${Tasmanian_name_tasgrid}")
-    set(Tasmanian_string_matlab_work ${Tasmanian_MATLAB_WORK_FOLDER})
     configure_file("${PROJECT_SOURCE_DIR}/InterfaceMATLAB/tsgGetPaths.in.m" "${CMAKE_BINARY_DIR}/install/matlab/tsgGetPaths.m")
 endif()
 
