@@ -118,7 +118,7 @@ class TasmanianSparseGrid:
 
         '''
         if (isinstance(tasmanian_library, int)):
-            self.pLibTSG = cdll.LoadLibrary("libtasmaniansparsegrid.dll")
+            self.pLibTSG = cdll.LoadLibrary("./libtasmaniansparsegrid.so")
         elif (sys.version_info.major == 3):
             if (isinstance(tasmanian_library, str)):
                 self.pLibTSG = cdll.LoadLibrary(tasmanian_library)
