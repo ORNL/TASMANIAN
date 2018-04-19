@@ -121,8 +121,8 @@ include/tsg%.hpp: ./SparseGrids/tsg%.hpp
 GaussPattersonRule.table: ./SparseGrids/GaussPattersonRule.table
 	cp ./SparseGrids/GaussPattersonRule.table .
 
-TasmanianSG.py: ./InterfacePython/TasmanianSG.py
-	cp ./InterfacePython/TasmanianSG.py .
+TasmanianSG.py: ./Config/AltBuildSystems/TasmanianSG.py
+	cp ./Config/AltBuildSystems/TasmanianSG.py .
 
 example_sparse_grids.py: ./Examples/example_sparse_grids.py
 	cp ./Examples/example_sparse_grids.py .
