@@ -7,10 +7,6 @@
 #   stage 2: everything should work after make install
 ########################################################################
 
-if (NOT DEFINED Tasmanian_TESTS_GPU_ID)
-    set(Tasmanian_TESTS_GPU_ID -1)
-endif()
-
 # stage 0: for support of simple GNU-Make, ignore for release and intermediate builds
 if (Tasmanian_DEVELOPMENT_BACKWARDS)
     set(Tasmanian_libsparsegrid_path "libtasmaniansparsegrid.dll")
@@ -20,7 +16,7 @@ if (Tasmanian_DEVELOPMENT_BACKWARDS)
     configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/Config/AltBuildSystems/TasmanianSG.py")
 
     set(Tasmanian_string_python_hashbang "/usr/bin/env python")
-    set(Tasmanian_cmake_synctest_enable "False")
+    set(Tasmanian_cmake_synctest_enable "False") # disable tests that check if the library reports the same options as given by the cmake variables
     configure_file("${PROJECT_SOURCE_DIR}/Testing/testTSG.in.py" "${PROJECT_SOURCE_DIR}/Config/AltBuildSystems/testTSG.py") # also using Tasmanian_libsparsegrid_path
 
     set(Tasmanian_python_example_import "#")
@@ -42,7 +38,7 @@ if (Tasmanian_ENABLE_PYTHON)
     configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${CMAKE_BINARY_DIR}/TasmanianSG.py")
 
     set(Tasmanian_string_python_hashbang "${PYTHON_EXECUTABLE}")
-    set(Tasmanian_cmake_synctest_enable "True")
+    set(Tasmanian_cmake_synctest_enable "True") # enable tests that check if the library reports the same options as given by the cmake variables
     configure_file("${PROJECT_SOURCE_DIR}/Testing/testTSG.in.py" "${CMAKE_BINARY_DIR}/testTSG.py") # also uses Tasmanian_libsparsegrid_path
 
     set(Tasmanian_python_example_import "sys.path.append(\"${CMAKE_BINARY_DIR}\")\n")
@@ -81,7 +77,7 @@ if (Tasmanian_ENABLE_MATLAB)
     configure_file("${PROJECT_SOURCE_DIR}/InterfaceMATLAB/tsgGetPaths.in.m" "${CMAKE_BINARY_DIR}/install/matlab/tsgGetPaths.m")
 endif()
 
-# configure post-install tests
+# configure post-install tests, i.e., make test_install
 configure_file("${PROJECT_SOURCE_DIR}/Testing/test_post_install.in.sh" "${CMAKE_BINARY_DIR}/test_post_install.sh")
 
 # cmake file for the examples, to be used post-install

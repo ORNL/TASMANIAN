@@ -127,7 +127,7 @@ include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/configure_files.cmake)
 # Testing
 ########################################################################
 enable_testing()
-if (Tasmanian_TESTS_GPU_ID LESS 0)
+if (NOT DEFINED Tasmanian_TESTS_GPU_ID)
     add_test(SparseGridsAcceleration tasgrid -test acceleration)
 else()
     add_test(SparseGridsAcceleration tasgrid -test acceleration -gpuid ${Tasmanian_TESTS_GPU_ID})
