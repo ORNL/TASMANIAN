@@ -29,7 +29,7 @@
 !==================================================================================================================================================================================
 PROGRAM FORTESTER
   USE TasmanianSG
-IMPLICIT NONE
+  IMPLICIT NONE
   INTEGER :: verm, vern!, i
   CHARACTER, pointer :: licence(:)
   INTEGER :: gridID, gridID_II
@@ -63,7 +63,7 @@ IMPLICIT NONE
   CALL tsgMakeGlobalGrid(gridID, 2, 0, 1, tsg_level, tsg_clenshaw_curtis)
   tp1 = reshape((/0.0D+0, 0.0D+0, 0.0D+0, -1.0D+0, 0.0D+0, 1.0D+0, -1.0D+0, 0.0D+0, 1.0D+0, 0.0D+0/), shape(tp1))
   tw1 = reshape((/4.0D+0/3.0D+0, 2.0D+0/3.0D+0, 2.0D+0/3.0D+0, 2.0D+0/3.0D+0, 2.0D+0/3.0D+0/), shape(tw1))
-  points => tsgGetPoints(gridID)
+  points  => tsgGetPoints(gridID)
   weights => tsgGetQuadratureWeights(gridID)
   IF ((getErrorMat(2, 5, tp1, points) > 1.0D-11) .OR. (getErrorVec(5, tw1, weights) > 1.0D-11)) THEN
     WRITE(*,*) "Mismatch in tsgMakeGlobal: core case 1", getErrorMat(2, 5, tp1, points), getErrorVec(5, tw1, weights)
@@ -73,11 +73,11 @@ IMPLICIT NONE
   DEALLOCATE(weights)
   
   CALL tsgMakeGlobalGrid(gridID, 2, 0, 2, tsg_level, tsg_clenshaw_curtis)
-  points => tsgGetPoints(gridID)
+  points  => tsgGetPoints(gridID)
   weights => tsgGetQuadratureWeights(gridID)
   IF ((abs(points(2, 4) + sqrt(0.5D+0)) > 1.0D-11) .OR. &
       (abs(points(2, 5) - sqrt(0.5D+0)) > 1.0D-11) .OR. &
-      (abs(weights(7) - 1.0D+0/9.0D+0) > 1.0D-11))then
+      (abs(weights(7) - 1.0D+0/9.0D+0)  > 1.0D-11))then
     WRITE(*,*) "Mismatch in tsgMakeGlobal: core case 2"
     WRITE(*,*) abs(points(2, 4) - sqrt(0.5D+0)), abs(points(2, 5) - sqrt(0.5D+0)), abs(weights(7) - 1.0D+0/9.0D+0)
     STOP 1
@@ -86,7 +86,7 @@ IMPLICIT NONE
   DEALLOCATE(weights)
   
   CALL tsgMakeGlobalGrid(gridID, 3, 0, 4, tsg_level, tsg_fejer2)
-  points => tsgGetPoints(gridID)
+  points  => tsgGetPoints(gridID)
   weights => tsgGetQuadratureWeights(gridID)
   n = tsgGetNumPoints(gridID)
   IF ((abs(sumMat(3, n, points)) > 1.0D-11) .OR. (abs(sumVec(n, weights) - 8.0D+0) > 1.0D-11))then
@@ -100,7 +100,7 @@ IMPLICIT NONE
   CALL tsgMakeGlobalGrid(gridID, 1, 0, 3, tsg_level, tsg_leja)
   tp2 = reshape((/0.0D+0, 1.0D+0, -1.0D+0, sqrt(1.0D+0/3.0D+0)/), shape(tp2))
   tw2 = reshape((/4.0D+0/3.0D+0, 1.0D+0/3.0D+0, 1.0D+0/3.0D+0, 0.0D+0/), shape(tw2))
-  points => tsgGetPoints(gridID)
+  points  => tsgGetPoints(gridID)
   weights => tsgGetQuadratureWeights(gridID)
   IF ((getErrorMat(1, 4, tp2, points) > 1.0D-11) .OR. (getErrorVec(1, tw2, weights) > 1.0D-11))then
     WRITE(*,*) "Mismatch in tsgMakeGlobal: core case 4", getErrorMat(1, 4, tp2, points), getErrorVec(1, tw2, weights)
@@ -123,7 +123,7 @@ IMPLICIT NONE
   anisoWeights(2) = 1
   CALL tsgMakeGlobalGrid(gridID, 2, 0, 2, tsg_level, tsg_leja, anisoWeights)
   tp3 = reshape((/0.0D+0, 0.0D+0, 0.0D+0, 1.0D+0, 0.0D+0, -1.0D+0, 1.0D+0, 0.0D+0/), shape(tp3))
-  points => tsgGetPoints(gridID)
+  points  => tsgGetPoints(gridID)
   weights => tsgGetQuadratureWeights(gridID)
   IF ((getErrorMat(2, 4, tp3, points) > 1.D-11) .OR. (abs(sumVec(4, weights) - 4.0D+0) > 1.D-11))then
     WRITE(*,*) "Mismatch in tsgMakeGlobal: core case 6", getErrorMat(2, 4, tp3, points), sumVec(4, weights)
@@ -133,15 +133,15 @@ IMPLICIT NONE
   DEALLOCATE(weights)
   
   gridID_II = tsgNewGridID()
-  levelLimits(1) = 1
-  levelLimits(2) = 3
+  levelLimits(1)  = 1
+  levelLimits(2)  = 3
   anisoWeights(1) = 1
   anisoWeights(2) = 1
   CALL tsgMakeGlobalGrid(gridID, 2, 0, 20, tsg_qptotal, tsg_clenshaw_curtis, anisoWeights, 0.0D+0, 0.0D+0, levelLimits)
   anisoWeights(1) = 1
   anisoWeights(2) = 3
   CALL tsgMakeGlobalGrid(gridID_II, 2, 0, 1, tsg_tensor, tsg_clenshaw_curtis, anisoWeights)
-  points => tsgGetPoints(gridID)
+  points  => tsgGetPoints(gridID)
   pointsb => tsgGetPoints(gridID_II)
   n = tsgGetNumPoints(gridID)
   IF ((tsgGetNumPoints(gridID_II) .NE. n) .OR. (getErrorMat(2, n, points, pointsb) > 1.0D-11))then
