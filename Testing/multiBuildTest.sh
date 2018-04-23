@@ -856,24 +856,6 @@ else
     echo "===========================================================================================" >> $sMultibuildLogFile
 fi
 
-if [ -f /usr/bin/clang++-3.8 ] && [ ! -f /usr/bin/g++-7 ]; then
-    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
-    cd $sTempBuild/Tasmanian || { exit 1; }
-    mkdir -p tsgWorkFolder
-    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-3.8" $sDashFort -noomp -cuda -make-j -verbose -nobashrc || { exit 1; }
-    if (( $bOctave == 1 )); then
-        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
-    fi
-    cd $sTempBuild
-    rm -fr Tasmanian/
-    cd $sTestRoot
-    echo "======= PASSED: Clang 3.8" >> $sMultibuildLogFile
-    echo "===========================================================================================" >> $sMultibuildLogFile
-else
-    echo "======= SKIPPED: Clang 3.8" >> $sMultibuildLogFile
-    echo "===========================================================================================" >> $sMultibuildLogFile
-fi
-
 if [ -f /usr/bin/g++-7 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
@@ -925,24 +907,6 @@ if [ -f /usr/bin/g++-5 ]; then
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
     echo "======= SKIPPED: GCC 5" >> $sMultibuildLogFile
-    echo "===========================================================================================" >> $sMultibuildLogFile
-fi
-
-if [ -f /usr/bin/g++-4.8 ]; then
-    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
-    cd $sTempBuild/Tasmanian || { exit 1; }
-    mkdir -p tsgWorkFolder
-    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-4.8" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
-    if (( $bOctave == 1 )); then
-        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
-    fi
-    cd $sTempBuild
-    rm -fr Tasmanian/
-    cd $sTestRoot
-    echo "======= PASSED: GCC 4.8" >> $sMultibuildLogFile
-    echo "===========================================================================================" >> $sMultibuildLogFile
-else
-    echo "======= SKIPPED: GCC 4.8" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 fi
 
