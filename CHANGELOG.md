@@ -45,33 +45,33 @@ Changelog for version 5.0
   number of outputs.
 
 * overhaul of the folder structure and build system, consult the updated
-  manual for all included build options. Shortlist is:
+  manual for all included build options.
 
-  -- install.sh using cmake, compile the code in TasmanianSource/Build
-
+- Install script: install.sh (!in v5.1 renames to install!) using cmake, compile the code in TasmanianSource/Build
+~~~
      cd <tasmanian source folder>
      ./install.sh -help
      ./install.sh <install prefix> <matlab work folder>
-
-
-  -- Manual cmake: !use out-of-source build!
-
+~~~
+- Manual cmake: !use out-of-source build!
+~~~
      cd <build folder>
      cmake <options> <tasmanian source folder>
      make
      make test
      make install
      ./test_post_install.sh (!replaced by "make test_install" in v5.1!)
+~~~
 
-  -- GNU make
-
+- GNU make
+~~~
      make
      make test
      make examples
      ./example_sparse_grids
      ./example_dream
      make matlab
-
+~~~
 
 
 Changelog for version 4.0

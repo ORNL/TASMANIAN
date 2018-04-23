@@ -2,7 +2,7 @@
 
 The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. The code consists of several modules that can be used individually or conjointly.
 
-Visit us at: http://tasmanian.ornl.gov/
+Visit us at: [http://tasmanian.ornl.gov/](http://tasmanian.ornl.gov/)
 
 Sparse Grids
 --------------
@@ -15,4 +15,5 @@ DiffeRential Evolution Adaptive Metropolis (DREAM) is an algorithm for sampling 
 
 ### Please cite us
 If you use TASMANIAN for your research, pleace cite the Manual and our work on global and locally adaptive grids.
-http://tasmanian.ornl.gov/documents/Tasmanian.bib
+
+[http://tasmanian.ornl.gov/documents/Tasmanian.bib](http://tasmanian.ornl.gov/documents/Tasmanian.bib)
