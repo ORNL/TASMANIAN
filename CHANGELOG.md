@@ -1,3 +1,12 @@
+Changelog for version 6.0
+--------------
+
+* required cmake 3.5 or newer (as opposed to 2.8 in version 5.1)
+
+* CXX standard 2011 is now enabled by default even if CUDA and MPI
+  are disabled; removed the option to force-disable CXX 2011
+
+
 Changelog for version 5.1
 --------------
 
@@ -47,7 +56,7 @@ Changelog for version 5.0
 * overhaul of the folder structure and build system, consult the updated
   manual for all included build options.
 
-- Install script: install.sh (!in v5.1 renames to install!) using cmake, compile the code in TasmanianSource/Build
+- Install script: install.sh (in v5.1 renamed to install) using cmake, compile the code in TasmanianSource/Build
 ~~~
      cd <tasmanian source folder>
      ./install.sh -help
@@ -60,7 +69,7 @@ Changelog for version 5.0
      make
      make test
      make install
-     ./test_post_install.sh (!replaced by "make test_install" in v5.1!)
+     ./test_post_install.sh (replaced by "make test_install" in v5.1)
 ~~~
 
 - GNU make
