@@ -1,13 +1,4 @@
 ########################################################################
-# C++ 2011 support
-########################################################################
-foreach(Tasmanian_loop_target ${Tasmanian_target_list})
-    set_property(TARGET ${Tasmanian_loop_target} PROPERTY CXX_STANDARD 11)
-endforeach()
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
-
-
-########################################################################
 # Compiler specific flags: Intel hasn't been tested in a while
 ########################################################################
 if (NOT Tasmanian_STRICT_OPTIONS)
