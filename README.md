@@ -2,7 +2,7 @@
 
 The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. The code consists of several modules that can be used individually or conjointly.
 
-The current stable version (5.0) and more detals regarding TASMANIAN can be found at: http://tasmanian.ornl.gov/
+Visit us at: http://tasmanian.ornl.gov/
 
 Sparse Grids
 --------------
