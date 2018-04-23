@@ -11,7 +11,7 @@ Sparse Grids is a family of algorithms for constructing multidimensional quadrat
 
 DREAM
 --------------
-DiffeRential Evolution Adaptive Metropolis (DREAM) is an algorithm for sampling from a general probability density when only the probability density function is known. The method can be applied to problems of Bayesian inference and optimization, including custom defined models as well as surrogate models constructed with the Tasmanian Sparse Grids module. 
+DiffeRential Evolution Adaptive Metropolis (DREAM) is an algorithm for sampling from a general probability density when only the probability density function is known. The method can be applied to problems of Bayesian inference and optimization, including custom defined models as well as surrogate models constructed with the Tasmanian Sparse Grids module.
 
 ### Please cite us
 If you use TASMANIAN for your research, pleace cite the Manual and our work on global and locally adaptive grids.

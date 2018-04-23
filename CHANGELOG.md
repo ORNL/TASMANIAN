@@ -17,8 +17,8 @@ Changelog for version 5.1
   MATLAB defaults to binary format now
 
 * CUDA accelerated evaluations can be triggered from MATLAB,
-  just specify lGrid.gpuDevice = X, where X is a valid CUDA device
-  run tsgCoreTests() to see a list of the available devices
+  just specify `lGrid.gpuDevice = X,` where X is a valid CUDA device
+  run `tsgCoreTests()` to see a list of the available devices
 
 * added tsgCoreTests() script to MATLAB
 
@@ -92,7 +92,7 @@ Changelog for version 4.0
   the simple GNU-Make will continue to be supported.
 
   Example cmake call (Linux): (!DOES NOT WORK ON VERSION 5.x, SEE MANUAL)
-
+~~~
   cd /home/myself/TasmanianBuild
   cmake \
     -DCMAKE_BUILD_TYPE=Release \
@@ -105,33 +105,36 @@ Changelog for version 4.0
   make
   make test
   make install
+~~~
 
 * in the above example, add the following to .bashrc
   in order to use tasgrid executable:
-    export PATH=$PATH:/home/myself/TSG/bin
+    `export PATH=$PATH:/home/myself/TSG/bin`
 
   in order to use tasgrid shared library:
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/myself/TSG/lib
+    `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/myself/TSG/lib`
 
   in order to compile C or C++ code:
-    export C_INCLUDE_PATH=$C_INCLUDE_PATH:/home/myself/TSG/include
-    export CPP_INCLUDE_PATH=$CPP_INCLUDE_PATH:/home/myself/TSG/include
+    `export C_INCLUDE_PATH=$C_INCLUDE_PATH:/home/myself/TSG/include`
+    `export CPP_INCLUDE_PATH=$CPP_INCLUDE_PATH:/home/myself/TSG/include`
 
   alternatively you can add -I/home/myself/TSG/include to your build command
 
 * in the above example, the python module will be installed under
-    /home/myself/TSG/python/TasmanianSG.py
+    `/home/myself/TSG/python/TasmanianSG.py`
     in your python script use:
 
+~~~
     import sys
     sys.path.append("/home/myself/TSG/python")
     import TasmanianSG
+~~~
 
 * in the above example, the MATLAB files will be installed under
     /home/myself/TSG/matlab/
 
     in MATLAB use:
-    addpath("/home/myself/TSG/matlab/")
+    `addpath("/home/myself/TSG/matlab/")`
 
     or add the path using the MATLAB gui
 
@@ -153,7 +156,7 @@ Changelog for version 4.0
 Changelog for version 3.1
 --------------
 
-* fixed a major bug when using the tasgrid executable, TasmanianSparseGrid::write, and TasmanianSparseGrid::read funcitons
+* fixed a major bug when using the tasgrid executable, `TasmanianSparseGrid::write`, and `TasmanianSparseGrid::read` funcitons
   the custom domain transform was not saved properly
   using grid files saved with version 3.0 will generate some warning, but it will work fine otherwise (except for the custom transfrom)
 
@@ -162,10 +165,12 @@ Changelog for version 3.1
 * added a windows bat script that mimics the make command but is compatible with Microsoft Visual C++
 
 * changed the signature of
+~~~
    TasmanianSparseGrid::setAnisotropicRefinement
    TasmanianSparseGrid::estimateAnisotropicCoefficients
    TasmanianSparseGrid::setSurplusRefinement
    TasmanianSparseGrid::setSurplusRefinement
+~~~
   All functions accept an output that specifies which output to be used
   Sequence, Local Polynomial, and Wavelet grids can now refine based on a specified output as opposed to all output
-  to regain the old behavior use output = -1
+  to regain the old behavior use `output = -1`
