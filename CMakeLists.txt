@@ -80,7 +80,7 @@ option(Tasmanian_ENABLE_CUDA "Enable Nvidia GPU acceleration using CUDA kernels 
 option(Tasmanian_STATIC_LIBRARY "Compile static library and the executables with static linkage (Tasmanian)" ON)
 option(Tasmanian_SHARED_LIBRARY "Compile dynamic library (Tasmanian)" ON)
 
-set(Tasmanian_TESTS_GPU_ID "-1" CACHE STRING "specify GPU ID for testing, -1 means running tests on all visiable devices")
+set(Tasmanian_TESTS_GPU_ID "-1" CACHE STRING "specify GPU ID for testing, -1 means running tests on all visible devices")
 set(Tasmanian_TESTS_OMP_NUM_THREADS "-1" CACHE STRING "specify OMP_NUM_THREADS for the tests, if less than 0, this option will be ignored")
 set(Tasmanian_MATLAB_WORK_FOLDER "" CACHE PATH "specify the path for the MATLAB work folder")
 
