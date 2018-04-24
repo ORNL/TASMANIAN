@@ -163,7 +163,7 @@ int main(int argc, const char ** argv){
                 }
                 gpuid = atoi(argv[k+1]);
                 k++;
-                if ((gpuid < 0) || (gpuid >= TasmanianSparseGrid::getNumGPUs())){
+                if ((gpuid < -1) || (gpuid >= TasmanianSparseGrid::getNumGPUs())){
                     cerr << "ERROR: -gpuid " << gpuid << " is not a valid gpuid!" << endl;
                     cerr << "      see ./tasgrid -v for a list of detected GPUs." << endl;
                     return 1;

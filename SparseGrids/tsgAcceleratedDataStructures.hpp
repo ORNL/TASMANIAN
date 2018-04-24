@@ -92,7 +92,7 @@ private:
     double *gpu_nodes, *gpu_support; // support is half support and encodes the level of the function, i.e., constant, linear, or quadratic
     int *gpu_hpntr, *gpu_hindx, *gpu_roots;
 
-    #ifdef TASMANIAN_CUBLAS
+    #ifdef Tasmanian_ENABLE_CUBLAS
     void *cublasHandle;
     void *cusparseHandle;
     #endif
@@ -162,12 +162,12 @@ public:
 
 private:
     // these actually store the rate and shift and not the hard upper/lower limits
-    #ifdef TASMANIAN_CUDA
+    #ifdef Tasmanian_ENABLE_CUDA
     double *gpu_trans_a, *gpu_trans_b;
     int padded_size;
 
     std::ostream *logstream;
-    #endif // TASMANIAN_CUDA
+    #endif // Tasmanian_ENABLE_CUDA
 };
 
 }

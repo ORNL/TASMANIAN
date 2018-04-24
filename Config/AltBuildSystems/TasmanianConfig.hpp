@@ -31,9 +31,9 @@
 #ifndef __TASMANIAN_CONFIG_HPP
 #define __TASMANIAN_CONFIG_HPP
 
-#define TASMANIAN_VERSION_MAJOR 5
-#define TASMANIAN_VERSION_MINOR 1
-#define TASMANIAN_VERSION_STRING "5.1"
+#define TASMANIAN_VERSION_MAJOR 6
+#define TASMANIAN_VERSION_MINOR 0
+#define TASMANIAN_VERSION_STRING "6.0"
 #define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
 
 ////////////////////////////////////////////////////////////////////////
@@ -45,9 +45,9 @@
 // we support advanced options only though cmake
 ////////////////////////////////////////////////////////////////////////
 
-/* #undef TASMANIAN_CPU_BLAS */
-/* #undef TASMANIAN_CUBLAS */
-/* #undef TASMANIAN_CUDA */
-/* #undef TASMANIAN_MPI */
+/* #undef Tasmanian_ENABLE_BLAS */
+/* #undef Tasmanian_ENABLE_CUBLAS */
+/* #undef Tasmanian_ENABLE_CUDA */
+/* #undef Tasmanian_ENABLE_MPI */
 
 #endif

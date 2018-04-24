@@ -39,7 +39,7 @@ except:
     bTsgPlotting = False
     tsgPlot = []
 
-__version__ = "5.1"
+__version__ = "6.0"
 __license__ = "BSD 3-Clause with UT-Battelle disclaimer"
 __author__ = "Miroslav Stoyanov"
 
