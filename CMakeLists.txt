@@ -27,8 +27,6 @@ message(STATUS "This is a development version of Tasmanian")
 #    -D Tasmanian_EXTRA_INCLUDE_DIRS:PATH="appends more include paths"
 #    -D Tasmanian_EXTRA_LIBRARIES:STRING="appends more link libraries"
 #    -D Tasmanian_EXTRA_LINK_DIRS:PATH="appends more link paths"
-#    -D Tasmanian_ENABLE_CXX_11:BOOL=OFF
-#      (note: unless manually specified, CUDA, CUBLAS, and MPI set this to ON)
 #
 # Development only options:
 #    -D Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS:BOOL=OFF
@@ -82,6 +80,8 @@ option(Tasmanian_ENABLE_CUDA "Enable Nvidia GPU acceleration using CUDA kernels 
 option(Tasmanian_STATIC_LIBRARY "Compile static library and the executables with static linkage (Tasmanian)" ON)
 option(Tasmanian_SHARED_LIBRARY "Compile dynamic library (Tasmanian)" ON)
 
+set(Tasmanian_TESTS_GPU_ID "-1" CACHE STRING "specify GPU ID for testing, -1 means running tests on all visiable devices")
+
 # version and license
 set(Tasmanian_version_string "${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
 set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer")
@@ -128,11 +128,7 @@ include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/configure_files.cmake)
 # Testing
 ########################################################################
 enable_testing()
-if (NOT DEFINED Tasmanian_TESTS_GPU_ID)
-    add_test(SparseGridsAcceleration tasgrid -test acceleration)
-else()
-    add_test(SparseGridsAcceleration tasgrid -test acceleration -gpuid ${Tasmanian_TESTS_GPU_ID})
-endif()
+add_test(SparseGridsAcceleration tasgrid -test acceleration -gpuid ${Tasmanian_TESTS_GPU_ID})
 add_test(SparseGridsDomain tasgrid -test domain)
 add_test(SparseGridsRefinement tasgrid -test refinement)
 add_test(SparseGridsGlobal tasgrid -test global)
