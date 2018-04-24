@@ -23,10 +23,12 @@ copy SparseGrids\GaussPattersonRule.table GaussPattersonRule.table
 copy DREAM\libtasmaniandream_static.lib libtasmaniandream_static.lib
 copy DREAM\tasdream.exe tasdream.exe
 
-copy InterfacePython\TasmanianSG.windows.py TasmanianSG.py
+copy Config\AltBuildSystems\TasmanianSG.windows.py TasmanianSG.py
 copy Examples\example_sparse_grids.py example_sparse_grids.py
 copy Testing\testTSG.py testTSG.py
 copy Testing\sandbox.py sandbox.py
+
+copy Config\AltBuildSystems\tsgGetPaths.m InterfaceMATLAB\tsgGetPaths.m
 
 @ECHO To enable MATLAB interface
 @ECHO edit InterfaceMATLAB\tsgGetPaths.m

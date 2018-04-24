@@ -7,45 +7,24 @@
 #   stage 2: everything should work after make install
 ########################################################################
 
-if (NOT DEFINED Tasmanian_TESTS_GPU_ID)
-    set(Tasmanian_TESTS_GPU_ID -1)
-endif()
-
 # stage 0: for support of simple GNU-Make, ignore for release and intermediate builds
 if (Tasmanian_DEVELOPMENT_BACKWARDS)
     set(Tasmanian_libsparsegrid_path "libtasmaniansparsegrid.dll")
-    configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.windows.py")
+    configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/Config/AltBuildSystems/TasmanianSG.windows.py")
 
     set(Tasmanian_libsparsegrid_path "./libtasmaniansparsegrid.so")
-    configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.py")
+    configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/Config/AltBuildSystems/TasmanianSG.py")
 
     set(Tasmanian_string_python_hashbang "/usr/bin/env python")
-    set(Tasmanian_cmake_synctest_enable "False")
+    set(Tasmanian_cmake_synctest_enable "False") # disable tests that check if the library reports the same options as given by the cmake variables
     configure_file("${PROJECT_SOURCE_DIR}/Testing/testTSG.in.py" "${PROJECT_SOURCE_DIR}/Config/AltBuildSystems/testTSG.py") # also using Tasmanian_libsparsegrid_path
 
     set(Tasmanian_python_example_import "#")
     configure_file("${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.in.py" "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
-
-    set(Tasmanian_tasgrid_path "ENTER THE PATH TO tasgrid EXECUTABLE")
-    set(Tasmanian_string_matlab_work "ENTER THE PATH TO MATLAB WORK FOLDER")
-    configure_file("${PROJECT_SOURCE_DIR}/InterfaceMATLAB/tsgGetPaths.in.m" "${PROJECT_SOURCE_DIR}/InterfaceMATLAB/tsgGetPaths.m")
 endif()
 
 
 # stage 1: build folder paths
-# this needs improvement, sync with stage 0 and the rest of the code
-if (Tasmanian_ENABLE_BLAS)
-    set(TASMANIAN_CPU_BLAS 1)
-endif()
-if (Tasmanian_ENABLE_CUBLAS)
-    set(TASMANIAN_CUBLAS 1)
-endif()
-if (Tasmanian_ENABLE_CUDA)
-    set(TASMANIAN_CUDA 1)
-endif()
-if (Tasmanian_ENABLE_MPI)
-    set(TASMANIAN_MPI 1)
-endif()
 configure_file("${PROJECT_SOURCE_DIR}/Config/TasmanianConfig.in.hpp"  "${CMAKE_BINARY_DIR}/configured/TasmanianConfig.hpp")
 
 configure_file("${PROJECT_SOURCE_DIR}/SparseGrids/GaussPattersonRule.table"  "${CMAKE_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
@@ -53,13 +32,13 @@ configure_file("${PROJECT_SOURCE_DIR}/SparseGrids/GaussPattersonRule.table"  "${
 if (Tasmanian_ENABLE_PYTHON)
     set(Tasmanian_libsparsegrid_path "${CMAKE_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_SHARED_LIBRARY_SUFFIX}")
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-    # windows puts the tmep .dll files in ${CMAKE_BUILD_TYPE} subfolder, as opposed to directly in ${CMAKE_BINARY_DIR}
+    # windows puts the temp .dll files in ${CMAKE_BUILD_TYPE} subfolder, as opposed to directly in ${CMAKE_BINARY_DIR}
         set(Tasmanian_libsparsegrid_path "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_SHARED_LIBRARY_SUFFIX}")
     endif()
     configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${CMAKE_BINARY_DIR}/TasmanianSG.py")
 
     set(Tasmanian_string_python_hashbang "${PYTHON_EXECUTABLE}")
-    set(Tasmanian_cmake_synctest_enable "True")
+    set(Tasmanian_cmake_synctest_enable "True") # enable tests that check if the library reports the same options as given by the cmake variables
     configure_file("${PROJECT_SOURCE_DIR}/Testing/testTSG.in.py" "${CMAKE_BINARY_DIR}/testTSG.py") # also uses Tasmanian_libsparsegrid_path
 
     set(Tasmanian_python_example_import "sys.path.append(\"${CMAKE_BINARY_DIR}\")\n")
@@ -95,11 +74,10 @@ endif()
 
 if (Tasmanian_ENABLE_MATLAB)
     set(Tasmanian_tasgrid_path "${CMAKE_INSTALL_PREFIX}/bin/${Tasmanian_name_tasgrid}")
-    set(Tasmanian_string_matlab_work ${Tasmanian_MATLAB_WORK_FOLDER})
     configure_file("${PROJECT_SOURCE_DIR}/InterfaceMATLAB/tsgGetPaths.in.m" "${CMAKE_BINARY_DIR}/install/matlab/tsgGetPaths.m")
 endif()
 
-# configure post-install tests
+# configure post-install tests, i.e., make test_install
 configure_file("${PROJECT_SOURCE_DIR}/Testing/test_post_install.in.sh" "${CMAKE_BINARY_DIR}/test_post_install.sh")
 
 # cmake file for the examples, to be used post-install

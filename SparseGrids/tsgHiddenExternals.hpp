@@ -35,7 +35,7 @@ namespace TasGrid{
 
 // interfaces to external libraries, for convenience purposes mostly
 // for now include only BLAS
-#ifdef TASMANIAN_CPU_BLAS
+#ifdef Tasmanian_ENABLE_BLAS
 extern "C" void daxpy_(const int *N, const double *alpha, const double *x, const int *incx, double *y, const int *incy);
 extern "C" double ddot_(const int *N, const double *x, const int *incx, const double *y, const int *incy);
 extern "C" double dnrm2_(const int *N, const double *x, const int *incx);
@@ -43,12 +43,12 @@ extern "C" void dgemv_(const char *transa, const int *M, const int *N, const dou
 extern "C" void dtrsv_(const char *uplo, const char *trans, const char *diag, const int *N, const double *A, const int *lda, const double *x, const int *incx);
 extern "C" void dgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, const double *C, const int *ldc);
 extern "C" void dtrsm_(const char *side, const char *uplo, const char* transa, const char* diag, const int *m, const int *n, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb);
-#endif // TASMANIAN_CPU_BLAS
+#endif // Tasmanian_ENABLE_BLAS
 
 
 class TasBLAS{
 public:
-#ifdef TASMANIAN_CPU_BLAS
+#ifdef Tasmanian_ENABLE_BLAS
     // can't find BLAS implementation that is generally reliable
     // if dgemv_ is called within OpenMP region with large matrices, it returns wrong result!
     // Level 1
@@ -167,7 +167,7 @@ public:
             }
         }
     }
-#endif // TASMANIAN_CPU_BLAS
+#endif // Tasmanian_ENABLE_BLAS
 
     // used to compute anisotropic weights (at most 2 * dims X 2 * dims, not worth adding lapack dependence for such small matrix)
     inline static void cholUTU(int N, double A[], int lda = -1){

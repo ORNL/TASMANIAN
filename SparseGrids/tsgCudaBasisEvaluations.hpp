@@ -33,7 +33,7 @@
 
 #include "TasmanianConfig.hpp"
 
-#ifdef TASMANIAN_CUDA
+#ifdef Tasmanian_ENABLE_CUDA
 
 namespace TasGrid{
 

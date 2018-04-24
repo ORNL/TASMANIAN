@@ -33,7 +33,7 @@
 
 #include "TasmanianConfig.hpp"
 
-#ifdef TASMANIAN_CUDA
+#ifdef Tasmanian_ENABLE_CUDA
 
 namespace TasGrid{
 
@@ -293,9 +293,6 @@ __global__ void tascuda_sparse_to_dense(int num_rows, int num_columns, const int
         i += gridDim.x;
     }
 }
-
-
-
 
 }
 
