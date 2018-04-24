@@ -13,8 +13,6 @@ endif()
 
 # stage 0: for support of simple GNU-Make, ignore for release and intermediate builds
 if (Tasmanian_DEVELOPMENT_BACKWARDS)
-    configure_file("${PROJECT_SOURCE_DIR}/Config/tasmanianConfig.in.hpp"  "${PROJECT_SOURCE_DIR}/Config/tasmanianConfig.hpp")
-
     set(Tasmanian_libsparsegrid_path "libtasmaniansparsegrid.dll")
     configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.windows.py")
 
@@ -23,7 +21,7 @@ if (Tasmanian_DEVELOPMENT_BACKWARDS)
 
     set(Tasmanian_string_python_hashbang "/usr/bin/env python")
     set(Tasmanian_cmake_synctest_enable "False")
-    configure_file("${PROJECT_SOURCE_DIR}/Testing/testTSG.in.py" "${PROJECT_SOURCE_DIR}/Testing/testTSG.py") # also using Tasmanian_libsparsegrid_path
+    configure_file("${PROJECT_SOURCE_DIR}/Testing/testTSG.in.py" "${PROJECT_SOURCE_DIR}/Config/AltBuildSystems/testTSG.py") # also using Tasmanian_libsparsegrid_path
 
     set(Tasmanian_python_example_import "#")
     configure_file("${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.in.py" "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
@@ -48,7 +46,7 @@ endif()
 if (Tasmanian_ENABLE_MPI)
     set(TASMANIAN_MPI 1)
 endif()
-configure_file("${PROJECT_SOURCE_DIR}/Config/tasmanianConfig.in.hpp"  "${CMAKE_BINARY_DIR}/configured/tasmanianConfig.hpp")
+configure_file("${PROJECT_SOURCE_DIR}/Config/TasmanianConfig.in.hpp"  "${CMAKE_BINARY_DIR}/configured/TasmanianConfig.hpp")
 
 configure_file("${PROJECT_SOURCE_DIR}/SparseGrids/GaussPattersonRule.table"  "${CMAKE_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
 

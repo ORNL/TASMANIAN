@@ -1,4 +1,4 @@
-include ../Config/Makefile.in
+include ../Config/AltBuildSystems/Makefile.in
 
 IADD = -I../SparseGrids $(CommonIADD)
 LADD = -L../ $(CommonLADD)

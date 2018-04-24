@@ -1,4 +1,4 @@
-include ../Config/Makefile.in
+include ../Config/AltBuildSystems/Makefile.in
 
 # use the common libs
 IADD = $(CommonIADD)

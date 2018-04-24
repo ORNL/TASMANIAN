@@ -1,20 +1,4 @@
 ########################################################################
-# C++ 2011 support
-########################################################################
-# if Tasmanian_ENABLE_CXX_11 is defined and set to off
-# then we do not enable c++11
-if (NOT (Tasmanian_ENABLE_CXX_11 EQUAL "OFF"))
-    if (Tasmanian_ENABLE_CXX_11 OR Tasmanian_ENABLE_MPI OR
-        Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_CUBLAS)
-        foreach(Tasmanian_loop_target ${Tasmanian_target_list})
-            set_property(TARGET ${Tasmanian_loop_target} PROPERTY CXX_STANDARD 11)
-        endforeach()
-        set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
-    endif()
-endif()
-
-
-########################################################################
 # Compiler specific flags: Intel hasn't been tested in a while
 ########################################################################
 if (NOT Tasmanian_STRICT_OPTIONS)
@@ -22,15 +6,6 @@ if (NOT Tasmanian_STRICT_OPTIONS)
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
         if (Tasmanian_ENABLE_FORTRAN)
             set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -O3 -fno-f2c")
-        endif()
-        if (Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -Wuninitialized -Wstrict-aliasing -pedantic")
-            if (NOT Tasmanian_ENABLE_OPENMP)
-                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
-            endif()
-            if (Tasmanian_ENABLE_FORTRAN)
-                set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wall -Wextra -Wshadow -pedantic")
-            endif()
         endif()
 #    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")

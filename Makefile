@@ -1,4 +1,4 @@
-include Config/Makefile.in
+include Config/AltBuildSystems/Makefile.in
 
 IADD = -I./include $(CommonIADD)
 LADD = -L./ $(CommonLADD)
@@ -14,17 +14,16 @@ CMAKE_IN_HEADERS = $(wildcard ./DREAM/*.in.hpp) \
                    $(wildcard ./SparseGrids/*.*.hpp) \
                    $(wildcard ./SparseGrids/*.*.h) \
                    $(wildcard ./SparseGrids/tasgrid*.hpp) \
-                   ./SparseGrids/tasmanianConfig.hpp \
 
 # header names with ./include as opposed to ./SparseGrids
 HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./DREAM/*.hpp))) \
           $(patsubst ./SparseGrids/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./SparseGrids/*.h*))) \
-          ./include/tasmanianConfig.hpp
+          ./include/TasmanianConfig.hpp
 
 ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py testTSG.py sandbox.py example_sparse_grids.cpp example_dream.cpp \
               libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid tasdream $(HEADERS)
 
-CONFIGURED_HEADERS = ./SparseGrids/tasmanianConfig.hpp
+CONFIGURED_HEADERS = ./SparseGrids/TasmanianConfig.hpp
 
 # all target
 .PHONY: all
@@ -43,12 +42,12 @@ all: $(ALL_TARGETS)
 # the extra dependencies ensure only one subfoler make is called at a time
 
 # Common headers
-SparseGrids/tasmanianConfig.hpp: ./Config/tasmanianConfig.hpp
-	cp ./Config/tasmanianConfig.hpp ./SparseGrids/tasmanianConfig.hpp
+SparseGrids/TasmanianConfig.hpp: ./Config/AltBuildSystems/TasmanianConfig.hpp
+	cp ./Config/AltBuildSystems/TasmanianConfig.hpp ./SparseGrids/TasmanianConfig.hpp
 
-include/tasmanianConfig.hpp: ./SparseGrids/tasmanianConfig.hpp
+include/TasmanianConfig.hpp: ./SparseGrids/TasmanianConfig.hpp
 	mkdir -p ./include
-	cp ./SparseGrids/tasmanianConfig.hpp ./include/
+	cp ./SparseGrids/TasmanianConfig.hpp ./include/
 
 # Sparse Grids
 libtasmaniansparsegrid.so: ./SparseGrids/libtasmaniansparsegrid.so
@@ -128,8 +127,8 @@ TasmanianSG.py: ./InterfacePython/TasmanianSG.py
 example_sparse_grids.py: ./Examples/example_sparse_grids.py
 	cp ./Examples/example_sparse_grids.py .
 
-testTSG.py: ./Testing/testTSG.py
-	cp ./Testing/testTSG.py .
+testTSG.py: ./Config/AltBuildSystems/testTSG.py
+	cp ./Config/AltBuildSystems/testTSG.py .
 
 sandbox.py: ./Testing/sandbox.py
 	cp ./Testing/sandbox.py .
@@ -237,7 +236,7 @@ clean:
 	rm -fr testTSG.py
 	rm -fr sandbox.py
 	rm -fr include
-	rm -fr ./SparseGrids/tasmanianConfig.hpp
+	rm -fr ./SparseGrids/TasmanianConfig.hpp
 	cd SparseGrids; make clean
 	cd DREAM; make clean
 	cd InterfaceFortran; make clean
