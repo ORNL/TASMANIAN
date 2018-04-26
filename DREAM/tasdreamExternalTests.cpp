@@ -38,6 +38,16 @@ using std::cerr;
 using std::endl;
 using std::setw;
 
+TestRNG::TestRNG(int seed): s(seed % 2097165){}
+TestRNG::~TestRNG(){}
+
+double TestRNG::getSample01() const{
+    s *= 511;
+    s += 127;
+    s %= 2097165;
+    return (double)(((double) s) / 2097165.0);
+}
+
 ExternalTester::ExternalTester(int num_monte_carlo) : num_mc(num_monte_carlo){
     #ifdef _TASMANIAN_WINDOWS_
     srand(15);

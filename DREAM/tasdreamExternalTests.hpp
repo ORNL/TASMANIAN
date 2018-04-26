@@ -46,6 +46,16 @@ enum TestList{
     test_all, test_analytic, test_model
 };
 
+class TestRNG : public TasDREAM::BaseUniform{
+public:
+    TestRNG(int seed);
+    ~TestRNG();
+
+    double getSample01() const;
+private:
+    mutable int s;
+};
+
 class ExternalTester{
 public:
     ExternalTester(int num_monte_carlo = 1);
