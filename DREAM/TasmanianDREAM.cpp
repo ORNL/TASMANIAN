@@ -446,10 +446,14 @@ void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
     int num_need_evaluation = num_chains;
 
     bool allValid = true; //, savedGaussian = false;
+    double unilength = 1.0 / ((double) num_chains);
 
     for(int i=0; i<num_chains; i++){
-        int index1 = rand() % num_chains;
-        int index2 = rand() % num_chains;
+        int index1 = (int) (core->getSample01() / unilength);
+        int index2 = (int) (core->getSample01() / unilength);
+        if (index1 >= num_chains) index1 = num_chains; // this is needed in case core->getSample01() returns 1.0
+        if (index2 >= num_chains) index2 = num_chains;
+
 
         valid[i] = true;
 
