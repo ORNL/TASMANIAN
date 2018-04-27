@@ -48,7 +48,8 @@ double TestRNG::getSample01() const{
     return (double)(((double) s) / 2097165.0);
 }
 
-ExternalTester::ExternalTester(int num_monte_carlo) : num_mc(num_monte_carlo){
+ExternalTester::ExternalTester(int num_monte_carlo) : num_mc(num_monte_carlo), rngseed(-1){
+    // rngseed = -1 indicates to use the seed coded for each test
     #ifdef _TASMANIAN_WINDOWS_
     srand(15);
     #else
@@ -58,7 +59,7 @@ ExternalTester::ExternalTester(int num_monte_carlo) : num_mc(num_monte_carlo){
     verbose = false;
 }
 ExternalTester::~ExternalTester(){}
-void ExternalTester::resetRandomSeed(){ srand(time(0)); }
+void ExternalTester::resetRandomSeed(){ rngseed = time(0); }
 
 void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 
@@ -119,15 +120,20 @@ bool ExternalTester::Test(TestList test){
 }
 
 bool ExternalTester::testUniform1D(){
+    int s = (rngseed == -1) ? 12 : rngseed;
+    TestRNG rng(s);
+
     int num_cells = 16; double delta = 2.0 / ((double) num_cells);
     int num_chains = 50;
     double *samples_true = new double[num_mc];
-    for(int i=0; i<num_mc; i++) samples_true[i] = -1.0 + 2.0 * u.getSample01();
+    for(int i=0; i<num_mc; i++) samples_true[i] = -1.0 + 2.0 * rng.getSample01();
 
     TasDREAM::TasmanianDREAM dream;
+    dream.overwriteBaseUnifrom(&rng);
     dream.setProbabilityWeightFunction(&uu1D);
     dream.setNumChains(num_chains);
     TasDREAM::GaussianPDF gauss(0.0, 0.01);
+    gauss.overwriteBaseUnifrom(&rng);
     dream.setCorrectionAll(&gauss);
 
     double *samples_dream = dream.collectSamples(3*num_mc, num_mc / num_chains, false);
@@ -162,17 +168,23 @@ bool ExternalTester::testUniform1D(){
 }
 
 bool ExternalTester::testBeta1D(){
+    int s = (rngseed == -1) ? 12 : rngseed;
+    TestRNG rng(s);
+
     int num_cells = 10; double delta = 2.0 / ((double) num_cells);
     int num_chains = 50;
     double *samples_true = new double[num_mc];
     TasDREAM::BetaPDF *Btrue = new TasDREAM::BetaPDF(-1.0, 1.0, 2.0, 5.0);
+    Btrue->overwriteBaseUnifrom(&rng);
 
     for(int i=0; i<num_mc; i++) samples_true[i] = Btrue->getSample();
 
     TasDREAM::TasmanianDREAM dream;
+    dream.overwriteBaseUnifrom(&rng);
     dream.setProbabilityWeightFunction(&distBeta1D);
     dream.setNumChains(num_chains);
     TasDREAM::GaussianPDF gauss(0.0, 0.0009);
+    gauss.overwriteBaseUnifrom(&rng);
     dream.setCorrectionAll(&gauss);
 
     double *samples_dream = dream.collectSamples(3*num_mc, num_mc / num_chains, false);
@@ -209,17 +221,23 @@ bool ExternalTester::testBeta1D(){
 }
 
 bool ExternalTester::testGamma1D(){
+    int s = (rngseed == -1) ? 12 : rngseed;
+    TestRNG rng(s);
+
     int num_cells = 20; double delta = 10.0 / ((double) num_cells);
     int num_chains = 50;
     double *samples_true = new double[num_mc];
     TasDREAM::GammaPDF *Gtrue = new TasDREAM::GammaPDF(-2.0, 9.0, 2.0);
+    Gtrue->overwriteBaseUnifrom(&rng);
 
     for(int i=0; i<num_mc; i++) samples_true[i] = Gtrue->getSample();
 
     TasDREAM::TasmanianDREAM dream;
+    dream.overwriteBaseUnifrom(&rng);
     dream.setProbabilityWeightFunction(&distGamma1D);
     dream.setNumChains(num_chains);
     TasDREAM::GaussianPDF gauss(0.0, 0.04);
+    gauss.overwriteBaseUnifrom(&rng);
     dream.setCorrectionAll(&gauss);
 
     double *samples_dream = dream.collectSamples(3*num_mc, num_mc / num_chains, false);
@@ -260,18 +278,24 @@ bool ExternalTester::testGamma1D(){
 }
 
 bool ExternalTester::testGaussian2D(){
+    int s = (rngseed == -1) ? 12 : rngseed;
+    TestRNG rng(s);
+
     int num_cells1d = 4; double delta = 2.0 / ((double) num_cells1d);
     int num_cells = num_cells1d * num_cells1d;
     int num_chains = 100;
     double *samples_true = new double[2*num_mc];
     TasDREAM::TruncatedGaussianPDF *Gtrue = new TasDREAM::TruncatedGaussianPDF(-0.5, 0.1, -1.0, 1.0);
+    Gtrue->overwriteBaseUnifrom(&rng);
 
     for(int i=0; i<2*num_mc; i++) samples_true[i] = Gtrue->getSample();
 
     TasDREAM::TasmanianDREAM dream;
+    dream.overwriteBaseUnifrom(&rng);
     dream.setProbabilityWeightFunction(&distGauss2D);
     dream.setNumChains(num_chains);
     TasDREAM::GaussianPDF gauss(0.0, 0.0001);
+    gauss.overwriteBaseUnifrom(&rng);
     dream.setCorrectionAll(&gauss);
 
     double *samples_dream = dream.collectSamples(3*num_mc, num_mc / num_chains, false);
@@ -352,6 +376,9 @@ bool ExternalTester::testGaussian2D(){
 }
 
 bool ExternalTester::testModelLikelihoodAlpha(){
+    int s = (rngseed == -1) ? 12 : rngseed;
+    TestRNG rng(s);
+
     // model sin(p_0 t M_PI + p_1), data cos(M_PI t) / cos(M_PI t) + cos(5 M_PI y)
     int N = 32; // sample points
     double dt = 1.0 / ((double) N), dt2 = 0.5 * dt;
@@ -389,10 +416,12 @@ bool ExternalTester::testModelLikelihoodAlpha(){
     post->setLikelihood(likely);
 
     TasDREAM::TasmanianDREAM *dream = new TasDREAM::TasmanianDREAM();
+    dream->overwriteBaseUnifrom(&rng);
     dream->setProbabilityWeightFunction(post);
 
     dream->setNumChains(num_chains);
     TasDREAM::GaussianPDF gauss(0.0, 0.0004);
+    gauss.overwriteBaseUnifrom(&rng);
     dream->setCorrectionAll(&gauss);
 
     double *mcmc = dream->collectSamples(num_mc, num_mc / 10);

@@ -84,6 +84,7 @@ private:
     int num_mc;
     int wfirst, wsecond, wthird;
     bool verbose;
+    int rngseed;
 
     TasDREAM::CppUniformSampler u;
 
