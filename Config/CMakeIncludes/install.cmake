@@ -144,7 +144,7 @@ else()
 endif()
 
 if (Tasmanian_ENABLE_PYTHON)
-    set(Tasmanian_post_install "${Tasmanian_post_install}python module:  ${Tasmanian_python_install_path}/site-packages/TasmanianSG.py\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}python module:  ${Tasmanian_python_install_path}/TasmanianSG.py\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}python example: ${CMAKE_INSTALL_PREFIX}/examples/example_sparse_grids.py\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}                to call the python module\n\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}                import sys\n")
