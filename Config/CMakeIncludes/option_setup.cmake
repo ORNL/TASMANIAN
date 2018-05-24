@@ -2,54 +2,90 @@
 # Setup the specific options
 ########################################################################
 
+macro(Tasmanian_target_link_libraries_sparsegrid Tasmanian_target_libraries)
+    if (Tasmanian_SHARED_LIBRARY)
+        target_link_libraries(Tasmanian_libsparsegrid_shared ${Tasmanian_target_libraries})
+    endif()
+    if (Tasmanian_STATIC_LIBRARY)
+        target_link_libraries(Tasmanian_libsparsegrid_static ${Tasmanian_target_libraries})
+    endif()
+endmacro()
+
+macro(Tasmanian_target_link_libraries_dream Tasmanian_target_libraries)
+    if (Tasmanian_SHARED_LIBRARY)
+        target_link_libraries(Tasmanian_libdream_shared ${Tasmanian_target_libraries})
+    endif()
+    if (Tasmanian_STATIC_LIBRARY)
+        target_link_libraries(Tasmanian_libdream_static ${Tasmanian_target_libraries})
+    endif()
+endmacro()
+
+macro(Tasmanian_target_include_directories_sparsegrid Tasmanian_option Tasmanian_target_dirs) # option PUBLIC/PRIVATE
+    if (Tasmanian_SHARED_LIBRARY)
+        target_include_directories(Tasmanian_libsparsegrid_shared ${Tasmanian_option} ${Tasmanian_target_dirs})
+    endif()
+    if (Tasmanian_STATIC_LIBRARY)
+        target_include_directories(Tasmanian_libsparsegrid_static ${Tasmanian_option} ${Tasmanian_target_dirs})
+    endif()
+endmacro()
+
+macro(Tasmanian_target_include_directories_dream Tasmanian_option Tasmanian_target_dir_options) # option: PUBLIC/PRIVATE
+    if (Tasmanian_SHARED_LIBRARY)
+        target_include_directories(Tasmanian_libdream_shared ${Tasmanian_option} ${Tasmanian_target_dir_options})
+    endif()
+    if (Tasmanian_STATIC_LIBRARY)
+        target_include_directories(Tasmanian_libdream_static ${Tasmanian_option} ${Tasmanian_target_dir_options})
+    endif()
+endmacro()
+
+macro(Tasmanian_target_compile_options_sparsegrid Tasmanian_option Tasmanian_compile_options) # option PUBLIC/PRIVATE
+    if (Tasmanian_SHARED_LIBRARY)
+        target_compile_options(Tasmanian_libsparsegrid_shared ${Tasmanian_option} ${Tasmanian_compile_options})
+    endif()
+    if (Tasmanian_STATIC_LIBRARY)
+        target_compile_options(Tasmanian_libsparsegrid_static ${Tasmanian_option} ${Tasmanian_compile_options})
+    endif()
+endmacro()
+
+macro(Tasmanian_target_compile_options_dream Tasmanian_option Tasmanian_compile_options) # option: PUBLIC/PRIVATE
+    if (Tasmanian_SHARED_LIBRARY)
+        target_compile_options(Tasmanian_libdream_shared ${Tasmanian_option} ${Tasmanian_compile_options})
+    endif()
+    if (Tasmanian_STATIC_LIBRARY)
+        target_compile_options(Tasmanian_libdream_static ${Tasmanian_option} ${Tasmanian_compile_options})
+    endif()
+endmacro()
+
 ########################################################################
 # BLAS setup
 ########################################################################
 if (Tasmanian_ENABLE_BLAS)
-    foreach(Tasmanian_loop_target ${Tasmanian_target_list})
-        target_link_libraries(${Tasmanian_loop_target} ${BLAS_LIBRARIES})
-    endforeach()
+    Tasmanian_target_link_libraries_sparsegrid(${BLAS_LIBRARIES})
+    Tasmanian_target_link_libraries_dream(${BLAS_LIBRARIES})
 endif()
 
 ########################################################################
 # MPI setup (experimental, DREAM distributed posterior only)
 ########################################################################
 if (Tasmanian_ENABLE_MPI)
-    target_link_libraries(tasdream ${MPI_CXX_LIBRARIES})
-    if (Tasmanian_SHARED_LIBRARY)
-        target_link_libraries(Tasmanian_libdream_shared ${MPI_CXX_LIBRARIES})
-    endif()
-    if (Tasmanian_STATIC_LIBRARY)
-        target_link_libraries(Tasmanian_libdream_static ${MPI_CXX_LIBRARIES})
-    endif()
+    Tasmanian_target_link_libraries_dream(${MPI_CXX_LIBRARIES})
 
     if (DEFINED MPI_CXX_INCLUDE_PATH)
-        include_directories(${MPI_CXX_INCLUDE_PATH})
-        if (Tasmanian_SHARED_LIBRARY)
-            set_property(TARGET Tasmanian_libdream_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${MPI_CXX_INCLUDE_PATH}")
-        endif()
-        if (Tasmanian_STATIC_LIBRARY)
-            set_property(TARGET Tasmanian_libdream_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${MPI_CXX_INCLUDE_PATH}")
-        endif()
+        Tasmanian_target_include_directories_dream("PUBLIC ${MPI_CXX_INCLUDE_PATH}")
     endif()
 
-    if(DEFINED MPI_COMPILE_FLAGS)
-        set_target_properties(Tasmanian_tasdream PROPERTIES COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-        if (Tasmanian_SHARED_LIBRARY)
-            set_target_properties(Tasmanian_libdream_shared PROPERTIES COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-        endif()
-        if (Tasmanian_STATIC_LIBRARY)
-            set_target_properties(Tasmanian_libdream_static PROPERTIES COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-        endif()
+    if(DEFINED MPI_CXX_COMPILE_FLAGS)
+        target_compile_options(Tasmanian_tasdream PUBLIC ${MPI_CXX_COMPILE_FLAGS})
+        Tasmanian_target_compile_options_sparsegrid(PUBLIC ${MPI_CXX_COMPILE_FLAGS})
     endif()
 
-    if(DEFINED MPI_LINK_FLAGS)
-        set_target_properties(tasdream PROPERTIES LINK_FLAGS "${MPI_LINK_FLAGS}")
+    if(DEFINED MPI_CXX_LINK_FLAGS)
+        set_target_properties(Tasmanian_tasdream PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
         if (Tasmanian_SHARED_LIBRARY)
-            set_target_properties(Tasmanian_libdream_shared PROPERTIES  LINK_FLAGS "${MPI_LINK_FLAGS}")
+            set_target_properties(Tasmanian_libdream_shared PROPERTIES  LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
         endif()
         if (Tasmanian_STATIC_LIBRARY)
-            set_target_properties(Tasmanian_libdream_static PROPERTIES  LINK_FLAGS "${MPI_LINK_FLAGS}")
+            set_target_properties(Tasmanian_libdream_static PROPERTIES  LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
         endif()
     endif()
 endif()
@@ -58,12 +94,10 @@ endif()
 # CUDA setup (see also the cuda pre-process in the sanity check section)
 ########################################################################
 if (Tasmanian_ENABLE_CUBLAS)
-    foreach(Tasmanian_loop_target ${Tasmanian_target_list})
-        target_link_libraries(${Tasmanian_loop_target} ${CUDA_cusparse_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_LIBRARIES})
-    endforeach()
+    Tasmanian_target_link_libraries_sparsegrid("${CUDA_cusparse_LIBRARY};${CUDA_CUBLAS_LIBRARIES};${CUDA_LIBRARIES}")
 
     if (DEFINED CUDA_INCLUDE_DIRS)
-        include_directories(${CUDA_INCLUDE_DIRS})
+        Tasmanian_target_include_directories_sparsegrid(PUBLIC ${CUDA_INCLUDE_DIRS})
     endif()
 endif()
 
@@ -71,7 +105,22 @@ endif()
 # OpenMP setup
 ########################################################################
 if (Tasmanian_ENABLE_OPENMP)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    if (OpenMP_CXX_LIBRARIES)
+        # using the OpenMP target leads to a problem with the exports
+        # the OpenMP target cannot be exported, which means that a
+        # project importing an already installed Tasmanian would
+        # have to "know" whether Tasmanian was build with OpenMP and
+        # call find_package(OpenMP) manually
+        # Furthermore, using find_package(OpenMP) from a different
+        # compiler can generate a wrong target, e.g., building Tasmanian
+        # with gcc links to libgomp, but calling find_package(OpenMP)
+        # from clang will create an OpenMP target that uses libiomp
+        Tasmanian_target_link_libraries_sparsegrid(${OpenMP_CXX_LIBRARIES})
+        target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
+        Tasmanian_target_compile_options_sparsegrid(PRIVATE ${OpenMP_CXX_FLAGS})
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    endif()
 endif()
 
 ########################################################################

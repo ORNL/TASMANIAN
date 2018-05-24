@@ -30,10 +30,10 @@ configure_file("${PROJECT_SOURCE_DIR}/Config/TasmanianConfig.in.hpp"  "${CMAKE_B
 configure_file("${PROJECT_SOURCE_DIR}/SparseGrids/GaussPattersonRule.table"  "${CMAKE_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
 
 if (Tasmanian_ENABLE_PYTHON)
-    set(Tasmanian_libsparsegrid_path "${CMAKE_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(Tasmanian_libsparsegrid_path "${CMAKE_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     # windows puts the temp .dll files in ${CMAKE_BUILD_TYPE} subfolder, as opposed to directly in ${CMAKE_BINARY_DIR}
-        set(Tasmanian_libsparsegrid_path "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+        set(Tasmanian_libsparsegrid_path "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
     endif()
     configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${CMAKE_BINARY_DIR}/TasmanianSG.py")
 
@@ -48,7 +48,7 @@ if (Tasmanian_ENABLE_PYTHON)
 endif()
 
 if (Tasmanian_ENABLE_MATLAB)
-    set(Tasmanian_tasgrid_path "${CMAKE_BINARY_DIR}/${Tasmanian_name_tasgrid}")
+    set(Tasmanian_tasgrid_path "${CMAKE_BINARY_DIR}/tasgrid")
     set(Tasmanian_string_matlab_work ${CMAKE_BINARY_DIR}/tempMATLAB/)
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tempMATLAB/)
     configure_file("${PROJECT_SOURCE_DIR}/InterfaceMATLAB/tsgGetPaths.in.m" "${CMAKE_BINARY_DIR}/matlab/tsgGetPaths.m")
@@ -61,10 +61,10 @@ endif()
 
 # stage 2: install folder paths
 if (Tasmanian_ENABLE_PYTHON)
-    set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     # windows puts the .dll files in bin, as opposed to lib
-        set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/bin/${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+        set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/bin/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
     endif()
     configure_file("${PROJECT_SOURCE_DIR}/InterfacePython/TasmanianSG.in.py" "${CMAKE_BINARY_DIR}/install/python/TasmanianSG.py")
 
@@ -73,7 +73,7 @@ if (Tasmanian_ENABLE_PYTHON)
 endif()
 
 if (Tasmanian_ENABLE_MATLAB)
-    set(Tasmanian_tasgrid_path "${CMAKE_INSTALL_PREFIX}/bin/${Tasmanian_name_tasgrid}")
+    set(Tasmanian_tasgrid_path "${CMAKE_INSTALL_PREFIX}/bin/tasgrid")
     configure_file("${PROJECT_SOURCE_DIR}/InterfaceMATLAB/tsgGetPaths.in.m" "${CMAKE_BINARY_DIR}/install/matlab/tsgGetPaths.m")
 endif()
 
@@ -82,7 +82,11 @@ configure_file("${PROJECT_SOURCE_DIR}/Testing/test_post_install.in.sh" "${CMAKE_
 
 # cmake file for the examples, to be used post-install
 set(Tasmanian_cmake_export "${CMAKE_INSTALL_PREFIX}/config/Tasmanian.cmake")
-configure_file("${PROJECT_SOURCE_DIR}/Examples/CMakeLists.in.txt" "${CMAKE_BINARY_DIR}/install/examples/CMakeLists.txt")
+set(Tasmanian_openmp_hack "# ALL GOOD, NO EXTRA OPENMP FLAG NEEDED HERE")
+if (Tasmanian_ENABLE_OPENMP AND (NOT EXISTS OpenMP_CXX_LIBRARIES))
+    set(Tasmanian_openmp_hack "set(CMAKE_CXX_FLAGS \"\$\{CMAKE_CXX_FLAGS\} ${OpenMP_CXX_FLAGS}\")")
+endif()
+configure_file("${PROJECT_SOURCE_DIR}/Examples/CMakeLists.in.txt" "${CMAKE_BINARY_DIR}/install/examples/CMakeLists.txt" @ONLY)
 
 # environment setup
 set(Tasmanian_config_line1 "export PATH=$PATH:${CMAKE_INSTALL_PREFIX}/bin/")

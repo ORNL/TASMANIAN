@@ -29,7 +29,6 @@ message(STATUS "This is a development version of Tasmanian")
 #    -D Tasmanian_EXTRA_LINK_DIRS:PATH="appends more link paths"
 #
 # Development only options:
-#    -D Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS:BOOL=OFF
 #    -D Tasmanian_DEVELOPMENT_BACKWARDS:BOOL=OFF
 #
 # xSDK options:
@@ -58,7 +57,8 @@ message(STATUS "This is a development version of Tasmanian")
 #   but only if Tasmanian_ENABLE_CUDA=OFF,
 #   Tasmanian_ENABLE_CUDA=ON absolutely requires find_package(CUDA)
 #
-# Optional to be added to the alternatives above
+# Optional that can be be added to the alternatives above
+#     -D OpenMP_CXX_LIBRARIES:STRING
 #     -D MPI_CXX_INCLUDE_PATH
 #     -D MPI_COMPILE_FLAGS
 #     -D MPI_LINK_FLAGS
@@ -93,83 +93,95 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer")
 # Defines the source files
 # NOTE: sanity check modifies the CUDA source lists before setup target
 ########################################################################
-include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/source_file_list.cmake)
+#include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/source_file_list.cmake)
 
 
 ########################################################################
 # Sanity check, xSDK compatibility, and find_package() calls
+# all done in one place for consistency
+# after this call, every enabled option comes with proper found set of
+# find_package(), libraries, includes, etc.
 ########################################################################
 include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/sanity_check_and_xsdk.cmake)
 
 
 ########################################################################
-# Setup targets
+# Core project configuration files
 ########################################################################
-include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/target_setup.cmake)
+enable_testing()
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianConfig.in.hpp"
+               "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp")
+
+# configure post-install tests, i.e., make test_install
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Testing/test_post_install.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianENVsetup.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianENVsetup.sh" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianDEVsetup.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianDEVsetup.sh" @ONLY)
+
+########################################################################
+# Setup targets
+# C++ modules have to come first, SparseGrids must preceed DREAM
+# The order of the interfaces afterwards is not important
+########################################################################
+#include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/target_setup.cmake)
+add_subdirectory("${CMAKE_SOURCE_DIR}/SparseGrids" "${CMAKE_BINARY_DIR}/SparseGrids")
+add_subdirectory("${CMAKE_SOURCE_DIR}/DREAM"       "${CMAKE_BINARY_DIR}/DREAM")
+
+if (Tasmanian_ENABLE_FORTRAN)
+    add_subdirectory("${CMAKE_SOURCE_DIR}/InterfaceFortran"  "${CMAKE_BINARY_DIR}/Fortran")
+endif()
+
+if (Tasmanian_ENABLE_PYTHON)
+    add_subdirectory("${CMAKE_SOURCE_DIR}/InterfacePython"  "${CMAKE_BINARY_DIR}/Python")
+endif()
+
+if (Tasmanian_ENABLE_MATLAB)
+    add_subdirectory("${CMAKE_SOURCE_DIR}/InterfaceMATLAB"  "${CMAKE_BINARY_DIR}/MATLAB")
+endif()
 
 
 ########################################################################
 # Setup options, BLAS, OpenMP, MPI, etc.
 ########################################################################
-include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/option_setup.cmake)
+#include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/option_setup.cmake)
 
 
 ########################################################################
 # Setup compiler flags and extra libs
 ########################################################################
-include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/compiler_flags_extras.cmake)
+#include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/compiler_flags_extras.cmake)
 
 
 ########################################################################
 # Configure various files
 ########################################################################
-include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/configure_files.cmake)
+#include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/configure_files.cmake)
 
 
 ########################################################################
 # Testing
 ########################################################################
-enable_testing()
-add_test(SparseGridsAcceleration tasgrid -test acceleration -gpuid ${Tasmanian_TESTS_GPU_ID})
-add_test(SparseGridsDomain tasgrid -test domain)
-add_test(SparseGridsRefinement tasgrid -test refinement)
-add_test(SparseGridsGlobal tasgrid -test global)
-add_test(SparseGridsLocal tasgrid -test local)
-add_test(SparseGridsWavelet tasgrid -test wavelet)
-add_test(DREAM_Analytic tasdream -test analytic)
-add_test(DREAM_Model tasdream -test model)
-set(Tasmanian_tests_list SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement
-                         SparseGridsGlobal SparseGridsLocal SparseGridsWavelet
-                         DREAM_Analytic DREAM_Model)
-if (Tasmanian_ENABLE_PYTHON)
-    add_test(NAME PythonIO COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testBasicIO)
-    add_test(NAME PythonAcceleration COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testAcceleratedEvaluate)
-    add_test(NAME PythonExceptions COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testBasicException)
-    add_test(NAME PythonMakeUpdate COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testFullCoverageA)
-    add_test(NAME PythonRefine COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testFullCoverageB)
-    add_test(NAME PythonLearning COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testFullCoverageC)
-    add_test(NAME PythonMisc COMMAND ${PYTHON_EXECUTABLE} ./testTSG.py TestTasmanian.testFullCoverageZ)
-    set(Tasmanian_tests_list ${Tasmanian_tests_list} PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc)
-endif()
-if (Tasmanian_ENABLE_FORTRAN)
-    add_test(Fortran fortester)
-    set(Tasmanian_tests_list ${Tasmanian_tests_list} Fortran)
-endif()
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(${Tasmanian_tests_list} PROPERTIES
+    set_tests_properties(${Tasmanian_tests_list_sparse_grids} 
+                         ${Tasmanian_tests_list_dream}
+                         ${Tasmanian_tests_list_python}
+                         ${Tasmanian_tests_list_fortran} PROPERTIES
         PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
         ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
 endif()
 
-add_custom_target(test_install COMMAND ${CMAKE_BINARY_DIR}/test_post_install.sh -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER})
+if (Tasmanian_ENABLE_FORTRAN)
+    add_custom_target(test_install COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}")
+else()
+    add_custom_target(test_install COMMAND ${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+endif()
 
 
 ########################################################################
 # Setup Message
 ########################################################################
-message("")
-message("TASMANIAN: summary of all compile options")
 if (NOT USE_XSDK_DEFAULTS)
+    message("")
+    message("TASMANIAN: summary of all compile options")
     message(" -D CMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
     foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_MPI
                              Tasmanian_ENABLE_MATLAB Tasmanian_ENABLE_PYTHON
@@ -186,11 +198,33 @@ if (NOT USE_XSDK_DEFAULTS)
         message(" -D Tasmanian_MATLAB_WORK_FOLDER:PATH=${Tasmanian_MATLAB_WORK_FOLDER}")
         message(" pre-install MATLAB folder: addpath('${CMAKE_BINARY_DIR}/matlab/')")
     endif()
+    message("")
 endif()
-message("")
 
 
 ########################################################################
-# installation
+# Install exports, config header, examples cmake
 ########################################################################
-include(${CMAKE_SOURCE_DIR}/Config/CMakeIncludes/install.cmake)
+install(EXPORT Tasmanian_exports DESTINATION "config" FILE "Tasmanian.cmake")
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
+        DESTINATION include
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianENVsetup.sh"
+        DESTINATION config
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianDEVsetup.sh"
+        DESTINATION config
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+
+
+# cmake file for the examples, to be used post-install
+set(Tasmanian_cmake_export "${CMAKE_INSTALL_PREFIX}/config/Tasmanian.cmake")
+set(Tasmanian_openmp_hack "# ALL GOOD, NO EXTRA OPENMP FLAG NEEDED HERE")
+if (Tasmanian_ENABLE_OPENMP AND (NOT (DEFINED OpenMP_CXX_LIBRARIES)))
+    set(Tasmanian_openmp_hack "set(CMAKE_CXX_FLAGS \"\$\{CMAKE_CXX_FLAGS\} ${OpenMP_CXX_FLAGS}\")")
+endif()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.txt "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt"
+        DESTINATION "examples"
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)

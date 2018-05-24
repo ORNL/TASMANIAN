@@ -50,11 +50,6 @@ double TestRNG::getSample01() const{
 
 ExternalTester::ExternalTester(int num_monte_carlo) : num_mc(num_monte_carlo), rngseed(-1){
     // rngseed = -1 indicates to use the seed coded for each test
-    #ifdef _TASMANIAN_WINDOWS_
-    srand(15);
-    #else
-    srand(10);
-    #endif
     wfirst = 15; wsecond = 30; wthird = 15;
     verbose = false;
 }
@@ -278,7 +273,7 @@ bool ExternalTester::testGamma1D(){
 }
 
 bool ExternalTester::testGaussian2D(){
-    int s = (rngseed == -1) ? 12 : rngseed;
+    int s = (rngseed == -1) ? 25 : rngseed;
     TestRNG rng(s);
 
     int num_cells1d = 4; double delta = 2.0 / ((double) num_cells1d);

@@ -17,39 +17,32 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
 	set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON) # needed by TPL
 endif()
 
-# names of the compiled files
-set(Tasmanian_name_libsparsegrid "tasmaniansparsegrid")
-set(Tasmanian_name_libdream "tasmaniandream")
-set(Tasmanian_name_libsparsegrid_fortran "tasmanianfortran")
-set(Tasmanian_name_tasgrid "tasgrid")
-set(Tasmanian_name_tasdream "tasdream")
-set(Tasmanian_name_fortester "fortester")
-
-include_directories("${PROJECT_SOURCE_DIR}/SparseGrids/") # compile time header files (needed by DREAM)
-include_directories("${CMAKE_BINARY_DIR}/configured/") # holds the additional headers configured by cmake
-
-if (Tasmanian_CUDA) # add executables
+########################################################################
+# first define all targets including two alias targets
+# both _shared or _static libraries can be build,
+# in which case executables link statically, hence the alias targets
+########################################################################
+if (Tasmanian_CUDA) # add executables for testing and cli interface
     cuda_add_executable(Tasmanian_tasgrid ${Tasmanian_source_tasgrid})
     cuda_add_executable(Tasmanian_tasdream ${Tasmanian_source_tasdream})
+    cuda_add_executable(Tasmanian_example_sparse_grids "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.cpp")
+    cuda_add_executable(Tasmanian_example_dream "${PROJECT_SOURCE_DIR}/Examples/example_dream.cpp")
 else()
     add_executable(Tasmanian_tasgrid ${Tasmanian_source_tasgrid})
     add_executable(Tasmanian_tasdream ${Tasmanian_source_tasdream})
+    add_executable(Tasmanian_example_sparse_grids "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.cpp")
+    add_executable(Tasmanian_example_dream "${PROJECT_SOURCE_DIR}/Examples/example_dream.cpp")
 endif()
 
-set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "${Tasmanian_name_tasgrid}")
-set_target_properties(Tasmanian_tasdream PROPERTIES OUTPUT_NAME "${Tasmanian_name_tasdream}")
+if (Tasmanian_ENABLE_FORTRAN) # fortran tests and examples
+    add_executable(Tasmanian_fortester "${PROJECT_SOURCE_DIR}/Testing/fortester.f90")
+    add_executable(Tasmanian_example_sparse_grids_f90 "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.f90")
+endif()
 
-set(Tasmanian_target_list Tasmanian_tasgrid Tasmanian_tasdream) # keep a list of all targets
+# form the lists of targets
 set(Tasmanian_install_targets Tasmanian_tasgrid Tasmanian_tasdream) # install targets
 
-if (Tasmanian_ENABLE_FORTRAN) # fortran tester
-    add_executable(Tasmanian_fortester ${Tasmanian_source_fortester})
-    set(Tasmanian_target_list ${Tasmanian_target_list} Tasmanian_fortester)
-    set_target_properties(Tasmanian_fortester PROPERTIES OUTPUT_NAME "${Tasmanian_name_fortester}")
-endif()
-
-# setup the shared liberaries
-if (Tasmanian_SHARED_LIBRARY)
+if (Tasmanian_SHARED_LIBRARY) # add the shared libraries
     if (Tasmanian_ENABLE_CUDA)
         cuda_add_library(Tasmanian_libsparsegrid_shared SHARED ${Tasmanian_source_libsparsegrid})
         cuda_add_library(Tasmanian_libdream_shared SHARED ${Tasmanian_source_libdream})
@@ -58,31 +51,18 @@ if (Tasmanian_SHARED_LIBRARY)
         add_library(Tasmanian_libdream_shared SHARED ${Tasmanian_source_libdream})
     endif()
 
-    target_link_libraries(Tasmanian_libdream_shared Tasmanian_libsparsegrid_shared) # DREAM uses Sparse Grids
-
-    set_target_properties(Tasmanian_libsparsegrid_shared PROPERTIES OUTPUT_NAME "${Tasmanian_name_libsparsegrid}")
-    set_target_properties(Tasmanian_libdream_shared PROPERTIES OUTPUT_NAME "${Tasmanian_name_libdream}")
-
-    set(Tasmanian_target_list ${Tasmanian_target_list} Tasmanian_libsparsegrid_shared Tasmanian_libdream_shared) # keep track of all targets
     set(Tasmanian_install_targets ${Tasmanian_install_targets} Tasmanian_libsparsegrid_shared Tasmanian_libdream_shared)
-
-    set_property(TARGET Tasmanian_libsparsegrid_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
-    set_property(TARGET Tasmanian_libdream_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
+    target_link_libraries(Tasmanian_libdream_shared Tasmanian_libsparsegrid_shared)
 
     if (Tasmanian_ENABLE_FORTRAN)
         add_library(Tasmanian_libsparsegrid_fortran_shared SHARED ${Tasmanian_source_libsparsegrid_fortran})
-        target_link_libraries(Tasmanian_libsparsegrid_fortran_shared Tasmanian_libsparsegrid_shared)
 
         set(Tasmanian_install_targets ${Tasmanian_install_targets} Tasmanian_libsparsegrid_fortran_shared)
-        set(Tasmanian_target_list ${Tasmanian_target_list} Tasmanian_libsparsegrid_fortran_shared)
-
-        set_property(TARGET Tasmanian_libsparsegrid_fortran_shared APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
-
-        set_target_properties(Tasmanian_libsparsegrid_fortran_shared PROPERTIES OUTPUT_NAME "${Tasmanian_name_libsparsegrid_fortran}")
+        target_link_libraries(Tasmanian_libsparsegrid_fortran_shared Tasmanian_libsparsegrid_shared)
     endif()
 endif()
 
-if (Tasmanian_STATIC_LIBRARY)
+if (Tasmanian_STATIC_LIBRARY) # add the static libraries
     if (Tasmanian_ENABLE_CUDA)
         cuda_add_library(Tasmanian_libsparsegrid_static STATIC ${Tasmanian_source_libsparsegrid})
         cuda_add_library(Tasmanian_libdream_static STATIC ${Tasmanian_source_libdream})
@@ -91,73 +71,106 @@ if (Tasmanian_STATIC_LIBRARY)
         add_library(Tasmanian_libdream_static STATIC ${Tasmanian_source_libdream})
     endif()
 
-    set(Tasmanian_target_list ${Tasmanian_target_list} Tasmanian_libsparsegrid_static Tasmanian_libdream_static)
-    target_link_libraries(Tasmanian_libdream_static Tasmanian_libsparsegrid_static)
-    if (Tasmanian_SHARED_LIBRARY)
-        # without this, if both static and shared libs are enabled, make -j tries to compile shared cuda kernels twice
-        # which creates a race condition and the build randomly fails
-        add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_libsparsegrid_static)
-    endif()
-
-    set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES OUTPUT_NAME "${Tasmanian_name_libsparsegrid}")
-    set_target_properties(Tasmanian_libdream_static PROPERTIES OUTPUT_NAME "${Tasmanian_name_libdream}")
-
     set(Tasmanian_install_targets ${Tasmanian_install_targets} Tasmanian_libsparsegrid_static Tasmanian_libdream_static)
+    target_link_libraries(Tasmanian_libdream_static Tasmanian_libsparsegrid_static)
 
-    # executables prefer linking to static libraries
-    target_link_libraries(Tasmanian_tasgrid Tasmanian_libsparsegrid_static)
-    target_link_libraries(Tasmanian_tasdream Tasmanian_libdream_static Tasmanian_libsparsegrid_static)
-
-    set_property(TARGET Tasmanian_libsparsegrid_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
-    set_property(TARGET Tasmanian_libdream_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
+    add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_static) # link executables statically
+    add_library(Tasmanian_libdream ALIAS Tasmanian_libdream_static)
 
     if (Tasmanian_ENABLE_FORTRAN)
         add_library(Tasmanian_libsparsegrid_fortran_static STATIC ${Tasmanian_source_libsparsegrid_fortran})
+
+        set(Tasmanian_install_targets ${Tasmanian_install_targets} Tasmanian_libsparsegrid_fortran_static)
         target_link_libraries(Tasmanian_libsparsegrid_fortran_static Tasmanian_libsparsegrid_static)
 
-        set(Tasmanian_target_list ${Tasmanian_target_list} Tasmanian_libsparsegrid_fortran_static)
-        set(Tasmanian_install_targets ${Tasmanian_install_targets} Tasmanian_libsparsegrid_fortran_static)
-
-        set_property(TARGET Tasmanian_libsparsegrid_fortran_static APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:include>)
-
-        set_target_properties(Tasmanian_libsparsegrid_fortran_static PROPERTIES OUTPUT_NAME "${Tasmanian_name_libsparsegrid_fortran}")
-        target_link_libraries(Tasmanian_fortester Tasmanian_libsparsegrid_fortran_static)
+        add_library(Tasmanian_libfortran ALIAS Tasmanian_libsparsegrid_fortran_static)
     endif()
 else()
-    target_link_libraries(Tasmanian_tasgrid Tasmanian_libsparsegrid_shared)
-    target_link_libraries(Tasmanian_tasdream Tasmanian_libdream_shared Tasmanian_libsparsegrid_shared)
+    add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_shared) # link executables dynamically (no static library)
+    add_library(Tasmanian_libdream ALIAS Tasmanian_libdream_shared)
+
     if (Tasmanian_ENABLE_FORTRAN)
-        target_link_libraries(Tasmanian_fortester Tasmanian_libsparsegrid_fortran_shared)
+        add_library(Tasmanian_libfortran ALIAS Tasmanian_libsparsegrid_fortran_shared)
     endif()
 endif()
 
-# for development purposes, compile the exmaples together with everything else
-if (Tasmanian_ENABLE_DEVELOPMENT_DEFAULTS)
-    if (Tasmanian_ENABLE_CUDA)
-        cuda_add_executable(Tasmanian_example_sparse_grids "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.cpp")
-        cuda_add_executable(Tasmanian_example_dream "${PROJECT_SOURCE_DIR}/Examples/example_dream.cpp")
-    else()
-        add_executable(Tasmanian_example_sparse_grids "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.cpp")
-        add_executable(Tasmanian_example_dream "${PROJECT_SOURCE_DIR}/Examples/example_dream.cpp")
-    endif()
-    set(Tasmanian_target_list ${Tasmanian_target_list} Tasmanian_example_sparse_grids Tasmanian_example_dream)
-    include_directories("${PROJECT_SOURCE_DIR}/DREAM/") # examples need the DREAM include folder
-    if (Tasmanian_STATIC_LIBRARY)
-        target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_static)
-        target_link_libraries(Tasmanian_example_dream Tasmanian_libdream_static)
-    else()
-        target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_shared)
-        target_link_libraries(Tasmanian_example_dream Tasmanian_libdream_shared)
-    endif()
+# hack a dependency problem in parallel make
+# without this, if both static and shared libs are enabled, make -j tries to compile shared cuda kernels twice
+# which creates a race condition and the build randomly fails
+if (Tasmanian_SHARED_LIBRARY AND Tasmanian_STATIC_LIBRARY)
+    add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_libsparsegrid_static)
+endif()
+
+########################################################################
+# give names for the executables and libraries
+########################################################################
+set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
+set_target_properties(Tasmanian_tasdream PROPERTIES OUTPUT_NAME "tasdream")
+set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
+set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
+if (Tasmanian_ENABLE_FORTRAN)
+    set_target_properties(Tasmanian_fortester PROPERTIES OUTPUT_NAME "fortester")
+    set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES OUTPUT_NAME "example_sparse_grids_f90")
+endif()
+if (Tasmanian_SHARED_LIBRARY)
+    set_target_properties(Tasmanian_libsparsegrid_shared PROPERTIES OUTPUT_NAME "tasmaniansparsegrid")
+    set_target_properties(Tasmanian_libdream_shared PROPERTIES OUTPUT_NAME "tasmaniandream")
     if (Tasmanian_ENABLE_FORTRAN)
-        add_executable(Tasmanian_example_sparse_grids_f90 "${PROJECT_SOURCE_DIR}/Examples/example_sparse_grids.f90")
-        set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES OUTPUT_NAME "example_sparse_grids_fortran")
-        set(Tasmanian_target_list ${Tasmanian_target_list} Tasmanian_example_sparse_grids_f90)
-        if (Tasmanian_STATIC_LIBRARY)
-            target_link_libraries(Tasmanian_example_sparse_grids_f90 Tasmanian_libsparsegrid_fortran_static Tasmanian_libdream_static)
-        else()
-            target_link_libraries(Tasmanian_example_sparse_grids_f90 Tasmanian_libsparsegrid_fortran_shared Tasmanian_libsparsegrid_shared)
-        endif()
+        set_target_properties(Tasmanian_libsparsegrid_fortran_shared PROPERTIES OUTPUT_NAME "tasmanianfortran")
+    endif()
+endif()
+if (Tasmanian_STATIC_LIBRARY)
+    set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES OUTPUT_NAME "tasmaniansparsegrid")
+    set_target_properties(Tasmanian_libdream_static PROPERTIES OUTPUT_NAME "tasmaniandream")
+    if (Tasmanian_ENABLE_FORTRAN)
+        set_target_properties(Tasmanian_libsparsegrid_fortran_static PROPERTIES OUTPUT_NAME "tasmanianfortran")
+    endif()
+endif()
+
+########################################################################
+# link executable to libraries (libraries are linked to libraries
+# when the targets are created
+########################################################################
+target_link_libraries(Tasmanian_tasgrid Tasmanian_libsparsegrid)
+target_link_libraries(Tasmanian_tasdream Tasmanian_libdream)
+target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid)
+target_link_libraries(Tasmanian_example_dream Tasmanian_libdream)
+if (Tasmanian_ENABLE_FORTRAN)
+    target_link_libraries(Tasmanian_fortester Tasmanian_libfortran)
+    target_link_libraries(Tasmanian_example_sparse_grids_f90 Tasmanian_libfortran)
+endif()
+
+
+########################################################################
+# add include directories for BUILD and INSTALL interfaces
+########################################################################
+if (Tasmanian_SHARED_LIBRARY)
+    target_include_directories(Tasmanian_libsparsegrid_shared PUBLIC $<INSTALL_INTERFACE:include>)
+    target_include_directories(Tasmanian_libdream_shared PUBLIC $<INSTALL_INTERFACE:include>)
+
+    target_include_directories(Tasmanian_libsparsegrid_shared PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/SparseGrids/>)
+    target_include_directories(Tasmanian_libsparsegrid_shared PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/configured/>)
+    target_include_directories(Tasmanian_libdream_shared PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/DREAM/>)
+    target_include_directories(Tasmanian_libdream_shared PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/configured/>)
+
+    if (Tasmanian_ENABLE_FORTRAN)
+        target_include_directories(Tasmanian_libsparsegrid_fortran_shared PUBLIC $<INSTALL_INTERFACE:include>)
+        target_include_directories(Tasmanian_libdream_shared PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/>)
+    endif()
+endif()
+
+if (Tasmanian_STATIC_LIBRARY)
+    target_include_directories(Tasmanian_libsparsegrid_static PUBLIC $<INSTALL_INTERFACE:include>)
+    target_include_directories(Tasmanian_libdream_static PUBLIC $<INSTALL_INTERFACE:include>)
+
+    target_include_directories(Tasmanian_libsparsegrid_static PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/SparseGrids/>)
+    target_include_directories(Tasmanian_libsparsegrid_static PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/configured/>)
+    target_include_directories(Tasmanian_libdream_static PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/DREAM/>)
+    target_include_directories(Tasmanian_libdream_static PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/configured/>)
+
+    if (Tasmanian_ENABLE_FORTRAN)
+        target_include_directories(Tasmanian_libsparsegrid_fortran_static PUBLIC $<INSTALL_INTERFACE:include>)
+        target_include_directories(Tasmanian_libdream_static PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/>)
     endif()
 endif()
 
@@ -182,16 +195,16 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
         # Unix uses .a and .so to distinguish static and shared
         # Windows uses .lib in both cases, append _static to differentiate
-        set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES OUTPUT_NAME "${Tasmanian_name_libsparsegrid}_static")
-        set_target_properties(Tasmanian_libdream_static PROPERTIES OUTPUT_NAME "${Tasmanian_name_libdream}_static")
+        set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES OUTPUT_NAME "tasmaniansparsegrid_static")
+        set_target_properties(Tasmanian_libdream_static PROPERTIES OUTPUT_NAME "tasmaniandream_static")
 
         if (Tasmanian_ENABLE_FORTRAN)
-            set_target_properties(Tasmanian_libsparsegrid_fortran_static PROPERTIES OUTPUT_NAME "${Tasmanian_name_libsparsegrid_fortran}_static")
+            set_target_properties(Tasmanian_libsparsegrid_fortran_static PROPERTIES OUTPUT_NAME "tasmanianfortran_static")
         endif()
     endif()
 
+    target_compile_definitions(Tasmanian_tasgrid -D_TASMANIAN_WINDOWS_) # overwrittes gettime()
     add_definitions(-D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
-    add_definitions(-D_TASMANIAN_WINDOWS_) # overwrittes gettime() and sets a seed
-    add_definitions(-D_USE_MATH_DEFINES) # needed to include M_PI constant
+    add_definitions(-D_USE_MATH_DEFINES) # needed to include M_PI constant (lots of targets need this, will figure it out)
 endif()
 

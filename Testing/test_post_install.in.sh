@@ -40,8 +40,8 @@ make > /dev/null || { echo "ERROR: Could not compile the C++ examples"; exit 1; 
 echo 'Executing "./example_sparse_grids"'
 ./example_sparse_grids -fast >/dev/null || { echo "ERROR: Could not run the C++ Sparse Grid example"; exit 1; }
 if [ -f @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.f90 ]; then
-    echo 'Executing "./example_sparse_grids_fortran"'
-    ./example_sparse_grids_fortran -fast >/dev/null 2>&1 || { echo "ERROR: Could not run the Fortran Sparse Grid example"; exit 1; }
+    echo 'Executing "./example_sparse_grids_f90"'
+    ./example_sparse_grids_f90 -fast >/dev/null 2>&1 || { echo "ERROR: Could not run the Fortran Sparse Grid example"; exit 1; }
 fi
 echo 'Executing "./example_dream"'
 ./example_dream -fast >/dev/null || { echo "ERROR: Could not run the C++ DREAM example"; exit 1; }
@@ -54,14 +54,14 @@ echo "--------------------------------------------------------------------------
 sPSuccess=1
 if [[ "@Tasmanian_ENABLE_PYTHON@" == "ON" ]]; then
     echo 'Executing "@CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.py"'
-    @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.py -fast > /dev/null || { echo "ERROR: could not run the python example post install!"; sPSuccess=0; }
+    @PYTHON_EXECUTABLE@ @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.py -fast > /dev/null || { echo "ERROR: could not run the python example post install!"; sPSuccess=0; }
     head -n 1 @CMAKE_INSTALL_PREFIX@/examples/example_sparse_grids.py > dummy.py
     echo 'import sys' >> dummy.py
-    echo '@Tasmanian_python_example_import@' >> dummy.py
+    echo 'sys.path.append("@CMAKE_INSTALL_PREFIX@/lib/python@PYTHON_VERSION_MAJOR@.@PYTHON_VERSION_MINOR@/site-packages")' >> dummy.py
     echo 'import TasmanianSG' >> dummy.py
     echo 'print("TasmanianSG Python module version: {0:1s}".format(TasmanianSG.__version__))' >> dummy.py
     chmod 755 dummy.py
-    ./dummy.py || { echo "ERROR: Could not run the dummy python test"; echo "      This is a problem either with Python install or the Tasmanian library."; sPSuccess=0; }
+    @PYTHON_EXECUTABLE@ dummy.py || { echo "ERROR: Could not run the dummy python test"; echo "      This is a problem either with Python install or the Tasmanian library."; sPSuccess=0; }
 else
     echo "Python not enabled, skipping"
 fi

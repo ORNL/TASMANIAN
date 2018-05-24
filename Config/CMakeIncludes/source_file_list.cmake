@@ -12,43 +12,7 @@ set(Tasmanian_source_tasgrid
                 SparseGrids/tasgridWrapper.hpp
                 SparseGrids/tasgridWrapper.cpp)
 
-set(Tasmanian_source_libsparsegrid
-               SparseGrids/TasmanianSparseGrid.hpp
-               SparseGrids/TasmanianSparseGrid.cpp
-               SparseGrids/tsgAcceleratedDataStructures.hpp
-               SparseGrids/tsgAcceleratedDataStructures.cpp
-               SparseGrids/tsgCacheLagrange.hpp
-               SparseGrids/tsgCoreOneDimensional.hpp
-               SparseGrids/tsgCoreOneDimensional.cpp
-               SparseGrids/tsgCudaMacros.hpp
-               SparseGrids/tsgEnumerates.hpp
-               SparseGrids/tsgGridCore.hpp
-               SparseGrids/tsgGridCore.cpp
-               SparseGrids/tsgGridGlobal.hpp
-               SparseGrids/tsgGridGlobal.cpp
-               SparseGrids/tsgGridWavelet.hpp
-               SparseGrids/tsgGridWavelet.cpp
-               SparseGrids/tsgHardCodedTabulatedRules.hpp
-               SparseGrids/tsgHardCodedTabulatedRules.cpp
-               SparseGrids/tsgHiddenExternals.hpp
-               SparseGrids/tsgGridLocalPolynomial.hpp
-               SparseGrids/tsgGridLocalPolynomial.cpp
-               SparseGrids/tsgGridSequence.hpp
-               SparseGrids/tsgGridSequence.cpp
-               SparseGrids/tsgIndexManipulator.hpp
-               SparseGrids/tsgIndexManipulator.cpp
-               SparseGrids/tsgIndexSets.hpp
-               SparseGrids/tsgIndexSets.cpp
-               SparseGrids/tsgLinearSolvers.hpp
-               SparseGrids/tsgLinearSolvers.cpp
-               SparseGrids/tsgOneDimensionalWrapper.hpp
-               SparseGrids/tsgOneDimensionalWrapper.cpp
-               SparseGrids/tsgRuleLocalPolynomial.hpp
-               SparseGrids/tsgRuleLocalPolynomial.cpp
-               SparseGrids/tsgRuleWavelet.hpp
-               SparseGrids/tsgRuleWavelet.cpp
-               SparseGrids/tsgSequenceOptimizer.hpp
-               SparseGrids/tsgSequenceOptimizer.cpp)
+
 
 set(Tasmanian_source_libsparsegrid_cuda
                SparseGrids/tsgCudaKernels.cu
@@ -60,8 +24,7 @@ set(Tasmanian_source_libdream
                DREAM/TasmanianDREAM.cpp
                DREAM/tdrEnumerates.hpp
                DREAM/tdrCorePDF.hpp
-               DREAM/tdrCorePDF.cpp
-               SparseGrids/TasmanianSparseGrid.hpp)
+               DREAM/tdrCorePDF.cpp)
 
 set(Tasmanian_source_tasdream
                DREAM/tasdream_main.cpp

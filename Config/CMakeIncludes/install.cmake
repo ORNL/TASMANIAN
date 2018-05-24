@@ -1,6 +1,14 @@
 ########################################################################
 # Installing
 ########################################################################
+set(Tasmanian_install_targets   Tasmanian_tasgrid 
+                                Tasmanian_tasdream
+                                Tasmanian_libsparsegrid_shared
+                                Tasmanian_libsparsegrid_static
+                                Tasmanian_libdream_shared
+                                Tasmanian_libdream_static
+                                Tasmanian_libfortran90_shared
+                                Tasmanian_libfortran90_static)
 install(TARGETS ${Tasmanian_install_targets}
         EXPORT Tasmanian_all_export_targets
         RUNTIME DESTINATION "bin"
@@ -8,24 +16,26 @@ install(TARGETS ${Tasmanian_install_targets}
         ARCHIVE DESTINATION "lib")
 install(EXPORT Tasmanian_all_export_targets DESTINATION "config" FILE "Tasmanian.cmake")
 
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/SparseGrids/"
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids/"
         DESTINATION include
         FILES_MATCHING PATTERN "*.hpp"
         PATTERN "*.windows.*" EXCLUDE
         PATTERN "Example" EXCLUDE
         PATTERN "tsgHiddenExternals.hpp" EXCLUDE)
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/DREAM/"
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/DREAM/"
         DESTINATION include
         FILES_MATCHING PATTERN "*.hpp"
         PATTERN "*.windows.*" EXCLUDE
         PATTERN "*.in.*" EXCLUDE
         PATTERN "Example" EXCLUDE)
-install(DIRECTORY "${CMAKE_BINARY_DIR}/configured/"
+install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/configured/"
         DESTINATION include
         FILES_MATCHING PATTERN "*.hpp")
-install(FILES "${CMAKE_SOURCE_DIR}/SparseGrids/TasmanianSparseGrid.h"
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids/TasmanianSparseGrid.h"
         DESTINATION "include"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+
+if (bogus)
 install(FILES "${CMAKE_BINARY_DIR}/install/examples/CMakeLists.txt"
         DESTINATION "examples"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
@@ -67,7 +77,7 @@ if (Tasmanian_ENABLE_FORTRAN)
             DESTINATION "examples"
             PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
 endif()
-
+endif()
 
 ########################################################################
 # Install Message
@@ -77,26 +87,26 @@ set(Tasmanian_post_install "${Tasmanian_post_install}Tasmanian Sparse Grids inst
 set(Tasmanian_post_install "${Tasmanian_post_install}executables:      ${Tasmanian_name_tasgrid}\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}                  ${Tasmanian_name_tasdream}\n")
 if (Tasmanian_SHARED_LIBRARY)
-    set(Tasmanian_post_install "${Tasmanian_post_install}shared libraries: ${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_SHARED_LIBRARY_SUFFIX}\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libdream}${CMAKE_SHARED_LIBRARY_SUFFIX}\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}shared libraries: ${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniandream${CMAKE_SHARED_LIBRARY_SUFFIX}\n")
     if (Tasmanian_ENABLE_FORTRAN)
-        set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_SHARED_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid_fortran}${CMAKE_SHARED_LIBRARY_SUFFIX}\n")
+        set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_SHARED_LIBRARY_PREFIX}tasmanianfortran${CMAKE_SHARED_LIBRARY_SUFFIX}\n")
     endif()
 endif()
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     if (Tasmanian_STATIC_LIBRARY)
-        set(Tasmanian_post_install "${Tasmanian_post_install}static libraries: ${CMAKE_STATIC_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}_static${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
-        set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_STATIC_LIBRARY_PREFIX}${Tasmanian_name_libdream}_static${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
+        set(Tasmanian_post_install "${Tasmanian_post_install}static libraries: ${CMAKE_STATIC_LIBRARY_PREFIX}tasmaniansparsegrid_static${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
+        set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_STATIC_LIBRARY_PREFIX}tasmaniandream_static${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
         if (Tasmanian_ENABLE_FORTRAN)
             set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_STATIC_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid_fortran}_static${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
         endif()
     endif()
 else()
     if (Tasmanian_STATIC_LIBRARY)
-        set(Tasmanian_post_install "${Tasmanian_post_install}static libraries: ${CMAKE_STATIC_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid}${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
-        set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_STATIC_LIBRARY_PREFIX}${Tasmanian_name_libdream}${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
+        set(Tasmanian_post_install "${Tasmanian_post_install}static libraries: ${CMAKE_STATIC_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
+        set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_STATIC_LIBRARY_PREFIX}tasmaniandream${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
         if (Tasmanian_ENABLE_FORTRAN)
-            set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_STATIC_LIBRARY_PREFIX}${Tasmanian_name_libsparsegrid_fortran}${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
+            set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_STATIC_LIBRARY_PREFIX}tasmanianfortran${CMAKE_STATIC_LIBRARY_SUFFIX}\n")
         endif()
     endif()
 endif()

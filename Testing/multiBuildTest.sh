@@ -856,6 +856,24 @@ else
     echo "===========================================================================================" >> $sMultibuildLogFile
 fi
 
+if [ -f /usr/bin/g++-8 ]; then
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
+    mkdir -p tsgWorkFolder
+    ./install ./TasInstall ./tsgWorkFolder -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/g++-8" $sDashFort -cuda -make-j -verbose -nobashrc || { exit 1; }
+    if (( $bOctave == 1 )); then
+        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/matlab/'); tsgCoreTests()" || { exit 1; }
+    fi
+    cd $sTempBuild
+    rm -fr Tasmanian/
+    cd $sTestRoot
+    echo "======= PASSED: GCC 8" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+else
+    echo "======= SKIPPED: GCC 8" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+fi
+
 if [ -f /usr/bin/g++-7 ]; then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }

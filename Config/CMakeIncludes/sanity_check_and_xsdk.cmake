@@ -66,7 +66,7 @@ if (Tasmanian_ENABLE_OPENMP)
     if (NOT DEFINED ${OpenMP_CXX_FLAGS})
         find_package(OpenMP)
 
-        if (NOT OPENMP_FOUND)
+        if ((NOT OPENMP_FOUND) AND (NOT OPENMP_CXX_FOUND))
             if (Tasmanian_STRICT_OPTIONS)
                 message(FATAL_ERROR "-D Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed")
             else()
@@ -121,7 +121,7 @@ if (Tasmanian_ENABLE_CUDA OR (Tasmanian_ENABLE_CUBLAS AND (NOT DEFINED CUDA_CUBL
     find_package(CUDA)
 
     if (CUDA_FOUND)
-        # could not find another way to pass 2011 flag to cuda, this may not be correct
+        # there is no other way to pass the "c++11" flag to CUDA, CUDA_NVCC_FLAGS cannot be specified per target
         list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
         if (Tasmanian_ENABLE_CUDA)
             set(Tasmanian_source_libsparsegrid ${Tasmanian_source_libsparsegrid_cuda} ${Tasmanian_source_libsparsegrid})
@@ -190,4 +190,46 @@ else()
     if ((Tasmanian_ENABLE_CUBLAS OR Tasmanian_ENABLE_CUDA) AND ("${CUDA_VERSION_MAJOR}" LESS 8))
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORCE_INLINES")
     endif()
+endif()
+
+########################################################################
+# Compiler specific flags: Intel hasn't been tested in a while
+# Tasmanian_STRICT_OPTIONS=ON will prevent Tasmanian from setting
+# compiler flags, only the user provided flags will be used
+########################################################################
+if (NOT Tasmanian_STRICT_OPTIONS)
+    if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang"))
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
+        if (Tasmanian_ENABLE_FORTRAN)
+            set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -O3 -fno-f2c")
+        endif()
+#    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
+    elseif (MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Ox /EHsc -D_SCL_SECURE_NO_WARNINGS")
+    endif()
+endif()
+
+
+########################################################################
+# Extra flags, libraries, and directories
+# (TODO: logic here needs revision)
+########################################################################
+if (DEFINED Tasmanian_EXTRA_CXX_FLAGS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Tasmanian_EXTRA_CXX_FLAGS}")
+endif()
+
+# fix this by putting it later
+#if (DEFINED Tasmanian_EXTRA_LIBRARIES)
+#    foreach(Tasmanian_loop_target ${Tasmanian_target_list})
+#        target_link_libraries(${Tasmanian_loop_target} ${Tasmanian_EXTRA_LIBRARIES})
+#    endforeach()
+#endif()
+
+if (DEFINED Tasmanian_EXTRA_INCLUDE_DIRS)
+    include_directories(${Tasmanian_EXTRA_INCLUDE_DIRS})
+endif()
+
+if (DEFINED Tasmanian_EXTRA_LINK_DIRS)
+    link_directories(${Tasmanian_EXTRA_LINK_DIRS})
 endif()
