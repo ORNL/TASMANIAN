@@ -20,22 +20,12 @@ endif()
 
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
-target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/SparseGrids/>)
-target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/configured/>)
+target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
+target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
 set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid")
 
-# setup the name, in MacOSX and Linux static libraries use .a extension and shared libs use .dylib and .so
-# in Windows, shared .dll libs need another file for linking which shares .lib extension with the static libs
-# thus on Windows, we specifically add _static to the name of the lib
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-    target_compile_definitions(${Tasmanian_libtsg_target_name} -D_TASMANIAN_WINDOWS_)
-    target_compile_definitions(${Tasmanian_libtsg_target_name} -D_SCL_SECURE_NO_WARNINGS)
-    target_compile_definitions(${Tasmanian_libtsg_target_name} -D_USE_MATH_DEFINES)
-    if (${Tasmanian_shared_or_static} STREQUAL STATIC)
-        set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid_static")
-    endif()
-endif()
+set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CXX_STANDARD 11)
 
 if (Tasmanian_ENABLE_BLAS)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${BLAS_LIBRARIES})
@@ -53,20 +43,25 @@ if (Tasmanian_ENABLE_OPENMP)
     if (OpenMP_CXX_LIBRARIES)
         # using the OpenMP target leads to a problem with the exports
         # the OpenMP target cannot be exported, which means that a
-        # project importing an already installed Tasmanian would
+        # project importing an already installed Tasmanian would also
         # have to "know" whether Tasmanian was build with OpenMP and
-        # call find_package(OpenMP) manually
+        # then call find_package(OpenMP) manually
         # Furthermore, using find_package(OpenMP) from a different
         # compiler can generate a wrong target, e.g., building Tasmanian
         # with gcc links to libgomp, but calling find_package(OpenMP)
         # from clang will create an OpenMP target that uses libiomp
         target_link_libraries(${Tasmanian_libtsg_target_name} ${OpenMP_CXX_LIBRARIES})
-        #target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
         target_compile_options(${Tasmanian_libtsg_target_name} PRIVATE ${OpenMP_CXX_FLAGS})
     else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     endif()
 endif()
+
+install(TARGETS ${Tasmanian_libtsg_target_name}
+        EXPORT Tasmanian_exports
+        RUNTIME DESTINATION "bin"
+        LIBRARY DESTINATION "lib"
+        ARCHIVE DESTINATION "lib")
 
 endmacro()
 
@@ -76,82 +71,90 @@ endmacro()
 # add_library and cuda_add_library in both shared and static cases
 ########################################################################
 set(Tasmanian_source_libsparsegrid
-               ${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgAcceleratedDataStructures.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgAcceleratedDataStructures.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgCacheLagrange.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgCoreOneDimensional.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgCoreOneDimensional.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgCudaMacros.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgEnumerates.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridCore.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridCore.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridGlobal.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridGlobal.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridWavelet.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridWavelet.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgHardCodedTabulatedRules.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgHardCodedTabulatedRules.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgHiddenExternals.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridLocalPolynomial.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridLocalPolynomial.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridSequence.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgGridSequence.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgIndexManipulator.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgIndexManipulator.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgIndexSets.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgIndexSets.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgLinearSolvers.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgLinearSolvers.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgOneDimensionalWrapper.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgOneDimensionalWrapper.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgRuleLocalPolynomial.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgRuleLocalPolynomial.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgRuleWavelet.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgRuleWavelet.cpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgSequenceOptimizer.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgSequenceOptimizer.cpp)
+        TasmanianSparseGrid.hpp
+        TasmanianSparseGrid.cpp
+        tsgAcceleratedDataStructures.hpp
+        tsgAcceleratedDataStructures.cpp
+        tsgCacheLagrange.hpp
+        tsgCoreOneDimensional.hpp
+        tsgCoreOneDimensional.cpp
+        tsgCudaMacros.hpp
+        tsgEnumerates.hpp
+        tsgGridCore.hpp
+        tsgGridCore.cpp
+        tsgGridGlobal.hpp
+        tsgGridGlobal.cpp
+        tsgGridWavelet.hpp
+        tsgGridWavelet.cpp
+        tsgHardCodedTabulatedRules.hpp
+        tsgHardCodedTabulatedRules.cpp
+        tsgHiddenExternals.hpp
+        tsgGridLocalPolynomial.hpp
+        tsgGridLocalPolynomial.cpp
+        tsgGridSequence.hpp
+        tsgGridSequence.cpp
+        tsgIndexManipulator.hpp
+        tsgIndexManipulator.cpp
+        tsgIndexSets.hpp
+        tsgIndexSets.cpp
+        tsgLinearSolvers.hpp
+        tsgLinearSolvers.cpp
+        tsgOneDimensionalWrapper.hpp
+        tsgOneDimensionalWrapper.cpp
+        tsgRuleLocalPolynomial.hpp
+        tsgRuleLocalPolynomial.cpp
+        tsgRuleWavelet.hpp
+        tsgRuleWavelet.cpp
+        tsgSequenceOptimizer.hpp
+        tsgSequenceOptimizer.cpp)
 
 # source files specific to cuda, used for both static and shared libs
 set(Tasmanian_source_libsparsegrid_cuda
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgCudaKernels.cu
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgCudaBasisEvaluations.hpp
-               ${CMAKE_CURRENT_SOURCE_DIR}/tsgCudaLinearAlgebra.hpp)
+       tsgCudaKernels.cu
+       tsgCudaBasisEvaluations.hpp
+       tsgCudaLinearAlgebra.hpp)
 
 set(Tasmanian_source_tasgrid
-                ${CMAKE_CURRENT_SOURCE_DIR}/tasgrid_main.cpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/tasgridExternalTests.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/tasgridExternalTests.cpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/tasgridTestFunctions.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/tasgridTestFunctions.cpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/tasgridWrapper.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/tasgridWrapper.cpp)
+        tasgrid_main.cpp
+        TasmanianSparseGrid.hpp
+        tasgridExternalTests.hpp
+        tasgridExternalTests.cpp
+        tasgridTestFunctions.hpp
+        tasgridTestFunctions.cpp
+        tasgridWrapper.hpp
+        tasgridWrapper.cpp)
 
 ########################################################################
 # add the tasgrid and examples executables
 ########################################################################
-add_executable(Tasmanian_tasgrid ${CMAKE_CURRENT_SOURCE_DIR}/tasgrid_main.cpp
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/tasgridExternalTests.hpp
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/tasgridExternalTests.cpp
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/tasgridTestFunctions.hpp
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/tasgridTestFunctions.cpp
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/tasgridWrapper.hpp
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/tasgridWrapper.cpp)
-add_executable(Tasmanian_example_sparse_grids "${CMAKE_CURRENT_SOURCE_DIR}/Examples/example_sparse_grids.cpp")
-list(APPEND Tasmanian_install_sparsegrid_targets Tasmanian_tasgrid)
+add_executable(Tasmanian_tasgrid tasgrid_main.cpp
+                                 TasmanianSparseGrid.hpp
+                                 tasgridExternalTests.hpp
+                                 tasgridExternalTests.cpp
+                                 tasgridTestFunctions.hpp
+                                 tasgridTestFunctions.cpp
+                                 tasgridWrapper.hpp
+                                 tasgridWrapper.cpp)
+add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
+
+set_property(TARGET Tasmanian_tasgrid              PROPERTY CXX_STANDARD 11)
+set_property(TARGET Tasmanian_example_sparse_grids PROPERTY CXX_STANDARD 11)
 
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
 set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
+
+if (Tasmanian_ENABLE_OPENMP AND OpenMP_CXX_LIBRARIES)
+    # see the remark in the macro above regarding the use of the OpenMP target
+    # also the libs are redundant here, as those will be added by libsparsegrid
+    target_link_libraries(Tasmanian_tasgrid ${OpenMP_CXX_LIBRARIES})
+    target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
+endif()
 
 ########################################################################
 # add the libraries
 ########################################################################
 if (Tasmanian_SHARED_LIBRARY)
     Tasmanian_macro_add_libsparsegrid(SHARED)
-    list(APPEND Tasmanian_install_sparsegrid_targets Tasmanian_libsparsegrid_shared)
 endif()
 
 if (Tasmanian_STATIC_LIBRARY)
@@ -159,8 +162,6 @@ if (Tasmanian_STATIC_LIBRARY)
 
     target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_static)
-
-    list(APPEND Tasmanian_install_sparsegrid_targets Tasmanian_libsparsegrid_static)
 else()
     target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_shared)
     target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_shared)
@@ -180,35 +181,53 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_
 # Windows specific support (DLL export/import directives and names)
 ########################################################################
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    # setup the name, in MacOSX and Linux static libraries use .a extension and shared libs use .dylib and .so
+    # in Windows, shared .dll libs need another file for linking which shares .lib extension with the static libs
+    # thus on Windows, we specifically add _static to the name of the lib
+    # furthermore, additional defines are needed to suppress extraneous warnings and adjust some system calls
+    macro(Tasmanian_macro_sparsegrids_windows_defines Tasmanian_dream_target)
+        target_compile_definitions(${Tasmanian_dream_target} PRIVATE -D_TASMANIAN_WINDOWS_) # overwrittes gettime()
+        target_compile_definitions(${Tasmanian_dream_target} PRIVATE -D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
+        target_compile_definitions(${Tasmanian_dream_target} PUBLIC  -D_USE_MATH_DEFINES) # needed to include M_PI constant
+    endmacro()
+
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.windows.hpp"  "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp" COPYONLY)
 
     if (Tasmanian_SHARED_LIBRARY)
         target_compile_definitions(Tasmanian_libsparsegrid_shared PUBLIC -DTSG_DLL)
+
+        Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_shared)
     else()
         target_compile_definitions(Tasmanian_tasgrid PUBLIC -DTSG_DYNAMIC)
     endif()
 
     if (Tasmanian_STATIC_LIBRARY)
         target_compile_definitions(Tasmanian_libsparsegrid_static PUBLIC -DTSG_STATIC)
+
+        Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_static)
+
+        set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid_static")
     endif()
 
-    target_compile_definitions(Tasmanian_tasgrid -D_TASMANIAN_WINDOWS_) # overwrittes gettime()
-    target_compile_definitions(Tasmanian_tasgrid -D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
-    target_compile_definitions(Tasmanian_tasgrid -D_USE_MATH_DEFINES) # needed to include M_PI constant (lots of targets need this, will figure it out)
+    Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_tasgrid)
 endif()
 
 
 ########################################################################
 # Testing
 ########################################################################
-add_test(SparseGridsAcceleration ${CMAKE_CURRENT_BINARY_DIR}/tasgrid -test acceleration -gpuid ${Tasmanian_TESTS_GPU_ID})
-add_test(SparseGridsDomain       ${CMAKE_CURRENT_BINARY_DIR}/tasgrid -test domain)
-add_test(SparseGridsRefinement   ${CMAKE_CURRENT_BINARY_DIR}/tasgrid -test refinement)
-add_test(SparseGridsGlobal       ${CMAKE_CURRENT_BINARY_DIR}/tasgrid -test global)
-add_test(SparseGridsLocal        ${CMAKE_CURRENT_BINARY_DIR}/tasgrid -test local)
-add_test(SparseGridsWavelet      ${CMAKE_CURRENT_BINARY_DIR}/tasgrid -test wavelet)
-set(Tasmanian_tests_list_sparse_grids SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement SparseGridsGlobal SparseGridsLocal SparseGridsWavelet)
-
+add_test(SparseGridsAcceleration tasgrid -test acceleration -gpuid ${Tasmanian_TESTS_GPU_ID})
+add_test(SparseGridsDomain       tasgrid -test domain)
+add_test(SparseGridsRefinement   tasgrid -test refinement)
+add_test(SparseGridsGlobal       tasgrid -test global)
+add_test(SparseGridsLocal        tasgrid -test local)
+add_test(SparseGridsWavelet      tasgrid -test wavelet)
+if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
+    set_tests_properties(SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement SparseGridsGlobal SparseGridsLocal SparseGridsWavelet
+        PROPERTIES
+        PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
+        ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
+endif()
 
 ########################################################################
 # Install headers and config files
@@ -227,7 +246,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
         FILES_MATCHING PATTERN "*.cpp"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
-install(TARGETS ${Tasmanian_install_sparsegrid_targets}
+install(TARGETS Tasmanian_tasgrid
         EXPORT Tasmanian_exports
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"

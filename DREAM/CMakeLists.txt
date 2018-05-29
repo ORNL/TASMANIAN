@@ -12,30 +12,20 @@ else()
     set(Tasmanian_libtdr_target_name "Tasmanian_libdream_static")
 endif()
 
-add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} ${CMAKE_CURRENT_SOURCE_DIR}/TasmanianDREAM.hpp
-                                                                          ${CMAKE_CURRENT_SOURCE_DIR}/TasmanianDREAM.cpp
-                                                                          ${CMAKE_CURRENT_SOURCE_DIR}/tdrEnumerates.hpp
-                                                                          ${CMAKE_CURRENT_SOURCE_DIR}/tdrCorePDF.hpp
-                                                                          ${CMAKE_CURRENT_SOURCE_DIR}/tdrCorePDF.cpp)
+add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} TasmanianDREAM.hpp
+                                                                          TasmanianDREAM.cpp
+                                                                          tdrEnumerates.hpp
+                                                                          tdrCorePDF.hpp
+                                                                          tdrCorePDF.cpp)
 
 target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
-target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/DREAM/>)
-target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/configured/>)
+target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
+target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
 set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream")
 
-# setup the name, in MacOSX and Linux static libraries use .a extension and shared libs use .dylib and .so
-# in Windows, shared .dll libs need another file for linking which shares .lib extension with the static libs
-# thus on Windows, we specifically add _static to the name of the lib
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-    target_compile_definitions(${Tasmanian_libtdr_target_name} -D_TASMANIAN_WINDOWS_)
-    target_compile_definitions(${Tasmanian_libtdr_target_name} -D_SCL_SECURE_NO_WARNINGS)
-    target_compile_definitions(${Tasmanian_libtdr_target_name} -D_USE_MATH_DEFINES)
-    if (${Tasmanian_shared_or_static} STREQUAL STATIC)
-        set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream_static")
-    endif()
-endif()
+set_property(TARGET ${Tasmanian_libtdr_target_name} PROPERTY CXX_STANDARD 11)
 
 ########################################################################
 # Option setup
@@ -63,19 +53,28 @@ if (Tasmanian_ENABLE_MPI)
     endif()
 endif()
 
+install(TARGETS ${Tasmanian_libtdr_target_name}
+        EXPORT Tasmanian_exports
+        RUNTIME DESTINATION "bin"
+        LIBRARY DESTINATION "lib"
+        ARCHIVE DESTINATION "lib")
+
 endmacro()
 
 ########################################################################
 # add tasdream and examples executables
 ########################################################################
-add_executable(Tasmanian_tasdream ${CMAKE_CURRENT_SOURCE_DIR}/tasdream_main.cpp
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/tasdreamExternalTests.hpp
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/tasdreamExternalTests.cpp
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/tasdreamTestPDFs.hpp
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/tasdreamTestPDFs.cpp
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/tasdreamBenchmark.hpp
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/tasdreamBenchmark.cpp)
-add_executable(Tasmanian_example_dream "${CMAKE_CURRENT_SOURCE_DIR}/Examples/example_dream.cpp")
+add_executable(Tasmanian_tasdream tasdream_main.cpp
+                                  tasdreamExternalTests.hpp
+                                  tasdreamExternalTests.cpp
+                                  tasdreamTestPDFs.hpp
+                                  tasdreamTestPDFs.cpp
+                                  tasdreamBenchmark.hpp
+                                  tasdreamBenchmark.cpp)
+add_executable(Tasmanian_example_dream Examples/example_dream.cpp)
+
+set_property(TARGET Tasmanian_tasdream      PROPERTY CXX_STANDARD 11)
+set_property(TARGET Tasmanian_example_dream PROPERTY CXX_STANDARD 11)
 
 list(APPEND Tasmanian_install_dream_targets Tasmanian_tasdream)
 
@@ -110,27 +109,46 @@ endif()
 # Windows specific support (DLL export/import directives and names)
 ########################################################################
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    # setup the name, in MacOSX and Linux static libraries use .a extension and shared libs use .dylib and .so
+    # in Windows, shared .dll libs need another file for linking which shares .lib extension with the static libs
+    # thus on Windows, we specifically add _static to the name of the lib
+    # also, Windows requires export/import directives (double-check those with cmake defaults)
+    macro(Tasmanian_macro_dream_windows_defines Tasmanian_dream_target)
+        target_compile_definitions(${Tasmanian_dream_target} PRIVATE -D_TASMANIAN_WINDOWS_) # overwrittes gettime()
+        target_compile_definitions(${Tasmanian_dream_target} PRIVATE -D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
+        target_compile_definitions(${Tasmanian_dream_target} PUBLIC  -D_USE_MATH_DEFINES) # needed to include M_PI constant
+    endmacro()
+
     if (Tasmanian_SHARED_LIBRARY)
         target_compile_definitions(Tasmanian_libdeam_shared PUBLIC -DTSG_DLL)
+
+        Tasmanian_macro_dream_windows_defines(${Tasmanian_libdeam_shared})
     else()
         target_compile_definitions(Tasmanian_tasdream PUBLIC -DTSG_DYNAMIC)
     endif()
 
     if (Tasmanian_STATIC_LIBRARY)
         target_compile_definitions(Tasmanian_libdream_static PUBLIC -DTSG_STATIC)
+
+        Tasmanian_macro_dream_windows_defines(${Tasmanian_libdeam_static})
+
+        set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream_static")
     endif()
 
-    target_compile_definitions(Tasmanian_tasdream -D_TASMANIAN_WINDOWS_) # overwrittes gettime()
-    target_compile_definitions(Tasmanian_tasdream -D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
-    target_compile_definitions(Tasmanian_tasdream -D_USE_MATH_DEFINES) # needed to include M_PI constant (lots of targets need this, will figure it out)
+    Tasmanian_macro_dream_windows_defines(${Tasmanian_tasdream})
 endif()
 
 ########################################################################
 # Testing
 ########################################################################
-add_test(DREAM_Analytic ${CMAKE_CURRENT_BINARY_DIR}/tasdream -test analytic)
-add_test(DREAM_Model    ${CMAKE_CURRENT_BINARY_DIR}/tasdream -test model)
-set(Tasmanian_tests_list_dream DREAM_Analytic DREAM_Model)
+add_test(DREAM_Analytic tasdream -test analytic)
+add_test(DREAM_Model    tasdream -test model)
+if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
+    set_tests_properties(DREAM_Analytic DREAM_Model
+        PROPERTIES
+        PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
+        ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
+endif()
 
 ########################################################################
 # Install headers and config files
@@ -146,7 +164,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
         FILES_MATCHING PATTERN "*.cpp"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
-install(TARGETS ${Tasmanian_install_dream_targets}
+install(TARGETS Tasmanian_tasdream
         EXPORT Tasmanian_exports
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"

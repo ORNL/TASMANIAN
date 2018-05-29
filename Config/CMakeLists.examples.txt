@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(Tasmanian_Examples)
 
-include(@Tasmanian_cmake_export@)
+include("@CMAKE_INSTALL_PREFIX@/config/Tasmanian.cmake")
 # one of Tasmanian_libsparsegrid_static or Tasmanian_libsparsegrid_shares is always available
 # here is default to the static library, unless only a shared one is available
 # you can also explicitly link to _static or _shared

@@ -166,6 +166,7 @@ cd $sTestRoot
 echo $sTempSource
 echo $sTempBuild
 
+
 ########################################################################
 # Test: simpel GNU Make build system
 ########################################################################
@@ -517,7 +518,7 @@ if (( $bGfortran == 1 )); then
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install ./TasInstall ./tsgWorkFolder -make-j -fortran -verbose -nobashrc || { exit 1; }
-    if [ ! -f ./TasInstall/lib/libtasmanianfortran.so ] && [ ! -f ./TasInstall/lib/libtasmanianfortran.dylib ]; then
+    if [ ! -f ./TasInstall/lib/libtasmanianfortran90.so ] && [ ! -f ./TasInstall/lib/libtasmanianfortran90.dylib ]; then
         echo "Failed to enable Fortran"
         exit 1;
     fi
@@ -543,7 +544,7 @@ if (( $bGfortran == 1 )); then
     cd $sTempBuild/Tasmanian || { exit 1; }
     mkdir -p tsgWorkFolder
     ./install ./TasInstall ./tsgWorkFolder -make-j -fortran -noshared -nospam -verbose -nobashrc || { exit 1; }
-    if [ ! -f ./TasInstall/lib/libtasmanianfortran.a ]; then
+    if [ ! -f ./TasInstall/lib/libtasmanianfortran90.a ]; then
         echo "Failed to enable Fortran"
         exit 1;
     fi
@@ -794,6 +795,47 @@ cd $sTempBuild
 rm -fr Tasmanian/
 cd $sTestRoot
 echo "======= PASSED: -wrong" >> $sMultibuildLogFile
+echo "===========================================================================================" >> $sMultibuildLogFile
+
+
+########################################################################
+# Mix different compilers
+########################################################################
+if [ -f /usr/bin/clang++-5.0 ]; then
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/Tasmanian || { exit 1; }
+    ./install ./TasInstall $sDashFort -cuda -make-j -verbose -nobashrc || { echo "Failed to make a mixed compiler release, gcc to clang"; exit 1; }
+    mkdir -p TasExamples || { echo "Failed to build mixed compiler examples"; exit 1; }
+    cd TasExamples
+    cmake -DCMAKE_CXX_COMPILER=/usr/bin/clang++-5.0 ../TasInstall/examples/ || { echo "Failed to cmake mixed compiler examples"; exit 1; }
+    make -j || { echo "Failed to make mixed compiler examples"; exit 1; }
+    ./example_sparse_grids -fast || { echo "Failed to run mixed compiler examples, sparse grid"; exit 1; }
+    ./example_dream -fast || { echo "Failed to run mixed compiler examples, dream"; exit 1; }
+    if [ -f example_sparse_grids_f90 ]; then
+        ./example_sparse_grids_f90 -fast || { echo "Failed to run mixed compiler examples, fortran"; exit 1; }
+    fi
+    cd $sTempBuild
+    rm -fr Tasmanian/
+    cd $sTestRoot
+
+    # something is broken here
+    #cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    #cd $sTempBuild/Tasmanian || { exit 1; }
+    #./install ./TasInstall $sDashFort -cuda -make-j -verbose -nobashrc -cmake="-DCMAKE_CXX_COMPILER=/usr/bin/clang++-5.0" || { echo "Failed to make a mixed compiler release, clang to gcc"; exit 1; }
+    #mkdir -p TasExamples || { echo "Failed to build mixed compiler examples"; exit 1; }
+    #cd TasExamples
+    #cmake -DCMAKE_CXX_COMPILER=/usr/bin/g++ ../TasInstall/examples/ || { echo "Failed to cmake mixed compiler examples"; exit 1; }
+    #make -j || { echo "Failed to make mixed compiler examples"; exit 1; }
+    #./example_sparse_grids -fast || { echo "Failed to run mixed compiler examples, sparse grid"; exit 1; }
+    #./example_dream -fast || { echo "Failed to run mixed compiler examples, dream"; exit 1; }
+    #if [ -f example_sparse_grids_f90 ]; then
+        #./example_sparse_grids_f90 -fast || { echo "Failed to run mixed compiler examples, fortran"; exit 1; }
+    #fi
+    #cd $sTempBuild
+    #rm -fr Tasmanian/
+    #cd $sTestRoot
+fi
+echo "======= PASSED: mixed compilers" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
 

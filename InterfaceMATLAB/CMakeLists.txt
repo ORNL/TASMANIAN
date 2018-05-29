@@ -44,10 +44,10 @@ set(Tasmanian_source_matlabsg
                tsgWriteMatrix.m)
 
 # set MATLAB for the build folder (stage 1)
-set(Tasmanian_tasgrid_path "${CMAKE_BINARY_DIR}/tasgrid")
-set(Tasmanian_string_matlab_work ${CMAKE_BINARY_DIR}/tempMATLAB/)
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/tempMATLAB/)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.in.m" "${CMAKE_BINARY_DIR}/matlab/tsgGetPaths.m")
+set(Tasmanian_tasgrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/tasgrid")
+set(Tasmanian_string_matlab_work ${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.in.m" "${CMAKE_CURRENT_BINARY_DIR}/matlab/tsgGetPaths.m")
 
 foreach(Tasmanian_matlab_file ${Tasmanian_source_matlabsg})
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/${Tasmanian_matlab_file}" "${CMAKE_CURRENT_BINARY_DIR}/matlab/${Tasmanian_matlab_file}" COPYONLY)

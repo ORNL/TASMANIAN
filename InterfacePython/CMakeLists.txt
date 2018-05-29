@@ -25,10 +25,10 @@ if (Tasmanian_DEVELOPMENT_BACKWARDS)
 
     set(Tasmanian_string_python_hashbang "/usr/bin/env python")
     set(Tasmanian_cmake_synctest_enable "False") # disable tests that check if the library reports the same options as given by the cmake variables
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Testing/testTSG.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/testTSG.py") # also using Tasmanian_libsparsegrid_path
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testTSG.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/testTSG.py") # also using Tasmanian_libsparsegrid_path
 
     set(Tasmanian_python_example_import "#")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Examples/example_sparse_grids.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Examples/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 endif()
 
 
@@ -44,17 +44,18 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_
 
 set(Tasmanian_string_python_hashbang "${PYTHON_EXECUTABLE}")
 set(Tasmanian_cmake_synctest_enable "True") # enable tests that check if the library reports the same options as given by the cmake variables
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Testing/testTSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py") # also uses Tasmanian_libsparsegrid_path
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testTSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py") # also uses Tasmanian_libsparsegrid_path
 
 set(Tasmanian_python_example_import "sys.path.append(\"${CMAKE_CURRENT_BINARY_DIR}\")\n")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Examples/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Testing/sandbox.py" "${CMAKE_CURRENT_BINARY_DIR}/sandbox.py") # only uses Tasmanian_string_python_hashbang
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sandbox.py" "${CMAKE_CURRENT_BINARY_DIR}/sandbox.py") # only uses Tasmanian_string_python_hashbang
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY) # needed for testing
 
+
 ########################################################################
-# Stage 1: Install folder paths
+# Stage 2: Install folder paths
 ########################################################################
 set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
@@ -64,7 +65,7 @@ endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py")
 
 set(Tasmanian_python_example_import "sys.path.append(\"${Tasmanian_python_install_path}\")\n")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Examples/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 
 
 ########################################################################
@@ -77,8 +78,12 @@ add_test(NAME PythonMakeUpdate   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BI
 add_test(NAME PythonRefine       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testFullCoverageB)
 add_test(NAME PythonLearning     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testFullCoverageC)
 add_test(NAME PythonMisc         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testFullCoverageZ)
-set(Tasmanian_tests_list_python PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc)
-
+if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
+    set_tests_properties(PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc
+        PROPERTIES
+        PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
+        ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
+endif()
 
 ########################################################################
 # Installation

@@ -531,18 +531,6 @@ if (( $bSkilBashrc == 0 )); then
     if [[ $sAppend == "y" ]] || [[ $sAppend == "Y" ]] || [[ $sAppend == "Yes" ]] || [[ $sAppend == "yes" ]]; then
         echo "source $sConfigPath/TasmanianENVsetup.sh" >> ~/.bashrc
     fi
-    echo ""
-    echo "Compiling against Tasmanian libraries without the use of cmake"
-    echo "requires the following command:"
-    echo ""
-    echo "source $sConfigPath/TasmanianDEVsetup.sh"
-    echo ""
-    echo "If you are not using Tasmanian through C/C++ and Fortran, or if you are using cmake,"
-    echo "then you don't need this!"
-    read -p "Append command to ~/.bashrc? (y/N)" sAppend
-    if [[ $sAppend == "y" ]] || [[ $sAppend == "Y" ]] || [[ $sAppend == "Yes" ]] || [[ $sAppend == "yes" ]]; then
-        echo "source $sConfigPath/TasmanianDEVsetup.sh" >> ~/.bashrc
-    fi
 fi
 
 if (( $bFailedTests == 1 )); then

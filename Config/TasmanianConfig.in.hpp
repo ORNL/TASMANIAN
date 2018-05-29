@@ -33,7 +33,7 @@
 
 #define TASMANIAN_VERSION_MAJOR @Tasmanian_VERSION_MAJOR@
 #define TASMANIAN_VERSION_MINOR @Tasmanian_VERSION_MINOR@
-#define TASMANIAN_VERSION_STRING "@Tasmanian_version_string@"
+#define TASMANIAN_VERSION_STRING "@Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@"
 #define TASMANIAN_LICENSE "@Tasmanian_license@"
 
 ////////////////////////////////////////////////////////////////////////
