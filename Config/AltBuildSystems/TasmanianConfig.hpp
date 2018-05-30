@@ -42,12 +42,15 @@
 // Note: cmake takes care of this automatically, use the lines
 // below only for simple GNU-Make
 // The lines below are for references purposes mostly,
-// we support advanced options only though cmake
+// advanced options are officially supported though cmake only
 ////////////////////////////////////////////////////////////////////////
 
 /* #undef Tasmanian_ENABLE_BLAS */
 /* #undef Tasmanian_ENABLE_CUBLAS */
 /* #undef Tasmanian_ENABLE_CUDA */
 /* #undef Tasmanian_ENABLE_MPI */
+
+// used mostly to suppress default cerr messages
+/* #undef USE_XSDK_DEFAULTS */
 
 #endif

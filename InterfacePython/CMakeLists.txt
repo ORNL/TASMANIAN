@@ -10,7 +10,12 @@ cmake_minimum_required(VERSION 3.5)
 #
 ########################################################################
 
-set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages")
+if (NOT DEFINED Tasmanian_python_install_path)
+    # calling "make install" invalidates PYTHON_VERSION_MAJOR and PYTHON_VERSION_MINOR
+    # thus, we cache the string on first call of cmake and the user could edit this variable
+    set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages" CACHE PATH "install path for the Python module")
+endif()
+
 
 ########################################################################
 # Stage 0: for support of simple GNU-Make
@@ -71,19 +76,20 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE
 ########################################################################
 # Testing
 ########################################################################
-add_test(NAME PythonIO           COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testBasicIO)
-add_test(NAME PythonAcceleration COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testAcceleratedEvaluate)
-add_test(NAME PythonExceptions   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testBasicException)
-add_test(NAME PythonMakeUpdate   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testFullCoverageA)
-add_test(NAME PythonRefine       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testFullCoverageB)
-add_test(NAME PythonLearning     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testFullCoverageC)
-add_test(NAME PythonMisc         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py TestTasmanian.testFullCoverageZ)
+add_test(NAME PythonIO           COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBasicIO)
+add_test(NAME PythonAcceleration COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAcceleratedEvaluate)
+add_test(NAME PythonExceptions   COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBasicException)
+add_test(NAME PythonMakeUpdate   COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testFullCoverageA)
+add_test(NAME PythonRefine       COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testFullCoverageB)
+add_test(NAME PythonLearning     COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testFullCoverageC)
+add_test(NAME PythonMisc         COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testFullCoverageZ)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
     set_tests_properties(PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc
         PROPERTIES
         PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
         ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
 endif()
+
 
 ########################################################################
 # Installation
@@ -93,7 +99,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
 
 # Create symlink for backward compatibility
-install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${Tasmanian_python_install_path} ${CMAKE_INSTALL_PREFIX}/python )" )
+install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${Tasmanian_python_install_path} ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python )" )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py"
-        DESTINATION "examples"
+        DESTINATION "share/Tasmanian/examples/"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)

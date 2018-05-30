@@ -1,6 +1,9 @@
 ########################################################################
 # Install Message
-# This is written in a CMakeLists.txt to ensure it is displayed last
+# This is written in this CMakeLists.txt and add subdir is called last
+# thus, the message will appear at the very end of the install process
+#
+# Do not put any other code here, this is for human readable info only
 ########################################################################
 set(Tasmanian_post_install "--------------------------------------------------------------------------------\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}Tasmanian Install Complete\n\n")
@@ -30,10 +33,10 @@ else()
         endif()
     endif()
 endif()
-set(Tasmanian_post_install "${Tasmanian_post_install}C++ examples:     ${CMAKE_INSTALL_PREFIX}/examples/example_sparse_grids.cpp\n")
-set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_INSTALL_PREFIX}/examples/example_dream.cpp\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}C++ examples:     ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/examples/example_sparse_grids.cpp\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/examples/example_dream.cpp\n")
 if (Tasmanian_ENABLE_FORTRAN)
-    set(Tasmanian_post_install "${Tasmanian_post_install}Fortran examples: ${CMAKE_INSTALL_PREFIX}/examples/example_sparse_grids.f90\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}Fortran examples: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/examples/example_sparse_grids.f90\n")
 endif()
 set(Tasmanian_post_install "${Tasmanian_post_install}                  see CMakeLists.txt in ${CMAKE_INSTALL_PREFIX}/examples\n\n")
 
@@ -43,8 +46,8 @@ set(Tasmanian_post_install "${Tasmanian_post_install}export LD_LIBRARY_PATH=$LD_
 
 set(Tasmanian_post_install "${Tasmanian_post_install}above commands are writte in the following\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}bash source files: ${CMAKE_INSTALL_PREFIX}/config/TasmanianENVsetup.sh\n")
-set(Tasmanian_post_install "${Tasmanian_post_install}cmake import:             ${CMAKE_INSTALL_PREFIX}/config/Tasmanian.cmake\n")
-set(Tasmanian_post_install "${Tasmanian_post_install}cmake directive:          include(\\\"${CMAKE_INSTALL_PREFIX}/config/Tasmanian.cmake\\\")\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}cmake import:             ${CMAKE_INSTALL_PREFIX}/lib/Tasmanian/Tasmanian.cmake\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}cmake directive:          include(\\\"${CMAKE_INSTALL_PREFIX}/lib/Tasmanian/Tasmanian.cmake\\\")\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}cmake executable targets: Tasmanian_tasgrid\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}                          Tasmanian_tasdream\n")
 if (Tasmanian_ENABLE_FORTRAN)
@@ -70,21 +73,22 @@ else()
 endif()
 
 if (Tasmanian_ENABLE_PYTHON)
-    set(Tasmanian_post_install "${Tasmanian_post_install}python module:  ${Tasmanian_python_install_path}/TasmanianSG.py\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}python example: ${CMAKE_INSTALL_PREFIX}/examples/example_sparse_grids.py\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}                to call the python module\n\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}                import sys\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}                sys.path.append(\\\"${CMAKE_INSTALL_PREFIX}/python\\\")\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}                import TasmanianSG\n\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}python module:      ${Tasmanian_python_install_path}/TasmanianSG.py\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}python alternative: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python/TasmanianSG.py\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}python example:     ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/examples/example_sparse_grids.py\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}                    to call the python module\n\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}                    import sys\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}                    sys.path.append(\\\"${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python\\\")\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}                    import TasmanianSG\n\n")
 endif()
 
 if (Tasmanian_ENABLE_MATLAB)
     set(Tasmanian_post_install "${Tasmanian_post_install}matlab flles in: ${CMAKE_INSTALL_PREFIX}/matlab/\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}                 NOTE: add ${CMAKE_INSTALL_PREFIX}/matlab/ to the MATLAB path\n\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}                 addpath('${CMAKE_INSTALL_PREFIX}/matlab/')\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}                 NOTE: add ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/matlab/ to the MATLAB path\n\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}                 addpath('${CMAKE_INSTALL_PREFIX}/share/Tasmanian/matlab/')\n")
 endif()
 set(Tasmanian_post_install "${Tasmanian_post_install}--------------------------------------------------------------------------------\n")
 
 install(CODE "message(\"${Tasmanian_post_install}\")")
-install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/config/Tasmanian.log \"${Tasmanian_post_install}\")")
+install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log \"${Tasmanian_post_install}\")")
 install(CODE "message(\"information stored in: ${CMAKE_INSTALL_PREFIX}/config/Tasmanian.log\n\")")

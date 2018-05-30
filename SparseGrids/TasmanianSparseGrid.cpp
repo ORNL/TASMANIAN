@@ -55,9 +55,9 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
 
 TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), domain_transform_a(0), domain_transform_b(0),
                                              conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0){
-#ifndef TASMANIAN_XSDK
+#ifndef USE_XSDK_DEFAULTS
     logstream = &cerr;
-#endif // TASMANIAN_XSDK
+#endif // USE_XSDK_DEFAULTS
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
@@ -67,9 +67,9 @@ TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : ba
                                     acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0)
 {
     copyGrid(&source);
-#ifndef TASMANIAN_XSDK
+#ifndef USE_XSDK_DEFAULTS
     logstream = &cerr;
-#endif // TASMANIAN_XSDK
+#endif // USE_XSDK_DEFAULTS
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
@@ -89,11 +89,11 @@ void TasmanianSparseGrid::clear(){
     if (conformal_asin_power != 0){ delete[] conformal_asin_power; conformal_asin_power = 0; }
     if (llimits != 0){ delete[] llimits; llimits = 0; }
     base = 0;
-#ifndef TASMANIAN_XSDK
+#ifndef USE_XSDK_DEFAULTS
     logstream = &cerr;
 #else
     logstream = 0;
-#endif // TASMANIAN_XSDK
+#endif // USE_XSDK_DEFAULTS
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #else
@@ -1504,28 +1504,28 @@ int tsgRead(void *grid, const char* filename){
 void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const char * sType, const char *sRule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
     TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
-    #ifdef _TASMANIAN_DEBUG_
+    #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sType << ", defaulting to clenshaw-curtis." << endl; }
-    #endif // _TASMANIAN_DEBUG_
+    #endif // NDEBUG
     ((TasmanianSparseGrid*) grid)->makeGlobalGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights, alpha, beta, custom_filename, limit_levels);
 }
 void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const char *sRule, const int *anisotropic_weights, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
     TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
-    #ifdef _TASMANIAN_DEBUG_
+    #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sRule << ", defaulting to clenshaw-curtis." << endl; }
-    #endif // _TASMANIAN_DEBUG_
+    #endif // NDEBUG
     if (depth_type == type_none){ depth_type = type_iptotal; }
     if (rule == rule_none){ rule = rule_clenshawcurtis; }
     ((TasmanianSparseGrid*) grid)->makeSequenceGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights, limit_levels);
 }
 void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int depth, int order, const char *sRule, const int *limit_levels){
     TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
-    #ifdef _TASMANIAN_DEBUG_
+    #ifndef NDEBUG
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sRule << ", defaulting to localp." << endl; }
-    #endif // _TASMANIAN_DEBUG_
+    #endif // NDEBUG
     if (rule == rule_none){ rule = rule_localp; }
     ((TasmanianSparseGrid*) grid)->makeLocalPolynomialGrid(dimensions, outputs, depth, order, rule, limit_levels);
 }
@@ -1535,17 +1535,17 @@ void tsgMakeWaveletGrid(void *grid, int dimensions, int outputs, int depth, int 
 
 void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
-    #ifdef _TASMANIAN_DEBUG_
+    #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
-    #endif // _TASMANIAN_DEBUG_
+    #endif // NDEBUG
     if (depth_type == type_none){ depth_type = type_iptotal; }
     ((TasmanianSparseGrid*) grid)->updateGlobalGrid(depth, depth_type, anisotropic_weights, limit_levels);
 }
 void tsgUpdateSequenceGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
-    #ifdef _TASMANIAN_DEBUG_
+    #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
-    #endif // _TASMANIAN_DEBUG_
+    #endif // NDEBUG
     if (depth_type == type_none){ depth_type = type_iptotal; }
     ((TasmanianSparseGrid*) grid)->updateSequenceGrid(depth, depth_type, anisotropic_weights, limit_levels);
 }
@@ -1645,17 +1645,17 @@ void tsgGetLevelLimits(void *grid, int *limits){ ((TasmanianSparseGrid*) grid)->
 
 void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth, int output, const int *level_limits){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
-    #ifdef _TASMANIAN_DEBUG_
+    #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
-    #endif // _TASMANIAN_DEBUG_
+    #endif // NDEBUG
     if (depth_type == type_none){ depth_type = type_iptotal; }
     ((TasmanianSparseGrid*) grid)->setAnisotropicRefinement(depth_type, min_growth, output, level_limits);
 }
 int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int output, int *num_coefficients){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
-    #ifdef _TASMANIAN_DEBUG_
+    #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
-    #endif // _TASMANIAN_DEBUG_
+    #endif // NDEBUG
     if (depth_type == type_none){ depth_type = type_iptotal; }
     *num_coefficients = ((TasmanianSparseGrid*) grid)->getNumDimensions();
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
@@ -1669,9 +1669,9 @@ int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int outp
 }
 void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, int output, int *coefficients){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
-    #ifdef _TASMANIAN_DEBUG_
+    #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
-    #endif // _TASMANIAN_DEBUG_
+    #endif // NDEBUG
     if (depth_type == type_none){ depth_type = type_iptotal; }
     int num_coefficients = ((TasmanianSparseGrid*) grid)->getNumDimensions();
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
@@ -1686,9 +1686,9 @@ void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output, con
 }
 void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output, const int *level_limits){
     TypeRefinement ref_type = OneDimensionalMeta::getIOTypeRefinementString(sRefinementType);
-    #ifdef _TASMANIAN_DEBUG_
+    #ifndef NDEBUG
     if (ref_type == refine_none){ cerr << "WARNING: incorrect refinement type: " << sRefinementType << ", defaulting to type_classic." << endl; }
-    #endif // _TASMANIAN_DEBUG_
+    #endif // NDEBUG
     if (ref_type == refine_none){ ref_type = refine_classic; }
     ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, ref_type, output, level_limits);
 }

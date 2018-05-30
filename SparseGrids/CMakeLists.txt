@@ -18,6 +18,13 @@ else()
     add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid})
 endif()
 
+# Tasmanian_EXTRA_LIBRARIES gives the user an option to force extra dependencies,
+# for example, on some systems (e.g., OLCF) find_package(BLAS) fails to
+# recognize that libacml_mp requires libgomp, so the build fails with either clang or ENABLE_OPENMP=OFF
+# -D Tasmanian_EXTRA_LIBRARIES=/path/to/libgomp.so circumvents the issue
+# NOTE: adding Tasmanian_EXTRA_LIBRARIES to SparseGrids will propagate to all other targets
+target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_EXTRA_LIBRARIES})
+
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
@@ -57,8 +64,8 @@ if (Tasmanian_ENABLE_OPENMP)
     endif()
 endif()
 
-install(TARGETS ${Tasmanian_libtsg_target_name}
-        EXPORT Tasmanian_exports
+install(TARGETS "${Tasmanian_libtsg_target_name}"
+        EXPORT "${CMAKE_PROJECT_NAME}-exports"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
@@ -150,6 +157,7 @@ if (Tasmanian_ENABLE_OPENMP AND OpenMP_CXX_LIBRARIES)
     target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
 endif()
 
+
 ########################################################################
 # add the libraries
 ########################################################################
@@ -160,9 +168,10 @@ endif()
 if (Tasmanian_STATIC_LIBRARY)
     Tasmanian_macro_add_libsparsegrid(STATIC)
 
+    # if static libraries are available, executables link statically
     target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_static)
-else()
+else() # if there are not static libs, use shared libs for the executables
     target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_shared)
     target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_shared)
 endif()
@@ -175,7 +184,8 @@ if (Tasmanian_SHARED_LIBRARY AND Tasmanian_STATIC_LIBRARY)
 endif()
 
 # data file, needed for testing and reference about custom rule definitions
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
+
 
 ########################################################################
 # Windows specific support (DLL export/import directives and names)
@@ -191,7 +201,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         target_compile_definitions(${Tasmanian_dream_target} PUBLIC  -D_USE_MATH_DEFINES) # needed to include M_PI constant
     endmacro()
 
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.windows.hpp"  "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp" COPYONLY)
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/TasmanianSparseGrid.windows.hpp"  "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp" COPYONLY)
 
     if (Tasmanian_SHARED_LIBRARY)
         target_compile_definitions(Tasmanian_libsparsegrid_shared PUBLIC -DTSG_DLL)
@@ -229,6 +239,7 @@ if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
         ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
 endif()
 
+
 ########################################################################
 # Install headers and config files
 ########################################################################
@@ -242,12 +253,16 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.h"
         DESTINATION include
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
-        DESTINATION "examples"
+        DESTINATION "share/Tasmanian/examples/"
         FILES_MATCHING PATTERN "*.cpp"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"
+        DESTINATION "share/Tasmanian/"
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+
 install(TARGETS Tasmanian_tasgrid
-        EXPORT Tasmanian_exports
+        EXPORT "${CMAKE_PROJECT_NAME}-exports"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")

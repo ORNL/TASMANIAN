@@ -3,7 +3,7 @@
 
 @ECHO Compiling SparseGrids
 
-copy Config\tasmanianConfig.hpp SparseGrids\tasmanianConfig.hpp
+copy Config\AltBuildSystems\TasmanianConfig.hpp SparseGrids\TasmanianConfig.hpp
 
 cd SparseGrids
 call WindowsMakeSG.bat
@@ -25,8 +25,8 @@ copy DREAM\tasdream.exe tasdream.exe
 
 copy Config\AltBuildSystems\TasmanianSG.windows.py TasmanianSG.py
 copy Examples\example_sparse_grids.py example_sparse_grids.py
-copy Testing\testTSG.py testTSG.py
-copy Testing\sandbox.py sandbox.py
+copy Config\AltBuildSystems\testTSG.py testTSG.py
+copy InterfacePython\sandbox.py sandbox.py
 
 copy Config\AltBuildSystems\tsgGetPaths.m InterfaceMATLAB\tsgGetPaths.m
 

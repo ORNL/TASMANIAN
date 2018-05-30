@@ -1,42 +1,57 @@
 cmake_minimum_required(VERSION 3.5)
 project(Tasmanian_Examples)
 
-include("@CMAKE_INSTALL_PREFIX@/config/Tasmanian.cmake")
+# the include command imports the targets for all compiled Tasmanian libraries
+include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
+
 # one of Tasmanian_libsparsegrid_static or Tasmanian_libsparsegrid_shares is always available
-# here is default to the static library, unless only a shared one is available
-# you can also explicitly link to _static or _shared
+# the code below uses the static library, unless only a shared one is available
+# it is also possilbe to explicitly link to _static or _shared
 if (TARGET Tasmanian_libsparsegrid_static)
-    set(Tasmanian_libsparsegrid Tasmanian_libsparsegrid_static)
-    set(Tasmanian_libdream Tasmanian_libdream_static)
+    set(Tasmanian_libsparsegrid  Tasmanian_libsparsegrid_static)
+    set(Tasmanian_libdream       Tasmanian_libdream_static)
 else()
-    set(Tasmanian_libsparsegrid Tasmanian_libsparsegrid_shared)
-    set(Tasmanian_libdream Tasmanian_libdream_shared)
+    set(Tasmanian_libsparsegrid  Tasmanian_libsparsegrid_shared)
+    set(Tasmanian_libdream       Tasmanian_libdream_shared)
 endif()
 
-add_executable(example_sparse_grids example_sparse_grids.cpp)
-add_executable(example_dream example_dream.cpp)
+add_executable(example_sparse_grids  example_sparse_grids.cpp)
+add_executable(example_dream         example_dream.cpp)
 
-target_link_libraries(example_sparse_grids ${Tasmanian_libsparsegrid})
-target_link_libraries(example_dream ${Tasmanian_libdream})
+target_link_libraries(example_sparse_grids  ${Tasmanian_libsparsegrid})
+target_link_libraries(example_dream         ${Tasmanian_libdream})
 
-# if fortran is available, then add the fortran example
+# if Fortran is available, then add the Fortran example
 if (TARGET Tasmanian_libfortran90_static)
     enable_language(Fortran)
-    add_executable(example_sparse_grids_f90 example_sparse_grids.f90)
-    target_link_libraries(example_sparse_grids_f90 Tasmanian_libfortran90_static)
+    add_executable(example_sparse_grids_f90  example_sparse_grids.f90)
+    target_link_libraries(example_sparse_grids_f90  Tasmanian_libfortran90_static)
 elseif (TARGET Tasmanian_libfortran90_shared)
     enable_language(Fortran)
-    add_executable(example_sparse_grids_f90 example_sparse_grids.f90)
-    target_link_libraries(example_sparse_grids_f90 Tasmanian_libfortran90_shared)
+    add_executable(example_sparse_grids_f90  example_sparse_grids.f90)
+    target_link_libraries(example_sparse_grids_f90  Tasmanian_libfortran90_shared)
 endif()
 
-# OpenMP, as a CXX language extension, is usually enabled with both a compile flag and a library
-# in cmake prior to version 3.9.6, there is no proper way to export the OpenMP library dependence
-# if Tasmanian was compiled with Tasmanian_ENABLE_OPENMP=ON and an older version of cmake
-# then further down you will see the OpenMP flag used on compile time
-# NOTE: this flag only works if both Tasmanian and the examples are build with the same compiler
-# if you don't see a flag below, then either OpenMP was disabled, or Tasmanian was build with
-# a newer version of cmake and the OpenMP dependence was properly propagated by the
-# call to "target_link_libraries()" above, i.e., you don't have to do anything extra
-
 @Tasmanian_openmp_hack@
+
+# OpenMP is a CXX language extension which is usually enabled with a compiler flag and a library
+# the flag tells the compiler to interpret the OpenMP language directives
+# the library is needed to implement some aspects of OpenMP functionality (e.g., omp_get_num_threads())
+# usually, compilers take the flag and automatically link to the library without an explicit link statement
+# but different compilers use different flags and OpenMP libraries
+#
+# CMake, prior to version 3.9.6, has no proper way to export the OpenMP library dependence
+# cmake offers no way to export a link flag and
+# calls to older find_package(OpenMP) do not return the library used by the compiler
+#
+# if Tasmanian was compiled with Tasmanian_ENABLE_OPENMP=ON and an older version of cmake
+# then, further up, you will see the OpenMP compiler flag used during the Tasmanian build process
+# the flag can be added to any project that imports Tasmanian, which will tell the compiler to
+# use the proper OpenMP library
+# BUT NOTE that this will only work if Tasmanian and the user project both call the same compiler
+# using a different compiler means that you must manually link to the OpenMP library
+# (usually, the library is libgom for gcc, and libiomp for clang)
+#
+# if you don't see a flag, then either OpenMP was disabled, or Tasmanian was build with
+# a newer version of cmake and the OpenMP dependence was properly propagated by the
+# calls to "include()" and "target_link_libraries()", i.e., you don't have to do anything extra

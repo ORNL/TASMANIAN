@@ -63,12 +63,12 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         if (rule == rule_customtabulated){
             if (num_levels > meta->getCustom()->getNumLevels()){
                 if (logstream != 0){ (*logstream) << "ERROR: custom-tabulated rule needed with levels " << num_levels << ", but only " << meta->getCustom()->getNumLevels() << " are provided." << endl; }
-                #ifndef TASMANIAN_XSDK
-                exit(1); // disabled by TASMANIAN_XSDK
+                #ifndef USE_XSDK_DEFAULTS
+                exit(1); // disabled by USE_XSDK_DEFAULTS
                 #else
                 max_level = meta->getCustom()->getNumLevels();
                 num_levels = max_levels;
-                #endif // TASMANIAN_XSDK
+                #endif // USE_XSDK_DEFAULTS
             }
         }
 
@@ -149,12 +149,12 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
             gp = new TableGaussPatterson();
             if (num_levels > gp->getNumLevels()){
                 if (logstream != 0){ (*logstream) << "ERROR: gauss-patterson rule needed with level " << max_level << ", but only " << gp->getNumLevels() << " are hardcoded." << endl; }
-                #ifndef TASMANIAN_XSDK
-                exit(1); // disabled by TASMANIAN_XSDK
+                #ifndef USE_XSDK_DEFAULTS
+                exit(1); // disabled by USE_XSDK_DEFAULTS
                 #else
                 max_level = gp->getNumLevels()-1;
                 num_levels = max_level+1;
-                #endif // TASMANIAN_XSDK
+                #endif // USE_XSDK_DEFAULTS
             }
             unique = gp->getNodes(max_level);
 

@@ -33,7 +33,7 @@ if ((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${Tasmanian_shared_or_static}
 endif()
 
 install(TARGETS ${Tasmanian_libfor_target_name}
-        EXPORT Tasmanian_exports
+        EXPORT "${CMAKE_PROJECT_NAME}-exports"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
@@ -89,5 +89,5 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tasmaniansg.mod"
         DESTINATION include
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/Examples/example_sparse_grids.f90"
-        DESTINATION "examples"
+        DESTINATION "share/Tasmanian/examples/"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)

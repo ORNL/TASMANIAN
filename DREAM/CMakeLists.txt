@@ -54,7 +54,7 @@ if (Tasmanian_ENABLE_MPI)
 endif()
 
 install(TARGETS ${Tasmanian_libtdr_target_name}
-        EXPORT Tasmanian_exports
+        EXPORT "${CMAKE_PROJECT_NAME}-exports"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
@@ -76,8 +76,6 @@ add_executable(Tasmanian_example_dream Examples/example_dream.cpp)
 set_property(TARGET Tasmanian_tasdream      PROPERTY CXX_STANDARD 11)
 set_property(TARGET Tasmanian_example_dream PROPERTY CXX_STANDARD 11)
 
-list(APPEND Tasmanian_install_dream_targets Tasmanian_tasdream)
-
 set_target_properties(Tasmanian_tasdream PROPERTIES OUTPUT_NAME "tasdream")
 set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
 
@@ -88,19 +86,16 @@ if (Tasmanian_SHARED_LIBRARY)
     Tasmanian_macro_add_libdream(SHARED)
 
     target_link_libraries(Tasmanian_libdream_shared Tasmanian_libsparsegrid_shared)
-
-    list(APPEND Tasmanian_install_dream_targets Tasmanian_libdream_shared)
 endif()
 
 if (Tasmanian_STATIC_LIBRARY)
     Tasmanian_macro_add_libdream(STATIC)
 
+    # if static libraries are available, executables link statically
     target_link_libraries(Tasmanian_libdream_static Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_tasdream        Tasmanian_libdream_static)
     target_link_libraries(Tasmanian_example_dream   Tasmanian_libdream_static)
-
-    list(APPEND Tasmanian_install_dream_targets Tasmanian_libdream_static)
-else()
+else() # if there are not static libs, use shared libs for the executables
     target_link_libraries(Tasmanian_tasdream      Tasmanian_libdream_shared)
     target_link_libraries(Tasmanian_example_dream Tasmanian_libdream_shared)
 endif()
@@ -120,9 +115,9 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     endmacro()
 
     if (Tasmanian_SHARED_LIBRARY)
-        target_compile_definitions(Tasmanian_libdeam_shared PUBLIC -DTSG_DLL)
+        target_compile_definitions(Tasmanian_libdream_shared PUBLIC -DTSG_DLL)
 
-        Tasmanian_macro_dream_windows_defines(${Tasmanian_libdeam_shared})
+        Tasmanian_macro_dream_windows_defines(Tasmanian_libdream_shared)
     else()
         target_compile_definitions(Tasmanian_tasdream PUBLIC -DTSG_DYNAMIC)
     endif()
@@ -130,12 +125,12 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     if (Tasmanian_STATIC_LIBRARY)
         target_compile_definitions(Tasmanian_libdream_static PUBLIC -DTSG_STATIC)
 
-        Tasmanian_macro_dream_windows_defines(${Tasmanian_libdeam_static})
+        Tasmanian_macro_dream_windows_defines(Tasmanian_libdream_static)
 
         set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream_static")
     endif()
 
-    Tasmanian_macro_dream_windows_defines(${Tasmanian_tasdream})
+    Tasmanian_macro_dream_windows_defines(Tasmanian_tasdream)
 endif()
 
 ########################################################################
@@ -160,12 +155,12 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
         PATTERN "*.in.*" EXCLUDE
         PATTERN "Examples" EXCLUDE)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
-        DESTINATION "examples"
+        DESTINATION "share/Tasmanian/examples/"
         FILES_MATCHING PATTERN "*.cpp"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 install(TARGETS Tasmanian_tasdream
-        EXPORT Tasmanian_exports
+        EXPORT "${CMAKE_PROJECT_NAME}-exports"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
