@@ -62,31 +62,32 @@ endif()
 
 # OpenMP setup
 if (Tasmanian_ENABLE_OPENMP)
-    if (NOT DEFINED ${OpenMP_CXX_FLAGS})
-        find_package(OpenMP)
+    find_package(OpenMP)
 
-        if ((NOT OPENMP_FOUND) AND (NOT OPENMP_CXX_FOUND))
-            if (Tasmanian_STRICT_OPTIONS)
-                message(FATAL_ERROR "-D Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed")
-            else()
-                message("-D Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed\noverwritting option: -D Tasmanian_ENABLE_OPENMP:BOOL=OFF")
-                set(Tasmanian_ENABLE_OPENMP OFF)
-            endif()
+    if ((NOT OPENMP_FOUND) AND (NOT OPENMP_CXX_FOUND)) # OPENMP_FOUND is used prior to cmake 3.9
+        if (Tasmanian_STRICT_OPTIONS)
+            message(FATAL_ERROR "-D Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed")
+        else()
+            message("-D Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed\noverwritting option: -D Tasmanian_ENABLE_OPENMP:BOOL=OFF")
+            set(Tasmanian_ENABLE_OPENMP OFF)
+        endif()
+    else()
+        if (NOT DEFINED OpenMP_CXX_LIBRARIES)
+            # on older versions of cmake use global flags, see comment in SparseGrids/CMakeLists.txt
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         endif()
     endif()
 endif()
 
 # Python setup, look for python
 if (Tasmanian_ENABLE_PYTHON)
-    if(NOT DEFINED PYTHON_EXECUTABLE)
-        find_package(PythonInterp)
-        if (NOT PYTHONINTERP_FOUND)
-            if (Tasmanian_STRICT_OPTIONS)
-                message(FATAL_ERROR "-D Tasmanian_ENABLE_PYTHON is ON, but find_package(PythonInterp) failed\nuse -D PYTHON_EXECUTABLE:PATH to specify valid python interpreter")
-            else()
-                message("-D Tasmanian_ENABLE_PYTHON is ON, but find_package(PythonInterp) failed\nuse -D PYTHON_EXECUTABLE:PATH to specify python interpreter\noverwritting option: -D Tasmanian_ENABLE_PYTHON:BOOL=OFF")
-                set(Tasmanian_ENABLE_PYTHON OFF)
-            endif()
+    find_package(PythonInterp)
+    if (NOT PYTHONINTERP_FOUND)
+        if (Tasmanian_STRICT_OPTIONS)
+            message(FATAL_ERROR "-D Tasmanian_ENABLE_PYTHON is ON, but find_package(PythonInterp) failed\nuse -D PYTHON_EXECUTABLE:PATH to specify valid python interpreter")
+        else()
+            message("-D Tasmanian_ENABLE_PYTHON is ON, but find_package(PythonInterp) failed\nuse -D PYTHON_EXECUTABLE:PATH to specify python interpreter\noverwritting option: -D Tasmanian_ENABLE_PYTHON:BOOL=OFF")
+            set(Tasmanian_ENABLE_PYTHON OFF)
         endif()
     endif()
 endif()
@@ -122,8 +123,13 @@ if (Tasmanian_ENABLE_CUDA OR (Tasmanian_ENABLE_CUBLAS AND (NOT DEFINED CUDA_CUBL
     find_package(CUDA)
 
     if (CUDA_FOUND)
-        # there is no other way to pass the "c++11" flag to CUDA, as of cmake 3.5, CUDA_NVCC_FLAGS cannot be specified per target
-        list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
+        if(${CMAKE_VERSION} VERSION_LESS "3.7.0")
+            # cmake versions prior to 3.7.0 do not respect c++11 flags and include directories defined per target
+            # there is no other way to pass the "c++11" flag to CUDA or to include the condifured folder
+            # cmake versions 3.7.0 and above do not need the statements below
+            list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
+            include_directories("${CMAKE_CURRENT_BINARY_DIR}/configured/")
+        endif()
     else()
         if (Tasmanian_STRICT_OPTIONS)
             message(FATAL_ERROR "Tasmanian_ENABLE_CUBLAS or Tasmanian_ENABLE_CUDA is on, but find_package(CUDA) failed")
@@ -177,6 +183,12 @@ if (Tasmanian_ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
+########################################################################
+# Needed for TasmanianConfig.cmake and TasmanianConfigVersion.cmake
+# enables the use of "find_package(Tasmanian <version>)"
+########################################################################
+include(CMakePackageConfigHelpers)
+
 
 ########################################################################
 # Compiler specific flags: Intel hasn't been tested in a while
@@ -199,15 +211,11 @@ endif()
 
 ########################################################################
 # Extra directories:
-# sometimes find_package() fails to recognize all dependencies
+# rarely but sometimes find_package() fails to recognize all dependencies
 # the extra variables here allow the user to circumvent the problem by
 # including additional directories, also check SparseGrids/CMakeLists.txt
-# comment about Tasmanian_EXTRA_LIBRARIES
+# comment about Tasmanian_EXTRA_LIBRARIES and Tasmanian_EXTRA_INCLUDE_DIRS
 ########################################################################
-if (DEFINED Tasmanian_EXTRA_INCLUDE_DIRS)
-    include_directories(${Tasmanian_EXTRA_INCLUDE_DIRS})
-endif()
-
 if (DEFINED Tasmanian_EXTRA_LINK_DIRS)
-    link_directories(${Tasmanian_EXTRA_LINK_DIRS})
+    link_directories(${Tasmanian_EXTRA_LINK_DIRS}) # cannot be done per-target
 endif()

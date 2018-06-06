@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.5)
-
 ########################################################################
 # Sparse Grid librareis and command line tool
 ########################################################################
@@ -14,6 +12,7 @@ endif()
 
 if (Tasmanian_ENABLE_CUDA)
     cuda_add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
+    set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CUDA_STANDARD 11)
 else()
     add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid})
 endif()
@@ -23,7 +22,10 @@ endif()
 # recognize that libacml_mp requires libgomp, so the build fails with either clang or ENABLE_OPENMP=OFF
 # -D Tasmanian_EXTRA_LIBRARIES=/path/to/libgomp.so circumvents the issue
 # NOTE: adding Tasmanian_EXTRA_LIBRARIES to SparseGrids will propagate to all other targets
+# same holds for Tasmanian_EXTRA_INCLUDE_DIRS
 target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_EXTRA_LIBRARIES})
+target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:${Tasmanian_EXTRA_INCLUDE_DIRS}>)
+target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${Tasmanian_EXTRA_INCLUDE_DIRS}>)
 
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
@@ -59,13 +61,11 @@ if (Tasmanian_ENABLE_OPENMP)
         # from clang will create an OpenMP target that uses libiomp
         target_link_libraries(${Tasmanian_libtsg_target_name} ${OpenMP_CXX_LIBRARIES})
         target_compile_options(${Tasmanian_libtsg_target_name} PRIVATE ${OpenMP_CXX_FLAGS})
-    else()
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     endif()
 endif()
 
 install(TARGETS "${Tasmanian_libtsg_target_name}"
-        EXPORT "${CMAKE_PROJECT_NAME}-exports"
+        EXPORT  "${CMAKE_PROJECT_NAME}-exports"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
@@ -235,8 +235,8 @@ add_test(SparseGridsWavelet      tasgrid -test wavelet)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
     set_tests_properties(SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement SparseGridsGlobal SparseGridsLocal SparseGridsWavelet
         PROPERTIES
-        PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
-        ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
+        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
+        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
 endif()
 
 

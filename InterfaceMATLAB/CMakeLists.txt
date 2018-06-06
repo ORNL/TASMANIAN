@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.5)
-
 ########################################################################
 # MATLAB interface, examples and tests
 ########################################################################
@@ -45,7 +43,7 @@ file(COPY  tsgCancelRefine.m
            DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/matlab/")
 
 # set MATLAB (tasgrid and temp folder) for the build folder (stage 1)
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/") # put temp files if running matlab from the build location
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.build.m" "${CMAKE_CURRENT_BINARY_DIR}/matlab/tsgGetPaths.m" @ONLY)
 
 # set MATLAB (tasgrid and temp folder) for the install folder (stage 2)

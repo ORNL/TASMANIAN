@@ -6,7 +6,7 @@
 # Do not put any other code here, this is for human readable info only
 ########################################################################
 set(Tasmanian_post_install "--------------------------------------------------------------------------------\n")
-set(Tasmanian_post_install "${Tasmanian_post_install}Tasmanian Install Complete\n\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}Tasmanian Install Complete: installed version ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}\n\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}executables:      tasgrid\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}                  tasdream\n")
 if (Tasmanian_SHARED_LIBRARY)
@@ -38,7 +38,7 @@ set(Tasmanian_post_install "${Tasmanian_post_install}                  ${CMAKE_I
 if (Tasmanian_ENABLE_FORTRAN)
     set(Tasmanian_post_install "${Tasmanian_post_install}Fortran examples: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/examples/example_sparse_grids.f90\n")
 endif()
-set(Tasmanian_post_install "${Tasmanian_post_install}                  see CMakeLists.txt in ${CMAKE_INSTALL_PREFIX}/examples\n\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}                  see CMakeLists.txt in ${CMAKE_INSTALL_PREFIX}/shared/Tasmanian/examples\n\n")
 
 set(Tasmanian_post_install "${Tasmanian_post_install}bash export commands (add to your environment, i.e., ~/.bashrc):\n\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}export PATH=$PATH:${CMAKE_INSTALL_PREFIX}/bin/\n")
@@ -47,7 +47,7 @@ set(Tasmanian_post_install "${Tasmanian_post_install}export LD_LIBRARY_PATH=$LD_
 set(Tasmanian_post_install "${Tasmanian_post_install}above commands are writte in the following\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}bash source files: ${CMAKE_INSTALL_PREFIX}/config/TasmanianENVsetup.sh\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}cmake import:             ${CMAKE_INSTALL_PREFIX}/lib/Tasmanian/Tasmanian.cmake\n")
-set(Tasmanian_post_install "${Tasmanian_post_install}cmake directive:          include(\\\"${CMAKE_INSTALL_PREFIX}/lib/Tasmanian/Tasmanian.cmake\\\")\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}cmake directive:          find_package(Tasmanian ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}.${Tasmanian_VERSION_PATCH} PATHS \\\"${CMAKE_INSTALL_PREFIX}/lib/\\\")\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}cmake executable targets: Tasmanian_tasgrid\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}                          Tasmanian_tasdream\n")
 if (Tasmanian_ENABLE_FORTRAN)
@@ -91,4 +91,4 @@ set(Tasmanian_post_install "${Tasmanian_post_install}---------------------------
 
 install(CODE "message(\"${Tasmanian_post_install}\")")
 install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log \"${Tasmanian_post_install}\")")
-install(CODE "message(\"information stored in: ${CMAKE_INSTALL_PREFIX}/config/Tasmanian.log\n\")")
+install(CODE "message(\"information stored in: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log\n\")")

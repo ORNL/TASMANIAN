@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.5)
-
 ########################################################################
 # Fortran librareis and command line tools
 ########################################################################
@@ -23,7 +21,7 @@ target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTE
 set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran90")
 
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
-target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/>)
+target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
 
 # setup the name, in MacOSX and Linux static libraries use .a extension and shared libs use .dylib and .so
 # in Windows, shared .dll libs need another file for linking which shares .lib extension with the static libs
@@ -77,8 +75,8 @@ add_test(Fortran90 fortester)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
     set_tests_properties(Fortran90
         PROPERTIES
-        PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
-        ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
+        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
+        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
 endif()
 
 

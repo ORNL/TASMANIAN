@@ -1,8 +1,17 @@
 cmake_minimum_required(VERSION 3.5)
 project(Tasmanian_Examples)
 
-# the include command imports the targets for all compiled Tasmanian libraries
-include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
+# if given the Tasmanian install path, find_package() can be used to include the correct version of Tasmanian with all targets
+find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasmanian_VERSION_PATCH@ PATHS "@CMAKE_INSTALL_PREFIX@/lib/")
+
+# Alternatively, a project can skip PATHS, but "@CMAKE_INSTALL_PREFIX@/lib/" must be included in CMAKE_PREFIX_PATH
+# this can be done from the command line with option -D CMAKE_PREFIX_PATH="@CMAKE_INSTALL_PREFIX@/lib/" then
+# find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasmanian_VERSION_PATCH@)
+
+# Alternatively, a project can directly include the exported targets with the following command
+# include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
+# Note: find_package() calls the above include command, but also checks the version
+
 
 # one of Tasmanian_libsparsegrid_static or Tasmanian_libsparsegrid_shares is always available
 # the code below uses the static library, unless only a shared one is available
