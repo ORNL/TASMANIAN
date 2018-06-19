@@ -93,6 +93,7 @@ public:
     static bool isSingleNodeGrowth(TypeOneDRule rule);
     static bool isLocalPolynomial(TypeOneDRule rule);
     static bool isWavelet(TypeOneDRule rule);
+    static bool isFourier(TypeOneDRule rule);
 
     static TypeOneDRule getIORuleString(const char *name);
     static const char* getIORuleString(TypeOneDRule rule);
@@ -134,6 +135,8 @@ namespace OneDimensionalNodes{
     double* getRLeja(int n);
     double* getRLejaCentered(int n);
     double* getRLejaShifted(int n);
+
+    double* getFourierNodes(int level);
 }
 
 }

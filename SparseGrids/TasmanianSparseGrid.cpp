@@ -56,7 +56,7 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     #endif // _OPENMP
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), domain_transform_a(0), domain_transform_b(0),
+TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0), domain_transform_a(0), domain_transform_b(0),
                                              conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0){
 #ifndef USE_XSDK_DEFAULTS
     logstream = &cerr;
@@ -65,7 +65,7 @@ TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pw
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
 }
-TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0),
+TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0),
                                     domain_transform_a(0), domain_transform_b(0), conformal_asin_power(0), llimits(0),
                                     acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0)
 {
@@ -87,6 +87,7 @@ void TasmanianSparseGrid::clear(){
     if (sequence != 0){ delete sequence; sequence = 0; }
     if (pwpoly != 0){ delete pwpoly; pwpoly = 0; }
     if (wavelet != 0){ delete wavelet; wavelet = 0; }
+    if (fourier != 0){ delete fourier; fourier = 0; }
     if (domain_transform_a != 0){ delete[] domain_transform_a; domain_transform_a = 0; }
     if (domain_transform_b != 0){ delete[] domain_transform_b; domain_transform_b = 0; }
     if (conformal_asin_power != 0){ delete[] conformal_asin_power; conformal_asin_power = 0; }
@@ -220,6 +221,17 @@ void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth
         std::copy(level_limits, level_limits + dimensions, llimits);
     }
 }
+void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){
+    clear();
+    fourier = new GridFourier();
+    fourier->makeGrid(dimensions, outputs, depth, type, anisotropic_weights, level_limits);
+    base = fourier;
+    if(level_limits != 0) {
+        llimits = new int[dimensions];
+        std::copy(level_limits, level_limits + dimensions, llimits);
+    }
+}
+
 void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
     clear();
     if (source->global != 0){
@@ -234,6 +246,9 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
     }else if (source->wavelet != 0){
         wavelet = new GridWavelet(*(source->wavelet));
         base = wavelet;
+    } else if (source->fourier != 0) {
+        fourier = new GridFourier(*(source->fourier));
+        base = fourier;
     }
     if (source->domain_transform_a != 0){
         setDomainTransform(source->domain_transform_a, source->domain_transform_b);
@@ -443,6 +458,9 @@ bool TasmanianSparseGrid::isLocalPolynomial() const{
 bool TasmanianSparseGrid::isWavelet() const{
     return (wavelet != 0);
 }
+bool TasmanianSparseGrid::isFourier() const{
+    return (fourier != 0);
+}
 
 void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[]){
     if ((base == 0) || (base->getNumDimensions() == 0)){
@@ -488,7 +506,13 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
             x[i] += domain_transform_a[j];
         }
         delete[] sqrt_b;
-    }else{ // canonical [-1, 1]
+    } else if(rule == rule_fourier) {
+        for(int i=0; i<num_points * num_dimensions; i++) {
+            int j = i % num_dimensions;
+            x[i] *= domain_transform_b[j]-domain_transform_a[j];
+            x[i] += domain_transform_a[j];
+        }
+    } else{ // canonical [-1,1]
         double *rate = new double[num_dimensions];
         double *shift = new double[num_dimensions];
         for(int j=0; j<num_dimensions; j++){
@@ -520,7 +544,13 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
             x[i] *= sqrt_b[j];
         }
         delete[] sqrt_b;
-    }else{ // canoncail [-1, 1]
+    } else if(rule == rule_fourier) {   // map to [0,1]^d
+        for(int i=0; i<num_points * num_dimensions; i++) {
+            int j = i % num_dimensions;
+            x[i] -= domain_transform_a[j];
+            x[i] /= domain_transform_b[j]-domain_transform_a[j];
+        }
+    } else{ // canonical [-1,1]
         double *rate = new double[num_dimensions];
         double *shift = new double[num_dimensions];
         for(int j=0; j<num_dimensions; j++){
@@ -556,7 +586,9 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
     }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){
         double power = -0.5 * (1.0 + global->getAlpha());
         for(int j=0; j<num_dimensions; j++) scale *= pow(domain_transform_b[j], power);
-    }else{
+    }else if(rule == rule_fourier) {
+        for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]); 
+    } else{
         for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]) / 2.0;
     }
     return scale;
@@ -1008,7 +1040,9 @@ const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
         return sequence->getSurpluses();
     }else if (global != 0){
         return global->getLoadedValues();
-    }else{
+    }else if (fourier != 0){
+        return fourier->getFourierCoefs();
+    } else {
         return 0;
     }
 }

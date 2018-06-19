@@ -167,6 +167,74 @@ void TasmanianTridiagonalSolver::decompose(int n, double d[], double e[], double
     }
 }
 
+void TasmanianFourierTransform::dft(const int rank, const int n[], const std::complex<double> data[], std::complex<double> out[], const int direction) {
+    // Fourier transform code by ZBM
+    // DOES NOT NORMALIZE the outgoing Fourier coefficients
+
+    if(direction != 1 && direction != -1) std::cerr << "ERROR: direction must be -1 (forward) or 1 (backward); value is " << direction << std::endl;
+    int num_data = 1;
+    for(int r=0; r<rank; r++) {
+        num_data *= n[r];
+    }
+
+    std::complex<double> i(0,1);
+
+
+    int k_idx[rank];
+    std::fill(k_idx, k_idx+rank, 0);
+    int k_restart_dim = 1;
+    std::complex<double>* exp_k = new std::complex<double>[rank];
+    std::fill(exp_k, exp_k+rank, 1);
+
+    for(int k=0; k<num_data; k++) {
+        int t=k;
+
+        for(int r=rank-1; r>=0; r--) {
+            if((t % n[r]) - k_idx[r] == 1) { k_restart_dim = r; }
+            k_idx[r] = t % n[r];
+            t /= n[r];
+        }
+
+        // Only recompute the factors that have changed since the previous step
+        for(int r=k_restart_dim; r<rank; r++) {
+            exp_k[r] = std::exp(direction * 2*M_PI*i*((double) k_idx[r]) / ((double) n[r]));
+        }
+
+        // initialize
+        out[k] = data[0];
+
+        int j_idx[rank];
+        std::fill(j_idx, j_idx+rank, 0);
+        int j_restart_dim = rank-1;
+
+        // exp_j_hist[r] = \prod_{m=0}^r exp(-2*pi*i*k_m*j_m/N_m)
+
+        std::complex<double>* exp_j_hist = new std::complex<double>[rank];
+        std::fill(exp_j_hist, exp_j_hist+rank, 1);
+
+        for(int j=1; j<num_data; j++) {
+            int q=j;
+            for(int r=rank-1; r>=0; r--) {
+                if((q % n[r]) - j_idx[r] == 1) { j_restart_dim=r; }
+                j_idx[r] = q % n[r];
+                q /= n[r];
+            }
+
+
+            // Only recompute the part of the running product that has changed
+            for(int r=j_restart_dim; r<rank; r++) {
+                exp_j_hist[r] = (r > 0 ? exp_j_hist[r-1] : 1) * std::pow(exp_k[r], j_idx[r]);
+            }
+
+            out[k] += exp_j_hist[rank-1]*data[j];
+
+        }
+        delete[] exp_j_hist;
+    }
+
+    delete[] exp_k;
+}
+
 }
 
 namespace TasSparse{
