@@ -13,6 +13,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_ENABLE_MPI:BOOL=OFF
 #    -D Tasmanian_ENABLE_CUBLAS:BOOL=ON
 #    -D Tasmanian_ENABLE_CUDA:BOOL=OFF
+#    -D Tasmanian_ENABLE_MAGMA:BOOL=OFF
 #    -D Tasmanian_ENABLE_MATLAB:BOOL=OFF
 #    -D Tasmanian_ENABLE_PYTHON:BOOL=ON
 #    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF
@@ -45,6 +46,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #  specifies those variables, then there is no need to call find)
 #     -D PYTHON_EXECUTABLE:PATH
 #     -D CUDA_TOOLKIT_ROOT_DIR:PATH
+#     -D Tasmanian_MAGMA_ROOT_DIR:PATH
 #     -D OpenMP_CXX_FLAGS:STRING
 #     -D BLAS_LIBRARIES:STRING
 #     -D CUDA_CUBLAS_LIBRARIES:STRING
@@ -68,6 +70,8 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #     -D CUDA_INCLUDE_DIRS
 #     -D CUDA_LIBRARIES
 #     -D CUDA_cusparse_LIBRARY
+#     -D Tasmanian_MAGMA_INCLUDE_DIRS
+#     -D Tasmanian_MAGMA_LIBRARIES
 #     -D PYTHON_VERSION_MAJOR
 #     -D PYTHON_VERSION_MINOR
 #
@@ -103,8 +107,9 @@ option(Tasmanian_ENABLE_MPI     "Enable MPI support for Tasmanian"       OFF)
 option(Tasmanian_ENABLE_MATLAB  "Enable MATLAB interface for Tasmanian"  OFF)
 option(Tasmanian_ENABLE_PYTHON  "Enable Python interface for Tasmanian"  ON)
 option(Tasmanian_ENABLE_FORTRAN "Enable Fortran interface for Tasmanian" OFF)
-option(Tasmanian_ENABLE_CUBLAS  "Enable Nvidia GPU acceleration using cuBLAS for Tasmanian"       ON)
-option(Tasmanian_ENABLE_CUDA    "Enable Nvidia GPU acceleration using CUDA kernels for Tasmanian" OFF)
+option(Tasmanian_ENABLE_CUBLAS  "Enable Nvidia GPU acceleration using cuBLAS within Tasmanian"       ON)
+option(Tasmanian_ENABLE_CUDA    "Enable Nvidia GPU acceleration using CUDA kernels within Tasmanian" OFF)
+option(Tasmanian_ENABLE_MAGMA   "Enable acceleration using UTK Magma library within Tasmanian" OFF)
 option(Tasmanian_STATIC_LIBRARY "Compile static library and the executables with static linkage (Tasmanian)" ON)
 option(Tasmanian_SHARED_LIBRARY "Compile dynamic library (Tasmanian)" ON)
 
@@ -241,10 +246,10 @@ if (NOT USE_XSDK_DEFAULTS)
     if (Tasmanian_ENABLE_CUDA)
         message(" -D CUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}")
     endif()
-    foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_MPI
-                             Tasmanian_ENABLE_MATLAB Tasmanian_ENABLE_PYTHON
-                             Tasmanian_ENABLE_CUBLAS Tasmanian_ENABLE_CUDA
-                             Tasmanian_ENABLE_FORTRAN
+    foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_MPI
+                             Tasmanian_ENABLE_MATLAB  Tasmanian_ENABLE_PYTHON
+                             Tasmanian_ENABLE_CUBLAS  Tasmanian_ENABLE_CUDA
+                             Tasmanian_ENABLE_MAGMA   Tasmanian_ENABLE_FORTRAN
                              Tasmanian_SHARED_LIBRARY Tasmanian_STATIC_LIBRARY)
         if (${Tasmanian_option})
             message(" -D ${Tasmanian_option}:BOOL=ON")
@@ -252,6 +257,9 @@ if (NOT USE_XSDK_DEFAULTS)
             message(" -D ${Tasmanian_option}:BOOL=OFF")
         endif()
     endforeach()
+    if (Tasmanian_MAGMA AND Tasmanian_MAGMA_ROOT)
+        message(" -D Tasmanian_MAGMA_ROOT:PATH=${Tasmanian_MAGMA_ROOT}")
+    endif()
     if (Tasmanian_ENABLE_MATLAB)
         message(" -D Tasmanian_MATLAB_WORK_FOLDER:PATH=${Tasmanian_MATLAB_WORK_FOLDER}")
         message(" pre-install MATLAB folder: addpath('${CMAKE_CURRENT_BINARY_DIR}/MATLAB/matlab/')")
