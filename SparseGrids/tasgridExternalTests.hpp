@@ -75,7 +75,8 @@ public:
     bool Test(TestList test) const;
 
     bool testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, bool interpolation, const int depths[], const double tols[]) const;
-    bool performGLobalTest(const TasGrid::TypeOneDRule rule) const;
+    bool performGLobalTest(TasGrid::TypeOneDRule rule) const;
+    bool performGaussTransfromTest(TasGrid::TypeOneDRule rule) const;
 
     bool testLocalPolynomialRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const;
     bool testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[]) const;

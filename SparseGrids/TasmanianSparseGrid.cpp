@@ -490,13 +490,13 @@ void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
 }
 
 void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const{
-    if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){
+    if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){ // canonical (0, +infty)
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
             x[i] /= domain_transform_b[j];
             x[i] += domain_transform_a[j];
         }
-    }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){
+    }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){ // (-infty, +infty)
         double *sqrt_b = new double[num_dimensions];
         for(int j=0; j<num_dimensions; j++) sqrt_b[j] = sqrt(domain_transform_b[j]);
         for(int i=0; i<num_points * num_dimensions; i++){
@@ -505,7 +505,7 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
             x[i] += domain_transform_a[j];
         }
         delete[] sqrt_b;
-    }else{
+    }else{ // canoncail [-1, 1]
         double *rate = new double[num_dimensions];
         double *shift = new double[num_dimensions];
         for(int j=0; j<num_dimensions; j++){
@@ -522,13 +522,13 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
     }
 }
 void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const{
-    if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){
+    if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){ // canonical (0, +infty)
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
             x[i] -= domain_transform_a[j];
             x[i] *= domain_transform_b[j];
         }
-    }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){
+    }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){ // (-infty, +infty)
         double *sqrt_b = new double[num_dimensions];
         for(int j=0; j<num_dimensions; j++) sqrt_b[j] = sqrt(domain_transform_b[j]);
         for(int i=0; i<num_points * num_dimensions; i++){
@@ -537,7 +537,7 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
             x[i] *= sqrt_b[j];
         }
         delete[] sqrt_b;
-    }else{
+    }else{ // canoncail [-1, 1]
         double *rate = new double[num_dimensions];
         double *shift = new double[num_dimensions];
         for(int j=0; j<num_dimensions; j++){
@@ -555,9 +555,18 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
 }
 double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule rule) const{
     double scale = 1.0;
-    if ((rule == rule_gausschebyshev1) || (rule == rule_gausschebyshev2) || (rule == rule_gaussgegenbauer) || (rule == rule_gaussjacobi)){
-        double alpha = (rule == rule_gausschebyshev1) ? -0.5 : (rule == rule_gausschebyshev2) ? 0.5 : global->getAlpha();
-        double beta = (rule == rule_gausschebyshev1) ? -0.5 : (rule == rule_gausschebyshev2) ? 0.5 : (rule == rule_gaussgegenbauer) ? global->getAlpha() : global->getBeta();
+    // gauss- (chebyshev1, chebyshev2, gegenbauer) are special case of jacobi
+    // points and weight are computed differently for better stability
+    // the transform is the same, just have to set the effective alpha/beta for each case
+    if ((rule == rule_gausschebyshev1)    || (rule == rule_gausschebyshev2)    || (rule == rule_gaussgegenbauer)    || (rule == rule_gaussjacobi) ||
+        (rule == rule_gausschebyshev1odd) || (rule == rule_gausschebyshev2odd) || (rule == rule_gaussgegenbauerodd) || (rule == rule_gaussjacobiodd)){
+        double alpha = ((rule == rule_gausschebyshev1) || (rule == rule_gausschebyshev1odd)) ? -0.5 :
+                       ((rule == rule_gausschebyshev2) || (rule == rule_gausschebyshev2odd)) ?  0.5 : 
+                       global->getAlpha();
+        double beta = ((rule == rule_gausschebyshev1) || (rule == rule_gausschebyshev1odd)) ? -0.5 : 
+                      ((rule == rule_gausschebyshev2) || (rule == rule_gausschebyshev2odd)) ?  0.5 : 
+                      ((rule == rule_gaussgegenbauer) || (rule == rule_gaussgegenbauerodd)) ? global->getAlpha() : 
+                      global->getBeta();
         for(int j=0; j<num_dimensions; j++) scale *= pow(0.5*(domain_transform_b[j] - domain_transform_a[j]), alpha + beta + 1.0);
     }else if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){
         for(int j=0; j<num_dimensions; j++) scale *= pow(domain_transform_b[j], -(1.0 + global->getAlpha()));

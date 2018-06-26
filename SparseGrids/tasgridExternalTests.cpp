@@ -35,7 +35,7 @@
 
 #include "tsgCudaMacros.hpp"
 
-ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1){ /*srand(time(0));*/ srand(10); }
+ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1){ srand(10); }
 ExternalTester::~ExternalTester(){}
 void ExternalTester::resetRandomSeed(){ srand(time(0)); }
 
@@ -43,9 +43,8 @@ void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 void ExternalTester::setGPUID(int gpu_id){ gpuid = gpu_id; }
 
 void ExternalTester::setRandomX(int n, double x[]) const{
-    for(int i=0; i<n; i++){
+    for(int i=0; i<n; i++)
         x[i] = 2.0 * ((double) rand()) / ((double) RAND_MAX) -1.0;
-    }
 }
 
 bool ExternalTester::Test(TestList test) const{
@@ -324,8 +323,8 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
-    }else if (rule == TasGrid::rule_chebyshev){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_chebyshev;
+    }else if ((rule == TasGrid::rule_chebyshev) || (rule == TasGrid::rule_chebyshevodd)){
+        { TasGrid::TypeOneDRule oned = rule;
         const int depths1[3] = { 22, 22, 22 };
         const double tols1[3] = { 1.E-12, 1.E-10, 1.E-10 };
         const int depths2[3] = { 22, 22, 22 };
@@ -335,30 +334,8 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
-    }else if (rule == TasGrid::rule_chebyshevodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_chebyshevodd;
-        const int depths1[3] = { 22, 22, 22 };
-        const double tols1[3] = { 1.E-12, 1.E-10, 1.E-10 };
-        const int depths2[3] = { 22, 22, 22 };
-        const double tols2[3] = { 1.E-12, 1.E-09, 1.E-09 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_leja){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_leja;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 3.E-10, 5.E-09, 5.E-09 };
-        const int depths2[3] = { 20, 20, 20 };
-        const double tols2[3] = { 3.E-09, 5.E-08, 5.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_lejaodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_lejaodd;
+    }else if ((rule == TasGrid::rule_leja) || (rule == TasGrid::rule_lejaodd)){
+        { TasGrid::TypeOneDRule oned = rule;
         const int depths1[3] = { 20, 20, 20 };
         const double tols1[3] = { 3.E-10, 5.E-09, 5.E-09 };
         const int depths2[3] = { 20, 20, 20 };
@@ -379,19 +356,8 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
-    }else if (rule == TasGrid::rule_rlejadouble2){
+    }else if ((rule == TasGrid::rule_rlejadouble2) || (rule == TasGrid::rule_rlejadouble4)){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_rlejadouble2;
-        const int depths1[3] = { 25, 25, 25 };
-        const double tols1[3] = { 1.E-12, 1.E-11, 1.E-11 };
-        const int depths2[3] = { 25, 27, 27 };
-        const double tols2[3] = { 1.E-12, 1.E-10, 1.E-10 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_rlejadouble4){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_rlejadouble4;
         const int depths1[3] = { 25, 25, 25 };
         const double tols1[3] = { 1.E-12, 1.E-11, 1.E-11 };
         const int depths2[3] = { 25, 27, 27 };
@@ -445,8 +411,10 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
-    }else if (rule == TasGrid::rule_maxlebesgue){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_maxlebesgue;
+    }else if ((rule == TasGrid::rule_mindelta) || (rule == TasGrid::rule_mindeltaodd) ||
+        (rule == TasGrid::rule_minlebesgue) || (rule == TasGrid::rule_minlebesgueodd) ||
+        (rule == TasGrid::rule_maxlebesgue) || (rule == TasGrid::rule_maxlebesgueodd)){
+        { TasGrid::TypeOneDRule oned = rule;
         const int depths1[3] = { 20, 20, 20 };
         const double tols1[3] = { 3.E-10, 5.E-09, 5.E-09 };
         const int depths2[3] = { 20, 20, 20 };
@@ -456,74 +424,8 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
-    }else if (rule == TasGrid::rule_maxlebesgueodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_maxlebesgueodd;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 3.E-10, 5.E-09, 5.E-09 };
-        const int depths2[3] = { 20, 20, 20 };
-        const double tols2[3] = { 3.E-09, 5.E-08, 5.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_minlebesgue){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_minlebesgue;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 3.E-10, 5.E-09, 5.E-09 };
-        const int depths2[3] = { 20, 20, 20 };
-        const double tols2[3] = { 3.E-09, 5.E-08, 5.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_minlebesgueodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_minlebesgueodd;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 3.E-10, 5.E-09, 5.E-09 };
-        const int depths2[3] = { 20, 20, 20 };
-        const double tols2[3] = { 3.E-09, 5.E-08, 5.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_mindelta){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_mindelta;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 3.E-10, 5.E-09, 5.E-09 };
-        const int depths2[3] = { 20, 20, 20 };
-        const double tols2[3] = { 3.E-09, 5.E-08, 5.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_mindeltaodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_mindeltaodd;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 3.E-10, 5.E-09, 5.E-09 };
-        const int depths2[3] = { 20, 20, 20 };
-        const double tols2[3] = { 3.E-09, 5.E-08, 5.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_gausslegendre){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausslegendre;
-        const int depths1[3] = { 20, 36, 38 };
-        const double tols1[3] = { 1.E-10, 1.E-07, 1.E-07 };
-        const int depths2[3] = { 24, 36, 36 };
-        const double tols2[3] = { 1.E-10, 1.E-07, 1.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_gausslegendreodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausslegendreodd;
+    }else if ((rule == TasGrid::rule_gausslegendre) || (rule == TasGrid::rule_gausslegendreodd)){
+        { TasGrid::TypeOneDRule oned = rule;
         const int depths1[3] = { 20, 36, 38 };
         const double tols1[3] = { 1.E-10, 1.E-07, 1.E-07 };
         const int depths2[3] = { 24, 36, 36 };
@@ -572,18 +474,72 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
-    }else if (rule == TasGrid::rule_gausschebyshev1){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausschebyshev1;
+    }else if ((rule == TasGrid::rule_gausschebyshev1) || (rule == TasGrid::rule_gausschebyshev1odd)){
+        { TasGrid::TypeOneDRule oned = rule;
         const int depths1[3] = { 20, 20, 20 };
         const double tols1[3] = { 5.E-14, 1.E-05, 1.E-05 };
-        if (testGlobalRule(&f21constGC1, oned, 0, alpha, beta, true, depths1, tols1)){
+        if (testGlobalRule(&f21constGC1, oned, 0, alpha, beta, true, depths1, tols1) && performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }
+        }}
+    }else if ((rule == TasGrid::rule_gausschebyshev2) || (rule == TasGrid::rule_gausschebyshev2odd)){
+        { TasGrid::TypeOneDRule oned = rule;
+        const int depths1[3] = { 20, 20, 20 };
+        const double tols1[3] = { 1.1E-14, 1.E-05, 1.E-05 };
+        if (testGlobalRule(&f21constGC2, oned, 0, alpha, beta, true, depths1, tols1) && performGaussTransfromTest(oned)){
+            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
+        }else{
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }}
+    }else if ((rule == TasGrid::rule_gaussgegenbauer) || (rule == TasGrid::rule_gaussgegenbauerodd)){
+        { TasGrid::TypeOneDRule oned = rule;
+        const int depths1[3] = { 20, 20, 20 };
+        const double tols1[3] = { 1.E-11, 1.E-05, 1.E-05 };
+        if (testGlobalRule(&f21constGG, oned, 0, alpha, beta, true, depths1, tols1) && performGaussTransfromTest(oned)){
+            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
+        }else{
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }}
+    }else if ((rule == TasGrid::rule_gaussjacobi) || (rule == TasGrid::rule_gaussjacobiodd)){
+        { TasGrid::TypeOneDRule oned = rule;
+        const int depths1[3] = { 20, 20, 20 };
+        const double tols1[3] = { 1.E-08, 1.E-05, 1.E-05 };
+        if (testGlobalRule(&f21constGJ, oned, 0, alpha, beta, true, depths1, tols1) && performGaussTransfromTest(oned)){
+            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
+        }else{
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }}
+    }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){
+        { TasGrid::TypeOneDRule oned = rule;
+        const int depths1[1] = { 20 };
+        const double tols1[1] = { 1.E-08 };
+        if (testGlobalRule(&f21constGGL, oned, 0, alpha, beta, false, depths1, tols1) && performGaussTransfromTest(oned)){
+            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
+        }else{
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }}
+    }else if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){
+        { TasGrid::TypeOneDRule oned = rule;
+        const int depths1[1] = { 20 };
+        const double tols1[1] = { 1.E-09 };
+        if (testGlobalRule(&f21constGH, oned, 0, alpha, beta, false, depths1, tols1) && performGaussTransfromTest(oned)){
+            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
+        }else{
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
+        }}
+    }
+    return pass;
+}
+
+bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const{
+    //double alpha = 0.3, beta = 0.7;
+    bool pass = true;
+    int wfirst = 10, wsecond = 35, wthird = 15;
+    if ((oned == TasGrid::rule_gausschebyshev1) || (oned == TasGrid::rule_gausschebyshev1odd)){
         // Gauss-Chebyshev-1 translated to [4, 7], area = M_PI, integral of f(x) = 1 / x is M_PI * sqrt(7.0) / 14.0
         TasGrid::TasmanianSparseGrid grid;
-        grid.makeGlobalGrid(1, 1, 6, type_level, rule_gausschebyshev1);
+        grid.makeGlobalGrid(1, 1, 6, type_level, oned);
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
         double *w = grid.getQuadratureWeights();
@@ -602,28 +558,11 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         delete[] w;
-        delete[] p; }
-    }else if (rule == TasGrid::rule_gausschebyshev1odd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausschebyshev1odd;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 2.E-14, 1.E-05, 1.E-05 };
-        if (testGlobalRule(&f21constGC1, oned, 0, alpha, beta, true, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_gausschebyshev2){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausschebyshev2;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 1.1E-14, 1.E-05, 1.E-05 };
-        if (testGlobalRule(&f21constGC2, oned, 0, alpha, beta, true, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }
+        delete[] p;
+    }else if ((oned == TasGrid::rule_gausschebyshev2) || (oned == TasGrid::rule_gausschebyshev2odd)){
         // Gauss-Chebyshev-2 translated to [4, 7], area = 9.0 * M_PI / 2.0, integral of f(x) = (7 - x)^0.5 (x - 4)^0.5 is 9.0 / 2.0
         TasGrid::TasmanianSparseGrid grid;
-        grid.makeGlobalGrid(1, 1, 10, type_level, rule_gausschebyshev2);
+        grid.makeGlobalGrid(1, 1, 10, type_level, oned);
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
         double *w = grid.getQuadratureWeights();
@@ -642,28 +581,11 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         delete[] w;
-        delete[] p; }
-    }else if (rule == TasGrid::rule_gausschebyshev2odd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausschebyshev2odd;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 1.1E-14, 1.E-05, 1.E-05 };
-        if (testGlobalRule(&f21constGC2, oned, 0, alpha, beta, true, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_gaussgegenbauer){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gaussgegenbauer;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 1.E-11, 1.E-05, 1.E-05 };
-        if (testGlobalRule(&f21constGG, oned, 0, alpha, beta, true, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }
+        delete[] p;
+    }else if ((oned == TasGrid::rule_gaussgegenbauer) || (oned == TasGrid::rule_gaussgegenbauerodd)){
         // Gauss-Gegenbauer translated to [4, 7], area = 8.1, integral of f(x) = x^3 is 389367.0 / 280.0
         TasGrid::TasmanianSparseGrid grid;
-        grid.makeGlobalGrid(1, 1, 10, type_level, rule_gaussgegenbauer, 0, 2.0);
+        grid.makeGlobalGrid(1, 1, 10, type_level, oned, 0, 2.0);
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
         double *w = grid.getQuadratureWeights();
@@ -681,28 +603,11 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         delete[] w;
-        delete[] p; }
-    }else if (rule == TasGrid::rule_gaussgegenbauerodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gaussgegenbauerodd;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 1.E-11, 1.E-05, 1.E-05 };
-        if (testGlobalRule(&f21constGG, oned, 0, alpha, beta, true, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_gaussjacobi){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gaussjacobi;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 1.E-08, 1.E-05, 1.E-05 };
-        if (testGlobalRule(&f21constGJ, oned, 0, alpha, beta, true, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }
+        delete[] p;
+    }else if ((oned == TasGrid::rule_gaussjacobi) || (oned == TasGrid::rule_gaussjacobiodd)){
         // Gauss-Jacobi translated to [4, 7], area = 12.15, integral of f(x) = x^3 is 389367.0 / 280.0
         TasGrid::TasmanianSparseGrid grid;
-        grid.makeGlobalGrid(1, 1, 10, type_level, rule_gaussjacobi, 0, 3.0, 2.0);
+        grid.makeGlobalGrid(1, 1, 10, type_level, oned, 0, 3.0, 2.0);
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
         double *w = grid.getQuadratureWeights();
@@ -720,25 +625,11 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         delete[] w;
-        delete[] p; }
-    }else if (rule == TasGrid::rule_gaussjacobiodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gaussjacobiodd;
-        const int depths1[3] = { 20, 20, 20 };
-        const double tols1[3] = { 1.E-08, 1.E-05, 1.E-05 };
-        if (testGlobalRule(&f21constGJ, oned, 0, alpha, beta, true, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_gausslaguerre){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausslaguerre;
-        const int depths1[1] = { 20 };
-        const double tols1[1] = { 1.E-08 };
-        if (!testGlobalRule(&f21constGGL, oned, 0, alpha, beta, false, depths1, tols1)){
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }
+        delete[] p;
+    }else if ((oned == TasGrid::rule_gausslaguerre) || (oned == TasGrid::rule_gausslaguerreodd)){
+        // Gauss-Laguerre, unbounded domain
         TasGrid::TasmanianSparseGrid grid;
-        grid.makeGlobalGrid(2, 1, 6, type_level, rule_gausslaguerre, 0, 3.0);
+        grid.makeGlobalGrid(2, 1, 6, type_level, oned, 0, 3.0);
         double transa[2] = {4.0, 3.0}, transb[2] = {0.5, 0.75};
         grid.setDomainTransform(transa, transb);
         double *w = grid.getQuadratureWeights();
@@ -747,12 +638,12 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
         if (fabs(sum - 96.0 * 512.0 / 27.0) > TSG_NUM_TOL){
             cout << sum << "     " << 96.0 * 512.0 / 27.0 << endl;
-            cout << "ERROR: sum of weight in transformed gauss-laguerr rule is off by: " << fabs(sum - 96.0 * 512.0 / 27.0) << endl;
+            cout << "ERROR: sum of weight in transformed gauss-laguerre rule is off by: " << fabs(sum - 96.0 * 512.0 / 27.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]);
-        if (fabs(sum - 15360.0 * 3573248.0 / 243.0) > 2.E-7){
-            cout << "ERROR: disrepancy in transformed gauss-laguerr rule is: " << fabs(sum - 15360.0 * 3573248.0 / 243.0) << endl;
+        if (fabs(sum - 15360.0 * 3573248.0 / 243.0) > 4.E-7){
+            cout << "ERROR: disrepancy in transformed gauss-laguerre rule is: " << fabs(sum - 15360.0 * 3573248.0 / 243.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         double test_x[2] = {3.0 + sqrt(2.0), 2.0 + sqrt(2.0)};
@@ -762,29 +653,13 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << "ERROR: nodal interpolation using gauss-laguerre: " << fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        if (pass && verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
         delete[] p;
         delete[] w;
         delete[] iw;
-        }
-    }else if (rule == TasGrid::rule_gausslaguerreodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausslaguerreodd;
-        const int depths1[1] = { 20 };
-        const double tols1[1] = { 1.E-08 };
-        if (testGlobalRule(&f21constGGL, oned, 0, alpha, beta, false, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
-    }else if (rule == TasGrid::rule_gausshermite){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausshermite;
-        const int depths1[1] = { 20 };
-        const double tols1[1] = { 1.E-09 };
-        if (!testGlobalRule(&f21constGH, oned, 0, alpha, beta, false, depths1, tols1)){
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }
+    }else if ((oned == TasGrid::rule_gausshermite) || (oned == TasGrid::rule_gausshermiteodd)){
+        // Gauss-Hermite, unbounded domain
         TasGrid::TasmanianSparseGrid grid;
-        grid.makeGlobalGrid(2, 1, 6, type_level, rule_gausshermite, 0, 4.0);
+        grid.makeGlobalGrid(2, 1, 6, type_level, oned, 0, 4.0);
         double transa[2] = {4.0, 3.0}, transb[2] = {0.5, 0.75};
         grid.setDomainTransform(transa, transb);
         double *w = grid.getQuadratureWeights();
@@ -808,20 +683,9 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << "ERROR: nodal interpolation using gauss-hermite: " << fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        if (pass && verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
         delete[] p;
         delete[] w;
         delete[] iw;
-        }
-    }else if (rule == TasGrid::rule_gausshermiteodd){
-        { TasGrid::TypeOneDRule oned = TasGrid::rule_gausshermiteodd;
-        const int depths1[1] = { 20 };
-        const double tols1[1] = { 1.E-09 };
-        if (testGlobalRule(&f21constGH, oned, 0, alpha, beta, false, depths1, tols1)){
-            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-        }else{
-            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-        }}
     }
     return pass;
 }
