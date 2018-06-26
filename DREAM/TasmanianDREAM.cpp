@@ -44,9 +44,9 @@ PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model
     grid(model), cmodel(0), num_dimensions(0), num_outputs(0), priors(0), priors_created_here(0),
     num_data(0), data(0), likely(0), num_cache(0), model_cache(0), logstream(os)
 {
-    #ifndef TASMANIAN_XSDK
+    #ifndef USE_XSDK_DEFAULTS
     if (logstream == 0) logstream = &cerr;
-    #endif // TASMANIAN_XSDK
+    #endif // USE_XSDK_DEFAULTS
     num_dimensions = grid->getNumDimensions();
     if (num_dimensions == 0){
         if (logstream != 0) (*logstream) << "ERROR: PosteriorFromModel cannot load a grid with no information" << endl;
@@ -64,9 +64,9 @@ PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model, std::ost
     grid(0), cmodel(model), num_dimensions(0), num_outputs(0), priors(0),  priors_created_here(0),
     num_data(0), data(0), likely(0), num_cache(0), model_cache(0), logstream(os)
 {
-    #ifndef TASMANIAN_XSDK
+    #ifndef USE_XSDK_DEFAULTS
     if (logstream == 0) logstream = &cerr;
-    #endif // TASMANIAN_XSDK
+    #endif // USE_XSDK_DEFAULTS
     num_dimensions = cmodel->getNumDimensions();
     if (num_dimensions == 0){
         if (logstream != 0) (*logstream) << "ERROR: PosteriorFromModel cannot load a model with no information" << endl;
@@ -154,9 +154,9 @@ void PosteriorFromModel::getDomainBounds(double* lower_bound, double* upper_boun
 DistributedPosteriorTSGModel::DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior, std::ostream *os) :
     posterior(local_posterior), comm(in_comm), num_chains(0), logstream(os){
 
-    #ifndef TASMANIAN_XSDK
+    #ifndef USE_XSDK_DEFAULTS
     if (logstream == 0) logstream = &cerr;
-    #endif // TASMANIAN_XSDK
+    #endif // USE_XSDK_DEFAULTS
 
     MPI_Comm_rank(comm, &comm_me);
     MPI_Comm_size(comm, &comm_size);
@@ -242,9 +242,9 @@ void DistributedPosteriorTSGModel::endWorkerLoop(){
 LikelihoodTSG::LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm, std::ostream *os) :
     grid(likely), savedLogarithmForm(savedLogForm), num_dimensions(0), priors(0), logstream(os)
 {
-    #ifndef TASMANIAN_XSDK
+    #ifndef USE_XSDK_DEFAULTS
     if (logstream == 0) logstream = &cerr;
-    #endif // TASMANIAN_XSDK
+    #endif // USE_XSDK_DEFAULTS
     num_dimensions = grid->getNumDimensions();
     if (num_dimensions < 1){
         if (logstream != 0) (*logstream) << "ERROR: cannot work with an empty Grid" << endl;
@@ -318,9 +318,9 @@ TasmanianDREAM::TasmanianDREAM(std::ostream *os): num_dimensions(-1), num_chains
     isBoudnedBelow(0), isBoudnedAbove(0), boundBelow(0), boundAbove(0), num_pdf_history(0),
     pdf_history(0), logstream(os)
 {
-    #ifndef TASMANIAN_XSDK
+    #ifndef USE_XSDK_DEFAULTS
     if (logstream == 0) logstream = &cerr;
-    #endif // TASMANIAN_XSDK
+    #endif // USE_XSDK_DEFAULTS
     core = &unifrom_cpp;
 }
 TasmanianDREAM::~TasmanianDREAM(){

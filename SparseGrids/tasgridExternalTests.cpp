@@ -208,7 +208,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     TasGrid::TypeDepth type = TasGrid::type_iptotal;
     double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
     bool bPass = true;
-    const char *custom_filename = (rule == rule_customtabulated) ? "GaussPattersonRule.table" : 0;
+    const char *custom_filename = (rule == rule_customtabulated) ? "SparseGrids/GaussPattersonRule.table" : 0;
     for(int i=0; i<num_global_tests; i++){
         if (interpolation){
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
@@ -546,7 +546,7 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         }}
     }else if (rule == TasGrid::rule_customtabulated){
         {
-        std::ifstream ftest("GaussPattersonRule.table");
+        std::ifstream ftest("SparseGrids/GaussPattersonRule.table");
         if (!ftest.good()){
             ftest.close();
             cout << "WARNING: cannot find GaussPattersonRule.table file and cannot test the custom rule!" << endl;
@@ -1070,7 +1070,7 @@ bool ExternalTester::testAllWavelet() const{
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(rule_wavelet) << setw(wthird) << "FAIL" << endl; pass = false;
-    }{ TasGrid::TasmanianSparseGrid grid; 
+    }{ TasGrid::TasmanianSparseGrid grid;
         grid.makeWaveletGrid(2, 1, 2, 1);
         int *indx = 0, *pntr = 0;
         double *vals = 0;
@@ -1109,10 +1109,10 @@ bool ExternalTester::testAllWavelet() const{
                 pass = false;
             }
         }
-        delete[] indx; 
-        delete[] pntr; 
-        delete[] vals; 
-        delete[] pnts; 
+        delete[] indx;
+        delete[] pntr;
+        delete[] vals;
+        delete[] pnts;
         delete[] y;
         delete[] v;
     }

@@ -375,10 +375,7 @@ int main(int argc, const char**){
     double *res = new double[1000];
 
     start_clock = clock();
-    #pragma omp parallel for
-    for(int i=0; i<1000; i++){
-        grid.evaluate(&(pnts[i*dim]), &(res[i]));
-    }
+    grid.evaluateBatch(pnts, 1000, res);
     end_clock = clock();
     int gstage3 = end_clock - start_clock;
 
@@ -397,10 +394,7 @@ int main(int argc, const char**){
     int sstage2 = end_clock - start_clock;
 
     start_clock = clock();
-    #pragma omp parallel for
-    for(int i=0; i<1000; i++){
-        sgrid.evaluate(&(pnts[i*dim]), &(res[i]));
-    }
+    sgrid.evaluateBatch(pnts, 1000, res);
     end_clock = clock();
     int sstage3 = end_clock - start_clock;
 

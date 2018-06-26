@@ -151,7 +151,7 @@ class TestTasmanian(unittest.TestCase):
         else:
             print("            none")
 
-        #grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
+        grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
 
         # test I/O for Global Grids
         # iDimension, iOutputs, iDepth, sType, sRule, fAlpha, fBeta, useTransform, loadFunciton, limitLevels
@@ -192,7 +192,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
         # test an error message from wrong read
-        #print("Attempting a bogus read to see if error would be properly registered")
+        print("Attempting a bogus read to see if error would be properly registered")
         gridB.disableLog()
         self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
         gridB.setErrorLogCerr()

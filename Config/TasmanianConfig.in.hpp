@@ -33,21 +33,16 @@
 
 #define TASMANIAN_VERSION_MAJOR @Tasmanian_VERSION_MAJOR@
 #define TASMANIAN_VERSION_MINOR @Tasmanian_VERSION_MINOR@
-#define TASMANIAN_VERSION_STRING "@Tasmanian_version_string@"
+#define TASMANIAN_VERSION_STRING "@Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@"
 #define TASMANIAN_LICENSE "@Tasmanian_license@"
 
-////////////////////////////////////////////////////////////////////////
-// In order to enable advanced options for Tasmanian,
-// the corresponding #define line below has to be uncommented
-// Note: cmake takes care of this automatically, use the lines
-// below only for simple GNU-Make
-// The lines below are for references purposes mostly,
-// we support advanced options only though cmake
-////////////////////////////////////////////////////////////////////////
-
+// cmake options propagated to the source code
 #cmakedefine Tasmanian_ENABLE_BLAS
 #cmakedefine Tasmanian_ENABLE_CUBLAS
 #cmakedefine Tasmanian_ENABLE_CUDA
 #cmakedefine Tasmanian_ENABLE_MPI
+
+// used mostly to suppress default cerr messages
+#cmakedefine USE_XSDK_DEFAULTS
 
 #endif

@@ -124,20 +124,20 @@ GaussPattersonRule.table: ./SparseGrids/GaussPattersonRule.table
 TasmanianSG.py: ./Config/AltBuildSystems/TasmanianSG.py
 	cp ./Config/AltBuildSystems/TasmanianSG.py .
 
-example_sparse_grids.py: ./Examples/example_sparse_grids.py
-	cp ./Examples/example_sparse_grids.py .
+example_sparse_grids.py: ./Config/AltBuildSystems/example_sparse_grids.py
+	cp ./Config/AltBuildSystems/example_sparse_grids.py .
 
 testTSG.py: ./Config/AltBuildSystems/testTSG.py
 	cp ./Config/AltBuildSystems/testTSG.py .
 
-sandbox.py: ./Testing/sandbox.py
-	cp ./Testing/sandbox.py .
+sandbox.py: ./InterfacePython/sandbox.py
+	cp ./InterfacePython/sandbox.py .
 
-example_sparse_grids.cpp: ./Examples/example_sparse_grids.cpp
-	cp ./Examples/example_sparse_grids.cpp .
+example_sparse_grids.cpp: ./SparseGrids/Examples/example_sparse_grids.cpp
+	cp ./SparseGrids/Examples/example_sparse_grids.cpp .
 
-example_dream.cpp: ./Examples/example_dream.cpp
-	cp ./Examples/example_dream.cpp .
+example_dream.cpp: ./DREAM/Examples/example_dream.cpp
+	cp ./DREAM/Examples/example_dream.cpp .
 
 # Matlab
 .PHONY: matlab
@@ -171,7 +171,7 @@ fortran_tester: libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
 	$(FF) $(OPTLFF) $(LADD) fortester.o -o fortester $(FFLIBS) -lstdc++
 
 example_sparse_grids_fortran: libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
-	cp Examples/example_sparse_grids.f90 .
+	cp ./InterfaceFortran/Examples/example_sparse_grids.f90 .
 	$(FF) $(OPTF) $(IADD) -c example_sparse_grids.f90 -o example_sparse_grids_fortran.o
 	$(FF) $(OPTLFF) $(LADD) example_sparse_grids_fortran.o -o example_sparse_grids_fortran $(FFLIBS) -lstdc++
 

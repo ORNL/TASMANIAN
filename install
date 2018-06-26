@@ -477,29 +477,13 @@ if [ ! $? == 0 ]; then
     exit 1;
 fi
 
-# when linking to the static library, a list of extra libraries is needed
-# use the cmake command from the examles to get that list
-if [[ $sEnableStatic == "ON" ]]; then
-    mkdir ExampleCmakeBuild
-    cd ExampleCmakeBuild
-    cmake $1 $sExtraCommand $sInstallPrefix/examples > /dev/null || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
-    sLinkCommand=`cat CMakeFiles/example_sparse_grids.dir/link.txt`
-    sLinkCommand=${sLinkCommand#*example_sparse_grids}
-    sLinkCommand=${sLinkCommand#*example_sparse_grids}
-    sLinkCommand=${sLinkCommand#*example_sparse_grids}
-    echo "export TasmanianSparseGrids_CXX_LINK='$sLinkCommand'" >> $sInstallPrefix/config/TasmanianDEVsetup.sh
-    cd ..
-else
-    echo "export TasmanianSparseGrids_CXX_LINK=''" >> $sInstallPrefix/config/TasmanianDEVsetup.sh
-fi
-
 if (( $bEnableTests == 1 )); then
     make test_install || { echo "ERROR: the post install test failed!"; bFailedTests=1; }
 fi
 
 # write out the build log
 set -x
-cat $sInstallPrefix/config/Tasmanian.log
+cat $sInstallPrefix/share/Tasmanian/Tasmanian.log
 # if you get here, it means things went well
 
 #######################################
@@ -530,18 +514,6 @@ if (( $bSkilBashrc == 0 )); then
     read -p "Append the command to ~/.bashrc? (y/N)" sAppend
     if [[ $sAppend == "y" ]] || [[ $sAppend == "Y" ]] || [[ $sAppend == "Yes" ]] || [[ $sAppend == "yes" ]]; then
         echo "source $sConfigPath/TasmanianENVsetup.sh" >> ~/.bashrc
-    fi
-    echo ""
-    echo "Compiling against Tasmanian libraries without the use of cmake"
-    echo "requires the following command:"
-    echo ""
-    echo "source $sConfigPath/TasmanianDEVsetup.sh"
-    echo ""
-    echo "If you are not using Tasmanian through C/C++ and Fortran, or if you are using cmake,"
-    echo "then you don't need this!"
-    read -p "Append command to ~/.bashrc? (y/N)" sAppend
-    if [[ $sAppend == "y" ]] || [[ $sAppend == "Y" ]] || [[ $sAppend == "Yes" ]] || [[ $sAppend == "yes" ]]; then
-        echo "source $sConfigPath/TasmanianDEVsetup.sh" >> ~/.bashrc
     fi
 fi
 

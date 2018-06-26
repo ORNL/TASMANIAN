@@ -39,7 +39,7 @@ except:
     bTsgPlotting = False
     tsgPlot = []
 
-__version__ = "@Tasmanian_version_string@"
+__version__ = "@Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@"
 __license__ = "@Tasmanian_license@"
 __author__ = "Miroslav Stoyanov"
 

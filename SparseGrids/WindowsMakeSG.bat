@@ -2,8 +2,8 @@
 
 @ECHO Compiling static library and executable
 
-copy TasmanianSparseGrid.windows.hpp TasmanianSparseGrid.hpp
-copy TasmanianSparseGrid.windows.h TasmanianSparseGrid.h
+copy ..\Config\AltBuildSystems\TasmanianSparseGrid.windows.hpp TasmanianSparseGrid.hpp
+copy ..\Config\AltBuildSystems\TasmanianSparseGrid.windows.h TasmanianSparseGrid.h
 
 del *.obj
 
