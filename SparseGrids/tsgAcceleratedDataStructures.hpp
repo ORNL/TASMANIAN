@@ -147,6 +147,8 @@ namespace AccelerationMeta{
     bool isAccTypeFullMemoryGPU(TypeAcceleration accel);
     bool isAccTypeGPU(TypeAcceleration accel);
 
+    TypeAcceleration getAvailableFallback(TypeAcceleration accel);
+    
     void cudaCheckError(void *cudaStatus, const char *info, std::ostream *os);
     void cublasCheckError(void *cublasStatus, const char *info, std::ostream *os);
     void cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os);

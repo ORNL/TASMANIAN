@@ -37,6 +37,8 @@
 
 #if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
 #define _TASMANIAN_SETGPU cudaSetDevice(gpuID);
+#else
+#define _TASMANIAN_SETGPU 
 #endif // defined
 
 namespace TasGrid{
@@ -364,28 +366,17 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
     const double *x_canonical = formCanonicalPoints(x, x_tmp, 1);
     switch (acceleration){
         case accel_gpu_default:
-        case accel_gpu_fullmemory:
         case accel_gpu_cublas:
-            #ifdef Tasmanian_ENABLE_CUBLAS
             _TASMANIAN_SETGPU
             base->evaluateFastGPUcublas(x_canonical, y, logstream);
             break;
-            #endif // Tasmanian_ENABLE_CUBLAS
         case accel_gpu_cuda:
-            #ifdef Tasmanian_ENABLE_CUDA
             _TASMANIAN_SETGPU
             base->evaluateFastGPUcuda(x_canonical, y, logstream);
             break;
-            #elif defined(Tasmanian_ENABLE_CUBLAS)
-            _TASMANIAN_SETGPU
-            base->evaluateFastGPUcublas(x_canonical, y, logstream);
-            break;
-            #endif // Tasmanian_ENABLE_CUDA
         case accel_cpu_blas:
-            #ifdef Tasmanian_ENABLE_BLAS
             base->evaluateFastCPUblas(x_canonical, y);
             break;
-            #endif // Tasmanian_ENABLE_BLAS
         default:
             base->evaluate(x_canonical, y);
             break;
@@ -396,36 +387,19 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
     double *x_tmp = 0;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
-    //for(int i=0; i<4; i++){
-    //    for(int j=0; j<base->getNumDimensions(); j++){
-    //        cout << x[i*base->getNumDimensions() + j] << "  ";
-    //    }
-    //    cout << endl;
-    //}
     switch (acceleration){
         case accel_gpu_default:
-        case accel_gpu_fullmemory:
         case accel_gpu_cublas:
-            #ifdef Tasmanian_ENABLE_CUBLAS
             _TASMANIAN_SETGPU
             base->evaluateBatchGPUcublas(x_canonical, num_x, y, logstream);
             break;
-            #endif // Tasmanian_ENABLE_CUBLAS
         case accel_gpu_cuda:
-            #ifdef Tasmanian_ENABLE_CUDA
             _TASMANIAN_SETGPU
             base->evaluateBatchGPUcuda(x_canonical, num_x, y, logstream);
             break;
-            #elif defined(Tasmanian_ENABLE_CUBLAS)
-            _TASMANIAN_SETGPU
-            base->evaluateBatchGPUcublas(x_canonical, num_x, y, logstream);
-            break;
-            #endif // Tasmanian_ENABLE_CUDA
         case accel_cpu_blas:
-            #ifdef Tasmanian_ENABLE_BLAS
             base->evaluateBatchCPUblas(x_canonical, num_x, y);
             break;
-            #endif // Tasmanian_ENABLE_BLAS
         default:
             base->evaluateBatch(x_canonical, num_x, y);
             break;
@@ -1379,9 +1353,10 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
 }
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
-    if (acc != acceleration){
+    TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
+    if (effective_acc != acceleration){
         if (base != 0) base->clearAccelerationData();
-        acceleration = acc;
+        acceleration = effective_acc;
         if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     }
 }
@@ -1420,10 +1395,8 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
 
         #if defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_CUBLAS) || defined(TASMANIAN_ENABLE_MAGMA)
         case accel_gpu_default:   return true;
-        case accel_gpu_fullmemory:   return true;
         #else
         case accel_gpu_default:   return false;
-        case accel_gpu_fullmemory:   return false;
         #endif // TASMANIAN_ENABLE_GPU
         default: return false;
     }

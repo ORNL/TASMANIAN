@@ -386,6 +386,51 @@ bool AccelerationMeta::isAccTypeGPU(TypeAcceleration accel){
     }
 }
 
+TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
+    if (accel == accel_gpu_default) accel = accel_gpu_magma;
+    switch(accel){
+        case accel_gpu_cuda:
+            #ifndef Tasmanian_ENABLE_CUDA 
+                #if defined(Tasmanian_ENABLE_CUBLAS)
+                accel = accel_gpu_cublas;
+                #elif defined(Tasmanian_ENABLE_MAGMA)
+                accel = accel_gpu_magma;
+                #else
+                accel = accel_cpu_blas; // BLAS needs only one if-statement, handle on run time
+                #endif
+            #endif            
+            break;
+        case accel_gpu_cublas:
+            #ifndef Tasmanian_ENABLE_CUBLAS 
+                #if defined(Tasmanian_ENABLE_MAGMA)
+                accel = accel_gpu_magma;
+                #elif defined(Tasmanian_ENABLE_CUDA)
+                accel = accel_gpu_cuda;
+                #else
+                accel = accel_cpu_blas; // BLAS needs only one if-statement, handle on run time
+                #endif
+            #endif            
+            break;
+        case accel_gpu_magma:
+            #ifndef Tasmanian_ENABLE_MAGMA 
+                #if defined(Tasmanian_ENABLE_CUDA)
+                accel = accel_gpu_cuda;
+                #elif defined(Tasmanian_ENABLE_CUBLAS)
+                accel = accel_gpu_cublas;
+                #else
+                accel = accel_cpu_blas; // BLAS needs only one if-statement, handle on run time
+                #endif
+            #endif            
+            break;
+        default:
+            break;
+    }
+    #ifndef Tasmanian_ENABLE_BLAS
+    if (accel == accel_cpu_blas) accel = accel_none; // 
+    #endif
+    return accel;
+}
+
 #if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
 void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::ostream *os){
     if (*((cudaError_t*) cudaStatus) != cudaSuccess){
