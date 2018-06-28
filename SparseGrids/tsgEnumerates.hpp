@@ -112,7 +112,6 @@ enum TypeRefinement{
 enum TypeAcceleration{
     accel_none,
     accel_cpu_blas, // default if compiled with CPU-BLAS flag
-    accel_gpu_fullmemory, // (deprecated, remove from code)
     accel_gpu_default, // currently magma (in v5.1 it was cuda)
     accel_gpu_cublas, // CPU + CUBLAS (effective for large num_outputs only)
     accel_gpu_cuda, // CUDA kernels, automatically couples with cublas

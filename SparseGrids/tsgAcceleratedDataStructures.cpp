@@ -335,8 +335,6 @@ TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
         return accel_gpu_cuda;
     }else if (strcmp(name, "gpu-magma") == 0){
         return accel_gpu_magma;
-    }else if (strcmp(name, "gpu-fullmem") == 0){
-        return accel_gpu_fullmemory;
     }else{
         return accel_none;
     }
@@ -348,14 +346,12 @@ const char* AccelerationMeta::getIOAccelerationString(TypeAcceleration accel){
         case accel_gpu_cublas:     return "gpu-cublas";
         case accel_gpu_cuda:       return "gpu-cuda";
         case accel_gpu_magma:      return "gpu-magma";
-        case accel_gpu_fullmemory: return "gpu-fullmem";
         default: return "none";
     }
 }
 int AccelerationMeta::getIOAccelerationInt(TypeAcceleration accel){
     switch (accel){
         case accel_cpu_blas:       return 1;
-        case accel_gpu_fullmemory: return 2;
         case accel_gpu_default:    return 3;
         case accel_gpu_cublas:     return 4;
         case accel_gpu_cuda:       return 5;
@@ -368,8 +364,7 @@ bool AccelerationMeta::isAccTypeFullMemoryGPU(TypeAcceleration accel){
         case accel_gpu_default:
         case accel_gpu_cublas:
         case accel_gpu_cuda:
-        case accel_gpu_magma:
-        case accel_gpu_fullmemory: return true;
+        case accel_gpu_magma: return true;
         default:
             return false;
     }
@@ -379,8 +374,7 @@ bool AccelerationMeta::isAccTypeGPU(TypeAcceleration accel){
         case accel_gpu_default:
         case accel_gpu_cublas:
         case accel_gpu_cuda:
-        case accel_gpu_magma:
-        case accel_gpu_fullmemory: return true;
+        case accel_gpu_magma: return true;
         default:
             return false;
     }
