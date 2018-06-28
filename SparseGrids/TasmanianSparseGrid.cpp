@@ -38,7 +38,7 @@
 #if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
 #define _TASMANIAN_SETGPU cudaSetDevice(gpuID);
 #else
-#define _TASMANIAN_SETGPU 
+#define _TASMANIAN_SETGPU
 #endif // defined
 
 namespace TasGrid{
@@ -374,6 +374,10 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
             _TASMANIAN_SETGPU
             base->evaluateFastGPUcuda(x_canonical, y, logstream);
             break;
+        case accel_gpu_magma:
+            _TASMANIAN_SETGPU
+            base->evaluateFastGPUmagma(x_canonical, y, logstream);
+            break;
         case accel_cpu_blas:
             base->evaluateFastCPUblas(x_canonical, y);
             break;
@@ -396,6 +400,10 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
         case accel_gpu_cuda:
             _TASMANIAN_SETGPU
             base->evaluateBatchGPUcuda(x_canonical, num_x, y, logstream);
+            break;
+        case accel_gpu_magma:
+            _TASMANIAN_SETGPU
+            base->evaluateBatchGPUmagma(x_canonical, num_x, y, logstream);
             break;
         case accel_cpu_blas:
             base->evaluateBatchCPUblas(x_canonical, num_x, y);
@@ -535,11 +543,11 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
     if ((rule == rule_gausschebyshev1)    || (rule == rule_gausschebyshev2)    || (rule == rule_gaussgegenbauer)    || (rule == rule_gaussjacobi) ||
         (rule == rule_gausschebyshev1odd) || (rule == rule_gausschebyshev2odd) || (rule == rule_gaussgegenbauerodd) || (rule == rule_gaussjacobiodd)){
         double alpha = ((rule == rule_gausschebyshev1) || (rule == rule_gausschebyshev1odd)) ? -0.5 :
-                       ((rule == rule_gausschebyshev2) || (rule == rule_gausschebyshev2odd)) ?  0.5 : 
+                       ((rule == rule_gausschebyshev2) || (rule == rule_gausschebyshev2odd)) ?  0.5 :
                        global->getAlpha();
-        double beta = ((rule == rule_gausschebyshev1) || (rule == rule_gausschebyshev1odd)) ? -0.5 : 
-                      ((rule == rule_gausschebyshev2) || (rule == rule_gausschebyshev2odd)) ?  0.5 : 
-                      ((rule == rule_gaussgegenbauer) || (rule == rule_gaussgegenbauerodd)) ? global->getAlpha() : 
+        double beta = ((rule == rule_gausschebyshev1) || (rule == rule_gausschebyshev1odd)) ? -0.5 :
+                      ((rule == rule_gausschebyshev2) || (rule == rule_gausschebyshev2odd)) ?  0.5 :
+                      ((rule == rule_gaussgegenbauer) || (rule == rule_gaussgegenbauerodd)) ? global->getAlpha() :
                       global->getBeta();
         for(int j=0; j<num_dimensions; j++) scale *= pow(0.5*(domain_transform_b[j] - domain_transform_a[j]), alpha + beta + 1.0);
     }else if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){
