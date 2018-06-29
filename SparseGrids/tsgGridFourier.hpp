@@ -4,7 +4,7 @@
 
 #include <cstdlib>
 #include <math.h>
-#include <complex.h>
+#include <complex>
 
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
@@ -47,15 +47,6 @@ public:
     double* getPoints() const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
     
-    void calculateFourierCoefficients();
-
-    std::complex<double>* getBasisFunctions(const double x[]) const;    // getInterpolationWeights in class BaseCanonicalGrid returns type double, NOT std::complex<double>
-    void getBasisFunctions(const double x[], double weights[]) const;
-    void getBasisFunctions(const double x[], std::complex<double> weights[]) const;
-
-    // These return -1, but we must override the virtual definitions in class BaseCanonicalGrid.
-    // The function values do not appear directly in the linear combination. 
-    // Instead, Fourier coefficients appear.
     double* getInterpolationWeights(const double x[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
     
@@ -87,9 +78,17 @@ public:
     const int* getPointIndexes() const;
     const IndexSet* getExponents() const;
     const double* getFourierCoefs() const;
+    bool blasEnabled() const;
 
 protected:
     void reset();
+    void calculateFourierCoefficients();
+
+    std::complex<double>* getBasisFunctions(const double x[]) const;    
+    void getBasisFunctions(const double x[], std::complex<double> weights[]) const;
+    void getBasisFunctions(const double x[], double weights[]) const;   // for evaluateHierarchicalFunctions (parallelized)
+    
+    int convertIndexes(const int i, const int levels[]) const;
 
 private:
     int num_dimensions, num_outputs;

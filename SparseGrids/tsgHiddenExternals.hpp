@@ -30,7 +30,7 @@
 
 #ifndef __TASMANIAN_SPARSE_GRID_HIDDEN_INTERNALS_HPP
 #define __TASMANIAN_SPARSE_GRID_HIDDEN_INTERNALS_HPP
-#include <complex.h>
+#include <complex>
 using std::complex;
 
 namespace TasGrid{
@@ -163,15 +163,15 @@ public:
         }
     }
     inline static void zgemv(int M, int N, const complex<double> A[], const complex<double> x[], complex<double> y[]) { // y = A*x, A is M by N; A, x, y are complex
-        for(i=0; i<M; i++) {
+        for(int i=0; i<M; i++) {
             y[i] = A[i]*x[0];
-            for(j=1; j<N; j++) y[i] += A[j*M + i]*x[j];
+            for(int j=1; j<N; j++) y[i] += A[j*M + i]*x[j];
         }
     }
     inline static void zgemtv(int M, int N,const complex<double> A[], const complex<double> x[], complex<double> y[]) { // y = A^T *x, A^T is M by N; A, x, y are complex
-        for(i=0; i<M; i++) {
+        for(int i=0; i<M; i++) {
             y[i] = A[i*M]*x[0];
-            for(j=1; j<N; j++) y[i] += A[i*M + j]*x[j];
+            for(int j=1; j<N; j++) y[i] += A[i*M + j]*x[j];
         }
     }
     inline static void dtrsm_LUTN(int M, int N, const double A[], double B[]){ // solve A = U^{-T} B (A comes from cholUTU)
@@ -198,7 +198,7 @@ public:
     inline static void zgemm(int M, int N, int K, complex<double> alpha, const complex<double> A[], const complex<double> B[], complex<double> beta, complex<double> C[]){
         for(int j=0; j<N; j++){
             for(int i=0; i<M; i++){
-                double sum = 0.0;
+                complex<double> sum = 0.0;
                 for(int k=0; k<K; k++){
                     sum += A[k*M + i] * B[j*N + k];
                 }

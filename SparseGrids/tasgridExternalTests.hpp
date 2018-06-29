@@ -60,7 +60,7 @@ enum TestType{
 };
 
 enum TestList{
-    test_all, test_acceleration, test_domain, test_refinement, test_global, test_local, test_wavelet
+    test_all, test_acceleration, test_domain, test_refinement, test_global, test_local, test_wavelet, test_fourier
 };
 
 class ExternalTester{
@@ -80,6 +80,7 @@ public:
 
     bool testLocalPolynomialRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const;
     bool testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[]) const;
+    bool testFourierRule(const BaseFunction *f, TasGrid::TypeDepth type, const int depths[], const double tols[]) const;
     bool testSurplusRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const;
     bool testAnisotropicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const;
     bool testAcceleration(const BaseFunction *f, TasmanianSparseGrid *grid) const;
@@ -90,6 +91,7 @@ public:
     bool testAllGlobal() const;
     bool testAllPWLocal() const;
     bool testAllWavelet() const;
+    bool testAllFourier() const;
     bool testAllRefinement() const;
     bool testAllDomain() const;
     bool testAllAcceleration() const;
@@ -114,6 +116,8 @@ private:
     TwoOneCos f21cos;
     TwoOneSinSin f21sinsin;
     TwoOneCosCos f21coscos;
+    TwoOneExpSinCos f21expsincos;
+    TwoTwoSinCos f22sincos;
     TwoOneDivisionAnisotropic f21aniso;
     TwoOne1DCurved f21curved;
 

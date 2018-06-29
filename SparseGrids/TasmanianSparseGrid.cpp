@@ -950,6 +950,17 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
         }
         pntr[num_x] = num_nz;
         delete[] dense_vals;
+    } else if(fourier != 0) {
+        int num_points = base->getNumPoints();
+        vals = new double[2*num_x * num_points];
+        base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);
+        pntr = new int[num_x + 1];
+        pntr[0] = 0;
+        for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + num_points;
+        indx  = new int[num_x * num_points];
+        for(int i=0; i<num_x; i++){
+            for(int j=0; j<num_points; j++) { indx[i*num_points + j] = j; }
+        }
     }else{
         int num_points = base->getNumPoints();
         vals = new double[num_x * num_points];

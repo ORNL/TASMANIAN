@@ -111,6 +111,8 @@ set(Tasmanian_source_libsparsegrid
         tsgGridLocalPolynomial.cpp
         tsgGridSequence.hpp
         tsgGridSequence.cpp
+        tsgGridFourier.hpp
+        tsgGridFourier.cpp
         tsgIndexManipulator.hpp
         tsgIndexManipulator.cpp
         tsgIndexSets.hpp
@@ -243,6 +245,7 @@ add_test(SparseGridsRefinement   tasgrid -test refinement)
 add_test(SparseGridsGlobal       tasgrid -test global)
 add_test(SparseGridsLocal        tasgrid -test local)
 add_test(SparseGridsWavelet      tasgrid -test wavelet)
+add_test(SparseGridFourier       tasgrid -test fourier)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
     set_tests_properties(SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement SparseGridsGlobal SparseGridsLocal SparseGridsWavelet
         PROPERTIES

@@ -180,7 +180,7 @@ void TasmanianFourierTransform::dft(const int rank, const int n[], const std::co
     std::complex<double> i(0,1);
 
 
-    int k_idx[rank];
+    int *k_idx = new int[rank];
     std::fill(k_idx, k_idx+rank, 0);
     int k_restart_dim = 1;
     std::complex<double>* exp_k = new std::complex<double>[rank];
@@ -203,7 +203,7 @@ void TasmanianFourierTransform::dft(const int rank, const int n[], const std::co
         // initialize
         out[k] = data[0];
 
-        int j_idx[rank];
+        int *j_idx = new int[rank];
         std::fill(j_idx, j_idx+rank, 0);
         int j_restart_dim = rank-1;
 

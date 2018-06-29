@@ -122,6 +122,18 @@ public:
     int getNumInputs() const; int getNumOutputs() const; const char* getDescription() const; void eval(const double x[], double y[]) const; void getIntegral(double y[]) const;
 };
 
+class TwoOneExpSinCos : public BaseFunction{
+public:
+    TwoOneExpSinCos(); ~TwoOneExpSinCos();
+    int getNumInputs() const; int getNumOutputs() const; const char* getDescription() const; void eval(const double x[], double y[]) const; void getIntegral(double y[]) const;
+};
+
+class TwoTwoSinCos : public BaseFunction{
+public:
+    TwoTwoSinCos(); ~TwoTwoSinCos();
+    int getNumInputs() const; int getNumOutputs() const; const char* getDescription() const; void eval(const double x[], double y[]) const; void getIntegral(double y[]) const;
+};
+
 class TwoOneExpm40: public BaseFunction{
 public:
     TwoOneExpm40(); ~TwoOneExpm40();

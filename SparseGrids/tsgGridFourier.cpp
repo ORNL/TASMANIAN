@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <ctime>
+
 #include "tsgGridFourier.hpp"
 #include "tsgHiddenExternals.hpp"
 
@@ -160,7 +161,7 @@ int GridFourier::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNu
 int GridFourier::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
 
-void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration acc) {
+void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration) {
     if (accel != 0) accel->resetGPULoadedData();
 
     if(points == 0) { //setting points for the first time
@@ -224,6 +225,54 @@ void GridFourier::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); };
 }
 
+int GridFourier::convertIndexes(const int i, const int levels[]) const {
+   
+    /*
+    We interpret this i as an external index. This function returns its associated internal index.
+    EXAMPLE: level-3 1D grid is [0, 1, 2, ..., 9] internally, but these indices correspond to
+        [0, 1/3, 2/3, 1/9, 2/9, 4/9, 5/9, 7/9, 8/9] externally. We say external indexing is arranged
+        in order of increasing x values.
+    */
+    
+    IndexSet *work = (points == 0 ? needed : points);
+    
+    int* cnum_oned_points = new int[num_dimensions];
+    for(int j=0; j<num_dimensions; j++) {
+        cnum_oned_points[j] = wrapper->getNumPoints(levels[j]);
+    }
+    
+    // This i is external indexing, flattened according to standard C (row-major) indexing
+    int t=i;
+    int* p=new int[num_dimensions];
+    for(int j=num_dimensions-1; j>=0; j--) {
+        p[j] = t % cnum_oned_points[j];
+        t /= cnum_oned_points[j];
+    }
+    // p[] stores the external indexing as a tensor address
+
+    
+    // Now we move from external to internal indexing
+    int *p_internal = new int[num_dimensions];
+    for(int j=0; j<num_dimensions; j++) {
+        int tmp = p[j]; 
+        if (tmp == 0) { 
+            p_internal[j] = 0; 
+        } else {
+            int go_back = 0;
+            while(tmp % 3 == 0 && tmp != 0) {
+                go_back += 1;
+                tmp /= 3;
+            }
+            
+            int num_prev_level = wrapper->getNumPoints(levels[j]-go_back-1);
+            p_internal[j] = num_prev_level + (tmp/3)*2 + tmp % 3 - 1;   
+        }
+    }
+
+    delete[] cnum_oned_points;
+    return (work->getSlot(p_internal));
+}
+
 void GridFourier::calculateFourierCoefficients() {
     int num_nodes = getNumPoints();
     
@@ -242,72 +291,41 @@ void GridFourier::calculateFourierCoefficients() {
                 num_tensor_points *= num_oned_points[j];
             }
          
-            // First we need to reorder from Tasmanian's internal indexing to get the point-grid in order of actual values
-            // EXAMPLE: level-3 1D grid is [0, 1, 2, ..., 9] internally, but these indices correspond to
-            //    [0, 1/3, 2/3, 1/9, 2/9, 4/9, 5/9, 7/9, 8/9] externally. We say external indexing is arranged
-            //    in order of increasing x values.
-         
-         
-            double* in = new double[num_tensor_points];
-            std::complex<double>* out = new std::complex<double>[num_tensor_points];
+            std::complex<double> *in = new std::complex<double>[num_tensor_points];
+            std::complex<double> *out = new std::complex<double>[num_tensor_points];
          
             for(int i=0; i<num_tensor_points; i++) {
-          
-                // This i is external indexing, flattened according to standard C (row-major) indexing
-                int t=i;
-                int* p=new int[num_dimensions];
-                for(int j=num_dimensions-1; j>=0; j--) {
-                    p[j] = t % num_oned_points[j];
-                    t /= num_oned_points[j];
-                }
-                // p[] stores the external indexing as a tensor address
-
-                // Now we move from external to internal indexing
-                int *p_internal = new int[num_dimensions];
-                for(int j=0; j<num_dimensions; j++) {
-                    int tmp = p[j]; 
-                    if (tmp == 0) { 
-                        p_internal[j] = 0; 
-                    } else {
-                        int go_back = 0;
-                        while(tmp % 3 == 0 && tmp != 0) {
-                            go_back += 1;
-                            tmp /= 3;
-                        }
-                        
-                        int num_prev_level = wrapper->getNumPoints(levels[j]-go_back-1);
-                        p_internal[j] = num_prev_level + (tmp/3)*2 + tmp % 3 - 1;   
-                    }
-                }
-          
-                int fval_index = points->getSlot(p_internal);
-                const double *v = values->getValues(fval_index);
+                // We interpret this "i" as running through the external indexing; convert to internal
+                int key = convertIndexes(i, levels);
+                const double *v = values->getValues(key);
                 in[i] = v[k];
             }
-         
          
             // Execute FFT
             TasmanianFourierTransform::dft(num_dimensions, num_oned_points, in, out);
         
             for(int i=0; i<num_tensor_points; i++) {
-                fourier_coefs[k*num_nodes + exponent_refs[n][i]] += ((double) active_weights[n]) * out[i];    
                 // Combine with tensor weights
+                fourier_coefs[num_outputs*(exponent_refs[n][i]) + k] += ((double) active_weights[n]) * out[i] / ((double) num_tensor_points);    
             }
         }    
     }
 }
 
 std::complex<double>* GridFourier::getBasisFunctions(const double x[]) const {
-    std::complex<double> unit_imag(0,1);    // this is sqrt(-1)
     std::complex<double> *weights = new std::complex<double>[exponents->getNumIndexes()];
-    
+    getBasisFunctions(x,weights);
+    return weights;
+}
+
+void GridFourier::getBasisFunctions(const double x[], std::complex<double> weights[]) const {
+    std::complex<double> unit_imag(0,1);    // this is sqrt(-1)
     for(int i=0; i<exponents->getNumIndexes(); i++) {
         weights[i] = exp(2 * M_PI * unit_imag * ((double) exponents->getIndex(i)[0]) * x[0]);
         for(int j=1; j<exponents->getNumDimensions(); j++) {
             weights[i] *= exp(2 * M_PI * unit_imag * ((double) exponents->getIndex(i)[j]) * x[j]);
         }
     }
-    return weights;
 }
 
 void GridFourier::getBasisFunctions(const double x[], double weights[]) const {
@@ -321,15 +339,49 @@ void GridFourier::getBasisFunctions(const double x[], double weights[]) const {
     delete[] tmp;
 }
 
-void GridFourier::getBasisFunctions(const double x[], std::complex<double> weights[]) const {
-    
-    // weights has length num_nodes here
-    weights = getBasisFunctions(x);
+double* GridFourier::getInterpolationWeights(const double x[]) const { 
+    double *w = new double[getNumPoints()];
+    getInterpolationWeights(x,w);
+    return w;
 }
 
-double* GridFourier::getInterpolationWeights(const double x[]) const { double *tmp = new double; *tmp = 0.0; return tmp; }
 void GridFourier::getInterpolationWeights(const double x[], double weights[]) const { 
-    std::fill(weights, weights + exponents->getNumIndexes(), 0.0); 
+    /*
+    I[f](x) = c^T * \Phi(x) = (U*P*f)^T * \Phi(x)           (U represents normalized forward Fourier transform; P represents reordering of f_i before going into FT)
+                            = f^T * (P^T * U^T * \Phi(x))   (P^T = P^(-1) since P is a permutation matrix)
+                         
+    Note that U is the DFT operator (complex) and the transposes are ONLY REAL transposes, so U^T = U.
+    */
+     
+    std::fill(weights, weights+getNumPoints(), 0.0);
+    std::complex<double> *basisFuncs = getBasisFunctions(x);
+    
+    for(int n=0; n<active_tensors->getNumIndexes(); n++) {
+        const int *levels = active_tensors->getIndex(n);
+        int num_tensor_points = 1;
+        int *num_oned_points = new int[num_dimensions];
+        
+        for(int j=0; j<num_dimensions; j++) {
+            num_oned_points[j] = wrapper->getNumPoints(levels[j]);
+            num_tensor_points *= num_oned_points[j];
+        }
+
+        std::complex<double> *in = new std::complex<double>[num_tensor_points];
+        std::complex<double> *out = new std::complex<double>[num_tensor_points];
+        
+        for(int i=0; i<num_tensor_points; i++) {
+            in[i] = basisFuncs[exponent_refs[n][i]];
+        }
+        
+        TasmanianFourierTransform::dft(num_dimensions, num_oned_points, in, out);
+        
+        
+        for(int i=0; i<num_tensor_points; i++) {
+            int key = convertIndexes(i, levels);
+            weights[key] += ((double) active_weights[n]) * out[i].real()/((double) num_tensor_points);
+        } 
+    }
+    delete[] basisFuncs;
 }
 
 double* GridFourier::getQuadratureWeights() const {
@@ -356,9 +408,8 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
             num_tensor_points *= wrapper->getNumPoints(levels[j]);
         }
         for(int i=0; i<num_tensor_points; i++) {
-            weights[tensor_refs[n][i]] += active_weights[n]/num_tensor_points;
+            weights[tensor_refs[n][i]] += ((double) active_weights[n])/((double) num_tensor_points);
         }
-        delete[] levels;
     }
 }
 
@@ -367,7 +418,7 @@ void GridFourier::evaluate(const double x[], double y[]) const{
     TasBLAS::setzero(num_outputs, y);
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<points->getNumIndexes(); i++){
-            y[k] += (w[i] * fourier_coefs[k*(points->getNumIndexes())+i]).real();
+            y[k] += (w[i] * fourier_coefs[i*num_outputs+k]).real();
         }
     }
     delete[] w;
@@ -382,7 +433,6 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 
 void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
     #ifdef Tasmanian_ENABLE_BLAS
-    std::cout<<"BLAS enabled"<<std::endl;
     std::complex<double> *w = getBasisFunctions(x);
     std::complex<double> *y_tmp = new std::complex<double>[num_outputs];
     TasBLAS::zgemv(num_outputs, points->getNumIndexes(), fourier_coefs, w, y_tmp);
@@ -395,20 +445,19 @@ void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
     delete[] w;
     delete[] y_tmp;
     #else
-    std::cout<<"BLAS disabled"<<std::endl;
     evaluate(x,y);
     #endif // Tasmanian_ENABLE_BLAS
 }
 
-void GridFourier::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{
+void GridFourier::evaluateFastGPUcublas(const double x[], double y[], std::ostream*) const{
     evaluateFastCPUblas(x,y);
 }
 
-void GridFourier::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{
+void GridFourier::evaluateFastGPUcuda(const double x[], double y[], std::ostream*) const{
     evaluateFastCPUblas(x,y);
 }
 
-void GridFourier::evaluateFastGPUmagma(const double x[], double y[], std::ostream *os) const{
+void GridFourier::evaluateFastGPUmagma(const double x[], double y[], std::ostream*) const{
     evaluateFastCPUblas(x,y);
 }
 
@@ -416,13 +465,13 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
     #ifdef Tasmanian_ENABLE_BLAS
     int num_points = points->getNumIndexes();
     std::complex<double> *y_tmp = new std::complex<double>[num_outputs * num_x];
-    double *weights = new double[num_points * num_x];
+    std::complex<double> *weights = new std::complex<double>[num_points * num_x];
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
         getBasisFunctions(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(weights[((size_t) i) * ((size_t) num_points)]));
     }
 
-    TasBLAS::zgemm(num_outputs, num_x, num_points, std::complex<double>(1.0,0.0), fourier_coefs, weights, std::complex<double>(0.0,0.0), y_tmp);
+    TasBLAS::zgemm(num_outputs, num_x, num_points, 1.0, fourier_coefs, weights, 0.0, y_tmp);
 
     #pragma omp parallel for
     for(int i=0; i<num_outputs*num_x; i++) {
@@ -437,15 +486,15 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
 }
 
 
-void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const {
+void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream*) const {
     evaluateBatchCPUblas(x, num_x, y);
 }
 
-void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const {
+void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream*) const {
     evaluateBatchCPUblas(x, num_x, y);
 }
 
-void GridFourier::evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const {
+void GridFourier::evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream*) const {
     evaluateBatchCPUblas(x, num_x, y);
 }
 
@@ -466,13 +515,13 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
 void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     // y must be of size num_x * num_nodes * 2
     int num_points = getNumPoints();
-    #pragma omp parallel for schedule(dynamic)
+    //#pragma omp parallel for
     for(int i=0; i<num_x; i++) {
-        getBasisFunctions(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_points)]));
+        getBasisFunctions(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) 2*num_points)]));
     }
 }
 
-void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os) {
+void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration, std::ostream*) {
     
     // takes c to be length 2*num_outputs*num_nodes
     // first two entries are real and imag parts of the Fourier coef for the first basis function and first output dimension
@@ -503,7 +552,7 @@ const IndexSet* GridFourier::getExponents() const{
 }
 
 const double* GridFourier::getFourierCoefs() const{
-    double* fc = new double[2*(exponents->getNumIndexes())];
+    double* fc = new double[2*getNumPoints()];
     for(int i=0; i<exponents->getNumIndexes(); i++) {
         fc[2*i] = fourier_coefs[i].real();
         fc[2*i+1] = fourier_coefs[i].imag();
@@ -511,8 +560,15 @@ const double* GridFourier::getFourierCoefs() const{
     return fc;
 }
 
+bool GridFourier::blasEnabled() const {
+    #ifdef Tasmanian_ENABLE_BLAS
+    return true;
+    #else
+    return false;
+    #endif // Tasmanian_ENABLE_BLAS
 
 } // end TasGrid
 
+}
 
 #endif

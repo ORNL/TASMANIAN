@@ -916,13 +916,13 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         int qn = gg->getNumPoints();
         double *w = gg->getQuadratureWeights();
         double *x = gg->getPoints();
-        double *I = new double[qn];
+        double *I_quad = new double[qn];
         delete gg;
         #pragma omp parallel for schedule(static)
         for(int i=0; i<qn; i++){
             double *y = new double[num_outputs];
             evaluate(&(x[i*num_dimensions]), y);
-            I[i] = w[i] * y[output];
+            I_quad[i] = w[i] * y[output];
             delete[] y;
         }
 
@@ -936,7 +936,7 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
                 for(int j=1; j<num_dimensions; j++){
                     v *= legendre(p[j], x[k*num_dimensions+j]);
                 }
-                c += v * I[k];
+                c += v * I_quad[k];
             }
             double nrm = sqrt((double) p[0] + 0.5);
             for(int j=1; j<num_dimensions; j++){
@@ -945,7 +945,7 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
             surp[i] = c * nrm;
         }
 
-        delete[] I;
+        delete[] I_quad;
         delete[] x;
         delete[] w;
     }
