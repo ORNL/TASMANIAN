@@ -40,6 +40,7 @@
 #cmakedefine Tasmanian_ENABLE_BLAS
 #cmakedefine Tasmanian_ENABLE_CUBLAS
 #cmakedefine Tasmanian_ENABLE_CUDA
+#cmakedefine Tasmanian_ENABLE_MAGMA
 #cmakedefine Tasmanian_ENABLE_MPI
 
 // used mostly to suppress default cerr messages

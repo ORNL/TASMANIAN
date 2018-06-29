@@ -4,7 +4,7 @@
 
 macro(Tasmanian_macro_add_libsparsegrid Tasmanian_shared_or_static)
 
-if (${Tasmanian_shared_or_static} STREQUAL SHARED)
+if (${Tasmanian_shared_or_static} STREQUAL "SHARED")
     set(Tasmanian_libtsg_target_name "Tasmanian_libsparsegrid_shared")
 else()
     set(Tasmanian_libtsg_target_name "Tasmanian_libsparsegrid_static")
@@ -35,6 +35,17 @@ target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERF
 set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid")
 
 set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CXX_STANDARD 11)
+
+# as MAGMA potentially depends on OpenMP, BLAS, and CuBLAS, it should be set first
+if (Tasmanian_ENABLE_MAGMA)
+    target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${Tasmanian_MAGMA_INCLUDE_DIRS}/>)
+
+    if (${Tasmanian_shared_or_static} STREQUAL "SHARED")
+        target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_MAGMA_SHARED_LIBRARIES})
+    else()
+        target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_MAGMA_LIBRARIES})
+    endif()
+endif()
 
 if (Tasmanian_ENABLE_BLAS)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${BLAS_LIBRARIES})
