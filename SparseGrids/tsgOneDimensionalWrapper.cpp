@@ -67,7 +67,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
                 exit(1); // disabled by USE_XSDK_DEFAULTS
                 #else
                 max_level = meta->getCustom()->getNumLevels();
-                num_levels = max_levels;
+                num_levels = max_level;
                 #endif // USE_XSDK_DEFAULTS
             }
         }

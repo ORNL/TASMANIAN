@@ -182,7 +182,7 @@ if (NOT Tasmanian_MAGMA_LIBRARIES) # user has not provided specific libs, search
     unset(Tasmanian_MAGMA_LIBRARIES)
     unset(Tasmanian_MAGMA_SHARED_LIBRARIES)
 
-    list(APPEND Tasmanian_MAGMA_SHARED_LIBRARIES  ${Tasmanian_libmagma} ${Tasmanian_libmagma_sparse}) # check if exist below
+    list(APPEND Tasmanian_MAGMA_SHARED_LIBRARIES ${Tasmanian_libmagma} ${Tasmanian_libmagma_sparse}) # check if exist below
 
     if (Tasmanian_libmagma_static AND Tasmanian_libmagma_sparse_static)
         list(APPEND Tasmanian_MAGMA_LIBRARIES ${Tasmanian_libmagma_static} ${Tasmanian_libmagma_sparse_static})

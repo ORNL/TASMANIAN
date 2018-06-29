@@ -505,7 +505,7 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
             x[i] += domain_transform_a[j];
         }
         delete[] sqrt_b;
-    }else{ // canoncail [-1, 1]
+    }else{ // canonical [-1, 1]
         double *rate = new double[num_dimensions];
         double *shift = new double[num_dimensions];
         for(int j=0; j<num_dimensions; j++){

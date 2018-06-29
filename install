@@ -1,46 +1,5 @@
 #!/usr/bin/env bash
 
-tty -s;
-if [ $? == 1 ]; then
-# start a terminal session
-    if [[ `uname -s` == "Linux" ]]; then
-        if [[ ! -z `ps -e | grep unity` ]] || [[ ! -z `ps -e | grep gnome-shell` ]] || [[ ! -z `ps -e | grep metacity` ]]; then
-            # if Gnome based system
-            if [[ ! -z `which gnome-terminal` ]]; then
-                gnome-terminal -e "./install.sh -holdend"
-            elif [[ ! -z `which konsole` ]]; then
-                konsole -e "./install.sh -holdend"
-            elif [[ ! -z `which xfce4-terminal` ]]; then
-                xfce4-terminal -e "./install.sh -holdend"
-            elif [[ ! -z `which lxterminal` ]]; then
-                lxterminal -e "./install.sh -holdend"
-            fi
-        elif [[ ! -z `ps -e | grep kwin` ]]; then
-            # if KDE based system
-            if [[ ! -z `which konsole` ]]; then
-                konsole -e "./install.sh -holdend"
-            elif [[ ! -z `which gnome-terminal` ]]; then
-                gnome-terminal -e "./install.sh -holdend"
-            elif [[ ! -z `which xfce4-terminal` ]]; then
-                xfce4-terminal -e "./install.sh -holdend"
-            elif [[ ! -z `which lxterminal` ]]; then
-                lxterminal -e "./install.sh -holdend"
-            fi
-        elif [[ ! -z `ps -e | grep xfwm4` ]]; then
-            # if XFCE4 based system
-            if [[ ! -z `which xfce4-terminal` ]]; then
-                xfce4-terminal -e "./install.sh -holdend"
-            elif [[ ! -z `which gnome-terminal` ]]; then
-                gnome-terminal -e "./install.sh -holdend"
-            elif [[ ! -z `which konsole` ]]; then
-                konsole -e "./install.sh -holdend"
-            elif [[ ! -z `which lxterminal` ]]; then
-                lxterminal -e "./install.sh -holdend"
-            fi
-        fi
-    fi
-fi
-
 echo ""
 echo "--------------------------------------------------------------------------------"
 echo "   TASMANIAN INSTALL SCRIPT"
@@ -55,7 +14,7 @@ if (( ${#@} > 0 )); then
 fi
 
 if (( $bShowHelp == 1 )); then
-    echo "Usage: ./install.sh <install path> <matlab work folder> <optinos>"
+    echo "Usage: ./install <install path> <matlab work folder> <optinos>"
     echo ""
     echo "       <install path>: optional"
     echo "                       the install prefix"
@@ -110,7 +69,7 @@ fi
 
 if (( $sProperFolder == 0 )); then
     echo ""
-    echo "ERROR: must run ./install.sh inside the Tasmanian source folder"
+    echo "ERROR: must run ./install inside the Tasmanian source folder"
     echo ""
     exit 1;
 fi
@@ -492,7 +451,7 @@ cat $sInstallPrefix/share/Tasmanian/Tasmanian.log
 set +x
 if (( $bSkilBashrc == 0 )); then
 # check if $sInstallPrefix is absolute or relative
-    cd $sInstallPrefix/config/
+    cd $sInstallPrefix/share/Tasmanian/
     if [ ! $? -eq 0 ] || [ ! -f ./TasmanianENVsetup.sh ]; then
         echo "Very odd! There were no previous errors but cannot find $sInstallPrefix/config/TasmanianENVsetup.sh"
         echo "This must be a bug!"
