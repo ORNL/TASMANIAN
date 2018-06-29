@@ -19,6 +19,7 @@ if (USE_XSDK_DEFAULTS)
     set(Tasmanian_ENABLE_FORTRAN OFF)
     set(Tasmanian_ENABLE_CUBLAS  OFF)
     set(Tasmanian_ENABLE_CUDA    OFF)
+    set(Tasmanian_ENABLE_MAGMA   OFF)
     set(Tasmanian_SHARED_LIBRARY ON) # xSDK defaults to shared
     set(Tasmanian_STATIC_LIBRARY OFF)
     if (DEFINED XSDK_ENABLE_OPENMP)
@@ -28,7 +29,7 @@ if (USE_XSDK_DEFAULTS)
         set(Tasmanian_ENABLE_BLAS ${TPL_ENABLE_BLAS})
     endif()
     if (DEFINED TPL_ENABLE_MAGMA)
-        set(Tasmanian_ENABLE_MAGMA TPL_ENABLE_MAGMA)
+        set(Tasmanian_ENABLE_MAGMA ${TPL_ENABLE_MAGMA})
         # don't really like the xSDK "TPL" convention, prefer to work
         # with Tasmanian_ variables to avoid confusion on who defined what
         if (TPL_MAGMA_LIBRARIES)
