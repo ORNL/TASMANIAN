@@ -451,7 +451,7 @@ cat $sInstallPrefix/share/Tasmanian/Tasmanian.log
 set +x
 if (( $bSkilBashrc == 0 )); then
 # check if $sInstallPrefix is absolute or relative
-    cd $sInstallPrefix/config/
+    cd $sInstallPrefix/share/Tasmanian/
     if [ ! $? -eq 0 ] || [ ! -f ./TasmanianENVsetup.sh ]; then
         echo "Very odd! There were no previous errors but cannot find $sInstallPrefix/config/TasmanianENVsetup.sh"
         echo "This must be a bug!"
