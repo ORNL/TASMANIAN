@@ -151,7 +151,7 @@ class TestTasmanian(unittest.TestCase):
         else:
             print("            none")
 
-        #grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
+        grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
 
         # test I/O for Global Grids
         # iDimension, iOutputs, iDepth, sType, sRule, fAlpha, fBeta, useTransform, loadFunciton, limitLevels
@@ -192,7 +192,7 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
         # test an error message from wrong read
-        #print("Attempting a bogus read to see if error would be properly registered")
+        print("Attempting a bogus read to see if error would be properly registered")
         gridB.disableLog()
         self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
         gridB.setErrorLogCerr()
@@ -367,15 +367,8 @@ class TestTasmanian(unittest.TestCase):
         print("\nTesting accelerated evaluate consistency")
 
         iGPUID = -1
-
-        # acceleration meta-data
+        
         grid = TasmanianSG.TasmanianSparseGrid()
-        grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
-        for accel in TasmanianSG.lsTsgAccelTypes:
-            grid.enableAcceleration(accel)
-            sA = grid.getAccelerationType()
-            bTest = ((accel not in sA) or (sA not in accel))
-            self.assertFalse(bTest, "set/get Acceleration")
 
         if (False):
             bHasBlas = ("ON" == "ON")
@@ -385,6 +378,19 @@ class TestTasmanian(unittest.TestCase):
             self.assertTrue((grid.isAccelerationAvailable("gpu-cublas") == bHasCuBlas), "failed to match cublas")
             self.assertTrue((grid.isAccelerationAvailable("gpu-cuda") == bHasCuda), "failed to match cuda")
             self.assertTrue((grid.isAccelerationAvailable("gpu-default") == (bHasCuBlas or bHasCuda)), "failed to match cuda")
+
+            # acceleration meta-data
+            lsAvailableAcc = []
+            if (bHasBlas): lsAvailableAcc.append("cpu-blas")
+            if (bHasCuBlas): lsAvailableAcc.append("gpu-cublas")
+            if (bHasCuda): lsAvailableAcc.append("gpu-cuda")
+            grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
+            for accel in lsAvailableAcc:
+                grid.enableAcceleration(accel)
+                sA = grid.getAccelerationType()
+                bTest = ((accel not in sA) or (sA not in accel))
+                self.assertFalse(bTest, "set/get Acceleration")
+
 
         self.assertTrue((grid.getGPUID() == 0), "did not default to gpu 0")
 

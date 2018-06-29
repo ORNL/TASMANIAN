@@ -48,6 +48,7 @@
 /* #undef Tasmanian_ENABLE_BLAS */
 /* #undef Tasmanian_ENABLE_CUBLAS */
 /* #undef Tasmanian_ENABLE_CUDA */
+/* #undef Tasmanian_ENABLE_MAGMA */
 /* #undef Tasmanian_ENABLE_MPI */
 
 // used mostly to suppress default cerr messages

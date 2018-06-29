@@ -367,15 +367,8 @@ class TestTasmanian(unittest.TestCase):
         print("\nTesting accelerated evaluate consistency")
 
         iGPUID = @Tasmanian_TESTS_GPU_ID@
-
-        # acceleration meta-data
+        
         grid = TasmanianSG.TasmanianSparseGrid()
-        grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
-        for accel in TasmanianSG.lsTsgAccelTypes:
-            grid.enableAcceleration(accel)
-            sA = grid.getAccelerationType()
-            bTest = ((accel not in sA) or (sA not in accel))
-            self.assertFalse(bTest, "set/get Acceleration")
 
         if (@Tasmanian_cmake_synctest_enable@):
             bHasBlas = ("@Tasmanian_ENABLE_BLAS@" == "ON")
@@ -385,6 +378,19 @@ class TestTasmanian(unittest.TestCase):
             self.assertTrue((grid.isAccelerationAvailable("gpu-cublas") == bHasCuBlas), "failed to match cublas")
             self.assertTrue((grid.isAccelerationAvailable("gpu-cuda") == bHasCuda), "failed to match cuda")
             self.assertTrue((grid.isAccelerationAvailable("gpu-default") == (bHasCuBlas or bHasCuda)), "failed to match cuda")
+
+            # acceleration meta-data
+            lsAvailableAcc = []
+            if (bHasBlas): lsAvailableAcc.append("cpu-blas")
+            if (bHasCuBlas): lsAvailableAcc.append("gpu-cublas")
+            if (bHasCuda): lsAvailableAcc.append("gpu-cuda")
+            grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'semi-localp')
+            for accel in lsAvailableAcc:
+                grid.enableAcceleration(accel)
+                sA = grid.getAccelerationType()
+                bTest = ((accel not in sA) or (sA not in accel))
+                self.assertFalse(bTest, "set/get Acceleration")
+
 
         self.assertTrue((grid.getGPUID() == 0), "did not default to gpu 0")
 

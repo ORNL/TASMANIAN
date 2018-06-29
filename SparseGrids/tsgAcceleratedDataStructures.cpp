@@ -335,8 +335,6 @@ TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
         return accel_gpu_cuda;
     }else if (strcmp(name, "gpu-magma") == 0){
         return accel_gpu_magma;
-    }else if (strcmp(name, "gpu-fullmem") == 0){
-        return accel_gpu_fullmemory;
     }else{
         return accel_none;
     }
@@ -348,14 +346,12 @@ const char* AccelerationMeta::getIOAccelerationString(TypeAcceleration accel){
         case accel_gpu_cublas:     return "gpu-cublas";
         case accel_gpu_cuda:       return "gpu-cuda";
         case accel_gpu_magma:      return "gpu-magma";
-        case accel_gpu_fullmemory: return "gpu-fullmem";
         default: return "none";
     }
 }
 int AccelerationMeta::getIOAccelerationInt(TypeAcceleration accel){
     switch (accel){
         case accel_cpu_blas:       return 1;
-        case accel_gpu_fullmemory: return 2;
         case accel_gpu_default:    return 3;
         case accel_gpu_cublas:     return 4;
         case accel_gpu_cuda:       return 5;
@@ -368,8 +364,7 @@ bool AccelerationMeta::isAccTypeFullMemoryGPU(TypeAcceleration accel){
         case accel_gpu_default:
         case accel_gpu_cublas:
         case accel_gpu_cuda:
-        case accel_gpu_magma:
-        case accel_gpu_fullmemory: return true;
+        case accel_gpu_magma: return true;
         default:
             return false;
     }
@@ -379,11 +374,84 @@ bool AccelerationMeta::isAccTypeGPU(TypeAcceleration accel){
         case accel_gpu_default:
         case accel_gpu_cublas:
         case accel_gpu_cuda:
-        case accel_gpu_magma:
-        case accel_gpu_fullmemory: return true;
+        case accel_gpu_magma: return true;
         default:
             return false;
     }
+}
+
+TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
+    // sparse grids are evaluated in 2 stages:
+    // - s1: convert multi-index to matrix B
+    // - s2: multiply matrix B by stored matrix A
+    // Mode   | Stage 1 device | Stage 2 device | Library for stage 2
+    // CUBLAS |      CPU       |     GPU        | Nvidia cuBlas (or cuSparse)
+    // CUDA   |      GPU       |     GPU        | Nvidia cuBlas (or cuSparse)
+    // MAGMA  |      GPU*      |     GPU        | UTK magma and magma_sparse
+    // BLAS   |      CPU       |     CPU        | BLAS
+    // none   | all done on CPU, still using OpenMP (if available)
+    // *if CUDA is not simultaneously available with MAGMA, then MAGMA will use the CPU for stage 1
+    // Note: using CUDA without either cuBlas or MAGMA is a bad idea (it will still work, just slow)
+
+    // accel_gpu_default should always point to the potentially "best" option (currently MAGMA)
+    if (accel == accel_gpu_default) accel = accel_gpu_magma;
+    #if !defined(Tasmanian_ENABLE_CUBLAS) || !defined(Tasmanian_ENABLE_CUDA) || !defined(Tasmanian_ENABLE_MAGMA) || !defined(Tasmanian_ENABLE_BLAS)
+    // if any of the 4 acceleration modes is missing, then add a switch statement to guard against setting that mode
+    switch(accel){
+        #ifndef Tasmanian_ENABLE_CUBLAS
+        // if CUBLAS is missing: prefer optimized subroutines from MAGMA, otherwise still try to use the GPU with CUDA, or fall-back to CPU only
+        case accel_gpu_cublas:
+            #if defined(Tasmanian_ENABLE_MAGMA)
+            accel = accel_gpu_magma;
+            #elif defined(Tasmanian_ENABLE_CUDA)
+            accel = accel_gpu_cuda;
+            #elif defined(Tasmanian_ENABLE_BLAS)
+            accel = accel_cpu_blas;
+            #else
+            accel = accel_none;
+            #endif
+            break;
+        #endif // Tasmanian_ENABLE_CUBLAS
+        #ifndef Tasmanian_ENABLE_CUDA
+        // if CUDA is missing, try using Nvidia cuBlas, then GPU MAGMA, then drop to CPU only mode
+        // using cuBlas ahead of magma to try and stay within the native Nvidia CUDA library suite
+        case accel_gpu_cuda: // CUDA undefined, need to guard against selecting CUDA
+            #if defined(Tasmanian_ENABLE_CUBLAS)
+            accel = accel_gpu_cublas;
+            #elif defined(Tasmanian_ENABLE_MAGMA)
+            accel = accel_gpu_magma;
+            #elif defined(Tasmanian_ENABLE_BLAS)
+            accel = accel_cpu_blas;
+            #else
+            accel = accel_none;
+            #endif
+            break;
+        #endif // Tasmanian_ENABLE_CUDA
+        #ifndef Tasmanian_ENABLE_MAGMA
+        // MAGMA tries to use CUDA kernels with magma linear algebra, this CUDA is the next best thing, then cuBlas, finally CPU only mode
+        case accel_gpu_magma:
+            #if defined(Tasmanian_ENABLE_CUDA)
+            accel = accel_gpu_cuda;
+            #elif defined(Tasmanian_ENABLE_CUBLAS)
+            accel = accel_gpu_cublas;
+            #elif defined(Tasmanian_ENABLE_BLAS)
+            accel = accel_cpu_blas;
+            #else
+            accel = accel_none;
+            #endif
+            break;
+        #endif // Tasmanian_ENABLE_MAGMA
+        #ifndef Tasmanian_ENABLE_BLAS
+        // if BLAS is missing, do not attempt to use the GPU but go directly to "none" mode
+        case accel_cpu_blas:
+            accel = accel_none;
+            break;
+        #endif // Tasmanian_ENABLE_BLAS
+        default: // compiler complains if there is no explicit "default", even if empty
+            break;
+    }
+    #endif
+    return accel;
 }
 
 #if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
