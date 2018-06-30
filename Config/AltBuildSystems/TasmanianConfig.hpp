@@ -36,6 +36,8 @@
 #define TASMANIAN_VERSION_STRING "6.0"
 #define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
 
+#define TASMANIAN_GIT_COMMIT_HASH "Tasmanian git hash is not available here"
+
 ////////////////////////////////////////////////////////////////////////
 // In order to enable advanced options for Tasmanian,
 // the corresponding #define line below has to be uncommented
