@@ -36,6 +36,8 @@
 #define TASMANIAN_VERSION_STRING "@Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@"
 #define TASMANIAN_LICENSE "@Tasmanian_license@"
 
+#define TASMANIAN_GIT_COMMIT_HASH "@Tasmanian_git_hash@"
+
 // cmake options propagated to the source code
 #cmakedefine Tasmanian_ENABLE_BLAS
 #cmakedefine Tasmanian_ENABLE_CUBLAS

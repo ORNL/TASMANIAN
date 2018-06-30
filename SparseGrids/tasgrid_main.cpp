@@ -71,6 +71,9 @@ int main(int argc, const char ** argv){
     // basic info, i.e., version, license, parallel support
     if ((strcmp(argv[1],"-version") == 0) || (strcmp(argv[1],"-v") == 0) || (strcmp(argv[1],"-info") == 0)){
         cout << "Tasmanian Sparse Grids  version: " << TasmanianSparseGrid::getVersion() << endl;
+        if (strcmp(TasmanianSparseGrid::getGitCommitHash(), "Tasmanian git hash is not available here") != 0){
+            cout << "                git commit hash: " << TasmanianSparseGrid::getGitCommitHash() << endl;
+        }
         cout << "                        license: " << TasmanianSparseGrid::getLicense() << endl;
         if (TasmanianSparseGrid::isOpenMPEnabled()){
             cout << "          OpenMP multithreading: Enabled" << endl;
