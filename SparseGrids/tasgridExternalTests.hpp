@@ -80,7 +80,6 @@ public:
 
     bool testLocalPolynomialRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const;
     bool testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[]) const;
-    bool testFourierRule(const BaseFunction *f, TasGrid::TypeDepth type, const int depths[], const double tols[]) const;
     bool testSurplusRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const;
     bool testAnisotropicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const;
     bool testAcceleration(const BaseFunction *f, TasmanianSparseGrid *grid) const;

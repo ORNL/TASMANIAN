@@ -217,7 +217,7 @@ OneDimensionalMeta::~OneDimensionalMeta(){}
 const CustomTabulated* OneDimensionalMeta::getCustom() const{  return custom;  }
 
 int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule) const{
-    int lcc, fourier_result;
+    int lcc;
     switch (rule){
         case rule_chebyshev:
         case rule_gausslegendre:
@@ -261,8 +261,8 @@ int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule) const{
         case rule_fejer2:             return ((1 << (level+1)) - 1);
 
         case rule_customtabulated:    return custom->getNumPoints(level);
-        
-        case rule_fourier:            fourier_result = 1; for(int k=0; k<level; k++) { fourier_result *= 3; } return fourier_result;
+
+        case rule_fourier:            lcc = 1; for(int k=0; k<level; k++) { lcc *= 3; } return lcc;
 
         default:
             return level;

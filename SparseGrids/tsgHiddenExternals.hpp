@@ -31,7 +31,6 @@
 #ifndef __TASMANIAN_SPARSE_GRID_HIDDEN_INTERNALS_HPP
 #define __TASMANIAN_SPARSE_GRID_HIDDEN_INTERNALS_HPP
 #include <complex>
-using std::complex;
 
 namespace TasGrid{
 
@@ -43,10 +42,10 @@ extern "C" double ddot_(const int *N, const double *x, const int *incx, const do
 extern "C" double dnrm2_(const int *N, const double *x, const int *incx);
 extern "C" void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda, const double *x, const int *incx, const double *beta, const double *y, const int *incy);
 extern "C" void dtrsv_(const char *uplo, const char *trans, const char *diag, const int *N, const double *A, const int *lda, const double *x, const int *incx);
-extern "C" void zgemv_(const char *transa, const int *M, const int *N, const complex<double> *alpha, const complex<double> *A, const int *lda, const complex<double> *x, const int *incx, const complex<double> *beta, const complex<double> *y, const int *incy);
+extern "C" void zgemv_(const char *transa, const int *M, const int *N, const double *alpha, const std::complex<double> *A, const int *lda, const std::complex<double> *x, const int *incx, const double *beta, const std::complex<double> *y, const int *incy);
 extern "C" void dgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, const double *C, const int *ldc);
 extern "C" void dtrsm_(const char *side, const char *uplo, const char* transa, const char* diag, const int *m, const int *n, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb);
-extern "C" void zgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const complex<double> *alpha, const complex<double> *A, const int *lda, const complex<double> *B, const int *ldb, const complex<double> *beta, const complex<double> *C, const int *ldc);
+extern "C" void zgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha, const std::complex<double> *A, const int *lda, const std::complex<double> *B, const int *ldb, const double *beta, const std::complex<double> *C, const int *ldc);
 #endif // Tasmanian_ENABLE_BLAS
 
 
@@ -86,13 +85,13 @@ public:
         char charU = 'U', charN = 'N'; int ione = 1;
         dtrsv_(&charU, &charN, &charN, &N, A, &ione, B, &ione);
     }
-    inline static void zgemv(int M, int N, const complex<double> A[], const complex<double> x[], complex<double> y[]) { // y = A*x, A is M by N; A, x, y are complex
-        char charN = 'N'; int blas_one = 1; complex<double> alpha(1.0,0.0); complex<double> beta(0.0,0.0);
-        zgemv_(&charN, &M, &N, &alpha, A, &M, x, &blas_one, &beta, y, &blas_one);
+    inline static void zgemv(int M, int N, const std::complex<double> A[], const std::complex<double> x[], std::complex<double> y[]){ // y = A*x, A is M by N; A, x, y are complex
+        char charN = 'N'; int blas_one = 1; double alpha[2] = {1.0, 0.0}; double beta[2] = {0.0, 0.0};
+        zgemv_(&charN, &M, &N, alpha, A, &M, x, &blas_one, beta, y, &blas_one);
     }
-    inline static void zgemtv(int M, int N,const complex<double> A[], const complex<double> x[], complex<double> y[]) { // y = A^T *x, A is M by N; A, x, y are complex
-        char charT = 'T'; int blas_one = 1; complex<double> alpha(1.0,0.0); complex<double> beta(0.0,0.0);
-        zgemv_(&charT, &M, &N, &alpha, A, &M, x, &blas_one, &beta, y, &blas_one);
+    inline static void zgemtv(int M, int N,const std::complex<double> A[], const std::complex<double> x[], std::complex<double> y[]){ // y = A^T *x, A is M by N; A, x, y are complex
+        char charT = 'T'; int blas_one = 1; double alpha[2] = {1.0, 0.0}; double beta[2] = {0.0, 0.0};
+        zgemv_(&charT, &M, &N, alpha, A, &M, x, &blas_one, beta, y, &blas_one);
     }
     // Level 3
     inline static void dgemm(int M, int N, int K, double alpha, const double A[], const double B[], double beta, double C[]){
@@ -107,9 +106,9 @@ public:
         char charL = 'L', charU = 'U', charN = 'N'; double alpha = 1.0; int ione = 1;
         dtrsm_(&charL, &charU, &charN, &charN, &M, &N, &alpha, A, &ione, B, &ione);
     }
-    inline static void zgemm(int M, int N, int K, complex<double> alpha, const complex<double> A[], const complex<double> B[], complex<double> beta, complex<double> C[]){
-        char charN = 'N';
-        zgemm_(&charN, &charN, &M, &N, &K, &alpha, A, &M, B, &K, &beta, C, &M);
+    inline static void zgemm(int M, int N, int K, const std::complex<double> A[], const std::complex<double> B[], std::complex<double> C[]){
+        char charN = 'N'; double alpha[2] = {1.0, 0.0}; double beta[2] = {0.0, 0.0};
+        zgemm_(&charN, &charN, &M, &N, &K, alpha, A, &M, B, &K, beta, C, &M);
     }
 #else
     // non optimal BLAS subroutines, in case there is no BLAS available
@@ -162,14 +161,14 @@ public:
             for(int j=i-1; j>=0; j--) B[j] -= A[i*N + j] * B[i];
         }
     }
-    inline static void zgemv(int M, int N, const complex<double> A[], const complex<double> x[], complex<double> y[]) { // y = A*x, A is M by N; A, x, y are complex
-        for(int i=0; i<M; i++) {
+    inline static void zgemv(int M, int N, const std::complex<double> A[], const std::complex<double> x[], std::complex<double> y[]){ // y = A*x, A is M by N; A, x, y are complex
+        for(int i=0; i<M; i++){
             y[i] = A[i]*x[0];
             for(int j=1; j<N; j++) y[i] += A[j*M + i]*x[j];
         }
     }
-    inline static void zgemtv(int M, int N,const complex<double> A[], const complex<double> x[], complex<double> y[]) { // y = A^T *x, A^T is M by N; A, x, y are complex
-        for(int i=0; i<M; i++) {
+    inline static void zgemtv(int M, int N,const std::complex<double> A[], const std::complex<double> x[], std::complex<double> y[]){ // y = A^T *x, A^T is M by N; A, x, y are complex
+        for(int i=0; i<M; i++){
             y[i] = A[i*M]*x[0];
             for(int j=1; j<N; j++) y[i] += A[i*M + j]*x[j];
         }
@@ -195,14 +194,13 @@ public:
             }
         }
     }
-    inline static void zgemm(int M, int N, int K, complex<double> alpha, const complex<double> A[], const complex<double> B[], complex<double> beta, complex<double> C[]){
+    inline static void zgemm(int M, int N, int K, const std::complex<double> A[], const std::complex<double> B[], std::complex<double> C[]){
         for(int j=0; j<N; j++){
             for(int i=0; i<M; i++){
-                complex<double> sum = 0.0;
+                C[j*M + i] = std::complex<double>(0.0,0.0);
                 for(int k=0; k<K; k++){
-                    sum += A[k*M + i] * B[j*N + k];
+                    C[j*M + i] += A[k*M + i] * B[j*N + k];
                 }
-                C[j*M + i] = beta*C[j*M + i] + alpha * sum;
             }
         }
     }

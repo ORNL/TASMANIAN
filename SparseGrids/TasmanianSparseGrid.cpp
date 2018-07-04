@@ -226,7 +226,7 @@ void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth
     fourier = new GridFourier();
     fourier->makeGrid(dimensions, outputs, depth, type, anisotropic_weights, level_limits);
     base = fourier;
-    if(level_limits != 0) {
+    if (level_limits != 0){
         llimits = new int[dimensions];
         std::copy(level_limits, level_limits + dimensions, llimits);
     }
@@ -246,7 +246,7 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
     }else if (source->wavelet != 0){
         wavelet = new GridWavelet(*(source->wavelet));
         base = wavelet;
-    } else if (source->fourier != 0) {
+    }else if (source->fourier != 0){
         fourier = new GridFourier(*(source->fourier));
         base = fourier;
     }
@@ -506,13 +506,13 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
             x[i] += domain_transform_a[j];
         }
         delete[] sqrt_b;
-    } else if(rule == rule_fourier) {
-        for(int i=0; i<num_points * num_dimensions; i++) {
+    }else if (rule == rule_fourier){
+        for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
             x[i] *= domain_transform_b[j]-domain_transform_a[j];
             x[i] += domain_transform_a[j];
         }
-    } else{ // canonical [-1,1]
+    }else{ // canonical [-1,1]
         double *rate = new double[num_dimensions];
         double *shift = new double[num_dimensions];
         for(int j=0; j<num_dimensions; j++){
@@ -544,13 +544,13 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
             x[i] *= sqrt_b[j];
         }
         delete[] sqrt_b;
-    } else if(rule == rule_fourier) {   // map to [0,1]^d
-        for(int i=0; i<num_points * num_dimensions; i++) {
+    }else if (rule == rule_fourier){   // map to [0,1]^d
+        for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
             x[i] -= domain_transform_a[j];
             x[i] /= domain_transform_b[j]-domain_transform_a[j];
         }
-    } else{ // canonical [-1,1]
+    }else{ // canonical [-1,1]
         double *rate = new double[num_dimensions];
         double *shift = new double[num_dimensions];
         for(int j=0; j<num_dimensions; j++){
@@ -586,9 +586,9 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
     }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){
         double power = -0.5 * (1.0 + global->getAlpha());
         for(int j=0; j<num_dimensions; j++) scale *= pow(domain_transform_b[j], power);
-    }else if(rule == rule_fourier) {
+    }else if (rule == rule_fourier){
         for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]); 
-    } else{
+    }else{
         for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]) / 2.0;
     }
     return scale;
@@ -950,7 +950,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
         }
         pntr[num_x] = num_nz;
         delete[] dense_vals;
-    } else if(fourier != 0) {
+    }else if (fourier != 0){
         int num_points = base->getNumPoints();
         vals = new double[2*num_x * num_points];
         base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);
@@ -959,7 +959,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
         for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + num_points;
         indx  = new int[num_x * num_points];
         for(int i=0; i<num_x; i++){
-            for(int j=0; j<num_points; j++) { indx[i*num_points + j] = j; }
+            for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
         }
     }else{
         int num_points = base->getNumPoints();
@@ -1053,7 +1053,7 @@ const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
         return global->getLoadedValues();
     }else if (fourier != 0){
         return fourier->getFourierCoefs();
-    } else {
+    }else{
         return 0;
     }
 }
@@ -1161,6 +1161,9 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     }else if (wavelet != 0){
         ofs << "wavelet" << endl;
         wavelet->write(ofs);
+    }else if (fourier != 0){
+        ofs << "fourier" << endl;
+        fourier->write(ofs);
     }else{
         ofs << "empty" << endl;
     }
@@ -1197,7 +1200,7 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     const char *TSG = "TSG5"; // last char indicates version
     ofs.write(TSG, 4 * sizeof(char)); // mark Tasmanian files
     char flag;
-    // use Integers to indicate grid types, empty 'e', global 'g', sequence 's', pwpoly 'p', wavelet 'w'
+    // use Integers to indicate grid types, empty 'e', global 'g', sequence 's', pwpoly 'p', wavelet 'w', Fourier 'f'
     if (global != 0){
         flag = 'g'; ofs.write(&flag, sizeof(char));
         global->writeBinary(ofs);
@@ -1210,6 +1213,9 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     }else if (wavelet != 0){
         flag = 'w'; ofs.write(&flag, sizeof(char));
         wavelet->writeBinary(ofs);
+    }else if (fourier != 0){
+        flag = 'f'; ofs.write(&flag, sizeof(char));
+        fourier->writeBinary(ofs);
     }else{
         flag = 'e'; ofs.write(&flag, sizeof(char));
     }
@@ -1266,6 +1272,12 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         wavelet = new GridWavelet();
         wavelet->read(ifs);
         base = wavelet;
+        getline(ifs, T);
+    }else if (T.compare("fourier") == 0){
+        clear();
+        fourier = new GridFourier();
+        fourier->read(ifs);
+        base = fourier;
         getline(ifs, T);
     }else if (T.compare("empty") == 0){
         clear();
@@ -1366,6 +1378,11 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
         wavelet = new GridWavelet();
         wavelet->readBinary(ifs);
         base = wavelet;
+    }else if (TSG[0] == 'f'){
+        clear();
+        fourier = new GridFourier();
+        fourier->readBinary(ifs);
+        base = fourier;
     }else if (TSG[0] == 'e'){
         clear();
     }else{

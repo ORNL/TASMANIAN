@@ -85,8 +85,8 @@ const char* TwoOneExpSinCos::getDescription() const{ return "f(x,y) = exp(sin(2*
 void TwoOneExpSinCos::eval(const double x[], double y[]) const{ y[0] = exp(sin(2*M_PI*x[0])+cos(2*M_PI*x[1])); } void TwoOneExpSinCos::getIntegral(double y[]) const{ y[0] = 1.6029228068079633; }
 
 TwoTwoSinCos::TwoTwoSinCos() {} TwoTwoSinCos::~TwoTwoSinCos() {} int TwoTwoSinCos::getNumInputs() const{ return 2; } int TwoTwoSinCos::getNumOutputs() const{ return 2; }
-const char* TwoTwoSinCos::getDescription() const{ return "f(x,y) = [sin(2*pi*x)cos(4*pi*y), cos(2*pi*x)]"; }
-void TwoTwoSinCos::eval(const double x[], double y[]) const{ y[0] = sin(2*M_PI*x[0])*cos(4*M_PI*x[1]); y[1]=cos(2*M_PI*x[0]); } void TwoTwoSinCos::getIntegral(double y[]) const{ y[0] = 0.0; y[1]=0.0; }
+const char* TwoTwoSinCos::getDescription() const{ return "f(x,y) = [sin(2*pi*x)cos(4*pi*y), x^2*cos(2*pi*x)]"; }
+void TwoTwoSinCos::eval(const double x[], double y[]) const{ y[0] = sin(2*M_PI*x[0])*cos(4*M_PI*x[1]); y[1] = x[0]*x[0]*cos(2*M_PI*x[0]); } void TwoTwoSinCos::getIntegral(double y[]) const{ y[0] = 0.0; y[1] = 1.0 / (2.0 * M_PI * M_PI); }
 
 TwoOneExpm40::TwoOneExpm40(){} TwoOneExpm40::~TwoOneExpm40(){} int TwoOneExpm40::getNumInputs() const{ return 2; } int TwoOneExpm40::getNumOutputs() const{ return 1; }
 const char* TwoOneExpm40::getDescription() const{ return "f(x,y) = 1.0 / (1.0 + exp(-40.0 * (sqrt(x^2 + y^2) - 0.4)))"; }
