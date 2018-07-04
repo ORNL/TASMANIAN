@@ -205,7 +205,6 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     TasGrid::TasmanianSparseGrid grid;
     TestResults R;
     int num_global_tests = (interpolation) ? 3 : 1;
-    int noutputs = (interpolation ? f->getNumOutputs() : 0);
     TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
     TasGrid::TypeDepth type = (rule == rule_fourier ? TasGrid::type_level : TasGrid::type_iptotal);
     double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
@@ -213,12 +212,21 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     bool bPass = true;
     const char *custom_filename = (rule == rule_customtabulated) ? "SparseGrids/GaussPattersonRule.table" : 0;
     for(int i=0; i<num_global_tests; i++){
-        if (rule == rule_fourier){
-            grid.makeFourierGrid(f->getNumInputs(), noutputs, depths[i], type, anisotropic);
+        if (interpolation){
+            if (rule == rule_fourier){
+                grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, anisotropic);
+            }else{
+                grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            }
+            R = getError(f, &grid, tests[i], x);
         }else{
-            grid.makeGlobalGrid(f->getNumInputs(), noutputs, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            if (rule == rule_fourier){
+                grid.makeFourierGrid(f->getNumInputs(), 0, depths[i], type, anisotropic);
+            }else{
+                grid.makeGlobalGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            }
+            R = getError(f, &grid, type_integration);
         }
-        R = getError(f, &grid, tests[i], x);    // if interpolation = false, then i=0 only, and tests[0] = type_integration
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
@@ -937,7 +945,7 @@ bool ExternalTester::testAllWavelet() const{
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(rule_wavelet) << setw(wthird) << "FAIL" << endl; pass = false;
-    }{ TasGrid::TasmanianSparseGrid grid; 
+    }{ TasGrid::TasmanianSparseGrid grid;
         grid.makeWaveletGrid(2, 1, 2, 1);
         int *indx = 0, *pntr = 0;
         double *vals = 0;
@@ -990,16 +998,16 @@ bool ExternalTester::testAllFourier() const{
     bool pass = true;
     const int depths1[3] = { 5, 5, 5 };
     const int depths2[3] = { 4, 4, 4 };
-    const double tols1[6] = { 1.E-11, 1.E-06, 1.E-06 };
-    const double tols2[6] = { 1.E-11, 1.E-03, 1.E-03 };
+    const double tols1[3] = { 1.E-11, 1.E-06, 1.E-06 };
+    const double tols2[3] = { 1.E-11, 1.E-03, 1.E-03 };
     int wfirst = 11, wsecond = 34, wthird = 15;
     if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, depths1, tols1) && testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, depths2, tols2)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl; pass = false;
-    }{ TasGrid::TasmanianSparseGrid grid; 
+    }{ TasGrid::TasmanianSparseGrid grid;
         grid.makeFourierGrid(2, 1, 4, TasGrid::type_level);
-        int num_eval=5;
+        int num_eval = 10;
         int *indx = 0, *pntr = 0;
         double *vals = 0;
         double *pnts = new double[2*num_eval]; setRandomX(2*num_eval, pnts); 
@@ -1405,7 +1413,7 @@ bool ExternalTester::testAllDomain() const{
         }
     }{
         const BaseFunction *f = &f21coscos;
-        double errs[5] = {5.E-2, 7.E-3, 9.E-4, 1.E-13};
+        double errs[5] = { 5.E-2, 7.E-3, 9.E-4, 1.E-13 };
         double transform_a[2] = { -1.0, -1.0 };     // canonical domain of Fourier grid is [0,1]
         double transform_b[2] = { 1.0,  1.0 };
         for(int i=0; i<3; i++){     // keeping depth low until we implement an FFT algorithm

@@ -167,7 +167,7 @@ void TasmanianTridiagonalSolver::decompose(int n, double d[], double e[], double
     }
 }
 
-void TasmanianFourierTransform::dft(const int rank, const int n[], const std::complex<double> data[], std::complex<double> out[], const int direction){
+void TasmanianFourierTransform::discrete_fourier_transform(const int rank, const int n[], const std::complex<double> data[], std::complex<double> out[], const int direction){
     // Fourier transform code by ZBM
     // DOES NOT NORMALIZE the outgoing Fourier coefficients
 
@@ -177,7 +177,7 @@ void TasmanianFourierTransform::dft(const int rank, const int n[], const std::co
         num_data *= n[r];
     }
 
-    std::complex<double> i(0.0, 1.0);
+    std::complex<double> unit_imag(0.0, 1.0);
 
     int *k_idx = new int[rank];
     std::fill(k_idx, k_idx+rank, 0);
@@ -195,7 +195,7 @@ void TasmanianFourierTransform::dft(const int rank, const int n[], const std::co
 
         // Only recompute the factors that have changed since the previous step
         for(int r=k_restart_dim; r<rank; r++){
-            exp_k[r] = std::exp(direction * 2*M_PI*i*((double) k_idx[r]) / ((double) n[r]));
+            exp_k[r] = std::exp(direction * 2*M_PI*unit_imag*((double) k_idx[r]) / ((double) n[r]));
         }
 
         // initialize
@@ -220,7 +220,8 @@ void TasmanianFourierTransform::dft(const int rank, const int n[], const std::co
 
             // Only recompute the part of the running product that has changed
             for(int r=j_restart_dim; r<rank; r++){
-                exp_j_hist[r] = (r > 0 ? exp_j_hist[r-1] : 1) * std::pow(exp_k[r], j_idx[r]);
+                exp_j_hist[r] = (r > 0 ? exp_j_hist[r-1] : 1);
+                for(int l=0; l<j_idx[r]; l++) exp_j_hist[r] *= exp_k[r];
             }
             out[k] += exp_j_hist[rank-1]*data[j];
         }

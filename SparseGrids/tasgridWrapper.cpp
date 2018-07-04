@@ -54,7 +54,7 @@ TypeConformalMap TasgridWrapper::getConfromalType(const char* name){
 }
 
 bool TasgridWrapper::isCreateCommand(TypeCommand com){
-    return ( (com == command_makeglobal) || (com == command_makesequence) || (com == command_makelocalp) || (com == command_makewavelet) || (com == command_makequadrature) );
+    return ( (com == command_makeglobal) || (com == command_makesequence) || (com == command_makelocalp) || (com == command_makewavelet) || (com == command_makefourier) || (com == command_makequadrature) );
 }
 
 void TasgridWrapper::setCommand(TypeCommand com){ command = com; }
@@ -159,6 +159,18 @@ bool TasgridWrapper::checkSane() const{
             cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping" << endl;
         }
         return pass;
+    }else if (command == command_makefourier){
+        if (num_dimensions < 1){ cerr << "ERROR: must specify number of dimensions" << endl; pass = false; }
+        if (num_outputs < 0){ cerr << "ERROR: must specify number of outputs (could use zero)" << endl; pass = false; }
+        if (depth < 0){ cerr << "ERROR: must specify depth" << endl; pass = false; }
+        if (depth_type == type_none){ cerr << "ERROR: must specify depth_type" << endl; pass = false; }
+        if ((gridfilename == 0) && (outfilename == 0) && (printCout == false)){
+            cerr << "ERROR: no means of output are specified, you should specify -gridfile, -outfile or -print" << endl; pass = false;
+        }
+        if ((conformal != conformal_none) ^ (conformalfilename != 0)){
+            cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping" << endl;
+        }
+        return pass;
     }else if (command == command_makequadrature){
         if (num_dimensions < 1){ cerr << "ERROR: must specify number of dimensions" << endl; pass = false; }
         if (num_outputs != -1){ cerr << "WARNING: ignoring the -outputs specified for the -makequadrature command" << endl; }
@@ -178,6 +190,8 @@ bool TasgridWrapper::checkSane() const{
             if (order < -1){ cerr << "ERROR: the maximum order cannot be less than -1"; pass = false; }
         }else if (OneDimensionalMeta::isWavelet(rule)){
             if ((order != 1) && (order != 3)){ cerr << "ERROR: the order must be either 1 or 3"; pass = false; }
+        }else if (OneDimensionalMeta::isFourier(rule)){
+            if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)" << endl; pass = false; }
         }else{
             if (rule == rule_none){
                 cerr << "ERROR: must specify rule to use (e.g., clenshaw-curtis or localp)" << endl; pass = false;
@@ -290,7 +304,7 @@ void TasgridWrapper::createGlobalGird(){
     }
     if (llimits != 0) delete[] llimits;
 }
-void TasgridWrapper::createSequenceGird(){
+void TasgridWrapper::createSequenceOrFourierGird(){
     int *weights = 0;
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
         weights = readAnisotropicFile(2*num_dimensions);
@@ -299,7 +313,11 @@ void TasgridWrapper::createSequenceGird(){
     }
     if (grid == 0) grid = new TasmanianSparseGrid();
     int* llimits = readLevelLimits(num_dimensions);
-    grid->makeSequenceGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, llimits);
+    if (command == command_makefourier || rule == rule_fourier){    // rule condition is for quadrature
+        grid->makeFourierGrid(num_dimensions, num_outputs, depth, depth_type, weights, llimits);
+    }else{
+        grid->makeSequenceGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, llimits);
+    }
     if (weights == 0) delete[] weights;
     if (transformfilename != 0){
         double *transforms = readTransform();
@@ -353,6 +371,8 @@ void TasgridWrapper::createQuadrature(){
         createLocalPolynomialGird();
     }else if (OneDimensionalMeta::isWavelet(rule)){
         createWaveletGird();
+    }else if (OneDimensionalMeta::isFourier(rule)){
+        createSequenceOrFourierGird();
     }else{
         cerr << "ERROR: createQuadrature" << endl;
     }
@@ -424,10 +444,10 @@ void TasgridWrapper::outputHierarchicalCoefficients() const{
     int num_p = grid->getNumPoints();
     int num_d = grid->getNumOutputs();
     if (outfilename != 0){
-        writeMatrix(outfilename, num_p, num_d, coeff, useASCII);
+        writeMatrix(outfilename, num_p, ((grid->isFourier()) ? 2 * num_d : num_d), coeff, useASCII);
     }
     if (printCout){
-        printMatrix(num_p, num_d, coeff);
+        printMatrix(num_p, num_d, coeff, grid->isFourier());
     }
 }
 bool TasgridWrapper::setConformalTransformation(){
@@ -747,10 +767,10 @@ bool TasgridWrapper::getSurpluses(){
     int num_p = grid->getNumLoaded();
     int num_o = grid->getNumOutputs();
     if (outfilename != 0){
-        writeMatrix(outfilename, num_p, num_o, surp, useASCII);
+        writeMatrix(outfilename, num_p, ((grid->isFourier()) ? 2 * num_o : num_o), surp, useASCII);
     }
     if (printCout){
-        printMatrix(num_p, num_o, surp);
+        printMatrix(num_p, num_o, surp, grid->isFourier());
     }
     return true;
 }
@@ -768,13 +788,13 @@ bool TasgridWrapper::getEvalHierarchyDense(){
         return false;
     }
     int num_p = grid->getNumPoints();
-    res = new double[((size_t) num_p) * ((size_t) rows)];
+    res = new double[((size_t) (grid->isFourier() ? 2 : 1) * num_p) * ((size_t) rows)];
     grid->evaluateHierarchicalFunctions(x, rows, res);
     if (outfilename != 0){
-        writeMatrix(outfilename, (int) rows, num_p, res, useASCII);
+        writeMatrix(outfilename, (int) rows, ((grid->isFourier()) ? 2 * num_p : num_p), res, useASCII);
     }
     if (printCout){
-        printMatrix(rows, num_p, res);
+        printMatrix(rows, num_p, res, grid->isFourier());
     }
     delete[] x;
     delete[] res;
@@ -807,8 +827,13 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             for(size_t i=1; i<rows+1; i++) ofs << " " << pntr[i];
             ofs << endl << indx[0];
             for(int i=1; i<num_nz; i++) ofs << " " << indx[i];
-            ofs << endl << vals[0];
-            for(int i=1; i<num_nz; i++) ofs << " " << vals[i];
+            if (grid->isFourier()){
+                ofs << endl << vals[0] << vals[1];
+                for(int i=1; i<num_nz; i++) ofs << " " << vals[2*i] << " " << vals[2*i+1];
+            }else{
+                ofs << endl << vals[0];
+                for(int i=1; i<num_nz; i++) ofs << " " << vals[i];
+            }
             ofs << endl;
             ofs.close();
         }else{
@@ -823,7 +848,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             ofs.write((char*) matrix_dims, 3 * sizeof(int));
             ofs.write((char*) pntr, (rows+1) * sizeof(int));
             ofs.write((char*) indx, num_nz * sizeof(int));
-            ofs.write((char*) vals, num_nz * sizeof(double));
+            ofs.write((char*) vals, (grid->isFourier() ? 2 : 1) * num_nz * sizeof(double));
             ofs.close();
         }
     }
@@ -834,8 +859,13 @@ bool TasgridWrapper::getEvalHierarchySparse(){
         for(size_t i=1; i<rows+1; i++) cout << " " << pntr[i];
         cout << endl << indx[0];
         for(int i=1; i<num_nz; i++) cout << " " << indx[i];
-        cout << endl << vals[0];
-        for(int i=1; i<num_nz; i++) cout << " " << vals[i];
+        if (grid->isFourier()){
+            cout << endl << vals[0] << vals[1];
+            for(int i=1; i<num_nz; i++) cout << " " << vals[2*i] << " " << vals[2*i+1];
+        }else{
+            cout << endl << vals[0];
+            for(int i=1; i<num_nz; i++) cout << " " << vals[i];
+        }
         cout << endl;
     }
     delete[] pntr;
@@ -852,8 +882,11 @@ bool TasgridWrapper::setHierarchy(){
         cerr << "ERROR: grid is awaiting " << grid->getNumPoints() << " hierarchical surpluses, but " << valsfilename << " specifies " << rows << endl;
         return false;
     }
-    if (cols != (size_t) grid->getNumOutputs()){
+    if (!(grid->isFourier()) && cols != (size_t) grid->getNumOutputs()){
         cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
+        return false;
+    }else if (grid->isFourier() && cols != (size_t) (2 * grid->getNumOutputs())){
+        cerr << "ERROR: fourier grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << (cols / 2) << endl;
         return false;
     }
     grid->setHierarchicalCoefficients(vals);
@@ -1026,13 +1059,21 @@ void TasgridWrapper::writeMatrix(const char *filename, int rows, int cols, const
     }
     ofs.close();
 }
-void TasgridWrapper::printMatrix(int rows, int cols, const double mat[]){
+void TasgridWrapper::printMatrix(int rows, int cols, const double mat[], bool isComplex){
     cout << rows << " " << cols << endl;
     cout.precision(17);
     cout << std::scientific;
     for(size_t i=0; i<((size_t) rows); i++){
-        for(size_t j=0; j<((size_t) cols); j++){
-            cout << setw(25) << mat[i* ((size_t) cols) + j] << " ";
+        if (isComplex){
+            for(size_t j=0; j<((size_t) cols); j++){
+                cout << setw(25) << mat[i* ((size_t) cols) + ((size_t) 2*j)];   // real part
+                cout << (mat[i* ((size_t) cols) + ((size_t) 2*j+1)] < 0.0 ? " -" : " +");
+                cout << setw(24) << fabs(mat[i* ((size_t) cols) + ((size_t) 2*j+1)]) << "i  ";     // imag part
+            }
+        }else{
+            for(size_t j=0; j<((size_t) cols); j++){
+                cout << setw(25) << mat[i* ((size_t) cols) + j] << " ";
+            }
         }
         cout << endl;
     }
@@ -1043,11 +1084,13 @@ bool TasgridWrapper::executeCommand(){
     if (command == command_makeglobal){
         createGlobalGird();
     }else if (command == command_makesequence){
-        createSequenceGird();
+        createSequenceOrFourierGird();
     }else if (command == command_makelocalp){
         createLocalPolynomialGird();
     }else if (command == command_makewavelet){
         createWaveletGird();
+    }else if (command == command_makefourier){
+        createSequenceOrFourierGird();
     }else if (command == command_makequadrature){
         createQuadrature();
         outputQuadrature();

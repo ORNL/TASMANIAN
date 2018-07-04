@@ -1072,10 +1072,10 @@ double* OneDimensionalNodes::getFourierNodes(int level) {
     int n = meta.getNumPoints(level, rule_fourier);
     double* x = new double[n];
     x[0]=0.0;
-    if(level > 0) { x[1]=1.0/3.0; x[2]=2.0/3.0; }
-    int count=3;
+    if(level > 0) { x[1] = 1.0/3.0; x[2] = 2.0/3.0; }
+    int count = 3;
     for(int l=2; l<=level; l++) {
-        n = meta.getNumPoints(l,rule_fourier);
+        n = meta.getNumPoints(l, rule_fourier);
         for(int i=1; i<n; i+=3) {
             x[count++] = (double) i / (double) n;
             x[count++] = (double) (i+1) / (double) n;

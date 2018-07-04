@@ -54,6 +54,7 @@ enum TypeCommand{
     command_makesequence,
     command_makelocalp,
     command_makewavelet,
+    command_makefourier,
     command_makequadrature,
     command_update,
 
@@ -143,7 +144,7 @@ protected:
     bool checkSane() const;
 
     void createGlobalGird();
-    void createSequenceGird();
+    void createSequenceOrFourierGird();
     void createLocalPolynomialGird();
     void createWaveletGird();
     void createQuadrature();
@@ -186,7 +187,7 @@ protected:
 
     static void readMatrix(const char *filename, size_t &rows, size_t &cols, double* &mat);
     static void writeMatrix(const char *filename, int rows, int cols, const double mat[], bool ascii);
-    static void printMatrix(int rows, int cols, const double mat[]);
+    static void printMatrix(int rows, int cols, const double mat[], bool isComplex = false);
 
 private:
     TasmanianSparseGrid *grid;
