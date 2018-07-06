@@ -50,13 +50,13 @@ set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES OUTPUT_NAME 
 ########################################################################
 # add the libraries
 ########################################################################
-if (Tasmanian_SHARED_LIBRARY)
+if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
     Tasmanian_macro_add_libdfortran(SHARED)
 
     target_link_libraries(Tasmanian_libfortran90_shared Tasmanian_libsparsegrid_shared)
 endif()
 
-if (Tasmanian_STATIC_LIBRARY)
+if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
     Tasmanian_macro_add_libdfortran(STATIC)
 
     target_link_libraries(Tasmanian_libfortran90_static      Tasmanian_libsparsegrid_static)

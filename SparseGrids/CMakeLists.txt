@@ -174,11 +174,11 @@ endif()
 ########################################################################
 # add the libraries
 ########################################################################
-if (Tasmanian_SHARED_LIBRARY)
+if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
     Tasmanian_macro_add_libsparsegrid(SHARED)
 endif()
 
-if (Tasmanian_STATIC_LIBRARY)
+if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
     Tasmanian_macro_add_libsparsegrid(STATIC)
 
     # if static libraries are available, executables link statically
@@ -192,7 +192,7 @@ endif()
 # hack a dependency problem in parallel make
 # without this, if both static and shared libs are enabled, make -j tries to compile shared cuda kernels twice
 # which creates a race condition and the build randomly fails
-if (Tasmanian_SHARED_LIBRARY AND Tasmanian_STATIC_LIBRARY)
+if ("${Tasmanian_libs_type}" STREQUAL "BOTH")
     add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_libsparsegrid_static)
 endif()
 
@@ -216,7 +216,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/TasmanianSparseGrid.windows.hpp"  "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp" COPYONLY)
 
-    if (Tasmanian_SHARED_LIBRARY)
+    if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
         target_compile_definitions(Tasmanian_libsparsegrid_shared PUBLIC -DTSG_DLL)
 
         Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_shared)
@@ -224,7 +224,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         target_compile_definitions(Tasmanian_tasgrid PUBLIC -DTSG_DYNAMIC)
     endif()
 
-    if (Tasmanian_STATIC_LIBRARY)
+    if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
         target_compile_definitions(Tasmanian_libsparsegrid_static PUBLIC -DTSG_STATIC)
 
         Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_static)

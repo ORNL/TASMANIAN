@@ -80,13 +80,13 @@ set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dr
 ########################################################################
 # add the libraries
 ########################################################################
-if (Tasmanian_SHARED_LIBRARY)
+if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
     Tasmanian_macro_add_libdream(SHARED)
 
     target_link_libraries(Tasmanian_libdream_shared Tasmanian_libsparsegrid_shared)
 endif()
 
-if (Tasmanian_STATIC_LIBRARY)
+if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
     Tasmanian_macro_add_libdream(STATIC)
 
     # if static libraries are available, executables link statically
@@ -112,7 +112,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         target_compile_definitions(${Tasmanian_dream_target} PUBLIC  -D_USE_MATH_DEFINES) # needed to include M_PI constant
     endmacro()
 
-    if (Tasmanian_SHARED_LIBRARY)
+    if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
         target_compile_definitions(Tasmanian_libdream_shared PUBLIC -DTSG_DLL)
 
         Tasmanian_macro_dream_windows_defines(Tasmanian_libdream_shared)
@@ -120,7 +120,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         target_compile_definitions(Tasmanian_tasdream PUBLIC -DTSG_DYNAMIC)
     endif()
 
-    if (Tasmanian_STATIC_LIBRARY)
+    if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
         target_compile_definitions(Tasmanian_libdream_static PUBLIC -DTSG_STATIC)
 
         Tasmanian_macro_dream_windows_defines(Tasmanian_libdream_static)
