@@ -753,7 +753,7 @@ bool TasgridWrapper::getPoly(){
         delete[] poly;
         delete[] double_poly;
     }else{
-        cerr << "ERROR: cannot call -getpoly for a grid that is neither Glboal nor Sequence" << endl;
+        cerr << "ERROR: cannot call -getpoly for a grid that is neither Global nor Sequence" << endl;
         return false;
     }
     return true;
