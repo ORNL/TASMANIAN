@@ -28,6 +28,11 @@ function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
 %                 Note: the quadrature induced by those rules is 
 %                       constructed by integrating the interpolant
 %
+%       'fourier'
+%                 approximation using Fourier basis; nested nodes
+%                 Note: the quadrature induced by this rule is
+%                       constructed by integrating the interpolant
+%
 %    Quadrature rules, the weights target exactness with respect to the
 %                        highest polynomial degree possible
 %

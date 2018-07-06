@@ -1,6 +1,13 @@
-function [mat] = tsgReadMatrix(filename)
+function [mat] = tsgReadMatrix(filename, bIsComplex)
 %
-% [mat] = tsgReadMatrix(filename)
+% [mat] = tsgReadMatrix(filename, bIsComplex)
+%
+% bIsComplex     :   (optional, default 0)
+%                   set to 1 if values are complex
+%                   file must have twice as many columns as the second
+%                       number in header line if bIsComplex = 1
+%                   
+% [mat] = tsgReadMatrix(filename, 0)
 %
 % reads a matrix from a file format
 % 
@@ -11,6 +18,19 @@ function [mat] = tsgReadMatrix(filename)
 %
 % results in the matrix [1 2 3 4; 5 6 7 8; 9 10 11 12;]
 %
+% [mat] = tsgReadMatrix(filename, 1) reads the file
+%
+% 3 2
+% 1 2 3 4
+% 5 6 7 8
+% 9 10 11 12
+%
+% results in the matrix [1+2i 3+4i; 5+6i 7+8i; 9+10i 11+12i]
+%
+
+if (~(exist('bIsComplex')) || (~(bIsComplex == 0 || bIsComplex == 1)))
+    bIsComplex = 0;
+end
 
 fid = fopen(filename);
 
@@ -22,6 +42,12 @@ if (TSG == 'TSG')
     Cols = D(2);
     mat = fread(fid, [Cols, Rows], '*double')';
     fclose(fid);
+    if(bIsComplex)
+        for j = 1:(Cols/2)
+            mat(:,j) = mat(:,2*j-1) + sqrt(-1)*mat(:,2*j);
+        end
+        mat = mat(:,1:(Cols/2));
+    end
     return;
 else
     fclose(fid);
@@ -43,12 +69,20 @@ else
 end
 
 for i = 1:Ni
-    
+
     [s] = fscanf(fid, ' %f ', [1, Nj]);
     
     mat(i,:) = s;
     
 end
+
+if (bIsComplex)
+    for j = 1:(Nj/2)
+        mat(:,j) = mat(:,2*j-1) + sqrt(-1)*mat(:,2*j);
+    end
+    mat = mat(:,1:(Nj/2));
+end
+
 
 fclose(fid);
 
