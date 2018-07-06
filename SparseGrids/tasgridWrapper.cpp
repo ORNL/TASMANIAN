@@ -1012,7 +1012,6 @@ void TasgridWrapper::readMatrix(const char *filename, size_t &rows_t, size_t &co
         cols_t = (size_t) cols;
         mat = new double[rows_t * cols_t];
         ifs.read((char*) mat, rows_t * cols_t * sizeof(double));
-        //if (rows > 10) for(int i=0; i<10; i++) cout << mat[i] << endl;
     }else{ // not a binary file
         ifs.close();
         ifs.open(filename);
