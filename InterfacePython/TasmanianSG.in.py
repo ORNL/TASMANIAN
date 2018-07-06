@@ -175,6 +175,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgMakeSequenceGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgMakeLocalPolynomialGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, c_char_p, POINTER(c_int)]
         self.pLibTSG.tsgMakeWaveletGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, POINTER(c_int)]
+        self.pLibTSG.tsgMakeFourierGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgUpdateGlobalGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgUpdateSequenceGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgGetAlpha.argtypes = [c_void_p]
@@ -643,6 +644,74 @@ class TasmanianSparseGrid:
                 pLevelLimits[iI] = liLevelLimits[iI]
 
         self.pLibTSG.tsgMakeWaveletGrid(self.pGrid, iDimension, iOutputs, iDepth, iOrder, pLevelLimits)
+
+    def makeFourierGrid(self, iDimension, iOutputs, iDepth, sType, liAnisotropicWeights=[], liLevelLimits=[]):
+        '''
+        creates a new sparse grid using a Fourier rule
+        discards any existing grid held by this class
+
+        iDimension: int (positive)
+              the number of inputs
+
+        iOutputs: int (non-negative)
+              the number of outputs
+
+        iDepth: int (non-negative)
+                controls the density of the grid, i.e.,
+                the offset for the tensor selection, the meaning of
+                iDepth depends on sType
+                Example 1: sType == 'iptotal' will give a grid that
+                           interpolates exactly all polynomials of
+                           degree up to and including iDepth
+                Example 2: sType == 'qptotal' will give a grid that
+                           integrates exactly all polynomials of degree
+                           up to and including iDepth
+
+        sType: string identifying the tensor selection strategy
+              'level'     'curved'     'hyperbolic'     'tensor'
+              'iptotal'   'ipcurved'   'iphyperbolic'   'iptensor'
+              'qptotal'   'qpcurved'   'qphyperbolic'   'qptensor'
+
+        liAnisotropicWeights: list or numpy.ndarray of weights
+                              length must be iDimension or 2*iDimension
+                              the first iDimension weights
+                                                       must be positive
+                              see the manual for details
+
+        '''
+        if (iDimension <= 0):
+            raise TasmanianInputError("iDimension", "ERROR: dimension should be a positive integer")
+        if (iOutputs < 0):
+            raise TasmanianInputError("iOutputs", "ERROR: outputs should be a non-negative integer")
+        if (iDepth < 0):
+            raise TasmanianInputError("iDepth", "ERROR: depth should be a non-negative integer")
+        if (sType not in lsTsgGlobalTypes):
+            raise TasmanianInputError("sType", "ERROR: invalid type, see TasmanianSG.lsTsgGlobalTypes for list of accepted types")
+        pAnisoWeights = None
+        if (len(liAnisotropicWeights) > 0):
+            if (sType in lsTsgCurvedTypes):
+                iNumWeights = 2*iDimension
+            else:
+                iNumWeights = iDimension
+            if (len(liAnisotropicWeights) != iNumWeights):
+                raise TasmanianInputError("liAnisotropicWeights", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
+            else:
+                pAnisoWeights = (c_int*iNumWeights)()
+                for iI in range(iNumWeights):
+                    pAnisoWeights[iI] = liAnisotropicWeights[iI]
+
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
+
+        if (sys.version_info.major == 3):
+            sType = bytes(sType, encoding='utf8')
+
+        self.pLibTSG.tsgMakeFourierGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), pAnisoWeights, pLevelLimits)
 
     def copyGrid(self, pGrid):
         '''
