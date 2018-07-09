@@ -59,6 +59,7 @@ bool ExternalTester::Test(TestList test) const{
     bool passGlobal  = true;
     bool passLocal   = true;
     bool passWavelet = true;
+    bool passFourier = true;
 
     if ((test == test_all) || (test == test_acceleration)) passAccel   = testAllAcceleration();
     if ((test == test_all) || (test == test_domain))       passDomain  = testAllDomain();
@@ -66,8 +67,9 @@ bool ExternalTester::Test(TestList test) const{
     if ((test == test_all) || (test == test_global))       passGlobal  = testAllGlobal();
     if ((test == test_all) || (test == test_local))        passLocal   = testAllPWLocal();
     if ((test == test_all) || (test == test_wavelet))      passWavelet = testAllWavelet();
+    if ((test == test_all) || (test == test_fourier))      passFourier = testAllFourier();
 
-    bool pass = passGlobal && passLocal && passWavelet && passRefine && passDomain && passAccel;
+    bool pass = passGlobal && passLocal && passWavelet && passFourier && passRefine && passDomain && passAccel;
     //bool pass = true;
 
     cout << endl;
@@ -204,21 +206,30 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     TestResults R;
     int num_global_tests = (interpolation) ? 3 : 1;
     TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
-    TasGrid::TypeDepth type = TasGrid::type_iptotal;
+    TasGrid::TypeDepth type = (rule == rule_fourier ? TasGrid::type_level : TasGrid::type_iptotal);
     double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
+    if (rule == rule_fourier){ for(int i=0; i<f->getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
     bool bPass = true;
     const char *custom_filename = (rule == rule_customtabulated) ? "SparseGrids/GaussPattersonRule.table" : 0;
     for(int i=0; i<num_global_tests; i++){
         if (interpolation){
-            grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            if (rule == rule_fourier){
+                grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, anisotropic);
+            }else{
+                grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            }
             R = getError(f, &grid, tests[i], x);
         }else{
-            grid.makeGlobalGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            if (rule == rule_fourier){
+                grid.makeFourierGrid(f->getNumInputs(), 0, depths[i], type, anisotropic);
+            }else{
+                grid.makeGlobalGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            }
             R = getError(f, &grid, type_integration);
         }
         if (R.error > tols[i]){
             bPass = false;
-            cout << setw(18) << "ERROR: FAILED global" << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
+            cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
             if (interpolation){
                 if (tests[i%3] == type_integration){
                     cout << setw(25) << "integration test";
@@ -983,6 +994,73 @@ bool ExternalTester::testAllWavelet() const{
     return pass;
 }
 
+bool ExternalTester::testAllFourier() const{
+    bool pass = true;
+    const int depths1[3] = { 5, 5, 5 };
+    const int depths2[3] = { 4, 4, 4 };
+    const double tols1[3] = { 1.E-11, 1.E-06, 1.E-06 };
+    const double tols2[3] = { 1.E-11, 1.E-03, 1.E-03 };
+    int wfirst = 11, wsecond = 34, wthird = 15;
+    if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, depths1, tols1) && testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, depths2, tols2)){
+        cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
+    }else{
+        cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl; pass = false;
+    }{ TasGrid::TasmanianSparseGrid grid;
+        grid.makeFourierGrid(2, 1, 4, TasGrid::type_level);
+        int num_eval = 10;
+        int *indx = 0, *pntr = 0;
+        double *vals = 0;
+        double *pnts = new double[2*num_eval]; setRandomX(2*num_eval, pnts); 
+        for(int i=0; i<2*num_eval; i++) pnts[i] = 0.5*(pnts[i]+1.0);    // map to [0,1]^d canonical Fourier domain
+        grid.evaluateSparseHierarchicalFunctions(pnts, num_eval, pntr, indx, vals);
+        getError(&f21expsincos, &grid, type_internal_interpolation); // this is done to load the values
+        const double *coeff = grid.getHierarchicalCoefficients();    // coeff = [fourier_coeff_1.real(), fourier_coeff_1.imag(), fourier_coeff_2.real(), ...]
+        double *y = new double[num_eval];
+        grid.evaluateBatch(pnts, num_eval, y);
+
+        for(int i=0; i<num_eval; i++){
+            for(int j=pntr[i]; j<pntr[i+1]; j++){
+                std::complex<double> fourier_coeff(coeff[2*indx[j]], coeff[2*indx[j]+1]);    //reformat as complex number
+                std::complex<double> phi(vals[2*j], vals[2*j+1]);                            //reformat as complex number
+                y[i] -= (fourier_coeff*phi).real();
+            }
+        }
+        for(int i=0; i<num_eval; i++){
+            if (fabs(y[i]) > TSG_NUM_TOL){
+                cout << "Error in evaluateSparseHierarchicalFunctions() (fourier)" << endl;
+                cout << "y["<<i<<"] = "<<y[i] << endl;
+                pass = false;
+            }
+        }
+
+        double *v = new double[2 * num_eval * grid.getNumPoints()];
+        getError(&f21expsincos, &grid, type_internal_interpolation);
+        grid.evaluateHierarchicalFunctions(pnts, num_eval, v);
+        grid.evaluateBatch(pnts, num_eval, y);
+        for(int i=0; i<num_eval; i++){
+            for(int j=0; j<grid.getNumPoints(); j++){
+                std::complex<double> fourier_coeff(coeff[2*j], coeff[2*j+1]);
+                std::complex<double> phi(v[2*(i*grid.getNumPoints()+j)], v[2*(i*grid.getNumPoints()+j)+1]);
+                y[i] -= (fourier_coeff * phi).real();
+            }
+        }
+        for(int i=0; i<num_eval; i++){
+            if (fabs(y[i]) > TSG_NUM_TOL){
+                cout << "Error in getHierarchicalCoefficients() (fourier)" << endl;
+                cout << "y["<<i<<"] = "<<y[i] << endl;
+                pass = false;
+            }
+        }
+        delete[] indx; 
+        delete[] pntr; 
+        delete[] vals; 
+        delete[] pnts; 
+        delete[] y;
+        delete[] v;
+    }
+    return pass;
+}
+
 bool ExternalTester::testAllRefinement() const{
     TasmanianSparseGrid grid;
     bool pass = true;
@@ -1329,6 +1407,21 @@ bool ExternalTester::testAllDomain() const{
             TestResults R = getError(f, &grid, type_integration);
             if (R.error>errs[i]){
                 cout << "Using localp rule" << endl;
+                cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                     pass2 = false;
+            }
+        }
+    }{
+        const BaseFunction *f = &f21coscos;
+        double errs[5] = { 5.E-2, 7.E-3, 9.E-4, 1.E-13 };
+        double transform_a[2] = { -1.0, -1.0 };     // canonical domain of Fourier grid is [0,1]
+        double transform_b[2] = { 1.0,  1.0 };
+        for(int i=0; i<3; i++){     // keeping depth low until we implement an FFT algorithm
+            grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), i+3, TasGrid::type_level);
+            grid.setDomainTransform(transform_a, transform_b);
+            TestResults R = getError(f, &grid, type_integration);
+            if (R.error>errs[i]){
+                cout << "Using fourier rule" << endl;
                 cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
@@ -1701,6 +1794,15 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "local polynomial" << setw(wthird) << "FAIL" << endl;
     }
 
+    // 3K outputs is too slow with Fourier currently; need FFT implementation for speedup
+    grid.makeFourierGrid(f22sincos.getNumInputs(), f22sincos.getNumOutputs(), 5, TasGrid::type_level);
+    pass = pass && testAcceleration(&f22sincos, &grid);
+    if (pass){
+        if (verbose) cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
+    }else{
+        cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl;
+    }
+    
     #ifdef Tasmanian_ENABLE_CUDA
     pass = pass && testGPU2GPUevaluations();
     if (pass){

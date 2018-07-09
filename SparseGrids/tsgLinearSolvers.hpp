@@ -35,6 +35,7 @@
 #include <vector>
 #include <fstream>
 #include <math.h>
+#include <complex>
 
 #include "tsgEnumerates.hpp"
 
@@ -46,6 +47,10 @@ namespace TasmanianDenseSolver{
 
 namespace TasmanianTridiagonalSolver{
     void decompose(int n, double d[], double e[], double z[]);
+}
+
+namespace TasmanianFourierTransform{
+    void discrete_fourier_transform(const int rank, const int n[], const std::complex<double> data[], std::complex<double> out[], const int direction = -1);
 }
 
 }

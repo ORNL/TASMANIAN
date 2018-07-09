@@ -39,6 +39,7 @@
 #include "tsgGridSequence.hpp"
 #include "tsgGridLocalPolynomial.hpp"
 #include "tsgGridWavelet.hpp"
+#include "tsgGridFourier.hpp"
 
 #include <iomanip> // only needed for printStats()
 
@@ -70,6 +71,7 @@ public:
     void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, const int *level_limits = 0);
     void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp, const int *level_limits = 0);
     void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, const int *level_limits = 0);
+    void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights = 0, const int* level_limits = 0);
     void copyGrid(const TasmanianSparseGrid *source);
 
     void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
@@ -111,6 +113,7 @@ public:
     bool isSequence() const;
     bool isLocalPolynomial() const;
     bool isWavelet() const;
+    bool isFourier() const;
 
     void setDomainTransform(const double a[], const double b[]); // set the ranges of the box
     bool isSetDomainTransfrom() const;
@@ -212,6 +215,7 @@ private:
     GridSequence *sequence;
     GridLocalPolynomial *pwpoly;
     GridWavelet *wavelet;
+    GridFourier *fourier;
 
     double *domain_transform_a, *domain_transform_b;
     int *conformal_asin_power;

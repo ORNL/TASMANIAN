@@ -262,6 +262,8 @@ int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule) const{
 
         case rule_customtabulated:    return custom->getNumPoints(level);
 
+        case rule_fourier:            lcc = 1; for(int k=0; k<level; k++) { lcc *= 3; } return lcc;
+
         default:
             return level;
     }
@@ -386,6 +388,9 @@ bool OneDimensionalMeta::isLocalPolynomial(TypeOneDRule rule){
 bool OneDimensionalMeta::isWavelet(TypeOneDRule rule){
     return (rule == rule_wavelet);
 }
+bool OneDimensionalMeta::isFourier(TypeOneDRule rule){
+    return (rule == rule_fourier);
+}
 
 const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
     switch (rule){
@@ -429,6 +434,7 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
         case rule_localp0:            return "Local polynomials zero boundary conditions";
         case rule_semilocalp:         return "Semi-Local polynomials";
         case rule_wavelet:            return "Wavelets";
+        case rule_fourier:            return "Fourier / trigonometric";
         default:
             return "unknown";
     }
@@ -475,6 +481,7 @@ const char* OneDimensionalMeta::getIORuleString(TypeOneDRule rule){
         case rule_localp0:            return "localp-zero";
         case rule_semilocalp:         return "semi-localp";
         case rule_wavelet:            return "wavelet";
+        case rule_fourier:            return "fourier";
         default:
             return "unknown";
     }
@@ -560,6 +567,8 @@ TypeOneDRule OneDimensionalMeta::getIORuleString(const char *name){
         return rule_semilocalp;
     }else if (strcmp(name, "wavelet") == 0){
         return rule_wavelet;
+    }else if (strcmp(name, "fourier") == 0){
+        return rule_fourier;
     }else{
         return rule_none;
     }
@@ -606,6 +615,7 @@ TypeOneDRule OneDimensionalMeta::getIORuleInt(int index){
         case 38: return rule_localp0;
         case 39: return rule_semilocalp;
         case 40: return rule_wavelet;
+        case 41: return rule_fourier;
         default:
             return rule_none;
     }
@@ -652,6 +662,7 @@ int OneDimensionalMeta::getIORuleInt(TypeOneDRule rule){
         case rule_localp0:            return 38;
         case rule_semilocalp:         return 39;
         case rule_wavelet:            return 40;
+        case rule_fourier:            return 41;
         default:
             return 0;
     }
@@ -1054,6 +1065,23 @@ double* OneDimensionalNodes::getRLejaShifted(int n){
         }
     }
     return nodes;
+}
+
+double* OneDimensionalNodes::getFourierNodes(int level) {
+    OneDimensionalMeta meta;
+    int n = meta.getNumPoints(level, rule_fourier);
+    double* x = new double[n];
+    x[0]=0.0;
+    if(level > 0) { x[1] = 1.0/3.0; x[2] = 2.0/3.0; }
+    int count = 3;
+    for(int l=2; l<=level; l++) {
+        n = meta.getNumPoints(l, rule_fourier);
+        for(int i=1; i<n; i+=3) {
+            x[count++] = (double) i / (double) n;
+            x[count++] = (double) (i+1) / (double) n;
+        }
+    }
+    return x;
 }
 
 }

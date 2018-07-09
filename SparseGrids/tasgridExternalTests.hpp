@@ -60,7 +60,7 @@ enum TestType{
 };
 
 enum TestList{
-    test_all, test_acceleration, test_domain, test_refinement, test_global, test_local, test_wavelet
+    test_all, test_acceleration, test_domain, test_refinement, test_global, test_local, test_wavelet, test_fourier
 };
 
 class ExternalTester{
@@ -90,6 +90,7 @@ public:
     bool testAllGlobal() const;
     bool testAllPWLocal() const;
     bool testAllWavelet() const;
+    bool testAllFourier() const;
     bool testAllRefinement() const;
     bool testAllDomain() const;
     bool testAllAcceleration() const;
@@ -114,6 +115,8 @@ private:
     TwoOneCos f21cos;
     TwoOneSinSin f21sinsin;
     TwoOneCosCos f21coscos;
+    TwoOneExpSinCos f21expsincos;
+    TwoTwoSinCos f22sincos;
     TwoOneDivisionAnisotropic f21aniso;
     TwoOne1DCurved f21curved;
 

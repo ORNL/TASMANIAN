@@ -183,6 +183,8 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         }else if ((rule == rule_mindelta) || (rule == rule_mindeltaodd)){
             GreedySequences greedy;
             unique = greedy.getMinDeltaNodes(meta->getNumPoints(max_level, rule));
+        }else if (rule==rule_fourier) {
+            unique = OneDimensionalNodes::getFourierNodes(max_level);
         }
 
         for(int l=0; l<num_levels; l++){

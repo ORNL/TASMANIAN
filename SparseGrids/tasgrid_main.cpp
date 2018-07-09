@@ -159,6 +159,7 @@ int main(int argc, const char ** argv){
             if ((strcmp(argv[k],"global") == 0)) test = test_global;
             if ((strcmp(argv[k],"local") == 0)) test = test_local;
             if ((strcmp(argv[k],"wavelet") == 0)) test = test_wavelet;
+            if ((strcmp(argv[k],"fourier") == 0)) test = test_fourier;
             if ((strcmp(argv[k],"-gpuid") == 0)){
                 if (k+1 >= argc){
                     cerr << "ERROR: -gpuid required a valid number!" << endl;
@@ -195,7 +196,7 @@ int main(int argc, const char ** argv){
     TasgridWrapper wrap;
     bool deprecatedMakeGrid = false;
     if (strcmp(argv[1],"-makegrid") == 0){
-        cerr << "WARNING: -makegrid is a deprecated command, in the future use -makeglobal, -makesequence, -makelocalpoly or -makewavelet" << endl;
+        cerr << "WARNING: -makegrid is a deprecated command, in the future use -makeglobal, -makesequence, -makelocalpoly, -makewavelet, or -makefourier" << endl;
         deprecatedMakeGrid = true; // use the correct command by guessing the grid type form the 1-D rule, wait for the 1-D rule
     }else if ((strcmp(argv[1],"-makeglobal") == 0) || (strcmp(argv[1],"-mg") == 0)){
         wrap.setCommand(command_makeglobal);
@@ -205,6 +206,8 @@ int main(int argc, const char ** argv){
         wrap.setCommand(command_makelocalp);
     }else if ((strcmp(argv[1],"-makewavelet") == 0) || (strcmp(argv[1],"-mw") == 0)){
         wrap.setCommand(command_makewavelet);
+    }else if ((strcmp(argv[1],"-makefourier") == 0) || (strcmp(argv[1],"-mf") == 0)){
+        wrap.setCommand(command_makefourier);
     }else if ((strcmp(argv[1],"-makequadrature") == 0) || (strcmp(argv[1],"-mq") == 0)){
         wrap.setCommand(command_makequadrature);
     }else if ((strcmp(argv[1],"-makeupdate") == 0) || (strcmp(argv[1],"-mu") == 0)){
@@ -248,9 +251,9 @@ int main(int argc, const char ** argv){
         wrap.setCommand(command_getpoly);
     }else if ((strcmp(argv[1],"-summary") == 0) || (strcmp(argv[1],"-s") == 0)){
         wrap.setCommand(command_summary);
-    }else if ((strcmp(argv[1],"-getcoefficients") == 0) || (strcmp(argv[1],"-gc") == 0)) {
+    }else if ((strcmp(argv[1],"-getcoefficients") == 0) || (strcmp(argv[1],"-gc") == 0)){
         wrap.setCommand(command_getcoefficients);
-    }else if ((strcmp(argv[1],"-setcoefficients") == 0) || (strcmp(argv[1],"-sc") == 0)) {
+    }else if ((strcmp(argv[1],"-setcoefficients") == 0) || (strcmp(argv[1],"-sc") == 0)){
         wrap.setCommand(command_setcoefficients);
     }else if (strcmp(argv[1],"-getpointsindexes") == 0){
         wrap.setCommand(command_getpointsindex);
@@ -534,6 +537,8 @@ int main(int argc, const char ** argv){
             wrap.setCommand(command_makelocalp);
         }else if (OneDimensionalMeta::isWavelet(wrap.getRule())){
             wrap.setCommand(command_makewavelet);
+        }else if (OneDimensionalMeta::isFourier(wrap.getRule())){
+            wrap.setCommand(command_makefourier);
         }else{
             cerr << "ERROR: deprecated -makegrid used but no -onedim specified" << endl;
             return 1;

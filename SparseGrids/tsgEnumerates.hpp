@@ -102,7 +102,9 @@ enum TypeOneDRule{ // list of one-d rules
     rule_localp0,
     rule_semilocalp,
     // Wavelet rules
-    rule_wavelet
+    rule_wavelet,
+    // Fourier rules
+    rule_fourier
 };
 
 enum TypeRefinement{
