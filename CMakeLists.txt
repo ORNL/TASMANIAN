@@ -17,8 +17,6 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_ENABLE_MATLAB:BOOL=OFF
 #    -D Tasmanian_ENABLE_PYTHON:BOOL=ON
 #    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF
-#    -D Tasmanian_SHARED_LIBRARY:BOOL=ON
-#    -D Tasmanian_STATIC_LIBRARY:BOOL=ON
 #    -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""
 #
 # Additional options: (if default test behavior is not desired)
@@ -110,8 +108,6 @@ option(Tasmanian_ENABLE_FORTRAN "Enable Fortran interface for Tasmanian" OFF)
 option(Tasmanian_ENABLE_CUBLAS  "Enable Nvidia GPU acceleration using cuBLAS within Tasmanian"       ON)
 option(Tasmanian_ENABLE_CUDA    "Enable Nvidia GPU acceleration using CUDA kernels within Tasmanian" OFF)
 option(Tasmanian_ENABLE_MAGMA   "Enable acceleration using UTK Magma library within Tasmanian" OFF)
-option(Tasmanian_STATIC_LIBRARY "Compile static library and the executables with static linkage (Tasmanian)" ON)
-option(Tasmanian_SHARED_LIBRARY "Compile dynamic library (Tasmanian)" ON)
 
 # treat those similar to options, but give values other than ON/OFF
 set(Tasmanian_TESTS_GPU_ID          "-1" CACHE STRING "(integer) specify GPU ID for testing, -1 means running tests on all visible devices")
@@ -246,11 +242,15 @@ if (NOT USE_XSDK_DEFAULTS)
     if (Tasmanian_ENABLE_CUDA)
         message(" -D CUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}")
     endif()
+    if (DEFINED BUILD_SHARED_LIBS)
+        message(" -D BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
+    else()
+        message(" -D BUILD_SHARED_LIBS=Undefined")
+    endif()
     foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_MPI
                              Tasmanian_ENABLE_MATLAB  Tasmanian_ENABLE_PYTHON
                              Tasmanian_ENABLE_CUBLAS  Tasmanian_ENABLE_CUDA
-                             Tasmanian_ENABLE_MAGMA   Tasmanian_ENABLE_FORTRAN
-                             Tasmanian_SHARED_LIBRARY Tasmanian_STATIC_LIBRARY)
+                             Tasmanian_ENABLE_MAGMA   Tasmanian_ENABLE_FORTRAN)
         if (${Tasmanian_option})
             message(" -D ${Tasmanian_option}:BOOL=ON")
         else()

@@ -261,8 +261,6 @@ if (( $bNVCC == 1 )); then
           -D Tasmanian_ENABLE_CUBLAS=ON \
           -D Tasmanian_ENABLE_CUDA=ON \
           -D Tasmanian_ENABLE_PYTHON=ON \
-          -D Tasmanian_SHARED_LIBRARY=ON \
-          -D Tasmanian_STATIC_LIBRARY=ON \
           -D Tasmanian_ENABLE_MATLAB=OFF \
           -D Tasmanian_ENABLE_MPI=OFF \
           -D Tasmanian_ENABLE_FORTRAN=OFF \
@@ -301,8 +299,6 @@ if (( $bNVCC == 1 )); then
           -D Tasmanian_ENABLE_CUBLAS=OFF \
           -D Tasmanian_ENABLE_CUDA=ON \
           -D Tasmanian_ENABLE_PYTHON=ON \
-          -D Tasmanian_SHARED_LIBRARY=ON \
-          -D Tasmanian_STATIC_LIBRARY=ON \
           -D Tasmanian_ENABLE_MATLAB=OFF \
           -D Tasmanian_ENABLE_MPI=OFF \
           -D Tasmanian_ENABLE_FORTRAN=OFF \

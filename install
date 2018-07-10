@@ -86,8 +86,7 @@ sEnableCUDA="OFF"
 sEnablePython="ON"
 sManualPythonInterp=""
 sEnableFortran="OFF"
-sEnableShared="ON"
-sEnableStatic="ON"
+sBuildSharedLibs=""
 sEnableMakeJobs=""
 bEnableTests=1
 sBuildType="Release"
@@ -113,9 +112,17 @@ for sOption in "$@"; do
     elif [[ $sOption == "-fortran" ]]; then
         sEnableFortran="ON"
     elif [[ $sOption == "-noshared" ]]; then
-        sEnableShared="OFF"
+        if [[ ! -z $sBuildSharedLibs ]]; then
+            echo "ERROR: only one -noshared or -nostatic can appear in the command line"
+            exit 1;
+        fi
+        sBuildSharedLibs="-D BUILD_SHARED_LIBS:BOOL=OFF"
     elif [[ $sOption == "-nostatic" ]]; then
-        sEnableStatic="OFF"
+        if [[ ! -z $sBuildSharedLibs ]]; then
+            echo "ERROR: only one -noshared or -nostatic can appear in the command line"
+            exit 1;
+        fi
+        sBuildSharedLibs="-D BUILD_SHARED_LIBS:BOOL=ON"
     elif [[ $sOption == "-make-j" ]]; then
         sEnableMakeJobs="-j"
     elif [[ $sOption == "-notest" ]]; then
@@ -137,12 +144,6 @@ for sOption in "$@"; do
         exit 1;
     fi
 done
-
-if [[ $sEnableShared == "OFF" ]] && [[ $sEnableStatic == "OFF" ]]; then
-    echo "ERROR: cannot use -noshared and -nostatic at the same time"
-    echo "       at least one type of library has to be build"
-    exit 1;
-fi
 
 if [[ $sEnablePython == "OFF" ]] && [[ ! -z $sManualPythonInterp ]]; then
     echo "WARNING: using simultanously -nopython and -python=$sManualPythonInterp, -python=$sManualPythonInterp will be ignored!"
@@ -316,10 +317,10 @@ fi
 if [[ $sEnableFortran == "ON" ]]; then
     echo "  -fortran: enable Fortran"
 fi
-if [[ $sEnableShared == "OFF" ]]; then
+if [[ $sBuildSharedLibs == "-D BUILD_SHARED_LIBS:BOOL=OFF" ]]; then
     echo " -noshared: do not build shared libraries"
 fi
-if [[ $sEnableStatic == "OFF" ]]; then
+if [[ $sBuildSharedLibs == "-D BUILD_SHARED_LIBS:BOOL=ON" ]]; then
     echo " -nostatic: do not build static libraries"
 fi
 if [[ $sBuildType == "Debug" ]]; then
@@ -379,6 +380,7 @@ fi
 cmake \
   -D CMAKE_BUILD_TYPE=$sBuildType \
   -D CMAKE_INSTALL_PREFIX=$sInstallPrefix \
+  $sBuildSharedLibs \
   -D Tasmanian_ENABLE_OPENMP:BOOL=$sEnableOpenMP \
   -D Tasmanian_ENABLE_BLAS:BOOL=$sEnableBLAS \
   -D Tasmanian_ENABLE_MPI:BOOL=OFF \
@@ -387,8 +389,6 @@ cmake \
   -D Tasmanian_ENABLE_MATLAB:BOOL=$sUseMatlab \
   -D Tasmanian_ENABLE_PYTHON:BOOL=$sEnablePython \
   -D Tasmanian_ENABLE_FORTRAN:BOOL=$sEnableFortran \
-  -D Tasmanian_SHARED_LIBRARY:BOOL=$sEnableShared \
-  -D Tasmanian_STATIC_LIBRARY:BOOL=$sEnableStatic \
   $sManualPythonInterp \
   $sMatlabWork \
   $sExtraCommand \

@@ -20,8 +20,6 @@ if (USE_XSDK_DEFAULTS)
     set(Tasmanian_ENABLE_CUBLAS  OFF)
     set(Tasmanian_ENABLE_CUDA    OFF)
     set(Tasmanian_ENABLE_MAGMA   OFF)
-    set(Tasmanian_SHARED_LIBRARY ON) # xSDK defaults to shared
-    set(Tasmanian_STATIC_LIBRARY OFF)
     if (DEFINED XSDK_ENABLE_OPENMP)
         set(Tasmanian_ENABLE_OPENMP ${XSDK_ENABLE_OPENMP})
     endif()
@@ -54,14 +52,16 @@ if (USE_XSDK_DEFAULTS)
     endif()
 endif()
 
-if (DEFINED BUILD_SHARED_LIBS) # respect BUILD_SHARED_LIBS
-    if (BUILD_SHARED_LIBS)
-        set(Tasmanian_SHARED_LIBRARY ON)
-        set(Tasmanian_STATIC_LIBRARY OFF)
-    else()
-        set(Tasmanian_SHARED_LIBRARY OFF)
-        set(Tasmanian_STATIC_LIBRARY ON)
-    endif()
+# when chosing shared/static libraries, pick the first mode that applies
+# - BUILD_SHARED_LIBS=OFF: build only static libs regardless of USE_XSDK_DEFAULTS
+# - BUILD_SHARED_LIBS=ON or USE_XSDK_DEFAULTS=ON: build only shared libs
+# - BUILD_SHARED_LIBS=Undefined and USE_XSDK_DEFAULTS=OFF: build both types
+if ((NOT "${BUILD_SHARED_LIBS}" STREQUAL "") AND (NOT BUILD_SHARED_LIBS)) # BUILD_SHARED_LIBS is defined and not an empty string
+    set(Tasmanian_libs_type "STATIC_ONLY")
+elseif (BUILD_SHARED_LIBS OR USE_XSDK_DEFAULTS)
+    set(Tasmanian_libs_type "SHARED_ONLY")
+else()
+    set(Tasmanian_libs_type "BOTH")
 endif()
 
 # OpenMP setup
@@ -96,23 +96,13 @@ if (Tasmanian_ENABLE_PYTHON)
     endif()
 endif()
 
-# Safeguard against silly option selection
-if ((NOT Tasmanian_STATIC_LIBRARY) AND (NOT Tasmanian_SHARED_LIBRARY))
-    if (Tasmanian_STRICT_OPTIONS)
-        message(FATAL_ERROR "Must specifiy at least one of Tasmanian_STATIC_LIBRARY or Tasmanian_SHARED_LIBRARY")
-    else()
-        message(WARNING "must specifiy at least one of Tasmanian_STATIC_LIBRARY or Tasmanian_SHARED_LIBRARY\noverwritting option: -DTasmanian_SHARED_LIBRARY:BOOL=ON")
-        set(Tasmanian_SHARED_LIBRARY ON)
-    endif()
-endif()
-
 # Python module requires a shared library
-if (Tasmanian_ENABLE_PYTHON AND (NOT Tasmanian_SHARED_LIBRARY))
+if (Tasmanian_ENABLE_PYTHON AND ("${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY"))
     if (Tasmanian_STRICT_OPTIONS)
-        message(FATAL_ERROR "Tasmanian_SHARED_LIBRARY (or BUILD_SHARED_LIBS) has to be ON to use the Tasmanian Python interface")
+        message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module")
     else()
-        message(WARNING "Tasmanian_SHARED_LIBRARY is needed by the python interface\nto disable the shared library, you must disable python as well\noverwritting option: -DTasmanian_SHARED_LIBRARY:BOOL=ON")
-        set(Tasmanian_SHARED_LIBRARY ON)
+        message(WARNING "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module\nbuilding shared libraries anyway")
+        set(Tasmanian_libs_type "BOTH")
     endif()
 endif()
 
@@ -158,10 +148,10 @@ if (Tasmanian_ENABLE_MAGMA)
 
     if (Tasmanian_MAGMA_FOUND)
         message(STATUS "Tasmanian will use UTK MAGMA libraries (static link): ${Tasmanian_MAGMA_LIBRARIES}")
-        if (Tasmanian_SHARED_LIBRARY)
+        if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY") # requesting shared libraries for Tasmanian
             message(STATUS "Tasmanian will use UTK MAGMA libraries (shared link): ${Tasmanian_MAGMA_SHARED_LIBRARIES}")
             if (NOT Tasmanian_MAGMA_SHARED_FOUND)
-                message(WARNING "Tasmanian_SHARED_LIBRARY=ON but the UTK MAGMA appears to provide static libraries \n attempting to link anyway, which is likely to fail.")
+                message(WARNING "Setting up build with shared libraries for Tasmanian but the UTK MAGMA appears to provide static libraries only \n attempting to link anyway, but this is likely to fail\nif encountering a problem call cmake again with -D BUILD_SHARED_LIBS=OFF")
             endif()
         endif()
         message(STATUS "Tasmanian will use UTK MAGMA include: ${Tasmanian_MAGMA_INCLUDE_DIRS}")
