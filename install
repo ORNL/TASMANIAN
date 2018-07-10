@@ -210,7 +210,7 @@ if (( $bMatlabWork == 0 )); then
     if (( $bInstallPrefix == 0 )); then
         echo "Enter path for MATLAB work file (leave empty to disable MATLAB)"
         read -p "matlab work path: " sMatlabWork
-        if [ -z $sMatlabWork ]; then
+        if [[ -z $sMatlabWork ]]; then
             sUseMatlab="OFF"
             sMatlabWork="NO_MATLAB"
         else
@@ -229,7 +229,7 @@ if [[ $sUseMatlab == "ON" ]]; then
         if [ ! -d $sMatlabWork ]; then
             echo "Matlab work folder $sMatlabWork doesn't exit"
             read -p "create the folder: (y/N) " sCreate
-            if [ -z $sCreate ]; then
+            if [[ -z $sCreate ]]; then
                 sCreate="n"
             fi
             if [[ $sCreate == "y" ]] || [[ $sCreate == "Y" ]] || [[ $sCreate == "Yes" ]] || [[ $sCreate == "yes" ]]; then
@@ -337,7 +337,7 @@ echo ""
 
 if (( $bInstallPrefix == 0 )); then
     read -p "proceed with installation: (y/N) " sCreate
-    if [ -z $sCreate ]; then
+    if [[ -z $sCreate ]]; then
         sCreate="n"
     fi
     if [[ $sCreate == "y" ]] || [[ $sCreate == "Y" ]] || [[ $sCreate == "Yes" ]] || [[ $sCreate == "yes" ]]; then
