@@ -4,19 +4,12 @@ function tsgWriteMatrix(filename, mat)
 %
 % write a matrix to a text file
 % 
-% the matrix [1 2 3 4; 5 6 7 8; 9 10 11 12;]
+% Both the real matrix [1 2 3 4; 5 6 7 8; 9 10 11 12] and the complex
+% matrix [1+2i 3+4i; 5+6i 7+8i; 9+10i 11+12i]
 %
-% is written as
+% are written as
 %
 % 3 4
-% 1 2 3 4
-% 5 6 7 8
-% 9 10 11 12
-%
-%
-% the complex matrix [1+2i 3+4i; 5+6i 7+8i; 9+10i 11+12i] is written as
-%
-% 3 2
 % 1 2 3 4
 % 5 6 7 8
 % 9 10 11 12

@@ -34,7 +34,6 @@ else
         fprintf(1,['Warning: Command had non-empty output:\n']);
         disp(cmdout);
     end
-    
     [coefficients] = tsgReadMatrix(sFileO, strcmp(lGrid.sType, 'fourier'));  % read file as a complex file if appropriate
 end
 
