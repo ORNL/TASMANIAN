@@ -92,7 +92,6 @@ bEnableTests=1
 sBuildType="Release"
 bVerbose=0
 bSkilBashrc=0
-bHoldEnd=0
 bInstall=1
 sExtraCommand=""
 
@@ -133,8 +132,6 @@ for sOption in "$@"; do
         bVerbose=1
     elif [[ $sOption == "-nobashrc" ]]; then
         bSkilBashrc=1
-    elif [[ $sOption == "-holdend" ]]; then
-        bHoldEnd=1
     elif [[ $sOption == "-noinstall" ]]; then
         bInstall=0
     elif [[ $sOption == "-cmake="* ]]; then
@@ -236,9 +233,6 @@ if [[ $sUseMatlab == "ON" ]]; then
                 mkdir -p $sMatlabWork
                 if [ ! $? == 0 ]; then
                     echo "ERROR: could not create folder $sMatlabWork"
-                    if (( $bHoldEnd == 1 )); then
-                        read -p "Press ENTER to end this process"
-                    fi
                     exit 1;
                 fi
                 # ensure absolute path in $sMatlabWork
@@ -249,9 +243,6 @@ if [[ $sUseMatlab == "ON" ]]; then
             else
                 echo "The Matlab interace requires the Matlab work folder,"
                 echo "you must create this or disable Matlab"
-                if (( $bHoldEnd == 1 )); then
-                    read -p "Press ENTER to end this process"
-                fi
                 exit 1;
             fi
         else
@@ -259,9 +250,6 @@ if [[ $sUseMatlab == "ON" ]]; then
             cd $sMatlabWork
             if [ ! $? == 0 ]; then
                 echo "ERROR: could not access matlab folder $sMatlabWork"
-                if (( $bHoldEnd == 1 )); then
-                    read -p "Press ENTER to end this process"
-                fi
                 exit 1;
             fi
             sMatlabWork=`pwd`
@@ -271,9 +259,6 @@ if [[ $sUseMatlab == "ON" ]]; then
         mkdir -p $sMatlabWork
         if [ ! $? == 0 ]; then
             echo "ERROR: could not create folder $sMatlabWork"
-            if (( $bHoldEnd == 1 )); then
-                read -p "Press ENTER to end this process"
-            fi
             exit 1;
         fi
         # ensure absolute path in $sMatlabWork
@@ -396,9 +381,6 @@ cmake \
 
 if [ ! $? == 0 ]; then
     echo "ERROR: could not execute the cmake build command!"
-    if (( $bHoldEnd == 1 )); then
-        read -p "Press ENTER to end this process"
-    fi
     exit 1;
 fi
 
@@ -406,9 +388,6 @@ make $sEnableMakeJobs
 
 if [ ! $? == 0 ]; then
     echo "ERROR: could not execute the 'make' command!"
-    if (( $bHoldEnd == 1 )); then
-        read -p "Press ENTER to end this process"
-    fi
     exit 1;
 fi
 
@@ -430,9 +409,6 @@ make install
 
 if [ ! $? == 0 ]; then
     echo "ERROR: the 'make install' command failed!"
-    if (( $bHoldEnd == 1 )); then
-        read -p "Press ENTER to end this process"
-    fi
     exit 1;
 fi
 
@@ -457,9 +433,6 @@ if (( $bSkilBashrc == 0 )); then
         echo "This must be a bug!"
         echo "At any rate, cannot automatically edit .bashrc, thus exising"
         echo ""
-        if (( $bHoldEnd == 1 )); then
-            read -p "Press ENTER to end this process"
-        fi
         exit 1;
     fi
     sConfigPath=`pwd`
@@ -486,9 +459,6 @@ if (( $bFailedTests == 1 )); then
     echo "         try testing with different seed:"
     echo "             tasgrid  -test random"
     echo "             tasdream -test random"
-    if (( $bHoldEnd == 1 )); then
-        read -p "Press ENTER to end this process"
-    fi
     exit 1;
 fi
 
@@ -497,9 +467,5 @@ echo "--------------------------------------------------------------------------
 echo "   TASMANIAN INSTALL COMPLETED SUCCESSFULLY"
 echo "--------------------------------------------------------------------------------"
 echo ""
-
-if (( $bHoldEnd == 1 )); then
-    read -p "Press ENTER to end this process"
-fi
 
 exit 0;
