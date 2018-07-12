@@ -828,7 +828,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             ofs << endl << indx[0];
             for(int i=1; i<num_nz; i++) ofs << " " << indx[i];
             if (grid->isFourier()){
-                ofs << endl << vals[0] << vals[1];
+                ofs << endl << vals[0] << " " << vals[1];
                 for(int i=1; i<num_nz; i++) ofs << " " << vals[2*i] << " " << vals[2*i+1];
             }else{
                 ofs << endl << vals[0];
@@ -860,7 +860,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
         cout << endl << indx[0];
         for(int i=1; i<num_nz; i++) cout << " " << indx[i];
         if (grid->isFourier()){
-            cout << endl << vals[0] << vals[1];
+            cout << endl << vals[0] << " " << vals[1];
             for(int i=1; i<num_nz; i++) cout << " " << vals[2*i] << " " << vals[2*i+1];
         }else{
             cout << endl << vals[0];
