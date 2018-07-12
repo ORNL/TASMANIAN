@@ -317,6 +317,41 @@ class TestTasmanian(unittest.TestCase):
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
+        # test I/O for Fourier Grids
+        # iDimension, iOutputs, iDepth, useTransform, loadFunction, useLevelLimits
+        lGrids = [[3, 2, 2, False, False, False],
+                  [2, 1, 4, False, False, False],
+                  [3, 1, 1, True, False, False],
+                  [3, 1, 1, True, False, True],
+                  [3, 1, 2, False, True, False],
+                  [3, 1, 2, True, True, True],
+                  [3, 1, 2, True, True, False],]
+
+        for lT in lGrids:
+            gridA = TasmanianSG.TasmanianSparseGrid()
+            gridB = TasmanianSG.TasmanianSparseGrid()
+
+            if (lT[5]):
+                gridA.makeFourierGrid(lT[0], lT[1], lT[2], 'level', [1, 1, 2])
+            else:
+                gridA.makeFourierGrid(lT[0], lT[1], lT[2], 'level')
+            if (lT[3]):
+                gridA.setDomainTransform(aTransform)
+            if (lT[4]):
+                self.loadExpN2(gridA)
+
+            gridA.write("testSave")
+            gridB.read("testSave")
+            self.compareGrids(gridA, gridB)
+
+            gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
+            self.compareGrids(gridA, gridB)
+
+            gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.copyGrid(gridA)
+            self.compareGrids(gridA, gridB)
+
         lGrids = ['gridA.makeGlobalGrid(3, 2, 4, "level", "clenshaw-curtis"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([3,4,5]))',
                   'gridA.makeGlobalGrid(3, 2, 4, "level", "gauss-legendre"); gridA.setConformalTransformASIN(np.array([3,5,1]))',
                   'gridA.makeSequenceGrid(2, 2, 5, "level", "leja"); gridA.setConformalTransformASIN(np.array([0,4]))',
@@ -501,6 +536,13 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeWaveletGrid(2,  1,  4,  2)", "iOrder"],
                    ["grid.makeWaveletGrid(2,  1,  4,  1, [1, 2, 3])", "liLevelLimits"],
                    ["grid.makeWaveletGrid(2,  1,  4,  1, [2, 1])", "notError"],
+                   ["grid.makeFourierGrid(-1, 1,  4, 'level')", "iDimension"],
+                   ["grid.makeFourierGrid(2, -1,  4, 'level')", "iOutputs"],
+                   ["grid.makeFourierGrid(2,  1, -4, 'level')", "iDepth"],
+                   ["grid.makeFourierGrid(2,  1,  4, 'wrong')", "sType"],
+                   ["grid.makeFourierGrid(2,  1,  4, 'level', [1, 2, 3])", "liAnisotropicWeights"],
+                   ["grid.makeFourierGrid(2,  1,  4, 'level', [1, 2], [1, 2, 3])", "liLevelLimits"],
+                   ["grid.makeFourierGrid(2,  1,  4, 'level', liLevelLimits = [1, 2])", "notError"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja')", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev')", "notError"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2]))", "notError"],
@@ -678,6 +720,11 @@ class TestTasmanian(unittest.TestCase):
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [0.0, math.sqrt(1.0/3.0)], [1.0, 0.0], [1.0, 1.0], [-1.0, 0.0]])
         aP = grid.getPoints()
         np.testing.assert_equal(aA, aP, 'Anisotropy Sequence not equal', True)
+
+        grid.makeFourierGrid(2, 1, 2, 'level', [1, 2])
+        aA = np.array([[0.0, 0.0], [0.0, 1.0/3.0], [0.0, 2.0/3.0], [1.0/3.0, 0.0], [2.0/3.0, 0.0], [1.0/9.0, 0.0], [2.0/9.0, 0.0], [4.0/9.0, 0.0], [5.0/9.0, 0.0], [7.0/9.0, 0.0], [8.0/9.0, 0.0]])
+        aP = grid.getPoints()
+        np.testing.assert_equal(aA, aP, 'Anisotropy Fourier not equal', True)
 
         # this is a very important test, checks the curved rule and covers the non-lower-set index selection code
         grid.makeGlobalGrid(2, 1, 1, 'ipcurved', 'rleja', [10, 10, -21, -21])
