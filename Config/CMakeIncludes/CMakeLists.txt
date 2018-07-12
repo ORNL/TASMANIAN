@@ -83,7 +83,7 @@ if (Tasmanian_ENABLE_PYTHON)
 endif()
 
 if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
-    set(Tasmanian_post_install "${Tasmanian_post_install}matlab flles in: ${CMAKE_INSTALL_PREFIX}/matlab/\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}matlab flles in: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/matlab/\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}                 NOTE: add ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/matlab/ to the MATLAB path\n\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}                 addpath('${CMAKE_INSTALL_PREFIX}/share/Tasmanian/matlab/')\n")
 endif()
