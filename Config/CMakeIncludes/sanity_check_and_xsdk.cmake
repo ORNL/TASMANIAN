@@ -14,7 +14,6 @@ if (USE_XSDK_DEFAULTS)
     set(Tasmanian_ENABLE_OPENMP  OFF)
     set(Tasmanian_ENABLE_BLAS    OFF)
     set(Tasmanian_ENABLE_MPI     ON)
-    set(Tasmanian_ENABLE_MATLAB  OFF)
     set(Tasmanian_ENABLE_PYTHON  OFF)
     set(Tasmanian_ENABLE_FORTRAN OFF)
     set(Tasmanian_ENABLE_CUBLAS  OFF)
@@ -42,9 +41,6 @@ if (USE_XSDK_DEFAULTS)
     endif()
     if (DEFINED XSDK_ENABLE_FORTRAN)
         set(Tasmanian_ENABLE_FORTRAN ${XSDK_ENABLE_FORTRAN})
-    endif()
-    if (DEFINED XSDK_ENABLE_MATLAB)
-        set(Tasmanian_ENABLE_MATLAB ${XSDK_ENABLE_MATLAB})
     endif()
     if (DEFINED XSDK_ENABLE_CUDA)
         set(Tasmanian_ENABLE_CUBLAS ${XSDK_ENABLE_CUDA})
@@ -104,11 +100,6 @@ if (Tasmanian_ENABLE_PYTHON AND ("${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY"
         message(WARNING "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module\nbuilding shared libraries anyway")
         set(Tasmanian_libs_type "BOTH")
     endif()
-endif()
-
-# MATLAB interface requires Tasmanian_MATLAB_WORK_FOLDER path
-if (Tasmanian_ENABLE_MATLAB AND (Tasmanian_MATLAB_WORK_FOLDER STREQUAL ""))
-    message(FATAL_ERROR "Tasmanian_ENABLE_MATLAB is ON, but -DTasmanian_MATLAB_WORK_FOLDER:PATH=<path> is missing\nIn order to enable the MATLAB interface, you must specify -DTasmanian_MATLAB_WORK_FOLDER:PATH=")
 endif()
 
 # ENABLE_CUDA and ENABLE_CUBLAS support for the add_library vs cuda_add_library
@@ -232,7 +223,7 @@ endif()
 ########################################################################
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git") # this is a git repo
     find_package(Git)
-    # do not set the hash if git is missing or 
+    # do not set the hash if git is missing or
     # if we are gnerating files for simple GNU Make compatiblity
     if (Git_FOUND AND (NOT Tasmanian_DEVELOPMENT_BACKWARDS))
         execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:%H -n 1

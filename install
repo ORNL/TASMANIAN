@@ -371,7 +371,6 @@ cmake \
   -D Tasmanian_ENABLE_MPI:BOOL=OFF \
   -D Tasmanian_ENABLE_CUBLAS:BOOL=$sEnableCUBLAS \
   -D Tasmanian_ENABLE_CUDA:BOOL=$sEnableCUDA \
-  -D Tasmanian_ENABLE_MATLAB:BOOL=$sUseMatlab \
   -D Tasmanian_ENABLE_PYTHON:BOOL=$sEnablePython \
   -D Tasmanian_ENABLE_FORTRAN:BOOL=$sEnableFortran \
   $sManualPythonInterp \
