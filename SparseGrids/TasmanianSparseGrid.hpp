@@ -56,6 +56,7 @@ public:
     static int getVersionMinor();
     static const char* getLicense(); // human readable
     static const char* getGitCommitHash();
+    static const char* getCmakeCxxFlags();
     static bool isOpenMPEnabled();
 
     void setErrorLog(std::ostream *os);

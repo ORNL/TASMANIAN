@@ -46,6 +46,7 @@ namespace TasGrid{
 const char* TasmanianSparseGrid::getVersion(){ return TASMANIAN_VERSION_STRING; }
 const char* TasmanianSparseGrid::getLicense(){ return TASMANIAN_LICENSE; }
 const char* TasmanianSparseGrid::getGitCommitHash(){ return TASMANIAN_GIT_COMMIT_HASH; }
+const char* TasmanianSparseGrid::getCmakeCxxFlags(){ return TASMANIAN_CXX_FLAGS; }
 int TasmanianSparseGrid::getVersionMajor(){ return TASMANIAN_VERSION_MAJOR; }
 int TasmanianSparseGrid::getVersionMinor(){ return TASMANIAN_VERSION_MINOR; }
 bool TasmanianSparseGrid::isOpenMPEnabled(){
@@ -587,7 +588,7 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
         double power = -0.5 * (1.0 + global->getAlpha());
         for(int j=0; j<num_dimensions; j++) scale *= pow(domain_transform_b[j], power);
     }else if (rule == rule_fourier){
-        for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]); 
+        for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]);
     }else{
         for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]) / 2.0;
     }
