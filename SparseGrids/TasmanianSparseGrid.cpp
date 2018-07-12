@@ -46,6 +46,7 @@ namespace TasGrid{
 const char* TasmanianSparseGrid::getVersion(){ return TASMANIAN_VERSION_STRING; }
 const char* TasmanianSparseGrid::getLicense(){ return TASMANIAN_LICENSE; }
 const char* TasmanianSparseGrid::getGitCommitHash(){ return TASMANIAN_GIT_COMMIT_HASH; }
+const char* TasmanianSparseGrid::getCmakeCxxFlags(){ return TASMANIAN_CXX_FLAGS; }
 int TasmanianSparseGrid::getVersionMajor(){ return TASMANIAN_VERSION_MAJOR; }
 int TasmanianSparseGrid::getVersionMinor(){ return TASMANIAN_VERSION_MINOR; }
 bool TasmanianSparseGrid::isOpenMPEnabled(){

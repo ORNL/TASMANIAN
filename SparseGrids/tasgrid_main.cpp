@@ -73,6 +73,7 @@ int main(int argc, const char ** argv){
         cout << "Tasmanian Sparse Grids  version: " << TasmanianSparseGrid::getVersion() << endl;
         if (strcmp(TasmanianSparseGrid::getGitCommitHash(), "Tasmanian git hash is not available here") != 0){
             cout << "                git commit hash: " << TasmanianSparseGrid::getGitCommitHash() << endl;
+            cout << "                cmake cxx flags: " << TasmanianSparseGrid::getCmakeCxxFlags() << endl;
         }
         cout << "                        license: " << TasmanianSparseGrid::getLicense() << endl;
         if (TasmanianSparseGrid::isOpenMPEnabled()){

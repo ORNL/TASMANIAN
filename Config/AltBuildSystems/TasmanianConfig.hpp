@@ -37,6 +37,7 @@
 #define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
 
 #define TASMANIAN_GIT_COMMIT_HASH "Tasmanian git hash is not available here"
+#define TASMANIAN_CXX_FLAGS "Not availabe in simple GNU Make mode"
 
 ////////////////////////////////////////////////////////////////////////
 // In order to enable advanced options for Tasmanian,
