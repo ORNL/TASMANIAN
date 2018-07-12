@@ -429,7 +429,7 @@ if (( $bSkilBashrc == 0 )); then
 # check if $sInstallPrefix is absolute or relative
     cd $sInstallPrefix/share/Tasmanian/
     if [ ! $? -eq 0 ] || [ ! -f ./TasmanianENVsetup.sh ]; then
-        echo "Very odd! There were no previous errors but cannot find $sInstallPrefix/config/TasmanianENVsetup.sh"
+        echo "Very odd! There were no previous errors but cannot find $sInstallPrefix/share/Tasmanian/TasmanianENVsetup.sh"
         echo "This must be a bug!"
         echo "At any rate, cannot automatically edit .bashrc, thus exising"
         echo ""
