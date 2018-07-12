@@ -588,7 +588,7 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
         double power = -0.5 * (1.0 + global->getAlpha());
         for(int j=0; j<num_dimensions; j++) scale *= pow(domain_transform_b[j], power);
     }else if (rule == rule_fourier){
-        for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]); 
+        for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]);
     }else{
         for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]) / 2.0;
     }
