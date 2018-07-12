@@ -37,7 +37,7 @@
 #define TASMANIAN_LICENSE "@Tasmanian_license@"
 
 #define TASMANIAN_GIT_COMMIT_HASH "@Tasmanian_git_hash@"
-#define TASMANIAN_CXX_FLAGS "@CMAKE_CXX_FLAGS@"
+#define TASMANIAN_CXX_FLAGS "@CMAKE_BUILD_TYPE@, @CMAKE_CXX_FLAGS@"
 
 // cmake options propagated to the source code
 #cmakedefine Tasmanian_ENABLE_BLAS
