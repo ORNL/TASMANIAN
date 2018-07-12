@@ -14,7 +14,6 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_ENABLE_CUBLAS:BOOL=ON
 #    -D Tasmanian_ENABLE_CUDA:BOOL=OFF
 #    -D Tasmanian_ENABLE_MAGMA:BOOL=OFF
-#    -D Tasmanian_ENABLE_MATLAB:BOOL=OFF
 #    -D Tasmanian_ENABLE_PYTHON:BOOL=ON
 #    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF
 #    -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""
@@ -102,7 +101,6 @@ option(Tasmanian_STRICT_OPTIONS "Disable automatic adjustment of the build optio
 option(Tasmanian_ENABLE_OPENMP  "Enable OpenMP support for Tasmanian"    ON)
 option(Tasmanian_ENABLE_BLAS    "Enable CPU Blas support for Tasmanian"  ON)
 option(Tasmanian_ENABLE_MPI     "Enable MPI support for Tasmanian"       OFF)
-option(Tasmanian_ENABLE_MATLAB  "Enable MATLAB interface for Tasmanian"  OFF)
 option(Tasmanian_ENABLE_PYTHON  "Enable Python interface for Tasmanian"  ON)
 option(Tasmanian_ENABLE_FORTRAN "Enable Fortran interface for Tasmanian" OFF)
 option(Tasmanian_ENABLE_CUBLAS  "Enable Nvidia GPU acceleration using cuBLAS within Tasmanian"       ON)
@@ -151,7 +149,7 @@ if (Tasmanian_ENABLE_PYTHON)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfacePython"  "${CMAKE_CURRENT_BINARY_DIR}/Python")
 endif()
 
-if (Tasmanian_ENABLE_MATLAB)
+if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceMATLAB"  "${CMAKE_CURRENT_BINARY_DIR}/MATLAB")
 endif()
 
@@ -247,8 +245,8 @@ if (NOT USE_XSDK_DEFAULTS)
     else()
         message(" -D BUILD_SHARED_LIBS=Undefined")
     endif()
-    foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_MPI
-                             Tasmanian_ENABLE_MATLAB  Tasmanian_ENABLE_PYTHON
+    foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS
+                             Tasmanian_ENABLE_MPI     Tasmanian_ENABLE_PYTHON
                              Tasmanian_ENABLE_CUBLAS  Tasmanian_ENABLE_CUDA
                              Tasmanian_ENABLE_MAGMA   Tasmanian_ENABLE_FORTRAN)
         if (${Tasmanian_option})
@@ -260,7 +258,7 @@ if (NOT USE_XSDK_DEFAULTS)
     if (Tasmanian_MAGMA AND Tasmanian_MAGMA_ROOT)
         message(" -D Tasmanian_MAGMA_ROOT:PATH=${Tasmanian_MAGMA_ROOT}")
     endif()
-    if (Tasmanian_ENABLE_MATLAB)
+    if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
         message(" -D Tasmanian_MATLAB_WORK_FOLDER:PATH=${Tasmanian_MATLAB_WORK_FOLDER}")
         message(" pre-install MATLAB folder: addpath('${CMAKE_CURRENT_BINARY_DIR}/MATLAB/matlab/')")
     endif()
