@@ -59,7 +59,7 @@ else
         [vals] = tsgReadMatrix(sFileO);
     elseif (strcmp(lGrid.sType, 'fourier'))
         [tmp] = tsgReadMatrix(sFileO);
-        vals = tmp(:,1:2:end) + sqrt(-1)*tmp(:,2:2:end);
+        vals = tmp(:,1:2:end) + i * tmp(:,2:2:end);     % i is unit imaginary
     else
         fid = fopen(sFileO);
         TSG = fread(fid, [1, 3], '*char');
@@ -72,8 +72,8 @@ else
             indx = fread(fid, [NNZ], '*int')';
             vals = fread(fid, [NNZ], '*double')';
             rindx = ones(NNZ, 1);
-            for i = 1:Rows
-                rindx((pntr(i)+1):(pntr(i+1))) = i;
+            for r = 1:Rows
+                rindx((pntr(r)+1):(pntr(r+1))) = r;
             end
             %[Rows, Cols, NNZ]
             vals = sparse(rindx, double(indx + 1.0), vals, double(Rows), double(Cols), double(NNZ));

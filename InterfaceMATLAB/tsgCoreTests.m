@@ -464,21 +464,21 @@ if ((abs(norm(sum(w)) - 58.0) > 1.E-11) || (abs(max(p(:, 1)) - 13.0/3.0) > 1.E-1
 end
 
 % correctness of 1-D
-[lGrid, pf] = tsgMakeFourier('_tsgcoretests_lgrid', 1, 1, 'level', 2);
-bmark = [0.0; 1.0/3.0; 2.0/3.0; 1.0/9.0; 2.0/9.0; 4.0/9.0; 5.0/9.0; 7.0/9.0; 8.0/9.0];
-if (norm(pf - bmark) > 1.E-11)
+[lGrid, p] = tsgMakeFourier('_tsgcoretests_lgrid', 1, 1, 'level', 2);
+tp = [0.0; 1.0/3.0; 2.0/3.0; 1.0/9.0; 2.0/9.0; 4.0/9.0; 5.0/9.0; 7.0/9.0; 8.0/9.0];
+if (norm(p - tp) > 1.E-11)
     error('Mismatch in tsgMakeFourier: points');
 end
 
 % level limits
-[lGrid, p] = tsgMakeFourier('_tsgcoretests_lgrid', 3, 1, 'level', 2, [], [], [], [], [0, 1, 2]);
-if (min(abs(p(:,1))) > 1.E-8)
+[lGrid, p] = tsgMakeFourier('_tsgcoretests_lgrid', 3, 1, 'level', 3, [], [], [], [], [0, 1, 2]);
+if (max(abs(p(:,1))) > 1.E-8)
     error('Mismatch in tsgMakeFourier: level limit, dim 1');
 end
-if (min(abs(p(:,2) - 2.0/3.0)) > 1.E-8)
+if (min(abs(p(:,2) - 1.0/9.0)) < 1.E-8)
     error('Mismatch in tsgMakeFourier: level limit, dim 2');
 end
-if (min(abs(p(:,3) - 8.0/9.0)) > 1.E-8)
+if (min(abs(p(:,3) - 1.0/27.0)) < 1.E-8)
     error('Mismatch in tsgMakeFourier: level limit, dim 3');
 end
 tsgDeleteGrid(lGrid);

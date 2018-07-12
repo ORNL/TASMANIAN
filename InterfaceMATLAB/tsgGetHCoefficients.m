@@ -39,8 +39,7 @@ end
 
 if (strcmp(lGrid.sType, 'fourier'))
     % convert to complex matrix if needed
-    coefficients(:, 1:end/2) = coefficients(:, 1:2:end) + sqrt(-1)*coefficients(:, 2:2:end);
-    coefficients = coefficients(:, 1:end/2);
+    coefficients = coefficients(:, 1:2:end) + i * coefficients(:, 2:2:end);     % i is unit imaginary
 end
 
 tsgCleanTempFiles(lGrid, lClean);
