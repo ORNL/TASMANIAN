@@ -97,6 +97,11 @@ int main(int argc, const char ** argv){
             anyAcc = true;
             anyGPU = true;
         }
+        if (TasmanianSparseGrid::isAccelerationAvailable(accel_gpu_magma)){
+            cout << " " << AccelerationMeta::getIOAccelerationString(accel_gpu_magma);
+            anyAcc = true;
+            anyGPU = true;
+        }
         if (!anyAcc){
             cout << " none";
         }

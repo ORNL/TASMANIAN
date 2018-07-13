@@ -49,7 +49,7 @@ lsTsgGlobalTypes = ["level", "curved", "iptotal", "ipcurved", "qptotal", "qpcurv
 lsTsgCurvedTypes = ["curved", "ipcurved", "qpcurved"]
 lsTsgSequenceRules = ["leja", "rleja", "rleja-shifted", "max-lebesgue", "min-lebesgue", "min-delta"]
 lsTsgLocalRules = ["localp", "semi-localp", "localp-zero"]
-lsTsgAccelTypes = ["none", "cpu-blas", "gpu-fullmem", "gpu-default", "gpu-cublas", "gpu-cuda"]
+lsTsgAccelTypes = ["none", "cpu-blas", "gpu-default", "gpu-cublas", "gpu-cuda", "gpu-magma"]
 
 class TasmanianInputError(Exception):
     '''Exception raised for incorret input to Tasmanian

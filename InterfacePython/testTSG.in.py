@@ -137,7 +137,7 @@ class TestTasmanian(unittest.TestCase):
             sStatus = "Disabled"
         print("                        OpenMP: {0:1s}".format(sStatus))
         sAvailableAcceleration = ""
-        for s in ["cpu-blas", "gpu-cublas", "gpu-cuda", "gpu-default"]:
+        for s in ["cpu-blas", "gpu-cublas", "gpu-cuda", "gpu-magma"]:
             if (grid.isAccelerationAvailable(s)):
                 sAvailableAcceleration += " " + s
         print("        Available acceleration:{0:1s}".format(sAvailableAcceleration))
@@ -367,7 +367,7 @@ class TestTasmanian(unittest.TestCase):
         print("\nTesting accelerated evaluate consistency")
 
         iGPUID = @Tasmanian_TESTS_GPU_ID@
-        
+
         grid = TasmanianSG.TasmanianSparseGrid()
 
         if (@Tasmanian_cmake_synctest_enable@):

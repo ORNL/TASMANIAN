@@ -1459,7 +1459,7 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
         case accel_gpu_cuda:   return false;
         #endif // Tasmanian_ENABLE_CUDA
 
-        #ifdef TASMANIAN_ENABLE_MAGMA
+        #ifdef Tasmanian_ENABLE_MAGMA
         case accel_gpu_magma:   return true;
         #else
         case accel_gpu_magma:   return false;
