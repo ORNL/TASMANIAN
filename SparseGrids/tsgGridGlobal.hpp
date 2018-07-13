@@ -98,13 +98,13 @@ public:
     void evaluateFastCPUblas(const double x[], double y[]) const;
     void evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const;
     void evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const;
-    void evaluateFastGPUmagma(const double x[], double y[], std::ostream *os) const;
+    void evaluateFastGPUmagma(int gpuID, const double x[], double y[], std::ostream *os) const;
 
     void evaluateBatch(const double x[], int num_x, double y[]) const;
     void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const;
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const;
-    void evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const;
+    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[], std::ostream *os) const;
 
     int* estimateAnisotropicCoefficients(TypeDepth type, int output) const;
 

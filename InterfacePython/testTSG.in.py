@@ -137,7 +137,7 @@ class TestTasmanian(unittest.TestCase):
             sStatus = "Disabled"
         print("                        OpenMP: {0:1s}".format(sStatus))
         sAvailableAcceleration = ""
-        for s in ["cpu-blas", "gpu-cublas", "gpu-cuda", "gpu-default"]:
+        for s in ["cpu-blas", "gpu-cublas", "gpu-cuda", "gpu-magma"]:
             if (grid.isAccelerationAvailable(s)):
                 sAvailableAcceleration += " " + s
         print("        Available acceleration:{0:1s}".format(sAvailableAcceleration))
@@ -367,7 +367,7 @@ class TestTasmanian(unittest.TestCase):
         print("\nTesting accelerated evaluate consistency")
 
         iGPUID = @Tasmanian_TESTS_GPU_ID@
-        
+
         grid = TasmanianSG.TasmanianSparseGrid()
 
         if (@Tasmanian_cmake_synctest_enable@):
@@ -425,7 +425,7 @@ class TestTasmanian(unittest.TestCase):
         lTests = ['grid.makeLocalPolynomialGrid(2, 3, 4, 1, "localp")']
 
         iNumGPUs = grid.getNumGPUs()
-        lsAccelTypes = ["none", "cpu-blas", "gpu-cuda", "gpu-cublas"]
+        lsAccelTypes = ["none", "cpu-blas", "gpu-cuda", "gpu-cublas", "gpu-magma"]
 
         for sTest in lTests:
             for iI in range(2):
@@ -443,7 +443,7 @@ class TestTasmanian(unittest.TestCase):
                         grid.setDomainTransform(aDomainTransform)
 
                     grid.enableAcceleration(sAcc)
-                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas")):
+                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas") or (sAcc == "gpu-magma")):
                         if (iGPU < grid.getNumGPUs()): # without cuda or cublas, NumGPUs is 0 and cannot set GPU
                             grid.setGPUID(iGPU)
 
@@ -456,7 +456,7 @@ class TestTasmanian(unittest.TestCase):
                     aFast = np.array([ grid.evaluate(aTestPoints[i,:]) for i in range(iFastEvalSubtest) ])
                     np.testing.assert_almost_equal(aRegular[0:iFastEvalSubtest,:], aFast, 14, "Batch evaluation test not equal: {0:1s}, acceleration: {1:1s}, gpu: {2:1d}".format(sTest, sAcc, iGPU), True)
 
-                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas")):
+                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas") or (sAcc == "gpu-magma")):
                         if (iGPUID == -1):
                             iGPU += 1
                             if (iGPU >= iNumGPUs):

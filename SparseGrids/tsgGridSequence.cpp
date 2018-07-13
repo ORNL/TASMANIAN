@@ -511,7 +511,7 @@ void GridSequence::evaluateFastGPUcublas(const double x[], double y[], std::ostr
 void GridSequence::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{
     evaluateFastGPUcublas(x, y, os);
 }
-void GridSequence::evaluateFastGPUmagma(const double x[], double y[], std::ostream *os) const{
+void GridSequence::evaluateFastGPUmagma(int, const double x[], double y[], std::ostream *os) const{
     evaluateFastGPUcublas(x, y, os);
 }
 
@@ -593,7 +593,7 @@ void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[],
 }
 #endif // Tasmanian_ENABLE_CUDA
 
-void GridSequence::evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const{
+void GridSequence::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream *os) const{
     evaluateBatchGPUcublas(x, num_x, y, os);
 }
 #if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)

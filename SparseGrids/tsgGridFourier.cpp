@@ -27,7 +27,7 @@
  * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
- 
+
 #ifndef __TASMANIAN_SPARSE_GRID_FOURIER_CPP
 #define __TASMANIAN_SPARSE_GRID_FOURIER_CPP
 
@@ -150,7 +150,7 @@ void GridFourier::read(std::ifstream &ifs, std::ostream *logstream){
             for(int j=0; j<work->getNumDimensions(); j++){
                 exponent[j] = (work->getIndex(i)[j] % 2 == 0 ? -work->getIndex(i)[j]/2 : (work->getIndex(i)[j]+1)/2);
             }
-            exponents_unsorted->addIndex(exponent); 
+            exponents_unsorted->addIndex(exponent);
         }
 
         exponents = new IndexSet(exponents_unsorted);
@@ -217,7 +217,7 @@ void GridFourier::writeBinary(std::ofstream &ofs) const{
 }
 
 void GridFourier::readBinary(std::ifstream &ifs, std::ostream *logstream){
-    reset(); 
+    reset();
     int num_dim_out[2];
     ifs.read((char*) num_dim_out, 2*sizeof(int));
     num_dimensions = num_dim_out[0];
@@ -269,7 +269,7 @@ void GridFourier::readBinary(std::ifstream &ifs, std::ostream *logstream){
             for(int j=0; j<work->getNumDimensions(); j++){
                 exponent[j] = (work->getIndex(i)[j] % 2 == 0 ? -work->getIndex(i)[j]/2 : (work->getIndex(i)[j]+1)/2);
             }
-            exponents_unsorted->addIndex(exponent); 
+            exponents_unsorted->addIndex(exponent);
         }
         exponents = new IndexSet(exponents_unsorted);
         delete[] exponent;
@@ -362,7 +362,7 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
         for(int j=0; j<needed->getNumDimensions(); j++){
             exponent[j] = (needed->getIndex(i)[j] % 2 == 0 ? -needed->getIndex(i)[j]/2 : (needed->getIndex(i)[j]+1)/2);
         }
-        exponents_unsorted->addIndex(exponent); 
+        exponents_unsorted->addIndex(exponent);
     }
 
     exponents = new IndexSet(exponents_unsorted);
@@ -503,9 +503,9 @@ int GridFourier::convertIndexes(const int i, const int levels[]) const {
     // Now we move from external to internal indexing
     int *p_internal = new int[num_dimensions];
     for(int j=0; j<num_dimensions; j++){
-        int tmp = p[j]; 
-        if (tmp == 0){ 
-            p_internal[j] = 0; 
+        int tmp = p[j];
+        if (tmp == 0){
+            p_internal[j] = 0;
         }else{
             int go_back = 0;
             while(tmp % 3 == 0 && tmp != 0){
@@ -514,7 +514,7 @@ int GridFourier::convertIndexes(const int i, const int levels[]) const {
             }
 
             int num_prev_level = wrapper->getNumPoints(levels[j]-go_back-1);
-            p_internal[j] = num_prev_level + (tmp/3)*2 + tmp % 3 - 1;   
+            p_internal[j] = num_prev_level + (tmp/3)*2 + tmp % 3 - 1;
         }
     }
 
@@ -529,7 +529,7 @@ void GridFourier::calculateFourierCoefficients(){
     fourier_coefs = new std::complex<double>[num_outputs * num_nodes];
     std::fill(fourier_coefs, fourier_coefs + num_outputs*num_nodes, std::complex<double>(0,0));
     for(int k=0; k<num_outputs; k++){
-        for(int n=0; n<active_tensors->getNumIndexes(); n++){  
+        for(int n=0; n<active_tensors->getNumIndexes(); n++){
             const int* levels = active_tensors->getIndex(n);
             int num_tensor_points = 1;
             int* num_oned_points = new int[num_dimensions];
@@ -552,7 +552,7 @@ void GridFourier::calculateFourierCoefficients(){
 
             for(int i=0; i<num_tensor_points; i++){
                 // Combine with tensor weights
-                fourier_coefs[num_outputs*(exponent_refs[n][i]) + k] += ((double) active_w[n]) * out[i] / ((double) num_tensor_points);    
+                fourier_coefs[num_outputs*(exponent_refs[n][i]) + k] += ((double) active_w[n]) * out[i] / ((double) num_tensor_points);
             }
         }
     }
@@ -582,16 +582,16 @@ void GridFourier::getBasisFunctions(const double x[], double weights[]) const {
     delete[] tmp;
 }
 
-double* GridFourier::getInterpolationWeights(const double x[]) const { 
+double* GridFourier::getInterpolationWeights(const double x[]) const {
     double *w = new double[getNumPoints()];
     getInterpolationWeights(x,w);
     return w;
 }
-void GridFourier::getInterpolationWeights(const double x[], double weights[]) const { 
+void GridFourier::getInterpolationWeights(const double x[], double weights[]) const {
     /*
     I[f](x) = c^T * \Phi(x) = (U*P*f)^T * \Phi(x)           (U represents normalized forward Fourier transform; P represents reordering of f_i before going into FT)
                             = f^T * (P^T * U^T * \Phi(x))   (P^T = P^(-1) since P is a permutation matrix)
-                         
+
     Note that U is the DFT operator (complex) and the transposes are ONLY REAL transposes, so U^T = U.
     */
 
@@ -610,7 +610,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
 
         std::complex<double> *in = new std::complex<double>[num_tensor_points];
         std::complex<double> *out = new std::complex<double>[num_tensor_points];
-        
+
         for(int i=0; i<num_tensor_points; i++){
             in[i] = basisFuncs[exponent_refs[n][i]];
         }
@@ -620,22 +620,22 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
         for(int i=0; i<num_tensor_points; i++){
             int key = convertIndexes(i, levels);
             weights[key] += ((double) active_w[n]) * out[i].real()/((double) num_tensor_points);
-        } 
+        }
     }
     delete[] basisFuncs;
 }
 
 double* GridFourier::getQuadratureWeights() const {
     int num_points = getNumPoints();
-    double *w = new double[num_points]; 
+    double *w = new double[num_points];
     getQuadratureWeights(w);
     return w;
 }
 void GridFourier::getQuadratureWeights(double weights[]) const{
 
-    /* 
-     * When integrating the Fourier series on a tensored grid, all the 
-     * nonzero modes vanish, and we're left with the normalized Fourier 
+    /*
+     * When integrating the Fourier series on a tensored grid, all the
+     * nonzero modes vanish, and we're left with the normalized Fourier
      * coeff for e^0 (sum of the data divided by number of points)
      */
 
@@ -693,7 +693,7 @@ void GridFourier::evaluateFastGPUcublas(const double x[], double y[], std::ostre
 void GridFourier::evaluateFastGPUcuda(const double x[], double y[], std::ostream*) const{
     evaluateFastCPUblas(x,y);
 }
-void GridFourier::evaluateFastGPUmagma(const double x[], double y[], std::ostream*) const{
+void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[], std::ostream*) const{
     evaluateFastCPUblas(x,y);
 }
 
@@ -730,7 +730,7 @@ void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]
 void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream*) const {
     evaluateBatchCPUblas(x, num_x, y);
 }
-void GridFourier::evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream*) const {
+void GridFourier::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream*) const {
     evaluateBatchCPUblas(x, num_x, y);
 }
 

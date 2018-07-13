@@ -710,7 +710,7 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostrea
 void GridGlobal::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{
     evaluateFastGPUcublas(x, y, os);
 }
-void GridGlobal::evaluateFastGPUmagma(const double x[], double y[], std::ostream *os) const{
+void GridGlobal::evaluateFastGPUmagma(int, const double x[], double y[], std::ostream *os) const{
     evaluateFastGPUcublas(x, y, os);
 }
 
@@ -764,10 +764,35 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[],
 void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
     evaluateBatchGPUcublas(x, num_x, y, os);
 }
-void GridGlobal::evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const{
-    evaluateBatchGPUcublas(x, num_x, y, os);
+
+#ifdef Tasmanian_ENABLE_MAGMA
+void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[], std::ostream *os) const{
+    int num_points = points->getNumIndexes();
+    makeCheckAccelerationData(accel_gpu_magma, os);
+
+    AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
+    double *weights = new double[((size_t) num_points) * ((size_t) num_x)];
+    evaluateHierarchicalFunctions(x, num_x, weights);
+
+    double *gpu_weights = TasCUDA::cudaSend(((size_t) num_points) * ((size_t) num_x), weights, os);
+    double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x), os);
+
+    gpu->magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, gpu_weights, gpu_result);
+
+    TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, y, os);
+
+    TasCUDA::cudaDel<double>(gpu_result, os);
+    TasCUDA::cudaDel<double>(gpu_weights, os);
+
+    delete[] weights;
 }
-#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
+#else
+void GridGlobal::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream *os) const{
+    evaluateBatchGPUcublas(x, num_x, y, os); // under the new acceleration fallback scheme, this should never get called
+}
+#endif // Tasmanian_ENABLE_MAGMA
+
+#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_MAGMA)
 void GridGlobal::makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const{
     if (AccelerationMeta::isAccTypeFullMemoryGPU(acc)){
         if ((accel != 0) && (!accel->isCompatible(acc))){
