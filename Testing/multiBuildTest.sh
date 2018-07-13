@@ -271,7 +271,6 @@ if (( $bNVCC == 1 )); then
           -D Tasmanian_ENABLE_CUBLAS=ON \
           -D Tasmanian_ENABLE_CUDA=ON \
           -D Tasmanian_ENABLE_PYTHON=ON \
-          -D Tasmanian_ENABLE_MATLAB=OFF \
           -D Tasmanian_ENABLE_MPI=OFF \
           -D Tasmanian_ENABLE_FORTRAN=OFF \
           $sTempBuild/Tasmanian || { exit 1; }
@@ -309,7 +308,6 @@ if (( $bNVCC == 1 )); then
           -D Tasmanian_ENABLE_CUBLAS=OFF \
           -D Tasmanian_ENABLE_CUDA=ON \
           -D Tasmanian_ENABLE_PYTHON=ON \
-          -D Tasmanian_ENABLE_MATLAB=OFF \
           -D Tasmanian_ENABLE_MPI=OFF \
           -D Tasmanian_ENABLE_FORTRAN=OFF \
           $sTempBuild/Tasmanian || { exit 1; }
