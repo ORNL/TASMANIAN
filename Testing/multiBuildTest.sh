@@ -210,7 +210,7 @@ fi
 
 
 ########################################################################
-# Test: default install, install.sh
+# Test: default install, install script
 ########################################################################
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
@@ -226,7 +226,7 @@ fi
 cd $sTempBuild
 rm -fr Tasmanian/
 cd $sTestRoot
-echo "======= PASSED: default install, using install.sh" >> $sMultibuildLogFile
+echo "======= PASSED: default install, using install script" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
 
