@@ -27,7 +27,7 @@
  * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
- 
+
 #ifndef __TASMANIAN_SPARSE_GRID_FOURIER_HPP
 #define __TASMANIAN_SPARSE_GRID_FOURIER_HPP
 
@@ -94,12 +94,12 @@ public:
     void evaluateFastCPUblas(const double x[], double y[]) const;
     void evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const;
     void evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const;
-    void evaluateFastGPUmagma(const double x[], double y[], std::ostream *os) const;
+    void evaluateFastGPUmagma(int gpuID, const double x[], double y[], std::ostream *os) const;
 
     void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const;
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const;
-    void evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const;
+    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[], std::ostream *os) const;
 
     void integrate(double q[], double *conformal_correction) const;
 
@@ -118,7 +118,7 @@ protected:
     void reset();
     void calculateFourierCoefficients();
 
-    std::complex<double>* getBasisFunctions(const double x[]) const;    
+    std::complex<double>* getBasisFunctions(const double x[]) const;
     void getBasisFunctions(const double x[], std::complex<double> weights[]) const;
     void getBasisFunctions(const double x[], double weights[]) const;   // for evaluateHierarchicalFunctions (parallelized)
 

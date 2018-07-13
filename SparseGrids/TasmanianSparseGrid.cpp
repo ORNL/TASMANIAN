@@ -393,7 +393,7 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
             break;
         case accel_gpu_magma:
             _TASMANIAN_SETGPU
-            base->evaluateFastGPUmagma(x_canonical, y, logstream);
+            base->evaluateFastGPUmagma(gpuID, x_canonical, y, logstream);
             break;
         case accel_cpu_blas:
             base->evaluateFastCPUblas(x_canonical, y);
@@ -420,7 +420,7 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
             break;
         case accel_gpu_magma:
             _TASMANIAN_SETGPU
-            base->evaluateBatchGPUmagma(x_canonical, num_x, y, logstream);
+            base->evaluateBatchGPUmagma(gpuID, x_canonical, num_x, y, logstream);
             break;
         case accel_cpu_blas:
             base->evaluateBatchCPUblas(x_canonical, num_x, y);

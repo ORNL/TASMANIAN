@@ -83,9 +83,13 @@ public:
 
     void cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses);
 
+    void magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
+
 protected:
     void makeCuBlasHandle();
     void makeCuSparseHandle();
+
+    void initializeMagma(int gpuID);
 
 private:
     double *gpu_values;
@@ -95,6 +99,12 @@ private:
     #ifdef Tasmanian_ENABLE_CUBLAS
     void *cublasHandle;
     void *cusparseHandle;
+    #endif
+
+    #ifdef Tasmanian_ENABLE_MAGMA
+    bool magma_initialized; // call init once per object (must simplify later)
+    void *magmaCudaStream;
+    void *magmaCudaQueue;
     #endif
 
     std::ostream *logstream;
@@ -148,7 +158,7 @@ namespace AccelerationMeta{
     bool isAccTypeGPU(TypeAcceleration accel);
 
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
-    
+
     void cudaCheckError(void *cudaStatus, const char *info, std::ostream *os);
     void cublasCheckError(void *cublasStatus, const char *info, std::ostream *os);
     void cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os);

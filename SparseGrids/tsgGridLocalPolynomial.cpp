@@ -490,7 +490,7 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], st
 #endif
 // evaluation of a single x cannot be accelerated with a gpu (not parallelizable), do that on the CPU and use the GPU only for the case of many outputs
 void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[], std::ostream* os) const{ evaluateFastGPUcublas(x, y, os); }
-void GridLocalPolynomial::evaluateFastGPUmagma(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
+void GridLocalPolynomial::evaluateFastGPUmagma(int, const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
 
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
@@ -645,7 +645,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
     evaluateBatchGPUcublas(x, num_x, y, os);
     #endif // Tasmanian_ENABLE_CUDA
 }
-void GridLocalPolynomial::evaluateBatchGPUmagma(const double x[], int num_x, double y[], std::ostream *os) const{
+void GridLocalPolynomial::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream *os) const{
     evaluateBatchGPUcublas(x, num_x, y, os);
 }
 

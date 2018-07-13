@@ -36,7 +36,7 @@
 #include "tsgCudaMacros.hpp"
 
 #ifdef Tasmanian_ENABLE_MAGMA
-#include "magma.h"
+#include "magma_v2.h"
 #include "magmasparse.h"
 #endif
 
@@ -51,6 +51,11 @@ AccelerationDataGPUFull::AccelerationDataGPUFull() :
 #ifdef Tasmanian_ENABLE_CUBLAS
     cublasHandle = 0;
     cusparseHandle = 0;
+#endif
+#ifdef Tasmanian_ENABLE_MAGMA
+    magma_initialized = false; // call init once per object (must simplify later)
+    magmaCudaStream = 0;
+    magmaCudaQueue = 0;
 #endif
 }
 AccelerationDataGPUFull::~AccelerationDataGPUFull(){
@@ -72,6 +77,13 @@ AccelerationDataGPUFull::~AccelerationDataGPUFull(){
         cusparseHandle = 0;
     }
     #endif // Tasmanian_ENABLE_CUBLAS
+    #ifdef Tasmanian_ENABLE_MAGMA
+    if (magmaCudaQueue != 0) magma_queue_destroy((magma_queue*) magmaCudaQueue);
+    magmaCudaQueue = 0;
+    if (magma_initialized) magma_finalize();
+    if (magmaCudaStream != 0) cudaStreamDestroy((cudaStream_t) magmaCudaStream);
+    magmaCudaStream = 0;
+    #endif
 }
 void AccelerationDataGPUFull::makeCuBlasHandle(){
     #ifdef Tasmanian_ENABLE_CUBLAS
@@ -90,6 +102,18 @@ void AccelerationDataGPUFull::makeCuSparseHandle(){
         cusparseHandle = (void*) csh;
     }
     #endif // Tasmanian_ENABLE_CUBLAS
+}
+
+void AccelerationDataGPUFull::initializeMagma(int gpuID){
+    #ifdef Tasmanian_ENABLE_MAGMA
+    if (!magma_initialized){
+        magma_init();
+        magma_initialized = true;
+    }
+    makeCuBlasHandle();
+    makeCuSparseHandle();
+    magma_queue_create_from_cuda(gpuID, (cudaStream_t) magmaCudaStream, (cublasHandle_t) cublasHandle, (cusparseHandle_t) cusparseHandle, ((magma_queue**) &magmaCudaQueue));
+    #endif
 }
 
 void AccelerationDataGPUFull::setLogStream(std::ostream *os){ logstream = os; }
@@ -328,6 +352,20 @@ void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, co
 void AccelerationDataGPUFull::cusparseMatvec(int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatveci(int, int, int, const int*, const double*, double*){}
 #endif // defined Tasmanian_ENABLE_CUBLAS
+
+#ifdef Tasmanian_ENABLE_MAGMA
+void AccelerationDataGPUFull::magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
+    initializeMagma(gpuID); // calls magma_init(), but only if not called before by this object
+
+    double alpha = 1.0, beta = 0.0;
+    magma_trans_t noTranspose = MagmaNoTrans;
+    magma_dgemm(noTranspose, noTranspose, num_outputs, num_x, num_points, alpha, gpu_values, num_outputs,
+                gpu_weights, num_points, beta, gpu_result, num_outputs, (magma_queue_t) magmaCudaQueue);
+}
+#else
+void AccelerationDataGPUFull::magmaCudaDGEMM(int, int, int, const double[], double*){}
+#endif
+
 
 TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
     if (strcmp(name, "cpu-blas") == 0){
