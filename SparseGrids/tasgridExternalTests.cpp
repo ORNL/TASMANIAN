@@ -1010,7 +1010,7 @@ bool ExternalTester::testAllFourier() const{
         int num_eval = 10;
         int *indx = 0, *pntr = 0;
         double *vals = 0;
-        double *pnts = new double[2*num_eval]; setRandomX(2*num_eval, pnts); 
+        double *pnts = new double[2*num_eval]; setRandomX(2*num_eval, pnts);
         for(int i=0; i<2*num_eval; i++) pnts[i] = 0.5*(pnts[i]+1.0);    // map to [0,1]^d canonical Fourier domain
         grid.evaluateSparseHierarchicalFunctions(pnts, num_eval, pntr, indx, vals);
         getError(&f21expsincos, &grid, type_internal_interpolation); // this is done to load the values
@@ -1051,10 +1051,10 @@ bool ExternalTester::testAllFourier() const{
                 pass = false;
             }
         }
-        delete[] indx; 
-        delete[] pntr; 
-        delete[] vals; 
-        delete[] pnts; 
+        delete[] indx;
+        delete[] pntr;
+        delete[] vals;
+        delete[] pnts;
         delete[] y;
         delete[] v;
     }
@@ -1802,7 +1802,7 @@ bool ExternalTester::testAllAcceleration() const{
     }else{
         cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl;
     }
-    
+
     #ifdef Tasmanian_ENABLE_CUDA
     pass = pass && testGPU2GPUevaluations();
     if (pass){
