@@ -35,6 +35,11 @@
 
 #include "tsgCudaMacros.hpp"
 
+#ifdef Tasmanian_ENABLE_MAGMA
+#include "magma.h"
+#include "magmasparse.h"
+#endif
+
 namespace TasGrid{
 
 BaseAccelerationData::BaseAccelerationData(){}
