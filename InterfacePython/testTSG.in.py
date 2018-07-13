@@ -98,6 +98,7 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(gridA.isSequence(), gridB.isSequence(), "error in isSequence()")
         self.assertEqual(gridA.isLocalPolynomial(), gridB.isLocalPolynomial(), "error in isLocalPolynomial()")
         self.assertEqual(gridA.isWavelet(), gridB.isWavelet(), "error in isWavelet()")
+        self.assertEqual(gridA.isFourier(), gridB.isFourier(), "error in isFourier()")
 
         self.assertEqual(gridA.isSetDomainTransfrom(), gridB.isSetDomainTransfrom(), "error in isSetDomainTransfrom()")
 
@@ -1165,6 +1166,13 @@ class TestTasmanian(unittest.TestCase):
         pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
         np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
 
+        grid.makeFourierGrid(2, 1, 4, "level")
+        grid.setDomainTransform(np.array([[-1.0, 1.0], [-1.0, 1.0]]))
+        aPoints = np.array([[0.33, 0.25], [-0.27, 0.39], [0.97, -0.76], [-0.44, 0.21], [-0.813, 0.03], [-0.666, 0.666]])
+        aDense = grid.evaluateHierarchicalFunctions(aPoints)
+        pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
+        np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
+
         gridA = TasmanianSG.TasmanianSparseGrid()
         gridB = TasmanianSG.TasmanianSparseGrid()
         gridA.makeGlobalGrid(2, 1, 4, 'level', 'chebyshev')
@@ -1232,6 +1240,12 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(gridA.getNumPoints(), gridB.getNumPoints(), 'different number of points after merge refinement')
         aRes = gridB.evaluateBatch(aPoints)
         np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+
+        gridA.makeFourierGrid(2, 1, 3, 'level')
+        gridB.makeFourierGrid(2, 1, 3, 'level')
+        self.loadExpN2(gridA)
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         self.compareGrids(gridA, gridB)
 
