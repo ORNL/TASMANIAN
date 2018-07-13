@@ -104,8 +104,8 @@ void AccelerationDataGPUFull::makeCuSparseHandle(){
     #endif // Tasmanian_ENABLE_CUBLAS
 }
 
+#ifdef Tasmanian_ENABLE_MAGMA
 void AccelerationDataGPUFull::initializeMagma(int gpuID){
-    #ifdef Tasmanian_ENABLE_MAGMA
     if (!magma_initialized){
         magma_init();
         magma_initialized = true;
@@ -113,8 +113,10 @@ void AccelerationDataGPUFull::initializeMagma(int gpuID){
     makeCuBlasHandle();
     makeCuSparseHandle();
     magma_queue_create_from_cuda(gpuID, (cudaStream_t) magmaCudaStream, (cublasHandle_t) cublasHandle, (cusparseHandle_t) cusparseHandle, ((magma_queue**) &magmaCudaQueue));
-    #endif
 }
+#else
+void AccelerationDataGPUFull::initializeMagma(int){}
+#endif
 
 void AccelerationDataGPUFull::setLogStream(std::ostream *os){ logstream = os; }
 
@@ -363,7 +365,7 @@ void AccelerationDataGPUFull::magmaCudaDGEMM(int gpuID, int num_outputs, int num
                 gpu_weights, num_points, beta, gpu_result, num_outputs, (magma_queue_t) magmaCudaQueue);
 }
 #else
-void AccelerationDataGPUFull::magmaCudaDGEMM(int, int, int, const double[], double*){}
+void AccelerationDataGPUFull::magmaCudaDGEMM(int, int, int, int, const double[], double*){}
 #endif
 
 

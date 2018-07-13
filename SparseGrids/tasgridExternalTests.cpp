@@ -1564,10 +1564,10 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     for(int i=0; i<num_x; i++) grid->evaluate(&(x[i*dims]), &(baseline_y[i*outs]));
 
     bool pass = true;
-    TypeAcceleration acc[4] = {accel_none, accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda};
+    TypeAcceleration acc[5] = {accel_none, accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma};
     int testGpuID = (gpuid == -1) ? 0 : gpuid;
     int c = 0;
-    while(c < 4){
+    while(c < 5){
         grid->enableAcceleration(acc[c]);
         if (c > 1){ // gpu test
             grid->setGPUID(testGpuID);
