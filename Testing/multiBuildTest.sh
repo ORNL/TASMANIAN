@@ -9,6 +9,7 @@ bMacOS=0
 bPython=1
 bPython3=1
 bNVCC=1
+bMAGMA230=0
 /usr/bin/env g++ --version | grep g++
 if ((! $? == 0 )); then
     echo "NOTICE: No g++"
@@ -41,6 +42,10 @@ echo "NOTICE: No NVCC"
 fi
 if [[ `uname -s` == 'Darwin' ]]; then
     bMacOS=1
+fi
+if [ -d ~/.magma230/ ]; then
+    bMAGMA230=1
+    echo "Using MAGMA 2.3.0 in ~/.magma230/"
 fi
 
 sPWD=`pwd`
@@ -145,6 +150,11 @@ if (( $bNVCC == 1 )); then
     echo "nvcc       --- yes" >> $sMultibuildLogFile
 else
     echo "nvcc       ---  no" >> $sMultibuildLogFile
+fi
+if (( $bMAGMA230 == 1 )); then
+    echo "magma 2.3  --- yes" >> $sMultibuildLogFile
+else
+    echo "magma 2.3  ---  no" >> $sMultibuildLogFile
 fi
 
 sDashFort=""
@@ -317,6 +327,48 @@ if (( $bNVCC == 1 )); then
     cd $sTestRoot
     echo "======= PASSED: pure cmake with lots of warning flags, cuda + no cublas" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
+fi
+
+
+#########################################################################
+## Test: pure cmake build with nvcc and magma 2.3.0
+#########################################################################
+if (( $bNVCC == 1)) && (( $bMAGMA230 == 1)); then
+    OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.magma230/lib/
+    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
+    cd $sTempBuild/ || { exit 1; }
+    mkdir Build || { exit 1; }
+    cd Build || { exit 1; }
+    cmake -D CMAKE_INSTALL_PREFIX="$sTempBuild/Install" \
+          -D CMAKE_BUILD_TYPE=Release \
+          -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow" \
+          -D Tasmanian_STRICT_OPTIONS=ON \
+          -D Tasmanian_ENABLE_OPENMP=ON \
+          -D Tasmanian_ENABLE_BLAS=ON \
+          -D Tasmanian_ENABLE_CUBLAS=ON \
+          -D Tasmanian_ENABLE_CUDA=ON \
+          -D Tasmanian_ENABLE_MAGMA=ON \
+          -D Tasmanian_MAGMA_ROOT_DIR=~/.magma230 \
+          -D Tasmanian_ENABLE_PYTHON=ON \
+          -D Tasmanian_ENABLE_MPI=OFF \
+          -D Tasmanian_ENABLE_FORTRAN=OFF \
+          $sTempBuild/Tasmanian || { exit 1; }
+    make -j || { exit 1; }
+    make test || { exit 1; }
+    make install || { exit 1; }
+    make test_install || { exit 1; }
+    if [ ! -f $sTempBuild/Install/lib/libtasmaniansparsegrid.so ]; then
+        echo "cmake did not install correctly"
+        exit 1;
+    fi
+    cd $sTempBuild
+    rm -fr Tasmanian/
+    rm -fr Build/
+    cd $sTestRoot
+    echo "======= PASSED: pure cmake build with nvcc and magma 2.3.0" >> $sMultibuildLogFile
+    echo "===========================================================================================" >> $sMultibuildLogFile
+    export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 fi
 
 
