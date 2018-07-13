@@ -150,27 +150,6 @@ fi
 echo "Looking for cmake ..."
 cmake --version || { echo "ERROR: Could not find cmake command, make sure it is included in your path."; exit 1; }
 
-# lazy way to check cmake versionm, FindCUDA exists only on version 3.x
-sCMAKEversion=`cmake --version | head -n 1 | sed 's/[[:alpha:]|(|[:space:]]//g'`
-sCMAKEversion=${sCMAKEversion:0:1}
-
-if (( $sCMAKEversion < 2 )); then
-    echo "ERROR: Tasmanian requires cmake version 2.8 or newer!"
-    exit 1;
-fi
-
-if [[ $sEnableCUDA == "ON" ]] || [[ $sEnableBLAS == "ON" ]]; then
-    if (( $sCMAKEversion < 3 )); then
-        echo ""
-        echo "WARNING: found cmake version $sCMAKEversion"
-        echo "         recommended version is 3.0 or newer"
-        echo "         CuBLAS and CUDA support requies cmake 2.8 or newer"
-        echo "         on older versions of cmake,"
-        echo "         you must use the -cublas switch"
-        echo ""
-    fi
-fi
-
 echo ""
 echo ""
 
