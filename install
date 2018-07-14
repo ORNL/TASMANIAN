@@ -163,6 +163,9 @@ elif [[ $1 == "-"* ]]; then
     bInstallPrefix=0
 fi
 
+# if there is no install prefix or no second input
+# or the second input starts with -
+# then matlab work folder has not been provided
 bMatlabWork=1
 if (( $bInstallPrefix == 0 )); then
     bMatlabWork=0
@@ -180,72 +183,32 @@ else
     sInstallPrefix=$1
 fi
 
-sMatlabWork="NO_MATLAB"
-sUseMatlab="OFF"
+sMatlabWork=""
 if (( $bMatlabWork == 0 )); then
     if (( $bInstallPrefix == 0 )); then
         echo "Enter path for MATLAB work file (leave empty to disable MATLAB)"
         read -p "matlab work path: " sMatlabWork
-        if [[ -z $sMatlabWork ]]; then
-            sUseMatlab="OFF"
-            sMatlabWork="NO_MATLAB"
-        else
-            sUseMatlab="ON"
-        fi
     fi
 else
-    sUseMatlab="ON"
     sMatlabWork=$2
 fi
 
 echo ""
 
-if [[ $sUseMatlab == "ON" ]]; then
-    if (( $bInstallPrefix == 0 )); then
-        if [ ! -d $sMatlabWork ]; then
-            echo "Matlab work folder $sMatlabWork doesn't exit"
-            read -p "create the folder: (y/N) " sCreate
-            if [[ -z $sCreate ]]; then
-                sCreate="n"
-            fi
-            if [[ $sCreate == "y" ]] || [[ $sCreate == "Y" ]] || [[ $sCreate == "Yes" ]] || [[ $sCreate == "yes" ]]; then
-                mkdir -p $sMatlabWork
-                if [ ! $? == 0 ]; then
-                    echo "ERROR: could not create folder $sMatlabWork"
-                    exit 1;
-                fi
-                # ensure absolute path in $sMatlabWork
-                sPWD=`pwd`
-                cd $sMatlabWork
-                sMatlabWork=`pwd`
-                cd $sPWD
-            else
-                echo "The Matlab interace requires the Matlab work folder,"
-                echo "you must create this or disable Matlab"
-                exit 1;
-            fi
-        else
-            sPWD=`pwd`
-            cd $sMatlabWork
-            if [ ! $? == 0 ]; then
-                echo "ERROR: could not access matlab folder $sMatlabWork"
-                exit 1;
-            fi
-            sMatlabWork=`pwd`
-            cd $sPWD
-        fi
-    else # automatically create $sMatlabWork
-        mkdir -p $sMatlabWork
-        if [ ! $? == 0 ]; then
-            echo "ERROR: could not create folder $sMatlabWork"
-            exit 1;
-        fi
-        # ensure absolute path in $sMatlabWork
-        sPWD=`pwd`
-        cd $sMatlabWork
-        sMatlabWork=`pwd`
-        cd $sPWD
+# cmake seems to handle relative paths as relative to the build folder
+# the user is likely to interpret relative paths to the location of the install script
+# thus we create the folder here and convert the folder to absolute path
+if [[ ! -z $sMatlabWork ]]; then
+    mkdir -p $sMatlabWork
+    if [ ! $? == 0 ]; then
+        echo "ERROR: could not create folder $sMatlabWork"
+        exit 1;
     fi
+    # ensure absolute path in $sMatlabWork
+    sPWD=`pwd`
+    cd $sMatlabWork
+    sMatlabWork=`pwd`
+    cd $sPWD
 fi
 
 
@@ -256,7 +219,7 @@ echo ""
 echo "Installing Tasmanian with options:"
 echo "   install path: $sInstallPrefix"
 
-if [[ $sUseMatlab == "ON" ]]; then
+if [[ ! -z $sMatlabWork ]]; then
     echo "   matlab work folder: $sMatlabWork"
 fi
 
@@ -331,11 +294,7 @@ mkdir -p Build
 
 cd Build
 
-if [[ $sUseMatlab == "ON" ]]; then
-    sMatlabWork="-D Tasmanian_MATLAB_WORK_FOLDER:PATH=$sMatlabWork"
-else
-    sMatlabWork=""
-fi
+sMatlabWork="-D Tasmanian_MATLAB_WORK_FOLDER:PATH=$sMatlabWork"
 
 if [[ ! -z $sManualPythonInterp ]]; then
     sManualPythonInterp="-D PYTHON_EXECUTABLE:FILEPATH=$sManualPythonInterp"

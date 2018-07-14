@@ -49,6 +49,9 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.build.m" "${CMAKE_CURREN
 # set MATLAB (tasgrid and temp folder) for the install folder (stage 2)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.install.m" "${CMAKE_CURRENT_BINARY_DIR}/configured/tsgGetPaths.m" @ONLY)
 
+# create the MATLAB work-folder on install
+install(CODE "file(MAKE_DIRECTORY \"${Tasmanian_MATLAB_WORK_FOLDER}\")")
+
 # installed files
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
         DESTINATION "share/Tasmanian/matlab/"
