@@ -163,6 +163,9 @@ elif [[ $1 == "-"* ]]; then
     bInstallPrefix=0
 fi
 
+# if there is no install prefix or no second input
+# or the second input starts with -
+# then matlab work folder has not been provided
 bMatlabWork=1
 if (( $bInstallPrefix == 0 )); then
     bMatlabWork=0
@@ -256,7 +259,7 @@ echo ""
 echo "Installing Tasmanian with options:"
 echo "   install path: $sInstallPrefix"
 
-if [[ $sUseMatlab == "ON" ]]; then
+if [[ ! -z $sMatlabWork ]]; then
     echo "   matlab work folder: $sMatlabWork"
 fi
 
@@ -331,11 +334,7 @@ mkdir -p Build
 
 cd Build
 
-if [[ $sUseMatlab == "ON" ]]; then
-    sMatlabWork="-D Tasmanian_MATLAB_WORK_FOLDER:PATH=$sMatlabWork"
-else
-    sMatlabWork=""
-fi
+sMatlabWork="-D Tasmanian_MATLAB_WORK_FOLDER:PATH=$sMatlabWork"
 
 if [[ ! -z $sManualPythonInterp ]]; then
     sManualPythonInterp="-D PYTHON_EXECUTABLE:FILEPATH=$sManualPythonInterp"
