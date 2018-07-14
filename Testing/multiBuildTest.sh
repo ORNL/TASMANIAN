@@ -210,7 +210,7 @@ fi
 
 
 ########################################################################
-# Test: default install, install.sh
+# Test: default install, install script
 ########################################################################
 cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
 cd $sTempBuild/Tasmanian || { exit 1; }
@@ -226,7 +226,7 @@ fi
 cd $sTempBuild
 rm -fr Tasmanian/
 cd $sTestRoot
-echo "======= PASSED: default install, using install.sh" >> $sMultibuildLogFile
+echo "======= PASSED: default install, using install script" >> $sMultibuildLogFile
 echo "===========================================================================================" >> $sMultibuildLogFile
 
 
@@ -271,7 +271,6 @@ if (( $bNVCC == 1 )); then
           -D Tasmanian_ENABLE_CUBLAS=ON \
           -D Tasmanian_ENABLE_CUDA=ON \
           -D Tasmanian_ENABLE_PYTHON=ON \
-          -D Tasmanian_ENABLE_MATLAB=OFF \
           -D Tasmanian_ENABLE_MPI=OFF \
           -D Tasmanian_ENABLE_FORTRAN=OFF \
           $sTempBuild/Tasmanian || { exit 1; }
@@ -309,7 +308,6 @@ if (( $bNVCC == 1 )); then
           -D Tasmanian_ENABLE_CUBLAS=OFF \
           -D Tasmanian_ENABLE_CUDA=ON \
           -D Tasmanian_ENABLE_PYTHON=ON \
-          -D Tasmanian_ENABLE_MATLAB=OFF \
           -D Tasmanian_ENABLE_MPI=OFF \
           -D Tasmanian_ENABLE_FORTRAN=OFF \
           $sTempBuild/Tasmanian || { exit 1; }
