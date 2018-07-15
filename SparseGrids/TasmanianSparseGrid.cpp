@@ -1100,7 +1100,8 @@ void TasmanianSparseGrid::printGridStats(std::ostream *os) const{
     if (isSequence()) (*os) << "Sequence";
     if (isLocalPolynomial()) (*os) << "Local Polynomial";
     if (isWavelet()) (*os) << "Wavelets";
-    if (!(isGlobal() || isSequence() || isLocalPolynomial() || isWavelet())) (*os) << "none";
+    if (isFourier()) (*os) << "Fourier";
+    if (!(isGlobal() || isSequence() || isLocalPolynomial() || isWavelet() || isFourier())) (*os) << "none";
     (*os) << endl;
 
     (*os) << setw(L1) << "Dimensions:" << "   " << getNumDimensions() << endl;

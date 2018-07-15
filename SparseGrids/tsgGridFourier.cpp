@@ -625,7 +625,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     delete[] basisFuncs;
 }
 
-double* GridFourier::getQuadratureWeights() const {
+double* GridFourier::getQuadratureWeights() const{
     int num_points = getNumPoints();
     double *w = new double[num_points];
     getQuadratureWeights(w);
