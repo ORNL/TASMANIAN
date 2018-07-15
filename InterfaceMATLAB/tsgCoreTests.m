@@ -105,7 +105,7 @@ end
 for iL = 7:8
     [w, p] = tsgMakeQuadrature(2, 'gauss-patterson', 'qptotal', iL, -1);
     [wc, pc] = tsgMakeQuadrature(2, 'gauss-patterson', 'qptotal', iL, -1, [], [], [], [], 'asin', [4, 4]);
-    
+
     I  = sum(w  .* (1.0 ./ ((1.0 + 5.0 .* p(:,1).^2)  .* (1.0 + 5.0 .* p(:,2).^2))));
     Ic = sum(wc .* (1.0 ./ ((1.0 + 5.0 .* pc(:,1).^2) .* (1.0 + 5.0 .* pc(:,2).^2))));
     %[abs(I - 1.028825601981092^2), abs(Ic - 1.028825601981092^2)]
@@ -421,14 +421,14 @@ for iL = 3:4
     [w, p] = tsgGetQuadrature(lGrid);
     [lGrid, p] = tsgMakeWavelet('_tsgcoretests_lgrid', 2, 1, iL, 1);
     [wc, pc] = tsgGetQuadrature(lGrid);
-    
+
     I  = sum(w  .* (1.0 ./ ((1.0 + 5.0 .* p(:,1).^2)  .* (1.0 + 5.0 .* p(:,2).^2))));
     Ic = sum(wc .* (1.0 ./ ((1.0 + 5.0 .* pc(:,1).^2) .* (1.0 + 5.0 .* pc(:,2).^2))));
 
     if (abs(I - 1.028825601981092^2) < abs(Ic - 1.028825601981092^2))
         error('Mismatch in points and weights of simple quadrature: conformal map');
     end
-    
+
 end
 tsgDeleteGrid(lGrid);
 

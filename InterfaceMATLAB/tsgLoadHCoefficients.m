@@ -10,8 +10,8 @@ function tsgLoadHCoefficients(lGrid, mValues)
 %
 % mValues: a matrix with dimension [num_needed_points, iOut]
 %          each row corresponds to the values of the hierarchical
-%          coefficients at the corresponding needed point. 
-%          The order and leading dimension must match the points 
+%          coefficients at the corresponding needed point.
+%          The order and leading dimension must match the points
 %          obtained form tsgGetNeededPoints(...) command
 %
 % OUTPUT:

@@ -1,7 +1,7 @@
 function [lGrid, points] = tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth, mTransformAB, vAnisotropy, sConformalMap, vConfromalWeights, vLimitLevels)
 %
-% [lGrid, points] = 
-%               tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth, 
+% [lGrid, points] =
+%               tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth,
 %                    mTransformAB, vAlphaBeta, vAnisotropy,
 %                    sConformalMap, vConfromalWeights)
 %
@@ -9,7 +9,7 @@ function [lGrid, points] = tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth, 
 %
 % INPUT:
 %
-% sGridName: the name of the grid, give it a string name, 
+% sGridName: the name of the grid, give it a string name,
 %            i.e. 'myGrid' or '1' or 'pi314'
 %            DO NOT LEAVE THIS EMPTY
 %
@@ -40,7 +40,7 @@ function [lGrid, points] = tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth, 
 %               transform specifies the lower and upper bound of the domain
 %               in each direction. For gauss-laguerre and gauss-hermite
 %               grids, the transform gives the a and b parameters that
-%               change the weight to 
+%               change the weight to
 %               exp(-b (x - a))  and  exp(-b (x - a)^2)
 %
 % lCustomRule: (global grids of custom-tabulated rule)
@@ -60,14 +60,14 @@ function [lGrid, points] = tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth, 
 %                   lCustomRule.vNodes
 %                   lCustomRule.vWeights
 %
-%                  see help tsgWriteCustomRuleFile.m for definition of 
+%                  see help tsgWriteCustomRuleFile.m for definition of
 %                  each field of the structure
 %
 % sConformalMap: (optional string giving the type of transform)
 %                conformal maps provide a non-linear domain transform,
 %                approximation (quadrature or interpolation) is done
 %                on the composition of f and the transform. A suitable
-%                transform could reduce the error by as much as an 
+%                transform could reduce the error by as much as an
 %                order of magnitude.
 %
 %                'asin': truncated MacLaurin series of arch-sin
@@ -79,9 +79,9 @@ function [lGrid, points] = tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth, 
 % vLimitLevels: (optional vector of integers of size iDim)
 %               limit the level in each direction, no points beyond the
 %               specified limit will be used, e.g., in 2D using
-%               clenshaw-curtis rule, [1, 99] forces the grid to have 
-%               at most 3 possible values in the first variable and 
-%               ~2^99 (practically infinite) number in the second 
+%               clenshaw-curtis rule, [1, 99] forces the grid to have
+%               at most 3 possible values in the first variable and
+%               ~2^99 (practically infinite) number in the second
 %               direction. vLimitLevels works in conjunction with
 %               iDepth and sType, the points added to the grid will
 %               obey both bounds
@@ -91,11 +91,11 @@ function [lGrid, points] = tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth, 
 % lGrid: list containing information about the sparse grid, can be used
 %        to call other functions
 %
-% points: (optional) the points of the grid in an array 
+% points: (optional) the points of the grid in an array
 %         of dimension [num_points, dim]
 %
-% [lGrid, points] = 
-%               tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth, 
+% [lGrid, points] =
+%               tsgMakeFourier(sGridName, iDim, iOut, sType, iDepth,
 %                    mTransformAB, vAnisotropy,
 %                    sConformalMap, vConfromalWeights)
 %

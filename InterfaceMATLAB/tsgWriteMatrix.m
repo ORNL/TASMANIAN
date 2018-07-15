@@ -3,7 +3,7 @@ function tsgWriteMatrix(filename, mat)
 % tsgWriteMatrix(filename, mat)
 %
 % write a matrix to a text file
-% 
+%
 % the matrix [1 2 3 4; 5 6 7 8; 9 10 11 12;]
 %
 % is written as
@@ -42,19 +42,19 @@ if (prod(size(mat)) < 1000) % small matrix, use ascii format
 else
 
     fid = fopen(filename, 'wb');
-    
+
     Ni = size(mat, 1);
     Nj = size(mat, 2);
-    
+
     fwrite(fid, ['TSG']);
     fwrite(fid, [Ni, Nj], 'integer*4');
     fwrite(fid, mat', 'double');
-    
+
     %if (size(mat, 1) > 10)
     %    size(mat)
     %    mat(1:10, :)
     %end
-    
+
     fclose(fid);
 
 end
