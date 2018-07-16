@@ -82,7 +82,7 @@ class TasmanianSimpleSparseMatrix:
     def getDenseForm(self):
         if ((self.iNumRows == 0) or (self.iNumCols == 0)):
             return np.empty([0,0], np.float64)
-        aMat = np.zeros([self.iNumRows, self.iNumCols], np.float64)
+        aMat = np.zeros([self.iNumRows, self.iNumCols], np.float64 if not np.iscomplexobj(self.aVals) else np.complex128)
         for iI in range(self.iNumRows):
             iJ = self.aPntr[iI]
             while(iJ < self.aPntr[iI+1]):
@@ -209,6 +209,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgIsSequence.argtypes = [c_void_p]
         self.pLibTSG.tsgIsLocalPolynomial.argtypes = [c_void_p]
         self.pLibTSG.tsgIsWavelet.argtypes = [c_void_p]
+        self.pLibTSG.tsgIsFourier.argtypes = [c_void_p]
         self.pLibTSG.tsgSetDomainTransform.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgIsSetDomainTransfrom.argtypes = [c_void_p]
         self.pLibTSG.tsgClearDomainTransform.argtypes = [c_void_p]
@@ -1203,6 +1204,12 @@ class TasmanianSparseGrid:
         '''
         return (self.pLibTSG.tsgIsWavelet(self.pGrid) != 0)
 
+    def isFourier(self):
+        '''
+        returns True if using a Fourier grid
+        '''
+        return (self.pLibTSG.tsgIsFourier(self.pGrid) != 0)
+
     def setDomainTransform(self, llfTransform):
         '''
         sets the lower and upper bound for each dimension
@@ -1601,8 +1608,15 @@ class TasmanianSparseGrid:
         iNumPoints = self.getNumLoaded()
         if (iNumPoints == 0):
             return np.empty([0,iNumOuts], np.float64)
-        aSurp = np.empty([iNumOuts * iNumPoints], np.float64)
-        self.pLibTSG.tsgGetHierarchicalCoefficientsStatic(self.pGrid, np.ctypeslib.as_ctypes(aSurp))
+
+        if not self.isFourier():
+            aSurp = np.empty([iNumOuts * iNumPoints], np.float64)
+            self.pLibTSG.tsgGetHierarchicalCoefficientsStatic(self.pGrid, np.ctypeslib.as_ctypes(aSurp))
+        else:
+            aSurp = np.empty([2 * iNumOuts * iNumPoints], np.float64)
+            self.pLibTSG.tsgGetHierarchicalCoefficientsStatic(self.pGrid, np.ctypeslib.as_ctypes(aSurp))
+            aSurp = aSurp[0::2] + 1j * aSurp[1::2]
+
         return aSurp.reshape([iNumPoints, iNumOuts])
 
     def evaluateHierarchicalFunctions(self, llfX):
@@ -1622,10 +1636,17 @@ class TasmanianSparseGrid:
         if (llfX.shape[1] != self.getNumDimensions()):
             raise TasmanianInputError("llfX", "ERROR: calling evaluateHierarchicalFunctions llfX.shape[1] is not equal to getNumDimensions()")
         iNumX = llfX.shape[0]
-        aResult = np.empty([iNumX * self.getNumPoints()], np.float64)
         # see evaluateBatch()
         lfX = llfX.reshape([llfX.shape[0] * llfX.shape[1]])
-        self.pLibTSG.tsgEvaluateHierarchicalFunctions(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX, np.ctypeslib.as_ctypes(aResult))
+
+        if not self.isFourier():
+            aResult = np.empty([iNumX * self.getNumPoints()], np.float64)
+            self.pLibTSG.tsgEvaluateHierarchicalFunctions(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX, np.ctypeslib.as_ctypes(aResult))
+        else:
+            aResult = np.empty([2 * iNumX * self.getNumPoints()], np.float64)
+            self.pLibTSG.tsgEvaluateHierarchicalFunctions(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX, np.ctypeslib.as_ctypes(aResult))
+            aResult = aResult[0::2] + 1j * aResult[1::2]
+
         return aResult.reshape([iNumX, self.getNumPoints()])
 
     def evaluateSparseHierarchicalFunctions(self, llfX):
@@ -1660,13 +1681,16 @@ class TasmanianSparseGrid:
         iNumNZ = self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ(self.pGrid, np.ctypeslib.as_ctypes(llfX.reshape([llfX.shape[0] * llfX.shape[1]])), iNumX)
         pMat.aPntr = np.empty([iNumX+1,], np.int32)
         pMat.aIndx = np.empty([iNumNZ,], np.int32)
-        pMat.aVals = np.empty([iNumNZ,], np.float64)
+        pMat.aVals = np.empty([iNumNZ if not self.isFourier() else 2 * iNumNZ,], np.float64)
         pMat.iNumRows = iNumX
         pMat.iNumCols = self.getNumPoints()
         # see evaluateBatch()
         lfX = llfX.reshape([llfX.shape[0] * llfX.shape[1]])
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX,
                                                         np.ctypeslib.as_ctypes(pMat.aPntr), np.ctypeslib.as_ctypes(pMat.aIndx), np.ctypeslib.as_ctypes(pMat.aVals))
+        if self.isFourier():
+            pMat.aVals = pMat.aVals[0::2] + 1j * pMat.aVals[1::2]
+
         return pMat
 
     def setHierarchicalCoefficients(self, llfCoefficients):
@@ -1703,9 +1727,21 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfCoefficients", "ERROR: leading dimension of llfCoefficients is {0:1d} but the number of current points is {1:1d}".format(llfCoefficients.shape[0], self.getNumNeeded()))
         if (llfCoefficients.shape[1] != self.getNumOutputs()):
             raise TasmanianInputError("llfCoefficients", "ERROR: second dimension of llfCoefficients is {0:1d} but the number of outputs is set to {1:1d}".format(llfCoefficients.shape[1], self.getNumOutputs()))
+        if (self.isFourier() and not np.iscomplexobj(llfCoefficients)):
+            raise TasmanianInputError("llfCoefficients", "ERROR: using Fourier grid but llfCoefficients is not complex")
+
         iNumPoints = llfCoefficients.shape[0]
         iNumDims = llfCoefficients.shape[1]
-        self.pLibTSG.tsgSetHierarchicalCoefficients(self.pGrid, np.ctypeslib.as_ctypes(llfCoefficients.reshape([iNumPoints * iNumDims,])))
+
+        if self.isFourier():
+            llfCoefficientsTmp = np.empty([iNumPoints, 2 * iNumDims,], np.float64)
+            llfCoefficientsTmp[:,0::2] = np.real(llfCoefficients)
+            llfCoefficientsTmp[:,1::2] = np.imag(llfCoefficients)
+            llfCoefficients = llfCoefficientsTmp.reshape([2 * iNumPoints * iNumDims,])
+        else:
+            llfCoefficients = llfCoefficients.reshape([iNumPoints * iNumDims,])
+
+        self.pLibTSG.tsgSetHierarchicalCoefficients(self.pGrid, np.ctypeslib.as_ctypes(llfCoefficients))
 
     def getGlobalPolynomialSpace(self, bInterpolation):
         '''

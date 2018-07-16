@@ -98,6 +98,7 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(gridA.isSequence(), gridB.isSequence(), "error in isSequence()")
         self.assertEqual(gridA.isLocalPolynomial(), gridB.isLocalPolynomial(), "error in isLocalPolynomial()")
         self.assertEqual(gridA.isWavelet(), gridB.isWavelet(), "error in isWavelet()")
+        self.assertEqual(gridA.isFourier(), gridB.isFourier(), "error in isFourier()")
 
         self.assertEqual(gridA.isSetDomainTransfrom(), gridB.isSetDomainTransfrom(), "error in isSetDomainTransfrom()")
 
@@ -460,7 +461,7 @@ class TestTasmanian(unittest.TestCase):
         lTests = ['grid.makeLocalPolynomialGrid(2, 3, 4, 1, "localp")']
 
         iNumGPUs = grid.getNumGPUs()
-        lsAccelTypes = ["none", "cpu-blas", "gpu-cuda", "gpu-cublas"]
+        lsAccelTypes = ["none", "cpu-blas", "gpu-cuda", "gpu-cublas", "gpu-magma"]
 
         for sTest in lTests:
             for iI in range(2):
@@ -478,7 +479,7 @@ class TestTasmanian(unittest.TestCase):
                         grid.setDomainTransform(aDomainTransform)
 
                     grid.enableAcceleration(sAcc)
-                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas")):
+                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas") or (sAcc == "gpu-magma")):
                         if (iGPU < grid.getNumGPUs()): # without cuda or cublas, NumGPUs is 0 and cannot set GPU
                             grid.setGPUID(iGPU)
 
@@ -491,7 +492,7 @@ class TestTasmanian(unittest.TestCase):
                     aFast = np.array([ grid.evaluate(aTestPoints[i,:]) for i in range(iFastEvalSubtest) ])
                     np.testing.assert_almost_equal(aRegular[0:iFastEvalSubtest,:], aFast, 14, "Batch evaluation test not equal: {0:1s}, acceleration: {1:1s}, gpu: {2:1d}".format(sTest, sAcc, iGPU), True)
 
-                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas")):
+                    if ((sAcc == "gpu-cuda") or (sAcc == "gpu-cublas") or (sAcc == "gpu-magma")):
                         if (iGPUID == -1):
                             iGPU += 1
                             if (iGPU >= iNumGPUs):
@@ -1165,6 +1166,13 @@ class TestTasmanian(unittest.TestCase):
         pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
         np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
 
+        grid.makeFourierGrid(2, 1, 4, "level")
+        grid.setDomainTransform(np.array([[-1.0, 1.0], [-1.0, 1.0]]))
+        aPoints = np.array([[0.33, 0.25], [-0.27, 0.39], [0.97, -0.76], [-0.44, 0.21], [-0.813, 0.03], [-0.666, 0.666]])
+        aDense = grid.evaluateHierarchicalFunctions(aPoints)
+        pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
+        np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
+
         gridA = TasmanianSG.TasmanianSparseGrid()
         gridB = TasmanianSG.TasmanianSparseGrid()
         gridA.makeGlobalGrid(2, 1, 4, 'level', 'chebyshev')
@@ -1234,6 +1242,12 @@ class TestTasmanian(unittest.TestCase):
         np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         self.compareGrids(gridA, gridB)
+
+        gridA.makeFourierGrid(2, 1, 3, 'level')
+        gridB.makeFourierGrid(2, 1, 3, 'level')
+        self.loadExpN2(gridA)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        np.testing.assert_almost_equal(gridA.getHierarchicalCoefficients(), gridB.getHierarchicalCoefficients(), 14, "Fourier coefficients differ", True)
 
     def testFullCoverageZ(self):
         print("\nTesting plotting and other misc")
