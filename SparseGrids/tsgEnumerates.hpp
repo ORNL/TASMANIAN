@@ -101,6 +101,7 @@ enum TypeOneDRule{ // list of one-d rules
     rule_localp,
     rule_localp0,
     rule_semilocalp,
+    rule_localpb, // starts with points on the boundary
     // Wavelet rules
     rule_wavelet,
     // Fourier rules

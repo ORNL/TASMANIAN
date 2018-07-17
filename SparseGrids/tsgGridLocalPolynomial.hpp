@@ -315,6 +315,7 @@ private:
     templRuleLocalPolynomial<rule_localp, false> rpoly;
     templRuleLocalPolynomial<rule_semilocalp, false> rsemipoly;
     templRuleLocalPolynomial<rule_localp0, false> rpoly0;
+    templRuleLocalPolynomial<rule_localpb, false> rpolyb;
     templRuleLocalPolynomial<rule_localp, true> rpolyc;
 
     mutable BaseAccelerationData *accel;

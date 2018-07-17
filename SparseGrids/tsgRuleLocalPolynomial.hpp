@@ -95,6 +95,8 @@ public:
                 return (level == 0) ? 1 : ((1 << level) + 1);
             }else if (rule == rule_localp0){
                 return (1 << (level+1)) -1;
+            }else if (rule == rule_localpb){
+                return ((1 << level) + 1);
             }
         }
     }
@@ -110,6 +112,11 @@ public:
                 return ((double)(2*point - 1)) / ((double) int2log2(point - 1)) - 3.0;
             }else if (rule == rule_localp0){
                 return ((double)(2*point +3) ) / ((double) int2log2(point + 1) ) - 3.0;
+            }else if (rule == rule_localpb){
+                if (point == 0) return -1.0;
+                if (point == 1) return  1.0;
+                if (point == 2) return  0.0;
+                return ((double)(2*point - 1)) / ((double) int2log2(point - 1)) - 3.0;
             }
         }
     }
@@ -121,9 +128,11 @@ public:
             return level;
         }else{
             if ((rule == rule_localp) || (rule == rule_semilocalp)){
-                return (point == 0) ? 0 : (point == 1) ? 1 : intlog2(point - 1) + 1;
+                return (point == 0) ? 0 : (point == 1) ? 1 : (intlog2(point - 1) + 1);
             }else if (rule == rule_localp0){
                 return intlog2(point + 1);
+            }else if (rule == rule_localpb){
+                return ((point == 0) || (point == 1)) ? 0 : (intlog2(point - 1) + 1);
             }
         }
     }
@@ -135,12 +144,14 @@ public:
                 return (point == 0) ? 1.0 : 1.0 / ((double) int2log2(point - 1));
             }else if (rule == rule_localp0){
                 return 1.0 / ((double) int2log2(point + 1));
+            }else if (rule == rule_localpb){
+                return ((point == 0) || (point == 1)) ? 2.0 : 1.0 / ((double) int2log2(point - 1));
             }
         }
     }
 
     int getMaxNumKids() const{ return (isZeroOrder) ? 4 : 2; }
-    int getMaxNumParents() const{ return ((isZeroOrder || (rule == rule_semilocalp)) ? 2 : 1); }
+    int getMaxNumParents() const{ return ((isZeroOrder || (rule == rule_semilocalp) || (rule == rule_localpb)) ? 2 : 1); }
 
     int getParent(int point) const{
         if (isZeroOrder){
@@ -153,6 +164,8 @@ public:
             }else if (rule == rule_localp0){
                 if (point == 0) return -1;
                 return (point - 1) / 2;
+            }else if (rule == rule_localpb){
+                return (point < 2) ? -1 : ((point + 1) / 2);
             }
         }
     }
@@ -169,6 +182,8 @@ public:
             if (rule == rule_semilocalp){
                 if (point == 3) return 2;
                 if (point == 4) return 1;
+            }else if (rule == rule_localpb){
+                if (point == 2) return 0;
             }
             return -1;
         }
@@ -184,21 +199,22 @@ public:
                 return (point % 2 == 0) ? 3*point + 3 : 3*point - 1;
             }
             return 3*point + kid_number;
-        }else{
-            if ((rule == rule_localp) || (rule == rule_semilocalp)){
-                if (kid_number == 0){
-                    if (point == 0) return 1;
-                    if (point == 1) return 3;
-                    if (point == 2) return 4;
-                    return 2*point-1;
-                }else{
-                    if (point == 0) return 2;
-                    if ((point == 1) || (point == 2)) return -1;
-                    return 2*point;
-                }
-            }else if (rule == rule_localp0){
-                return 2*point + ((kid_number == 0) ? 1 : 2);
+        }else if ((rule == rule_localp) || (rule == rule_semilocalp)){
+            if (kid_number == 0){
+                if (point == 0) return 1;
+                if (point == 1) return 3;
+                if (point == 2) return 4;
+                return 2*point-1;
+            }else{
+                if (point == 0) return 2;
+                if ((point == 1) || (point == 2)) return -1;
+                return 2*point;
             }
+        }else if (rule == rule_localp0){
+            return 2*point + ((kid_number == 0) ? 1 : 2);
+        }else if (rule == rule_localpb){
+            if ((point == 0) || (point == 1)) return (kid_number == 0) ? 2 : -1;
+            return 2*point - ((kid_number == 0) ? 1 : 0);
         }
     }
 
@@ -238,7 +254,7 @@ public:
             }
             double xn = scaleX(point, x);
             if (fabs(xn) <= 1.0){
-                if ((rule == rule_localp) || (rule == rule_localp0)) if (max_order == 1) return 1.0 - fabs(xn);
+                if (rule != rule_semilocalp) if (max_order == 1) return 1.0 - fabs(xn);
                 if (max_order == 2) return evalPWQuadratic(point, xn);
                 if (max_order == 3) return evalPWCubic(point, xn);
                 return evalPWPower(point, xn);
@@ -277,11 +293,15 @@ protected:
             if (point == 0) return x;
             return ((double) int2log2(point + 1) * (x + 3.0) - 3.0 - (double) (2*point));
         }
-        if ((rule == rule_localp) || (rule == rule_semilocalp)){
+        if ((rule == rule_localp) || (rule == rule_semilocalp) || (rule == rule_localpb)){
             if (rule == rule_localp){
                 if (point == 0) return x;
                 if (point == 1) return (x + 1.0);
                 if (point == 2) return (x - 1.0);
+            }else if (rule == rule_localpb){
+                if (point == 0) return (x + 1.0) / 2.0;
+                if (point == 1) return (x - 1.0) / 2.0;
+                if (point == 2) return x;
             }
             return ((double) int2log2(point - 1) * (x + 3.0) + 1.0 - (double) (2*point));
         }
@@ -291,6 +311,9 @@ protected:
         if (rule == rule_localp){
             if (point == 1) return 1.0 - x;
             if (point == 2) return 1.0 + x;
+        }else if (rule == rule_localpb){
+            if (point == 0) return 1.0 - x;
+            if (point == 1) return 1.0 + x;
         }
         return (1.0 - x) * (1.0 + x);
     }
@@ -300,13 +323,19 @@ protected:
             if (point == 1) return 1.0 - x;
             if (point == 2) return 1.0 + x;
             if (point <= 4) return (1.0 - x) * (1.0 + x);
+        }else if (rule == rule_localpb){
+            if (point == 0) return 1.0 - x;
+            if (point == 1) return 1.0 + x;
+            if (point == 2) return (1.0 - x) * (1.0 + x);
+        }else if (rule == rule_localp0){
+            if (point == 0) return (1.0 - x) * (1.0 + x);
         }
-        if (rule == rule_localp0) if (point == 0) return (1.0 - x) * (1.0 + x);
         return (point % 2 == 0) ? (1.0 - x) * (1.0 + x) * (3.0 + x) / 3.0 : (1.0 - x) * (1.0 + x) * (3.0 - x) / 3.0;
     }
     double evalPWPower(int point, double x) const{
         if (rule == rule_localp)     if (point <= 8) return evalPWCubic(point, x);
         if (rule == rule_semilocalp) if (point <= 4) return evalPWCubic(point, x);
+        if (rule == rule_localpb)    if (point <= 4) return evalPWCubic(point, x);
         if (rule == rule_localp0)    if (point <= 2) return evalPWCubic(point, x);
         int level = getLevel(point);
         int mod = 1;
@@ -314,6 +343,7 @@ protected:
         int imax;
         if (rule == rule_localp)     imax = (max_order < 0) ? level-2 : ((max_order   < level) ? max_order -2 : level-2);
         if (rule == rule_semilocalp) imax = (max_order < 0) ? level-1 : ((max_order-1 < level) ? max_order -2 : level-1);
+        if (rule == rule_localpb)    imax = (max_order < 0) ? level-1 : ((max_order-1 < level) ? max_order -2 : level-1);
         if (rule == rule_localp0)    imax = (max_order < 0) ? level   : ((max_order-2 < level) ? max_order -2 : level);
         for(int j=0; j < imax; j++){
             mod *= 2;
