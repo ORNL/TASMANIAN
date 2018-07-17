@@ -561,13 +561,13 @@ TypeOneDRule OneDimensionalMeta::getIORuleString(const char *name){
         return rule_gausshermiteodd;
     }else if (strcmp(name, "custom-tabulated") == 0){
         return rule_customtabulated;
-    }else  if (strcmp(name, "localp") == 0){
+    }else if (strcmp(name, "localp") == 0){
         return rule_localp;
-    }else  if (strcmp(name, "localp-zero") == 0){
+    }else if (strcmp(name, "localp-zero") == 0){
         return rule_localp0;
     }else if (strcmp(name, "localp-boundary") == 0){
         return rule_localpb;
-    }else  if (strcmp(name, "semi-localp") == 0){
+    }else if (strcmp(name, "semi-localp") == 0){
         return rule_semilocalp;
     }else if (strcmp(name, "wavelet") == 0){
         return rule_wavelet;
