@@ -187,7 +187,7 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     }
 }
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
-    if ((rule != rule_localp) && (rule != rule_localp0) && (rule != rule_semilocalp)){
+    if (!OneDimensionalMeta::isLocalPolynomial(rule)){
         if (logstream != 0){
             (*logstream) << "ERROR: makeLocalPolynomialGrid is called with rule " << OneDimensionalMeta::getIORuleString(rule) << " which is not a local polynomial rule" << endl;
             (*logstream) << "       use either " << OneDimensionalMeta::getIORuleString(rule_localp) << " or " << OneDimensionalMeta::getIORuleString(rule_semilocalp)
