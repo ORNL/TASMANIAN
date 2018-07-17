@@ -175,7 +175,7 @@ void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const
     double alpha = 1.0, beta = 0.0;
     cublasStatus_t stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, num_outputs, num_points,
                                      &alpha, gpu_values, num_outputs, gpu_weights, 1, &beta, gpu_result, 1);
-    AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in dgemv", logstream);
+    AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in DGEMV", logstream);
 
     TasCUDA::cudaRecv<double>(num_outputs, gpu_result, cpu_result, logstream);
 
@@ -193,7 +193,7 @@ void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_x, int num_po
     double alpha = 1.0, beta = 0.0;
     cublasStatus_t stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points,
                                       &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
-    AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in dgemm", logstream);
+    AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM", logstream);
 }
 
 void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses){
@@ -292,7 +292,7 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
     double alpha = 1.0, beta = 0.0;
     cusparseMatDescr_t mat_desc;
     stat = cusparseCreateMatDescr(&mat_desc);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRMM2", logstream);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in Matmul", logstream);
     cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
     cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
@@ -300,7 +300,7 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
     stat = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
             CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, num_x, num_outputs, num_points, num_nz,
             &alpha, mat_desc, gpu_vals, gpu_pntr, gpu_indx, gpu_values, num_outputs, &beta, gpu_result_t, num_x);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrmm2 in DCRMM2", logstream);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrmm2 in Matmul", logstream);
 
     cusparseDestroyMatDescr(mat_desc);
 
@@ -309,7 +309,7 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
     bstat = cublasDgeam((cublasHandle_t) cublasHandle,
                         CUBLAS_OP_T, CUBLAS_OP_T, num_outputs, num_x,
                         &alpha, gpu_result_t, num_x, &beta, gpu_result_t, num_x, gpu_result, num_outputs);
-    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam in DCRMM2", logstream);
+    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam in Matmul", logstream);
 
     TasCUDA::cudaDel<double>(gpu_result_t, logstream);
     if (cpu_pointers){
@@ -327,7 +327,7 @@ void AccelerationDataGPUFull::cusparseMatvec(int num_points, int num_x, const in
     double alpha = 1.0, beta = 0.0;
     cusparseMatDescr_t mat_desc;
     stat = cusparseCreateMatDescr(&mat_desc);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRMM2", logstream);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in Matvec", logstream);
     cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
     cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
     cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
@@ -335,7 +335,7 @@ void AccelerationDataGPUFull::cusparseMatvec(int num_points, int num_x, const in
     stat = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
             CUSPARSE_OPERATION_NON_TRANSPOSE, num_x, num_points, num_nz,
             &alpha, mat_desc, svals, spntr, sindx, gpu_values, &beta, result);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseMatvec in DCRMM2", logstream);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrmv in Matvec", logstream);
 
     cusparseDestroyMatDescr(mat_desc);
 }
@@ -347,7 +347,7 @@ void AccelerationDataGPUFull::cusparseMatveci(int num_outputs, int num_points, i
     stat = cusparseDgemvi((cusparseHandle_t) cusparseHandle,
             CUSPARSE_OPERATION_NON_TRANSPOSE, num_outputs, num_points, &alpha,
             gpu_values, num_outputs, num_nz, svals, sindx, &beta, result, CUSPARSE_INDEX_BASE_ZERO, 0);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseMatvec in DCRMM2", logstream);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDgemvi in Matveci", logstream);
 }
 #else
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
@@ -545,7 +545,23 @@ void AccelerationMeta::cublasCheckError(void *cublasStatus, const char *info, st
 void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os){
     if (*((cusparseStatus_t*) cusparseStatus) != CUSPARSE_STATUS_SUCCESS){
         if (os != 0){
-            (*os)  << "ERROR: cusparse failed at " << info << endl;
+            (*os)  << "ERROR: cusparse failed with code: ";
+            if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_NOT_INITIALIZED){
+                (*os) << "CUSPARSE_STATUS_NOT_INITIALIZED";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_ALLOC_FAILED){
+                (*os) << "CUSPARSE_STATUS_ALLOC_FAILED";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_INVALID_VALUE){
+                (*os) << "CUSPARSE_STATUS_INVALID_VALUE";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_ARCH_MISMATCH){
+                (*os) << "CUSPARSE_STATUS_ARCH_MISMATCH";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_INTERNAL_ERROR){
+                (*os) << "CUSPARSE_STATUS_INTERNAL_ERROR";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED){
+                (*os) << "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_EXECUTION_FAILED){
+                (*os) << "CUSPARSE_STATUS_EXECUTION_FAILED";
+            }
+            (*os) << " at " << info << endl;
         }
     }
 }
