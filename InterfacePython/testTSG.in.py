@@ -98,6 +98,7 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(gridA.isSequence(), gridB.isSequence(), "error in isSequence()")
         self.assertEqual(gridA.isLocalPolynomial(), gridB.isLocalPolynomial(), "error in isLocalPolynomial()")
         self.assertEqual(gridA.isWavelet(), gridB.isWavelet(), "error in isWavelet()")
+        self.assertEqual(gridA.isFourier(), gridB.isFourier(), "error in isFourier()")
 
         self.assertEqual(gridA.isSetDomainTransfrom(), gridB.isSetDomainTransfrom(), "error in isSetDomainTransfrom()")
 
@@ -317,6 +318,41 @@ class TestTasmanian(unittest.TestCase):
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
+        # test I/O for Fourier Grids
+        # iDimension, iOutputs, iDepth, useTransform, loadFunction, useLevelLimits
+        lGrids = [[3, 2, 2, False, False, False],
+                  [2, 1, 4, False, False, False],
+                  [3, 1, 1, True, False, False],
+                  [3, 1, 1, True, False, True],
+                  [3, 1, 2, False, True, False],
+                  [3, 1, 2, True, True, True],
+                  [3, 1, 2, True, True, False],]
+
+        for lT in lGrids:
+            gridA = TasmanianSG.TasmanianSparseGrid()
+            gridB = TasmanianSG.TasmanianSparseGrid()
+
+            if (lT[5]):
+                gridA.makeFourierGrid(lT[0], lT[1], lT[2], 'level', [1, 1, 2])
+            else:
+                gridA.makeFourierGrid(lT[0], lT[1], lT[2], 'level')
+            if (lT[3]):
+                gridA.setDomainTransform(aTransform)
+            if (lT[4]):
+                self.loadExpN2(gridA)
+
+            gridA.write("testSave")
+            gridB.read("testSave")
+            self.compareGrids(gridA, gridB)
+
+            gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.read("testSave")
+            self.compareGrids(gridA, gridB)
+
+            gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.copyGrid(gridA)
+            self.compareGrids(gridA, gridB)
+
         lGrids = ['gridA.makeGlobalGrid(3, 2, 4, "level", "clenshaw-curtis"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([3,4,5]))',
                   'gridA.makeGlobalGrid(3, 2, 4, "level", "gauss-legendre"); gridA.setConformalTransformASIN(np.array([3,5,1]))',
                   'gridA.makeSequenceGrid(2, 2, 5, "level", "leja"); gridA.setConformalTransformASIN(np.array([0,4]))',
@@ -501,6 +537,13 @@ class TestTasmanian(unittest.TestCase):
                    ["grid.makeWaveletGrid(2,  1,  4,  2)", "iOrder"],
                    ["grid.makeWaveletGrid(2,  1,  4,  1, [1, 2, 3])", "liLevelLimits"],
                    ["grid.makeWaveletGrid(2,  1,  4,  1, [2, 1])", "notError"],
+                   ["grid.makeFourierGrid(-1, 1,  4, 'level')", "iDimension"],
+                   ["grid.makeFourierGrid(2, -1,  4, 'level')", "iOutputs"],
+                   ["grid.makeFourierGrid(2,  1, -4, 'level')", "iDepth"],
+                   ["grid.makeFourierGrid(2,  1,  4, 'wrong')", "sType"],
+                   ["grid.makeFourierGrid(2,  1,  4, 'level', [1, 2, 3])", "liAnisotropicWeights"],
+                   ["grid.makeFourierGrid(2,  1,  4, 'level', [1, 2], [1, 2, 3])", "liLevelLimits"],
+                   ["grid.makeFourierGrid(2,  1,  4, 'level', liLevelLimits = [1, 2])", "notError"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja')", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev')", "notError"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2]))", "notError"],
@@ -678,6 +721,11 @@ class TestTasmanian(unittest.TestCase):
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [0.0, math.sqrt(1.0/3.0)], [1.0, 0.0], [1.0, 1.0], [-1.0, 0.0]])
         aP = grid.getPoints()
         np.testing.assert_equal(aA, aP, 'Anisotropy Sequence not equal', True)
+
+        grid.makeFourierGrid(2, 1, 2, 'level', [1, 2])
+        aA = np.array([[0.0, 0.0], [0.0, 1.0/3.0], [0.0, 2.0/3.0], [1.0/3.0, 0.0], [2.0/3.0, 0.0], [1.0/9.0, 0.0], [2.0/9.0, 0.0], [4.0/9.0, 0.0], [5.0/9.0, 0.0], [7.0/9.0, 0.0], [8.0/9.0, 0.0]])
+        aP = grid.getPoints()
+        np.testing.assert_equal(aA, aP, 'Anisotropy Fourier not equal', True)
 
         # this is a very important test, checks the curved rule and covers the non-lower-set index selection code
         grid.makeGlobalGrid(2, 1, 1, 'ipcurved', 'rleja', [10, 10, -21, -21])
@@ -1118,6 +1166,13 @@ class TestTasmanian(unittest.TestCase):
         pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
         np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
 
+        grid.makeFourierGrid(2, 1, 4, "level")
+        grid.setDomainTransform(np.array([[-1.0, 1.0], [-1.0, 1.0]]))
+        aPoints = np.array([[0.33, 0.25], [-0.27, 0.39], [0.97, -0.76], [-0.44, 0.21], [-0.813, 0.03], [-0.666, 0.666]])
+        aDense = grid.evaluateHierarchicalFunctions(aPoints)
+        pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
+        np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
+
         gridA = TasmanianSG.TasmanianSparseGrid()
         gridB = TasmanianSG.TasmanianSparseGrid()
         gridA.makeGlobalGrid(2, 1, 4, 'level', 'chebyshev')
@@ -1185,6 +1240,12 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(gridA.getNumPoints(), gridB.getNumPoints(), 'different number of points after merge refinement')
         aRes = gridB.evaluateBatch(aPoints)
         np.testing.assert_almost_equal(aRes, np.zeros(aRes.shape), 14, "not zero after merged refinement", True)
+        gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
+        self.compareGrids(gridA, gridB)
+
+        gridA.makeFourierGrid(2, 1, 3, 'level')
+        gridB.makeFourierGrid(2, 1, 3, 'level')
+        self.loadExpN2(gridA)
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         self.compareGrids(gridA, gridB)
 

@@ -1576,6 +1576,14 @@ void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int dep
 void tsgMakeWaveletGrid(void *grid, int dimensions, int outputs, int depth, int order, const int *limit_levels){
     ((TasmanianSparseGrid*) grid)->makeWaveletGrid(dimensions, outputs, depth, order, limit_levels);
 }
+void tsgMakeFourierGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const int *anisotropic_weights, const int *limit_levels){
+    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    #ifndef NDEBUG
+    if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_level." << endl; }
+    #endif // NDEBUG
+    if (depth_type == type_none){ depth_type = type_level; }
+    ((TasmanianSparseGrid*) grid)->makeFourierGrid(dimensions, outputs, depth, depth_type, anisotropic_weights, limit_levels);
+}
 
 void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
@@ -1673,6 +1681,7 @@ int tsgIsGlobal(void *grid){ return (((TasmanianSparseGrid*) grid)->isGlobal() ?
 int tsgIsSequence(void *grid){ return (((TasmanianSparseGrid*) grid)->isSequence() ? 1 : 0); }
 int tsgIsLocalPolynomial(void *grid){ return (((TasmanianSparseGrid*) grid)->isLocalPolynomial() ? 1 : 0); }
 int tsgIsWavelet(void *grid){ return (((TasmanianSparseGrid*) grid)->isWavelet() ? 1 : 0); }
+int tsgIsFourier(void *grid){ return (((TasmanianSparseGrid*) grid)->isFourier() ? 1 : 0); }
 
 void tsgSetDomainTransform(void *grid, const double a[], const double b[]){ ((TasmanianSparseGrid*) grid)->setDomainTransform(a, b); }
 int tsgIsSetDomainTransfrom(void *grid){ return (((TasmanianSparseGrid*) grid)->isSetDomainTransfrom() ? 1 : 0); }
@@ -1770,7 +1779,7 @@ void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff){
     int num_outputs = ((TasmanianSparseGrid*) grid)->getNumOutputs();
     if ((num_points == 0) || (num_outputs == 0)) return;
     const double *surp = ((TasmanianSparseGrid*) grid)->getHierarchicalCoefficients();
-    std::copy(surp, surp + num_outputs * num_points, coeff);
+    std::copy(surp, surp + (((TasmanianSparseGrid*) grid)->isFourier() ? 2 : 1) * num_outputs * num_points, coeff);
 }
 void tsgSetHierarchicalCoefficients(void *grid, const double *c){
     ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
