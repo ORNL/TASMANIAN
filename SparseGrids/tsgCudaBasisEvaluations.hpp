@@ -101,6 +101,20 @@ __device__ inline T tasgpu_devalpwpoly_feval(const double x, const double node, 
             v = 1.0 - v / support;
             if (v < 0.0) v = 0.0;
         }
+    }else if (rule == rule_localpb){
+        if (order == 1){
+            v = 1.0 - fabs(x - node) / support;
+            if (v < 0.0) v = 0.0;
+        }else if (order == 2){
+            if (support == -2.0){
+                v = 1.0 + fabs(x - node) / support;
+            }else{
+                v = x - node;
+                v *= v;
+                v = 1.0 - v / support;
+                if (v < 0.0) v = 0.0;
+            }
+        }
     }else{
         if (order == 2){
             v = x - node;

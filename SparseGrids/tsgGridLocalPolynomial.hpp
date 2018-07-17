@@ -290,6 +290,9 @@ protected:
                         if (p[j] == 1) cpu_support[i*num_dimensions + j] = -4.0;
                         else if (p[j] == 2) cpu_support[i*num_dimensions + j] = -5.0;
                     }
+                    if ((crule == rule_localpb) && (order == 2)){
+                        if (p[j] < 2) cpu_support[i*num_dimensions + j] = -2.0; // linear functions on level 0
+                    }
                 }
             }
         }
