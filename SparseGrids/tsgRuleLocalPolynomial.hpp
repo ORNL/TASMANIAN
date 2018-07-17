@@ -277,6 +277,10 @@ public:
                 if (point == 0) return 2.0;
                 if ((point == 1) || (point == 2)) return 1.0/3.0;
                 if ((max_order == 2) || (max_order == 3) || (point <= 4))  return (4.0/3.0) * getSupport(point);
+            }else if (rule == rule_localpb){
+                if ((point == 0) || (point == 1)) return 1.0;
+                if (max_order == 1) return getSupport(point);
+                if ((max_order == 2) || (max_order == 3) || (point <= 4))  return (4.0/3.0) * getSupport(point);
             }else if (rule == rule_localp0){
                 if (max_order == 1) return getSupport(point);
                 if ((max_order == 2) || (max_order == 3) || (point <= 2))  return (4.0/3.0) * getSupport(point);
