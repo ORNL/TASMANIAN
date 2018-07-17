@@ -10,7 +10,7 @@ function [coefficients] = tsgGetHCoefficients(lGrid)
 %
 % OUTPUT:
 %
-% coefficients: the hierarchical coefficients of the grid in an array of dimension [num_poits, iOut]
+% coefficients: the hierarchical coefficients of the grid in an array of dimension [num_points, iOut]
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
@@ -35,6 +35,11 @@ else
         disp(cmdout);
     end
     [coefficients] = tsgReadMatrix(sFileO);
+end
+
+if (strcmp(lGrid.sType, 'fourier'))
+    % convert to complex matrix if needed
+    coefficients = coefficients(:, 1:2:end) + i * coefficients(:, 2:2:end);     % i is unit imaginary
 end
 
 tsgCleanTempFiles(lGrid, lClean);

@@ -48,6 +48,8 @@ elseif (strcmp(l1{4}, 'Local'))
     lGrid.sType = 'localpolynomial';
 elseif (strcmp(l1{4}, 'Wavelets'))
     lGrid.sType = 'wavelet';
+elseif (strcmp(l1{4}, 'Fourier'))
+    lGrid.sType = 'fourier';
 end
 
 lGrid.iDim = str2num(l2{3});

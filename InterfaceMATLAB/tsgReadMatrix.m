@@ -3,7 +3,7 @@ function [mat] = tsgReadMatrix(filename)
 % [mat] = tsgReadMatrix(filename)
 %
 % reads a matrix from a file format
-% 
+%
 % 3 4
 % 1 2 3 4
 % 5 6 7 8
@@ -43,11 +43,11 @@ else
 end
 
 for i = 1:Ni
-    
+
     [s] = fscanf(fid, ' %f ', [1, Nj]);
-    
+
     mat(i,:) = s;
-    
+
 end
 
 fclose(fid);

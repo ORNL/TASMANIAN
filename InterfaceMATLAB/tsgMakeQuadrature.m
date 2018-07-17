@@ -1,7 +1,7 @@
 function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder, mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, sConformalMap, vConfromalWeights, vLimitLevels)
 %
-% [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder, 
-%                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, 
+% [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
+%                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule,
 %                        sConformalMap, vConfromalWeights, vLimitLevels)
 %
 % creates a set of points and weights for integration
@@ -13,7 +13,7 @@ function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
 %
 % s1D: (string for the underlying 1-D rule that induces the grid)
 %
-%    Interpolation rules (Note: the quadrature induced by those rules is 
+%    Interpolation rules (Note: the quadrature induced by those rules is
 %                               constructed by integrating the interpolant)
 %
 %   'clenshaw-curtis'         'clenshaw-curtis-zero'           'fejer2'
@@ -25,7 +25,12 @@ function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
 %       'chebyshev'  'chebyshev-odd'
 %                 approximation using roots of Chebyshev polynomials
 %                 non-nested case (in contrast to Clenshaw-Curtis nodes)
-%                 Note: the quadrature induced by those rules is 
+%                 Note: the quadrature induced by those rules is
+%                       constructed by integrating the interpolant
+%
+%       'fourier'
+%                 approximation using Fourier basis; nested nodes
+%                 Note: the quadrature induced by this rule is
 %                       constructed by integrating the interpolant
 %
 %    Quadrature rules, the weights target exactness with respect to the
@@ -61,7 +66,7 @@ function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
 %                 approximation using roots of polynomials orthogonal in
 %                 measure |x|^alpha * epx(-x^2)
 %
-%    Local rules (Note: the quadrature induced by those rules is 
+%    Local rules (Note: the quadrature induced by those rules is
 %                       constructed by integrating the interpolant)
 %            Note: local rules ignore the values of inputs sType,
 %                  vAnisotropy and vAlphaBeta
@@ -95,7 +100,7 @@ function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
 %               transform specifies the lower and upper bound of the domain
 %               in each direction. For gauss-laguerre and gauss-hermite
 %               grids, the transform gives the a and b parameters that
-%               change the weight to 
+%               change the weight to
 %               exp(-b (x - a))  and  exp(-b (x - a)^2)
 %
 % vAnisotropy: (optional vector of positive integers, length iDim or 2*iDim)
@@ -130,7 +135,7 @@ function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
 %                conformal maps provide a non-linear domain transform,
 %                approximation (quadrature or interpolation) is done
 %                on the composition of f and the transform. A suitable
-%                transform could reduce the error by as much as an 
+%                transform could reduce the error by as much as an
 %                order of magnitude.
 %
 %                'asin': truncated MacLaurin series of arch-sin
@@ -142,9 +147,9 @@ function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
 % vLimitLevels: (optional vector of integers of size iDim)
 %               limit the level in each direction, no points beyond the
 %               specified limit will be used, e.g., in 2D using
-%               clenshaw-curtis rule, [1, 99] forces the grid to have 
-%               at most 3 possible values in the first variable and 
-%               ~2^99 (practicallyt infinite) number in the second 
+%               clenshaw-curtis rule, [1, 99] forces the grid to have
+%               at most 3 possible values in the first variable and
+%               ~2^99 (practicallyt infinite) number in the second
 %               direction. vLimitLevels works in conjunction with
 %               iDepth and sType, the points added to the grid will
 %               obey both bounds
@@ -158,8 +163,8 @@ function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
 %
 % points: the quadrature nodes, i.e., quad(f) = weights' * f(points)
 %
-% [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder, 
-%                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, 
+% [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
+%                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule,
 %                        sConformalMap, vConfromalWeights, vLimitLevels)
 %
 
@@ -178,7 +183,7 @@ if (bLocal)
     sCommand = [sCommand, ' -order ', num2str(iOrder)];
 else
     sCommand = [sCommand, ' -type ',  sType];
-    
+
     % set anisotropy
     if (exist('vAnisotropy') && (max(size(vAnisotropy)) ~= 0))
         if (min(size(vAnisotropy)) ~= 1)

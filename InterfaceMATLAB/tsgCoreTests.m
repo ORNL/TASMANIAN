@@ -105,7 +105,7 @@ end
 for iL = 7:8
     [w, p] = tsgMakeQuadrature(2, 'gauss-patterson', 'qptotal', iL, -1);
     [wc, pc] = tsgMakeQuadrature(2, 'gauss-patterson', 'qptotal', iL, -1, [], [], [], [], 'asin', [4, 4]);
-    
+
     I  = sum(w  .* (1.0 ./ ((1.0 + 5.0 .* p(:,1).^2)  .* (1.0 + 5.0 .* p(:,2).^2))));
     Ic = sum(wc .* (1.0 ./ ((1.0 + 5.0 .* pc(:,1).^2) .* (1.0 + 5.0 .* pc(:,2).^2))));
     %[abs(I - 1.028825601981092^2), abs(Ic - 1.028825601981092^2)]
@@ -421,14 +421,14 @@ for iL = 3:4
     [w, p] = tsgGetQuadrature(lGrid);
     [lGrid, p] = tsgMakeWavelet('_tsgcoretests_lgrid', 2, 1, iL, 1);
     [wc, pc] = tsgGetQuadrature(lGrid);
-    
+
     I  = sum(w  .* (1.0 ./ ((1.0 + 5.0 .* p(:,1).^2)  .* (1.0 + 5.0 .* p(:,2).^2))));
     Ic = sum(wc .* (1.0 ./ ((1.0 + 5.0 .* pc(:,1).^2) .* (1.0 + 5.0 .* pc(:,2).^2))));
 
     if (abs(I - 1.028825601981092^2) < abs(Ic - 1.028825601981092^2))
         error('Mismatch in points and weights of simple quadrature: conformal map');
     end
-    
+
 end
 tsgDeleteGrid(lGrid);
 
@@ -442,6 +442,44 @@ if (min(abs(p(:,2) - 0.75)) < 1.E-8)
 end
 if (min(abs(p(:,3) - 0.125)) < 1.E-8)
     error('Mismatch in tsgMakeLocalPolynomial: level limit, dim 3');
+end
+tsgDeleteGrid(lGrid);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgMakeFourier()                             %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% test transform
+[lGrid, p] = tsgMakeFourier('_tsgcoretests_lgrid', 3, 1, 'level', 1, [3.0 5.0; -7.0 -6.0; -12.0 17.0]);
+if ((abs(max(p(:, 1)) - 13.0/3.0) > 1.E-11) || (abs(min(p(:, 1)) - 3.0) > 1.E-11) ...
+    || (abs(max(p(:, 2)) + 19.0/3.0) > 1.E-11) || (abs(min(p(:, 2)) + 7.0) > 1.E-11) ...
+    || (abs(max(p(:, 3)) - 22.0/3.0) > 1.E-11) || (abs(min(p(:, 3)) + 12.0) > 1.E-11))
+    error('Mismatch in tsgMakeFourier: transform');
+end
+[w, p] = tsgGetQuadrature(lGrid);
+if ((abs(norm(sum(w)) - 58.0) > 1.E-11) || (abs(max(p(:, 1)) - 13.0/3.0) > 1.E-11) ...
+    || (abs(min(p(:, 1)) - 3.0) > 1.E-11) || (abs(max(p(:, 2)) + 19.0/3.0) > 1.E-11) ...
+    || (abs(min(p(:, 2)) + 7.0) > 1.E-11) || (abs(max(p(:, 3)) - 22.0/3.0) > 1.E-11) ...
+    || (abs(min(p(:, 3)) + 12.0) > 1.E-11))
+    error('Mismatch in tsgMakeFourier: getQuadrature');
+end
+
+% correctness of 1-D
+[lGrid, p] = tsgMakeFourier('_tsgcoretests_lgrid', 1, 1, 'level', 2);
+tp = [0.0; 1.0/3.0; 2.0/3.0; 1.0/9.0; 2.0/9.0; 4.0/9.0; 5.0/9.0; 7.0/9.0; 8.0/9.0];
+if (norm(p - tp) > 1.E-11)
+    error('Mismatch in tsgMakeFourier: points');
+end
+
+% level limits
+[lGrid, p] = tsgMakeFourier('_tsgcoretests_lgrid', 3, 1, 'level', 3, [], [], [], [], [0, 1, 2]);
+if (max(abs(p(:,1))) > 1.E-8)
+    error('Mismatch in tsgMakeFourier: level limit, dim 1');
+end
+if (min(abs(p(:,2) - 1.0/9.0)) < 1.E-8)
+    error('Mismatch in tsgMakeFourier: level limit, dim 2');
+end
+if (min(abs(p(:,3) - 1.0/27.0)) < 1.E-8)
+    error('Mismatch in tsgMakeFourier: level limit, dim 3');
 end
 tsgDeleteGrid(lGrid);
 
@@ -633,6 +671,19 @@ pnts = [-1.0 + 2.0 * rand(13, 2)];
 res = mVan * coef;
 if (norm(tres - res) > 1.E-11)
     error(['Mismatch in tsgEvaluateHierarchy: localp grid test']);
+end
+
+% this tests reading a complex matrix
+[lGrid, p] = tsgMakeFourier('_tsgcoretests_ml', 2, 1, 'level', 4);
+v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
+tsgLoadValues(lGrid, v);
+pnts = [-1.0 + 2.0 * rand(13, 2)];
+[tres] = tsgEvaluate(lGrid, pnts);
+[mVan] = tsgEvaluateHierarchy(lGrid, pnts);
+[coef] = tsgGetHCoefficients(lGrid);
+res = real(mVan * coef);
+if (norm(tres - res) > 1.E-11)
+    error(['Mismatch in tsgEvaluateHierarchy: Fourier grid test']);
 end
 
 tsgDeleteGrid(lGrid);

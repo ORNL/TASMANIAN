@@ -10,8 +10,8 @@ function tsgLoadHCoefficients(lGrid, mValues)
 %
 % mValues: a matrix with dimension [num_needed_points, iOut]
 %          each row corresponds to the values of the hierarchical
-%          coefficients at the corresponding needed point. 
-%          The order and leading dimension must match the points 
+%          coefficients at the corresponding needed point.
+%          The order and leading dimension must match the points
 %          obtained form tsgGetNeededPoints(...) command
 %
 % OUTPUT:
@@ -25,6 +25,13 @@ function tsgLoadHCoefficients(lGrid, mValues)
 sCommand = [sTasGrid,' -setcoefficients'];
 
 sCommand = [sCommand, ' -gridfile ', sFileG];
+
+if (strcmp(lGrid.sType, 'fourier'))
+    mRealMat = zeros(size(mValues, 1), 2 * size(mValues, 2));
+    mRealMat(:, 1:2:end) = real(mValues);
+    mRealMat(:, 2:2:end) = imag(mValues);
+    mValues = mRealMat;
+end
 
 tsgWriteMatrix(sFileV, mValues);
 lClean.sFileV = 1;
