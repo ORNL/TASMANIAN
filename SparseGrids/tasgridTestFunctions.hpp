@@ -128,6 +128,12 @@ public:
     int getNumInputs() const; int getNumOutputs() const; const char* getDescription() const; void eval(const double x[], double y[]) const; void getIntegral(double y[]) const;
 };
 
+class TwoOneSinCosAxis : public BaseFunction{
+public:
+    TwoOneSinCosAxis(); ~TwoOneSinCosAxis();
+    int getNumInputs() const; int getNumOutputs() const; const char* getDescription() const; void eval(const double x[], double y[]) const; void getIntegral(double y[]) const;
+};
+
 class TwoTwoSinCos : public BaseFunction{
 public:
     TwoTwoSinCos(); ~TwoTwoSinCos();
