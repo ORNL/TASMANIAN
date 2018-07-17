@@ -1247,7 +1247,7 @@ class TestTasmanian(unittest.TestCase):
         gridB.makeFourierGrid(2, 1, 3, 'level')
         self.loadExpN2(gridA)
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
-        np.testing.assert_almost_equal(gridA.getHierarchicalCoefficients(), gridB.getHierarchicalCoefficients(), 14, "Fourier coefficients differ", True)
+        self.compareGrids(gridA, gridB)
 
     def testFullCoverageZ(self):
         print("\nTesting plotting and other misc")
