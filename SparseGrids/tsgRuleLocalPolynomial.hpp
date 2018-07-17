@@ -105,8 +105,8 @@ public:
         if (isZeroOrder){
             return -2.0 + (1.0 / ((double) int3log3(point))) * (3*point + 2 - point % 2);
         }else{
-            if (point == 0) return  0.0;
             if ((rule == rule_localp) || (rule == rule_semilocalp)){
+                if (point == 0) return  0.0;
                 if (point == 1) return -1.0;
                 if (point == 2) return  1.0;
                 return ((double)(2*point - 1)) / ((double) int2log2(point - 1)) - 3.0;
