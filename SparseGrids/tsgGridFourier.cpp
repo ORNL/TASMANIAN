@@ -625,7 +625,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     delete[] basisFuncs;
 }
 
-double* GridFourier::getQuadratureWeights() const {
+double* GridFourier::getQuadratureWeights() const{
     int num_points = getNumPoints();
     double *w = new double[num_points];
     getQuadratureWeights(w);
@@ -735,17 +735,28 @@ void GridFourier::evaluateBatchGPUmagma(int, const double x[], int num_x, double
 }
 
 void GridFourier::integrate(double q[], double *conformal_correction) const{
-    double *w = getQuadratureWeights();
-    if (conformal_correction != 0){ for(int i=0; i<points->getNumIndexes(); i++) w[i] *= conformal_correction[i]; }
     std::fill(q, q+num_outputs, 0.0);
-    #pragma omp parallel for schedule(static)
-    for(int k=0; k<num_outputs; k++){
-        for(int i=0; i<points->getNumIndexes(); i++){
-            const double *v = values->getValues(i);
-            q[k] += w[i] * v[k];
+    if (conformal_correction == 0){
+        // everything vanishes except the Fourier coeff of e^0
+        int *zeros_num_dim = new int[num_dimensions];
+        std::fill(zeros_num_dim, zeros_num_dim + num_dimensions, 0);
+        int idx = exponents->getSlot(zeros_num_dim);
+        for(int k=0; k<num_outputs; k++){
+            q[k] = fourier_coefs[num_outputs * idx + k].real();
         }
+        delete[] zeros_num_dim;
+    }else{
+        // Do the expensive computation if we have a conformal map
+        double *w = getQuadratureWeights();
+        for(int i=0; i<points->getNumIndexes(); i++){
+            w[i] *= conformal_correction[i];
+            const double *v = values->getValues(i);
+            for(int k=0; k<num_outputs; k++){
+                q[k] += w[i] * v[k];
+            }
+        }
+        delete[] w;
     }
-    delete[] w;
 }
 
 void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
@@ -762,6 +773,12 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     // second two entries are real/imag parts of the Fourier coef for the second basis function and first output dim
     // and so on
     if (accel != 0) accel->resetGPULoadedData();
+    if (points == 0){
+        points = needed;
+        needed = 0;
+    }
+    if (fourier_coefs != 0) delete[] fourier_coefs;
+    fourier_coefs = new std::complex<double>[num_outputs * getNumPoints()];
     for(int i=0; i<num_outputs*getNumPoints(); i++){
         fourier_coefs[i] = std::complex<double>(c[2*i], c[2*i+1]);
     }
