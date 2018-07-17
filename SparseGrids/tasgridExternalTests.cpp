@@ -1162,6 +1162,14 @@ bool ExternalTester::testAllRefinement() const{
             cout << "ERROR: failed localp fds refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
+        const BaseFunction *f = &f21sincosaxis;
+        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localpb);
+        int np[7] = { 37, 77, 157, 317, 637, 1277, 2317 };
+        double err[7] = { 3.E-01, 5.E-02, 2.E-02, 4.E-03, 7.E-04, 3.E-04, 1.E-04 };
+        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_classic, np, err, 7)){
+            cout << "ERROR: failed localp-boundary fds refinement for " << f->getDescription() << endl;
+        }
+    }{
         const BaseFunction *f = &f21coscos;
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_localp0);
         int np[6] = { 49, 129, 321, 769, 1761, 2209 };
