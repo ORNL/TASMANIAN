@@ -545,7 +545,23 @@ void AccelerationMeta::cublasCheckError(void *cublasStatus, const char *info, st
 void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os){
     if (*((cusparseStatus_t*) cusparseStatus) != CUSPARSE_STATUS_SUCCESS){
         if (os != 0){
-            (*os)  << "ERROR: cusparse failed at " << info << endl;
+            (*os)  << "ERROR: cusparse failed with code: ";
+            if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_NOT_INITIALIZED){
+                (*os) << "CUSPARSE_STATUS_NOT_INITIALIZED";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_ALLOC_FAILED){
+                (*os) << "CUSPARSE_STATUS_ALLOC_FAILED";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_INVALID_VALUE){
+                (*os) << "CUSPARSE_STATUS_INVALID_VALUE";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_ARCH_MISMATCH){
+                (*os) << "CUSPARSE_STATUS_ARCH_MISMATCH";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_INTERNAL_ERROR){
+                (*os) << "CUSPARSE_STATUS_INTERNAL_ERROR";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED){
+                (*os) << "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_EXECUTION_FAILED){
+                (*os) << "CUSPARSE_STATUS_EXECUTION_FAILED";
+            }
+            (*os) << " at " << info << endl;
         }
     }
 }
