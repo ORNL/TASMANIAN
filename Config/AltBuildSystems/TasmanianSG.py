@@ -661,12 +661,6 @@ class TasmanianSparseGrid:
                 controls the density of the grid, i.e.,
                 the offset for the tensor selection, the meaning of
                 iDepth depends on sType
-                Example 1: sType == 'iptotal' will give a grid that
-                           interpolates exactly all polynomials of
-                           degree up to and including iDepth
-                Example 2: sType == 'qptotal' will give a grid that
-                           integrates exactly all polynomials of degree
-                           up to and including iDepth
 
         sType: string identifying the tensor selection strategy
               'level'     'curved'     'hyperbolic'     'tensor'
@@ -1609,7 +1603,7 @@ class TasmanianSparseGrid:
         if (iNumPoints == 0):
             return np.empty([0,iNumOuts], np.float64)
 
-        if not self.isFourier():
+        if (not self.isFourier()):
             aSurp = np.empty([iNumOuts * iNumPoints], np.float64)
             self.pLibTSG.tsgGetHierarchicalCoefficientsStatic(self.pGrid, np.ctypeslib.as_ctypes(aSurp))
         else:
@@ -1727,7 +1721,7 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfCoefficients", "ERROR: leading dimension of llfCoefficients is {0:1d} but the number of current points is {1:1d}".format(llfCoefficients.shape[0], self.getNumNeeded()))
         if (llfCoefficients.shape[1] != self.getNumOutputs()):
             raise TasmanianInputError("llfCoefficients", "ERROR: second dimension of llfCoefficients is {0:1d} but the number of outputs is set to {1:1d}".format(llfCoefficients.shape[1], self.getNumOutputs()))
-        if (self.isFourier() and not np.iscomplexobj(llfCoefficients)):
+        if (self.isFourier() and (not np.iscomplexobj(llfCoefficients))):
             raise TasmanianInputError("llfCoefficients", "ERROR: using Fourier grid but llfCoefficients is not complex")
 
         iNumPoints = llfCoefficients.shape[0]
