@@ -710,7 +710,7 @@ class TestTasmanian(unittest.TestCase):
         grid.makeGlobalGrid(2, 0, 4, 'ipcurved', 'leja', [20, 10, 0, 7])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [0.0, math.sqrt(1.0/3.0)], [1.0, 0.0], [1.0, 1.0], [-1.0, 0.0]])
         aP = grid.getPoints()
-        np.testing.assert_equal(aA, aP, 'Anisotropy Global not equal', True)
+        np.testing.assert_almost_equal(aA, aP, 12, 'Anisotropy Global not equal', True)
 
         grid.makeSequenceGrid(2, 1, 2, 'level', 'leja', [2, 1])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [1.0, 0.0]])
@@ -720,12 +720,12 @@ class TestTasmanian(unittest.TestCase):
         grid.makeSequenceGrid(2, 1, 4, 'ipcurved', 'leja', [20, 10, 0, 7])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [0.0, math.sqrt(1.0/3.0)], [1.0, 0.0], [1.0, 1.0], [-1.0, 0.0]])
         aP = grid.getPoints()
-        np.testing.assert_equal(aA, aP, 'Anisotropy Sequence not equal', True)
+        np.testing.assert_almost_equal(aA, aP, 12, 'Anisotropy Sequence not equal', True)
 
         grid.makeFourierGrid(2, 1, 2, 'level', [1, 2])
         aA = np.array([[0.0, 0.0], [0.0, 1.0/3.0], [0.0, 2.0/3.0], [1.0/3.0, 0.0], [2.0/3.0, 0.0], [1.0/9.0, 0.0], [2.0/9.0, 0.0], [4.0/9.0, 0.0], [5.0/9.0, 0.0], [7.0/9.0, 0.0], [8.0/9.0, 0.0]])
         aP = grid.getPoints()
-        np.testing.assert_equal(aA, aP, 'Anisotropy Fourier not equal', True)
+        np.testing.assert_almost_equal(aA, aP, 12, 'Anisotropy Fourier not equal', True)
 
         # this is a very important test, checks the curved rule and covers the non-lower-set index selection code
         grid.makeGlobalGrid(2, 1, 1, 'ipcurved', 'rleja', [10, 10, -21, -21])
