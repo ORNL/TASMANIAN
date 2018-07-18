@@ -344,10 +344,23 @@ void AccelerationDataGPUFull::cusparseMatveci(int num_outputs, int num_points, i
     cusparseStatus_t stat;
     double alpha = 1.0, beta = 0.0;
 
+    // quote from Nvidia CUDA cusparse manual at https://docs.nvidia.com/cuda/cusparse/index.html#cusparse-lt-t-gt-gemvi
+    // "This function requires no extra storage for the general matrices when operation CUSPARSE_OPERATION_NON_TRANSPOSE is selected."
+    // Yet, buffer is required when num_nz exceeds 32 even with CUSPARSE_OPERATION_NON_TRANSPOSE
+    int buffer_size;
+    double *gpu_buffer = 0;
+    stat = cusparseDgemvi_bufferSize((cusparseHandle_t) cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                     num_outputs, num_points, num_nz, &buffer_size);
+    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDgemvi_bufferSize in Matveci", logstream);
+    if (buffer_size > 0){
+        gpu_buffer = TasCUDA::cudaNew<double>(buffer_size, logstream);
+    }
+
     stat = cusparseDgemvi((cusparseHandle_t) cusparseHandle,
             CUSPARSE_OPERATION_NON_TRANSPOSE, num_outputs, num_points, &alpha,
-            gpu_values, num_outputs, num_nz, svals, sindx, &beta, result, CUSPARSE_INDEX_BASE_ZERO, 0);
+            gpu_values, num_outputs, num_nz, svals, sindx, &beta, result, CUSPARSE_INDEX_BASE_ZERO, gpu_buffer);
     AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDgemvi in Matveci", logstream);
+    if (gpu_buffer != 0) TasCUDA::cudaDel<double>(gpu_buffer, logstream);
 }
 #else
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}

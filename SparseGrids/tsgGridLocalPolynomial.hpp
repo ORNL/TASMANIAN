@@ -181,6 +181,77 @@ protected:
 
         delete[] monkey_count;
         delete[] monkey_tail;
+
+        // according to https://docs.nvidia.com/cuda/cusparse/index.html#sparse-format
+        // "... it is assumed that the indices are provided in increasing order and that each index appears only once."
+        // This may not be a requirement for cusparseDgemvi(), but it may be that I have not tested it sufficiently
+        // Also, see AccelerationDataGPUFull::cusparseMatveci() for inaccuracies in Nvidia documentation
+        if (fill){
+            bool isNotSorted = false;
+            for(int i=0; i<num_nz-1; i++) if (sindx[i] > sindx[i+1]) isNotSorted = true;
+            if (isNotSorted){ // sort the vector
+                int *idx1 = new int[num_nz];
+                int *idx2 = new int[num_nz];
+                double *vls1 = new double[num_nz];
+                double *vls2 = new double[num_nz];
+
+                int loop_end = (num_nz % 2 == 1) ? num_nz - 1 : num_nz;
+                for(int i=0; i<loop_end; i+=2){
+                    if (sindx[i] < sindx[i+1]){
+                        idx1[i] = sindx[i];  idx1[i+1] = sindx[i+1];
+                        vls1[i] = svals[i];  vls1[i+1] = svals[i+1];
+                    }else{
+                        idx1[i] = sindx[i+1];  idx1[i+1] = sindx[i];
+                        vls1[i] = svals[i+1];  vls1[i+1] = svals[i];
+                    }
+                }
+                if (num_nz % 2 == 1){
+                    idx1[num_nz - 1] = sindx[num_nz - 1];
+                    vls1[num_nz - 1] = svals[num_nz - 1];
+                }
+
+                int stride = 2;
+                while(stride < num_nz){
+                    int c = 0;
+                    while(c < num_nz){
+                        int acurrent = c;
+                        int bcurrent = c + stride;
+                        int aend = (acurrent + stride < num_nz) ? acurrent + stride : num_nz;
+                        int bend = (bcurrent + stride < num_nz) ? bcurrent + stride : num_nz;
+                        while((acurrent < aend) || (bcurrent  < bend)){
+                            bool picka;
+                            if (bcurrent >= bend){
+                                picka = true;
+                            }else if (acurrent >= aend){
+                                picka = false;
+                            }else{
+                                picka = (idx1[acurrent] < idx1[bcurrent]);
+                            }
+                            if (picka){
+                                idx2[c] = idx1[acurrent];
+                                vls2[c] = vls1[acurrent];
+                                acurrent++;
+                            }else{
+                                idx2[c] = idx1[bcurrent];
+                                vls2[c] = vls1[bcurrent];
+                                bcurrent++;
+                            }
+                            c++;
+                        }
+                    }
+                    stride *= 2;
+                    int *it = idx2; idx2 = idx1; idx1 = it;
+                    double *vt = vls2; vls2 = vls1; vls1 = vt;
+                }
+                std::copy(idx1, idx1 + num_nz, sindx);
+                std::copy(vls1, vls1 + num_nz, svals);
+
+                delete[] idx1;
+                delete[] idx2;
+                delete[] vls1;
+                delete[] vls2;
+            }
+        }
     }
 
     double evalBasisRaw(const int point[], const double x[]) const;
