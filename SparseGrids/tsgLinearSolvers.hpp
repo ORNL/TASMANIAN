@@ -50,7 +50,8 @@ namespace TasmanianTridiagonalSolver{
 }
 
 namespace TasmanianFourierTransform{
-    void discrete_fourier_transform(const int rank, const int n[], const std::complex<double> data[], std::complex<double> out[], const int direction = -1);
+    void fft_1d(const int n, const std::complex<double> data[], std::complex<double> out[]);
+    void fft(const int num_dimensions, const int n[], const std::complex<double> data[], std::complex<double> out[]);
 }
 
 }

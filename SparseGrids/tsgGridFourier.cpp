@@ -548,7 +548,7 @@ void GridFourier::calculateFourierCoefficients(){
             }
 
             // Execute FFT
-            TasmanianFourierTransform::discrete_fourier_transform(num_dimensions, num_oned_points, in, out);
+            TasmanianFourierTransform::fft(num_dimensions, num_oned_points, in, out);
 
             for(int i=0; i<num_tensor_points; i++){
                 // Combine with tensor weights
@@ -615,7 +615,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
             in[i] = basisFuncs[exponent_refs[n][i]];
         }
 
-        TasmanianFourierTransform::discrete_fourier_transform(num_dimensions, num_oned_points, in, out);
+        TasmanianFourierTransform::fft(num_dimensions, num_oned_points, in, out);
 
         for(int i=0; i<num_tensor_points; i++){
             int key = convertIndexes(i, levels);

@@ -167,67 +167,95 @@ void TasmanianTridiagonalSolver::decompose(int n, double d[], double e[], double
     }
 }
 
-void TasmanianFourierTransform::discrete_fourier_transform(const int rank, const int n[], const std::complex<double> data[], std::complex<double> out[], const int direction){
-    // Fourier transform code by ZBM
-    // DOES NOT NORMALIZE the outgoing Fourier coefficients
+void TasmanianFourierTransform::fft_1d(const int n, const std::complex<double> data[], std::complex<double> out[]){
 
-    if (direction != 1 && direction != -1) std::cerr << "ERROR: direction must be -1 (forward) or 1 (backward); value is " << direction << std::endl;
-    int num_data = 1;
-    for(int r=0; r<rank; r++){
-        num_data *= n[r];
+    // Designed for N=3^k points
+
+    std::fill(out, out + n, std::complex<double>(0.0,0.0));
+    std::complex<double> unit_imag(0,1);
+    if(n == 1){
+        out[0] = data[0];
+    }else{
+        int m = n/3;
+        std::complex<double> *data_mod0 = new std::complex<double>[m];
+        std::complex<double> *data_mod1 = new std::complex<double>[m];
+        std::complex<double> *data_mod2 = new std::complex<double>[m];
+        for(int i=0; i<m; i++){
+            data_mod0[i] = data[3*i];
+            data_mod1[i] = data[3*i+1];
+            data_mod2[i] = data[3*i+2];
+        }
+        std::complex<double> *out_mod0 = new std::complex<double>[m];
+        std::complex<double> *out_mod1 = new std::complex<double>[m];
+        std::complex<double> *out_mod2 = new std::complex<double>[m];
+
+        fft_1d(m, data_mod0, out_mod0);
+        fft_1d(m, data_mod1, out_mod1);
+        fft_1d(m, data_mod2, out_mod2);
+
+        for(int k=0; k<m; k++){
+            out_mod1[k] *= std::exp(-2.0 * M_PI * unit_imag * ((double) k / (double) n));
+            out_mod2[k] *= std::exp(-4.0 * M_PI * unit_imag * ((double) k / (double) n));
+        }
+        for(int k=0; k<m; k++){
+            out[k] = out_mod0[k] + out_mod1[k] + out_mod2[k];
+            out[k + m] = out_mod0[k] + std::exp(-2.0*M_PI*unit_imag / 3.0) * out_mod1[k] + std::exp(2.0*M_PI*unit_imag / 3.0) * out_mod2[k];
+            out[k + 2*m] = out_mod0[k] + std::exp(2.0*M_PI*unit_imag / 3.0) * out_mod1[k] + std::exp(-2.0*M_PI*unit_imag / 3.0) * out_mod2[k];
+        }
+        delete[] data_mod0; delete[] data_mod1; delete[] data_mod2;
+        delete[] out_mod0; delete[] out_mod1; delete[] out_mod2;
     }
+}
 
-    std::complex<double> unit_imag(0.0, 1.0);
+void TasmanianFourierTransform::fft(const int num_dimensions, const int n[], const std::complex<double> data[], std::complex<double> out[]){
 
-    int *k_idx = new int[rank];
-    std::fill(k_idx, k_idx+rank, 0);
-    int k_restart_dim = 1;
-    std::complex<double>* exp_k = new std::complex<double>[rank];
-    std::fill(exp_k, exp_k+rank, 1);
+    // Designed so that each direction will have N_d = 3^{k_d} points
 
-    for(int k=0; k<num_data; k++){
-        int t=k;
-        for(int r=rank-1; r>=0; r--){
-            if ((t % n[r]) - k_idx[r] == 1){ k_restart_dim = r; }
-            k_idx[r] = t % n[r];
-            t /= n[r];
-        }
+    int num_tensor_points = 1;
+    int *increments = new int[num_dimensions];
+    increments[num_dimensions-1] = 1;
+    for (int j=0; j<num_dimensions; j++) { num_tensor_points *= n[j]; }
+    for (int j=num_dimensions-1; j>0; j--) { increments[j-1] = n[j] * increments[j]; }
 
-        // Only recompute the factors that have changed since the previous step
-        for(int r=k_restart_dim; r<rank; r++){
-            exp_k[r] = std::exp(direction * 2*M_PI*unit_imag*((double) k_idx[r]) / ((double) n[r]));
-        }
+    // first, copy over data[] into out[]
+    for (int i=0; i<num_tensor_points; i++) { out[i] = data[i]; }
 
-        // initialize
-        out[k] = data[0];
+    // Apply 1d FFT to each 1D slice along dim 1;
+    // then apply 1d FFT to each 1D slice along dim 2 of the result;
+    // and so on
+    for (int dim=0; dim<num_dimensions; dim++){
+        int num_1d_slices = num_tensor_points / n[dim];
+        std::complex<double> *data_1d = new std::complex<double>[n[dim]];
+        std::complex<double> *out_1d = new std::complex<double>[n[dim]];
 
-        int *j_idx = new int[rank];
-        std::fill(j_idx, j_idx+rank, 0);
-        int j_restart_dim = rank-1;
+        for (int k=0; k<num_1d_slices; k++){
+            std::fill(data_1d, data_1d + n[dim], std::complex<double>(0.0,0.0));
+            std::fill(out_1d, out_1d + n[dim], std::complex<double>(0.0,0.0));
 
-        // exp_j_hist[r] = \prod_{m=0}^r exp(-2*pi*i*k_m*j_m/N_m)
-
-        std::complex<double>* exp_j_hist = new std::complex<double>[rank];
-        std::fill(exp_j_hist, exp_j_hist+rank, 1);
-
-        for(int j=1; j<num_data; j++){
-            int q=j;
-            for(int r=rank-1; r>=0; r--){
-                if ((q % n[r]) - j_idx[r] == 1){ j_restart_dim=r; }
-                j_idx[r] = q % n[r];
-                q /= n[r];
+            // compute tensor-product address for starting point of 1D slice;
+            // only consider dimensions != dim; park 0 in k_tensor[dim]
+            int *k_tensor = new int[num_dimensions];
+            int t = k;
+            for (int j=num_dimensions-1; j>=0; j--){
+                k_tensor[j] = (j != dim ? t % n[j] : 0);
+                if (j != dim) t /= n[j];
+            }
+            int offset = 0;
+            for (int j=0; j<num_dimensions; j++){
+                offset += k_tensor[j] * increments[j]; // NOTE: this is NOT the same thing as k since we omit dimension `dim` from `k_tensor`
+            }
+            for (int i=0; i<n[dim]; i++){
+                data_1d[i] = out[offset + increments[dim] * i];
             }
 
-            // Only recompute the part of the running product that has changed
-            for(int r=j_restart_dim; r<rank; r++){
-                exp_j_hist[r] = (r > 0 ? exp_j_hist[r-1] : 1);
-                for(int l=0; l<j_idx[r]; l++) exp_j_hist[r] *= exp_k[r];
+            fft_1d(n[dim], data_1d, out_1d);
+
+            for (int i=0; i<n[dim]; i++){
+                out[offset + increments[dim] * i] = out_1d[i];
             }
-            out[k] += exp_j_hist[rank-1]*data[j];
         }
-        delete[] exp_j_hist;
     }
-    delete[] exp_k;
+    delete[] increments;
 }
 
 }
