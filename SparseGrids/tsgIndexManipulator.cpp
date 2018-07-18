@@ -1048,23 +1048,22 @@ IndexSet* IndexManipulator::generatePointsFromDeltas(const UnsortedIndexSet* del
 int* IndexManipulator::computeDAGupLocal(const IndexSet *set, const BaseRuleLocalPolynomial *rule) const{
     int n = set->getNumIndexes();
     int *parents;
-    if (rule->getMaxNumParents() > 1){
+    if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
         int max_parents = rule->getMaxNumParents()*num_dimensions;
         parents = new int[n * max_parents];
+        std::fill(parents, parents + n * max_parents, -1);
+        int level0_offset = rule->getNumPoints(0);
         #pragma omp parallel for schedule(static)
         for(int i=0; i<n; i++){
             const int *p = set->getIndex(i);
             int *dad = new int[num_dimensions];
             std::copy(p, p + num_dimensions, dad);
             for(int j=0; j<num_dimensions; j++){
-                if (dad[j] == 0){
-                    parents[i*max_parents + 2*j    ] = -1;
-                    parents[i*max_parents + 2*j + 1] = -1;
-                }else{
+                if (dad[j] >= level0_offset){
                     int current = p[j];
                     dad[j] = rule->getParent(current);
                     parents[i*max_parents + 2*j] = set->getSlot(dad);
-                    while ((dad[j] != 0) && (parents[i*max_parents + 2*j] == -1)){
+                    while ((dad[j] >= level0_offset) && (parents[i*max_parents + 2*j] == -1)){
                         current = dad[j];
                         dad[j] = rule->getParent(current);
                         parents[i*max_parents + 2*j] = set->getSlot(dad);
@@ -1080,7 +1079,7 @@ int* IndexManipulator::computeDAGupLocal(const IndexSet *set, const BaseRuleLoca
             }
             delete[] dad;
         }
-    }else{
+    }else{ // this assumes that level zero has only one node
         parents = new int[n * num_dimensions];
         #pragma omp parallel for schedule(static)
         for(int i=0; i<n; i++){

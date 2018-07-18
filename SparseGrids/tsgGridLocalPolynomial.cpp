@@ -163,6 +163,8 @@ void GridLocalPolynomial::read(std::ifstream &ifs){
             rule = &rsemipoly;
         }else if (crule == rule_localp0){
             rule = &rpoly0;
+        }else if (crule == rule_localpb){
+            rule = &rpolyb;
         }
         if (order == 0){
             rule = &rpolyc;
@@ -221,6 +223,8 @@ void GridLocalPolynomial::readBinary(std::ifstream &ifs){
             rule = &rsemipoly;
         }else if (crule == rule_localp0){
             rule = &rpoly0;
+        }else if (crule == rule_localpb){
+            rule = &rpolyb;
         }
         if (order == 0){
             rule = &rpolyc;
@@ -269,15 +273,20 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     num_outputs = cnum_outputs;
     order = corder;
 
-    TypeOneDRule effective_rule = (crule == rule_localp0) ? rule_localp0 : (((crule == rule_semilocalp) && ((order == -1) || (order > 1))) ? rule_semilocalp : rule_localp);
+    TypeOneDRule effective_rule = ((crule == rule_semilocalp) && ((order == -1) || (order > 1))) ? rule_semilocalp : rule_localp; // semi-localp of order 1 is identical to localp
+    if (crule == rule_localp0) effective_rule = rule_localp0;
+    if (crule == rule_localpb) effective_rule = rule_localpb;
+
     if (effective_rule == rule_localp){
         rule = &rpoly;
     }else if (effective_rule == rule_semilocalp){
         rule = &rsemipoly;
     }else if (effective_rule == rule_localp0){
         rule = &rpoly0;
+    }else if (effective_rule == rule_localpb){
+        rule = &rpolyb;
     }
-    if (order == 0){
+    if (order == 0){ // if the rule is zero-order
         rule = &rpolyc;
     }
     rule->setMaxOrder(order);
@@ -320,6 +329,8 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
         rule = &rsemipoly;
     }else if (pwpoly->rule->getType() == rule_localp0){
         rule = &rpoly0;
+    }else if (pwpoly->rule->getType() == rule_localpb){
+        rule = &rpolyb;
     }
     if (pwpoly->rule->getMaxOrder() == 0){
         rule = &rpolyc;
@@ -1979,6 +1990,12 @@ void GridLocalPolynomial::checkAccelerationGPUNodes() const{
             }
         }else if (rule->getType() == rule_semilocalp){
             encodeSupportForGPU<2, rule_semilocalp>(work, cpu_support);
+        }else if (rule->getType() == rule_localpb){
+            switch(order){
+            case 2: encodeSupportForGPU<2, rule_localpb>(work, cpu_support); break;
+            default:
+                encodeSupportForGPU<1, rule_localpb>(work, cpu_support);
+            }
         }else{
             switch(order){
             case 2: encodeSupportForGPU<2, rule_localp0>(work, cpu_support); break;

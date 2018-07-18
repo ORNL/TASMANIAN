@@ -116,6 +116,7 @@ private:
     TwoOneSinSin f21sinsin;
     TwoOneCosCos f21coscos;
     TwoOneExpSinCos f21expsincos;
+    TwoOneSinCosAxis f21sincosaxis;
     TwoTwoSinCos f22sincos;
     TwoOneDivisionAnisotropic f21aniso;
     TwoOne1DCurved f21curved;

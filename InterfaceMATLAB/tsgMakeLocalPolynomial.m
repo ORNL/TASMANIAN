@@ -1,6 +1,6 @@
 function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iDepth, iOrder, mTransformAB, sConformalMap, vConfromalWeights, vLimitLevels)
 %
-% [lGrid, points] 
+% [lGrid, points]
 %     tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iDepth, iOrder,
 %                        mTransformAB, sConformalMap, vConfromalWeights,
 %                        vLimitLevels)
@@ -9,7 +9,7 @@ function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iD
 %
 % INPUT:
 %
-% sGridName: the name of the grid, give it a string name, 
+% sGridName: the name of the grid, give it a string name,
 %            i.e. 'myGrid' or '1' or 'pi314'
 %            DO NOT LEAVE THIS EMPTY
 %
@@ -21,12 +21,12 @@ function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iD
 %
 % s1D: (string for the underlying 1-D rule that induces the grid)
 %
-%      'localp'   'localp-zero'   'semi-localp'
+%      'localp'   'localp-zero'   'semi-localp'   'localp-boundary'
 %
 % iDepth: (integer non-negative)
-%          controls the density of the grid, 
+%          controls the density of the grid,
 %          i.e., the number of levels to use
-%       
+%
 %
 % iOrder: (integer must be -1 or bigger)
 %         -1 indicates largest possible order
@@ -37,14 +37,14 @@ function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iD
 %               transform specifies the lower and upper bound of the domain
 %               in each direction. For gauss-laguerre and gauss-hermite
 %               grids, the transform gives the a and b parameters that
-%               change the weight to 
+%               change the weight to
 %               exp(-b (x - a))  and  exp(-b (x - a)^2)
 %
 % sConformalMap: (optional string giving the type of transform)
 %                conformal maps provide a non-linear domain transform,
 %                approximation (quadrature or interpolation) is done
 %                on the composition of f and the transform. A suitable
-%                transform could reduce the error by as much as an 
+%                transform could reduce the error by as much as an
 %                order of magnitude.
 %
 %                'asin': truncated MacLaurin series of arch-sin
@@ -67,7 +67,7 @@ function [lGrid, points] = tsgMakeLocalPolynomial(sGridName, iDim, iOut, s1D, iD
 % lGrid: list containing information about the sparse grid, can be used
 %        to call other functions
 %
-% points: (optional) the points of the grid in an array 
+% points: (optional) the points of the grid in an array
 %                    of dimension [num_poits, dim]
 %
 % [lGrid, points] =

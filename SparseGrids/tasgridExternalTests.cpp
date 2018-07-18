@@ -865,6 +865,14 @@ bool ExternalTester::testAllPWLocal() const{
     }else{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
     }}
+    { TasGrid::TypeOneDRule oned = TasGrid::rule_localpb;
+    const int depths1[18] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
+    const double tols1[18] = { 1.E-03, 5.E-01, 5.E-01, 1.E-03, 1.E-03, 1.E-03, 1.E-07, 1.E-04, 1.E-04, 1.E-07, 1.E-05, 1.E-05, 1.E-07, 9.E-06, 9.E-06, 1.E-06, 2.E-05, 2.E-05 };
+    if (testLocalPolynomialRule(&f21sincosaxis, oned, depths1, tols1)){
+        if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
+    }else{
+        cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
+    }}
     { TasGrid::TypeOneDRule oned = TasGrid::rule_localp0;
     const int depths1[18] = { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
     const double tols1[18] = { 1.E-03, 5.E-01, 5.E-01, 1.E-03, 2.E-04, 2.E-04, 1.E-09, 1.E-06, 1.E-06, 1.E-09, 3.E-08, 3.E-08, 1.E-09, 4.E-09, 4.E-09, 1.E-09, 4.E-09, 4.E-09 };
@@ -1152,6 +1160,14 @@ bool ExternalTester::testAllRefinement() const{
         double err[8] = { 1.E-01, 5.E-02, 2.E-02, 5.E-03, 2.E-03, 6.E-04, 2.E-04, 1.E-04 };
         if (!testSurplusRefinement(f, &grid, 1.E-4, refine_fds, np, err, 8)){
             cout << "ERROR: failed localp fds refinement for " << f->getDescription() << endl;  pass = false;
+        }
+    }{
+        const BaseFunction *f = &f21sincosaxis;
+        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localpb);
+        int np[7] = { 37, 77, 157, 317, 637, 1277, 2317 };
+        double err[7] = { 3.E-01, 5.E-02, 2.E-02, 4.E-03, 7.E-04, 3.E-04, 1.E-04 };
+        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_classic, np, err, 7)){
+            cout << "ERROR: failed localp-boundary fds refinement for " << f->getDescription() << endl;
         }
     }{
         const BaseFunction *f = &f21coscos;
@@ -1633,12 +1649,12 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     #ifdef Tasmanian_ENABLE_CUDA
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
     TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
-    int num_tests = 7;
+    int num_tests = 9;
     int dims = 3;
-    TasGrid::TypeOneDRule pwp_rule[7] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp,
-                                         TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp,
+    TasGrid::TypeOneDRule pwp_rule[9] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
+                                         TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
                                          TasGrid::rule_localp};
-    int order[7] = {1, 1, 1, 2, 2, 2, 0};
+    int order[9] = {1, 1, 1, 1, 2, 2, 2, 2, 0};
     double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
 
     bool pass = true;
@@ -1651,7 +1667,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             grid->setDomainTransform(a, b);
 
-            int nump = 3000;
+            int nump = 2000;
             double *x = new double[dims*nump];
             double *xt = new double[dims*nump];
             setRandomX(dims*nump, x);
@@ -1780,9 +1796,9 @@ bool ExternalTester::testAllAcceleration() const{
 
     // for the purpose of testing CUDA evaluations, test all three localp rules vs orders 0, 1, and 2
     // for order 0, regardless of the selected rule, thegrid should switch to localp
-    TasGrid::TypeOneDRule pwp_rule[3] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp};
-    for(int t=0; t<9; t++){
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 3 == 0) ? 5 : 6), (t / 3), pwp_rule[t % 3]);
+    TasGrid::TypeOneDRule pwp_rule[4] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb};
+    for(int t=0; t<12; t++){
+        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 4 == 0) ? 5 : 6), (t / 4), pwp_rule[t % 4]);
         pass = pass && testAcceleration(f, &grid);
     }
     // test cusparse sparse mat times dense vec used in accel_type cuda

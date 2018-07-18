@@ -383,7 +383,7 @@ bool OneDimensionalMeta::isSingleNodeGrowth(TypeOneDRule rule){
          (rule == rule_gaussjacobi) || (rule == rule_gausslaguerre) || (rule == rule_gausshermite));
 }
 bool OneDimensionalMeta::isLocalPolynomial(TypeOneDRule rule){
-    return ((rule == rule_localp) || (rule == rule_localp0) || (rule == rule_semilocalp));
+    return ((rule == rule_localp) || (rule == rule_localp0) || (rule == rule_semilocalp) || (rule == rule_localpb));
 }
 bool OneDimensionalMeta::isWavelet(TypeOneDRule rule){
     return (rule == rule_wavelet);
@@ -432,6 +432,7 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
         case rule_customtabulated:    return "Custom rule";
         case rule_localp:             return "Local polynomials";
         case rule_localp0:            return "Local polynomials zero boundary conditions";
+        case rule_localpb:            return "Local polynomials focused nodes on the boundary";
         case rule_semilocalp:         return "Semi-Local polynomials";
         case rule_wavelet:            return "Wavelets";
         case rule_fourier:            return "Fourier / trigonometric";
@@ -479,6 +480,7 @@ const char* OneDimensionalMeta::getIORuleString(TypeOneDRule rule){
         case rule_customtabulated:    return "custom-tabulated";
         case rule_localp:             return "localp";
         case rule_localp0:            return "localp-zero";
+        case rule_localpb:            return "localp-boundary";
         case rule_semilocalp:         return "semi-localp";
         case rule_wavelet:            return "wavelet";
         case rule_fourier:            return "fourier";
@@ -559,11 +561,13 @@ TypeOneDRule OneDimensionalMeta::getIORuleString(const char *name){
         return rule_gausshermiteodd;
     }else if (strcmp(name, "custom-tabulated") == 0){
         return rule_customtabulated;
-    }else  if (strcmp(name, "localp") == 0){
+    }else if (strcmp(name, "localp") == 0){
         return rule_localp;
-    }else  if (strcmp(name, "localp-zero") == 0){
+    }else if (strcmp(name, "localp-zero") == 0){
         return rule_localp0;
-    }else  if (strcmp(name, "semi-localp") == 0){
+    }else if (strcmp(name, "localp-boundary") == 0){
+        return rule_localpb;
+    }else if (strcmp(name, "semi-localp") == 0){
         return rule_semilocalp;
     }else if (strcmp(name, "wavelet") == 0){
         return rule_wavelet;
@@ -616,6 +620,7 @@ TypeOneDRule OneDimensionalMeta::getIORuleInt(int index){
         case 39: return rule_semilocalp;
         case 40: return rule_wavelet;
         case 41: return rule_fourier;
+        case 42: return rule_localpb;
         default:
             return rule_none;
     }
@@ -660,6 +665,7 @@ int OneDimensionalMeta::getIORuleInt(TypeOneDRule rule){
         case rule_customtabulated:    return 36;
         case rule_localp:             return 37;
         case rule_localp0:            return 38;
+        case rule_localpb:            return 42;
         case rule_semilocalp:         return 39;
         case rule_wavelet:            return 40;
         case rule_fourier:            return 41;

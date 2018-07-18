@@ -74,6 +74,13 @@ void TasCUDA::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int
             default:
                     tasgpu_devalpwpoly<double, 1, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
+    }else if (rule == rule_localpb){
+        switch(order){
+            case 2: tasgpu_devalpwpoly<double, 2, rule_localpb, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    break;
+            default:
+                    tasgpu_devalpwpoly<double, 1, rule_localpb, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        }
     }else{ // rule == rule_semilocalp
         tasgpu_devalpwpoly<double, 2, rule_semilocalp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }
@@ -111,6 +118,16 @@ inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule,
                 break;
             default:
                 tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localp0, fill, dense><<<num_blocks, THREADS>>>
+                    (dims, num_x, num_points, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals, gpu_dense);
+        }
+    }else if (rule == rule_localpb){
+        switch(order){
+            case 2:
+                tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localpb, fill, dense><<<num_blocks, THREADS>>>
+                    (dims, num_x, num_points, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals, gpu_dense);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localpb, fill, dense><<<num_blocks, THREADS>>>
                     (dims, num_x, num_points, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals, gpu_dense);
         }
     }else{ // rule == rule_semilocalp
