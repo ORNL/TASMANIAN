@@ -1667,7 +1667,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             grid->setDomainTransform(a, b);
 
-            int nump = 3000;
+            int nump = 2000;
             double *x = new double[dims*nump];
             double *xt = new double[dims*nump];
             setRandomX(dims*nump, x);
