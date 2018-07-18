@@ -1990,6 +1990,12 @@ void GridLocalPolynomial::checkAccelerationGPUNodes() const{
             }
         }else if (rule->getType() == rule_semilocalp){
             encodeSupportForGPU<2, rule_semilocalp>(work, cpu_support);
+        }else if (rule->getType() == rule_localpb){
+            switch(order){
+            case 2: encodeSupportForGPU<2, rule_localpb>(work, cpu_support); break;
+            default:
+                encodeSupportForGPU<1, rule_localpb>(work, cpu_support);
+            }
         }else{
             switch(order){
             case 2: encodeSupportForGPU<2, rule_localp0>(work, cpu_support); break;

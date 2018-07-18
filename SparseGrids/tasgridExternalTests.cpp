@@ -1649,12 +1649,12 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     #ifdef Tasmanian_ENABLE_CUDA
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
     TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
-    int num_tests = 7;
+    int num_tests = 9;
     int dims = 3;
-    TasGrid::TypeOneDRule pwp_rule[7] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp,
-                                         TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp,
+    TasGrid::TypeOneDRule pwp_rule[9] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
+                                         TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
                                          TasGrid::rule_localp};
-    int order[7] = {1, 1, 1, 2, 2, 2, 0};
+    int order[9] = {1, 1, 1, 1, 2, 2, 2, 2, 0};
     double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
 
     bool pass = true;
@@ -1796,9 +1796,9 @@ bool ExternalTester::testAllAcceleration() const{
 
     // for the purpose of testing CUDA evaluations, test all three localp rules vs orders 0, 1, and 2
     // for order 0, regardless of the selected rule, thegrid should switch to localp
-    TasGrid::TypeOneDRule pwp_rule[3] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp};
-    for(int t=0; t<9; t++){
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 3 == 0) ? 5 : 6), (t / 3), pwp_rule[t % 3]);
+    TasGrid::TypeOneDRule pwp_rule[4] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb};
+    for(int t=0; t<12; t++){
+        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 4 == 0) ? 5 : 6), (t / 4), pwp_rule[t % 4]);
         pass = pass && testAcceleration(f, &grid);
     }
     // test cusparse sparse mat times dense vec used in accel_type cuda
