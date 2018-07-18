@@ -48,7 +48,7 @@ lsTsgGlobalRules = ["clenshaw-curtis", "clenshaw-curtis-zero", "chebyshev", "che
 lsTsgGlobalTypes = ["level", "curved", "iptotal", "ipcurved", "qptotal", "qpcurved", "hyperbolic", "iphyperbolic", "qphyperbolic", "tensor", "iptensor", "qptensor"]
 lsTsgCurvedTypes = ["curved", "ipcurved", "qpcurved"]
 lsTsgSequenceRules = ["leja", "rleja", "rleja-shifted", "max-lebesgue", "min-lebesgue", "min-delta"]
-lsTsgLocalRules = ["localp", "semi-localp", "localp-zero"]
+lsTsgLocalRules = ["localp", "semi-localp", "localp-zero", "localp-boundary"]
 lsTsgAccelTypes = ["none", "cpu-blas", "gpu-default", "gpu-cublas", "gpu-cuda", "gpu-magma"]
 
 class TasmanianInputError(Exception):
@@ -581,7 +581,7 @@ class TasmanianSparseGrid:
                    to double for the other cases)
 
         sRule: string (defines the 1-D rule that induces the grid)
-              'localp'   'localp-zero'   'semi-localp'
+              'localp'  'localp-zero'  'semi-localp'  'localp-boundary'
 
         '''
         if (iDimension <= 0):
