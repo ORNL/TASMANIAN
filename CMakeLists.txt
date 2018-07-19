@@ -11,7 +11,6 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_ENABLE_OPENMP:BOOL=ON
 #    -D Tasmanian_ENABLE_BLAS:BOOL=ON
 #    -D Tasmanian_ENABLE_MPI:BOOL=OFF
-#    -D Tasmanian_ENABLE_CUBLAS:BOOL=ON
 #    -D Tasmanian_ENABLE_CUDA:BOOL=OFF
 #    -D Tasmanian_ENABLE_MAGMA:BOOL=OFF
 #    -D Tasmanian_ENABLE_PYTHON:BOOL=ON
@@ -46,7 +45,6 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #     -D Tasmanian_MAGMA_ROOT_DIR:PATH
 #     -D OpenMP_CXX_FLAGS:STRING
 #     -D BLAS_LIBRARIES:STRING
-#     -D CUDA_CUBLAS_LIBRARIES:STRING
 #     -D MPI_CXX_LIBRARIES:STRING
 #
 # PYTHON_EXECUTABLE and CUDA_TOOLKIT_ROOT_DIR help cmake find a specific
@@ -55,18 +53,12 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #
 # BLAS_LIBRARIES bypasses find_package(BLAS)
 # MPI_CXX_LIBRARIES bypasses find_package(MPI)
-# CUDA_CUBLAS_LIBRARIES bypasses find_package(CUDA),
-#   but only if Tasmanian_ENABLE_CUDA=OFF,
-#   Tasmanian_ENABLE_CUDA=ON absolutely requires find_package(CUDA)
 #
 # Optional that can be be added to the manual alternatives above
 #     -D OpenMP_CXX_LIBRARIES:STRING
 #     -D MPI_CXX_INCLUDE_PATH
 #     -D MPI_COMPILE_FLAGS
 #     -D MPI_LINK_FLAGS
-#     -D CUDA_INCLUDE_DIRS
-#     -D CUDA_LIBRARIES
-#     -D CUDA_cusparse_LIBRARY
 #     -D Tasmanian_MAGMA_INCLUDE_DIRS
 #     -D Tasmanian_MAGMA_LIBRARIES
 #     -D PYTHON_VERSION_MAJOR
@@ -103,8 +95,7 @@ option(Tasmanian_ENABLE_BLAS    "Enable CPU Blas support for Tasmanian"  ON)
 option(Tasmanian_ENABLE_MPI     "Enable MPI support for Tasmanian"       OFF)
 option(Tasmanian_ENABLE_PYTHON  "Enable Python interface for Tasmanian"  ON)
 option(Tasmanian_ENABLE_FORTRAN "Enable Fortran interface for Tasmanian" OFF)
-option(Tasmanian_ENABLE_CUBLAS  "Enable Nvidia GPU acceleration using cuBLAS within Tasmanian"       ON)
-option(Tasmanian_ENABLE_CUDA    "Enable Nvidia GPU acceleration using CUDA kernels within Tasmanian" OFF)
+option(Tasmanian_ENABLE_CUDA    "Enable Nvidia CUDA kernels and libraries within Tasmanian" OFF)
 option(Tasmanian_ENABLE_MAGMA   "Enable acceleration using UTK Magma library within Tasmanian" OFF)
 
 # treat those similar to options, but give values other than ON/OFF
@@ -247,8 +238,8 @@ if (NOT USE_XSDK_DEFAULTS)
     endif()
     foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS
                              Tasmanian_ENABLE_MPI     Tasmanian_ENABLE_PYTHON
-                             Tasmanian_ENABLE_CUBLAS  Tasmanian_ENABLE_CUDA
-                             Tasmanian_ENABLE_MAGMA   Tasmanian_ENABLE_FORTRAN)
+                             Tasmanian_ENABLE_CUDA    Tasmanian_ENABLE_MAGMA
+                             Tasmanian_ENABLE_FORTRAN)
         if (${Tasmanian_option})
             message(" -D ${Tasmanian_option}:BOOL=ON")
         else()
