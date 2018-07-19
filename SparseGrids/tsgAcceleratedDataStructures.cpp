@@ -396,12 +396,6 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
         #ifndef Tasmanian_ENABLE_CUDA
         // if CUDA is missing: just use the CPU
         case accel_gpu_cublas:
-            #if defined(Tasmanian_ENABLE_BLAS)
-            accel = accel_cpu_blas;
-            #else
-            accel = accel_none;
-            #endif
-            break;
         case accel_gpu_cuda:
             #if defined(Tasmanian_ENABLE_BLAS)
             accel = accel_cpu_blas;
