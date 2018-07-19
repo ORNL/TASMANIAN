@@ -710,9 +710,23 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostrea
 void GridGlobal::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{
     evaluateFastGPUcublas(x, y, os);
 }
+
+#ifdef Tasmanian_ENABLE_MAGMA
+void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[], std::ostream *os) const{
+    makeCheckAccelerationData(accel_gpu_magma, os);
+
+    AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
+    double *weights = getInterpolationWeights(x);
+
+    gpu->magmaCudaDGEMV(gpuID, num_outputs, points->getNumIndexes(), weights, y);
+
+    delete[] weights;
+}
+#else
 void GridGlobal::evaluateFastGPUmagma(int, const double x[], double y[], std::ostream *os) const{
     evaluateFastGPUcublas(x, y, os);
 }
+#endif // Tasmanian_ENABLE_MAGMA
 
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
