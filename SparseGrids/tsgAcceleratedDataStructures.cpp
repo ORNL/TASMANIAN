@@ -171,13 +171,25 @@ void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const
     TasCUDA::cudaDel<double>(gpu_result, logstream);
     TasCUDA::cudaDel<double>(gpu_weights, logstream);
 }
-void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
+void AccelerationDataGPUFull::cublasDGEMM(bool cpu_pointers, int num_outputs, int num_x, int num_points, const double weights[], double *result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
+
+    const double *gpu_weights = 0;
+    double *gpu_result = 0, *gpu_temp = 0;
+
+    gpu_weights = (cpu_pointers) ? TasCUDA::cudaSendConst<double>(num_x * num_points, weights, gpu_temp, logstream) : weights;
+    gpu_result  = (cpu_pointers) ? TasCUDA::cudaNew<double>(num_outputs * num_x, logstream) : result;
 
     double alpha = 1.0, beta = 0.0;
     cublasStatus_t stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points,
                                       &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
     AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM", logstream);
+
+    if (cpu_pointers){
+        TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, result, logstream);
+        TasCUDA::cudaDel<double>(gpu_result, logstream);
+        TasCUDA::cudaDel<double>(gpu_temp, logstream);
+    }
 }
 void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
     makeCuSparseHandle(); // creates a handle only if one doesn't exist

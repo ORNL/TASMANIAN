@@ -560,15 +560,7 @@ void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[
     double *fvalues = new double[((size_t) num_points) * ((size_t) num_x)];
     evaluateHierarchicalFunctions(x, num_x, fvalues);
 
-    double *gpu_weights = TasCUDA::cudaSend<double>(((size_t) num_points) * ((size_t) num_x), fvalues, os);
-    double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x), os);
-
-    gpu->cublasDGEMM(num_outputs, num_x, num_points, gpu_weights, gpu_result);
-
-    TasCUDA::cudaRecv<double>(((size_t) num_outputs) * ((size_t) num_x), gpu_result, y, os);
-
-    TasCUDA::cudaDel<double>(gpu_result, os);
-    TasCUDA::cudaDel<double>(gpu_weights, os);
+    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, fvalues, y);
 
     delete[] fvalues;
 }
@@ -588,7 +580,7 @@ void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[],
     double *gpu_weights = TasCUDA::cudaSend<double>(((size_t) num_points) * ((size_t) num_x), fvalues, os);
     double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x), os);
 
-    gpu_acc->cublasDGEMM(num_outputs, num_x, num_points, gpu_weights, gpu_result);
+    gpu_acc->cublasDGEMM(false, num_outputs, num_x, num_points, gpu_weights, gpu_result);
     //TasCUDA::cudaDgemm(num_outputs, num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
 
     TasCUDA::cudaRecv<double>(((size_t) num_outputs) * ((size_t) num_x), gpu_result, y, os);
