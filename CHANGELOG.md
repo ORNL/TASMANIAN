@@ -1,6 +1,10 @@
 Changelog for version 6.0
 --------------
 
+* merged Tasmanian_ENABLE_CUBLAS option into Tasmanian_ENABLE_CUDA
+    * the option is OFF by default
+    * two distinct acceleration modes use this variable: `gpu-cublas` and `gpu-cuda`
+
 * required cmake 3.5 or newer (as opposed to 2.8 in version 5.1)
 
 * CXX standard 2011 is now enabled by default even if CUDA and MPI
