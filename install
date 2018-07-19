@@ -30,8 +30,7 @@ if (( $bShowHelp == 1 )); then
     echo "                       can overwrite default features, useful for testing"
     echo "               -noomp: disable OpenMP support"
     echo "              -noblas: disable BLAS support"
-    echo "            -nocublas: disable Nvidia cuBlas and cuSparse support"
-    echo "                -cuda: enable Nvidia CUDA kernels"
+    echo "                -cuda: enable Nvidia CUDA support"
     echo "            -nopython: disable Python interface"
     echo "       -python=<path>: provide a path to the python interpreter"
     echo "             -fortran: enable Fortran interface"
@@ -81,7 +80,6 @@ fi
 ########################################################################
 sEnableOpenMP="ON"
 sEnableBLAS="ON"
-sEnableCUBLAS="ON"
 sEnableCUDA="OFF"
 sEnablePython="ON"
 sManualPythonInterp=""
@@ -102,8 +100,6 @@ for sOption in "$@"; do
         sEnableBLAS="OFF"
     elif [[ $sOption == "-cuda" ]]; then
         sEnableCUDA="ON"
-    elif [[ $sOption == "-nocublas" ]]; then
-        sEnableCUBLAS="OFF"
     elif [[ $sOption == "-nopython" ]] || [[ $sOption == "-nospam" ]]; then
         sEnablePython="OFF"
     elif [[ $sOption == "-python="* ]]; then
@@ -229,11 +225,8 @@ fi
 if [[ $sEnableBLAS == "OFF" ]]; then
     echo "   -noblas: disable BLAS support"
 fi
-if [[ $sEnableCUBLAS == "OFF" ]]; then
-    echo " -nocublas: disable Nvidia cuBlas and cuSparse support"
-fi
 if [[ $sEnableCUDA == "ON" ]]; then
-    echo "     -cuda: enable Nvidia CUDA kernels"
+    echo "     -cuda: enable Nvidia CUDA support"
 fi
 if [[ $sEnablePython == "OFF" ]]; then
     echo " -nopython: disable Python"
@@ -307,7 +300,6 @@ cmake \
   -D Tasmanian_ENABLE_OPENMP:BOOL=$sEnableOpenMP \
   -D Tasmanian_ENABLE_BLAS:BOOL=$sEnableBLAS \
   -D Tasmanian_ENABLE_MPI:BOOL=OFF \
-  -D Tasmanian_ENABLE_CUBLAS:BOOL=$sEnableCUBLAS \
   -D Tasmanian_ENABLE_CUDA:BOOL=$sEnableCUDA \
   -D Tasmanian_ENABLE_PYTHON:BOOL=$sEnablePython \
   -D Tasmanian_ENABLE_FORTRAN:BOOL=$sEnableFortran \

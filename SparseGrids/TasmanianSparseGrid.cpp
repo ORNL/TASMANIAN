@@ -35,7 +35,7 @@
 
 #include "tsgCudaMacros.hpp"
 
-#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
+#ifdef Tasmanian_ENABLE_CUDA
 #define _TASMANIAN_SETGPU cudaSetDevice(gpuID);
 #else
 #define _TASMANIAN_SETGPU
@@ -104,9 +104,9 @@ void TasmanianSparseGrid::clear(){
 #else
     acceleration = accel_none;
 #endif // Tasmanian_ENABLE_BLAS
-#if defined (Tasmanian_ENABLE_CUBLAS) || defined (Tasmanian_ENABLE_CUDA)
+#ifdef Tasmanian_ENABLE_CUDA
     gpuID = 0;
-#endif // Tasmanian_ENABLE_CUBLAS || Tasmanian_ENABLE_CUDA
+#endif // Tasmanian_ENABLE_CUDA
     if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
 }
 
@@ -365,7 +365,7 @@ void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weig
 }
 
 void TasmanianSparseGrid::loadNeededPoints(const double *vals){
-    #if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
+    #ifdef Tasmanian_ENABLE_CUDA
     if (AccelerationMeta::isAccTypeGPU(acceleration)){
         _TASMANIAN_SETGPU
     }
@@ -1437,15 +1437,11 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
         case accel_cpu_blas:   return false;
         #endif // Tasmanian_ENABLE_BLAS
 
-        #ifdef Tasmanian_ENABLE_CUBLAS
-        case accel_gpu_cublas:   return true;
-        #else
-        case accel_gpu_cublas:   return false;
-        #endif // Tasmanian_ENABLE_CUBLAS
-
         #ifdef Tasmanian_ENABLE_CUDA
+        case accel_gpu_cublas: return true;
         case accel_gpu_cuda:   return true;
         #else
+        case accel_gpu_cublas: return false;
         case accel_gpu_cuda:   return false;
         #endif // Tasmanian_ENABLE_CUDA
 
@@ -1455,7 +1451,7 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
         case accel_gpu_magma:   return false;
         #endif // TASMANIAN_ENABLE_MAGMA
 
-        #if defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_CUBLAS) || defined(TASMANIAN_ENABLE_MAGMA)
+        #if defined(Tasmanian_ENABLE_CUDA) || defined(TASMANIAN_ENABLE_MAGMA)
         case accel_gpu_default:   return true;
         #else
         case accel_gpu_default:   return false;
@@ -1475,16 +1471,16 @@ void TasmanianSparseGrid::setGPUID(int new_gpuID){
 int TasmanianSparseGrid::getGPUID() const{ return gpuID; }
 
 int TasmanianSparseGrid::getNumGPUs(){
-    #if defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_CUBLAS)
+    #ifdef Tasmanian_ENABLE_CUDA
     int gpu_count = 0;
     cudaGetDeviceCount(&gpu_count);
     return gpu_count;
     #else
     return 0;
-    #endif // Tasmanian_ENABLE_CUDA || Tasmanian_ENABLE_CUBLAS
+    #endif // Tasmanian_ENABLE_CUDA
 }
 
-#if defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_CUBLAS)
+#ifdef Tasmanian_ENABLE_CUDA
 int TasmanianSparseGrid::getGPUMemory(int gpu){
     if (gpu < 0) return 0;
     int gpu_count = 0;
@@ -1520,7 +1516,7 @@ char* TasmanianSparseGrid::getGPUName(int){
     name[0] = '\0';
     return name;
 }
-#endif // Tasmanian_ENABLE_CUDA || Tasmanian_ENABLE_CUBLAS
+#endif // Tasmanian_ENABLE_CUDA
 
 // ------------ C Interface for use with Python ctypes and potentially other C codes -------------- //
 extern "C" {

@@ -43,7 +43,6 @@ then
       -D Tasmanian_STRICT_OPTIONS=ON \
       -D Tasmanian_ENABLE_OPENMP=ON \
       -D Tasmanian_ENABLE_BLAS=ON \
-      -D Tasmanian_ENABLE_CUBLAS=ON \
       -D Tasmanian_ENABLE_CUDA=ON \
       -D Tasmanian_ENABLE_PYTHON=ON \
       -D Tasmanian_ENABLE_MATLAB=OFF \

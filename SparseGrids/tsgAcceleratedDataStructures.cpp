@@ -48,7 +48,7 @@ BaseAccelerationData::~BaseAccelerationData(){}
 AccelerationDataGPUFull::AccelerationDataGPUFull() :
     gpu_values(0), gpu_nodes(0), gpu_support(0),
     gpu_hpntr(0), gpu_hindx(0), gpu_roots(0), logstream(0){
-#ifdef Tasmanian_ENABLE_CUBLAS
+#ifdef Tasmanian_ENABLE_CUDA
     cublasHandle = 0;
     cusparseHandle = 0;
 #endif
@@ -59,15 +59,13 @@ AccelerationDataGPUFull::AccelerationDataGPUFull() :
 #endif
 }
 AccelerationDataGPUFull::~AccelerationDataGPUFull(){
-    #if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
+    #ifdef Tasmanian_ENABLE_CUDA
     if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
     if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes, logstream); gpu_nodes = 0; }
     if (gpu_support != 0){ TasCUDA::cudaDel<double>(gpu_support, logstream); gpu_support = 0; }
     if (gpu_hpntr != 0){ TasCUDA::cudaDel<int>(gpu_hpntr, logstream); gpu_hpntr = 0; }
     if (gpu_hindx != 0){ TasCUDA::cudaDel<int>(gpu_hindx, logstream); gpu_hindx = 0; }
     if (gpu_roots != 0){ TasCUDA::cudaDel<int>(gpu_roots, logstream); gpu_roots = 0; }
-    #endif // Tasmanian_ENABLE_CUBLAS || Tasmanian_ENABLE_CUDA
-    #ifdef Tasmanian_ENABLE_CUBLAS
     if (cublasHandle != 0){
         cublasDestroy((cublasHandle_t) cublasHandle);
         cublasHandle = 0;
@@ -76,7 +74,7 @@ AccelerationDataGPUFull::~AccelerationDataGPUFull(){
         cusparseDestroy((cusparseHandle_t) cusparseHandle);
         cusparseHandle = 0;
     }
-    #endif // Tasmanian_ENABLE_CUBLAS
+    #endif // Tasmanian_ENABLE_CUDA
     #ifdef Tasmanian_ENABLE_MAGMA
     if (magmaCudaQueue != 0) magma_queue_destroy((magma_queue*) magmaCudaQueue);
     magmaCudaQueue = 0;
@@ -86,22 +84,22 @@ AccelerationDataGPUFull::~AccelerationDataGPUFull(){
     #endif
 }
 void AccelerationDataGPUFull::makeCuBlasHandle(){
-    #ifdef Tasmanian_ENABLE_CUBLAS
+    #ifdef Tasmanian_ENABLE_CUDA
     if (cublasHandle == 0){
         cublasHandle_t cbh;
         cublasCreate(&cbh);
         cublasHandle = (void*) cbh;
     }
-    #endif // Tasmanian_ENABLE_CUBLAS
+    #endif // Tasmanian_ENABLE_CUDA
 }
 void AccelerationDataGPUFull::makeCuSparseHandle(){
-    #ifdef Tasmanian_ENABLE_CUBLAS
+    #ifdef Tasmanian_ENABLE_CUDA
     if (cusparseHandle == 0){
         cusparseHandle_t csh;
         cusparseCreate(&csh);
         cusparseHandle = (void*) csh;
     }
-    #endif // Tasmanian_ENABLE_CUBLAS
+    #endif // Tasmanian_ENABLE_CUDA
 }
 
 #ifdef Tasmanian_ENABLE_MAGMA
@@ -122,16 +120,16 @@ void AccelerationDataGPUFull::setLogStream(std::ostream *os){ logstream = os; }
 
 bool AccelerationDataGPUFull::isCompatible(TypeAcceleration acc) const{ return AccelerationMeta::isAccTypeFullMemoryGPU(acc); }
 
-#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
+#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::loadGPUValues(size_t total_entries, const double *cpu_values){
     gpu_values = TasCUDA::cudaSend(total_entries, cpu_values, logstream);
 }
 #else
 void AccelerationDataGPUFull::loadGPUValues(size_t, const double *){}
-#endif // Tasmanian_ENABLE_CUBLAS or Tasmanian_ENABLE_CUDA
+#endif // Tasmanian_ENABLE_CUDA
 double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }
 
-#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
+#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::resetGPULoadedData(){
     if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
     if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes, logstream); gpu_nodes = 0; }
@@ -166,7 +164,7 @@ void AccelerationDataGPUFull::loadGPUHierarchy(int, int*, int*, int, int*){}
 #endif
 
 
-#ifdef Tasmanian_ENABLE_CUBLAS
+#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
     double *gpu_weights = TasCUDA::cudaSend(num_points, cpu_weights, logstream);
@@ -184,9 +182,9 @@ void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const
 }
 #else
 void AccelerationDataGPUFull::cublasDGEMV(int, int, const double *, double *){}
-#endif // Tasmanian_ENABLE_CUBLAS
+#endif // Tasmanian_ENABLE_CUDA
 
-#ifdef Tasmanian_ENABLE_CUBLAS
+#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
 
@@ -258,9 +256,9 @@ void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, co
 #else
 void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double *){}
 void AccelerationDataGPUFull::cusparseDCRSMM(int, int, const int*, const int*, const double*, const double*, double*){}
-#endif // Tasmanian_ENABLE_CUBLAS
+#endif // Tasmanian_ENABLE_CUDA
 
-#ifdef Tasmanian_ENABLE_CUBLAS
+#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
     makeCuSparseHandle(); // creates a handle only if one doesn't exist
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
@@ -366,7 +364,7 @@ void AccelerationDataGPUFull::cusparseMatveci(int num_outputs, int num_points, i
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatvec(int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatveci(int, int, int, const int*, const double*, double*){}
-#endif // defined Tasmanian_ENABLE_CUBLAS
+#endif // defined Tasmanian_ENABLE_CUDA
 
 #ifdef Tasmanian_ENABLE_MAGMA
 void AccelerationDataGPUFull::magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
@@ -453,32 +451,20 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
 
     // accel_gpu_default should always point to the potentially "best" option (currently MAGMA)
     if (accel == accel_gpu_default) accel = accel_gpu_magma;
-    #if !defined(Tasmanian_ENABLE_CUBLAS) || !defined(Tasmanian_ENABLE_CUDA) || !defined(Tasmanian_ENABLE_MAGMA) || !defined(Tasmanian_ENABLE_BLAS)
+    #if !defined(Tasmanian_ENABLE_CUDA) || !defined(Tasmanian_ENABLE_MAGMA) || !defined(Tasmanian_ENABLE_BLAS)
     // if any of the 4 acceleration modes is missing, then add a switch statement to guard against setting that mode
     switch(accel){
-        #ifndef Tasmanian_ENABLE_CUBLAS
-        // if CUBLAS is missing: prefer optimized subroutines from MAGMA, otherwise still try to use the GPU with CUDA, or fall-back to CPU only
+        #ifndef Tasmanian_ENABLE_CUDA
+        // if CUDA is missing: just use the CPU
         case accel_gpu_cublas:
-            #if defined(Tasmanian_ENABLE_MAGMA)
-            accel = accel_gpu_magma;
-            #elif defined(Tasmanian_ENABLE_CUDA)
-            accel = accel_gpu_cuda;
-            #elif defined(Tasmanian_ENABLE_BLAS)
+            #if defined(Tasmanian_ENABLE_BLAS)
             accel = accel_cpu_blas;
             #else
             accel = accel_none;
             #endif
             break;
-        #endif // Tasmanian_ENABLE_CUBLAS
-        #ifndef Tasmanian_ENABLE_CUDA
-        // if CUDA is missing, try using Nvidia cuBlas, then GPU MAGMA, then drop to CPU only mode
-        // using cuBlas ahead of magma to try and stay within the native Nvidia CUDA library suite
-        case accel_gpu_cuda: // CUDA undefined, need to guard against selecting CUDA
-            #if defined(Tasmanian_ENABLE_CUBLAS)
-            accel = accel_gpu_cublas;
-            #elif defined(Tasmanian_ENABLE_MAGMA)
-            accel = accel_gpu_magma;
-            #elif defined(Tasmanian_ENABLE_BLAS)
+        case accel_gpu_cuda:
+            #if defined(Tasmanian_ENABLE_BLAS)
             accel = accel_cpu_blas;
             #else
             accel = accel_none;
@@ -486,12 +472,10 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
             break;
         #endif // Tasmanian_ENABLE_CUDA
         #ifndef Tasmanian_ENABLE_MAGMA
-        // MAGMA tries to use CUDA kernels with magma linear algebra, this CUDA is the next best thing, then cuBlas, finally CPU only mode
+        // MAGMA tries to use CUDA kernels with magma linear algebra, this CUDA is the next best thing
         case accel_gpu_magma:
             #if defined(Tasmanian_ENABLE_CUDA)
             accel = accel_gpu_cuda;
-            #elif defined(Tasmanian_ENABLE_CUBLAS)
-            accel = accel_gpu_cublas;
             #elif defined(Tasmanian_ENABLE_BLAS)
             accel = accel_cpu_blas;
             #else
@@ -512,7 +496,7 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
     return accel;
 }
 
-#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
+#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::ostream *os){
     if (*((cudaError_t*) cudaStatus) != cudaSuccess){
         if (os != 0){
@@ -523,9 +507,9 @@ void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::o
 }
 #else
 void AccelerationMeta::cudaCheckError(void *, const char *, std::ostream *){}
-#endif // Tasmanian_ENABLE_CUBLAS or Tasmanian_ENABLE_CUDA
+#endif // Tasmanian_ENABLE_CUDA
 
-#ifdef Tasmanian_ENABLE_CUBLAS
+#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationMeta::cublasCheckError(void *cublasStatus, const char *info, std::ostream *os){
     if (*((cublasStatus_t*) cublasStatus) != CUBLAS_STATUS_SUCCESS){
         if (os != 0){
@@ -581,7 +565,7 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
 #else
 void AccelerationMeta::cublasCheckError(void *, const char *, std::ostream *){}
 void AccelerationMeta::cusparseCheckError(void *, const char *, std::ostream *){}
-#endif // Tasmanian_ENABLE_CUBLAS
+#endif // Tasmanian_ENABLE_CUDA
 
 
 #ifdef Tasmanian_ENABLE_CUDA

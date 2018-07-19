@@ -268,7 +268,6 @@ if (( $bNVCC == 1 )); then
           -D Tasmanian_STRICT_OPTIONS=ON \
           -D Tasmanian_ENABLE_OPENMP=ON \
           -D Tasmanian_ENABLE_BLAS=ON \
-          -D Tasmanian_ENABLE_CUBLAS=ON \
           -D Tasmanian_ENABLE_CUDA=ON \
           -D Tasmanian_ENABLE_PYTHON=ON \
           -D Tasmanian_ENABLE_MPI=OFF \
@@ -292,7 +291,7 @@ fi
 
 
 #########################################################################
-## Test: pure cmake with lots of warning flags, cuda + no cublas
+## Test: pure cmake with lots of warning flags, no cuda
 #########################################################################
 if (( $bNVCC == 1 )); then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
@@ -305,8 +304,7 @@ if (( $bNVCC == 1 )); then
           -D Tasmanian_STRICT_OPTIONS=ON \
           -D Tasmanian_ENABLE_OPENMP=ON \
           -D Tasmanian_ENABLE_BLAS=ON \
-          -D Tasmanian_ENABLE_CUBLAS=OFF \
-          -D Tasmanian_ENABLE_CUDA=ON \
+          -D Tasmanian_ENABLE_CUDA=OFF \
           -D Tasmanian_ENABLE_PYTHON=ON \
           -D Tasmanian_ENABLE_MPI=OFF \
           -D Tasmanian_ENABLE_FORTRAN=OFF \
@@ -323,7 +321,7 @@ if (( $bNVCC == 1 )); then
     rm -fr Tasmanian/
     rm -fr Build/
     cd $sTestRoot
-    echo "======= PASSED: pure cmake with lots of warning flags, cuda + no cublas" >> $sMultibuildLogFile
+    echo "======= PASSED: pure cmake with lots of warning flags, no cuda" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 fi
 
@@ -344,7 +342,6 @@ if (( $bNVCC == 1)) && (( $bMAGMA230 == 1)); then
           -D Tasmanian_STRICT_OPTIONS=ON \
           -D Tasmanian_ENABLE_OPENMP=ON \
           -D Tasmanian_ENABLE_BLAS=ON \
-          -D Tasmanian_ENABLE_CUBLAS=ON \
           -D Tasmanian_ENABLE_CUDA=ON \
           -D Tasmanian_ENABLE_MAGMA=ON \
           -D Tasmanian_MAGMA_ROOT_DIR=~/.magma230 \
@@ -413,27 +410,6 @@ echo "==========================================================================
 
 
 ########################################################################
-# Test: -nocublas
-########################################################################
-cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
-cd $sTempBuild/Tasmanian || { exit 1; }
-mkdir -p tsgWorkFolder
-./install ./TasInstall ./tsgWorkFolder -make-j -nocublas -verbose -nobashrc || { exit 1; }
-if [[ ! -z `./TasInstall/bin/tasgrid -v | grep gpu-cublas` ]]; then
-    echo "Failed to disable Nvidia cuBLAS"
-    exit 1;
-fi
-if (( $bOctave == 1 )); then
-    octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/share/Tasmanian/matlab/'); tsgCoreTests()" || { exit 1; }
-fi
-cd $sTempBuild
-rm -fr Tasmanian/
-cd $sTestRoot
-echo "======= PASSED: no cuBLAS install" >> $sMultibuildLogFile
-echo "===========================================================================================" >> $sMultibuildLogFile
-
-
-########################################################################
 # Test: -cuda
 ########################################################################
 if (( $bNVCC == 1 )); then
@@ -455,32 +431,6 @@ if (( $bNVCC == 1 )); then
     echo "===========================================================================================" >> $sMultibuildLogFile
 else
     echo "======= SKIPPED: with CUDA install" >> $sMultibuildLogFile
-    echo "===========================================================================================" >> $sMultibuildLogFile
-fi
-
-
-########################################################################
-# Test: -cuda -nocublas
-########################################################################
-if (( $bNVCC == 1 )); then
-    cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
-    cd $sTempBuild/Tasmanian || { exit 1; }
-    mkdir -p tsgWorkFolder
-    ./install ./TasInstall ./tsgWorkFolder -make-j -cuda -nocublas -verbose -nobashrc || { exit 1; }
-    if [[ -z `./TasInstall/bin/tasgrid -v | grep gpu-cuda` ]]; then
-        echo "Failed to enable Nvidia CUDA without CUBLAS"
-        exit 1;
-    fi
-    if (( $bOctave == 1 )); then
-        octave --eval "addpath('$sTempBuild/Tasmanian/TasInstall/share/Tasmanian/matlab/'); tsgCoreTests()" || { exit 1; }
-    fi
-    cd $sTempBuild
-    rm -fr Tasmanian/
-    cd $sTestRoot
-    echo "======= PASSED: with CUDA and no CUBLAS install" >> $sMultibuildLogFile
-    echo "===========================================================================================" >> $sMultibuildLogFile
-else
-    echo "======= SKIPPED: with CUDA and no CUBLAS install" >> $sMultibuildLogFile
     echo "===========================================================================================" >> $sMultibuildLogFile
 fi
 

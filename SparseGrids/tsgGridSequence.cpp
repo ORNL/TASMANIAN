@@ -494,7 +494,7 @@ void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
     evaluate(x, y);
     #endif // Tasmanian_ENABLE_BLAS
 }
-#ifdef Tasmanian_ENABLE_CUBLAS
+#ifdef Tasmanian_ENABLE_CUDA
 void GridSequence::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{
     makeCheckAccelerationData(accel_gpu_cublas, os);
 
@@ -507,7 +507,7 @@ void GridSequence::evaluateFastGPUcublas(const double x[], double y[], std::ostr
 }
 #else
 void GridSequence::evaluateFastGPUcublas(const double x[], double y[], std::ostream *) const{ evaluateFastCPUblas(x, y); }
-#endif // Tasmanian_ENABLE_CUBLAS
+#endif // Tasmanian_ENABLE_CUDA
 void GridSequence::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{
     evaluateFastGPUcublas(x, y, os);
 }
@@ -537,7 +537,7 @@ void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[])
     evaluateBatch(x, num_x, y);
     #endif // Tasmanian_ENABLE_BLAS
 }
-#ifdef Tasmanian_ENABLE_CUBLAS
+#ifdef Tasmanian_ENABLE_CUDA
 void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas, os);
@@ -560,7 +560,7 @@ void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[
 }
 #else
 void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *) const{ evaluateBatchCPUblas(x, num_x, y); }
-#endif // Tasmanian_ENABLE_CUBLAS
+#endif // Tasmanian_ENABLE_CUDA
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
@@ -574,11 +574,8 @@ void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[],
     double *gpu_weights = TasCUDA::cudaSend<double>(((size_t) num_points) * ((size_t) num_x), fvalues, os);
     double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x), os);
 
-    #ifdef Tasmanian_ENABLE_CUBLAS
     gpu_acc->cublasDGEMM(num_outputs, num_x, num_points, gpu_weights, gpu_result);
-    #else
-    TasCUDA::cudaDgemm(num_outputs, num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
-    #endif // Tasmanian_ENABLE_CUBLAS
+    //TasCUDA::cudaDgemm(num_outputs, num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
 
     TasCUDA::cudaRecv<double>(((size_t) num_outputs) * ((size_t) num_x), gpu_result, y, os);
 
@@ -596,7 +593,7 @@ void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[],
 void GridSequence::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream *os) const{
     evaluateBatchGPUcublas(x, num_x, y, os);
 }
-#if defined(Tasmanian_ENABLE_CUBLAS) || defined(Tasmanian_ENABLE_CUDA)
+#ifdef Tasmanian_ENABLE_CUDA
 void GridSequence::makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const{
     if (AccelerationMeta::isAccTypeFullMemoryGPU(acc)){
         if ((accel != 0) && (!accel->isCompatible(acc))){
@@ -612,7 +609,7 @@ void GridSequence::makeCheckAccelerationData(TypeAcceleration acc, std::ostream 
 }
 #else
 void GridSequence::makeCheckAccelerationData(TypeAcceleration, std::ostream *) const{}
-#endif // Tasmanian_ENABLE_CUBLAS || Tasmanian_ENABLE_CUDA
+#endif // Tasmanian_ENABLE_CUDA
 
 void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points->getNumIndexes();

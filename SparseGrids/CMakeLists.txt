@@ -51,12 +51,12 @@ if (Tasmanian_ENABLE_BLAS)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${BLAS_LIBRARIES})
 endif()
 
-if (Tasmanian_ENABLE_CUBLAS)
+if (Tasmanian_ENABLE_CUDA) # this must come after MAGMA, since MAGMA doesn't come with package config
     target_link_libraries(${Tasmanian_libtsg_target_name} ${CUDA_cusparse_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_LIBRARIES})
 
-    if (DEFINED CUDA_INCLUDE_DIRS)
+    #if (DEFINED CUDA_INCLUDE_DIRS)
         target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC ${CUDA_INCLUDE_DIRS})
-    endif()
+    #endif()
 endif()
 
 if (Tasmanian_ENABLE_OPENMP)

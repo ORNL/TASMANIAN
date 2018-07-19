@@ -408,7 +408,7 @@ class TestTasmanian(unittest.TestCase):
 
         if (@Tasmanian_cmake_synctest_enable@):
             bHasBlas = ("@Tasmanian_ENABLE_BLAS@" == "ON")
-            bHasCuBlas = ("@Tasmanian_ENABLE_CUBLAS@" == "ON")
+            bHasCuBlas = ("@Tasmanian_ENABLE_CUDA@" == "ON")
             bHasCuda = ("@Tasmanian_ENABLE_CUDA@" == "ON")
             self.assertTrue((grid.isAccelerationAvailable("cpu-blas") == bHasBlas), "failed to match blas")
             self.assertTrue((grid.isAccelerationAvailable("gpu-cublas") == bHasCuBlas), "failed to match cublas")
