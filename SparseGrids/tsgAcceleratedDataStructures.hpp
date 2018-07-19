@@ -81,8 +81,6 @@ public:
     // A is num_outputs by num_points, result is num_outputs
     void cusparseMatveci(int num_outputs, int num_points, int num_nz, const int *sindx, const double *svals, double *result);
 
-    void cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses);
-
     void magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
     void magmaCudaDGEMV(int gpuID, int num_outputs, int num_points, const double cpu_weights[], double *cpu_result); // multiplies by the gpu_values
 
@@ -113,11 +111,6 @@ private:
 
 // namespace realized in tsgCudaKernels.cu, each function corresponds to a CUDA kernel for evaluations of basis matrix, domain transform, or fallback linear algebra
 namespace TasCUDA{
-    // matrix solve double-precision (d), level 3, general (ge), column compressed sparse (cs) (solve): C = A * B
-    // A is N by M, B is M by M, C is N by M
-    // A and C are stored in column format, B is sparse column compresses and unit triangular (the diagonal entry is no include in the pattern)
-    void d3gecss(int N, int M, int *levels, int top_level, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, const double *cpuA, double *cpuC, std::ostream *os);
-
     // convert transformed points to the canonical domain, all inputs live on the GPU
     void dtrans2can(int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b, const double *gpu_x_transformed, double *gpu_x_canonical);
 

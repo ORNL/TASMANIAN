@@ -196,69 +196,8 @@ void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_x, int num_po
                                       &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
     AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM", logstream);
 }
-
-void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses){
-    makeCuSparseHandle(); // creates a handle only if one doesn't exist
-    makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    int num_nz = cpu_pntr[num_points];
-    int *gpu_pntr = TasCUDA::cudaSend(num_points + 1, cpu_pntr, logstream);
-    int *gpu_indx = TasCUDA::cudaSend(num_nz, cpu_indx, logstream);
-    double *gpu_vals = TasCUDA::cudaSend(num_nz, cpu_vals, logstream);
-    double *gpu_a = TasCUDA::cudaSend(num_points * num_outputs, values, logstream);
-    double *gpu_b = TasCUDA::cudaNew<double>(((size_t) num_points) * ((size_t) num_outputs), logstream);
-    double alpha = 1.0, beta = 0.0;
-
-    // Transpose values
-    cublasStatus_t bstat;
-    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
-                        CUBLAS_OP_T, CUBLAS_OP_T, num_points, num_outputs,
-                        &alpha, gpu_a, num_outputs, &beta, gpu_a, num_outputs, gpu_b, num_points); // gpu_b = gpu_a^T = values^T
-    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam first in DCRSMM", logstream);
-
-    // Set matrix properties
-    cusparseStatus_t stat;
-    cusparseMatDescr_t mat_desc;
-    stat = cusparseCreateMatDescr(&mat_desc);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRSMM", logstream);
-    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_TRIANGULAR);
-    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
-    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_UNIT);
-    cusparseSetMatFillMode(mat_desc, CUSPARSE_FILL_MODE_LOWER);
-
-    // Analyze matrix
-    cusparseSolveAnalysisInfo_t info;
-    cusparseCreateSolveAnalysisInfo(&info);
-    stat = cusparseDcsrsm_analysis((cusparseHandle_t) cusparseHandle,
-                                   CUSPARSE_OPERATION_NON_TRANSPOSE, num_points, num_nz,
-                                   mat_desc, gpu_vals, gpu_pntr, gpu_indx, info);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrsm_analysis in DCRSMM", logstream);
-
-    // Solve
-    stat = cusparseDcsrsm_solve((cusparseHandle_t) cusparseHandle,
-                                 CUSPARSE_OPERATION_NON_TRANSPOSE, num_points, num_outputs,
-                                 &alpha, mat_desc, gpu_vals, gpu_pntr, gpu_indx, info,
-                                 gpu_b, num_points, gpu_a, num_points);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrsm_solve in DCRSMM", logstream); // gpu_a = S * gpu_b = s^{-T} values^T
-
-    // transpose back
-    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
-                        CUBLAS_OP_T, CUBLAS_OP_T, num_outputs, num_points,
-                        &alpha, gpu_a, num_points, &beta, gpu_a, num_points, gpu_b, num_outputs); // gpu_b = gpu_a^T = values * s^{-1}
-    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam second in DCRSMM", logstream);
-
-    TasCUDA::cudaRecv<double>(num_points * num_outputs, gpu_b, surpluses, logstream);
-
-    cusparseDestroyMatDescr(mat_desc);
-
-    TasCUDA::cudaDel<double>(gpu_a, logstream);
-    TasCUDA::cudaDel<double>(gpu_b, logstream);
-    TasCUDA::cudaDel<double>(gpu_vals, logstream);
-    TasCUDA::cudaDel<int>(gpu_indx, logstream);
-    TasCUDA::cudaDel<int>(gpu_pntr, logstream);
-}
 #else
 void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double *){}
-void AccelerationDataGPUFull::cusparseDCRSMM(int, int, const int*, const int*, const double*, const double*, double*){}
 #endif // Tasmanian_ENABLE_CUDA
 
 #ifdef Tasmanian_ENABLE_CUDA

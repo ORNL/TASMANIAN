@@ -177,44 +177,6 @@ void TasCUDA::cudaDgemm(int M, int N, int K, const double *gpu_a, const double *
     tasgpu_cudaTgemm<double, 32, 96><<<blocks, 1024>>>(M, N, K, gpu_a, gpu_b, gpu_c);
 }
 
-// sparse triangular solve, usnig cuda kernels (as opposed to cusparse)
-void TasCUDA::d3gecss(int N, int M, int *level, int top_level, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, const double *cpuA, double *cpuC, std::ostream *os){
-    int *gpuBpntr, *gpuBindx, *gpu_order;
-    double *gpuBvals;
-    double *gpuX;
-
-    int num_nz = cpuBpntr[M];
-
-    int *order = new int[M], c = 0;
-    for(int l=1; l<=top_level; l++){
-        for(int i=0; i<M; i++){
-            if (level[i] == l){
-                order[c++] = i;
-            }
-        }
-    }
-    while(c < M) order[c++] = 0;
-
-    gpu_order = TasCUDA::cudaSend<int>(M, order, os);
-    gpuBpntr = TasCUDA::cudaSend<int>(M+1, cpuBpntr, os);
-    gpuBindx = TasCUDA::cudaSend<int>(num_nz, cpuBindx, os);
-    gpuBvals = TasCUDA::cudaSend<double>(num_nz, cpuBvals, os);
-    gpuX = TasCUDA::cudaSend<double>(M*N, cpuA, os);
-
-    int num_blocks = N / _MAX_CUDA_THREADS + ((N % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks >= 65536) num_blocks = 65536;
-    tasgpu_d3gecss<<< num_blocks, _MAX_CUDA_THREADS >>>(N, M, gpu_order, top_level, gpuBpntr, gpuBindx, gpuBvals, gpuX, num_blocks * _MAX_CUDA_THREADS);
-
-    TasCUDA::cudaRecv<double>(M*N, gpuX, cpuC, os);
-
-    delete[] order;
-    TasCUDA::cudaDel<double>(gpuX, os);
-    TasCUDA::cudaDel<double>(gpuBvals, os);
-    TasCUDA::cudaDel<int>(gpuBindx, os);
-    TasCUDA::cudaDel<int>(gpuBpntr, os);
-    TasCUDA::cudaDel<int>(gpu_order, os);
-}
-
 void TasCUDA::convert_sparse_to_dense(int num_rows, int num_columns, const int *pntr, const int *indx, const double *vals, double *destination){
     int n = num_rows * num_columns;
     int num_blocks = n / _MAX_CUDA_THREADS + ((n % _MAX_CUDA_THREADS == 0) ? 0 : 1);
