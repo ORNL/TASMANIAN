@@ -124,12 +124,6 @@ bool AccelerationDataGPUFull::isCompatible(TypeAcceleration acc) const{ return A
 void AccelerationDataGPUFull::loadGPUValues(size_t total_entries, const double *cpu_values){
     gpu_values = TasCUDA::cudaSend(total_entries, cpu_values, logstream);
 }
-#else
-void AccelerationDataGPUFull::loadGPUValues(size_t, const double *){}
-#endif // Tasmanian_ENABLE_CUDA
-double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }
-
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::resetGPULoadedData(){
     if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
     if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes, logstream); gpu_nodes = 0; }
@@ -138,34 +132,28 @@ void AccelerationDataGPUFull::resetGPULoadedData(){
     if (gpu_hindx != 0){ TasCUDA::cudaDel<int>(gpu_hindx, logstream); gpu_hindx = 0; }
     if (gpu_roots != 0){ TasCUDA::cudaDel<int>(gpu_roots, logstream); gpu_roots = 0; }
 }
-#else
-void AccelerationDataGPUFull::resetGPULoadedData(){}
-#endif
-
-double* AccelerationDataGPUFull::getGPUNodes() const{ return gpu_nodes; }
-double* AccelerationDataGPUFull::getGPUSupport() const{ return gpu_support; }
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::loadGPUNodesSupport(int total_entries, const double *cpu_nodes, const double *cpu_support){
-    gpu_nodes = TasCUDA::cudaSend(total_entries, cpu_nodes, logstream);
-    gpu_support = TasCUDA::cudaSend(total_entries, cpu_support, logstream);
+    gpu_nodes   = TasCUDA::cudaSend<double>(total_entries, cpu_nodes,   logstream);
+    gpu_support = TasCUDA::cudaSend<double>(total_entries, cpu_support, logstream);
 }
-#else
-void AccelerationDataGPUFull::loadGPUNodesSupport(int, const double *, const double *){}
-#endif // Tasmanian_ENABLE_CUDA
-
-int* AccelerationDataGPUFull::getGPUpntr() const{ return gpu_hpntr; }
-int* AccelerationDataGPUFull::getGPUindx() const{ return gpu_hindx; }
-int* AccelerationDataGPUFull::getGPUroots() const{ return gpu_roots; }
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots){
     gpu_hpntr = TasCUDA::cudaSend<int>(num_points + 1, pntr, logstream);
     gpu_hindx = TasCUDA::cudaSend<int>(pntr[num_points], indx, logstream);
     gpu_roots = TasCUDA::cudaSend<int>(num_roots, roots, logstream);
 }
 #else
+void AccelerationDataGPUFull::loadGPUValues(size_t, const double *){}
+void AccelerationDataGPUFull::resetGPULoadedData(){}
+void AccelerationDataGPUFull::loadGPUNodesSupport(int, const double *, const double *){}
 void AccelerationDataGPUFull::loadGPUHierarchy(int, int*, int*, int, int*){}
-#endif
+#endif // Tasmanian_ENABLE_CUDA
 
+double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }
+double* AccelerationDataGPUFull::getGPUNodes() const{ return gpu_nodes; }
+double* AccelerationDataGPUFull::getGPUSupport() const{ return gpu_support; }
+int* AccelerationDataGPUFull::getGPUpntr() const{ return gpu_hpntr; }
+int* AccelerationDataGPUFull::getGPUindx() const{ return gpu_hindx; }
+int* AccelerationDataGPUFull::getGPUroots() const{ return gpu_roots; }
 
 #ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
@@ -183,11 +171,6 @@ void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const
     TasCUDA::cudaDel<double>(gpu_result, logstream);
     TasCUDA::cudaDel<double>(gpu_weights, logstream);
 }
-#else
-void AccelerationDataGPUFull::cublasDGEMV(int, int, const double *, double *){}
-#endif // Tasmanian_ENABLE_CUDA
-
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
 
@@ -196,11 +179,6 @@ void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_x, int num_po
                                       &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
     AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM", logstream);
 }
-#else
-void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double *){}
-#endif // Tasmanian_ENABLE_CUDA
-
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
     makeCuSparseHandle(); // creates a handle only if one doesn't exist
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
@@ -303,10 +281,12 @@ void AccelerationDataGPUFull::cusparseMatveci(int num_outputs, int num_points, i
     if (gpu_buffer != 0) TasCUDA::cudaDel<double>(gpu_buffer, logstream);
 }
 #else
+void AccelerationDataGPUFull::cublasDGEMV(int, int, const double *, double *){}
+void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double *){}
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatvec(int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatveci(int, int, int, const int*, const double*, double*){}
-#endif // defined Tasmanian_ENABLE_CUDA
+#endif // Tasmanian_ENABLE_CUDA
 
 #ifdef Tasmanian_ENABLE_MAGMA
 void AccelerationDataGPUFull::magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
