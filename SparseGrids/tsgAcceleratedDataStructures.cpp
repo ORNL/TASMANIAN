@@ -375,8 +375,25 @@ void AccelerationDataGPUFull::magmaCudaDGEMM(int gpuID, int num_outputs, int num
     magma_dgemm(noTranspose, noTranspose, num_outputs, num_x, num_points, alpha, gpu_values, num_outputs,
                 gpu_weights, num_points, beta, gpu_result, num_outputs, (magma_queue_t) magmaCudaQueue);
 }
+void AccelerationDataGPUFull::magmaCudaDGEMV(int gpuID, int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
+    initializeMagma(gpuID); // calls magma_init(), but only if not called before by this object
+
+    double *gpu_weights = TasCUDA::cudaSend<double>(num_points, cpu_weights, logstream);
+    double *gpu_result = TasCUDA::cudaNew<double>(num_outputs, logstream);
+
+    double alpha = 1.0, beta = 0.0;
+    magma_trans_t noTranspose = MagmaNoTrans;
+    magma_dgemv(noTranspose, num_outputs, num_points, alpha, gpu_values, num_outputs,
+                gpu_weights, 1, beta, gpu_result, 1, (magma_queue_t) magmaCudaQueue);
+
+    TasCUDA::cudaRecv<double>(num_outputs, gpu_result, cpu_result, logstream);
+
+    TasCUDA::cudaDel<double>(gpu_result, logstream);
+    TasCUDA::cudaDel<double>(gpu_weights, logstream);
+}
 #else
 void AccelerationDataGPUFull::magmaCudaDGEMM(int, int, int, int, const double[], double*){}
+void AccelerationDataGPUFull::magmaCudaDGEMV(int, int, int, const double[], double*){}
 #endif
 
 
