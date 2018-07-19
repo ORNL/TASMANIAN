@@ -438,11 +438,6 @@ void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::o
         }
     }
 }
-#else
-void AccelerationMeta::cudaCheckError(void *, const char *, std::ostream *){}
-#endif // Tasmanian_ENABLE_CUDA
-
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationMeta::cublasCheckError(void *cublasStatus, const char *info, std::ostream *os){
     if (*((cublasStatus_t*) cublasStatus) != CUBLAS_STATUS_SUCCESS){
         if (os != 0){
@@ -496,6 +491,7 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
     }
 }
 #else
+void AccelerationMeta::cudaCheckError(void *, const char *, std::ostream *){}
 void AccelerationMeta::cublasCheckError(void *, const char *, std::ostream *){}
 void AccelerationMeta::cusparseCheckError(void *, const char *, std::ostream *){}
 #endif // Tasmanian_ENABLE_CUDA
