@@ -96,7 +96,7 @@ private:
     double *gpu_nodes, *gpu_support; // support is half support and encodes the level of the function, i.e., constant, linear, or quadratic
     int *gpu_hpntr, *gpu_hindx, *gpu_roots;
 
-    #ifdef Tasmanian_ENABLE_CUBLAS
+    #ifdef Tasmanian_ENABLE_CUDA
     void *cublasHandle;
     void *cusparseHandle;
     #endif
