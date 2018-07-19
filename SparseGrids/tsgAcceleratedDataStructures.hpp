@@ -45,44 +45,56 @@ public:
     virtual void resetGPULoadedData() = 0;
 };
 
-// wrapper around cublas handle and also that stores onto the gpu values, points, etc
+// wrapper around cublas and cusparse handles, and magma queue
+// it also stores the values and data needed for cuda evaluations
+// (points, support, etc.)
 class AccelerationDataGPUFull : public BaseAccelerationData{
 public:
     AccelerationDataGPUFull();
     ~AccelerationDataGPUFull();
 
     void setLogStream(std::ostream *os);
+    // for GPU error messages/codes
 
     bool isCompatible(TypeAcceleration acc) const;
+    // when setting a new acceleration, check if we need to also set a new object or can reuse this one
 
     double* getGPUValues() const;
     void loadGPUValues(size_t total_entries, const double *cpu_values);
+    // either values (global grid) or coefficients (sequence, local polynomial, etc.)
 
     double* getGPUNodes() const;
     double* getGPUSupport() const;
     void loadGPUNodesSupport(int total_entries, const double *cpu_nodes, const double *cpu_support);
+    // nodes and support for local polynomial evaluations (support also encodes order for special cases)
 
     int* getGPUpntr() const;
     int* getGPUindx() const;
     int* getGPUroots() const;
     void loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots);
+    // collection of trees to be used in CUDA evaluations of local polynomial grids
 
     void resetGPULoadedData();
+    // deletes nodes, values, and hierarchy
 
     void cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result);
-    void cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
+    void cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result);
+    // dense matrix-matrix or matrix-vector product using cublas, the matrix is the getGPUValues()
 
-    // cusparseMatmul multiplies, cusparseDCRSMM solves for the coefficients
     void cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
-    // sparse matrix times a vector, makes sense only if the matrix already sits on the gpu
-    // assumes num_points == 1 and vectors live on the gpu
-    void cusparseMatvec(int num_points, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
-    // dense matrix A times a sparse vector defined by sindx and svals
-    // A is num_outputs by num_points, result is num_outputs
-    void cusparseMatveci(int num_outputs, int num_points, int num_nz, const int *sindx, const double *svals, double *result);
+    // sparse matrix times dense matrix, dense matrix is getGPUValues(), sparse matrix can be given on either cpu or gpu
 
-    void magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
-    void magmaCudaDGEMV(int gpuID, int num_outputs, int num_points, const double cpu_weights[], double *cpu_result); // multiplies by the gpu_values
+    void cusparseMatvec(int num_points, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
+    // sparse matrix times a dense vector, makes sense only if the matrix already sits on the gpu
+    // e.g., assumes num_points == 1, the vectors is getGPUValues(), and the sparse matrix was computed on the GPU
+
+    void cusparseMatveci(int num_outputs, int num_points, int num_nz, const int *sindx, const double *svals, double *result);
+    // dense matrix times a sparse vector defined by sindx and svals
+    // the dense matrix is getGPUValues()
+
+    void magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result);
+    void magmaCudaDGEMV(int gpuID, int num_outputs, int num_points, const double cpu_weights[], double *cpu_result);
+    // dense matrix-matrix or matrix-vector product using magma, the matrix is the getGPUValues()
 
 protected:
     void makeCuBlasHandle();
