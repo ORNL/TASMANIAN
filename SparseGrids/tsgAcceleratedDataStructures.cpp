@@ -156,21 +156,6 @@ int* AccelerationDataGPUFull::getGPUindx() const{ return gpu_hindx; }
 int* AccelerationDataGPUFull::getGPUroots() const{ return gpu_roots; }
 
 #ifdef Tasmanian_ENABLE_CUDA
-void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
-    makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    double *gpu_weights = TasCUDA::cudaSend(num_points, cpu_weights, logstream);
-    double *gpu_result = TasCUDA::cudaNew<double>(num_outputs, logstream);
-
-    double alpha = 1.0, beta = 0.0;
-    cublasStatus_t stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, num_outputs, num_points,
-                                     &alpha, gpu_values, num_outputs, gpu_weights, 1, &beta, gpu_result, 1);
-    AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in DGEMV", logstream);
-
-    TasCUDA::cudaRecv<double>(num_outputs, gpu_result, cpu_result, logstream);
-
-    TasCUDA::cudaDel<double>(gpu_result, logstream);
-    TasCUDA::cudaDel<double>(gpu_weights, logstream);
-}
 void AccelerationDataGPUFull::cublasDGEMM(bool cpu_pointers, int num_outputs, int num_x, int num_points, const double weights[], double *result){
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
 
@@ -181,9 +166,15 @@ void AccelerationDataGPUFull::cublasDGEMM(bool cpu_pointers, int num_outputs, in
     gpu_result  = (cpu_pointers) ? TasCUDA::cudaNew<double>(num_outputs * num_x, logstream) : result;
 
     double alpha = 1.0, beta = 0.0;
-    cublasStatus_t stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points,
-                                      &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
-    AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM", logstream);
+    if (num_x > 1){ // matrix-matrix mode
+        cublasStatus_t stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points,
+                                        &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
+        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM", logstream);
+    }else{ // matrix-vector mode
+        cublasStatus_t stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, num_outputs, num_points,
+                                        &alpha, gpu_values, num_outputs, gpu_weights, 1, &beta, gpu_result, 1);
+        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in DGEMV", logstream);
+    }
 
     if (cpu_pointers){
         TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, result, logstream);

@@ -501,7 +501,7 @@ void GridSequence::evaluateFastGPUcublas(const double x[], double y[], std::ostr
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     double *fvalues = evalHierarchicalFunctions(x);
 
-    gpu->cublasDGEMV(num_outputs, points->getNumIndexes(), fvalues, y);
+    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), fvalues, y);
 
     delete[] fvalues;
 }

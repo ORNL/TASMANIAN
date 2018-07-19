@@ -700,7 +700,7 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostrea
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     double *weights = getInterpolationWeights(x);
 
-    gpu->cublasDGEMV(num_outputs, points->getNumIndexes(), weights, y);
+    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), weights, y);
 
     delete[] weights;
 }

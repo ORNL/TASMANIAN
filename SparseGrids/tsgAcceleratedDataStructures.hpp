@@ -77,9 +77,8 @@ public:
     void resetGPULoadedData();
     // deletes nodes, values, and hierarchy
 
-    void cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result);
     void cublasDGEMM(bool cpu_pointers, int num_outputs, int num_x, int num_points, const double weights[], double *result);
-    // dense matrix-matrix or matrix-vector product using cublas, the matrix is the getGPUValues()
+    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for num_x == 1) product using cublas, the matrix is the getGPUValues()
 
     void cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
     // sparse matrix times dense matrix, dense matrix is getGPUValues(), sparse matrix can be given on either cpu or gpu
