@@ -170,21 +170,12 @@ void TasCUDA::devalpwpoly_sparse_dense(int order, TypeOneDRule rule, int dims, i
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //       Linear Algebra
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__
 void TasCUDA::cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c){ // gpu_c = gpu_a * gpu_b, gpu_c is M by N
     int blocks = (N / 96) + (((N % 96) == 0) ? 0 : 1);
     blocks *= (M / 96) + (((M % 96) == 0) ? 0 : 1);
     while(blocks > 65536) blocks = 65536;
     tasgpu_cudaTgemm<double, 32, 96><<<blocks, 1024>>>(M, N, K, gpu_a, gpu_b, gpu_c);
-}
-
-void TasCUDA::convert_sparse_to_dense(int num_rows, int num_columns, const int *pntr, const int *indx, const double *vals, double *destination){
-    int n = num_rows * num_columns;
-    int num_blocks = n / _MAX_CUDA_THREADS + ((n % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks >= 65536) num_blocks = 65536;
-    tascuda_fill<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(n, 0.0, destination);
-    num_blocks = num_rows;
-    if (num_blocks >= 65536) num_blocks = 65536;
-    tascuda_sparse_to_dense<double, 64><<<num_blocks, 64>>>(num_rows, num_columns, pntr, indx, vals, destination);
 }
 
 void TasCUDA::cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C){
@@ -208,6 +199,17 @@ void TasCUDA::cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, c
         }
     }
 }
+
+void TasCUDA::convert_sparse_to_dense(int num_rows, int num_columns, const int *pntr, const int *indx, const double *vals, double *destination){
+    int n = num_rows * num_columns;
+    int num_blocks = n / _MAX_CUDA_THREADS + ((n % _MAX_CUDA_THREADS == 0) ? 0 : 1);
+    if (num_blocks >= 65536) num_blocks = 65536;
+    tascuda_fill<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(n, 0.0, destination);
+    num_blocks = num_rows;
+    if (num_blocks >= 65536) num_blocks = 65536;
+    tascuda_sparse_to_dense<double, 64><<<num_blocks, 64>>>(num_rows, num_columns, pntr, indx, vals, destination);
+}
+#endif
 
 }
 

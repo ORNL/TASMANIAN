@@ -134,23 +134,31 @@ namespace TasCUDA{
     // evaluate sequence grids (not done yet)
     //void devalseq(int dims, int num_x, int num_points, int num_nodes, const double *gpu_x, const double *gpu_nodes, const double *gpu_coeff, const int *points, double *gpu_dense);
 
+    // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
+    #ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__
+    // CUDA kernels that provide essentially the same functionality as cuBlas and MAGMA, but nowhere near as optimal
+    // those functions should not be used in a Release or production builds
+    // the kernels are useful because they are simple and do not depend on potentially poorly documented 3d party library
+    // since the kernels are useful for testing and some debugging, the code should not be deleted (for now), but also don't waste time compiling in most cases
+
+    void cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c);
     // lazy cuda dgemm, nowhere near as powerful as cuBlas, but does not depend on cuBlas
     // gpu_a is M by K, gpu_b is K by N, gpu_c is M by N, all in column-major format
     // on exit gpu_c = gpu_a * gpu_b
-    void cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c);
 
+    void cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C);
     // lazy cuda sparse dgemm, less efficient (especially for large N), but more memory conservative then cusparse as there is no need for a transpose
     // C is M x N, B is K x N (K is max(gpu_sindx)), both are given in row-major format, num_nz/spntr/sindx/svals describe row compressed A which is M by K
     // on exit C = A * B
-    void cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C);
 
+    void cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, const int *indx, const double *vals, double *C);
     // dense matrix A (column major) times a sparse vector defiend by num_nz, indx, and vals
     // A is M by N, C is M by 1,
     // on exit C = A * (indx, vals)
-    void cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, const int *indx, const double *vals, double *C);
 
-    // converts a sparse matrix to a dense representation (all data sits on the gpu and is pre-allocated)
     void convert_sparse_to_dense(int num_rows, int num_columns, const int *gpu_pntr, const int *gpu_indx, const double *gpu_vals, double *gpu_destination);
+    // converts a sparse matrix to a dense representation (all data sits on the gpu and is pre-allocated)
+    #endif
 }
 
 // generic error checking function and types I/O

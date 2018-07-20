@@ -37,6 +37,9 @@
 
 namespace TasGrid{
 
+// NOTE: the kernels here were used for testing and debugging (and place holders before using the MAGMA library)
+//       presently, none of the templates are instantiated unless __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ is defined in tsgAcceleratedDataStructures.hpp (TasCUDA namespace)
+
 // only works with SHORT = 32 and BLOCK = 96
 // using blocks, block in C has dims BLOCK by BLOCK = 3 * SHORT by 3 * SHORT,
 // blocks of A and B are both BLOCK by SHORT or 3 * SHORT by SHORT
