@@ -310,6 +310,7 @@ int OneDimensionalMeta::getIExact(int level, TypeOneDRule rule) const{
         case rule_clenshawcurtis0:    return ((1 << (level+1)) +1);
         case rule_rlejadouble2:       return getNumPoints(level,rule_rlejadouble2)-1;
         case rule_rlejadouble4:       return getNumPoints(level,rule_rlejadouble4)-1;
+        case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
         case rule_customtabulated:    return custom->getIExact(level);
         default:
             return level;
@@ -358,6 +359,7 @@ int OneDimensionalMeta::getQExact(int level, TypeOneDRule rule) const{
         case rule_rlejadouble2:       return getNumPoints(level,rule_rlejadouble2);
         case rule_rlejadouble4:       return getNumPoints(level,rule_rlejadouble4)-1;
         case rule_fejer2:             return ((1 << (level+1)) - 1);
+        case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
         case rule_customtabulated:    return custom->getQExact(level);
         default:
             return level;
