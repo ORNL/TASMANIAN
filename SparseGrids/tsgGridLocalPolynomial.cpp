@@ -572,10 +572,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
     checkAccelerationGPUNodes();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
-    bool useDense = (sparse_affinity == -1);
-    if (sparse_affinity == 0){
-        useDense = (num_points <= 1024);
-    }
+    bool useDense = (sparse_affinity == -1) || ((sparse_affinity == 0) && (num_dimensions > 6)); // dimension is the real criteria here
 
     if (useDense){
         double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
