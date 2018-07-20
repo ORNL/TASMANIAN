@@ -274,41 +274,40 @@ void AccelerationDataGPUFull::cusparseMatveci(int num_outputs, int num_points, i
     if (gpu_buffer != 0) TasCUDA::cudaDel<double>(gpu_buffer, logstream);
 }
 #else
-void AccelerationDataGPUFull::cublasDGEMV(int, int, const double *, double *){}
-void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double *){}
+void AccelerationDataGPUFull::cublasDGEMM(bool, int, int, int, const double *, double *){}
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatvec(int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatveci(int, int, int, const int*, const double*, double*){}
 #endif // Tasmanian_ENABLE_CUDA
 
 #ifdef Tasmanian_ENABLE_MAGMA
-void AccelerationDataGPUFull::magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
+void AccelerationDataGPUFull::magmaCudaDGEMM(bool cpu_pointers, int gpuID, int num_outputs, int num_x, int num_points, const double weights[], double *result){
     initializeMagma(gpuID); // calls magma_init(), but only if not called before by this object
+
+    const double *gpu_weights = 0;
+    double *gpu_result = 0, *gpu_temp = 0;
+
+    gpu_weights = (cpu_pointers) ? TasCUDA::cudaSendConst<double>(num_x * num_points, weights, gpu_temp, logstream) : weights;
+    gpu_result  = (cpu_pointers) ? TasCUDA::cudaNew<double>(num_outputs * num_x, logstream) : result;
 
     double alpha = 1.0, beta = 0.0;
     magma_trans_t noTranspose = MagmaNoTrans;
-    magma_dgemm(noTranspose, noTranspose, num_outputs, num_x, num_points, alpha, gpu_values, num_outputs,
-                gpu_weights, num_points, beta, gpu_result, num_outputs, (magma_queue_t) magmaCudaQueue);
-}
-void AccelerationDataGPUFull::magmaCudaDGEMV(int gpuID, int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
-    initializeMagma(gpuID); // calls magma_init(), but only if not called before by this object
+    if (num_x > 1){ // matrix-matrix mode
+        magma_dgemm(noTranspose, noTranspose, num_outputs, num_x, num_points, alpha, gpu_values, num_outputs,
+                    gpu_weights, num_points, beta, gpu_result, num_outputs, (magma_queue_t) magmaCudaQueue);
+    }else{ // matrix-vector mode
+        magma_dgemv(noTranspose, num_outputs, num_points, alpha, gpu_values, num_outputs,
+                    gpu_weights, 1, beta, gpu_result, 1, (magma_queue_t) magmaCudaQueue);
+    }
 
-    double *gpu_weights = TasCUDA::cudaSend<double>(num_points, cpu_weights, logstream);
-    double *gpu_result = TasCUDA::cudaNew<double>(num_outputs, logstream);
-
-    double alpha = 1.0, beta = 0.0;
-    magma_trans_t noTranspose = MagmaNoTrans;
-    magma_dgemv(noTranspose, num_outputs, num_points, alpha, gpu_values, num_outputs,
-                gpu_weights, 1, beta, gpu_result, 1, (magma_queue_t) magmaCudaQueue);
-
-    TasCUDA::cudaRecv<double>(num_outputs, gpu_result, cpu_result, logstream);
-
-    TasCUDA::cudaDel<double>(gpu_result, logstream);
-    TasCUDA::cudaDel<double>(gpu_weights, logstream);
+    if (cpu_pointers){
+        TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, result, logstream);
+        TasCUDA::cudaDel<double>(gpu_result, logstream);
+        TasCUDA::cudaDel<double>(gpu_temp, logstream);
+    }
 }
 #else
-void AccelerationDataGPUFull::magmaCudaDGEMM(int, int, int, int, const double[], double*){}
-void AccelerationDataGPUFull::magmaCudaDGEMV(int, int, int, const double[], double*){}
+void AccelerationDataGPUFull::magmaCudaDGEMM(bool, int, int, int, int, const double[], double*){}
 #endif
 
 

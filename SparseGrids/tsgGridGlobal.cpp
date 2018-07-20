@@ -718,7 +718,7 @@ void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[], s
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     double *weights = getInterpolationWeights(x);
 
-    gpu->magmaCudaDGEMV(gpuID, num_outputs, points->getNumIndexes(), weights, y);
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), weights, y);
 
     delete[] weights;
 }
@@ -780,15 +780,7 @@ void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, d
     double *weights = new double[((size_t) num_points) * ((size_t) num_x)];
     evaluateHierarchicalFunctions(x, num_x, weights);
 
-    double *gpu_weights = TasCUDA::cudaSend(((size_t) num_points) * ((size_t) num_x), weights, os);
-    double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x), os);
-
-    gpu->magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, gpu_weights, gpu_result);
-
-    TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, y, os);
-
-    TasCUDA::cudaDel<double>(gpu_result, os);
-    TasCUDA::cudaDel<double>(gpu_weights, os);
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, weights, y);
 
     delete[] weights;
 }
