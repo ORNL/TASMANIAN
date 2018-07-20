@@ -45,7 +45,6 @@ then
       -D Tasmanian_ENABLE_BLAS=ON \
       -D Tasmanian_ENABLE_CUDA=ON \
       -D Tasmanian_ENABLE_PYTHON=ON \
-      -D Tasmanian_ENABLE_MATLAB=OFF \
       -D Tasmanian_ENABLE_MPI=OFF \
       -D Tasmanian_ENABLE_FORTRAN=OFF \
       -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
