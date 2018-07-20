@@ -7,7 +7,7 @@ mkdir build && cd build
 if [ "${BUILD_TYPE}" == "clang50-python3" ]
 then
 # Enables only core libraries and PYTHON
-# Attempts to enable OpenMP, BLAS and CUBLAS
+# Attempts to enable OpenMP and BLAS
 # but neither exists, so cmake will automatically disable those options
     cmake \
       -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
@@ -19,8 +19,8 @@ then
 elif [ "${BUILD_TYPE}" == "gcc73-python2" ]
 then
 # Enables core libraries, PYTHON and OpenMP
-# Attempts to enable BLAS and CUBLAS
-# but neither exists, so cmake will automatically disable BLAS/CUBLAS
+# Attempts to enable BLAS
+# but it does not exist, so cmake will automatically disable BLAS
     cmake \
       -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
       -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow -pedantic" \
@@ -44,8 +44,8 @@ then
       -D Tasmanian_ENABLE_OPENMP=ON \
       -D Tasmanian_ENABLE_BLAS=ON \
       -D Tasmanian_ENABLE_CUDA=ON \
+      -D Tasmanian_ENABLE_MAGMA=OFF \
       -D Tasmanian_ENABLE_PYTHON=ON \
-      -D Tasmanian_ENABLE_MATLAB=OFF \
       -D Tasmanian_ENABLE_MPI=OFF \
       -D Tasmanian_ENABLE_FORTRAN=OFF \
       -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
