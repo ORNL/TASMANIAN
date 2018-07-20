@@ -462,11 +462,6 @@ void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) cons
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{
-    if (num_outputs < 64){
-        evaluate(x, y);
-        return;
-    }
-
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas, os);
     checkAccelerationGPUValues();
