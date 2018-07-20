@@ -185,27 +185,16 @@ void AccelerationDataGPUFull::cublasDGEMM(bool cpu_pointers, int num_outputs, in
 void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
     makeCuSparseHandle(); // creates a handle only if one doesn't exist
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    const int *gpu_pntr = 0, *gpu_indx = 0;
-    const double *gpu_vals = 0;
     int *tempp = 0, *tempi = 0;
-    double *tempv = 0, *tempr = 0;
-    double *gpu_result = 0;
-    if (cpu_pointers){
-        num_nz = spntr[num_x];
-        tempp = TasCUDA::cudaSend<int>(num_x + 1, spntr, logstream);
-        gpu_pntr = tempp;
-        tempi = TasCUDA::cudaSend<int>(num_nz, sindx, logstream);
-        gpu_indx = tempi;
-        tempv = TasCUDA::cudaSend<double>(num_nz, svals, logstream);
-        gpu_vals = tempv;
-        tempr = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs), logstream);
-        gpu_result = tempr;
-    }else{
-        gpu_pntr = spntr;
-        gpu_indx = sindx;
-        gpu_vals = svals;
-        gpu_result = result;
-    }
+    double *tempv = 0;
+
+    if (cpu_pointers) num_nz = spntr[num_x];
+    const int *gpu_pntr    = (cpu_pointers) ? TasCUDA::cudaSendConst<int>(num_x + 1, spntr, tempp, logstream) : spntr;
+    const int *gpu_indx    = (cpu_pointers) ? TasCUDA::cudaSendConst<int>(num_nz, sindx, tempi, logstream)    : sindx;
+    const double *gpu_vals = (cpu_pointers) ? TasCUDA::cudaSendConst<double>(num_nz, svals, tempv, logstream) : svals;
+
+    double *gpu_result = (cpu_pointers) ? TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs), logstream) : result;
+
     double *gpu_result_t = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs), logstream);
 
     // call cusparse
@@ -233,10 +222,11 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
     AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam in Matmul", logstream);
 
     TasCUDA::cudaDel<double>(gpu_result_t, logstream);
-    if (cpu_pointers){
-        TasCUDA::cudaRecv<double>(num_x * num_outputs, gpu_result, result, logstream);
 
-        TasCUDA::cudaDel<double>(tempr, logstream);
+    if (cpu_pointers){
+        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) num_outputs), gpu_result, result, logstream);
+
+        TasCUDA::cudaDel<double>(gpu_result, logstream);
         TasCUDA::cudaDel<double>(tempv, logstream);
         TasCUDA::cudaDel<int>(tempi, logstream);
         TasCUDA::cudaDel<int>(tempp, logstream);
