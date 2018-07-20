@@ -591,7 +591,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         TasCUDA::cudaDel<double>(gpu_result, os);
         TasCUDA::cudaDel<double>(gpu_weights, os);
         TasCUDA::cudaDel<double>(gpu_x, os);
-    }else if (!useDense){
+    }else{
         double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
         double *gpu_y = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs), os);
 
@@ -612,23 +612,6 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         TasCUDA::cudaDel<int>(gpu_sindx, os);
         TasCUDA::cudaDel<double>(gpu_svals, os);
         TasCUDA::cudaDel<double>(gpu_y, os);
-        TasCUDA::cudaDel<double>(gpu_x, os);
-    }else{
-        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
-        double *gpu_weights = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) points->getNumIndexes()), os);
-        double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) values->getNumOutputs()), os);
-
-        checkAccelerationGPUHierarchy();
-        TasCUDA::devalpwpoly_sparse_dense(order, rule->getType(), num_dimensions, num_x, num_points, gpu_x, gpu_acc->getGPUNodes(), gpu_acc->getGPUSupport(),
-                                gpu_acc->getGPUpntr(), gpu_acc->getGPUindx(), num_roots, gpu_acc->getGPUroots(), gpu_weights);
-
-        gpu_acc->cublasDGEMM(false, values->getNumOutputs(), num_x, num_points, gpu_weights, gpu_result);
-        //TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
-
-        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) values->getNumOutputs()), gpu_result, y, os);
-
-        TasCUDA::cudaDel<double>(gpu_result, os);
-        TasCUDA::cudaDel<double>(gpu_weights, os);
         TasCUDA::cudaDel<double>(gpu_x, os);
     }
 }
