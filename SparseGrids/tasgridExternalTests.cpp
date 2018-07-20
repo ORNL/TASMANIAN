@@ -1022,13 +1022,13 @@ bool ExternalTester::testAllFourier() const{
         for(int i=0; i<2*num_eval; i++) pnts[i] = 0.5*(pnts[i]+1.0);    // map to [0,1]^d canonical Fourier domain
         grid.evaluateSparseHierarchicalFunctions(pnts, num_eval, pntr, indx, vals);
         getError(&f21expsincos, &grid, type_internal_interpolation); // this is done to load the values
-        const double *coeff = grid.getHierarchicalCoefficients();    // coeff = [fourier_coeff_1.real(), fourier_coeff_1.imag(), fourier_coeff_2.real(), ...]
+        const double *coeff = grid.getHierarchicalCoefficients();    // coeff = [fourier_coeff_1.real(), fourier_coeff_2.real(), ..., fourier_coeff_1.imag(), fourier_coeff_2.imag(), ...]
         double *y = new double[num_eval];
         grid.evaluateBatch(pnts, num_eval, y);
 
         for(int i=0; i<num_eval; i++){
             for(int j=pntr[i]; j<pntr[i+1]; j++){
-                std::complex<double> fourier_coeff(coeff[2*indx[j]], coeff[2*indx[j]+1]);    //reformat as complex number
+                std::complex<double> fourier_coeff(coeff[indx[j]], coeff[indx[j]+(grid.getNumOutputs()*grid.getNumPoints())]);    //reformat as complex number
                 std::complex<double> phi(vals[2*j], vals[2*j+1]);                            //reformat as complex number
                 y[i] -= (fourier_coeff*phi).real();
             }
@@ -1047,7 +1047,7 @@ bool ExternalTester::testAllFourier() const{
         grid.evaluateBatch(pnts, num_eval, y);
         for(int i=0; i<num_eval; i++){
             for(int j=0; j<grid.getNumPoints(); j++){
-                std::complex<double> fourier_coeff(coeff[2*j], coeff[2*j+1]);
+                std::complex<double> fourier_coeff(coeff[j], coeff[j + (grid.getNumPoints() * grid.getNumOutputs())]);
                 std::complex<double> phi(v[2*(i*grid.getNumPoints()+j)], v[2*(i*grid.getNumPoints()+j)+1]);
                 y[i] -= (fourier_coeff * phi).real();
             }

@@ -79,8 +79,8 @@ void GridFourier::write(std::ofstream &ofs) const{
             values->write(ofs);
             if (fourier_coefs != 0){
                 ofs << "1";
-                for(int i=0; i < num_outputs*getNumPoints(); i++){
-                    ofs << " " << fourier_coefs[i].real() << " " << fourier_coefs[i].imag();
+                for (int i=0; i < 2*num_outputs*getNumPoints(); i++){
+                    ofs << " " << fourier_coefs[i];
                 }
             }else{
                 ofs << "0";
@@ -124,11 +124,9 @@ void GridFourier::read(std::ifstream &ifs, std::ostream *logstream){
             values = new StorageSet(0, 0); values->read(ifs);
             ifs >> flag;
             if (flag == 1){
-                fourier_coefs = new std::complex<double>[num_outputs * work->getNumIndexes()];
-                double fourier_real; double fourier_imag;
-                for(int i=0; i<num_outputs*work->getNumIndexes(); i++){
-                    ifs >> fourier_real >> fourier_imag;
-                    fourier_coefs[i] = std::complex<double>(fourier_real, fourier_imag);
+                fourier_coefs = new double[num_outputs * work->getNumIndexes()];
+                for(int i=0; i<2*num_outputs*work->getNumIndexes(); i++){
+                    ifs >> fourier_coefs[i];
                 }
             }else{
                 fourier_coefs = 0;
@@ -196,8 +194,7 @@ void GridFourier::writeBinary(std::ofstream &ofs) const{
             values->writeBinary(ofs);
             if (fourier_coefs != 0){
                 flag = 'y'; ofs.write(&flag, sizeof(char));
-                const double *fcoefs = getFourierCoefs();     // real double array of length 2*num_outputs*num_nodes
-                ofs.write((char*) fcoefs, 2 * getNumPoints() * num_outputs * sizeof(double));
+                ofs.write((char*) fourier_coefs, 2 * getNumPoints() * num_outputs * sizeof(double));
             }else{
                 flag = 'n'; ofs.write(&flag, sizeof(char));
             }
@@ -242,12 +239,8 @@ void GridFourier::readBinary(std::ifstream &ifs, std::ostream *logstream){
             values = new StorageSet(0, 0); values->readBinary(ifs);
             ifs.read((char*) &flag, sizeof(char));
             if (flag == 'y'){
-                double *fcoefs = new double[2 * num_outputs * work->getNumIndexes()];
-                fourier_coefs = new std::complex<double>[num_outputs * work->getNumIndexes()];
-                ifs.read((char*) fcoefs, 2 * num_outputs * work->getNumIndexes() * sizeof(double));
-                for(int i=0; i<num_outputs * work->getNumIndexes(); i++){
-                    fourier_coefs[i] = std::complex<double>(fcoefs[2*i], fcoefs[2*i+1]);
-                }
+                fourier_coefs = new double[2 * num_outputs * work->getNumIndexes()];
+                ifs.read((char*) fourier_coefs, 2 * num_outputs * work->getNumIndexes() * sizeof(double));
             }else{
                 fourier_coefs = 0;
             }
@@ -529,8 +522,8 @@ void GridFourier::calculateFourierCoefficients(){
     int num_nodes = getNumPoints();
 
     if (fourier_coefs != 0){ delete[] fourier_coefs; fourier_coefs = 0; }
-    fourier_coefs = new std::complex<double>[num_outputs * num_nodes];
-    std::fill(fourier_coefs, fourier_coefs + num_outputs*num_nodes, std::complex<double>(0,0));
+    fourier_coefs = new double[2 * num_outputs * num_nodes];
+    std::fill(fourier_coefs, fourier_coefs + 2*num_outputs*num_nodes, 0.0);
     for(int k=0; k<num_outputs; k++){
         for(int n=0; n<active_tensors->getNumIndexes(); n++){
             const int* levels = active_tensors->getIndex(n);
@@ -555,7 +548,8 @@ void GridFourier::calculateFourierCoefficients(){
 
             for(int i=0; i<num_tensor_points; i++){
                 // Combine with tensor weights
-                fourier_coefs[num_outputs*(exponent_refs[n][i]) + k] += ((double) active_w[n]) * out[i] / ((double) num_tensor_points);
+                fourier_coefs[num_outputs*(exponent_refs[n][i]) + k] += ((double) active_w[n]) * out[i].real() / ((double) num_tensor_points);
+                fourier_coefs[num_outputs*(exponent_refs[n][i]) + k + num_nodes*num_outputs] += ((double) active_w[n]) * out[i].imag() / ((double) num_tensor_points);
             }
             delete[] in;
             delete[] out;
@@ -667,7 +661,8 @@ void GridFourier::evaluate(const double x[], double y[]) const{
     TasBLAS::setzero(num_outputs, y);
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<points->getNumIndexes(); i++){
-            y[k] += (w[i] * fourier_coefs[i*num_outputs+k]).real();
+            y[k] += (w[i].real() * fourier_coefs[i*num_outputs+k]);
+            y[k] -= (w[i].imag() * fourier_coefs[i*num_outputs+k + getNumPoints()*num_outputs]);
         }
     }
     delete[] w;
@@ -683,7 +678,11 @@ void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
     #ifdef Tasmanian_ENABLE_BLAS
     std::complex<double> *w = getBasisFunctions(x);
     std::complex<double> *y_tmp = new std::complex<double>[num_outputs];
-    TasBLAS::zgemv(num_outputs, points->getNumIndexes(), fourier_coefs, w, y_tmp);
+    std::complex<double> *fcoefs = new std::complex<double>[num_outputs*getNumPoints()];
+    for (int i=0; i<num_outputs*getNumPoints(); i++){
+        fcoefs[i] = std::complex<double>(fourier_coefs[i], fourier_coefs[i + num_outputs*getNumPoints()]);
+    }
+    TasBLAS::zgemv(num_outputs, points->getNumIndexes(), fcoefs, w, y_tmp);
 
     #pragma omp parallel for
     for(int i=0; i<num_outputs; i++){
@@ -711,6 +710,11 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
     int num_points = points->getNumIndexes();
     std::complex<double> *y_tmp = new std::complex<double>[num_outputs * num_x];
     std::complex<double> *weights = new std::complex<double>[num_points * num_x];
+    std::complex<double> *fcoefs = new std::complex<double>[num_outputs * getNumPoints()];
+    for (int i=0; i<num_outputs*getNumPoints(); i++){
+        fcoefs[i] = std::complex<double>(fourier_coefs[i], fourier_coefs[i + num_outputs*getNumPoints()]);
+    }
+
     double *weights_tmp = new double[2 * num_points * num_x];
     evaluateHierarchicalFunctions(x, num_x, weights_tmp);
 
@@ -719,7 +723,7 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
         weights[i] = std::complex<double>(weights_tmp[2*i], weights_tmp[2*i+1]);
     }
 
-    TasBLAS::zgemm(num_outputs, num_x, num_points, fourier_coefs, weights, y_tmp);
+    TasBLAS::zgemm(num_outputs, num_x, num_points, fcoefs, weights, y_tmp);
 
     #pragma omp parallel for
     for(int i=0; i<num_outputs*num_x; i++){
@@ -751,7 +755,7 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
         std::fill(zeros_num_dim, zeros_num_dim + num_dimensions, 0);
         int idx = exponents->getSlot(zeros_num_dim);
         for(int k=0; k<num_outputs; k++){
-            q[k] = fourier_coefs[num_outputs * idx + k].real();
+            q[k] = fourier_coefs[num_outputs * idx + k];
         }
         delete[] zeros_num_dim;
     }else{
@@ -787,9 +791,9 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
         needed = 0;
     }
     if (fourier_coefs != 0) delete[] fourier_coefs;
-    fourier_coefs = new std::complex<double>[num_outputs * getNumPoints()];
-    for(int i=0; i<num_outputs*getNumPoints(); i++){
-        fourier_coefs[i] = std::complex<double>(c[2*i], c[2*i+1]);
+    fourier_coefs = new double[2 * num_outputs * getNumPoints()];
+    for(int i=0; i<2*num_outputs*getNumPoints(); i++){
+        fourier_coefs[i] = c[i];
     }
 }
 
@@ -808,14 +812,7 @@ const int* GridFourier::getPointIndexes() const{
 const IndexSet* GridFourier::getExponents() const{
     return exponents;
 }
-const double* GridFourier::getFourierCoefs() const{
-    double* fc = new double[2 * getNumPoints() * num_outputs];
-    for(int i=0; i<getNumPoints() * num_outputs; i++){
-        fc[2*i] = fourier_coefs[i].real();
-        fc[2*i+1] = fourier_coefs[i].imag();
-    }
-    return fc;
-}
+const double* GridFourier::getFourierCoefs() const{ return fourier_coefs; }
 
 } // end TasGrid
 
