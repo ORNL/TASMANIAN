@@ -148,7 +148,7 @@ public:
     void printStatsLog() const;
 
     void enableAcceleration(TypeAcceleration acc);
-    void forceSparseAlgorithmForLocalPolynomials();
+    void favorSparseAlgorithmForLocalPolynomials(bool favor);
     TypeAcceleration getAccelerationType() const;
     static bool isAccelerationAvailable(TypeAcceleration acc);
 

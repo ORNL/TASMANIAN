@@ -102,6 +102,7 @@ public:
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
 
     void clearAccelerationData();
+    void setFavorSparse(bool favor);
 
     const double* getSurpluses() const;
     const int* getPointIndexes() const;
@@ -114,10 +115,6 @@ public:
     // EXPERIMENTAL: GPU evaluateHierarchicalFunctionsGPU()
     void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[], std::ostream *os) const;
     void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz, std::ostream *os) const;
-
-    // EXPERIMENTAL: mostly for tuning and testing purposes, force certain backend behavior
-    inline void setBackendFlavor(TypeLocalPolynomialBackendFlavor new_flavor){ backend_flavor = new_flavor; }
-    inline void setForceSparse(){ force_sparse = true; }
 
 protected:
     void reset(bool clear_rule = true);
@@ -320,8 +317,7 @@ private:
     templRuleLocalPolynomial<rule_localp, true> rpolyc;
 
     mutable BaseAccelerationData *accel;
-    TypeLocalPolynomialBackendFlavor backend_flavor;
-    bool force_sparse;
+    int sparse_affinity;
 };
 
 }

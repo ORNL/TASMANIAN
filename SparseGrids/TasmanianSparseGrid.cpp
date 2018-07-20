@@ -1422,8 +1422,8 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
         if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     }
 }
-void TasmanianSparseGrid::forceSparseAlgorithmForLocalPolynomials(){
-    if (pwpoly != 0) pwpoly->setForceSparse();
+void TasmanianSparseGrid::favorSparseAlgorithmForLocalPolynomials(bool favor){
+    if (pwpoly != 0) pwpoly->setFavorSparse(favor);
 }
 TypeAcceleration TasmanianSparseGrid::getAccelerationType() const{
     return acceleration;

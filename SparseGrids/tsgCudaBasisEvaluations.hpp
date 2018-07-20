@@ -225,12 +225,11 @@ __device__ inline T tasgpu_devalpwpoly_support_pwc_multid(int dims, int i, int i
 // the kernel is called twice with fill false and then true
 // false only counts the non-zeros, sindx and svals are ignored
 // true fills the non-zeros in sindx and svals, sindx and svals must be pre-allocated
-// dense being true means that the algorithm will fill the dense matrix "dense" and ignore the sparse (spntr, sindx, svals) (call dense == true only when fill == false)
-template <typename T, int THREADS, int TOPLEVEL, int order, TypeOneDRule rule, bool fill, bool dense>
+template <typename T, int THREADS, int TOPLEVEL, int order, TypeOneDRule rule, bool fill>
 __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
                                           const T *x, const T *nodes, const T *support,
                                           const int *hpntr, const int *hindx, int num_roots, const int *roots,
-                                          int *spntr, int *sindx, T *svals, T *gpu_dense = 0){
+                                          int *spntr, int *sindx, T *svals){
     __shared__ int mcount[TOPLEVEL][THREADS];
     __shared__ int mstop[TOPLEVEL][THREADS];
 
@@ -260,7 +259,6 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
                     svals[c] = p;
                 }
                 c++;
-                if (dense) gpu_dense[i * num_points + ip] = p;
 
                 int current = 0;
                 mstop[0][threadIdx.x] = hpntr[ip + 1];
@@ -284,7 +282,6 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
                                 svals[c] = p;
                             }
                             c++;
-                            if (dense) gpu_dense[i * num_points + ip] = p;
 
                             current++;
                             mstop[current][threadIdx.x] = hpntr[ip + 1];
@@ -300,7 +297,7 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
             }
         }
 
-        if (!fill && !dense){
+        if (!fill){
             spntr[i+1] = c;
         }
 
