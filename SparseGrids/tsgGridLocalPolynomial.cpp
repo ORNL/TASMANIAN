@@ -458,8 +458,9 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
     delete[] monkey_count;
     delete[] monkey_tail;
 }
+void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
+// standard BLAS cannot accelerate dense matrix times a sparse vector, fallback to regular evaluate()
 
-void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); } // standard BLAS cannot accelerate dense matrix times a sparse vector
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{
     if (num_outputs < 64){

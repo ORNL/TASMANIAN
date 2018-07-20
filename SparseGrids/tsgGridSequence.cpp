@@ -571,7 +571,7 @@ void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[],
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
     double *fvalues = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, fvalues);
+    evaluateHierarchicalFunctions(x, num_x, fvalues); // this will be replaced by GPU eval function
 
     double *gpu_weights = TasCUDA::cudaSend<double>(((size_t) num_points) * ((size_t) num_x), fvalues, os);
     double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x), os);
