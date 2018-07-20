@@ -494,7 +494,7 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], st
     delete[] svals;
 }
 #else
-void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
+void GridLocalPolynomial::evaluateFastGPUcublas(const double[], double[], std::ostream*) const{}
 #endif
 // evaluation of a single x cannot be accelerated with a gpu (not parallelizable), do that on the CPU and use the GPU only for the case of many outputs
 void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[], std::ostream* os) const{ evaluateFastGPUcublas(x, y, os); }
@@ -548,6 +548,7 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
     delete[] spntr;
     delete[] svals;
 }
+
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
     int num_points = points->getNumIndexes();
@@ -565,12 +566,7 @@ void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, do
     delete[] sindx;
     delete[] spntr;
 }
-#else
-void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *) const{ evaluateBatchCPUblas(x, num_x, y); }
-#endif // Tasmanian_ENABLE_CUDA
-
 void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
-    #ifdef Tasmanian_ENABLE_CUDA
     if ((order == -1) || (order > 2)){ // GPU evaluations are availabe only for order 0, 1, and 2. Cubic will come later, but higher order will not be supported
         evaluateBatchGPUcublas(x, num_x, y, os);
         return;
@@ -641,10 +637,12 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         TasCUDA::cudaDel<double>(gpu_weights, os);
         TasCUDA::cudaDel<double>(gpu_x, os);
     }
-    #else
-    evaluateBatchGPUcublas(x, num_x, y, os);
-    #endif // Tasmanian_ENABLE_CUDA
 }
+#else
+void GridLocalPolynomial::evaluateBatchGPUcublas(const double[], int, double[], std::ostream *) const{}
+void GridLocalPolynomial::evaluateBatchGPUcuda(const double[], int, double[], std::ostream *) const{}
+#endif // Tasmanian_ENABLE_CUDA
+
 void GridLocalPolynomial::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream *os) const{
     evaluateBatchGPUcublas(x, num_x, y, os);
 }
