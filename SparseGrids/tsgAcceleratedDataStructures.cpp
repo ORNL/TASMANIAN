@@ -122,14 +122,8 @@ bool AccelerationDataGPUFull::isCompatible(TypeAcceleration acc) const{ return A
 
 #ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::loadGPUValues(size_t total_entries, const double *cpu_values){
-    gpu_values = TasCUDA::cudaSend(total_entries, cpu_values, logstream);
+    gpu_values = TasCUDA::cudaSend<double>(total_entries, cpu_values, logstream);
 }
-#else
-void AccelerationDataGPUFull::loadGPUValues(size_t, const double *){}
-#endif // Tasmanian_ENABLE_CUDA
-double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }
-
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::resetGPULoadedData(){
     if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
     if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes, logstream); gpu_nodes = 0; }
@@ -138,154 +132,69 @@ void AccelerationDataGPUFull::resetGPULoadedData(){
     if (gpu_hindx != 0){ TasCUDA::cudaDel<int>(gpu_hindx, logstream); gpu_hindx = 0; }
     if (gpu_roots != 0){ TasCUDA::cudaDel<int>(gpu_roots, logstream); gpu_roots = 0; }
 }
-#else
-void AccelerationDataGPUFull::resetGPULoadedData(){}
-#endif
-
-double* AccelerationDataGPUFull::getGPUNodes() const{ return gpu_nodes; }
-double* AccelerationDataGPUFull::getGPUSupport() const{ return gpu_support; }
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::loadGPUNodesSupport(int total_entries, const double *cpu_nodes, const double *cpu_support){
-    gpu_nodes = TasCUDA::cudaSend(total_entries, cpu_nodes, logstream);
-    gpu_support = TasCUDA::cudaSend(total_entries, cpu_support, logstream);
+    gpu_nodes   = TasCUDA::cudaSend<double>(total_entries, cpu_nodes,   logstream);
+    gpu_support = TasCUDA::cudaSend<double>(total_entries, cpu_support, logstream);
 }
-#else
-void AccelerationDataGPUFull::loadGPUNodesSupport(int, const double *, const double *){}
-#endif // Tasmanian_ENABLE_CUDA
-
-int* AccelerationDataGPUFull::getGPUpntr() const{ return gpu_hpntr; }
-int* AccelerationDataGPUFull::getGPUindx() const{ return gpu_hindx; }
-int* AccelerationDataGPUFull::getGPUroots() const{ return gpu_roots; }
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots){
     gpu_hpntr = TasCUDA::cudaSend<int>(num_points + 1, pntr, logstream);
     gpu_hindx = TasCUDA::cudaSend<int>(pntr[num_points], indx, logstream);
     gpu_roots = TasCUDA::cudaSend<int>(num_roots, roots, logstream);
 }
 #else
+void AccelerationDataGPUFull::loadGPUValues(size_t, const double *){}
+void AccelerationDataGPUFull::resetGPULoadedData(){}
+void AccelerationDataGPUFull::loadGPUNodesSupport(int, const double *, const double *){}
 void AccelerationDataGPUFull::loadGPUHierarchy(int, int*, int*, int, int*){}
-#endif
-
-
-#ifdef Tasmanian_ENABLE_CUDA
-void AccelerationDataGPUFull::cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
-    makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    double *gpu_weights = TasCUDA::cudaSend(num_points, cpu_weights, logstream);
-    double *gpu_result = TasCUDA::cudaNew<double>(num_outputs, logstream);
-
-    double alpha = 1.0, beta = 0.0;
-    cublasStatus_t stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, num_outputs, num_points,
-                                     &alpha, gpu_values, num_outputs, gpu_weights, 1, &beta, gpu_result, 1);
-    AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in DGEMV", logstream);
-
-    TasCUDA::cudaRecv<double>(num_outputs, gpu_result, cpu_result, logstream);
-
-    TasCUDA::cudaDel<double>(gpu_result, logstream);
-    TasCUDA::cudaDel<double>(gpu_weights, logstream);
-}
-#else
-void AccelerationDataGPUFull::cublasDGEMV(int, int, const double *, double *){}
 #endif // Tasmanian_ENABLE_CUDA
 
-#ifdef Tasmanian_ENABLE_CUDA
-void AccelerationDataGPUFull::cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
-    makeCuBlasHandle(); // creates a handle only if one doesn't exist
-
-    double alpha = 1.0, beta = 0.0;
-    cublasStatus_t stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points,
-                                      &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
-    AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM", logstream);
-}
-
-void AccelerationDataGPUFull::cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses){
-    makeCuSparseHandle(); // creates a handle only if one doesn't exist
-    makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    int num_nz = cpu_pntr[num_points];
-    int *gpu_pntr = TasCUDA::cudaSend(num_points + 1, cpu_pntr, logstream);
-    int *gpu_indx = TasCUDA::cudaSend(num_nz, cpu_indx, logstream);
-    double *gpu_vals = TasCUDA::cudaSend(num_nz, cpu_vals, logstream);
-    double *gpu_a = TasCUDA::cudaSend(num_points * num_outputs, values, logstream);
-    double *gpu_b = TasCUDA::cudaNew<double>(((size_t) num_points) * ((size_t) num_outputs), logstream);
-    double alpha = 1.0, beta = 0.0;
-
-    // Transpose values
-    cublasStatus_t bstat;
-    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
-                        CUBLAS_OP_T, CUBLAS_OP_T, num_points, num_outputs,
-                        &alpha, gpu_a, num_outputs, &beta, gpu_a, num_outputs, gpu_b, num_points); // gpu_b = gpu_a^T = values^T
-    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam first in DCRSMM", logstream);
-
-    // Set matrix properties
-    cusparseStatus_t stat;
-    cusparseMatDescr_t mat_desc;
-    stat = cusparseCreateMatDescr(&mat_desc);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "alloc mat_desc in DCRSMM", logstream);
-    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_TRIANGULAR);
-    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
-    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_UNIT);
-    cusparseSetMatFillMode(mat_desc, CUSPARSE_FILL_MODE_LOWER);
-
-    // Analyze matrix
-    cusparseSolveAnalysisInfo_t info;
-    cusparseCreateSolveAnalysisInfo(&info);
-    stat = cusparseDcsrsm_analysis((cusparseHandle_t) cusparseHandle,
-                                   CUSPARSE_OPERATION_NON_TRANSPOSE, num_points, num_nz,
-                                   mat_desc, gpu_vals, gpu_pntr, gpu_indx, info);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrsm_analysis in DCRSMM", logstream);
-
-    // Solve
-    stat = cusparseDcsrsm_solve((cusparseHandle_t) cusparseHandle,
-                                 CUSPARSE_OPERATION_NON_TRANSPOSE, num_points, num_outputs,
-                                 &alpha, mat_desc, gpu_vals, gpu_pntr, gpu_indx, info,
-                                 gpu_b, num_points, gpu_a, num_points);
-    AccelerationMeta::cusparseCheckError((void*) &stat, "cusparseDcsrsm_solve in DCRSMM", logstream); // gpu_a = S * gpu_b = s^{-T} values^T
-
-    // transpose back
-    bstat = cublasDgeam((cublasHandle_t) cublasHandle,
-                        CUBLAS_OP_T, CUBLAS_OP_T, num_outputs, num_points,
-                        &alpha, gpu_a, num_points, &beta, gpu_a, num_points, gpu_b, num_outputs); // gpu_b = gpu_a^T = values * s^{-1}
-    AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam second in DCRSMM", logstream);
-
-    TasCUDA::cudaRecv<double>(num_points * num_outputs, gpu_b, surpluses, logstream);
-
-    cusparseDestroyMatDescr(mat_desc);
-
-    TasCUDA::cudaDel<double>(gpu_a, logstream);
-    TasCUDA::cudaDel<double>(gpu_b, logstream);
-    TasCUDA::cudaDel<double>(gpu_vals, logstream);
-    TasCUDA::cudaDel<int>(gpu_indx, logstream);
-    TasCUDA::cudaDel<int>(gpu_pntr, logstream);
-}
-#else
-void AccelerationDataGPUFull::cublasDGEMM(int, int, int, const double *, double *){}
-void AccelerationDataGPUFull::cusparseDCRSMM(int, int, const int*, const int*, const double*, const double*, double*){}
-#endif // Tasmanian_ENABLE_CUDA
+double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }
+double* AccelerationDataGPUFull::getGPUNodes() const{ return gpu_nodes; }
+double* AccelerationDataGPUFull::getGPUSupport() const{ return gpu_support; }
+int* AccelerationDataGPUFull::getGPUpntr() const{ return gpu_hpntr; }
+int* AccelerationDataGPUFull::getGPUindx() const{ return gpu_hindx; }
+int* AccelerationDataGPUFull::getGPUroots() const{ return gpu_roots; }
 
 #ifdef Tasmanian_ENABLE_CUDA
+void AccelerationDataGPUFull::cublasDGEMM(bool cpu_pointers, int num_outputs, int num_x, int num_points, const double weights[], double *result){
+    makeCuBlasHandle(); // creates a handle only if one doesn't exist
+
+    const double *gpu_weights = 0;
+    double *gpu_result = 0, *gpu_temp = 0;
+
+    gpu_weights = (cpu_pointers) ? TasCUDA::cudaSendConst<double>(num_x * num_points, weights, gpu_temp, logstream) : weights;
+    gpu_result  = (cpu_pointers) ? TasCUDA::cudaNew<double>(num_outputs * num_x, logstream) : result;
+
+    double alpha = 1.0, beta = 0.0;
+    if (num_x > 1){ // matrix-matrix mode
+        cublasStatus_t stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, num_outputs, num_x, num_points,
+                                        &alpha, gpu_values, num_outputs, gpu_weights, num_points, &beta, gpu_result, num_outputs);
+        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM", logstream);
+    }else{ // matrix-vector mode
+        cublasStatus_t stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, num_outputs, num_points,
+                                        &alpha, gpu_values, num_outputs, gpu_weights, 1, &beta, gpu_result, 1);
+        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in DGEMV", logstream);
+    }
+
+    if (cpu_pointers){
+        TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, result, logstream);
+        TasCUDA::cudaDel<double>(gpu_result, logstream);
+        TasCUDA::cudaDel<double>(gpu_temp, logstream);
+    }
+}
 void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result){
     makeCuSparseHandle(); // creates a handle only if one doesn't exist
     makeCuBlasHandle(); // creates a handle only if one doesn't exist
-    const int *gpu_pntr = 0, *gpu_indx = 0;
-    const double *gpu_vals = 0;
     int *tempp = 0, *tempi = 0;
-    double *tempv = 0, *tempr = 0;
-    double *gpu_result = 0;
-    if (cpu_pointers){
-        num_nz = spntr[num_x];
-        tempp = TasCUDA::cudaSend<int>(num_x + 1, spntr, logstream);
-        gpu_pntr = tempp;
-        tempi = TasCUDA::cudaSend<int>(num_nz, sindx, logstream);
-        gpu_indx = tempi;
-        tempv = TasCUDA::cudaSend<double>(num_nz, svals, logstream);
-        gpu_vals = tempv;
-        tempr = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs), logstream);
-        gpu_result = tempr;
-    }else{
-        gpu_pntr = spntr;
-        gpu_indx = sindx;
-        gpu_vals = svals;
-        gpu_result = result;
-    }
+    double *tempv = 0;
+
+    if (cpu_pointers) num_nz = spntr[num_x];
+    const int *gpu_pntr    = (cpu_pointers) ? TasCUDA::cudaSendConst<int>(num_x + 1, spntr, tempp, logstream) : spntr;
+    const int *gpu_indx    = (cpu_pointers) ? TasCUDA::cudaSendConst<int>(num_nz, sindx, tempi, logstream)    : sindx;
+    const double *gpu_vals = (cpu_pointers) ? TasCUDA::cudaSendConst<double>(num_nz, svals, tempv, logstream) : svals;
+
+    double *gpu_result = (cpu_pointers) ? TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs), logstream) : result;
+
     double *gpu_result_t = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs), logstream);
 
     // call cusparse
@@ -313,10 +222,11 @@ void AccelerationDataGPUFull::cusparseMatmul(bool cpu_pointers, int num_points, 
     AccelerationMeta::cublasCheckError((void*) &bstat, "cublasDgeam in Matmul", logstream);
 
     TasCUDA::cudaDel<double>(gpu_result_t, logstream);
-    if (cpu_pointers){
-        TasCUDA::cudaRecv<double>(num_x * num_outputs, gpu_result, result, logstream);
 
-        TasCUDA::cudaDel<double>(tempr, logstream);
+    if (cpu_pointers){
+        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) num_outputs), gpu_result, result, logstream);
+
+        TasCUDA::cudaDel<double>(gpu_result, logstream);
         TasCUDA::cudaDel<double>(tempv, logstream);
         TasCUDA::cudaDel<int>(tempi, logstream);
         TasCUDA::cudaDel<int>(tempp, logstream);
@@ -364,39 +274,40 @@ void AccelerationDataGPUFull::cusparseMatveci(int num_outputs, int num_points, i
     if (gpu_buffer != 0) TasCUDA::cudaDel<double>(gpu_buffer, logstream);
 }
 #else
+void AccelerationDataGPUFull::cublasDGEMM(bool, int, int, int, const double *, double *){}
 void AccelerationDataGPUFull::cusparseMatmul(bool, int, int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatvec(int, int, const int*, const int*, const double*, int, double*){}
 void AccelerationDataGPUFull::cusparseMatveci(int, int, int, const int*, const double*, double*){}
-#endif // defined Tasmanian_ENABLE_CUDA
+#endif // Tasmanian_ENABLE_CUDA
 
 #ifdef Tasmanian_ENABLE_MAGMA
-void AccelerationDataGPUFull::magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result){
+void AccelerationDataGPUFull::magmaCudaDGEMM(bool cpu_pointers, int gpuID, int num_outputs, int num_x, int num_points, const double weights[], double *result){
     initializeMagma(gpuID); // calls magma_init(), but only if not called before by this object
+
+    const double *gpu_weights = 0;
+    double *gpu_result = 0, *gpu_temp = 0;
+
+    gpu_weights = (cpu_pointers) ? TasCUDA::cudaSendConst<double>(num_x * num_points, weights, gpu_temp, logstream) : weights;
+    gpu_result  = (cpu_pointers) ? TasCUDA::cudaNew<double>(num_outputs * num_x, logstream) : result;
 
     double alpha = 1.0, beta = 0.0;
     magma_trans_t noTranspose = MagmaNoTrans;
-    magma_dgemm(noTranspose, noTranspose, num_outputs, num_x, num_points, alpha, gpu_values, num_outputs,
-                gpu_weights, num_points, beta, gpu_result, num_outputs, (magma_queue_t) magmaCudaQueue);
-}
-void AccelerationDataGPUFull::magmaCudaDGEMV(int gpuID, int num_outputs, int num_points, const double cpu_weights[], double *cpu_result){
-    initializeMagma(gpuID); // calls magma_init(), but only if not called before by this object
+    if (num_x > 1){ // matrix-matrix mode
+        magma_dgemm(noTranspose, noTranspose, num_outputs, num_x, num_points, alpha, gpu_values, num_outputs,
+                    gpu_weights, num_points, beta, gpu_result, num_outputs, (magma_queue_t) magmaCudaQueue);
+    }else{ // matrix-vector mode
+        magma_dgemv(noTranspose, num_outputs, num_points, alpha, gpu_values, num_outputs,
+                    gpu_weights, 1, beta, gpu_result, 1, (magma_queue_t) magmaCudaQueue);
+    }
 
-    double *gpu_weights = TasCUDA::cudaSend<double>(num_points, cpu_weights, logstream);
-    double *gpu_result = TasCUDA::cudaNew<double>(num_outputs, logstream);
-
-    double alpha = 1.0, beta = 0.0;
-    magma_trans_t noTranspose = MagmaNoTrans;
-    magma_dgemv(noTranspose, num_outputs, num_points, alpha, gpu_values, num_outputs,
-                gpu_weights, 1, beta, gpu_result, 1, (magma_queue_t) magmaCudaQueue);
-
-    TasCUDA::cudaRecv<double>(num_outputs, gpu_result, cpu_result, logstream);
-
-    TasCUDA::cudaDel<double>(gpu_result, logstream);
-    TasCUDA::cudaDel<double>(gpu_weights, logstream);
+    if (cpu_pointers){
+        TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, result, logstream);
+        TasCUDA::cudaDel<double>(gpu_result, logstream);
+        TasCUDA::cudaDel<double>(gpu_temp, logstream);
+    }
 }
 #else
-void AccelerationDataGPUFull::magmaCudaDGEMM(int, int, int, int, const double[], double*){}
-void AccelerationDataGPUFull::magmaCudaDGEMV(int, int, int, const double[], double*){}
+void AccelerationDataGPUFull::magmaCudaDGEMM(bool, int, int, int, int, const double[], double*){}
 #endif
 
 
@@ -472,19 +383,13 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
     // accel_gpu_default should always point to the potentially "best" option (currently MAGMA)
     if (accel == accel_gpu_default) accel = accel_gpu_magma;
     #if !defined(Tasmanian_ENABLE_CUDA) || !defined(Tasmanian_ENABLE_MAGMA) || !defined(Tasmanian_ENABLE_BLAS)
-    // if any of the 4 acceleration modes is missing, then add a switch statement to guard against setting that mode
+    // if any of the 3 acceleration modes is missing, then add a switch statement to guard against setting that mode
     switch(accel){
         #ifndef Tasmanian_ENABLE_CUDA
         // if CUDA is missing: just use the CPU
         case accel_gpu_cublas:
-            #if defined(Tasmanian_ENABLE_BLAS)
-            accel = accel_cpu_blas;
-            #else
-            accel = accel_none;
-            #endif
-            break;
         case accel_gpu_cuda:
-            #if defined(Tasmanian_ENABLE_BLAS)
+            #ifdef Tasmanian_ENABLE_BLAS
             accel = accel_cpu_blas;
             #else
             accel = accel_none;
@@ -494,7 +399,7 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
         #ifndef Tasmanian_ENABLE_MAGMA
         // MAGMA tries to use CUDA kernels with magma linear algebra, this CUDA is the next best thing
         case accel_gpu_magma:
-            #if defined(Tasmanian_ENABLE_CUDA)
+            #ifdef Tasmanian_ENABLE_CUDA
             accel = accel_gpu_cuda;
             #elif defined(Tasmanian_ENABLE_BLAS)
             accel = accel_cpu_blas;
@@ -525,11 +430,6 @@ void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::o
         }
     }
 }
-#else
-void AccelerationMeta::cudaCheckError(void *, const char *, std::ostream *){}
-#endif // Tasmanian_ENABLE_CUDA
-
-#ifdef Tasmanian_ENABLE_CUDA
 void AccelerationMeta::cublasCheckError(void *cublasStatus, const char *info, std::ostream *os){
     if (*((cublasStatus_t*) cublasStatus) != CUBLAS_STATUS_SUCCESS){
         if (os != 0){
@@ -583,6 +483,7 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
     }
 }
 #else
+void AccelerationMeta::cudaCheckError(void *, const char *, std::ostream *){}
 void AccelerationMeta::cublasCheckError(void *, const char *, std::ostream *){}
 void AccelerationMeta::cusparseCheckError(void *, const char *, std::ostream *){}
 #endif // Tasmanian_ENABLE_CUDA
@@ -606,8 +507,8 @@ AccelerationDomainTransform::AccelerationDomainTransform(int num_dimensions, con
         c = (c % num_dimensions);
     }
 
-    gpu_trans_a = TasCUDA::cudaSend(padded_size, rate, logstream);
-    gpu_trans_b = TasCUDA::cudaSend(padded_size, shift, logstream);
+    gpu_trans_a = TasCUDA::cudaSend<double>(padded_size, rate, logstream);
+    gpu_trans_b = TasCUDA::cudaSend<double>(padded_size, shift, logstream);
 
     delete[] rate;
     delete[] shift;

@@ -37,24 +37,8 @@
 
 namespace TasGrid{
 
-// sparse triangular solve using cuda kernel, does not out-perform the CPU since the values have to be moved from host to device memory
-// sparse solves are also inefficient when using cuSparse
-// double precision - triangular - general - column sparse - solve = d3gecss, probably too cryptic
-__global__
-void tasgpu_d3gecss(int N, int M, int *order, int top_level, const int *gpuBpntr, const int *gpuBindx, const double *gpuBvals, double *gpuX, int k_stride){
-    int k = blockIdx.x*blockDim.x + threadIdx.x;
-    if (k < N){
-        for(int o=0; o<M; o++){
-            int i = order[o];
-            double sum = 0.0;
-            for(int j=gpuBpntr[i]; j<gpuBpntr[i+1]; j++){
-                sum += gpuBvals[j] * gpuX[gpuBindx[j] * N + k];
-            }
-            gpuX[i*N + k] -= sum;
-        }
-        k += k_stride;
-    }
-}
+// NOTE: the kernels here were used for testing and debugging (and place holders before using the MAGMA library)
+//       presently, none of the templates are instantiated unless __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ is defined in tsgAcceleratedDataStructures.hpp (TasCUDA namespace)
 
 // only works with SHORT = 32 and BLOCK = 96
 // using blocks, block in C has dims BLOCK by BLOCK = 3 * SHORT by 3 * SHORT,

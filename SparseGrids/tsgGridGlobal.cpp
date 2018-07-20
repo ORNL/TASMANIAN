@@ -684,15 +684,16 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
     delete[] w;
 }
 
+#ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateFastCPUblas(const double x[], double y[]) const{
-    #ifdef Tasmanian_ENABLE_BLAS
     double *w = getInterpolationWeights(x);
     TasBLAS::dgemv(num_outputs, points->getNumIndexes(), values->getValues(0), w, y);
     delete[] w;
-    #else
-    evaluate(x, y);
-    #endif // Tasmanian_ENABLE_BLAS
 }
+#else
+void GridGlobal::evaluateFastCPUblas(const double[], double[]) const{}
+#endif // Tasmanian_ENABLE_BLAS
+
 #ifdef Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{
     makeCheckAccelerationData(accel_gpu_cublas, os);
@@ -700,12 +701,12 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostrea
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     double *weights = getInterpolationWeights(x);
 
-    gpu->cublasDGEMV(num_outputs, points->getNumIndexes(), weights, y);
+    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), weights, y);
 
     delete[] weights;
 }
 #else
-void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostream *) const{ evaluateFastCPUblas(x, y); }
+void GridGlobal::evaluateFastGPUcublas(const double[], double[], std::ostream *) const{}
 #endif // Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{
     evaluateFastGPUcublas(x, y, os);
@@ -718,14 +719,12 @@ void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[], s
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     double *weights = getInterpolationWeights(x);
 
-    gpu->magmaCudaDGEMV(gpuID, num_outputs, points->getNumIndexes(), weights, y);
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), weights, y);
 
     delete[] weights;
 }
 #else
-void GridGlobal::evaluateFastGPUmagma(int, const double x[], double y[], std::ostream *os) const{
-    evaluateFastGPUcublas(x, y, os);
-}
+void GridGlobal::evaluateFastGPUmagma(int, const double[], double[], std::ostream *) const{}
 #endif // Tasmanian_ENABLE_MAGMA
 
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
@@ -735,8 +734,8 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
     }
 }
 
+#ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    #ifdef Tasmanian_ENABLE_BLAS
     int num_points = points->getNumIndexes();
     double *weights = new double[num_points * num_x];
     #pragma omp parallel for
@@ -747,10 +746,11 @@ void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) c
     TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values->getValues(0), weights, 0.0, y);
 
     delete[] weights;
-    #else
-    evaluateBatch(x, num_x, y);
-    #endif // Tasmanian_ENABLE_BLAS
 }
+#else
+void GridGlobal::evaluateBatchCPUblas(const double[], int, double[]) const{}
+#endif // Tasmanian_ENABLE_BLAS
+
 #ifdef Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
     int num_points = points->getNumIndexes();
@@ -760,20 +760,12 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[],
     double *weights = new double[((size_t) num_points) * ((size_t) num_x)];
     evaluateHierarchicalFunctions(x, num_x, weights);
 
-    double *gpu_weights = TasCUDA::cudaSend(((size_t) num_points) * ((size_t) num_x), weights, os);
-    double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x), os);
-
-    gpu->cublasDGEMM(num_outputs, num_x, num_points, gpu_weights, gpu_result);
-
-    TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, y, os);
-
-    TasCUDA::cudaDel<double>(gpu_result, os);
-    TasCUDA::cudaDel<double>(gpu_weights, os);
+    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, weights, y);
 
     delete[] weights;
 }
 #else
-void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *) const{ evaluateBatchCPUblas(x, num_x, y); }
+void GridGlobal::evaluateBatchGPUcublas(const double[], int, double[], std::ostream *) const{}
 #endif // Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
     evaluateBatchGPUcublas(x, num_x, y, os);
@@ -788,22 +780,12 @@ void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, d
     double *weights = new double[((size_t) num_points) * ((size_t) num_x)];
     evaluateHierarchicalFunctions(x, num_x, weights);
 
-    double *gpu_weights = TasCUDA::cudaSend(((size_t) num_points) * ((size_t) num_x), weights, os);
-    double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x), os);
-
-    gpu->magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, gpu_weights, gpu_result);
-
-    TasCUDA::cudaRecv<double>(num_outputs * num_x, gpu_result, y, os);
-
-    TasCUDA::cudaDel<double>(gpu_result, os);
-    TasCUDA::cudaDel<double>(gpu_weights, os);
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, weights, y);
 
     delete[] weights;
 }
 #else
-void GridGlobal::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream *os) const{
-    evaluateBatchGPUcublas(x, num_x, y, os); // under the new acceleration fallback scheme, this should never get called
-}
+void GridGlobal::evaluateBatchGPUmagma(int, const double[], int, double[], std::ostream *) const{}
 #endif // Tasmanian_ENABLE_MAGMA
 
 #ifdef Tasmanian_ENABLE_CUDA

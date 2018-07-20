@@ -45,46 +45,54 @@ public:
     virtual void resetGPULoadedData() = 0;
 };
 
-// wrapper around cublas handle and also that stores onto the gpu values, points, etc
+// wrapper around cublas and cusparse handles, and magma queue
+// it also stores the values and data needed for cuda evaluations
+// (points, support, etc.)
 class AccelerationDataGPUFull : public BaseAccelerationData{
 public:
     AccelerationDataGPUFull();
     ~AccelerationDataGPUFull();
 
     void setLogStream(std::ostream *os);
+    // for GPU error messages/codes
 
     bool isCompatible(TypeAcceleration acc) const;
+    // when setting a new acceleration, check if we need to also set a new object or can reuse this one
 
     double* getGPUValues() const;
     void loadGPUValues(size_t total_entries, const double *cpu_values);
+    // either values (global grid) or coefficients (sequence, local polynomial, etc.)
 
     double* getGPUNodes() const;
     double* getGPUSupport() const;
     void loadGPUNodesSupport(int total_entries, const double *cpu_nodes, const double *cpu_support);
+    // nodes and support for local polynomial evaluations (support also encodes order for special cases)
 
     int* getGPUpntr() const;
     int* getGPUindx() const;
     int* getGPUroots() const;
     void loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots);
+    // collection of trees to be used in CUDA evaluations of local polynomial grids
 
     void resetGPULoadedData();
+    // deletes nodes, values, and hierarchy
 
-    void cublasDGEMV(int num_outputs, int num_points, const double cpu_weights[], double *cpu_result);
-    void cublasDGEMM(int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
+    void cublasDGEMM(bool cpu_pointers, int num_outputs, int num_x, int num_points, const double weights[], double *result);
+    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for num_x == 1) product using cublas, the matrix is the getGPUValues()
 
-    // cusparseMatmul multiplies, cusparseDCRSMM solves for the coefficients
     void cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
-    // sparse matrix times a vector, makes sense only if the matrix already sits on the gpu
-    // assumes num_points == 1 and vectors live on the gpu
+    // sparse matrix times dense matrix, dense matrix is getGPUValues(), sparse matrix can be given on either cpu or gpu
+
     void cusparseMatvec(int num_points, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
-    // dense matrix A times a sparse vector defined by sindx and svals
-    // A is num_outputs by num_points, result is num_outputs
+    // sparse matrix times a dense vector, makes sense only if the matrix already sits on the gpu (hence no cpu_pointers flag)
+    // e.g., assumes num_points == 1, the vectors is getGPUValues(), and the sparse matrix was computed on the GPU
+
     void cusparseMatveci(int num_outputs, int num_points, int num_nz, const int *sindx, const double *svals, double *result);
+    // dense matrix times a sparse vector defined by sindx and svals, currently the sparse vector can only be computed on the cpu
+    // the dense matrix is getGPUValues()
 
-    void cusparseDCRSMM(int num_points, int num_outputs, const int *cpu_pntr, const int *cpu_indx, const double *cpu_vals, const double *values, double *surpluses);
-
-    void magmaCudaDGEMM(int gpuID, int num_outputs, int num_x, int num_points, const double gpu_weights[], double *gpu_result); // multiplies by the gpu_values
-    void magmaCudaDGEMV(int gpuID, int num_outputs, int num_points, const double cpu_weights[], double *cpu_result); // multiplies by the gpu_values
+    void magmaCudaDGEMM(bool cpu_pointers, int gpuID, int num_outputs, int num_x, int num_points, const double weights[], double *result);
+    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for num_x == 1) product using magma, the matrix is the getGPUValues()
 
 protected:
     void makeCuBlasHandle();
@@ -113,11 +121,6 @@ private:
 
 // namespace realized in tsgCudaKernels.cu, each function corresponds to a CUDA kernel for evaluations of basis matrix, domain transform, or fallback linear algebra
 namespace TasCUDA{
-    // matrix solve double-precision (d), level 3, general (ge), column compressed sparse (cs) (solve): C = A * B
-    // A is N by M, B is M by M, C is N by M
-    // A and C are stored in column format, B is sparse column compresses and unit triangular (the diagonal entry is no include in the pattern)
-    void d3gecss(int N, int M, int *levels, int top_level, const int *cpuBpntr, const int *cpuBindx, const double *cpuBvals, const double *cpuA, double *cpuC, std::ostream *os);
-
     // convert transformed points to the canonical domain, all inputs live on the GPU
     void dtrans2can(int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b, const double *gpu_x_transformed, double *gpu_x_canonical);
 
@@ -131,23 +134,31 @@ namespace TasCUDA{
     // evaluate sequence grids (not done yet)
     //void devalseq(int dims, int num_x, int num_points, int num_nodes, const double *gpu_x, const double *gpu_nodes, const double *gpu_coeff, const int *points, double *gpu_dense);
 
+    // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
+    #ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__
+    // CUDA kernels that provide essentially the same functionality as cuBlas and MAGMA, but nowhere near as optimal
+    // those functions should not be used in a Release or production builds
+    // the kernels are useful because they are simple and do not depend on potentially poorly documented 3d party library
+    // since the kernels are useful for testing and some debugging, the code should not be deleted (for now), but also don't waste time compiling in most cases
+
+    void cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c);
     // lazy cuda dgemm, nowhere near as powerful as cuBlas, but does not depend on cuBlas
     // gpu_a is M by K, gpu_b is K by N, gpu_c is M by N, all in column-major format
     // on exit gpu_c = gpu_a * gpu_b
-    void cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c);
 
+    void cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C);
     // lazy cuda sparse dgemm, less efficient (especially for large N), but more memory conservative then cusparse as there is no need for a transpose
     // C is M x N, B is K x N (K is max(gpu_sindx)), both are given in row-major format, num_nz/spntr/sindx/svals describe row compressed A which is M by K
     // on exit C = A * B
-    void cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C);
 
+    void cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, const int *indx, const double *vals, double *C);
     // dense matrix A (column major) times a sparse vector defiend by num_nz, indx, and vals
     // A is M by N, C is M by 1,
     // on exit C = A * (indx, vals)
-    void cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, const int *indx, const double *vals, double *C);
 
-    // converts a sparse matrix to a dense representation (all data sits on the gpu and is pre-allocated)
     void convert_sparse_to_dense(int num_rows, int num_columns, const int *gpu_pntr, const int *gpu_indx, const double *gpu_vals, double *gpu_destination);
+    // converts a sparse matrix to a dense representation (all data sits on the gpu and is pre-allocated)
+    #endif
 }
 
 // generic error checking function and types I/O

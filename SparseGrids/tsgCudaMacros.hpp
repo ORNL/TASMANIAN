@@ -70,6 +70,14 @@ namespace TasCUDA{
     }
 
     template <typename T>
+    inline const T* cudaSendConst(size_t num_entries, const T *cpu_array, T* &gpu_temp_array, std::ostream *os){
+        // takes a const cpu_array and returns a newly allocated const gpu array
+        // gpu_temp_array is an alias that can be used to delete the const gpu arrray
+        gpu_temp_array = cudaSend<T>(num_entries, cpu_array, os);
+        return gpu_temp_array;
+    }
+
+    template <typename T>
     inline void cudaRecv(size_t num_entries, const T *gpu_array, T *cpu_array, std::ostream *os){
         cudaError_t cudaStat = cudaMemcpy(cpu_array, gpu_array, num_entries * sizeof(T), cudaMemcpyDeviceToHost);
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaRecv(type, type)", os);
@@ -80,7 +88,6 @@ namespace TasCUDA{
         cudaError_t cudaStat = cudaFree(gpu_array);
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaDel(type)", os);
     }
-
 }
 #endif
 

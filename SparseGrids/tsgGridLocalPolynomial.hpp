@@ -125,8 +125,6 @@ protected:
     void buildTree();
 
     void recomputeSurpluses();
-    void recomputeSurplusesGPUcublas();
-    void recomputeSurplusesGPUcuda();
 
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, int &num_blocks, int &num_last, int &stripe_size,
                                     int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
