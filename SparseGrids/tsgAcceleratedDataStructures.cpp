@@ -122,7 +122,7 @@ bool AccelerationDataGPUFull::isCompatible(TypeAcceleration acc) const{ return A
 
 #ifdef Tasmanian_ENABLE_CUDA
 void AccelerationDataGPUFull::loadGPUValues(size_t total_entries, const double *cpu_values){
-    gpu_values = TasCUDA::cudaSend(total_entries, cpu_values, logstream);
+    gpu_values = TasCUDA::cudaSend<double>(total_entries, cpu_values, logstream);
 }
 void AccelerationDataGPUFull::resetGPULoadedData(){
     if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
@@ -507,8 +507,8 @@ AccelerationDomainTransform::AccelerationDomainTransform(int num_dimensions, con
         c = (c % num_dimensions);
     }
 
-    gpu_trans_a = TasCUDA::cudaSend(padded_size, rate, logstream);
-    gpu_trans_b = TasCUDA::cudaSend(padded_size, shift, logstream);
+    gpu_trans_a = TasCUDA::cudaSend<double>(padded_size, rate, logstream);
+    gpu_trans_b = TasCUDA::cudaSend<double>(padded_size, shift, logstream);
 
     delete[] rate;
     delete[] shift;
