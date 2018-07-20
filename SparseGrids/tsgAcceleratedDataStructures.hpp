@@ -84,11 +84,11 @@ public:
     // sparse matrix times dense matrix, dense matrix is getGPUValues(), sparse matrix can be given on either cpu or gpu
 
     void cusparseMatvec(int num_points, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
-    // sparse matrix times a dense vector, makes sense only if the matrix already sits on the gpu
+    // sparse matrix times a dense vector, makes sense only if the matrix already sits on the gpu (hence no cpu_pointers flag)
     // e.g., assumes num_points == 1, the vectors is getGPUValues(), and the sparse matrix was computed on the GPU
 
     void cusparseMatveci(int num_outputs, int num_points, int num_nz, const int *sindx, const double *svals, double *result);
-    // dense matrix times a sparse vector defined by sindx and svals
+    // dense matrix times a sparse vector defined by sindx and svals, currently the sparse vector can only be computed on the cpu
     // the dense matrix is getGPUValues()
 
     void magmaCudaDGEMM(bool cpu_pointers, int gpuID, int num_outputs, int num_x, int num_points, const double weights[], double *result);
