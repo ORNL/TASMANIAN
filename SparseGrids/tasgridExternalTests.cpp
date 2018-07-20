@@ -1873,11 +1873,15 @@ void loadGridValues(TasmanianSparseGrid *grid){ // for benchmark
 void ExternalTester::benchmark(int argc, const char **argv){
     if ((argc < 3) || (strcmp(argv[2],"help") == 0)){
         cout << "Accepted benchmarks:" << endl;
-        cout << "./tasgrid -bench alpha <dims> <outs> <depth> <type> <rule> <batch size> <iterations> <gpu>" << endl;
+        cout << "./tasgrid -bench alpha <dims> <outs> <depth> <type> <rule> <batch size> <iterations> <gpu> <use fast>" << endl;
         return;
     }
     if (strcmp(argv[2],"alpha") == 0){
-        cout << "./tasgrid -bench alpha <dims> <outs> <depth> <type> <rule> <batch size> <iterations> <gpu>" << endl;
+        if (argc > 11){
+            cout << "./tasgrid -bench alpha <dims> <outs> <depth> <type> <rule> <batch size> <iterations> <gpu> fast-eval" << endl;
+        }else{
+            cout << "./tasgrid -bench alpha <dims> <outs> <depth> <type> <rule> <batch size> <iterations> <gpu> batch-eval" << endl;
+        }
         cout << "Compare acceleration: if batch size is 0 use surpluses, otherwise use evaluateBatch()";
         if (argc < 11){ cout << endl; return; }
         int dims = atoi(argv[3]), outs = atoi(argv[4]), depth = atoi(argv[5]);
@@ -1907,13 +1911,13 @@ void ExternalTester::benchmark(int argc, const char **argv){
         cout << endl;
         cout << setw(width) << "num outputs";
         TypeAcceleration cpu_tests[2] = {accel_none, accel_cpu_blas};
-        TypeAcceleration gpu_tests[3] = {accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda};
+        TypeAcceleration gpu_tests[4] = {accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma};
         TypeAcceleration *tests;
         int num_tests;
         if (gpu > -1){
-            num_tests = 3;
+            num_tests = 4;
             tests = gpu_tests;
-            cout << setw(width) << "cpu_blas" << setw(width) << "gpu_cublas" << setw(width) << "gpu_cuda" << endl;
+            cout << setw(width) << "cpu_blas" << setw(width) << "gpu_cublas" << setw(width) << "gpu_cuda" << setw(width) << "gpu_magma" << endl;
         }else{
             num_tests = 2;
             tests = cpu_tests;
@@ -1927,6 +1931,8 @@ void ExternalTester::benchmark(int argc, const char **argv){
             for(int s=0; s<7; s++){
                 if (OneDimensionalMeta::isLocalPolynomial(r)){
                     grid->makeLocalPolynomialGrid(dims, outs, depth, 2, r);
+                    //grid->favorSparseAlgorithmForLocalPolynomials(true); // use sparse or dense algorithm, defaults to auto
+                    //grid->favorSparseAlgorithmForLocalPolynomials(false);
                 }else if (OneDimensionalMeta::isSequence(r)){
                     grid->makeSequenceGrid(dims, outs, depth, d, r);
                 }else{
@@ -1942,47 +1948,25 @@ void ExternalTester::benchmark(int argc, const char **argv){
                     if ((gpu > -1) && (t > 0)) grid->setGPUID(gpu);
                     grid->evaluateFast(x, y);
                     start = gettime();
-                    if ((num_tests == 2) || (t > -1))
-                    for(int i=0; i<num_runs; i++){
-                        grid->evaluateBatch(x, num_x, y);
+                    //if ((num_tests == 2) || (t > -1))
+                    if (argc == 11){
+                        for(int i=0; i<num_runs; i++){
+                            grid->evaluateBatch(x, num_x, y);
+                        }
+                    }else{
+                        for(int i=0; i<num_runs; i++){
+                            for(int j=0; j<num_x; j++){
+                                grid->evaluateFast(&(x[j*dims]), &(y[j*outs]));
+                            }
+                        }
                     }
                     cout << setw(width) << ((int) ((gettime() - start) * 1000.0));
                 }
                 outs *= 2;
-                cout << setw(width+5) << "miliseconds" << endl;
+                cout << setw(width+5) << "milliseconds" << endl;
                 delete[] y;
             }
             delete[] x;
-        }else{ // compare compute surpluses
-            double *v = new double[np * outs * 16];
-            cout << std::scientific;
-            cout.precision(5);
-            setRandomX(np * outs * 16, v);
-            for(int s=0; s<5; s++){
-                if (OneDimensionalMeta::isLocalPolynomial(r)){
-                    grid->makeLocalPolynomialGrid(dims, outs, depth, 2, r);
-                }else if (OneDimensionalMeta::isSequence(r)){
-                    grid->makeSequenceGrid(dims, outs, depth, d, r);
-                }else{
-                    grid->makeGlobalGrid(dims, outs, depth, d, r);
-                }
-                cout << setw(width) << outs;
-                double start;
-
-                for(int t=0; t<num_tests; t++){
-                    grid->enableAcceleration(tests[t]);
-                    if ((gpu > -1) && (t > 0)) grid->setGPUID(gpu);
-                    start = gettime();
-                    if ((num_tests == 2) || (t > 0) || (num_x == 0))
-                    for(int i=0; i<num_runs; i++){
-                        grid->loadNeededPoints(v);
-                    }
-                    cout << setw(width) << ((int) ((gettime() - start) * 1000.0));
-                }
-                outs *= 2;
-                cout << setw(width+5) << "miliseconds" << endl;
-            }
-            delete[] v;
         }
     }
 }
