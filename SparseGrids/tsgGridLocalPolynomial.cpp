@@ -40,10 +40,10 @@ namespace TasGrid{
 
 GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0),
                          surpluses(0), points(0), needed(0), values(0), parents(0), num_roots(0), roots(0), pntr(0), indx(0), rule(0),
-                         accel(0), backend_flavor(flavor_auto), force_sparse(false)  {}
+                         accel(0), sparse_affinity(0)  {}
 GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0),
                          surpluses(0), points(0), needed(0), values(0), parents(0), num_roots(0), roots(0), pntr(0), indx(0), rule(0),
-                         accel(0), backend_flavor(flavor_auto), force_sparse(false)
+                         accel(0), sparse_affinity(0)
 {
     copyGrid(&pwpoly);
 }
@@ -63,8 +63,7 @@ void GridLocalPolynomial::reset(bool clear_rule){
     if (pntr != 0){ delete[] pntr;  pntr = 0; }
     if (indx != 0){ delete[] indx;  indx = 0; }
     if (clear_rule){ rule = 0; order = 1; }
-    backend_flavor = flavor_auto;
-    force_sparse = false;
+    sparse_affinity = 0;
 }
 
 void GridLocalPolynomial::write(std::ofstream &ofs) const{
@@ -508,7 +507,7 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
     }
 }
 void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    if (force_sparse || (((backend_flavor == flavor_auto) || (backend_flavor == flavor_sparse_sparse)) && (num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS))){
+    if ((sparse_affinity == 1) || ((sparse_affinity == 0) && (num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS))){
         evaluateBatch(x, num_x, y);
         return;
     }
@@ -521,7 +520,7 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
     double nnz = (double) spntr[num_x];
     double total_size = ((double) num_x) * ((double) num_points);
 
-    if ((backend_flavor == flavor_sparse_dense) || (backend_flavor == flavor_dense_dense) || ((backend_flavor == flavor_auto) && (nnz / total_size > 0.1))){
+    if ((sparse_affinity == -1) || ((sparse_affinity == 0) && (nnz / total_size > 0.1))){
         // potentially wastes a lot of memory
         double *A = new double[((size_t) num_x) * ((size_t) num_points)];
         std::fill(A, A + ((size_t) num_x) * ((size_t) num_points), 0.0);
@@ -578,13 +577,12 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
     checkAccelerationGPUNodes();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
-    TypeLocalPolynomialBackendFlavor flv = backend_flavor;
-    if (backend_flavor == flavor_auto){
-        flv = (num_points > 1024) ? flavor_sparse_sparse : flavor_dense_dense;
+    bool useDense = (sparse_affinity == -1);
+    if (sparse_affinity == 0){
+        useDense = (num_points <= 1024);
     }
-    if (force_sparse) flv = flavor_sparse_sparse;
-    //flv = flavor_sparse_dense;
-    if (flv == flavor_dense_dense){
+
+    if (useDense){
         double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
         double *gpu_weights = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) points->getNumIndexes()), os);
         double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) values->getNumOutputs()), os);
@@ -598,7 +596,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         TasCUDA::cudaDel<double>(gpu_result, os);
         TasCUDA::cudaDel<double>(gpu_weights, os);
         TasCUDA::cudaDel<double>(gpu_x, os);
-    }else if (flv == flavor_sparse_sparse){
+    }else if (!useDense){
         double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
         double *gpu_y = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs), os);
 
@@ -620,7 +618,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         TasCUDA::cudaDel<double>(gpu_svals, os);
         TasCUDA::cudaDel<double>(gpu_y, os);
         TasCUDA::cudaDel<double>(gpu_x, os);
-    }else if (flv == flavor_sparse_dense){
+    }else{
         double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
         double *gpu_weights = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) points->getNumIndexes()), os);
         double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) values->getNumOutputs()), os);
@@ -1893,6 +1891,15 @@ void GridLocalPolynomial::clearAccelerationData(){
         delete accel;
         accel = 0;
     }
+}
+
+void GridLocalPolynomial::setFavorSparse(bool favor){
+    // sparse_affinity == -1: use dense algorithms
+    // sparse_affinity ==  1: use sparse algorithms
+    // sparse_affinity ==  0: let Tasmanian decide
+    // favor true/false bumps you upper or lower on the scale
+    if (favor && (sparse_affinity < 1)) sparse_affinity++;
+    if (!favor && (sparse_affinity > -1)) sparse_affinity--;
 }
 
 }

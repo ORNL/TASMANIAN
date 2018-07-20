@@ -121,16 +121,6 @@ enum TypeAcceleration{
     accel_gpu_magma // implies combination with CUDA kernels, if CUDA is ON
 };
 
-enum TypeLocalPolynomialBackendFlavor{
-    flavor_auto,
-    flavor_sparse_sparse,
-    flavor_sparse_dense,
-    flavor_dense_sparse,
-    flavor_dense_dense,
-    flavor_cuda
-};
-
-
 
 ////////////////////////////////////////////////////////////
 //                                                        //
