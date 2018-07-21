@@ -33,36 +33,27 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D USE_XSDK_DEFAULTS:BOOL=OFF
 #    -D XSDK_ENABLE_OPENMP:BOOL=OFF
 #    -D TPL_ENABLE_BLAS:BOOL=OFF
+#    -D TPL_ENABLE_MAGMA:BOOL=OFF
 #    -D XSDK_ENABLE_PYTHON:BOOL=OFF
 #    -D XSDK_ENABLE_FORTRAN:BOOL=OFF
 #    -D XSDK_ENABLE_CUDA:BOOL=OFF
 #
-# Alternatives to find_package()
-# (each find_package() defines a set of variables, if the user manually
-#  specifies those variables, then there is no need to call find)
+# Selecting specific packages for find_package()
 #     -D PYTHON_EXECUTABLE:PATH
 #     -D CUDA_TOOLKIT_ROOT_DIR:PATH
 #     -D Tasmanian_MAGMA_ROOT_DIR:PATH
-#     -D OpenMP_CXX_FLAGS:STRING
-#     -D BLAS_LIBRARIES:STRING
-#     -D MPI_CXX_LIBRARIES:STRING
 #
-# PYTHON_EXECUTABLE and CUDA_TOOLKIT_ROOT_DIR help cmake find a specific
-#     implementation, but find_package() is still used
-# OpenMP_CXX_FLAGS bypasses find_package(OpenMP)
-#
-# BLAS_LIBRARIES bypasses find_package(BLAS)
-# MPI_CXX_LIBRARIES bypasses find_package(MPI)
-#
-# Optional that can be be added to the manual alternatives above
-#     -D OpenMP_CXX_LIBRARIES:STRING
+# Directly specifying libraries and bypassing find_package()
+#     -D BLAS_LIBRARIES
+#     -D Tasmanian_MAGMA_LIBRARIES
+#     -D Tasmanian_MAGMA_INCLUDE_DIRS
+#     -D MPI_CXX_LIBRARIES
 #     -D MPI_CXX_INCLUDE_PATH
 #     -D MPI_COMPILE_FLAGS
 #     -D MPI_LINK_FLAGS
-#     -D Tasmanian_MAGMA_INCLUDE_DIRS
-#     -D Tasmanian_MAGMA_LIBRARIES
-#     -D PYTHON_VERSION_MAJOR
-#     -D PYTHON_VERSION_MINOR
+#
+# Note: directly specifying libraries still requires the corresponding
+#       Tasmanian_ENABLE_ option
 #
 ########################################################################
 
