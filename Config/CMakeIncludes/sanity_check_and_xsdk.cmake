@@ -96,8 +96,13 @@ if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
     endif()
 endif()
 
+# Python module requires a shared library
+if (Tasmanian_ENABLE_PYTHON AND ("${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY"))
+    message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module")
+endif()
+
 # Python setup, look for python
-if (Tasmanian_ENABLE_PYTHON OR Tasmanian_ENABLE_RECOMMENDED)
+if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")))
     find_package(PythonInterp)
 
     if (NOT PYTHONINTERP_FOUND)
@@ -110,11 +115,6 @@ if (Tasmanian_ENABLE_PYTHON OR Tasmanian_ENABLE_RECOMMENDED)
     else()
         set(Tasmanian_ENABLE_PYTHON ON)
     endif()
-endif()
-
-# Python module requires a shared library
-if (Tasmanian_ENABLE_PYTHON AND ("${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY"))
-    message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module")
 endif()
 
 # Tasmanian_ENABLE_CUDA support for the add_library vs cuda_add_library
