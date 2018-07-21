@@ -1025,12 +1025,11 @@ bool ExternalTester::testAllFourier() const{
         const double *coeff = grid.getHierarchicalCoefficients();    // coeff = [fourier_coeff_1.real(), fourier_coeff_2.real(), ..., fourier_coeff_1.imag(), fourier_coeff_2.imag(), ...]
         double *y = new double[num_eval];
         grid.evaluateBatch(pnts, num_eval, y);
+        int num_points = grid.getNumPoints();
 
         for(int i=0; i<num_eval; i++){
             for(int j=pntr[i]; j<pntr[i+1]; j++){
-                std::complex<double> fourier_coeff(coeff[indx[j]], coeff[indx[j]+(grid.getNumOutputs()*grid.getNumPoints())]);    //reformat as complex number
-                std::complex<double> phi(vals[2*j], vals[2*j+1]);                            //reformat as complex number
-                y[i] -= (fourier_coeff*phi).real();
+                y[i] -= (coeff[indx[j]] * vals[2*num_points*i+indx[j]] + coeff[indx[j]+num_points] * vals[(2*i+1)*num_points+indx[j]]);
             }
         }
         for(int i=0; i<num_eval; i++){
@@ -1046,10 +1045,8 @@ bool ExternalTester::testAllFourier() const{
         grid.evaluateHierarchicalFunctions(pnts, num_eval, v);
         grid.evaluateBatch(pnts, num_eval, y);
         for(int i=0; i<num_eval; i++){
-            for(int j=0; j<grid.getNumPoints(); j++){
-                std::complex<double> fourier_coeff(coeff[j], coeff[j + (grid.getNumPoints() * grid.getNumOutputs())]);
-                std::complex<double> phi(v[2*(i*grid.getNumPoints()+j)], v[2*(i*grid.getNumPoints()+j)+1]);
-                y[i] -= (fourier_coeff * phi).real();
+            for(int j=0; j<num_points; j++){
+                y[i] -= (coeff[j] * v[2*num_points*i+j] + coeff[j+num_points] * v[(2*i+1)*num_points+j]);
             }
         }
         for(int i=0; i<num_eval; i++){

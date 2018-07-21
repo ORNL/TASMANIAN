@@ -558,28 +558,23 @@ void GridFourier::calculateFourierCoefficients(){
     }
 }
 
-std::complex<double>* GridFourier::getBasisFunctions(const double x[]) const {
-    std::complex<double> *weights = new std::complex<double>[exponents->getNumIndexes()];
+double* GridFourier::getBasisFunctions(const double x[]) const {
+    double *weights = new double[2*getNumPoints()];
     getBasisFunctions(x,weights);
     return weights;
 }
-void GridFourier::getBasisFunctions(const double x[], std::complex<double> weights[]) const {
-    std::complex<double> unit_imag(0.0, 1.0);    // this is sqrt(-1)
-    for(int i=0; i<exponents->getNumIndexes(); i++){
-        weights[i] = exp(2 * M_PI * unit_imag * ((double) exponents->getIndex(i)[0]) * x[0]);
-        for(int j=1; j<exponents->getNumDimensions(); j++){
-            weights[i] *= exp(2 * M_PI * unit_imag * ((double) exponents->getIndex(i)[j]) * x[j]);
-        }
+void GridFourier::getBasisFunctions(const double x[], double weights[]) const{
+    int num_points = getNumPoints();
+    std::fill(weights, weights + 2*num_points, 0.0);
+    for (int i=0; i<num_points; i++){
+        double theta = 0;
+        for(int j=0; j<num_dimensions; j++) theta += exponents->getIndex(i)[j] * x[j];
+        double theta_offset = fabs(theta) - ((int) fabs(theta));
+        bool neg = (theta_offset > 0.25 && theta_offset < 0.75);
+        theta *= 2.0 * M_PI;
+        weights[i + num_points] = -1.0*sin(theta);
+        weights[i] = (neg ? -1.0 : 1.0) * sqrt(1 - weights[i + num_points]*weights[i + num_points]);
     }
-}
-void GridFourier::getBasisFunctions(const double x[], double weights[]) const {
-    // weights has length 2*num_nodes here
-    std::complex<double> *tmp = getBasisFunctions(x);
-    for(int i=0; i<exponents->getNumIndexes(); i++){
-        weights[2*i] = tmp[i].real();
-        weights[2*i+1] = tmp[i].imag();
-    }
-    delete[] tmp;
 }
 
 double* GridFourier::getInterpolationWeights(const double x[]) const {
@@ -596,7 +591,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     */
 
     std::fill(weights, weights+getNumPoints(), 0.0);
-    std::complex<double> *basisFuncs = getBasisFunctions(x);
+    double *basisFuncs = getBasisFunctions(x);
 
     for(int n=0; n<active_tensors->getNumIndexes(); n++){
         const int *levels = active_tensors->getIndex(n);
@@ -608,18 +603,22 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
             num_tensor_points *= num_oned_points[j];
         }
 
-        std::complex<double> *in = new std::complex<double>[num_tensor_points];
-        std::complex<double> *out = new std::complex<double>[num_tensor_points];
+        std::complex<double> *in_cos = new std::complex<double>[num_tensor_points];
+        std::complex<double> *in_sin = new std::complex<double>[num_tensor_points];
+        std::complex<double> *out_cos = new std::complex<double>[num_tensor_points];
+        std::complex<double> *out_sin = new std::complex<double>[num_tensor_points];
 
         for(int i=0; i<num_tensor_points; i++){
-            in[i] = basisFuncs[exponent_refs[n][i]];
+            in_cos[i] = basisFuncs[exponent_refs[n][i]];
+            in_sin[i] = basisFuncs[exponent_refs[n][i] + getNumPoints()];
         }
 
-        TasmanianFourierTransform::discrete_fourier_transform(num_dimensions, num_oned_points, in, out);
+        TasmanianFourierTransform::discrete_fourier_transform(num_dimensions, num_oned_points, in_cos, out_cos);
+        TasmanianFourierTransform::discrete_fourier_transform(num_dimensions, num_oned_points, in_sin, out_sin);
 
         for(int i=0; i<num_tensor_points; i++){
             int key = convertIndexes(i, levels);
-            weights[key] += ((double) active_w[n]) * out[i].real()/((double) num_tensor_points);
+            weights[key] += ((double) active_w[n]) * (out_cos[i].real()+out_sin[i].imag()) /((double) num_tensor_points);
         }
         delete[] in;
         delete[] out;
@@ -628,9 +627,8 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     delete[] basisFuncs;
 }
 
-double* GridFourier::getQuadratureWeights() const {
-    int num_points = getNumPoints();
-    double *w = new double[num_points];
+double* GridFourier::getQuadratureWeights() const{
+    double *w = new double[getNumPoints()];
     getQuadratureWeights(w);
     return w;
 }
@@ -657,12 +655,12 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
 }
 
 void GridFourier::evaluate(const double x[], double y[]) const{
-    std::complex<double> *w = getBasisFunctions(x);
+    int num_points = getNumPoints();
+    double *w = getBasisFunctions(x);
     TasBLAS::setzero(num_outputs, y);
     for(int k=0; k<num_outputs; k++){
-        for(int i=0; i<points->getNumIndexes(); i++){
-            y[k] += (w[i].real() * fourier_coefs[i*num_outputs+k]);
-            y[k] -= (w[i].imag() * fourier_coefs[i*num_outputs+k + getNumPoints()*num_outputs]);
+        for(int i=0; i<num_points; i++){
+            y[k] += (w[i] * fourier_coefs[i*num_outputs+k] + w[i + num_points] * fourier_coefs[i*num_outputs+k + num_points*num_outputs]);
         }
     }
     delete[] w;
@@ -676,21 +674,10 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 
 void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
     #ifdef Tasmanian_ENABLE_BLAS
-    std::complex<double> *w = getBasisFunctions(x);
-    std::complex<double> *y_tmp = new std::complex<double>[num_outputs];
-    std::complex<double> *fcoefs = new std::complex<double>[num_outputs*getNumPoints()];
-    for (int i=0; i<num_outputs*getNumPoints(); i++){
-        fcoefs[i] = std::complex<double>(fourier_coefs[i], fourier_coefs[i + num_outputs*getNumPoints()]);
-    }
-    TasBLAS::zgemv(num_outputs, points->getNumIndexes(), fcoefs, w, y_tmp);
-
-    #pragma omp parallel for
-    for(int i=0; i<num_outputs; i++){
-        y[i] = y_tmp[i].real();
-    }
+    double *w = getBasisFunctions(x);
+    TasBLAS::dgemv(num_outputs, 2*points->getNumIndexes(), fourier_coefs, w, y);
 
     delete[] w;
-    delete[] y_tmp;
     #else
     evaluate(x,y);
     #endif // Tasmanian_ENABLE_BLAS
@@ -708,31 +695,12 @@ void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[], std::o
 void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     #ifdef Tasmanian_ENABLE_BLAS
     int num_points = points->getNumIndexes();
-    std::complex<double> *y_tmp = new std::complex<double>[num_outputs * num_x];
-    std::complex<double> *weights = new std::complex<double>[num_points * num_x];
-    std::complex<double> *fcoefs = new std::complex<double>[num_outputs * getNumPoints()];
-    for (int i=0; i<num_outputs*getNumPoints(); i++){
-        fcoefs[i] = std::complex<double>(fourier_coefs[i], fourier_coefs[i + num_outputs*getNumPoints()]);
-    }
+    double *w = new double[2 * num_points * num_x];
+    evaluateHierarchicalFunctions(x, num_x, w);
 
-    double *weights_tmp = new double[2 * num_points * num_x];
-    evaluateHierarchicalFunctions(x, num_x, weights_tmp);
+    TasBLAS::dgemm(num_outputs, num_x, 2*num_points, 1.0, fourier_coefs, w, 0.0, y);
 
-    #pragma omp parallel for
-    for(int i=0; i<num_points*num_x; i++){
-        weights[i] = std::complex<double>(weights_tmp[2*i], weights_tmp[2*i+1]);
-    }
-
-    TasBLAS::zgemm(num_outputs, num_x, num_points, fcoefs, weights, y_tmp);
-
-    #pragma omp parallel for
-    for(int i=0; i<num_outputs*num_x; i++){
-        y[i] = y_tmp[i].real();
-    }
-
-    delete[] y_tmp;
-    delete[] weights;
-    delete[] weights_tmp;
+    delete[] w;
     #else
     evaluateBatch(x, num_x, y);
     #endif // Tasmanian_ENABLE_BLAS
