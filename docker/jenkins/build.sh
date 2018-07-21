@@ -7,12 +7,11 @@ mkdir build && cd build
 if [ "${BUILD_TYPE}" == "clang50-python3" ]
 then
 # Enables only core libraries and PYTHON
-# Attempts to enable OpenMP and BLAS
-# but neither exists, so cmake will automatically disable those options
     cmake \
       -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
-      -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow -pedantic" \
+      -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic" \
       -D CMAKE_CXX_COMPILER=clang++ \
+      -D Tasmanian_ENABLE_PYTHON=ON \
       -D PYTHON_EXECUTABLE=/usr/bin/python3 \
       -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
       ..
