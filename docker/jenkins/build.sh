@@ -39,7 +39,6 @@ then
       -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
       -D CMAKE_BUILD_TYPE=Release \
       -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow" \
-      -D Tasmanian_STRICT_OPTIONS=ON \
       -D Tasmanian_ENABLE_OPENMP=ON \
       -D Tasmanian_ENABLE_BLAS=ON \
       -D Tasmanian_ENABLE_CUDA=ON \
