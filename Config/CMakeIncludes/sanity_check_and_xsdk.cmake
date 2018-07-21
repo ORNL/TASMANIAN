@@ -6,18 +6,18 @@ if ((NOT DEFINED CMAKE_BUILD_TYPE) OR (NOT CMAKE_BUILD_TYPE))
 endif()
 
 # XSDK mode:
-#   - Assume Tasmanian_STRICT_OPTIONS (never overwrite user preferences)
+#   - Never overwrite user preferences, Tasmanian_ENABLE_RECOMMENDED OFF
 #   - All Tasmanian_ENABLE options are disbaled (by default)
 #   - Options are enabled with XSDK switches, e.g., XSDK_ENABLE_FORTRAN
 if (USE_XSDK_DEFAULTS)
-    set(Tasmanian_STRICT_OPTIONS ON)
-    set(Tasmanian_ENABLE_OPENMP  OFF)
-    set(Tasmanian_ENABLE_BLAS    OFF)
-    set(Tasmanian_ENABLE_MPI     ON)
-    set(Tasmanian_ENABLE_PYTHON  OFF)
-    set(Tasmanian_ENABLE_FORTRAN OFF)
-    set(Tasmanian_ENABLE_CUDA    OFF)
-    set(Tasmanian_ENABLE_MAGMA   OFF)
+    set(Tasmanian_ENABLE_RECOMMENDED OFF)
+    set(Tasmanian_ENABLE_OPENMP      OFF)
+    set(Tasmanian_ENABLE_BLAS        OFF)
+    set(Tasmanian_ENABLE_MPI         ON)
+    set(Tasmanian_ENABLE_PYTHON      OFF)
+    set(Tasmanian_ENABLE_FORTRAN     OFF)
+    set(Tasmanian_ENABLE_CUDA        OFF)
+    set(Tasmanian_ENABLE_MAGMA       OFF)
     if (DEFINED XSDK_ENABLE_OPENMP)
         set(Tasmanian_ENABLE_OPENMP ${XSDK_ENABLE_OPENMP})
     endif()
@@ -59,17 +59,18 @@ else()
 endif()
 
 # OpenMP setup
-if (Tasmanian_ENABLE_OPENMP)
+if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     find_package(OpenMP)
 
     if ((NOT OPENMP_FOUND) AND (NOT OPENMP_CXX_FOUND)) # OPENMP_FOUND is used prior to cmake 3.9
-        if (Tasmanian_STRICT_OPTIONS)
-            message(FATAL_ERROR "-D Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed")
-        else()
-            message("-D Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed\noverwritting option: -D Tasmanian_ENABLE_OPENMP:BOOL=OFF")
+        if (Tasmanian_ENABLE_RECOMMENDED)
             set(Tasmanian_ENABLE_OPENMP OFF)
+            message(STATUS "Tasmanian could not find OpenMP, the library will run in single-threaded mode")
+        else()
+            message(FATAL_ERROR "Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed")
         endif()
     else()
+        set(Tasmanian_ENABLE_OPENMP ON) # if using RECOMMENDED, make sure OPENMP is ON
         if (NOT DEFINED OpenMP_CXX_LIBRARIES)
             # on older versions of cmake use global flags, see comment in SparseGrids/CMakeLists.txt
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -78,26 +79,24 @@ if (Tasmanian_ENABLE_OPENMP)
 endif()
 
 # Python setup, look for python
-if (Tasmanian_ENABLE_PYTHON)
+if (Tasmanian_ENABLE_PYTHON OR Tasmanian_ENABLE_RECOMMENDED)
     find_package(PythonInterp)
+
     if (NOT PYTHONINTERP_FOUND)
-        if (Tasmanian_STRICT_OPTIONS)
-            message(FATAL_ERROR "-D Tasmanian_ENABLE_PYTHON is ON, but find_package(PythonInterp) failed\nuse -D PYTHON_EXECUTABLE:PATH to specify valid python interpreter")
-        else()
-            message("-D Tasmanian_ENABLE_PYTHON is ON, but find_package(PythonInterp) failed\nuse -D PYTHON_EXECUTABLE:PATH to specify python interpreter\noverwritting option: -D Tasmanian_ENABLE_PYTHON:BOOL=OFF")
+        if (Tasmanian_ENABLE_RECOMMENDED)
             set(Tasmanian_ENABLE_PYTHON OFF)
+            message(STATUS "Tasmanian could not find Python, the python module will not be installed and some tests will be omitted")
+        else()
+            message(FATAL_ERROR "-D Tasmanian_ENABLE_PYTHON is ON, but find_package(PythonInterp) failed\nuse -D PYTHON_EXECUTABLE:PATH to specify valid python interpreter")
         endif()
+    else()
+        set(Tasmanian_ENABLE_PYTHON ON)
     endif()
 endif()
 
 # Python module requires a shared library
 if (Tasmanian_ENABLE_PYTHON AND ("${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY"))
-    if (Tasmanian_STRICT_OPTIONS)
-        message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module")
-    else()
-        message(WARNING "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module\nbuilding shared libraries anyway")
-        set(Tasmanian_libs_type "BOTH")
-    endif()
+    message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module")
 endif()
 
 # Tasmanian_ENABLE_CUDA support for the add_library vs cuda_add_library
@@ -113,11 +112,7 @@ if (Tasmanian_ENABLE_CUDA)
             include_directories("${CMAKE_CURRENT_BINARY_DIR}/configured/")
         endif()
     else()
-        if (Tasmanian_STRICT_OPTIONS)
-            message(FATAL_ERROR "Tasmanian_ENABLE_CUDA is on, but find_package(CUDA) failed")
-        else()
-            message(WARNING "find_package(CUDA) failed, could not find CUDA\noverwritting option: -D Tasmanian_ENABLE_CUDA:BOOL=OFF")
-        endif()
+        message(FATAL_ERROR "Tasmanian_ENABLE_CUDA is ON, but find_package(CUDA) failed")
     endif()
 endif()
 
@@ -136,25 +131,23 @@ if (Tasmanian_ENABLE_MAGMA)
         endif()
         message(STATUS "Tasmanian will use UTK MAGMA include: ${Tasmanian_MAGMA_INCLUDE_DIRS}")
     else()
-        if (Tasmanian_STRICT_OPTIONS)
-            message(FATAL_ERROR "Tasmanian_ENABLE_MAGMA is ON, but find_package(TasmanianMAGMA) failed\n please provide valid Tasmanian_MAGMA_ROOT:PATH or Tasmanian_MAGMA_LIBRARIES with Tasmanian_MAGMA_INCLUDE_DIRS:PATH")
-        else()
-            message(WARNING "find_package(TasmanianMAGMA) failed, could not find UTK MAGMA\n overwritting option: -D Tasmanian_ENABLE_MAGMA:BOOL=OFF")
-            set(Tasmanian_ENABLE_MAGMA OFF)
-        endif()
+        message(FATAL_ERROR "Tasmanian_ENABLE_MAGMA is ON, but find_package(TasmanianMAGMA) failed\n please provide valid Tasmanian_MAGMA_ROOT:PATH or Tasmanian_MAGMA_LIBRARIES with Tasmanian_MAGMA_INCLUDE_DIRS:PATH")
     endif()
 endif()
 
 # check for BLAS
-if (Tasmanian_ENABLE_BLAS)
-    if (NOT DEFINED BLAS_LIBRARIES)
+if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
+    if (NOT DEFINED BLAS_LIBRARIES) # user defined BLAS libraries are an XSDK requirement
         find_package(BLAS)
-        if (NOT BLAS_FOUND)
-            if (Tasmanian_STRICT_OPTIONS)
-                message(FATAL_ERROR "Tasmanian_ENABLE_BLAS is on, but find_package(BLAS) failed")
-            else()
-                message(WARNING "find_package(BLAS) failed, could not find BLAS\noverwritting option: -DTasmanian_ENABLE_BLAS:BOOL=OFF")
+
+        if (BLAS_FOUND)
+            set(Tasmanian_ENABLE_BLAS ON) # set ON if using Tasmanian_ENABLE_RECOMMENDED
+        else()
+            if (Tasmanian_ENABLE_RECOMMENDED)
                 set(Tasmanian_ENABLE_BLAS OFF)
+                message(STATUS "Tasmanian could not find BLAS, which gives significant boost when working with grid with many outputs")
+            else()
+                message(FATAL_ERROR "Tasmanian_ENABLE_BLAS is ON, but find_package(BLAS) failed")
             endif()
         endif()
     endif()
@@ -162,21 +155,16 @@ endif()
 
 # check for MPI
 if (Tasmanian_ENABLE_MPI)
-    if (NOT DEFINED MPI_CXX_LIBRARIES)
+    if (NOT DEFINED MPI_CXX_LIBRARIES) # user defined MPI libraries is XSDK requirement
         find_package(MPI)
 
         if (NOT MPI_CXX_FOUND)
-            if (Tasmanian_STRICT_OPTIONS)
-                message(FATAL_ERROR "Tasmanian_ENABLE_MPI is on, but find_package(MPI) failed")
-            else()
-                message(WARNING "find_package(MPI) failed, could not find MPI\noverwritting option: -D Tasmanian_ENABLE_MPI:BOOL=OFF")
-                set(Tasmanian_ENABLE_MPI OFF)
-            endif()
+            message(FATAL_ERROR "Tasmanian_ENABLE_MPI is ON, but find_package(MPI) failed")
         endif()
     endif()
 endif()
 
-# check for Fortran, note that enable_language always gives FATAL_ERROR if the compiler is missing (no way to recover or autodisable)
+# check for Fortran, note that enable_language always gives FATAL_ERROR if the compiler is missing
 if (Tasmanian_ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
@@ -189,11 +177,9 @@ include(CMakePackageConfigHelpers)
 
 
 ########################################################################
-# Compiler specific flags: Intel hasn't been tested in a while
-# Tasmanian_STRICT_OPTIONS=ON will prevent Tasmanian from setting
-# compiler flags, only the user provided flags will be used
+# Recommended compiler flags: Intel hasn't been tested in a while
 ########################################################################
-if (NOT Tasmanian_STRICT_OPTIONS)
+if (Tasmanian_ENABLE_RECOMMENDED)
     if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang"))
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3") # there is no point in making a slow debug
         if (Tasmanian_ENABLE_FORTRAN)
