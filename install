@@ -36,6 +36,10 @@ if (( $bShowHelp == 1 )); then
     echo "                       automatically seach for CUDA installation"
     echo "         -cuda=<path>: enable Nvidia CUDA support and specify path for CUDA"
     echo "                       e.g., -cuda=/usr/local/cuda-9.1/"
+    echo "               -magma: enable UTK MAGMA support"
+    echo "                       automatically seach for MAGMA installation"
+    echo "        -magma=<path>: enable UTK MAGMA support and specify path for MAGMA"
+    echo "                       e.g., -magma=/usr/local/magma/"
     echo "             -fortran: enable Fortran interface"
     echo "      -fortran=<path>: enable Fortran interface and specify Fortran compiler"
     echo "                       e.g., -fortran=/usr/bin/gfortran-6"
@@ -82,34 +86,45 @@ fi
 # Development options: -make-j calls make -j
 #                      -nobashrc calls skips the .bashrc section
 ########################################################################
-sEnableOpenMP="ON"
-sEnableBLAS="ON"
+sCmake="cmake"
+sCXXcompiler=""
+sPythonInterpreter=""
 sEnableCUDA="OFF"
-sEnablePython="ON"
-sManualPythonInterp=""
+sCudaRootDir=""
+sEnableMAGMA="OFF"
+sMagmaRootDir=""
 sEnableFortran="OFF"
+sFortranCompiler=""
 sBuildSharedLibs=""
-sEnableMakeJobs=""
+sMakeCommand="make"
 bEnableTests=1
 sBuildType="Release"
 bVerbose=0
 bSkilBashrc=0
 bInstall=1
-sExtraCommand=""
 
 for sOption in "$@"; do
-    if [[ $sOption == "-noomp" ]]; then
-        sEnableOpenMP="OFF"
-    elif [[ $sOption == "-noblas" ]]; then
-        sEnableBLAS="OFF"
+    if [[ $sOption == "-cmake="* ]]; then
+        sCmake="${sOption:7}"
+    elif [[ $sOption == "-compiler="* ]]; then
+        sCXXcompiler="-D CMAKE_CXX_COMPILER=${sOption:10}"
+    elif [[ $sOption == "-python="* ]]; then
+        sManualPythonInterp="-D PYTHON_EXECUTABLE=${sOption:8}"
     elif [[ $sOption == "-cuda" ]]; then
         sEnableCUDA="ON"
-    elif [[ $sOption == "-nopython" ]] || [[ $sOption == "-nospam" ]]; then
-        sEnablePython="OFF"
-    elif [[ $sOption == "-python="* ]]; then
-        sManualPythonInterp=${sOption:8}
+    elif [[ $sOption == "-cuda="* ]]; then
+        sEnableCUDA="ON"
+        sCudaRootDir="-D CUDA_TOOLKIT_ROOT_DIR=${sOption:6}"
+    elif [[ $sOption == "-magma" ]]; then
+        sEnableMAGMA="ON"
+    elif [[ $sOption == "-magma="* ]]; then
+        sEnableMAGMA="ON"
+        sCudaRootDir="-D Tasmanian_MAGMA_ROOT_DIR=${sOption:7}"
     elif [[ $sOption == "-fortran" ]]; then
         sEnableFortran="ON"
+    elif [[ $sOption == "-fortran="* ]]; then
+        sEnableFortran="ON"
+        sCudaRootDir="-D CMAKE_Fortran_COMPILER=${sOption:9}"
     elif [[ $sOption == "-noshared" ]]; then
         if [[ ! -z $sBuildSharedLibs ]]; then
             echo "ERROR: only one -noshared or -nostatic can appear in the command line"
@@ -123,7 +138,7 @@ for sOption in "$@"; do
         fi
         sBuildSharedLibs="-D BUILD_SHARED_LIBS:BOOL=ON"
     elif [[ $sOption == "-make-j" ]]; then
-        sEnableMakeJobs="-j"
+        sMakeCommand="make -j"
     elif [[ $sOption == "-notest" ]]; then
         bEnableTests=0
     elif [[ $sOption == "-debug" ]]; then
@@ -134,21 +149,14 @@ for sOption in "$@"; do
         bSkilBashrc=1
     elif [[ $sOption == "-noinstall" ]]; then
         bInstall=0
-    elif [[ $sOption == "-cmake="* ]]; then
-        sExtraCommand=${sOption:7}
     elif [[ $sOption == "-"* ]]; then
         echo "ERROR: unrecognized options $sOption"
         exit 1;
     fi
 done
 
-if [[ $sEnablePython == "OFF" ]] && [[ ! -z $sManualPythonInterp ]]; then
-    echo "WARNING: using simultanously -nopython and -python=$sManualPythonInterp, -python=$sManualPythonInterp will be ignored!"
-    sManualPythonInterp=""
-fi
-
 echo "Looking for cmake ..."
-cmake --version || { echo "ERROR: Could not find cmake command, make sure it is included in your path."; exit 1; }
+$sCmake --version || { echo "ERROR: Could not find cmake command, please use option -cmake=<cmake full path>"; exit 1; }
 
 echo ""
 echo ""
@@ -219,27 +227,27 @@ echo ""
 echo "Installing Tasmanian with options:"
 echo "   install path: $sInstallPrefix"
 
+echo "     cmake: $sCmake"
+if [[ ! -z $sCXXcompiler ]]; then
+    echo "  $sCXXcompiler"
+fi
 if [[ ! -z $sMatlabWork ]]; then
     echo "   matlab work folder: $sMatlabWork"
 fi
-
-if [[ $sEnableOpenMP == "OFF" ]]; then
-    echo "    -noomp: disable OpenMP support"
-fi
-if [[ $sEnableBLAS == "OFF" ]]; then
-    echo "   -noblas: disable BLAS support"
+if [[ ! -z $sManualPythonInterp ]]; then
+    echo "  $sManualPythonInterp"
 fi
 if [[ $sEnableCUDA == "ON" ]]; then
     echo "     -cuda: enable Nvidia CUDA support"
 fi
-if [[ $sEnablePython == "OFF" ]]; then
-    echo " -nopython: disable Python"
-fi
-if [[ ! -z $sManualPythonInterp ]]; then
-    echo " -python=$sManualPythonInterp"
+if [[ ! -z $sCudaRootDir ]]; then
+    echo "  $sCudaRootDir"
 fi
 if [[ $sEnableFortran == "ON" ]]; then
     echo "  -fortran: enable Fortran"
+fi
+if [[ ! -z $sFortranCompiler ]]; then
+    echo "  $sFortranCompiler"
 fi
 if [[ $sBuildSharedLibs == "-D BUILD_SHARED_LIBS:BOOL=OFF" ]]; then
     echo " -noshared: do not build shared libraries"
@@ -252,9 +260,6 @@ if [[ $sBuildType == "Debug" ]]; then
 fi
 if (( $bEnableTests == 0 )); then
     echo "   -notest: do not execute any of the tests"
-fi
-if [[ ! -z $sExtraCommand ]]; then
-    echo " -cmake=$sExtraCommand"
 fi
 
 echo ""
@@ -289,27 +294,27 @@ fi
 
 mkdir -p Build
 
-cd Build
+cd Build || { echo "ERROR: Could not create or enter the Build folder"; exit 1; }
 
-sMatlabWork="-D Tasmanian_MATLAB_WORK_FOLDER:PATH=$sMatlabWork"
-
-if [[ ! -z $sManualPythonInterp ]]; then
-    sManualPythonInterp="-D PYTHON_EXECUTABLE:FILEPATH=$sManualPythonInterp"
+if [[ ! -z $sMatlabWork ]]; then
+    sMatlabWork="-D Tasmanian_MATLAB_WORK_FOLDER:PATH=$sMatlabWork"
 fi
 
-cmake \
+$sCmake \
   -D CMAKE_BUILD_TYPE=$sBuildType \
   -D CMAKE_INSTALL_PREFIX=$sInstallPrefix \
   $sBuildSharedLibs \
-  -D Tasmanian_ENABLE_OPENMP:BOOL=$sEnableOpenMP \
-  -D Tasmanian_ENABLE_BLAS:BOOL=$sEnableBLAS \
-  -D Tasmanian_ENABLE_MPI:BOOL=OFF \
-  -D Tasmanian_ENABLE_CUDA:BOOL=$sEnableCUDA \
-  -D Tasmanian_ENABLE_PYTHON:BOOL=$sEnablePython \
-  -D Tasmanian_ENABLE_FORTRAN:BOOL=$sEnableFortran \
+  $sCXXcompiler \
+  -D Tasmanian_ENABLE_RECOMMENDED:BOOL=ON \
   $sManualPythonInterp \
+  -D Tasmanian_ENABLE_CUDA:BOOL=$sEnableCUDA \
+  $sCudaRootDir \
+  -D Tasmanian_ENABLE_MAGMA:BOOL=$sEnableMAGMA \
+  $sMagmaRootDir \
+  -D Tasmanian_ENABLE_FORTRAN:BOOL=$sEnableFortran \
+  $sFortranCompiler \
+  -D Tasmanian_ENABLE_MPI:BOOL=OFF \
   $sMatlabWork \
-  $sExtraCommand \
   ../
 
 if [ ! $? == 0 ]; then
@@ -317,7 +322,7 @@ if [ ! $? == 0 ]; then
     exit 1;
 fi
 
-make $sEnableMakeJobs
+$sMakeCommand
 
 if [ ! $? == 0 ]; then
     echo "ERROR: could not execute the 'make' command!"
