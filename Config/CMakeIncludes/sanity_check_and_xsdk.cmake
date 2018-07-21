@@ -78,6 +78,24 @@ if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     endif()
 endif()
 
+# check for BLAS
+if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
+    if (NOT DEFINED BLAS_LIBRARIES) # user defined BLAS libraries are an XSDK requirement
+        find_package(BLAS)
+
+        if (BLAS_FOUND)
+            set(Tasmanian_ENABLE_BLAS ON) # set ON if using Tasmanian_ENABLE_RECOMMENDED
+        else()
+            if (Tasmanian_ENABLE_RECOMMENDED)
+                set(Tasmanian_ENABLE_BLAS OFF)
+                message(STATUS "Tasmanian could not find BLAS, which gives significant boost when working with grid with many outputs")
+            else()
+                message(FATAL_ERROR "Tasmanian_ENABLE_BLAS is ON, but find_package(BLAS) failed")
+            endif()
+        endif()
+    endif()
+endif()
+
 # Python setup, look for python
 if (Tasmanian_ENABLE_PYTHON OR Tasmanian_ENABLE_RECOMMENDED)
     find_package(PythonInterp)
@@ -132,24 +150,6 @@ if (Tasmanian_ENABLE_MAGMA)
         message(STATUS "Tasmanian will use UTK MAGMA include: ${Tasmanian_MAGMA_INCLUDE_DIRS}")
     else()
         message(FATAL_ERROR "Tasmanian_ENABLE_MAGMA is ON, but find_package(TasmanianMAGMA) failed\n please provide valid Tasmanian_MAGMA_ROOT:PATH or Tasmanian_MAGMA_LIBRARIES with Tasmanian_MAGMA_INCLUDE_DIRS:PATH")
-    endif()
-endif()
-
-# check for BLAS
-if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
-    if (NOT DEFINED BLAS_LIBRARIES) # user defined BLAS libraries are an XSDK requirement
-        find_package(BLAS)
-
-        if (BLAS_FOUND)
-            set(Tasmanian_ENABLE_BLAS ON) # set ON if using Tasmanian_ENABLE_RECOMMENDED
-        else()
-            if (Tasmanian_ENABLE_RECOMMENDED)
-                set(Tasmanian_ENABLE_BLAS OFF)
-                message(STATUS "Tasmanian could not find BLAS, which gives significant boost when working with grid with many outputs")
-            else()
-                message(FATAL_ERROR "Tasmanian_ENABLE_BLAS is ON, but find_package(BLAS) failed")
-            endif()
-        endif()
     endif()
 endif()
 
