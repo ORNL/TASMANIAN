@@ -1,6 +1,15 @@
 Changelog for version 6.0
 --------------
 
+* new option Tasmanian_ENABLE_RECOMMENDED
+    * searches for OpenMP, BLAS, and Python, and enable if found
+    * set the `-O3` flag for Debug and Release
+    * adjusted the install script, see `./install --help`
+
+* removed Tasmanian_STRICT_OPTIONS, now all options are considered strict by default
+
+* added new acceleration mode `gpu-magma` that uses UTK MAGMA library
+
 * merged Tasmanian_ENABLE_CUBLAS option into Tasmanian_ENABLE_CUDA
     * the option is OFF by default
     * two distinct acceleration modes use this variable: `gpu-cublas` and `gpu-cuda`
