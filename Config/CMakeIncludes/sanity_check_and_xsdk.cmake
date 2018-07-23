@@ -105,12 +105,19 @@ endif()
 if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")))
     find_package(PythonInterp)
 
-    if (NOT PYTHONINTERP_FOUND)
+    if (PYTHONINTERP_FOUND)
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/PythonImportTest.py"
+                        RESULT_VARIABLE Tasmanian_python_has_numpy OUTPUT_QUIET)
+    else()
+        set(Tasmanian_python_has_numpy "1") # 1 is error code if the script above fails
+    endif()
+
+    if (NOT "${Tasmanian_python_has_numpy}" STREQUAL "0")
         if (Tasmanian_ENABLE_RECOMMENDED)
             set(Tasmanian_ENABLE_PYTHON OFF)
-            message(STATUS "Tasmanian could not find Python, the python module will not be installed and some tests will be omitted")
+            message(STATUS "Tasmanian could not find Python with numpy module, the python interface will not be installed and some tests will be omitted")
         else()
-            message(FATAL_ERROR "-D Tasmanian_ENABLE_PYTHON is ON, but find_package(PythonInterp) failed\nuse -D PYTHON_EXECUTABLE:PATH to specify valid python interpreter")
+            message(FATAL_ERROR "-D Tasmanian_ENABLE_PYTHON is ON, but either find_package(PythonInterp) failed python executable could not 'import numpy'\nuse -D PYTHON_EXECUTABLE:PATH to specify valid python interpreter")
         endif()
     else()
         set(Tasmanian_ENABLE_PYTHON ON)
