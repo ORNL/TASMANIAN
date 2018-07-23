@@ -7,15 +7,15 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 
 ########################################################################
 #  User specified options:
-#    -D Tasmanian_STRICT_OPTIONS:BOOL=OFF
-#    -D Tasmanian_ENABLE_OPENMP:BOOL=ON
-#    -D Tasmanian_ENABLE_BLAS:BOOL=ON
-#    -D Tasmanian_ENABLE_MPI:BOOL=OFF
-#    -D Tasmanian_ENABLE_CUDA:BOOL=OFF
-#    -D Tasmanian_ENABLE_MAGMA:BOOL=OFF
-#    -D Tasmanian_ENABLE_PYTHON:BOOL=ON
-#    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF
-#    -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""
+#    -D Tasmanian_ENABLE_RECOMMENDED:BOOL=OFF (includes some flags)
+#    -D Tasmanian_ENABLE_OPENMP:BOOL=OFF      (recommended)
+#    -D Tasmanian_ENABLE_BLAS:BOOL=OFF        (recommended)
+#    -D Tasmanian_ENABLE_PYTHON:BOOL=OFF      (recommended)
+#    -D Tasmanian_ENABLE_CUDA:BOOL=OFF        (stable)
+#    -D Tasmanian_ENABLE_MAGMA:BOOL=OFF       (stable)
+#    -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""  (stable)
+#    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF     (experimental)
+#    -D Tasmanian_ENABLE_MPI:BOOL=OFF         (experimental)
 #
 # Additional options: (if default test behavior is not desired)
 #    -D Tasmanian_TESTS_OMP_NUM_THREADS:INT="sets OpenMP number of threads"
@@ -33,36 +33,27 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D USE_XSDK_DEFAULTS:BOOL=OFF
 #    -D XSDK_ENABLE_OPENMP:BOOL=OFF
 #    -D TPL_ENABLE_BLAS:BOOL=OFF
+#    -D TPL_ENABLE_MAGMA:BOOL=OFF
 #    -D XSDK_ENABLE_PYTHON:BOOL=OFF
 #    -D XSDK_ENABLE_FORTRAN:BOOL=OFF
 #    -D XSDK_ENABLE_CUDA:BOOL=OFF
 #
-# Alternatives to find_package()
-# (each find_package() defines a set of variables, if the user manually
-#  specifies those variables, then there is no need to call find)
+# Selecting specific packages for find_package()
 #     -D PYTHON_EXECUTABLE:PATH
 #     -D CUDA_TOOLKIT_ROOT_DIR:PATH
 #     -D Tasmanian_MAGMA_ROOT_DIR:PATH
-#     -D OpenMP_CXX_FLAGS:STRING
-#     -D BLAS_LIBRARIES:STRING
-#     -D MPI_CXX_LIBRARIES:STRING
 #
-# PYTHON_EXECUTABLE and CUDA_TOOLKIT_ROOT_DIR help cmake find a specific
-#     implementation, but find_package() is still used
-# OpenMP_CXX_FLAGS bypasses find_package(OpenMP)
-#
-# BLAS_LIBRARIES bypasses find_package(BLAS)
-# MPI_CXX_LIBRARIES bypasses find_package(MPI)
-#
-# Optional that can be be added to the manual alternatives above
-#     -D OpenMP_CXX_LIBRARIES:STRING
+# Directly specifying libraries and bypassing find_package()
+#     -D BLAS_LIBRARIES
+#     -D Tasmanian_MAGMA_LIBRARIES
+#     -D Tasmanian_MAGMA_INCLUDE_DIRS
+#     -D MPI_CXX_LIBRARIES
 #     -D MPI_CXX_INCLUDE_PATH
 #     -D MPI_COMPILE_FLAGS
 #     -D MPI_LINK_FLAGS
-#     -D Tasmanian_MAGMA_INCLUDE_DIRS
-#     -D Tasmanian_MAGMA_LIBRARIES
-#     -D PYTHON_VERSION_MAJOR
-#     -D PYTHON_VERSION_MINOR
+#
+# Note: directly specifying libraries still requires the corresponding
+#       Tasmanian_ENABLE_ option
 #
 ########################################################################
 
@@ -88,20 +79,21 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 # 7. Print final messages
 ########################################################################
 
-option(USE_XSDK_DEFAULTS        "Enable xSDK compatibility"              OFF)
-option(Tasmanian_STRICT_OPTIONS "Disable automatic adjustment of the build options for Tasmanian" OFF)
-option(Tasmanian_ENABLE_OPENMP  "Enable OpenMP support for Tasmanian"    ON)
-option(Tasmanian_ENABLE_BLAS    "Enable CPU Blas support for Tasmanian"  ON)
-option(Tasmanian_ENABLE_MPI     "Enable MPI support for Tasmanian"       OFF)
-option(Tasmanian_ENABLE_PYTHON  "Enable Python interface for Tasmanian"  ON)
-option(Tasmanian_ENABLE_FORTRAN "Enable Fortran interface for Tasmanian" OFF)
-option(Tasmanian_ENABLE_CUDA    "Enable Nvidia CUDA kernels and libraries within Tasmanian" OFF)
-option(Tasmanian_ENABLE_MAGMA   "Enable acceleration using UTK Magma library within Tasmanian" OFF)
+option(USE_XSDK_DEFAULTS            "Enable xSDK compatibility"              OFF)
+option(Tasmanian_ENABLE_RECOMMENDED "Enable (if found) OpenMP, BLAS, and Python, also set optimization flags" OFF)
+option(Tasmanian_ENABLE_OPENMP      "Enable OpenMP support for Tasmanian (recommended)"    OFF)
+option(Tasmanian_ENABLE_BLAS        "Enable CPU Blas support for Tasmanian (recommended)"  OFF)
+option(Tasmanian_ENABLE_PYTHON      "Enable Python interface for Tasmanian (recommended)"  OFF)
+option(Tasmanian_ENABLE_CUDA        "Enable Nvidia CUDA kernels and libraries within Tasmanian (stable)"    OFF)
+option(Tasmanian_ENABLE_MAGMA       "Enable acceleration using UTK Magma library within Tasmanian (stable)" OFF)
+option(Tasmanian_ENABLE_MPI         "Enable MPI support for Tasmanian (experimental)"       OFF)
+option(Tasmanian_ENABLE_FORTRAN     "Enable Fortran interface for Tasmanian (experimental)" OFF)
 
 # treat those similar to options, but give values other than ON/OFF
+set(Tasmanian_MATLAB_WORK_FOLDER     ""  CACHE PATH   "Enable MATLAB interface and use the path for the MATLAB work folder (stable)")
+
 set(Tasmanian_TESTS_GPU_ID          "-1" CACHE STRING "(integer) specify GPU ID for testing, -1 means running tests on all visible devices")
 set(Tasmanian_TESTS_OMP_NUM_THREADS "-1" CACHE STRING "(integer) specify OMP_NUM_THREADS for the tests, if less than 0, this option will be ignored")
-set(Tasmanian_MATLAB_WORK_FOLDER     ""  CACHE PATH   "specify the path for the MATLAB work folder")
 
 
 ########################################################################
