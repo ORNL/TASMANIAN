@@ -189,13 +189,13 @@ if (( $bGCC == 1 )); then
     ./example_sparse_grids -fast || { echo "Legacy SG examples failed!"; exit 1; }
     ./example_dream -fast || { echo "Legacy dream examples failed!"; exit 1; }
     if (( $bGfortran == 1 )) && (( $bMacOS == 0 )); then
-        make fortran
-        ./example_sparse_grids_fortran -fast || { echo "Legacy fortran examples failed!"; exit 1; }
+        make fortran  || { exit 1; }
+        ./example_sparse_grids_f90 -fast || { echo "Legacy fortran examples failed!"; exit 1; }
     else
         echo "Either using OSX or no gfortran, skipping GNU Make fortran test" >> $sMultibuildLogFile
     fi
     if (( $bOctave == 1 )); then
-        make matlab
+        make matlab  || { exit 1; }
         octave --eval "addpath('$sTempBuild/Tasmanian/InterfaceMATLAB/'); tsgCoreTests()" || { exit 1; }
     else
         echo "No octave executable, skipping GNU Make MATLAB test" >> $sMultibuildLogFile
