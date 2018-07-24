@@ -3,7 +3,7 @@ include Config/AltBuildSystems/Makefile.in
 IADD = -I./include $(CommonIADD)
 LADD = -L./ $(CommonLADD)
 LIBS = ./libtasmaniansparsegrid.a ./libtasmaniandream.a $(CommonLIBS)
-FFLIBS = ./libtasmanianfortran.a ./libtasmaniansparsegrid.a ./libtasmaniandream.a $(CommonLIBS)
+FFLIBS90 = ./libtasmanianfortran90.a ./libtasmaniansparsegrid.a ./libtasmaniandream.a $(CommonLIBS)
 
 TSG_SOURCE = $(wildcard ./SparseGrids/*.cpp) $(wildcard ./SparseGrids/*.hpp) $(wildcard ./SparseGrids/*.h)
 TDR_SOURCE = $(wildcard ./DREAM/*.cpp) $(wildcard ./DREAM/*.hpp)
@@ -162,35 +162,35 @@ python3: ./Config/AltBuildSystems/TasmanianSG.py ./Config/AltBuildSystems/testTS
 
 # Fortran
 .PHONY: fortran
-fortran: example_sparse_grids_fortran fortran_tester libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
-	./fortester
+fortran: example_sparse_grids_f90 fortester90 libtasmanianfortran90.a libtasmanianfortran90.so tasmaniansg.mod
+	./fortester90
 
-fortran_tester: libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
-	cp Testing/fortester.f90 .
-	$(FF) $(OPTF) $(IADD) -c fortester.f90 -o fortester.o
-	$(FF) $(OPTLFF) $(LADD) fortester.o -o fortester $(FFLIBS) -lstdc++
+fortester90: libtasmanianfortran90.a libtasmanianfortran90.so tasmaniansg.mod
+	cp InterfaceFortran/fortester.f90 .
+	$(FF) $(OPTF) $(IADD) -c fortester.f90 -o fortester90.o
+	$(FF) $(OPTLFF) $(LADD) fortester90.o -o fortester90 $(FFLIBS90) -lstdc++
 
-example_sparse_grids_fortran: libtasmanianfortran.a libtasmanianfortran.so tasmaniansg.mod
+example_sparse_grids_f90: libtasmanianfortran90.a libtasmanianfortran90.so tasmaniansg.mod
 	cp ./InterfaceFortran/Examples/example_sparse_grids.f90 .
-	$(FF) $(OPTF) $(IADD) -c example_sparse_grids.f90 -o example_sparse_grids_fortran.o
-	$(FF) $(OPTLFF) $(LADD) example_sparse_grids_fortran.o -o example_sparse_grids_fortran $(FFLIBS) -lstdc++
+	$(FF) $(OPTF) $(IADD) -c example_sparse_grids.f90 -o example_sparse_grids_f90.o
+	$(FF) $(OPTLFF) $(LADD) example_sparse_grids_f90.o -o example_sparse_grids_f90 $(FFLIBS90) -lstdc++
 
 tasmaniansg.mod: InterfaceFortran/tasmaniansg.mod
 	cp InterfaceFortran/tasmaniansg.mod .
 
-InterfaceFortran/tasmaniansg.mod: libtasmanianfortran.a libtasmanianfortran.so
+InterfaceFortran/tasmaniansg.mod: libtasmanianfortran90.a libtasmanianfortran90.so
 	cd InterfaceFortran/; make
 
-libtasmanianfortran.so: InterfaceFortran/libtasmanianfortran.so
-	cp InterfaceFortran/libtasmanianfortran.so .
+libtasmanianfortran90.so: InterfaceFortran/libtasmanianfortran90.so
+	cp InterfaceFortran/libtasmanianfortran90.so .
 
-libtasmanianfortran.a: InterfaceFortran/libtasmanianfortran.a
-	cp InterfaceFortran/libtasmanianfortran.a .
+libtasmanianfortran90.a: InterfaceFortran/libtasmanianfortran90.a
+	cp InterfaceFortran/libtasmanianfortran90.a .
 
-InterfaceFortran/libtasmanianfortran.so: libtasmanianfortran.a
+InterfaceFortran/libtasmanianfortran90.so: libtasmanianfortran90.a
 	cd InterfaceFortran/; make
 
-InterfaceFortran/libtasmanianfortran.a:
+InterfaceFortran/libtasmanianfortran90.a:
 	cd InterfaceFortran/; make
 
 # Testing and examples
@@ -214,8 +214,8 @@ clean:
 	rm -fr libtasmaniansparsegrid.a
 	rm -fr libtasmaniandream.so
 	rm -fr libtasmaniandream.a
-	rm -fr libtasmanianfortran.so
-	rm -fr libtasmanianfortran.a
+	rm -fr libtasmanianfortran90.so
+	rm -fr libtasmanianfortran90.a
 	rm -fr tasmaniansg.mod
 	rm -fr fortester*
 	rm -fr tasgrid
