@@ -153,10 +153,10 @@ matlab:
 
 # Python 3
 .PHONY: python3
-python3: ./InterfacePython/TasmanianSG.py ./Testing/testTSG.py ./Examples/example_sparse_grids.py
-	cp ./InterfacePython/TasmanianSG.py .
-	cp ./Examples/example_sparse_grids.py .
-	cp ./Testing/testTSG.py .
+python3: ./Config/AltBuildSystems/TasmanianSG.py ./Config/AltBuildSystems/testTSG.py ./Config/AltBuildSystems/example_sparse_grids.py
+	cp ./Config/AltBuildSystems/TasmanianSG.py .
+	cp ./Config/AltBuildSystems/example_sparse_grids.py .
+	cp ./Config/AltBuildSystems/testTSG.py .
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' example_sparse_grids.py
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' testTSG.py
 
