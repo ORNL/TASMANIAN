@@ -25,6 +25,7 @@ file(COPY  tsgCancelRefine.m
            tsgLoadHCoefficients.m
            tsgLoadValues.m
            tsgMakeFilenames.m
+           tsgMakeFourier.m
            tsgMakeGlobal.m
            tsgMakeLocalPolynomial.m
            tsgMakeQuadrature.m
