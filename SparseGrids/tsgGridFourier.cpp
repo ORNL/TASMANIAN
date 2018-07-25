@@ -566,15 +566,36 @@ double* GridFourier::getBasisFunctions(const double x[]) const {
 void GridFourier::getBasisFunctions(const double x[], double weights[]) const{
     int num_points = getNumPoints();
     std::fill(weights, weights + 2*num_points, 0.0);
-    for (int i=0; i<num_points; i++){
-        double theta = 0;
-        for(int j=0; j<num_dimensions; j++) theta += exponents->getIndex(i)[j] * x[j];
-        double theta_offset = fabs(theta) - ((int) fabs(theta));
-        bool neg = (theta_offset > 0.25 && theta_offset < 0.75);
-        theta *= 2.0 * M_PI;
-        weights[i + num_points] = -1.0*sin(theta);
-        weights[i] = (neg ? -1.0 : 1.0) * sqrt(1 - weights[i + num_points]*weights[i + num_points]);
+    std::complex<double> unit_imag(0.0,1.0);
+    std::complex<double> **cacheExponentials = new std::complex<double>*[num_dimensions];
+    int *middles = new int[num_dimensions];
+    for (int j=0; j<num_dimensions; j++){
+        int num_level_points = wrapper->getNumPoints(max_levels[j]);
+        int middle = (num_level_points - 1)/2;
+        middles[j] = middle;
+        cacheExponentials[j] = new std::complex<double>[num_level_points];
+        cacheExponentials[j][middle] = std::complex<double>(1.0,0.0);
+        if (num_level_points > 1){
+            cacheExponentials[j][middle+1] = std::exp(2*M_PI*unit_imag*x[j]);
+            for (int i=middle+2; i<num_level_points; i++){
+                cacheExponentials[j][i] = cacheExponentials[j][middle+1] * cacheExponentials[j][i-1];
+            }
+
+            cacheExponentials[j][middle-1] = std::conj(cacheExponentials[j][middle+1]);
+            for (int i=middle-2; i>=0; i--){
+                cacheExponentials[j][i] = cacheExponentials[j][middle-1] * cacheExponentials[j][i+1];
+            }
+        }
     }
+    for (int i=0; i<num_points; i++){
+        std::complex<double> basis_entry(1.0,0.0);
+        for (int j=0; j<num_dimensions; j++) basis_entry *= cacheExponentials[j][exponents->getIndex(i)[j] + middles[j]];
+        weights[i] = basis_entry.real();
+        weights[i + num_points] = -1.0*basis_entry.imag();
+    }
+    for (int j=0; j<num_dimensions; j++) { delete[] cacheExponentials[j]; }
+    delete[] cacheExponentials;
+    delete[] middles;
 }
 
 double* GridFourier::getInterpolationWeights(const double x[]) const {
