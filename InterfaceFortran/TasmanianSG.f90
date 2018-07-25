@@ -71,6 +71,9 @@ PUBLIC :: tsgInitialize,        &
           tsgEvaluate,         &
           tsgEvaluateFast,     &
           tsgEvaluateBatch,    &
+          tsgEvaluateHierarchicalFunctions,        &
+          tsgEvaluateComplexHierarchicalFunctions, &
+          tsgEvaluateSparseHierarchicalFunctions,  &
           tsgIntegrate,        &
           tsgSetDomainTransform,   &
           tsgIsSetDomainTransfrom, &
@@ -548,6 +551,39 @@ subroutine tsgEvaluateBatch(gridID, x, numX, y)
   double precision :: x(:,:), y(:,:)
   call tsgevb(gridID, x, numX, y)
 end subroutine tsgEvaluateBatch
+!=======================================================================
+subroutine tsgEvaluateHierarchicalFunctions(gridID, x, numX, y)
+  integer :: gridID, numX
+  double precision :: x(:,:), y(:,:)
+  double precision :: y_c_style(size(y,2),size(y,1))
+  call tsgehf(gridID, x, numX, y_c_style)
+  y = transpose(y_c_style)
+end subroutine tsgEvaluateHierarchicalFunctions
+!=======================================================================
+subroutine tsgEvaluateComplexHierarchicalFunctions(gridID, x, numX, y)
+  integer :: gridID, numX
+  double precision :: x(:,:)
+  double complex   :: y(:,:)
+  double precision :: y_c_style(2*size(y,2),size(y,1))
+  integer :: i, j
+  call tsgehf(gridID, x, numX, y_c_style)
+  do i = 1,size(y,1)
+    do j = 1,size(y,2)
+      y(i,j) = complex( y_c_style(2*j-1,i), y_c_style(2*j,i) )
+    enddo
+  enddo
+end subroutine tsgEvaluateComplexHierarchicalFunctions
+!=======================================================================
+subroutine tsgEvaluateSparseHierarchicalFunctions(gridID, x, numX, pntr, indx, y)
+  integer :: gridID, numX
+  double precision :: x(:,:)
+  integer, pointer :: pntr(:), indx(:)
+  double precision, pointer :: y(:)
+  integer :: numNZ
+  call tsgehz(gridID, x, numX, numNZ)
+  allocate( pntr(numX+1), indx(numNZ), y(numNZ) )
+  call tsgehs(gridID, x, numX, pntr, indx, y)
+end subroutine tsgEvaluateSparseHierarchicalFunctions
 !=======================================================================
 subroutine tsgIntegrate(gridID, q)
   integer :: gridID

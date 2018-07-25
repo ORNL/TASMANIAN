@@ -171,6 +171,14 @@ void tsgevf_(int *id, const double *x, double *y){ _tsg_grid_list[*id]->evaluate
 void tsgevb_(int *id, const double *x, int *num_x, double *y){ _tsg_grid_list[*id]->evaluateBatch(x, (*num_x), y); }
 void tsgint_(int *id, double *q){ _tsg_grid_list[*id]->integrate(q); }
 
+// hierarchical functions/coefficients
+void tsgehf_(int *id, const double *x, int *num_x, double *y){
+    _tsg_grid_list[*id]->evaluateHierarchicalFunctions(x, (*num_x), y);}
+void tsgehs_(int *id, const double *x, int *num_x, int *pntr, int *indx, double *vals){
+    _tsg_grid_list[*id]->evaluateSparseHierarchicalFunctionsStatic(x, *num_x, pntr, indx, vals);}
+void tsgehz_(int *id, const double *x, int *num_x, int *num_nz){
+    *num_nz = _tsg_grid_list[*id]->evaluateSparseHierarchicalFunctionsGetNZ(x, *num_x);}
+
 // setAnisotropic/Surplus/Refinement
 void tsgsar_(int *id, int *type, int *min_growth, int *output){
     _tsg_grid_list[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output);
