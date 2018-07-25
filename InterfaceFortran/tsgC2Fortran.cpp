@@ -106,20 +106,21 @@ void tsgwri_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->w
 void tsgrea_(int *id, const char *filename){ _tsg_grid_list[*id]->read(filename); }
 
 // create
-void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights, double *alpha, double *beta, const int *llimits){
+void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights, 
+            double *alpha, double *beta, const char *customRuleFilename, const int *llimits){
     _tsg_grid_list[*id]->makeGlobalGrid(*dimensions, *outputs, *depth,
         OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule),
-        anisotropic_weights, *alpha, *beta, 0, llimits);
+        anisotropic_weights, *alpha, *beta, customRuleFilename, llimits);
 }
-void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights){
+void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights, const int *llimits){
     _tsg_grid_list[*id]->makeSequenceGrid(*dimensions, *outputs, *depth,
-        OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule), anisotropic_weights);
+        OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule), anisotropic_weights, llimits);
 }
-void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *order, int *rule){
-    _tsg_grid_list[*id]->makeLocalPolynomialGrid(*dimensions, *outputs, *depth, *order, OneDimensionalMeta::getIORuleInt(*rule));
+void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *order, int *rule, const int *llimits){
+    _tsg_grid_list[*id]->makeLocalPolynomialGrid(*dimensions, *outputs, *depth, *order, OneDimensionalMeta::getIORuleInt(*rule), llimits);
 }
-void tsgmw_(int *id, int *dimensions, int *outputs, int *depth, int *order){
-    _tsg_grid_list[*id]->makeWaveletGrid(*dimensions, *outputs, *depth, *order);
+void tsgmw_(int *id, int *dimensions, int *outputs, int *depth, int *order, const int *llimits){
+    _tsg_grid_list[*id]->makeWaveletGrid(*dimensions, *outputs, *depth, *order, llimits);
 }
 void tsgmf_(int *id, int *dimensions, int *outputs, int *depth, int *type, const int *anisotropic_weights, const int *llimits){
     _tsg_grid_list[*id]->makeFourierGrid(*dimensions, *outputs, *depth, 
@@ -195,8 +196,8 @@ void tsggchc_(int *id, struct dcmplx *c){
 void tsgshc_(int *id, double *c){_tsg_grid_list[*id]->setHierarchicalCoefficients(c);}
 
 // setAnisotropic/Surplus/Refinement
-void tsgsar_(int *id, int *type, int *min_growth, int *output){
-    _tsg_grid_list[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output);
+void tsgsar_(int *id, int *type, int *min_growth, int *output, const int *llimits = 0){
+    _tsg_grid_list[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output, llimits);
 }
 void tsgeac_(int *id, int *type, int *output, int *result){
     int *coeff = _tsg_grid_list[*id]->estimateAnisotropicCoefficients(OneDimensionalMeta::getIOTypeInt(*type), *output);
@@ -205,9 +206,10 @@ void tsgeac_(int *id, int *type, int *output, int *result){
     for(int i=0; i<num_coeff; i++) result[i] = coeff[i];
     delete[] coeff;
 }
-void tsgssr_(int *id, double *tol, int *output){ _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output, 0); }
-void tsgshr_(int *id, double *tol, int *type, int *output){
-    _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), *output);
+void tsgssr_(int *id, double *tol, int *output, const int *llimits = 0){ 
+    _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output, llimits); }
+void tsgshr_(int *id, double *tol, int *type, int *output, const int *llimits = 0){
+    _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), *output, llimits);
 }
 void tsgcre_(int *id){ _tsg_grid_list[*id]->clearRefinement(); }
 void tsgmre_(int *id){ _tsg_grid_list[*id]->mergeRefinement(); }
