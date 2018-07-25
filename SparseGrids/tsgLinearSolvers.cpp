@@ -226,8 +226,10 @@ void TasmanianFourierTransform::discrete_fourier_transform(const int rank, const
             out[k] += exp_j_hist[rank-1]*data[j];
         }
         delete[] exp_j_hist;
+        delete[] j_idx;
     }
     delete[] exp_k;
+    delete[] k_idx;
 }
 
 }

@@ -518,8 +518,11 @@ int GridFourier::convertIndexes(const int i, const int levels[]) const {
         }
     }
 
+    int result = work->getSlot(p_internal);
     delete[] cnum_oned_points;
-    return (work->getSlot(p_internal));
+    delete[] p_internal;
+    delete[] p;
+    return result;
 }
 
 void GridFourier::calculateFourierCoefficients(){
@@ -554,6 +557,9 @@ void GridFourier::calculateFourierCoefficients(){
                 // Combine with tensor weights
                 fourier_coefs[num_outputs*(exponent_refs[n][i]) + k] += ((double) active_w[n]) * out[i] / ((double) num_tensor_points);
             }
+            delete[] in;
+            delete[] out;
+            delete[] num_oned_points;
         }
     }
 }
@@ -621,6 +627,9 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
             int key = convertIndexes(i, levels);
             weights[key] += ((double) active_w[n]) * out[i].real()/((double) num_tensor_points);
         }
+        delete[] in;
+        delete[] out;
+        delete[] num_oned_points;
     }
     delete[] basisFuncs;
 }
