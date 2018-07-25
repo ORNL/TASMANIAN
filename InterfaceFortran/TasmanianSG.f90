@@ -33,6 +33,7 @@ PUBLIC :: tsgInitialize,        &
           tsgFinalize,          &
           tsgNewGridID,         &
           tsgFreeGridID,        &
+          tsgGetNumActiveGrids, &
 !===== ABOVE ARE FORTRAN SPECIFIC FUNCTIONS ======!
 !===== BELOW ARE WRAPPERS FOR STANDARD C++ CLASS =!
           tsgGetVersionMajor,   &
@@ -187,6 +188,11 @@ subroutine tsgFreeGridID(gridID)
   integer :: gridID
   call tsgfre(gridID)
 end subroutine tsgFreeGridID
+!=======================================================================
+function tsgGetNumActiveGrids() result(res)
+  integer :: res
+  call tsggag(res);
+end function
 !=======================================================================
 !   class TasmanianSparseGrid wrapper functions
 !=======================================================================

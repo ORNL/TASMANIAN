@@ -59,7 +59,7 @@ double complex,   pointer :: dcmplx_pnt_1d_a(:), dcmplx_pnt_1d_b(:), dcmplx_pnt_
 
 
 ! must call tsgInitialize() once per program
-call tsgInitialize()
+! call tsgInitialize()
 
 
 write(*,'(a)') 'Testing TASMANIAN FORTRAN interface'
@@ -73,6 +73,67 @@ write(*,"(A,40A)") "Licence: ", licence
 
 ! initialize random number generator
 call srand(seed)
+
+
+
+!=======================================================================
+!       tsgInitialize()
+!       tsgFinalize()
+!=======================================================================
+i_a = 8
+allocate(int_1d_a(i_a), int_1d_b(i_a))
+int_1d_b = (/1,8,6,4,7,3,2,5/)
+if ( tsgGetNumActiveGrids() .ne. 0 ) then
+  write(*,*) "Mismatch in tsgGetNumActiveGrids: before initialization"
+  stop 1
+endif
+call tsgInitialize()
+if ( tsgGetNumActiveGrids() .ne. 0 ) then
+  write(*,*) "Mismatch in tsgGetNumActiveGrids: after initialization"
+  stop 1
+endif
+do i = 1, i_a
+  int_1d_a(i) = tsgNewGridID()
+  if ( tsgGetNumActiveGrids() .ne. i ) then
+    write(*,*) "Mismatch in tsgGetNumActiveGrids: adding grids"
+    stop 1
+  endif
+enddo
+do i = 1, i_a
+  call tsgFreeGridID(int_1d_a(int_1d_b(i)))
+  if ( tsgGetNumActiveGrids() .ne. i_a-i ) then
+    write(*,*) "Mismatch in tsgGetNumActiveGrids: removing grids"
+    stop 1
+  endif
+enddo
+int_1d_a(1) = tsgNewGridID()
+int_1d_a(2) = tsgNewGridID()
+call tsgFinalize()
+if ( tsgGetNumActiveGrids() .ne. 0 ) then
+  write(*,*) "Mismatch in tsgGetNumActiveGrids: after finalize"
+  stop 1
+endif
+do i = 1, i_a
+  int_1d_a(i) = tsgNewGridID()
+  if ( tsgGetNumActiveGrids() .ne. i ) then
+    write(*,*) "Mismatch in tsgGetNumActiveGrids: adding grids without initialization"
+    stop 1
+  endif
+enddo
+do i = 1, i_a
+  call tsgFreeGridID(int_1d_a(int_1d_b(i)))
+  if ( tsgGetNumActiveGrids() .ne. i_a-i ) then
+    write(*,*) "Mismatch in tsgGetNumActiveGrids: removing grids without initialization"
+    stop 1
+  endif
+enddo
+deallocate(int_1d_a, int_1d_b)
+
+
+
+
+
+
 
 
 !=======================================================================
@@ -101,6 +162,10 @@ do i = 1,i_a
 enddo
 deallocate(int_1d_a)
 
+
+
+
+write(*,*) "Fortran wrappers:         PASS"
 
 
 gridID    = tsgNewGridID()
@@ -1364,7 +1429,7 @@ call tsgFreeGridID(gridID_II)
 
 
 ! Tasmanian holds to some RAM until tsgFinalize() is called
-call tsgFinalize()
+! call tsgFinalize()
 
 
 
