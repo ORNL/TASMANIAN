@@ -57,12 +57,13 @@ void tsgbeg_(){
 void tsgnew_(int *returnID){
     int id = 0;
     while((id < _tsg_num_grids) && (_tsg_grid_list[id] != 0)) id++;
+    // double the number of grids if the assumed number was too small
     if (id == _tsg_num_grids){
         TasmanianSparseGrid **_tsg_grid_list_old = _tsg_grid_list;
         _tsg_num_grids *= 2;
         _tsg_grid_list = new TasmanianSparseGrid*[_tsg_num_grids];
         for(int i=0; i<_tsg_num_grids/2; i++) _tsg_grid_list[i] = _tsg_grid_list_old[i];
-        for(int i=_tsg_num_grids/2; i<_tsg_num_grids; i++) _tsg_grid_list_old[i] = 0;
+        for(int i=_tsg_num_grids/2; i<_tsg_num_grids; i++) _tsg_grid_list[i] = 0;
         delete[] _tsg_grid_list_old;
         _tsg_grid_list_old = 0;
     }
