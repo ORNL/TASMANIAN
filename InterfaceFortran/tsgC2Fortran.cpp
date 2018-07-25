@@ -210,6 +210,7 @@ void tsgshr_(int *id, double *tol, int *type, int *output){
     _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), *output);
 }
 void tsgcre_(int *id){ _tsg_grid_list[*id]->clearRefinement(); }
+void tsgmre_(int *id){ _tsg_grid_list[*id]->mergeRefinement(); }
 
 // set/is/clear/getConformalTransform
 void tsgsca_(int *id, int *trunc){ _tsg_grid_list[*id]->setConformalTransformASIN(trunc); }

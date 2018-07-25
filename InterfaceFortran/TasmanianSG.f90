@@ -89,6 +89,7 @@ PUBLIC :: tsgInitialize,        &
           tsgSetGlobalSurplusRefinement,      &
           tsgSetLocalSurplusRefinement,       &
           tsgClearRefinement,                 &
+          tsgMergeRefinement,                 &
           tsgSetConformalTransformASIN,   &
           tsgIsSetConformalTransformASIN, &
           tsgClearConformalTransform,     &
@@ -689,6 +690,11 @@ subroutine tsgClearRefinement(gridID)
   integer :: gridID
   call tsgcre(gridID)
 end subroutine tsgClearRefinement
+!=======================================================================
+subroutine tsgMergeRefinement(gridID)
+  integer :: gridID
+  call tsgmre(gridID)
+end subroutine tsgMergeRefinement
 !=======================================================================
 subroutine tsgSetConformalTransformASIN(gridID, truncate)
   integer :: gridID, truncate(:)
