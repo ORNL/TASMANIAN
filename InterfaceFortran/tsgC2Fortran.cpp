@@ -45,6 +45,8 @@ extern "C" void tsgc2fmat_(int *rows, int *cols, double *mat);
 TasmanianSparseGrid **_tsg_grid_list;
 int _tsg_num_grids;
 
+struct dcmplx {double r, i;}; // interoperability with Fortran complex type
+
 extern "C"{
 
 void tsgbeg_(){
@@ -178,6 +180,19 @@ void tsgehs_(int *id, const double *x, int *num_x, int *pntr, int *indx, double 
     _tsg_grid_list[*id]->evaluateSparseHierarchicalFunctionsStatic(x, *num_x, pntr, indx, vals);}
 void tsgehz_(int *id, const double *x, int *num_x, int *num_nz){
     *num_nz = _tsg_grid_list[*id]->evaluateSparseHierarchicalFunctionsGetNZ(x, *num_x);}
+void tsgghc_(int *id, double *c){
+    const double *cc = _tsg_grid_list[*id]->getHierarchicalCoefficients();
+    std::copy(cc, cc + _tsg_grid_list[*id]->getNumPoints() * _tsg_grid_list[*id]->getNumOutputs(), c);
+}
+void tsggchc_(int *id, struct dcmplx *c){
+    const double *cc = _tsg_grid_list[*id]->getHierarchicalCoefficients();
+    int num_c = _tsg_grid_list[*id]->getNumPoints() * _tsg_grid_list[*id]->getNumOutputs();
+    for (int i = 0; i < num_c; i++){
+        (c+i)->r = cc[2*i];
+        (c+i)->i = cc[2*i+1];
+    }
+}
+void tsgshc_(int *id, double *c){_tsg_grid_list[*id]->setHierarchicalCoefficients(c);}
 
 // setAnisotropic/Surplus/Refinement
 void tsgsar_(int *id, int *type, int *min_growth, int *output){

@@ -74,6 +74,11 @@ PUBLIC :: tsgInitialize,        &
           tsgEvaluateHierarchicalFunctions,        &
           tsgEvaluateComplexHierarchicalFunctions, &
           tsgEvaluateSparseHierarchicalFunctions,  &
+          tsgGetHierarchicalCoefficients,          &
+          tsgGetHierarchicalCoefficientsStatic,    &
+          tsgGetComplexHierarchicalCoefficients,   &
+          tsgGetComplexHierarchicalCoefficientsStatic, &
+          tsgSetHierarchicalCoefficients, &
           tsgIntegrate,        &
           tsgSetDomainTransform,   &
           tsgIsSetDomainTransfrom, &
@@ -584,6 +589,38 @@ subroutine tsgEvaluateSparseHierarchicalFunctions(gridID, x, numX, pntr, indx, y
   allocate( pntr(numX+1), indx(numNZ), y(numNZ) )
   call tsgehs(gridID, x, numX, pntr, indx, y)
 end subroutine tsgEvaluateSparseHierarchicalFunctions
+!=======================================================================
+function tsgGetHierarchicalCoefficients(gridID) result(c)
+  integer :: gridID
+  double precision, pointer :: c(:)
+  allocate(c(tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
+  call tsgghc(gridID, c)
+end function tsgGetHierarchicalCoefficients
+!=======================================================================
+subroutine tsgGetHierarchicalCoefficientsStatic(gridID, c)
+  integer :: gridID
+  double precision :: c(:)
+  call tsgghc(gridID, c)
+end subroutine tsgGetHierarchicalCoefficientsStatic
+!=======================================================================
+function tsgGetComplexHierarchicalCoefficients(gridID) result(c)
+  integer :: gridID
+  double complex, pointer :: c(:)
+  allocate(c(tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
+  call tsggchc(gridID, c)
+end function tsgGetComplexHierarchicalCoefficients
+!=======================================================================
+subroutine tsgGetComplexHierarchicalCoefficientsStatic(gridID, c)
+  integer :: gridID
+  double complex :: c(:)
+  call tsggchc(gridID, c)
+end subroutine tsgGetComplexHierarchicalCoefficientsStatic
+!=======================================================================
+subroutine tsgSetHierarchicalCoefficients(gridID,c)
+  integer :: gridID
+  double precision :: c(:)
+  call tsgshc(gridID, c)
+end subroutine tsgSetHierarchicalCoefficients
 !=======================================================================
 subroutine tsgIntegrate(gridID, q)
   integer :: gridID
