@@ -44,7 +44,7 @@ extern "C" void tsgc2fmat_(int *rows, int *cols, double *mat);
 
 TasmanianSparseGrid **_tsg_grid_list;
 int _tsg_num_grids, _tsg_num_active_grids = 0;
-bool is_initialized = false;
+bool _tsg_is_initialized = false;
 
 struct dcmplx {double r, i;}; // interoperability with Fortran complex type
 
@@ -54,16 +54,16 @@ void tsggag_(int *num_active){
     *num_active = _tsg_num_active_grids;
 }
 void tsgbeg_(){
-    if ( !is_initialized ){
+    if ( !_tsg_is_initialized ){
         _tsg_num_grids = 4; // assume we are working with 4 grids
         _tsg_num_active_grids = 0;
         _tsg_grid_list = new TasmanianSparseGrid*[_tsg_num_grids];
         for(int i=0; i<_tsg_num_grids; i++) _tsg_grid_list[i] = 0;
     }
-    is_initialized = true;
+    _tsg_is_initialized = true;
 }
 void tsgend_(){
-    if (is_initialized){
+    if (_tsg_is_initialized){
         for(int i=0; i<_tsg_num_grids; i++){
             if (_tsg_grid_list[i] != 0) delete _tsg_grid_list[i];
         }
@@ -72,10 +72,10 @@ void tsgend_(){
         _tsg_num_grids = 0;
     }
     _tsg_num_active_grids = 0;
-    is_initialized = false;
+    _tsg_is_initialized = false;
 }
 void tsgnew_(int *returnID){
-    if ( !is_initialized ) tsgbeg_();
+    if ( !_tsg_is_initialized ) tsgbeg_();
     int id = 0;
     while((id < _tsg_num_grids) && (_tsg_grid_list[id] != 0)) id++;
     // double the number of grids if the assumed number was too small
