@@ -207,48 +207,47 @@ function tsgGetLicense() result(lic)
 end function tsgGetLicense
 !=======================================================================
 subroutine tsgMakeGlobalGrid(gridID, dims, outs, depth, gtype, rule, &
-                             aweights, alpha, beta, levelLimits)
-  integer, intent(in) :: gridID, dims, outs, depth, gtype, rule
-  integer :: i
-  integer, optional :: aweights(*), levelLimits(dims)
-  double precision, optional :: alpha, beta
-  double precision :: al, be
-  integer, allocatable :: aw(:)
-  integer, allocatable :: ll(:)
-  if(present(alpha))then
-    al = alpha
-  else
-    al = 0.0
-  endif
-  if(present(beta))then
-    be = beta
-  else
-    be = 0.0
-  endif
-  allocate(ll(dims))
-  if(present(levelLimits))then
-    do i = 1, dims
-      ll(i) = levelLimits(i)
-    end do
-  else
-    do i = 1, dims
-      ll(i) = -1
-    end do
-  endif
-  if(present(aweights))then
-    call tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be, ll)
-  else
-    allocate(aw(2*dims))
-    do i = 1, dims
-      aw(i) = 1
-    end do
-    do i = dims+1, 2*dims
-      aw(i) = 0
-    end do
-    call tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be, ll)
-    deallocate(aw)
-  endif
-  deallocate(ll)
+                             aweights, alpha, beta, customRuleFilename, levelLimits)
+integer, intent(in) :: gridID, dims, outs, depth, gtype, rule
+integer :: i
+integer, optional :: aweights(*), levelLimits(dims)
+double precision, optional :: alpha, beta
+character(len=*), optional :: customRuleFilename
+character(len=80) :: cfn
+double precision :: al, be
+integer, allocatable :: aw(:)
+integer, allocatable :: ll(:)
+if (present(customRuleFilename)) then
+  cfn = customRuleFilename//char(0)
+else
+  cfn = char(0)
+endif
+if(present(alpha))then
+  al = alpha
+else
+  al = 0.0
+endif
+if(present(beta))then
+  be = beta
+else
+  be = 0.0
+endif
+allocate(ll(dims))
+if(present(levelLimits))then
+  ll = levelLimits
+else
+  ll = -1
+endif
+if(present(aweights))then
+  call tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be, cfn, ll)
+else
+  allocate(aw(2*dims))
+  aw(1:dims) = 1
+  aw(dims+1:2*dims) = 0
+  call tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be, cfn, ll)
+  deallocate(aw)
+endif
+deallocate(ll)
 end subroutine tsgMakeGlobalGrid
 !=======================================================================
 subroutine tsgMakeSequenceGrid(gridID, dims, outs, depth, gtype, rule, &
