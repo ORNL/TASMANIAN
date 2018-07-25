@@ -47,3 +47,15 @@ Quick Install
   make install
   make test_install
 ```
+
+Basic Usage of Tasmanian
+--------------
+
+* see the Examples in the install prefix:
+```
+  <install-prefix>/share/Tasmanian/examples/
+```
+* the Examples source code is in:
+```
+  <source-root>/<module>/Examples/
+```
