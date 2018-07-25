@@ -208,73 +208,84 @@ end function tsgGetLicense
 !=======================================================================
 subroutine tsgMakeGlobalGrid(gridID, dims, outs, depth, gtype, rule, &
                              aweights, alpha, beta, customRuleFilename, levelLimits)
-integer, intent(in) :: gridID, dims, outs, depth, gtype, rule
-integer :: i
-integer, optional :: aweights(*), levelLimits(dims)
-double precision, optional :: alpha, beta
-character(len=*), optional :: customRuleFilename
-character(len=80) :: cfn
-double precision :: al, be
-integer, allocatable :: aw(:)
-integer, allocatable :: ll(:)
-if (present(customRuleFilename)) then
-  cfn = customRuleFilename//char(0)
-else
-  cfn = char(0)
-endif
-if(present(alpha))then
-  al = alpha
-else
-  al = 0.0
-endif
-if(present(beta))then
-  be = beta
-else
-  be = 0.0
-endif
-allocate(ll(dims))
-if(present(levelLimits))then
-  ll = levelLimits
-else
-  ll = -1
-endif
-if(present(aweights))then
-  call tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be, cfn, ll)
-else
-  allocate(aw(2*dims))
-  aw(1:dims) = 1
-  aw(dims+1:2*dims) = 0
-  call tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be, cfn, ll)
-  deallocate(aw)
-endif
-deallocate(ll)
+  integer, intent(in) :: gridID, dims, outs, depth, gtype, rule
+  integer :: i
+  integer, optional :: aweights(*), levelLimits(dims)
+  double precision, optional :: alpha, beta
+  character(len=*), optional :: customRuleFilename
+  character(len=80) :: cfn
+  double precision :: al, be
+  integer, allocatable :: aw(:)
+  integer, allocatable :: ll(:)
+  if (present(customRuleFilename)) then
+    cfn = customRuleFilename//char(0)
+  else
+    cfn = char(0)
+  endif
+  if(present(alpha))then
+    al = alpha
+  else
+    al = 0.0
+  endif
+  if(present(beta))then
+    be = beta
+  else
+    be = 0.0
+  endif
+  allocate(ll(dims))
+  if(present(levelLimits))then
+    ll = levelLimits
+  else
+    ll = -1
+  endif
+  if(present(aweights))then
+    call tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be, cfn, ll)
+  else
+    allocate(aw(2*dims))
+    aw(1:dims) = 1
+    aw(dims+1:2*dims) = 0
+    call tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be, cfn, ll)
+    deallocate(aw)
+  endif
+  deallocate(ll)
 end subroutine tsgMakeGlobalGrid
 !=======================================================================
 subroutine tsgMakeSequenceGrid(gridID, dims, outs, depth, gtype, rule, &
-                               aweights)
+                               aweights, levelLimits)
   integer :: gridID, dims, outs, depth, gtype, rule, i
-  integer, optional :: aweights(*)
+  integer, optional :: aweights(*), levelLimits(dims)
   integer, allocatable :: aw(:)
+  integer, allocatable :: ll(:)
+  allocate(ll(dims))
+  if(present(levelLimits))then
+    ll = levelLimits
+  else
+    ll = -1
+  endif
   if(present(aweights))then
-    call tsgms(gridID, dims, outs, depth, gtype, rule, aweights)
+    call tsgms(gridID, dims, outs, depth, gtype, rule, aweights, ll)
   else
     allocate(aw(2*dims))
-    do i = 1, dims
-      aw(i) = 1
-    end do
-    do i = dims+1, 2*dims
-      aw(i) = 0
-    end do
-    call tsgms(gridID, dims, outs, depth, gtype, rule, aw)
+    aw(1:dims) = 1
+    aw(dims+1:2*dims) = 0
+    call tsgms(gridID, dims, outs, depth, gtype, rule, aw, ll)
     deallocate(aw)
   endif
+  deallocate(ll)
 end subroutine tsgMakeSequenceGrid
 !=======================================================================
 subroutine tsgMakeLocalPolynomialGrid(gridID, dims, outs, depth, order,&
-                                      rule)
+                                      rule, levelLimits)
   integer :: gridID, dims, outs, depth
-  integer, optional :: order, rule
-  integer :: or, ru
+  integer, optional :: order, rule, levelLimits(dims)
+  integer :: or, ru, i
+  integer, allocatable :: ll(:)
+  allocate(ll(dims))
+  if(present(levelLimits))then
+    ll = levelLimits
+  else
+    ll = -1
+  endif
   if(present(order))then
     or = order
   else
@@ -285,18 +296,29 @@ subroutine tsgMakeLocalPolynomialGrid(gridID, dims, outs, depth, order,&
   else
     ru = 1
   endif
-  call tsgml(gridID, dims, outs, depth, or, ru)
+  call tsgml(gridID, dims, outs, depth, or, ru, ll)
+  deallocate(ll)
 end subroutine tsgMakeLocalPolynomialGrid
 !=======================================================================
-subroutine tsgMakeWaveletGrid(gridID, dims, outs, depth, order)
+subroutine tsgMakeWaveletGrid(gridID, dims, outs, depth, order, levelLimits)
   integer :: gridID, dims, outs, depth, or
+  integer, optional :: levelLimits(dims)
+  integer :: i
   integer, optional :: order
-  if(present(order))THEN
+  integer, allocatable :: ll(:)
+  allocate(ll(dims))
+  if(present(levelLimits))then
+    ll = levelLimits
+  else
+    ll = -1
+  endif
+  if(present(order))then
     or = order
   else
     or = 1
   endif
-  call tsgmw(gridID, dims, outs, depth, or)
+  call tsgmw(gridID, dims, outs, depth, or, ll)
+  deallocate(ll)
 end subroutine tsgMakeWaveletGrid
 !=======================================================================
 subroutine tsgMakeFourierGrid(gridID, dims, outs, depth, gtype, aweights, levelLimits)
@@ -651,39 +673,52 @@ subroutine tsgGetDomainTransform(gridID, transformA, transformB)
   call tsggdt(gridID, transformA, transformB)
 end subroutine tsgGetDomainTransform
 !=======================================================================
-subroutine tsgSetAnisotropicRefinement(gridID, gtype, minGrowth, output)
+subroutine tsgSetAnisotropicRefinement(gridID, gtype, minGrowth, output, levelLimits)
   integer :: gridID, gtype, minGrowth, output
-  call tsgsar(gridID, gtype, minGrowth, output)
+  integer, optional :: levelLimits(:)
+  if(present(levelLimits))then
+    call tsgsar(gridID, gtype, minGrowth, output-1, levelLimits)
+  else
+    call tsgsar(gridID, gtype, minGrowth, output-1)
+  endif
 end subroutine tsgSetAnisotropicRefinement
 !=======================================================================
-function tsgEstimateAnisotropicCoefficients(gridID, gtype, output) &
-                                              result(coeff)
+function tsgEstimateAnisotropicCoefficients(gridID, gtype, output) result(coeff)
   integer :: gridID, gtype, output, N
-  integer, allocatable :: coeff(:)
+  integer, pointer :: coeff(:)
   N = tsgGetNumDimensions(gridID)
   if ((gtype .EQ. 2) .OR. (gtype .EQ. 4) .OR. (gtype .EQ. 6))then
     N = N * 2
   endif
   allocate(coeff(N))
-  call tsgeac(gridID, gtype, output, coeff)
+  call tsgeac(gridID, gtype, output-1, coeff)
 end function tsgEstimateAnisotropicCoefficients
 !=======================================================================
-subroutine tsgSetGlobalSurplusRefinement(gridID, tolerance, output)
+subroutine tsgSetGlobalSurplusRefinement(gridID, tolerance, output, levelLimits)
   integer :: gridID, output
+  integer, optional :: levelLimits(:)
   double precision :: tolerance
-  call tsgssr(gridID, tolerance, output)
+  if(present(levelLimits))then
+    call tsgssr(gridID, tolerance, output-1, levelLimits)
+  else
+    call tsgssr(gridID, tolerance, output-1)
+  endif
 end subroutine tsgSetGlobalSurplusRefinement
 !=======================================================================
-subroutine tsgSetLocalSurplusRefinement(gridID, tolerance, rtype, output)
+subroutine tsgSetLocalSurplusRefinement(gridID, tolerance, rtype, output, levelLimits)
   integer :: gridID, rtype, theout
-  integer, optional :: output
+  integer, optional :: output, levelLimits(:)
   double precision :: tolerance
   if(present(output))then
-    theout = output
+    theout = output-1
   else
     theout = -1
   endif
-  call tsgshr(gridID, tolerance, rtype, theout)
+  if(present(levelLimits))then
+    call tsgshr(gridID, tolerance, rtype, theout, levelLimits)
+  else
+    call tsgshr(gridID, tolerance, rtype, theout)
+  endif
 end subroutine tsgSetLocalSurplusRefinement
 !=======================================================================
 subroutine tsgClearRefinement(gridID)
