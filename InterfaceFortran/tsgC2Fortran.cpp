@@ -119,6 +119,10 @@ void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *order, int 
 void tsgmw_(int *id, int *dimensions, int *outputs, int *depth, int *order){
     _tsg_grid_list[*id]->makeWaveletGrid(*dimensions, *outputs, *depth, *order);
 }
+void tsgmf_(int *id, int *dimensions, int *outputs, int *depth, int *type, const int *anisotropic_weights, const int *llimits){
+    _tsg_grid_list[*id]->makeFourierGrid(*dimensions, *outputs, *depth, 
+        OneDimensionalMeta::getIOTypeInt(*type), anisotropic_weights, llimits);
+}
 
 // copy/updare
 void tsgcp_(int *id, int *source){ _tsg_grid_list[*id]->copyGrid(_tsg_grid_list[*source]); }

@@ -42,6 +42,7 @@ PUBLIC :: tsgInitialize,        &
           tsgMakeSequenceGrid,  &
           tsgMakeLocalPolynomialGrid, &
           tsgMakeWaveletGrid,   &
+          tsgMakeFourierGrid,   &
           tsgCopyGrid,          &
           tsgUpdateGlobalGrid,  &
           tsgUpdateSequenceGrid,&
@@ -288,6 +289,29 @@ subroutine tsgMakeWaveletGrid(gridID, dims, outs, depth, order)
   endif
   call tsgmw(gridID, dims, outs, depth, or)
 end subroutine tsgMakeWaveletGrid
+!=======================================================================
+subroutine tsgMakeFourierGrid(gridID, dims, outs, depth, gtype, aweights, levelLimits)
+  integer :: gridID, dims, outs, depth, gtype
+  integer, optional :: aweights(*), levelLimits(dims)
+  integer, allocatable :: aw(:)
+  integer, allocatable :: ll(:)
+  allocate(ll(dims))
+  if(present(levelLimits)) then
+    ll = levelLimits
+  else
+    ll = -1
+  endif
+  if(present(aweights)) then
+    call tsgmf(gridID, dims, outs, depth, gtype, aweights, ll)
+  else
+    allocate(aw(2*dims))
+    aw(1:dims)  = 1
+    aw(dims+1:) = 0
+    call tsgmf(gridID, dims, outs, depth, gtype, aw, ll)
+    deallocate(aw)
+  endif
+  deallocate(ll)
+end subroutine tsgMakeFourierGrid
 !=======================================================================
 subroutine tsgCopyGrid(gridID, sourceID)
   integer :: gridID, sourceID
