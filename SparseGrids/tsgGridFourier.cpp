@@ -124,7 +124,7 @@ void GridFourier::read(std::ifstream &ifs, std::ostream *logstream){
             values = new StorageSet(0, 0); values->read(ifs);
             ifs >> flag;
             if (flag == 1){
-                fourier_coefs = new double[num_outputs * work->getNumIndexes()];
+                fourier_coefs = new double[2 * num_outputs * work->getNumIndexes()];
                 for(int i=0; i<2*num_outputs*work->getNumIndexes(); i++){
                     ifs >> fourier_coefs[i];
                 }
@@ -414,7 +414,6 @@ int GridFourier::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : 
 
 void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
     if (accel != 0) accel->resetGPULoadedData();
-
     if (points == 0){ //setting points for the first time
         values->setValues(vals);
         points = needed;
@@ -520,7 +519,6 @@ int GridFourier::convertIndexes(const int i, const int levels[]) const {
 
 void GridFourier::calculateFourierCoefficients(){
     int num_nodes = getNumPoints();
-
     if (fourier_coefs != 0){ delete[] fourier_coefs; fourier_coefs = 0; }
     fourier_coefs = new double[2 * num_outputs * num_nodes];
     std::fill(fourier_coefs, fourier_coefs + 2*num_outputs*num_nodes, 0.0);
@@ -641,8 +639,8 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
             int key = convertIndexes(i, levels);
             weights[key] += ((double) active_w[n]) * (out_cos[i].real()+out_sin[i].imag()) /((double) num_tensor_points);
         }
-        delete[] in;
-        delete[] out;
+        delete[] in_cos; delete[] in_sin;
+        delete[] out_cos; delete[] out_sin;
         delete[] num_oned_points;
     }
     delete[] basisFuncs;

@@ -951,9 +951,20 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
         }
         pntr[num_x] = num_nz;
         delete[] dense_vals;
+    }else if (fourier != 0){
+        int num_points = base->getNumPoints();
+        vals = new double[2 * num_x * num_points];
+        base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);
+        pntr = new int[num_x + 1];
+        pntr[0] = 0;
+        for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + 2*num_points;
+        indx  = new int[2 * num_x * num_points];
+        for(int i=0; i<num_x; i++){
+            for(int j=0; j<2*num_points; j++) indx[2*i*num_points + j] = j;
+        }
     }else{
         int num_points = base->getNumPoints();
-        vals = new double[(fourier != 0 ? 2 * num_x * num_points : num_x * num_points)];
+        vals = new double[num_x * num_points];
         base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);
         pntr = new int[num_x + 1];
         pntr[0] = 0;
@@ -977,6 +988,8 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
         wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals);
         for(int i=0; i<num_points*num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
         delete[] dense_vals;
+    }else if (fourier != 0){
+        return 2 * num_x * base->getNumPoints();
     }else{
         return num_x * base->getNumPoints();
     }
@@ -1006,6 +1019,14 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
         }
         pntr[num_x] = num_nz;
         delete[] dense_vals;
+    }else if (fourier != 0){
+        int num_points = base->getNumPoints();
+        base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);
+        pntr[0] = 0;
+        for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + 2*num_points;
+        for(int i=0; i<num_x; i++){
+            for(int j=0; j<2*num_points; j++) indx[2*i*num_points + j] = j;
+        }
     }else{
         int num_points = base->getNumPoints();
         base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);

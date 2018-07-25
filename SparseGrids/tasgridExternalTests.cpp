@@ -1029,7 +1029,7 @@ bool ExternalTester::testAllFourier() const{
 
         for(int i=0; i<num_eval; i++){
             for(int j=pntr[i]; j<pntr[i+1]; j++){
-                y[i] -= (coeff[indx[j]] * vals[2*num_points*i+indx[j]] + coeff[indx[j]+num_points] * vals[(2*i+1)*num_points+indx[j]]);
+                y[i] -= (coeff[indx[j]] * vals[j]);
             }
         }
         for(int i=0; i<num_eval; i++){
