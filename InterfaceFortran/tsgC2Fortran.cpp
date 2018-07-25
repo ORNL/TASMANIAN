@@ -158,7 +158,7 @@ void tsggpp_(int *id, double *points){ _tsg_grid_list[*id]->getPoints(points); }
 
 // getQuadrature/InterpolationWeights
 void tsggqw_(int *id, double *weights){ _tsg_grid_list[*id]->getQuadratureWeights(weights); }
-void tsggiw_(int *id, double *weights){ _tsg_grid_list[*id]->getQuadratureWeights(weights); }
+void tsggiw_(int *id, const double *x, double *weights){ _tsg_grid_list[*id]->getInterpolationWeights(x,weights); }
 
 // set/is/clear/getDomainTransform
 void tsgsdt_(int *id, const double *transform_a, const double *transform_b){ _tsg_grid_list[*id]->setDomainTransform(transform_a, transform_b); }
