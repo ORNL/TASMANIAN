@@ -678,9 +678,7 @@ void GridFourier::evaluate(const double x[], double y[]) const{
     double *w = getBasisFunctions(x);
     TasBLAS::setzero(num_outputs, y);
     for(int k=0; k<num_outputs; k++){
-        for(int i=0; i<num_points; i++){
-            y[k] += (w[i] * fourier_coefs[i*num_outputs+k] + w[i + num_points] * fourier_coefs[i*num_outputs+k + num_points*num_outputs]);
-        }
+        for(int i=0; i<2*num_points; i++) y[k] += w[i] * fourier_coefs[i*num_outputs+k];
     }
     delete[] w;
 }
