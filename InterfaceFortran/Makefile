@@ -7,8 +7,8 @@ LIBS = ../libtasmaniansparsegrid.a $(CommonLIBS) -lstdc++
 CSOURCE = tsgC2Fortran.cpp
 FSOURCE = TasmanianSG.f90 tsgC2FortranBridge.f90
 
-LIBNAME = libtasmanianfortran.a
-SHAREDNAME = libtasmanianfortran.so
+LIBNAME = libtasmanianfortran90.a
+SHAREDNAME = libtasmanianfortran90.so
 
 all: $(LIBNAME) $(SHAREDNAME)
 
