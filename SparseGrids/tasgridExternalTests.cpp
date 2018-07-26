@@ -1060,7 +1060,6 @@ bool ExternalTester::testAllFourier() const{
         delete[] pntr;
         delete[] vals;
         delete[] pnts;
-        delete[] coeff;
         delete[] y;
         delete[] v;
     }
