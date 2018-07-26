@@ -55,11 +55,8 @@ else
         fprintf(1,['Warning: Command had non-empty output:\n']);
         disp(cmdout);
     end
-    if (strcmp(lGrid.sType, 'global') || strcmp(lGrid.sType, 'sequence'))
+    if (strcmp(lGrid.sType, 'global') || strcmp(lGrid.sType, 'sequence') || strcmp(lGrid.sType, 'fourier'))
         [vals] = tsgReadMatrix(sFileO);
-    elseif (strcmp(lGrid.sType, 'fourier'))
-        [tmp] = tsgReadMatrix(sFileO);
-        vals = tmp(:,1:2:end) + i * tmp(:,2:2:end);     % i is unit imaginary
     else
         fid = fopen(sFileO);
         TSG = fread(fid, [1, 3], '*char');

@@ -37,11 +37,6 @@ else
     [coefficients] = tsgReadMatrix(sFileO);
 end
 
-if (strcmp(lGrid.sType, 'fourier'))
-    % convert to complex matrix if needed
-    coefficients = coefficients(:, 1:2:end) + i * coefficients(:, 2:2:end);     % i is unit imaginary
-end
-
 tsgCleanTempFiles(lGrid, lClean);
 
 end

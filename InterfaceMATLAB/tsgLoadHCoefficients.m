@@ -26,13 +26,6 @@ sCommand = [sTasGrid,' -setcoefficients'];
 
 sCommand = [sCommand, ' -gridfile ', sFileG];
 
-if (strcmp(lGrid.sType, 'fourier'))
-    mRealMat = zeros(size(mValues, 1), 2 * size(mValues, 2));
-    mRealMat(:, 1:2:end) = real(mValues);
-    mRealMat(:, 2:2:end) = imag(mValues);
-    mValues = mRealMat;
-end
-
 tsgWriteMatrix(sFileV, mValues);
 lClean.sFileV = 1;
 

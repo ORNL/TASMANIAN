@@ -673,7 +673,6 @@ if (norm(tres - res) > 1.E-11)
     error(['Mismatch in tsgEvaluateHierarchy: localp grid test']);
 end
 
-% this tests reading a complex matrix
 [lGrid, p] = tsgMakeFourier('_tsgcoretests_ml', 2, 1, 'level', 4);
 v = [exp(-p(:,1).^2 - 2.0 * p(:,2).^2)];
 tsgLoadValues(lGrid, v);
