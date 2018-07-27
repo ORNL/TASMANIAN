@@ -809,12 +809,7 @@ const IndexSet* GridFourier::getExponents() const{
     return exponents;
 }
 const double* GridFourier::getFourierCoefs() const{
-    double* fc = new double[2 * getNumPoints() * num_outputs];
-    for(int i=0; i<getNumPoints() * num_outputs; i++){
-        fc[2*i] = fourier_coefs[i].real();
-        fc[2*i+1] = fourier_coefs[i].imag();
-    }
-    return fc;
+    return ((double*) fourier_coefs);
 }
 
 } // end TasGrid
