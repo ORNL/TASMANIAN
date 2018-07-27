@@ -444,10 +444,10 @@ void TasgridWrapper::outputHierarchicalCoefficients() const{
     int num_p = grid->getNumPoints();
     int num_d = grid->getNumOutputs();
     if (outfilename != 0){
-        writeMatrix(outfilename, num_p, ((grid->isFourier()) ? 2 * num_d : num_d), coeff, useASCII);
+        writeMatrix(outfilename, (grid->isFourier() ? 2 * num_p : num_p), num_d, coeff, useASCII);
     }
     if (printCout){
-        printMatrix(num_p, num_d, coeff, grid->isFourier());
+        printMatrix((grid->isFourier() ? 2 * num_p : num_p), num_d, coeff);
     }
 }
 bool TasgridWrapper::setConformalTransformation(){
@@ -767,10 +767,10 @@ bool TasgridWrapper::getSurpluses(){
     int num_p = grid->getNumLoaded();
     int num_o = grid->getNumOutputs();
     if (outfilename != 0){
-        writeMatrix(outfilename, num_p, ((grid->isFourier()) ? 2 * num_o : num_o), surp, useASCII);
+        writeMatrix(outfilename, (grid->isFourier() ? 2 * num_p : num_p), num_o, surp, useASCII);
     }
     if (printCout){
-        printMatrix(num_p, num_o, surp, grid->isFourier());
+        printMatrix((grid->isFourier() ? 2 * num_p : num_p), num_o, surp);
     }
     return true;
 }
@@ -791,10 +791,10 @@ bool TasgridWrapper::getEvalHierarchyDense(){
     res = new double[((size_t) (grid->isFourier() ? 2 : 1) * num_p) * ((size_t) rows)];
     grid->evaluateHierarchicalFunctions(x, rows, res);
     if (outfilename != 0){
-        writeMatrix(outfilename, (int) rows, ((grid->isFourier()) ? 2 * num_p : num_p), res, useASCII);
+        writeMatrix(outfilename, (int) rows, (grid->isFourier() ? 2 * num_p : num_p), res, useASCII);
     }
     if (printCout){
-        printMatrix(rows, num_p, res, grid->isFourier());
+        printMatrix(rows, (grid->isFourier() ? 2 * num_p : num_p), res);
     }
     delete[] x;
     delete[] res;
@@ -827,13 +827,8 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             for(size_t i=1; i<rows+1; i++) ofs << " " << pntr[i];
             ofs << endl << indx[0];
             for(int i=1; i<num_nz; i++) ofs << " " << indx[i];
-            if (grid->isFourier()){
-                ofs << endl << vals[0] << " " << vals[1];
-                for(int i=1; i<num_nz; i++) ofs << " " << vals[2*i] << " " << vals[2*i+1];
-            }else{
-                ofs << endl << vals[0];
-                for(int i=1; i<num_nz; i++) ofs << " " << vals[i];
-            }
+            ofs << endl << vals[0];
+            for(int i=1; i<num_nz; i++) ofs << " " << vals[i];
             ofs << endl;
             ofs.close();
         }else{
@@ -848,7 +843,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             ofs.write((char*) matrix_dims, 3 * sizeof(int));
             ofs.write((char*) pntr, (rows+1) * sizeof(int));
             ofs.write((char*) indx, num_nz * sizeof(int));
-            ofs.write((char*) vals, (grid->isFourier() ? 2 : 1) * num_nz * sizeof(double));
+            ofs.write((char*) vals, num_nz * sizeof(double));
             ofs.close();
         }
     }
@@ -859,13 +854,8 @@ bool TasgridWrapper::getEvalHierarchySparse(){
         for(size_t i=1; i<rows+1; i++) cout << " " << pntr[i];
         cout << endl << indx[0];
         for(int i=1; i<num_nz; i++) cout << " " << indx[i];
-        if (grid->isFourier()){
-            cout << endl << vals[0] << " " << vals[1];
-            for(int i=1; i<num_nz; i++) cout << " " << vals[2*i] << " " << vals[2*i+1];
-        }else{
-            cout << endl << vals[0];
-            for(int i=1; i<num_nz; i++) cout << " " << vals[i];
-        }
+        cout << endl << vals[0];
+        for(int i=1; i<num_nz; i++) cout << " " << vals[i];
         cout << endl;
     }
     delete[] pntr;
@@ -878,15 +868,15 @@ bool TasgridWrapper::setHierarchy(){
     size_t rows, cols;
     double *vals = 0;
     readMatrix(valsfilename, rows, cols, vals);
-    if (rows != (size_t) grid->getNumPoints()){
+    if (!(grid->isFourier()) && rows != (size_t) grid->getNumPoints()){
         cerr << "ERROR: grid is awaiting " << grid->getNumPoints() << " hierarchical surpluses, but " << valsfilename << " specifies " << rows << endl;
         return false;
-    }
-    if (!(grid->isFourier()) && cols != (size_t) grid->getNumOutputs()){
-        cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
+    }else if (grid->isFourier() && rows != (size_t) (2 * grid->getNumPoints())){
+        cerr << "ERROR: fourier grid is awaiting " << 2*grid->getNumPoints() << " hierarchical surpluses, but " << valsfilename << " specifies " << rows << endl;
         return false;
-    }else if (grid->isFourier() && cols != (size_t) (2 * grid->getNumOutputs())){
-        cerr << "ERROR: fourier grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << (cols / 2) << endl;
+    }
+    if (cols != (size_t) grid->getNumOutputs()){
+        cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
         return false;
     }
     grid->setHierarchicalCoefficients(vals);
@@ -1058,21 +1048,13 @@ void TasgridWrapper::writeMatrix(const char *filename, int rows, int cols, const
     }
     ofs.close();
 }
-void TasgridWrapper::printMatrix(int rows, int cols, const double mat[], bool isComplex){
+void TasgridWrapper::printMatrix(int rows, int cols, const double mat[]){
     cout << rows << " " << cols << endl;
     cout.precision(17);
     cout << std::scientific;
     for(size_t i=0; i<((size_t) rows); i++){
-        if (isComplex){
-            for(size_t j=0; j<((size_t) cols); j++){
-                cout << setw(25) << mat[i* ((size_t) cols) + ((size_t) 2*j)];   // real part
-                cout << (mat[i* ((size_t) cols) + ((size_t) 2*j+1)] < 0.0 ? " -" : " +");
-                cout << setw(24) << fabs(mat[i* ((size_t) cols) + ((size_t) 2*j+1)]) << "i  ";     // imag part
-            }
-        }else{
-            for(size_t j=0; j<((size_t) cols); j++){
-                cout << setw(25) << mat[i* ((size_t) cols) + j] << " ";
-            }
+        for(size_t j=0; j<((size_t) cols); j++){
+            cout << setw(25) << mat[i* ((size_t) cols) + j] << " ";
         }
         cout << endl;
     }

@@ -33,7 +33,6 @@
 
 #include <cstdlib>
 #include <math.h>
-#include <complex>
 
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
@@ -118,9 +117,8 @@ protected:
     void reset();
     void calculateFourierCoefficients();
 
-    std::complex<double>* getBasisFunctions(const double x[]) const;
-    void getBasisFunctions(const double x[], std::complex<double> weights[]) const;
-    void getBasisFunctions(const double x[], double weights[]) const;   // for evaluateHierarchicalFunctions (parallelized)
+    double* getBasisFunctions(const double x[]) const;
+    void getBasisFunctions(const double x[], double weights[]) const;
 
     int convertIndexes(const int i, const int levels[]) const;
 
@@ -137,7 +135,7 @@ private:
     IndexSet *needed;
     IndexSet *exponents;
 
-    std::complex<double> *fourier_coefs;
+    double *fourier_coefs;
     int **exponent_refs;
     int **tensor_refs;
 

@@ -187,7 +187,7 @@ protected:
 
     static void readMatrix(const char *filename, size_t &rows, size_t &cols, double* &mat);
     static void writeMatrix(const char *filename, int rows, int cols, const double mat[], bool ascii);
-    static void printMatrix(int rows, int cols, const double mat[], bool isComplex = false);
+    static void printMatrix(int rows, int cols, const double mat[]);
 
 private:
     TasmanianSparseGrid *grid;

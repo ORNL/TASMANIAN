@@ -82,7 +82,7 @@ class TasmanianSimpleSparseMatrix:
     def getDenseForm(self):
         if ((self.iNumRows == 0) or (self.iNumCols == 0)):
             return np.empty([0,0], np.float64)
-        aMat = np.zeros([self.iNumRows, self.iNumCols], np.float64 if not np.iscomplexobj(self.aVals) else np.complex128)
+        aMat = np.zeros([self.iNumRows, self.iNumCols], np.float64)
         for iI in range(self.iNumRows):
             iJ = self.aPntr[iI]
             while(iJ < self.aPntr[iI+1]):
@@ -1606,12 +1606,13 @@ class TasmanianSparseGrid:
         if (not self.isFourier()):
             aSurp = np.empty([iNumOuts * iNumPoints], np.float64)
             self.pLibTSG.tsgGetHierarchicalCoefficientsStatic(self.pGrid, np.ctypeslib.as_ctypes(aSurp))
+            aSurp = aSurp.reshape([iNumPoints,iNumOuts])
         else:
             aSurp = np.empty([2 * iNumOuts * iNumPoints], np.float64)
             self.pLibTSG.tsgGetHierarchicalCoefficientsStatic(self.pGrid, np.ctypeslib.as_ctypes(aSurp))
-            aSurp = aSurp[0::2] + 1j * aSurp[1::2]
+            aSurp = aSurp.reshape([2*iNumPoints,iNumOuts])
 
-        return aSurp.reshape([iNumPoints, iNumOuts])
+        return aSurp
 
     def evaluateHierarchicalFunctions(self, llfX):
         '''
@@ -1622,7 +1623,8 @@ class TasmanianSparseGrid:
               the entries indicate the points for evaluating the weights
 
         output: returns a 2-D numpy.ndarray of
-                shape == [llfX.shape[0], getNumPoints()]
+                shape == [llfX.shape[0], getNumPoints()] or
+                shape == [llfX.shape[0], 2*getNumPoints()] (if Fourier)
                 the values of the basis functions at the points
         '''
         if (len(llfX.shape) != 2):
@@ -1636,12 +1638,13 @@ class TasmanianSparseGrid:
         if not self.isFourier():
             aResult = np.empty([iNumX * self.getNumPoints()], np.float64)
             self.pLibTSG.tsgEvaluateHierarchicalFunctions(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX, np.ctypeslib.as_ctypes(aResult))
+            aResult = aResult.reshape([iNumX, self.getNumPoints()])
         else:
             aResult = np.empty([2 * iNumX * self.getNumPoints()], np.float64)
             self.pLibTSG.tsgEvaluateHierarchicalFunctions(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX, np.ctypeslib.as_ctypes(aResult))
-            aResult = aResult[0::2] + 1j * aResult[1::2]
+            aResult = aResult.reshape([iNumX, 2*self.getNumPoints()])
 
-        return aResult.reshape([iNumX, self.getNumPoints()])
+        return aResult
 
     def evaluateSparseHierarchicalFunctions(self, llfX):
         '''
@@ -1675,15 +1678,13 @@ class TasmanianSparseGrid:
         iNumNZ = self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ(self.pGrid, np.ctypeslib.as_ctypes(llfX.reshape([llfX.shape[0] * llfX.shape[1]])), iNumX)
         pMat.aPntr = np.empty([iNumX+1,], np.int32)
         pMat.aIndx = np.empty([iNumNZ,], np.int32)
-        pMat.aVals = np.empty([iNumNZ if not self.isFourier() else 2 * iNumNZ,], np.float64)
+        pMat.aVals = np.empty([iNumNZ,], np.float64)
         pMat.iNumRows = iNumX
-        pMat.iNumCols = self.getNumPoints()
+        pMat.iNumCols = (self.getNumPoints() if (not self.isFourier()) else 2*self.getNumPoints())
         # see evaluateBatch()
         lfX = llfX.reshape([llfX.shape[0] * llfX.shape[1]])
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX,
                                                         np.ctypeslib.as_ctypes(pMat.aPntr), np.ctypeslib.as_ctypes(pMat.aIndx), np.ctypeslib.as_ctypes(pMat.aVals))
-        if self.isFourier():
-            pMat.aVals = pMat.aVals[0::2] + 1j * pMat.aVals[1::2]
 
         return pMat
 
@@ -1717,20 +1718,20 @@ class TasmanianSparseGrid:
         '''
         if (len(llfCoefficients.shape) != 2):
             raise TasmanianInputError("llfCoefficients", "ERROR: llfCoefficients should be a 2-D numpy.ndarray, instead it has {0:1d} dimensions".format(len(llfCoefficients.shape)))
-        if (llfCoefficients.shape[0] != self.getNumPoints()):
+        if (llfCoefficients.shape[0] != self.getNumPoints() and (not self.isFourier())):
             raise TasmanianInputError("llfCoefficients", "ERROR: leading dimension of llfCoefficients is {0:1d} but the number of current points is {1:1d}".format(llfCoefficients.shape[0], self.getNumNeeded()))
+        if (llfCoefficients.shape[0] != 2*self.getNumPoints() and self.isFourier()):
+            raise TasmanianInputError("llfCoefficients", "ERROR: (FOURIER GRID) leading dimension of llfCoefficients is {0:1d} but the number of current Fourier points is {1:1d}".format(llfCoefficients.shape[0], self.getNumNeeded()))
         if (llfCoefficients.shape[1] != self.getNumOutputs()):
             raise TasmanianInputError("llfCoefficients", "ERROR: second dimension of llfCoefficients is {0:1d} but the number of outputs is set to {1:1d}".format(llfCoefficients.shape[1], self.getNumOutputs()))
-        if (self.isFourier() and (not np.iscomplexobj(llfCoefficients))):
-            raise TasmanianInputError("llfCoefficients", "ERROR: using Fourier grid but llfCoefficients is not complex")
 
         iNumPoints = llfCoefficients.shape[0]
         iNumDims = llfCoefficients.shape[1]
 
         if self.isFourier():
-            llfCoefficientsTmp = np.empty([iNumPoints, 2 * iNumDims,], np.float64)
-            llfCoefficientsTmp[:,0::2] = np.real(llfCoefficients)
-            llfCoefficientsTmp[:,1::2] = np.imag(llfCoefficients)
+            llfCoefficientsTmp = np.empty([2*iNumPoints, iNumDims], np.float64)
+            llfCoefficientsTmp[:iNumPoints, :] = np.real(llfCoefficients)
+            llfCoefficientsTmp[iNumPoints:, :] = np.imag(llfCoefficients)
             llfCoefficients = llfCoefficientsTmp.reshape([2 * iNumPoints * iNumDims,])
         else:
             llfCoefficients = llfCoefficients.reshape([iNumPoints * iNumDims,])
