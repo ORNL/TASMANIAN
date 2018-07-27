@@ -1649,7 +1649,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
 bool ExternalTester::testGPU2GPUevaluations() const{
     #ifdef Tasmanian_ENABLE_CUDA
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
-    TasGrid::TasmanianSparseGrid *grid = new TasGrid::TasmanianSparseGrid();
+    TasGrid::TasmanianSparseGrid grid;
     int num_tests = 9;
     int dims = 3;
     TasGrid::TypeOneDRule pwp_rule[9] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
@@ -1660,13 +1660,13 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
     bool pass = true;
     int gpu_index_first = (gpuid == -1) ? 0 : gpuid;
-    int gpu_end_gpus = (gpuid == -1) ? grid->getNumGPUs() : gpuid+1;
+    int gpu_end_gpus = (gpuid == -1) ? grid.getNumGPUs() : gpuid+1;
     for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
         for(int t=0; t<num_tests; t++){
             bool dense_pass = true;
-            grid->makeLocalPolynomialGrid(dims, 1, ((order[t] == 0) ? 4 : 7), order[t], pwp_rule[t]);
+            grid.makeLocalPolynomialGrid(dims, 1, ((order[t] == 0) ? 4 : 7), order[t], pwp_rule[t]);
 
-            grid->setDomainTransform(a, b);
+            grid.setDomainTransform(a, b);
 
             int nump = 2000;
             double *x = new double[dims*nump];
@@ -1677,24 +1677,24 @@ bool ExternalTester::testGPU2GPUevaluations() const{
                     xt[dims*i + j] = 0.5 * (b[j] - a[j]) * x[dims*i+j] + 0.5 * (b[j] + a[j]);
                 }
             }
-            //grid->printStats();
-            //cout << "Memory requirements = " << (grid->getNumPoints() * nump * 8) / (1024 * 1024) << "MB" << endl;
+            //grid.printStats();
+            //cout << "Memory requirements = " << (grid.getNumPoints() * nump * 8) / (1024 * 1024) << "MB" << endl;
 
             // Dense version:
-            double *y_true = new double[grid->getNumPoints() * nump];
-            grid->evaluateHierarchicalFunctions(xt, nump, y_true);
+            double *y_true = new double[grid.getNumPoints() * nump];
+            grid.evaluateHierarchicalFunctions(xt, nump, y_true);
 
             double *gpux = TasGrid::TasCUDA::cudaSend(dims * nump, xt, &cerr);
-            double *gpuy = TasGrid::TasCUDA::cudaNew<double>(grid->getNumPoints() * nump, &cerr);
+            double *gpuy = TasGrid::TasCUDA::cudaNew<double>(grid.getNumPoints() * nump, &cerr);
 
-            grid->enableAcceleration(TasGrid::accel_gpu_cuda);
-            grid->setGPUID(gpuID);
-            grid->evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
+            grid.enableAcceleration(TasGrid::accel_gpu_cuda);
+            grid.setGPUID(gpuID);
+            grid.evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
 
-            double *y = new double[grid->getNumPoints() * nump];
-            TasGrid::TasCUDA::cudaRecv<double>(grid->getNumPoints() * nump, gpuy, y, &cerr);
+            double *y = new double[grid.getNumPoints() * nump];
+            TasGrid::TasCUDA::cudaRecv<double>(grid.getNumPoints() * nump, gpuy, y, &cerr);
 
-            for(int i=0; i<grid->getNumPoints() * nump; i++){
+            for(int i=0; i<grid.getNumPoints() * nump; i++){
                 if (fabs(y[i] - y_true[i]) > 1.E-11){
                     dense_pass = false;
                 }
@@ -1702,7 +1702,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             if (!dense_pass){
                 cout << "Failed when using grid: " << endl;
-                grid->printStats();
+                grid.printStats();
             }
             pass = pass && dense_pass;
 
@@ -1714,9 +1714,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             bool sparse_pass = true;
             int *gpu_indx = 0, *gpu_pntr = 0, num_nz = 0;
             double *gpu_vals = 0;
-            grid->enableAcceleration(TasGrid::accel_gpu_cuda);
-            grid->setGPUID(gpuID);
-            grid->evaluateSparseHierarchicalFunctionsGPU(gpux, nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
+            grid.enableAcceleration(TasGrid::accel_gpu_cuda);
+            grid.setGPUID(gpuID);
+            grid.evaluateSparseHierarchicalFunctionsGPU(gpux, nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
 
             int *cpntr = new int[nump+1]; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr, &cerr);
             int *cindx = new int[num_nz]; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
@@ -1724,11 +1724,11 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             int *pntr = 0, *indx = 0;
             double *vals = 0;
-            grid->enableAcceleration(TasGrid::accel_none);
-            grid->evaluateSparseHierarchicalFunctions(xt, nump, pntr, indx, vals);
+            grid.enableAcceleration(TasGrid::accel_none);
+            grid.evaluateSparseHierarchicalFunctions(xt, nump, pntr, indx, vals);
             if (pntr[nump] != num_nz){
                 cout << "ERROR: mismatch in the numn from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
-                grid->printStats();
+                grid.printStats();
                 sparse_pass = false;
             }
             if (sparse_pass){
@@ -1747,7 +1747,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             }
             if (!sparse_pass){
                 cout << "Failed when using grid: " << endl;
-                grid->printStats();
+                grid.printStats();
             }
 
             pass = pass && sparse_pass;
