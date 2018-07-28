@@ -1660,30 +1660,38 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     bool pass = true;
     int gpu_index_first = (gpuid == -1) ? 0 : gpuid;
     int gpu_end_gpus = (gpuid == -1) ? grid.getNumGPUs() : gpuid+1;
-    for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
-        for(int t=0; t<num_tests; t++){
-            bool dense_pass = true;
-            grid.makeLocalPolynomialGrid(dims, 1, ((order[t] == 0) ? 4 : 7), order[t], pwp_rule[t]);
+    for(int t=0; t<num_tests; t++){
+        grid.makeLocalPolynomialGrid(dims, 1, ((order[t] == 0) ? 4 : 7), order[t], pwp_rule[t]);
 
-            grid.setDomainTransform(a, b);
+        grid.setDomainTransform(a, b);
+        grid.enableAcceleration(TasGrid::accel_none);
 
-            int nump = 2000;
-            double *x = new double[dims*nump];
-            double *xt = new double[dims*nump];
-            setRandomX(dims*nump, x);
-            for(int i=0; i<nump; i++){
-                for(int j=0; j<dims; j++){
-                    xt[dims*i + j] = 0.5 * (b[j] - a[j]) * x[dims*i+j] + 0.5 * (b[j] + a[j]);
-                }
+        int nump = 2000;
+        double *x = new double[dims*nump];
+        double *xt = new double[dims*nump];
+        setRandomX(dims*nump, x);
+        for(int i=0; i<nump; i++){
+            for(int j=0; j<dims; j++){
+                xt[dims*i + j] = 0.5 * (b[j] - a[j]) * x[dims*i+j] + 0.5 * (b[j] + a[j]);
             }
-            //grid.printStats();
-            //cout << "Memory requirements = " << (grid.getNumPoints() * nump * 8) / (1024 * 1024) << "MB" << endl;
+        }
+        delete[] x;
 
-            // Dense version:
-            double *y_true = new double[grid.getNumPoints() * nump];
-            grid.evaluateHierarchicalFunctions(xt, nump, y_true);
+        // Dense version:
+        double *y_true_dense = new double[grid.getNumPoints() * nump];
+        grid.evaluateHierarchicalFunctions(xt, nump, y_true_dense);
+        // grid.printStats();
+        // cout << "Memory requirements = " << (grid.getNumPoints() * nump * 8) / (1024 * 1024) << "MB" << endl;
 
-            double *gpux = TasGrid::TasCUDA::cudaSend(dims * nump, xt, &cerr);
+        int *pntr = 0, *indx = 0;
+        double *vals = 0;
+        grid.evaluateSparseHierarchicalFunctions(xt, nump, pntr, indx, vals);
+
+        for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
+            bool dense_pass = true;
+
+            cudaSetDevice(gpuID);
+            double *gpux = TasGrid::TasCUDA::cudaSend<double>(dims * nump, xt, &cerr);
             double *gpuy = TasGrid::TasCUDA::cudaNew<double>(grid.getNumPoints() * nump, &cerr);
 
             grid.enableAcceleration(TasGrid::accel_gpu_cuda);
@@ -1694,7 +1702,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             TasGrid::TasCUDA::cudaRecv<double>(grid.getNumPoints() * nump, gpuy, y, &cerr);
 
             for(int i=0; i<grid.getNumPoints() * nump; i++){
-                if (fabs(y[i] - y_true[i]) > 1.E-11){
+                if (fabs(y[i] - y_true_dense[i]) > 1.E-11){
                     dense_pass = false;
                 }
             }
@@ -1706,7 +1714,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             pass = pass && dense_pass;
 
             TasGrid::TasCUDA::cudaDel<double>(gpuy, &cerr);
-            delete[] y_true;
             delete[] y;
 
             // Sparse version:
@@ -1721,10 +1728,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             int *cindx = new int[num_nz]; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
             double *cvals = new double[num_nz]; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals, &cerr);
 
-            int *pntr = 0, *indx = 0;
-            double *vals = 0;
-            grid.enableAcceleration(TasGrid::accel_none);
-            grid.evaluateSparseHierarchicalFunctions(xt, nump, pntr, indx, vals);
             if (pntr[nump] != num_nz){
                 cout << "ERROR: mismatch in the numn from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
                 grid.printStats();
@@ -1751,17 +1754,20 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             pass = pass && sparse_pass;
 
-            delete[] cpntr; delete[] pntr;
-            delete[] cindx; delete[] indx;
-            delete[] cvals; delete[] vals;
+            delete[] cpntr;
+            delete[] cindx;
+            delete[] cvals;
             TasGrid::TasCUDA::cudaDel<double>(gpux, &cerr);
             TasGrid::TasCUDA::cudaDel<int>(gpu_pntr, &cerr);
             TasGrid::TasCUDA::cudaDel<int>(gpu_indx, &cerr);
             TasGrid::TasCUDA::cudaDel<double>(gpu_vals, &cerr);
-
-            delete[] x;
-            delete[] xt;
         }
+
+        delete[] xt;
+        delete[] pntr;
+        delete[] indx;
+        delete[] vals;
+        delete[] y_true_dense;
     }
 
     return pass;
