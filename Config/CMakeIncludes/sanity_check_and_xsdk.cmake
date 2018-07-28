@@ -143,6 +143,10 @@ endif()
 
 # check for MAGMA
 if (Tasmanian_ENABLE_MAGMA)
+    if (NOT Tasmanian_ENABLE_CUDA)
+        message(FATAL_ERROR "Currently Tasmanian can use only CUDA related capability from MAGMA, hence Tasmanian_ENABLE_CUDA must be set ON")
+    endif()
+
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/")
     find_package(TasmanianMAGMA)
 
