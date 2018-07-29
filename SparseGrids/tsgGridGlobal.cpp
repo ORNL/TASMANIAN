@@ -44,13 +44,13 @@
 
 namespace TasGrid{
 
-GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0), wrapper(0), tensors(0), active_tensors(0), active_w(0),
+GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0), wrapper(0), tensors(0), active_tensors(0),
     points(0), needed(0), tensor_refs(0), max_levels(0), values(0),
-    updated_tensors(0), updated_active_tensors(0), updated_active_w(0), custom(0), accel(0)
+    updated_tensors(0), updated_active_tensors(0), custom(0), accel(0)
 {}
-GridGlobal::GridGlobal(const GridGlobal &global) : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0), wrapper(0), tensors(0), active_tensors(0), active_w(0),
+GridGlobal::GridGlobal(const GridGlobal &global) : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0), wrapper(0), tensors(0), active_tensors(0),
     points(0), needed(0), tensor_refs(0), max_levels(0), values(0),
-    updated_tensors(0), updated_active_tensors(0), updated_active_w(0), custom(0), accel(0)
+    updated_tensors(0), updated_active_tensors(0), custom(0), accel(0)
 {
     copyGrid(&global);
 }
@@ -120,7 +120,7 @@ void GridGlobal::writeBinary(std::ofstream &ofs) const{
         }
         tensors->writeBinary(ofs);
         active_tensors->writeBinary(ofs);
-        ofs.write((char*) active_w, active_tensors->getNumIndexes() * sizeof(int));
+        ofs.write((char*) (active_w.data()), active_tensors->getNumIndexes() * sizeof(int));
         char flag;
         if (points == 0){
             flag = 'n'; ofs.write(&flag, sizeof(char));
@@ -141,7 +141,7 @@ void GridGlobal::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             updated_tensors->writeBinary(ofs);
             updated_active_tensors->writeBinary(ofs);
-            ofs.write((char*) updated_active_w, updated_active_tensors->getNumIndexes() * sizeof(int));
+            ofs.write((char*) (updated_active_w.data()), updated_active_tensors->getNumIndexes() * sizeof(int));
         }else{
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }
@@ -161,7 +161,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
         }
         tensors = new IndexSet(num_dimensions);  tensors->read(ifs);
         active_tensors = new IndexSet(num_dimensions);  active_tensors->read(ifs);
-        active_w = new int[active_tensors->getNumIndexes()];  for(int i=0; i<active_tensors->getNumIndexes(); i++){ ifs >> active_w[i]; }
+        active_w.resize(active_tensors->getNumIndexes());  for(int i=0; i<active_tensors->getNumIndexes(); i++){ ifs >> active_w[i]; }
         ifs >> flag; if (flag == 1){ points = new IndexSet(num_dimensions); points->read(ifs); }
         ifs >> flag; if (flag == 1){ needed = new IndexSet(num_dimensions); needed->read(ifs); }
         max_levels = new int[num_dimensions];  for(int j=0; j<num_dimensions; j++){ ifs >> max_levels[j]; }
@@ -172,7 +172,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
         if (flag == 1){
             updated_tensors = new IndexSet(num_dimensions);  updated_tensors->read(ifs);
             updated_active_tensors = new IndexSet(num_dimensions);  updated_active_tensors->read(ifs);
-            updated_active_w = new int[updated_active_tensors->getNumIndexes()];  for(int i=0; i<updated_active_tensors->getNumIndexes(); i++){ ifs >> updated_active_w[i]; }
+            updated_active_w.resize(updated_active_tensors->getNumIndexes());  for(int i=0; i<updated_active_tensors->getNumIndexes(); i++){ ifs >> updated_active_w[i]; }
             IM.getMaxLevels(updated_tensors, 0, oned_max_level);
         }else{
             oned_max_level = max_levels[0];
@@ -220,8 +220,8 @@ void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
 
         tensors = new IndexSet(num_dimensions);  tensors->readBinary(ifs);
         active_tensors = new IndexSet(num_dimensions);  active_tensors->readBinary(ifs);
-        active_w = new int[active_tensors->getNumIndexes()];
-        ifs.read((char*) active_w, active_tensors->getNumIndexes() * sizeof(int));
+        active_w.resize(active_tensors->getNumIndexes());
+        ifs.read((char*) (active_w.data()), active_tensors->getNumIndexes() * sizeof(int));
 
         char flag;
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ points = new IndexSet(num_dimensions); points->readBinary(ifs); }
@@ -238,8 +238,8 @@ void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
         if (flag == 'y'){
             updated_tensors = new IndexSet(num_dimensions);  updated_tensors->readBinary(ifs);
             updated_active_tensors = new IndexSet(num_dimensions);  updated_active_tensors->readBinary(ifs);
-            updated_active_w = new int[updated_active_tensors->getNumIndexes()];
-            ifs.read((char*) updated_active_w, updated_active_tensors->getNumIndexes() * sizeof(int));
+            updated_active_w.resize(updated_active_tensors->getNumIndexes());
+            ifs.read((char*) (updated_active_w.data()), updated_active_tensors->getNumIndexes() * sizeof(int));
             IM.getMaxLevels(updated_tensors, 0, oned_max_level);
         }else{
             oned_max_level = max_levels[0];
@@ -273,14 +273,12 @@ void GridGlobal::reset(bool includeCustom){
     if (wrapper != 0){ delete wrapper; wrapper = 0; }
     if (tensors != 0){ delete tensors; tensors = 0; }
     if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
-    if (active_w != 0){ delete[] active_w; active_w = 0; }
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
     if (max_levels != 0){ delete[] max_levels; max_levels = 0; }
     if (values != 0){ delete values;  values = 0; }
     if (updated_tensors != 0){ delete updated_tensors; updated_tensors = 0; }
     if (updated_active_tensors != 0){ delete updated_active_tensors; updated_active_tensors = 0; }
-    if (updated_active_w != 0){ delete[] updated_active_w; updated_active_w = 0; }
     if (includeCustom && (custom != 0)){ delete custom; custom = 0; }
     num_dimensions = num_outputs = 0;
 }
@@ -289,7 +287,7 @@ void GridGlobal::clearRefinement(){
     if (needed != 0){ delete needed; needed = 0; }
     if (updated_tensors != 0){ delete updated_tensors; updated_tensors = 0; }
     if (updated_active_tensors != 0){ delete updated_active_tensors; updated_active_tensors = 0; }
-    if (updated_active_w != 0){ delete[] updated_active_w; updated_active_w = 0; }
+    updated_active_w.resize(0);
 }
 
 void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const int *level_limits){
@@ -326,8 +324,8 @@ void GridGlobal::copyGrid(const GridGlobal *global){
     if (global->updated_tensors != 0){
         updated_tensors = new IndexSet(global->updated_tensors);
         updated_active_tensors = new IndexSet(global->updated_active_tensors);
-        updated_active_w = new int[updated_active_tensors->getNumIndexes()];
-        std::copy(global->updated_active_w, global->updated_active_w + updated_active_tensors->getNumIndexes(), updated_active_w);
+        updated_active_w.resize(updated_active_tensors->getNumIndexes());
+        std::copy(global->updated_active_w.begin(), global->updated_active_w.end(), updated_active_w.data());
 
         needed = new IndexSet(global->needed);
 
@@ -360,7 +358,7 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
 
     int nz_weights = active_tensors->getNumIndexes();
 
-    active_w = new int[nz_weights];
+    active_w.resize(nz_weights);
     int count = 0;
     for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w[count++] = tensors_w[i]; }
 
@@ -425,7 +423,7 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_we
 
             int nz_weights = updated_active_tensors->getNumIndexes();
 
-            updated_active_w = new int[nz_weights];
+            updated_active_w.resize(nz_weights);
             int count = 0;
             for(int i=0; i<updated_tensors->getNumIndexes(); i++){ if (updates_tensor_w[i] != 0) updated_active_w[count++] = updates_tensor_w[i];  }
 
@@ -563,7 +561,7 @@ void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
 
         delete tensors; tensors = updated_tensors; updated_tensors = 0;
         delete active_tensors; active_tensors = updated_active_tensors; updated_active_tensors = 0;
-        delete[] active_w; active_w = updated_active_w; updated_active_w = 0;
+        active_w = updated_active_w;
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexManipulator IM(num_dimensions, custom);
@@ -599,7 +597,7 @@ void GridGlobal::mergeRefinement(){
 
         delete tensors; tensors = updated_tensors; updated_tensors = 0;
         delete active_tensors; active_tensors = updated_active_tensors; updated_active_tensors = 0;
-        delete[] active_w; active_w = updated_active_w; updated_active_w = 0;
+        active_w = std::move(updated_active_w);
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexManipulator IM(num_dimensions, custom);
@@ -1055,7 +1053,7 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
 
     int nz_weights = updated_active_tensors->getNumIndexes();
 
-    updated_active_w = new int[nz_weights];
+    updated_active_w.resize(nz_weights);
     int count = 0;
     for(int i=0; i<updated_tensors->getNumIndexes(); i++){ if (updates_tensor_w[i] != 0) updated_active_w[count++] = updates_tensor_w[i];  }
 
@@ -1107,7 +1105,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *l
 
         int nz_weights = updated_active_tensors->getNumIndexes();
 
-        updated_active_w = new int[nz_weights];
+        updated_active_w.resize(nz_weights);
         int count = 0;
         for(int i=0; i<updated_tensors->getNumIndexes(); i++){ if (updates_tensor_w[i] != 0) updated_active_w[count++] = updates_tensor_w[i];  }
 

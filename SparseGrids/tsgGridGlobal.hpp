@@ -135,7 +135,7 @@ private:
 
     IndexSet *tensors;
     IndexSet *active_tensors;
-    int *active_w;
+    std::vector<int> active_w;
     IndexSet *points;
     IndexSet *needed;
 
@@ -147,7 +147,7 @@ private:
 
     IndexSet *updated_tensors;
     IndexSet *updated_active_tensors;
-    int *updated_active_w;
+    std::vector<int> updated_active_w;
 
     CustomTabulated *custom;
 
