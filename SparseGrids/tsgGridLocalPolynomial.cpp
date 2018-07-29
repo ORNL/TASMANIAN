@@ -629,9 +629,8 @@ void GridLocalPolynomial::mergeRefinement(){
 void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
 
-    int *active_points = new int[work->getNumIndexes()];
+    std::vector<int> active_points(0);
     std::fill(weights, weights + work->getNumIndexes(), 0.0);
-    int num_active_points = 0;
 
     int *monkey_count = new int[top_level+1];
     int *monkey_tail = new int[top_level+1];
@@ -645,7 +644,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
         basis_value = evalBasisSupported(work->getIndex(roots[r]), x, isSupported);
 
         if (isSupported){
-            active_points[num_active_points++] = roots[r];
+            active_points.push_back(roots[r]);
             weights[roots[r]] = basis_value;
 
             int current = 0;
@@ -659,7 +658,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
                     basis_value = evalBasisSupported(work->getIndex(offset), x, isSupported);
 
                     if (isSupported){
-                        active_points[num_active_points++] = offset;
+                        active_points.push_back(offset);
                         weights[offset] = basis_value;
 
                         monkey_tail[++current] = offset;
@@ -683,9 +682,9 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
         dagUp = IM.computeDAGupLocal(work, rule);
     }
 
-    int *level = new int[num_active_points];
+    int *level = new int[active_points.size()];
     int active_top_level = 0;
-    for(int i=0; i<num_active_points; i++){
+    for(size_t i=0; i<active_points.size(); i++){
         const int *p = work->getIndex(active_points[i]);
         level[i] = rule->getLevel(p[0]);
         for(int j=1; j<num_dimensions; j++){
@@ -699,7 +698,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     int max_parents = rule->getMaxNumParents() * num_dimensions;
 
     for(int l=active_top_level; l>0; l--){
-        for(int i=0; i<num_active_points; i++){
+        for(size_t i=0; i<active_points.size(); i++){
             if (level[i] == l){
                 const int* p = work->getIndex(active_points[i]);
                 for(int j=0; j<num_dimensions; j++) node[j] = rule->getNode(p[j]);
@@ -740,8 +739,6 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
 
     delete[] monkey_count;
     delete[] monkey_tail;
-
-    delete[] active_points;
 
     if (num_outputs > 0){
         delete[] dagUp;
