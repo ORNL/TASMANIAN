@@ -98,14 +98,12 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             weights = grid->getInterpolationWeights(x);
         }
 
-        double *y = new double[num_outputs];
-        double *r = new double[num_outputs];  std::fill(r, r + num_outputs, 0.0);
+        std::vector<double> y(num_outputs);
+        std::vector<double> r(num_outputs, 0.0);
 //      Sequential version: integration
         for(int i=0; i<num_points; i++){
-            f->eval(&(points[i*num_dimensions]), y);
-            for(int k=0; k<num_outputs; k++){
-                r[k] += weights[i] * y[k];
-            }
+            f->eval(&(points[i*num_dimensions]), y.data());
+            for(int k=0; k<num_outputs; k++) r[k] += weights[i] * y[k];
         }
 
         //#pragma omp parallel
@@ -132,17 +130,15 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
         double err = 0.0;
         if (type == type_integration){
-            f->getIntegral(y);
+            f->getIntegral(y.data());
         }else{
-            f->eval(x, y);
+            f->eval(x, y.data());
         }
         for(int j=0; j<num_outputs; j++){
             err += fabs(y[j] - r[j]);
         };
         R.error = err;
 
-        delete[] r;
-        delete[] y;
         delete[] points;
         delete[] weights;
     }else if (type == type_internal_interpolation){
