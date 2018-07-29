@@ -410,16 +410,16 @@ bool ExternalTester::testModelLikelihoodAlpha(){
     TasDREAM::GaussianLikelihood *likely = new TasDREAM::GaussianLikelihood(N, TasDREAM::likely_gauss_scale, &scale, 1, data);
     post->setLikelihood(likely);
 
-    TasDREAM::TasmanianDREAM *dream = new TasDREAM::TasmanianDREAM();
-    dream->overwriteBaseUnifrom(&rng);
-    dream->setProbabilityWeightFunction(post);
+    TasDREAM::TasmanianDREAM dream;
+    dream.overwriteBaseUnifrom(&rng);
+    dream.setProbabilityWeightFunction(post);
 
-    dream->setNumChains(num_chains);
+    dream.setNumChains(num_chains);
     TasDREAM::GaussianPDF gauss(0.0, 0.0004);
     gauss.overwriteBaseUnifrom(&rng);
-    dream->setCorrectionAll(&gauss);
+    dream.setCorrectionAll(&gauss);
 
-    double *mcmc = dream->collectSamples(num_mc, num_mc / 10);
+    double *mcmc = dream.collectSamples(num_mc, num_mc / 10);
     double frequency = 0.0, correction = 0.0;
     for(int i=0; i<num_chains * num_mc / 10; i++){
         //cout << mcmc[2*i] << "   " << mcmc[2*i+1] << endl;
