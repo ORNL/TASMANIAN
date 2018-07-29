@@ -160,10 +160,10 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         std::vector<double> err(num_outputs, 0.0); // absolute error
         std::vector<double> nrm(num_outputs, 0.0); // norm, needed to compute relative error
 
-		double *test_x = new double[num_dimensions * num_mc];
-		double *result_tasm = new double[num_mc * num_outputs];
-		double *result_true = new double[num_mc * num_outputs];
-		setRandomX(num_dimensions * num_mc, test_x);
+        std::vector<double> test_x(num_mc * num_dimensions);
+        std::vector<double> result_tasm(num_mc * num_outputs);
+        std::vector<double> result_true(num_mc * num_outputs);
+        setRandomX(num_dimensions * num_mc, test_x.data());
 
 		#pragma omp parallel for
 		for(int i=0; i<num_mc; i++){
@@ -185,10 +185,6 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             double relative_errork = err[k] / nrm[k];
 			if (rel_err < relative_errork) rel_err = relative_errork;
 		}
-
-		delete[] test_x;
-		delete[] result_tasm;
-		delete[] result_true;
 
         R.error = rel_err;
     }
