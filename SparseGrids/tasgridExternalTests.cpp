@@ -165,7 +165,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         std::vector<double> result_true(num_mc * num_outputs);
         setRandomX(num_dimensions * num_mc, test_x.data());
 
-		#pragma omp parallel for
+		#pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
 		for(int i=0; i<num_mc; i++){
 			grid->evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_outputs]));
 			f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_outputs]));
