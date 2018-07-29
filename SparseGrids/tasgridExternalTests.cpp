@@ -146,15 +146,14 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         int num_needed_points = grid->getNumNeeded();
         if (num_needed_points > 0){
             double *needed_points = grid->getNeededPoints();
-            double *values = new double[num_outputs * num_needed_points];
+            std::vector<double> values(num_outputs * num_needed_points);
 
             for(int i=0; i<num_needed_points; i++){
                 f->eval(&(needed_points[i*num_dimensions]), &(values[i*num_outputs]));
             }
 
-            grid->loadNeededPoints(values);
+            grid->loadNeededPoints(values.data());
 
-            delete[] values;
             delete[] needed_points;
         }
 
