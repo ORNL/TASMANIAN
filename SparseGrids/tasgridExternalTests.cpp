@@ -157,8 +157,8 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             delete[] needed_points;
         }
 
-        double *e = new double[num_outputs];  std::fill(e, e + num_outputs, 0.0);
-        double *n = new double[num_outputs];  std::fill(n, n + num_outputs, 0.0);
+        std::vector<double> err(num_outputs, 0.0); // absolute error
+        std::vector<double> nrm(num_outputs, 0.0); // norm, needed to compute relative error
 
 		double *test_x = new double[num_dimensions * num_mc];
 		double *result_tasm = new double[num_mc * num_outputs];
@@ -173,24 +173,24 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
 		for(int i=0; i<num_mc; i++){
 			for(int k=0; k<num_outputs; k++){
-				if (n[k] < fabs(result_true[i * num_outputs + k])) n[k] = fabs(result_true[i * num_outputs + k]);
-				if (e[k] < fabs(result_true[i * num_outputs + k] - result_tasm[i * num_outputs + k]))
-					e[k] = fabs(result_true[i * num_outputs + k] - result_tasm[i * num_outputs + k]);
+                double nrmik = fabs(result_true[i * num_outputs + k]);
+                double errik = fabs(result_true[i * num_outputs + k] - result_tasm[i * num_outputs + k]);
+                if (nrm[k] < nrmik) nrm[k] = nrmik;
+                if (err[k] < errik) err[k] = errik;
 			}
 		}
 
-		double err = 0.0;
+		double rel_err = 0.0; // relative error
 		for(int k=0; k<num_outputs; k++){
-			if (err < e[k] / n[k]) err = e[k] / n[k];
+            double relative_errork = err[k] / nrm[k];
+			if (rel_err < relative_errork) rel_err = relative_errork;
 		}
 
 		delete[] test_x;
 		delete[] result_tasm;
 		delete[] result_true;
 
-        delete[] e;
-        delete[] n;
-        R.error = err;
+        R.error = rel_err;
     }
     R.num_points = grid->getNumPoints();
     return R;
