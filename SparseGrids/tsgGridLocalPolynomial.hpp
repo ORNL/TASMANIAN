@@ -123,8 +123,8 @@ protected:
 
     template<bool fill>
     void buildSparseVector(const double x[], int &num_nz, int *sindx, double *svals) const{
-        int *monkey_count = new int[top_level+1];
-        int *monkey_tail = new int[top_level+1];
+        std::vector<int> monkey_count(top_level+1);
+        std::vector<int> monkey_tail(top_level+1);
 
         bool isSupported;
         size_t offset;
@@ -169,9 +169,6 @@ protected:
             }
         }
 
-        delete[] monkey_count;
-        delete[] monkey_tail;
-
         // according to https://docs.nvidia.com/cuda/cusparse/index.html#sparse-format
         // "... it is assumed that the indices are provided in increasing order and that each index appears only once."
         // This may not be a requirement for cusparseDgemvi(), but it may be that I have not tested it sufficiently
@@ -180,10 +177,10 @@ protected:
             bool isNotSorted = false;
             for(int i=0; i<num_nz-1; i++) if (sindx[i] > sindx[i+1]) isNotSorted = true;
             if (isNotSorted){ // sort the vector
-                int *idx1 = new int[num_nz];
-                int *idx2 = new int[num_nz];
-                double *vls1 = new double[num_nz];
-                double *vls2 = new double[num_nz];
+                std::vector<int> idx1(num_nz);
+                std::vector<int> idx2(num_nz);
+                std::vector<double> vls1(num_nz);
+                std::vector<double> vls2(num_nz);
 
                 int loop_end = (num_nz % 2 == 1) ? num_nz - 1 : num_nz;
                 for(int i=0; i<loop_end; i+=2){
@@ -230,16 +227,11 @@ protected:
                         }
                     }
                     stride *= 2;
-                    int *it = idx2; idx2 = idx1; idx1 = it;
-                    double *vt = vls2; vls2 = vls1; vls1 = vt;
+                    std::swap(idx1, idx2);
+                    std::swap(vls1, vls2);
                 }
-                std::copy(idx1, idx1 + num_nz, sindx);
-                std::copy(vls1, vls1 + num_nz, svals);
-
-                delete[] idx1;
-                delete[] idx2;
-                delete[] vls1;
-                delete[] vls2;
+                std::copy(idx1.begin(), idx1.end(), sindx);
+                std::copy(vls1.begin(), vls1.end(), svals);
             }
         }
     }
