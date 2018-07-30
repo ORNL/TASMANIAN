@@ -122,9 +122,14 @@ protected:
                                     int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
 
     template<bool fill_data>
-    void buildSparseVector(const double x[], int &num_nz, int *sindx, double *svals) const{
+    void buildSparseVector(const double x[], int &num_nz, std::vector<int> &sindx, std::vector<double> &svals) const{
         std::vector<int> monkey_count(top_level+1);
         std::vector<int> monkey_tail(top_level+1);
+
+        if (fill_data){
+            sindx.resize(num_nz);
+            svals.resize(num_nz);
+        }
 
         bool isSupported;
         size_t offset;
@@ -230,8 +235,8 @@ protected:
                     std::swap(idx1, idx2);
                     std::swap(vls1, vls2);
                 }
-                std::copy(idx1.begin(), idx1.end(), sindx);
-                std::copy(vls1.begin(), vls1.end(), svals);
+                sindx = idx1;
+                svals = vls1;
             }
         }
     }

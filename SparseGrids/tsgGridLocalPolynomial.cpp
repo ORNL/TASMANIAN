@@ -436,14 +436,13 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], st
     checkAccelerationGPUValues();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
-    int num_nz, *sindx = 0;
-    double *svals = 0;
-    buildSparseVector<false>(x, num_nz, 0, 0);
-    sindx = new int[num_nz];
-    svals = new double[num_nz];
+    int num_nz;
+    std::vector<int> sindx;
+    std::vector<double> svals;
+    buildSparseVector<false>(x, num_nz, sindx, svals);
     buildSparseVector<true>(x, num_nz, sindx, svals);
-    int *gpu_sindx = TasCUDA::cudaSend<int>(num_nz, sindx, os);
-    double *gpu_svals = TasCUDA::cudaSend<double>(num_nz, svals, os);
+    int *gpu_sindx = TasCUDA::cudaSend<int>(sindx, os);
+    double *gpu_svals = TasCUDA::cudaSend<double>(svals, os);
     double *gpu_y = TasCUDA::cudaNew<double>(num_outputs, os);
 
     gpu_acc->cusparseMatveci(num_outputs, num_points, num_nz, gpu_sindx, gpu_svals, gpu_y);
@@ -454,8 +453,6 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], st
     TasCUDA::cudaDel<int>(gpu_sindx, os);
     TasCUDA::cudaDel<double>(gpu_svals, os);
     TasCUDA::cudaDel<double>(gpu_y, os);
-    delete[] sindx;
-    delete[] svals;
 }
 #else
 void GridLocalPolynomial::evaluateFastGPUcublas(const double[], double[], std::ostream*) const{}
