@@ -1708,7 +1708,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             }
 
             if (!dense_pass){
-                cout << "Failed when using grid: " << endl;
+                cout << "Failed evaluateHierarchicalFunctionsGPU() when using grid: " << endl;
                 grid.printStats();
             }
             pass = pass && dense_pass;
@@ -1729,7 +1729,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             double *cvals = new double[num_nz]; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals, &cerr);
 
             if (pntr[nump] != num_nz){
-                cout << "ERROR: mismatch in the numn from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
+                cout << "ERROR: mismatch in the numnz from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
                 grid.printStats();
                 sparse_pass = false;
             }
@@ -1748,7 +1748,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
                 }
             }
             if (!sparse_pass){
-                cout << "Failed when using grid: " << endl;
+                cout << "Failed evaluateSparseHierarchicalFunctionsGPU() when using grid: " << endl;
                 grid.printStats();
             }
 

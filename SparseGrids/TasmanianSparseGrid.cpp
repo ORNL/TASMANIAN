@@ -905,12 +905,14 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int nu
 }
 #ifdef Tasmanian_ENABLE_CUDA
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+    _TASMANIAN_SETGPU
     double *gpu_temp_x = 0;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
     pwpoly->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y, logstream);
     if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x, logstream);
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const{
+    _TASMANIAN_SETGPU
     double *gpu_temp_x = 0;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
     pwpoly->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_pntr, gpu_indx, gpu_vals, num_nz, logstream);
@@ -1465,6 +1467,7 @@ void TasmanianSparseGrid::setGPUID(int new_gpuID){
         if (AccelerationMeta::isAccTypeGPU(acceleration)){ // if using GPU acceleration
             if (base != 0) base->clearAccelerationData();
         }
+        if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
         gpuID = new_gpuID;
     }
 }
