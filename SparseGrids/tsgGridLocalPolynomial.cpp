@@ -1138,14 +1138,15 @@ void GridLocalPolynomial::buildTree(){
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
 
-    int *level = new int[num_points];
+    std::vector<int> level(num_points);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = work->getIndex(i);
-        level[i] = rule->getLevel(p[0]);
+        int current_level =rule->getLevel(p[0]);
         for(int j=1; j<num_dimensions; j++){
-            level[i] += rule->getLevel(p[j]);
+            current_level += rule->getLevel(p[j]);
         }
+        level[i] = current_level;
     }
 
     top_level = 0;
@@ -1153,28 +1154,18 @@ void GridLocalPolynomial::buildTree(){
 
     int max_1d_kids = rule->getMaxNumKids();
     int max_kids = max_1d_kids*num_dimensions;
-    int* monkey_count = new int[top_level + 1];
-    int* monkey_tail  = new int[top_level + 1];
+    std::vector<int> monkey_count(top_level + 1);
+    std::vector<int> monkey_tail(top_level + 1);
 
-    int  *tree = new int[max_kids * num_points];  std::fill(tree, tree + max_kids * num_points, -1);
-    bool *free = new bool[num_points];        std::fill(free, free + num_points, true);
-    int  *kid  = new int[num_dimensions];
+    std::vector<int>  tree(max_kids * num_points);  std::fill(tree.begin(), tree.end(), -1);
+    std::vector<bool> free(num_points);             std::fill(free.begin(), free.end(), true);
+    std::vector<int>  kid(num_dimensions);
 
     int next_root = 0;
-
-    int crts = 12;
-    int *rts = new int[crts];
-    int num_rts = 0;
+    std::vector<int> rts(0);
 
     while(next_root != -1){
-        if (num_rts == crts){
-            int *tmp = rts;
-            crts *= 2;
-            rts = new int[crts];
-            std::copy(tmp, tmp + num_rts, rts);
-            delete[] tmp;
-        }
-        rts[num_rts++] = next_root;
+        rts.push_back(next_root);
         free[next_root] = false;
 
         monkey_tail[0] = next_root;
@@ -1191,9 +1182,9 @@ void GridLocalPolynomial::buildTree(){
                 if (ikid == -1){
                     monkey_count[current]++;
                 }else{
-                    std::copy(p, p + num_dimensions, kid);
+                    std::copy(p, p + num_dimensions, kid.data());
                     kid[dir] = ikid;
-                    int t = work->getSlot(kid);
+                    int t = work->getSlot(kid.data());
                     if ((t == -1) || (!free[t])){
                         monkey_count[current]++;
                     }else{
@@ -1218,9 +1209,9 @@ void GridLocalPolynomial::buildTree(){
         }
     }
 
-    num_roots = num_rts;
+    num_roots = rts.size();
     roots = new int[num_roots];
-    std::copy(rts, rts + num_roots, roots);
+    std::copy(rts.begin(), rts.end(), roots);
 
     pntr = new int[num_points + 1];
     pntr[0] = 0;
@@ -1237,14 +1228,6 @@ void GridLocalPolynomial::buildTree(){
             if (t > -1) indx[count++] = t;
         }
     }
-
-    delete[] kid;
-    delete[] free;
-    delete[] tree;
-    delete[] monkey_tail;
-    delete[] monkey_count;
-    delete[] rts;
-    delete[] level;
 }
 
 void GridLocalPolynomial::getBasisIntegrals(double *integrals) const{
