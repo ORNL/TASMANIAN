@@ -483,15 +483,13 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
 
     if ((sparse_affinity == -1) || ((sparse_affinity == 0) && (nnz / total_size > 0.1))){
         // potentially wastes a lot of memory
-        double *A = new double[((size_t) num_x) * ((size_t) num_points)];
-        std::fill(A, A + ((size_t) num_x) * ((size_t) num_points), 0.0);
+        std::vector<double> A(((size_t) num_x) * ((size_t) num_points), 0.0);
         for(int i=0; i<num_x; i++){
             for(int j=spntr[i]; j<spntr[i+1]; j++){
                 A[((size_t) i) * ((size_t) num_points) + ((size_t) sindx[j])] = svals[j];
             }
         }
-        TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses, A, 0.0, y);
-        delete[] A;
+        TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses, A.data(), 0.0, y);
     }else{
         #pragma omp parallel for
         for(int i=0; i<num_x; i++){
