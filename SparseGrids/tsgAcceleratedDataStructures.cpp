@@ -136,7 +136,7 @@ void AccelerationDataGPUFull::loadGPUNodesSupport(int total_entries, const doubl
     gpu_nodes   = TasCUDA::cudaSend<double>(total_entries, cpu_nodes,   logstream);
     gpu_support = TasCUDA::cudaSend<double>(total_entries, cpu_support, logstream);
 }
-void AccelerationDataGPUFull::loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots){
+void AccelerationDataGPUFull::loadGPUHierarchy(int num_points, const int *pntr, const int *indx, int num_roots, const int *roots){
     gpu_hpntr = TasCUDA::cudaSend<int>(num_points + 1, pntr, logstream);
     gpu_hindx = TasCUDA::cudaSend<int>(pntr[num_points], indx, logstream);
     gpu_roots = TasCUDA::cudaSend<int>(num_roots, roots, logstream);
@@ -145,7 +145,7 @@ void AccelerationDataGPUFull::loadGPUHierarchy(int num_points, int *pntr, int *i
 void AccelerationDataGPUFull::loadGPUValues(size_t, const double *){}
 void AccelerationDataGPUFull::resetGPULoadedData(){}
 void AccelerationDataGPUFull::loadGPUNodesSupport(int, const double *, const double *){}
-void AccelerationDataGPUFull::loadGPUHierarchy(int, int*, int*, int, int*){}
+void AccelerationDataGPUFull::loadGPUHierarchy(int, const int*, const int*, int, const int*){}
 #endif // Tasmanian_ENABLE_CUDA
 
 double* AccelerationDataGPUFull::getGPUValues() const{ return gpu_values; }

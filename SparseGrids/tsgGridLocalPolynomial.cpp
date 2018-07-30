@@ -1787,7 +1787,7 @@ void GridLocalPolynomial::checkAccelerationGPUNodes() const{
 void GridLocalPolynomial::checkAccelerationGPUHierarchy() const{
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     int num_points = getNumPoints();
-    gpu->loadGPUHierarchy(num_points, pntr, indx, roots.size(), roots.data());
+    gpu->loadGPUHierarchy(num_points, pntr.data(), indx.data(), roots.size(), roots.data());
 }
 #else
 void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration, std::ostream *) const{}

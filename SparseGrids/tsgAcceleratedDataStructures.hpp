@@ -71,7 +71,7 @@ public:
     int* getGPUpntr() const;
     int* getGPUindx() const;
     int* getGPUroots() const;
-    void loadGPUHierarchy(int num_points, int *pntr, int *indx, int num_roots, int *roots);
+    void loadGPUHierarchy(int num_points, const int *pntr, const int *indx, int num_roots, const int *roots);
     // collection of trees to be used in CUDA evaluations of local polynomial grids
 
     void resetGPULoadedData();
