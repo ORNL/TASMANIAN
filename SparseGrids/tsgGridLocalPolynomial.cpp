@@ -386,24 +386,24 @@ void GridLocalPolynomial::getPoints(double *x) const{
 }
 
 void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
-    int *monkey_count = new int[top_level+1];
-    int *monkey_tail = new int[top_level+1];
+    std::vector<int> monkey_count(top_level+1);
+    std::vector<int> monkey_tail(top_level+1);
 
     bool isSupported;
     size_t offset;
 
     std::fill(y, y + num_outputs, 0.0);
 
-    for(unsigned r=0; r<roots.size(); r++){
-        double basis_value = evalBasisSupported(points->getIndex(roots[r]), x, isSupported);
+    for(auto const &r : roots){
+        double basis_value = evalBasisSupported(points->getIndex(r), x, isSupported);
 
         if (isSupported){
-            offset = roots[r] * num_outputs;
+            offset = r * num_outputs;
             for(int k=0; k<num_outputs; k++) y[k] += basis_value * surpluses[offset + k];
 
             int current = 0;
-            monkey_tail[0] = roots[r];
-            monkey_count[0] = pntr[roots[r]];
+            monkey_tail[0] = r;
+            monkey_count[0] = pntr[r];
 
             while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                 if (monkey_count[current] < pntr[monkey_tail[current]+1]){
@@ -425,9 +425,6 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
             }
         }
     }
-
-    delete[] monkey_count;
-    delete[] monkey_tail;
 }
 void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
 // standard BLAS cannot accelerate dense matrix times a sparse vector, fallback to regular evaluate()
