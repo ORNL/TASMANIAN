@@ -632,8 +632,8 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     std::vector<int> active_points(0);
     std::fill(weights, weights + work->getNumIndexes(), 0.0);
 
-    int *monkey_count = new int[top_level+1];
-    int *monkey_tail = new int[top_level+1];
+    std::vector<int> monkey_count(top_level+1);
+    std::vector<int> monkey_tail(top_level+1);
 
     double basis_value;
     bool isSupported;
@@ -682,19 +682,20 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
         dagUp = IM.computeDAGupLocal(work, rule);
     }
 
-    int *level = new int[active_points.size()];
+    std::vector<int> level(active_points.size());
     int active_top_level = 0;
     for(size_t i=0; i<active_points.size(); i++){
         const int *p = work->getIndex(active_points[i]);
-        level[i] = rule->getLevel(p[0]);
+        int current_level = rule->getLevel(p[0]);
         for(int j=1; j<num_dimensions; j++){
-            level[i] += rule->getLevel(p[j]);
+            current_level += rule->getLevel(p[j]);
         }
-        if (active_top_level < level[i]) active_top_level = level[i];
+        if (active_top_level < current_level) active_top_level = current_level;
+        level[i] = current_level;
     }
 
-    bool *used = new bool[work->getNumIndexes()];
-    double *node = new double[num_dimensions];
+    std::vector<bool> used(work->getNumIndexes());
+    std::vector<double> node(num_dimensions);
     int max_parents = rule->getMaxNumParents() * num_dimensions;
 
     for(int l=active_top_level; l>0; l--){
@@ -703,7 +704,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
                 const int* p = work->getIndex(active_points[i]);
                 for(int j=0; j<num_dimensions; j++) node[j] = rule->getNode(p[j]);
 
-                std::fill(used, used + work->getNumIndexes(), false);
+                std::fill(used.begin(), used.end(), false);
 
                 monkey_count[0] = 0;
                 monkey_tail[0] = active_points[i];
@@ -731,14 +732,6 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
             }
         }
     }
-
-    delete[] used;
-    delete[] node;
-
-    delete[] level;
-
-    delete[] monkey_count;
-    delete[] monkey_tail;
 
     if (num_outputs > 0){
         delete[] dagUp;
