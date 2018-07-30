@@ -121,7 +121,7 @@ protected:
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, int &num_blocks, int &num_last, int &stripe_size,
                                     int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
 
-    template<bool fill>
+    template<bool fill_data>
     void buildSparseVector(const double x[], int &num_nz, int *sindx, double *svals) const{
         std::vector<int> monkey_count(top_level+1);
         std::vector<int> monkey_tail(top_level+1);
@@ -136,7 +136,7 @@ protected:
 
             if (isSupported){
                 offset = r * num_outputs;
-                if (fill){
+                if (fill_data){
                     sindx[num_nz] = r;
                     svals[num_nz] = basis_value;
                 }
@@ -151,7 +151,7 @@ protected:
                         offset = indx[monkey_count[current]];
                         basis_value = evalBasisSupported(points->getIndex(offset), x, isSupported);
                         if (isSupported){
-                            if (fill){
+                            if (fill_data){
                                 sindx[num_nz] = offset;
                                 svals[num_nz] = basis_value;
                             }
@@ -173,7 +173,7 @@ protected:
         // "... it is assumed that the indices are provided in increasing order and that each index appears only once."
         // This may not be a requirement for cusparseDgemvi(), but it may be that I have not tested it sufficiently
         // Also, see AccelerationDataGPUFull::cusparseMatveci() for inaccuracies in Nvidia documentation
-        if (fill){
+        if (fill_data){
             bool isNotSorted = false;
             for(int i=0; i<num_nz-1; i++) if (sindx[i] > sindx[i+1]) isNotSorted = true;
             if (isNotSorted){ // sort the vector
