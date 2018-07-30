@@ -766,14 +766,15 @@ void GridLocalPolynomial::recomputeSurpluses(){
     //int max_parents = (rule->isSemiLocal()) ? 2*num_dimensions : num_dimensions;
     int max_parents = rule->getMaxNumParents() * num_dimensions;
 
-    int *level = new int[num_points];
+    std::vector<int> level(num_points);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = points->getIndex(i);
-        level[i] = rule->getLevel(p[0]);
+        int current_level = rule->getLevel(p[0]);
         for(int j=1; j<num_dimensions; j++){
-            level[i] += rule->getLevel(p[j]);
+            current_level += rule->getLevel(p[j]);
         }
+        level[i] = current_level;
     }
 
     for(int l=1; l<=top_level; l++){
@@ -781,14 +782,14 @@ void GridLocalPolynomial::recomputeSurpluses(){
         for(int i=0; i<num_points; i++){
             if (level[i] == l){
                 const int* p = points->getIndex(i);
-                double *x = new double[num_dimensions];
+                std::vector<double> x(num_dimensions);
                 double *surpi = &(surpluses[((size_t) i) * ((size_t) num_outputs)]);
                 for(int j=0; j<num_dimensions; j++) x[j] = rule->getNode(p[j]);
 
-                int *monkey_count = new int[top_level + 1];
-                int *monkey_tail = new int[top_level + 1];
-                bool *used = new bool[num_points];
-                std::fill(used, used + num_points, false);
+                std::vector<int> monkey_count(top_level + 1);
+                std::vector<int> monkey_tail(top_level + 1);
+                std::vector<bool> used(num_points);
+                std::fill(used.begin(), used.end(), false);
 
                 int current = 0;
 
@@ -802,7 +803,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
                             monkey_count[current]++;
                         }else{
                             const double *branch_surp = &(surpluses[((size_t) branch) * ((size_t) num_outputs)]);
-                            double basis_value = evalBasisRaw(points->getIndex(branch), x);
+                            double basis_value = evalBasisRaw(points->getIndex(branch), x.data());
                             for(int k=0; k<num_outputs; k++){
                                 surpi[k] -= basis_value * branch_surp[k];
                             }
@@ -815,17 +816,11 @@ void GridLocalPolynomial::recomputeSurpluses(){
                         monkey_count[--current]++;
                     }
                 }
-
-                delete[] x;
-                delete[] used;
-                delete[] monkey_tail;
-                delete[] monkey_count;
             }
         }
     }
 
     delete[] dagUp;
-    delete[] level;
 }
 
 double GridLocalPolynomial::evalBasisRaw(const int point[], const double x[]) const{
