@@ -131,20 +131,20 @@ protected:
 
         num_nz = 0;
 
-        for(int r=0; r<roots.size(); r++){
-            double basis_value = evalBasisSupported(points->getIndex(roots[r]), x, isSupported);
+        for(const auto &r : roots){
+            double basis_value = evalBasisSupported(points->getIndex(r), x, isSupported);
 
             if (isSupported){
-                offset = roots[r] * num_outputs;
+                offset = r * num_outputs;
                 if (fill){
-                    sindx[num_nz] = roots[r];
+                    sindx[num_nz] = r;
                     svals[num_nz] = basis_value;
                 }
                 num_nz++;
 
                 int current = 0;
-                monkey_tail[0] = roots[r];
-                monkey_count[0] = pntr[roots[r]];
+                monkey_tail[0] = r;
+                monkey_count[0] = pntr[r];
 
                 while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){

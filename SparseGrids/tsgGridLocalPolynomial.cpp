@@ -96,7 +96,7 @@ void GridLocalPolynomial::write(std::ofstream &ofs) const{
             for(int i=0; i<rule->getMaxNumParents()*(points->getNumIndexes()); i++){ ofs << " " << parents[i]; } ofs << endl;
         }
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
-        ofs << roots.size(); for(unsigned i=0; i<roots.size(); i++){  ofs << " " << roots[i];  } ofs << endl;
+        ofs << roots.size(); for(auto const &r : roots){ ofs << " " << r; } ofs << endl;
         ofs << pntr[0]; for(int i=1; i<=num_points; i++){  ofs << " " << pntr[i];  }  ofs << endl;
         ofs << indx[0]; for(int i=1; i<pntr[num_points]; i++){  ofs << " " << indx[i];  }  ofs << endl;
         if (num_outputs > 0) values->write(ofs);
