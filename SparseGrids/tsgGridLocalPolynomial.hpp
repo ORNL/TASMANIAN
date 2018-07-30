@@ -131,7 +131,7 @@ protected:
 
         num_nz = 0;
 
-        for(int r=0; r<num_roots; r++){
+        for(int r=0; r<roots.size(); r++){
             double basis_value = evalBasisSupported(points->getIndex(roots[r]), x, isSupported);
 
             if (isSupported){
@@ -300,8 +300,11 @@ private:
     int *parents;
 
     // tree for evaluation
-    int num_roots, *roots;
-    int *pntr, *indx;
+    //int num_roots, *roots;
+    //int *pntr, *indx;
+    std::vector<int> roots;
+    std::vector<int> pntr;
+    std::vector<int> indx;
 
     BaseRuleLocalPolynomial *rule;
 

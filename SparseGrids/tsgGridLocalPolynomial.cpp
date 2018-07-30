@@ -39,10 +39,10 @@
 namespace TasGrid{
 
 GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0),
-                         surpluses(0), points(0), needed(0), values(0), parents(0), num_roots(0), roots(0), pntr(0), indx(0), rule(0),
+                         surpluses(0), points(0), needed(0), values(0), parents(0), rule(0),
                          accel(0), sparse_affinity(0)  {}
 GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0),
-                         surpluses(0), points(0), needed(0), values(0), parents(0), num_roots(0), roots(0), pntr(0), indx(0), rule(0),
+                         surpluses(0), points(0), needed(0), values(0), parents(0), rule(0),
                          accel(0), sparse_affinity(0)
 {
     copyGrid(&pwpoly);
@@ -59,9 +59,9 @@ void GridLocalPolynomial::reset(bool clear_rule){
     if (needed != 0){ delete needed; needed = 0; }
     if (values != 0){ delete values; values = 0; }
     if (parents != 0){ delete[] parents; parents = 0; }
-    if (roots != 0){ delete[] roots;  roots = 0; }
-    if (pntr != 0){ delete[] pntr;  pntr = 0; }
-    if (indx != 0){ delete[] indx;  indx = 0; }
+    //if (roots != 0){ delete[] roots;  roots = 0; }
+    //if (pntr != 0){ delete[] pntr;  pntr = 0; }
+    //if (indx != 0){ delete[] indx;  indx = 0; }
     if (clear_rule){ rule = 0; order = 1; }
     sparse_affinity = 0;
 }
@@ -96,7 +96,7 @@ void GridLocalPolynomial::write(std::ofstream &ofs) const{
             for(int i=0; i<rule->getMaxNumParents()*(points->getNumIndexes()); i++){ ofs << " " << parents[i]; } ofs << endl;
         }
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
-        ofs << num_roots; for(int i=0; i<num_roots; i++){  ofs << " " << roots[i];  } ofs << endl;
+        ofs << roots.size(); for(unsigned i=0; i<roots.size(); i++){  ofs << " " << roots[i];  } ofs << endl;
         ofs << pntr[0]; for(int i=1; i<=num_points; i++){  ofs << " " << pntr[i];  }  ofs << endl;
         ofs << indx[0]; for(int i=1; i<pntr[num_points]; i++){  ofs << " " << indx[i];  }  ofs << endl;
         if (num_outputs > 0) values->write(ofs);
@@ -140,10 +140,11 @@ void GridLocalPolynomial::writeBinary(std::ofstream &ofs) const{
         }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
+        int num_roots = roots.size();
         ofs.write((char*) &num_roots, sizeof(int));
-        ofs.write((char*) roots, num_roots * sizeof(int));
-        ofs.write((char*) pntr, (num_points+1) * sizeof(int));
-        ofs.write((char*) indx, pntr[num_points] * sizeof(int));
+        ofs.write((char*) roots.data(), num_roots * sizeof(int));
+        ofs.write((char*) pntr.data(), (num_points+1) * sizeof(int));
+        ofs.write((char*) indx.data(), pntr[num_points] * sizeof(int));
 
         if (num_outputs > 0) values->writeBinary(ofs);
     }
@@ -190,16 +191,17 @@ void GridLocalPolynomial::read(std::ifstream &ifs){
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
 
+        int num_roots;
         ifs >> num_roots;
-        roots = new int[num_roots];
+        roots.resize(num_roots);
         for(int i=0; i<num_roots; i++) ifs >> roots[i];
-        pntr  = new int[num_points + 1];
+        pntr.resize(num_points + 1);
         for(int i=0; i<=num_points; i++) ifs >> pntr[i];
         if (pntr[num_points] > 0){
-            indx  = new int[pntr[num_points]];
+            indx.resize(pntr[num_points]);
             for(int i=0; i<pntr[num_points]; i++) ifs >> indx[i];
         }else{
-            indx  = new int[1];  ifs >> indx[0]; // there is a special case when the grid has only one point without any children
+            indx.resize(1);  ifs >> indx[0]; // there is a special case when the grid has only one point without any children
         }
 
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->read(ifs); }
@@ -247,19 +249,20 @@ void GridLocalPolynomial::readBinary(std::ifstream &ifs){
         }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
+        int num_roots;
         ifs.read((char*) &num_roots, sizeof(int));
-        roots = new int[num_roots];
-        ifs.read((char*) roots, num_roots * sizeof(int));
+        roots.resize(num_roots);
+        ifs.read((char*) roots.data(), num_roots * sizeof(int));
 
-        pntr  = new int[num_points + 1];
-        ifs.read((char*) pntr, (num_points+1) * sizeof(int));
+        pntr.resize(num_points + 1);
+        ifs.read((char*) pntr.data(), (num_points+1) * sizeof(int));
 
         if (pntr[num_points] > 0){
-            indx  = new int[pntr[num_points]];
-            ifs.read((char*) indx, pntr[num_points] * sizeof(int));
+            indx.resize(pntr[num_points]);
+            ifs.read((char*) indx.data(), pntr[num_points] * sizeof(int));
         }else{
-            indx  = new int[1];
-            ifs.read((char*) indx, sizeof(int));
+            indx.resize(1);
+            ifs.read((char*) indx.data(), sizeof(int));
         }
 
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
@@ -391,7 +394,7 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
 
     std::fill(y, y + num_outputs, 0.0);
 
-    for(int r=0; r<num_roots; r++){
+    for(unsigned r=0; r<roots.size(); r++){
         double basis_value = evalBasisSupported(points->getIndex(roots[r]), x, isSupported);
 
         if (isSupported){
@@ -639,7 +642,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     bool isSupported;
     int offset;
 
-    for(int r=0; r<num_roots; r++){
+    for(unsigned r=0; r<roots.size(); r++){
 
         basis_value = evalBasisSupported(work->getIndex(roots[r]), x, isSupported);
 
@@ -949,7 +952,7 @@ int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x, int 
         for(int i=0; i<this_size; i++){ // for each point
             const double *this_x = &(x[(b*num_chunk + i) * num_dimensions]);
 
-            for(int r=0; r<num_roots; r++){
+            for(unsigned r=0; r<roots.size(); r++){
                 evalBasisSupported(work->getIndex(roots[r]), this_x, isSupported);
 
                 if (isSupported){
@@ -1024,7 +1027,7 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
             tpntr[b][i+1] = tpntr[b][i];
             const double *this_x = &(x[(b*num_chunk + i) * num_dimensions]);
 
-            for(int r=0; r<num_roots; r++){
+            for(unsigned r=0; r<roots.size(); r++){
                 double basis_value = evalBasisSupported(work->getIndex(roots[r]), this_x, isSupported);
 
                 if (isSupported){
@@ -1121,7 +1124,7 @@ void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cp
     checkAccelerationGPUHierarchy();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
     TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, gpu_acc->getGPUNodes(), gpu_acc->getGPUSupport(),
-                                gpu_acc->getGPUpntr(), gpu_acc->getGPUindx(), num_roots, gpu_acc->getGPUroots(),
+                                gpu_acc->getGPUpntr(), gpu_acc->getGPUindx(), roots.size(), gpu_acc->getGPUroots(),
                                 gpu_spntr, gpu_sindx, gpu_svals, num_nz, os);
 }
 
@@ -1131,9 +1134,9 @@ void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double*, int, int*&, i
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridLocalPolynomial::buildTree(){
-    if (roots != 0) delete[] roots;
-    if (pntr != 0) delete[] pntr;
-    if (indx != 0) delete[] indx;
+    //if (roots != 0) delete[] roots;
+    //if (pntr != 0) delete[] pntr;
+    //if (indx != 0) delete[] indx;
 
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
@@ -1162,10 +1165,11 @@ void GridLocalPolynomial::buildTree(){
     std::vector<int>  kid(num_dimensions);
 
     int next_root = 0;
-    std::vector<int> rts(0);
+    //std::vector<int> rts(0);
+    roots.resize(0);
 
     while(next_root != -1){
-        rts.push_back(next_root);
+        roots.push_back(next_root);
         free[next_root] = false;
 
         monkey_tail[0] = next_root;
@@ -1209,18 +1213,21 @@ void GridLocalPolynomial::buildTree(){
         }
     }
 
-    num_roots = rts.size();
-    roots = new int[num_roots];
-    std::copy(rts.begin(), rts.end(), roots);
+    //num_roots = rts.size();
+    //roots = new int[num_roots];
+    //std::copy(rts.begin(), rts.end(), roots);
 
-    pntr = new int[num_points + 1];
+    //pntr = new int[num_points + 1];
+    pntr.resize(num_points + 1);
     pntr[0] = 0;
     for(int i=0; i<num_points; i++){
         pntr[i+1] = pntr[i];
         for(int j=0; j<max_kids; j++) if (tree[i * max_kids + j] > -1) pntr[i+1]++;
     }
 
-    indx = (pntr[num_points] > 0) ? new int[pntr[num_points]] : new int[1]; indx[0] = 0;
+    //indx = (pntr[num_points] > 0) ? new int[pntr[num_points]] : new int[1]; indx[0] = 0;
+    indx.resize((pntr[num_points] > 0) ? pntr[num_points] : 1);
+    indx[0] = 0;
     int count = 0;
     for(int i=0; i<num_points; i++){
         for(int j=0; j<max_kids; j++){
@@ -1780,7 +1787,7 @@ void GridLocalPolynomial::checkAccelerationGPUNodes() const{
 void GridLocalPolynomial::checkAccelerationGPUHierarchy() const{
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     int num_points = getNumPoints();
-    gpu->loadGPUHierarchy(num_points, pntr, indx, num_roots, roots);
+    gpu->loadGPUHierarchy(num_points, pntr, indx, roots.size(), roots.data());
 }
 #else
 void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration, std::ostream *) const{}
