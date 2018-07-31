@@ -324,26 +324,6 @@ void GridSequence::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); }
 }
 
-double* GridSequence::getQuadratureWeights() const{
-    IndexSet *work = (points == 0) ? needed : points;
-    double *integ = cacheBasisIntegrals();
-
-    int n = work->getNumIndexes();
-    double *weights = new double[n];
-
-    for(int i=0; i<n; i++){
-        const int* p = work->getIndex(i);
-        weights[i] = integ[p[0]];
-        for(int j=1; j<num_dimensions; j++){
-            weights[i] *= integ[p[j]];
-        }
-    }
-    delete[] integ;
-
-    applyTransformationTransposed(weights);
-
-    return weights;
-}
 void GridSequence::getQuadratureWeights(double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
     double *integ = cacheBasisIntegrals();
@@ -360,16 +340,6 @@ void GridSequence::getQuadratureWeights(double *weights) const{
     applyTransformationTransposed(weights);
 }
 
-double* GridSequence::getInterpolationWeights(const double x[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int n = work->getNumIndexes();
-
-    double *weights = new double[n];
-
-    getInterpolationWeights(x, weights);
-
-    return weights;
-}
 void GridSequence::getInterpolationWeights(const double x[], double *weights) const{
     double **cache = cacheBasisValues<double>(x);
     IndexSet *work = (points == 0) ? needed : points;
@@ -616,7 +586,8 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
         }
         delete[] integ;
     }else{
-        double *w = getQuadratureWeights();
+        double *w = new double[num_points];
+        getQuadratureWeights(w);
         for(int i=0; i<num_points; i++){
             w[i] *= conformal_correction[i];
             const double *vals = values->getValues(i);
