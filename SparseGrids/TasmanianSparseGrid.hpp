@@ -97,11 +97,16 @@ public:
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
+    void getLoadedPoints(std::vector<double> &x) const;
+    void getNeededPoints(std::vector<double> &x) const;
+    void getPoints(std::vector<double> &x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
     double* getQuadratureWeights() const;
     double* getInterpolationWeights(const double x[]) const;
     void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
+    void getQuadratureWeights(std::vector<double> &weights) const;
+    void getInterpolationWeights(const double x[], std::vector<double> &weights) const;
 
     void loadNeededPoints(const double *vals);
 

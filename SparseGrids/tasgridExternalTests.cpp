@@ -91,11 +91,12 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
     int num_outputs = f->getNumOutputs();
     int num_points = grid->getNumPoints();
     if ((type == type_integration) || (type == type_nodal_interpolation)){
-        double *points = grid->getPoints(), *weights = 0;
+        std::vector<double> points, weights;
+        grid->getPoints(points);
         if (type == type_integration){
-            weights = grid->getQuadratureWeights();
+            grid->getQuadratureWeights(weights);
         }else{
-            weights = grid->getInterpolationWeights(x);
+            grid->getInterpolationWeights(x, weights);
         }
 
         std::vector<double> y(num_outputs);
@@ -138,23 +139,18 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             err += fabs(y[j] - r[j]);
         };
         R.error = err;
-
-        delete[] points;
-        delete[] weights;
     }else if (type == type_internal_interpolation){
         // load needed points
         int num_needed_points = grid->getNumNeeded();
         if (num_needed_points > 0){
-            double *needed_points = grid->getNeededPoints();
-            std::vector<double> values(num_outputs * num_needed_points);
+            std::vector<double> values(num_outputs * num_needed_points), needed_points;
+            grid->getNeededPoints(needed_points);
 
             for(int i=0; i<num_needed_points; i++){
                 f->eval(&(needed_points[i*num_dimensions]), &(values[i*num_outputs]));
             }
 
             grid->loadNeededPoints(values.data());
-
-            delete[] needed_points;
         }
 
         std::vector<double> err(num_outputs, 0.0); // absolute error
