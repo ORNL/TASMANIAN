@@ -1357,33 +1357,33 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
     }
 }
 
-double* GridLocalPolynomial::getNormalization() const{
-    double* norm = new double[num_outputs];  std::fill(norm, norm + num_outputs, 0.0);
+void GridLocalPolynomial::getNormalization(std::vector<double> &norms) const{
+    norms.resize(num_outputs);
+    std::fill(norms.begin(), norms.end(), 0.0);
     for(int i=0; i<points->getNumIndexes(); i++){
         const double *v = values->getValues(i);
         for(int j=0; j<num_outputs; j++){
-            if (norm[j] < fabs(v[j])) norm[j] = fabs(v[j]);
+            if (norms[j] < fabs(v[j])) norms[j] = fabs(v[j]);
         }
     }
-    return norm;
 }
 
-int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const{
+void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, std::vector<int> &pmap) const{
     int num_points = points->getNumIndexes();
-    int *pmap = new int[num_points * num_dimensions];  std::fill(pmap, pmap + num_points * num_dimensions, 0);
+    pmap.resize(num_points * num_dimensions);
 
-    double *norm = getNormalization();
+    std::vector<double> norm;
+    getNormalization(norm);
 
     const double *scale = scale_correction;
-    double *temp_scale = 0;
+    std::vector<double> temp_scale;
     if (scale == 0){
-        size_t size_scale = ((size_t) num_points) * ((size_t) num_outputs);
-        temp_scale = new double[size_scale]; std::fill(temp_scale, temp_scale + size_scale, 1.0);
-        scale = temp_scale;
+        temp_scale = std::move(std::vector<double>(((size_t) num_points) * ((size_t) num_outputs), 1.0));
+        scale = temp_scale.data();
     }
 
     if (tolerance == 0.0){
-        std::fill(pmap, pmap + num_points * num_dimensions, 1);
+        std::fill(pmap.begin(), pmap.end(), 1);
     }else if ((criteria == refine_classic) || (criteria == refine_parents_first)){
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
@@ -1415,8 +1415,9 @@ int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
             int nump = split.getJobNumPoints(s);
             const int *pnts = split.getJobPoints(s);
 
-            int *global_to_pnts = new int[num_points];
-            int *levels = new int[nump];
+            std::vector<int> global_to_pnts(num_points);
+            std::vector<int> levels(nump);
+
             int max_level = 0;
 
             int active_outputs = (output == -1) ? num_outputs : 1;
@@ -1495,17 +1496,10 @@ int* GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
             }
 
             delete[] vals;
-            delete[] global_to_pnts;
-            delete[] levels;
         }
 
         delete[] dagUp;
     }
-
-    delete[] norm;
-    if (temp_scale != 0) delete[] temp_scale;
-
-    return pmap;
 }
 
 bool GridLocalPolynomial::addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const{
@@ -1565,7 +1559,7 @@ const int* GridLocalPolynomial::getNeededIndexes() const{
 void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
     clearRefinement();
 
-    int *pmap = buildUpdateMap(tolerance, criteria, output, scale_correction);
+    std::vector<int> pmap; buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
 
     bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
 
@@ -1616,15 +1610,14 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
         needed = new IndexSet(refined);
     }
     delete refined;
-
-    delete[] pmap;
 }
 int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     clearRefinement();
     int num_points = points->getNumIndexes();
     bool *pmap = new bool[num_points]; // point map, set to true if the point is to be kept, false otherwise
 
-    double *norm = getNormalization();
+    std::vector<double> norm;
+    getNormalization(norm);
 
     const double *scale = scale_correction;
     double *temp_scale = 0;
@@ -1647,13 +1640,11 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 
     int num_kept = 0; for(int i=0; i<num_points; i++) num_kept += (pmap[i]) ? 1 : 0;
     if (num_kept == 0){
-        delete[] norm;
         delete[] pmap;
         return 0;
     }
 
     if (num_kept == num_points){
-        delete[] norm;
         delete[] pmap;
         return num_points;
     }
@@ -1684,7 +1675,6 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     buildTree();
     recomputeSurpluses();
 
-    delete[] norm;
     delete[] pmap;
     if (temp_scale == 0) delete[] temp_scale;
 
