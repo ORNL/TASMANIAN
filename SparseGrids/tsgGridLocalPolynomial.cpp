@@ -1378,7 +1378,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
     const double *scale = scale_correction;
     std::vector<double> temp_scale;
     if (scale == 0){
-        temp_scale = std::move(std::vector<double>(((size_t) num_points) * ((size_t) num_outputs), 1.0));
+        temp_scale = std::vector<double>(((size_t) num_points) * ((size_t) num_outputs), 1.0);
         scale = temp_scale.data();
     }
 
