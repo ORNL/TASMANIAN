@@ -241,20 +241,6 @@ int GridWavelet::getNumLoaded() const{ return (((points == 0) || (num_outputs ==
 int GridWavelet::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
 int GridWavelet::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
-double* GridWavelet::getLoadedPoints() const{
-    if (points == 0) return 0;
-    int num_points = points->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = points->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule1D.getNode(p[j]);
-        }
-    }
-    return x;
-}
 void GridWavelet::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -265,20 +251,6 @@ void GridWavelet::getLoadedPoints(double *x) const{
         }
     }
 }
-double* GridWavelet::getNeededPoints() const{
-    if (needed == 0) return 0;
-    int num_points = needed->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = needed->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule1D.getNode(p[j]);
-        }
-    }
-    return x;
-}
 void GridWavelet::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -288,9 +260,6 @@ void GridWavelet::getNeededPoints(double *x) const{
             x[i*num_dimensions + j] = rule1D.getNode(p[j]);
         }
     }
-}
-double* GridWavelet::getPoints() const{
-    return ((points == 0) ? getNeededPoints() : getLoadedPoints());
 }
 void GridWavelet::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); }
@@ -768,7 +737,8 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     if (coefficients != 0) delete[] coefficients;
     coefficients = new double[size_coeff];
     std::copy(c, c + size_coeff, coefficients);
-    double *x = getPoints();
+    double *x = new double[getNumPoints() * num_dimensions];
+    getPoints(x);
     if (acc == accel_cpu_blas){
         evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
     }else if (acc == accel_gpu_cublas){
