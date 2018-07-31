@@ -60,12 +60,7 @@ AccelerationDataGPUFull::AccelerationDataGPUFull() :
 }
 AccelerationDataGPUFull::~AccelerationDataGPUFull(){
     #ifdef Tasmanian_ENABLE_CUDA
-    if (gpu_values != 0){ TasCUDA::cudaDel<double>(gpu_values, logstream); gpu_values = 0; }
-    if (gpu_nodes != 0){ TasCUDA::cudaDel<double>(gpu_nodes, logstream); gpu_nodes = 0; }
-    if (gpu_support != 0){ TasCUDA::cudaDel<double>(gpu_support, logstream); gpu_support = 0; }
-    if (gpu_hpntr != 0){ TasCUDA::cudaDel<int>(gpu_hpntr, logstream); gpu_hpntr = 0; }
-    if (gpu_hindx != 0){ TasCUDA::cudaDel<int>(gpu_hindx, logstream); gpu_hindx = 0; }
-    if (gpu_roots != 0){ TasCUDA::cudaDel<int>(gpu_roots, logstream); gpu_roots = 0; }
+    resetGPULoadedData();
     if (cublasHandle != 0){
         cublasDestroy((cublasHandle_t) cublasHandle);
         cublasHandle = 0;
