@@ -337,13 +337,9 @@ void TasmanianSparseGrid::getPoints(double *x) const{
 }
 
 double* TasmanianSparseGrid::getQuadratureWeights() const{
-    double *w = base->getQuadratureWeights();
-    mapConformalWeights(base->getNumDimensions(), base->getNumPoints(), w);
-    if (domain_transform_a != 0){
-        double scale = getQuadratureScale(base->getNumDimensions(), base->getRule());
-        #pragma omp parallel for schedule(static)
-        for(int i=0; i<getNumPoints(); i++) w[i] *= scale;
-    }
+    if (getNumPoints() == 0) return 0;
+    double *w = new double[getNumPoints()];
+    getQuadratureWeights(w);
     return w;
 }
 void TasmanianSparseGrid::getQuadratureWeights(double *weights) const{
@@ -356,9 +352,9 @@ void TasmanianSparseGrid::getQuadratureWeights(double *weights) const{
     }
 }
 double* TasmanianSparseGrid::getInterpolationWeights(const double x[]) const{
-    double *x_tmp = 0;
-    double *w = base->getInterpolationWeights(formCanonicalPoints(x, x_tmp, 1));
-    clearCanonicalPoints(x_tmp);
+    if (getNumPoints() == 0) return 0;
+    double *w = new double[getNumPoints()];
+    getInterpolationWeights(x, w);
     return w;
 }
 void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weights) const{
