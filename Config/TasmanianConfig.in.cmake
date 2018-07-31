@@ -8,3 +8,5 @@ cmake_minimum_required(VERSION 3.5)
 include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
 
 check_required_components(Tasmanian)
+
+@Tasmanian_openmp_hack@

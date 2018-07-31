@@ -174,6 +174,12 @@ endif()
 # The current setup allows the parent project to append more targets to "${CMAKE_PROJECT_NAME}-exports" and install in a different spot
 # The parent project can also completely ignore any Tasmanian exports and config files and make thier own files
 # END NOTE
+# NOTE: see the OpenMP remark in the SparseGirds sub-directory
+# unset(OpenMP_CXX_LIBRARIES) # use this to test on newer cmake
+set(Tasmanian_openmp_hack "")
+if (Tasmanian_ENABLE_OPENMP AND (NOT (DEFINED OpenMP_CXX_LIBRARIES)))
+    set(Tasmanian_openmp_hack "set(Tasmanian_CXX_FLAGS \"${OpenMP_CXX_FLAGS}\")")
+endif()
 configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianConfig.in.cmake"
                               "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.cmake"
                               INSTALL_DESTINATION "lib/Tasmanian/")
@@ -193,12 +199,6 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 # cmake file for the examples, to be used post-install
-# see the OpenMP remark in the SparseGirds sub-directory
-# unset(OpenMP_CXX_LIBRARIES) # use this to test on newer cmake
-set(Tasmanian_openmp_hack "# ALL GOOD, the commands above are sufficient to link any external project to Tasmanian")
-if (Tasmanian_ENABLE_OPENMP AND (NOT (DEFINED OpenMP_CXX_LIBRARIES)))
-    set(Tasmanian_openmp_hack "set(CMAKE_CXX_FLAGS \"\$\{CMAKE_CXX_FLAGS\} ${OpenMP_CXX_FLAGS}\") # see the long comment below")
-endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.txt" "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt"
         DESTINATION "share/Tasmanian/examples/"

@@ -41,7 +41,9 @@ elseif (TARGET Tasmanian_libfortran90_shared)
     target_link_libraries(example_sparse_grids_f90  Tasmanian_libfortran90_shared)
 endif()
 
-@Tasmanian_openmp_hack@
+# this is needed only if Tasmanian was build with cmake older than 3.9.6
+# see if the long comment below
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Tasmanian_CXX_FLAGS}")
 
 # OpenMP is a CXX language extension which is usually enabled with a compiler flag and a library
 # the flag tells the compiler to interpret the OpenMP language directives
@@ -54,13 +56,10 @@ endif()
 # calls to older find_package(OpenMP) do not return the library used by the compiler
 #
 # if Tasmanian was compiled with Tasmanian_ENABLE_OPENMP=ON and an older version of cmake
-# then, further up, you will see the OpenMP compiler flag used during the Tasmanian build process
-# the flag can be added to any project that imports Tasmanian, which will tell the compiler to
-# use the proper OpenMP library
+# then, find_package(Tasmanian) will create variable Tasmanian_CXX_FLAGS which is needed
+# to link to the Tasmanian libraries
 # BUT NOTE that this will only work if Tasmanian and the user project both call the same compiler
 # using a different compiler means that you must manually link to the OpenMP library
 # (usually, the library is libgom for gcc, and libiomp for clang)
 #
-# if you don't see a flag, then either OpenMP was disabled, or Tasmanian was build with
-# a newer version of cmake and the OpenMP dependence was properly propagated by the
-# calls to "include()" and "target_link_libraries()", i.e., you don't have to do anything extra
+# if newer cmake was used to build Tasmanian, then Tasmanian_CXX_FLAGS will not be defined
