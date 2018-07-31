@@ -77,11 +77,8 @@ public:
     int getNumNeeded() const;
     int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
 
-    double* getLoadedPoints() const;
     void getLoadedPoints(double *x) const;
-    double* getNeededPoints() const;
     void getNeededPoints(double *x) const;
-    double* getPoints() const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
     double* getQuadratureWeights() const;

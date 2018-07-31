@@ -458,19 +458,6 @@ int GridGlobal::getNumLoaded() const{ return (((points == 0) || (num_outputs == 
 int GridGlobal::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
 int GridGlobal::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
-double* GridGlobal::getLoadedPoints() const{
-    if (points == 0) return 0;
-    int num_points = points->getNumIndexes();
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = points->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper->getNode(p[j]);
-        }
-    }
-    return x;
-}
 void GridGlobal::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -481,20 +468,6 @@ void GridGlobal::getLoadedPoints(double *x) const{
         }
     }
 }
-double* GridGlobal::getNeededPoints() const{
-    if (needed == 0) return 0;
-    int num_points = needed->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = needed->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper->getNode(p[j]);
-        }
-    }
-    return x;
-}
 void GridGlobal::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -504,10 +477,6 @@ void GridGlobal::getNeededPoints(double *x) const{
             x[i*num_dimensions + j] = wrapper->getNode(p[j]);
         }
     }
-}
-
-double* GridGlobal::getPoints() const{
-    return ((points == 0) ? getNeededPoints() : getLoadedPoints());
 }
 void GridGlobal::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -936,7 +905,8 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
 
         int qn = gg->getNumPoints();
         double *w = gg->getQuadratureWeights();
-        double *x = gg->getPoints();
+        double *x = new double[getNumPoints() * num_dimensions];
+        gg->getPoints(x);
         double *I = new double[qn];
         delete gg;
         #pragma omp parallel for schedule(static)
