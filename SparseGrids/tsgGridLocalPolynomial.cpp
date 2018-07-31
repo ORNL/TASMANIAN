@@ -626,14 +626,6 @@ void GridLocalPolynomial::mergeRefinement(){
     std::fill(surpluses, surpluses + num_vals, 0.0);
 }
 
-
-double* GridLocalPolynomial::getInterpolationWeights(const double x[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    double *weights = new double[work->getNumIndexes()];
-    getInterpolationWeights(x, weights);
-    return weights;
-}
-
 void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
 
@@ -1294,12 +1286,6 @@ void GridLocalPolynomial::getBasisIntegrals(double *integrals) const{
         delete[] w;
     }
 }
-double* GridLocalPolynomial::getQuadratureWeights() const{
-    IndexSet *work = (points == 0) ? needed : points;
-    double *weights = new double[work->getNumIndexes()];
-    getQuadratureWeights(weights);
-    return weights;
-}
 void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
     getBasisIntegrals(weights);
@@ -1391,7 +1377,8 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
         }
         delete[] integrals;
     }else{
-        double *w = getQuadratureWeights();
+        double *w = new double[num_points];
+        getQuadratureWeights(w);
         for(int i=0; i<num_points; i++){
             w[i] *= conformal_correction[i];
             const double *vals = values->getValues(i);

@@ -69,9 +69,7 @@ public:
     void getNeededPoints(double *x) const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
-    double* getQuadratureWeights() const;
     void getQuadratureWeights(double weights[]) const;
-    double* getInterpolationWeights(const double x[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
 
     void loadNeededPoints(const double *vals, TypeAcceleration acc = accel_none);
