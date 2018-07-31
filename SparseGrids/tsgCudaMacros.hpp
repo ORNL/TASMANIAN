@@ -34,6 +34,7 @@
 #include "TasmanianConfig.hpp"
 
 #include <iostream>
+#include <vector>
 
 #ifdef Tasmanian_ENABLE_CUDA
 #include <cuda_runtime_api.h>
@@ -59,6 +60,14 @@ namespace TasCUDA{
     inline T* cudaSend(size_t num_entries, const T *cpu_array, std::ostream *os){
         T *x = cudaNew<T>(num_entries, os);
         cudaError_t cudaStat = cudaMemcpy(x, cpu_array, num_entries * sizeof(T), cudaMemcpyHostToDevice);
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type)", os);
+        return x;
+    }
+
+    template <typename T>
+    inline T* cudaSend(std::vector<T> cpu_vector, std::ostream *os){
+        T *x = cudaNew<T>(cpu_vector.size(), os);
+        cudaError_t cudaStat = cudaMemcpy(x, cpu_vector.data(), cpu_vector.size() * sizeof(T), cudaMemcpyHostToDevice);
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type)", os);
         return x;
     }

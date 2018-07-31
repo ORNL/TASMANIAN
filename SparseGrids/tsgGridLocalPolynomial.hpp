@@ -121,37 +121,42 @@ protected:
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, int &num_blocks, int &num_last, int &stripe_size,
                                     int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
 
-    template<bool fill>
-    void buildSparseVector(const double x[], int &num_nz, int *sindx, double *svals) const{
-        int *monkey_count = new int[top_level+1];
-        int *monkey_tail = new int[top_level+1];
+    template<bool fill_data>
+    void buildSparseVector(const double x[], int &num_nz, std::vector<int> &sindx, std::vector<double> &svals) const{
+        std::vector<int> monkey_count(top_level+1);
+        std::vector<int> monkey_tail(top_level+1);
+
+        if (fill_data){
+            sindx.resize(num_nz);
+            svals.resize(num_nz);
+        }
 
         bool isSupported;
         size_t offset;
 
         num_nz = 0;
 
-        for(int r=0; r<num_roots; r++){
-            double basis_value = evalBasisSupported(points->getIndex(roots[r]), x, isSupported);
+        for(const auto &r : roots){
+            double basis_value = evalBasisSupported(points->getIndex(r), x, isSupported);
 
             if (isSupported){
-                offset = roots[r] * num_outputs;
-                if (fill){
-                    sindx[num_nz] = roots[r];
+                offset = r * num_outputs;
+                if (fill_data){
+                    sindx[num_nz] = r;
                     svals[num_nz] = basis_value;
                 }
                 num_nz++;
 
                 int current = 0;
-                monkey_tail[0] = roots[r];
-                monkey_count[0] = pntr[roots[r]];
+                monkey_tail[0] = r;
+                monkey_count[0] = pntr[r];
 
                 while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
                         offset = indx[monkey_count[current]];
                         basis_value = evalBasisSupported(points->getIndex(offset), x, isSupported);
                         if (isSupported){
-                            if (fill){
+                            if (fill_data){
                                 sindx[num_nz] = offset;
                                 svals[num_nz] = basis_value;
                             }
@@ -169,21 +174,18 @@ protected:
             }
         }
 
-        delete[] monkey_count;
-        delete[] monkey_tail;
-
         // according to https://docs.nvidia.com/cuda/cusparse/index.html#sparse-format
         // "... it is assumed that the indices are provided in increasing order and that each index appears only once."
         // This may not be a requirement for cusparseDgemvi(), but it may be that I have not tested it sufficiently
         // Also, see AccelerationDataGPUFull::cusparseMatveci() for inaccuracies in Nvidia documentation
-        if (fill){
+        if (fill_data){
             bool isNotSorted = false;
             for(int i=0; i<num_nz-1; i++) if (sindx[i] > sindx[i+1]) isNotSorted = true;
             if (isNotSorted){ // sort the vector
-                int *idx1 = new int[num_nz];
-                int *idx2 = new int[num_nz];
-                double *vls1 = new double[num_nz];
-                double *vls2 = new double[num_nz];
+                std::vector<int> idx1(num_nz);
+                std::vector<int> idx2(num_nz);
+                std::vector<double> vls1(num_nz);
+                std::vector<double> vls2(num_nz);
 
                 int loop_end = (num_nz % 2 == 1) ? num_nz - 1 : num_nz;
                 for(int i=0; i<loop_end; i+=2){
@@ -230,16 +232,11 @@ protected:
                         }
                     }
                     stride *= 2;
-                    int *it = idx2; idx2 = idx1; idx1 = it;
-                    double *vt = vls2; vls2 = vls1; vls1 = vt;
+                    std::swap(idx1, idx2);
+                    std::swap(vls1, vls2);
                 }
-                std::copy(idx1, idx1 + num_nz, sindx);
-                std::copy(vls1, vls1 + num_nz, svals);
-
-                delete[] idx1;
-                delete[] idx2;
-                delete[] vls1;
-                delete[] vls2;
+                sindx = idx1;
+                svals = vls1;
             }
         }
     }
@@ -249,9 +246,9 @@ protected:
 
     void getBasisIntegrals(double *integrals) const;
 
-    double* getNormalization() const;
+    void getNormalization(std::vector<double> &norms) const;
 
-    int* buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const;
+    void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, std::vector<int> &pmap) const;
 
     bool addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
     void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
@@ -300,8 +297,11 @@ private:
     int *parents;
 
     // tree for evaluation
-    int num_roots, *roots;
-    int *pntr, *indx;
+    //int num_roots, *roots;
+    //int *pntr, *indx;
+    std::vector<int> roots;
+    std::vector<int> pntr;
+    std::vector<int> indx;
 
     BaseRuleLocalPolynomial *rule;
 
