@@ -571,11 +571,6 @@ void GridFourier::getBasisFunctions(const double x[], double weights[]) const {
     delete[] tmp;
 }
 
-double* GridFourier::getInterpolationWeights(const double x[]) const {
-    double *w = new double[getNumPoints()];
-    getInterpolationWeights(x,w);
-    return w;
-}
 void GridFourier::getInterpolationWeights(const double x[], double weights[]) const {
     /*
     I[f](x) = c^T * \Phi(x) = (U*P*f)^T * \Phi(x)           (U represents normalized forward Fourier transform; P represents reordering of f_i before going into FT)
@@ -617,12 +612,6 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     delete[] basisFuncs;
 }
 
-double* GridFourier::getQuadratureWeights() const {
-    int num_points = getNumPoints();
-    double *w = new double[num_points];
-    getQuadratureWeights(w);
-    return w;
-}
 void GridFourier::getQuadratureWeights(double weights[]) const{
 
     /*
@@ -739,7 +728,8 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
         delete[] zeros_num_dim;
     }else{
         // Do the expensive computation if we have a conformal map
-        double *w = getQuadratureWeights();
+        double *w = new double[getNumPoints()];
+        getQuadratureWeights(w);
         for(int i=0; i<points->getNumIndexes(); i++){
             w[i] *= conformal_correction[i];
             const double *v = values->getValues(i);
