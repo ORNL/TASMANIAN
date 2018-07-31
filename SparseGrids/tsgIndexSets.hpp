@@ -32,6 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 
 #include "tsgEnumerates.hpp"
+#include <vector>
 
 namespace TasGrid{
 
@@ -68,6 +69,7 @@ public:
     int getNumIndexes() const;
 
     void addIndex(const int p[]);
+    inline void addIndex(const std::vector<int> p){ addIndex(p.data()); }
     int getSlot(const int p[]) const;
 
     const int* getIndex(int j) const;
@@ -124,6 +126,7 @@ public:
     void readBinary(std::ifstream &ifs);
 
     int getSlot(const int p[]) const;
+    inline int getSlot(const std::vector<int> p) const{ return getSlot(p.data()); }
 
     const int* getIndex(int i) const;
 

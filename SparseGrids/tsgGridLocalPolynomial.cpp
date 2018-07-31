@@ -1503,7 +1503,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
 }
 
 bool GridLocalPolynomial::addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const{
-    int *dad = new int[num_dimensions];  std::copy(point, point + num_dimensions, dad);
+    std::vector<int> dad(num_dimensions);  std::copy(point, point + num_dimensions, dad.data());
     bool added = false;
     dad[direction] = rule->getParent(point[direction]);
     if ((dad[direction] != -1) && (exclude->getSlot(dad) == -1)){
@@ -1515,11 +1515,10 @@ bool GridLocalPolynomial::addParent(const int point[], int direction, Granulated
         destination->addIndex(dad);
         added = true;
     }
-    delete[] dad;
     return added;
 }
 void GridLocalPolynomial::addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude)const{
-    int *kid = new int[num_dimensions];  std::copy(point, point + num_dimensions, kid);
+    std::vector<int> kid(num_dimensions);  std::copy(point, point + num_dimensions, kid.data());
     int max_1d_kids = rule->getMaxNumKids();
     for(int i=0; i<max_1d_kids; i++){
         kid[direction] = rule->getKid(point[direction], i);
@@ -1527,10 +1526,9 @@ void GridLocalPolynomial::addChild(const int point[], int direction, GranulatedI
             destination->addIndex(kid);
         }
     }
-    delete[] kid;
 }
 void GridLocalPolynomial::addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const int *level_limits) const{
-    int *kid = new int[num_dimensions];  std::copy(point, point + num_dimensions, kid);
+    std::vector<int> kid(num_dimensions);  std::copy(point, point + num_dimensions, kid.data());
     int max_1d_kids = rule->getMaxNumKids();
     for(int i=0; i<max_1d_kids; i++){
         kid[direction] = rule->getKid(point[direction], i);
@@ -1540,7 +1538,6 @@ void GridLocalPolynomial::addChildLimited(const int point[], int direction, Gran
             destination->addIndex(kid);
         }
     }
-    delete[] kid;
 }
 
 void GridLocalPolynomial::clearRefinement(){
