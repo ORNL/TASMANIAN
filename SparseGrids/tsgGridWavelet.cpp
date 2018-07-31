@@ -265,13 +265,6 @@ void GridWavelet::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); }
 }
 
-double* GridWavelet::getQuadratureWeights() const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
-	double *weights = new double[num_points];
-	getQuadratureWeights(weights);
-	return weights;
-}
 void GridWavelet::getQuadratureWeights(double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
@@ -280,13 +273,6 @@ void GridWavelet::getQuadratureWeights(double *weights) const{
 		weights[i] = evalIntegral(work->getIndex(i));
 	}
 	solveTransposed(weights);
-}
-double* GridWavelet::getInterpolationWeights(const double x[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
-	double *weights = new double[num_points];
-	getInterpolationWeights(x, weights);
-	return weights;
 }
 void GridWavelet::getInterpolationWeights(const double x[], double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
@@ -393,7 +379,8 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
         delete[] basis_integrals;
     }else{
         std::fill(q, q + num_outputs, 0.0);
-        double *w = getQuadratureWeights();
+        double *w = new double[num_points];
+        getQuadratureWeights(w);
         for(int i=0; i<num_points; i++){
             w[i] *= conformal_correction[i];
             const double *vals = values->getValues(i);
