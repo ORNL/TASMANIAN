@@ -49,11 +49,8 @@ public:
     virtual int getNumNeeded() const = 0;
     virtual int getNumPoints() const = 0;
 
-    virtual double* getLoadedPoints() const = 0;
     virtual void getLoadedPoints(double *x) const = 0;
-    virtual double* getNeededPoints() const = 0;
     virtual void getNeededPoints(double *x) const = 0;
-    virtual double* getPoints() const = 0;
     virtual void getPoints(double *x) const = 0;
 
     virtual double* getQuadratureWeights() const = 0;
