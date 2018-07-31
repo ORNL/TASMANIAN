@@ -98,51 +98,47 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             weights = grid->getInterpolationWeights(x);
         }
 
-        double *y = new double[num_outputs];
-        double *r = new double[num_outputs];  std::fill(r, r + num_outputs, 0.0);
+        std::vector<double> y(num_outputs);
+        std::vector<double> r(num_outputs, 0.0);
 //      Sequential version: integration
-//        for(int i=0; i<num_points; i++){
-//            f->eval(&(points[i*num_dimensions]), y);
-//            for(int k=0; k<num_outputs; k++){
-//                r[k] += weights[i] * y[k];
-//            }
-//        }
-
-        #pragma omp parallel
-        {
-            double *y_local = new double[num_outputs];
-            double *r_local = new double[num_outputs];  std::fill(r_local, r_local + num_outputs, 0.0);
-            #pragma omp for
-            for(int i=0; i<num_points; i++){
-                f->eval(&(points[i*num_dimensions]), y_local);
-                for(int j=0; j<num_outputs; j++){
-                    r_local[j] += weights[i] * y_local[j];
-                }
-            }
-
-            #pragma omp critical
-            {
-                for(int j=0; j<num_outputs; j++){
-                    r[j] += r_local[j];
-                }
-            }
-            delete[] y_local;
-            delete[] r_local;
+        for(int i=0; i<num_points; i++){
+            f->eval(&(points[i*num_dimensions]), y.data());
+            for(int k=0; k<num_outputs; k++) r[k] += weights[i] * y[k];
         }
+
+        //#pragma omp parallel
+        //{
+        //    double *y_local = new double[num_outputs];
+        //    double *r_local = new double[num_outputs];  std::fill(r_local, r_local + num_outputs, 0.0);
+        //    #pragma omp for
+        //    for(int i=0; i<num_points; i++){
+        //        f->eval(&(points[i*num_dimensions]), y_local);
+        //        for(int j=0; j<num_outputs; j++){
+        //            r_local[j] += weights[i] * y_local[j];
+        //        }
+        //    }
+        //
+        //    #pragma omp critical
+        //    {
+        //        for(int j=0; j<num_outputs; j++){
+        //            r[j] += r_local[j];
+        //        }
+        //    }
+        //    delete[] y_local;
+        //    delete[] r_local;
+        //}
 
         double err = 0.0;
         if (type == type_integration){
-            f->getIntegral(y);
+            f->getIntegral(y.data());
         }else{
-            f->eval(x, y);
+            f->eval(x, y.data());
         }
         for(int j=0; j<num_outputs; j++){
             err += fabs(y[j] - r[j]);
         };
         R.error = err;
 
-        delete[] r;
-        delete[] y;
         delete[] points;
         delete[] weights;
     }else if (type == type_internal_interpolation){
@@ -150,27 +146,26 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         int num_needed_points = grid->getNumNeeded();
         if (num_needed_points > 0){
             double *needed_points = grid->getNeededPoints();
-            double *values = new double[num_outputs * num_needed_points];
+            std::vector<double> values(num_outputs * num_needed_points);
 
             for(int i=0; i<num_needed_points; i++){
                 f->eval(&(needed_points[i*num_dimensions]), &(values[i*num_outputs]));
             }
 
-            grid->loadNeededPoints(values);
+            grid->loadNeededPoints(values.data());
 
-            delete[] values;
             delete[] needed_points;
         }
 
-        double *e = new double[num_outputs];  std::fill(e, e + num_outputs, 0.0);
-        double *n = new double[num_outputs];  std::fill(n, n + num_outputs, 0.0);
+        std::vector<double> err(num_outputs, 0.0); // absolute error
+        std::vector<double> nrm(num_outputs, 0.0); // norm, needed to compute relative error
 
-		double *test_x = new double[num_dimensions * num_mc];
-		double *result_tasm = new double[num_mc * num_outputs];
-		double *result_true = new double[num_mc * num_outputs];
-		setRandomX(num_dimensions * num_mc, test_x);
+        std::vector<double> test_x(num_mc * num_dimensions);
+        std::vector<double> result_tasm(num_mc * num_outputs);
+        std::vector<double> result_true(num_mc * num_outputs);
+        setRandomX(num_dimensions * num_mc, test_x.data());
 
-		#pragma omp parallel for
+		#pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
 		for(int i=0; i<num_mc; i++){
 			grid->evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_outputs]));
 			f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_outputs]));
@@ -178,24 +173,20 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
 		for(int i=0; i<num_mc; i++){
 			for(int k=0; k<num_outputs; k++){
-				if (n[k] < fabs(result_true[i * num_outputs + k])) n[k] = fabs(result_true[i * num_outputs + k]);
-				if (e[k] < fabs(result_true[i * num_outputs + k] - result_tasm[i * num_outputs + k]))
-					e[k] = fabs(result_true[i * num_outputs + k] - result_tasm[i * num_outputs + k]);
+                double nrmik = fabs(result_true[i * num_outputs + k]);
+                double errik = fabs(result_true[i * num_outputs + k] - result_tasm[i * num_outputs + k]);
+                if (nrm[k] < nrmik) nrm[k] = nrmik;
+                if (err[k] < errik) err[k] = errik;
 			}
 		}
 
-		double err = 0.0;
+		double rel_err = 0.0; // relative error
 		for(int k=0; k<num_outputs; k++){
-			if (err < e[k] / n[k]) err = e[k] / n[k];
+            double relative_errork = err[k] / nrm[k];
+			if (rel_err < relative_errork) rel_err = relative_errork;
 		}
 
-		delete[] test_x;
-		delete[] result_tasm;
-		delete[] result_true;
-
-        delete[] e;
-        delete[] n;
-        R.error = err;
+        R.error = rel_err;
     }
     R.num_points = grid->getNumPoints();
     return R;
