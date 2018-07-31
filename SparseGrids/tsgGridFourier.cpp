@@ -434,12 +434,6 @@ void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
     calculateFourierCoefficients();
 }
 
-double* GridFourier::getLoadedPoints() const{
-    if (points == 0) return 0;
-    double *x = new double[num_dimensions * points->getNumIndexes()];
-    getLoadedPoints(x);
-    return x;
-}
 void GridFourier::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -450,14 +444,6 @@ void GridFourier::getLoadedPoints(double *x) const{
         }
     }
 }
-double* GridFourier::getNeededPoints() const{
-    if (needed == 0) return 0;
-    int num_points = needed->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    getNeededPoints(x);
-    return x;
-}
 void GridFourier::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -467,9 +453,6 @@ void GridFourier::getNeededPoints(double *x) const{
             x[i*num_dimensions + j] = wrapper->getNode(p[j]);
         }
     }
-}
-double* GridFourier::getPoints() const{
-    return ((points == 0) ? getNeededPoints() : getLoadedPoints());
 }
 void GridFourier::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -588,11 +571,6 @@ void GridFourier::getBasisFunctions(const double x[], double weights[]) const {
     delete[] tmp;
 }
 
-double* GridFourier::getInterpolationWeights(const double x[]) const {
-    double *w = new double[getNumPoints()];
-    getInterpolationWeights(x,w);
-    return w;
-}
 void GridFourier::getInterpolationWeights(const double x[], double weights[]) const {
     /*
     I[f](x) = c^T * \Phi(x) = (U*P*f)^T * \Phi(x)           (U represents normalized forward Fourier transform; P represents reordering of f_i before going into FT)
@@ -634,12 +612,6 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     delete[] basisFuncs;
 }
 
-double* GridFourier::getQuadratureWeights() const {
-    int num_points = getNumPoints();
-    double *w = new double[num_points];
-    getQuadratureWeights(w);
-    return w;
-}
 void GridFourier::getQuadratureWeights(double weights[]) const{
 
     /*
@@ -756,7 +728,8 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
         delete[] zeros_num_dim;
     }else{
         // Do the expensive computation if we have a conformal map
-        double *w = getQuadratureWeights();
+        double *w = new double[getNumPoints()];
+        getQuadratureWeights(w);
         for(int i=0; i<points->getNumIndexes(); i++){
             w[i] *= conformal_correction[i];
             const double *v = values->getValues(i);

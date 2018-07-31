@@ -300,20 +300,6 @@ int GridSequence::getNumLoaded() const{ return (((points == 0) || (num_outputs =
 int GridSequence::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
 int GridSequence::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
-double* GridSequence::getLoadedPoints() const{
-    if (points == 0) return 0;
-    int num_points = points->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for
-    for(int i=0; i<num_points; i++){
-        const int *p = points->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = nodes[p[j]];
-        }
-    }
-    return x;
-}
 void GridSequence::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
     #pragma omp parallel for
@@ -323,20 +309,6 @@ void GridSequence::getLoadedPoints(double *x) const{
             x[i*num_dimensions + j] = nodes[p[j]];
         }
     }
-}
-double* GridSequence::getNeededPoints() const{
-    if (needed == 0) return 0;
-    int num_points = needed->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for
-    for(int i=0; i<num_points; i++){
-        const int *p = needed->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = nodes[p[j]];
-        }
-    }
-    return x;
 }
 void GridSequence::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
@@ -348,34 +320,10 @@ void GridSequence::getNeededPoints(double *x) const{
         }
     }
 }
-
-double* GridSequence::getPoints() const{
-    return ((points == 0) ? getNeededPoints() : getLoadedPoints());
-}
 void GridSequence::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); }
 }
 
-double* GridSequence::getQuadratureWeights() const{
-    IndexSet *work = (points == 0) ? needed : points;
-    double *integ = cacheBasisIntegrals();
-
-    int n = work->getNumIndexes();
-    double *weights = new double[n];
-
-    for(int i=0; i<n; i++){
-        const int* p = work->getIndex(i);
-        weights[i] = integ[p[0]];
-        for(int j=1; j<num_dimensions; j++){
-            weights[i] *= integ[p[j]];
-        }
-    }
-    delete[] integ;
-
-    applyTransformationTransposed(weights);
-
-    return weights;
-}
 void GridSequence::getQuadratureWeights(double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
     double *integ = cacheBasisIntegrals();
@@ -392,16 +340,6 @@ void GridSequence::getQuadratureWeights(double *weights) const{
     applyTransformationTransposed(weights);
 }
 
-double* GridSequence::getInterpolationWeights(const double x[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int n = work->getNumIndexes();
-
-    double *weights = new double[n];
-
-    getInterpolationWeights(x, weights);
-
-    return weights;
-}
 void GridSequence::getInterpolationWeights(const double x[], double *weights) const{
     double **cache = cacheBasisValues<double>(x);
     IndexSet *work = (points == 0) ? needed : points;
@@ -648,7 +586,8 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
         }
         delete[] integ;
     }else{
-        double *w = getQuadratureWeights();
+        double *w = new double[num_points];
+        getQuadratureWeights(w);
         for(int i=0; i<num_points; i++){
             w[i] *= conformal_correction[i];
             const double *vals = values->getValues(i);
@@ -722,7 +661,8 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     if (surpluses != 0) delete[] surpluses;
     surpluses = new double[((size_t) num_ponits) * ((size_t) num_outputs)];
     std::copy(c, c + ((size_t) num_ponits) * ((size_t) num_outputs), surpluses);
-    double *x = getPoints();
+    double *x = new double[getNumPoints() * num_dimensions];
+    getPoints(x);
     if (acc == accel_cpu_blas){
         evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
     }else if (acc == accel_gpu_cublas){
