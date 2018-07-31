@@ -1,14 +1,33 @@
 Changelog for version 6.0
 --------------
 
+* added new grids and rules
+    * `GridFourier` that uses trigonometric basis functions (see Manual)
+    * `localpb` rule to local polynomial grids that favors the boundary
+
+* added `std::vector` to the API in addition to the previous arrays
+
+* added package-config file, now it is possible to use the command
+```
+find_package(Tasmanian 6.0 PATHS "<Tasmanian install prefix>")
+# PATHS "<Tasmanian install prefix>" not needed if the install folder
+# is included in CMAKE_PREFIX_PATH
+```
+
+* modified install folder structure now everything sits in four places
+    * `<prefix>/bin` takes the executable files
+    * `<prefix>/lib` takes the libraries and Fortran `.mod` files
+    * `<prefix>/include` takes the headers
+    * `<prefix>/Tasmanian` takes everything else
+
 * new option Tasmanian_ENABLE_RECOMMENDED
-    * searches for OpenMP, BLAS, and Python, and enable if found
+    * searches for OpenMP, BLAS, and Python, and enables if found
     * set the `-O3` flag for Debug and Release
     * adjusted the install script, see `./install --help`
 
 * removed Tasmanian_STRICT_OPTIONS, now all options are considered strict by default
 
-* added new acceleration mode `gpu-magma` that uses UTK MAGMA library
+* added new acceleration mode `gpu-magma` that uses UTK MAGMA library (requires CUDA)
 
 * merged Tasmanian_ENABLE_CUBLAS option into Tasmanian_ENABLE_CUDA
     * the option is OFF by default
@@ -16,8 +35,9 @@ Changelog for version 6.0
 
 * required cmake 3.5 or newer (as opposed to 2.8 in version 5.1)
 
-* CXX standard 2011 is now enabled by default even if CUDA and MPI
-  are disabled; removed the option to force-disable CXX 2011
+* CXX standard 2011 is now required and enabled by default
+
+* as always, a new version includes numerous bug fixes and performance enhancements
 
 
 Changelog for version 5.1
