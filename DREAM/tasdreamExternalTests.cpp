@@ -404,15 +404,15 @@ bool ExternalTester::testModelLikelihoodAlpha(){
         data[j] = sin(M_PI * (dt2 + j*dt) + 0.3 * M_PI);
     }
 
-    TasDREAM::PosteriorFromModel *post = new TasDREAM::PosteriorFromModel(&grid);
+    TasDREAM::PosteriorFromModel post(&grid);
 
     double scale = 1.0 / ((double) (N));
     TasDREAM::GaussianLikelihood *likely = new TasDREAM::GaussianLikelihood(N, TasDREAM::likely_gauss_scale, &scale, 1, data);
-    post->setLikelihood(likely);
+    post.setLikelihood(likely);
 
     TasDREAM::TasmanianDREAM dream;
     dream.overwriteBaseUnifrom(&rng);
-    dream.setProbabilityWeightFunction(post);
+    dream.setProbabilityWeightFunction(&post);
 
     dream.setNumChains(num_chains);
     TasDREAM::GaussianPDF gauss(0.0, 0.0004);
