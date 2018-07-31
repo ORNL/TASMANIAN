@@ -358,20 +358,6 @@ int GridLocalPolynomial::getNumLoaded() const{ return (((points == 0) || (num_ou
 int GridLocalPolynomial::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
 int GridLocalPolynomial::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
-double* GridLocalPolynomial::getLoadedPoints() const{
-    if (points == 0) return 0;
-    int num_points = points->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = points->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule->getNode(p[j]);
-        }
-    }
-    return x;
-}
 void GridLocalPolynomial::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -382,20 +368,6 @@ void GridLocalPolynomial::getLoadedPoints(double *x) const{
         }
     }
 }
-double* GridLocalPolynomial::getNeededPoints() const{
-    if (needed == 0) return 0;
-    int num_points = needed->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = needed->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule->getNode(p[j]);
-        }
-    }
-    return x;
-}
 void GridLocalPolynomial::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -405,9 +377,6 @@ void GridLocalPolynomial::getNeededPoints(double *x) const{
             x[i*num_dimensions + j] = rule->getNode(p[j]);
         }
     }
-}
-double* GridLocalPolynomial::getPoints() const{
-    return ((points == 0) ? getNeededPoints() : getLoadedPoints());
 }
 void GridLocalPolynomial::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); }
@@ -1785,7 +1754,8 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
     if (surpluses != 0) delete[] surpluses;
     surpluses = new double[((size_t) num_ponits) * ((size_t) num_outputs)];
     std::copy(c, c + ((size_t) num_ponits) * ((size_t) num_outputs), surpluses);
-    double *x = getPoints();
+    double *x = new double[getNumPoints() * num_dimensions];
+    getPoints(x);
     if (acc == accel_cpu_blas){
         evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
     }else if (acc == accel_gpu_cublas){
@@ -1822,7 +1792,8 @@ void GridLocalPolynomial::checkAccelerationGPUNodes() const{
     if (gpu->getGPUNodes() == 0){
         IndexSet *work = (points == 0) ? needed : points;
         int num_entries = num_dimensions * work->getNumIndexes();
-        double *cpu_nodes = getPoints();
+        double *cpu_nodes = new double[getNumPoints() * num_dimensions];
+        getPoints(cpu_nodes);
         double *cpu_support = new double[num_entries];
         if (rule->getType() == rule_localp){
             switch(order){
