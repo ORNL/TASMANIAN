@@ -434,12 +434,6 @@ void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
     calculateFourierCoefficients();
 }
 
-double* GridFourier::getLoadedPoints() const{
-    if (points == 0) return 0;
-    double *x = new double[num_dimensions * points->getNumIndexes()];
-    getLoadedPoints(x);
-    return x;
-}
 void GridFourier::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -450,14 +444,6 @@ void GridFourier::getLoadedPoints(double *x) const{
         }
     }
 }
-double* GridFourier::getNeededPoints() const{
-    if (needed == 0) return 0;
-    int num_points = needed->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    getNeededPoints(x);
-    return x;
-}
 void GridFourier::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -467,9 +453,6 @@ void GridFourier::getNeededPoints(double *x) const{
             x[i*num_dimensions + j] = wrapper->getNode(p[j]);
         }
     }
-}
-double* GridFourier::getPoints() const{
-    return ((points == 0) ? getNeededPoints() : getLoadedPoints());
 }
 void GridFourier::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); };
