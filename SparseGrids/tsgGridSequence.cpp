@@ -300,20 +300,6 @@ int GridSequence::getNumLoaded() const{ return (((points == 0) || (num_outputs =
 int GridSequence::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
 int GridSequence::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
-double* GridSequence::getLoadedPoints() const{
-    if (points == 0) return 0;
-    int num_points = points->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for
-    for(int i=0; i<num_points; i++){
-        const int *p = points->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = nodes[p[j]];
-        }
-    }
-    return x;
-}
 void GridSequence::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
     #pragma omp parallel for
@@ -324,20 +310,6 @@ void GridSequence::getLoadedPoints(double *x) const{
         }
     }
 }
-double* GridSequence::getNeededPoints() const{
-    if (needed == 0) return 0;
-    int num_points = needed->getNumIndexes();
-    if (num_points == 0) return 0;
-    double *x = new double[num_dimensions * num_points];
-    #pragma omp parallel for
-    for(int i=0; i<num_points; i++){
-        const int *p = needed->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = nodes[p[j]];
-        }
-    }
-    return x;
-}
 void GridSequence::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
     #pragma omp parallel for
@@ -347,10 +319,6 @@ void GridSequence::getNeededPoints(double *x) const{
             x[i*num_dimensions + j] = nodes[p[j]];
         }
     }
-}
-
-double* GridSequence::getPoints() const{
-    return ((points == 0) ? getNeededPoints() : getLoadedPoints());
 }
 void GridSequence::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); }
@@ -722,7 +690,8 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     if (surpluses != 0) delete[] surpluses;
     surpluses = new double[((size_t) num_ponits) * ((size_t) num_outputs)];
     std::copy(c, c + ((size_t) num_ponits) * ((size_t) num_outputs), surpluses);
-    double *x = getPoints();
+    double *x = new double[getNumPoints() * num_dimensions];
+    getPoints(x);
     if (acc == accel_cpu_blas){
         evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
     }else if (acc == accel_gpu_cublas){
