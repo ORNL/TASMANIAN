@@ -306,8 +306,9 @@ int TasmanianSparseGrid::getNumNeeded() const{ return (base == 0) ? 0 : base->ge
 int TasmanianSparseGrid::getNumPoints() const{ return (base == 0) ? 0 : base->getNumPoints(); }
 
 double* TasmanianSparseGrid::getLoadedPoints() const{
-    double *x = base->getLoadedPoints();
-    formTransformedPoints(base->getNumLoaded(), x);
+    if (base->getNumLoaded() == 0) return 0;
+    double *x = new double[base->getNumLoaded() * base->getNumDimensions()];
+    getLoadedPoints(x);
     return x;
 }
 void TasmanianSparseGrid::getLoadedPoints(double *x) const{
@@ -315,8 +316,9 @@ void TasmanianSparseGrid::getLoadedPoints(double *x) const{
     formTransformedPoints(base->getNumLoaded(), x);
 }
 double* TasmanianSparseGrid::getNeededPoints() const{
-    double *x = base->getNeededPoints();
-    formTransformedPoints(base->getNumNeeded(), x);
+    if (base->getNumNeeded() == 0) return 0;
+    double *x = new double[base->getNumNeeded() * base->getNumDimensions()];
+    getNeededPoints(x);
     return x;
 }
 void TasmanianSparseGrid::getNeededPoints(double *x) const{
@@ -324,8 +326,9 @@ void TasmanianSparseGrid::getNeededPoints(double *x) const{
     formTransformedPoints(base->getNumNeeded(), x);
 }
 double* TasmanianSparseGrid::getPoints() const{
-    double *x = base->getPoints();
-    formTransformedPoints(base->getNumPoints(), x);
+    if (base->getNumPoints() == 0) return 0;
+    double *x = new double[base->getNumPoints() * base->getNumDimensions()];
+    getPoints(x);
     return x;
 }
 void TasmanianSparseGrid::getPoints(double *x) const{
@@ -728,7 +731,8 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
 void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points, double weights[]) const{
     if (conformal_asin_power != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
-        double *x = base->getPoints();
+        double *x = new double[base->getNumPoints() * base->getNumDimensions()];
+        base->getPoints(x);
         double **c = new double*[num_dimensions], **p = new double*[num_dimensions];
         int sum_powers = 0; for(int j=0; j<num_dimensions; j++) sum_powers += (conformal_asin_power[j] + 1);
         c[0] = new double[sum_powers]; p[0] = new double[sum_powers];
