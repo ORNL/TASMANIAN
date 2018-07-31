@@ -482,13 +482,6 @@ void GridGlobal::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); };
 }
 
-double* GridGlobal::getQuadratureWeights() const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
-    double *weights = new double[num_points];
-    getQuadratureWeights(weights);
-    return weights;
-}
 void GridGlobal::getQuadratureWeights(double weights[]) const{
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
@@ -520,16 +513,6 @@ void GridGlobal::getQuadratureWeights(double weights[]) const{
     work = 0;
 }
 
-double* GridGlobal::getInterpolationWeights(const double x[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-
-    int num_points = work->getNumIndexes();
-    double *weights = new double[num_points];
-
-    getInterpolationWeights(x, weights);
-
-    return weights;
-}
 void GridGlobal::getInterpolationWeights(const double x[], double weights[]) const{
     IndexSet *work = (points == 0) ? needed : points;
 
@@ -642,7 +625,8 @@ const double* GridGlobal::getLoadedValues() const{
 }
 
 void GridGlobal::evaluate(const double x[], double y[]) const{
-    double *w = getInterpolationWeights(x);
+    double *w = new double[points->getNumIndexes()];
+    getInterpolationWeights(x, w);
     TasBLAS::setzero(num_outputs, y);
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<points->getNumIndexes(); i++){
@@ -655,7 +639,8 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateFastCPUblas(const double x[], double y[]) const{
-    double *w = getInterpolationWeights(x);
+    double *w = new double[points->getNumIndexes()];
+    getInterpolationWeights(x, w);
     TasBLAS::dgemv(num_outputs, points->getNumIndexes(), values->getValues(0), w, y);
     delete[] w;
 }
@@ -668,7 +653,8 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostrea
     makeCheckAccelerationData(accel_gpu_cublas, os);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = getInterpolationWeights(x);
+    double *weights = new double[points->getNumIndexes()];
+    getInterpolationWeights(x, weights);
 
     gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), weights, y);
 
@@ -686,7 +672,8 @@ void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[], s
     makeCheckAccelerationData(accel_gpu_magma, os);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = getInterpolationWeights(x);
+    double *weights = new double[points->getNumIndexes()];
+    getInterpolationWeights(x, weights);
 
     gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), weights, y);
 
@@ -776,7 +763,8 @@ void GridGlobal::makeCheckAccelerationData(TypeAcceleration, std::ostream *) con
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
-    double *w = getQuadratureWeights();
+    double *w = new double[getNumPoints()];
+    getQuadratureWeights(w);
     if (conformal_correction != 0) for(int i=0; i<points->getNumIndexes(); i++) w[i] *= conformal_correction[i];
     std::fill(q, q+num_outputs, 0.0);
     #pragma omp parallel for schedule(static)
@@ -904,7 +892,8 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         delete polynomial_set;
 
         int qn = gg->getNumPoints();
-        double *w = gg->getQuadratureWeights();
+        double *w = new double[qn];
+        gg->getQuadratureWeights(w);
         double *x = new double[getNumPoints() * num_dimensions];
         gg->getPoints(x);
         double *I = new double[qn];
