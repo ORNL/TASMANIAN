@@ -3,45 +3,50 @@
 ########################################################################
 
 # copy the source files to the build folder to be used pre-install (stage 1)
-file(COPY  tsgCancelRefine.m
-           tsgCleanTempFiles.m
-           tsgCopyGrid.m
-           tsgDeleteGridByName.m
-           tsgDeleteGrid.m
-           tsgEstimateAnisotropicCoefficients.m
-           tsgEvaluateHierarchy.m
-           tsgEvaluate.m
-           tsgExample.m
-           tsgGetHCoefficients.m
-           tsgGetInterpolationWeights.m
-           tsgGetNeededIndexes.m
-           tsgGetNeededPoints.m
-           tsgGetPointsIndexes.m
-           tsgGetPoints.m
-           tsgGetPolynomialSpaces.m
-           tsgGetQuadrature.m
-           tsgIntegrate.m
-           tsgListGridsByName.m
-           tsgLoadHCoefficients.m
-           tsgLoadValues.m
-           tsgMakeFilenames.m
-           tsgMakeFourier.m
-           tsgMakeGlobal.m
-           tsgMakeLocalPolynomial.m
-           tsgMakeQuadrature.m
-           tsgMakeSequence.m
-           tsgMakeWavelet.m
-           tsgMergeRefine.m
-           tsgPlotPoints2D.m
-           tsgReadMatrix.m
-           tsgRefineAnisotropic.m
-           tsgRefineSurplus.m
-           tsgReloadGrid.m
-           tsgSummary.m
-           tsgCoreTests.m
-           tsgWriteCustomRuleFile.m
-           tsgWriteMatrix.m
-           DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/matlab/")
+# if file is used here "make" will not update the scripts in the build tree
+# even if the source files are modified, hence using configure_file
+set(Tasmanian_matlab_source_files tsgCancelRefine.m
+                                  tsgCleanTempFiles.m
+                                  tsgCopyGrid.m
+                                  tsgDeleteGridByName.m
+                                  tsgDeleteGrid.m
+                                  tsgEstimateAnisotropicCoefficients.m
+                                  tsgEvaluateHierarchy.m
+                                  tsgEvaluate.m
+                                  tsgExample.m
+                                  tsgGetHCoefficients.m
+                                  tsgGetInterpolationWeights.m
+                                  tsgGetNeededIndexes.m
+                                  tsgGetNeededPoints.m
+                                  tsgGetPointsIndexes.m
+                                  tsgGetPoints.m
+                                  tsgGetPolynomialSpaces.m
+                                  tsgGetQuadrature.m
+                                  tsgIntegrate.m
+                                  tsgListGridsByName.m
+                                  tsgLoadHCoefficients.m
+                                  tsgLoadValues.m
+                                  tsgMakeFilenames.m
+                                  tsgMakeFourier.m
+                                  tsgMakeGlobal.m
+                                  tsgMakeLocalPolynomial.m
+                                  tsgMakeQuadrature.m
+                                  tsgMakeSequence.m
+                                  tsgMakeWavelet.m
+                                  tsgMergeRefine.m
+                                  tsgPlotPoints2D.m
+                                  tsgReadMatrix.m
+                                  tsgRefineAnisotropic.m
+                                  tsgRefineSurplus.m
+                                  tsgReloadGrid.m
+                                  tsgSummary.m
+                                  tsgCoreTests.m
+                                  tsgWriteCustomRuleFile.m
+                                  tsgWriteMatrix.m)
+
+foreach(Tasmanian_matlab_source_file ${Tasmanian_matlab_source_files})
+    configure_file(${Tasmanian_matlab_source_file} "matlab/${Tasmanian_matlab_source_file}" COPYONLY)
+endforeach()
 
 # set MATLAB (tasgrid and temp folder) for the build folder (stage 1)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/") # put temp files if running matlab from the build location
