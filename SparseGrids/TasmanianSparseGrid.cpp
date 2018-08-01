@@ -469,6 +469,28 @@ void TasmanianSparseGrid::integrate(double q[]) const{
     }
 }
 
+void TasmanianSparseGrid::evaluate(const std::vector<double> x, std::vector<double> &y) const{
+    size_t num_outputs = getNumOutputs();
+    if (y.size() < num_outputs) y.resize(num_outputs);
+    evaluate(x.data(), y.data());
+}
+void TasmanianSparseGrid::evaluateFast(const std::vector<double> x, std::vector<double> &y) const{
+    size_t num_outputs = getNumOutputs();
+    if (y.size() < num_outputs) y.resize(num_outputs);
+    evaluateFast(x.data(), y.data());
+}
+void TasmanianSparseGrid::evaluateBatch(const std::vector<double> x, std::vector<double> &y) const{
+    size_t num_outputs = getNumOutputs();
+    size_t num_x = x.size() / getNumDimensions();
+    if (y.size() < num_outputs * num_x) y.resize(num_outputs * num_x);
+    evaluateBatch(x.data(), num_x, y.data());
+}
+void TasmanianSparseGrid::integrate(std::vector<double> &q) const{
+    size_t num_outputs = getNumOutputs();
+    if (q.size() < num_outputs) q.resize(num_outputs);
+    integrate(q.data());
+}
+
 bool TasmanianSparseGrid::isGlobal() const{
     return (global != 0);
 }

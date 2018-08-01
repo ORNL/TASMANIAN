@@ -116,6 +116,12 @@ public:
     void evaluateBatch(const double x[], int num_x, double y[]) const; // uses acceleration, OpenMP, BLAS, GPU, etc.
     void integrate(double q[]) const;
 
+    // same as above, but resizes the output vector (is too small)
+    void evaluate(const std::vector<double> x, std::vector<double> &y) const;
+    void evaluateFast(const std::vector<double> x, std::vector<double> &y) const;
+    void evaluateBatch(const std::vector<double> x, std::vector<double> &y) const;
+    void integrate(std::vector<double> &q) const;
+
     bool isGlobal() const;
     bool isSequence() const;
     bool isLocalPolynomial() const;
