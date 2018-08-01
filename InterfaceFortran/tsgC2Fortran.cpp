@@ -224,11 +224,11 @@ void tsgcct_(int *id){ _tsg_grid_list[*id]->clearConformalTransform(); }
 void tsggca_(int *id, int *trunc){ _tsg_grid_list[*id]->getConformalTransformASIN(trunc); }
 
 // isGlobal/Sequence/LocalPolynomial/Wavelet/Fourier
-void tsgisg_(int *id, bool *status){*status = _tsg_grid_list[*id]->isGlobal();}
-void tsgiss_(int *id, bool *status){*status = _tsg_grid_list[*id]->isSequence();}
-void tsgisl_(int *id, bool *status){*status = _tsg_grid_list[*id]->isLocalPolynomial();}
-void tsgisw_(int *id, bool *status){*status = _tsg_grid_list[*id]->isWavelet();}
-void tsgisf_(int *id, bool *status){*status = _tsg_grid_list[*id]->isFourier();}
+void tsgisg_(int *id, int *status){*status = (_tsg_grid_list[*id]->isGlobal()) ? 1 : 0;}
+void tsgiss_(int *id, int *status){*status = (_tsg_grid_list[*id]->isSequence()) ? 1 : 0;}
+void tsgisl_(int *id, int *status){*status = (_tsg_grid_list[*id]->isLocalPolynomial()) ? 1 : 0;}
+void tsgisw_(int *id, int *status){*status = (_tsg_grid_list[*id]->isWavelet()) ? 1 : 0;}
+void tsgisf_(int *id, int *status){*status = (_tsg_grid_list[*id]->isFourier()) ? 1 : 0;}
 
 // print stats
 void tsgpri_(int *id){ _tsg_grid_list[*id]->printStats(); }
