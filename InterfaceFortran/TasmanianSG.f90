@@ -239,139 +239,122 @@ end function tsgGetLicense
 subroutine tsgMakeGlobalGrid(gridID, dims, outs, depth, gtype, rule, &
                              aweights, alpha, beta, customRuleFilename, levelLimits)
   integer, intent(in) :: gridID, dims, outs, depth, gtype, rule
-  integer :: i
-  integer, optional :: aweights(*), levelLimits(dims)
+  integer, optional, target  :: aweights(:), levelLimits(dims)
   double precision, optional :: alpha, beta
   character(len=*), optional :: customRuleFilename
-  character(len=80) :: cfn
-  double precision :: al, be
-  integer, allocatable :: aw(:)
-  integer, allocatable :: ll(:)
-  if (present(customRuleFilename)) then
-    cfn = customRuleFilename//char(0)
-  else
-    cfn = char(0)
+  integer           :: opt_flags(5)
+  character(len=80) :: cfn = char(0)
+  double precision  :: al, be
+  integer, pointer  :: aw(:) => null()
+  integer, pointer  :: ll(:) => null()
+
+  opt_flags = 0
+  if ( present(aweights) ) then
+    opt_flags(1) = 1
+    aw => aweights
   endif
-  if(present(alpha))then
+  if ( present(alpha) ) then
+    opt_flags(2) = 1
     al = alpha
-  else
-    al = 0.0
   endif
-  if(present(beta))then
+  if ( present(beta) ) then
+    opt_flags(3) = 1
     be = beta
-  else
-    be = 0.0
+    endif
+  if ( present(customRuleFilename) ) then
+    opt_flags(4) = 1
+    cfn = customRuleFilename//char(0)
   endif
-  allocate(ll(dims))
-  if(present(levelLimits))then
-    ll = levelLimits
-  else
-    ll = -1
+  if ( present(levelLimits) ) then
+    opt_flags(5) = 1
+    ll => levelLimits
   endif
-  if(present(aweights))then
-    call tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be, cfn, ll)
-  else
-    allocate(aw(2*dims))
-    aw(1:dims) = 1
-    aw(dims+1:2*dims) = 0
-    call tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be, cfn, ll)
-    deallocate(aw)
-  endif
-  deallocate(ll)
+
+  call tsgmg(gridID, dims, outs, depth, gtype, rule, opt_flags, aw, al, be, cfn, ll)
 end subroutine tsgMakeGlobalGrid
 !=======================================================================
-subroutine tsgMakeSequenceGrid(gridID, dims, outs, depth, gtype, rule, &
-                               aweights, levelLimits)
-  integer :: gridID, dims, outs, depth, gtype, rule, i
-  integer, optional :: aweights(*), levelLimits(dims)
-  integer, allocatable :: aw(:)
-  integer, allocatable :: ll(:)
-  allocate(ll(dims))
-  if(present(levelLimits))then
-    ll = levelLimits
-  else
-    ll = -1
-  endif
-  if(present(aweights))then
-    call tsgms(gridID, dims, outs, depth, gtype, rule, aweights, ll)
-  else
-    allocate(aw(2*dims))
-    aw(1:dims) = 1
-    aw(dims+1:2*dims) = 0
-    call tsgms(gridID, dims, outs, depth, gtype, rule, aw, ll)
-    deallocate(aw)
-  endif
-  deallocate(ll)
+subroutine tsgMakeSequenceGrid(gridID, dims, outs, depth, gtype, rule, aweights, levelLimits)
+integer :: gridID, dims, outs, depth, gtype, rule
+integer, optional, target :: aweights(:), levelLimits(dims)
+integer          :: opt_flags(2)
+integer, pointer :: aw(:) => null()
+integer, pointer :: ll(:) => null()
+
+opt_flags = 0
+if ( present(aweights) ) then
+  opt_flags(1) = 1
+  aw => aweights
+endif
+if ( present(levelLimits) ) then
+  opt_flags(2) = 1
+  ll => levelLimits
+endif
+
+call tsgms(gridID, dims, outs, depth, gtype, rule, opt_flags, aw, ll)
 end subroutine tsgMakeSequenceGrid
 !=======================================================================
-subroutine tsgMakeLocalPolynomialGrid(gridID, dims, outs, depth, order,&
-                                      rule, levelLimits)
+subroutine tsgMakeLocalPolynomialGrid(gridID, dims, outs, depth, order, rule, levelLimits)
   integer :: gridID, dims, outs, depth
-  integer, optional :: order, rule, levelLimits(dims)
-  integer :: or, ru, i
-  integer, allocatable :: ll(:)
-  allocate(ll(dims))
-  if(present(levelLimits))then
-    ll = levelLimits
-  else
-    ll = -1
-  endif
-  if(present(order))then
+  integer, optional :: order, rule
+  integer, optional, target :: levelLimits(dims)
+  integer          :: opt_flags(3), or, ru
+  integer, pointer :: ll(:) => null()
+
+  opt_flags = 0
+  if ( present(order) ) then
+    opt_flags(1) = 1
     or = order
-  else
-    or = 1
   endif
-  if(present(rule))then
+  if ( present(rule) ) then
+    opt_flags(2) = 1
     ru = rule
-  else
-    ru = 1
   endif
-  call tsgml(gridID, dims, outs, depth, or, ru, ll)
-  deallocate(ll)
+  if ( present(levelLimits) ) then
+    opt_flags(3) = 1
+    ll => levelLimits
+  endif
+
+  call tsgml(gridID, dims, outs, depth, opt_flags, or, ru, ll)
 end subroutine tsgMakeLocalPolynomialGrid
 !=======================================================================
 subroutine tsgMakeWaveletGrid(gridID, dims, outs, depth, order, levelLimits)
-  integer :: gridID, dims, outs, depth, or
-  integer, optional :: levelLimits(dims)
-  integer :: i
+  integer :: gridID, dims, outs, depth
+  integer, optional, target :: levelLimits(dims)
   integer, optional :: order
-  integer, allocatable :: ll(:)
-  allocate(ll(dims))
-  if(present(levelLimits))then
-    ll = levelLimits
-  else
-    ll = -1
-  endif
-  if(present(order))then
+  integer           :: opt_flags(2), or
+  integer, pointer  :: ll(:) => null()
+
+  opt_flags = 0
+  if ( present(order) ) then
+    opt_flags(1) = 1
     or = order
-  else
-    or = 1
   endif
-  call tsgmw(gridID, dims, outs, depth, or, ll)
-  deallocate(ll)
+  if ( present(levelLimits) ) then
+    opt_flags(2) = 1
+    ll => levelLimits
+  endif
+
+  call tsgmw(gridID, dims, outs, depth, opt_flags, or, ll)
 end subroutine tsgMakeWaveletGrid
 !=======================================================================
 subroutine tsgMakeFourierGrid(gridID, dims, outs, depth, gtype, aweights, levelLimits)
   integer :: gridID, dims, outs, depth, gtype
-  integer, optional :: aweights(*), levelLimits(dims)
-  integer, allocatable :: aw(:)
-  integer, allocatable :: ll(:)
-  allocate(ll(dims))
-  if(present(levelLimits)) then
-    ll = levelLimits
-  else
-    ll = -1
+  integer, optional, target :: aweights(:), levelLimits(dims)
+  integer          :: opt_flags(2)
+  integer, pointer :: aw(:) => null()
+  integer, pointer :: ll(:) => null()
+
+  opt_flags = 0
+  if ( present(aweights) ) then
+    opt_flags(1) = 1
+    aw => aweights
   endif
-  if(present(aweights)) then
-    call tsgmf(gridID, dims, outs, depth, gtype, aweights, ll)
-  else
-    allocate(aw(2*dims))
-    aw(1:dims)  = 1
-    aw(dims+1:) = 0
-    call tsgmf(gridID, dims, outs, depth, gtype, aw, ll)
-    deallocate(aw)
+  if ( present(levelLimits) ) then
+    opt_flags(2) = 1
+    ll => levelLimits
   endif
-  deallocate(ll)
+
+  call tsgmf(gridID, dims, outs, depth, gtype, opt_flags, aw, ll)
 end subroutine tsgMakeFourierGrid
 !=======================================================================
 subroutine tsgCopyGrid(gridID, sourceID)
@@ -381,44 +364,27 @@ end subroutine tsgCopyGrid
 !=======================================================================
 subroutine tsgUpdateGlobalGrid(gridID, depth, gtype, aweights)
   integer, intent(in) :: gridID, depth, gtype
-  integer, optional :: aweights(*)
-  integer, allocatable :: aw(:)
-  integer :: dims, i
-  if(present(aweights))THEN
-    call tsgug(gridID, depth, gtype, aweights)
-  else
-    dims = tsgGetNumDimensions(gridID)
-    allocate(aw(2*dims))
-    do i = 1, dims
-      aw(i) = 1
-    end do
-    do i = dims+1, 2*dims
-      aw(i) = 0
-    end do
-    call tsgug(gridID, depth, gtype, aw)
-    deallocate(aw)
+  integer, optional, target :: aweights(:)
+  integer          :: opt_flags = 0
+  integer, pointer :: aw(:) => null()
+  if ( present(aweights) ) then
+    opt_flags = 1
+    aw => aweights
   endif
+  call tsgug(gridID, depth, gtype, opt_flags, aw)
 end subroutine tsgUpdateGlobalGrid
 !=======================================================================
 subroutine tsgUpdateSequenceGrid(gridID, depth, gtype, aweights)
   integer, intent(in) :: gridID, depth, gtype
   integer :: dims, i
-  integer, optional :: aweights(*)
-  integer, allocatable :: aw(:)
-  if(present(aweights))THEN
-    call tsgus(gridID, depth, gtype, aweights)
-  else
-    dims = tsgGetNumDimensions(gridID)
-    allocate(aw(2*dims))
-    do i = 1, dims
-      aw(i) = 1
-    end do
-    do i = dims+1, 2*dims
-      aw(i) = 0
-    end do
-    call tsgus(gridID, depth, gtype, aw)
-    deallocate(aw)
+  integer, optional, target :: aweights(:)
+  integer          :: opt_flags = 0
+  integer, pointer :: aw(:) => null()
+  if ( present(aweights) ) then
+    opt_flags = 1
+    aw => aweights
   endif
+  call tsgus(gridID, depth, gtype, opt_flags, aw)
 end subroutine tsgUpdateSequenceGrid
 !=======================================================================
 subroutine tsgRead(gridID, filename)
@@ -724,16 +690,14 @@ end subroutine tsgGetDomainTransform
 !=======================================================================
 subroutine tsgSetAnisotropicRefinement(gridID, gtype, minGrowth, output, levelLimits)
   integer :: gridID, gtype, minGrowth, output
-  integer, optional :: levelLimits(:)
-  integer, allocatable :: ll(:)
-  allocate(ll(tsgGetNumDimensions(gridID)))
+  integer, optional, target :: levelLimits(:)
+  integer          :: opt_flags = 0
+  integer, pointer :: ll(:) => null()
   if (present(levelLimits)) then
-    ll = levelLimits
-  else
-    ll = -1
+    opt_flags = 1
+    ll => levelLimits
   endif
-  call tsgsar(gridID, gtype, minGrowth, output-1, ll)
-  deallocate(ll)
+  call tsgsar(gridID, gtype, minGrowth, output-1, opt_flags, ll)
 end subroutine tsgSetAnisotropicRefinement
 !=======================================================================
 function tsgEstimateAnisotropicCoefficients(gridID, gtype, output) result(coeff)
@@ -749,37 +713,36 @@ end function tsgEstimateAnisotropicCoefficients
 !=======================================================================
 subroutine tsgSetGlobalSurplusRefinement(gridID, tolerance, output, levelLimits)
   integer :: gridID, output
-  integer, optional :: levelLimits(:)
+  integer, optional, target :: levelLimits(:)
   double precision :: tolerance
-  integer, allocatable :: ll(:)
-  allocate(ll(tsgGetNumDimensions(gridID)))
+  integer          :: opt_flags = 0
+  integer, pointer :: ll(:) => null()
   if (present(levelLimits)) then
-    ll = levelLimits
-  else
-    ll = -1
+    opt_flags = 1
+    ll => levelLimits
   endif
-  call tsgssr(gridID, tolerance, output-1, ll)
-  deallocate(ll)
+  call tsgssr(gridID, tolerance, output-1, opt_flags, ll)
 end subroutine tsgSetGlobalSurplusRefinement
 !=======================================================================
 subroutine tsgSetLocalSurplusRefinement(gridID, tolerance, rtype, output, levelLimits)
-  integer :: gridID, rtype, theout
-  integer, optional :: output, levelLimits(:)
+  integer :: gridID, rtype
+  integer, optional :: output
+  integer, optional, target :: levelLimits(:)
   double precision :: tolerance
-  integer, allocatable :: ll(:)
-  allocate(ll(tsgGetNumDimensions(gridID)))
-  if (present(levelLimits)) then
-    ll = levelLimits
-  else
-    ll = -1
-  endif
-  if(present(output))then
+  integer          :: opt_flags(2), theout
+  integer, pointer :: ll(:) => null()
+
+  opt_flags = 0
+  if (present(output)) then
+    opt_flags(1) = 1
     theout = output-1
-  else
-    theout = -1
   endif
-  call tsgshr(gridID, tolerance, rtype, theout, ll)
-  deallocate(ll)
+  if (present(levelLimits)) then
+    opt_flags(2) = 1
+    ll => levelLimits
+  endif
+
+  call tsgshr(gridID, tolerance, rtype, opt_flags, theout, ll)
 end subroutine tsgSetLocalSurplusRefinement
 !=======================================================================
 subroutine tsgClearRefinement(gridID)
@@ -873,7 +836,7 @@ function tsgTestInternals(verbose) result(res)
   call tsggag(num_ag)
   if ( num_ag .ne. 0 ) then
     if (verb) then
-      write(*,*) "Mismatch in number of active grids after finalize: num_ag = ", num_ag
+      write(*,*) "Mismatch in number of active grids after clearall: num_ag = ", num_ag
     endif
     res = .false.
   endif

@@ -116,35 +116,73 @@ void tsgwri_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->w
 void tsgrea_(int *id, const char *filename){ _tsg_grid_list[*id]->read(filename); }
 
 // create
-void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights, 
-            double *alpha, double *beta, const char *customRuleFilename, const int *llimits){
+void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, int *opt_flags,
+            const int *aniso_weights, double *alpha, double *beta, const char *customRuleFilename, const int *llimits){
+    double al, be;
+    const int  *aw, *ll;
+    const char *cfn;
+
+    opt_flags[0] == 1 ? aw  = aniso_weights : aw = 0;
+    opt_flags[1] == 1 ? al  = *alpha : al = 0;
+    opt_flags[2] == 1 ? be  = *beta  : be = 0;
+    opt_flags[3] == 1 ? cfn = customRuleFilename : cfn = 0;
+    opt_flags[4] == 1 ? ll  = llimits : ll = 0;
+    
     _tsg_grid_list[*id]->makeGlobalGrid(*dimensions, *outputs, *depth,
         OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule),
-        anisotropic_weights, *alpha, *beta, customRuleFilename, llimits);
+        aw, al, be, cfn, ll);
 }
-void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, const int *anisotropic_weights, const int *llimits){
+void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, int *opt_flags, 
+            const int *aniso_weights, const int *llimits){
+    const int *aw, *ll;
+
+    opt_flags[0] == 1 ? aw = aniso_weights : aw = 0;
+    opt_flags[1] == 1 ? ll = llimits : ll = 0;
+
     _tsg_grid_list[*id]->makeSequenceGrid(*dimensions, *outputs, *depth,
-        OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule), anisotropic_weights, llimits);
+        OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule), aw, ll);
 }
-void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *order, int *rule, const int *llimits){
-    _tsg_grid_list[*id]->makeLocalPolynomialGrid(*dimensions, *outputs, *depth, *order, OneDimensionalMeta::getIORuleInt(*rule), llimits);
+void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags, 
+            int *order, int *rule, const int *llimits){
+    int ord, ru;
+    const int *ll;
+
+    opt_flags[0] == 1 ? ru  = *rule   : ru = 1;
+    opt_flags[1] == 1 ? ord = *order  : ord = 1;
+    opt_flags[2] == 1 ? ll  = llimits : ll = 0;
+
+    _tsg_grid_list[*id]->makeLocalPolynomialGrid(*dimensions, *outputs, *depth, ord, OneDimensionalMeta::getIORuleInt(ru), ll);
 }
-void tsgmw_(int *id, int *dimensions, int *outputs, int *depth, int *order, const int *llimits){
+void tsgmw_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags, int *order, const int *llimits){
+    int ord;
+    const int *ll;
+
+    opt_flags[0] == 1 ? ord = *order  : ord = 1;
+    opt_flags[1] == 1 ? ll  = llimits : ll  = 0;
+
     _tsg_grid_list[*id]->makeWaveletGrid(*dimensions, *outputs, *depth, *order, llimits);
 }
-void tsgmf_(int *id, int *dimensions, int *outputs, int *depth, int *type, const int *anisotropic_weights, const int *llimits){
-    _tsg_grid_list[*id]->makeFourierGrid(*dimensions, *outputs, *depth, 
-        OneDimensionalMeta::getIOTypeInt(*type), anisotropic_weights, llimits);
+void tsgmf_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *opt_flags, const int *aniso_weights, const int *llimits){
+    const int *ll, *aw;
+
+    opt_flags[0] == 1 ? aw = aniso_weights : aw = 0;
+    opt_flags[1] == 1 ? ll = llimits  : ll = 0;
+
+    _tsg_grid_list[*id]->makeFourierGrid(*dimensions, *outputs, *depth, OneDimensionalMeta::getIOTypeInt(*type), aw, ll);
 }
 
 // copy/updare
 void tsgcp_(int *id, int *source){ _tsg_grid_list[*id]->copyGrid(_tsg_grid_list[*source]); }
 
-void tsgug_(int *id, int *depth, int *type, const int *anisotropic_weights){
-    _tsg_grid_list[*id]->updateGlobalGrid(*depth, OneDimensionalMeta::getIOTypeInt(*type), anisotropic_weights);
+void tsgug_(int *id, int *depth, int *type, int *opt_flags, const int *anisotropic_weights){
+    const int *aw;
+    opt_flags[0] == 1 ? aw = anisotropic_weights : aw = 0;
+    _tsg_grid_list[*id]->updateGlobalGrid(*depth, OneDimensionalMeta::getIOTypeInt(*type), aw);
 }
-void tsgus_(int *id, int *depth, int *type, const int *anisotropic_weights){
-    _tsg_grid_list[*id]->updateSequenceGrid(*depth, OneDimensionalMeta::getIOTypeInt(*type), anisotropic_weights);
+void tsgus_(int *id, int *depth, int *type, int *opt_flags, const int *anisotropic_weights){
+    const int *aw;
+    opt_flags[0] == 1 ? aw = anisotropic_weights : aw = 0;
+    _tsg_grid_list[*id]->updateSequenceGrid(*depth, OneDimensionalMeta::getIOTypeInt(*type), aw);
 }
 
 // getAlpha/Beta/Order/Dims/Outs/Rule //
@@ -199,8 +237,10 @@ void tsgghc_(int *id, double *c){
 void tsgshc_(int *id, double *c){_tsg_grid_list[*id]->setHierarchicalCoefficients(c);}
 
 // setAnisotropic/Surplus/Refinement
-void tsgsar_(int *id, int *type, int *min_growth, int *output, const int *llimits){
-    _tsg_grid_list[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output, llimits);
+void tsgsar_(int *id, int *type, int *min_growth, int *output, int *opt_flags, const int *llimits){
+    const int *ll;
+    opt_flags[0] == 1 ? ll = llimits : ll = 0;
+    _tsg_grid_list[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output, ll);
 }
 void tsgeac_(int *id, int *type, int *output, int *result){
     int *coeff = _tsg_grid_list[*id]->estimateAnisotropicCoefficients(OneDimensionalMeta::getIOTypeInt(*type), *output);
@@ -209,10 +249,18 @@ void tsgeac_(int *id, int *type, int *output, int *result){
     for(int i=0; i<num_coeff; i++) result[i] = coeff[i];
     delete[] coeff;
 }
-void tsgssr_(int *id, double *tol, int *output, const int *llimits){ 
-    _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output, llimits); }
-void tsgshr_(int *id, double *tol, int *type, int *output, const int *llimits){
-    _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), *output, llimits);
+void tsgssr_(int *id, double *tol, int *output, int *opt_flags, const int *llimits){ 
+    const int *ll;
+    opt_flags[0] == 1 ? ll = llimits : ll = 0;
+    _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output, ll); }
+void tsgshr_(int *id, double *tol, int *type, int *opt_flags, int *output, const int *llimits){
+    int theout;
+    const int *ll;
+
+    opt_flags[0] == 1 ? theout = *output : theout = -1;
+    opt_flags[1] == 1 ? ll = llimits : ll = 0;
+
+    _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), theout, ll);
 }
 void tsgcre_(int *id){ _tsg_grid_list[*id]->clearRefinement(); }
 void tsgmre_(int *id){ _tsg_grid_list[*id]->mergeRefinement(); }
