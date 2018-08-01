@@ -624,15 +624,29 @@ end subroutine tsgGetHierarchicalCoefficientsStatic
 !=======================================================================
 function tsgGetComplexHierarchicalCoefficients(gridID) result(c)
   integer :: gridID
-  double complex, pointer :: c(:)
+  double complex, pointer       :: c(:)
+  double precision, allocatable :: c_real(:)
+  integer :: i
+
   allocate(c(tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
-  call tsggchc(gridID, c)
+  allocate(c_real(2*tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
+  call tsgghc(gridID, c_real)
+  do i = 1,size(c)
+    c(i) = complex( c_real(2*i-1), c_real(2*i) )
+  enddo
+  deallocate(c_real)
 end function tsgGetComplexHierarchicalCoefficients
 !=======================================================================
 subroutine tsgGetComplexHierarchicalCoefficientsStatic(gridID, c)
   integer :: gridID
-  double complex :: c(:)
-  call tsggchc(gridID, c)
+  double complex   :: c(:)
+  double precision :: c_real(2*size(c))
+  integer :: i
+
+  call tsgghc(gridID, c_real)
+  do i = 1,size(c)
+    c(i) = complex( c_real(2*i-1), c_real(2*i) )
+  enddo
 end subroutine tsgGetComplexHierarchicalCoefficientsStatic
 !=======================================================================
 subroutine tsgSetHierarchicalCoefficients(gridID,c)
