@@ -1423,21 +1423,21 @@ function norm(x,n) result(res)
   double precision :: x(n)
   double precision :: res
 
-  res = sqrt(sum(abs(x)**2))
+  res = sqrt(sum(x**2))
 end function 
 
 function norm1d(x) result(res)
   double precision :: x(:)
   double precision :: res
 
-  res = sqrt(sum(abs(x)**2))
+  res = sqrt(sum(x**2))
 end function 
 
 function norm2d(x) result(res)
   double precision :: x(:,:)
   double precision :: res
 
-  res = sqrt(sum(abs(x)**2))
+  res = sqrt(sum(x**2))
 end function 
 
 function check_points(points,mustHave,mustNotHave) result(res)
