@@ -199,7 +199,7 @@ void tsgghc_(int *id, double *c){
 void tsgshc_(int *id, double *c){_tsg_grid_list[*id]->setHierarchicalCoefficients(c);}
 
 // setAnisotropic/Surplus/Refinement
-void tsgsar_(int *id, int *type, int *min_growth, int *output, const int *llimits = 0){
+void tsgsar_(int *id, int *type, int *min_growth, int *output, const int *llimits){
     _tsg_grid_list[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output, llimits);
 }
 void tsgeac_(int *id, int *type, int *output, int *result){
@@ -209,9 +209,9 @@ void tsgeac_(int *id, int *type, int *output, int *result){
     for(int i=0; i<num_coeff; i++) result[i] = coeff[i];
     delete[] coeff;
 }
-void tsgssr_(int *id, double *tol, int *output, const int *llimits = 0){ 
+void tsgssr_(int *id, double *tol, int *output, const int *llimits){ 
     _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output, llimits); }
-void tsgshr_(int *id, double *tol, int *type, int *output, const int *llimits = 0){
+void tsgshr_(int *id, double *tol, int *type, int *output, const int *llimits){
     _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), *output, llimits);
 }
 void tsgcre_(int *id){ _tsg_grid_list[*id]->clearRefinement(); }

@@ -686,11 +686,15 @@ end subroutine tsgGetDomainTransform
 subroutine tsgSetAnisotropicRefinement(gridID, gtype, minGrowth, output, levelLimits)
   integer :: gridID, gtype, minGrowth, output
   integer, optional :: levelLimits(:)
-  if(present(levelLimits))then
-    call tsgsar(gridID, gtype, minGrowth, output-1, levelLimits)
+  integer, allocatable :: ll(:)
+  allocate(ll(tsgGetNumDimensions(gridID)))
+  if (present(levelLimits)) then
+    ll = levelLimits
   else
-    call tsgsar(gridID, gtype, minGrowth, output-1)
+    ll = -1
   endif
+  call tsgsar(gridID, gtype, minGrowth, output-1, ll)
+  deallocate(ll)
 end subroutine tsgSetAnisotropicRefinement
 !=======================================================================
 function tsgEstimateAnisotropicCoefficients(gridID, gtype, output) result(coeff)
@@ -708,27 +712,35 @@ subroutine tsgSetGlobalSurplusRefinement(gridID, tolerance, output, levelLimits)
   integer :: gridID, output
   integer, optional :: levelLimits(:)
   double precision :: tolerance
-  if(present(levelLimits))then
-    call tsgssr(gridID, tolerance, output-1, levelLimits)
+  integer, allocatable :: ll(:)
+  allocate(ll(tsgGetNumDimensions(gridID)))
+  if (present(levelLimits)) then
+    ll = levelLimits
   else
-    call tsgssr(gridID, tolerance, output-1)
+    ll = -1
   endif
+  call tsgssr(gridID, tolerance, output-1, ll)
+  deallocate(ll)
 end subroutine tsgSetGlobalSurplusRefinement
 !=======================================================================
 subroutine tsgSetLocalSurplusRefinement(gridID, tolerance, rtype, output, levelLimits)
   integer :: gridID, rtype, theout
   integer, optional :: output, levelLimits(:)
   double precision :: tolerance
+  integer, allocatable :: ll(:)
+  allocate(ll(tsgGetNumDimensions(gridID)))
+  if (present(levelLimits)) then
+    ll = levelLimits
+  else
+    ll = -1
+  endif
   if(present(output))then
     theout = output-1
   else
     theout = -1
   endif
-  if(present(levelLimits))then
-    call tsgshr(gridID, tolerance, rtype, theout, levelLimits)
-  else
-    call tsgshr(gridID, tolerance, rtype, theout)
-  endif
+  call tsgshr(gridID, tolerance, rtype, theout, ll)
+  deallocate(ll)
 end subroutine tsgSetLocalSurplusRefinement
 !=======================================================================
 subroutine tsgClearRefinement(gridID)
