@@ -624,12 +624,14 @@ subroutine tsgEvaluateComplexHierarchicalFunctions(gridID, x, numX, y)
   double complex   :: y(:,:)
   double precision :: y_c_style(2*size(y,2),size(y,1))
   integer :: i, j
-  call tsgehf(gridID, x, numX, y_c_style)
-  do i = 1,size(y,1)
-    do j = 1,size(y,2)
-      y(i,j) = complex( y_c_style(2*j-1,i), y_c_style(2*j,i) )
+  if ( tsgIsFourier(gridID) ) then
+    call tsgehf(gridID, x, numX, y_c_style)
+    do i = 1,size(y,1)
+      do j = 1,size(y,2)
+        y(i,j) = complex( y_c_style(2*j-1,i), y_c_style(2*j,i) )
+      enddo
     enddo
-  enddo
+  endif
 end subroutine tsgEvaluateComplexHierarchicalFunctions
 !=======================================================================
 subroutine tsgEvaluateSparseHierarchicalFunctions(gridID, x, numX, pntr, indx, y)
@@ -661,14 +663,15 @@ function tsgGetComplexHierarchicalCoefficients(gridID) result(c)
   double complex, pointer       :: c(:)
   double precision, allocatable :: c_real(:)
   integer :: i
-
-  allocate(c(tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
-  allocate(c_real(2*tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
-  call tsgghc(gridID, c_real)
-  do i = 1,size(c)
-    c(i) = complex( c_real(2*i-1), c_real(2*i) )
-  enddo
-  deallocate(c_real)
+  if ( tsgIsFourier(gridID) ) then
+    allocate(c(tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
+    allocate(c_real(2*tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
+    call tsgghc(gridID, c_real)
+    do i = 1,size(c)
+      c(i) = complex( c_real(2*i-1), c_real(2*i) )
+    enddo
+    deallocate(c_real)
+  endif
 end function tsgGetComplexHierarchicalCoefficients
 !=======================================================================
 subroutine tsgGetComplexHierarchicalCoefficientsStatic(gridID, c)
@@ -676,11 +679,12 @@ subroutine tsgGetComplexHierarchicalCoefficientsStatic(gridID, c)
   double complex   :: c(:)
   double precision :: c_real(2*size(c))
   integer :: i
-
-  call tsgghc(gridID, c_real)
-  do i = 1,size(c)
-    c(i) = complex( c_real(2*i-1), c_real(2*i) )
-  enddo
+  if ( tsgIsFourier(gridID) ) then
+    call tsgghc(gridID, c_real)
+    do i = 1,size(c)
+      c(i) = complex( c_real(2*i-1), c_real(2*i) )
+    enddo
+  endif
 end subroutine tsgGetComplexHierarchicalCoefficientsStatic
 !=======================================================================
 subroutine tsgSetHierarchicalCoefficients(gridID,c)
