@@ -476,7 +476,7 @@ void TasmanianSparseGrid::evaluate(const std::vector<double> x, std::vector<doub
 }
 void TasmanianSparseGrid::evaluateFast(const std::vector<double> x, std::vector<double> &y) const{
     size_t num_outputs = getNumOutputs();
-    if (y.size() < num_outputs) y.resize(num_outputs);
+    if (y.size() < num_outputs){ cout << "Resizing" << endl; y.resize(num_outputs); }
     evaluateFast(x.data(), y.data());
 }
 void TasmanianSparseGrid::evaluateBatch(const std::vector<double> x, std::vector<double> &y) const{

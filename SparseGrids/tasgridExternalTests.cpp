@@ -1509,24 +1509,21 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     int dims = f->getNumInputs();
     int outs = f->getNumOutputs();
     if (grid->getNumNeeded() > 0){
-        double *points = grid->getNeededPoints();
-        double *vals = new double[outs * grid->getNumPoints()];
+        std::vector<double> points, vals(outs * grid->getNumPoints());
+        grid->getNeededPoints(points);
 
         for(int i=0; i<grid->getNumPoints(); i++){
             f->eval(&(points[i*dims]), &(vals[i*outs]));
         }
         grid->loadNeededPoints(vals);
-        delete[] vals;
-        delete[] points;
     }
 
     int num_x = 256; // for batched evaluations
     int num_fast = 16; // for fast evaluations, must be <= num_x
-    double *x = new double[num_x * dims];
-    setRandomX(num_x * dims, x);
+    std::vector<double> x(num_x * dims);
+    setRandomX(num_x * dims, x.data());
 
-    double *baseline_y = new double[outs * num_x];
-    double *test_y = new double[outs * num_x];
+    std::vector<double> test_y, baseline_y(outs * num_x);
     for(int i=0; i<num_x; i++) grid->evaluate(&(x[i*dims]), &(baseline_y[i*outs]));
 
     bool pass = true;
@@ -1540,9 +1537,9 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
         //grid->printStats();
 
-        for(int i=0; i<outs * num_x; i++ ) test_y[i] = 0.0;
+        test_y.resize(1); // makes sure that evaluate sets the right dimension
 
-        grid->evaluateBatch(x, num_x, test_y);
+        grid->evaluateBatch(x, test_y);
 
         double err = 0.0;
         for(int i=0; i<outs*num_x; i++) if (fabs(test_y[i] - baseline_y[i]) > err) err = fabs(test_y[i] - baseline_y[i]);
@@ -1559,7 +1556,8 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             exit(1);
         }
 
-        for(int i=0; i<num_fast; i++){
+        grid->evaluateFast(x, test_y);
+        for(int i= 1; i<num_fast; i++){
             grid->evaluateFast(&(x[i*dims]), &(test_y[i*outs]));
         }
 
@@ -1587,10 +1585,6 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             c++;
         }
     }
-
-    delete[] test_y;
-    delete[] baseline_y;
-    delete[] x;
 
     return pass;
 }
