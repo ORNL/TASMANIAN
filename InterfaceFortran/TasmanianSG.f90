@@ -740,7 +740,7 @@ function tsgEstimateAnisotropicCoefficients(gridID, gtype, output) result(coeff)
   integer :: gridID, gtype, output, N
   integer, pointer :: coeff(:)
   N = tsgGetNumDimensions(gridID)
-  if ((gtype .EQ. 2) .OR. (gtype .EQ. 4) .OR. (gtype .EQ. 6))then
+  if ((gtype .EQ. tsg_curved) .OR. (gtype .EQ. tsg_ipcurved) .OR. (gtype .EQ. tsg_qpcurved))then
     N = N * 2
   endif
   allocate(coeff(N))
