@@ -93,6 +93,12 @@ namespace TasCUDA{
     }
 
     template <typename T>
+    inline void cudaRecv(size_t num_entries, const T *gpu_array, std::vector<T> &cpu_vector, std::ostream *os){
+        if (cpu_vector.size() < num_entries) cpu_vector.resize(num_entries);
+        cudaRecv<T>(num_entries, gpu_array, cpu_vector.data(), os);
+    }
+
+    template <typename T>
     inline void cudaDel(T *gpu_array, std::ostream *os){
         cudaError_t cudaStat = cudaFree(gpu_array);
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaDel(type)", os);

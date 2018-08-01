@@ -1668,9 +1668,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             grid.setGPUID(gpuID);
             grid.evaluateSparseHierarchicalFunctionsGPU(gpux, nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
 
-            int *cpntr = new int[nump+1]; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr, &cerr);
-            int *cindx = new int[num_nz]; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
-            double *cvals = new double[num_nz]; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals, &cerr);
+            std::vector<int> cpntr; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr, &cerr);
+            std::vector<int> cindx; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
+            std::vector<double> cvals; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals, &cerr);
 
             if (pntr[nump] != num_nz){
                 cout << "ERROR: mismatch in the numnz from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
@@ -1698,9 +1698,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             pass = pass && sparse_pass;
 
-            delete[] cpntr;
-            delete[] cindx;
-            delete[] cvals;
             TasGrid::TasCUDA::cudaDel<double>(gpux, &cerr);
             TasGrid::TasCUDA::cudaDel<int>(gpu_pntr, &cerr);
             TasGrid::TasCUDA::cudaDel<int>(gpu_indx, &cerr);
