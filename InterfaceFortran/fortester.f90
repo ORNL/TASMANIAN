@@ -44,6 +44,7 @@ double precision, pointer :: points(:,:), weights(:), pointsb(:,:), weightsb(:)
 
 integer          :: i_a, i_b, i_c, i_d, i, j
 double precision :: d_a, d_b, d_c, d_d, int, int2
+logical          :: bool
 
 integer,          allocatable :: int_1d_a(:),    int_1d_b(:),    int_1d_c(:),    int_1d_d(:)
 double precision, allocatable :: double_1d_a(:), double_1d_b(:), double_1d_c(:), double_1d_d(:)
@@ -86,6 +87,43 @@ endif
 
 gridID    = tsgNewGridID()
 gridID_II = tsgNewGridID()
+
+
+
+
+!=======================================================================
+!       tsgIs***()
+!=======================================================================
+call tsgMakeGlobalGrid(gridID, 2, 0, 1, tsg_level, tsg_clenshaw_curtis)
+if ( .not. tsgIsGlobal(gridID) ) then
+  write(*,*) "Mismatch in tsgIsGlobal"
+  stop 1
+endif
+call tsgMakeSequenceGrid(gridID, 2, 1, 3, tsg_level, tsg_min_lebesgue)
+if ( .not. tsgIsSequence(gridID) ) then
+  write(*,*) "Mismatch in tsgIsSequence"
+  stop 1
+endif
+call tsgMakeLocalPolynomialGrid(gridID, 3, 1, 2, 2, tsg_localp)
+if ( .not. tsgIsLocalPolynomial(gridID) ) then
+  write(*,*) "Mismatch in tsgIsLocalPolynomial"
+  stop 1
+endif
+call tsgMakeWaveletGrid(gridID, 3, 1, 2, 1)
+if ( .not. tsgIsWavelet(gridID) ) then
+  write(*,*) "Mismatch in tsgIsWavelet"
+  stop 1
+endif
+call tsgMakeFourierGrid(gridID, 3, 1, 1, tsg_level)
+if ( .not. tsgIsFourier(gridID) ) then
+  write(*,*) "Mismatch in tsgIsFourier"
+  stop 1
+endif
+
+
+
+
+
 
 
 

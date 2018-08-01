@@ -223,6 +223,13 @@ void tsgica_(int *id, int *result){ *result = (_tsg_grid_list[*id]->isSetConform
 void tsgcct_(int *id){ _tsg_grid_list[*id]->clearConformalTransform(); }
 void tsggca_(int *id, int *trunc){ _tsg_grid_list[*id]->getConformalTransformASIN(trunc); }
 
+// isGlobal/Sequence/LocalPolynomial/Wavelet/Fourier
+void tsgisg_(int *id, bool *status){*status = _tsg_grid_list[*id]->isGlobal();}
+void tsgiss_(int *id, bool *status){*status = _tsg_grid_list[*id]->isSequence();}
+void tsgisl_(int *id, bool *status){*status = _tsg_grid_list[*id]->isLocalPolynomial();}
+void tsgisw_(int *id, bool *status){*status = _tsg_grid_list[*id]->isWavelet();}
+void tsgisf_(int *id, bool *status){*status = _tsg_grid_list[*id]->isFourier();}
+
 // print stats
 void tsgpri_(int *id){ _tsg_grid_list[*id]->printStats(); }
 

@@ -34,6 +34,11 @@ PUBLIC :: tsgFinalize,          &
           tsgFreeGridID,        &
 !===== ABOVE ARE FORTRAN SPECIFIC FUNCTIONS ======!
 !===== BELOW ARE WRAPPERS FOR STANDARD C++ CLASS =!
+          tsgIsGlobal,          &
+          tsgIsSequence,        &
+          tsgIsLocalPolynomial, &
+          tsgIsWavelet,         &
+          tsgIsFourier,         &
           tsgGetVersionMajor,   &
           tsgGetVersionMinor,   &
           tsgGetLicense,        &
@@ -168,6 +173,36 @@ PRIVATE
   double precision, pointer :: matrix(:,:), vector(:)
   character, pointer :: string(:)
 contains
+!=======================================================================
+function tsgIsGlobal(id) result(res)
+  integer :: id
+  logical :: res
+  call tsgisg(id, res)
+end function
+!=======================================================================
+function tsgIsSequence(id) result(res)
+  integer :: id
+  logical :: res
+  call tsgiss(id, res)
+end function
+!=======================================================================
+function tsgIsLocalPolynomial(id) result(res)
+  integer :: id
+  logical :: res
+  call tsgisl(id, res)
+end function
+!=======================================================================
+function tsgIsWavelet(id) result(res)
+  integer :: id
+  logical :: res
+  call tsgisw(id, res)
+end function
+!=======================================================================
+function tsgIsFourier(id) result(res)
+  integer :: id
+  logical :: res
+  call tsgisf(id, res)
+end function
 !=======================================================================
 subroutine tsgFinalize()
   call tsgend()
