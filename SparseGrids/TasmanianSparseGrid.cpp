@@ -534,6 +534,14 @@ void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
     std::copy(domain_transform_a, domain_transform_a + num_dimensions, a);
     std::copy(domain_transform_b, domain_transform_b + num_dimensions, b);
 }
+void TasmanianSparseGrid::setDomainTransform(std::vector<double> a, std::vector<double> b){
+    setDomainTransform(a.data(), b.data());
+}
+void TasmanianSparseGrid::getDomainTransform(std::vector<double> &a, std::vector<double> &b) const{
+    if (a.size() < (size_t) getNumDimensions()) a.resize(getNumDimensions());
+    if (b.size() < (size_t) getNumDimensions()) b.resize(getNumDimensions());
+    getDomainTransform(a.data(), b.data());
+}
 
 void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const{
     if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){ // canonical (0, +infty)

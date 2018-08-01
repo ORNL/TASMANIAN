@@ -1599,7 +1599,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
                                          TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
                                          TasGrid::rule_localp};
     int order[9] = {1, 1, 1, 1, 2, 2, 2, 2, 0};
-    double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
+    std::vector<double> a = {3.0, 4.0, -10.0}, b = {5.0, 7.0, 2.0};
 
     bool pass = true;
     int gpu_index_first = (gpuid == -1) ? 0 : gpuid;

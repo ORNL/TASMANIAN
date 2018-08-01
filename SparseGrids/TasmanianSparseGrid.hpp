@@ -132,6 +132,8 @@ public:
     bool isSetDomainTransfrom() const;
     void clearDomainTransform();
     void getDomainTransform(double a[], double b[]) const;
+    void setDomainTransform(std::vector<double> a, std::vector<double> b);
+    void getDomainTransform(std::vector<double> &a, std::vector<double> &b) const;
 
     void setConformalTransformASIN(const int truncation[]);
     bool isSetConformalTransformASIN() const;
