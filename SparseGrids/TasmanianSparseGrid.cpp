@@ -391,6 +391,9 @@ void TasmanianSparseGrid::loadNeededPoints(const double *vals){
     #endif
     base->loadNeededPoints(vals, acceleration);
 }
+void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> vals){
+    loadNeededPoints(vals.data());
+}
 
 void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
     double *x_tmp = 0;

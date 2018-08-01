@@ -128,7 +128,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                 f->eval(&(needed_points[i*num_dimensions]), &(values[i*num_outputs]));
             }
 
-            grid->loadNeededPoints(values.data());
+            grid->loadNeededPoints(values);
         }
 
         std::vector<double> err(num_outputs, 0.0); // absolute error

@@ -109,6 +109,7 @@ public:
     void getInterpolationWeights(const double x[], std::vector<double> &weights) const;
 
     void loadNeededPoints(const double *vals);
+    void loadNeededPoints(const std::vector<double> vals);
 
     void evaluate(const double x[], double y[]) const;
     void evaluateFast(const double x[], double y[]) const; // evaluate that is potentially not thread safe!
