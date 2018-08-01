@@ -128,7 +128,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                 f->eval(&(needed_points[i*num_dimensions]), &(values[i*num_outputs]));
             }
 
-            grid->loadNeededPoints(values.data());
+            grid->loadNeededPoints(values);
         }
 
         std::vector<double> err(num_outputs, 0.0); // absolute error
@@ -1509,24 +1509,21 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     int dims = f->getNumInputs();
     int outs = f->getNumOutputs();
     if (grid->getNumNeeded() > 0){
-        double *points = grid->getNeededPoints();
-        double *vals = new double[outs * grid->getNumPoints()];
+        std::vector<double> points, vals(outs * grid->getNumPoints());
+        grid->getNeededPoints(points);
 
         for(int i=0; i<grid->getNumPoints(); i++){
             f->eval(&(points[i*dims]), &(vals[i*outs]));
         }
         grid->loadNeededPoints(vals);
-        delete[] vals;
-        delete[] points;
     }
 
     int num_x = 256; // for batched evaluations
     int num_fast = 16; // for fast evaluations, must be <= num_x
-    double *x = new double[num_x * dims];
-    setRandomX(num_x * dims, x);
+    std::vector<double> x(num_x * dims);
+    setRandomX(num_x * dims, x.data());
 
-    double *baseline_y = new double[outs * num_x];
-    double *test_y = new double[outs * num_x];
+    std::vector<double> test_y, baseline_y(outs * num_x);
     for(int i=0; i<num_x; i++) grid->evaluate(&(x[i*dims]), &(baseline_y[i*outs]));
 
     bool pass = true;
@@ -1540,9 +1537,9 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
         //grid->printStats();
 
-        for(int i=0; i<outs * num_x; i++ ) test_y[i] = 0.0;
+        test_y.resize(1); // makes sure that evaluate sets the right dimension
 
-        grid->evaluateBatch(x, num_x, test_y);
+        grid->evaluateBatch(x, test_y);
 
         double err = 0.0;
         for(int i=0; i<outs*num_x; i++) if (fabs(test_y[i] - baseline_y[i]) > err) err = fabs(test_y[i] - baseline_y[i]);
@@ -1559,7 +1556,8 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             exit(1);
         }
 
-        for(int i=0; i<num_fast; i++){
+        grid->evaluateFast(x, test_y);
+        for(int i= 1; i<num_fast; i++){
             grid->evaluateFast(&(x[i*dims]), &(test_y[i*outs]));
         }
 
@@ -1588,10 +1586,6 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
     }
 
-    delete[] test_y;
-    delete[] baseline_y;
-    delete[] x;
-
     return pass;
 }
 
@@ -1605,7 +1599,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
                                          TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
                                          TasGrid::rule_localp};
     int order[9] = {1, 1, 1, 1, 2, 2, 2, 2, 0};
-    double a[3] = {3.0, 4.0, -10.0}, b[3] = {5.0, 7.0, 2.0};
+    std::vector<double> a = {3.0, 4.0, -10.0}, b = {5.0, 7.0, 2.0};
 
     bool pass = true;
     int gpu_index_first = (gpuid == -1) ? 0 : gpuid;
@@ -1618,7 +1612,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
         int nump = 2000;
         double *x = new double[dims*nump];
-        double *xt = new double[dims*nump];
+        std::vector<double> xt(dims * nump);
         setRandomX(dims*nump, x);
         for(int i=0; i<nump; i++){
             for(int j=0; j<dims; j++){
@@ -1628,20 +1622,20 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         delete[] x;
 
         // Dense version:
-        double *y_true_dense = new double[grid.getNumPoints() * nump];
-        grid.evaluateHierarchicalFunctions(xt, nump, y_true_dense);
+        std::vector<double> y_true_dense;
+        grid.evaluateHierarchicalFunctions(xt, y_true_dense);
         // grid.printStats();
         // cout << "Memory requirements = " << (grid.getNumPoints() * nump * 8) / (1024 * 1024) << "MB" << endl;
 
         int *pntr = 0, *indx = 0;
         double *vals = 0;
-        grid.evaluateSparseHierarchicalFunctions(xt, nump, pntr, indx, vals);
+        grid.evaluateSparseHierarchicalFunctions(xt.data(), nump, pntr, indx, vals);
 
         for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
             bool dense_pass = true;
 
             cudaSetDevice(gpuID);
-            double *gpux = TasGrid::TasCUDA::cudaSend<double>(dims * nump, xt, &cerr);
+            double *gpux = TasGrid::TasCUDA::cudaSend<double>(xt, &cerr);
             double *gpuy = TasGrid::TasCUDA::cudaNew<double>(grid.getNumPoints() * nump, &cerr);
 
             grid.enableAcceleration(TasGrid::accel_gpu_cuda);
@@ -1674,9 +1668,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             grid.setGPUID(gpuID);
             grid.evaluateSparseHierarchicalFunctionsGPU(gpux, nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
 
-            int *cpntr = new int[nump+1]; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr, &cerr);
-            int *cindx = new int[num_nz]; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
-            double *cvals = new double[num_nz]; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals, &cerr);
+            std::vector<int> cpntr; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr, &cerr);
+            std::vector<int> cindx; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
+            std::vector<double> cvals; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals, &cerr);
 
             if (pntr[nump] != num_nz){
                 cout << "ERROR: mismatch in the numnz from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
@@ -1704,20 +1698,15 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             pass = pass && sparse_pass;
 
-            delete[] cpntr;
-            delete[] cindx;
-            delete[] cvals;
             TasGrid::TasCUDA::cudaDel<double>(gpux, &cerr);
             TasGrid::TasCUDA::cudaDel<int>(gpu_pntr, &cerr);
             TasGrid::TasCUDA::cudaDel<int>(gpu_indx, &cerr);
             TasGrid::TasCUDA::cudaDel<double>(gpu_vals, &cerr);
         }
 
-        delete[] xt;
         delete[] pntr;
         delete[] indx;
         delete[] vals;
-        delete[] y_true_dense;
     }
 
     return pass;

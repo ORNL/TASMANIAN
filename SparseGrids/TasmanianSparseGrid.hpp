@@ -109,11 +109,18 @@ public:
     void getInterpolationWeights(const double x[], std::vector<double> &weights) const;
 
     void loadNeededPoints(const double *vals);
+    void loadNeededPoints(const std::vector<double> vals);
 
     void evaluate(const double x[], double y[]) const;
     void evaluateFast(const double x[], double y[]) const; // evaluate that is potentially not thread safe!
     void evaluateBatch(const double x[], int num_x, double y[]) const; // uses acceleration, OpenMP, BLAS, GPU, etc.
     void integrate(double q[]) const;
+
+    // same as above, but resizes the output vector (is too small)
+    void evaluate(const std::vector<double> x, std::vector<double> &y) const;
+    void evaluateFast(const std::vector<double> x, std::vector<double> &y) const;
+    void evaluateBatch(const std::vector<double> x, std::vector<double> &y) const;
+    void integrate(std::vector<double> &q) const;
 
     bool isGlobal() const;
     bool isSequence() const;
@@ -125,6 +132,8 @@ public:
     bool isSetDomainTransfrom() const;
     void clearDomainTransform();
     void getDomainTransform(double a[], double b[]) const;
+    void setDomainTransform(std::vector<double> a, std::vector<double> b);
+    void getDomainTransform(std::vector<double> &a, std::vector<double> &b) const;
 
     void setConformalTransformASIN(const int truncation[]);
     bool isSetConformalTransformASIN() const;
@@ -145,6 +154,9 @@ public:
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const;
     void setHierarchicalCoefficients(const double c[]);
+
+    void evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const;
+    void setHierarchicalCoefficients(const std::vector<double> c);
 
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 

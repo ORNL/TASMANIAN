@@ -336,15 +336,15 @@ void TasmanianSparseGrid::getPoints(double *x) const{
     formTransformedPoints(base->getNumPoints(), x);
 }
 void TasmanianSparseGrid::getLoadedPoints(std::vector<double> &x) const{
-    x.resize(base->getNumDimensions() * base->getNumLoaded());
+    if (x.size() < (size_t) (base->getNumDimensions() * base->getNumLoaded())) x.resize(base->getNumDimensions() * base->getNumLoaded());
     getLoadedPoints(x.data());
 }
 void TasmanianSparseGrid::getNeededPoints(std::vector<double> &x) const{
-    x.resize(base->getNumDimensions() * base->getNumNeeded());
+    if (x.size() < (size_t) (base->getNumDimensions() * base->getNumNeeded())) x.resize(base->getNumDimensions() * base->getNumNeeded());
     getNeededPoints(x.data());
 }
 void TasmanianSparseGrid::getPoints(std::vector<double> &x) const{
-    x.resize(base->getNumDimensions() * base->getNumPoints());
+    if (x.size() < (size_t) (base->getNumDimensions() * base->getNumPoints())) x.resize(base->getNumDimensions() * base->getNumPoints());
     getPoints(x.data());
 }
 
@@ -375,11 +375,11 @@ void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weig
     clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::getQuadratureWeights(std::vector<double> &weights) const{
-    weights.resize(base->getNumPoints());
+    if (weights.size() < (size_t) base->getNumPoints()) weights.resize(base->getNumPoints());
     getQuadratureWeights(weights.data());
 }
 void TasmanianSparseGrid::getInterpolationWeights(const double x[], std::vector<double> &weights) const{
-    weights.resize(base->getNumPoints());
+    if (weights.size() < (size_t) base->getNumPoints()) weights.resize(base->getNumPoints());
     getInterpolationWeights(x, weights.data());
 }
 
@@ -390,6 +390,9 @@ void TasmanianSparseGrid::loadNeededPoints(const double *vals){
     }
     #endif
     base->loadNeededPoints(vals, acceleration);
+}
+void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> vals){
+    loadNeededPoints(vals.data());
 }
 
 void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
@@ -466,6 +469,28 @@ void TasmanianSparseGrid::integrate(double q[]) const{
     }
 }
 
+void TasmanianSparseGrid::evaluate(const std::vector<double> x, std::vector<double> &y) const{
+    size_t num_outputs = getNumOutputs();
+    if (y.size() < num_outputs) y.resize(num_outputs);
+    evaluate(x.data(), y.data());
+}
+void TasmanianSparseGrid::evaluateFast(const std::vector<double> x, std::vector<double> &y) const{
+    size_t num_outputs = getNumOutputs();
+    if (y.size() < num_outputs){ cout << "Resizing" << endl; y.resize(num_outputs); }
+    evaluateFast(x.data(), y.data());
+}
+void TasmanianSparseGrid::evaluateBatch(const std::vector<double> x, std::vector<double> &y) const{
+    size_t num_outputs = getNumOutputs();
+    size_t num_x = x.size() / getNumDimensions();
+    if (y.size() < num_outputs * num_x) y.resize(num_outputs * num_x);
+    evaluateBatch(x.data(), num_x, y.data());
+}
+void TasmanianSparseGrid::integrate(std::vector<double> &q) const{
+    size_t num_outputs = getNumOutputs();
+    if (q.size() < num_outputs) q.resize(num_outputs);
+    integrate(q.data());
+}
+
 bool TasmanianSparseGrid::isGlobal() const{
     return (global != 0);
 }
@@ -508,6 +533,14 @@ void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
     int num_dimensions = base->getNumDimensions();
     std::copy(domain_transform_a, domain_transform_a + num_dimensions, a);
     std::copy(domain_transform_b, domain_transform_b + num_dimensions, b);
+}
+void TasmanianSparseGrid::setDomainTransform(std::vector<double> a, std::vector<double> b){
+    setDomainTransform(a.data(), b.data());
+}
+void TasmanianSparseGrid::getDomainTransform(std::vector<double> &a, std::vector<double> &b) const{
+    if (a.size() < (size_t) getNumDimensions()) a.resize(getNumDimensions());
+    if (b.size() < (size_t) getNumDimensions()) b.resize(getNumDimensions());
+    getDomainTransform(a.data(), b.data());
 }
 
 void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const{
@@ -923,6 +956,12 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int nu
     base->evaluateHierarchicalFunctions(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
     clearCanonicalPoints(x_tmp);
 }
+void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const{
+    int num_points = getNumPoints();
+    int num_x = x.size() / getNumDimensions();
+    if (y.size() < (size_t) (num_points * num_x)) y.resize(num_points * num_x);
+    evaluateHierarchicalFunctions(x.data(), num_x, y.data());
+}
 #ifdef Tasmanian_ENABLE_CUDA
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
     _TASMANIAN_SETGPU
@@ -1043,6 +1082,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
     base->setHierarchicalCoefficients(c, acceleration, logstream);
 }
+void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> c){ setHierarchicalCoefficients(c.data()); }
 
 void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const{
     if (global != 0){
