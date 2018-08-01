@@ -94,6 +94,7 @@ gridID_II = tsgNewGridID()
 !=======================================================================
 !       tsgIs***()
 !=======================================================================
+! test type of grid
 call tsgMakeGlobalGrid(gridID, 2, 0, 1, tsg_level, tsg_clenshaw_curtis)
 if ( .not. tsgIsGlobal(gridID) ) then
   write(*,*) "Mismatch in tsgIsGlobal"
@@ -119,7 +120,20 @@ if ( .not. tsgIsFourier(gridID) ) then
   write(*,*) "Mismatch in tsgIsFourier"
   stop 1
 endif
-
+! test transform
+if ( tsgIsSetDomainTransform(gridID) ) then
+  write(*,*) "Mismatch in tsgIsSetDomainTransform"
+  stop 1
+endif
+call tsgMakeGlobalGrid(gridID, 3, 0, 2, tsg_level, tsg_clenshaw_curtis)
+call tsgSetDomainTransform(gridID, transformA=(/ 3.0d0, -7.0d0, -12.0d0 /), transformB=(/ 5.0d0, -6.0d0,  17.0d0 /))
+points  => tsgGetPoints(gridID)
+weights => tsgGetQuadratureWeights(gridID)
+if ( .not. tsgIsSetDomainTransform(gridID) ) then
+  write(*,*) "Mismatch in tsgIsSetDomainTransform"
+  stop 1
+endif
+deallocate(points, weights)
 
 
 

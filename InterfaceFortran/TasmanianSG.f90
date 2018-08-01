@@ -85,7 +85,7 @@ PUBLIC :: tsgFinalize,          &
           tsgSetHierarchicalCoefficients, &
           tsgIntegrate,        &
           tsgSetDomainTransform,   &
-          tsgIsSetDomainTransfrom, &
+          tsgIsSetDomainTransform, &
           tsgClearDomainTransform, &
           tsgGetDomainTransform,   &
           tsgSetAnisotropicRefinement,        &
@@ -705,10 +705,11 @@ subroutine tsgSetDomainTransform(gridID, transformA, transformB)
   call tsgsdt(gridID, transformA, transformB)
 end subroutine tsgSetDomainTransform
 !=======================================================================
-function tsgIsSetDomainTransfrom(gridID) result(res)
-  integer :: gridID, res
+function tsgIsSetDomainTransform(gridID) result(res)
+  integer :: gridID
+  logical :: res
   call tsgidt(gridID, res)
-end function tsgIsSetDomainTransfrom
+end function tsgIsSetDomainTransform
 !=======================================================================
 subroutine tsgClearDomainTransform(gridID)
   integer :: gridID
