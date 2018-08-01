@@ -956,6 +956,12 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int nu
     base->evaluateHierarchicalFunctions(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
     clearCanonicalPoints(x_tmp);
 }
+void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const{
+    int num_points = getNumPoints();
+    int num_x = x.size() / getNumDimensions();
+    if (y.size() < (size_t) (num_points * num_x)) y.resize(num_points * num_x);
+    evaluateHierarchicalFunctions(x.data(), num_x, y.data());
+}
 #ifdef Tasmanian_ENABLE_CUDA
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
     _TASMANIAN_SETGPU
@@ -1076,6 +1082,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
     base->setHierarchicalCoefficients(c, acceleration, logstream);
 }
+void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> c){ setHierarchicalCoefficients(c.data()); }
 
 void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const{
     if (global != 0){

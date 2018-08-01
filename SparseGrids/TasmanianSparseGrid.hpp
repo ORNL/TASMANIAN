@@ -155,6 +155,9 @@ public:
     void evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const;
     void setHierarchicalCoefficients(const double c[]);
 
+    void evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const;
+    void setHierarchicalCoefficients(const std::vector<double> c);
+
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
     void printStats() const;
