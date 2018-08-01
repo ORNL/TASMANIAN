@@ -598,7 +598,7 @@ endif
 deallocate(points)
 
 allocate(points(tsgGetNumDimensions(gridID),tsgGetNumPoints(gridID)))
-call tsgGetPointsStatic(gridID, tsgGetNumDimensions(gridID), points )
+call tsgGetPointsStatic(gridID, points )
 if ( norm2d(points-pointsb) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgGetPointsStatic: core case 1"
   stop 1
@@ -606,7 +606,7 @@ endif
 deallocate(points)
 
 allocate(points(tsgGetNumDimensions(gridID),tsgGetNumPoints(gridID)))
-call tsgGetNeededPointsStatic(gridID, tsgGetNumDimensions(gridID), points )
+call tsgGetNeededPointsStatic(gridID, points )
 if ( norm2d(points-pointsb) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgGetNeededPointsStatic: core case 1"
   stop 1
@@ -639,6 +639,13 @@ call tsgLoadNeededPoints(gridID, double_2d_a)
 pointsb => tsgGetLoadedPoints(gridID)
 if ( norm2d(points-pointsb) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgLoadNeededPoints: tsgGetLoadedPoints"
+  stop 1
+endif
+deallocate(pointsb)
+allocate(pointsb(tsgGetNumDimensions(gridID),tsgGetNumPoints(gridID)))
+call tsgGetLoadedPointsStatic(gridID, pointsb)
+if ( norm2d(points-pointsb) > 1.d-11 ) then
+  write(*,*) "Mismatch in tsgLoadNeededPoints: tsgGetLoadedPointsStatic"
   stop 1
 endif
 if ( tsgGetNumNeeded(gridID) .ne. 0 ) then

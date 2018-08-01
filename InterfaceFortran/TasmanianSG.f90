@@ -501,21 +501,21 @@ function tsgGetPoints(gridID) result(p)
   call tsggpp(gridID, p)
 end function tsgGetPoints
 !=======================================================================
-subroutine tsgGetLoadedPointsStatic(gridID, dims, points)
-  integer :: gridID, dims
-  double precision :: points(dims,*)
+subroutine tsgGetLoadedPointsStatic(gridID, points)
+  integer :: gridID
+  double precision :: points(:,:)
   call tsgglp(gridID, points)
 end subroutine tsgGetLoadedPointsStatic
 !=======================================================================
-subroutine tsgGetNeededPointsStatic(gridID, dims, points)
-  integer :: gridID, dims
-  double precision :: points(dims,*)
+subroutine tsgGetNeededPointsStatic(gridID, points)
+  integer :: gridID
+  double precision :: points(:,:)
   call tsggdp(gridID, points)
 end subroutine tsgGetNeededPointsStatic
 !=======================================================================
-subroutine tsgGetPointsStatic(gridID, dims, points)
-  integer :: gridID, dims
-  double precision :: points(dims,*)
+subroutine tsgGetPointsStatic(gridID, points)
+  integer :: gridID
+  double precision :: points(:,:)
   call tsggpp(gridID, points)
 end subroutine tsgGetPointsStatic
 !=======================================================================
