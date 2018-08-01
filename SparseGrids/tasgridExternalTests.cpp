@@ -107,28 +107,6 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             for(int k=0; k<num_outputs; k++) r[k] += weights[i] * y[k];
         }
 
-        //#pragma omp parallel
-        //{
-        //    double *y_local = new double[num_outputs];
-        //    double *r_local = new double[num_outputs];  std::fill(r_local, r_local + num_outputs, 0.0);
-        //    #pragma omp for
-        //    for(int i=0; i<num_points; i++){
-        //        f->eval(&(points[i*num_dimensions]), y_local);
-        //        for(int j=0; j<num_outputs; j++){
-        //            r_local[j] += weights[i] * y_local[j];
-        //        }
-        //    }
-        //
-        //    #pragma omp critical
-        //    {
-        //        for(int j=0; j<num_outputs; j++){
-        //            r[j] += r_local[j];
-        //        }
-        //    }
-        //    delete[] y_local;
-        //    delete[] r_local;
-        //}
-
         double err = 0.0;
         if (type == type_integration){
             f->getIntegral(y.data());
@@ -199,21 +177,12 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     bool bPass = true;
     const char *custom_filename = (rule == rule_customtabulated) ? "SparseGrids/GaussPattersonRule.table" : 0;
     for(int i=0; i<num_global_tests; i++){
-        if (interpolation){
-            if (rule == rule_fourier){
-                grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, anisotropic);
-            }else{
-                grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
-            }
-            R = getError(f, &grid, tests[i], x);
+        if (rule == rule_fourier){
+            grid.makeFourierGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, anisotropic);
         }else{
-            if (rule == rule_fourier){
-                grid.makeFourierGrid(f->getNumInputs(), 0, depths[i], type, anisotropic);
-            }else{
-                grid.makeGlobalGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
-            }
-            R = getError(f, &grid, type_integration);
+            grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
         }
+        R = getError(f, &grid, ((interpolation) ? tests[i] : type_integration), x);
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
@@ -235,15 +204,9 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     if (rule == rule_customtabulated){
         TasGrid::TasmanianSparseGrid *grid_copy;
         for(int i=0; i<num_global_tests; i++){
-            if (interpolation){
-                grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
-                grid_copy = new TasGrid::TasmanianSparseGrid(grid);
-                R = getError(f, grid_copy, tests[i], x);
-            }else{
-                grid.makeGlobalGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
-                grid_copy = new TasGrid::TasmanianSparseGrid(grid);
-                R = getError(f, grid_copy, type_integration);
-            }
+            grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            grid_copy = new TasGrid::TasmanianSparseGrid(grid);
+            R = getError(f, grid_copy, ((interpolation) ? tests[i] : type_integration), x);
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
