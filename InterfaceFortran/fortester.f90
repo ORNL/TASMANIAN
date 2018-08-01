@@ -955,72 +955,72 @@ deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_1d_a,double
 
 
 ! load coefficients
-i_a = 13
-allocate( double_2d_b(1,i_a), double_2d_c(1,i_a), pointsb(2,i_a) )
-call tsgMakeLocalPolynomialGrid(gridID,    2, 1, 5, 1, tsg_semi_localp)
-call tsgMakeLocalPolynomialGrid(gridID_II, 2, 1, 5, 1, tsg_semi_localp)
-points  => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
-rnd     => rand(2,i_a)
-pointsb =  -1.d0 + 2.d0 * rnd
-allocate( double_2d_a(1,i_b), double_1d_b(i_b), double_2d_d(i_b,i_b) )
-double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
-call tsgLoadNeededPoints(gridID, double_2d_a)
-call tsgEvaluateHierarchicalFunctions(gridID,points,i_b,double_2d_d)
-double_1d_b = tsgSolveLeastSquares(double_2d_d,double_2d_a,0.d0)
-call tsgSetHierarchicalCoefficients(gridID_II,double_1d_b)
-call tsgEvaluateBatch(gridID,pointsb,i_a,double_2d_b)
-call tsgEvaluateBatch(gridID_II,pointsb,i_a,double_2d_c)
-if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
-  write(*,*) "Mismatch in setHierarchicalCoefficients: localp grid solve ", norm2d(double_2d_b - double_2d_c)
-  stop 1
-endif
-deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_1d_b,rnd)
+! i_a = 13
+! allocate( double_2d_b(1,i_a), double_2d_c(1,i_a), pointsb(2,i_a) )
+! call tsgMakeLocalPolynomialGrid(gridID,    2, 1, 5, 1, tsg_semi_localp)
+! call tsgMakeLocalPolynomialGrid(gridID_II, 2, 1, 5, 1, tsg_semi_localp)
+! points  => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
+! rnd     => rand(2,i_a)
+! pointsb =  -1.d0 + 2.d0 * rnd
+! allocate( double_2d_a(1,i_b), double_1d_b(i_b), double_2d_d(i_b,i_b) )
+! double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
+! call tsgLoadNeededPoints(gridID, double_2d_a)
+! call tsgEvaluateHierarchicalFunctions(gridID,points,i_b,double_2d_d)
+! double_1d_b = tsgSolveLeastSquares(double_2d_d,double_2d_a,0.d0)
+! call tsgSetHierarchicalCoefficients(gridID_II,double_1d_b)
+! call tsgEvaluateBatch(gridID,pointsb,i_a,double_2d_b)
+! call tsgEvaluateBatch(gridID_II,pointsb,i_a,double_2d_c)
+! if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
+!   write(*,*) "Mismatch in setHierarchicalCoefficients: localp grid solve ", norm2d(double_2d_b - double_2d_c)
+!   stop 1
+! endif
+! deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_1d_b,rnd)
 
 
-call tsgMakeLocalPolynomialGrid(gridID, 2, 1, 5, 1, tsg_semi_localp)
-call tsgMakeLocalPolynomialGrid(gridID_II, 2, 1, 5, 1, tsg_semi_localp)
-call tsgSetDomainTransform(gridID,    (/-1.d0, 7.d0/), (/2.d0, 9.d0/))
-call tsgSetDomainTransform(gridID_II, (/-1.d0, 7.d0/), (/2.d0, 9.d0/))
-points => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
-i_a = 13
-allocate(double_1d_b(i_b), double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a), double_2d_d(i_b,i_b), pointsb(2,i_a))
-double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
-call tsgLoadNeededPoints(gridID, double_2d_a)
-call tsgEvaluateHierarchicalFunctions(gridID,points,i_b,double_2d_d)
-double_1d_b = tsgSolveLeastSquares(double_2d_d,double_2d_a,0.d0)
-call tsgSetHierarchicalCoefficients(gridID_II,double_1d_b)
-rnd     => rand(2,i_a)
-pointsb = -1.d0 + 2.d0 * rnd
-call tsgEvaluateBatch(gridID,    pointsb, i_a, double_2d_b)
-call tsgEvaluateBatch(gridID_II, pointsb, i_a, double_2d_c)
-if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
-  write(*,*) "Mismatch in setHierarchicalCoefficients: local grid solve, transform"
-  stop 1
-endif
-deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_1d_b,rnd)
+! call tsgMakeLocalPolynomialGrid(gridID, 2, 1, 5, 1, tsg_semi_localp)
+! call tsgMakeLocalPolynomialGrid(gridID_II, 2, 1, 5, 1, tsg_semi_localp)
+! call tsgSetDomainTransform(gridID,    (/-1.d0, 7.d0/), (/2.d0, 9.d0/))
+! call tsgSetDomainTransform(gridID_II, (/-1.d0, 7.d0/), (/2.d0, 9.d0/))
+! points => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
+! i_a = 13
+! allocate(double_1d_b(i_b), double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a), double_2d_d(i_b,i_b), pointsb(2,i_a))
+! double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
+! call tsgLoadNeededPoints(gridID, double_2d_a)
+! call tsgEvaluateHierarchicalFunctions(gridID,points,i_b,double_2d_d)
+! double_1d_b = tsgSolveLeastSquares(double_2d_d,double_2d_a,0.d0)
+! call tsgSetHierarchicalCoefficients(gridID_II,double_1d_b)
+! rnd     => rand(2,i_a)
+! pointsb = -1.d0 + 2.d0 * rnd
+! call tsgEvaluateBatch(gridID,    pointsb, i_a, double_2d_b)
+! call tsgEvaluateBatch(gridID_II, pointsb, i_a, double_2d_c)
+! if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
+!   write(*,*) "Mismatch in setHierarchicalCoefficients: local grid solve, transform"
+!   stop 1
+! endif
+! deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_1d_b,rnd)
 
 
-call tsgMakeSequenceGrid(gridID,    2, 1, 5, tsg_level, tsg_rleja)
-call tsgMakeSequenceGrid(gridID_II, 2, 1, 5, tsg_level, tsg_rleja)
-call tsgSetDomainTransform(gridID, (/1.d0, 1.d0/), (/2.d0, 2.d0/))
-call tsgSetDomainTransform(gridID_II, (/1.d0, 1.d0/), (/2.d0, 2.d0/))
-points => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
-i_a = 13
-allocate(double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a), double_2d_d(i_b,i_b), pointsb(2,i_a), double_1d_b(i_b))
-double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
-call tsgLoadNeededPoints(gridID, double_2d_a)
-call tsgEvaluateHierarchicalFunctions(gridID,points,i_b,double_2d_d)
-double_1d_b = tsgSolveLeastSquares(double_2d_d,double_2d_a,0.d0)
-call tsgSetHierarchicalCoefficients(gridID_II,double_1d_b)
-rnd     => rand(2,i_a)
-pointsb = -1.d0 + 2.d0 * rnd
-call tsgEvaluateBatch(gridID,    pointsb, i_a, double_2d_b)
-call tsgEvaluateBatch(gridID_II, pointsb, i_a, double_2d_c)
-if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
-  write(*,*) "Mismatch in setHierarchicalCoefficients: sequence grid solve, transform"
-  stop 1
-endif
-deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_1d_b,rnd)
+! call tsgMakeSequenceGrid(gridID,    2, 1, 5, tsg_level, tsg_rleja)
+! call tsgMakeSequenceGrid(gridID_II, 2, 1, 5, tsg_level, tsg_rleja)
+! call tsgSetDomainTransform(gridID, (/1.d0, 1.d0/), (/2.d0, 2.d0/))
+! call tsgSetDomainTransform(gridID_II, (/1.d0, 1.d0/), (/2.d0, 2.d0/))
+! points => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
+! i_a = 13
+! allocate(double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a), double_2d_d(i_b,i_b), pointsb(2,i_a), double_1d_b(i_b))
+! double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
+! call tsgLoadNeededPoints(gridID, double_2d_a)
+! call tsgEvaluateHierarchicalFunctions(gridID,points,i_b,double_2d_d)
+! double_1d_b = tsgSolveLeastSquares(double_2d_d,double_2d_a,0.d0)
+! call tsgSetHierarchicalCoefficients(gridID_II,double_1d_b)
+! rnd     => rand(2,i_a)
+! pointsb = -1.d0 + 2.d0 * rnd
+! call tsgEvaluateBatch(gridID,    pointsb, i_a, double_2d_b)
+! call tsgEvaluateBatch(gridID_II, pointsb, i_a, double_2d_c)
+! if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
+!   write(*,*) "Mismatch in setHierarchicalCoefficients: sequence grid solve, transform"
+!   stop 1
+! endif
+! deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_1d_b,rnd)
 
 
 

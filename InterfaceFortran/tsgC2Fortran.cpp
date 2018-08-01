@@ -249,9 +249,5 @@ void tsggng_(int *gpus){ *gpus = TasmanianSparseGrid::getNumGPUs(); }
 void tsgggm_(int *gpuID, int *mem){ *mem = TasmanianSparseGrid::getGPUMemory(*gpuID); }
 
 
-// linear solvers
-void tsgsls_(int *n, int *m, double *A, double *y, double *x, double *reg){
-    TasGrid::TasmanianDenseSolver::solveLeastSquares(*n, *m, A, y, *reg, x);}
-
 }
 #endif

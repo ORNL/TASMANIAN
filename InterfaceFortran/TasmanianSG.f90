@@ -94,7 +94,6 @@ PUBLIC :: tsgFinalize,          &
           tsgClearConformalTransform,     &
           tsgGetConformalTransformASIN,   &
           tsgPrintStats, &
-          tsgSolveLeastSquares, &
           tsgTestInternals,     &
 !===== do NOT USE THESE FUNCTIONS DIRECTLY ======!
 !===== THESE ARE NEEDED TO LINK TO C++ ==========!
@@ -786,19 +785,6 @@ subroutine tsgPrintStats(gridID)
   integer :: gridID
   call tsgpri(gridID)
 end subroutine tsgPrintStats
-!=======================================================================
-function tsgSolveLeastSquares(A,y,reg) result(x)
-  double precision :: A(:,:), y(*)
-  double precision :: x(size(A,2))
-  double precision, optional :: reg
-  double precision :: regg
-  if (present(reg)) then
-    regg = reg
-  else
-    regg = 0.d0
-  endif
-  call tsgsls(size(A,1),size(A,2),A,y,x,regg)
-end function
 !=======================================================================
 function tsgTestInternals(verbose) result(res)
   integer, parameter :: i_a = 8, i_b = 4
