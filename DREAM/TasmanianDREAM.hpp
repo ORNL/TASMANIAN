@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_DREAM_HPP
 #define __TASMANIAN_DREAM_HPP
 
+#include <vector>
+
 #include "TasmanianSparseGrid.hpp"
 
 #include "tdrEnumerates.hpp"
@@ -208,6 +210,7 @@ public:
 
     // read/write chain state
     void setChainState(const double* state);
+    void setChainState(const std::vector<double> state);
     //void clearPDFValues(); // delete cached pdf values, use when the state has been saved from a different pdf
 
     void setProbabilityWeightFunction(ProbabilityWeightFunction *probability_weight);
@@ -217,6 +220,8 @@ public:
     //      TasmanianDREAM class does not call delete on the pointer
 
     double* collectSamples(int num_burnup, int num_samples, bool useLogForm = false);
+    void collectSamples(int num_burnup, int num_samples, double *samples, bool useLogForm = false);
+    void collectSamples(int num_burnup, int num_samples, std::vector<double> &samples, bool useLogForm = false);
     double* getPDFHistory() const;
 
 protected:
@@ -231,16 +236,17 @@ private:
     double jump;
     BasePDF **corrections;
 
-    double *chain_state, *pdf_values, *old_state, *new_pdf_values;
+    bool state_initialized, values_initialized, values_logform;
+    //double *old_state, *new_pdf_values;
+    std::vector<double> chain_state, pdf_values, new_pdf_values, old_state;
 
-    bool *isBoudnedBelow, *isBoudnedAbove;
-    double *boundBelow, *boundAbove;
+    std::vector<bool> isBoudnedBelow, isBoudnedAbove;
+    std::vector<double> boundBelow, boundAbove;
 
     const BaseUniform *core;
     CppUniformSampler unifrom_cpp;
 
-    int num_pdf_history;
-    double *pdf_history;
+    std::vector<double> pdf_history;
 
     std::ostream *logstream;
 };

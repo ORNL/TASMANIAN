@@ -314,9 +314,8 @@ void LikelihoodTSG::getDomainBounds(double* lower_bound, double* upper_bound){
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 TasmanianDREAM::TasmanianDREAM(std::ostream *os): num_dimensions(-1), num_chains(-1),
-    pdf(0), jump(1.0), corrections(0), chain_state(0), pdf_values(0), old_state(0), new_pdf_values(0),
-    isBoudnedBelow(0), isBoudnedAbove(0), boundBelow(0), boundAbove(0), num_pdf_history(0),
-    pdf_history(0), logstream(os)
+    pdf(0), jump(1.0), corrections(0), state_initialized(false), values_initialized(false), values_logform(false),
+    logstream(os)
 {
     #ifndef USE_XSDK_DEFAULTS
     if (logstream == 0) logstream = &cerr;
@@ -342,27 +341,20 @@ void TasmanianDREAM::clear(){
         delete[] corrections;
         corrections = 0;
     }
+    state_initialized = false;
+    values_initialized = false;
     num_dimensions = -1;
     num_chains = -1;
     pdf = 0;
     jump = 0.0;
-    if (chain_state != 0){ delete[] chain_state; chain_state = 0; }
-    if (pdf_values != 0){ delete[] pdf_values; pdf_values = 0; }
-    if (isBoudnedBelow != 0){ delete[] isBoudnedBelow; isBoudnedBelow = 0; }
-    if (isBoudnedAbove != 0){ delete[] isBoudnedAbove; isBoudnedAbove = 0; }
-    if (boundBelow != 0){ delete[] boundBelow; boundBelow = 0; }
-    if (boundAbove != 0){ delete[] boundAbove; boundAbove = 0; }
-    if (pdf_history != 0){ delete[] pdf_history; pdf_history = 0; }
 }
 
 void TasmanianDREAM::setErrorLog(std::ostream *os){ logstream = os; }
 
 void TasmanianDREAM::setNumChains(int num_dream_chains){
     num_chains = num_dream_chains;
-    if (chain_state != 0){ delete[] chain_state; chain_state = 0; }
-    if (pdf_values != 0){ delete[] pdf_values; pdf_values = 0; }
-    if (old_state != 0){ delete[] old_state; old_state = 0; }
-    if (new_pdf_values != 0){ delete[] new_pdf_values; new_pdf_values = 0; }
+    state_initialized = false;
+    values_initialized = false;
 }
 int TasmanianDREAM::getNumChains() const{ return num_chains; }
 int TasmanianDREAM::getNumDimensions() const{ return num_dimensions; }
@@ -391,58 +383,86 @@ void TasmanianDREAM::setProbabilityWeightFunction(ProbabilityWeightFunction *pro
     clear();
     pdf = probability_weight;
     num_dimensions = probability_weight->getNumDimensions();
-    isBoudnedBelow = new bool[num_dimensions];
-    isBoudnedAbove = new bool[num_dimensions];
-    boundBelow = new double[num_dimensions];
-    boundAbove = new double[num_dimensions];
-    probability_weight->getDomainBounds(isBoudnedBelow, isBoudnedAbove);
-    probability_weight->getDomainBounds(boundBelow, boundAbove);
+    isBoudnedBelow.resize(num_dimensions);
+    isBoudnedAbove.resize(num_dimensions);
+    boundBelow.resize(num_dimensions);
+    boundAbove.resize(num_dimensions);
+
+    // std::vector<bool> is a special class without .data() member ... hack for now
+    bool *bbelow = new bool[num_dimensions];
+    bool *babove = new bool[num_dimensions];
+    probability_weight->getDomainBounds(bbelow, babove);
+    for(int i=0; i<num_dimensions; i++){
+        isBoudnedBelow[i] = bbelow[i];
+        isBoudnedAbove[i] = babove[i];
+    }
+    delete[] bbelow;
+    delete[] babove;
+
+    probability_weight->getDomainBounds(boundBelow.data(), boundAbove.data());
+
     corrections = new BasePDF*[num_dimensions];
     for(int j=0; j<num_dimensions; j++) corrections[j] = 0;
 }
 
-double* TasmanianDREAM::collectSamples(int num_burnup, int num_samples, bool useLogForm){
-    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return 0; } // no chains specified
-    if (chain_state == 0){
-        chain_state = new double[num_chains * num_dimensions];
+void TasmanianDREAM::setChainState(const double* state){
+    chain_state.resize(num_dimensions * num_chains);
+    std::copy(state, state + num_dimensions * num_chains, chain_state.data());
+    state_initialized = true;
+    values_initialized = false;
+}
+void TasmanianDREAM::setChainState(const std::vector<double> state){
+    chain_state = state; // copy assignment
+    if (chain_state.size() != (size_t) (num_dimensions * num_chains)) num_chains = chain_state.size() / num_dimensions;
+    state_initialized = true;
+    values_initialized = false;
+}
+
+void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, double *samples, bool useLogForm){
+    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return; } // no chains specified
+    if (!state_initialized){
+        chain_state.resize(num_chains * num_dimensions);
         for(int j=0; j<num_chains; j++){
             pdf->getInitialSample(&(chain_state[j*num_dimensions]));
         }
+        state_initialized = true;
     }
-    if (pdf_values == 0){
-        pdf_values = new double[num_chains];
-        pdf->evaluate(num_chains, chain_state, pdf_values, useLogForm);
+    if (!values_initialized || (values_logform != useLogForm)){ // if log form is changed mid evaluations
+        pdf_values.resize(num_chains);
+        pdf->evaluate(num_chains, chain_state.data(), pdf_values.data(), useLogForm);
+        values_initialized = true;
+        values_logform = useLogForm;
     }
-
-    old_state = new double[num_chains * num_dimensions];
-    new_pdf_values = new double[num_chains];
 
     for(int i=0; i<num_burnup; i++){
         advanceMCMCDREAM(useLogForm);
     }
 
-    double *samples = new double[num_samples * num_dimensions * num_chains];
-    if (pdf_history != 0){ delete[] pdf_history; }
-    pdf_history = new double[num_samples * num_chains];
-    num_pdf_history = num_samples * num_chains;
+    pdf_history.resize(num_samples * num_chains);
 
+    auto iter_hist = pdf_history.begin();
     for(int i=0; i<num_samples; i++){
         advanceMCMCDREAM(useLogForm);
-        std::copy(chain_state, chain_state + num_dimensions*num_chains, &(samples[i*num_dimensions*num_chains]));
-        std::copy(pdf_values, pdf_values + num_chains, &(pdf_history[i*num_chains]));
+        std::copy(chain_state.begin(), chain_state.end(), &(samples[i*num_dimensions*num_chains]));
+        std::copy(pdf_values.begin(), pdf_values.end(), iter_hist);
+        advance(iter_hist, num_chains);
     }
-
-    delete[] new_pdf_values;
-    new_pdf_values = 0;
-    delete[] old_state;
-    old_state = 0;
-
+}
+double* TasmanianDREAM::collectSamples(int num_burnup, int num_samples, bool useLogForm){
+    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return 0; } // no chains specified
+    double *samples = new double[num_samples * num_dimensions * num_chains];
+    collectSamples(num_burnup, num_samples, samples, useLogForm);
     return samples;
+}
+void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, std::vector<double> &samples, bool useLogForm){
+    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return; } // no chains specified
+    samples.resize(num_samples * num_dimensions * num_chains);
+    collectSamples(num_burnup, num_samples, samples.data(), useLogForm);
 }
 
 void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
-    std::copy(chain_state, chain_state + num_chains*num_dimensions, old_state);
-    bool *valid = new bool[num_chains];
+    std::vector<double> old_state = chain_state; // copy assignment
+    std::vector<bool> valid(num_chains);
     int num_need_evaluation = num_chains;
 
     bool allValid = true; //, savedGaussian = false;
@@ -470,25 +490,26 @@ void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
     }
 
     // extract only the valid entries to evaluate
-    double *need_evaluation;
+    std::vector<double>* need_evaluation;
+    std::vector<double> selected_for_evaluation;
     if (allValid){
         num_need_evaluation = num_chains;
-        need_evaluation = chain_state;
+        need_evaluation = &chain_state;
     }else{
-        need_evaluation = new double[num_dimensions * num_need_evaluation];
+        selected_for_evaluation.resize(num_dimensions * num_need_evaluation);
         num_need_evaluation = 0;
         for(int i=0; i<num_chains; i++){
             if (valid[i])
-                std::copy(&(chain_state[i*num_dimensions]), &(chain_state[i*num_dimensions]) + num_dimensions, &(need_evaluation[num_dimensions * num_need_evaluation++]));
+                std::copy(&(chain_state[i*num_dimensions]), &(chain_state[i*num_dimensions]) + num_dimensions, &(selected_for_evaluation[num_dimensions * num_need_evaluation++]));
         }
+        need_evaluation = &selected_for_evaluation;
     }
 
-    pdf->evaluate(num_need_evaluation, need_evaluation, new_pdf_values, useLogForm);
+    std::vector<double> new_pdf_values(num_chains);
+    pdf->evaluate(num_need_evaluation, need_evaluation->data(), new_pdf_values.data(), useLogForm);
 
     // clean memory and reorder the pdf values putting 0 in the invalid spots (for log case 0 should be -infty, hence using valid for accept/reject too
     if (!allValid){
-        delete[] need_evaluation;
-
         int c = num_chains - num_need_evaluation;
         for(int i=num_chains-1; (i>=0) && (c>0) ; i--){
             if (valid[i]){
@@ -521,13 +542,11 @@ void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
             std::copy(&(old_state[i*num_dimensions]), &(old_state[i*num_dimensions]) + num_dimensions, &(chain_state[i*num_dimensions]));
         }
     }
-
-    delete[] valid;
 }
 
 double* TasmanianDREAM::getPDFHistory() const{
-    double *hist = new double[num_pdf_history];
-    std::copy(pdf_history, pdf_history + num_pdf_history, hist);
+    double *hist = new double[pdf_history.size()];
+    std::copy(pdf_history.begin(), pdf_history.end(), hist);
     return hist;
 }
 
