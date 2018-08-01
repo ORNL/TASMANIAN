@@ -407,8 +407,8 @@ bool ExternalTester::testModelLikelihoodAlpha(){
     TasDREAM::PosteriorFromModel post(&grid);
 
     double scale = 1.0 / ((double) (N));
-    TasDREAM::GaussianLikelihood *likely = new TasDREAM::GaussianLikelihood(N, TasDREAM::likely_gauss_scale, &scale, 1, data);
-    post.setLikelihood(likely);
+    TasDREAM::GaussianLikelihood likely(N, TasDREAM::likely_gauss_scale, &scale, 1, data);
+    post.setLikelihood(&likely);
 
     TasDREAM::TasmanianDREAM dream;
     dream.overwriteBaseUnifrom(&rng);
