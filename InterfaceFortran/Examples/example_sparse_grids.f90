@@ -1042,7 +1042,7 @@ IMPLICIT NONE
 ! no need to free grid IDs before tsgFinalize(),
 ! all memory will be freed regardless
 ! must deallocate points, weights, etc.
-  CALL tsgFinalize()
+  CALL tsgClearAll()
 
   WRITE(*,*) "-------------------------------------------------------------------------------------------------"
   WRITE(*,*)

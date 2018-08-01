@@ -29,7 +29,7 @@
 !==================================================================================================================================================================================
 Module TasmanianSG
 implicit none
-PUBLIC :: tsgFinalize,          &
+PUBLIC :: tsgClearAll,          &
           tsgNewGridID,         &
           tsgFreeGridID,        &
 !===== ABOVE ARE FORTRAN SPECIFIC FUNCTIONS ======!
@@ -204,9 +204,9 @@ function tsgIsFourier(id) result(res)
   call tsgisf(id, res)
 end function
 !=======================================================================
-subroutine tsgFinalize()
+subroutine tsgClearAll()
   call tsgend()
-end subroutine tsgFinalize
+end subroutine tsgClearAll
 !=======================================================================
 function tsgNewGridID() result(newid)
   integer :: newid
@@ -832,7 +832,7 @@ function tsgTestInternals(verbose) result(res)
   enddo
   int_1d_a(1) = tsgNewGridID()
   int_1d_a(2) = tsgNewGridID()
-  call tsgFinalize()
+  call tsgClearAll()
   call tsggag(num_ag)
   if ( num_ag .ne. 0 ) then
     if (verb) then

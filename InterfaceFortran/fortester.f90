@@ -1403,9 +1403,6 @@ call tsgFreeGridID(gridID_II)
   
 
 
-! Tasmanian holds to some RAM until tsgFinalize() is called
-! call tsgFinalize()
-
 
 
 contains
