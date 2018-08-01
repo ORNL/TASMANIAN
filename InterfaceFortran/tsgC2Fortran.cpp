@@ -43,27 +43,20 @@ extern "C" void tsgc2fmat_(int *rows, int *cols, double *mat);
 
 
 TasmanianSparseGrid **_tsg_grid_list;
-int _tsg_num_grids, _tsg_num_active_grids = 0;
-bool _tsg_is_initialized = false;
+int _tsg_num_grids; 
+
 
 struct dcmplx {double r, i;}; // interoperability with Fortran complex type
 
 extern "C"{
 
 void tsggag_(int *num_active){
-    *num_active = _tsg_num_active_grids;
-}
-void tsgbeg_(){
-    if ( !_tsg_is_initialized ){
-        _tsg_num_grids = 4; // assume we are working with 4 grids
-        _tsg_num_active_grids = 0;
-        _tsg_grid_list = new TasmanianSparseGrid*[_tsg_num_grids];
-        for(int i=0; i<_tsg_num_grids; i++) _tsg_grid_list[i] = 0;
-    }
-    _tsg_is_initialized = true;
+    *num_active = 0;
+    for (int i = 0; i < _tsg_num_grids; i++ )
+        if ( _tsg_grid_list[i] != 0 ) (*num_active)++;
 }
 void tsgend_(){
-    if (_tsg_is_initialized){
+    if (_tsg_grid_list != 0){
         for(int i=0; i<_tsg_num_grids; i++){
             if (_tsg_grid_list[i] != 0) delete _tsg_grid_list[i];
         }
@@ -71,11 +64,13 @@ void tsgend_(){
         _tsg_grid_list = 0;
         _tsg_num_grids = 0;
     }
-    _tsg_num_active_grids = 0;
-    _tsg_is_initialized = false;
 }
 void tsgnew_(int *returnID){
-    if ( !_tsg_is_initialized ) tsgbeg_();
+    if ( _tsg_grid_list == 0 ){
+        _tsg_num_grids = 4; // assume we are working with 4 grids
+        _tsg_grid_list = new TasmanianSparseGrid*[_tsg_num_grids];
+        for(int i=0; i<_tsg_num_grids; i++) _tsg_grid_list[i] = 0;
+    }
     int id = 0;
     while((id < _tsg_num_grids) && (_tsg_grid_list[id] != 0)) id++;
     // double the number of grids if the assumed number was too small
@@ -90,7 +85,6 @@ void tsgnew_(int *returnID){
     }
     _tsg_grid_list[id] = new TasmanianSparseGrid();
     *returnID = id;
-    _tsg_num_active_grids++;
 }
 void tsgfre_(int *id){
     if (*id < _tsg_num_grids){
@@ -99,7 +93,9 @@ void tsgfre_(int *id){
             _tsg_grid_list[*id] = 0;
         }
     }
-    if ( --_tsg_num_active_grids == 0 ) tsgend_();
+    for (int i = 0; i < _tsg_num_grids; i++ )
+        if ( _tsg_grid_list[i] != 0 ) return;
+    tsgend_();
 }
 ////////////////////////////////////////////////////////////////////////
 //   MAIN INTERFACE

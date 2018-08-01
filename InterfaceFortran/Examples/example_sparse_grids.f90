@@ -92,7 +92,7 @@ IMPLICIT NONE
 ! using classical Smolyak grid with Clenshaw-Curtis points and weights
 
 ! must call tsgInitialize() once per program
-  CALL tsgInitialize()
+!  CALL tsgInitialize()
 
   verm = tsgGetVersionMajor()
   vern = tsgGetVersionMinor()

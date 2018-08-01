@@ -29,11 +29,9 @@
 !==================================================================================================================================================================================
 Module TasmanianSG
 implicit none
-PUBLIC :: tsgInitialize,        &
-          tsgFinalize,          &
+PUBLIC :: tsgFinalize,          &
           tsgNewGridID,         &
           tsgFreeGridID,        &
-          tsgGetNumActiveGrids, &
 !===== ABOVE ARE FORTRAN SPECIFIC FUNCTIONS ======!
 !===== BELOW ARE WRAPPERS FOR STANDARD C++ CLASS =!
           tsgGetVersionMajor,   &
@@ -97,6 +95,7 @@ PUBLIC :: tsgInitialize,        &
           tsgGetConformalTransformASIN,   &
           tsgPrintStats, &
           tsgSolveLeastSquares, &
+          tsgTestInternals,     &
 !===== do NOT USE THESE FUNCTIONS DIRECTLY ======!
 !===== THESE ARE NEEDED TO LINK TO C++ ==========!
           !tsgReceiveInt,    &
@@ -171,10 +170,6 @@ PRIVATE
   character, pointer :: string(:)
 contains
 !=======================================================================
-subroutine tsgInitialize()
-  call tsgbeg()
-end subroutine tsgInitialize
-!=======================================================================
 subroutine tsgFinalize()
   call tsgend()
 end subroutine tsgFinalize
@@ -188,11 +183,6 @@ subroutine tsgFreeGridID(gridID)
   integer :: gridID
   call tsgfre(gridID)
 end subroutine tsgFreeGridID
-!=======================================================================
-function tsgGetNumActiveGrids() result(res)
-  integer :: res
-  call tsggag(res);
-end function
 !=======================================================================
 !   class TasmanianSparseGrid wrapper functions
 !=======================================================================
@@ -783,6 +773,59 @@ function tsgSolveLeastSquares(A,y,reg) result(x)
   endif
   call tsgsls(size(A,1),size(A,2),A,y,x,regg)
 end function
+!=======================================================================
+function tsgTestInternals(verbose) result(res)
+  integer, parameter :: i_a = 8, i_b = 4
+  integer :: i, num_ag
+  integer :: int_1d_a(i_a), int_1d_b(i_a) = (/1,8,6,4,7,3,2,5/)
+  logical :: res
+  logical, optional :: verbose
+  logical :: verb
+
+  verb = .false.
+  if ( present(verbose) ) then
+    verb = verbose
+  endif
+
+  res = .true.
+  call tsggag(num_ag)
+  if ( num_ag .ne. 0 ) then
+    if (verb) then
+      write(*,*) "Mismatch in number of active grids before creating any grids: num_ag = ", num_ag
+    endif
+    res = .false.
+  endif
+  do i = 1, i_a
+    int_1d_a(i) = tsgNewGridID()
+    call tsggag(num_ag)
+    if ( num_ag .ne. i ) then
+      if (verb) then
+        write(*,*) "Mismatch in number of active grids, adding grids: num_ag = ", num_ag
+      endif
+      res = .false.
+    endif
+  enddo
+  do i = 1, i_a
+    call tsgFreeGridID(int_1d_a(int_1d_b(i)))
+    call tsggag(num_ag)
+    if ( num_ag .ne. i_a-i ) then
+      if (verb) then
+        write(*,*) "Mismatch in number of active grids, removing grids: num_ag = ", num_ag
+      endif
+      res = .false.
+    endif
+  enddo
+  int_1d_a(1) = tsgNewGridID()
+  int_1d_a(2) = tsgNewGridID()
+  call tsgFinalize()
+  call tsggag(num_ag)
+  if ( num_ag .ne. 0 ) then
+    if (verb) then
+      write(*,*) "Mismatch in number of active grids after finalize: num_ag = ", num_ag
+    endif
+    res = .false.
+  endif
+end function tsgTestInternals
 !=======================================================================
 ! do NOT call THOSE FUNCTIONS DIRECTLY !
 !=======================================================================

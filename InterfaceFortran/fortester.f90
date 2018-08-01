@@ -76,96 +76,12 @@ call srand(seed)
 
 
 
-!=======================================================================
-!       tsgInitialize()
-!       tsgFinalize()
-!=======================================================================
-i_a = 8
-allocate(int_1d_a(i_a), int_1d_b(i_a))
-int_1d_b = (/1,8,6,4,7,3,2,5/)
-if ( tsgGetNumActiveGrids() .ne. 0 ) then
-  write(*,*) "Mismatch in tsgGetNumActiveGrids: before initialization"
+if ( tsgTestInternals() ) then
+  write(*,*) "Fortran wrappers:         PASS"
+else
+  write(*,*) "Fortran wrappers:         FAIL"
   stop 1
 endif
-call tsgInitialize()
-if ( tsgGetNumActiveGrids() .ne. 0 ) then
-  write(*,*) "Mismatch in tsgGetNumActiveGrids: after initialization"
-  stop 1
-endif
-do i = 1, i_a
-  int_1d_a(i) = tsgNewGridID()
-  if ( tsgGetNumActiveGrids() .ne. i ) then
-    write(*,*) "Mismatch in tsgGetNumActiveGrids: adding grids"
-    stop 1
-  endif
-enddo
-do i = 1, i_a
-  call tsgFreeGridID(int_1d_a(int_1d_b(i)))
-  if ( tsgGetNumActiveGrids() .ne. i_a-i ) then
-    write(*,*) "Mismatch in tsgGetNumActiveGrids: removing grids"
-    stop 1
-  endif
-enddo
-int_1d_a(1) = tsgNewGridID()
-int_1d_a(2) = tsgNewGridID()
-call tsgFinalize()
-if ( tsgGetNumActiveGrids() .ne. 0 ) then
-  write(*,*) "Mismatch in tsgGetNumActiveGrids: after finalize"
-  stop 1
-endif
-do i = 1, i_a
-  int_1d_a(i) = tsgNewGridID()
-  if ( tsgGetNumActiveGrids() .ne. i ) then
-    write(*,*) "Mismatch in tsgGetNumActiveGrids: adding grids without initialization"
-    stop 1
-  endif
-enddo
-do i = 1, i_a
-  call tsgFreeGridID(int_1d_a(int_1d_b(i)))
-  if ( tsgGetNumActiveGrids() .ne. i_a-i ) then
-    write(*,*) "Mismatch in tsgGetNumActiveGrids: removing grids without initialization"
-    stop 1
-  endif
-enddo
-deallocate(int_1d_a, int_1d_b)
-
-
-
-
-
-
-
-
-!=======================================================================
-!       tsgNewGridID()
-!       tsgFreeGridID()
-!=======================================================================
-! Test Fortran wrapper (dynamic array of pointers) around C++ "new TasmanianSparseGrid()"
-! This also tests tsgFreeGridID()
-i_a = 8; i_b = 4
-allocate(int_1d_a(i_a))
-! 4 grids, default dimension of array
-do i = 1,i_b
-  int_1d_a(i) = tsgNewGridID()
-  call tsgMakeGlobalGrid(int_1d_a(i), 2, 0, 1, tsg_level, tsg_clenshaw_curtis)
-enddo
-do i = 1,i_b
-  call tsgFreeGridID(int_1d_a(i))
-enddo
-! 8 grids, dynamically enlarged array
-do i = 1,i_a
-  int_1d_a(i) = tsgNewGridID()
-  call tsgMakeGlobalGrid(int_1d_a(i), 2, 0, 1, tsg_level, tsg_clenshaw_curtis)
-enddo
-do i = 1,i_a
-  call tsgFreeGridID(int_1d_a(i))
-enddo
-deallocate(int_1d_a)
-
-
-
-
-write(*,*) "Fortran wrappers:         PASS"
 
 
 gridID    = tsgNewGridID()
