@@ -51,6 +51,9 @@ public:
 
 
 class ProbabilityWeightFunction{ // use this class for inheritance purposes only
+// WARNING: TasmanianDREAM class holds an alias to an instance of this class,
+//      modifying the class after calling setProbabilityWeightFunction could result in undefined behavior
+//      TasmanianDREAM class does not call delete on the pointer
 public:
     ProbabilityWeightFunction();
     virtual ~ProbabilityWeightFunction();
@@ -59,9 +62,6 @@ public:
 
     virtual void evaluate(int num_points, const double x[], double y[], bool useLogForm) = 0;
     // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
-    // WARNING: TasmanianDREAM class holds an alias to an instance of this class,
-    //      modifying the class after calling setProbabilityWeightFunction could result in undefined behavior
-    //      TasmanianDREAM class does not call delete on the pointer
 
     virtual void getDomainBounds(bool* lower_bound, bool* upper_bound) = 0;
     virtual void getDomainBounds(double* lower_bound, double* upper_bound) = 0;
