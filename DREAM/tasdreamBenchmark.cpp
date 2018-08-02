@@ -215,15 +215,15 @@ void mpiBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int num_
 
     if (mpi_me == 0){
 
-        TasmanianDREAM *dream = new TasmanianDREAM();
-        dream->setProbabilityWeightFunction(dist);
+        TasmanianDREAM dream;
+        dream.setProbabilityWeightFunction(dist);
 
-        dream->setNumChains(num_chains);
+        dream.setNumChains(num_chains);
         GaussianPDF gauss(0.0, 0.01);
-        dream->setCorrectionAll(&gauss);
+        dream.setCorrectionAll(&gauss);
 
         int start_time = (int) time(0);
-        double *mcmc = dream->collectSamples(num_burnup, num_mcmc, useLogForm);
+        double *mcmc = dream.collectSamples(num_burnup, num_mcmc, useLogForm);
         int end_time = (int) time(0);
 
         cout << "Elapsed time: " << end_time - start_time << endl;
@@ -231,6 +231,8 @@ void mpiBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int num_
         if (outfilename != 0){
             writeMatrix(outfilename, num_mcmc*num_chains, grid->getNumDimensions(), mcmc);
         }
+
+        delete[] mcmc;
 
     }else{
         dist->workerLoop(useLogForm); // main runs the chains, the rest wait in a loop only to evaluate the likelihood

@@ -44,9 +44,12 @@ class CustomModelWrapper{ // use this class for inheritance purposes only
 public:
     CustomModelWrapper();
     virtual ~CustomModelWrapper();
+    virtual int getAPIversion() const;
+
     virtual int getNumDimensions() const = 0;
     virtual int getNumOutputs() const = 0;
-    virtual void evaluate(const double x[], int num_points, double y[]) const = 0;
+    virtual void evaluate(const double x[], int num_points, double y[]) const;
+    virtual void evaluate(const std::vector<double> x, std::vector<double> &y) const = 0;
 };
 
 
@@ -58,9 +61,14 @@ public:
     ProbabilityWeightFunction();
     virtual ~ProbabilityWeightFunction();
 
+    virtual int getAPIversion() const;
+    // if this returns 5 or lower, TasmanianDREAM will use evaluate(int, const double[], double[], bool)
+    // if this returns 6 or more, TasmanianDREAM will use evaluate(const std::vector<double>, std::vector<double>&, bool)
+
     virtual int getNumDimensions() const = 0;
 
-    virtual void evaluate(int num_points, const double x[], double y[], bool useLogForm) = 0;
+    virtual void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    virtual void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm) = 0;
     // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
 
     virtual void getDomainBounds(bool* lower_bound, bool* upper_bound) = 0;
@@ -85,7 +93,7 @@ public:
 
     int getNumDimensions() const;
 
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
 
     void getInitialSample(double x[]);
     void setLikelihood(BaseLikelihood *likelihood);
@@ -107,9 +115,6 @@ private:
 
     BaseLikelihood *likely;
 
-    int num_cache;
-    double *model_cache;
-
     std::ostream *logstream;
 };
 
@@ -125,7 +130,7 @@ public:
     void setErrorLog(std::ostream *os);
 
     int getNumDimensions() const;
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
 
     void getInitialSample(double x[]);
 
@@ -160,7 +165,7 @@ public:
 
     int getNumDimensions() const;
 
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
 
     void getInitialSample(double x[]);
 

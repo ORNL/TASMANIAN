@@ -42,7 +42,9 @@ int main(int argc, const char**){
         UnscaledPDF(){}
         ~UnscaledPDF(){}
         int getNumDimensions() const{ return 1; }
-        void evaluate(int num_points, const double x[], double y[], bool useLogForm){
+        void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+            int num_points = x.size();
+            if (y.size() < (size_t) num_points) y.resize(num_points);
             for(int i=0; i<num_points; i++){ // set the pdf values
                 y[i] = -0.5 * x[i] * x[i];
             }
@@ -572,7 +574,9 @@ int main(int argc, const char**){
 
         int getNumDimensions() const{ return 2; }
         int getNumOutputs() const{ return N; }
-        void evaluate(const double x[], int num_points, double y[]) const{
+        void evaluate(const std::vector<double> x, std::vector<double> &y) const{
+            int num_points = x.size() / 2;
+            if (y.size() < (size_t) (N * num_points)) y.resize(N * num_points);
             for(int i=0; i<num_points; i++){
                 for(int j=0; j<N; j++){
                     y[i*N + j] = sin(x[2*i] * M_PI * (dt2 + j*dt) + x[2*i+1]);
@@ -695,7 +699,9 @@ int main(int argc, const char**){
 
         int getNumDimensions() const{ return 6; }
         int getNumOutputs() const{ return N; }
-        void evaluate(const double x[], int num_points, double y[]) const{
+        void evaluate(const std::vector<double> x, std::vector<double> &y) const{
+            int num_points = x.size() / 2;
+            if (y.size() < (size_t) (N * num_points)) y.resize(N * num_points);
             for(int i=0; i<num_points; i++){
                 for(int j=0; j<N; j++){
                     double t = snap[j];

@@ -46,7 +46,7 @@ public:
     UnscaledUniform1D();
     ~UnscaledUniform1D();
     int getNumDimensions() const;
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
     void getDomainBounds(bool* lower_bound, bool* upper_bound);
     void getDomainBounds(double* lower_bound, double* upper_bound);
     void getInitialSample(double x[]);
@@ -58,8 +58,12 @@ class Beta1D : public TasDREAM::ProbabilityWeightFunction{
 public:
     Beta1D();
     ~Beta1D();
+    int getAPIversion() const;
+
     int getNumDimensions() const;
+
     void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
     void getDomainBounds(bool* lower_bound, bool* upper_bound);
     void getDomainBounds(double* lower_bound, double* upper_bound);
     void getInitialSample(double x[]);
@@ -73,7 +77,7 @@ public:
     Gamma1D();
     ~Gamma1D();
     int getNumDimensions() const;
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
     void getDomainBounds(bool* lower_bound, bool* upper_bound);
     void getDomainBounds(double* lower_bound, double* upper_bound);
     void getInitialSample(double x[]);
@@ -87,7 +91,7 @@ public:
     Gaussian2D();
     ~Gaussian2D();
     int getNumDimensions() const;
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
     void getDomainBounds(bool* lower_bound, bool* upper_bound);
     void getDomainBounds(double* lower_bound, double* upper_bound);
     void getInitialSample(double x[]);

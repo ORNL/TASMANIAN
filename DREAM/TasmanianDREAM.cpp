@@ -40,9 +40,15 @@ CustomModelWrapper::~CustomModelWrapper(){}
 ProbabilityWeightFunction::ProbabilityWeightFunction(){}
 ProbabilityWeightFunction::~ProbabilityWeightFunction(){}
 
+void CustomModelWrapper::evaluate(const double*, int, double*) const{} // kept for backwards compatibility
+void ProbabilityWeightFunction::evaluate(int, const double*, double*, bool){} // kept for backwards compatibility
+
+int CustomModelWrapper::getAPIversion() const{ return TASMANIAN_VERSION_MAJOR; }
+int ProbabilityWeightFunction::getAPIversion() const{ return TASMANIAN_VERSION_MAJOR; }
+
 PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model, std::ostream *os) :
     grid(model), cmodel(0), num_dimensions(0), num_outputs(0), priors(0), priors_created_here(0),
-    num_data(0), data(0), likely(0), num_cache(0), model_cache(0), logstream(os)
+    num_data(0), data(0), likely(0), logstream(os)
 {
     #ifndef USE_XSDK_DEFAULTS
     if (logstream == 0) logstream = &cerr;
@@ -62,7 +68,7 @@ PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model
 }
 PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model, std::ostream *os) :
     grid(0), cmodel(model), num_dimensions(0), num_outputs(0), priors(0),  priors_created_here(0),
-    num_data(0), data(0), likely(0), num_cache(0), model_cache(0), logstream(os)
+    num_data(0), data(0), likely(0), logstream(os)
 {
     #ifndef USE_XSDK_DEFAULTS
     if (logstream == 0) logstream = &cerr;
@@ -86,7 +92,6 @@ PosteriorFromModel::~PosteriorFromModel(){
         delete[] priors;
     }
     if (priors_created_here != 0) delete[] priors_created_here;
-    if (model_cache != 0) delete[] model_cache;
 }
 void PosteriorFromModel::overwritePDF(int dimension, BasePDF* pdf){
     if ((dimension < 0) || (dimension >= num_dimensions)) if (logstream != 0) (*logstream) << "ERROR: attempt to overwritePDF for dimension outside of range" << endl;
@@ -98,24 +103,27 @@ void PosteriorFromModel::overwritePDF(int dimension, BasePDF* pdf){
 void PosteriorFromModel::setErrorLog(std::ostream *os){ logstream = os; }
 int PosteriorFromModel::getNumDimensions() const{ return num_dimensions; }
 
-void PosteriorFromModel::evaluate(int num_points, const double x[], double y[], bool useLogForm){
-    if (num_points != num_cache){
-        if (model_cache != 0) delete[] model_cache;
-        num_cache = num_points;
-        model_cache = new double[num_cache * num_outputs];
-    }
+void PosteriorFromModel::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+    int num_points = x.size() / num_dimensions;
 
+    std::vector<double> model_output;
     if (grid != 0){
-        grid->evaluateBatch(x, num_points, model_cache); // fastest
+        grid->evaluateBatch(x, model_output); // fastest
 //        for(int i=0; i<num_points; i++){
 //            //grid->evaluate(&(x[i*num_dimensions]), &(model_cache[i*num_outputs])); // slow, thread safe
 //            grid->fastEvaluate(&(x[i*num_dimensions]), &(model_cache[i*num_outputs])); // faster, not thread safe
 //        }
     }else{
-        cmodel->evaluate(x, num_points, model_cache); // fastest
+        if (cmodel->getAPIversion() < 6){
+            model_output.resize(num_points * num_outputs);
+            cmodel->evaluate(x.data(), num_points, model_output.data()); // fastest
+        }else{
+            cmodel->evaluate(x, model_output);
+        }
     }
 
-    likely->getLikelihood(num_points, model_cache, num_data, data, y, useLogForm);
+    if (y.size() < (size_t) num_points) y.resize(num_points);
+    likely->getLikelihood(num_points, model_output.data(), num_data, data, y.data(), useLogForm);
 
     if (useLogForm){
         for(int i=0; i<num_points; i++){
@@ -169,23 +177,20 @@ void DistributedPosteriorTSGModel::setErrorLog(std::ostream *os){ logstream = os
 
 int DistributedPosteriorTSGModel::getNumDimensions() const{ return posterior->getNumDimensions(); }
 
-void DistributedPosteriorTSGModel::evaluate(int num_points, const double x[], double y[], bool useLogForm){
+void DistributedPosteriorTSGModel::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+    int num_points = x.size() / num_dimensions;
     // MPI witchcraft
-    double *local_y = new double[num_chains];
-    double *x_extended = new double[num_chains*num_dimensions + 2]; std::copy(x, x+num_dimensions*num_points, x_extended);
+    std::vector<double> local_y(num_points);
+    std::vector<double> x_extended(num_chains*num_dimensions + 2);
+    std::copy(x.begin(), x.end(), x_extended.data());
     x_extended[num_dimensions*num_chains] = 1.0; // send message: keep working
     x_extended[num_dimensions*num_chains+1] = (double) num_points; // send message: with number of points
-    MPI_Bcast((void*) x_extended, num_dimensions*num_chains+2, MPI_DOUBLE, 0, comm);
+    MPI_Bcast((void*) x_extended.data(), num_dimensions*num_chains+2, MPI_DOUBLE, 0, comm);
 
-    posterior->evaluate(num_points, x, local_y, useLogForm);
+    posterior->evaluate(x, local_y, useLogForm);
 
-    for(int i=num_points; i<num_chains; i++) local_y[i] = 0.0;
-
-    if (useLogForm){
-        MPI_Reduce(local_y, y, num_points, MPI_DOUBLE, MPI_SUM, 0, comm);
-    }else{
-        MPI_Reduce(local_y, y, num_points, MPI_DOUBLE, MPI_PROD, 0, comm);
-    }
+    if (y.size() < (size_t) num_points) y.resize(num_points);
+    MPI_Reduce(local_y.data(), y.data(), num_points, MPI_DOUBLE, (useLogForm) ? MPI_SUM : MPI_PROD, 0, comm);
 }
 
 void DistributedPosteriorTSGModel::getInitialSample(double x[]){ posterior->getInitialSample(x); }
@@ -200,40 +205,30 @@ void DistributedPosteriorTSGModel::getDomainBounds(double* lower_bound, double* 
 }
 
 void DistributedPosteriorTSGModel::workerLoop(bool useLogForm){
-    double *x = new double[num_dimensions*num_chains+2];
-    double *local_y = new double[num_chains];
+    std::vector<double> x(num_dimensions*num_chains+2);
+    std::vector<double> local_y(num_chains);
 
     bool keep_working = true;
 
     while(keep_working){
-        MPI_Bcast((void*) x, num_dimensions*num_chains+2, MPI_DOUBLE, 0, comm);
+        MPI_Bcast((void*) x.data(), num_dimensions*num_chains+2, MPI_DOUBLE, 0, comm);
 
         if (x[num_dimensions*num_chains] == 1.0){ // received message: keep working
 
             int num_points = (int) x[num_dimensions*num_chains+1];
 
-            posterior->evaluate(num_points, x, local_y, useLogForm);
+            posterior->evaluate(x, local_y, useLogForm);
 
-            for(int i=num_points; i<num_chains; i++) local_y[i] = 0.0;
-
-            if (useLogForm){
-                MPI_Reduce(local_y, 0, num_points, MPI_DOUBLE, MPI_SUM, 0, comm);
-            }else{
-                MPI_Reduce(local_y, 0, num_points, MPI_DOUBLE, MPI_PROD, 0, comm);
-            }
+            MPI_Reduce(local_y.data(), 0, num_points, MPI_DOUBLE,((useLogForm) ? MPI_SUM : MPI_PROD), 0, comm);
         }else{
             keep_working = false;
         }
     }
-    delete[] local_y;
-    delete[] x;
 }
 void DistributedPosteriorTSGModel::endWorkerLoop(){
     if (comm_me == 0){
-        double *x = new double[num_dimensions*num_chains+2];
-        std::fill(x, x + num_dimensions*num_chains+2, 0.0); // send message: stop working
-        MPI_Bcast((void*) x, num_dimensions*num_chains+2, MPI_DOUBLE, 0, comm);
-        delete[] x;
+        std::vector<double> x(num_dimensions*num_chains+2, 0.0); // send message: stop working
+        MPI_Bcast((void*) x.data(), num_dimensions*num_chains+2, MPI_DOUBLE, 0, comm);
     }
 }
 #endif // MPI_VERSION
@@ -267,9 +262,10 @@ void LikelihoodTSG::setPDF(int dimension, BasePDF* &pdf){
 void LikelihoodTSG::setErrorLog(std::ostream *os){ logstream = os; }
 int LikelihoodTSG::getNumDimensions() const{ return num_dimensions; }
 
-void LikelihoodTSG::evaluate(int num_points, const double x[], double y[], bool useLogForm){
+void LikelihoodTSG::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+    int num_points = x.size() / num_dimensions;
 
-    grid->evaluateBatch(x, num_points, y); // fastest
+    grid->evaluateBatch(x, y); // fastest
 //    for(int i=0; i<num_points; i++){
 //        //grid->evaluate(&(x[i*num_dimensions]), &(y[i])); // slow, thread safe
 //        grid->fastEvaluate(&(x[i*num_dimensions]), &(y[i])); // faster, not thread safe
@@ -506,7 +502,11 @@ void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
     }
 
     std::vector<double> new_pdf_values(num_chains);
-    pdf->evaluate(num_need_evaluation, need_evaluation->data(), new_pdf_values.data(), useLogForm);
+    if (pdf->getAPIversion() < 6){
+        pdf->evaluate(num_need_evaluation, need_evaluation->data(), new_pdf_values.data(), useLogForm);
+    }else{
+        pdf->evaluate(*need_evaluation, new_pdf_values, useLogForm);
+    }
 
     // clean memory and reorder the pdf values putting 0 in the invalid spots (for log case 0 should be -infty, hence using valid for accept/reject too
     if (!allValid){
