@@ -178,7 +178,7 @@ function tsgIsGlobal(id) result(res)
   integer :: id, flag
   logical :: res
   call tsgisg(id, flag)
-  if (flag .eq. 1) then
+  if (flag .ne. 0) then
     res = .true.
   else
     res = .false.
@@ -189,7 +189,7 @@ function tsgIsSequence(id) result(res)
   integer :: id, flag
   logical :: res
   call tsgiss(id, flag)
-  if (flag .eq. 1) then
+  if (flag .ne. 0) then
     res = .true.
   else
     res = .false.
@@ -200,7 +200,7 @@ function tsgIsLocalPolynomial(id) result(res)
   integer :: id, flag
   logical :: res
   call tsgisl(id, flag)
-  if (flag .eq. 1) then
+  if (flag .ne. 0) then
     res = .true.
   else
     res = .false.
@@ -211,7 +211,7 @@ function tsgIsWavelet(id) result(res)
   integer :: id, flag
   logical :: res
   call tsgisw(id, flag)
-  if (flag .eq. 1) then
+  if (flag .ne. 0) then
     res = .true.
   else
     res = .false.
@@ -222,7 +222,7 @@ function tsgIsFourier(id) result(res)
   integer :: id, flag
   logical :: res
   call tsgisf(id, flag)
-  if (flag .eq. 1) then
+  if (flag .ne. 0) then
     res = .true.
   else
     res = .false.
@@ -605,8 +605,13 @@ subroutine tsgEvaluateHierarchicalFunctions(gridID, x, numX, y)
   integer :: gridID, numX
   double precision :: x(:,:), y(:,:)
   double precision :: y_c_style(size(y,2),size(y,1))
-  call tsgehf(gridID, x, numX, y_c_style)
-  y = transpose(y_c_style)
+  if ( .not. tsgIsFourier(gridID) ) then
+    call tsgehf(gridID, x, numX, y_c_style)
+    y = transpose(y_c_style)
+  else
+    write(*,*) "ERROR: called tsgEvaluateHierarchicalFunctions() on a Fourier grid, "
+    write(*,*) "       use tsgEvaluateComplexHierarchicalFunctions() instead"
+  endif
 end subroutine tsgEvaluateHierarchicalFunctions
 !=======================================================================
 subroutine tsgEvaluateComplexHierarchicalFunctions(gridID, x, numX, y)
@@ -623,7 +628,8 @@ subroutine tsgEvaluateComplexHierarchicalFunctions(gridID, x, numX, y)
       enddo
     enddo
   else
-    write(*,*) "ERROR: non-Fourier grid in tsgEvaluateComplexHierarchicalFunctions"
+    write(*,*) "ERROR: called tsgEvaluateComplexHierarchicalFunctions() on a non-Fourier grid, "
+    write(*,*) "       use tsgEvaluateHierarchicalFunctions() instead"
   endif
 end subroutine tsgEvaluateComplexHierarchicalFunctions
 !=======================================================================
@@ -633,22 +639,36 @@ subroutine tsgEvaluateSparseHierarchicalFunctions(gridID, x, numX, pntr, indx, y
   integer, pointer :: pntr(:), indx(:)
   double precision, pointer :: y(:)
   integer :: numNZ
-  call tsgehz(gridID, x, numX, numNZ)
-  allocate( pntr(numX+1), indx(numNZ), y(numNZ) )
-  call tsgehs(gridID, x, numX, pntr, indx, y)
+  if ( .not. tsgIsFourier(gridID) ) then
+    call tsgehz(gridID, x, numX, numNZ)
+    allocate( pntr(numX+1), indx(numNZ), y(numNZ) )
+    call tsgehs(gridID, x, numX, pntr, indx, y)
+  else
+    write(*,*) "ERROR: called tsgEvaluateSparseHierarchicalFunctions() on a Fourier grid"
+  endif
 end subroutine tsgEvaluateSparseHierarchicalFunctions
 !=======================================================================
 function tsgGetHierarchicalCoefficients(gridID) result(c)
   integer :: gridID
   double precision, pointer :: c(:)
-  allocate(c(tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
-  call tsgghc(gridID, c)
+  if ( .not. tsgIsFourier(gridID) ) then
+    allocate(c(tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
+    call tsgghc(gridID, c)
+  else
+    write(*,*) "ERROR: called tsgGetHierarchicalCoefficients() on a Fourier grid, "
+    write(*,*) "       use tsgGetComplexHierarchicalCoefficients() instead"
+  endif
 end function tsgGetHierarchicalCoefficients
 !=======================================================================
 subroutine tsgGetHierarchicalCoefficientsStatic(gridID, c)
   integer :: gridID
   double precision :: c(:)
-  call tsgghc(gridID, c)
+  if ( .not. tsgIsFourier(gridID) ) then
+    call tsgghc(gridID, c)
+  else
+    write(*,*) "ERROR: called tsgGetHierarchicalCoefficientsStatic() on a Fourier grid, "
+    write(*,*) "       use tsgGetComplexHierarchicalCoefficientsStatic() instead"
+  endif
 end subroutine tsgGetHierarchicalCoefficientsStatic
 !=======================================================================
 function tsgGetComplexHierarchicalCoefficients(gridID) result(c)
@@ -665,7 +685,8 @@ function tsgGetComplexHierarchicalCoefficients(gridID) result(c)
     enddo
     deallocate(c_real)
   else
-    write(*,*) "ERROR: non-Fourier grid in tsgGetComplexHierarchicalCoefficients"
+    write(*,*) "ERROR: called tsgGetComplexHierarchicalCoefficients() on a non-Fourier grid, "
+    write(*,*) "       use tsgGetHierarchicalCoefficients() instead"
   endif
 end function tsgGetComplexHierarchicalCoefficients
 !=======================================================================
@@ -680,7 +701,8 @@ subroutine tsgGetComplexHierarchicalCoefficientsStatic(gridID, c)
       c(i) = complex( c_real(2*i-1), c_real(2*i) )
     enddo
   else
-    write(*,*) "ERROR: non-Fourier grid in tsgGetComplexHierarchicalCoefficientsStatic"
+    write(*,*) "ERROR: called tsgGetComplexHierarchicalCoefficientsStatic() on a non-Fourier grid, "
+    write(*,*) "       use tsgGetHierarchicalCoefficientsStatic() instead"
   endif
 end subroutine tsgGetComplexHierarchicalCoefficientsStatic
 !=======================================================================
@@ -822,7 +844,7 @@ end subroutine tsgPrintStats
 !=======================================================================
 function tsgTestInternals(verbose) result(res)
   integer, parameter :: i_a = 8, i_b = 4
-  integer :: i, num_ag
+  integer :: i, num_ag, num_ag_in
   integer :: int_1d_a(i_a), int_1d_b(i_a) = (/1,8,6,4,7,3,2,5/)
   logical :: res
   logical, optional :: verbose
@@ -834,17 +856,11 @@ function tsgTestInternals(verbose) result(res)
   endif
 
   res = .true.
-  call tsggag(num_ag)
-  if ( num_ag .ne. 0 ) then
-    if (verb) then
-      write(*,*) "Mismatch in number of active grids before creating any grids: num_ag = ", num_ag
-    endif
-    res = .false.
-  endif
+  call tsggag(num_ag_in)
   do i = 1, i_a
     int_1d_a(i) = tsgNewGridID()
     call tsggag(num_ag)
-    if ( num_ag .ne. i ) then
+    if ( num_ag .ne. i+num_ag_in ) then
       if (verb) then
         write(*,*) "Mismatch in number of active grids, adding grids: num_ag = ", num_ag
       endif
@@ -854,7 +870,7 @@ function tsgTestInternals(verbose) result(res)
   do i = 1, i_a
     call tsgFreeGridID(int_1d_a(int_1d_b(i)))
     call tsggag(num_ag)
-    if ( num_ag .ne. i_a-i ) then
+    if ( num_ag .ne. i_a-i+num_ag_in ) then
       if (verb) then
         write(*,*) "Mismatch in number of active grids, removing grids: num_ag = ", num_ag
       endif

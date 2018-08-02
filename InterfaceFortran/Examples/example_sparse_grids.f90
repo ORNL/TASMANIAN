@@ -91,8 +91,6 @@ IMPLICIT NONE
 ! EXAMPLE 1: integrate: f(x,y) = exp(-x^2) * cos(y) over [-1,1] x [-1,1]
 ! using classical Smolyak grid with Clenshaw-Curtis points and weights
 
-! must call tsgInitialize() once per program
-!  CALL tsgInitialize()
 
   verm = tsgGetVersionMajor()
   vern = tsgGetVersionMinor()
@@ -1039,9 +1037,6 @@ IMPLICIT NONE
   DEALLOCATE(res2)
   DEALLOCATE(tvalues)
 
-! no need to free grid IDs before tsgFinalize(),
-! all memory will be freed regardless
-! must deallocate points, weights, etc.
   CALL tsgClearAll()
 
   WRITE(*,*) "-------------------------------------------------------------------------------------------------"
