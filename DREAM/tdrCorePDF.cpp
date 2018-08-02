@@ -262,10 +262,8 @@ void SparseGridDomainToPDF::assumeDefaultPDF(const TasGrid::TasmanianSparseGrid 
     int num_dimensions = grid->getNumDimensions();
     TasGrid::TypeOneDRule rule = grid->getRule();
 
-    double *a = 0, *b = 0;
+    std::vector<double> a, b;
     if (grid->isSetDomainTransfrom()){
-        a = new double[num_dimensions];
-        b = new double[num_dimensions];
         grid->getDomainTransform(a, b);
     }
 
@@ -294,9 +292,6 @@ void SparseGridDomainToPDF::assumeDefaultPDF(const TasGrid::TasmanianSparseGrid 
             for(int i=0; i<num_dimensions; i++) priors[i] = new UniformPDF(-1.0, 1.0);
         }
     }
-
-    if (a != 0) delete[] a;
-    if (b != 0) delete[] b;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
