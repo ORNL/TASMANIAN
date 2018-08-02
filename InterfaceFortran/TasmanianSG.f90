@@ -622,6 +622,8 @@ subroutine tsgEvaluateComplexHierarchicalFunctions(gridID, x, numX, y)
         y(i,j) = complex( y_c_style(2*j-1,i), y_c_style(2*j,i) )
       enddo
     enddo
+  else
+    write(*,*) "ERROR: non-Fourier grid in tsgEvaluateComplexHierarchicalFunctions"
   endif
 end subroutine tsgEvaluateComplexHierarchicalFunctions
 !=======================================================================
@@ -662,6 +664,8 @@ function tsgGetComplexHierarchicalCoefficients(gridID) result(c)
       c(i) = complex( c_real(2*i-1), c_real(2*i) )
     enddo
     deallocate(c_real)
+  else
+    write(*,*) "ERROR: non-Fourier grid in tsgGetComplexHierarchicalCoefficients"
   endif
 end function tsgGetComplexHierarchicalCoefficients
 !=======================================================================
@@ -675,6 +679,8 @@ subroutine tsgGetComplexHierarchicalCoefficientsStatic(gridID, c)
     do i = 1,size(c)
       c(i) = complex( c_real(2*i-1), c_real(2*i) )
     enddo
+  else
+    write(*,*) "ERROR: non-Fourier grid in tsgGetComplexHierarchicalCoefficientsStatic"
   endif
 end subroutine tsgGetComplexHierarchicalCoefficientsStatic
 !=======================================================================
