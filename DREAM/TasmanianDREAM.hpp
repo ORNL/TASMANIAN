@@ -241,7 +241,7 @@ private:
     ProbabilityWeightFunction *pdf;
 
     double jump;
-    BasePDF **corrections;
+    std::vector<BasePDF*> corrections;
 
     bool state_initialized, values_initialized, values_logform;
     //double *old_state, *new_pdf_values;

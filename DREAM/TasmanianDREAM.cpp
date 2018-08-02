@@ -321,7 +321,7 @@ void LikelihoodTSG::getDomainBounds(std::vector<double> &lower, std::vector<doub
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 TasmanianDREAM::TasmanianDREAM(std::ostream *os): num_dimensions(-1), num_chains(-1),
-    pdf(0), jump(1.0), corrections(0), state_initialized(false), values_initialized(false), values_logform(false),
+    pdf(0), jump(1.0), state_initialized(false), values_initialized(false), values_logform(false),
     logstream(os)
 {
     #ifndef USE_XSDK_DEFAULTS
@@ -343,11 +343,7 @@ int TasmanianDREAM::getVersionMajor(){ return TASMANIAN_VERSION_MAJOR; }
 int TasmanianDREAM::getVersionMinor(){ return TASMANIAN_VERSION_MINOR; }
 
 void TasmanianDREAM::clear(){
-    if (corrections != 0){
-        for(int j=0; j<num_dimensions; j++) corrections[j] = 0;
-        delete[] corrections;
-        corrections = 0;
-    }
+    corrections.resize(0); // ensures I don't keep old unwanted pointers
     state_initialized = false;
     values_initialized = false;
     num_dimensions = -1;
@@ -371,7 +367,7 @@ double TasmanianDREAM::getJumpScale(){ return jump; }
 
 void TasmanianDREAM::setCorrectionAll(BasePDF *correct){
     if (num_dimensions == 0) if (logstream != 0) (*logstream) << "ERROR: cannot set correction before the pdf" << endl;
-    for(int j=0; j<num_dimensions; j++) corrections[j] = correct;
+    for(auto &p : corrections) p = correct;
 }
 void TasmanianDREAM::setCorrection(int dim, BasePDF *correct){
     if (num_dimensions == 0) if (logstream != 0) (*logstream) << "ERROR: cannot set correction before the pdf" << endl;
@@ -390,6 +386,9 @@ void TasmanianDREAM::setProbabilityWeightFunction(ProbabilityWeightFunction *pro
     clear();
     pdf = probability_weight;
     num_dimensions = probability_weight->getNumDimensions();
+
+    corrections.resize(num_dimensions, 0);
+
     isBoudnedBelow.resize(num_dimensions);
     isBoudnedAbove.resize(num_dimensions);
     boundBelow.resize(num_dimensions);
@@ -412,9 +411,6 @@ void TasmanianDREAM::setProbabilityWeightFunction(ProbabilityWeightFunction *pro
         probability_weight->getDomainBounds(isBoudnedBelow, isBoudnedAbove);
         probability_weight->getDomainBounds(boundBelow, boundAbove);
     }
-
-    corrections = new BasePDF*[num_dimensions];
-    for(int j=0; j<num_dimensions; j++) corrections[j] = 0;
 }
 
 void TasmanianDREAM::setChainState(const double* state){
