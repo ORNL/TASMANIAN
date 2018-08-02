@@ -175,33 +175,58 @@ PRIVATE
 contains
 !=======================================================================
 function tsgIsGlobal(id) result(res)
-  integer :: id
+  integer :: id, flag
   logical :: res
-  call tsgisg(id, res)
+  call tsgisg(id, flag)
+  if (flag .eq. 1) then
+    res = .true.
+  else
+    res = .false.
+  endif
 end function
 !=======================================================================
 function tsgIsSequence(id) result(res)
-  integer :: id
+  integer :: id, flag
   logical :: res
-  call tsgiss(id, res)
+  call tsgiss(id, flag)
+  if (flag .eq. 1) then
+    res = .true.
+  else
+    res = .false.
+  endif
 end function
 !=======================================================================
 function tsgIsLocalPolynomial(id) result(res)
-  integer :: id
+  integer :: id, flag
   logical :: res
-  call tsgisl(id, res)
+  call tsgisl(id, flag)
+  if (flag .eq. 1) then
+    res = .true.
+  else
+    res = .false.
+  endif
 end function
 !=======================================================================
 function tsgIsWavelet(id) result(res)
-  integer :: id
+  integer :: id, flag
   logical :: res
-  call tsgisw(id, res)
+  call tsgisw(id, flag)
+  if (flag .eq. 1) then
+    res = .true.
+  else
+    res = .false.
+  endif
 end function
 !=======================================================================
 function tsgIsFourier(id) result(res)
-  integer :: id
+  integer :: id, flag
   logical :: res
-  call tsgisf(id, res)
+  call tsgisf(id, flag)
+  if (flag .eq. 1) then
+    res = .true.
+  else
+    res = .false.
+  endif
 end function
 !=======================================================================
 subroutine tsgClearAll()
