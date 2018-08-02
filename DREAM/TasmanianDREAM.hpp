@@ -71,8 +71,10 @@ public:
     virtual void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm) = 0;
     // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
 
-    virtual void getDomainBounds(bool* lower_bound, bool* upper_bound) = 0;
-    virtual void getDomainBounds(double* lower_bound, double* upper_bound) = 0;
+    virtual void getDomainBounds(bool* lower_bound, bool* upper_bound);
+    virtual void getDomainBounds(double* lower_bound, double* upper_bound);
+    virtual void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper) = 0;
+    virtual void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper) = 0;
     virtual void getInitialSample(double x[]) = 0;
 };
 
@@ -99,8 +101,8 @@ public:
     void setLikelihood(BaseLikelihood *likelihood);
     void setData(int num_data_samples, const double *posterior_data);
 
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
 
 private:
     const TasGrid::TasmanianSparseGrid *grid;
@@ -136,8 +138,8 @@ public:
 
     void setNumChanis(int num_dream_chains); // needed for MPI communication purposes
 
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
 
     void workerLoop(bool useLogForm);
     void endWorkerLoop();
@@ -169,8 +171,8 @@ public:
 
     void getInitialSample(double x[]);
 
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
 
 private:
     const TasGrid::TasmanianSparseGrid *grid;

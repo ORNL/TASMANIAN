@@ -46,6 +46,9 @@ void ProbabilityWeightFunction::evaluate(int, const double*, double*, bool){} //
 int CustomModelWrapper::getAPIversion() const{ return TASMANIAN_VERSION_MAJOR; }
 int ProbabilityWeightFunction::getAPIversion() const{ return TASMANIAN_VERSION_MAJOR; }
 
+void ProbabilityWeightFunction::getDomainBounds(bool*, bool*){} // kept for backwards compatibility
+void ProbabilityWeightFunction::getDomainBounds(double*, double*){} // kept for backwards compatibility
+
 PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model, std::ostream *os) :
     grid(model), cmodel(0), num_dimensions(0), num_outputs(0), priors(0), priors_created_here(0),
     num_data(0), data(0), likely(0), logstream(os)
@@ -144,16 +147,20 @@ void PosteriorFromModel::setData(int num_data_samples, const double *posterior_d
 
 void PosteriorFromModel::getInitialSample(double x[]){ for(int j=0; j<num_dimensions; j++) x[j] = priors[j]->getSample(); }
 
-void PosteriorFromModel::getDomainBounds(bool* lower_bound, bool* upper_bound){
+void PosteriorFromModel::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
+    if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
+    if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
-        lower_bound[j] = priors[j]->isBoundedBelow();
-        upper_bound[j] = priors[j]->isBoundedAbove();
+        lower[j] = priors[j]->isBoundedBelow();
+        upper[j] = priors[j]->isBoundedAbove();
     }
 }
-void PosteriorFromModel::getDomainBounds(double* lower_bound, double* upper_bound){
+void PosteriorFromModel::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
+    if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
+    if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
-        lower_bound[j] = priors[j]->getBoundBelow();
-        upper_bound[j] = priors[j]->getBoundAbove();
+        lower[j] = priors[j]->getBoundBelow();
+        upper[j] = priors[j]->getBoundAbove();
     }
 }
 
@@ -197,11 +204,11 @@ void DistributedPosteriorTSGModel::getInitialSample(double x[]){ posterior->getI
 
 void DistributedPosteriorTSGModel::setNumChanis(int num_dream_chains){ num_chains = num_dream_chains; }
 
-void DistributedPosteriorTSGModel::getDomainBounds(bool* lower_bound, bool* upper_bound){
-    posterior->getDomainBounds(lower_bound, upper_bound);
+void DistributedPosteriorTSGModel::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
+    posterior->getDomainBounds(lower, upper);
 }
-void DistributedPosteriorTSGModel::getDomainBounds(double* lower_bound, double* upper_bound){
-    posterior->getDomainBounds(lower_bound, upper_bound);
+void DistributedPosteriorTSGModel::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
+    posterior->getDomainBounds(lower, upper);
 }
 
 void DistributedPosteriorTSGModel::workerLoop(bool useLogForm){
@@ -291,16 +298,20 @@ void LikelihoodTSG::evaluate(const std::vector<double> x, std::vector<double> &y
 
 void LikelihoodTSG::getInitialSample(double x[]){ for(int j=0; j<num_dimensions; j++) x[j] = priors[j]->getSample(); }
 
-void LikelihoodTSG::getDomainBounds(bool* lower_bound, bool* upper_bound){
+void LikelihoodTSG::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
+    if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
+    if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
-        lower_bound[j] = priors[j]->isBoundedBelow();
-        upper_bound[j] = priors[j]->isBoundedAbove();
+        lower[j] = priors[j]->isBoundedBelow();
+        upper[j] = priors[j]->isBoundedAbove();
     }
 }
-void LikelihoodTSG::getDomainBounds(double* lower_bound, double* upper_bound){
+void LikelihoodTSG::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
+    if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
+    if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
-        lower_bound[j] = priors[j]->getBoundBelow();
-        upper_bound[j] = priors[j]->getBoundAbove();
+        lower[j] = priors[j]->getBoundBelow();
+        upper[j] = priors[j]->getBoundAbove();
     }
 }
 
@@ -384,18 +395,23 @@ void TasmanianDREAM::setProbabilityWeightFunction(ProbabilityWeightFunction *pro
     boundBelow.resize(num_dimensions);
     boundAbove.resize(num_dimensions);
 
-    // std::vector<bool> is a special class without .data() member ... hack for now
-    bool *bbelow = new bool[num_dimensions];
-    bool *babove = new bool[num_dimensions];
-    probability_weight->getDomainBounds(bbelow, babove);
-    for(int i=0; i<num_dimensions; i++){
-        isBoudnedBelow[i] = bbelow[i];
-        isBoudnedAbove[i] = babove[i];
-    }
-    delete[] bbelow;
-    delete[] babove;
+    if (pdf->getAPIversion() < 6){
+        // std::vector<bool> is a special class without .data() member ... hack for now
+        bool *bbelow = new bool[num_dimensions];
+        bool *babove = new bool[num_dimensions];
+        probability_weight->getDomainBounds(bbelow, babove);
+        for(int i=0; i<num_dimensions; i++){
+            isBoudnedBelow[i] = bbelow[i];
+            isBoudnedAbove[i] = babove[i];
+        }
+        delete[] bbelow;
+        delete[] babove;
 
-    probability_weight->getDomainBounds(boundBelow.data(), boundAbove.data());
+        probability_weight->getDomainBounds(boundBelow.data(), boundAbove.data());
+    }else{
+        probability_weight->getDomainBounds(isBoudnedBelow, isBoudnedAbove);
+        probability_weight->getDomainBounds(boundBelow, boundAbove);
+    }
 
     corrections = new BasePDF*[num_dimensions];
     for(int j=0; j<num_dimensions; j++) corrections[j] = 0;

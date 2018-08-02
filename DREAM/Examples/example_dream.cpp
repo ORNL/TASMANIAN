@@ -54,13 +54,17 @@ int main(int argc, const char**){
                 }
             }
         }
-        void getDomainBounds(bool* lower_bound, bool* upper_bound){
-            lower_bound[0] = false; // Gaussian is unbounded
-            upper_bound[0] = false;
+        void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
+            if (lower.size() < 1) lower.resize(1);
+            if (upper.size() < 1) upper.resize(1);
+            lower[0] = false; // Gaussian is unbounded
+            upper[0] = false;
         }
-        void getDomainBounds(double* lower_bound, double* upper_bound){
-            lower_bound[0] = 0.0; // since bounds above give false,
-            upper_bound[0] = 0.0; // those here are dummy values
+        void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
+            if (lower.size() < 1) lower.resize(1);
+            if (upper.size() < 1) upper.resize(1);
+            lower[0] = 0.0; // since bounds above give false,
+            upper[0] = 0.0;
         }
         void getInitialSample(double x[]){
             // initialize with samples unifromly in [-1,1]
