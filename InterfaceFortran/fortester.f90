@@ -234,7 +234,7 @@ deallocate(pointsb, points, weights)
   
 
 ! make custom rule file
-open(unit=17,iostat=i,file='customRule.txt',status='replace')
+open(unit=17,iostat=i,file='tasmanianFortranTestCustomRule.table',status='replace')
 if (i .ne. 0) then
   print*, "Cannot open file with custom rule"
   stop 1
@@ -253,7 +253,8 @@ do i = 0,4
 enddo
 close(unit=17)
 ! test custom rule
-call tsgMakeGlobalGrid(gridID,    2, 0, 4, tsg_level, tsg_custom_tabulated, customRuleFilename="customRule.txt")
+call tsgMakeGlobalGrid(gridID, 2, 0, 4, tsg_level, tsg_custom_tabulated, &
+                       customRuleFilename="tasmanianFortranTestCustomRule.table")
 call tsgMakeGlobalGrid(gridID_II, 2, 0, 4, tsg_level, tsg_gauss_legendre)
 points   => tsgGetPoints(gridID)
 pointsb  => tsgGetPoints(gridID_II)
@@ -264,7 +265,7 @@ if ( (norm1d(weights-weightsb) > 1.d-11) .or. (norm2d(points-pointsb) > 1.d-11) 
 endif
 deallocate(points,pointsb,weights,weightsb)
 ! delete custom rule file
-open(unit=17,file='customRule.txt',status='replace')
+open(unit=17,file='tasmanianFortranTestCustomRule.table',status='replace')
 close(unit=17,status='delete')
 
 
