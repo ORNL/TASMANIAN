@@ -260,7 +260,7 @@ private:
 };
 
 namespace SparseGridDomainToPDF{
-    void assumeDefaultPDF(const TasGrid::TasmanianSparseGrid *grid, BasePDF **priors);
+    void assumeDefaultPDF(const TasGrid::TasmanianSparseGrid *grid, std::vector<BasePDF*> &priors);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -50,7 +50,7 @@ void ProbabilityWeightFunction::getDomainBounds(bool*, bool*){} // kept for back
 void ProbabilityWeightFunction::getDomainBounds(double*, double*){} // kept for backwards compatibility
 
 PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model, std::ostream *os) :
-    grid(model), cmodel(0), num_dimensions(0), num_outputs(0), priors(0), priors_created_here(0),
+    grid(model), cmodel(0), num_dimensions(0), num_outputs(0),
     num_data(0), data(0), likely(0), logstream(os)
 {
     #ifndef USE_XSDK_DEFAULTS
@@ -64,13 +64,11 @@ PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model
     if (num_outputs < 1){
         if (logstream != 0) (*logstream) << "ERROR: cannot work with a grid with no outputs" << endl;
     }
-    priors = new BasePDF*[num_dimensions];
     SparseGridDomainToPDF::assumeDefaultPDF(model, priors);
-    priors_created_here = new bool[num_dimensions];
-    for(int j=0; j<num_dimensions; j++) priors_created_here[j] = true;
+    priors_created_here.resize(num_dimensions, true);
 }
 PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model, std::ostream *os) :
-    grid(0), cmodel(model), num_dimensions(0), num_outputs(0), priors(0),  priors_created_here(0),
+    grid(0), cmodel(model), num_dimensions(0), num_outputs(0),
     num_data(0), data(0), likely(0), logstream(os)
 {
     #ifndef USE_XSDK_DEFAULTS
@@ -84,17 +82,11 @@ PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model, std::ost
     if (num_outputs < 1){
         if (logstream != 0) (*logstream) << "ERROR: cannot work with a model with no outputs" << endl;
     }
-    priors = new BasePDF*[num_dimensions];
-    for(int j=0; j<num_dimensions; j++) priors[j] = 0;
-    priors_created_here = new bool[num_dimensions];
-    for(int j=0; j<num_dimensions; j++) priors_created_here[j] = false;
+    priors.resize(num_dimensions, 0);
+    priors_created_here.resize(num_dimensions, true);
 }
 PosteriorFromModel::~PosteriorFromModel(){
-    if (priors != 0){
-        for(int j=0; j<num_dimensions; j++) if ((priors[j] != 0) && priors_created_here[j]) delete priors[j];
-        delete[] priors;
-    }
-    if (priors_created_here != 0) delete[] priors_created_here;
+    for(size_t j=0; j<priors.size(); j++) if ((priors[j] != 0) && priors_created_here[j]) delete priors[j];
 }
 void PosteriorFromModel::overwritePDF(int dimension, BasePDF* pdf){
     if ((dimension < 0) || (dimension >= num_dimensions)) if (logstream != 0) (*logstream) << "ERROR: attempt to overwritePDF for dimension outside of range" << endl;
@@ -242,7 +234,7 @@ void DistributedPosteriorTSGModel::endWorkerLoop(){
 
 
 LikelihoodTSG::LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm, std::ostream *os) :
-    grid(likely), savedLogarithmForm(savedLogForm), num_dimensions(0), priors(0), logstream(os)
+    grid(likely), savedLogarithmForm(savedLogForm), num_dimensions(0), logstream(os)
 {
     #ifndef USE_XSDK_DEFAULTS
     if (logstream == 0) logstream = &cerr;
@@ -251,13 +243,12 @@ LikelihoodTSG::LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool sa
     if (num_dimensions < 1){
         if (logstream != 0) (*logstream) << "ERROR: cannot work with an empty Grid" << endl;
     }
-    priors = new BasePDF*[num_dimensions];
     SparseGridDomainToPDF::assumeDefaultPDF(likely, priors);
 }
 LikelihoodTSG::~LikelihoodTSG(){
-    if (priors != 0){
-        for(int i=0; i<num_dimensions; i++) delete priors[i];
-        delete[] priors;
+    for(auto &p : priors){
+        delete p;
+        p = 0;
     }
 }
 void LikelihoodTSG::setPDF(int dimension, BasePDF* &pdf){

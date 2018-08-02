@@ -109,8 +109,8 @@ private:
     const CustomModelWrapper *cmodel;
 
     int num_dimensions, num_outputs;
-    BasePDF **priors;
-    bool *priors_created_here;
+    std::vector<BasePDF*> priors;
+    std::vector<bool> priors_created_here;
 
     int num_data;
     const double *data;
@@ -179,7 +179,7 @@ private:
     bool savedLogarithmForm;
 
     int num_dimensions;
-    BasePDF **priors;
+    std::vector<BasePDF*> priors;
 
     std::ostream *logstream;
 };

@@ -258,8 +258,10 @@ double BetaPDF::getDensityLog(double x) const{
 }
 TypeDistribution BetaPDF::getType() const{ return dist_beta; }
 
-void SparseGridDomainToPDF::assumeDefaultPDF(const TasGrid::TasmanianSparseGrid *grid, BasePDF **priors){
+void SparseGridDomainToPDF::assumeDefaultPDF(const TasGrid::TasmanianSparseGrid *grid, std::vector<BasePDF*> &priors){
     int num_dimensions = grid->getNumDimensions();
+    if (priors.size() < (size_t) num_dimensions) priors.resize(num_dimensions);
+
     TasGrid::TypeOneDRule rule = grid->getRule();
 
     std::vector<double> a, b;
