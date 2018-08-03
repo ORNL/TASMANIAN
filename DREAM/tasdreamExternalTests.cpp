@@ -164,11 +164,11 @@ bool ExternalTester::testBeta1D(){
 
     int num_cells = 10; double delta = 2.0 / ((double) num_cells);
     int num_chains = 50;
-    double *samples_true = new double[num_mc];
-    TasDREAM::BetaPDF *Btrue = new TasDREAM::BetaPDF(-1.0, 1.0, 2.0, 5.0);
-    Btrue->overwriteBaseUnifrom(&rng);
+    std::vector<double> samples_true(num_mc);
+    TasDREAM::BetaPDF Btrue(-1.0, 1.0, 2.0, 5.0);
+    Btrue.overwriteBaseUnifrom(&rng);
 
-    for(int i=0; i<num_mc; i++) samples_true[i] = Btrue->getSample();
+    for(int i=0; i<num_mc; i++) samples_true[i] = Btrue.getSample();
 
     TasDREAM::TasmanianDREAM dream;
     dream.overwriteBaseUnifrom(&rng);
@@ -178,12 +178,13 @@ bool ExternalTester::testBeta1D(){
     gauss.overwriteBaseUnifrom(&rng);
     dream.setCorrectionAll(&gauss);
 
-    double *samples_dream = dream.collectSamples(3*num_mc, num_mc / num_chains, false);
+    std::vector<double> samples_dream;
+    dream.collectSamples(3*num_mc, num_mc / num_chains, samples_dream, false);
     //for(int i=0; i<num_mc; i++) samples_dream[i] = -1.0 + 2.0 * u.getSample01();
     //for(int i=0; i<num_mc; i++) cout << samples_dream[i] << endl;
 
-    int *cells_a = new int[num_cells]; std::fill(cells_a, cells_a + num_cells, 0);
-    int *cells_b = new int[num_cells]; std::fill(cells_b, cells_b + num_cells, 0);
+    std::vector<int> cells_a(num_cells, 0);
+    std::vector<int> cells_b(num_cells, 0);
     for(int i=0; i<num_mc; i++){
         int c = floor((samples_true[i] + 1.0) / delta);
         if (c < num_cells) cells_a[c]++;
@@ -195,18 +196,12 @@ bool ExternalTester::testBeta1D(){
 
     bool pass = true;
 
-    if (testKS(num_cells, cells_a, cells_b)){
+    if (testKS(num_cells, cells_a.data(), cells_b.data())){
         cout << setw(wfirst) << "Distribution" << setw(wsecond) << "Beta 1D" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Distribution" << setw(wsecond) << "Beta 1D" << setw(wthird) << "FAIL" << endl;
         pass = false;
     }
-
-    delete Btrue;
-    delete[] samples_dream;
-    delete[] samples_true;
-    delete[] cells_a;
-    delete[] cells_b;
 
     return pass;
 }
