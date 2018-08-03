@@ -64,8 +64,8 @@ PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model
     if (num_outputs < 1){
         if (logstream != 0) (*logstream) << "ERROR: cannot work with a grid with no outputs" << endl;
     }
-    SparseGridDomainToPDF::assumeDefaultPDF(model, priors);
-    priors_created_here.resize(num_dimensions, true);
+    SparseGridDomainToPDF::assumeDefaultPDF(model, internal_priors);
+    active_priors = internal_priors; // copy assignment
 }
 PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model, std::ostream *os) :
     grid(0), cmodel(model), num_dimensions(0), num_outputs(0),
@@ -82,18 +82,15 @@ PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model, std::ost
     if (num_outputs < 1){
         if (logstream != 0) (*logstream) << "ERROR: cannot work with a model with no outputs" << endl;
     }
-    priors.resize(num_dimensions, 0);
-    priors_created_here.resize(num_dimensions, true);
+    internal_priors.resize(num_dimensions, 0);
+    active_priors.resize(num_dimensions, 0);
 }
 PosteriorFromModel::~PosteriorFromModel(){
-    for(size_t j=0; j<priors.size(); j++) if ((priors[j] != 0) && priors_created_here[j]) delete priors[j];
+    for(auto &p : internal_priors) if (p != 0) delete p;
 }
 void PosteriorFromModel::overwritePDF(int dimension, BasePDF* pdf){
     if ((dimension < 0) || (dimension >= num_dimensions)) if (logstream != 0) (*logstream) << "ERROR: attempt to overwritePDF for dimension outside of range" << endl;
-    if ((priors[dimension] != 0) && priors_created_here[dimension]) delete priors[dimension];
-    priors[dimension] = pdf;
-    priors_created_here[dimension] = false;
-    //pdf = 0;
+    active_priors[dimension] = pdf;
 }
 void PosteriorFromModel::setErrorLog(std::ostream *os){ logstream = os; }
 int PosteriorFromModel::getNumDimensions() const{ return num_dimensions; }
@@ -122,11 +119,11 @@ void PosteriorFromModel::evaluate(const std::vector<double> x, std::vector<doubl
 
     if (useLogForm){
         for(int i=0; i<num_points; i++){
-            for(int j=0; j<num_dimensions; j++) y[i] += priors[j]->getDensityLog(x[i*num_dimensions +j]);
+            for(int j=0; j<num_dimensions; j++) y[i] += active_priors[j]->getDensityLog(x[i*num_dimensions +j]);
         }
     }else{
         for(int i=0; i<num_points; i++){
-            for(int j=0; j<num_dimensions; j++) y[i] *= priors[j]->getDensity(x[i*num_dimensions +j]);
+            for(int j=0; j<num_dimensions; j++) y[i] *= active_priors[j]->getDensity(x[i*num_dimensions +j]);
         }
     }
 }
@@ -137,22 +134,22 @@ void PosteriorFromModel::setData(int num_data_samples, const double *posterior_d
     data = posterior_data;
 }
 
-void PosteriorFromModel::getInitialSample(double x[]){ for(int j=0; j<num_dimensions; j++) x[j] = priors[j]->getSample(); }
+void PosteriorFromModel::getInitialSample(double x[]){ for(int j=0; j<num_dimensions; j++) x[j] = active_priors[j]->getSample(); }
 
 void PosteriorFromModel::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
     if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
     if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
-        lower[j] = priors[j]->isBoundedBelow();
-        upper[j] = priors[j]->isBoundedAbove();
+        lower[j] = active_priors[j]->isBoundedBelow();
+        upper[j] = active_priors[j]->isBoundedAbove();
     }
 }
 void PosteriorFromModel::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
     if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
     if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
-        lower[j] = priors[j]->getBoundBelow();
-        upper[j] = priors[j]->getBoundAbove();
+        lower[j] = active_priors[j]->getBoundBelow();
+        upper[j] = active_priors[j]->getBoundAbove();
     }
 }
 

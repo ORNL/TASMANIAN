@@ -109,8 +109,8 @@ private:
     const CustomModelWrapper *cmodel;
 
     int num_dimensions, num_outputs;
-    std::vector<BasePDF*> priors;
-    std::vector<bool> priors_created_here;
+    std::vector<BasePDF*> internal_priors;
+    std::vector<BasePDF*> active_priors;
 
     int num_data;
     const double *data;
