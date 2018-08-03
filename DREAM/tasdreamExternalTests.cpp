@@ -212,11 +212,11 @@ bool ExternalTester::testGamma1D(){
 
     int num_cells = 20; double delta = 10.0 / ((double) num_cells);
     int num_chains = 50;
-    double *samples_true = new double[num_mc];
-    TasDREAM::GammaPDF *Gtrue = new TasDREAM::GammaPDF(-2.0, 9.0, 2.0);
-    Gtrue->overwriteBaseUnifrom(&rng);
+    std::vector<double> samples_true(num_mc);
+    TasDREAM::GammaPDF Gtrue(-2.0, 9.0, 2.0);
+    Gtrue.overwriteBaseUnifrom(&rng);
 
-    for(int i=0; i<num_mc; i++) samples_true[i] = Gtrue->getSample();
+    for(int i=0; i<num_mc; i++) samples_true[i] = Gtrue.getSample();
 
     TasDREAM::TasmanianDREAM dream;
     dream.overwriteBaseUnifrom(&rng);
@@ -230,8 +230,8 @@ bool ExternalTester::testGamma1D(){
     //for(int i=0; i<num_mc; i++) samples_dream[i] = -1.0 + 2.0 * u.getSample01();
     //for(int i=0; i<num_mc; i++) cout << samples_dream[i] << endl;
 
-    int *cells_a = new int[num_cells+1]; std::fill(cells_a, cells_a + num_cells + 1, 0);
-    int *cells_b = new int[num_cells+1]; std::fill(cells_b, cells_b + num_cells + 1, 0);
+    std::vector<int> cells_a(num_cells+1, 0);
+    std::vector<int> cells_b(num_cells+1, 0);
     for(int i=0; i<num_mc; i++){
         int c = floor((samples_true[i] + 2.0) / delta);
         if (c < num_cells) cells_a[c]++;
@@ -247,18 +247,14 @@ bool ExternalTester::testGamma1D(){
     bool pass = true;
 
     //if (testChi(num_cells+1, cells_a, cells_b)){
-    if (testKS(num_cells+1, cells_a, cells_b)){
+    if (testKS(num_cells+1, cells_a.data(), cells_b.data())){
         cout << setw(wfirst) << "Distribution" << setw(wsecond) << "Gamma 1D" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Distribution" << setw(wsecond) << "Gamma 1D" << setw(wthird) << "FAIL" << endl;
         pass = false;
     }
 
-    delete Gtrue;
     delete[] samples_dream;
-    delete[] samples_true;
-    delete[] cells_a;
-    delete[] cells_b;
 
     return pass;
 }
