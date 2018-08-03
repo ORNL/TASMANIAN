@@ -36,15 +36,29 @@
 UnscaledUniform1D::UnscaledUniform1D(){}
 UnscaledUniform1D::~UnscaledUniform1D(){}
 int UnscaledUniform1D::getNumDimensions() const{ return 1; }
-void UnscaledUniform1D::evaluate(int num_points, const double*, double y[], bool){ for(int i=0; i<num_points; i++) y[i] = 1.0; }
-void UnscaledUniform1D::getDomainBounds(bool* lower_bound, bool* upper_bound){ lower_bound[0] = true; upper_bound[0] = true; }
-void UnscaledUniform1D::getDomainBounds(double* lower_bound, double* upper_bound){ lower_bound[0] = -1.0; upper_bound[0] = 1.0; }
+void UnscaledUniform1D::evaluate(const std::vector<double> x, std::vector<double> &y, bool){
+    if (y.size() < x.size()) y.resize(x.size());
+    for(size_t i=0; i<x.size(); i++) y[i] = 1.0;
+}
+void UnscaledUniform1D::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
+    if (lower.size() < 1) lower.resize(1);
+    if (upper.size() < 1) upper.resize(1);
+    lower[0] = true; // Gaussian is unbounded
+    upper[0] = true;
+}
+void UnscaledUniform1D::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
+    if (lower.size() < 1) lower.resize(1);
+    if (upper.size() < 1) upper.resize(1);
+    lower[0] = -1.0; // since bounds above give false,
+    upper[0] =  1.0;
+}
 void UnscaledUniform1D::getInitialSample(double y[]){ y[0] = -1.0 + 2.0 * u.getSample01(); }
 
 Beta1D::Beta1D(){
     b = new TasDREAM::BetaPDF(-1.0, 1.0, 2.0, 5.0);
 }
 Beta1D::~Beta1D(){ delete b; }
+int Beta1D::getAPIversion() const{ return 5; }
 int Beta1D::getNumDimensions() const{ return 1; }
 void Beta1D::evaluate(int num_points, const double x[], double y[], bool useLogForm){
     if (useLogForm){
@@ -53,8 +67,11 @@ void Beta1D::evaluate(int num_points, const double x[], double y[], bool useLogF
         for(int i=0; i<num_points; i++) y[i] = b->getDensity(x[i]);
     }
 }
+void Beta1D::evaluate(const std::vector<double>, std::vector<double> &, bool){} // test backward compatibility
 void Beta1D::getDomainBounds(bool* lower_bound, bool* upper_bound){ lower_bound[0] = true; upper_bound[0] = true; }
 void Beta1D::getDomainBounds(double* lower_bound, double* upper_bound){ lower_bound[0] = -1.0; upper_bound[0] = 1.0; }
+void Beta1D::getDomainBounds(std::vector<bool> &, std::vector<bool> &){}
+void Beta1D::getDomainBounds(std::vector<double> &, std::vector<double> &){}
 void Beta1D::getInitialSample(double y[]){ y[0] = -1.0 + 2.0 * u.getSample01(); }
 
 Gamma1D::Gamma1D(){
@@ -62,15 +79,27 @@ Gamma1D::Gamma1D(){
 }
 Gamma1D::~Gamma1D(){ delete g; }
 int Gamma1D::getNumDimensions() const{ return 1; }
-void Gamma1D::evaluate(int num_points, const double x[], double y[], bool useLogForm){
+void Gamma1D::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+    int num_points = x.size();
+    if (y.size() < x.size()) y.resize(x.size());
     if (useLogForm){
         for(int i=0; i<num_points; i++) y[i] = g->getDensityLog(x[i]);
     }else{
         for(int i=0; i<num_points; i++) y[i] = g->getDensity(x[i]);
     }
 }
-void Gamma1D::getDomainBounds(bool* lower_bound, bool* upper_bound){ lower_bound[0] = true; upper_bound[0] = false; }
-void Gamma1D::getDomainBounds(double* lower_bound, double* upper_bound){ lower_bound[0] = -2.0; upper_bound[0] = 0.0; }
+void Gamma1D::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
+    if (lower.size() < 1) lower.resize(1);
+    if (upper.size() < 1) upper.resize(1);
+    lower[0] = true;
+    upper[0] = false;
+}
+void Gamma1D::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
+    if (lower.size() < 1) lower.resize(1);
+    if (upper.size() < 1) upper.resize(1);
+    lower[0] = -2.0;
+    upper[0] =  0.0;
+}
 void Gamma1D::getInitialSample(double y[]){ y[0] = -1.0 + 10.0 * u.getSample01(); }
 
 Gaussian2D::Gaussian2D(){
@@ -79,21 +108,26 @@ Gaussian2D::Gaussian2D(){
 }
 Gaussian2D::~Gaussian2D(){ delete g1; delete g2; }
 int Gaussian2D::getNumDimensions() const{ return 2; }
-void Gaussian2D::evaluate(int num_points, const double x[], double y[], bool useLogForm){
-    //cout << "Eval called" << endl;
+void Gaussian2D::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+    int num_points = x.size() / 2;
+    if (y.size() < x.size()) y.resize(x.size());
     if (useLogForm){
         for(int i=0; i<num_points; i++) y[i] = g1->getDensityLog(x[2*i]) + g2->getDensityLog(x[2*i+1]);
     }else{
         for(int i=0; i<num_points; i++) y[i] = g1->getDensity(x[2*i]) * g2->getDensity(x[2*i+1]);
     }
 }
-void Gaussian2D::getDomainBounds(bool* lower_bound, bool* upper_bound){
-    lower_bound[0] = true; upper_bound[0] = true;
-    lower_bound[1] = true; upper_bound[1] = true;
+void Gaussian2D::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
+    if (lower.size() < 2) lower.resize(2);
+    if (upper.size() < 2) upper.resize(2);
+    lower[0] = true; lower[1] = true;
+    upper[0] = true; upper[1] = true;
 }
-void Gaussian2D::getDomainBounds(double* lower_bound, double* upper_bound){
-    lower_bound[0] = -1.0; upper_bound[0] = 1.0;
-    lower_bound[1] = -1.0; upper_bound[1] = 1.0;
+void Gaussian2D::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
+    if (lower.size() < 2) lower.resize(2);
+    if (upper.size() < 2) upper.resize(2);
+    lower[0] = -1.0; lower[1] = -1.0;
+    upper[0] =  1.0; upper[1] =  1.0;
 }
 void Gaussian2D::getInitialSample(double x[]){
     x[0] = -1.0 + 2.0 * u.getSample01();

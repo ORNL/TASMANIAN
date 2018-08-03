@@ -46,9 +46,9 @@ public:
     UnscaledUniform1D();
     ~UnscaledUniform1D();
     int getNumDimensions() const;
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
     void getInitialSample(double x[]);
 private:
     TasDREAM::CppUniformSampler u;
@@ -58,10 +58,16 @@ class Beta1D : public TasDREAM::ProbabilityWeightFunction{
 public:
     Beta1D();
     ~Beta1D();
+    int getAPIversion() const;
+
     int getNumDimensions() const;
+
     void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
     void getDomainBounds(bool* lower_bound, bool* upper_bound);
     void getDomainBounds(double* lower_bound, double* upper_bound);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
     void getInitialSample(double x[]);
 private:
     TasDREAM::BetaPDF *b;
@@ -73,9 +79,9 @@ public:
     Gamma1D();
     ~Gamma1D();
     int getNumDimensions() const;
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
     void getInitialSample(double x[]);
 private:
     TasDREAM::GammaPDF *g;
@@ -87,9 +93,9 @@ public:
     Gaussian2D();
     ~Gaussian2D();
     int getNumDimensions() const;
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
     void getInitialSample(double x[]);
 private:
     TasDREAM::TruncatedGaussianPDF *g1, *g2;

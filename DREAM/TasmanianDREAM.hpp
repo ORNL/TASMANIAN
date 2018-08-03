@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_DREAM_HPP
 #define __TASMANIAN_DREAM_HPP
 
+#include <vector>
+
 #include "TasmanianSparseGrid.hpp"
 
 #include "tdrEnumerates.hpp"
@@ -42,27 +44,37 @@ class CustomModelWrapper{ // use this class for inheritance purposes only
 public:
     CustomModelWrapper();
     virtual ~CustomModelWrapper();
+    virtual int getAPIversion() const;
+
     virtual int getNumDimensions() const = 0;
     virtual int getNumOutputs() const = 0;
-    virtual void evaluate(const double x[], int num_points, double y[]) const = 0;
+    virtual void evaluate(const double x[], int num_points, double y[]) const;
+    virtual void evaluate(const std::vector<double> x, std::vector<double> &y) const = 0;
 };
 
 
 class ProbabilityWeightFunction{ // use this class for inheritance purposes only
+// WARNING: TasmanianDREAM class holds an alias to an instance of this class,
+//      modifying the class after calling setProbabilityWeightFunction could result in undefined behavior
+//      TasmanianDREAM class does not call delete on the pointer
 public:
     ProbabilityWeightFunction();
     virtual ~ProbabilityWeightFunction();
 
+    virtual int getAPIversion() const;
+    // if this returns 5 or lower, TasmanianDREAM will use evaluate(int, const double[], double[], bool)
+    // if this returns 6 or more, TasmanianDREAM will use evaluate(const std::vector<double>, std::vector<double>&, bool)
+
     virtual int getNumDimensions() const = 0;
 
-    virtual void evaluate(int num_points, const double x[], double y[], bool useLogForm) = 0;
+    virtual void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    virtual void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm) = 0;
     // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
-    // WARNING: TasmanianDREAM class holds an alias to an instance of this class,
-    //      modifying the class after calling setProbabilityWeightFunction could result in undefined behavior
-    //      TasmanianDREAM class does not call delete on the pointer
 
-    virtual void getDomainBounds(bool* lower_bound, bool* upper_bound) = 0;
-    virtual void getDomainBounds(double* lower_bound, double* upper_bound) = 0;
+    virtual void getDomainBounds(bool* lower_bound, bool* upper_bound);
+    virtual void getDomainBounds(double* lower_bound, double* upper_bound);
+    virtual void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper) = 0;
+    virtual void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper) = 0;
     virtual void getInitialSample(double x[]) = 0;
 };
 
@@ -83,30 +95,27 @@ public:
 
     int getNumDimensions() const;
 
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
 
     void getInitialSample(double x[]);
     void setLikelihood(BaseLikelihood *likelihood);
     void setData(int num_data_samples, const double *posterior_data);
 
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
 
 private:
     const TasGrid::TasmanianSparseGrid *grid;
     const CustomModelWrapper *cmodel;
 
     int num_dimensions, num_outputs;
-    BasePDF **priors;
-    bool *priors_created_here;
+    std::vector<BasePDF*> internal_priors;
+    std::vector<BasePDF*> active_priors;
 
     int num_data;
     const double *data;
 
     BaseLikelihood *likely;
-
-    int num_cache;
-    double *model_cache;
 
     std::ostream *logstream;
 };
@@ -123,14 +132,14 @@ public:
     void setErrorLog(std::ostream *os);
 
     int getNumDimensions() const;
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
 
     void getInitialSample(double x[]);
 
     void setNumChanis(int num_dream_chains); // needed for MPI communication purposes
 
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
 
     void workerLoop(bool useLogForm);
     void endWorkerLoop();
@@ -152,25 +161,26 @@ class LikelihoodTSG : public ProbabilityWeightFunction{
 public:
     LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm, std::ostream *os = 0);
     ~LikelihoodTSG();
-    void setPDF(int dimension, BasePDF* &pdf);
+    void setPDF(int dimension, BasePDF* pdf);
 
     void setErrorLog(std::ostream *os);
 
     int getNumDimensions() const;
 
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
 
     void getInitialSample(double x[]);
 
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
+    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
 
 private:
     const TasGrid::TasmanianSparseGrid *grid;
     bool savedLogarithmForm;
 
     int num_dimensions;
-    BasePDF **priors;
+    std::vector<BasePDF*> internal_priors;
+    std::vector<BasePDF*> active_priors;
 
     std::ostream *logstream;
 };
@@ -208,6 +218,7 @@ public:
 
     // read/write chain state
     void setChainState(const double* state);
+    void setChainState(const std::vector<double> state);
     //void clearPDFValues(); // delete cached pdf values, use when the state has been saved from a different pdf
 
     void setProbabilityWeightFunction(ProbabilityWeightFunction *probability_weight);
@@ -217,7 +228,11 @@ public:
     //      TasmanianDREAM class does not call delete on the pointer
 
     double* collectSamples(int num_burnup, int num_samples, bool useLogForm = false);
+    void collectSamples(int num_burnup, int num_samples, double *samples, bool useLogForm = false);
+    void collectSamples(int num_burnup, int num_samples, std::vector<double> &samples, bool useLogForm = false);
+
     double* getPDFHistory() const;
+    void getPDFHistory(std::vector<double> history) const;
 
 protected:
     void clear();
@@ -229,18 +244,19 @@ private:
     ProbabilityWeightFunction *pdf;
 
     double jump;
-    BasePDF **corrections;
+    std::vector<BasePDF*> corrections;
 
-    double *chain_state, *pdf_values, *old_state, *new_pdf_values;
+    bool state_initialized, values_initialized, values_logform;
+    //double *old_state, *new_pdf_values;
+    std::vector<double> chain_state, pdf_values;
 
-    bool *isBoudnedBelow, *isBoudnedAbove;
-    double *boundBelow, *boundAbove;
+    std::vector<bool> isBoudnedBelow, isBoudnedAbove;
+    std::vector<double> boundBelow, boundAbove;
 
     const BaseUniform *core;
     CppUniformSampler unifrom_cpp;
 
-    int num_pdf_history;
-    double *pdf_history;
+    std::vector<double> pdf_history;
 
     std::ostream *logstream;
 };

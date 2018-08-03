@@ -42,7 +42,9 @@ int main(int argc, const char**){
         UnscaledPDF(){}
         ~UnscaledPDF(){}
         int getNumDimensions() const{ return 1; }
-        void evaluate(int num_points, const double x[], double y[], bool useLogForm){
+        void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+            int num_points = x.size();
+            if (y.size() < (size_t) num_points) y.resize(num_points);
             for(int i=0; i<num_points; i++){ // set the pdf values
                 y[i] = -0.5 * x[i] * x[i];
             }
@@ -52,13 +54,17 @@ int main(int argc, const char**){
                 }
             }
         }
-        void getDomainBounds(bool* lower_bound, bool* upper_bound){
-            lower_bound[0] = false; // Gaussian is unbounded
-            upper_bound[0] = false;
+        void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
+            if (lower.size() < 1) lower.resize(1);
+            if (upper.size() < 1) upper.resize(1);
+            lower[0] = false; // Gaussian is unbounded
+            upper[0] = false;
         }
-        void getDomainBounds(double* lower_bound, double* upper_bound){
-            lower_bound[0] = 0.0; // since bounds above give false,
-            upper_bound[0] = 0.0; // those here are dummy values
+        void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
+            if (lower.size() < 1) lower.resize(1);
+            if (upper.size() < 1) upper.resize(1);
+            lower[0] = 0.0; // since bounds above give false,
+            upper[0] = 0.0;
         }
         void getInitialSample(double x[]){
             // initialize with samples unifromly in [-1,1]
@@ -572,7 +578,9 @@ int main(int argc, const char**){
 
         int getNumDimensions() const{ return 2; }
         int getNumOutputs() const{ return N; }
-        void evaluate(const double x[], int num_points, double y[]) const{
+        void evaluate(const std::vector<double> x, std::vector<double> &y) const{
+            int num_points = x.size() / 2;
+            if (y.size() < (size_t) (N * num_points)) y.resize(N * num_points);
             for(int i=0; i<num_points; i++){
                 for(int j=0; j<N; j++){
                     y[i*N + j] = sin(x[2*i] * M_PI * (dt2 + j*dt) + x[2*i+1]);
@@ -695,7 +703,9 @@ int main(int argc, const char**){
 
         int getNumDimensions() const{ return 6; }
         int getNumOutputs() const{ return N; }
-        void evaluate(const double x[], int num_points, double y[]) const{
+        void evaluate(const std::vector<double> x, std::vector<double> &y) const{
+            int num_points = x.size() / 2;
+            if (y.size() < (size_t) (N * num_points)) y.resize(N * num_points);
             for(int i=0; i<num_points; i++){
                 for(int j=0; j<N; j++){
                     double t = snap[j];
