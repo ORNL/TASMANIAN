@@ -266,11 +266,11 @@ bool ExternalTester::testGaussian2D(){
     int num_cells1d = 4; double delta = 2.0 / ((double) num_cells1d);
     int num_cells = num_cells1d * num_cells1d;
     int num_chains = 100;
-    double *samples_true = new double[2*num_mc];
-    TasDREAM::TruncatedGaussianPDF *Gtrue = new TasDREAM::TruncatedGaussianPDF(-0.5, 0.1, -1.0, 1.0);
-    Gtrue->overwriteBaseUnifrom(&rng);
+    std::vector<double> samples_true(2*num_mc);
+    TasDREAM::TruncatedGaussianPDF Gtrue(-0.5, 0.1, -1.0, 1.0);
+    Gtrue.overwriteBaseUnifrom(&rng);
 
-    for(int i=0; i<2*num_mc; i++) samples_true[i] = Gtrue->getSample();
+    for(int i=0; i<2*num_mc; i++) samples_true[i] = Gtrue.getSample();
 
     TasDREAM::TasmanianDREAM dream;
     dream.overwriteBaseUnifrom(&rng);
@@ -280,12 +280,13 @@ bool ExternalTester::testGaussian2D(){
     gauss.overwriteBaseUnifrom(&rng);
     dream.setCorrectionAll(&gauss);
 
-    double *samples_dream = dream.collectSamples(3*num_mc, num_mc / num_chains, false);
+    std::vector<double> samples_dream;
+    dream.collectSamples(3*num_mc, num_mc / num_chains, samples_dream, false);
     //for(int i=0; i<num_mc; i++) samples_dream[i] = -1.0 + 2.0 * u.getSample01();
     //for(int i=0; i<num_mc; i++) cout << samples_dream[i] << endl;
 
-    int *cells_a = new int[num_cells]; std::fill(cells_a, cells_a + num_cells, 0);
-    int *cells_b = new int[num_cells]; std::fill(cells_b, cells_b + num_cells, 0);
+    std::vector<int> cells_a(num_cells, 0);
+    std::vector<int> cells_b(num_cells, 0);
     for(int i=0; i<num_mc; i++){
         if ((fabs(samples_true[2*i]) > 1.0) || (fabs(samples_true[2*i+1]) > 1.0)) cout << "ERROR: bad value: " << samples_true[2*i] << "  " << samples_true[2*i + 1] << endl;
         int cx = floor((samples_true[2*i  ] + 1.0) / delta);
@@ -300,7 +301,7 @@ bool ExternalTester::testGaussian2D(){
     //for(int i=0; i<num_cells; i++){ cout << cells_a[i] << "  " << cells_b[i] << endl; }
 
     bool pass = true;
-    if (!testChi(num_cells, cells_a, cells_b)){
+    if (!testChi(num_cells, cells_a.data(), cells_b.data())){
         cout << "FAIL: mismatch between true Gaussian PDF and dream samples from Gaussian PFD" << endl;
         pass = false;
     }
@@ -309,22 +310,22 @@ bool ExternalTester::testGaussian2D(){
     TasGrid::TasmanianSparseGrid grid;
     grid.makeGlobalGrid(2, 1, 15, TasGrid::type_iptotal, TasGrid::rule_clenshawcurtis);
     int num_grid_points = grid.getNumNeeded();
-    double *points = grid.getNeededPoints();
-    double *values = new double[num_grid_points];
+    std::vector<double> points;
+    grid.getNeededPoints(points);
+    std::vector<double> values(num_grid_points);
     for(int i=0; i<num_grid_points; i++){
-        values[i] = Gtrue->getDensityLog(points[2*i]) + Gtrue->getDensityLog(points[2*i+1]);
+        values[i] = Gtrue.getDensityLog(points[2*i]) + Gtrue.getDensityLog(points[2*i+1]);
     }
     grid.loadNeededPoints(values);
 
-    TasDREAM::LikelihoodTSG *grid_pdf = new TasDREAM::LikelihoodTSG(&grid, true);
+    TasDREAM::LikelihoodTSG grid_pdf(&grid, true);
 
-    dream.setProbabilityWeightFunction(grid_pdf);
+    dream.setProbabilityWeightFunction(&grid_pdf);
     dream.setNumChains(num_chains);
     dream.setCorrectionAll(&gauss);
-    delete[] samples_dream;
-    samples_dream = dream.collectSamples(3*num_mc, num_mc / num_chains, true);
+    dream.collectSamples(3*num_mc, num_mc / num_chains, samples_dream, true);
 
-    std::fill(cells_b, cells_b + num_cells, 0);
+    std::fill(cells_b.begin(), cells_b.end(), 0);
     for(int i=0; i<num_mc; i++){
         if ((fabs(samples_dream[2*i]) > 1.0) || (fabs(samples_dream[2*i+1]) > 1.0)) cout << "ERROR: bad value: " << samples_dream[2*i] << "  " << samples_dream[2*i + 1] << endl;
         int cx = floor((samples_dream[2*i  ] + 1.0) / delta);
@@ -334,7 +335,7 @@ bool ExternalTester::testGaussian2D(){
     }
     //for(int i=0; i<num_cells; i++){ cout << cells_a[i] << "  " << cells_b[i] << endl; }
 
-    if (!testChi(num_cells, cells_a, cells_b)){
+    if (!testChi(num_cells, cells_a.data(), cells_b.data())){
         cout << "FAIL: mismatch between true Gaussian PDF and dream samples from interpolated Gaussian PFD" << endl;
         pass = false;
     }
@@ -344,15 +345,6 @@ bool ExternalTester::testGaussian2D(){
     }else{
         cout << setw(wfirst) << "Distribution" << setw(wsecond) << "Truncated Gaussian 2D" << setw(wthird) << "FAIL" << endl;
     }
-
-    delete grid_pdf;
-    delete[] points;
-    delete[] values;
-    delete Gtrue;
-    delete[] samples_dream;
-    delete[] samples_true;
-    delete[] cells_a;
-    delete[] cells_b;
 
     return pass;
 }
@@ -373,8 +365,9 @@ bool ExternalTester::testModelLikelihoodAlpha(){
     double domain_b[2] = {8.0,  1.7};
     grid.setDomainTransform(domain_a, domain_b);
     int num_grid_points = grid.getNumNeeded();
-    double *points = grid.getNeededPoints();
-    double *values = new double[num_grid_points * N];
+    std::vector<double> points;
+    grid.getNeededPoints(points);
+    std::vector<double> values(num_grid_points * N);
     for(int i=0; i<num_grid_points; i++){
         for(int j=0; j<N; j++){
             values[i*N + j] = sin(points[2*i] * M_PI * (dt2 + j*dt) + points[2*i+1]);
@@ -382,11 +375,9 @@ bool ExternalTester::testModelLikelihoodAlpha(){
         }
     }
     grid.loadNeededPoints(values);
-    delete[] points;
-    delete[] values;
 
     // set the data
-    double *data = new double[N];
+    std::vector<double> data(N);
     for(int j=0; j<N; j++){
         data[j] = sin(M_PI * (dt2 + j*dt) + 0.3 * M_PI);
     }
@@ -394,7 +385,7 @@ bool ExternalTester::testModelLikelihoodAlpha(){
     TasDREAM::PosteriorFromModel post(&grid);
 
     double scale = 1.0 / ((double) (N));
-    TasDREAM::GaussianLikelihood likely(N, TasDREAM::likely_gauss_scale, &scale, 1, data);
+    TasDREAM::GaussianLikelihood likely(N, TasDREAM::likely_gauss_scale, &scale, 1, data.data());
     post.setLikelihood(&likely);
 
     TasDREAM::TasmanianDREAM dream;
@@ -406,7 +397,8 @@ bool ExternalTester::testModelLikelihoodAlpha(){
     gauss.overwriteBaseUnifrom(&rng);
     dream.setCorrectionAll(&gauss);
 
-    double *mcmc = dream.collectSamples(num_mc, num_mc / 10);
+    std::vector<double> mcmc;
+    dream.collectSamples(num_mc, num_mc / 10, mcmc);
     double frequency = 0.0, correction = 0.0;
     for(int i=0; i<num_chains * num_mc / 10; i++){
         //cout << mcmc[2*i] << "   " << mcmc[2*i+1] << endl;
@@ -420,9 +412,6 @@ bool ExternalTester::testModelLikelihoodAlpha(){
         cout << "inferred frequency: " << frequency << "   actual: 1.0" << endl;
         cout << "inferred correction: " << correction << "   actual: " << 0.3 * M_PI << endl;
     }
-
-    delete[] mcmc;
-    delete[] data;
 
     bool pass = true;
     if ((fabs(frequency - 1.0) > 0.015) || (fabs(correction - 0.3 * M_PI) > 0.03)){
