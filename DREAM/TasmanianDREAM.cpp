@@ -240,19 +240,15 @@ LikelihoodTSG::LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool sa
     if (num_dimensions < 1){
         if (logstream != 0) (*logstream) << "ERROR: cannot work with an empty Grid" << endl;
     }
-    SparseGridDomainToPDF::assumeDefaultPDF(likely, priors);
+    SparseGridDomainToPDF::assumeDefaultPDF(likely, internal_priors);
+    active_priors = internal_priors;
 }
 LikelihoodTSG::~LikelihoodTSG(){
-    for(auto &p : priors){
-        delete p;
-        p = 0;
-    }
+    for(auto &p : internal_priors) delete p;
 }
-void LikelihoodTSG::setPDF(int dimension, BasePDF* &pdf){
+void LikelihoodTSG::setPDF(int dimension, BasePDF* pdf){
     if ((dimension < 0) || (dimension >= num_dimensions)) return;
-    if (priors[dimension] != 0) delete priors[dimension];
-    priors[dimension] = pdf;
-    pdf = 0;
+    active_priors[dimension] = pdf;
 }
 void LikelihoodTSG::setErrorLog(std::ostream *os){ logstream = os; }
 int LikelihoodTSG::getNumDimensions() const{ return num_dimensions; }
@@ -275,31 +271,31 @@ void LikelihoodTSG::evaluate(const std::vector<double> x, std::vector<double> &y
 
     if (useLogForm){
         for(int i=0; i<num_points; i++){
-            for(int j=0; j<num_dimensions; j++) y[i] += priors[j]->getDensityLog(x[i*num_dimensions +j]);
+            for(int j=0; j<num_dimensions; j++) y[i] += active_priors[j]->getDensityLog(x[i*num_dimensions +j]);
         }
     }else{
         for(int i=0; i<num_points; i++){
-            for(int j=0; j<num_dimensions; j++) y[i] *= priors[j]->getDensity(x[i*num_dimensions +j]);
+            for(int j=0; j<num_dimensions; j++) y[i] *= active_priors[j]->getDensity(x[i*num_dimensions +j]);
         }
     }
 }
 
-void LikelihoodTSG::getInitialSample(double x[]){ for(int j=0; j<num_dimensions; j++) x[j] = priors[j]->getSample(); }
+void LikelihoodTSG::getInitialSample(double x[]){ for(int j=0; j<num_dimensions; j++) x[j] = active_priors[j]->getSample(); }
 
 void LikelihoodTSG::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
     if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
     if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
-        lower[j] = priors[j]->isBoundedBelow();
-        upper[j] = priors[j]->isBoundedAbove();
+        lower[j] = active_priors[j]->isBoundedBelow();
+        upper[j] = active_priors[j]->isBoundedAbove();
     }
 }
 void LikelihoodTSG::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
     if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
     if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
-        lower[j] = priors[j]->getBoundBelow();
-        upper[j] = priors[j]->getBoundAbove();
+        lower[j] = active_priors[j]->getBoundBelow();
+        upper[j] = active_priors[j]->getBoundAbove();
     }
 }
 

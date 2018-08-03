@@ -161,7 +161,7 @@ class LikelihoodTSG : public ProbabilityWeightFunction{
 public:
     LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm, std::ostream *os = 0);
     ~LikelihoodTSG();
-    void setPDF(int dimension, BasePDF* &pdf);
+    void setPDF(int dimension, BasePDF* pdf);
 
     void setErrorLog(std::ostream *os);
 
@@ -179,7 +179,8 @@ private:
     bool savedLogarithmForm;
 
     int num_dimensions;
-    std::vector<BasePDF*> priors;
+    std::vector<BasePDF*> internal_priors;
+    std::vector<BasePDF*> active_priors;
 
     std::ostream *logstream;
 };
