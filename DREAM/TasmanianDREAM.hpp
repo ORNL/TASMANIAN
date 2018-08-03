@@ -248,7 +248,7 @@ private:
 
     bool state_initialized, values_initialized, values_logform;
     //double *old_state, *new_pdf_values;
-    std::vector<double> chain_state, pdf_values, new_pdf_values, old_state;
+    std::vector<double> chain_state, pdf_values;
 
     std::vector<bool> isBoudnedBelow, isBoudnedAbove;
     std::vector<double> boundBelow, boundAbove;
