@@ -171,7 +171,7 @@ protected:
     TypeIndexRelation compareIndexes(int num_dimensions, const int a[], const int b[]) const;
 
 private:
-    size_t num_outputs, num_values;
+    size_t num_outputs, num_values; // kept as size_t to avoid conversions in products, but each one is small individually
     double *values;
 };
 
