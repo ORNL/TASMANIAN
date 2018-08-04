@@ -80,12 +80,12 @@ Gamma1D::Gamma1D(){
 Gamma1D::~Gamma1D(){ delete g; }
 int Gamma1D::getNumDimensions() const{ return 1; }
 void Gamma1D::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
-    int num_points = x.size();
+    size_t num_points = x.size();
     if (y.size() < x.size()) y.resize(x.size());
     if (useLogForm){
-        for(int i=0; i<num_points; i++) y[i] = g->getDensityLog(x[i]);
+        for(size_t i=0; i<num_points; i++) y[i] = g->getDensityLog(x[i]);
     }else{
-        for(int i=0; i<num_points; i++) y[i] = g->getDensity(x[i]);
+        for(size_t i=0; i<num_points; i++) y[i] = g->getDensity(x[i]);
     }
 }
 void Gamma1D::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
@@ -109,12 +109,12 @@ Gaussian2D::Gaussian2D(){
 Gaussian2D::~Gaussian2D(){ delete g1; delete g2; }
 int Gaussian2D::getNumDimensions() const{ return 2; }
 void Gaussian2D::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
-    int num_points = x.size() / 2;
+    size_t num_points = x.size() / 2;
     if (y.size() < x.size()) y.resize(x.size());
     if (useLogForm){
-        for(int i=0; i<num_points; i++) y[i] = g1->getDensityLog(x[2*i]) + g2->getDensityLog(x[2*i+1]);
+        for(size_t i=0; i<num_points; i++) y[i] = g1->getDensityLog(x[2*i]) + g2->getDensityLog(x[2*i+1]);
     }else{
-        for(int i=0; i<num_points; i++) y[i] = g1->getDensity(x[2*i]) * g2->getDensity(x[2*i+1]);
+        for(size_t i=0; i<num_points; i++) y[i] = g1->getDensity(x[2*i]) * g2->getDensity(x[2*i+1]);
     }
 }
 void Gaussian2D::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
