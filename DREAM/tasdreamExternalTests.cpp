@@ -115,7 +115,7 @@ bool ExternalTester::Test(TestList test){
 }
 
 bool ExternalTester::testUniform1D(){
-    int s = (rngseed == -1) ? 12 : rngseed;
+    int s = (rngseed == -1) ? 12 : ((int) rngseed);
     TestRNG rng(s);
 
     int num_cells = 16; double delta = 2.0 / ((double) num_cells);
@@ -138,9 +138,9 @@ bool ExternalTester::testUniform1D(){
     std::vector<int> cells_a(num_cells, 0);
     std::vector<int> cells_b(num_cells, 0);
     for(int i=0; i<num_mc; i++){
-        int c = floor((samples_true[i] + 1.0) / delta);
+        int c = (int) floor((samples_true[i] + 1.0) / delta);
         if (c < num_cells) cells_a[c]++;
-        c = floor((samples_dream[i] + 1.0) / delta);
+        c = (int) floor((samples_dream[i] + 1.0) / delta);
         if (c < num_cells) cells_b[c]++;
         //if ( c >= num_cells ) cout << samples_dream[i] << endl;
     }
@@ -159,7 +159,7 @@ bool ExternalTester::testUniform1D(){
 }
 
 bool ExternalTester::testBeta1D(){
-    int s = (rngseed == -1) ? 12 : rngseed;
+    int s = (rngseed == -1) ? 12 : ((int) rngseed);
     TestRNG rng(s);
 
     int num_cells = 10; double delta = 2.0 / ((double) num_cells);
@@ -186,9 +186,9 @@ bool ExternalTester::testBeta1D(){
     std::vector<int> cells_a(num_cells, 0);
     std::vector<int> cells_b(num_cells, 0);
     for(int i=0; i<num_mc; i++){
-        int c = floor((samples_true[i] + 1.0) / delta);
+        int c = (int) floor((samples_true[i] + 1.0) / delta);
         if (c < num_cells) cells_a[c]++;
-        c = floor((samples_dream[i] + 1.0) / delta);
+        c = (int) floor((samples_dream[i] + 1.0) / delta);
         if (c < num_cells) cells_b[c]++;
         //if ( c >= num_cells ) cout << samples_dream[i] << endl;
     }
@@ -207,7 +207,7 @@ bool ExternalTester::testBeta1D(){
 }
 
 bool ExternalTester::testGamma1D(){
-    int s = (rngseed == -1) ? 12 : rngseed;
+    int s = (rngseed == -1) ? 12 : ((int) rngseed);
     TestRNG rng(s);
 
     int num_cells = 20; double delta = 10.0 / ((double) num_cells);
@@ -233,10 +233,10 @@ bool ExternalTester::testGamma1D(){
     std::vector<int> cells_a(num_cells+1, 0);
     std::vector<int> cells_b(num_cells+1, 0);
     for(int i=0; i<num_mc; i++){
-        int c = floor((samples_true[i] + 2.0) / delta);
+        int c = (int) floor((samples_true[i] + 2.0) / delta);
         if (c < num_cells) cells_a[c]++;
         if (c >= num_cells) cells_a[num_cells]++;
-        c = floor((samples_dream[i] + 2.0) / delta);
+        c = (int) floor((samples_dream[i] + 2.0) / delta);
         if (c < num_cells) cells_b[c]++;
         if (c >= num_cells) cells_b[num_cells]++;
         if (samples_dream[i] < -2.0 ) cout << "ERROR: bad value: " << samples_dream[i] << endl;
@@ -260,7 +260,7 @@ bool ExternalTester::testGamma1D(){
 }
 
 bool ExternalTester::testGaussian2D(){
-    int s = (rngseed == -1) ? 25 : rngseed;
+    int s = (rngseed == -1) ? 25 : ((int) rngseed);
     TestRNG rng(s);
 
     int num_cells1d = 4; double delta = 2.0 / ((double) num_cells1d);
@@ -289,13 +289,13 @@ bool ExternalTester::testGaussian2D(){
     std::vector<int> cells_b(num_cells, 0);
     for(int i=0; i<num_mc; i++){
         if ((fabs(samples_true[2*i]) > 1.0) || (fabs(samples_true[2*i+1]) > 1.0)) cout << "ERROR: bad value: " << samples_true[2*i] << "  " << samples_true[2*i + 1] << endl;
-        int cx = floor((samples_true[2*i  ] + 1.0) / delta);
-        int cy = floor((samples_true[2*i+1] + 1.0) / delta);
+        int cx = (int) floor((samples_true[2*i  ] + 1.0) / delta);
+        int cy = (int) floor((samples_true[2*i+1] + 1.0) / delta);
         cells_a[cx*num_cells1d + cy]++;
 
         if ((fabs(samples_dream[2*i]) > 1.0) || (fabs(samples_dream[2*i+1]) > 1.0)) cout << "ERROR: bad value: " << samples_dream[2*i] << "  " << samples_dream[2*i + 1] << endl;
-        cx = floor((samples_dream[2*i  ] + 1.0) / delta);
-        cy = floor((samples_dream[2*i+1] + 1.0) / delta);
+        cx = (int) floor((samples_dream[2*i  ] + 1.0) / delta);
+        cy = (int) floor((samples_dream[2*i+1] + 1.0) / delta);
         cells_b[cx*num_cells1d + cy]++;
     }
     //for(int i=0; i<num_cells; i++){ cout << cells_a[i] << "  " << cells_b[i] << endl; }
@@ -328,8 +328,8 @@ bool ExternalTester::testGaussian2D(){
     std::fill(cells_b.begin(), cells_b.end(), 0);
     for(int i=0; i<num_mc; i++){
         if ((fabs(samples_dream[2*i]) > 1.0) || (fabs(samples_dream[2*i+1]) > 1.0)) cout << "ERROR: bad value: " << samples_dream[2*i] << "  " << samples_dream[2*i + 1] << endl;
-        int cx = floor((samples_dream[2*i  ] + 1.0) / delta);
-        int cy = floor((samples_dream[2*i+1] + 1.0) / delta);
+        int cx = (int) floor((samples_dream[2*i  ] + 1.0) / delta);
+        int cy = (int) floor((samples_dream[2*i+1] + 1.0) / delta);
         cells_b[cx*num_cells1d + cy]++;
         //cout << samples_dream[2*i] << "  " << samples_dream[2*i+1] << endl;
     }
@@ -350,7 +350,7 @@ bool ExternalTester::testGaussian2D(){
 }
 
 bool ExternalTester::testModelLikelihoodAlpha(){
-    int s = (rngseed == -1) ? 12 : rngseed;
+    int s = (rngseed == -1) ? 12 : ((int) rngseed);
     TestRNG rng(s);
 
     // model sin(p_0 t M_PI + p_1), data cos(M_PI t) / cos(M_PI t) + cos(5 M_PI y)
