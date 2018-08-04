@@ -318,7 +318,7 @@ int main(int argc, const char**){
     }
 
     // generate 4000 random points between -1 and 1
-    srand(clock());
+    srand((int) clock());
     double *pnts = new double[4000];
     for(int i=0; i<4000; i++)  pnts[i] = 2.0 * ((double) rand()) / ((double) RAND_MAX) -1.0;
 
@@ -329,7 +329,7 @@ int main(int argc, const char**){
     int dim = 4;
     int out = 1;
     int prec = 15;
-    int start_clock, end_clock;
+    long int start_clock, end_clock;
 
     // generate the true values of the funciton (for error checking)
     double *tres = new double[1000];
@@ -346,7 +346,7 @@ int main(int argc, const char**){
     start_clock = clock();
     grid.makeGlobalGrid(dim, out, prec, TasGrid::type_iptotal, TasGrid::rule_leja);
     end_clock = clock();
-    int gstage1 = end_clock - start_clock;
+    long int gstage1 = end_clock - start_clock;
 
     int num_points = grid.getNumPoints();
     double *points = grid.getPoints();
@@ -370,14 +370,14 @@ int main(int argc, const char**){
     start_clock = clock();
     grid.loadNeededPoints(vals);
     end_clock = clock();
-    int gstage2 = end_clock - start_clock;
+    long int gstage2 = end_clock - start_clock;
 
     double *res = new double[1000];
 
     start_clock = clock();
     grid.evaluateBatch(pnts, 1000, res);
     end_clock = clock();
-    int gstage3 = end_clock - start_clock;
+    long int gstage3 = end_clock - start_clock;
 
     double gerr = 0.0;
     for(int i=0; i<1000; i++)  if (gerr < fabs(res[i] - tres[i])) gerr = fabs(res[i] - tres[i]);
@@ -386,17 +386,17 @@ int main(int argc, const char**){
     start_clock = clock();
     sgrid.makeSequenceGrid(dim, out, prec, TasGrid::type_iptotal, TasGrid::rule_leja);
     end_clock = clock();
-    int sstage1 = end_clock - start_clock;
+    long int sstage1 = end_clock - start_clock;
 
     start_clock = clock();
     sgrid.loadNeededPoints(vals);
     end_clock = clock();
-    int sstage2 = end_clock - start_clock;
+    long int sstage2 = end_clock - start_clock;
 
     start_clock = clock();
     sgrid.evaluateBatch(pnts, 1000, res);
     end_clock = clock();
-    int sstage3 = end_clock - start_clock;
+    long int sstage3 = end_clock - start_clock;
 
     cout << setw(15) << "Stage"       << setw(15) << "Global Grid" << setw(15) << "Sequence Grid" << endl;
     cout << setw(15) << "make grid"   << setw(15) << gstage1 << setw(15) << sstage1 << "   cycles" << endl;

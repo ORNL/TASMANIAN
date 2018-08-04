@@ -96,7 +96,7 @@ void PosteriorFromModel::setErrorLog(std::ostream *os){ logstream = os; }
 int PosteriorFromModel::getNumDimensions() const{ return num_dimensions; }
 
 void PosteriorFromModel::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
-    int num_points = x.size() / num_dimensions;
+    size_t num_points = x.size() / num_dimensions;
 
     std::vector<double> model_output;
     if (grid != 0){
@@ -108,21 +108,21 @@ void PosteriorFromModel::evaluate(const std::vector<double> x, std::vector<doubl
     }else{
         if (cmodel->getAPIversion() < 6){
             model_output.resize(num_points * num_outputs);
-            cmodel->evaluate(x.data(), num_points, model_output.data()); // fastest
+            cmodel->evaluate(x.data(), (int) num_points, model_output.data()); // fastest
         }else{
             cmodel->evaluate(x, model_output);
         }
     }
 
-    if (y.size() < (size_t) num_points) y.resize(num_points);
-    likely->getLikelihood(num_points, model_output.data(), num_data, data, y.data(), useLogForm);
+    if (y.size() < num_points) y.resize(num_points);
+    likely->getLikelihood((int) num_points, model_output.data(), num_data, data, y.data(), useLogForm);
 
     if (useLogForm){
-        for(int i=0; i<num_points; i++){
+        for(size_t i=0; i<num_points; i++){
             for(int j=0; j<num_dimensions; j++) y[i] += active_priors[j]->getDensityLog(x[i*num_dimensions +j]);
         }
     }else{
-        for(int i=0; i<num_points; i++){
+        for(size_t i=0; i<num_points; i++){
             for(int j=0; j<num_dimensions; j++) y[i] *= active_priors[j]->getDensity(x[i*num_dimensions +j]);
         }
     }
@@ -254,7 +254,7 @@ void LikelihoodTSG::setErrorLog(std::ostream *os){ logstream = os; }
 int LikelihoodTSG::getNumDimensions() const{ return num_dimensions; }
 
 void LikelihoodTSG::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
-    int num_points = x.size() / num_dimensions;
+    size_t num_points = x.size() / num_dimensions;
 
     grid->evaluateBatch(x, y); // fastest
 //    for(int i=0; i<num_points; i++){
@@ -263,18 +263,18 @@ void LikelihoodTSG::evaluate(const std::vector<double> x, std::vector<double> &y
 //    }
     if (savedLogarithmForm ^ useLogForm){ // using form other than the one saved
         if (savedLogarithmForm){
-            for(int i=0; i<num_points; i++) y[i] = exp(y[i]);
+            for(size_t i=0; i<num_points; i++) y[i] = exp(y[i]);
         }else{
-            for(int i=0; i<num_points; i++) y[i] = log(y[i]);
+            for(size_t i=0; i<num_points; i++) y[i] = log(y[i]);
         }
     }
 
     if (useLogForm){
-        for(int i=0; i<num_points; i++){
+        for(size_t i=0; i<num_points; i++){
             for(int j=0; j<num_dimensions; j++) y[i] += active_priors[j]->getDensityLog(x[i*num_dimensions +j]);
         }
     }else{
-        for(int i=0; i<num_points; i++){
+        for(size_t i=0; i<num_points; i++){
             for(int j=0; j<num_dimensions; j++) y[i] *= active_priors[j]->getDensity(x[i*num_dimensions +j]);
         }
     }
@@ -405,7 +405,7 @@ void TasmanianDREAM::setChainState(const double* state){
 }
 void TasmanianDREAM::setChainState(const std::vector<double> state){
     chain_state = state; // copy assignment
-    if (chain_state.size() != (size_t) (num_dimensions * num_chains)) num_chains = chain_state.size() / num_dimensions;
+    if (chain_state.size() != (size_t) (num_dimensions * num_chains)) num_chains = (int) (chain_state.size() / num_dimensions);
     state_initialized = true;
     values_initialized = false;
 }

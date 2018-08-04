@@ -553,7 +553,7 @@ void StorageSet::readBinary(std::ifstream &ifs){
     }
 }
 
-int StorageSet::getNumOutputs() const{ return num_outputs; }
+int StorageSet::getNumOutputs() const{ return (int) num_outputs; }
 const double* StorageSet::getValues(int i) const{ return &(values[i*num_outputs]); }
 double* StorageSet::aliasValues() const{ return values; }
 
@@ -584,7 +584,7 @@ void StorageSet::addValues(const IndexSet *old_set, const IndexSet *new_set, con
         }else if (offsetOld >= old_num_values){ // old is b
             relation = type_abeforeb;
         }else{
-            relation = compareIndexes(num_dimensions, new_set->getIndex(offsetNew), old_set->getIndex(offsetOld));
+            relation = compareIndexes(num_dimensions, new_set->getIndex((int) offsetNew), old_set->getIndex((int) offsetOld));
         }
         if (relation == type_abeforeb){
             std::copy(&(new_vals[num_outputs * offsetNew]), &(new_vals[num_outputs * offsetNew]) + num_outputs, &(values[num_outputs * num_values++]));

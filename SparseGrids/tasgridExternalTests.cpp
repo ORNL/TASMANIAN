@@ -37,7 +37,7 @@
 
 ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1){ srand(10); }
 ExternalTester::~ExternalTester(){}
-void ExternalTester::resetRandomSeed(){ srand(time(0)); }
+void ExternalTester::resetRandomSeed(){ srand((int) time(0)); }
 
 void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 void ExternalTester::setGPUID(int gpu_id){ gpuid = gpu_id; }
@@ -1785,7 +1785,7 @@ bool ExternalTester::testAllAcceleration() const{
 extern "C" double gettime(){
     struct timeval t;
     gettimeofday(&t, NULL);
-    return t.tv_sec + t.tv_usec * 1.0E-6;
+    return ((double) t.tv_sec) + ((double) t.tv_usec) * 1.0E-6;
 }
 #else
     double gettime(){ return ((double) time(0)); }

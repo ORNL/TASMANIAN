@@ -480,10 +480,10 @@ void TasmanianSparseGrid::evaluateFast(const std::vector<double> x, std::vector<
     evaluateFast(x.data(), y.data());
 }
 void TasmanianSparseGrid::evaluateBatch(const std::vector<double> x, std::vector<double> &y) const{
-    size_t num_outputs = getNumOutputs();
+    int num_outputs = getNumOutputs();
     size_t num_x = x.size() / getNumDimensions();
     if (y.size() < num_outputs * num_x) y.resize(num_outputs * num_x);
-    evaluateBatch(x.data(), num_x, y.data());
+    evaluateBatch(x.data(), (int) num_x, y.data());
 }
 void TasmanianSparseGrid::integrate(std::vector<double> &q) const{
     size_t num_outputs = getNumOutputs();
@@ -958,9 +958,9 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int nu
 }
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const{
     int num_points = getNumPoints();
-    int num_x = x.size() / getNumDimensions();
-    if (y.size() < (size_t) (num_points * num_x)) y.resize(num_points * num_x);
-    evaluateHierarchicalFunctions(x.data(), num_x, y.data());
+    size_t num_x = x.size() / getNumDimensions();
+    if (y.size() < num_points * num_x) y.resize(num_points * num_x);
+    evaluateHierarchicalFunctions(x.data(), (int) num_x, y.data());
 }
 #ifdef Tasmanian_ENABLE_CUDA
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
