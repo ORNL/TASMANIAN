@@ -77,7 +77,7 @@ void CustomTabulated::write(std::ofstream &ofs) const{
     }
 }
 void CustomTabulated::writeBinary(std::ofstream &ofs) const{
-    int num_description = description->size();
+    int num_description = (int) description->size();
     ofs.write((char*) &num_description, sizeof(int));
     ofs.write(description->c_str(), num_description * sizeof(char));
     ofs.write((char*) &num_levels, sizeof(int));
