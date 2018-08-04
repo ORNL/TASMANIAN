@@ -140,7 +140,7 @@ void GridLocalPolynomial::writeBinary(std::ofstream &ofs) const{
         }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
-        int num_roots = roots.size();
+        int num_roots = (int) roots.size();
         ofs.write((char*) &num_roots, sizeof(int));
         ofs.write((char*) roots.data(), num_roots * sizeof(int));
         ofs.write((char*) pntr.data(), (num_points+1) * sizeof(int));
@@ -390,7 +390,7 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
     std::vector<int> monkey_tail(top_level+1);
 
     bool isSupported;
-    size_t offset;
+    int offset;
 
     std::fill(y, y + num_outputs, 0.0);
 
