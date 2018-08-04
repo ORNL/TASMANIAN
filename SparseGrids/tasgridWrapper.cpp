@@ -513,10 +513,10 @@ bool TasgridWrapper::getInterWeights(){
         delete[] r;
     }
     if (outfilename != 0){
-        writeMatrix(outfilename, rows, num_p, res, useASCII);
+        writeMatrix(outfilename, (int) rows, (int) num_p, res, useASCII);
     }
     if (printCout){
-        printMatrix(rows, num_p, res);
+        printMatrix((int) rows, (int) num_p, res);
     }
     delete[] x;
     delete[] res;
@@ -554,13 +554,13 @@ bool TasgridWrapper::getEvaluate(){
         }
     }
 
-    grid->evaluateBatch(x, rows, res);
+    grid->evaluateBatch(x, (int) rows, res);
 
     if (outfilename != 0){
-        writeMatrix(outfilename, rows, num_out, res, useASCII);
+        writeMatrix(outfilename, (int) rows, (int) num_out, res, useASCII);
     }
     if (printCout){
-        printMatrix(rows, num_out, res);
+        printMatrix((int) rows, (int) num_out, res);
     }
     delete[] x;
     delete[] res;
@@ -789,12 +789,12 @@ bool TasgridWrapper::getEvalHierarchyDense(){
     }
     int num_p = grid->getNumPoints();
     res = new double[((size_t) (grid->isFourier() ? 2 : 1) * num_p) * ((size_t) rows)];
-    grid->evaluateHierarchicalFunctions(x, rows, res);
+    grid->evaluateHierarchicalFunctions(x, (int) rows, res);
     if (outfilename != 0){
         writeMatrix(outfilename, (int) rows, ((grid->isFourier()) ? 2 * num_p : num_p), res, useASCII);
     }
     if (printCout){
-        printMatrix(rows, num_p, res, grid->isFourier());
+        printMatrix((int) rows, (int) num_p, res, grid->isFourier());
     }
     delete[] x;
     delete[] res;
@@ -814,7 +814,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
     }
     int *pntr = 0, *indx = 0;
     double *vals = 0;
-    grid->evaluateSparseHierarchicalFunctions(x, rows, pntr, indx, vals);
+    grid->evaluateSparseHierarchicalFunctions(x, (int) rows, pntr, indx, vals);
     int num_p = grid->getNumPoints();
     int num_nz = pntr[rows];
     if (outfilename != 0){
@@ -842,7 +842,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             char charTSG[3] = {'T', 'S', 'G'};
             ofs.write(charTSG, 3 * sizeof(char));
             int matrix_dims[3];
-            matrix_dims[0] = rows;
+            matrix_dims[0] = (int) rows;
             matrix_dims[1] = num_p;
             matrix_dims[2] = num_nz;
             ofs.write((char*) matrix_dims, 3 * sizeof(int));
