@@ -387,7 +387,27 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
 
 int* GridFourier::referenceExponents(const int levels[], const IndexSet *list){
 
-    // This is like IndexManipulator::referenceNestedPoints, but it references an ordered list of exponents for basis functions
+    /*
+     * This function ensures the correct match-up between Fourier coefficients and basis functions.
+     * The basis exponents are stored in an IndexSet whose ordering is different from the needed/points
+     * IndexSet (since exponents may be negative).
+     *
+     * The 1D Fourier coefficients are \hat{f}^l_j, where j = -(3^l-1)/2, ..., 0, ..., (3^l-1)/2 and
+     *
+     * \hat{f}^l_j = \sum_{n=0}^{3^l-1} f(x_n) exp(-2 * pi * sqrt(-1) * j * x_n)
+     *             = \sum_{n=0}^{3^l-1} f(x_n) exp(-2 * pi * sqrt(-1) * j * n/3^l)
+     *
+     * Now, \hat{f}^l_j is the coefficient of the basis function exp(2 * pi * sqrt(-1) * j * x).
+     * However, the Fourier transform code returns the coefficients with the indexing j' = 0, 1,
+     * ..., 3^l-1.  For j' = 0, 1, ..., (3^l-1)/2, the corresponding basis function has exponent j'.
+     * For j' = (3^l-1)/2 + 1, ..., 3^l-1, we march clockwise around the unit circle to see
+     * the corresponding exponent is -3^l + j'. Algebraically, for j' > (3^l-1)/2,
+     *
+     * \hat{f}^l_{j'} = \sum_{n=0}^{3^l-1} f(x_n) [exp(-2 * pi * sqrt(-1) * j' /3^l)]^n
+     *                = \sum_{n=0}^{3^l-1} f(x_n) [exp(-2 * pi * sqrt(-1) * (j' - 3^l) /3^l) * exp(-2 * pi * sqrt(-1))]^n
+     *                = \sum_{n=0}^{3^l-1} f(x_n) [exp(-2 * pi * sqrt(-1) * (j' - 3^l) /3^l)]^n
+     *                = \hat{f}^l_{j' - 3^l}
+     */
     int *num_points = new int[num_dimensions];
     int num_total = 1;
     for(int j=0; j<num_dimensions; j++){  num_points[j] = wrapper->getNumPoints(levels[j]); num_total *= num_points[j];  }
@@ -461,11 +481,26 @@ void GridFourier::getPoints(double *x) const{
 int GridFourier::convertIndexes(const int i, const int levels[]) const {
 
     /*
-    We interpret this i as an external index. This function returns its associated internal index.
-    EXAMPLE: level-3 1D grid is [0, 1, 2, ..., 9] internally, but these indices correspond to
-        [0, 1/3, 2/3, 1/9, 2/9, 4/9, 5/9, 7/9, 8/9] externally. We say external indexing is arranged
-        in order of increasing x values.
-    */
+     * This routine ensures that function values are loaded into the Fourier transform in order of
+     * increasing SPATIAL x-values.
+     *
+     * Take the example of the level-2 1D grid. Tasmanian's internal indexing reports the points as
+     *
+     * [0, 1, 2, ..., 8]
+     *
+     * which corresponds spatially to
+     *
+     * [0, 1/3, 2/3, 1/9, 2/9, 4/9, 5/9, 7/9, 8/9].
+     *
+     * That is, the new points added on level-2 appear after the level-1 points, even though spatially
+     * they are interwoven. We now order the grid spatially, in terms of increasing x-values:
+     *
+     * [0, 1/9, ..., 8/9]
+     *
+     * The input parameter i is the i-th entry in the spatially ordered list. The output is the corresponding
+     * internal index used by Tasmanian. For example, with p[0] = 2, convertIndexes(1, p) would return 4 (the
+     * index of 1/9 in the internally ordered list of points).
+     */
 
     IndexSet *work = (points == 0 ? needed : points);
 
@@ -474,16 +509,16 @@ int GridFourier::convertIndexes(const int i, const int levels[]) const {
         cnum_oned_points[j] = wrapper->getNumPoints(levels[j]);
     }
 
-    // This i is external indexing, flattened according to standard C (row-major) indexing
+    // This i is spatial indexing
     int t=i;
     int* p=new int[num_dimensions];
     for(int j=num_dimensions-1; j>=0; j--){
         p[j] = t % cnum_oned_points[j];
         t /= cnum_oned_points[j];
     }
-    // p[] stores the external indexing as a tensor address
+    // p[] stores the spatial index as a tensor address
 
-    // Now we move from external to internal indexing
+    // Now we move from spatial to internal indexing
     int *p_internal = new int[num_dimensions];
     for(int j=0; j<num_dimensions; j++){
         int tmp = p[j];
@@ -527,7 +562,7 @@ void GridFourier::calculateFourierCoefficients(){
             std::complex<double> *in = new std::complex<double>[num_tensor_points];
             std::complex<double> *out = new std::complex<double>[num_tensor_points];
             for(int i=0; i<num_tensor_points; i++){
-                // We interpret this "i" as running through the external indexing; convert to internal
+                // We interpret this "i" as running through the spatial indexing; convert to internal
                 int key = convertIndexes(i, levels);
                 const double *v = values->getValues(key);
                 in[i] = v[k];
