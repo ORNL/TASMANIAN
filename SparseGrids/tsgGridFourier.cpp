@@ -498,12 +498,12 @@ int GridFourier::convertIndexes(const int i, const int levels[]) const {
      * [0, 1/9, ..., 8/9]
      *
      * The input parameter i is the i-th entry in the spatially ordered list. The output is the corresponding
-     * internal index used by Tasmanian. For example, with p[0] = 2, convertIndexes(1, p) would return 4 (the
+     * internal index used by Tasmanian. For example, with p[0] = 2, convertIndexes(1, p) would return 3 (the
      * index of 1/9 in the internally ordered list of points).
      *
      * ANOTHER EXAMPLE: consider spatial index 48 on a grid of level 4. There are 81 points total, so spatial
-     * index 48 is 48/81 = 16/27. So the point first appears on the level with 27 points (level 3). In internal
-     * indexing, there are 9 points on the level-2 grid. In addition, there are floor(16/3) full subintervals
+     * index 48 is 48/81 = 16/27. So the point first appears on the level with 27 points (level 3). Internal
+     * indexing first loads the 9 points of the level-2 grid. Spatially, there are floor(16/3) full subintervals
      * prior to arriving at 16/27 on the level-3 grid. In each of these 5 intervals, there are 2 new points,
      * and 16 is the first point in the 6th subinterval. So the internal index is 9 + 5*2 + 1 - 1 = 19 (minus
      * 1 since C++ indexing begins at 0).
