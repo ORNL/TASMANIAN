@@ -132,7 +132,7 @@ protected:
         }
 
         bool isSupported;
-        size_t offset;
+        int p;
 
         num_nz = 0;
 
@@ -140,7 +140,6 @@ protected:
             double basis_value = evalBasisSupported(points->getIndex(r), x, isSupported);
 
             if (isSupported){
-                offset = r * num_outputs;
                 if (fill_data){
                     sindx[num_nz] = r;
                     svals[num_nz] = basis_value;
@@ -153,17 +152,17 @@ protected:
 
                 while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                        offset = indx[monkey_count[current]];
-                        basis_value = evalBasisSupported(points->getIndex(offset), x, isSupported);
+                        p = indx[monkey_count[current]];
+                        basis_value = evalBasisSupported(points->getIndex(p), x, isSupported);
                         if (isSupported){
                             if (fill_data){
-                                sindx[num_nz] = offset;
+                                sindx[num_nz] = p;
                                 svals[num_nz] = basis_value;
                             }
                             num_nz++;
 
-                            monkey_tail[++current] = offset;
-                            monkey_count[current] = pntr[offset];
+                            monkey_tail[++current] = p;
+                            monkey_count[current] = pntr[p];
                         }else{
                             monkey_count[current]++;
                         }

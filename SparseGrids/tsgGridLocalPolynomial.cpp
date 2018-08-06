@@ -1116,7 +1116,7 @@ void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cp
     checkAccelerationGPUHierarchy();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
     TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, gpu_acc->getGPUNodes(), gpu_acc->getGPUSupport(),
-                                gpu_acc->getGPUpntr(), gpu_acc->getGPUindx(), roots.size(), gpu_acc->getGPUroots(),
+                                gpu_acc->getGPUpntr(), gpu_acc->getGPUindx(), (int) roots.size(), gpu_acc->getGPUroots(),
                                 gpu_spntr, gpu_sindx, gpu_svals, num_nz, os);
 }
 
@@ -1766,7 +1766,7 @@ void GridLocalPolynomial::checkAccelerationGPUNodes() const{
 void GridLocalPolynomial::checkAccelerationGPUHierarchy() const{
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     int num_points = getNumPoints();
-    gpu->loadGPUHierarchy(num_points, pntr.data(), indx.data(), roots.size(), roots.data());
+    gpu->loadGPUHierarchy(num_points, pntr.data(), indx.data(), (int) roots.size(), roots.data());
 }
 #else
 void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration, std::ostream *) const{}
