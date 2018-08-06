@@ -76,7 +76,7 @@ call srand(seed)
 
 
 
-if ( tsgTestInternals(.true.) ) then
+if ( tsgTestInternals() ) then
   write(*,*) "Fortran wrappers:         PASS"
 else
   write(*,*) "Fortran wrappers:         FAIL"
@@ -378,7 +378,7 @@ deallocate(pointsb, points, weights)
 
 ! test conformal
 allocate( pointsb(2,100), double_2d_a(1,100), double_2d_b(1,100), double_2d_c(1,100), double_2d_d(1,100) )
-rnd => rand(2,100)
+rnd => random(2,100)
 pointsb          = -1.d0 + 2.d0 * rnd
 double_2d_a(1,:) = 1.d0/((1.d0+5.d0*pointsb(1,:)**2)*(1.d0+5.d0*pointsb(2,:)**2))
 do i = 7,8
@@ -446,7 +446,7 @@ deallocate(points, weights)
 
 ! test conformal
 allocate( pointsb(2,100), double_2d_a(1,100), double_2d_b(1,100), double_2d_c(1,100), double_2d_d(1,100) )
-rnd => rand(2,100)
+rnd => random(2,100)
 pointsb          = -1.d0 + 2.d0 * rnd
 double_2d_a(1,:) = 1.d0/((1.d0+5.d0*pointsb(1,:)**2)*(1.d0+5.d0*pointsb(2,:)**2))
 do i = 3,4
@@ -919,12 +919,12 @@ call tsgMakeSequenceGrid(gridID, 2, 1, 2, tsg_level, tsg_leja)
 allocate(points(2,6), double_2d_a(6,6), double_2d_b(6,6))
 points = reshape( (/ 0.33d0, 0.25d0, -0.270d0, 0.39d0,  0.970d0, -0.760d0, &
                     -0.44d0, 0.21d0, -0.813d0, 0.03d0, -0.666d0,  0.666d0 /), shape(points) )
-double_2d_a(:,1) = 1
-double_2d_a(:,2) = points(2,:)
-double_2d_a(:,3) = 0.5d0 * points(2,:) * ( points(2,:) - 1.d0 )
-double_2d_a(:,4) = points(1,:)
-double_2d_a(:,5) = points(1,:) * points(2,:)
-double_2d_a(:,6) = 0.5d0 * points(1,:) * ( points(1,:) - 1.d0 )
+double_2d_a(1,:) = 1
+double_2d_a(2,:) = points(2,:)
+double_2d_a(3,:) = 0.5d0 * points(2,:) * ( points(2,:) - 1.d0 )
+double_2d_a(4,:) = points(1,:)
+double_2d_a(5,:) = points(1,:) * points(2,:)
+double_2d_a(6,:) = 0.5d0 * points(1,:) * ( points(1,:) - 1.d0 )
 call tsgEvaluateHierarchicalFunctions(gridID,points,6,double_2d_b)
 if ( norm2d(double_2d_a-double_2d_b) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgEvaluateHierarchicalFunctions: sequence grid test"
@@ -937,15 +937,15 @@ call tsgMakeLocalPolynomialGrid(gridID, 2, 1, 4, 1, tsg_localp)
 points => tsgGetPoints(gridID)
 i_a = tsgGetNumPoints(gridID)
 i_b = 13
-allocate(double_2d_a(1,i_a), double_2d_b(1,i_b), double_2d_c(i_b,i_a), double_1d_b(i_b), pointsb(2,i_b))
+allocate(double_2d_a(1,i_a), double_2d_b(1,i_b), double_2d_c(i_a,i_b), double_1d_b(i_b), pointsb(2,i_b))
 double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
-rnd     => rand(2,i_b)
+rnd     => random(2,i_b)
 pointsb = -1.d0 + 2.d0 * rnd
 call tsgEvaluateBatch(gridID,pointsb,i_b,double_2d_b)
 call tsgEvaluateHierarchicalFunctions(gridID,pointsb,i_b,double_2d_c)
 weights => tsgGetHierarchicalCoefficients(gridID)
-double_1d_b = matmul( double_2d_c, weights )
+double_1d_b = matmul( weights, double_2d_c )
 if ( norm1d(double_1d_b-double_2d_b(1,:)) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgEvaluateHierarchicalFunctions: local grid test"
   stop 1
@@ -960,7 +960,7 @@ i_b = 13
 allocate(double_2d_a(1,i_a), double_2d_b(1,i_b), double_1d_b(i_b), pointsb(2,i_b))
 double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
-rnd     => rand(2,i_b)
+rnd     => random(2,i_b)
 pointsb = -1.d0 + 2.d0 * rnd
 call tsgEvaluateBatch(gridID,pointsb,i_b,double_2d_b)
 call tsgEvaluateSparseHierarchicalFunctions(gridID,pointsb, i_b, int_pnt_1d_a, int_pnt_1d_b, double_pnt_1d_a)
@@ -982,18 +982,17 @@ allocate(double_2d_a(1,i_a), double_2d_b(1,i_b), double_2d_c(i_b,2*i_a), &
          double_1d_a(i_b),   double_1d_b(i_b),   double_1d_c(i_b), pointsb(2,i_b), double_1d_d(2*i_a))
 double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
-rnd     => rand(2,i_b)
+rnd     => random(2,i_b)
 pointsb = -1.d0 + 2.d0 * rnd
 call tsgEvaluateBatch(gridID,pointsb,i_b,double_2d_b)
 
-allocate(dcmplx_1d_a(i_a),dcmplx_2d_c(i_b,i_a))
+allocate(dcmplx_1d_a(i_a),dcmplx_2d_c(i_a,i_b))
 call tsgEvaluateComplexHierarchicalFunctions(gridID,pointsb,i_b,dcmplx_2d_c)
 call tsgGetComplexHierarchicalCoefficientsStatic(gridID, dcmplx_1d_a)
-double_1d_b = real(matmul(dcmplx_2d_c,dcmplx_1d_a))
+double_1d_b = real(matmul(dcmplx_1d_a,dcmplx_2d_c))
 
-call tsgGetComplexHierarchicalCoefficientsStatic(gridID, dcmplx_1d_a)
 dcmplx_pnt_1d_a => tsgGetComplexHierarchicalCoefficients(gridID)
-double_1d_c = real(matmul(dcmplx_2d_c,dcmplx_pnt_1d_a))
+double_1d_c = real(matmul(dcmplx_pnt_1d_a,dcmplx_2d_c))
 
 if ( norm1d(double_1d_b - double_2d_b(1,:)) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgGetComplexHierarchicalCoefficientsStatic: fourier grid test 1"
@@ -1012,20 +1011,20 @@ allocate( double_2d_b(1,i_a), double_2d_c(1,i_a), pointsb(2,i_a) )
 call tsgMakeLocalPolynomialGrid(gridID,    2, 1, 5, 1, tsg_semi_localp)
 call tsgMakeLocalPolynomialGrid(gridID_II, 2, 1, 5, 1, tsg_semi_localp)
 points  => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
-rnd     => rand(2,i_a)
+rnd     => random(2,i_a)
 pointsb =  -1.d0 + 2.d0 * rnd
-allocate( double_2d_a(1,i_b), double_1d_b(i_b), double_2d_d(i_b,i_b) )
+allocate( double_2d_a(1,i_b), double_2d_d(i_b,i_b) )
 double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
-double_1d_b = tsgGetHierarchicalCoefficients(gridID)
-call tsgSetHierarchicalCoefficients(gridID_II,double_1d_b)
+double_pnt_1d_b => tsgGetHierarchicalCoefficients(gridID)
+call tsgSetHierarchicalCoefficients(gridID_II,double_pnt_1d_b)
 call tsgEvaluateBatch(gridID,pointsb,i_a,double_2d_b)
 call tsgEvaluateBatch(gridID_II,pointsb,i_a,double_2d_c)
 if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
   write(*,*) "Mismatch in setHierarchicalCoefficients: localp grid solve ", norm2d(double_2d_b - double_2d_c)
   stop 1
 endif
-deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_1d_b,rnd)
+deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_pnt_1d_b,rnd)
 
 
 call tsgMakeLocalPolynomialGrid(gridID, 2, 1, 5, 1, tsg_semi_localp)
@@ -1034,12 +1033,12 @@ call tsgSetDomainTransform(gridID,    (/-1.d0, 7.d0/), (/2.d0, 9.d0/))
 call tsgSetDomainTransform(gridID_II, (/-1.d0, 7.d0/), (/2.d0, 9.d0/))
 points => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
 i_a = 13
-allocate(double_1d_b(i_b), double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a), double_2d_d(i_b,i_b), pointsb(2,i_a))
+allocate(double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a), double_2d_d(i_b,i_b), pointsb(2,i_a))
 double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
-double_1d_b = tsgGetHierarchicalCoefficients(gridID)
-call tsgSetHierarchicalCoefficients(gridID_II,double_1d_b)
-rnd     => rand(2,i_a)
+double_pnt_1d_b => tsgGetHierarchicalCoefficients(gridID)
+call tsgSetHierarchicalCoefficients(gridID_II,double_pnt_1d_b)
+rnd     => random(2,i_a)
 pointsb = -1.d0 + 2.d0 * rnd
 call tsgEvaluateBatch(gridID,    pointsb, i_a, double_2d_b)
 call tsgEvaluateBatch(gridID_II, pointsb, i_a, double_2d_c)
@@ -1047,7 +1046,7 @@ if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
   write(*,*) "Mismatch in setHierarchicalCoefficients: local grid solve, transform"
   stop 1
 endif
-deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_1d_b,rnd)
+deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_pnt_1d_b,rnd)
 
 
 call tsgMakeSequenceGrid(gridID,    2, 1, 5, tsg_level, tsg_rleja)
@@ -1056,12 +1055,12 @@ call tsgSetDomainTransform(gridID, (/1.d0, 1.d0/), (/2.d0, 2.d0/))
 call tsgSetDomainTransform(gridID_II, (/1.d0, 1.d0/), (/2.d0, 2.d0/))
 points => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
 i_a = 13
-allocate(double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a), double_2d_d(i_b,i_b), pointsb(2,i_a), double_1d_b(i_b))
+allocate(double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a), double_2d_d(i_b,i_b), pointsb(2,i_a))
 double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
-double_1d_b = tsgGetHierarchicalCoefficients(gridID)
-call tsgSetHierarchicalCoefficients(gridID_II,double_1d_b)
-rnd     => rand(2,i_a)
+double_pnt_1d_b => tsgGetHierarchicalCoefficients(gridID)
+call tsgSetHierarchicalCoefficients(gridID_II,double_pnt_1d_b)
+rnd     => random(2,i_a)
 pointsb = -1.d0 + 2.d0 * rnd
 call tsgEvaluateBatch(gridID,    pointsb, i_a, double_2d_b)
 call tsgEvaluateBatch(gridID_II, pointsb, i_a, double_2d_c)
@@ -1069,7 +1068,7 @@ if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
   write(*,*) "Mismatch in setHierarchicalCoefficients: sequence grid solve, transform"
   stop 1
 endif
-deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_1d_b,rnd)
+deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double_pnt_1d_b,rnd)
 
 
 
@@ -1123,7 +1122,7 @@ call tsgMakeGlobalGrid(gridID,    2, 1, 4, tsg_level, tsg_fejer2)
 call tsgMakeGlobalGrid(gridID_II, 2, 1, 4, tsg_level, tsg_fejer2)
 points  => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
 allocate( pointsb(2,i_a), double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a) )
-rnd     => rand(2,i_a)
+rnd     => random(2,i_a)
 pointsb =  -1.d0 + 2.d0 * rnd
 double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
@@ -1145,7 +1144,7 @@ call tsgMakeSequenceGrid(gridID,    2, 1, 7, tsg_level, tsg_min_delta)
 call tsgMakeSequenceGrid(gridID_II, 2, 1, 7, tsg_level, tsg_min_delta)
 points  => tsgGetPoints(gridID);  i_b = tsgGetNumPoints(gridID)
 allocate( pointsb(2,i_a), double_2d_a(1,i_b), double_2d_b(1,i_a), double_2d_c(1,i_a) )
-rnd     => rand(2,i_a)
+rnd     => random(2,i_a)
 pointsb =  -1.d0 + 2.d0 * rnd
 double_2d_a(1,:) = exp( -points(1,:)**2 - 2.d0 * points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
@@ -1355,7 +1354,7 @@ endif
 deallocate(points, pointsb)
 
 allocate(points(2,i_a), double_2d_a(1,i_a))
-rnd    => rand(2,i_a)
+rnd    => random(2,i_a)
 points = -1.d0 + 2.d0 * rnd
 call tsgEvaluateBatch(gridID_II,points,i_a,double_2d_a)
 if ( norm2d(double_2d_a) > 1.d-11 ) then
@@ -1372,7 +1371,7 @@ deallocate(points, double_2d_a)
 
 i_a = 30
 allocate( points(2,i_a), double_2d_a(1,i_a), double_2d_b(1,i_a) )
-rnd     => rand(2,i_a)
+rnd     => random(2,i_a)
 points = -1.d0 + 2.d0 * rnd
 call tsgEvaluateBatch(gridID,    points, i_a, double_2d_a)
 call tsgEvaluateBatch(gridID_II, points, i_a, double_2d_b)
@@ -1397,7 +1396,7 @@ call tsgFreeGridID(gridID_II)
 
 contains
 
-function rand(n,m) result(res)
+function random(n,m) result(res)
   integer :: n, m
   double precision, pointer :: res(:,:)
 

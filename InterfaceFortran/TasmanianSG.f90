@@ -401,7 +401,6 @@ end subroutine tsgUpdateGlobalGrid
 !=======================================================================
 subroutine tsgUpdateSequenceGrid(gridID, depth, gtype, aweights)
   integer, intent(in) :: gridID, depth, gtype
-  integer :: dims, i
   integer, optional, target :: aweights(:)
   integer          :: opt_flags = 0
   integer, pointer :: aw(:) => null()
@@ -604,10 +603,8 @@ end subroutine tsgEvaluateBatch
 subroutine tsgEvaluateHierarchicalFunctions(gridID, x, numX, y)
   integer :: gridID, numX
   double precision :: x(:,:), y(:,:)
-  double precision :: y_c_style(size(y,2),size(y,1))
   if ( .not. tsgIsFourier(gridID) ) then
-    call tsgehf(gridID, x, numX, y_c_style)
-    y = transpose(y_c_style)
+    call tsgehf(gridID, x, numX, y)
   else
     write(*,*) "ERROR: called tsgEvaluateHierarchicalFunctions() on a Fourier grid, "
     write(*,*) "       use tsgEvaluateComplexHierarchicalFunctions() instead"
@@ -618,13 +615,14 @@ subroutine tsgEvaluateComplexHierarchicalFunctions(gridID, x, numX, y)
   integer :: gridID, numX
   double precision :: x(:,:)
   double complex   :: y(:,:)
-  double precision :: y_c_style(2*size(y,2),size(y,1))
+  double precision, allocatable :: y_c_style(:)
   integer :: i, j
   if ( tsgIsFourier(gridID) ) then
+    allocate(y_c_style(2*size(y,1)*size(y,2)))
     call tsgehf(gridID, x, numX, y_c_style)
-    do i = 1,size(y,1)
-      do j = 1,size(y,2)
-        y(i,j) = complex( y_c_style(2*j-1,i), y_c_style(2*j,i) )
+    do j = 1,size(y,2)
+      do i = 1,size(y,1)
+        y(i,j) = cmplx( y_c_style( 2*size(y,1)*(j-1) + 2*i-1 ), y_c_style( 2*size(y,1)*(j-1) + 2*i), kind(y) )
       enddo
     enddo
   else
@@ -842,18 +840,14 @@ subroutine tsgPrintStats(gridID)
   call tsgpri(gridID)
 end subroutine tsgPrintStats
 !=======================================================================
-function tsgTestInternals(verbose) result(res)
+function tsgTestInternals() result(res)
   integer, parameter :: i_a = 8, i_b = 4
   integer :: i, num_ag, num_ag_in
   integer :: int_1d_a(i_a), int_1d_b(i_a) = (/1,8,6,4,7,3,2,5/)
   logical :: res
-  logical, optional :: verbose
   logical :: verb
 
-  verb = .false.
-  if ( present(verbose) ) then
-    verb = verbose
-  endif
+  write(*,*) "WARNING: tsgTestInternals() will clear all grids"
 
   res = .true.
   call tsggag(num_ag_in)
@@ -861,9 +855,7 @@ function tsgTestInternals(verbose) result(res)
     int_1d_a(i) = tsgNewGridID()
     call tsggag(num_ag)
     if ( num_ag .ne. i+num_ag_in ) then
-      if (verb) then
-        write(*,*) "Mismatch in number of active grids, adding grids: num_ag = ", num_ag
-      endif
+      write(*,*) "Mismatch in number of active grids, adding grids: num_ag = ", num_ag
       res = .false.
     endif
   enddo
@@ -871,9 +863,7 @@ function tsgTestInternals(verbose) result(res)
     call tsgFreeGridID(int_1d_a(int_1d_b(i)))
     call tsggag(num_ag)
     if ( num_ag .ne. i_a-i+num_ag_in ) then
-      if (verb) then
-        write(*,*) "Mismatch in number of active grids, removing grids: num_ag = ", num_ag
-      endif
+      write(*,*) "Mismatch in number of active grids, removing grids: num_ag = ", num_ag
       res = .false.
     endif
   enddo
@@ -882,9 +872,7 @@ function tsgTestInternals(verbose) result(res)
   call tsgClearAll()
   call tsggag(num_ag)
   if ( num_ag .ne. 0 ) then
-    if (verb) then
-      write(*,*) "Mismatch in number of active grids after clearall: num_ag = ", num_ag
-    endif
+    write(*,*) "Mismatch in number of active grids after clearall: num_ag = ", num_ag
     res = .false.
   endif
 end function tsgTestInternals
