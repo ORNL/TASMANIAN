@@ -846,8 +846,8 @@ function tsgTestInternals() result(res)
   integer :: int_1d_a(i_a), int_1d_b(i_a) = (/1,8,6,4,7,3,2,5/)
   logical :: res
   logical :: verb
-
-  write(*,*) "NOTE: calling tsgTestInternals() will clear all grids and invalidate all grid IDs"
+  ! NOTE: calling tsgTestInternals() will clear all grids and invalidate all grid IDs
+  write(*,*) "Perfroming internal consistency test in Tasmanian Fortran 90/95 module, all existing grids will be cleared."
 
   res = .true.
   call tsggag(num_ag_in)
