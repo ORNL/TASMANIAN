@@ -500,6 +500,13 @@ int GridFourier::convertIndexes(const int i, const int levels[]) const {
      * The input parameter i is the i-th entry in the spatially ordered list. The output is the corresponding
      * internal index used by Tasmanian. For example, with p[0] = 2, convertIndexes(1, p) would return 4 (the
      * index of 1/9 in the internally ordered list of points).
+     *
+     * ANOTHER EXAMPLE: consider spatial index 48 on a grid of level 4. There are 81 points total, so spatial
+     * index 48 is 48/81 = 16/27. So the point first appears on the level with 27 points (level 3). In internal
+     * indexing, there are 9 points on the level-2 grid. In addition, there are floor(16/3) full subintervals
+     * prior to arriving at 16/27 on the level-3 grid. In each of these 5 intervals, there are 2 new points,
+     * and 16 is the first point in the 6th subinterval. So the internal index is 9 + 5*2 + 1 - 1 = 19 (minus
+     * 1 since C++ indexing begins at 0).
      */
 
     IndexSet *work = (points == 0 ? needed : points);
@@ -521,18 +528,18 @@ int GridFourier::convertIndexes(const int i, const int levels[]) const {
     // Now we move from spatial to internal indexing
     int *p_internal = new int[num_dimensions];
     for(int j=0; j<num_dimensions; j++){
-        int tmp = p[j];
-        if (tmp == 0){
+        if (p[j] == 0){
             p_internal[j] = 0;
         }else{
-            int go_back = 0;
-            while(tmp % 3 == 0 && tmp != 0){
-                go_back += 1;
-                tmp /= 3;
-            }
+            int spatial_idx_when_added = p[j];
+            int division_count = 0;
+            while(spatial_idx_when_added % 3 == 0){ spatial_idx_when_added /= 3; division_count++; }
 
-            int num_prev_level = wrapper->getNumPoints(levels[j]-go_back-1);
-            p_internal[j] = num_prev_level + (tmp/3)*2 + tmp % 3 - 1;
+            int level_when_added = levels[j] - division_count;
+
+            // 3 spatial points in each added full subinterval; 2 new points for internal indexing
+            int offset = 2 * (spatial_idx_when_added/3) + (spatial_idx_when_added % 3);
+            p_internal[j] = wrapper->getNumPoints(level_when_added-1) + offset - 1;
         }
     }
 
