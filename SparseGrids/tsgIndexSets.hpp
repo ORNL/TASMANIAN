@@ -48,16 +48,17 @@ public:
     const int* getIndex(int i) const;
 
     int* getIndexesSorted() const;
+    void getIndexesSorted(std::vector<int> sorted) const;
     // returns an array of num_dimensions X num_indexes of the sorted indexes
 
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
-    void merge(const int listA[], int sizeA, const int listB[], int sizeB, int destination[]) const;
+    void merge(const int listA[], size_t sizeA, const int listB[], size_t sizeB, int destination[]) const;
 
 private:
-    int num_dimensions;
-    int num_indexes;
-    int *index;
+    size_t num_dimensions;
+    size_t num_indexes;
+    std::vector<int> index;
 };
 
 class GranulatedIndexSet{ // optimized to add one index at a time

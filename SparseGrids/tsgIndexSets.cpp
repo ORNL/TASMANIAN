@@ -35,15 +35,17 @@
 
 namespace TasGrid{
 
-UnsortedIndexSet::UnsortedIndexSet(int cnum_dimensions, int cnum_slots) : num_dimensions(cnum_dimensions), num_indexes(0){
-    index = new int[num_dimensions * cnum_slots];
+UnsortedIndexSet::UnsortedIndexSet(int cnum_dimensions, int cnum_slots) : num_indexes(0){
+    //index = new int[num_dimensions * cnum_slots];
+    num_dimensions = (size_t) cnum_dimensions;
+    index.resize(num_dimensions * cnum_slots);
 }
 UnsortedIndexSet::~UnsortedIndexSet(){
-    delete[] index;
+    //delete[] index;
 }
 
-int UnsortedIndexSet::getNumDimensions() const{ return num_dimensions; }
-int UnsortedIndexSet::getNumIndexes() const{ return num_indexes; }
+int UnsortedIndexSet::getNumDimensions() const{ return (int) num_dimensions; }
+int UnsortedIndexSet::getNumIndexes() const{ return (int) num_indexes; }
 
 void UnsortedIndexSet::addIndex(const int p[]){
     std::copy(p, p + num_dimensions, &(index[num_dimensions * num_indexes++]));
@@ -52,12 +54,11 @@ const int* UnsortedIndexSet::getIndex(int i) const{
     return &(index[i * num_dimensions]);
 }
 
-int* UnsortedIndexSet::getIndexesSorted() const{
-    int *list_source = new int[num_indexes];
-    int *list_destination = new int[num_indexes];
-    int *list_temp = 0;
+void UnsortedIndexSet::getIndexesSorted(std::vector<int> sorted) const{
+    std::vector<int> list_source(num_indexes);
+    std::vector<int> list_destination(num_indexes);
 
-    for(int i=0; i<num_indexes - num_indexes%2; i+=2){
+    for(int i=0; i<(int) (num_indexes - num_indexes%2); i+=2){
         if (compareIndexes(&(index[i*num_dimensions]), &(index[(i+1)*num_dimensions])) == type_abeforeb){
             list_source[i] = i;
             list_source[i+1] = i+1;
@@ -66,50 +67,81 @@ int* UnsortedIndexSet::getIndexesSorted() const{
             list_source[i+1] = i;
         }
     }
-    if (num_indexes%2 == 1){
-        list_source[num_indexes-1] = num_indexes-1;
-    }
+    if (num_indexes%2 == 1) list_source[num_indexes-1] = (int) (num_indexes-1);
 
-    int warp = 2;
+    size_t warp = 2;
     while(warp < num_indexes){
-        int full_warps = 2*warp * ((num_indexes) / (2*warp));
+        size_t full_warps = 2*warp * ((num_indexes) / (2*warp));
         #pragma omp parallel for
-        for(int i=0; i<full_warps; i+=2*warp){
+        for(size_t i=0; i<full_warps; i+=2*warp){
             merge(&(list_source[i]), warp, &(list_source[i+warp]), warp, &(list_destination[i]));
         }
 
         if (full_warps < num_indexes){
-            merge(&(list_source[full_warps]), ((full_warps+warp < num_indexes) ? warp : num_indexes - full_warps), &(list_source[full_warps+warp]), ((full_warps+2*warp < num_indexes) ? warp : num_indexes - full_warps - warp), &(list_destination[full_warps]));
+            size_t sizeA = (full_warps+warp < num_indexes) ? warp : num_indexes - full_warps; // try to use warp indexes, but do no exceed num_indexes
+            size_t sizeB = (full_warps+2*warp < num_indexes) ? warp : num_indexes - full_warps - sizeA; // try to use warp indexes, but do no exceed num_indexes
+            merge(&(list_source[full_warps]), sizeA, &(list_source[full_warps+warp]), sizeB, &(list_destination[full_warps]));
         }
-        list_temp = list_destination;
-        list_destination = list_source;
-        list_source = list_temp;
-        list_temp = 0;
+        std::swap(list_source, list_destination);
+        warp *= 2;
+    }
+
+    sorted.resize(num_indexes * num_dimensions);
+    for(size_t i=0; i<num_indexes; i++){
+        std::copy(&(index[list_source[i] * num_dimensions]), &(index[list_source[i] * num_dimensions]) + num_dimensions, &(sorted[i*num_dimensions]));
+    }
+}
+
+int* UnsortedIndexSet::getIndexesSorted() const{
+    std::vector<int> list_source(num_indexes);
+    std::vector<int> list_destination(num_indexes);
+
+    for(int i=0; i<(int) (num_indexes - num_indexes%2); i+=2){
+        if (compareIndexes(&(index[i*num_dimensions]), &(index[(i+1)*num_dimensions])) == type_abeforeb){
+            list_source[i] = i;
+            list_source[i+1] = i+1;
+        }else{
+            list_source[i] = i+1;
+            list_source[i+1] = i;
+        }
+    }
+    if (num_indexes%2 == 1) list_source[num_indexes-1] = (int) (num_indexes-1);
+
+    size_t warp = 2;
+    while(warp < num_indexes){
+        size_t full_warps = 2*warp * ((num_indexes) / (2*warp));
+        #pragma omp parallel for
+        for(size_t i=0; i<full_warps; i+=2*warp){
+            merge(&(list_source[i]), warp, &(list_source[i+warp]), warp, &(list_destination[i]));
+        }
+
+        if (full_warps < num_indexes){
+            size_t sizeA = (full_warps+warp < num_indexes) ? warp : num_indexes - full_warps; // try to use warp indexes, but do no exceed num_indexes
+            size_t sizeB = (full_warps+2*warp < num_indexes) ? warp : num_indexes - full_warps - sizeA; // try to use warp indexes, but do no exceed num_indexes
+            merge(&(list_source[full_warps]), sizeA, &(list_source[full_warps+warp]), sizeB, &(list_destination[full_warps]));
+        }
+        std::swap(list_source, list_destination);
         warp *= 2;
     }
 
     int *result = new int[num_indexes * num_dimensions];
-    for(int i=0; i<num_indexes; i++){
+    for(size_t i=0; i<num_indexes; i++){
         std::copy(&(index[list_source[i] * num_dimensions]), &(index[list_source[i] * num_dimensions]) + num_dimensions, &(result[i*num_dimensions]));
     }
-
-    delete[] list_source;
-    delete[] list_destination;
-
     return result;
 }
 
 TypeIndexRelation UnsortedIndexSet::compareIndexes(const int a[], const int b[]) const{
-    for(int i=0; i<num_dimensions; i++){
+    for(size_t i=0; i<num_dimensions; i++){
         if (a[i] < b[i]) return type_abeforeb;
         if (a[i] > b[i]) return type_bbeforea;
     }
     return type_asameb;
 }
 
-void UnsortedIndexSet::merge(const int listA[], int sizeA, const int listB[], int sizeB, int destination[]) const{
+void UnsortedIndexSet::merge(const int listA[], size_t sizeA, const int listB[], size_t sizeB, int destination[]) const{
     TypeIndexRelation relation;
-    int offset_destination = 0, offsetA = 0, offsetB = 0;
+    size_t offset_destination = 0, offsetA = 0, offsetB = 0;
     while( (offsetA < sizeA) || (offsetB < sizeB) ){
         if (offsetA >= sizeA){
             relation = type_bbeforea;
