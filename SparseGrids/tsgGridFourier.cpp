@@ -652,67 +652,29 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 }
 
 void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
-    #ifdef Tasmanian_ENABLE_BLAS
-    std::complex<double> *w = getBasisFunctions(x);
-    std::complex<double> *y_tmp = new std::complex<double>[num_outputs];
-    TasBLAS::zgemv(num_outputs, points->getNumIndexes(), fourier_coefs, w, y_tmp);
-
-    #pragma omp parallel for
-    for(int i=0; i<num_outputs; i++){
-        y[i] = y_tmp[i].real();
-    }
-
-    delete[] w;
-    delete[] y_tmp;
-    #else
     evaluate(x,y);
-    #endif // Tasmanian_ENABLE_BLAS
 }
 void GridFourier::evaluateFastGPUcublas(const double x[], double y[], std::ostream*) const{
-    evaluateFastCPUblas(x,y);
+    evaluate(x,y);
 }
 void GridFourier::evaluateFastGPUcuda(const double x[], double y[], std::ostream*) const{
-    evaluateFastCPUblas(x,y);
+    evaluate(x,y);
 }
 void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[], std::ostream*) const{
-    evaluateFastCPUblas(x,y);
+    evaluate(x,y);
 }
 
 void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    #ifdef Tasmanian_ENABLE_BLAS
-    int num_points = points->getNumIndexes();
-    std::complex<double> *y_tmp = new std::complex<double>[num_outputs * num_x];
-    std::complex<double> *weights = new std::complex<double>[num_points * num_x];
-    double *weights_tmp = new double[2 * num_points * num_x];
-    evaluateHierarchicalFunctions(x, num_x, weights_tmp);
-
-    #pragma omp parallel for
-    for(int i=0; i<num_points*num_x; i++){
-        weights[i] = std::complex<double>(weights_tmp[2*i], weights_tmp[2*i+1]);
-    }
-
-    TasBLAS::zgemm(num_outputs, num_x, num_points, fourier_coefs, weights, y_tmp);
-
-    #pragma omp parallel for
-    for(int i=0; i<num_outputs*num_x; i++){
-        y[i] = y_tmp[i].real();
-    }
-
-    delete[] y_tmp;
-    delete[] weights;
-    delete[] weights_tmp;
-    #else
     evaluateBatch(x, num_x, y);
-    #endif // Tasmanian_ENABLE_BLAS
 }
 void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream*) const {
-    evaluateBatchCPUblas(x, num_x, y);
+    evaluateBatch(x, num_x, y);
 }
 void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream*) const {
-    evaluateBatchCPUblas(x, num_x, y);
+    evaluateBatch(x, num_x, y);
 }
 void GridFourier::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream*) const {
-    evaluateBatchCPUblas(x, num_x, y);
+    evaluateBatch(x, num_x, y);
 }
 
 void GridFourier::integrate(double q[], double *conformal_correction) const{
