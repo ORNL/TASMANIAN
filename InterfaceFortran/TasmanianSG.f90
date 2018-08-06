@@ -28,13 +28,17 @@
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
 Module TasmanianSG
-IMPLICIT NONE
-PUBLIC :: tsgInitialize,        &
-          tsgFinalize,          &
+implicit none
+PUBLIC :: tsgClearAll,          &
           tsgNewGridID,         &
           tsgFreeGridID,        &
 !===== ABOVE ARE FORTRAN SPECIFIC FUNCTIONS ======!
 !===== BELOW ARE WRAPPERS FOR STANDARD C++ CLASS =!
+          tsgIsGlobal,          &
+          tsgIsSequence,        &
+          tsgIsLocalPolynomial, &
+          tsgIsWavelet,         &
+          tsgIsFourier,         &
           tsgGetVersionMajor,   &
           tsgGetVersionMinor,   &
           tsgGetLicense,        &
@@ -42,6 +46,7 @@ PUBLIC :: tsgInitialize,        &
           tsgMakeSequenceGrid,  &
           tsgMakeLocalPolynomialGrid, &
           tsgMakeWaveletGrid,   &
+          tsgMakeFourierGrid,   &
           tsgCopyGrid,          &
           tsgUpdateGlobalGrid,  &
           tsgUpdateSequenceGrid,&
@@ -70,9 +75,17 @@ PUBLIC :: tsgInitialize,        &
           tsgEvaluate,         &
           tsgEvaluateFast,     &
           tsgEvaluateBatch,    &
+          tsgEvaluateHierarchicalFunctions,        &
+          tsgEvaluateComplexHierarchicalFunctions, &
+          tsgEvaluateSparseHierarchicalFunctions,  &
+          tsgGetHierarchicalCoefficients,          &
+          tsgGetHierarchicalCoefficientsStatic,    &
+          tsgGetComplexHierarchicalCoefficients,   &
+          tsgGetComplexHierarchicalCoefficientsStatic, &
+          tsgSetHierarchicalCoefficients, &
           tsgIntegrate,        &
           tsgSetDomainTransform,   &
-          tsgIsSetDomainTransfrom, &
+          tsgIsSetDomainTransform, &
           tsgClearDomainTransform, &
           tsgGetDomainTransform,   &
           tsgSetAnisotropicRefinement,        &
@@ -80,12 +93,14 @@ PUBLIC :: tsgInitialize,        &
           tsgSetGlobalSurplusRefinement,      &
           tsgSetLocalSurplusRefinement,       &
           tsgClearRefinement,                 &
+          tsgMergeRefinement,                 &
           tsgSetConformalTransformASIN,   &
           tsgIsSetConformalTransformASIN, &
           tsgClearConformalTransform,     &
           tsgGetConformalTransformASIN,   &
           tsgPrintStats, &
-!===== DO NOT USE THESE FUNCTIONS DIRECTLY ======!
+          tsgTestInternals,     &
+!===== do NOT USE THESE FUNCTIONS DIRECTLY ======!
 !===== THESE ARE NEEDED TO LINK TO C++ ==========!
           !tsgReceiveInt,    &
           !tsgReceiveScalar, &
@@ -123,7 +138,7 @@ PUBLIC :: tsgInitialize,        &
           tsg_acc_none    , tsg_acc_cpu_blas , tsg_acc_gpu_cublas, &
           tsg_acc_gpu_cuda, tsg_acc_gpu_magma
                         
-  INTEGER, PARAMETER :: tsg_clenshaw_curtis      =  1,  tsg_rule_clenshaw_curtis_zero = 2, &
+  integer, parameter :: tsg_clenshaw_curtis      =  1,  tsg_rule_clenshaw_curtis_zero = 2, &
                         tsg_chebyshev            =  3,  tsg_chebyshev_odd         =  4, &
                         tsg_gauss_legendre       =  5,  tsg_gauss_legendreodd     =  6, & 
                         tsg_gauss_patterson      =  7,  tsg_leja                  =  8, &
@@ -154,501 +169,736 @@ PUBLIC :: tsgInitialize,        &
                         tsg_acc_none     = 0, tsg_acc_cpu_blas  = 1, tsg_acc_gpu_cublas = 2, &
                         tsg_acc_gpu_cuda = 3, tsg_acc_gpu_magma = 4
 PRIVATE
-  INTEGER :: rows, cols, length
-  DOUBLE PRECISION, pointer :: matrix(:,:), vector(:)
-  CHARACTER, pointer :: string(:)
-CONTAINS
+  integer :: rows, cols, length
+  double precision, pointer :: matrix(:,:), vector(:)
+  character, pointer :: string(:)
+contains
 !=======================================================================
-SUBROUTINE tsgInitialize()
-  CALL tsgbeg()
-END SUBROUTINE tsgInitialize
+function tsgIsGlobal(id) result(res)
+  integer :: id, flag
+  logical :: res
+  call tsgisg(id, flag)
+  if (flag .ne. 0) then
+    res = .true.
+  else
+    res = .false.
+  endif
+end function
 !=======================================================================
-SUBROUTINE tsgFinalize()
-  CALL tsgend()
-END SUBROUTINE tsgFinalize
+function tsgIsSequence(id) result(res)
+  integer :: id, flag
+  logical :: res
+  call tsgiss(id, flag)
+  if (flag .ne. 0) then
+    res = .true.
+  else
+    res = .false.
+  endif
+end function
 !=======================================================================
-FUNCTION tsgNewGridID() result(newid)
-  INTEGER :: newid
-  CALL tsgnew(newid)
-END FUNCTION tsgNewGridID
+function tsgIsLocalPolynomial(id) result(res)
+  integer :: id, flag
+  logical :: res
+  call tsgisl(id, flag)
+  if (flag .ne. 0) then
+    res = .true.
+  else
+    res = .false.
+  endif
+end function
 !=======================================================================
-SUBROUTINE tsgFreeGridID(gridID)
-  INTEGER :: gridID
-  CALL tsgfre(gridID)
-END SUBROUTINE tsgFreeGridID
+function tsgIsWavelet(id) result(res)
+  integer :: id, flag
+  logical :: res
+  call tsgisw(id, flag)
+  if (flag .ne. 0) then
+    res = .true.
+  else
+    res = .false.
+  endif
+end function
+!=======================================================================
+function tsgIsFourier(id) result(res)
+  integer :: id, flag
+  logical :: res
+  call tsgisf(id, flag)
+  if (flag .ne. 0) then
+    res = .true.
+  else
+    res = .false.
+  endif
+end function
+!=======================================================================
+subroutine tsgClearAll()
+  call tsgend()
+end subroutine tsgClearAll
+!=======================================================================
+function tsgNewGridID() result(newid)
+  integer :: newid
+  call tsgnew(newid)
+end function tsgNewGridID
+!=======================================================================
+subroutine tsgFreeGridID(gridID)
+  integer :: gridID
+  call tsgfre(gridID)
+end subroutine tsgFreeGridID
 !=======================================================================
 !   class TasmanianSparseGrid wrapper functions
 !=======================================================================
-FUNCTION tsgGetVersionMajor() result(ver)
-  INTEGER :: ver
-  CALL tsggvm(ver)
-END FUNCTION tsgGetVersionMajor
+function tsgGetVersionMajor() result(ver)
+  integer :: ver
+  call tsggvm(ver)
+end function tsgGetVersionMajor
 !=======================================================================
-FUNCTION tsgGetVersionMinor() result(ver)
-  INTEGER :: ver
-  CALL tsggvn(ver)
-END FUNCTION tsgGetVersionMinor
+function tsgGetVersionMinor() result(ver)
+  integer :: ver
+  call tsggvn(ver)
+end function tsgGetVersionMinor
 !=======================================================================
-FUNCTION tsgGetLicense() result(lic)
-  CHARACTER, pointer :: lic(:)
-  CALL tsggli()
+function tsgGetLicense() result(lic)
+  character, pointer :: lic(:)
+  call tsggli()
   lic => string
-END FUNCTION tsgGetLicense
+end function tsgGetLicense
 !=======================================================================
-SUBROUTINE tsgMakeGlobalGrid(gridID, dims, outs, depth, gtype, rule, &
-                             aweights, alpha, beta, levelLimits)
-  INTEGER, intent(in) :: gridID, dims, outs, depth, gtype, rule
-  INTEGER :: i
-  INTEGER, optional :: aweights(*), levelLimits(dims)
-  DOUBLE PRECISION, optional :: alpha, beta
-  DOUBLE PRECISION :: al, be
-  INTEGER, allocatable :: aw(:)
-  INTEGER, allocatable :: ll(:)
-  IF(PRESENT(alpha))then
+subroutine tsgMakeGlobalGrid(gridID, dims, outs, depth, gtype, rule, &
+                             aweights, alpha, beta, customRuleFilename, levelLimits)
+  integer, intent(in) :: gridID, dims, outs, depth, gtype, rule
+  integer, optional, target  :: aweights(:), levelLimits(dims)
+  double precision, optional :: alpha, beta
+  character(len=*), optional :: customRuleFilename
+  integer           :: opt_flags(5)
+  character(len=80) :: cfn = char(0)
+  double precision  :: al, be
+  integer, pointer  :: aw(:) => null()
+  integer, pointer  :: ll(:) => null()
+
+  opt_flags = 0
+  if ( present(aweights) ) then
+    opt_flags(1) = 1
+    aw => aweights
+  endif
+  if ( present(alpha) ) then
+    opt_flags(2) = 1
     al = alpha
-  ELSE
-    al = 0.0
-  ENDIF
-  IF(PRESENT(beta))then
+  endif
+  if ( present(beta) ) then
+    opt_flags(3) = 1
     be = beta
-  ELSE
-    be = 0.0
-  ENDIF
-  ALLOCATE(ll(dims))
-  IF(PRESENT(levelLimits))then
-    DO i = 1, dims
-      ll(i) = levelLimits(i)
-    END DO
-  ELSE
-    DO i = 1, dims
-      ll(i) = -1
-    END DO
-  ENDIF
-  IF(PRESENT(aweights))then
-    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aweights, al, be, ll)
-  ELSE
-    ALLOCATE(aw(2*dims))
-    DO i = 1, dims
-      aw(i) = 1
-    END DO
-    DO i = dims+1, 2*dims
-      aw(i) = 0
-    END DO
-    CALL tsgmg(gridID, dims, outs, depth, gtype, rule, aw, al, be, ll)
-    DEALLOCATE(aw)
-  ENDIF
-  DEALLOCATE(ll)
-END SUBROUTINE tsgMakeGlobalGrid
+    endif
+  if ( present(customRuleFilename) ) then
+    opt_flags(4) = 1
+    cfn = customRuleFilename//char(0)
+  endif
+  if ( present(levelLimits) ) then
+    opt_flags(5) = 1
+    ll => levelLimits
+  endif
+
+  call tsgmg(gridID, dims, outs, depth, gtype, rule, opt_flags, aw, al, be, cfn, ll)
+end subroutine tsgMakeGlobalGrid
 !=======================================================================
-SUBROUTINE tsgMakeSequenceGrid(gridID, dims, outs, depth, gtype, rule, &
-                               aweights)
-  INTEGER :: gridID, dims, outs, depth, gtype, rule, i
-  INTEGER, optional :: aweights(*)
-  INTEGER, allocatable :: aw(:)
-  IF(PRESENT(aweights))then
-    CALL tsgms(gridID, dims, outs, depth, gtype, rule, aweights)
-  ELSE
-    ALLOCATE(aw(2*dims))
-    DO i = 1, dims
-      aw(i) = 1
-    END DO
-    DO i = dims+1, 2*dims
-      aw(i) = 0
-    END DO
-    CALL tsgms(gridID, dims, outs, depth, gtype, rule, aw)
-    DEALLOCATE(aw)
-  ENDIF
-END SUBROUTINE tsgMakeSequenceGrid
+subroutine tsgMakeSequenceGrid(gridID, dims, outs, depth, gtype, rule, aweights, levelLimits)
+integer :: gridID, dims, outs, depth, gtype, rule
+integer, optional, target :: aweights(:), levelLimits(dims)
+integer          :: opt_flags(2)
+integer, pointer :: aw(:) => null()
+integer, pointer :: ll(:) => null()
+
+opt_flags = 0
+if ( present(aweights) ) then
+  opt_flags(1) = 1
+  aw => aweights
+endif
+if ( present(levelLimits) ) then
+  opt_flags(2) = 1
+  ll => levelLimits
+endif
+
+call tsgms(gridID, dims, outs, depth, gtype, rule, opt_flags, aw, ll)
+end subroutine tsgMakeSequenceGrid
 !=======================================================================
-SUBROUTINE tsgMakeLocalPolynomialGrid(gridID, dims, outs, depth, order,&
-                                      rule)
-  INTEGER :: gridID, dims, outs, depth
-  INTEGER, optional :: order, rule
-  INTEGER :: or, ru
-  IF(PRESENT(order))then
+subroutine tsgMakeLocalPolynomialGrid(gridID, dims, outs, depth, order, rule, levelLimits)
+  integer :: gridID, dims, outs, depth
+  integer, optional :: order, rule
+  integer, optional, target :: levelLimits(dims)
+  integer          :: opt_flags(3), or, ru
+  integer, pointer :: ll(:) => null()
+
+  opt_flags = 0
+  if ( present(order) ) then
+    opt_flags(1) = 1
     or = order
-  ELSE
-    or = 1
-  ENDIF
-  IF(PRESENT(rule))then
+  endif
+  if ( present(rule) ) then
+    opt_flags(2) = 1
     ru = rule
-  ELSE
-    ru = 1
-  ENDIF
-  CALL tsgml(gridID, dims, outs, depth, or, ru)
-END SUBROUTINE tsgMakeLocalPolynomialGrid
+  endif
+  if ( present(levelLimits) ) then
+    opt_flags(3) = 1
+    ll => levelLimits
+  endif
+
+  call tsgml(gridID, dims, outs, depth, opt_flags, or, ru, ll)
+end subroutine tsgMakeLocalPolynomialGrid
 !=======================================================================
-SUBROUTINE tsgMakeWaveletGrid(gridID, dims, outs, depth, order)
-  INTEGER :: gridID, dims, outs, depth, or
-  INTEGER, optional :: order
-  IF(PRESENT(order))THEN
+subroutine tsgMakeWaveletGrid(gridID, dims, outs, depth, order, levelLimits)
+  integer :: gridID, dims, outs, depth
+  integer, optional, target :: levelLimits(dims)
+  integer, optional :: order
+  integer           :: opt_flags(2), or
+  integer, pointer  :: ll(:) => null()
+
+  opt_flags = 0
+  if ( present(order) ) then
+    opt_flags(1) = 1
     or = order
-  ELSE
-    or = 1
-  ENDIF
-  CALL tsgmw(gridID, dims, outs, depth, or)
-END SUBROUTINE tsgMakeWaveletGrid
+  endif
+  if ( present(levelLimits) ) then
+    opt_flags(2) = 1
+    ll => levelLimits
+  endif
+
+  call tsgmw(gridID, dims, outs, depth, opt_flags, or, ll)
+end subroutine tsgMakeWaveletGrid
 !=======================================================================
-SUBROUTINE tsgCopyGrid(gridID, sourceID)
-  INTEGER :: gridID, sourceID
-  CALL tsgcp(gridID, sourceID)
-END SUBROUTINE tsgCopyGrid
+subroutine tsgMakeFourierGrid(gridID, dims, outs, depth, gtype, aweights, levelLimits)
+  integer :: gridID, dims, outs, depth, gtype
+  integer, optional, target :: aweights(:), levelLimits(dims)
+  integer          :: opt_flags(2)
+  integer, pointer :: aw(:) => null()
+  integer, pointer :: ll(:) => null()
+
+  opt_flags = 0
+  if ( present(aweights) ) then
+    opt_flags(1) = 1
+    aw => aweights
+  endif
+  if ( present(levelLimits) ) then
+    opt_flags(2) = 1
+    ll => levelLimits
+  endif
+
+  call tsgmf(gridID, dims, outs, depth, gtype, opt_flags, aw, ll)
+end subroutine tsgMakeFourierGrid
 !=======================================================================
-SUBROUTINE tsgUpdateGlobalGrid(gridID, depth, gtype, aweights)
-  INTEGER, intent(in) :: gridID, depth, gtype
-  INTEGER, optional :: aweights(*)
-  INTEGER, allocatable :: aw(:)
-  INTEGER :: dims, i
-  IF(PRESENT(aweights))THEN
-    CALL tsgug(gridID, depth, gtype, aweights)
-  ELSE
-    dims = tsgGetNumDimensions(gridID)
-    ALLOCATE(aw(2*dims))
-    DO i = 1, dims
-      aw(i) = 1
-    END DO
-    DO i = dims+1, 2*dims
-      aw(i) = 0
-    END DO
-    CALL tsgug(gridID, depth, gtype, aw)
-    DEALLOCATE(aw)
-  ENDIF
-END SUBROUTINE tsgUpdateGlobalGrid
+subroutine tsgCopyGrid(gridID, sourceID)
+  integer :: gridID, sourceID
+  call tsgcp(gridID, sourceID)
+end subroutine tsgCopyGrid
 !=======================================================================
-SUBROUTINE tsgUpdateSequenceGrid(gridID, depth, gtype, aweights)
-  INTEGER, intent(in) :: gridID, depth, gtype
-  INTEGER :: dims, i
-  INTEGER, optional :: aweights(*)
-  INTEGER, allocatable :: aw(:)
-  IF(PRESENT(aweights))THEN
-    CALL tsgus(gridID, depth, gtype, aweights)
-  ELSE
-    dims = tsgGetNumDimensions(gridID)
-    ALLOCATE(aw(2*dims))
-    DO i = 1, dims
-      aw(i) = 1
-    END DO
-    DO i = dims+1, 2*dims
-      aw(i) = 0
-    END DO
-    CALL tsgus(gridID, depth, gtype, aw)
-    DEALLOCATE(aw)
-  ENDIF
-END SUBROUTINE tsgUpdateSequenceGrid
+subroutine tsgUpdateGlobalGrid(gridID, depth, gtype, aweights)
+  integer, intent(in) :: gridID, depth, gtype
+  integer, optional, target :: aweights(:)
+  integer          :: opt_flags = 0
+  integer, pointer :: aw(:) => null()
+  if ( present(aweights) ) then
+    opt_flags = 1
+    aw => aweights
+  endif
+  call tsgug(gridID, depth, gtype, opt_flags, aw)
+end subroutine tsgUpdateGlobalGrid
 !=======================================================================
-SUBROUTINE tsgRead(gridID, filename)
-  INTEGER, intent(in) :: gridID
-  CHARACTER(len=*), intent(in) :: filename
-  INTEGER :: N, i
-  CHARACTER, allocatable :: cfilename(:)
+subroutine tsgUpdateSequenceGrid(gridID, depth, gtype, aweights)
+  integer, intent(in) :: gridID, depth, gtype
+  integer, optional, target :: aweights(:)
+  integer          :: opt_flags = 0
+  integer, pointer :: aw(:) => null()
+  if ( present(aweights) ) then
+    opt_flags = 1
+    aw => aweights
+  endif
+  call tsgus(gridID, depth, gtype, opt_flags, aw)
+end subroutine tsgUpdateSequenceGrid
+!=======================================================================
+subroutine tsgRead(gridID, filename)
+  integer, intent(in) :: gridID
+  character(len=*), intent(in) :: filename
+  integer :: N, i
+  character, allocatable :: cfilename(:)
   N = len(trim(filename))
-  ALLOCATE(cfilename(N+1))
-  DO i = 1, N
+  allocate(cfilename(N+1))
+  do i = 1, N
     cfilename(i) = filename(i:i)
-  END DO
+  end do
   cfilename(N+1) = CHAR(0)
-  CALL tsgrea(gridID, cfilename)
-  DEALLOCATE(cfilename)
-END SUBROUTINE tsgRead
+  call tsgrea(gridID, cfilename)
+  deallocate(cfilename)
+end subroutine tsgRead
 !=======================================================================
-SUBROUTINE tsgWrite(gridID, filename, useBinary)
-  INTEGER, intent(in) :: gridID
-  LOGICAL, intent(in), optional :: useBinary
-  INTEGER :: ubin
-  CHARACTER(len=*), intent(in) :: filename
-  INTEGER :: N, i
-  CHARACTER, allocatable :: cfilename(:)
+subroutine tsgWrite(gridID, filename, useBinary)
+  integer, intent(in) :: gridID
+  logical, intent(in), optional :: useBinary
+  integer :: ubin
+  character(len=*), intent(in) :: filename
+  integer :: N, i
+  character, allocatable :: cfilename(:)
   N = len(trim(filename))
-  ALLOCATE(cfilename(N+1))
-  DO i = 1, N
+  allocate(cfilename(N+1))
+  do i = 1, N
     cfilename(i) = filename(i:i)
-  END DO
+  end do
   cfilename(N+1) = CHAR(0)
-  IF(PRESENT(useBinary))then
-    IF(useBinary)then
+  if(present(useBinary))then
+    if(useBinary)then
       ubin = 1
-    ELSE
+    else
       ubin = 0
-    ENDIF
-  ELSE
+    endif
+  else
     ubin = 0
-  ENDIF
-  CALL tsgwri(gridID, cfilename, ubin)
-  DEALLOCATE(cfilename)
-END SUBROUTINE tsgWrite
+  endif
+  call tsgwri(gridID, cfilename, ubin)
+  deallocate(cfilename)
+end subroutine tsgWrite
 !=======================================================================
-FUNCTION tsgGetAlpha(gridID) result(alpha)
-  INTEGER :: gridID
-  DOUBLE PRECISION :: alpha
-  CALL tsggal(gridID, alpha)
-END FUNCTION tsgGetAlpha
+function tsgGetAlpha(gridID) result(alpha)
+  integer :: gridID
+  double precision :: alpha
+  call tsggal(gridID, alpha)
+end function tsgGetAlpha
 !=======================================================================
-FUNCTION tsgGetBeta(gridID) result(beta)
-  INTEGER :: gridID
-  DOUBLE PRECISION :: beta
-  CALL tsggbe(gridID, beta)
-END FUNCTION tsgGetBeta
+function tsgGetBeta(gridID) result(beta)
+  integer :: gridID
+  double precision :: beta
+  call tsggbe(gridID, beta)
+end function tsgGetBeta
 !=======================================================================
-FUNCTION tsgGetOrder(gridID) result(order)
-  INTEGER :: gridID, order
-  CALL tsggor(gridID, order)
-END FUNCTION tsgGetOrder
+function tsgGetOrder(gridID) result(order)
+  integer :: gridID, order
+  call tsggor(gridID, order)
+end function tsgGetOrder
 !=======================================================================
-FUNCTION tsgGetNumDimensions(gridID) result(dims)
-  INTEGER :: gridID, dims
-  CALL tsggnd(gridID, dims)
-END FUNCTION tsgGetNumDimensions
+function tsgGetNumDimensions(gridID) result(dims)
+  integer :: gridID, dims
+  call tsggnd(gridID, dims)
+end function tsgGetNumDimensions
 !=======================================================================
-FUNCTION tsgGetNumOutputs(gridID) result(outs)
-  INTEGER :: gridID, outs
-  CALL tsggno(gridID, outs)
-END FUNCTION tsgGetNumOutputs
+function tsgGetNumOutputs(gridID) result(outs)
+  integer :: gridID, outs
+  call tsggno(gridID, outs)
+end function tsgGetNumOutputs
 !=======================================================================
-FUNCTION tsgGetRule(gridID) result(rule)
-  INTEGER :: gridID, rule
-  CALL tsggor(gridID, rule)
-END FUNCTION tsgGetRule
+function tsgGetRule(gridID) result(rule)
+  integer :: gridID, rule
+  call tsggor(gridID, rule)
+end function tsgGetRule
 !=======================================================================
-FUNCTION tsgGetNumLoaded(gridID) result(num)
-  INTEGER :: gridID, num
-  CALL tsggnl(gridID, num)
-END FUNCTION tsgGetNumLoaded
+function tsgGetNumLoaded(gridID) result(num)
+  integer :: gridID, num
+  call tsggnl(gridID, num)
+end function tsgGetNumLoaded
 !=======================================================================
-FUNCTION tsgGetNumNeeded(gridID) result(num)
-  INTEGER :: gridID, num
-  CALL tsggnn(gridID, num)
-END FUNCTION tsgGetNumNeeded
+function tsgGetNumNeeded(gridID) result(num)
+  integer :: gridID, num
+  call tsggnn(gridID, num)
+end function tsgGetNumNeeded
 !=======================================================================
-FUNCTION tsgGetNumPoints(gridID) result(num)
-  INTEGER :: gridID, num
-  CALL tsggnp(gridID, num)
-END FUNCTION tsgGetNumPoints
+function tsgGetNumPoints(gridID) result(num)
+  integer :: gridID, num
+  call tsggnp(gridID, num)
+end function tsgGetNumPoints
 !=======================================================================
-FUNCTION tsgGetLoadedPoints(gridID) result(p)
-  DOUBLE PRECISION, pointer :: p(:,:)
-  INTEGER :: gridID, rows, cols
+function tsgGetLoadedPoints(gridID) result(p)
+  double precision, pointer :: p(:,:)
+  integer :: gridID, rows, cols
   rows = tsgGetNumDimensions(gridID)
   cols = tsgGetNumLoaded(gridID)
-  ALLOCATE(p(rows,cols))
-  CALL tsgglp(gridID, p)
-END FUNCTION tsgGetLoadedPoints
+  allocate(p(rows,cols))
+  call tsgglp(gridID, p)
+end function tsgGetLoadedPoints
 !=======================================================================
-FUNCTION tsgGetNeededPoints(gridID) result(p)
-  DOUBLE PRECISION, pointer :: p(:,:)
-  INTEGER :: gridID, rows, cols
+function tsgGetNeededPoints(gridID) result(p)
+  double precision, pointer :: p(:,:)
+  integer :: gridID, rows, cols
   rows = tsgGetNumDimensions(gridID)
   cols = tsgGetNumNeeded(gridID)
-  ALLOCATE(p(rows,cols))
-  CALL tsggdp(gridID, p)
-END FUNCTION tsgGetNeededPoints
+  allocate(p(rows,cols))
+  call tsggdp(gridID, p)
+end function tsgGetNeededPoints
 !=======================================================================
-FUNCTION tsgGetPoints(gridID) result(p)
-  DOUBLE PRECISION, pointer :: p(:,:)
-  INTEGER :: gridID, rows, cols
+function tsgGetPoints(gridID) result(p)
+  double precision, pointer :: p(:,:)
+  integer :: gridID, rows, cols
   rows = tsgGetNumDimensions(gridID)
   cols = tsgGetNumPoints(gridID)
-  ALLOCATE(p(rows,cols))
-  CALL tsggpp(gridID, p)
-END FUNCTION tsgGetPoints
+  allocate(p(rows,cols))
+  call tsggpp(gridID, p)
+end function tsgGetPoints
 !=======================================================================
-SUBROUTINE tsgGetLoadedPointsStatic(gridID, dims, points)
-  INTEGER :: gridID, dims
-  DOUBLE PRECISION :: points(dims,*)
-  CALL tsgglp(gridID, points)
-END SUBROUTINE tsgGetLoadedPointsStatic
+subroutine tsgGetLoadedPointsStatic(gridID, points)
+  integer :: gridID
+  double precision :: points(:,:)
+  call tsgglp(gridID, points)
+end subroutine tsgGetLoadedPointsStatic
 !=======================================================================
-SUBROUTINE tsgGetNeededPointsStatic(gridID, dims, points)
-  INTEGER :: gridID, dims
-  DOUBLE PRECISION :: points(dims,*)
-  CALL tsggdp(gridID, points)
-END SUBROUTINE tsgGetNeededPointsStatic
+subroutine tsgGetNeededPointsStatic(gridID, points)
+  integer :: gridID
+  double precision :: points(:,:)
+  call tsggdp(gridID, points)
+end subroutine tsgGetNeededPointsStatic
 !=======================================================================
-SUBROUTINE tsgGetPointsStatic(gridID, dims, points)
-  INTEGER :: gridID, dims
-  DOUBLE PRECISION :: points(dims,*)
-  CALL tsggpp(gridID, points)
-END SUBROUTINE tsgGetPointsStatic
+subroutine tsgGetPointsStatic(gridID, points)
+  integer :: gridID
+  double precision :: points(:,:)
+  call tsggpp(gridID, points)
+end subroutine tsgGetPointsStatic
 !=======================================================================
-FUNCTION tsgGetQuadratureWeights(gridID) result(w)
-  INTEGER :: gridID, length
-  DOUBLE PRECISION, pointer :: w(:)
+function tsgGetQuadratureWeights(gridID) result(w)
+  integer :: gridID, length
+  double precision, pointer :: w(:)
   length = tsgGetNumPoints(gridID)
-  ALLOCATE(w(length))
-  CALL tsggqw(gridID, w)
-END FUNCTION tsgGetQuadratureWeights
+  allocate(w(length))
+  call tsggqw(gridID, w)
+end function tsgGetQuadratureWeights
 !=======================================================================
-SUBROUTINE tsgGetQuadratureWeightsStatic(gridID, weights)
-  INTEGER :: gridID
-  DOUBLE PRECISION :: weights(*)
-  CALL tsggqw(gridID, weights)
-END SUBROUTINE tsgGetQuadratureWeightsStatic
+subroutine tsgGetQuadratureWeightsStatic(gridID, weights)
+  integer :: gridID
+  double precision :: weights(*)
+  call tsggqw(gridID, weights)
+end subroutine tsgGetQuadratureWeightsStatic
 !=======================================================================
-FUNCTION tsgGetInterpolationWeights(gridID, x) result(w)
-  INTEGER :: gridID, length
-  DOUBLE PRECISION :: x(*)
-  DOUBLE PRECISION, pointer :: w(:)
+function tsgGetInterpolationWeights(gridID, x) result(w)
+  integer :: gridID, length
+  double precision :: x(*)
+  double precision, pointer :: w(:)
   length = tsgGetNumPoints(gridID)
-  ALLOCATE(w(length))
-  CALL tsggiw(gridID, x, w)
-END FUNCTION tsgGetInterpolationWeights
+  allocate(w(length))
+  call tsggiw(gridID, x, w)
+end function tsgGetInterpolationWeights
 !=======================================================================
-SUBROUTINE tsgGetInterpolationWeightsStatic(gridID, x, weights)
-  INTEGER :: gridID
-  DOUBLE PRECISION :: x(:)
-  DOUBLE PRECISION :: weights(:)
-  CALL tsggiw(gridID, x, weights)
-END SUBROUTINE tsgGetInterpolationWeightsStatic
+subroutine tsgGetInterpolationWeightsStatic(gridID, x, weights)
+  integer :: gridID
+  double precision :: x(:)
+  double precision :: weights(:)
+  call tsggiw(gridID, x, weights)
+end subroutine tsgGetInterpolationWeightsStatic
 !=======================================================================
-SUBROUTINE tsgLoadNeededPoints(gridID, values)
-  INTEGER :: gridID
-  DOUBLE PRECISION :: values(:,:)
-  CALL tsglnp(gridID, values)
-END SUBROUTINE tsgLoadNeededPoints
+subroutine tsgLoadNeededPoints(gridID, values)
+  integer :: gridID
+  double precision :: values(:,:)
+  call tsglnp(gridID, values)
+end subroutine tsgLoadNeededPoints
 !=======================================================================
-SUBROUTINE tsgEvaluate(gridID, x, y)
-  INTEGER :: gridID
-  DOUBLE PRECISION, intent(in) :: x(:)
-  DOUBLE PRECISION :: y(:)
-  CALL tsgeva(gridID, x, y)
-END SUBROUTINE tsgEvaluate
+subroutine tsgEvaluate(gridID, x, y)
+  integer :: gridID
+  double precision, intent(in) :: x(:)
+  double precision :: y(:)
+  call tsgeva(gridID, x, y)
+end subroutine tsgEvaluate
 !=======================================================================
-SUBROUTINE tsgEvaluateFast(gridID, x, y)
-  INTEGER :: gridID
-  DOUBLE PRECISION, intent(in) :: x(:)
-  DOUBLE PRECISION :: y(:)
-  CALL tsgevf(gridID, x, y)
-END SUBROUTINE tsgEvaluateFast
+subroutine tsgEvaluateFast(gridID, x, y)
+  integer :: gridID
+  double precision, intent(in) :: x(:)
+  double precision :: y(:)
+  call tsgevf(gridID, x, y)
+end subroutine tsgEvaluateFast
 !=======================================================================
-SUBROUTINE tsgEvaluateBatch(gridID, x, numX, y)
-  INTEGER :: gridID, numX
-  DOUBLE PRECISION :: x(:,:), y(:,:)
-  CALL tsgevb(gridID, x, numX, y)
-END SUBROUTINE tsgEvaluateBatch
+subroutine tsgEvaluateBatch(gridID, x, numX, y)
+  integer :: gridID, numX
+  double precision :: x(:,:), y(:,:)
+  call tsgevb(gridID, x, numX, y)
+end subroutine tsgEvaluateBatch
 !=======================================================================
-SUBROUTINE tsgIntegrate(gridID, q)
-  INTEGER :: gridID
-  DOUBLE PRECISION :: q(:)
-  CALL tsgint(gridID, q)
-END SUBROUTINE tsgIntegrate
+subroutine tsgEvaluateHierarchicalFunctions(gridID, x, numX, y)
+  integer :: gridID, numX
+  double precision :: x(:,:), y(:,:)
+  if ( .not. tsgIsFourier(gridID) ) then
+    call tsgehf(gridID, x, numX, y)
+  else
+    write(*,*) "ERROR: called tsgEvaluateHierarchicalFunctions() on a Fourier grid, "
+    write(*,*) "       use tsgEvaluateComplexHierarchicalFunctions() instead"
+  endif
+end subroutine tsgEvaluateHierarchicalFunctions
 !=======================================================================
-SUBROUTINE tsgSetDomainTransform(gridID, transformA, transformB)
-  INTEGER :: gridID
-  DOUBLE PRECISION :: transformA(*), transformB(*)
-  CALL tsgsdt(gridID, transformA, transformB)
-END SUBROUTINE tsgSetDomainTransform
+subroutine tsgEvaluateComplexHierarchicalFunctions(gridID, x, numX, y)
+  integer :: gridID, numX
+  double precision :: x(:,:)
+  double complex   :: y(:,:)
+  double precision, allocatable :: y_c_style(:)
+  integer :: i, j
+  if ( tsgIsFourier(gridID) ) then
+    allocate(y_c_style(2*size(y,1)*size(y,2)))
+    call tsgehf(gridID, x, numX, y_c_style)
+    do j = 1,size(y,2)
+      do i = 1,size(y,1)
+        y(i,j) = cmplx( y_c_style( 2*size(y,1)*(j-1) + 2*i-1 ), y_c_style( 2*size(y,1)*(j-1) + 2*i), kind(y) )
+      enddo
+    enddo
+  else
+    write(*,*) "ERROR: called tsgEvaluateComplexHierarchicalFunctions() on a non-Fourier grid, "
+    write(*,*) "       use tsgEvaluateHierarchicalFunctions() instead"
+  endif
+end subroutine tsgEvaluateComplexHierarchicalFunctions
 !=======================================================================
-FUNCTION tsgIsSetDomainTransfrom(gridID) result(res)
-  INTEGER :: gridID, res
-  CALL tsgidt(gridID, res)
-END FUNCTION tsgIsSetDomainTransfrom
+subroutine tsgEvaluateSparseHierarchicalFunctions(gridID, x, numX, pntr, indx, y)
+  integer :: gridID, numX
+  double precision :: x(:,:)
+  integer, pointer :: pntr(:), indx(:)
+  double precision, pointer :: y(:)
+  integer :: numNZ
+  if ( .not. tsgIsFourier(gridID) ) then
+    call tsgehz(gridID, x, numX, numNZ)
+    allocate( pntr(numX+1), indx(numNZ), y(numNZ) )
+    call tsgehs(gridID, x, numX, pntr, indx, y)
+  else
+    write(*,*) "ERROR: called tsgEvaluateSparseHierarchicalFunctions() on a Fourier grid"
+  endif
+end subroutine tsgEvaluateSparseHierarchicalFunctions
 !=======================================================================
-SUBROUTINE tsgClearDomainTransform(gridID)
-  INTEGER :: gridID
-  CALL tsgcdt(gridID)
-END SUBROUTINE tsgClearDomainTransform
+function tsgGetHierarchicalCoefficients(gridID) result(c)
+  integer :: gridID
+  double precision, pointer :: c(:)
+  if ( .not. tsgIsFourier(gridID) ) then
+    allocate(c(tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
+    call tsgghc(gridID, c)
+  else
+    write(*,*) "ERROR: called tsgGetHierarchicalCoefficients() on a Fourier grid, "
+    write(*,*) "       use tsgGetComplexHierarchicalCoefficients() instead"
+  endif
+end function tsgGetHierarchicalCoefficients
 !=======================================================================
-SUBROUTINE tsgGetDomainTransform(gridID, transformA, transformB)
-  INTEGER :: gridID
-  DOUBLE PRECISION :: transformA(*), transformB(*)
-  CALL tsggdt(gridID, transformA, transformB)
-END SUBROUTINE tsgGetDomainTransform
+subroutine tsgGetHierarchicalCoefficientsStatic(gridID, c)
+  integer :: gridID
+  double precision :: c(:)
+  if ( .not. tsgIsFourier(gridID) ) then
+    call tsgghc(gridID, c)
+  else
+    write(*,*) "ERROR: called tsgGetHierarchicalCoefficientsStatic() on a Fourier grid, "
+    write(*,*) "       use tsgGetComplexHierarchicalCoefficientsStatic() instead"
+  endif
+end subroutine tsgGetHierarchicalCoefficientsStatic
 !=======================================================================
-SUBROUTINE tsgSetAnisotropicRefinement(gridID, gtype, minGrowth, output)
-  INTEGER :: gridID, gtype, minGrowth, output
-  CALL tsgsar(gridID, gtype, minGrowth, output)
-END SUBROUTINE tsgSetAnisotropicRefinement
+function tsgGetComplexHierarchicalCoefficients(gridID) result(c)
+  integer :: gridID
+  double complex, pointer       :: c(:)
+  double precision, allocatable :: c_real(:)
+  integer :: i
+  if ( tsgIsFourier(gridID) ) then
+    allocate(c(tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
+    allocate(c_real(2*tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
+    call tsgghc(gridID, c_real)
+    do i = 1,size(c)
+      c(i) = complex( c_real(2*i-1), c_real(2*i) )
+    enddo
+    deallocate(c_real)
+  else
+    write(*,*) "ERROR: called tsgGetComplexHierarchicalCoefficients() on a non-Fourier grid, "
+    write(*,*) "       use tsgGetHierarchicalCoefficients() instead"
+  endif
+end function tsgGetComplexHierarchicalCoefficients
 !=======================================================================
-FUNCTION tsgEstimateAnisotropicCoefficients(gridID, gtype, output) &
-                                              result(coeff)
-  INTEGER :: gridID, gtype, output, N
-  INTEGER, allocatable :: coeff(:)
+subroutine tsgGetComplexHierarchicalCoefficientsStatic(gridID, c)
+  integer :: gridID
+  double complex   :: c(:)
+  double precision :: c_real(2*size(c))
+  integer :: i
+  if ( tsgIsFourier(gridID) ) then
+    call tsgghc(gridID, c_real)
+    do i = 1,size(c)
+      c(i) = complex( c_real(2*i-1), c_real(2*i) )
+    enddo
+  else
+    write(*,*) "ERROR: called tsgGetComplexHierarchicalCoefficientsStatic() on a non-Fourier grid, "
+    write(*,*) "       use tsgGetHierarchicalCoefficientsStatic() instead"
+  endif
+end subroutine tsgGetComplexHierarchicalCoefficientsStatic
+!=======================================================================
+subroutine tsgSetHierarchicalCoefficients(gridID,c)
+  integer :: gridID
+  double precision :: c(:)
+  call tsgshc(gridID, c)
+end subroutine tsgSetHierarchicalCoefficients
+!=======================================================================
+subroutine tsgIntegrate(gridID, q)
+  integer :: gridID
+  double precision :: q(:)
+  call tsgint(gridID, q)
+end subroutine tsgIntegrate
+!=======================================================================
+subroutine tsgSetDomainTransform(gridID, transformA, transformB)
+  integer :: gridID
+  double precision :: transformA(*), transformB(*)
+  call tsgsdt(gridID, transformA, transformB)
+end subroutine tsgSetDomainTransform
+!=======================================================================
+function tsgIsSetDomainTransform(gridID) result(res)
+  integer :: gridID
+  logical :: res
+  call tsgidt(gridID, res)
+end function tsgIsSetDomainTransform
+!=======================================================================
+subroutine tsgClearDomainTransform(gridID)
+  integer :: gridID
+  call tsgcdt(gridID)
+end subroutine tsgClearDomainTransform
+!=======================================================================
+subroutine tsgGetDomainTransform(gridID, transformA, transformB)
+  integer :: gridID
+  double precision :: transformA(*), transformB(*)
+  call tsggdt(gridID, transformA, transformB)
+end subroutine tsgGetDomainTransform
+!=======================================================================
+subroutine tsgSetAnisotropicRefinement(gridID, gtype, minGrowth, output, levelLimits)
+  integer :: gridID, gtype, minGrowth, output
+  integer, optional, target :: levelLimits(:)
+  integer          :: opt_flags = 0
+  integer, pointer :: ll(:) => null()
+  if (present(levelLimits)) then
+    opt_flags = 1
+    ll => levelLimits
+  endif
+  call tsgsar(gridID, gtype, minGrowth, output-1, opt_flags, ll)
+end subroutine tsgSetAnisotropicRefinement
+!=======================================================================
+function tsgEstimateAnisotropicCoefficients(gridID, gtype, output) result(coeff)
+  integer :: gridID, gtype, output, N
+  integer, pointer :: coeff(:)
   N = tsgGetNumDimensions(gridID)
-  IF ((gtype .EQ. 2) .OR. (gtype .EQ. 4) .OR. (gtype .EQ. 6))then
+  if ((gtype .EQ. tsg_curved) .OR. (gtype .EQ. tsg_ipcurved) .OR. (gtype .EQ. tsg_qpcurved))then
     N = N * 2
-  ENDIF
-  ALLOCATE(coeff(N))
-  CALL tsgeac(gridID, gtype, output, coeff)
-END FUNCTION tsgEstimateAnisotropicCoefficients
+  endif
+  allocate(coeff(N))
+  call tsgeac(gridID, gtype, output-1, coeff)
+end function tsgEstimateAnisotropicCoefficients
 !=======================================================================
-SUBROUTINE tsgSetGlobalSurplusRefinement(gridID, tolerance, output)
-  INTEGER :: gridID, output
-  DOUBLE PRECISION :: tolerance
-  CALL tsgssr(gridID, tolerance, output)
-END SUBROUTINE tsgSetGlobalSurplusRefinement
+subroutine tsgSetGlobalSurplusRefinement(gridID, tolerance, output, levelLimits)
+  integer :: gridID, output
+  integer, optional, target :: levelLimits(:)
+  double precision :: tolerance
+  integer          :: opt_flags = 0
+  integer, pointer :: ll(:) => null()
+  if (present(levelLimits)) then
+    opt_flags = 1
+    ll => levelLimits
+  endif
+  call tsgssr(gridID, tolerance, output-1, opt_flags, ll)
+end subroutine tsgSetGlobalSurplusRefinement
 !=======================================================================
-SUBROUTINE tsgSetLocalSurplusRefinement(gridID, tolerance, rtype, output)
-  INTEGER :: gridID, rtype, theout
-  INTEGER, optional :: output
-  DOUBLE PRECISION :: tolerance
-  IF(PRESENT(output))then
-    theout = output
-  ELSE
-    theout = -1
-  ENDIF
-  CALL tsgshr(gridID, tolerance, rtype, theout)
-END SUBROUTINE tsgSetLocalSurplusRefinement
+subroutine tsgSetLocalSurplusRefinement(gridID, tolerance, rtype, output, levelLimits)
+  integer :: gridID, rtype
+  integer, optional :: output
+  integer, optional, target :: levelLimits(:)
+  double precision :: tolerance
+  integer          :: opt_flags(2), theout
+  integer, pointer :: ll(:) => null()
+
+  opt_flags = 0
+  if (present(output)) then
+    opt_flags(1) = 1
+    theout = output-1
+  endif
+  if (present(levelLimits)) then
+    opt_flags(2) = 1
+    ll => levelLimits
+  endif
+
+  call tsgshr(gridID, tolerance, rtype, opt_flags, theout, ll)
+end subroutine tsgSetLocalSurplusRefinement
 !=======================================================================
-SUBROUTINE tsgClearRefinement(gridID)
-  INTEGER :: gridID
-  CALL tsgcre(gridID)
-END SUBROUTINE tsgClearRefinement
+subroutine tsgClearRefinement(gridID)
+  integer :: gridID
+  call tsgcre(gridID)
+end subroutine tsgClearRefinement
 !=======================================================================
-SUBROUTINE tsgSetConformalTransformASIN(gridID, truncate)
-  INTEGER :: gridID, truncate(:)
-  CALL tsgsca(gridID, truncate)
-END SUBROUTINE tsgSetConformalTransformASIN
+subroutine tsgMergeRefinement(gridID)
+  integer :: gridID
+  call tsgmre(gridID)
+end subroutine tsgMergeRefinement
 !=======================================================================
-FUNCTION tsgIsSetConformalTransformASIN(gridID) result(isset)
-  INTEGER :: gridID, res
-  LOGICAL :: isset
-  CALL tsgica(gridID, res)
-  IF (res .EQ. 0)then
+subroutine tsgSetConformalTransformASIN(gridID, truncate)
+  integer :: gridID, truncate(:)
+  call tsgsca(gridID, truncate)
+end subroutine tsgSetConformalTransformASIN
+!=======================================================================
+function tsgIsSetConformalTransformASIN(gridID) result(isset)
+  integer :: gridID, res
+  logical :: isset
+  call tsgica(gridID, res)
+  if (res .EQ. 0)then
     isset = .FALSE.
-  ELSE
+  else
     isset = .TRUE.
-  ENDIF
-END FUNCTION tsgIsSetConformalTransformASIN
+  endif
+end function tsgIsSetConformalTransformASIN
 !=======================================================================
-SUBROUTINE tsgClearConformalTransform(gridID)
-  INTEGER :: gridID
-  CALL tsgcct(gridID)
-END SUBROUTINE tsgClearConformalTransform
+subroutine tsgClearConformalTransform(gridID)
+  integer :: gridID
+  call tsgcct(gridID)
+end subroutine tsgClearConformalTransform
 !=======================================================================
-FUNCTION tsgGetConformalTransformASIN(gridID) result(truncate)
-  INTEGER :: gridID, N
-  INTEGER, allocatable :: truncate(:)
+function tsgGetConformalTransformASIN(gridID) result(truncate)
+  integer :: gridID, N
+  integer, allocatable :: truncate(:)
   N = tsgGetNumDimensions(gridID)
-  ALLOCATE(truncate(N))
-  CALL tsgcre(gridID, truncate)
-END FUNCTION tsgGetConformalTransformASIN
+  allocate(truncate(N))
+  call tsgcre(gridID, truncate)
+end function tsgGetConformalTransformASIN
 !=======================================================================
-SUBROUTINE tsgPrintStats(gridID)
-  INTEGER :: gridID
-  CALL tsgpri(gridID)
-END SUBROUTINE tsgPrintStats
+subroutine tsgPrintStats(gridID)
+  integer :: gridID
+  call tsgpri(gridID)
+end subroutine tsgPrintStats
 !=======================================================================
-! DO NOT CALL THOSE FUNCTIONS DIRECTLY !
+function tsgTestInternals() result(res)
+  integer, parameter :: i_a = 8, i_b = 4
+  integer :: i, num_ag, num_ag_in
+  integer :: int_1d_a(i_a), int_1d_b(i_a) = (/1,8,6,4,7,3,2,5/)
+  logical :: res
+  logical :: verb
+  ! NOTE: calling tsgTestInternals() will clear all grids and invalidate all grid IDs
+  write(*,*) "Perfroming internal consistency test in Tasmanian Fortran 90/95 module, all existing grids will be cleared."
+
+  res = .true.
+  call tsggag(num_ag_in)
+  do i = 1, i_a
+    int_1d_a(i) = tsgNewGridID()
+    call tsggag(num_ag)
+    if ( num_ag .ne. i+num_ag_in ) then
+      write(*,*) "Mismatch in number of active grids, adding grids: num_ag = ", num_ag
+      res = .false.
+    endif
+  enddo
+  do i = 1, i_a
+    call tsgFreeGridID(int_1d_a(int_1d_b(i)))
+    call tsggag(num_ag)
+    if ( num_ag .ne. i_a-i+num_ag_in ) then
+      write(*,*) "Mismatch in number of active grids, removing grids: num_ag = ", num_ag
+      res = .false.
+    endif
+  enddo
+  int_1d_a(1) = tsgNewGridID()
+  int_1d_a(2) = tsgNewGridID()
+  call tsgClearAll()
+  call tsggag(num_ag)
+  if ( num_ag .ne. 0 ) then
+    write(*,*) "Mismatch in number of active grids after clearall: num_ag = ", num_ag
+    res = .false.
+  endif
+end function tsgTestInternals
 !=======================================================================
-SUBROUTINE tsgReceiveString(l, S)
-  INTEGER :: l
-  CHARACTER, target :: S(l)
+! do NOT call THOSE FUNCTIONS DIRECTLY !
+!=======================================================================
+subroutine tsgReceiveString(l, S)
+  integer :: l
+  character, target :: S(l)
   length = l
   string => S(1:length)
-END SUBROUTINE tsgReceiveString
+end subroutine tsgReceiveString
 !=======================================================================
-SUBROUTINE tsgReceiveVector(s, V)
-  INTEGER :: s
-  DOUBLE PRECISION, target :: V(s)
+subroutine tsgReceiveVector(s, V)
+  integer :: s
+  double precision, target :: V(s)
   length = s
   vector => V(1:length)
-END SUBROUTINE tsgReceiveVector
+end subroutine tsgReceiveVector
 !=======================================================================
-SUBROUTINE tsgReceiveMatrix(r, c, M)
-  INTEGER :: r, c
-  DOUBLE PRECISION, target :: M(r,c)
+subroutine tsgReceiveMatrix(r, c, M)
+  integer :: r, c
+  double precision, target :: M(r,c)
   rows = r
   cols = c
   matrix => M(1:rows,1:cols)
-END SUBROUTINE tsgReceiveMatrix
+end subroutine tsgReceiveMatrix
 !=======================================================================
-END MODULE
+end MODULE
