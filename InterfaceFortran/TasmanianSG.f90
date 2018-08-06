@@ -847,7 +847,7 @@ function tsgTestInternals() result(res)
   logical :: res
   logical :: verb
 
-  write(*,*) "WARNING: tsgTestInternals() will clear all grids"
+  write(*,*) "NOTE: calling tsgTestInternals() will clear all grids and invalidate all grid IDs"
 
   res = .true.
   call tsggag(num_ag_in)
