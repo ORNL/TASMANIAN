@@ -544,8 +544,8 @@ do i = 3,4
     write(*,*) "Mismatch in tsgMakeWaveletGrid: conformal map"
     stop 1
   endif
+  deallocate(points, pointsb, weights, weightsb)
 enddo
-deallocate(points, pointsb, weights, weightsb)
 
 
 ! test level limits
@@ -885,13 +885,15 @@ allocate(double_2d_a(1,tsgGetNumPoints(gridID)))
 double_2d_a(1,:) = exp( -points(1,:)**2 - points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
 allocate(pointsb(2,1000),double_2d_b(1,1000),double_2d_c(1,1000))
+rnd     => random(2,1000)
+pointsb = -1.d0 + 2.d0 * rnd
 double_2d_b(1,:) = exp( -pointsb(1,:)**2 - pointsb(2,:)**2 )
 call tsgEvaluateBatch(gridID,pointsb,1000,double_2d_c)
 if ( norm2d(double_2d_b-double_2d_c) > 1.d-8 ) then
   write(*,*) "Mismatch in tsgEvaluateBatch: global grid with chebyshev points, output ", norm2d(double_2d_b-double_2d_c)
   stop 1
 endif
-deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c)
+deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,rnd)
 
 
 
@@ -1002,8 +1004,8 @@ if ( norm1d(double_1d_c - double_2d_b(1,:)) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgGetComplexHierarchicalCoefficientsStatic: fourier grid test 2"
   stop 1
 endif
-deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_1d_a,double_1d_b,double_1d_c,double_1d_d,rnd,dcmplx_pnt_1d_a)
-
+deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_1d_a,double_1d_b,double_1d_c,double_1d_d,rnd)
+deallocate(dcmplx_pnt_1d_a,dcmplx_1d_a,dcmplx_2d_c)
 
 ! load coefficients
 i_a = 13
@@ -1226,6 +1228,7 @@ if ( check_points( points(2,:), (/12345.d0/), (/1.d0/sqrt(3.d0)/) ) .or. &
   write(*,*) "Mismatch in tsgSetAnisotropicRefinement: limits refine using existing limits"
   stop 1
 endif
+deallocate( pointsb )
 call tsgSetAnisotropicRefinement(gridID,tsg_iptotal,30,1,levelLimits=(/3,2,2/))
 pointsb => tsgGetNeededPoints(gridID)
 if ( size(pointsb) .eq. 0 ) then
@@ -1344,7 +1347,6 @@ call tsgMergeRefinement(gridID_II)
 deallocate(points, double_2d_a)
 
 i_a = 20
-allocate( pointsb(2,i_a) );
 points  => tsgGetPoints(gridID);     i_b = tsgGetNumPoints(gridID)
 pointsb => tsgGetPoints(gridID_II);  i_c = tsgGetNumPoints(gridID_II)
 if ( norm2d(points-pointsb) > 1.d-11 )then
@@ -1379,7 +1381,7 @@ if ( norm2d(double_2d_a-double_2d_b) > 1.d-11 )then
   write(*,*) "Mismatch in tsgMergeRefine(): case 3, tsgEvaluate() not equal"
   stop 1
 endif
-deallocate(points, double_2d_a, double_2d_b)
+deallocate(points, double_2d_a, double_2d_b, rnd)
 
 
 write(*,*) "Refinement functions:     PASS"

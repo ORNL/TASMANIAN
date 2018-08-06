@@ -160,7 +160,7 @@ void tsgmw_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags, 
     ord = (opt_flags[0] != 0) ? *order  : 1;
     ll  = (opt_flags[1] != 0) ? llimits : 0;
 
-    _tsg_grid_list[*id]->makeWaveletGrid(*dimensions, *outputs, *depth, *order, llimits);
+    _tsg_grid_list[*id]->makeWaveletGrid(*dimensions, *outputs, *depth, ord, ll);
 }
 void tsgmf_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *opt_flags, const int *aniso_weights, const int *llimits){
     const int *ll, *aw;
