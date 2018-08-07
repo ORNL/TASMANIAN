@@ -129,7 +129,6 @@ protected:
 
 private:
     size_t num_dimensions;
-    size_t num_indexes;
     std::vector<int> index;
 };
 

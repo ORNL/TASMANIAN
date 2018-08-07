@@ -232,16 +232,14 @@ void GranulatedIndexSet::mergeMapped(const std::vector<int> newIndex, const std:
 
 IndexSet::IndexSet(int cnum_dimensions){
     num_dimensions = (size_t) cnum_dimensions;
-    num_indexes = 0;
 }
 IndexSet::IndexSet(const UnsortedIndexSet *uset){
     num_dimensions = (size_t) uset->getNumDimensions();
-    num_indexes = (size_t) uset->getNumIndexes();
     uset->getIndexesSorted(index);
 }
 IndexSet::IndexSet(const GranulatedIndexSet *gset){
     num_dimensions = (size_t) gset->getNumDimensions();
-    num_indexes = (size_t) gset->getNumIndexes();
+    size_t num_indexes = (size_t) gset->getNumIndexes();
     index.resize(num_dimensions * num_indexes);
     for(size_t i=0; i<num_indexes; i++){
         const int *p = gset->getIndex((int) i);
@@ -250,53 +248,49 @@ IndexSet::IndexSet(const GranulatedIndexSet *gset){
 }
 IndexSet::IndexSet(const IndexSet *iset){
     num_dimensions = (size_t) iset->getNumDimensions();
-    num_indexes = (size_t) iset->getNumIndexes();
     index = *iset->getIndexes();
 }
 
 IndexSet::IndexSet(int cnum_dimensions, std::vector<int> &cindex){
     num_dimensions = cnum_dimensions;
-    num_indexes = cindex.size() / num_dimensions;
     index = std::move(cindex);
 }
 IndexSet::~IndexSet(){}
 
 int IndexSet::getNumDimensions() const{ return (int) num_dimensions; }
-int IndexSet::getNumIndexes() const{ return (int) num_indexes; }
+int IndexSet::getNumIndexes() const{ return (int) (index.size() / num_dimensions); }
 
 void IndexSet::write(std::ofstream &ofs) const{
-    ofs << num_dimensions << " " << num_indexes;
-    for(size_t i=0; i<num_dimensions*num_indexes; i++){
-        ofs << " " << index[i];
-    }
+    size_t numi = index.size() / num_dimensions;
+    ofs << num_dimensions << " " << numi;
+    for(auto i : index) ofs << " " << i;
     ofs << endl;
 }
 void IndexSet::read(std::ifstream &ifs){
-    ifs >> num_dimensions >> num_indexes;
-    index.resize(num_dimensions * num_indexes);
-    for(size_t i=0; i<num_dimensions*num_indexes; i++){
-        ifs >> index[i];
-    }
+    size_t numi;
+    ifs >> num_dimensions >> numi;
+    index.resize(num_dimensions * numi);
+    for(auto & i : index) ifs >> i;
 }
 
 void IndexSet::writeBinary(std::ofstream &ofs) const{
     int sizes[2];
     sizes[0] = (int) num_dimensions;
-    sizes[1] = (int) num_indexes;
+    sizes[1] = (int) (index.size() / num_dimensions);
     ofs.write((char*) sizes, 2*sizeof(int));
-    ofs.write((char*) index.data(), num_dimensions*num_indexes*sizeof(int));
+    ofs.write((char*) index.data(), index.size()*sizeof(int));
 }
 void IndexSet::readBinary(std::ifstream &ifs){
     int sizes[2];
     ifs.read((char*) sizes, 2*sizeof(int));
     num_dimensions = (size_t) sizes[0];
-    num_indexes = (size_t) sizes[1];
+    size_t num_indexes = (size_t) sizes[1];
     index.resize(num_dimensions * num_indexes);
     ifs.read((char*) index.data(), num_dimensions*num_indexes*sizeof(int));
 }
 
 int IndexSet::getSlot(const int p[]) const{
-    int sstart = 0, send = (int) (num_indexes - 1);
+    int sstart = 0, send = (int) (index.size() / num_dimensions - 1);
     int current = (sstart + send) / 2;
     TypeIndexRelation t;
     while (sstart <= send){
@@ -334,10 +328,11 @@ void IndexSet::addIndexSet(const IndexSet *iset){
 }
 
 IndexSet* IndexSet::diffSets(const IndexSet *iset) const{
-    std::vector<int> slots(num_indexes);
+    int numi = (int) (index.size() / num_dimensions);
+    std::vector<int> slots(numi);
 
     #pragma omp parallel for schedule(static)
-    for(int i=0; i<(int) num_indexes; i++){ // openmp needs a signed counter, go figure ... (this is safe conversion)
+    for(int i=0; i<numi; i++){ // openmp needs a signed counter, go figure ... (this is safe conversion)
         slots[i] = iset->getSlot(&(index[i*num_dimensions]));
     }
 
@@ -377,13 +372,12 @@ TypeIndexRelation IndexSet::compareIndexes(const int a[], const int b[]) const{
 void IndexSet::mergeSet(const std::vector<int> newIndex){
     std::vector<int> oldIndex = std::move(index); // move assignment
 
-    index.reserve(num_dimensions * (num_indexes + newIndex.size() / num_dimensions));
+    index.reserve(oldIndex.size() + newIndex.size());
     index.resize(0);
 
     TypeIndexRelation relation;
     auto iterNew = newIndex.begin();
     auto iterOld = oldIndex.begin();
-    num_indexes = 0;
     while( (iterNew < newIndex.end()) || (iterOld < oldIndex.end()) ){
         if (iterNew >= newIndex.end()){ // new is a
             relation = type_bbeforea;
@@ -405,17 +399,15 @@ void IndexSet::mergeSet(const std::vector<int> newIndex){
             if (relation == type_asameb) std::advance(iterNew, num_dimensions);
         }
     }
-    num_indexes = index.size() / num_dimensions;
 }
 
 void IndexSet::mergeMapped(const int newIndex[], const int map[], int sizeNew){
     std::vector<int> oldIndex = std::move(index); // move assignment
-    size_t sizeOld = num_indexes;
+    size_t sizeOld = oldIndex.size() / num_dimensions;
 
     index.resize(num_dimensions * (sizeOld + sizeNew));
 
     TypeIndexRelation relation;
-    num_indexes = 0;
     size_t offsetNew = 0, offsetOld = 0;
     while( (offsetNew < (size_t) sizeNew) || (offsetOld < sizeOld) ){
         if (offsetNew >= (size_t) sizeNew){ // new is a
@@ -425,14 +417,16 @@ void IndexSet::mergeMapped(const int newIndex[], const int map[], int sizeNew){
         }else{
             relation = compareIndexes(&(newIndex[map[offsetNew] * num_dimensions]), &(oldIndex[offsetOld * num_dimensions]));
         }
+        const int *p;
         if (relation == type_abeforeb){
-            std::copy(&(newIndex[map[offsetNew] * num_dimensions]), &(newIndex[map[offsetNew] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
+            p = &(newIndex[map[offsetNew] * num_dimensions]);
             offsetNew++;
         }else{
-            std::copy(&(oldIndex[offsetOld * num_dimensions]), &(oldIndex[offsetOld * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
+            p = &(oldIndex[offsetOld * num_dimensions]);
             offsetOld++;
             offsetNew += (relation == type_asameb) ? 1 : 0;
         }
+        for(size_t i=0; i<num_dimensions; i++) index.push_back(p[i]);
     }
 }
 
