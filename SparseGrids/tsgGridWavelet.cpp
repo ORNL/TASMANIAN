@@ -302,9 +302,8 @@ void GridWavelet::mergeRefinement(){
     if (needed == 0) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t size_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    double *vals = new double[size_vals];
-    std::fill(vals, vals + size_vals, 0.0);
-    values->setValuesPointer(vals, num_all_points);
+    std::vector<double> vals(size_vals, 0.0);
+    values->setValues(vals);
     if (points == 0){
         points = needed;
         needed = 0;
@@ -708,8 +707,11 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
 }
 
 void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
+    std::vector<double> vvals;
     double *vals = 0;
     bool aliased = false;
+    size_t num_ponits = (size_t) getNumPoints();
+    size_t size_coeff = num_ponits * ((size_t) num_outputs);
     if (points != 0){
         clearRefinement();
         vals = values->aliasValues();
@@ -717,10 +719,9 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     }else{
         points = needed;
         needed = 0;
-        vals = new double[((size_t) points->getNumIndexes()) * ((size_t) num_outputs)];
+        vvals.resize(size_coeff);
+        vals = vvals.data();
     }
-    int num_ponits = points->getNumIndexes();
-    size_t size_coeff = ((size_t) num_ponits) * ((size_t) num_outputs);
     if (coefficients != 0) delete[] coefficients;
     coefficients = new double[size_coeff];
     std::copy(c, c + size_coeff, coefficients);
@@ -736,7 +737,7 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
         evaluateBatch(x, points->getNumIndexes(), vals);
     }
     delete[] x;
-    if (! aliased) values->setValuesPointer(vals, num_ponits);
+    if (! aliased) values->setValues(vvals);
 }
 
 const int* GridWavelet::getPointIndexes() const{

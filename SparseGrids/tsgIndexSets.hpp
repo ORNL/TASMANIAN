@@ -150,7 +150,7 @@ public:
     int getNumOutputs() const;
 
     void setValues(const double vals[]);
-    void setValuesPointer(double* &vals, int num_values);
+    void setValues(std::vector<double> &vals);
     void addValues(const IndexSet *old_set, const IndexSet *new_set, const double new_vals[]);
 
 protected:
@@ -158,7 +158,7 @@ protected:
 
 private:
     size_t num_outputs, num_values; // kept as size_t to avoid conversions in products, but each one is small individually
-    double *values;
+    std::vector<double> values;
 };
 
 }

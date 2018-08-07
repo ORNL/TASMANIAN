@@ -584,9 +584,8 @@ void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
 void GridGlobal::mergeRefinement(){
     if (needed == 0) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
-    double *vals = new double[num_all_points * num_outputs];
-    std::fill(vals, vals + num_all_points * num_outputs, 0.0);
-    values->setValuesPointer(vals, num_all_points);
+    std::vector<double> vals(((size_t) num_all_points) * ((size_t) num_outputs), 0.0);
+    values->setValues(vals);
     if (points == 0){
         points = needed;
         needed = 0;
