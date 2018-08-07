@@ -646,36 +646,31 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
 }
 void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
     if (accel != 0) accel->resetGPULoadedData();
-    std::vector<double> vvals;
-    double *vals = 0;
-    bool aliased = false;
+    std::vector<double> *vals = 0;
     size_t num_ponits = (size_t) getNumPoints();
     size_t num_vals = num_ponits * ((size_t) num_outputs);
     if (points != 0){
         clearRefinement();
-        vals = values->aliasValues();
-        aliased = true;
     }else{
         points = needed;
         needed = 0;
-        vvals.resize(num_vals);
-        vals = vvals.data();
     }
+    vals = values->aliasValues();
+    vals->resize(num_vals);
     if (surpluses != 0) delete[] surpluses;
     surpluses = new double[num_vals];
     std::copy(c, c + num_vals, surpluses);
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     if (acc == accel_cpu_blas){
-        evaluateBatchCPUblas(x.data(), points->getNumIndexes(), vals);
+        evaluateBatchCPUblas(x.data(), points->getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x.data(), points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcublas(x.data(), points->getNumIndexes(), vals->data(), os);
     }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x.data(), points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcuda(x.data(), points->getNumIndexes(), vals->data(), os);
     }else{
-        evaluateBatch(x.data(), points->getNumIndexes(), vals);
+        evaluateBatch(x.data(), points->getNumIndexes(), vals->data());
     }
-    if (! aliased) values->setValues(vvals);
 }
 
 int* GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output) const{

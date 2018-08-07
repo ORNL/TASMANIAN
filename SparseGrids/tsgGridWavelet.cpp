@@ -707,37 +707,32 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
 }
 
 void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
-    std::vector<double> vvals;
-    double *vals = 0;
-    bool aliased = false;
+    std::vector<double> *vals = 0;
     size_t num_ponits = (size_t) getNumPoints();
     size_t size_coeff = num_ponits * ((size_t) num_outputs);
     if (points != 0){
         clearRefinement();
-        vals = values->aliasValues();
-        aliased = true;
     }else{
         points = needed;
         needed = 0;
-        vvals.resize(size_coeff);
-        vals = vvals.data();
     }
+    vals = values->aliasValues();
+    vals->resize(size_coeff);
     if (coefficients != 0) delete[] coefficients;
     coefficients = new double[size_coeff];
     std::copy(c, c + size_coeff, coefficients);
     double *x = new double[getNumPoints() * num_dimensions];
     getPoints(x);
     if (acc == accel_cpu_blas){
-        evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
+        evaluateBatchCPUblas(x, points->getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x, points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcublas(x, points->getNumIndexes(), vals->data(), os);
     }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x, points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcuda(x, points->getNumIndexes(), vals->data(), os);
     }else{
-        evaluateBatch(x, points->getNumIndexes(), vals);
+        evaluateBatch(x, points->getNumIndexes(), vals->data());
     }
     delete[] x;
-    if (! aliased) values->setValues(vvals);
 }
 
 const int* GridWavelet::getPointIndexes() const{

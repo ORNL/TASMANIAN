@@ -496,7 +496,7 @@ void StorageSet::readBinary(std::ifstream &ifs){
 
 int StorageSet::getNumOutputs() const{ return (int) num_outputs; }
 const double* StorageSet::getValues(int i) const{ return &(values[i*num_outputs]); }
-double* StorageSet::aliasValues() const{ return (double*) values.data(); }
+std::vector<double>* StorageSet::aliasValues(){ return &values; }
 
 void StorageSet::setValues(const double vals[]){
     values.resize(num_outputs * num_values);
