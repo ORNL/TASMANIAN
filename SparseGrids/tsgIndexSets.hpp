@@ -74,22 +74,21 @@ public:
 
     const int* getIndex(int j) const;
 
-    void addGranulatedSet(const GranulatedIndexSet *set);
+    void addGranulatedSet(const GranulatedIndexSet *gset);
 
-    const int* getIndexes() const;
-    const int* getMap() const;
+    const std::vector<int>* getIndexes() const;
+    const std::vector<int>* getMap() const;
 
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
 
-    void mergeMapped(const int newIndex[], const int newMap[], int sizeNew);
+    void mergeMapped(const std::vector<int> newIndex, const std::vector<int> newMap, int sizeNew);
 
 private:
-    int num_dimensions;
-    int num_indexes;
-    int num_slots;
-    int *index;
-    int *map;
+    size_t num_dimensions;
+    size_t num_indexes;
+    std::vector<int> index;
+    std::vector<int> imap;
 };
 
 class DumpIndexSet{

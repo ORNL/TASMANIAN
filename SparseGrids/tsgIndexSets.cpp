@@ -116,134 +116,119 @@ void UnsortedIndexSet::merge(const int listA[], size_t sizeA, const int listB[],
     }
 }
 
-GranulatedIndexSet::GranulatedIndexSet(int cnum_dimensions, int cnum_slots) : num_dimensions(cnum_dimensions), num_indexes(0), num_slots(cnum_slots){
-    index = new int[num_dimensions * num_slots];
-    map = new int[num_slots];
+GranulatedIndexSet::GranulatedIndexSet(int cnum_dimensions, int cnum_slots) : num_dimensions((size_t) cnum_dimensions), num_indexes(0){
+    index.reserve(num_dimensions * cnum_slots);
+    imap.reserve(cnum_slots);
 }
 
-GranulatedIndexSet::~GranulatedIndexSet(){
-    delete[] index;
-    delete[] map;
-}
+GranulatedIndexSet::~GranulatedIndexSet(){}
 
-int GranulatedIndexSet::getNumDimensions() const{  return num_dimensions;  }
-int GranulatedIndexSet::getNumIndexes() const{  return num_indexes;  }
+int GranulatedIndexSet::getNumDimensions() const{ return (int) num_dimensions; }
+int GranulatedIndexSet::getNumIndexes() const{ return (int) num_indexes; }
 
 int GranulatedIndexSet::getSlot(const int p[]) const{
-    int start = 0, end = num_indexes - 1;
-    int current = (start + end) / 2;
+    int sstart = 0, send = (int) (num_indexes - 1);
+    int current = (sstart + send) / 2;
     TypeIndexRelation t;
-    while (start <= end){
-        t = compareIndexes(&(index[num_dimensions * map[current]]), p);
+    while (sstart <= send){
+        t = compareIndexes(&(index[num_dimensions * imap[current]]), p);
         if (t == type_abeforeb){
-            start = current+1;
+            sstart = current+1;
         }else if (t == type_bbeforea){
-            end = current-1;
+            send = current-1;
         }else{
             return current;
         };
-        current = (start + end) / 2;
+        current = (sstart + send) / 2;
     }
     return -1;
 }
 
 const int* GranulatedIndexSet::getIndex(int j) const{
-    return &(index[map[j] * num_dimensions]);
+    return &(index[imap[j] * num_dimensions]);
 }
 
 void GranulatedIndexSet::addIndex(const int p[]){
-    int start = 0, end = num_indexes - 1;
-    int current = (start + end) / 2;
+    int sstart = 0, send = (int) (num_indexes - 1); // start and end for the search
+    int current = (sstart + send) / 2;
     TypeIndexRelation t;
-    while (start <= end){
-        t = compareIndexes(&(index[num_dimensions * map[current]]), p);
+    while (sstart <= send){
+        t = compareIndexes(&(index[num_dimensions * imap[current]]), p);
         if (t == type_abeforeb){
-            start = current+1;
+            sstart = current+1;
         }else if (t == type_bbeforea){
-            end = current-1;
+            send = current-1;
         }else{
             return;
         };
-        current = (start + end) / 2;
+        current = (sstart + send) / 2;
     }
 
-    if (num_indexes == num_slots){
-        int *old_index = index;
-        int *old_map = map;
-        num_slots *= 2;
+    for(size_t i=0; i<num_dimensions; i++) index.push_back(p[i]);
+    imap.push_back((int) num_indexes);
 
-        index = new int[num_dimensions * num_slots];
-        map = new int[num_slots];
+    size_t slot = sstart+1; slot = (slot > num_indexes) ? num_indexes : slot;
+    while((slot>0) && (compareIndexes(p, &(index[imap[slot-1] * num_dimensions])) == type_abeforeb)){ slot--; }
 
-        std::copy(old_index, old_index + num_dimensions * num_indexes, index);
-        std::copy(old_map, old_map + num_indexes, map);
-
-        delete[] old_index;
-        delete[] old_map;
-    }
-
-    std::copy(p, p + num_dimensions, &(index[num_indexes * num_dimensions]));
-
-    int slot = start+1; slot = (slot > num_indexes) ? num_indexes : slot;
-    while((slot>0) && (compareIndexes(p, &(index[map[slot-1] * num_dimensions])) == type_abeforeb)){ slot--; }
-
-    for(int i=num_indexes; i>slot; i--){  map[i] = map[i-1];  }
-    map[slot] = num_indexes;
+    for(size_t i=num_indexes; i>slot; i--){ imap[i] = imap[i-1]; }
+    imap[slot] = (int) num_indexes;
     num_indexes++;
 }
 
-void GranulatedIndexSet::addGranulatedSet(const GranulatedIndexSet *set){
-    mergeMapped(set->getIndexes(), set->getMap(), set->getNumIndexes());
+void GranulatedIndexSet::addGranulatedSet(const GranulatedIndexSet *gset){
+    mergeMapped(*(gset->getIndexes()), *(gset->getMap()), gset->getNumIndexes());
 }
-const int* GranulatedIndexSet::getIndexes() const{
-    return index;
+const std::vector<int>* GranulatedIndexSet::getIndexes() const{
+    return &index;
 }
-const int* GranulatedIndexSet::getMap() const{
-    return map;
+const std::vector<int>* GranulatedIndexSet::getMap() const{
+    return &imap;
 }
 
 TypeIndexRelation GranulatedIndexSet::compareIndexes(const int a[], const int b[]) const{
-    for(int i=0; i<num_dimensions; i++){
+    for(size_t i=0; i<num_dimensions; i++){
         if (a[i] < b[i]) return type_abeforeb;
         if (a[i] > b[i]) return type_bbeforea;
     }
     return type_asameb;
 }
 
-void GranulatedIndexSet::mergeMapped(const int newIndex[], const int newMap[], int sizeNew){
-    int *oldIndex = index;
-    int sizeOld = num_indexes;
-    num_slots = sizeOld + sizeNew;
+void GranulatedIndexSet::mergeMapped(const std::vector<int> newIndex, const std::vector<int> newMap, int sizeNew){
+    std::vector<int> oldIndex = std::move(index);
+    size_t sizeOld = num_indexes;
 
-    index = new int[num_dimensions * num_slots];
+    index.resize(0);
+    index.reserve((sizeOld + sizeNew) * num_dimensions);
 
     TypeIndexRelation relation;
     num_indexes = 0;
-    int offsetNew = 0, offsetOld = 0;
-    while( (offsetNew < sizeNew) || (offsetOld < sizeOld) ){
-        if (offsetNew >= sizeNew){ // new is a
+    size_t offsetNew = 0, offsetOld = 0;
+    while( (offsetNew < (size_t) sizeNew) || (offsetOld < sizeOld) ){
+        if (offsetNew >= (size_t) sizeNew){ // new is a
             relation = type_bbeforea;
         }else if (offsetOld >= sizeOld){ // old is b
             relation = type_abeforeb;
         }else{
-            relation = compareIndexes(&(newIndex[newMap[offsetNew] * num_dimensions]), &(oldIndex[map[offsetOld] * num_dimensions]));
+            relation = compareIndexes(&(newIndex[newMap[offsetNew] * num_dimensions]), &(oldIndex[imap[offsetOld] * num_dimensions]));
         }
+        const int *p;
         if (relation == type_abeforeb){
-            std::copy(&(newIndex[newMap[offsetNew] * num_dimensions]), &(newIndex[newMap[offsetNew] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
+            //std::copy(&(newIndex[newMap[offsetNew] * num_dimensions]), &(newIndex[newMap[offsetNew] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
+            p = &(newIndex[newMap[offsetNew] * num_dimensions]);
             offsetNew++;
         }
         if ((relation == type_bbeforea) || (relation == type_asameb)){
-            std::copy(&(oldIndex[map[offsetOld] * num_dimensions]), &(oldIndex[map[offsetOld] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
+            //std::copy(&(oldIndex[imap[offsetOld] * num_dimensions]), &(oldIndex[imap[offsetOld] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
+            p = &(oldIndex[imap[offsetOld] * num_dimensions]);
             offsetOld++;
             offsetNew += (relation == type_asameb) ? 1 : 0;
         }
+        for(size_t i=0; i<num_dimensions; i++) index.push_back(p[i]);
+        num_indexes++;
     }
 
-    delete[] oldIndex;
-    delete[] map;
-
-    map = new int[num_slots];
-    for(int i=0; i<num_indexes; i++){  map[i] = i;  }
+    imap.resize(num_indexes);
+    for(size_t i=0; i<num_indexes; i++){ imap[i] = (int) i; }
 }
 
 DumpIndexSet::DumpIndexSet(int cnum_dimensions, int initial_slots) :
@@ -376,10 +361,10 @@ void IndexSet::addUnsortedSet(const UnsortedIndexSet *uset){
     mergeSet(uset_index.data(), set_num_indexes);
 }
 void IndexSet::addGranulatedSet(const GranulatedIndexSet *gset){
-    const int *set_index = gset->getIndexes();
-    const int *set_map = gset->getMap();
+    const std::vector<int> *set_index = gset->getIndexes();
+    const std::vector<int> *set_map = gset->getMap();
     int set_num_indexes = gset->getNumIndexes();
-    mergeMapped(set_index, set_map, set_num_indexes);
+    mergeMapped(set_index->data(), set_map->data(), set_num_indexes);
 }
 void IndexSet::addIndexSet(const IndexSet *iset){
     const int *set_index = iset->getIndex(0);
