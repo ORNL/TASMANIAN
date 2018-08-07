@@ -91,21 +91,6 @@ private:
     std::vector<int> imap;
 };
 
-class DumpIndexSet{
-public:
-    DumpIndexSet(int cnum_dimensions, int initial_slots);
-    ~DumpIndexSet();
-
-    int getNumLoaded() const;
-
-    void addIndex(const int p[]);
-    int* ejectIndexes();
-
-private:
-    int num_dimensions, num_slots, num_loaded;
-    int *index;
-};
-
 class IndexSet{ // rigid set but optimal in storage size
 public:
     IndexSet(int cnum_dimensions);
@@ -113,6 +98,7 @@ public:
     IndexSet(const GranulatedIndexSet *gset);
     IndexSet(const IndexSet *iset);
     IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex);
+    IndexSet(int cnum_dimensions, std::vector<int> &cindex);
     ~IndexSet();
 
     int getNumDimensions() const;

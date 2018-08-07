@@ -198,26 +198,21 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
     if (known_lower){ // use fast algorithm, but only works for sets guaranteed to be lower
         int c = num_dimensions -1;
         bool outside = false;
-        int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
-        DumpIndexSet *index_dump = new DumpIndexSet(num_dimensions, 256);
+        std::vector<int> root(num_dimensions, 0);
+        std::vector<int> index_dump;
         while( !(outside && (c == 0)) ){
             if (outside){
                 for(int k=c; k<num_dimensions; k++) root[k] = 0;
                 c--;
                 root[c]++;
             }else{
-                index_dump->addIndex(root);
+                for(int i=0; i<num_dimensions; i++) index_dump.push_back(root[i]);
                 c = num_dimensions-1;
                 root[c]++;
             }
-            outside = (getIndexWeight(root, type, weights, rule) > normalized_offset);
+            outside = (getIndexWeight(root.data(), type, weights, rule) > normalized_offset);
         }
-        delete[] root;
-        int num_loaded = index_dump->getNumLoaded();
-        int *res = index_dump->ejectIndexes();
-        total = new IndexSet(num_dimensions, num_loaded, res);
-        delete index_dump;
-
+        total = new IndexSet(num_dimensions, index_dump);
     }else{ // use slower algorithm, but more general
         GranulatedIndexSet **sets;
         int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);

@@ -231,39 +231,6 @@ void GranulatedIndexSet::mergeMapped(const std::vector<int> newIndex, const std:
     for(size_t i=0; i<num_indexes; i++){ imap[i] = (int) i; }
 }
 
-DumpIndexSet::DumpIndexSet(int cnum_dimensions, int initial_slots) :
-    num_dimensions(cnum_dimensions), num_slots(initial_slots), num_loaded(0), index(0){
-    index = new int[num_dimensions * num_slots];
-}
-DumpIndexSet::~DumpIndexSet(){
-    if (index != 0){ delete[] index; index = 0; }
-}
-int DumpIndexSet::getNumLoaded() const{ return num_loaded; }
-void DumpIndexSet::addIndex(const int p[]){
-    if (num_loaded == num_slots){
-        int *old_index = index;
-        index = new int[2 * num_dimensions * num_slots];
-        std::copy(old_index, old_index + num_slots * num_dimensions, index);
-        num_slots *= 2;
-        delete[] old_index;
-    }
-    std::copy(p, p + num_dimensions, &(index[num_loaded * num_dimensions]));
-    num_loaded++;
-}
-int* DumpIndexSet::ejectIndexes(){
-    int *res;
-    if (num_slots == num_loaded){
-        res = index;
-        index = 0;
-        num_loaded = 0;
-        return res;
-    }else{
-        res = new int[num_dimensions * num_loaded];
-        std::copy(index, index + num_dimensions * num_loaded, res);
-    }
-    return res;
-}
-
 IndexSet::IndexSet(int cnum_dimensions){
     num_dimensions = (size_t) cnum_dimensions;
     num_indexes = 0;
@@ -294,6 +261,11 @@ IndexSet::IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex){
     index.resize(num_dimensions * num_indexes);
     std::copy(cindex, cindex + num_dimensions * num_indexes, index.data());
     delete[] cindex;
+}
+IndexSet::IndexSet(int cnum_dimensions, std::vector<int> &cindex){
+    num_dimensions = cnum_dimensions;
+    num_indexes = cindex.size() / num_dimensions;
+    index = std::move(cindex);
 }
 IndexSet::~IndexSet(){}
 
