@@ -48,7 +48,7 @@ public:
     const int* getIndex(int i) const;
 
     int* getIndexesSorted() const;
-    void getIndexesSorted(std::vector<int> sorted) const;
+    void getIndexesSorted(std::vector<int> &sorted) const;
     // returns an array of num_dimensions X num_indexes of the sorted indexes
 
 protected:
@@ -111,9 +111,9 @@ private:
 class IndexSet{ // rigid set but optimal in storage size
 public:
     IndexSet(int cnum_dimensions);
-    IndexSet(const UnsortedIndexSet *set);
-    IndexSet(const GranulatedIndexSet *set);
-    IndexSet(const IndexSet *set);
+    IndexSet(const UnsortedIndexSet *uset);
+    IndexSet(const GranulatedIndexSet *gset);
+    IndexSet(const IndexSet *iset);
     IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex);
     ~IndexSet();
 
@@ -130,23 +130,24 @@ public:
     inline int getSlot(const std::vector<int> p) const{ return getSlot(p.data()); }
 
     const int* getIndex(int i) const;
+    const std::vector<int>* getIndexes() const;
 
-    void addUnsortedSet(const UnsortedIndexSet *set);
-    void addGranulatedSet(const GranulatedIndexSet *set);
-    void addIndexSet(const IndexSet *set);
+    void addUnsortedSet(const UnsortedIndexSet *uset);
+    void addGranulatedSet(const GranulatedIndexSet *gset);
+    void addIndexSet(const IndexSet *iset);
 
-    IndexSet* diffSets(const IndexSet *set) const; // returns this set minus the points in set
+    IndexSet* diffSets(const IndexSet *iset) const; // returns this set minus the points in set
 
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
 
-    void merge(const int newIndex[], int sizeNew);
-    void mergeMapped(const int newIndex[], const int map[], int sizeNew);
+    void mergeSet(const int newIndex[], int sizeNew);
+    void mergeMapped(const int newIndex[], const int imap[], int sizeNew);
 
 private:
-    int num_dimensions;
-    int num_indexes;
-    int *index;
+    size_t num_dimensions;
+    size_t num_indexes;
+    std::vector<int> index;
 };
 
 class StorageSet{ // stores the values of the function

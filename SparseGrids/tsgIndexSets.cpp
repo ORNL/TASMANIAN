@@ -54,7 +54,7 @@ const int* UnsortedIndexSet::getIndex(int i) const{
     return &(index[i * num_dimensions]);
 }
 
-void UnsortedIndexSet::getIndexesSorted(std::vector<int> sorted) const{
+void UnsortedIndexSet::getIndexesSorted(std::vector<int> &sorted) const{
     std::vector<int> list_source(num_indexes);
     std::vector<int> list_destination(num_indexes);
 
@@ -321,75 +321,75 @@ int* DumpIndexSet::ejectIndexes(){
     return res;
 }
 
-IndexSet::IndexSet(int cnum_dimensions) : num_dimensions(cnum_dimensions), num_indexes(0), index(0){}
-IndexSet::IndexSet(const UnsortedIndexSet *set){
-    num_dimensions = set->getNumDimensions();
-    num_indexes = set->getNumIndexes();
-    index = set->getIndexesSorted();
+IndexSet::IndexSet(int cnum_dimensions){
+    num_dimensions = (size_t) cnum_dimensions;
+    num_indexes = 0;
 }
-IndexSet::IndexSet(const GranulatedIndexSet *set){
-    num_dimensions = set->getNumDimensions();
-    num_indexes = set->getNumIndexes();
-    index = new int[num_dimensions * num_indexes];
-    for(int i=0; i<num_indexes; i++){
-        const int *p = set->getIndex(i);
+IndexSet::IndexSet(const UnsortedIndexSet *uset){
+    num_dimensions = (size_t) uset->getNumDimensions();
+    num_indexes = (size_t) uset->getNumIndexes();
+    uset->getIndexesSorted(index);
+}
+IndexSet::IndexSet(const GranulatedIndexSet *gset){
+    num_dimensions = (size_t) gset->getNumDimensions();
+    num_indexes = (size_t) gset->getNumIndexes();
+    index.resize(num_dimensions * num_indexes);
+    for(size_t i=0; i<num_indexes; i++){
+        const int *p = gset->getIndex((int) i);
         std::copy(p, p + num_dimensions, &(index[i*num_dimensions]));
     }
 }
-IndexSet::IndexSet(const IndexSet *set){
-    num_dimensions = set->getNumDimensions();
-    num_indexes = set->getNumIndexes();
-    index = new int[num_dimensions * num_indexes];
-    const int *p = set->getIndex(0);
-    std::copy(p, p + num_dimensions * num_indexes, index);
+IndexSet::IndexSet(const IndexSet *iset){
+    num_dimensions = (size_t) iset->getNumDimensions();
+    num_indexes = (size_t) iset->getNumIndexes();
+    index = *iset->getIndexes();
 }
 
-IndexSet::IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex) : num_dimensions(cnum_dimensions), num_indexes(cnum_indexes), index(cindex) {
-    cindex = 0;
+IndexSet::IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex){
+    num_dimensions = cnum_dimensions;
+    num_indexes = cnum_indexes;
+    index.resize(num_dimensions * num_indexes);
+    std::copy(cindex, cindex + num_dimensions * num_indexes, index.data());
+    delete[] cindex;
 }
-IndexSet::~IndexSet(){
-    if (index != 0){  delete[] index;  }
-}
-int IndexSet::getNumDimensions() const{
-    return num_dimensions;
-}
-int IndexSet::getNumIndexes() const{  return num_indexes;  }
+IndexSet::~IndexSet(){}
+
+int IndexSet::getNumDimensions() const{ return (int) num_dimensions; }
+int IndexSet::getNumIndexes() const{ return (int) num_indexes; }
 
 void IndexSet::write(std::ofstream &ofs) const{
     ofs << num_dimensions << " " << num_indexes;
-    for(int i=0; i<num_dimensions*num_indexes; i++){
+    for(size_t i=0; i<num_dimensions*num_indexes; i++){
         ofs << " " << index[i];
     }
     ofs << endl;
 }
 void IndexSet::read(std::ifstream &ifs){
-    if (index != 0){ delete[] index; }
     ifs >> num_dimensions >> num_indexes;
-    index = new int[num_dimensions * num_indexes];
-    for(int i=0; i<num_dimensions*num_indexes; i++){
+    index.resize(num_dimensions * num_indexes);
+    for(size_t i=0; i<num_dimensions*num_indexes; i++){
         ifs >> index[i];
     }
 }
 
 void IndexSet::writeBinary(std::ofstream &ofs) const{
     int sizes[2];
-    sizes[0] = num_dimensions;
-    sizes[1] = num_indexes;
+    sizes[0] = (int) num_dimensions;
+    sizes[1] = (int) num_indexes;
     ofs.write((char*) sizes, 2*sizeof(int));
-    ofs.write((char*) index, num_dimensions*num_indexes*sizeof(int));
+    ofs.write((char*) index.data(), num_dimensions*num_indexes*sizeof(int));
 }
 void IndexSet::readBinary(std::ifstream &ifs){
-    if (index != 0){ delete[] index; }
     int sizes[2];
     ifs.read((char*) sizes, 2*sizeof(int));
-    num_dimensions = sizes[0];
-    num_indexes = sizes[1];
-    index = new int[num_dimensions * num_indexes];
-    ifs.read((char*) index, num_dimensions*num_indexes*sizeof(int));
+    num_dimensions = (size_t) sizes[0];
+    num_indexes = (size_t) sizes[1];
+    index.resize(num_dimensions * num_indexes);
+    ifs.read((char*) index.data(), num_dimensions*num_indexes*sizeof(int));
 }
 
 int IndexSet::getSlot(const int p[]) const{
-    int start = 0, end = num_indexes - 1;
+    int start = 0, end = (int) (num_indexes - 1);
     int current = (start + end) / 2;
     TypeIndexRelation t;
     while (start <= end){
@@ -408,72 +408,73 @@ int IndexSet::getSlot(const int p[]) const{
 const int* IndexSet::getIndex(int i) const{
     return &(index[i*num_dimensions]);
 }
-void IndexSet::addUnsortedSet(const UnsortedIndexSet *set){
-    int *set_index = set->getIndexesSorted();
-    int set_num_indexes = set->getNumIndexes();
-    merge(set_index, set_num_indexes);
+const std::vector<int>* IndexSet::getIndexes() const{
+    return &index;
+}
+void IndexSet::addUnsortedSet(const UnsortedIndexSet *uset){
+    int *set_index = uset->getIndexesSorted();
+    int set_num_indexes = uset->getNumIndexes();
+    mergeSet(set_index, set_num_indexes);
     delete[] set_index;
 }
-void IndexSet::addGranulatedSet(const GranulatedIndexSet *set){
-    const int *set_index = set->getIndexes();
-    const int *set_map = set->getMap();
-    int set_num_indexes = set->getNumIndexes();
+void IndexSet::addGranulatedSet(const GranulatedIndexSet *gset){
+    const int *set_index = gset->getIndexes();
+    const int *set_map = gset->getMap();
+    int set_num_indexes = gset->getNumIndexes();
     mergeMapped(set_index, set_map, set_num_indexes);
 }
-void IndexSet::addIndexSet(const IndexSet *set){
-    const int *set_index = set->getIndex(0);
-    int set_num_indexes = set->getNumIndexes();
-    merge(set_index, set_num_indexes);
+void IndexSet::addIndexSet(const IndexSet *iset){
+    const int *set_index = iset->getIndex(0);
+    int set_num_indexes = iset->getNumIndexes();
+    mergeSet(set_index, set_num_indexes);
 }
 
-IndexSet* IndexSet::diffSets(const IndexSet *set) const{
-    int *slots = new int[num_indexes];
+IndexSet* IndexSet::diffSets(const IndexSet *iset) const{
+    std::vector<int> slots(num_indexes);
 
     #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_indexes; i++){
-        slots[i] = set->getSlot(&(index[i*num_dimensions]));
+    for(size_t i=0; i<num_indexes; i++){
+        slots[i] = iset->getSlot(&(index[i*num_dimensions]));
     }
 
-    int n = 0;
-    for(int i=0; i<num_indexes; i++){
+    size_t n = 0;
+    for(size_t i=0; i<num_indexes; i++){
         if (slots[i] == -1) n++;
     }
 
     if (n == 0){
-        delete[] slots;
         return 0;
     }else{
         int *diff_index = new int[num_dimensions * n];
         n = 0;
-        for(int i=0; i<num_indexes; i++){
+        for(size_t i=0; i<num_indexes; i++){
             if (slots[i] == -1) std::copy(&(index[i*num_dimensions]), &(index[i*num_dimensions]) + num_dimensions, &(diff_index[num_dimensions * n++]));
         }
-        delete[] slots;
 
-        IndexSet *diff_set = new IndexSet(num_dimensions, n, diff_index);
+        IndexSet *diff_set = new IndexSet((int) num_dimensions, (int) n, diff_index);
         return diff_set;
     }
 }
 
 
 TypeIndexRelation IndexSet::compareIndexes(const int a[], const int b[]) const{
-    for(int i=0; i<num_dimensions; i++){
+    for(size_t i=0; i<num_dimensions; i++){
         if (a[i] < b[i]) return type_abeforeb;
         if (a[i] > b[i]) return type_bbeforea;
     }
     return type_asameb;
 }
-void IndexSet::merge(const int newIndex[], int sizeNew){
-    int *oldIndex = index;
-    int sizeOld = num_indexes;
+void IndexSet::mergeSet(const int newIndex[], int sizeNew){
+    std::vector<int> oldIndex = std::move(index); // move assignment
+    size_t sizeOld = num_indexes;
 
-    index = new int[num_dimensions * (sizeOld + sizeNew)];
+    index.resize(num_dimensions * (sizeOld + sizeNew));
 
     TypeIndexRelation relation;
     num_indexes = 0;
-    int offsetNew = 0, offsetOld = 0;
-    while( (offsetNew < sizeNew) || (offsetOld < sizeOld) ){
-        if (offsetNew >= sizeNew){ // new is a
+    size_t offsetNew = 0, offsetOld = 0;
+    while( (offsetNew < (size_t) sizeNew) || (offsetOld < sizeOld) ){
+        if (offsetNew >= (size_t) sizeNew){ // new is a
             relation = type_bbeforea;
         }else if (offsetOld >= sizeOld){ // old is b
             relation = type_abeforeb;
@@ -489,21 +490,19 @@ void IndexSet::merge(const int newIndex[], int sizeNew){
             offsetNew += (relation == type_asameb) ? 1 : 0;
         }
     }
-
-    delete[] oldIndex;
 }
 
 void IndexSet::mergeMapped(const int newIndex[], const int map[], int sizeNew){
-    int *oldIndex = index;
-    int sizeOld = num_indexes;
+    std::vector<int> oldIndex = std::move(index); // move assignment
+    size_t sizeOld = num_indexes;
 
-    index = new int[num_dimensions * (sizeOld + sizeNew)];
+    index.resize(num_dimensions * (sizeOld + sizeNew));
 
     TypeIndexRelation relation;
     num_indexes = 0;
-    int offsetNew = 0, offsetOld = 0;
-    while( (offsetNew < sizeNew) || (offsetOld < sizeOld) ){
-        if (offsetNew >= sizeNew){ // new is a
+    size_t offsetNew = 0, offsetOld = 0;
+    while( (offsetNew < (size_t) sizeNew) || (offsetOld < sizeOld) ){
+        if (offsetNew >= (size_t) sizeNew){ // new is a
             relation = type_bbeforea;
         }else if (offsetOld >= sizeOld){ // old is b
             relation = type_abeforeb;
@@ -519,8 +518,6 @@ void IndexSet::mergeMapped(const int newIndex[], const int map[], int sizeNew){
             offsetNew += (relation == type_asameb) ? 1 : 0;
         }
     }
-
-    delete[] oldIndex;
 }
 
 StorageSet::StorageSet(int cnum_outputs, int cnum_values) : num_outputs(cnum_outputs), num_values(cnum_values), values(0){}
