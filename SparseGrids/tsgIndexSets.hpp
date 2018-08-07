@@ -52,7 +52,7 @@ public:
 
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
-    void merge(const int listA[], size_t sizeA, const int listB[], size_t sizeB, int destination[]) const;
+    void mergeLists(const int listA[], size_t sizeA, const int listB[], size_t sizeB, int destination[]) const;
 
 private:
     size_t num_dimensions;

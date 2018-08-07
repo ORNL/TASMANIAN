@@ -71,13 +71,13 @@ void UnsortedIndexSet::getIndexesSorted(std::vector<int> &sorted) const{
         size_t full_warps = 2*warp * ((num_indexes) / (2*warp));
         #pragma omp parallel for
         for(size_t i=0; i<full_warps; i+=2*warp){
-            merge(&(list_source[i]), warp, &(list_source[i+warp]), warp, &(list_destination[i]));
+            mergeLists(&(list_source[i]), warp, &(list_source[i+warp]), warp, &(list_destination[i]));
         }
 
         if (full_warps < num_indexes){
             size_t sizeA = (full_warps+warp < num_indexes) ? warp : num_indexes - full_warps; // try to use warp indexes, but do no exceed num_indexes
             size_t sizeB = (full_warps+2*warp < num_indexes) ? warp : num_indexes - full_warps - sizeA; // try to use warp indexes, but do no exceed num_indexes
-            merge(&(list_source[full_warps]), sizeA, &(list_source[full_warps+warp]), sizeB, &(list_destination[full_warps]));
+            mergeLists(&(list_source[full_warps]), sizeA, &(list_source[full_warps+warp]), sizeB, &(list_destination[full_warps]));
         }
         std::swap(list_source, list_destination);
         warp *= 2;
@@ -97,7 +97,7 @@ TypeIndexRelation UnsortedIndexSet::compareIndexes(const int a[], const int b[])
     return type_asameb;
 }
 
-void UnsortedIndexSet::merge(const int listA[], size_t sizeA, const int listB[], size_t sizeB, int destination[]) const{
+void UnsortedIndexSet::mergeLists(const int listA[], size_t sizeA, const int listB[], size_t sizeB, int destination[]) const{
     TypeIndexRelation relation;
     size_t offset_destination = 0, offsetA = 0, offsetB = 0;
     while( (offsetA < sizeA) || (offsetB < sizeB) ){
@@ -303,19 +303,19 @@ void IndexSet::readBinary(std::ifstream &ifs){
 }
 
 int IndexSet::getSlot(const int p[]) const{
-    int start = 0, end = (int) (num_indexes - 1);
-    int current = (start + end) / 2;
+    int sstart = 0, send = (int) (num_indexes - 1);
+    int current = (sstart + send) / 2;
     TypeIndexRelation t;
-    while (start <= end){
+    while (sstart <= send){
         t = compareIndexes(&(index[num_dimensions * current]), p);
         if (t == type_abeforeb){
-            start = current+1;
+            sstart = current+1;
         }else if (t == type_bbeforea){
-            end = current-1;
+            send = current-1;
         }else{
             return current;
         };
-        current = (start + end) / 2;
+        current = (sstart + send) / 2;
     }
     return -1;
 }
