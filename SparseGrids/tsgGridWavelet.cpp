@@ -721,18 +721,17 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     if (coefficients != 0) delete[] coefficients;
     coefficients = new double[size_coeff];
     std::copy(c, c + size_coeff, coefficients);
-    double *x = new double[getNumPoints() * num_dimensions];
-    getPoints(x);
+    std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
+    getPoints(x.data());
     if (acc == accel_cpu_blas){
-        evaluateBatchCPUblas(x, points->getNumIndexes(), vals->data());
+        evaluateBatchCPUblas(x.data(), points->getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x, points->getNumIndexes(), vals->data(), os);
+        evaluateBatchGPUcublas(x.data(), points->getNumIndexes(), vals->data(), os);
     }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x, points->getNumIndexes(), vals->data(), os);
+        evaluateBatchGPUcuda(x.data(), points->getNumIndexes(), vals->data(), os);
     }else{
-        evaluateBatch(x, points->getNumIndexes(), vals->data());
+        evaluateBatch(x.data(), points->getNumIndexes(), vals->data());
     }
-    delete[] x;
 }
 
 const int* GridWavelet::getPointIndexes() const{
