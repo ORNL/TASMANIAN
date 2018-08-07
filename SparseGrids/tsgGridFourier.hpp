@@ -143,7 +143,6 @@ protected:
         IndexSet *work = (points == 0 ? needed : points);
         int num_points = work->getNumIndexes();
 
-        #pragma omp parallel for
         for (int i=0; i<num_points; i++){
             std::complex<double> basis_entry(1.0,0.0);
             for (int j=0; j<num_dimensions; j++) basis_entry *= cache[j][exponents->getIndex(i)[j] + middles[j]];
