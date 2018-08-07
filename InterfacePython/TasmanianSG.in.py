@@ -1609,7 +1609,7 @@ class TasmanianSparseGrid:
         else:
             aSurp = np.empty([2 * iNumOuts * iNumPoints], np.float64)
             self.pLibTSG.tsgGetHierarchicalCoefficientsStatic(self.pGrid, np.ctypeslib.as_ctypes(aSurp))
-            aSurp = aSurp[0::2] + 1j * aSurp[1::2]
+            aSurp = aSurp[:(iNumOuts * iNumPoints)] + 1j * aSurp[(iNumOuts * iNumPoints):]
 
         return aSurp.reshape([iNumPoints, iNumOuts])
 
@@ -1728,9 +1728,7 @@ class TasmanianSparseGrid:
         iNumDims = llfCoefficients.shape[1]
 
         if self.isFourier():
-            llfCoefficientsTmp = np.empty([iNumPoints, 2 * iNumDims,], np.float64)
-            llfCoefficientsTmp[:,0::2] = np.real(llfCoefficients)
-            llfCoefficientsTmp[:,1::2] = np.imag(llfCoefficients)
+            llfCoefficientsTmp = np.vstack((np.real(llfCoefficients), np.imag(llfCoefficients)))
             llfCoefficients = llfCoefficientsTmp.reshape([2 * iNumPoints * iNumDims,])
         else:
             llfCoefficients = llfCoefficients.reshape([iNumPoints * iNumDims,])
