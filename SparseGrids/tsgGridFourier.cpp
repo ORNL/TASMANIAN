@@ -79,8 +79,8 @@ void GridFourier::write(std::ofstream &ofs) const{
             values->write(ofs);
             if (fourier_coefs != 0){
                 ofs << "1";
-                for(int i=0; i < num_outputs*getNumPoints(); i++){
-                    ofs << " " << fourier_coefs[i].real() << " " << fourier_coefs[i].imag();
+                for(int i=0; i < 2*num_outputs*getNumPoints(); i++){
+                    ofs << " " << fourier_coefs[i];
                 }
             }else{
                 ofs << "0";
@@ -124,11 +124,9 @@ void GridFourier::read(std::ifstream &ifs, std::ostream *logstream){
             values = new StorageSet(0, 0); values->read(ifs);
             ifs >> flag;
             if (flag == 1){
-                fourier_coefs = new std::complex<double>[num_outputs * work->getNumIndexes()];
-                double fourier_real; double fourier_imag;
-                for(int i=0; i<num_outputs*work->getNumIndexes(); i++){
-                    ifs >> fourier_real >> fourier_imag;
-                    fourier_coefs[i] = std::complex<double>(fourier_real, fourier_imag);
+                fourier_coefs = new double[2 * num_outputs * work->getNumIndexes()];
+                for(int i=0; i<2*num_outputs*work->getNumIndexes(); i++){
+                    ifs >> fourier_coefs[i];
                 }
             }else{
                 fourier_coefs = 0;
@@ -196,8 +194,7 @@ void GridFourier::writeBinary(std::ofstream &ofs) const{
             values->writeBinary(ofs);
             if (fourier_coefs != 0){
                 flag = 'y'; ofs.write(&flag, sizeof(char));
-                const double *fcoefs = getFourierCoefs();     // real double array of length 2*num_outputs*num_nodes
-                ofs.write((char*) fcoefs, 2 * getNumPoints() * num_outputs * sizeof(double));
+                ofs.write((char*) fourier_coefs, 2 * getNumPoints() * num_outputs * sizeof(double));
             }else{
                 flag = 'n'; ofs.write(&flag, sizeof(char));
             }
@@ -242,12 +239,8 @@ void GridFourier::readBinary(std::ifstream &ifs, std::ostream *logstream){
             values = new StorageSet(0, 0); values->readBinary(ifs);
             ifs.read((char*) &flag, sizeof(char));
             if (flag == 'y'){
-                double *fcoefs = new double[2 * num_outputs * work->getNumIndexes()];
-                fourier_coefs = new std::complex<double>[num_outputs * work->getNumIndexes()];
-                ifs.read((char*) fcoefs, 2 * num_outputs * work->getNumIndexes() * sizeof(double));
-                for(int i=0; i<num_outputs * work->getNumIndexes(); i++){
-                    fourier_coefs[i] = std::complex<double>(fcoefs[2*i], fcoefs[2*i+1]);
-                }
+                fourier_coefs = new double[2* num_outputs * work->getNumIndexes()];
+                ifs.read((char*) fourier_coefs, 2 * num_outputs * work->getNumIndexes() * sizeof(double));
             }else{
                 fourier_coefs = 0;
             }
@@ -551,11 +544,11 @@ int GridFourier::convertIndexes(const int i, const int levels[]) const {
 }
 
 void GridFourier::calculateFourierCoefficients(){
-    int num_nodes = getNumPoints();
+    int num_points = getNumPoints();
 
     if (fourier_coefs != 0){ delete[] fourier_coefs; fourier_coefs = 0; }
-    fourier_coefs = new std::complex<double>[num_outputs * num_nodes];
-    std::fill(fourier_coefs, fourier_coefs + num_outputs*num_nodes, std::complex<double>(0,0));
+    fourier_coefs = new double[2 * num_outputs * num_points];
+    std::fill(fourier_coefs, fourier_coefs + 2*num_outputs*num_points, 0.0);
     for(int k=0; k<num_outputs; k++){
         for(int n=0; n<active_tensors->getNumIndexes(); n++){
             const int* levels = active_tensors->getIndex(n);
@@ -580,7 +573,8 @@ void GridFourier::calculateFourierCoefficients(){
 
             for(int i=0; i<num_tensor_points; i++){
                 // Combine with tensor weights
-                fourier_coefs[num_outputs*(exponent_refs[n][i]) + k] += ((double) active_w[n]) * out[i] / ((double) num_tensor_points);
+                fourier_coefs[num_outputs*(exponent_refs[n][i]) + k] += ((double) active_w[n]) * out[i].real() / ((double) num_tensor_points);
+                fourier_coefs[num_outputs*(exponent_refs[n][i] + num_points) + k] += ((double) active_w[n]) * out[i].imag() / ((double) num_tensor_points);
             }
             delete[] in;
             delete[] out;
@@ -660,7 +654,7 @@ void GridFourier::evaluate(const double x[], double y[]) const{
     TasBLAS::setzero(num_outputs, y);
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<num_points; i++){
-            y[k] += (w[i] * fourier_coefs[i*num_outputs+k].real() - w[i+num_points] * fourier_coefs[i*num_outputs+k].imag());
+            y[k] += (w[i] * fourier_coefs[i*num_outputs+k] - w[i+num_points] * fourier_coefs[(i+num_points)*num_outputs+k]);
         }
     }
     delete[] w;
@@ -706,7 +700,7 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
         std::fill(zeros_num_dim, zeros_num_dim + num_dimensions, 0);
         int idx = exponents->getSlot(zeros_num_dim);
         for(int k=0; k<num_outputs; k++){
-            q[k] = fourier_coefs[num_outputs * idx + k].real();
+            q[k] = fourier_coefs[num_outputs * idx + k];
         }
         delete[] zeros_num_dim;
     }else{
@@ -725,7 +719,7 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
 }
 
 void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
-    // y must be of size num_x * num_nodes * 2
+    // y must be of size 2*num_x*num_points
     int num_points = getNumPoints();
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
@@ -747,20 +741,17 @@ void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int nu
 }
 
 void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration, std::ostream*){
-    // takes c to be length 2*num_outputs*num_nodes
-    // first two entries are real and imag parts of the Fourier coef for the first basis function and first output dimension
-    // second two entries are real/imag parts of the Fourier coef for the second basis function and first output dim
-    // and so on
+    // takes c to be length 2*num_outputs*num_points
+    // first num_points*num_outputs are the real part; second num_points*num_outputs are the imaginary part
+
     if (accel != 0) accel->resetGPULoadedData();
     if (points == 0){
         points = needed;
         needed = 0;
     }
     if (fourier_coefs != 0) delete[] fourier_coefs;
-    fourier_coefs = new std::complex<double>[num_outputs * getNumPoints()];
-    for(int i=0; i<num_outputs*getNumPoints(); i++){
-        fourier_coefs[i] = std::complex<double>(c[2*i], c[2*i+1]);
-    }
+    fourier_coefs = new double[2 * getNumPoints() * num_outputs];
+    for(int i=0; i<2 * getNumPoints() * num_outputs; i++) fourier_coefs[i] = c[i];
 }
 
 void GridFourier::clearAccelerationData(){
