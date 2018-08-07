@@ -328,8 +328,7 @@ const std::vector<int>* IndexSet::getIndexes() const{
 void IndexSet::addUnsortedSet(const UnsortedIndexSet *uset){
     std::vector<int> uset_index;
     uset->getIndexesSorted(uset_index);
-    int set_num_indexes = uset->getNumIndexes();
-    mergeSet(uset_index.data(), set_num_indexes);
+    mergeSet(uset_index);
 }
 void IndexSet::addGranulatedSet(const GranulatedIndexSet *gset){
     const std::vector<int> *set_index = gset->getIndexes();
@@ -338,9 +337,7 @@ void IndexSet::addGranulatedSet(const GranulatedIndexSet *gset){
     mergeMapped(set_index->data(), set_map->data(), set_num_indexes);
 }
 void IndexSet::addIndexSet(const IndexSet *iset){
-    const int *set_index = iset->getIndex(0);
-    int set_num_indexes = iset->getNumIndexes();
-    mergeSet(set_index, set_num_indexes);
+    mergeSet(iset->index);
 }
 
 IndexSet* IndexSet::diffSets(const IndexSet *iset) const{
@@ -384,32 +381,38 @@ TypeIndexRelation IndexSet::compareIndexes(const int a[], const int b[]) const{
     }
     return type_asameb;
 }
-void IndexSet::mergeSet(const int newIndex[], int sizeNew){
+void IndexSet::mergeSet(const std::vector<int> newIndex){
     std::vector<int> oldIndex = std::move(index); // move assignment
-    size_t sizeOld = num_indexes;
 
-    index.resize(num_dimensions * (sizeOld + sizeNew));
+    index.reserve(num_dimensions * (num_indexes + newIndex.size() / num_dimensions));
+    index.resize(0);
 
     TypeIndexRelation relation;
+    auto iterNew = newIndex.begin();
+    auto iterOld = oldIndex.begin();
     num_indexes = 0;
-    size_t offsetNew = 0, offsetOld = 0;
-    while( (offsetNew < (size_t) sizeNew) || (offsetOld < sizeOld) ){
-        if (offsetNew >= (size_t) sizeNew){ // new is a
+    while( (iterNew < newIndex.end()) || (iterOld < oldIndex.end()) ){
+        if (iterNew >= newIndex.end()){ // new is a
             relation = type_bbeforea;
-        }else if (offsetOld >= sizeOld){ // old is b
+        }else if (iterOld >= oldIndex.end()){ // old is b
             relation = type_abeforeb;
         }else{
-            relation = compareIndexes(&(newIndex[offsetNew * num_dimensions]), &(oldIndex[offsetOld * num_dimensions]));
+            relation = compareIndexes(&*iterNew, &*iterOld);
         }
         if (relation == type_abeforeb){
-            std::copy(&(newIndex[offsetNew * num_dimensions]), &(newIndex[offsetNew * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
-            offsetNew++;
+            for(size_t i=0; i<num_dimensions; i++){
+                index.push_back(*iterNew);
+                iterNew++;
+            }
         }else{
-            std::copy(&(oldIndex[offsetOld * num_dimensions]), &(oldIndex[offsetOld * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
-            offsetOld++;
-            offsetNew += (relation == type_asameb) ? 1 : 0;
+            for(size_t i=0; i<num_dimensions; i++){
+                index.push_back(*iterOld);
+                iterOld++;
+            }
+            if (relation == type_asameb) std::advance(iterNew, num_dimensions);
         }
     }
+    num_indexes = index.size() / num_dimensions;
 }
 
 void IndexSet::mergeMapped(const int newIndex[], const int map[], int sizeNew){
