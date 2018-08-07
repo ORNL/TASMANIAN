@@ -347,25 +347,31 @@ IndexSet* IndexSet::diffSets(const IndexSet *iset) const{
     std::vector<int> slots(num_indexes);
 
     #pragma omp parallel for schedule(static)
-    for(size_t i=0; i<num_indexes; i++){
+    for(int i=0; i<(int) num_indexes; i++){ // openmp needs a signed counter, go figure ... (this is safe conversion)
         slots[i] = iset->getSlot(&(index[i*num_dimensions]));
     }
 
     size_t n = 0;
-    for(size_t i=0; i<num_indexes; i++){
-        if (slots[i] == -1) n++;
+    for(auto s : slots){
+        if (s == -1) n++;
     }
 
     if (n == 0){
         return 0;
     }else{
-        int *diff_index = new int[num_dimensions * n];
+        std::vector<int> diff_index(num_dimensions * n);
         n = 0;
-        for(size_t i=0; i<num_indexes; i++){
-            if (slots[i] == -1) std::copy(&(index[i*num_dimensions]), &(index[i*num_dimensions]) + num_dimensions, &(diff_index[num_dimensions * n++]));
+        auto iterIndex = index.begin();
+        auto iterDiff = diff_index.begin();
+        for(auto s : slots){
+            if (s == -1){
+                std::copy(iterIndex, iterIndex + num_dimensions, iterDiff);
+                std::advance(iterDiff, num_dimensions);
+            }
+            std::advance(iterIndex, num_dimensions);
         }
 
-        IndexSet *diff_set = new IndexSet((int) num_dimensions, (int) n, diff_index);
+        IndexSet *diff_set = new IndexSet((int) num_dimensions, diff_index);
         return diff_set;
     }
 }
