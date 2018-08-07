@@ -142,30 +142,23 @@ protected:
 
         IndexSet *work = (points == 0 ? needed : points);
         int num_points = work->getNumIndexes();
-        std::complex<double> *basis_complex = new std::complex<double>[num_points];
 
+        #pragma omp parallel for
         for (int i=0; i<num_points; i++){
-            basis_complex[i] = std::complex<double>(1.0,0.0);
-            for (int j=0; j<num_dimensions; j++) basis_complex[i] *= cache[j][exponents->getIndex(i)[j] + middles[j]];
-        }
-
-        std::fill(w, w + 2*num_points, 0.0);
-        if (interwoven){
-            for(int i=0; i<num_points; i++){
-                w[2*i] = basis_complex[i].real();
-                w[2*i + 1] = basis_complex[i].imag();
-            }
-        }else{
-            for(int i=0; i<num_points; i++){
-                w[i] = basis_complex[i].real();
-                w[i + num_points] = basis_complex[i].imag();
+            std::complex<double> basis_entry(1.0,0.0);
+            for (int j=0; j<num_dimensions; j++) basis_entry *= cache[j][exponents->getIndex(i)[j] + middles[j]];
+            if (interwoven){
+                w[2*i] = basis_entry.real();
+                w[2*i + 1] = basis_entry.imag();
+            }else{
+                w[i] = basis_entry.real();
+                w[i + num_points] = basis_entry.imag();
             }
         }
 
         for (int j=0; j<num_dimensions; j++) { delete[] cache[j]; }
         delete[] cache;
         delete[] middles;
-        delete[] basis_complex;
     }
 
 private:
