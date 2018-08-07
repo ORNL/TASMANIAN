@@ -113,11 +113,59 @@ protected:
     void reset();
     void calculateFourierCoefficients();
 
-    std::complex<double>* getBasisFunctions(const double x[]) const;
-    void getBasisFunctions(const double x[], std::complex<double> weights[]) const;
-    void getBasisFunctions(const double x[], double weights[]) const;   // for evaluateHierarchicalFunctions (parallelized)
-
     int convertIndexes(const int i, const int levels[]) const;
+
+    template<bool interwoven>
+    void computeExponentials(const double x[], double w[]) const{
+        std::complex<double> unit_imag(0.0,1.0);
+        std::complex<double> **cache = new std::complex<double>*[num_dimensions];
+        int *middles = new int[num_dimensions];
+        for (int j=0; j<num_dimensions; j++){
+            int num_level_points = wrapper->getNumPoints(max_levels[j]);
+            int middle = (num_level_points - 1)/2;
+            middles[j] = middle;
+            cache[j] = new std::complex<double>[num_level_points];
+            cache[j][middle] = std::complex<double>(1.0,0.0);
+            if (num_level_points > 1){
+                cache[j][middle+1] = std::exp(2*M_PI*unit_imag*x[j]);
+                for (int i=middle+2; i<num_level_points; i++){
+                    cache[j][i] = cache[j][middle+1] * cache[j][i-1];
+                }
+
+                cache[j][middle-1] = std::conj(cache[j][middle+1]);
+                for (int i=middle-2; i>=0; i--){
+                    cache[j][i] = cache[j][middle-1] * cache[j][i+1];
+                }
+            }
+        }
+
+        IndexSet *work = (points == 0 ? needed : points);
+        int num_points = work->getNumIndexes();
+        std::complex<double> *basis_complex = new std::complex<double>[num_points];
+
+        for (int i=0; i<num_points; i++){
+            basis_complex[i] = std::complex<double>(1.0,0.0);
+            for (int j=0; j<num_dimensions; j++) basis_complex[i] *= cache[j][exponents->getIndex(i)[j] + middles[j]];
+        }
+
+        std::fill(w, w + 2*num_points, 0.0);
+        if (interwoven){
+            for(int i=0; i<num_points; i++){
+                w[2*i] = basis_complex[i].real();
+                w[2*i + 1] = basis_complex[i].imag();
+            }
+        }else{
+            for(int i=0; i<num_points; i++){
+                w[i] = basis_complex[i].real();
+                w[i + num_points] = basis_complex[i].imag();
+            }
+        }
+
+        for (int j=0; j<num_dimensions; j++) { delete[] cache[j]; }
+        delete[] cache;
+        delete[] middles;
+        delete[] basis_complex;
+    }
 
 private:
     int num_dimensions, num_outputs;
