@@ -36,13 +36,10 @@
 namespace TasGrid{
 
 UnsortedIndexSet::UnsortedIndexSet(int cnum_dimensions, int cnum_slots) : num_indexes(0){
-    //index = new int[num_dimensions * cnum_slots];
     num_dimensions = (size_t) cnum_dimensions;
     index.resize(num_dimensions * cnum_slots);
 }
-UnsortedIndexSet::~UnsortedIndexSet(){
-    //delete[] index;
-}
+UnsortedIndexSet::~UnsortedIndexSet(){}
 
 int UnsortedIndexSet::getNumDimensions() const{ return (int) num_dimensions; }
 int UnsortedIndexSet::getNumIndexes() const{ return (int) num_indexes; }
@@ -90,45 +87,6 @@ void UnsortedIndexSet::getIndexesSorted(std::vector<int> &sorted) const{
     for(size_t i=0; i<num_indexes; i++){
         std::copy(&(index[list_source[i] * num_dimensions]), &(index[list_source[i] * num_dimensions]) + num_dimensions, &(sorted[i*num_dimensions]));
     }
-}
-
-int* UnsortedIndexSet::getIndexesSorted() const{
-    std::vector<int> list_source(num_indexes);
-    std::vector<int> list_destination(num_indexes);
-
-    for(int i=0; i<(int) (num_indexes - num_indexes%2); i+=2){
-        if (compareIndexes(&(index[i*num_dimensions]), &(index[(i+1)*num_dimensions])) == type_abeforeb){
-            list_source[i] = i;
-            list_source[i+1] = i+1;
-        }else{
-            list_source[i] = i+1;
-            list_source[i+1] = i;
-        }
-    }
-    if (num_indexes%2 == 1) list_source[num_indexes-1] = (int) (num_indexes-1);
-
-    size_t warp = 2;
-    while(warp < num_indexes){
-        size_t full_warps = 2*warp * ((num_indexes) / (2*warp));
-        #pragma omp parallel for
-        for(size_t i=0; i<full_warps; i+=2*warp){
-            merge(&(list_source[i]), warp, &(list_source[i+warp]), warp, &(list_destination[i]));
-        }
-
-        if (full_warps < num_indexes){
-            size_t sizeA = (full_warps+warp < num_indexes) ? warp : num_indexes - full_warps; // try to use warp indexes, but do no exceed num_indexes
-            size_t sizeB = (full_warps+2*warp < num_indexes) ? warp : num_indexes - full_warps - sizeA; // try to use warp indexes, but do no exceed num_indexes
-            merge(&(list_source[full_warps]), sizeA, &(list_source[full_warps+warp]), sizeB, &(list_destination[full_warps]));
-        }
-        std::swap(list_source, list_destination);
-        warp *= 2;
-    }
-
-    int *result = new int[num_indexes * num_dimensions];
-    for(size_t i=0; i<num_indexes; i++){
-        std::copy(&(index[list_source[i] * num_dimensions]), &(index[list_source[i] * num_dimensions]) + num_dimensions, &(result[i*num_dimensions]));
-    }
-    return result;
 }
 
 TypeIndexRelation UnsortedIndexSet::compareIndexes(const int a[], const int b[]) const{
@@ -412,10 +370,10 @@ const std::vector<int>* IndexSet::getIndexes() const{
     return &index;
 }
 void IndexSet::addUnsortedSet(const UnsortedIndexSet *uset){
-    int *set_index = uset->getIndexesSorted();
+    std::vector<int> uset_index;
+    uset->getIndexesSorted(uset_index);
     int set_num_indexes = uset->getNumIndexes();
-    mergeSet(set_index, set_num_indexes);
-    delete[] set_index;
+    mergeSet(uset_index.data(), set_num_indexes);
 }
 void IndexSet::addGranulatedSet(const GranulatedIndexSet *gset){
     const int *set_index = gset->getIndexes();

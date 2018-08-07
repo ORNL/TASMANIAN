@@ -47,9 +47,8 @@ public:
     void addIndex(const int p[]);
     const int* getIndex(int i) const;
 
-    int* getIndexesSorted() const;
     void getIndexesSorted(std::vector<int> &sorted) const;
-    // returns an array of num_dimensions X num_indexes of the sorted indexes
+    // returns a vector of num_dimensions X num_indexes of the sorted indexes
 
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
