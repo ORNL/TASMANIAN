@@ -202,26 +202,25 @@ void GranulatedIndexSet::mergeMapped(const std::vector<int> newIndex, const std:
 
     TypeIndexRelation relation;
     num_indexes = 0;
-    size_t offsetNew = 0, offsetOld = 0;
-    while( (offsetNew < (size_t) sizeNew) || (offsetOld < sizeOld) ){
-        if (offsetNew >= (size_t) sizeNew){ // new is a
+    auto iterNew = newMap.begin();
+    auto iterOld = imap.begin();
+    while( (iterNew < newMap.end()) || (iterOld < imap.end()) ){
+        if (iterNew >= newMap.end()){ // new is a
             relation = type_bbeforea;
-        }else if (offsetOld >= sizeOld){ // old is b
+        }else if (iterOld >= imap.end()){ // old is b
             relation = type_abeforeb;
         }else{
-            relation = compareIndexes(&(newIndex[newMap[offsetNew] * num_dimensions]), &(oldIndex[imap[offsetOld] * num_dimensions]));
+            relation = compareIndexes(&(newIndex[*iterNew * num_dimensions]), &(oldIndex[*iterOld * num_dimensions]));
         }
         const int *p;
         if (relation == type_abeforeb){
-            //std::copy(&(newIndex[newMap[offsetNew] * num_dimensions]), &(newIndex[newMap[offsetNew] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
-            p = &(newIndex[newMap[offsetNew] * num_dimensions]);
-            offsetNew++;
+            p = &(newIndex[*iterNew * num_dimensions]);
+            iterNew++;
         }
         if ((relation == type_bbeforea) || (relation == type_asameb)){
-            //std::copy(&(oldIndex[imap[offsetOld] * num_dimensions]), &(oldIndex[imap[offsetOld] * num_dimensions]) + num_dimensions, &(index[num_indexes++ * num_dimensions]));
-            p = &(oldIndex[imap[offsetOld] * num_dimensions]);
-            offsetOld++;
-            offsetNew += (relation == type_asameb) ? 1 : 0;
+            p = &(oldIndex[*iterOld * num_dimensions]);
+            iterOld++;
+            if (relation == type_asameb) iterNew ++;
         }
         for(size_t i=0; i<num_dimensions; i++) index.push_back(p[i]);
         num_indexes++;
