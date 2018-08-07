@@ -125,7 +125,7 @@ protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
 
     void mergeSet(const std::vector<int> newIndex);
-    void mergeMapped(const int newIndex[], const int imap[], int sizeNew);
+    void mergeMapped(const std::vector<int> *newIndex, const std::vector<int> *imap);
 
 private:
     size_t num_dimensions;

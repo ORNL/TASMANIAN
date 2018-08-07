@@ -318,10 +318,7 @@ void IndexSet::addUnsortedSet(const UnsortedIndexSet *uset){
     mergeSet(uset_index);
 }
 void IndexSet::addGranulatedSet(const GranulatedIndexSet *gset){
-    const std::vector<int> *set_index = gset->getIndexes();
-    const std::vector<int> *set_map = gset->getMap();
-    int set_num_indexes = gset->getNumIndexes();
-    mergeMapped(set_index->data(), set_map->data(), set_num_indexes);
+    mergeMapped(gset->getIndexes(), gset->getMap());
 }
 void IndexSet::addIndexSet(const IndexSet *iset){
     mergeSet(iset->index);
@@ -401,30 +398,31 @@ void IndexSet::mergeSet(const std::vector<int> newIndex){
     }
 }
 
-void IndexSet::mergeMapped(const int newIndex[], const int map[], int sizeNew){
+void IndexSet::mergeMapped(const std::vector<int> *newIndex, const std::vector<int> *imap){
     std::vector<int> oldIndex = std::move(index); // move assignment
-    size_t sizeOld = oldIndex.size() / num_dimensions;
 
-    index.resize(num_dimensions * (sizeOld + sizeNew));
+    index.reserve(newIndex->size() + oldIndex.size());
+    index.resize(0);
 
     TypeIndexRelation relation;
-    size_t offsetNew = 0, offsetOld = 0;
-    while( (offsetNew < (size_t) sizeNew) || (offsetOld < sizeOld) ){
-        if (offsetNew >= (size_t) sizeNew){ // new is a
+    auto iterNew = imap->begin();
+    auto iterOld = oldIndex.begin();
+    while( (iterNew < imap->end()) || (iterOld < oldIndex.end()) ){
+        if (iterNew >= imap->end()){ // new is a
             relation = type_bbeforea;
-        }else if (offsetOld >= sizeOld){ // old is b
+        }else if (iterOld >= oldIndex.end()){ // old is b
             relation = type_abeforeb;
         }else{
-            relation = compareIndexes(&(newIndex[map[offsetNew] * num_dimensions]), &(oldIndex[offsetOld * num_dimensions]));
+            relation = compareIndexes(&((*newIndex)[(*iterNew) * num_dimensions]), &*iterOld);
         }
         const int *p;
         if (relation == type_abeforeb){
-            p = &(newIndex[map[offsetNew] * num_dimensions]);
-            offsetNew++;
+            p = &((*newIndex)[(*iterNew) * num_dimensions]);
+            iterNew++;
         }else{
-            p = &(oldIndex[offsetOld * num_dimensions]);
-            offsetOld++;
-            offsetNew += (relation == type_asameb) ? 1 : 0;
+            p = &*iterOld;
+            std::advance(iterOld, num_dimensions);
+            if (relation == type_asameb) iterNew++;
         }
         for(size_t i=0; i<num_dimensions; i++) index.push_back(p[i]);
     }
