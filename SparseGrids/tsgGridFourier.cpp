@@ -589,30 +589,6 @@ void GridFourier::calculateFourierCoefficients(){
     }
 }
 
-std::complex<double>* GridFourier::getBasisFunctions(const double x[]) const {
-    std::complex<double> *weights = new std::complex<double>[exponents->getNumIndexes()];
-    getBasisFunctions(x,weights);
-    return weights;
-}
-void GridFourier::getBasisFunctions(const double x[], std::complex<double> weights[]) const {
-    std::complex<double> unit_imag(0.0, 1.0);    // this is sqrt(-1)
-    for(int i=0; i<exponents->getNumIndexes(); i++){
-        weights[i] = exp(2 * M_PI * unit_imag * ((double) exponents->getIndex(i)[0]) * x[0]);
-        for(int j=1; j<exponents->getNumDimensions(); j++){
-            weights[i] *= exp(2 * M_PI * unit_imag * ((double) exponents->getIndex(i)[j]) * x[j]);
-        }
-    }
-}
-void GridFourier::getBasisFunctions(const double x[], double weights[]) const {
-    // weights has length 2*num_nodes here
-    std::complex<double> *tmp = getBasisFunctions(x);
-    for(int i=0; i<exponents->getNumIndexes(); i++){
-        weights[2*i] = tmp[i].real();
-        weights[2*i+1] = tmp[i].imag();
-    }
-    delete[] tmp;
-}
-
 void GridFourier::getInterpolationWeights(const double x[], double weights[]) const {
     /*
     I[f](x) = c^T * \Phi(x) = (U*P*f)^T * \Phi(x)           (U represents normalized forward Fourier transform; P represents reordering of f_i before going into FT)
@@ -622,7 +598,8 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     */
 
     std::fill(weights, weights+getNumPoints(), 0.0);
-    std::complex<double> *basisFuncs = getBasisFunctions(x);
+    double *basisFuncs = new double[2* getNumPoints()];
+    computeExponentials<true>(x, basisFuncs);
 
     for(int n=0; n<active_tensors->getNumIndexes(); n++){
         const int *levels = active_tensors->getIndex(n);
@@ -638,7 +615,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
         std::complex<double> *out = new std::complex<double>[num_tensor_points];
 
         for(int i=0; i<num_tensor_points; i++){
-            in[i] = basisFuncs[exponent_refs[n][i]];
+            in[i] = std::complex<double>(basisFuncs[2*exponent_refs[n][i]], basisFuncs[2*exponent_refs[n][i] + 1]);
         }
 
         TasmanianFourierTransform::discrete_fourier_transform(num_dimensions, num_oned_points, in, out);
@@ -677,11 +654,13 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
 }
 
 void GridFourier::evaluate(const double x[], double y[]) const{
-    std::complex<double> *w = getBasisFunctions(x);
+    int num_points = getNumPoints();
+    double *w = new double[2 * num_points];
+    computeExponentials<false>(x, w);
     TasBLAS::setzero(num_outputs, y);
     for(int k=0; k<num_outputs; k++){
-        for(int i=0; i<points->getNumIndexes(); i++){
-            y[k] += (w[i] * fourier_coefs[i*num_outputs+k]).real();
+        for(int i=0; i<num_points; i++){
+            y[k] += (w[i] * fourier_coefs[i*num_outputs+k].real() - w[i+num_points] * fourier_coefs[i*num_outputs+k].imag());
         }
     }
     delete[] w;
@@ -750,9 +729,23 @@ void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, dou
     int num_points = getNumPoints();
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        getBasisFunctions(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) 2*num_points)]));
+        computeExponentials<true>(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) 2*num_points)]));
     }
 }
+void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double M_real[], double M_imag[]) const{
+    // y must be of size num_x * num_nodes * 2
+    int num_points = getNumPoints();
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++){
+        double *w = new double[2 * num_points];
+        computeExponentials<false>(&(x[((size_t) i) * ((size_t) num_dimensions)]), w);
+        for(int m=0; m<num_points; m++){
+            M_real[i*num_points+m] = w[m];
+            M_imag[i*num_points+m] = w[m + num_points];
+        }
+    }
+}
+
 void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration, std::ostream*){
     // takes c to be length 2*num_outputs*num_nodes
     // first two entries are real and imag parts of the Fourier coef for the first basis function and first output dimension
