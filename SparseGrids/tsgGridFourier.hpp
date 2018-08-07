@@ -99,6 +99,7 @@ public:
     void integrate(double q[], double *conformal_correction) const;
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
+    void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double M_real[], double M_imag[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
 
     void clearAccelerationData();

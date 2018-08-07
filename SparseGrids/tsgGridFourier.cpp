@@ -732,6 +732,20 @@ void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, dou
         computeExponentials<true>(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) 2*num_points)]));
     }
 }
+void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double M_real[], double M_imag[]) const{
+    // y must be of size num_x * num_nodes * 2
+    int num_points = getNumPoints();
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++){
+        double *w = new double[2 * num_points];
+        computeExponentials<false>(&(x[((size_t) i) * ((size_t) num_dimensions)]), w);
+        for(int m=0; m<num_points; m++){
+            M_real[i*num_points+m] = w[m];
+            M_imag[i*num_points+m] = w[m + num_points];
+        }
+    }
+}
+
 void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration, std::ostream*){
     // takes c to be length 2*num_outputs*num_nodes
     // first two entries are real and imag parts of the Fourier coef for the first basis function and first output dimension
