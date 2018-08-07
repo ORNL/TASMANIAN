@@ -590,7 +590,7 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
             int active_outputs = (output == -1) ? num_outputs : 1;
 
             double *vals = new double[nump * active_outputs];
-            int *indexes = new int[nump * num_dimensions];
+            std::vector<int> indexes(nump * num_dimensions);
 
             for(int i=0; i<nump; i++){
                 const double* v = values->getValues(pnts[i]);
@@ -603,7 +603,7 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
                 std::copy(p, p + num_dimensions, &(indexes[((size_t) i) * ((size_t) num_dimensions)]));
                 global_to_pnts[pnts[i]] = i;
             }
-            IndexSet *pointset = new IndexSet(num_dimensions, nump, indexes);
+            IndexSet *pointset = new IndexSet(num_dimensions, indexes);
 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);

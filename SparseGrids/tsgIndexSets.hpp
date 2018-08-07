@@ -97,8 +97,7 @@ public:
     IndexSet(const UnsortedIndexSet *uset);
     IndexSet(const GranulatedIndexSet *gset);
     IndexSet(const IndexSet *iset);
-    IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex);
-    IndexSet(int cnum_dimensions, std::vector<int> &cindex);
+    IndexSet(int cnum_dimensions, std::vector<int> &cindex); // move assignment
     ~IndexSet();
 
     int getNumDimensions() const;

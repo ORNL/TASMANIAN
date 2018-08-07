@@ -1646,7 +1646,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     }
 
     // save a copy of the points and the values
-    int *point_kept = new int[num_kept * num_dimensions];
+    std::vector<int> point_kept(num_kept * num_dimensions);
     double *values_kept = new double[num_kept * num_outputs];
 
     num_kept = 0;
@@ -1663,7 +1663,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     reset(false);
     num_dimensions = dims; num_outputs = outs;
 
-    points = new IndexSet(num_dimensions, num_kept, point_kept);
+    points = new IndexSet(num_dimensions, point_kept);
     values = new StorageSet(num_outputs, num_kept);
     values->setValues(values_kept);
     delete[] values_kept;

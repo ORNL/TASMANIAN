@@ -254,13 +254,6 @@ IndexSet::IndexSet(const IndexSet *iset){
     index = *iset->getIndexes();
 }
 
-IndexSet::IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex){
-    num_dimensions = cnum_dimensions;
-    num_indexes = cnum_indexes;
-    index.resize(num_dimensions * num_indexes);
-    std::copy(cindex, cindex + num_dimensions * num_indexes, index.data());
-    delete[] cindex;
-}
 IndexSet::IndexSet(int cnum_dimensions, std::vector<int> &cindex){
     num_dimensions = cnum_dimensions;
     num_indexes = cindex.size() / num_dimensions;
