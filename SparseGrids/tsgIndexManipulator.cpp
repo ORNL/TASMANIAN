@@ -128,6 +128,21 @@ int IndexManipulator::getIndexWeight(const int index[], TypeDepth type, const in
             return 0;
     }
 }
+long long IndexManipulator::getIndexWeight(const std::vector<int> &index, TypeDepth type, const std::vector<int> &weights, TypeOneDRule rule) const{
+    switch (type){
+        case type_level:         return getIndexWeight<type_level>(index, weights, rule);
+        case type_curved:        return getIndexWeight<type_curved>(index, weights, rule);
+        case type_iptotal:       return getIndexWeight<type_iptotal>(index, weights, rule);;
+        case type_ipcurved:      return getIndexWeight<type_ipcurved>(index, weights, rule);
+        case type_qptotal:       return getIndexWeight<type_qptotal>(index, weights, rule);
+        case type_qpcurved:      return getIndexWeight<type_qpcurved>(index, weights, rule);
+        case type_hyperbolic:    return getIndexWeight<type_hyperbolic>(index, weights, rule);
+        case type_iphyperbolic:  return getIndexWeight<type_iphyperbolic>(index, weights, rule);
+        case type_qphyperbolic:  return getIndexWeight<type_qphyperbolic>(index, weights, rule);
+        default:
+            return 0;
+    }
+}
 
 IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int *anisotropic_weights, TypeOneDRule rule) const{
     // construct the minimum tensor set that covers the target_space defined by offset, type, and anisotropic weights
@@ -180,7 +195,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
     getProperWeights(type, anisotropic_weights, weights);
 
     // compute normalization and check if heavily curved
-    int normalized_offset = weights[0];
+    long long normalized_offset = weights[0];
     for(int i=1; i<num_dimensions; i++){
         if (normalized_offset > weights[i]) normalized_offset = weights[i];
     }
@@ -206,7 +221,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                 c = num_dimensions-1;
                 root[c]++;
             }
-            outside = (getIndexWeight(root.data(), type, weights.data(), rule) > normalized_offset);
+            outside = (getIndexWeight(root, type, weights, rule) > normalized_offset);
         }
         total = new IndexSet(num_dimensions, index_dump);
     }else{ // use slower algorithm, but more general
@@ -229,7 +244,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                     const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
                     for(int j=0; j<num_dimensions; j++){
                         newp[j]++;
-                        if ((getIndexWeight(newp.data(), type, weights.data(), rule) <= normalized_offset) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
+                        if ((getIndexWeight(newp, type, weights, rule) <= normalized_offset) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
                             sets[me]->addIndex(newp.data());
                         }
                         newp[j]--;
