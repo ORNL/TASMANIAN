@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
         python \
         python-numpy \
         cmake \
+        gfortran \
         git \
         && \
     apt-get clean && \
