@@ -203,6 +203,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
     bool known_lower = true;
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
         for(int i=0; i<num_dimensions; i++) if (weights[i] + weights[i+num_dimensions] < 0) known_lower = false;
+
     }
     normalized_offset *= offset;
     IndexSet *total = 0;
@@ -218,7 +219,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                 c--;
                 root[c]++;
             }else{
-                for(int i=0; i<num_dimensions; i++) index_dump.push_back(root[i]);
+                for(auto i : root) index_dump.push_back(i);
                 c = num_dimensions-1;
                 root[c]++;
             }
@@ -236,19 +237,18 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
 
             sets = new GranulatedIndexSet*[num_sets];
 
-            //#pragma omp parallel for schedule(dynamic)
             for(int me=0; me<num_sets; me++){
 
                 sets[me] = new GranulatedIndexSet(num_dimensions);
                 std::vector<int> newp(num_dimensions);
                 for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
                     const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
-                    for(int j=0; j<num_dimensions; j++){
-                        newp[j]++;
+                    for(auto &j : newp){
+                        j++;
                         if ((getIndexWeight(newp, type, weights, rule) <= normalized_offset) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
                             sets[me]->addIndex(newp.data());
                         }
-                        newp[j]--;
+                        j--;
                     }
                 }
             }
