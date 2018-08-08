@@ -232,10 +232,12 @@ void GranulatedIndexSet::mergeMapped(const std::vector<int> newIndex, const std:
 
 IndexSet::IndexSet(int cnum_dimensions){
     num_dimensions = (size_t) cnum_dimensions;
+    cache_num_indexes = 0;
 }
 IndexSet::IndexSet(const UnsortedIndexSet *uset){
     num_dimensions = (size_t) uset->getNumDimensions();
     uset->getIndexesSorted(index);
+    cacheNumIndexes();
 }
 IndexSet::IndexSet(const GranulatedIndexSet *gset){
     num_dimensions = (size_t) gset->getNumDimensions();
@@ -245,20 +247,23 @@ IndexSet::IndexSet(const GranulatedIndexSet *gset){
         const int *p = gset->getIndex((int) i);
         std::copy(p, p + num_dimensions, &(index[i*num_dimensions]));
     }
+    cacheNumIndexes();
 }
 IndexSet::IndexSet(const IndexSet *iset){
     num_dimensions = (size_t) iset->getNumDimensions();
     index = *iset->getIndexes();
+    cacheNumIndexes();
 }
 
 IndexSet::IndexSet(int cnum_dimensions, std::vector<int> &cindex){
     num_dimensions = cnum_dimensions;
     index = std::move(cindex);
+    cacheNumIndexes();
 }
 IndexSet::~IndexSet(){}
 
 int IndexSet::getNumDimensions() const{ return (int) num_dimensions; }
-int IndexSet::getNumIndexes() const{ return (int) (index.size() / num_dimensions); }
+int IndexSet::getNumIndexes() const{ return cache_num_indexes; }
 
 void IndexSet::write(std::ofstream &ofs) const{
     size_t numi = index.size() / num_dimensions;
@@ -271,6 +276,7 @@ void IndexSet::read(std::ifstream &ifs){
     ifs >> num_dimensions >> numi;
     index.resize(num_dimensions * numi);
     for(auto & i : index) ifs >> i;
+    cacheNumIndexes();
 }
 
 void IndexSet::writeBinary(std::ofstream &ofs) const{
@@ -287,6 +293,7 @@ void IndexSet::readBinary(std::ifstream &ifs){
     size_t num_indexes = (size_t) sizes[1];
     index.resize(num_dimensions * num_indexes);
     ifs.read((char*) index.data(), num_dimensions*num_indexes*sizeof(int));
+    cacheNumIndexes();
 }
 
 int IndexSet::getSlot(const int p[]) const{
@@ -396,6 +403,7 @@ void IndexSet::mergeSet(const std::vector<int> newIndex){
             if (relation == type_asameb) std::advance(iterNew, num_dimensions);
         }
     }
+    cacheNumIndexes();
 }
 
 void IndexSet::mergeMapped(const std::vector<int> *newIndex, const std::vector<int> *imap){
@@ -426,7 +434,10 @@ void IndexSet::mergeMapped(const std::vector<int> *newIndex, const std::vector<i
         }
         for(size_t i=0; i<num_dimensions; i++) index.push_back(p[i]);
     }
+    cacheNumIndexes();
 }
+
+void IndexSet::cacheNumIndexes(){ cache_num_indexes = (int) (index.size() / num_dimensions); }
 
 StorageSet::StorageSet(int cnum_outputs, int cnum_values) : num_outputs((size_t) cnum_outputs), num_values((size_t) cnum_values){}
 StorageSet::StorageSet(const StorageSet *storage) : values(0){

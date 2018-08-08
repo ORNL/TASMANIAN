@@ -127,8 +127,11 @@ protected:
     void mergeSet(const std::vector<int> newIndex);
     void mergeMapped(const std::vector<int> *newIndex, const std::vector<int> *imap);
 
+    void cacheNumIndexes();
+
 private:
     size_t num_dimensions;
+    int cache_num_indexes;
     std::vector<int> index;
 };
 
