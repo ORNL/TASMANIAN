@@ -304,8 +304,8 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
     // Computers & Mathematics with Applications, 71(11):2449–2465, 2016
     // the other selectTensors() function cover the special caseof Corrolary 1
     GranulatedIndexSet **sets;
-    int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
-    GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root);  delete[] root;
+    std::vector<int> root(num_dimensions, 0);
+    GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root.data());
     IndexSet *total = new IndexSet(num_dimensions);
     bool adding = true;
 
@@ -317,37 +317,58 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
         #pragma omp parallel for schedule(dynamic)
         for(int me=0; me<num_sets; me++){
 
-            int *corner = new int[num_dimensions];
-
             sets[me] = new GranulatedIndexSet(num_dimensions);
-            int *newp = new int[num_dimensions];
-            for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
-                const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp);
 
-                for(int j=0; j<num_dimensions; j++){
-                    newp[j]++;
-
-                    // compute the minimum polynomial for this delta
-                    if (integration){
-                        for(int k=0; k<num_dimensions; k++){
-                            corner[k] = (newp[k] > 0) ? (meta.getQExact(newp[k]-1, rule) + 1) : 0;
-                        }
-                    }else{
-                        for(int k=0; k<num_dimensions; k++){
-                            corner[k] = (newp[k] > 0) ? (meta.getIExact(newp[k]-1, rule) + 1) : 0;
-                        }
+            std::vector<int> newp(num_dimensions);
+            std::vector<int> corner(num_dimensions);
+            if (integration){
+                for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
+                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
+                    auto iterp = newp.begin();
+                    for(auto &c : corner){
+                        c = (*iterp > 0) ? (meta.getQExact(*iterp -1, rule) + 1) : 0;
+                        iterp++;
                     }
+                    iterp = newp.begin();
+                    int oldc;
 
-                    if ((target_space->getSlot(corner) != -1) && (set_level->getSlot(newp) == -1) && (total->getSlot(newp) == -1)){
-                        sets[me]->addIndex(newp);
+                    for(auto &c : corner){
+                        (*iterp)++; // increment the index of newp
+                        oldc = c; // save the corner entry
+                        c = meta.getQExact(*iterp -1, rule) + 1; // recompute the corner entry (the index here cannot be zero since we just incremented)
+
+                        if ((target_space->getSlot(corner.data()) != -1) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
+                            sets[me]->addIndex(newp); // add new index
+                        }
+                        c = oldc; // restore the corner entry
+                        (*iterp)--; // restore the index entry
+                        iterp++; // move to the next index
                     }
-                    newp[j]--;
                 }
+            }else{
+                for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
+                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
+                    auto iterp = newp.begin();
+                    for(auto &c : corner){
+                        c = (*iterp > 0) ? (meta.getIExact(*iterp -1, rule) + 1) : 0;
+                        iterp++;
+                    }
+                    iterp = newp.begin();
+                    int oldc;
+                    for(auto &c : corner){
+                        (*iterp)++;
+                        oldc = c;
+                        c = meta.getIExact(*iterp -1, rule) + 1;
 
+                        if ((target_space->getSlot(corner.data()) != -1) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
+                            sets[me]->addIndex(newp);
+                        }
+                        c = oldc;
+                        (*iterp)--;
+                        iterp++;
+                    }
+                }
             }
-            delete[] newp;
-
-            delete[] corner;
         }
 
         int warp = num_sets;
