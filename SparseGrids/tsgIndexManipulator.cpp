@@ -141,7 +141,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
     // instead of computing the grid in the standard gradual level by level way,
     // the tensor grid ca be computed directly with two for-loops
     if ((type == type_tensor) || (type == type_iptensor) || (type == type_qptensor)){ // special case, full tensor
-        int *levels = new int[num_dimensions]; // how many levels to keep in each direction
+        std::vector<int> levels(num_dimensions); // how many levels to keep in each direction
         if (type == type_tensor){
             for(int j=0; j<num_dimensions; j++){
                 levels[j] = offset;
@@ -172,9 +172,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                 t /= levels[j];
             }
         }
-        IndexSet *tensors = new IndexSet(num_dimensions, index);
-        delete[] levels;
-        return tensors;
+        return new IndexSet(num_dimensions, index);
     }
 
     // non-tensor cases
@@ -212,8 +210,8 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
         total = new IndexSet(num_dimensions, index_dump);
     }else{ // use slower algorithm, but more general
         GranulatedIndexSet **sets;
-        int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
-        GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root);  delete[] root;
+        std::vector<int> root(num_dimensions, 0);
+        GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root.data());
         total = new IndexSet(num_dimensions);
         bool adding = true;
         while(adding){
@@ -225,19 +223,17 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
             for(int me=0; me<num_sets; me++){
 
                 sets[me] = new GranulatedIndexSet(num_dimensions);
-                int *newp = new int[num_dimensions];
+                std::vector<int> newp(num_dimensions);
                 for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
-                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp);
+                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
                     for(int j=0; j<num_dimensions; j++){
                         newp[j]++;
-                        if ((getIndexWeight(newp, type, weights, rule) <= normalized_offset) && (set_level->getSlot(newp) == -1) && (total->getSlot(newp) == -1)){
-                            sets[me]->addIndex(newp);
+                        if ((getIndexWeight(newp.data(), type, weights, rule) <= normalized_offset) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
+                            sets[me]->addIndex(newp.data());
                         }
                         newp[j]--;
                     }
                 }
-                delete[] newp;
-
             }
 
             int warp = num_sets;
