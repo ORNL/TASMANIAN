@@ -52,7 +52,7 @@ public:
 
     void computeLevels(const IndexSet* iset, std::vector<int> &level) const; // returns a vector of its corresponding to the sum of entries of set
 
-    int* makeTensorWeights(const IndexSet* set) const;
+    void makeTensorWeights(const IndexSet* iset, std::vector<int> &weights) const;
     IndexSet* nonzeroSubset(const IndexSet* set, const int weights[]) const; // returns a subset corresponding to the non-zeros weights
 
     UnsortedIndexSet* tensorGenericPoints(const int levels[], const OneDimensionalWrapper *rule) const;

@@ -353,16 +353,15 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
     wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
 
 
-    int* tensors_w = IM.makeTensorWeights(tensors);
-    active_tensors = IM.nonzeroSubset(tensors, tensors_w);
+    std::vector<int> tensors_w;
+    IM.makeTensorWeights(tensors, tensors_w);
+    active_tensors = IM.nonzeroSubset(tensors, tensors_w.data());
 
     int nz_weights = active_tensors->getNumIndexes();
 
     active_w.resize(nz_weights);
     int count = 0;
     for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w[count++] = tensors_w[i]; }
-
-    delete[] tensors_w;
 
     if (OneDimensionalMeta::isNonNested(rule)){
         needed = IM.generateGenericPoints(active_tensors, wrapper);
@@ -418,8 +417,9 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_we
             delete wrapper;
             wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
 
-            int* updates_tensor_w = IM.makeTensorWeights(updated_tensors);
-            updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w);
+            std::vector<int> updates_tensor_w;
+            IM.makeTensorWeights(updated_tensors, updates_tensor_w);
+            updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w.data());
 
             int nz_weights = updated_active_tensors->getNumIndexes();
 
@@ -437,7 +437,6 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_we
             needed = new_points->diffSets(points);
 
             delete new_points;
-            delete[] updates_tensor_w;
         }else{
             clearRefinement();
         }
@@ -1047,8 +1046,9 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     delete wrapper;
     wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
 
-    int* updates_tensor_w = IM.makeTensorWeights(updated_tensors);
-    updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w);
+    std::vector<int> updates_tensor_w;
+    IM.makeTensorWeights(updated_tensors, updates_tensor_w);
+    updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w.data());
 
     int nz_weights = updated_active_tensors->getNumIndexes();
 
@@ -1065,7 +1065,6 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
 
         delete new_points;
     }
-    delete[] updates_tensor_w;
 }
 
 void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *level_limits){
@@ -1099,16 +1098,15 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *l
         delete wrapper;
         wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
 
-        int* updates_tensor_w = IM.makeTensorWeights(updated_tensors);
-        updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w);
+        std::vector<int> updates_tensor_w;
+        IM.makeTensorWeights(updated_tensors, updates_tensor_w);
+        updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w.data());
 
         int nz_weights = updated_active_tensors->getNumIndexes();
 
         updated_active_w.resize(nz_weights);
         int count = 0;
         for(int i=0; i<updated_tensors->getNumIndexes(); i++){ if (updates_tensor_w[i] != 0) updated_active_w[count++] = updates_tensor_w[i];  }
-
-        delete[] updates_tensor_w;
 
         needed = updated_tensors->diffSets(tensors);
     }

@@ -334,8 +334,9 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
     int max_level; IM.getMaxLevels(tensors, max_levels, max_level);
     wrapper = new OneDimensionalWrapper(&meta, max_level, rule_fourier);
 
-    int* tensors_w = IM.makeTensorWeights(tensors);
-    active_tensors = IM.nonzeroSubset(tensors, tensors_w);
+    std::vector<int> tensors_w;
+    IM.makeTensorWeights(tensors, tensors_w);
+    active_tensors = IM.nonzeroSubset(tensors, tensors_w.data());
 
     int nz_weights = active_tensors->getNumIndexes();
 
@@ -343,8 +344,6 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
     tensor_refs = new int*[nz_weights];
     int count = 0;
     for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w[count++] = tensors_w[i]; }
-
-    delete[] tensors_w;
 
     needed = IM.generateNestedPoints(tensors, wrapper); // nested grids exploit nesting
 

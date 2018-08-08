@@ -495,40 +495,44 @@ void IndexManipulator::computeLevels(const IndexSet* iset, std::vector<int> &lev
     }
 }
 
-int* IndexManipulator::makeTensorWeights(const IndexSet* set) const{
-    int n = set->getNumIndexes();
+void IndexManipulator::makeTensorWeights(const IndexSet* iset, std::vector<int> &weights) const{
+    int n = iset->getNumIndexes();
     std::vector<int> level;
-    computeLevels(set, level);
-    int *weights = new int[n];
+    computeLevels(iset, level);
+    weights.resize(n);
 
-    int max_level = level[0];  for(int i=1; i<n; i++){  if (max_level < level[i]) max_level = level[i];  }
+    int max_level = 0;
+    for(auto l : level) if (l > max_level) max_level = l;
 
-    int *kids = new int[n * num_dimensions];
+    std::vector<int> kids(((size_t) n) * ((size_t) num_dimensions));
     #pragma omp parallel for schedule(static)
     for(int i=0; i<n; i++){
-        const int *p = set->getIndex(i);
-        int *kid = new int[num_dimensions];
-        std::copy(p, p + num_dimensions, kid);
+        const int *p = iset->getIndex(i);
+        std::vector<int> kid(num_dimensions);
+        std::copy(p, p + num_dimensions, kid.data());
+        int *ref_kids = &(kids[((size_t) i) * ((size_t) num_dimensions)]); // cannot use iterators with openmp
 
         for(int j=0; j<num_dimensions; j++){
             kid[j]++;
-            kids[i*num_dimensions + j] = set->getSlot(kid);
+            ref_kids[j] = iset->getSlot(kid);
             kid[j]--;
         }
-        delete[] kid;
         if (level[i] == max_level){
             weights[i] = 1;
         }
     }
 
+    // this is a hack to avoid the i*num_dimension + j indexing later
+    // since kids are not sorted, only getIndex is a valid call here
+    IndexSet ikids(num_dimensions, kids);
+
     for(int l=max_level-1; l>=0; l--){
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<n; i++){
             if (level[i] == l){
-                int *monkey_tail  = new int[max_level-l+1];
-                int *monkey_count = new int[max_level-l+1];
-                bool* used = new bool[n];
-                std::fill(used, used + n, false);
+                std::vector<int> monkey_tail(max_level-l+1);
+                std::vector<int> monkey_count(max_level-l+1);
+                std::vector<bool> used(n, false);
 
                 int current = 0;
                 monkey_count[0] = 0;
@@ -538,7 +542,7 @@ int* IndexManipulator::makeTensorWeights(const IndexSet* set) const{
 
                 while(monkey_count[0] < num_dimensions){
                     if (monkey_count[current] < num_dimensions){
-                        int branch = kids[monkey_tail[current]*num_dimensions + monkey_count[current]];
+                        int branch = ikids.getIndex(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
@@ -553,16 +557,9 @@ int* IndexManipulator::makeTensorWeights(const IndexSet* set) const{
                 }
 
                 weights[i] = 1 - sum;
-
-                delete[] used;
-                delete[] monkey_count;
-                delete[] monkey_tail;
             }
         }
     }
-
-    delete[] kids;
-    return weights;
 }
 
 IndexSet* IndexManipulator::nonzeroSubset(const IndexSet* set, const int weights[]) const{
