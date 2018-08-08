@@ -216,8 +216,7 @@ void GranulatedIndexSet::mergeMapped(const std::vector<int> newIndex, const std:
         if (relation == type_abeforeb){
             p = &(newIndex[*iterNew * num_dimensions]);
             iterNew++;
-        }
-        if ((relation == type_bbeforea) || (relation == type_asameb)){
+        }else{
             p = &(oldIndex[*iterOld * num_dimensions]);
             iterOld++;
             if (relation == type_asameb) iterNew ++;
