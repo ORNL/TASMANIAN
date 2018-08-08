@@ -582,12 +582,12 @@ IndexSet* IndexManipulator::nonzeroSubset(const IndexSet* iset, const std::vecto
 }
 
 UnsortedIndexSet* IndexManipulator::tensorGenericPoints(const int levels[], const OneDimensionalWrapper *rule) const{
-    int *num_points = new int[num_dimensions];
-    int num_total = 1;
-    for(int j=0; j<num_dimensions; j++){  num_points[j] = rule->getNumPoints(levels[j]); num_total *= num_points[j];  }
+    std::vector<int> num_points(num_dimensions);
+    int num_total = 1; // points here are a subset of the total, hence there is no chance for overflow in int
+    for(int j=0; j<num_dimensions; j++){ num_points[j] = rule->getNumPoints(levels[j]); num_total *= num_points[j]; }
 
-    UnsortedIndexSet* set = new UnsortedIndexSet(num_dimensions, num_total);
-    int *p = new int[num_dimensions];
+    UnsortedIndexSet* uset = new UnsortedIndexSet(num_dimensions, num_total);
+    std::vector<int> p(num_dimensions);
 
     for(int i=0; i<num_total; i++){
         int t = i;
@@ -595,13 +595,10 @@ UnsortedIndexSet* IndexManipulator::tensorGenericPoints(const int levels[], cons
             p[j] = rule->getPointIndex(levels[j], t % num_points[j]);
             t /= num_points[j];
         }
-        set->addIndex(p);
+        uset->addIndex(p.data());
     }
 
-    delete[] p;
-    delete[] num_points;
-
-    return set;
+    return uset;
 }
 
 IndexSet* IndexManipulator::generateGenericPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const{
