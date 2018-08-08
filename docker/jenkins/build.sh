@@ -24,6 +24,7 @@ then
       -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow -pedantic" \
       -D CMAKE_CXX_COMPILER=g++ \
       -D Tasmanian_ENABLE_RECOMMENDED=ON \
+      -D Tasmanian_ENABLE_FORTRAN=ON \
       -D PYTHON_EXECUTABLE=/usr/bin/python2 \
       -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
       ..
@@ -45,7 +46,7 @@ then
       -D Tasmanian_ENABLE_MAGMA=OFF \
       -D Tasmanian_ENABLE_PYTHON=ON \
       -D Tasmanian_ENABLE_MPI=OFF \
-      -D Tasmanian_ENABLE_FORTRAN=OFF \
+      -D Tasmanian_ENABLE_FORTRAN=ON \
       -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
       ..
 else
