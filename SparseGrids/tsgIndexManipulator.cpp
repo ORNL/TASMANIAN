@@ -409,21 +409,20 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
     return total;
 }
 
-IndexSet* IndexManipulator::getLowerCompletion(const IndexSet *set) const{
+IndexSet* IndexManipulator::getLowerCompletion(const IndexSet *iset) const{
 
     GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions);
-    for(int i=0; i<set->getNumIndexes(); i++){
-        const int* p = set->getIndex(i);
-        int* dad = new int[num_dimensions];
-        std::copy(p, p + num_dimensions, dad);
-        for(int j=0; j<num_dimensions; j++){
-            dad[j]--;
-            if ((dad[j]>-1) && (set->getSlot(dad) == -1)){
+    std::vector<int> dad(num_dimensions);
+    for(int i=0; i<iset->getNumIndexes(); i++){
+        const int* p = iset->getIndex(i);
+        std::copy(p, p + num_dimensions, dad.data());
+        for(auto &d : dad){
+            d--;
+            if ((d>-1) && (iset->getSlot(dad.data()) == -1)){
                 set_level->addIndex(dad);
             }
-            dad[j]++;
+            d++;
         }
-        delete[] dad;
     }
 
     if (set_level->getNumIndexes() > 0){
@@ -434,16 +433,14 @@ IndexSet* IndexManipulator::getLowerCompletion(const IndexSet *set) const{
             GranulatedIndexSet *set_future = new GranulatedIndexSet(num_dimensions);
             for(int i=0; i<set_level->getNumIndexes(); i++){
                 const int* p = set_level->getIndex(i);
-                int* dad = new int[num_dimensions];
-                std::copy(p, p + num_dimensions, dad);
-                for(int j=0; j<num_dimensions; j++){
-                    dad[j]--;
-                    if ((dad[j]>-1) && (set->getSlot(dad) == -1) && (total->getSlot(dad) == -1)){
+                std::copy(p, p + num_dimensions, dad.data());
+                for(auto &d : dad){
+                    d--;
+                    if ((d>-1) && (iset->getSlot(dad.data()) == -1) && (total->getSlot(dad.data()) == -1)){
                         set_future->addIndex(dad);
                     }
-                    dad[j]++;
+                    d++;
                 }
-                delete[] dad;
             }
             delete set_level;
             set_level = set_future;

@@ -48,7 +48,7 @@ public:
 
     IndexSet* selectTensors(int offset, TypeDepth type, const int *anisotropic_weights, TypeOneDRule rule) const;
     IndexSet* selectTensors(const IndexSet *target_space, bool integration, TypeOneDRule rule) const;
-    IndexSet* getLowerCompletion(const IndexSet *set) const;
+    IndexSet* getLowerCompletion(const IndexSet *iset) const;
 
     int* computeLevels(const IndexSet* set) const; // returns a vector of its corresponding to the sum of entries of set
 
