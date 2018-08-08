@@ -605,9 +605,8 @@ void GridLocalPolynomial::mergeRefinement(){
     if (needed == 0) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    double *vals = new double[num_vals];
-    std::fill(vals, vals + num_vals, 0.0);
-    values->setValuesPointer(vals, num_all_points);
+    std::vector<double> vals(num_vals, 0.0);
+    values->setValues(vals);
     if (points == 0){
         points = needed;
         needed = 0;
@@ -1647,7 +1646,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     }
 
     // save a copy of the points and the values
-    int *point_kept = new int[num_kept * num_dimensions];
+    std::vector<int> point_kept(num_kept * num_dimensions);
     double *values_kept = new double[num_kept * num_outputs];
 
     num_kept = 0;
@@ -1664,7 +1663,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     reset(false);
     num_dimensions = dims; num_outputs = outs;
 
-    points = new IndexSet(num_dimensions, num_kept, point_kept);
+    points = new IndexSet(num_dimensions, point_kept);
     values = new StorageSet(num_outputs, num_kept);
     values->setValues(values_kept);
     delete[] values_kept;
@@ -1680,35 +1679,30 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 
 void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
     if (accel != 0) accel->resetGPULoadedData();
-    double *vals = 0;
-    bool aliased = false;
+    std::vector<double> *vals = 0;
+    size_t num_ponits = (size_t) getNumPoints();
+    size_t num_vals = num_ponits * ((size_t) num_outputs);
     if (points != 0){
         clearRefinement();
-        vals = values->aliasValues();
-        aliased = true;
     }else{
         points = needed;
         needed = 0;
-        vals = new double[((size_t) points->getNumIndexes()) * ((size_t) num_outputs)];
     }
-    int num_ponits = points->getNumIndexes();
+    vals = values->aliasValues();
+    vals->resize(num_vals);
     if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[((size_t) num_ponits) * ((size_t) num_outputs)];
-    std::copy(c, c + ((size_t) num_ponits) * ((size_t) num_outputs), surpluses);
-    double *x = new double[getNumPoints() * num_dimensions];
-    getPoints(x);
+    surpluses = new double[num_vals];
+    std::copy(c, c + num_vals, surpluses);
+    std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
+    getPoints(x.data());
     if (acc == accel_cpu_blas){
-        evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
+        evaluateBatchCPUblas(x.data(), points->getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x, points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcublas(x.data(), points->getNumIndexes(), vals->data(), os);
     }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x, points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcuda(x.data(), points->getNumIndexes(), vals->data(), os);
     }else{
-        evaluateBatch(x, points->getNumIndexes(), vals);
-    }
-    delete[] x;
-    if (! aliased){
-        values->setValuesPointer(vals, num_ponits);
+        evaluateBatch(x.data(), points->getNumIndexes(), vals->data());
     }
 }
 

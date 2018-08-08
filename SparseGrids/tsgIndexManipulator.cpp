@@ -167,7 +167,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
         }
         int num_total = ++levels[0];
         for(int j=1; j<num_dimensions; j++) num_total *= ++levels[j];
-        int *index = new int[num_total * num_dimensions];
+        std::vector<int> index(num_total * num_dimensions);
         for(int i=0; i<num_total; i++){
             int t = i;
             for(int j = num_dimensions-1; j>=0; j--){
@@ -175,7 +175,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                 t /= levels[j];
             }
         }
-        IndexSet *tensors = new IndexSet(num_dimensions, num_total, index);
+        IndexSet *tensors = new IndexSet(num_dimensions, index);
         delete[] levels;
         return tensors;
     }
@@ -198,26 +198,21 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
     if (known_lower){ // use fast algorithm, but only works for sets guaranteed to be lower
         int c = num_dimensions -1;
         bool outside = false;
-        int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
-        DumpIndexSet *index_dump = new DumpIndexSet(num_dimensions, 256);
+        std::vector<int> root(num_dimensions, 0);
+        std::vector<int> index_dump;
         while( !(outside && (c == 0)) ){
             if (outside){
                 for(int k=c; k<num_dimensions; k++) root[k] = 0;
                 c--;
                 root[c]++;
             }else{
-                index_dump->addIndex(root);
+                for(int i=0; i<num_dimensions; i++) index_dump.push_back(root[i]);
                 c = num_dimensions-1;
                 root[c]++;
             }
-            outside = (getIndexWeight(root, type, weights, rule) > normalized_offset);
+            outside = (getIndexWeight(root.data(), type, weights, rule) > normalized_offset);
         }
-        delete[] root;
-        int num_loaded = index_dump->getNumLoaded();
-        int *res = index_dump->ejectIndexes();
-        total = new IndexSet(num_dimensions, num_loaded, res);
-        delete index_dump;
-
+        total = new IndexSet(num_dimensions, index_dump);
     }else{ // use slower algorithm, but more general
         GranulatedIndexSet **sets;
         int *root = new int[num_dimensions];  std::fill(root, root + num_dimensions, 0);
@@ -554,7 +549,7 @@ IndexSet* IndexManipulator::nonzeroSubset(const IndexSet* set, const int weights
     int nz_weights = 0;
     for(int i=0; i<set->getNumIndexes(); i++){ if (weights[i] != 0) nz_weights++; }
 
-    int *index = new int[nz_weights * num_dimensions];
+    std::vector<int> index(nz_weights * num_dimensions);
     nz_weights = 0;
     for(int i=0; i<set->getNumIndexes(); i++){
         if (weights[i] != 0){
@@ -563,8 +558,7 @@ IndexSet* IndexManipulator::nonzeroSubset(const IndexSet* set, const int weights
         }
     }
 
-    IndexSet *result = new IndexSet(num_dimensions, nz_weights, index);
-    return result;
+    return new IndexSet(num_dimensions, index);
 }
 
 UnsortedIndexSet* IndexManipulator::tensorGenericPoints(const int levels[], const OneDimensionalWrapper *rule) const{
@@ -665,7 +659,7 @@ IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *set, const int limits
         if (obeys) c++;
     }
     if (c == set->getNumIndexes()) return 0;
-    int *new_idx = new int[dims * c];
+    std::vector<int> new_idx(dims * c);
     c = 0;
     for(int i=0; i<set->getNumIndexes(); i++){
         const int *idx = set->getIndex(i);
@@ -673,7 +667,8 @@ IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *set, const int limits
         for(int j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
         if (obeys) std::copy(idx, idx + dims, &(new_idx[dims * (c++)]));
     }
-    return (new IndexSet(dims, c, new_idx));
+
+    return new IndexSet(dims, new_idx);
 }
 UnsortedIndexSet* IndexManipulator::removeIndexesByLimit(UnsortedIndexSet *set, const int limits[]) const{
     int c = 0, dims = set->getNumDimensions();
@@ -727,7 +722,7 @@ IndexSet* IndexManipulator::tensorNestedPoints(const int levels[], const OneDime
 
         num_total *= num_points[j];
     }
-    int *index = new int[num_dimensions * num_total];
+    std::vector<int> index(num_dimensions * num_total);
 
     for(int i=0; i<num_total; i++){
         int t = i;
@@ -740,8 +735,7 @@ IndexSet* IndexManipulator::tensorNestedPoints(const int levels[], const OneDime
     delete[] offsets;
     delete[] num_points;
 
-    IndexSet* set = new IndexSet(num_dimensions, num_total, index);
-    return set;
+    return new IndexSet(num_dimensions, index);
 }
 
 IndexSet* IndexManipulator::generateNestedPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const{
@@ -812,7 +806,7 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
         int num_total = num_points[0];
         for(int j=1; j<num_dimensions; j++) num_total *= num_points[j];
 
-        int *poly = new int[num_total * num_dimensions];
+        std::vector<int> poly(num_total * num_dimensions);
 
         for(int i=0; i<num_total; i++){
             int v = i;
@@ -822,7 +816,7 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
             }
         }
 
-        sets[t] = new IndexSet(num_dimensions, num_total, poly);
+        sets[t] = new IndexSet(num_dimensions, poly);
         delete[] num_points;
     }
 

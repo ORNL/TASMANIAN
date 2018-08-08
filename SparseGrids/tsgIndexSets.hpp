@@ -47,17 +47,17 @@ public:
     void addIndex(const int p[]);
     const int* getIndex(int i) const;
 
-    int* getIndexesSorted() const;
-    // returns an array of num_dimensions X num_indexes of the sorted indexes
+    void getIndexesSorted(std::vector<int> &sorted) const;
+    // returns a vector of num_dimensions X num_indexes of the sorted indexes
 
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
-    void merge(const int listA[], int sizeA, const int listB[], int sizeB, int destination[]) const;
+    void mergeLists(const int listA[], size_t sizeA, const int listB[], size_t sizeB, int destination[]) const;
 
 private:
-    int num_dimensions;
-    int num_indexes;
-    int *index;
+    size_t num_dimensions;
+    size_t num_indexes;
+    std::vector<int> index;
 };
 
 class GranulatedIndexSet{ // optimized to add one index at a time
@@ -74,46 +74,30 @@ public:
 
     const int* getIndex(int j) const;
 
-    void addGranulatedSet(const GranulatedIndexSet *set);
+    void addGranulatedSet(const GranulatedIndexSet *gset);
 
-    const int* getIndexes() const;
-    const int* getMap() const;
+    const std::vector<int>* getIndexes() const;
+    const std::vector<int>* getMap() const;
 
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
 
-    void mergeMapped(const int newIndex[], const int newMap[], int sizeNew);
+    void mergeMapped(const std::vector<int> newIndex, const std::vector<int> newMap, int sizeNew);
 
 private:
-    int num_dimensions;
-    int num_indexes;
-    int num_slots;
-    int *index;
-    int *map;
-};
-
-class DumpIndexSet{
-public:
-    DumpIndexSet(int cnum_dimensions, int initial_slots);
-    ~DumpIndexSet();
-
-    int getNumLoaded() const;
-
-    void addIndex(const int p[]);
-    int* ejectIndexes();
-
-private:
-    int num_dimensions, num_slots, num_loaded;
-    int *index;
+    size_t num_dimensions;
+    size_t num_indexes;
+    std::vector<int> index;
+    std::vector<int> imap;
 };
 
 class IndexSet{ // rigid set but optimal in storage size
 public:
     IndexSet(int cnum_dimensions);
-    IndexSet(const UnsortedIndexSet *set);
-    IndexSet(const GranulatedIndexSet *set);
-    IndexSet(const IndexSet *set);
-    IndexSet(int cnum_dimensions, int cnum_indexes, int* &cindex);
+    IndexSet(const UnsortedIndexSet *uset);
+    IndexSet(const GranulatedIndexSet *gset);
+    IndexSet(const IndexSet *iset);
+    IndexSet(int cnum_dimensions, std::vector<int> &cindex); // move assignment
     ~IndexSet();
 
     int getNumDimensions() const;
@@ -129,23 +113,26 @@ public:
     inline int getSlot(const std::vector<int> p) const{ return getSlot(p.data()); }
 
     const int* getIndex(int i) const;
+    const std::vector<int>* getIndexes() const;
 
-    void addUnsortedSet(const UnsortedIndexSet *set);
-    void addGranulatedSet(const GranulatedIndexSet *set);
-    void addIndexSet(const IndexSet *set);
+    void addUnsortedSet(const UnsortedIndexSet *uset);
+    void addGranulatedSet(const GranulatedIndexSet *gset);
+    void addIndexSet(const IndexSet *iset);
 
-    IndexSet* diffSets(const IndexSet *set) const; // returns this set minus the points in set
+    IndexSet* diffSets(const IndexSet *iset) const; // returns this set minus the points in set
 
 protected:
     TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
 
-    void merge(const int newIndex[], int sizeNew);
-    void mergeMapped(const int newIndex[], const int map[], int sizeNew);
+    void mergeSet(const std::vector<int> newIndex);
+    void mergeMapped(const std::vector<int> *newIndex, const std::vector<int> *imap);
+
+    void cacheNumIndexes();
 
 private:
-    int num_dimensions;
-    int num_indexes;
-    int *index;
+    size_t num_dimensions;
+    int cache_num_indexes;
+    std::vector<int> index;
 };
 
 class StorageSet{ // stores the values of the function
@@ -160,11 +147,11 @@ public:
     void readBinary(std::ifstream &ifs);
 
     const double* getValues(int i) const;
-    double* aliasValues() const;
+    std::vector<double>* aliasValues(); // alternative to setValues()
     int getNumOutputs() const;
 
     void setValues(const double vals[]);
-    void setValuesPointer(double* &vals, int num_values);
+    void setValues(std::vector<double> &vals);
     void addValues(const IndexSet *old_set, const IndexSet *new_set, const double new_vals[]);
 
 protected:
@@ -172,7 +159,7 @@ protected:
 
 private:
     size_t num_outputs, num_values; // kept as size_t to avoid conversions in products, but each one is small individually
-    double *values;
+    std::vector<double> values;
 };
 
 }

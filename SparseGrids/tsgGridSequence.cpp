@@ -380,9 +380,9 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
 void GridSequence::mergeRefinement(){
     if (needed == 0) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
-    double *vals = new double[((size_t) num_all_points) * ((size_t) num_outputs)];
-    std::fill(vals, vals + ((size_t) num_all_points) * ((size_t) num_outputs), 0.0);
-    values->setValuesPointer(vals, num_all_points);
+    size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
+    std::vector<double> vals(num_vals, 0.0);
+    values->setValues(vals);
     if (points == 0){
         points = needed;
         needed = 0;
@@ -395,8 +395,8 @@ void GridSequence::mergeRefinement(){
         int m; IM.getMaxLevels(points, max_levels, m);
     }
     if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[((size_t) num_all_points) * ((size_t) num_outputs)];
-    std::fill(surpluses, surpluses + ((size_t) num_all_points) * ((size_t) num_outputs), 0.0);
+    surpluses = new double[num_vals];
+    std::fill(surpluses, surpluses + num_vals, 0.0);
 }
 
 void GridSequence::evaluate(const double x[], double y[]) const{
@@ -646,34 +646,31 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
 }
 void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
     if (accel != 0) accel->resetGPULoadedData();
-    double *vals = 0;
-    bool aliased = false;
+    std::vector<double> *vals = 0;
+    size_t num_ponits = (size_t) getNumPoints();
+    size_t num_vals = num_ponits * ((size_t) num_outputs);
     if (points != 0){
         clearRefinement();
-        vals = values->aliasValues();
-        aliased = true;
     }else{
         points = needed;
         needed = 0;
-        vals = new double[((size_t) points->getNumIndexes()) * ((size_t) num_outputs)];
     }
-    int num_ponits = points->getNumIndexes();
+    vals = values->aliasValues();
+    vals->resize(num_vals);
     if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[((size_t) num_ponits) * ((size_t) num_outputs)];
-    std::copy(c, c + ((size_t) num_ponits) * ((size_t) num_outputs), surpluses);
-    double *x = new double[getNumPoints() * num_dimensions];
-    getPoints(x);
+    surpluses = new double[num_vals];
+    std::copy(c, c + num_vals, surpluses);
+    std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
+    getPoints(x.data());
     if (acc == accel_cpu_blas){
-        evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
+        evaluateBatchCPUblas(x.data(), points->getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x, points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcublas(x.data(), points->getNumIndexes(), vals->data(), os);
     }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x, points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcuda(x.data(), points->getNumIndexes(), vals->data(), os);
     }else{
-        evaluateBatch(x, points->getNumIndexes(), vals);
+        evaluateBatch(x.data(), points->getNumIndexes(), vals->data());
     }
-    delete[] x;
-    if (! aliased) values->setValuesPointer(vals, num_ponits);
 }
 
 int* GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output) const{

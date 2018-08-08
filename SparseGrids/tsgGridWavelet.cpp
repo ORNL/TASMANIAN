@@ -302,9 +302,8 @@ void GridWavelet::mergeRefinement(){
     if (needed == 0) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t size_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    double *vals = new double[size_vals];
-    std::fill(vals, vals + size_vals, 0.0);
-    values->setValuesPointer(vals, num_all_points);
+    std::vector<double> vals(size_vals, 0.0);
+    values->setValues(vals);
     if (points == 0){
         points = needed;
         needed = 0;
@@ -591,7 +590,7 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
             int active_outputs = (output == -1) ? num_outputs : 1;
 
             double *vals = new double[nump * active_outputs];
-            int *indexes = new int[nump * num_dimensions];
+            std::vector<int> indexes(nump * num_dimensions);
 
             for(int i=0; i<nump; i++){
                 const double* v = values->getValues(pnts[i]);
@@ -604,7 +603,7 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
                 std::copy(p, p + num_dimensions, &(indexes[((size_t) i) * ((size_t) num_dimensions)]));
                 global_to_pnts[pnts[i]] = i;
             }
-            IndexSet *pointset = new IndexSet(num_dimensions, nump, indexes);
+            IndexSet *pointset = new IndexSet(num_dimensions, indexes);
 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);
@@ -708,35 +707,31 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
 }
 
 void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
-    double *vals = 0;
-    bool aliased = false;
+    std::vector<double> *vals = 0;
+    size_t num_ponits = (size_t) getNumPoints();
+    size_t size_coeff = num_ponits * ((size_t) num_outputs);
     if (points != 0){
         clearRefinement();
-        vals = values->aliasValues();
-        aliased = true;
     }else{
         points = needed;
         needed = 0;
-        vals = new double[((size_t) points->getNumIndexes()) * ((size_t) num_outputs)];
     }
-    int num_ponits = points->getNumIndexes();
-    size_t size_coeff = ((size_t) num_ponits) * ((size_t) num_outputs);
+    vals = values->aliasValues();
+    vals->resize(size_coeff);
     if (coefficients != 0) delete[] coefficients;
     coefficients = new double[size_coeff];
     std::copy(c, c + size_coeff, coefficients);
-    double *x = new double[getNumPoints() * num_dimensions];
-    getPoints(x);
+    std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
+    getPoints(x.data());
     if (acc == accel_cpu_blas){
-        evaluateBatchCPUblas(x, points->getNumIndexes(), vals);
+        evaluateBatchCPUblas(x.data(), points->getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x, points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcublas(x.data(), points->getNumIndexes(), vals->data(), os);
     }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x, points->getNumIndexes(), vals, os);
+        evaluateBatchGPUcuda(x.data(), points->getNumIndexes(), vals->data(), os);
     }else{
-        evaluateBatch(x, points->getNumIndexes(), vals);
+        evaluateBatch(x.data(), points->getNumIndexes(), vals->data());
     }
-    delete[] x;
-    if (! aliased) values->setValuesPointer(vals, num_ponits);
 }
 
 const int* GridWavelet::getPointIndexes() const{
