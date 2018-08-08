@@ -355,7 +355,7 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
 
     std::vector<int> tensors_w;
     IM.makeTensorWeights(tensors, tensors_w);
-    active_tensors = IM.nonzeroSubset(tensors, tensors_w.data());
+    active_tensors = IM.nonzeroSubset(tensors, tensors_w);
 
     int nz_weights = active_tensors->getNumIndexes();
 
@@ -419,7 +419,7 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_we
 
             std::vector<int> updates_tensor_w;
             IM.makeTensorWeights(updated_tensors, updates_tensor_w);
-            updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w.data());
+            updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w);
 
             int nz_weights = updated_active_tensors->getNumIndexes();
 
@@ -1048,7 +1048,7 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
 
     std::vector<int> updates_tensor_w;
     IM.makeTensorWeights(updated_tensors, updates_tensor_w);
-    updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w.data());
+    updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w);
 
     int nz_weights = updated_active_tensors->getNumIndexes();
 
@@ -1100,7 +1100,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *l
 
         std::vector<int> updates_tensor_w;
         IM.makeTensorWeights(updated_tensors, updates_tensor_w);
-        updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w.data());
+        updated_active_tensors = IM.nonzeroSubset(updated_tensors, updates_tensor_w);
 
         int nz_weights = updated_active_tensors->getNumIndexes();
 

@@ -336,7 +336,7 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
 
     std::vector<int> tensors_w;
     IM.makeTensorWeights(tensors, tensors_w);
-    active_tensors = IM.nonzeroSubset(tensors, tensors_w.data());
+    active_tensors = IM.nonzeroSubset(tensors, tensors_w);
 
     int nz_weights = active_tensors->getNumIndexes();
 

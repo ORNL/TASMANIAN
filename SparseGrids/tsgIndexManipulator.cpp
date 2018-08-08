@@ -562,16 +562,19 @@ void IndexManipulator::makeTensorWeights(const IndexSet* iset, std::vector<int> 
     }
 }
 
-IndexSet* IndexManipulator::nonzeroSubset(const IndexSet* set, const int weights[]) const{
-    int nz_weights = 0;
-    for(int i=0; i<set->getNumIndexes(); i++){ if (weights[i] != 0) nz_weights++; }
+IndexSet* IndexManipulator::nonzeroSubset(const IndexSet* iset, const std::vector<int> &weights) const{
+    size_t nz_weights = 0;
+    for(auto w: weights) if (w != 0) nz_weights++;
+    //for(int i=0; i<set->getNumIndexes(); i++){ if (weights[i] != 0) nz_weights++; }
 
-    std::vector<int> index(nz_weights * num_dimensions);
+    std::vector<int> index(nz_weights * ((size_t) num_dimensions));
     nz_weights = 0;
-    for(int i=0; i<set->getNumIndexes(); i++){
+    auto iter = index.begin();
+    for(int i=0; i<iset->getNumIndexes(); i++){
         if (weights[i] != 0){
-            const int *p = set->getIndex(i);
-            std::copy(p, p + num_dimensions, &(index[num_dimensions * nz_weights++]));
+            const int *p = iset->getIndex(i);
+            std::copy(p, p + num_dimensions, iter);
+            std::advance(iter, num_dimensions);
         }
     }
 
