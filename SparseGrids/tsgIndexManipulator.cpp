@@ -482,23 +482,23 @@ void IndexManipulator::getProperWeights(TypeDepth type, const int *anisotropic_w
     }
 }
 
-int* IndexManipulator::computeLevels(const IndexSet* set) const{
-    int num_indexes = set->getNumIndexes();
-    int *level = new int[num_indexes];
+void IndexManipulator::computeLevels(const IndexSet* iset, std::vector<int> &level) const{
+    int num_indexes = iset->getNumIndexes();
+    level.resize(num_indexes);
     #pragma omp parallel for
     for(int i=0; i<num_indexes; i++){
-        const int* p = set->getIndex(i);
+        const int* p = iset->getIndex(i);
         level[i] = p[0];
         for(int j=1; j<num_dimensions; j++){
             level[i] += p[j];
         }
     }
-    return level;
 }
 
 int* IndexManipulator::makeTensorWeights(const IndexSet* set) const{
     int n = set->getNumIndexes();
-    int *level = computeLevels(set);
+    std::vector<int> level;
+    computeLevels(set, level);
     int *weights = new int[n];
 
     int max_level = level[0];  for(int i=1; i<n; i++){  if (max_level < level[i]) max_level = level[i];  }
@@ -562,7 +562,6 @@ int* IndexManipulator::makeTensorWeights(const IndexSet* set) const{
     }
 
     delete[] kids;
-    delete[] level;
     return weights;
 }
 

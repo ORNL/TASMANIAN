@@ -50,7 +50,7 @@ public:
     IndexSet* selectTensors(const IndexSet *target_space, bool integration, TypeOneDRule rule) const;
     IndexSet* getLowerCompletion(const IndexSet *iset) const;
 
-    int* computeLevels(const IndexSet* set) const; // returns a vector of its corresponding to the sum of entries of set
+    void computeLevels(const IndexSet* iset, std::vector<int> &level) const; // returns a vector of its corresponding to the sum of entries of set
 
     int* makeTensorWeights(const IndexSet* set) const;
     IndexSet* nonzeroSubset(const IndexSet* set, const int weights[]) const; // returns a subset corresponding to the non-zeros weights

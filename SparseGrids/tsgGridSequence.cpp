@@ -987,7 +987,8 @@ void GridSequence::recomputeSurpluses(){
     }
 
     IndexManipulator IM(num_dimensions);
-    int *level = IM.computeLevels(points);
+    std::vector<int> level;
+    IM.computeLevels(points, level);
     int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
 
     for(int l=1; l<=top_level; l++){
@@ -1034,8 +1035,6 @@ void GridSequence::recomputeSurpluses(){
             }
         }
     }
-
-    delete[] level;
 }
 
 void GridSequence::applyTransformationTransposed(double weights[]) const{
@@ -1043,7 +1042,8 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
     int n = work->getNumIndexes();
 
     IndexManipulator IM(num_dimensions);
-    int *level = IM.computeLevels(work);
+    std::vector<int> level;
+    IM.computeLevels(work, level);
 
     int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
 
@@ -1081,7 +1081,6 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
         }
     }
 
-    delete[] level;
     delete[] used;
     delete[] monkey_tail;
     delete[] monkey_count;
