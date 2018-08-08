@@ -156,35 +156,36 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
     // instead of computing the grid in the standard gradual level by level way,
     // the tensor grid ca be computed directly with two for-loops
     if ((type == type_tensor) || (type == type_iptensor) || (type == type_qptensor)){ // special case, full tensor
-        std::vector<int> levels(num_dimensions); // how many levels to keep in each direction
+        std::vector<int> levels; // how many levels to keep in each direction
         if (type == type_tensor){
-            for(int j=0; j<num_dimensions; j++){
-                levels[j] = offset;
-                if (anisotropic_weights != 0) levels[j] *= anisotropic_weights[j];
-            }
+            levels.resize(num_dimensions, offset);
+            if (anisotropic_weights != 0) for(int j=0; j<num_dimensions; j++) levels[j] *= anisotropic_weights[j];
         }else if (type == type_iptensor){
+            levels.resize(num_dimensions, 0);
             for(int j=0; j<num_dimensions; j++){
-                int target = offset;
+                long long target = offset;
                 if (anisotropic_weights != 0) target *= anisotropic_weights[j];
-                levels[j] = 0;
                 while(meta.getIExact(levels[j], rule) < target) levels[j]++;
             }
         }else{
+            levels.resize(num_dimensions, 0);
             for(int j=0; j<num_dimensions; j++){
-                int target = offset;
+                long long target = offset;
                 if (anisotropic_weights != 0) target *= anisotropic_weights[j];
-                levels[j] = 0;
                 while(meta.getQExact(levels[j], rule) < target) levels[j]++;
             }
         }
-        int num_total = ++levels[0];
-        for(int j=1; j<num_dimensions; j++) num_total *= ++levels[j];
+        long long num_total = 1;
+        for(auto &l : levels) num_total *= ++l;
         std::vector<int> index(num_total * num_dimensions);
-        for(int i=0; i<num_total; i++){
-            int t = i;
+        auto iter = index.rbegin();
+        for(long long i=num_total-1; i>=0; i--){
+            long long t = i;
+            auto l = levels.rbegin();
+            // in order to generate indexes in the correct order, the for loop must go backwards
             for(int j = num_dimensions-1; j>=0; j--){
-                index[i*num_dimensions + j] = t % levels[j];
-                t /= levels[j];
+                *iter++ = (int) (t % *l);
+                t /= *l++;
             }
         }
         return new IndexSet(num_dimensions, index);
