@@ -93,7 +93,7 @@ protected:
     int getIPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const;
     int getQPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const;
 
-    int* getProperWeights(TypeDepth type, const int *anisotropic_weights) const;
+    void getProperWeights(TypeDepth type, const int *anisotropic_weights, std::vector<int> &weights) const;
 
 private:
     int num_dimensions;

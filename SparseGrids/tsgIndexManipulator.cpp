@@ -176,7 +176,8 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
     }
 
     // non-tensor cases
-    int *weights = getProperWeights(type, anisotropic_weights);
+    std::vector<int> weights;
+    getProperWeights(type, anisotropic_weights, weights);
 
     // compute normalization and check if heavily curved
     int normalized_offset = weights[0];
@@ -205,7 +206,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                 c = num_dimensions-1;
                 root[c]++;
             }
-            outside = (getIndexWeight(root.data(), type, weights, rule) > normalized_offset);
+            outside = (getIndexWeight(root.data(), type, weights.data(), rule) > normalized_offset);
         }
         total = new IndexSet(num_dimensions, index_dump);
     }else{ // use slower algorithm, but more general
@@ -228,7 +229,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                     const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
                     for(int j=0; j<num_dimensions; j++){
                         newp[j]++;
-                        if ((getIndexWeight(newp.data(), type, weights, rule) <= normalized_offset) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
+                        if ((getIndexWeight(newp.data(), type, weights.data(), rule) <= normalized_offset) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
                             sets[me]->addIndex(newp.data());
                         }
                         newp[j]--;
@@ -275,8 +276,6 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
             delete completion;
         }
     }
-
-    delete[] weights;
 
     return total;
 }
@@ -423,35 +422,30 @@ IndexSet* IndexManipulator::getLowerCompletion(const IndexSet *set) const{
     }
 }
 
-int* IndexManipulator::getProperWeights(TypeDepth type, const int *anisotropic_weights) const{
-    int *weights;
+void IndexManipulator::getProperWeights(TypeDepth type, const int *anisotropic_weights, std::vector<int> &weights) const{
     if (anisotropic_weights == 0){
         if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
-            weights = new int[2*num_dimensions];
-            std::fill(weights, weights + num_dimensions, 1);
+            weights.resize(2*num_dimensions, 1);
             std::fill(&(weights[num_dimensions]), &(weights[num_dimensions]) + num_dimensions, 0);
         }else if ((type == type_hyperbolic) || (type == type_iphyperbolic) || (type == type_qphyperbolic)){
-            weights = new int[num_dimensions+1];
-            std::fill(weights, weights + num_dimensions+1, 1);
+            weights.resize(num_dimensions + 1, 1);
         }else{
-            weights = new int[num_dimensions];
-            std::fill(weights, weights + num_dimensions, 1);
+            weights.resize(num_dimensions, 1);
         }
     }else{
         if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
-            weights = new int[2*num_dimensions];
-            std::copy(anisotropic_weights, anisotropic_weights + 2*num_dimensions, weights);
+            weights.resize(2*num_dimensions);
+            std::copy(anisotropic_weights, anisotropic_weights + 2*num_dimensions, weights.data());
         }else if ((type == type_hyperbolic) || (type == type_iphyperbolic) || (type == type_qphyperbolic)){
-            weights = new int[num_dimensions+1];
-            std::copy(anisotropic_weights, anisotropic_weights + num_dimensions, weights);
+            weights.resize(num_dimensions + 1);
+            std::copy(anisotropic_weights, anisotropic_weights + num_dimensions, weights.data());
             weights[num_dimensions] = weights[0];
             for(int j=1; j<num_dimensions; j++){ weights[num_dimensions] += weights[j]; }
         }else{
-            weights = new int[num_dimensions];
-            std::copy(anisotropic_weights, anisotropic_weights + num_dimensions, weights);
+            weights.resize(num_dimensions);
+            std::copy(anisotropic_weights, anisotropic_weights + num_dimensions, weights.data());
         }
     }
-    return weights;
 }
 
 int* IndexManipulator::computeLevels(const IndexSet* set) const{
