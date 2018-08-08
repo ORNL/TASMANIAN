@@ -98,7 +98,7 @@ protected:
 private:
     int num_dimensions;
 
-    OneDimensionalMeta *meta;
+    OneDimensionalMeta meta;
 };
 
 }

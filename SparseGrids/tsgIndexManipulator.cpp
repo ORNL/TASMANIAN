@@ -35,11 +35,8 @@
 
 namespace TasGrid{
 
-IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions)
-{
-    meta = new OneDimensionalMeta(custom);
-}
-IndexManipulator::~IndexManipulator(){  delete meta;  }
+IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
+IndexManipulator::~IndexManipulator(){}
 
 int IndexManipulator::getLevel(const int index[], const int weights[]) const{
     int l = index[0] * weights[0];
@@ -58,37 +55,37 @@ int IndexManipulator::getCurved(const int index[], const int weights[]) const{
     return ((int)ceil(((double) l) + c));
 }
 int IndexManipulator::getIPTotal(const int index[], const int weights[], TypeOneDRule rule) const{
-    int l = ((index[0] > 0) ? (meta->getIExact(index[0]-1, rule) + 1) : 0) * weights[0];
+    int l = ((index[0] > 0) ? (meta.getIExact(index[0]-1, rule) + 1) : 0) * weights[0];
     for(int j=1; j<num_dimensions; j++){
-        l += ((index[j] > 0) ? (meta->getIExact(index[j]-1, rule) + 1) : 0) * weights[j];
+        l += ((index[j] > 0) ? (meta.getIExact(index[j]-1, rule) + 1) : 0) * weights[j];
     }
     return l;
 }
 int IndexManipulator::getIPCurved(const int index[], const int weights[], TypeOneDRule rule) const{
-    int pex = (index[0] > 0) ? meta->getIExact(index[0]-1, rule) + 1 : 0;
+    int pex = (index[0] > 0) ? meta.getIExact(index[0]-1, rule) + 1 : 0;
     int l = pex * weights[0];
     double c = (weights[num_dimensions]) * log1p((double) (pex));
     //cout << "c = " << c << "   " << weights[num_dimensions] << "    " << pex << "   " << log1p((double) (pex)) << endl;
     for(int j=1; j<num_dimensions; j++){
-        pex = (index[j] > 0) ? meta->getIExact(index[j]-1, rule) + 1 : 0;
+        pex = (index[j] > 0) ? meta.getIExact(index[j]-1, rule) + 1 : 0;
         l += pex * weights[j];
         c += (weights[num_dimensions+j]) * log1p((double) (pex));
     }
     return ((int)ceil(((double) l) + c));
 }
 int IndexManipulator::getQPTotal(const int index[], const int weights[], TypeOneDRule rule) const{
-    int l = ((index[0] > 0) ? (meta->getQExact(index[0]-1, rule) + 1) : 0) * weights[0];
+    int l = ((index[0] > 0) ? (meta.getQExact(index[0]-1, rule) + 1) : 0) * weights[0];
     for(int j=1; j<num_dimensions; j++){
-        l += ((index[j] > 0) ? (meta->getQExact(index[j]-1, rule) + 1) : 0) * weights[j];
+        l += ((index[j] > 0) ? (meta.getQExact(index[j]-1, rule) + 1) : 0) * weights[j];
     }
     return l;
 }
 int IndexManipulator::getQPCurved(const int index[], const int weights[], TypeOneDRule rule) const{
-    int pex = (index[0] > 0) ? meta->getQExact(index[0]-1, rule) + 1 : 0;
+    int pex = (index[0] > 0) ? meta.getQExact(index[0]-1, rule) + 1 : 0;
     int l = pex * weights[0];
     double c = ((double) weights[num_dimensions]) * log((double) (pex+1));
     for(int j=1; j<num_dimensions; j++){
-        pex = (index[j] > 0) ? meta->getQExact(index[j]-1, rule) + 1 : 0;
+        pex = (index[j] > 0) ? meta.getQExact(index[j]-1, rule) + 1 : 0;
         l += pex * weights[j];
         c += (weights[num_dimensions+j]) * log((double) (pex+1));
     }
@@ -102,16 +99,16 @@ int IndexManipulator::getHyperbolic(const int index[], const int weights[]) cons
     return ((int) ceil(l));
 }
 int IndexManipulator::getIPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const{
-    double l = (index[0] > 0) ? pow((double) (meta->getIExact(index[0]-1, rule) + 2), ((double) weights[0]) / ((double) weights[num_dimensions])) : 1.0;
+    double l = (index[0] > 0) ? pow((double) (meta.getIExact(index[0]-1, rule) + 2), ((double) weights[0]) / ((double) weights[num_dimensions])) : 1.0;
     for(int j=1; j<num_dimensions; j++){
-        l *= (index[j] > 0) ? pow((double) (meta->getIExact(index[j]-1, rule) + 2), ((double) weights[j]) / ((double) weights[num_dimensions])) : 1.0;
+        l *= (index[j] > 0) ? pow((double) (meta.getIExact(index[j]-1, rule) + 2), ((double) weights[j]) / ((double) weights[num_dimensions])) : 1.0;
     }
     return ((int) ceil(l));
 }
 int IndexManipulator::getQPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const{
-    double l = (index[0] > 0) ? pow((double) (meta->getQExact(index[0]-1, rule) + 2), ((double) weights[0]) / ((double) weights[num_dimensions])) : 1.0;
+    double l = (index[0] > 0) ? pow((double) (meta.getQExact(index[0]-1, rule) + 2), ((double) weights[0]) / ((double) weights[num_dimensions])) : 1.0;
     for(int j=1; j<num_dimensions; j++){
-        l *= (index[j] > 0) ? pow((double) (meta->getQExact(index[j]-1, rule) + 2), ((double) weights[j]) / ((double) weights[num_dimensions])) : 1.0;
+        l *= (index[j] > 0) ? pow((double) (meta.getQExact(index[j]-1, rule) + 2), ((double) weights[j]) / ((double) weights[num_dimensions])) : 1.0;
     }
     return ((int) ceil(l));
 }
@@ -155,14 +152,14 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                 int target = offset;
                 if (anisotropic_weights != 0) target *= anisotropic_weights[j];
                 levels[j] = 0;
-                while(meta->getIExact(levels[j], rule) < target) levels[j]++;
+                while(meta.getIExact(levels[j], rule) < target) levels[j]++;
             }
         }else{
             for(int j=0; j<num_dimensions; j++){
                 int target = offset;
                 if (anisotropic_weights != 0) target *= anisotropic_weights[j];
                 levels[j] = 0;
-                while(meta->getQExact(levels[j], rule) < target) levels[j]++;
+                while(meta.getQExact(levels[j], rule) < target) levels[j]++;
             }
         }
         int num_total = ++levels[0];
@@ -322,11 +319,11 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
                     // compute the minimum polynomial for this delta
                     if (integration){
                         for(int k=0; k<num_dimensions; k++){
-                            corner[k] = (newp[k] > 0) ? (meta->getQExact(newp[k]-1, rule) + 1) : 0;
+                            corner[k] = (newp[k] > 0) ? (meta.getQExact(newp[k]-1, rule) + 1) : 0;
                         }
                     }else{
                         for(int k=0; k<num_dimensions; k++){
-                            corner[k] = (newp[k] > 0) ? (meta->getIExact(newp[k]-1, rule) + 1) : 0;
+                            corner[k] = (newp[k] > 0) ? (meta.getIExact(newp[k]-1, rule) + 1) : 0;
                         }
                     }
 
@@ -798,9 +795,9 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
         const int *ti = tensors->getIndex(t);
         int *num_points = new int[num_dimensions];
         if (iexact){
-            for(int j=0; j<num_dimensions; j++)  num_points[j] = meta->getIExact(ti[j], rule) + 1;
+            for(int j=0; j<num_dimensions; j++)  num_points[j] = meta.getIExact(ti[j], rule) + 1;
         }else{
-            for(int j=0; j<num_dimensions; j++)  num_points[j] = meta->getQExact(ti[j], rule) + 1;
+            for(int j=0; j<num_dimensions; j++)  num_points[j] = meta.getQExact(ti[j], rule) + 1;
         }
 
         int num_total = num_points[0];
