@@ -725,32 +725,26 @@ void IndexManipulator::computeDAGup(const IndexSet *iset, Data2D<int> &parents) 
 }
 
 IndexSet* IndexManipulator::tensorNestedPoints(const int levels[], const OneDimensionalWrapper *rule) const{
-    int *num_points = new int[num_dimensions];
-    int *offsets = new int[num_dimensions];
-    int num_total = 1;
+    std::vector<int> num_points(num_dimensions);
+    std::vector<int> offsets(num_dimensions, 0);
+    int num_total = 1; // this is only a subset of all points, no danger of overflow
     for(int j=0; j<num_dimensions; j++){
-        num_points[j] = rule->getNumPoints(levels[j]);
-        if (levels[j] > 0){
-            offsets[j] = rule->getNumPoints(levels[j]-1);
-            num_points[j] -= offsets[j];
-        }else{
-            offsets[j] = 0;
-        }
-
+        if (levels[j] > 0) offsets[j] = rule->getNumPoints(levels[j]-1);
+        num_points[j] = rule->getNumPoints(levels[j]) - offsets[j];
         num_total *= num_points[j];
     }
-    std::vector<int> index(num_dimensions * num_total);
+    std::vector<int> index(((size_t) num_dimensions) * ((size_t) num_total));
 
-    for(int i=0; i<num_total; i++){
+    auto iter = index.rbegin();
+    for(int i=num_total-1; i>=0; i--){
         int t = i;
+        auto n = num_points.rbegin();
+        auto o = offsets.rbegin();
         for(int j=num_dimensions-1; j>=0; j--){
-            index[i*num_dimensions + j] = offsets[j] + t % num_points[j];
-            t /= num_points[j];
+            *iter++ = *o++ + (t % *n);
+            t /= *n++;
         }
     }
-
-    delete[] offsets;
-    delete[] num_points;
 
     return new IndexSet(num_dimensions, index);
 }
