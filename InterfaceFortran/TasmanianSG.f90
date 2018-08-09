@@ -109,7 +109,7 @@ PUBLIC :: tsgClearAll,          &
           tsgReceiveMatrix, &
           tsg_clenshaw_curtis     ,  tsg_rule_clenshaw_curtis_zero, &
           tsg_chebyshev           ,  tsg_chebyshev_odd        , &
-          tsg_gauss_legendre      ,  tsg_gauss_legendreodd    , & 
+          tsg_gauss_legendre      ,  tsg_gauss_legendreodd    , &
           tsg_gauss_patterson     ,  tsg_leja                 , &
           tsg_lejaodd             ,  tsg_rleja                , &
           tsg_rleja_odd           ,  tsg_rleja_double_2       , &
@@ -137,10 +137,10 @@ PUBLIC :: tsgClearAll,          &
           tsg_directional,  tsg_fds          , &
           tsg_acc_none    , tsg_acc_cpu_blas , tsg_acc_gpu_cublas, &
           tsg_acc_gpu_cuda, tsg_acc_gpu_magma
-                        
+
   integer, parameter :: tsg_clenshaw_curtis      =  1,  tsg_rule_clenshaw_curtis_zero = 2, &
                         tsg_chebyshev            =  3,  tsg_chebyshev_odd         =  4, &
-                        tsg_gauss_legendre       =  5,  tsg_gauss_legendreodd     =  6, & 
+                        tsg_gauss_legendre       =  5,  tsg_gauss_legendreodd     =  6, &
                         tsg_gauss_patterson      =  7,  tsg_leja                  =  8, &
                         tsg_lejaodd              =  9,  tsg_rleja                 = 10, &
                         tsg_rleja_odd            = 11,  tsg_rleja_double_2        = 12, &
@@ -679,7 +679,7 @@ function tsgGetComplexHierarchicalCoefficients(gridID) result(c)
     allocate(c_real(2*tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
     call tsgghc(gridID, c_real)
     do i = 1,size(c)
-      c(i) = complex( c_real(2*i-1), c_real(2*i) )
+      c(i) = complex( c_real(i), c_real(i + size(c)) )
     enddo
     deallocate(c_real)
   else
@@ -696,7 +696,7 @@ subroutine tsgGetComplexHierarchicalCoefficientsStatic(gridID, c)
   if ( tsgIsFourier(gridID) ) then
     call tsgghc(gridID, c_real)
     do i = 1,size(c)
-      c(i) = complex( c_real(2*i-1), c_real(2*i) )
+      c(i) = complex( c_real(i), c_real(i + size(c)) )
     enddo
   else
     write(*,*) "ERROR: called tsgGetComplexHierarchicalCoefficientsStatic() on a non-Fourier grid, "
