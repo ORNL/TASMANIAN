@@ -152,7 +152,8 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                 sets[me] = new GranulatedIndexSet(num_dimensions);
                 std::vector<int> newp(num_dimensions);
                 for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
-                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
+                    const int *p = set_level->getIndex(i);
+                    std::copy(p, p + num_dimensions, newp.data());
                     for(auto &j : newp){
                         j++;
                         if ((getIndexWeight(newp, type, weights, rule) <= normalized_offset) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
@@ -233,7 +234,8 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
             std::vector<int> corner(num_dimensions);
             if (integration){
                 for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
-                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
+                    const int *p = set_level->getIndex(i);
+                    std::copy(p, p + num_dimensions, newp.data());
                     auto iterp = newp.begin();
                     for(auto &c : corner){
                         c = (*iterp > 0) ? (meta.getQExact(*iterp -1, rule) + 1) : 0;
@@ -257,7 +259,8 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
                 }
             }else{
                 for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
-                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
+                    const int *p = set_level->getIndex(i);
+                    std::copy(p, p + num_dimensions, newp.data());
                     auto iterp = newp.begin();
                     for(auto &c : corner){
                         c = (*iterp > 0) ? (meta.getIExact(*iterp -1, rule) + 1) : 0;
@@ -731,7 +734,7 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
         for(int i=1; i<warp/2; i++){
             sets[i] = sets[2*i];
         }
-        if (warp % 2 == 1){ sets[warp/2] = sets[warp-1];  };
+        if (warp % 2 == 1){ sets[warp/2] = sets[warp-1]; };
         warp = warp / 2 + warp % 2;
     }
 
