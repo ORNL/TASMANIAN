@@ -576,19 +576,19 @@ int* IndexManipulator::referenceGenericPoints(const int levels[], const OneDimen
     return refs;
 }
 
-IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *set, const int limits[]) const{
-    size_t c = 0, dims = set->getNumDimensions();
-    for(int i=0; i<set->getNumIndexes(); i++){
-        const int *idx = set->getIndex(i);
+IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *iset, const int limits[]) const{
+    size_t c = 0, dims = iset->getNumDimensions();
+    for(int i=0; i<iset->getNumIndexes(); i++){
+        const int *idx = iset->getIndex(i);
         bool obeys = true;
         for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
         if (obeys) c++;
     }
-    if (c == (size_t) set->getNumIndexes()) return 0;
+    if (c == (size_t) iset->getNumIndexes()) return 0;
     std::vector<int> new_idx(dims * c);
     c = 0;
-    for(int i=0; i<set->getNumIndexes(); i++){
-        const int *idx = set->getIndex(i);
+    for(int i=0; i<iset->getNumIndexes(); i++){
+        const int *idx = iset->getIndex(i);
         bool obeys = true;
         for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
         if (obeys) std::copy(idx, idx + dims, &(new_idx[dims * (c++)]));
