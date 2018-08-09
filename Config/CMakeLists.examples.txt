@@ -27,6 +27,9 @@ endif()
 add_executable(example_sparse_grids  example_sparse_grids.cpp)
 add_executable(example_dream         example_dream.cpp)
 
+set_property(TARGET example_sparse_grids PROPERTY CXX_STANDARD 11)
+set_property(TARGET example_dream PROPERTY CXX_STANDARD 11)
+
 target_link_libraries(example_sparse_grids  ${Tasmanian_libsparsegrid})
 target_link_libraries(example_dream         ${Tasmanian_libdream})
 
