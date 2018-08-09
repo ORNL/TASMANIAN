@@ -419,62 +419,65 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
 #ifdef Tasmanian_ENABLE_CUDA
 void AccelerationMeta::cudaCheckError(void *cudaStatus, const char *info, std::ostream *os){
     if (*((cudaError_t*) cudaStatus) != cudaSuccess){
-        if (os != 0){
-            (*os) << "ERROR: cuda failed at " << info << " with error: " << endl;
-            (*os) << cudaGetErrorString(*((cudaError_t*) cudaStatus)) << endl;
-        }
+        std::string message = "ERROR: cuda failed at ";
+        message += info;
+        message += " with error: ";
+        message += cudaGetErrorString(*((cudaError_t*) cudaStatus));
+        throw std::runtime_error(message);
     }
 }
 void AccelerationMeta::cublasCheckError(void *cublasStatus, const char *info, std::ostream *os){
     if (*((cublasStatus_t*) cublasStatus) != CUBLAS_STATUS_SUCCESS){
-        if (os != 0){
-            (*os) << "ERROR: cublas failed with code: ";
-            if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_NOT_INITIALIZED){
-                (*os) << "CUBLAS_STATUS_NOT_INITIALIZED";
-            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_ALLOC_FAILED){
-                (*os) << "CUBLAS_STATUS_ALLOC_FAILED";
-            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_INVALID_VALUE){
-                (*os) << "CUBLAS_STATUS_INVALID_VALUE";
-            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_ARCH_MISMATCH){
-                (*os) << "CUBLAS_STATUS_ARCH_MISMATCH";
-            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_MAPPING_ERROR){
-                (*os) << "CUBLAS_STATUS_MAPPING_ERROR";
-            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_EXECUTION_FAILED){
-                (*os) << "CUBLAS_STATUS_EXECUTION_FAILED";
-            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_INTERNAL_ERROR){
-                (*os) << "CUBLAS_STATUS_INTERNAL_ERROR";
-            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_NOT_SUPPORTED){
-                (*os) << "CUBLAS_STATUS_NOT_SUPPORTED";
-            }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_LICENSE_ERROR){
-                (*os) << "CUBLAS_STATUS_LICENSE_ERROR";
-            }else{
-                (*os) << "UNKNOWN";
-            }
-            (*os) << " at " << info << endl;
+        std::string message = "ERROR: cuBlas failed with code: ";
+        if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_NOT_INITIALIZED){
+            message += "CUBLAS_STATUS_NOT_INITIALIZED";
+        }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_ALLOC_FAILED){
+            message += "CUBLAS_STATUS_ALLOC_FAILED";
+        }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_INVALID_VALUE){
+            message += "CUBLAS_STATUS_INVALID_VALUE";
+        }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_ARCH_MISMATCH){
+            message += "CUBLAS_STATUS_ARCH_MISMATCH";
+        }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_MAPPING_ERROR){
+            message += "CUBLAS_STATUS_MAPPING_ERROR";
+        }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_EXECUTION_FAILED){
+            message += "CUBLAS_STATUS_EXECUTION_FAILED";
+        }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_INTERNAL_ERROR){
+            message += "CUBLAS_STATUS_INTERNAL_ERROR";
+        }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_NOT_SUPPORTED){
+            message += "CUBLAS_STATUS_NOT_SUPPORTED";
+        }else if (*((cublasStatus_t*) cublasStatus) == CUBLAS_STATUS_LICENSE_ERROR){
+            message += "CUBLAS_STATUS_LICENSE_ERROR";
+        }else{
+            message += "UNKNOWN";
         }
+        message += " at ";
+        message += info;
+        throw std::runtime_error(message);
     }
 }
 void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os){
     if (*((cusparseStatus_t*) cusparseStatus) != CUSPARSE_STATUS_SUCCESS){
-        if (os != 0){
-            (*os)  << "ERROR: cusparse failed with code: ";
-            if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_NOT_INITIALIZED){
-                (*os) << "CUSPARSE_STATUS_NOT_INITIALIZED";
-            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_ALLOC_FAILED){
-                (*os) << "CUSPARSE_STATUS_ALLOC_FAILED";
-            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_INVALID_VALUE){
-                (*os) << "CUSPARSE_STATUS_INVALID_VALUE";
-            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_ARCH_MISMATCH){
-                (*os) << "CUSPARSE_STATUS_ARCH_MISMATCH";
-            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_INTERNAL_ERROR){
-                (*os) << "CUSPARSE_STATUS_INTERNAL_ERROR";
-            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED){
-                (*os) << "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
-            }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_EXECUTION_FAILED){
-                (*os) << "CUSPARSE_STATUS_EXECUTION_FAILED";
-            }
-            (*os) << " at " << info << endl;
+        std::string message = "ERROR: cuSparse failed with code: ";
+        if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_NOT_INITIALIZED){
+            message += "CUSPARSE_STATUS_NOT_INITIALIZED";
+        }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_ALLOC_FAILED){
+            message += "CUSPARSE_STATUS_ALLOC_FAILED";
+        }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_INVALID_VALUE){
+            message += "CUSPARSE_STATUS_INVALID_VALUE";
+        }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_ARCH_MISMATCH){
+            message += "CUSPARSE_STATUS_ARCH_MISMATCH";
+        }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_INTERNAL_ERROR){
+            message += "CUSPARSE_STATUS_INTERNAL_ERROR";
+        }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED){
+            message += "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+        }else if (*((cusparseStatus_t*) cusparseStatus) == CUSPARSE_STATUS_EXECUTION_FAILED){
+            message += "CUSPARSE_STATUS_EXECUTION_FAILED";
+        }else{
+            message += "UNKNOWN";
         }
+        message += " at ";
+        message += info;
+        throw std::runtime_error(message);
     }
 }
 #else
