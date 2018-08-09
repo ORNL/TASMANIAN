@@ -132,7 +132,7 @@ public:
     bool isSetDomainTransfrom() const;
     void clearDomainTransform();
     void getDomainTransform(double a[], double b[]) const;
-    void setDomainTransform(std::vector<double> a, std::vector<double> b);
+    void setDomainTransform(const std::vector<double> a, const std::vector<double> b);
     void getDomainTransform(std::vector<double> &a, std::vector<double> &b) const;
 
     void setConformalTransformASIN(const int truncation[]);
@@ -235,7 +235,7 @@ private:
     GridWavelet *wavelet;
     GridFourier *fourier;
 
-    double *domain_transform_a, *domain_transform_b;
+    std::vector<double> domain_transform_a, domain_transform_b;
     int *conformal_asin_power;
     int *llimits;
 

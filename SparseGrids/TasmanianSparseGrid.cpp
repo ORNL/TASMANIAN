@@ -57,7 +57,7 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     #endif // _OPENMP
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0), domain_transform_a(0), domain_transform_b(0),
+TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0),
                                              conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0){
 #ifndef USE_XSDK_DEFAULTS
     logstream = &cerr;
@@ -67,7 +67,7 @@ TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pw
 #endif // Tasmanian_ENABLE_BLAS
 }
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0),
-                                    domain_transform_a(0), domain_transform_b(0), conformal_asin_power(0), llimits(0),
+                                    conformal_asin_power(0), llimits(0),
                                     acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0)
 {
     copyGrid(&source);
@@ -89,10 +89,10 @@ void TasmanianSparseGrid::clear(){
     if (pwpoly != 0){ delete pwpoly; pwpoly = 0; }
     if (wavelet != 0){ delete wavelet; wavelet = 0; }
     if (fourier != 0){ delete fourier; fourier = 0; }
-    if (domain_transform_a != 0){ delete[] domain_transform_a; domain_transform_a = 0; }
-    if (domain_transform_b != 0){ delete[] domain_transform_b; domain_transform_b = 0; }
     if (conformal_asin_power != 0){ delete[] conformal_asin_power; conformal_asin_power = 0; }
     if (llimits != 0){ delete[] llimits; llimits = 0; }
+    domain_transform_a.resize(0);
+    domain_transform_b.resize(0);
     base = 0;
 #ifndef USE_XSDK_DEFAULTS
     logstream = &cerr;
@@ -251,7 +251,7 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
         fourier = new GridFourier(*(source->fourier));
         base = fourier;
     }
-    if (source->domain_transform_a != 0){
+    if (source->domain_transform_a.size() > 0){
         setDomainTransform(source->domain_transform_a, source->domain_transform_b);
     }
     if (source->conformal_asin_power != 0){
@@ -357,7 +357,7 @@ double* TasmanianSparseGrid::getQuadratureWeights() const{
 void TasmanianSparseGrid::getQuadratureWeights(double *weights) const{
     base->getQuadratureWeights(weights);
     mapConformalWeights(base->getNumDimensions(), base->getNumPoints(), weights);
-    if (domain_transform_a != 0){
+    if (domain_transform_a.size() != 0){
         double scale = getQuadratureScale(base->getNumDimensions(), base->getRule());
         #pragma omp parallel for schedule(static)
         for(int i=0; i<getNumPoints(); i++) weights[i] *= scale;
@@ -463,7 +463,7 @@ void TasmanianSparseGrid::integrate(double q[]) const{
     }else{
         base->integrate(q, 0);
     }
-    if (domain_transform_a != 0){
+    if (domain_transform_a.size() != 0){
         double scale = getQuadratureScale(base->getNumDimensions(), base->getRule());
         for(int k=0; k<getNumOutputs(); k++) q[k] *= scale;
     }
@@ -512,35 +512,33 @@ void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[])
         if (logstream != 0){ (*logstream) << "ERROR: cannot call setDomainTransform on uninitialized grid!" << endl; }
         return;
     }
-    clearDomainTransform();
     if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     int num_dimensions = base->getNumDimensions();
-    domain_transform_a = new double[num_dimensions];  std::copy(a, a + num_dimensions, domain_transform_a);
-    domain_transform_b = new double[num_dimensions];  std::copy(b, b + num_dimensions, domain_transform_b);
+    domain_transform_a.resize(num_dimensions); std::copy(a, a + num_dimensions, domain_transform_a.data());
+    domain_transform_b.resize(num_dimensions); std::copy(b, b + num_dimensions, domain_transform_b.data());
 }
 bool TasmanianSparseGrid::isSetDomainTransfrom() const{
-    return (domain_transform_a != 0);
+    return (domain_transform_a.size() != 0);
 }
 void TasmanianSparseGrid::clearDomainTransform(){
-    if (domain_transform_a != 0){ delete[] domain_transform_a; domain_transform_a = 0; }
-    if (domain_transform_b != 0){ delete[] domain_transform_b; domain_transform_b = 0; }
+    domain_transform_a.resize(0);
+    domain_transform_b.resize(0);
 }
 void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
-    if ((base == 0) || (base->getNumDimensions() == 0) || (domain_transform_a == 0)){
+    if ((base == 0) || (base->getNumDimensions() == 0) || (domain_transform_a.size() == 0)){
         if (logstream != 0){ (*logstream) << "ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!" << endl; }
         return;
     }
-    int num_dimensions = base->getNumDimensions();
-    std::copy(domain_transform_a, domain_transform_a + num_dimensions, a);
-    std::copy(domain_transform_b, domain_transform_b + num_dimensions, b);
+    std::copy(domain_transform_a.begin(), domain_transform_a.end(), a);
+    std::copy(domain_transform_b.begin(), domain_transform_b.end(), b);
 }
-void TasmanianSparseGrid::setDomainTransform(std::vector<double> a, std::vector<double> b){
-    setDomainTransform(a.data(), b.data());
+void TasmanianSparseGrid::setDomainTransform(const std::vector<double> a, const std::vector<double> b){
+    domain_transform_a = a; // copy assignment
+    domain_transform_b = b;
 }
 void TasmanianSparseGrid::getDomainTransform(std::vector<double> &a, std::vector<double> &b) const{
-    if (a.size() < (size_t) getNumDimensions()) a.resize(getNumDimensions());
-    if (b.size() < (size_t) getNumDimensions()) b.resize(getNumDimensions());
-    getDomainTransform(a.data(), b.data());
+    a = domain_transform_a; // copy assignment
+    b = domain_transform_b;
 }
 
 void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const{
@@ -825,32 +823,32 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
 }
 
 const double* TasmanianSparseGrid::formCanonicalPoints(const double *x, double* &x_temp, int num_x) const{
-    if ((domain_transform_a != 0) || (conformal_asin_power != 0)){
+    if ((domain_transform_a.size() != 0) || (conformal_asin_power != 0)){
         int num_dimensions = base->getNumDimensions();
         x_temp = new double[num_dimensions*num_x]; std::copy(x, x + num_dimensions*num_x, x_temp);
         mapConformalTransformedToCanonical(num_dimensions, num_x, x_temp);
-        if (domain_transform_a != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_temp);
+        if (domain_transform_a.size() != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_temp);
         return x_temp;
     }else{
         return x;
     }
 }
 void TasmanianSparseGrid::clearCanonicalPoints(double* &x_temp) const{
-    if ((domain_transform_a != 0) || (conformal_asin_power != 0)){
+    if ((domain_transform_a.size() != 0) || (conformal_asin_power != 0)){
         delete[] x_temp;
     }
 }
 void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) const{
     mapConformalCanonicalToTransformed(base->getNumDimensions(), num_points, x); // internally switch based on the conformal transform
-    if (domain_transform_a != 0){ // check the basic domain
+    if (domain_transform_a.size() != 0){ // check the basic domain
         mapCanonicalToTransformed(base->getNumDimensions(), num_points, base->getRule(), x);
     }
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
 const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, double* &gpu_x_temp, int num_x) const{
-    if (domain_transform_a != 0){
-        if (acc_domain == 0) acc_domain = new AccelerationDomainTransform(base->getNumDimensions(), domain_transform_a, domain_transform_b);
+    if (domain_transform_a.size() != 0){
+        if (acc_domain == 0) acc_domain = new AccelerationDomainTransform(base->getNumDimensions(), domain_transform_a.data(), domain_transform_b.data());
         gpu_x_temp = acc_domain->getCanonicalPoints(base->getNumDimensions(), num_x, gpu_x);
         return gpu_x_temp;
     }else{
@@ -1220,7 +1218,7 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     }else{
         ofs << "empty" << endl;
     }
-    if (domain_transform_a != 0){
+    if (domain_transform_a.size() != 0){
         ofs << "custom" << endl;
         ofs << std::scientific; ofs.precision(17);
         for(int j=0; j<base->getNumDimensions(); j++){
@@ -1273,10 +1271,10 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
         flag = 'e'; ofs.write(&flag, sizeof(char));
     }
     // domain transform: custom 'y', canonical: 'n'
-    if (domain_transform_a != 0){
+    if (domain_transform_a.size() != 0){
         flag = 'y'; ofs.write(&flag, sizeof(char));
-        ofs.write((char*) domain_transform_a, base->getNumDimensions() * sizeof(double));
-        ofs.write((char*) domain_transform_b, base->getNumDimensions() * sizeof(double));
+        ofs.write((char*) domain_transform_a.data(), base->getNumDimensions() * sizeof(double));
+        ofs.write((char*) domain_transform_b.data(), base->getNumDimensions() * sizeof(double));
     }else{
         flag = 'n'; ofs.write(&flag, sizeof(char));
     }
@@ -1343,8 +1341,8 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     bool using_v4_format = false; // for compatibility with version 3.1 and 4.0
     bool using_v5_format = false; // for compatibility with version 3.1 and 4.0
     if (T.compare("custom") == 0){
-        domain_transform_a = new double[base->getNumDimensions()];
-        domain_transform_b = new double[base->getNumDimensions()];
+        domain_transform_a.resize(base->getNumDimensions());
+        domain_transform_b.resize(base->getNumDimensions());
         for(int j=0; j<base->getNumDimensions(); j++){
             ifs >> domain_transform_a[j] >> domain_transform_b[j];
        }
@@ -1444,10 +1442,10 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }
     ifs.read(TSG, sizeof(char)); // linear domain transform?
     if (TSG[0] == 'y'){
-        domain_transform_a = new double[base->getNumDimensions()];
-        domain_transform_b = new double[base->getNumDimensions()];
-        ifs.read((char*) domain_transform_a, base->getNumDimensions() * sizeof(double));
-        ifs.read((char*) domain_transform_b, base->getNumDimensions() * sizeof(double));
+        domain_transform_a.resize(base->getNumDimensions());
+        domain_transform_b.resize(base->getNumDimensions());
+        ifs.read((char*) domain_transform_a.data(), base->getNumDimensions() * sizeof(double));
+        ifs.read((char*) domain_transform_b.data(), base->getNumDimensions() * sizeof(double));
     }else if (TSG[0] != 'n'){
         if (logstream != 0){ (*logstream) << "ERROR: wrong domain type, wrong file format!" << endl; }
         return false;
