@@ -58,8 +58,8 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
     // construct the minimum tensor set that covers the target_space defined by offset, type, and anisotropic weights
     // consult the manual for the detailed definition of each case
     // used for constructing Global and Sequence grids
-    // implements Corrolary 1 of Theorem 1 from
-    // Stoyanov, Webster: "A dynamically adaptive sparse grids method forquasi-optimal interpolation of multidimensional functions"
+    // implements Corollary 1 of Theorem 1 from
+    // Stoyanov, Webster: "A dynamically adaptive sparse grids method for quasi-optimal interpolation of multidimensional functions"
     // Computers & Mathematics with Applications, 71(11):2449–2465, 2016
 
     // This cheats a bit, but it handles the special case when we want a full tensor grid
@@ -152,7 +152,8 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
                 sets[me] = new GranulatedIndexSet(num_dimensions);
                 std::vector<int> newp(num_dimensions);
                 for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
-                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
+                    const int *p = set_level->getIndex(i);
+                    std::copy(p, p + num_dimensions, newp.data());
                     for(auto &j : newp){
                         j++;
                         if ((getIndexWeight(newp, type, weights, rule) <= normalized_offset) && (set_level->getSlot(newp.data()) == -1) && (total->getSlot(newp.data()) == -1)){
@@ -208,11 +209,11 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
 
 IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool integration, TypeOneDRule rule) const{
     // construct the minimum tensor set that covers the target_space
-    // used when projecting the Global grid onto Lagendre polynomial basis
+    // used when projecting the Global grid onto Legendre polynomial basis
     // implements the clean version of Theorem 1 from
-    // Stoyanov, Webster: "A dynamically adaptive sparse grids method forquasi-optimal interpolation of multidimensional functions"
+    // Stoyanov, Webster: "A dynamically adaptive sparse grids method for quasi-optimal interpolation of multidimensional functions"
     // Computers & Mathematics with Applications, 71(11):2449–2465, 2016
-    // the other selectTensors() function cover the special caseof Corrolary 1
+    // the other selectTensors() function cover the special case of Corollary 1
     GranulatedIndexSet **sets;
     std::vector<int> root(num_dimensions, 0);
     GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root.data());
@@ -233,7 +234,8 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
             std::vector<int> corner(num_dimensions);
             if (integration){
                 for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
-                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
+                    const int *p = set_level->getIndex(i);
+                    std::copy(p, p + num_dimensions, newp.data());
                     auto iterp = newp.begin();
                     for(auto &c : corner){
                         c = (*iterp > 0) ? (meta.getQExact(*iterp -1, rule) + 1) : 0;
@@ -257,7 +259,8 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
                 }
             }else{
                 for(int i=me; i<set_level->getNumIndexes(); i+=num_sets){
-                    const int *p = set_level->getIndex(i);  std::copy(p, p + num_dimensions, newp.data());
+                    const int *p = set_level->getIndex(i);
+                    std::copy(p, p + num_dimensions, newp.data());
                     auto iterp = newp.begin();
                     for(auto &c : corner){
                         c = (*iterp > 0) ? (meta.getIExact(*iterp -1, rule) + 1) : 0;
@@ -475,7 +478,6 @@ void IndexManipulator::makeTensorWeights(const IndexSet* iset, std::vector<int> 
 IndexSet* IndexManipulator::nonzeroSubset(const IndexSet* iset, const std::vector<int> &weights) const{
     size_t nz_weights = 0;
     for(auto w: weights) if (w != 0) nz_weights++;
-    //for(int i=0; i<set->getNumIndexes(); i++){ if (weights[i] != 0) nz_weights++; }
 
     std::vector<int> index(nz_weights * ((size_t) num_dimensions));
     nz_weights = 0;
@@ -577,19 +579,19 @@ int* IndexManipulator::referenceGenericPoints(const int levels[], const OneDimen
     return refs;
 }
 
-IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *set, const int limits[]) const{
-    size_t c = 0, dims = set->getNumDimensions();
-    for(int i=0; i<set->getNumIndexes(); i++){
-        const int *idx = set->getIndex(i);
+IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *iset, const int limits[]) const{
+    size_t c = 0, dims = iset->getNumDimensions();
+    for(int i=0; i<iset->getNumIndexes(); i++){
+        const int *idx = iset->getIndex(i);
         bool obeys = true;
         for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
         if (obeys) c++;
     }
-    if (c == (size_t) set->getNumIndexes()) return 0;
+    if (c == (size_t) iset->getNumIndexes()) return 0;
     std::vector<int> new_idx(dims * c);
     c = 0;
-    for(int i=0; i<set->getNumIndexes(); i++){
-        const int *idx = set->getIndex(i);
+    for(int i=0; i<iset->getNumIndexes(); i++){
+        const int *idx = iset->getIndex(i);
         bool obeys = true;
         for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
         if (obeys) std::copy(idx, idx + dims, &(new_idx[dims * (c++)]));
@@ -647,7 +649,6 @@ IndexSet* IndexManipulator::generateNestedPoints(const IndexSet *tensors, const 
     for(int i=0; i<num_tensors; i++){
         psets[i] = tensorNestedPoints(tensors->getIndex(i), rule);
     }
-
 
     int warp = num_tensors;
     while(warp > 1){
@@ -733,7 +734,7 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
         for(int i=1; i<warp/2; i++){
             sets[i] = sets[2*i];
         }
-        if (warp % 2 == 1){ sets[warp/2] = sets[warp-1];  };
+        if (warp % 2 == 1){ sets[warp/2] = sets[warp-1]; };
         warp = warp / 2 + warp % 2;
     }
 
