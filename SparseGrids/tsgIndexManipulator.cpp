@@ -863,9 +863,9 @@ IndexSet* IndexManipulator::generatePointsFromDeltas(const IndexSet* deltas, con
 
     UnsortedIndexSet *raw_points = new UnsortedIndexSet(num_dimensions, num_points);
 
-    int *num_points_delta = new int[num_dimensions];
-    int *offsets = new int[num_dimensions];
-    int *index = new int[num_dimensions];
+    std::vector<int> num_points_delta(num_dimensions);
+    std::vector<int> offsets(num_dimensions);
+    std::vector<int> index(num_dimensions);
 
     for(int i=0; i<deltas->getNumIndexes(); i++){
         const int *p = deltas->getIndex(i);
@@ -888,18 +888,14 @@ IndexSet* IndexManipulator::generatePointsFromDeltas(const IndexSet* deltas, con
                 index[j] = offsets[j] + t % num_points_delta[j];
                 t /= num_points_delta[j];
             }
-            raw_points->addIndex(index);
+            raw_points->addIndex(index.data());
         }
     }
 
-    delete[] index;
-    delete[] offsets;
-    delete[] num_points_delta;
-
-    IndexSet* set = new IndexSet(raw_points);
+    IndexSet* iset = new IndexSet(raw_points);
     delete raw_points;
 
-    return set;
+    return iset;
 }
 
 int* IndexManipulator::computeDAGupLocal(const IndexSet *set, const BaseRuleLocalPolynomial *rule) const{
