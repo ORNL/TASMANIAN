@@ -443,11 +443,27 @@ void TasgridWrapper::outputHierarchicalCoefficients() const{
     const double *coeff = grid->getHierarchicalCoefficients();
     int num_p = grid->getNumPoints();
     int num_d = grid->getNumOutputs();
-    if (outfilename != 0){
-        writeMatrix(outfilename, num_p, ((grid->isFourier()) ? 2 * num_d : num_d), coeff, useASCII);
-    }
-    if (printCout){
-        printMatrix(num_p, num_d, coeff, grid->isFourier());
+    if (grid->isFourier()){
+        // use interwoven format for complex coefficients
+        double *coeff_fourier = new double[2 * num_p * num_d];
+        for(int i=0; i<num_p*num_d; i++){
+            coeff_fourier[2*i] = coeff[i];
+            coeff_fourier[2*i+1] = coeff[i + num_d*num_p];
+        }
+        if (outfilename != 0){
+            writeMatrix(outfilename, num_p, 2*num_d, coeff_fourier, useASCII);
+        }
+        if (printCout){
+            printMatrix(num_p, num_d, coeff_fourier, true);
+        }
+        delete[] coeff_fourier;
+    }else{
+        if (outfilename != 0){
+            writeMatrix(outfilename, num_p, num_d, coeff, useASCII);
+        }
+        if (printCout){
+            printMatrix(num_p, num_d, coeff);
+        }
     }
 }
 bool TasgridWrapper::setConformalTransformation(){
@@ -766,11 +782,27 @@ bool TasgridWrapper::getSurpluses(){
     const double *surp = grid->getHierarchicalCoefficients();
     int num_p = grid->getNumLoaded();
     int num_o = grid->getNumOutputs();
-    if (outfilename != 0){
-        writeMatrix(outfilename, num_p, ((grid->isFourier()) ? 2 * num_o : num_o), surp, useASCII);
-    }
-    if (printCout){
-        printMatrix(num_p, num_o, surp, grid->isFourier());
+    if (grid->isFourier()){
+        // use interwoven format for complex coefficients
+        double *surp_fourier = new double[2 * num_p * num_o];
+        for(int i=0; i<num_p*num_o; i++){
+            surp_fourier[2*i] = surp[i];
+            surp_fourier[2*i+1] = surp[i + num_p*num_o];
+        }
+        if (outfilename != 0){
+            writeMatrix(outfilename, num_p, 2*num_o, surp_fourier, useASCII);
+        }
+        if (printCout){
+            printMatrix(num_p, num_o, surp_fourier, true);
+        }
+        delete[] surp_fourier;
+    }else{
+        if (outfilename != 0){
+            writeMatrix(outfilename, num_p, num_o, surp, useASCII);
+        }
+        if (printCout){
+            printMatrix(num_p, num_o, surp);
+        }
     }
     return true;
 }
@@ -1065,9 +1097,9 @@ void TasgridWrapper::printMatrix(int rows, int cols, const double mat[], bool is
     for(size_t i=0; i<((size_t) rows); i++){
         if (isComplex){
             for(size_t j=0; j<((size_t) cols); j++){
-                cout << setw(25) << mat[i* ((size_t) cols) + ((size_t) 2*j)];   // real part
-                cout << (mat[i* ((size_t) cols) + ((size_t) 2*j+1)] < 0.0 ? " -" : " +");
-                cout << setw(24) << fabs(mat[i* ((size_t) cols) + ((size_t) 2*j+1)]) << "i  ";     // imag part
+                cout << setw(25) << mat[((size_t) 2*(i*cols + j))];   // real part
+                cout << (mat[((size_t) 2*(i*cols + j) + 1)] < 0.0 ? " -" : " +");
+                cout << setw(24) << fabs(mat[((size_t) 2*(i*cols + j) + 1)]) << "i  ";     // imag part
             }
         }else{
             for(size_t j=0; j<((size_t) cols); j++){

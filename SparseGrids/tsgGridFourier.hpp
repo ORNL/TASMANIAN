@@ -173,7 +173,7 @@ private:
     IndexSet *needed;
     IndexSet *exponents;
 
-    std::complex<double> *fourier_coefs;
+    double *fourier_coefs;
     int **exponent_refs;
     int **tensor_refs;
 
