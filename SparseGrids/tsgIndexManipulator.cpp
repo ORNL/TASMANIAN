@@ -668,24 +668,24 @@ int* IndexManipulator::referenceGenericPoints(const int levels[], const OneDimen
 }
 
 IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *set, const int limits[]) const{
-    int c = 0, dims = set->getNumDimensions();
+    size_t c = 0, dims = set->getNumDimensions();
     for(int i=0; i<set->getNumIndexes(); i++){
         const int *idx = set->getIndex(i);
         bool obeys = true;
-        for(int j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
+        for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
         if (obeys) c++;
     }
-    if (c == set->getNumIndexes()) return 0;
+    if (c == (size_t) set->getNumIndexes()) return 0;
     std::vector<int> new_idx(dims * c);
     c = 0;
     for(int i=0; i<set->getNumIndexes(); i++){
         const int *idx = set->getIndex(i);
         bool obeys = true;
-        for(int j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
+        for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
         if (obeys) std::copy(idx, idx + dims, &(new_idx[dims * (c++)]));
     }
 
-    return new IndexSet(dims, new_idx);
+    return new IndexSet((int) dims, new_idx);
 }
 UnsortedIndexSet* IndexManipulator::removeIndexesByLimit(UnsortedIndexSet *set, const int limits[]) const{
     int c = 0, dims = set->getNumDimensions();
