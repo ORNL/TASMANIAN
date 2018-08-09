@@ -44,8 +44,6 @@ public:
     IndexManipulator(int cnum_dimensions, const CustomTabulated* custom = 0);
     ~IndexManipulator();
 
-    int getIndexWeight(const int index[], TypeDepth type, const int weights[], TypeOneDRule rule) const;
-
     IndexSet* selectTensors(int offset, TypeDepth type, const int *anisotropic_weights, TypeOneDRule rule) const;
     IndexSet* selectTensors(const IndexSet *target_space, bool integration, TypeOneDRule rule) const;
     IndexSet* getLowerCompletion(const IndexSet *iset) const;
@@ -84,16 +82,6 @@ public:
     int* computeDAGupLocal(const IndexSet *set, const BaseRuleLocalPolynomial *rule) const;
 
 protected:
-    int getLevel(const int index[], const int weights[]) const;
-    int getCurved(const int index[], const int weights[]) const;
-    int getIPTotal(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getIPCurved(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getQPTotal(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getQPCurved(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getHyperbolic(const int index[], const int weights[]) const;
-    int getIPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getQPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const;
-
     void getProperWeights(TypeDepth type, const int *anisotropic_weights, std::vector<int> &weights) const;
 
     template<TypeDepth type>
