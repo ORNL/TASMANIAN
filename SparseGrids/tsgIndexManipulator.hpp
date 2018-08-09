@@ -44,25 +44,22 @@ public:
     IndexManipulator(int cnum_dimensions, const CustomTabulated* custom = 0);
     ~IndexManipulator();
 
-    int getIndexWeight(const int index[], TypeDepth type, const int weights[], TypeOneDRule rule) const;
-
     IndexSet* selectTensors(int offset, TypeDepth type, const int *anisotropic_weights, TypeOneDRule rule) const;
     IndexSet* selectTensors(const IndexSet *target_space, bool integration, TypeOneDRule rule) const;
-    IndexSet* getLowerCompletion(const IndexSet *set) const;
+    IndexSet* getLowerCompletion(const IndexSet *iset) const;
 
-    int* computeLevels(const IndexSet* set) const; // returns a vector of its corresponding to the sum of entries of set
+    void computeLevels(const IndexSet* iset, std::vector<int> &level) const; // returns a vector of its corresponding to the sum of entries of set
 
-    int* makeTensorWeights(const IndexSet* set) const;
-    IndexSet* nonzeroSubset(const IndexSet* set, const int weights[]) const; // returns a subset corresponding to the non-zeros weights
+    void makeTensorWeights(const IndexSet* iset, std::vector<int> &weights) const;
+    IndexSet* nonzeroSubset(const IndexSet* iset, const std::vector<int> &weights) const; // returns a subset corresponding to the non-zeros weights
 
     UnsortedIndexSet* tensorGenericPoints(const int levels[], const OneDimensionalWrapper *rule) const;
     IndexSet* generateGenericPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const;
     int* referenceGenericPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const;
 
     IndexSet* removeIndexesByLimit(IndexSet *set, const int limits[]) const;
-    UnsortedIndexSet* removeIndexesByLimit(UnsortedIndexSet *set, const int limits[]) const;
 
-    int* computeDAGup(const IndexSet *set) const;
+    void computeDAGup(const IndexSet *iset, Data2D<int> &parents) const;
 
     IndexSet* tensorNestedPoints(const int levels[], const OneDimensionalWrapper *rule) const;
     IndexSet* generateNestedPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const;
@@ -70,35 +67,73 @@ public:
 
     IndexSet* getPolynomialSpace(const IndexSet *tensors, TypeOneDRule rule, bool iexact) const;
 
-    int getMinChildLevel(const IndexSet *set, TypeDepth type, const int weights[], TypeOneDRule rule);
+    int getMinChildLevel(const IndexSet *iset, TypeDepth type, const int weights[], TypeOneDRule rule);
+    // find the minimum level of a child of iset
 
-    IndexSet* selectFlaggedChildren(const IndexSet *set, const bool flagged[], const int *level_limits = 0) const;
+    IndexSet* selectFlaggedChildren(const IndexSet *iset, const bool flagged[], const int *level_limits = 0) const;
 
-    void getMaxLevels(const IndexSet *set, int max_levels[], int &total_max) const;
+    void getMaxLevels(const IndexSet *iset, std::vector<int> &max_levels, int &total_max) const;
+    int getMaxLevel(const IndexSet *iset) const;
 
     // use by Local Grids
-    UnsortedIndexSet* getToalDegreeDeltas(int level) const;
-    IndexSet* generatePointsFromDeltas(const UnsortedIndexSet* deltas, const BaseRuleLocalPolynomial *rule) const;
+    IndexSet* generatePointsFromDeltas(const IndexSet* deltas, const BaseRuleLocalPolynomial *rule) const;
 
-    int* computeDAGupLocal(const IndexSet *set, const BaseRuleLocalPolynomial *rule) const;
+    void computeDAGupLocal(const IndexSet *iset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents) const;
 
 protected:
-    int getLevel(const int index[], const int weights[]) const;
-    int getCurved(const int index[], const int weights[]) const;
-    int getIPTotal(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getIPCurved(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getQPTotal(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getQPCurved(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getHyperbolic(const int index[], const int weights[]) const;
-    int getIPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const;
-    int getQPHyperbolic(const int index[], const int weights[], TypeOneDRule rule) const;
+    void getProperWeights(TypeDepth type, const int *anisotropic_weights, std::vector<int> &weights) const;
 
-    int* getProperWeights(TypeDepth type, const int *anisotropic_weights) const;
+    template<TypeDepth type>
+    long long getIndexWeight(const std::vector<int> &index, const std::vector<int> &weights, TypeOneDRule rule) const{
+        long long l = ((type == type_hyperbolic) || (type == type_iphyperbolic) || (type == type_qphyperbolic)) ? 1 : 0;
+        if (type == type_level){
+            auto witer = weights.begin();
+            for(auto i : index) l += i * *witer++;
+        }else if (type == type_curved){
+            auto walpha = weights.begin();
+            auto wbeta = weights.begin(); std::advance(wbeta, num_dimensions);
+            double c = 0.0;
+            for(auto i : index){
+                l += i * *walpha++;
+                c += log1p((double) i) * *wbeta++;
+            }
+            l += (long long) ceil(c);
+        }else if ((type == type_iptotal) || (type == type_qptotal)){
+            auto witer = weights.begin();
+            for(auto i : index) l += ((i > 0) ? 1 + ((type == type_iptotal) ? meta.getIExact(i-1, rule) : meta.getQExact(i-1, rule)) : 0) * *witer++;
+        }else if ((type == type_ipcurved) || (type == type_qpcurved)){
+            auto walpha = weights.begin();
+            auto wbeta = weights.begin(); std::advance(wbeta, num_dimensions);
+            double c = 0.0;
+            for(auto i : index){
+                long long pex = (i > 0) ? 1 + ((type == type_ipcurved) ? meta.getIExact(i-1, rule) : meta.getQExact(i-1, rule)) : 0;
+                l += pex * *walpha++;
+                c += log1p((double) pex) * *wbeta++;
+            }
+            l += (long long) ceil(c);
+        }else if (type == type_iphyperbolic){
+            double nweight = (double) weights[num_dimensions];
+            double s = 1.0;
+            auto witer = weights.begin();
+            for(auto i : index) s *= pow((double) (i+1), ((double) *witer++) / nweight);
+            l = (long long) ceil(s);
+        }else{
+            double nweight = (double) weights[num_dimensions];
+            double s = 1.0;
+            auto witer = weights.begin();
+            for(auto i : index) s *= pow((i>0) ? 2.0 + (double) ((type == type_iphyperbolic) ? meta.getIExact(i-1, rule) : meta.getQExact(i-1, rule)) : 1.0,
+                                         ((double) *witer++) / nweight);
+            l = (long long) ceil(s);
+        }
+        return l;
+    }
+
+    long long getIndexWeight(const std::vector<int> &index, TypeDepth type, const std::vector<int> &weights, TypeOneDRule rule) const;
 
 private:
     int num_dimensions;
 
-    OneDimensionalMeta *meta;
+    OneDimensionalMeta meta;
 };
 
 }

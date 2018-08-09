@@ -135,6 +135,46 @@ private:
     std::vector<int> index;
 };
 
+template<typename T>
+class Data2D{
+// this class is a work around of using indexing of type [i * stride + j] where i, j, and stride are int and can overflow
+// the class internally uses size_t and can pass information back and forth between API calls
+// the idea is to apply this to data stored as either std::vector<int/double> or double[]/int[]
+public:
+    Data2D() : stride(0), num_strips(0), data(0){}
+    ~Data2D(){}
+
+    void resize(int new_stride, int new_num_strips){
+        stride = (size_t) new_stride;
+        num_strips = (size_t) new_num_strips;
+        vec.resize(stride * num_strips);
+        data = vec.data();
+    }
+    void resize(int new_stride, int new_num_strips, T val){
+        stride = (size_t) new_stride;
+        num_strips = (size_t) new_num_strips;
+        vec.resize(stride * num_strips, val);
+        data = vec.data();
+    }
+    void load(int new_stride, int new_num_strips, T* new_data){
+        stride = (size_t) new_stride;
+        num_strips = (size_t) new_num_strips;
+        data = new_data;
+        vec.resize(0);
+    }
+
+    T* getStrip(int i){ return &(data[i*stride]); }
+    const T* getStrip(int i) const{ return &(data[i*stride]); }
+    int getStride() const{ return (int) stride; }
+    int getNumStrips() const{ return (int) num_strips; }
+    size_t getTotalEntries() const{ return stride * num_strips; }
+
+private:
+    size_t stride, num_strips;
+    T* data;
+    std::vector<T> vec;
+};
+
 class StorageSet{ // stores the values of the function
 public:
     StorageSet(int cnum_outputs, int cnum_values);

@@ -151,7 +151,7 @@ private:
 
     IndexSet *points;
     IndexSet *needed;
-    int *parents; // NOTE: this is needed only for computing surpluses, maybe there is no need to store it
+    //int *parents; // NOTE: this is needed only for computing surpluses, maybe there is no need to store it
 
     double *surpluses;
     double *nodes;
@@ -159,7 +159,7 @@ private:
 
     StorageSet *values;
 
-    int *max_levels;
+    std::vector<int> max_levels;
 
     mutable BaseAccelerationData *accel;
 };

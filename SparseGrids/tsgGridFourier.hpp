@@ -168,7 +168,7 @@ private:
     IndexSet *tensors;
     IndexSet *active_tensors;
     int *active_w;
-    int *max_levels;
+    std::vector<int> max_levels;
     IndexSet *points;
     IndexSet *needed;
     IndexSet *exponents;

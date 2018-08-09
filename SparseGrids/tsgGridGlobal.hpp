@@ -141,7 +141,7 @@ private:
 
     int **tensor_refs;
 
-    int *max_levels; // for evaluation purposes, counts the maximum level in each direction (only counts tensors)
+    std::vector<int> max_levels; // for evaluation purposes, counts the maximum level in each direction (only counts tensors)
 
     StorageSet *values;
 

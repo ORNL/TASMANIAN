@@ -116,7 +116,7 @@ void GridFourier::read(std::ifstream &ifs, std::ostream *logstream){
         active_w = new int[active_tensors->getNumIndexes()];  for(int i=0; i<active_tensors->getNumIndexes(); i++){ ifs >> active_w[i]; }
         ifs >> flag; if (flag == 1){ points = new IndexSet(num_dimensions); points->read(ifs); }
         ifs >> flag; if (flag == 1){ needed = new IndexSet(num_dimensions); needed->read(ifs); }
-        max_levels = new int[num_dimensions];  for(int j=0; j<num_dimensions; j++){ ifs >> max_levels[j]; }
+        max_levels.resize(num_dimensions); for(auto &m : max_levels){ ifs >> m; }
 
         IndexSet *work = (points != 0) ? points : needed;
 
@@ -188,7 +188,7 @@ void GridFourier::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             needed->writeBinary(ofs);
         }
-        ofs.write((char*) max_levels, num_dimensions * sizeof(int));
+        ofs.write((char*) max_levels.data(), num_dimensions * sizeof(int));
 
         if (num_outputs > 0){
             values->writeBinary(ofs);
@@ -232,8 +232,8 @@ void GridFourier::readBinary(std::ifstream &ifs, std::ostream *logstream){
 
         IndexSet *work = (points != 0) ? points : needed;
 
-        max_levels = new int[num_dimensions];
-        ifs.read((char*) max_levels, num_dimensions * sizeof(int));
+        max_levels.resize(num_dimensions);
+        ifs.read((char*) max_levels.data(), num_dimensions * sizeof(int));
 
         if (num_outputs > 0){
             values = new StorageSet(0, 0); values->readBinary(ifs);
@@ -287,7 +287,6 @@ void GridFourier::reset(){
     if (tensors != 0){ delete tensors; tensors = 0; }
     if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
     if (active_w != 0){ delete[] active_w; active_w = 0; }
-    if (max_levels != 0){ delete[] max_levels; max_levels = 0; }
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
     if (exponents != 0){ delete exponents; exponents = 0; }
@@ -330,11 +329,11 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
     IndexManipulator IM(num_dimensions);
 
     OneDimensionalMeta meta(0);
-    max_levels = new int[num_dimensions];
     int max_level; IM.getMaxLevels(tensors, max_levels, max_level);
     wrapper = new OneDimensionalWrapper(&meta, max_level, rule_fourier);
 
-    int* tensors_w = IM.makeTensorWeights(tensors);
+    std::vector<int> tensors_w;
+    IM.makeTensorWeights(tensors, tensors_w);
     active_tensors = IM.nonzeroSubset(tensors, tensors_w);
 
     int nz_weights = active_tensors->getNumIndexes();
@@ -343,8 +342,6 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
     tensor_refs = new int*[nz_weights];
     int count = 0;
     for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w[count++] = tensors_w[i]; }
-
-    delete[] tensors_w;
 
     needed = IM.generateNestedPoints(tensors, wrapper); // nested grids exploit nesting
 

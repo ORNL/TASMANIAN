@@ -39,10 +39,10 @@
 namespace TasGrid{
 
 GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0),
-                         surpluses(0), points(0), needed(0), values(0), parents(0), rule(0),
+                         surpluses(0), points(0), needed(0), values(0), rule(0),
                          accel(0), sparse_affinity(0)  {}
 GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0),
-                         surpluses(0), points(0), needed(0), values(0), parents(0), rule(0),
+                         surpluses(0), points(0), needed(0), values(0), rule(0),
                          accel(0), sparse_affinity(0)
 {
     copyGrid(&pwpoly);
@@ -58,11 +58,8 @@ void GridLocalPolynomial::reset(bool clear_rule){
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
     if (values != 0){ delete values; values = 0; }
-    if (parents != 0){ delete[] parents; parents = 0; }
-    //if (roots != 0){ delete[] roots;  roots = 0; }
-    //if (pntr != 0){ delete[] pntr;  pntr = 0; }
-    //if (indx != 0){ delete[] indx;  indx = 0; }
     if (clear_rule){ rule = 0; order = 1; }
+    parents.load(0, 0, 0);
     sparse_affinity = 0;
 }
 
@@ -89,11 +86,13 @@ void GridLocalPolynomial::write(std::ofstream &ofs) const{
             ofs << "1 ";
             needed->write(ofs);
         }
-        if (parents == 0){
+        if (parents.getNumStrips() == 0){
             ofs << "0" << endl;
         }else{
             ofs << "1";
-            for(int i=0; i<rule->getMaxNumParents()*(points->getNumIndexes()); i++){ ofs << " " << parents[i]; } ofs << endl;
+            size_t n = parents.getTotalEntries();
+            const int *p = parents.getStrip(0);
+            for(size_t i=0; i<n; i++){ ofs << " " << p[i]; } ofs << endl;
         }
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
         ofs << roots.size(); for(auto const &r : roots){ ofs << " " << r; } ofs << endl;
@@ -132,11 +131,11 @@ void GridLocalPolynomial::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             ofs.write((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
         }
-        if (parents == 0){
+        if (parents.getTotalEntries() == 0){
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) parents, rule->getMaxNumParents()*(points->getNumIndexes()) * sizeof(int));
+            ofs.write((char*) parents.getStrip(0), parents.getTotalEntries() * sizeof(int));
         }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
@@ -184,9 +183,10 @@ void GridLocalPolynomial::read(std::ifstream &ifs){
         }
         ifs >> flag;
         if (flag == 1){
-            int num_parents = rule->getMaxNumParents() * points->getNumIndexes();
-            parents = new int[num_parents];
-            for(int i=0; i<num_parents; i++){ ifs >> parents[i]; }
+            parents.resize(rule->getMaxNumParents() * num_dimensions, points->getNumIndexes());
+            size_t n = parents.getTotalEntries();
+            int *p = parents.getStrip(0);
+            for(size_t i=0; i<n; i++){ ifs >> p[i]; }
         }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
@@ -244,8 +244,8 @@ void GridLocalPolynomial::readBinary(std::ifstream &ifs){
 
         ifs.read((char*) &flag, sizeof(char));
         if (flag == 'y'){
-            parents = new int[rule->getMaxNumParents() * points->getNumIndexes()];
-            ifs.read((char*) parents, rule->getMaxNumParents() * points->getNumIndexes() * sizeof(int));
+            parents.resize(rule->getMaxNumParents() * num_dimensions, points->getNumIndexes());
+            ifs.read((char*) parents.getStrip(0), parents.getTotalEntries() * sizeof(int));
         }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
@@ -294,11 +294,11 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     rule->setMaxOrder(order);
 
     IndexManipulator IM(num_dimensions);
-    UnsortedIndexSet* deltas = IM.getToalDegreeDeltas(depth);
+    IndexSet* deltas = IM.selectTensors(depth, type_level, 0, rule_leja);
 
     // Limits come here
     if (level_limits != 0){
-        UnsortedIndexSet *limited = IM.removeIndexesByLimit(deltas, level_limits);
+        IndexSet *limited = IM.removeIndexesByLimit(deltas, level_limits);
         if (limited != 0){
             delete deltas;
             deltas = limited;
@@ -313,7 +313,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     if (num_outputs == 0){
         points = needed;
         needed = 0;
-        parents = IM.computeDAGupLocal(points, rule);
+        IM.computeDAGupLocal(points, rule, parents);
     }else{
         values = new StorageSet(num_outputs, needed->getNumIndexes());
     }
@@ -341,6 +341,7 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
 
     if (pwpoly->points != 0) points = new IndexSet(pwpoly->points);
     if (pwpoly->needed != 0) needed = new IndexSet(pwpoly->needed);
+    parents = pwpoly->parents;
 
     buildTree();
 
@@ -668,12 +669,14 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     }
 
     // apply the transpose of the surplus transformation
-    const int *dagUp;
-    if (num_outputs == 0){
-        dagUp = parents;
+    const Data2D<int> *dagUp;
+    Data2D<int> lparents;
+    if (parents.getNumStrips() == work->getNumIndexes()){
+        dagUp = &parents;
     }else{
         IndexManipulator IM(num_dimensions);
-        dagUp = IM.computeDAGupLocal(work, rule);
+        IM.computeDAGupLocal(work, rule, lparents);
+        dagUp = &lparents;
     }
 
     std::vector<int> level(active_points.size());
@@ -706,7 +709,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp[ monkey_tail[current] * max_parents + monkey_count[current] ];
+                        int branch = dagUp->getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
@@ -725,10 +728,6 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
                 }
             }
         }
-    }
-
-    if (num_outputs > 0){
-        delete[] dagUp;
     }
 }
 
@@ -754,10 +753,10 @@ void GridLocalPolynomial::recomputeSurpluses(){
     const double* v = values->getValues(0);
     std::copy(v, v + ((size_t) num_points) * ((size_t) num_outputs), surpluses);
 
+    Data2D<int> dagUp;
     IndexManipulator IM(num_dimensions);
-    int *dagUp = IM.computeDAGupLocal(points, rule);
+    IM.computeDAGupLocal(points, rule, dagUp);
 
-    //int max_parents = (rule->isSemiLocal()) ? 2*num_dimensions : num_dimensions;
     int max_parents = rule->getMaxNumParents() * num_dimensions;
 
     std::vector<int> level(num_points);
@@ -792,7 +791,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp[monkey_tail[current] * max_parents + monkey_count[current]];
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
@@ -813,8 +812,6 @@ void GridLocalPolynomial::recomputeSurpluses(){
             }
         }
     }
-
-    delete[] dagUp;
 }
 
 double GridLocalPolynomial::evalBasisRaw(const int point[], const double x[]) const{
@@ -1261,12 +1258,14 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
     double basis_value;
 
-    const int *dagUp;
-    if (num_outputs == 0){
-        dagUp = parents;
+    const Data2D<int> *dagUp;
+    Data2D<int> lparents;
+    if (parents.getNumStrips() == work->getNumIndexes()){
+        dagUp = &parents;
     }else{
         IndexManipulator IM(num_dimensions);
-        dagUp = IM.computeDAGupLocal(work, rule);
+        IM.computeDAGupLocal(work, rule, lparents);
+        dagUp = &lparents;
     }
 
     int num_points = work->getNumIndexes();
@@ -1297,7 +1296,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp[ monkey_tail[current] * max_parents + monkey_count[current] ];
+                        int branch = dagUp->getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
@@ -1325,8 +1324,6 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
     delete[] monkey_count;
     delete[] monkey_tail;
-
-    if (num_outputs > 0)  delete[] dagUp;
 }
 
 void GridLocalPolynomial::integrate(double q[], double *conformal_correction) const{
@@ -1401,10 +1398,10 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
     }else{
         // construct a series of 1D interpolants and use a refinement criteria that is a combination of the two hierarchical coefficients
         IndexManipulator IM(num_dimensions);
-        int *dagUp = IM.computeDAGupLocal(points, rule);
+        Data2D<int> dagUp;
+        IM.computeDAGupLocal(points, rule, dagUp);
 
         int max_1D_parents = rule->getMaxNumParents();
-        int max_parents = max_1D_parents * num_dimensions;
 
         SplitDirections split(points);
 
@@ -1454,7 +1451,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
 
                         while(monkey_count[0] < (d+1) * max_1D_parents){
                             if (monkey_count[current] < (d+1) * max_1D_parents){
-                                int branch = dagUp[monkey_tail[current] * max_parents + monkey_count[current]];
+                                int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
                                 if ((branch == -1) || (used[global_to_pnts[branch]])){
                                     monkey_count[current]++;
                                 }else{
@@ -1496,8 +1493,6 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
 
             delete[] vals;
         }
-
-        delete[] dagUp;
     }
 }
 
