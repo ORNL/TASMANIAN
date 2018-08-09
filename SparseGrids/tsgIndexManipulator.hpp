@@ -70,7 +70,8 @@ public:
 
     IndexSet* getPolynomialSpace(const IndexSet *tensors, TypeOneDRule rule, bool iexact) const;
 
-    int getMinChildLevel(const IndexSet *set, TypeDepth type, const int weights[], TypeOneDRule rule);
+    int getMinChildLevel(const IndexSet *iset, TypeDepth type, const int weights[], TypeOneDRule rule);
+    // find the minimum level of a child of iset
 
     IndexSet* selectFlaggedChildren(const IndexSet *set, const bool flagged[], const int *level_limits = 0) const;
 

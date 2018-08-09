@@ -851,41 +851,42 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
     return s;
 }
 
-int IndexManipulator::getMinChildLevel(const IndexSet *set, TypeDepth type, const int weights[], TypeOneDRule rule){
-    int n = set->getNumIndexes();
+int IndexManipulator::getMinChildLevel(const IndexSet *iset, TypeDepth type, const int weights[], TypeOneDRule rule){
+    int n = iset->getNumIndexes();
 
-    int min_level = -1;
+    std::vector<int> w;
+    getProperWeights(type, weights, w);
+
+    long long min_level = -1;
 
     #pragma omp parallel
     {
-        int local_level = -1;
-        int *kid = new int[num_dimensions];
+        long long local_level = -1;
+        std::vector<int> kid(num_dimensions);
 
         #pragma omp for
         for(int i=0; i<n; i++){
-            const int* p = set->getIndex(i);
-            std::copy(p, p + num_dimensions, kid);
-            for(int j=0; j<num_dimensions; j++){
-                kid[j]++;
-                if (set->getSlot(kid) == -1){
-                    int l = getIndexWeight(kid, type, weights, rule);
-                    if ((local_level == -1) || (l<local_level)) local_level = l;
+            const int* p = iset->getIndex(i);
+            std::copy(p, p + num_dimensions, kid.data());
+            for(auto &k : kid){
+                k++;
+                if (iset->getSlot(kid) == -1){
+                    long long l = getIndexWeight(kid, type, w, rule);
+                    if ((local_level == -1) || (l < local_level)) local_level = l;
                 }
-                kid[j]--;
+                k--;
             }
         }
 
         #pragma omp critical
         {
-            if ((min_level == -1) || ((local_level!=-1) && (local_level<min_level))) min_level = local_level;
+            if ((min_level == -1) || ((local_level != -1) && (local_level<min_level))) min_level = local_level;
         }
-
-        delete[] kid;
     }
 
-    int min_weight = weights[0];  for(int j=1; j<num_dimensions; j++) if (min_weight > weights[j]) min_weight = weights[j];
+    long long min_weight = weights[0]; for(int j=1; j<num_dimensions; j++) if (min_weight > weights[j]) min_weight = weights[j];
     min_level /= min_weight;
-    return min_level;
+    return (int) min_level;
 }
 
 IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *set, const bool flagged[], const int *level_limits) const{
