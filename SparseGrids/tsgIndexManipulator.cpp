@@ -475,7 +475,6 @@ void IndexManipulator::makeTensorWeights(const IndexSet* iset, std::vector<int> 
 IndexSet* IndexManipulator::nonzeroSubset(const IndexSet* iset, const std::vector<int> &weights) const{
     size_t nz_weights = 0;
     for(auto w: weights) if (w != 0) nz_weights++;
-    //for(int i=0; i<set->getNumIndexes(); i++){ if (weights[i] != 0) nz_weights++; }
 
     std::vector<int> index(nz_weights * ((size_t) num_dimensions));
     nz_weights = 0;
@@ -647,7 +646,6 @@ IndexSet* IndexManipulator::generateNestedPoints(const IndexSet *tensors, const 
     for(int i=0; i<num_tensors; i++){
         psets[i] = tensorNestedPoints(tensors->getIndex(i), rule);
     }
-
 
     int warp = num_tensors;
     while(warp > 1){
