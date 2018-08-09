@@ -294,11 +294,11 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     rule->setMaxOrder(order);
 
     IndexManipulator IM(num_dimensions);
-    UnsortedIndexSet* deltas = IM.getToalDegreeDeltas(depth);
+    IndexSet* deltas = IM.selectTensors(depth, type_level, 0, rule_leja);
 
     // Limits come here
     if (level_limits != 0){
-        UnsortedIndexSet *limited = IM.removeIndexesByLimit(deltas, level_limits);
+        IndexSet *limited = IM.removeIndexesByLimit(deltas, level_limits);
         if (limited != 0){
             delete deltas;
             deltas = limited;

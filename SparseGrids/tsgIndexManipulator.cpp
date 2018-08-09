@@ -597,24 +597,6 @@ IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *set, const int limits
 
     return new IndexSet((int) dims, new_idx);
 }
-UnsortedIndexSet* IndexManipulator::removeIndexesByLimit(UnsortedIndexSet *set, const int limits[]) const{
-    size_t c = 0, dims = set->getNumDimensions();
-    for(int i=0; i<set->getNumIndexes(); i++){
-        const int *idx = set->getIndex(i);
-        bool obeys = true;
-        for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
-        if (obeys) c++;
-    }
-    if (c == (size_t) set->getNumIndexes()) return 0;
-    UnsortedIndexSet* restricted = new UnsortedIndexSet((int) dims, (int) c);
-    for(int i=0; i<set->getNumIndexes(); i++){
-        const int *idx = set->getIndex(i);
-        bool obeys = true;
-        for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
-        if (obeys) restricted->addIndex(idx);
-    }
-    return restricted;
-}
 
 void IndexManipulator::computeDAGup(const IndexSet *iset, Data2D<int> &parents) const{
     int n = iset->getNumIndexes();
@@ -864,52 +846,7 @@ int IndexManipulator::getMaxLevel(const IndexSet *iset) const{
     return m;
 }
 
-UnsortedIndexSet* IndexManipulator::getToalDegreeDeltas(int level) const{
-    int num_delta = 1;
-    if (level > 0){
-        int k = (level > num_dimensions) ? num_dimensions : level;
-        int n = level + num_dimensions;
-        for(int i=0; i<k; i++){
-            num_delta *= (n - i);
-            num_delta /= (i + 1);
-        }
-    }
-
-    UnsortedIndexSet* deltas = new UnsortedIndexSet(num_dimensions, num_delta);
-    int *index = new int[num_dimensions]; std::fill(index, index + num_dimensions, 0);
-    deltas->addIndex(index);
-
-    if (num_dimensions == 1){
-        for(int l=1; l<=level; l++) deltas->addIndex(&l);
-    }else{
-        int *remainder = new int[num_dimensions];
-        for(int l=1; l<=level; l++){
-            remainder[0] = l;
-            index[0] = 0;
-            int current = 0;
-            while(index[0] <= remainder[0]){
-                if (index[current] > remainder[current]){
-                    index[--current]++;
-                }else{
-                    if (current == num_dimensions-2){
-                        index[current+1] = remainder[current] - index[current];
-                        deltas->addIndex(index);
-                        index[current]++;
-                    }else{
-                        remainder[current+1] = remainder[current] - index[current];
-                        index[++current] = 0;
-                    }
-                }
-            }
-        }
-        delete[] remainder;
-    }
-    delete[] index;
-
-    return deltas;
-}
-
-IndexSet* IndexManipulator::generatePointsFromDeltas(const UnsortedIndexSet* deltas, const BaseRuleLocalPolynomial *rule) const{
+IndexSet* IndexManipulator::generatePointsFromDeltas(const IndexSet* deltas, const BaseRuleLocalPolynomial *rule) const{
     int num_points = 0;
     for(int i=0; i<deltas->getNumIndexes(); i++){
         const int *p = deltas->getIndex(i);

@@ -58,7 +58,6 @@ public:
     int* referenceGenericPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const;
 
     IndexSet* removeIndexesByLimit(IndexSet *set, const int limits[]) const;
-    UnsortedIndexSet* removeIndexesByLimit(UnsortedIndexSet *set, const int limits[]) const;
 
     void computeDAGup(const IndexSet *iset, Data2D<int> &parents) const;
 
@@ -77,8 +76,7 @@ public:
     int getMaxLevel(const IndexSet *iset) const;
 
     // use by Local Grids
-    UnsortedIndexSet* getToalDegreeDeltas(int level) const;
-    IndexSet* generatePointsFromDeltas(const UnsortedIndexSet* deltas, const BaseRuleLocalPolynomial *rule) const;
+    IndexSet* generatePointsFromDeltas(const IndexSet* deltas, const BaseRuleLocalPolynomial *rule) const;
 
     int* computeDAGupLocal(const IndexSet *set, const BaseRuleLocalPolynomial *rule) const;
 
