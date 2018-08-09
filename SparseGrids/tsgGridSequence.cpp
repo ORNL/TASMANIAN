@@ -40,11 +40,11 @@
 namespace TasGrid{
 
 GridSequence::GridSequence() : num_dimensions(0), num_outputs(0),
-                               points(0), needed(0), parents(0), surpluses(0), nodes(0), coeff(0), values(0),
+                               points(0), needed(0), surpluses(0), nodes(0), coeff(0), values(0),
                                max_levels(0), accel(0)
 {}
 GridSequence::GridSequence(const GridSequence &seq) : num_dimensions(0), num_outputs(0),
-                                                      points(0), needed(0), parents(0), surpluses(0), nodes(0), coeff(0), values(0),
+                                                      points(0), needed(0), surpluses(0), nodes(0), coeff(0), values(0),
                                                       max_levels(0), accel(0)
 {  copyGrid(&seq); }
 GridSequence::~GridSequence(){ reset(); }
@@ -118,7 +118,6 @@ void GridSequence::read(std::ifstream &ifs){
         ifs >> flag;  if (flag == 1){  points = new IndexSet(num_dimensions); points->read(ifs);  }
         ifs >> flag;  if (flag == 1){  needed = new IndexSet(num_dimensions); needed->read(ifs);  }
         IndexManipulator IM(num_dimensions);
-        parents = IM.computeDAGup(((points == 0) ? needed : points));
         ifs >> flag;
         if (flag == 1){
             surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())];
@@ -154,7 +153,6 @@ void GridSequence::readBinary(std::ifstream &ifs){
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ needed = new IndexSet(num_dimensions); needed->readBinary(ifs); }
 
         IndexManipulator IM(num_dimensions);
-        parents = IM.computeDAGup(((points == 0) ? needed : points));
 
         ifs.read((char*) &flag, sizeof(char));
         if (flag == 'y'){
@@ -183,7 +181,6 @@ void GridSequence::reset(){
     clearAccelerationData();
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (parents != 0){ delete[] parents; parents = 0; }
     if (surpluses != 0){ delete[] surpluses; surpluses = 0; }
     if (nodes != 0){ delete[] nodes; nodes = 0; }
     if (coeff != 0){ delete[] coeff; coeff = 0; }
@@ -238,8 +235,6 @@ void GridSequence::setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule cru
 
     needed = pset;
     pset = 0;
-
-    parents = IM.computeDAGup(needed);
 
     max_levels = new int[num_dimensions];
     int max_level; IM.getMaxLevels(needed, max_levels, max_level);
@@ -370,9 +365,7 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
         values->addValues(points, needed, vals);
         points->addIndexSet(needed);
         delete needed; needed = 0;
-        delete[] parents;
         IndexManipulator IM(num_dimensions);
-        parents = IM.computeDAGup(points);
         int m; IM.getMaxLevels(points, max_levels, m);
     }
     recomputeSurpluses();
@@ -389,9 +382,7 @@ void GridSequence::mergeRefinement(){
     }else{
         points->addIndexSet(needed);
         delete needed; needed = 0;
-        delete[] parents;
         IndexManipulator IM(num_dimensions);
-        parents = IM.computeDAGup(points);
         int m; IM.getMaxLevels(points, max_levels, m);
     }
     if (surpluses != 0) delete[] surpluses;
@@ -991,6 +982,8 @@ void GridSequence::recomputeSurpluses(){
     IM.computeLevels(points, level);
     int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
 
+    IndexSet *parents = IM.computeDAGup(points);
+
     for(int l=1; l<=top_level; l++){
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<n; i++){
@@ -1010,7 +1003,7 @@ void GridSequence::recomputeSurpluses(){
 
                 while(monkey_count[0] < num_dimensions){
                     if (monkey_count[current] < num_dimensions){
-                        int branch = parents[monkey_tail[current] * num_dimensions + monkey_count[current]];
+                        int branch = parents->getIndex(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
@@ -1035,6 +1028,7 @@ void GridSequence::recomputeSurpluses(){
             }
         }
     }
+    delete parents;
 }
 
 void GridSequence::applyTransformationTransposed(double weights[]) const{
@@ -1044,6 +1038,8 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
     IndexManipulator IM(num_dimensions);
     std::vector<int> level;
     IM.computeLevels(work, level);
+
+    IndexSet *parents = IM.computeDAGup(work);
 
     int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
 
@@ -1063,7 +1059,7 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
 
                 while(monkey_count[0] < num_dimensions){
                     if (monkey_count[current] < num_dimensions){
-                        int branch = parents[ monkey_tail[current] * num_dimensions + monkey_count[current] ];
+                        int branch = parents->getIndex(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
@@ -1081,6 +1077,7 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
         }
     }
 
+    delete parents;
     delete[] used;
     delete[] monkey_tail;
     delete[] monkey_count;

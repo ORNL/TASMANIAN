@@ -706,22 +706,23 @@ UnsortedIndexSet* IndexManipulator::removeIndexesByLimit(UnsortedIndexSet *set, 
     return restricted;
 }
 
-int* IndexManipulator::computeDAGup(const IndexSet *set) const{
+IndexSet* IndexManipulator::computeDAGup(const IndexSet *set) const{
     int n = set->getNumIndexes();
-    int *parents = new int[n * num_dimensions];
+    std::vector<int> parents(((size_t) n) * ((size_t) num_dimensions));
     #pragma omp parallel for schedule(static)
     for(int i=0; i<n; i++){
         const int *p = set->getIndex(i);
-        int *dad = new int[num_dimensions];
-        std::copy(p, p + num_dimensions, dad);
-        for(int j=0; j<num_dimensions; j++){
-            dad[j]--;
-            parents[i*num_dimensions + j] = (dad[j] < 0) ? -1 : set->getSlot(dad);
-            dad[j]++;
+        std::vector<int> dad(num_dimensions);
+        std::copy(p, p + num_dimensions, dad.data());
+        int *v = &(parents[((size_t) n) * ((size_t) num_dimensions)]);
+        for(auto &d : dad){
+            d--;
+            *v = (d < 0) ? -1 : set->getSlot(dad.data());
+            d++;
+            v++;
         }
-        delete[] dad;
     }
-    return parents;
+    return new IndexSet(num_dimensions, parents);
 }
 
 IndexSet* IndexManipulator::tensorNestedPoints(const int levels[], const OneDimensionalWrapper *rule) const{
