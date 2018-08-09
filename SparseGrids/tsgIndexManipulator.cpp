@@ -778,24 +778,22 @@ IndexSet* IndexManipulator::generateNestedPoints(const IndexSet *tensors, const 
 }
 
 int* IndexManipulator::referenceNestedPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const{
-    int *num_points = new int[num_dimensions];
+    std::vector<int> num_points(num_dimensions);
     int num_total = 1;
     for(int j=0; j<num_dimensions; j++){  num_points[j] = rule->getNumPoints(levels[j]); num_total *= num_points[j];  }
 
     int* refs = new int[num_total];
-    int *p = new int[num_dimensions];
+    std::vector<int> p(num_dimensions);
 
-    for(int i=0; i<num_total; i++){
+    for(int i=num_total-1; i>=0; i--){
         int t = i;
+        auto n = num_points.rbegin();
         for(int j=num_dimensions-1; j>=0; j--){
-            p[j] = t % num_points[j];
-            t /= num_points[j];
+            p[j] = t % *n;
+            t /= *n++;
         }
         refs[i] = points->getSlot(p);
     }
-
-    delete[] p;
-    delete[] num_points;
 
     return refs;
 }
@@ -807,28 +805,29 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
 
     for(int t=0; t<num_tensors; t++){
         const int *ti = tensors->getIndex(t);
-        int *num_points = new int[num_dimensions];
+        std::vector<int> num_points(num_dimensions);
         if (iexact){
-            for(int j=0; j<num_dimensions; j++)  num_points[j] = meta.getIExact(ti[j], rule) + 1;
+            for(int j=0; j<num_dimensions; j++) num_points[j] = meta.getIExact(ti[j], rule) + 1;
         }else{
-            for(int j=0; j<num_dimensions; j++)  num_points[j] = meta.getQExact(ti[j], rule) + 1;
+            for(int j=0; j<num_dimensions; j++) num_points[j] = meta.getQExact(ti[j], rule) + 1;
         }
 
-        int num_total = num_points[0];
-        for(int j=1; j<num_dimensions; j++) num_total *= num_points[j];
+        int num_total = 1;
+        for(auto n : num_points) num_total *= n;
 
-        std::vector<int> poly(num_total * num_dimensions);
+        std::vector<int> poly(((size_t) num_total) * ((size_t) num_dimensions));
 
-        for(int i=0; i<num_total; i++){
+        auto iter = poly.rbegin();
+        for(int i=num_total-1; i>=0; i--){
             int v = i;
+            auto n = num_points.rbegin();
             for(int j=num_dimensions-1; j>=0; j--){
-                poly[i*num_dimensions + j] = v % num_points[j];
-                v /= num_points[j];
+                *iter++ = v % *n;
+                v /= *n++;
             }
         }
 
         sets[t] = new IndexSet(num_dimensions, poly);
-        delete[] num_points;
     }
 
     int warp = num_tensors;
