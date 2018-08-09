@@ -49,59 +49,59 @@ namespace TasGrid{
 namespace TasCUDA{
     // general GPU/CPU I/O, new/delete vectors, send/recv data
     template <typename T>
-    inline T* cudaNew(size_t num_entries, std::ostream *os){
+    inline T* cudaNew(size_t num_entries){
         T* x = 0;
         cudaError_t cudaStat = cudaMalloc(((void**) &x), num_entries * sizeof(T));
-        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaNew()", os);
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaNew()");
         return x;
     }
 
     template <typename T>
-    inline T* cudaSend(size_t num_entries, const T *cpu_array, std::ostream *os){
-        T *x = cudaNew<T>(num_entries, os);
+    inline T* cudaSend(size_t num_entries, const T *cpu_array){
+        T *x = cudaNew<T>(num_entries);
         cudaError_t cudaStat = cudaMemcpy(x, cpu_array, num_entries * sizeof(T), cudaMemcpyHostToDevice);
-        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type)", os);
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type)");
         return x;
     }
 
     template <typename T>
-    inline T* cudaSend(std::vector<T> cpu_vector, std::ostream *os){
-        T *x = cudaNew<T>(cpu_vector.size(), os);
+    inline T* cudaSend(std::vector<T> cpu_vector){
+        T *x = cudaNew<T>(cpu_vector.size());
         cudaError_t cudaStat = cudaMemcpy(x, cpu_vector.data(), cpu_vector.size() * sizeof(T), cudaMemcpyHostToDevice);
-        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type)", os);
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type)");
         return x;
     }
 
     template <typename T>
-    inline void cudaSend(size_t num_entries, const T *cpu_array, T *gpu_array, std::ostream *os){
+    inline void cudaSend(size_t num_entries, const T *cpu_array, T *gpu_array){
         cudaError_t cudaStat = cudaMemcpy(gpu_array, cpu_array, num_entries * sizeof(T), cudaMemcpyHostToDevice);
-        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type, type)", os);
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaSend(type, type)");
     }
 
     template <typename T>
-    inline const T* cudaSendConst(size_t num_entries, const T *cpu_array, T* &gpu_temp_array, std::ostream *os){
+    inline const T* cudaSendConst(size_t num_entries, const T *cpu_array, T* &gpu_temp_array){
         // takes a const cpu_array and returns a newly allocated const gpu array
         // gpu_temp_array is an alias that can be used to delete the const gpu arrray
-        gpu_temp_array = cudaSend<T>(num_entries, cpu_array, os);
+        gpu_temp_array = cudaSend<T>(num_entries, cpu_array);
         return gpu_temp_array;
     }
 
     template <typename T>
-    inline void cudaRecv(size_t num_entries, const T *gpu_array, T *cpu_array, std::ostream *os){
+    inline void cudaRecv(size_t num_entries, const T *gpu_array, T *cpu_array){
         cudaError_t cudaStat = cudaMemcpy(cpu_array, gpu_array, num_entries * sizeof(T), cudaMemcpyDeviceToHost);
-        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaRecv(type, type)", os);
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaRecv(type, type)");
     }
 
     template <typename T>
-    inline void cudaRecv(size_t num_entries, const T *gpu_array, std::vector<T> &cpu_vector, std::ostream *os){
+    inline void cudaRecv(size_t num_entries, const T *gpu_array, std::vector<T> &cpu_vector){
         if (cpu_vector.size() < num_entries) cpu_vector.resize(num_entries);
-        cudaRecv<T>(num_entries, gpu_array, cpu_vector.data(), os);
+        cudaRecv<T>(num_entries, gpu_array, cpu_vector.data());
     }
 
     template <typename T>
-    inline void cudaDel(T *gpu_array, std::ostream *os){
+    inline void cudaDel(T *gpu_array){
         cudaError_t cudaStat = cudaFree(gpu_array);
-        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaDel(type)", os);
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaDel(type)");
     }
 }
 #endif

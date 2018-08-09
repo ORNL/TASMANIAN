@@ -138,22 +138,21 @@ inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule,
 
 // local polynomial basis functions, SPARSE algorithm (2 passes, one pass to compue the non-zeros and one pass to evaluate)
 void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
-                                 int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz,
-                                 std::ostream *os){
-    gpu_spntr = cudaNew<int>(num_x + 1, os);
+                                 int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz){
+    gpu_spntr = cudaNew<int>(num_x + 1);
     // call with fill == false to count the non-zeros per row of the matrix
     devalpwpoly_sparse_realize_rule_order<double, 64, 46, false>
         (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, 0, 0);
 
     int *cpu_spntr = new int[num_x+1];
-    cudaRecv(num_x+1, gpu_spntr, cpu_spntr, os);
+    cudaRecv<int>(num_x+1, gpu_spntr, cpu_spntr);
     cpu_spntr[0] = 0;
     for(int i=1; i<=num_x; i++) cpu_spntr[i] += cpu_spntr[i-1];
     num_nz = cpu_spntr[num_x]; // save the number of non-zeros
-    cudaSend<int>(num_x + 1, cpu_spntr, gpu_spntr, os);
+    cudaSend<int>(num_x + 1, cpu_spntr, gpu_spntr);
     delete[] cpu_spntr;
-    gpu_sindx = cudaNew<int>(num_nz, os);
-    gpu_svals = cudaNew<double>(num_nz, os);
+    gpu_sindx = cudaNew<int>(num_nz);
+    gpu_svals = cudaNew<double>(num_nz);
     // call with fill == true to load the non-zeros
     devalpwpoly_sparse_realize_rule_order<double, 64, 46, true>
         (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);

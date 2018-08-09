@@ -63,22 +63,22 @@ public:
 
     virtual void evaluateFastCPUblas(const double x[], double y[]) const = 0;
 
-    virtual void evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const = 0;
-    virtual void evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const = 0;
-    virtual void evaluateFastGPUmagma(int gpuID, const double x[], double y[], std::ostream *os) const = 0;
+    virtual void evaluateFastGPUcublas(const double x[], double y[]) const = 0;
+    virtual void evaluateFastGPUcuda(const double x[], double y[]) const = 0;
+    virtual void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const = 0;
 
     virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const = 0;
 
-    virtual void evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const = 0;
-    virtual void evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const = 0;
-    virtual void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[], std::ostream *os) const = 0;
+    virtual void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const = 0;
+    virtual void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const = 0;
+    virtual void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const = 0;
 
     virtual void clearRefinement() = 0;
     virtual void mergeRefinement() = 0;
 
     virtual void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const = 0; // add acceleration here
-    virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os) = 0;
+    virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) = 0;
 
     virtual void clearAccelerationData() = 0;
 };

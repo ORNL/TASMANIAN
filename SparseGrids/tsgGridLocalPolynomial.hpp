@@ -78,15 +78,15 @@ public:
     void integrate(double q[], double *conformal_correction) const;
 
     void evaluateFastCPUblas(const double x[], double y[]) const;
-    void evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const;
-    void evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const;
-    void evaluateFastGPUmagma(int gpuID, const double x[], double y[], std::ostream *os) const;
+    void evaluateFastGPUcublas(const double x[], double y[]) const;
+    void evaluateFastGPUcuda(const double x[], double y[]) const;
+    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
 
     void evaluateBatch(const double x[], int num_x, double y[]) const;
     void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const;
-    void evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const;
-    void evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const;
-    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[], std::ostream *os) const;
+    void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction);
     void clearRefinement();
@@ -94,7 +94,7 @@ public:
     int removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction); // returns the number of points kept
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
-    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
+    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
     void clearAccelerationData();
     void setFavorSparse(bool favor);
@@ -108,8 +108,8 @@ public:
     int getSpareBasisMatrixNZ(const double x[], int num_x, int num_chunk) const;
 
     // EXPERIMENTAL: GPU evaluateHierarchicalFunctionsGPU()
-    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[], std::ostream *os) const;
-    void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz, std::ostream *os) const;
+    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
+    void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz) const;
 
 protected:
     void reset(bool clear_rule = true);
@@ -253,7 +253,7 @@ protected:
     void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
     void addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const int *level_limits) const;
 
-    void makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const;
+    void makeCheckAccelerationData(TypeAcceleration acc) const;
     void checkAccelerationGPUValues() const;
     void checkAccelerationGPUNodes() const;
     void checkAccelerationGPUHierarchy() const;

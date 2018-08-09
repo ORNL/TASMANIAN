@@ -1633,15 +1633,15 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             bool dense_pass = true;
 
             cudaSetDevice(gpuID);
-            double *gpux = TasGrid::TasCUDA::cudaSend<double>(xt, &cerr);
-            double *gpuy = TasGrid::TasCUDA::cudaNew<double>(grid.getNumPoints() * nump, &cerr);
+            double *gpux = TasGrid::TasCUDA::cudaSend<double>(xt);
+            double *gpuy = TasGrid::TasCUDA::cudaNew<double>(grid.getNumPoints() * nump);
 
             grid.enableAcceleration(TasGrid::accel_gpu_cuda);
             grid.setGPUID(gpuID);
             grid.evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
 
             double *y = new double[grid.getNumPoints() * nump];
-            TasGrid::TasCUDA::cudaRecv<double>(grid.getNumPoints() * nump, gpuy, y, &cerr);
+            TasGrid::TasCUDA::cudaRecv<double>(grid.getNumPoints() * nump, gpuy, y);
 
             for(int i=0; i<grid.getNumPoints() * nump; i++){
                 if (fabs(y[i] - y_true_dense[i]) > 1.E-11){
@@ -1655,7 +1655,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             }
             pass = pass && dense_pass;
 
-            TasGrid::TasCUDA::cudaDel<double>(gpuy, &cerr);
+            TasGrid::TasCUDA::cudaDel<double>(gpuy);
             delete[] y;
 
             // Sparse version:
@@ -1666,9 +1666,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             grid.setGPUID(gpuID);
             grid.evaluateSparseHierarchicalFunctionsGPU(gpux, nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
 
-            std::vector<int> cpntr; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr, &cerr);
-            std::vector<int> cindx; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx, &cerr);
-            std::vector<double> cvals; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals, &cerr);
+            std::vector<int> cpntr; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr);
+            std::vector<int> cindx; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx);
+            std::vector<double> cvals; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals);
 
             if (pntr[nump] != num_nz){
                 cout << "ERROR: mismatch in the numnz from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
@@ -1696,10 +1696,10 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             pass = pass && sparse_pass;
 
-            TasGrid::TasCUDA::cudaDel<double>(gpux, &cerr);
-            TasGrid::TasCUDA::cudaDel<int>(gpu_pntr, &cerr);
-            TasGrid::TasCUDA::cudaDel<int>(gpu_indx, &cerr);
-            TasGrid::TasCUDA::cudaDel<double>(gpu_vals, &cerr);
+            TasGrid::TasCUDA::cudaDel<double>(gpux);
+            TasGrid::TasCUDA::cudaDel<int>(gpu_pntr);
+            TasGrid::TasCUDA::cudaDel<int>(gpu_indx);
+            TasGrid::TasCUDA::cudaDel<double>(gpu_vals);
         }
 
         delete[] pntr;

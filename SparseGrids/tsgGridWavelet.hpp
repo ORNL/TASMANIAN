@@ -78,15 +78,15 @@ public:
     void integrate(double q[], double *conformal_correction) const;
 
     void evaluateFastCPUblas(const double x[], double y[]) const;
-    void evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const;
-    void evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const;
-    void evaluateFastGPUmagma(int gpuID, const double x[], double y[], std::ostream *os) const;
+    void evaluateFastGPUcublas(const double x[], double y[]) const;
+    void evaluateFastGPUcuda(const double x[], double y[]) const;
+    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
 
     void evaluateBatch(const double x[], int num_x, double y[]) const;
     void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const;
-    void evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const;
-    void evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const;
-    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[], std::ostream *os) const;
+    void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0);
     void clearRefinement();
@@ -94,7 +94,7 @@ public:
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
-    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os);
+    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
     const double* getSurpluses() const;
     const int* getPointIndexes() const;

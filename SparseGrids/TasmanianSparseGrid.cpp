@@ -407,15 +407,15 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
         case accel_gpu_default:
         case accel_gpu_cublas:
             _TASMANIAN_SETGPU
-            base->evaluateFastGPUcublas(x_canonical, y, logstream);
+            base->evaluateFastGPUcublas(x_canonical, y);
             break;
         case accel_gpu_cuda:
             _TASMANIAN_SETGPU
-            base->evaluateFastGPUcuda(x_canonical, y, logstream);
+            base->evaluateFastGPUcuda(x_canonical, y);
             break;
         case accel_gpu_magma:
             _TASMANIAN_SETGPU
-            base->evaluateFastGPUmagma(gpuID, x_canonical, y, logstream);
+            base->evaluateFastGPUmagma(gpuID, x_canonical, y);
             break;
         case accel_cpu_blas:
             base->evaluateFastCPUblas(x_canonical, y);
@@ -434,15 +434,15 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
         case accel_gpu_default:
         case accel_gpu_cublas:
             _TASMANIAN_SETGPU
-            base->evaluateBatchGPUcublas(x_canonical, num_x, y, logstream);
+            base->evaluateBatchGPUcublas(x_canonical, num_x, y);
             break;
         case accel_gpu_cuda:
             _TASMANIAN_SETGPU
-            base->evaluateBatchGPUcuda(x_canonical, num_x, y, logstream);
+            base->evaluateBatchGPUcuda(x_canonical, num_x, y);
             break;
         case accel_gpu_magma:
             _TASMANIAN_SETGPU
-            base->evaluateBatchGPUmagma(gpuID, x_canonical, num_x, y, logstream);
+            base->evaluateBatchGPUmagma(gpuID, x_canonical, num_x, y);
             break;
         case accel_cpu_blas:
             base->evaluateBatchCPUblas(x_canonical, num_x, y);
@@ -850,7 +850,7 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
 #ifdef Tasmanian_ENABLE_CUDA
 const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, double* &gpu_x_temp, int num_x) const{
     if (domain_transform_a != 0){
-        if (acc_domain == 0) acc_domain = new AccelerationDomainTransform(base->getNumDimensions(), domain_transform_a, domain_transform_b, logstream);
+        if (acc_domain == 0) acc_domain = new AccelerationDomainTransform(base->getNumDimensions(), domain_transform_a, domain_transform_b);
         gpu_x_temp = acc_domain->getCanonicalPoints(base->getNumDimensions(), num_x, gpu_x);
         return gpu_x_temp;
     }else{
@@ -967,15 +967,15 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[],
     _TASMANIAN_SETGPU
     double *gpu_temp_x = 0;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
-    pwpoly->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y, logstream);
-    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x, logstream);
+    pwpoly->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y);
+    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x);
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const{
     _TASMANIAN_SETGPU
     double *gpu_temp_x = 0;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
-    pwpoly->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_pntr, gpu_indx, gpu_vals, num_nz, logstream);
-    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x, logstream);
+    pwpoly->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_pntr, gpu_indx, gpu_vals, num_nz);
+    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x);
 }
 #else
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double*, int, double*) const{
@@ -1080,7 +1080,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
 }
 
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
-    base->setHierarchicalCoefficients(c, acceleration, logstream);
+    base->setHierarchicalCoefficients(c, acceleration);
 }
 void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> c){ setHierarchicalCoefficients(c.data()); }
 
