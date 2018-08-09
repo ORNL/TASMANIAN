@@ -335,9 +335,9 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
 }
 
 void GridWavelet::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
-void GridWavelet::evaluateFastGPUcublas(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
-void GridWavelet::evaluateFastGPUcuda(const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
-void GridWavelet::evaluateFastGPUmagma(int, const double x[], double y[], std::ostream*) const{ evaluate(x, y); }
+void GridWavelet::evaluateFastGPUcublas(const double x[], double y[]) const{ evaluate(x, y); }
+void GridWavelet::evaluateFastGPUcuda(const double x[], double y[]) const{ evaluate(x, y); }
+void GridWavelet::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
 
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
@@ -348,13 +348,13 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
 void GridWavelet::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     evaluateBatch(x, num_x, y);
 }
-void GridWavelet::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream*) const{
+void GridWavelet::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
     evaluateBatch(x, num_x, y);
 }
-void GridWavelet::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream*) const{
+void GridWavelet::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     evaluateBatch(x, num_x, y);
 }
-void GridWavelet::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream*) const{
+void GridWavelet::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const{
     evaluateBatch(x, num_x, y);
 }
 
@@ -706,7 +706,7 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
     }
 }
 
-void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream *os){
+void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     std::vector<double> *vals = 0;
     size_t num_ponits = (size_t) getNumPoints();
     size_t size_coeff = num_ponits * ((size_t) num_outputs);
@@ -726,9 +726,9 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     if (acc == accel_cpu_blas){
         evaluateBatchCPUblas(x.data(), points->getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x.data(), points->getNumIndexes(), vals->data(), os);
+        evaluateBatchGPUcublas(x.data(), points->getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x.data(), points->getNumIndexes(), vals->data(), os);
+        evaluateBatchGPUcuda(x.data(), points->getNumIndexes(), vals->data());
     }else{
         evaluateBatch(x.data(), points->getNumIndexes(), vals->data());
     }

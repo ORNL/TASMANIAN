@@ -645,7 +645,7 @@ void GridGlobal::evaluateFastCPUblas(const double[], double[]) const{}
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{
+void GridGlobal::evaluateFastGPUcublas(const double x[], double y[]) const{
     makeCheckAccelerationData(accel_gpu_cublas);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
@@ -657,14 +657,14 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[], std::ostrea
     delete[] weights;
 }
 #else
-void GridGlobal::evaluateFastGPUcublas(const double[], double[], std::ostream *) const{}
+void GridGlobal::evaluateFastGPUcublas(const double[], double[]) const{}
 #endif // Tasmanian_ENABLE_CUDA
-void GridGlobal::evaluateFastGPUcuda(const double x[], double y[], std::ostream *os) const{
-    evaluateFastGPUcublas(x, y, os);
+void GridGlobal::evaluateFastGPUcuda(const double x[], double y[]) const{
+    evaluateFastGPUcublas(x, y);
 }
 
 #ifdef Tasmanian_ENABLE_MAGMA
-void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[], std::ostream *os) const{
+void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
     makeCheckAccelerationData(accel_gpu_magma);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
@@ -676,7 +676,7 @@ void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[], s
     delete[] weights;
 }
 #else
-void GridGlobal::evaluateFastGPUmagma(int, const double[], double[], std::ostream *) const{}
+void GridGlobal::evaluateFastGPUmagma(int, const double[], double[]) const{}
 #endif // Tasmanian_ENABLE_MAGMA
 
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
@@ -704,7 +704,7 @@ void GridGlobal::evaluateBatchCPUblas(const double[], int, double[]) const{}
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
+void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas);
 
@@ -717,14 +717,14 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[],
     delete[] weights;
 }
 #else
-void GridGlobal::evaluateBatchGPUcublas(const double[], int, double[], std::ostream *) const{}
+void GridGlobal::evaluateBatchGPUcublas(const double[], int, double[]) const{}
 #endif // Tasmanian_ENABLE_CUDA
-void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream *os) const{
-    evaluateBatchGPUcublas(x, num_x, y, os);
+void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
+    evaluateBatchGPUcublas(x, num_x, y);
 }
 
 #ifdef Tasmanian_ENABLE_MAGMA
-void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[], std::ostream *os) const{
+void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_magma);
 
@@ -737,7 +737,7 @@ void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, d
     delete[] weights;
 }
 #else
-void GridGlobal::evaluateBatchGPUmagma(int, const double[], int, double[], std::ostream *) const{}
+void GridGlobal::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
 #endif // Tasmanian_ENABLE_MAGMA
 
 #ifdef Tasmanian_ENABLE_CUDA
@@ -1113,7 +1113,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *l
     delete[] flagged;
     delete[] surp;
 }
-void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc, std::ostream*){
+void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     if (accel != 0) accel->resetGPULoadedData();
     if (points != 0) clearRefinement();
     loadNeededPoints(c, acc);

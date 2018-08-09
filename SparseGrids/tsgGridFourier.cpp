@@ -666,26 +666,26 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
     evaluate(x,y);
 }
-void GridFourier::evaluateFastGPUcublas(const double x[], double y[], std::ostream*) const{
+void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
     evaluate(x,y);
 }
-void GridFourier::evaluateFastGPUcuda(const double x[], double y[], std::ostream*) const{
+void GridFourier::evaluateFastGPUcuda(const double x[], double y[]) const{
     evaluate(x,y);
 }
-void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[], std::ostream*) const{
+void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[]) const{
     evaluate(x,y);
 }
 
 void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     evaluateBatch(x, num_x, y);
 }
-void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream*) const {
+void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const {
     evaluateBatch(x, num_x, y);
 }
-void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[], std::ostream*) const {
+void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const {
     evaluateBatch(x, num_x, y);
 }
-void GridFourier::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[], std::ostream*) const {
+void GridFourier::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const {
     evaluateBatch(x, num_x, y);
 }
 
@@ -737,7 +737,7 @@ void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int nu
     }
 }
 
-void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration, std::ostream*){
+void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration){
     // takes c to be length 2*num_outputs*num_points
     // first num_points*num_outputs are the real part; second num_points*num_outputs are the imaginary part
 
