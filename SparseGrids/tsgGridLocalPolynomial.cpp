@@ -442,18 +442,18 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], st
     std::vector<double> svals;
     buildSparseVector<false>(x, num_nz, sindx, svals);
     buildSparseVector<true>(x, num_nz, sindx, svals);
-    int *gpu_sindx = TasCUDA::cudaSend<int>(sindx, os);
-    double *gpu_svals = TasCUDA::cudaSend<double>(svals, os);
-    double *gpu_y = TasCUDA::cudaNew<double>(num_outputs, os);
+    int *gpu_sindx = TasCUDA::cudaSend<int>(sindx);
+    double *gpu_svals = TasCUDA::cudaSend<double>(svals);
+    double *gpu_y = TasCUDA::cudaNew<double>(num_outputs);
 
     gpu_acc->cusparseMatveci(num_outputs, num_points, num_nz, gpu_sindx, gpu_svals, gpu_y);
     //TasCUDA::cudaSparseVecDenseMat(num_outputs, num_points, num_nz, gpu_acc->getGPUValues(), gpu_sindx, gpu_svals, gpu_y);
 
-    TasCUDA::cudaRecv<double>(num_outputs, gpu_y, y, os);
+    TasCUDA::cudaRecv<double>(num_outputs, gpu_y, y);
 
-    TasCUDA::cudaDel<int>(gpu_sindx, os);
-    TasCUDA::cudaDel<double>(gpu_svals, os);
-    TasCUDA::cudaDel<double>(gpu_y, os);
+    TasCUDA::cudaDel<int>(gpu_sindx);
+    TasCUDA::cudaDel<double>(gpu_svals);
+    TasCUDA::cudaDel<double>(gpu_y);
 }
 #else
 void GridLocalPolynomial::evaluateFastGPUcublas(const double[], double[], std::ostream*) const{}
@@ -540,22 +540,22 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
     bool useDense = (sparse_affinity == -1) || ((sparse_affinity == 0) && (num_dimensions > 6)); // dimension is the real criteria here
 
     if (useDense){
-        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
-        double *gpu_weights = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) points->getNumIndexes()), os);
-        double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) values->getNumOutputs()), os);
+        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x);
+        double *gpu_weights = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) points->getNumIndexes()));
+        double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) values->getNumOutputs()));
 
         buildDenseBasisMatrixGPU(gpu_x, num_x, gpu_weights, os);
         gpu_acc->cublasDGEMM(false, values->getNumOutputs(), num_x, num_points, gpu_weights, gpu_result);
         //TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
 
-        TasCUDA::cudaRecv<double>(num_x * values->getNumOutputs(), gpu_result, y, os);
+        TasCUDA::cudaRecv<double>(num_x * values->getNumOutputs(), gpu_result, y);
 
-        TasCUDA::cudaDel<double>(gpu_result, os);
-        TasCUDA::cudaDel<double>(gpu_weights, os);
-        TasCUDA::cudaDel<double>(gpu_x, os);
+        TasCUDA::cudaDel<double>(gpu_result);
+        TasCUDA::cudaDel<double>(gpu_weights);
+        TasCUDA::cudaDel<double>(gpu_x);
     }else{
-        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x, os);
-        double *gpu_y = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs), os);
+        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x);
+        double *gpu_y = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs));
 
         int *gpu_spntr, *gpu_sindx, num_nz = 0;
         double *gpu_svals;
@@ -568,13 +568,13 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         }
         //TasCUDA::cudaSparseMatmul(num_x, num_outputs, num_nz, gpu_spntr, gpu_sindx, gpu_svals, gpu_acc->getGPUValues(), gpu_y);
 
-        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) num_outputs), gpu_y, y, os);
+        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) num_outputs), gpu_y, y);
 
-        TasCUDA::cudaDel<int>(gpu_spntr, os);
-        TasCUDA::cudaDel<int>(gpu_sindx, os);
-        TasCUDA::cudaDel<double>(gpu_svals, os);
-        TasCUDA::cudaDel<double>(gpu_y, os);
-        TasCUDA::cudaDel<double>(gpu_x, os);
+        TasCUDA::cudaDel<int>(gpu_spntr);
+        TasCUDA::cudaDel<int>(gpu_sindx);
+        TasCUDA::cudaDel<double>(gpu_svals);
+        TasCUDA::cudaDel<double>(gpu_y);
+        TasCUDA::cudaDel<double>(gpu_x);
     }
 }
 #else
@@ -1113,7 +1113,7 @@ void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cp
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
     TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, gpu_acc->getGPUNodes(), gpu_acc->getGPUSupport(),
                                 gpu_acc->getGPUpntr(), gpu_acc->getGPUindx(), (int) roots.size(), gpu_acc->getGPUroots(),
-                                gpu_spntr, gpu_sindx, gpu_svals, num_nz, os);
+                                gpu_spntr, gpu_sindx, gpu_svals, num_nz);
 }
 
 #else

@@ -130,7 +130,7 @@ namespace TasCUDA{
     // evaluate local polynomial rules
     void devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y);
     void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
-                            int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nzm, std::ostream *os);
+                            int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nzm);
     void devalpwpoly_sparse_dense(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
                                  int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, double *gpu_dense);
 
@@ -174,9 +174,9 @@ namespace AccelerationMeta{
 
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
 
-    void cudaCheckError(void *cudaStatus, const char *info, std::ostream *os);
-    void cublasCheckError(void *cublasStatus, const char *info, std::ostream *os);
-    void cusparseCheckError(void *cusparseStatus, const char *info, std::ostream *os);
+    void cudaCheckError(void *cudaStatus, const char *info);
+    void cublasCheckError(void *cublasStatus, const char *info);
+    void cusparseCheckError(void *cusparseStatus, const char *info);
 }
 
 // stores domain transforms, to be used by the top class TasmanianSparseGrid
