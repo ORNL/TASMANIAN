@@ -150,6 +150,12 @@ public:
         vec.resize(stride * num_strips);
         data = vec.data();
     }
+    void resize(int new_stride, int new_num_strips, T val){
+        stride = (size_t) new_stride;
+        num_strips = (size_t) new_num_strips;
+        vec.resize(stride * num_strips, val);
+        data = vec.data();
+    }
     void load(int new_stride, int new_num_strips, T* new_data){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
@@ -158,8 +164,10 @@ public:
     }
 
     T* getStrip(int i){ return &(data[i*stride]); }
+    const T* getStrip(int i) const{ return &(data[i*stride]); }
     int getStride() const{ return (int) stride; }
     int getNumStrips() const{ return (int) num_strips; }
+    size_t getTotalEntries() const{ return stride * num_strips; }
 
 private:
     size_t stride, num_strips;

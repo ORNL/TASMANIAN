@@ -898,65 +898,59 @@ IndexSet* IndexManipulator::generatePointsFromDeltas(const IndexSet* deltas, con
     return iset;
 }
 
-int* IndexManipulator::computeDAGupLocal(const IndexSet *set, const BaseRuleLocalPolynomial *rule) const{
-    int n = set->getNumIndexes();
-    int *parents;
+void IndexManipulator::computeDAGupLocal(const IndexSet *iset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents) const{
+    int n = iset->getNumIndexes();
     if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
         int max_parents = rule->getMaxNumParents()*num_dimensions;
-        parents = new int[n * max_parents];
-        std::fill(parents, parents + n * max_parents, -1);
+        parents.resize(max_parents, n, -1);
         int level0_offset = rule->getNumPoints(0);
         #pragma omp parallel for schedule(static)
         for(int i=0; i<n; i++){
-            const int *p = set->getIndex(i);
-            int *dad = new int[num_dimensions];
-            std::copy(p, p + num_dimensions, dad);
+            const int *p = iset->getIndex(i);
+            std::vector<int> dad(num_dimensions);
+            std::copy(p, p + num_dimensions, dad.data());
+            int *pp = parents.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (dad[j] >= level0_offset){
                     int current = p[j];
                     dad[j] = rule->getParent(current);
-                    parents[i*max_parents + 2*j] = set->getSlot(dad);
-                    while ((dad[j] >= level0_offset) && (parents[i*max_parents + 2*j] == -1)){
+                    pp[2*j] = iset->getSlot(dad);
+                    while ((dad[j] >= level0_offset) && (pp[2*j] == -1)){
                         current = dad[j];
                         dad[j] = rule->getParent(current);
-                        parents[i*max_parents + 2*j] = set->getSlot(dad);
+                        pp[2*j] = iset->getSlot(dad);
                     }
                     dad[j] = rule->getStepParent(current);
                     if (dad[j] != -1){
-                        parents[i*max_parents + 2*j + 1] = set->getSlot(dad);
-                    }else{
-                        parents[i*max_parents + 2*j + 1] = -1;
+                        pp[2*j + 1] = iset->getSlot(dad.data());
                     }
                     dad[j] = p[j];
                 }
             }
-            delete[] dad;
         }
     }else{ // this assumes that level zero has only one node
-        parents = new int[n * num_dimensions];
+        parents.resize(num_dimensions, n);
         #pragma omp parallel for schedule(static)
         for(int i=0; i<n; i++){
-            const int *p = set->getIndex(i);
-            int *dad = new int[num_dimensions];
-            std::copy(p, p + num_dimensions, dad);
+            const int *p = iset->getIndex(i);
+            std::vector<int> dad(num_dimensions);
+            std::copy(p, p + num_dimensions, dad.data());
+            int *pp = parents.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (dad[j] == 0){
-                    parents[i*num_dimensions + j] = -1;
+                    pp[j] = -1;
                 }else{
                     dad[j] = rule->getParent(dad[j]);
-                    parents[i*num_dimensions + j] = set->getSlot(dad);
-                    while((dad[j] != 0) && (parents[i*num_dimensions + j] == -1)){
+                    pp[j] = iset->getSlot(dad.data());
+                    while((dad[j] != 0) && (pp[j] == -1)){
                         dad[j] = rule->getParent(dad[j]);
-                        parents[i*num_dimensions + j] = set->getSlot(dad);
+                        pp[j] = iset->getSlot(dad);
                     }
                     dad[j] = p[j];
                 }
             }
-            delete[] dad;
         }
     }
-
-    return parents;
 }
 
 }

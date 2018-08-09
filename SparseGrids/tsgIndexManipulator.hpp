@@ -78,7 +78,7 @@ public:
     // use by Local Grids
     IndexSet* generatePointsFromDeltas(const IndexSet* deltas, const BaseRuleLocalPolynomial *rule) const;
 
-    int* computeDAGupLocal(const IndexSet *set, const BaseRuleLocalPolynomial *rule) const;
+    void computeDAGupLocal(const IndexSet *iset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents) const;
 
 protected:
     void getProperWeights(TypeDepth type, const int *anisotropic_weights, std::vector<int> &weights) const;

@@ -293,7 +293,7 @@ private:
     IndexSet *needed;
 
     StorageSet *values;
-    int *parents;
+    Data2D<int> parents;
 
     // tree for evaluation
     //int num_roots, *roots;
