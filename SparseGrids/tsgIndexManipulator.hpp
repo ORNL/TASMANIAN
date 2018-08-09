@@ -62,7 +62,7 @@ public:
     IndexSet* removeIndexesByLimit(IndexSet *set, const int limits[]) const;
     UnsortedIndexSet* removeIndexesByLimit(UnsortedIndexSet *set, const int limits[]) const;
 
-    IndexSet* computeDAGup(const IndexSet *set) const;
+    void computeDAGup(const IndexSet *iset, Data2D<int> &parents) const;
 
     IndexSet* tensorNestedPoints(const int levels[], const OneDimensionalWrapper *rule) const;
     IndexSet* generateNestedPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const;

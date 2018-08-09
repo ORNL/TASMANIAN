@@ -982,7 +982,8 @@ void GridSequence::recomputeSurpluses(){
     IM.computeLevels(points, level);
     int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
 
-    IndexSet *parents = IM.computeDAGup(points);
+    Data2D<int> parents;
+    IM.computeDAGup(points, parents);
 
     for(int l=1; l<=top_level; l++){
         #pragma omp parallel for schedule(dynamic)
@@ -1003,7 +1004,7 @@ void GridSequence::recomputeSurpluses(){
 
                 while(monkey_count[0] < num_dimensions){
                     if (monkey_count[current] < num_dimensions){
-                        int branch = parents->getIndex(monkey_tail[current])[monkey_count[current]];
+                        int branch = parents.getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
@@ -1028,7 +1029,6 @@ void GridSequence::recomputeSurpluses(){
             }
         }
     }
-    delete parents;
 }
 
 void GridSequence::applyTransformationTransposed(double weights[]) const{
@@ -1039,7 +1039,8 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
     std::vector<int> level;
     IM.computeLevels(work, level);
 
-    IndexSet *parents = IM.computeDAGup(work);
+    Data2D<int> parents;
+    IM.computeDAGup(work, parents);
 
     int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
 
@@ -1059,7 +1060,7 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
 
                 while(monkey_count[0] < num_dimensions){
                     if (monkey_count[current] < num_dimensions){
-                        int branch = parents->getIndex(monkey_tail[current])[monkey_count[current]];
+                        int branch = parents.getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
@@ -1077,7 +1078,6 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
         }
     }
 
-    delete parents;
     delete[] used;
     delete[] monkey_tail;
     delete[] monkey_count;

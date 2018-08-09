@@ -799,7 +799,8 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         int top_level = level[0];  for(int i=1; i<num_points; i++){ if (top_level < level[i]) top_level = level[i];  }
         int top_1d = 0; const int *id = points->getIndex(0); for(int i=0; i<num_points*num_dimensions; i++) if (top_1d < id[i]) top_1d = id[i];
 
-        IndexSet *parents = IM.computeDAGup(points);
+        Data2D<int> parents;
+        IM.computeDAGup(points, parents);
 
         const double* nodes = wrapper->getNodes(0);
         double *coeff = new double[top_1d+1];
@@ -827,7 +828,7 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
 
                     while(monkey_count[0] < num_dimensions){
                         if (monkey_count[current] < num_dimensions){
-                            int branch = parents->getIndex(monkey_tail[current])[monkey_count[current]];
+                            int branch = parents.getStrip(monkey_tail[current])[monkey_count[current]];
                             if ((branch == -1) || (used[branch])){
                                 monkey_count[current]++;
                             }else{
@@ -861,7 +862,6 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         }
 
         delete[] coeff;
-        delete parents;
 
         if (normalize){
             #pragma omp parallel for schedule(static)
