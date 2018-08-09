@@ -433,7 +433,7 @@ void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) cons
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[], std::ostream *os) const{
     int num_points = points->getNumIndexes();
-    makeCheckAccelerationData(accel_gpu_cublas, os);
+    makeCheckAccelerationData(accel_gpu_cublas);
     checkAccelerationGPUValues();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
@@ -512,7 +512,7 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[], std::ostream *os) const{
     int num_points = points->getNumIndexes();
-    makeCheckAccelerationData(accel_gpu_cublas, os);
+    makeCheckAccelerationData(accel_gpu_cublas);
     checkAccelerationGPUValues();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
@@ -532,7 +532,7 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         return;
     }
     int num_points = points->getNumIndexes();
-    makeCheckAccelerationData(accel_gpu_cuda, os);
+    makeCheckAccelerationData(accel_gpu_cuda);
     checkAccelerationGPUValues();
     checkAccelerationGPUNodes();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
@@ -1100,14 +1100,14 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[], std::ostream *os) const{
     int num_points = getNumPoints();
-    makeCheckAccelerationData(accel_gpu_cuda, os);
+    makeCheckAccelerationData(accel_gpu_cuda);
     checkAccelerationGPUNodes();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
     TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, gpu_acc->getGPUNodes(), gpu_acc->getGPUSupport(), gpu_y);
 }
 void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz, std::ostream *os) const{
     int num_points = getNumPoints();
-    makeCheckAccelerationData(accel_gpu_cuda, os);
+    makeCheckAccelerationData(accel_gpu_cuda);
     checkAccelerationGPUNodes();
     checkAccelerationGPUHierarchy();
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
@@ -1702,14 +1702,13 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const{
+void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration acc) const{
     if (AccelerationMeta::isAccTypeFullMemoryGPU(acc)){
         if ((accel != 0) && (!accel->isCompatible(acc))){
             delete accel;
             accel = 0;
         }
         if (accel == 0){ accel = (BaseAccelerationData*) (new AccelerationDataGPUFull()); }
-        ((AccelerationDataGPUFull*) accel)->setLogStream(os);
     }
 }
 void GridLocalPolynomial::checkAccelerationGPUValues() const{
@@ -1758,7 +1757,7 @@ void GridLocalPolynomial::checkAccelerationGPUHierarchy() const{
     gpu->loadGPUHierarchy(num_points, pntr.data(), indx.data(), (int) roots.size(), roots.data());
 }
 #else
-void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration, std::ostream *) const{}
+void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration) const{}
 void GridLocalPolynomial::checkAccelerationGPUValues() const{}
 void GridLocalPolynomial::checkAccelerationGPUNodes() const{}
 void GridLocalPolynomial::checkAccelerationGPUHierarchy() const{}

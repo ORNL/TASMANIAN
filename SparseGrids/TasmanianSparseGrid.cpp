@@ -850,7 +850,7 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
 #ifdef Tasmanian_ENABLE_CUDA
 const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, double* &gpu_x_temp, int num_x) const{
     if (domain_transform_a != 0){
-        if (acc_domain == 0) acc_domain = new AccelerationDomainTransform(base->getNumDimensions(), domain_transform_a, domain_transform_b, logstream);
+        if (acc_domain == 0) acc_domain = new AccelerationDomainTransform(base->getNumDimensions(), domain_transform_a, domain_transform_b);
         gpu_x_temp = acc_domain->getCanonicalPoints(base->getNumDimensions(), num_x, gpu_x);
         return gpu_x_temp;
     }else{

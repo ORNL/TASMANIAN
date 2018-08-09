@@ -56,9 +56,6 @@ public:
     AccelerationDataGPUFull();
     ~AccelerationDataGPUFull();
 
-    void setLogStream(std::ostream *os);
-    // for GPU error messages/codes
-
     bool isCompatible(TypeAcceleration acc) const;
     // when setting a new acceleration, check if we need to also set a new object or can reuse this one
 
@@ -118,8 +115,6 @@ private:
     void *magmaCudaStream;
     void *magmaCudaQueue;
     #endif
-
-    std::ostream *logstream;
 };
 
 // namespace realized in tsgCudaKernels.cu, each function corresponds to a CUDA kernel for evaluations of basis matrix, domain transform, or fallback linear algebra
@@ -182,7 +177,7 @@ namespace AccelerationMeta{
 // stores domain transforms, to be used by the top class TasmanianSparseGrid
 class AccelerationDomainTransform{
 public:
-    AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b, std::ostream *os);
+    AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b);
     ~AccelerationDomainTransform();
 
     double* getCanonicalPoints(int num_dimensions, int num_x, const double *gpu_transformed_x);
@@ -192,8 +187,6 @@ private:
     #ifdef Tasmanian_ENABLE_CUDA
     double *gpu_trans_a, *gpu_trans_b;
     int padded_size;
-
-    std::ostream *logstream;
     #endif // Tasmanian_ENABLE_CUDA
 };
 

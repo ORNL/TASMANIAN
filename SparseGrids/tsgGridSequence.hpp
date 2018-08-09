@@ -143,7 +143,7 @@ protected:
 
     double evalBasis(const int f[], const int p[]) const; // evaluate function corresponding to f at p
 
-    void makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const;
+    void makeCheckAccelerationData(TypeAcceleration acc) const;
 
 private:
     int num_dimensions, num_outputs;

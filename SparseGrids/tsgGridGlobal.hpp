@@ -124,7 +124,7 @@ protected:
 
     static double legendre(int n, double x);
 
-    void makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const;
+    void makeCheckAccelerationData(TypeAcceleration acc) const;
 
 private:
     int num_dimensions, num_outputs;

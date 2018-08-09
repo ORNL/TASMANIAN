@@ -47,7 +47,7 @@ BaseAccelerationData::~BaseAccelerationData(){}
 
 AccelerationDataGPUFull::AccelerationDataGPUFull() :
     gpu_values(0), gpu_nodes(0), gpu_support(0),
-    gpu_hpntr(0), gpu_hindx(0), gpu_roots(0), logstream(0){
+    gpu_hpntr(0), gpu_hindx(0), gpu_roots(0){
 #ifdef Tasmanian_ENABLE_CUDA
     cublasHandle = 0;
     cusparseHandle = 0;
@@ -110,8 +110,6 @@ void AccelerationDataGPUFull::initializeMagma(int gpuID){
 #else
 void AccelerationDataGPUFull::initializeMagma(int){}
 #endif
-
-void AccelerationDataGPUFull::setLogStream(std::ostream *os){ logstream = os; }
 
 bool AccelerationDataGPUFull::isCompatible(TypeAcceleration acc) const{ return AccelerationMeta::isAccTypeFullMemoryGPU(acc); }
 
@@ -481,15 +479,15 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
     }
 }
 #else
-void AccelerationMeta::cudaCheckError(void *, const char *, std::ostream *){}
-void AccelerationMeta::cublasCheckError(void *, const char *, std::ostream *){}
-void AccelerationMeta::cusparseCheckError(void *, const char *, std::ostream *){}
+void AccelerationMeta::cudaCheckError(void *, const char *){}
+void AccelerationMeta::cublasCheckError(void *, const char *){}
+void AccelerationMeta::cusparseCheckError(void *, const char *){}
 #endif // Tasmanian_ENABLE_CUDA
 
 
 #ifdef Tasmanian_ENABLE_CUDA
-AccelerationDomainTransform::AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b, std::ostream *os) :
-    gpu_trans_a(0), gpu_trans_b(0), padded_size(0), logstream(os)
+AccelerationDomainTransform::AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b) :
+    gpu_trans_a(0), gpu_trans_b(0), padded_size(0)
 {
     padded_size = num_dimensions;
     while(padded_size < 512) padded_size += num_dimensions;
@@ -521,7 +519,7 @@ double* AccelerationDomainTransform::getCanonicalPoints(int num_dimensions, int 
     return gpu_x_canonical;
 }
 #else
-AccelerationDomainTransform::AccelerationDomainTransform(int, const double*, const double*, std::ostream *){}
+AccelerationDomainTransform::AccelerationDomainTransform(int, const double*, const double*){}
 AccelerationDomainTransform::~AccelerationDomainTransform(){}
 double* AccelerationDomainTransform::getCanonicalPoints(int, int, const double*){ return 0; }
 #endif // Tasmanian_ENABLE_CUDA

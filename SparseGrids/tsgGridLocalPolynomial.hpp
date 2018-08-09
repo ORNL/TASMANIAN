@@ -253,7 +253,7 @@ protected:
     void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
     void addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const int *level_limits) const;
 
-    void makeCheckAccelerationData(TypeAcceleration acc, std::ostream *os) const;
+    void makeCheckAccelerationData(TypeAcceleration acc) const;
     void checkAccelerationGPUValues() const;
     void checkAccelerationGPUNodes() const;
     void checkAccelerationGPUHierarchy() const;
