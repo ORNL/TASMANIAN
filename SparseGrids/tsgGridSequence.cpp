@@ -125,14 +125,13 @@ void GridSequence::read(std::ifstream &ifs){
         }
         values = new StorageSet(0, 0); values->read(ifs);
         int mp = 0, mn = 0, max_level;
-        max_levels = new int[num_dimensions];
         if (needed == 0){ // points must be non-zero
             IM.getMaxLevels(points, max_levels, mp);
         }else if (points == 0){ // only needed, no points (right after creation)
             IM.getMaxLevels(needed, max_levels, mn);
         }else{ // both points and needed are set
             IM.getMaxLevels(points, max_levels, mp);
-            IM.getMaxLevels(needed, 0, mn);
+            mn = IM.getMaxLevel(needed);
         }
         max_level = (mp > mn) ? mp : mn;
         prepareSequence(max_level + 1);
@@ -163,14 +162,13 @@ void GridSequence::readBinary(std::ifstream &ifs){
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
 
         int mp = 0, mn = 0, max_level;
-        max_levels = new int[num_dimensions];
         if (needed == 0){ // points must be non-zero
             IM.getMaxLevels(points, max_levels, mp);
         }else if (points == 0){ // only needed, no points (right after creation)
             IM.getMaxLevels(needed, max_levels, mn);
         }else{ // both points and needed are set
             IM.getMaxLevels(points, max_levels, mp);
-            IM.getMaxLevels(needed, 0, mn);
+            mn = IM.getMaxLevel(needed);
         }
         max_level = (mp > mn) ? mp : mn;
         prepareSequence(max_level + 1);
@@ -185,7 +183,6 @@ void GridSequence::reset(){
     if (nodes != 0){ delete[] nodes; nodes = 0; }
     if (coeff != 0){ delete[] coeff; coeff = 0; }
     if (values != 0){ delete values; values = 0; }
-    if (max_levels != 0){ delete[] max_levels; max_levels = 0; }
 }
 void GridSequence::clearRefinement(){
     if (needed != 0){ delete needed; needed = 0; }
@@ -215,8 +212,8 @@ void GridSequence::copyGrid(const GridSequence *seq){
     if ((seq->points != 0) && (seq->needed != 0)){ // there is a refinement
         IndexManipulator IM(num_dimensions);
         int m1, m2;
-        IM.getMaxLevels(seq->points, 0, m1);
-        IM.getMaxLevels(seq->needed, 0, m2);
+        m1 = IM.getMaxLevel(seq->points);
+        m2 = IM.getMaxLevel(seq->needed);
         int max_level = (m1 > m2) ? m1 : m2;
         delete[] nodes; delete[] coeff;
         prepareSequence(max_level+1);
@@ -236,7 +233,6 @@ void GridSequence::setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule cru
     needed = pset;
     pset = 0;
 
-    max_levels = new int[num_dimensions];
     int max_level; IM.getMaxLevels(needed, max_levels, max_level);
 
     prepareSequence(max_level + 1);
@@ -274,7 +270,7 @@ void GridSequence::updateGrid(IndexSet* &update){
         if ((needed != 0) && (needed->getNumIndexes() > 0)){
             OneDimensionalMeta meta;
             IndexManipulator IM(num_dimensions);
-            int max_level; IM.getMaxLevels(update, 0, max_level);
+            int max_level = IM.getMaxLevel(update);
             delete[] nodes; delete[] coeff;
             nodes = 0; coeff = 0;
             prepareSequence(max_level+1);
@@ -805,7 +801,7 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
     }
     total->addIndexSet(points); // avoids the case where existing points in tensor are not included in the update
 
-    int max_level; IM.getMaxLevels(total, 0, max_level);
+    int max_level = IM.getMaxLevel(total);
     delete[] nodes; delete[] coeff;
     prepareSequence(max_level+1);
     delete total;
@@ -857,7 +853,8 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const int 
         }
 
         OneDimensionalMeta meta;
-        int max_level; IM.getMaxLevels(total, 0, max_level);
+        int max_level;
+        max_level = IM.getMaxLevel(total);
         delete[] nodes; delete[] coeff;
         prepareSequence(max_level+1);
 

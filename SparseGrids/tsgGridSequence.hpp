@@ -159,7 +159,7 @@ private:
 
     StorageSet *values;
 
-    int *max_levels;
+    std::vector<int> max_levels;
 
     mutable BaseAccelerationData *accel;
 };

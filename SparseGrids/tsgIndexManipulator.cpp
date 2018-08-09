@@ -799,32 +799,33 @@ int IndexManipulator::getMinChildLevel(const IndexSet *iset, TypeDepth type, con
     return (int) min_level;
 }
 
-IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *set, const bool flagged[], const int *level_limits) const{
+IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *iset, const bool flagged[], const int *level_limits) const{
     GranulatedIndexSet *next_level = new GranulatedIndexSet(num_dimensions);
-    int *kid = new int[num_dimensions];
+    std::vector<int> kid(num_dimensions);
 
+    int n = iset->getNumIndexes();
     if (level_limits == 0){
-        for(int i=0; i<set->getNumIndexes(); i++){
+        for(int i=0; i<n; i++){
             if (flagged[i]){
-                const int* p = set->getIndex(i);
-                std::copy(p, p + num_dimensions, kid);
-                for(int j=0; j<num_dimensions; j++){
-                    kid[j]++;
-                    if (set->getSlot(kid) == -1){
+                const int* p = iset->getIndex(i);
+                std::copy(p, p + num_dimensions, kid.data());
+                for(auto &k : kid){
+                    k++;
+                    if (iset->getSlot(kid.data()) == -1){
                         next_level->addIndex(kid);
                     }
-                    kid[j]--;
+                    k--;
                 }
             }
         }
     }else{
-        for(int i=0; i<set->getNumIndexes(); i++){
+        for(int i=0; i<n; i++){
             if (flagged[i]){
-                const int* p = set->getIndex(i);
-                std::copy(p, p + num_dimensions, kid);
+                const int* p = iset->getIndex(i);
+                std::copy(p, p + num_dimensions, kid.data());
                 for(int j=0; j<num_dimensions; j++){
                     kid[j]++;
-                    if (((level_limits[j] == -1) || (kid[j] <= level_limits[j])) && (set->getSlot(kid) == -1)){
+                    if (((level_limits[j] == -1) || (kid[j] <= level_limits[j])) && (iset->getSlot(kid.data()) == -1)){
                         next_level->addIndex(kid);
                     }
                     kid[j]--;
@@ -832,7 +833,6 @@ IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *set, const boo
             }
         }
     }
-    delete[] kid;
     if (next_level->getNumIndexes() == 0){
         delete next_level;
         return 0;
@@ -844,19 +844,24 @@ IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *set, const boo
     return result;
 }
 
-void IndexManipulator::getMaxLevels(const IndexSet *set, int max_levels[], int &total_max) const{
-    int * ml = new int[num_dimensions];
-    std::fill(ml, ml + num_dimensions, 0);
-    for(int i=1; i<set->getNumIndexes(); i++){
-        const int* t = set->getIndex(i);
-        for(int j=0; j<num_dimensions; j++){  if (t[j] > ml[j]) ml[j] = t[j];  }
+void IndexManipulator::getMaxLevels(const IndexSet *iset, std::vector<int> &max_levels, int &total_max) const{
+    max_levels.resize(num_dimensions, 0);
+    int n = iset->getNumIndexes();
+    for(int i=1; i<n; i++){
+        const int* t = iset->getIndex(i);
+        for(int j=0; j<num_dimensions; j++) if (max_levels[j] < t[j]) max_levels[j] = t[j];
     }
-    total_max = ml[0];
-    for(int j=1; j<num_dimensions; j++){  if (total_max < ml[j]) total_max = ml[j];  }
-    if (max_levels != 0){
-        std::copy(ml, ml+num_dimensions, max_levels);
+    total_max = 0;
+    for(auto m : max_levels) if (total_max < m) total_max = m;
+}
+int IndexManipulator::getMaxLevel(const IndexSet *iset) const{
+    int n = iset->getNumIndexes();
+    int m = 0;
+    for(int i=1; i<n; i++){
+        const int* t = iset->getIndex(i);
+        for(int j=0; j<num_dimensions; j++) if (m < t[j]) m = t[j];
     }
-    delete[] ml;
+    return m;
 }
 
 UnsortedIndexSet* IndexManipulator::getToalDegreeDeltas(int level) const{

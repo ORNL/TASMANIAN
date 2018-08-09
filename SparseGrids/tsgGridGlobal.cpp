@@ -134,7 +134,7 @@ void GridGlobal::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             needed->writeBinary(ofs);
         }
-        ofs.write((char*) max_levels, num_dimensions * sizeof(int));
+        ofs.write((char*) max_levels.data(), num_dimensions * sizeof(int));
 
         if (num_outputs > 0) values->writeBinary(ofs);
         if (updated_tensors != 0){
@@ -164,7 +164,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
         active_w.resize(active_tensors->getNumIndexes());  for(int i=0; i<active_tensors->getNumIndexes(); i++){ ifs >> active_w[i]; }
         ifs >> flag; if (flag == 1){ points = new IndexSet(num_dimensions); points->read(ifs); }
         ifs >> flag; if (flag == 1){ needed = new IndexSet(num_dimensions); needed->read(ifs); }
-        max_levels = new int[num_dimensions];  for(int j=0; j<num_dimensions; j++){ ifs >> max_levels[j]; }
+        max_levels.resize(num_dimensions);  for(auto &m : max_levels){ ifs >> m; }
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->read(ifs); }
         ifs >> flag;
         IndexManipulator IM(num_dimensions);
@@ -173,7 +173,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
             updated_tensors = new IndexSet(num_dimensions);  updated_tensors->read(ifs);
             updated_active_tensors = new IndexSet(num_dimensions);  updated_active_tensors->read(ifs);
             updated_active_w.resize(updated_active_tensors->getNumIndexes());  for(int i=0; i<updated_active_tensors->getNumIndexes(); i++){ ifs >> updated_active_w[i]; }
-            IM.getMaxLevels(updated_tensors, 0, oned_max_level);
+            oned_max_level = IM.getMaxLevel(updated_tensors);
         }else{
             oned_max_level = max_levels[0];
             for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
@@ -227,8 +227,8 @@ void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ points = new IndexSet(num_dimensions); points->readBinary(ifs); }
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ needed = new IndexSet(num_dimensions); needed->readBinary(ifs); }
 
-        max_levels = new int[num_dimensions];
-        ifs.read((char*) max_levels, num_dimensions * sizeof(int));
+        max_levels.resize(num_dimensions);
+        ifs.read((char*) max_levels.data(), num_dimensions * sizeof(int));
 
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
 
@@ -240,7 +240,7 @@ void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
             updated_active_tensors = new IndexSet(num_dimensions);  updated_active_tensors->readBinary(ifs);
             updated_active_w.resize(updated_active_tensors->getNumIndexes());
             ifs.read((char*) (updated_active_w.data()), updated_active_tensors->getNumIndexes() * sizeof(int));
-            IM.getMaxLevels(updated_tensors, 0, oned_max_level);
+            oned_max_level = IM.getMaxLevel(updated_tensors);
         }else{
             oned_max_level = max_levels[0];
             for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
@@ -275,7 +275,6 @@ void GridGlobal::reset(bool includeCustom){
     if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (max_levels != 0){ delete[] max_levels; max_levels = 0; }
     if (values != 0){ delete values;  values = 0; }
     if (updated_tensors != 0){ delete updated_tensors; updated_tensors = 0; }
     if (updated_active_tensors != 0){ delete updated_active_tensors; updated_active_tensors = 0; }
@@ -348,8 +347,8 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
     IndexManipulator IM(num_dimensions, custom);
 
     OneDimensionalMeta meta(custom);
-    max_levels = new int[num_dimensions];
-    int max_level; IM.getMaxLevels(tensors, max_levels, max_level);
+    int max_level;
+    IM.getMaxLevels(tensors, max_levels, max_level);
     wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
 
 
@@ -413,7 +412,8 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_we
             updated_tensors->addIndexSet(tensors); // avoids the case where existing points in tensor are not included in the update
 
             OneDimensionalMeta meta(custom);
-            int max_level; IM.getMaxLevels(updated_tensors, 0, max_level);
+            int max_level;
+            max_level = IM.getMaxLevel(updated_tensors);
             delete wrapper;
             wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
 
@@ -513,7 +513,7 @@ void GridGlobal::getQuadratureWeights(double weights[]) const{
 void GridGlobal::getInterpolationWeights(const double x[], double weights[]) const{
     IndexSet *work = (points == 0) ? needed : points;
 
-    CacheLagrange<double> *lcache = new CacheLagrange<double>(num_dimensions, max_levels, wrapper, x);
+    CacheLagrange<double> *lcache = new CacheLagrange<double>(num_dimensions, max_levels.data(), wrapper, x);
 
     int num_points = work->getNumIndexes();
     std::fill(weights, weights + num_points, 0.0);
@@ -874,9 +874,7 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         GridGlobal *gg = new GridGlobal();
         IndexSet *quadrature_tensors = IM.selectTensors(polynomial_set, true, rule_gausspatterson);
 
-        int *max_lvl = new int[num_dimensions];
-        int ml; IM.getMaxLevels(quadrature_tensors, max_lvl, ml);
-        delete[] max_lvl;
+        int ml = IM.getMaxLevel(quadrature_tensors);
 
         if (ml < TableGaussPatterson::getNumLevels()-1){
             gg->setTensors(quadrature_tensors, 0, rule_gausspatterson, 0.0, 0.0);
@@ -1042,7 +1040,8 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     updated_tensors->addIndexSet(tensors); // avoids the case where existing points in tensor are not included in the update
 
     OneDimensionalMeta meta(custom);
-    int max_level; IM.getMaxLevels(updated_tensors, 0, max_level);
+    int max_level;
+    max_level = IM.getMaxLevel(updated_tensors);
     delete wrapper;
     wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
 
@@ -1094,7 +1093,8 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *l
         }
 
         OneDimensionalMeta meta(custom);
-        int max_level; IM.getMaxLevels(updated_tensors, 0, max_level);
+        int max_level;
+        max_level = IM.getMaxLevel(updated_tensors);
         delete wrapper;
         wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
 

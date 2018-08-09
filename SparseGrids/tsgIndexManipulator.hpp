@@ -71,9 +71,10 @@ public:
     int getMinChildLevel(const IndexSet *iset, TypeDepth type, const int weights[], TypeOneDRule rule);
     // find the minimum level of a child of iset
 
-    IndexSet* selectFlaggedChildren(const IndexSet *set, const bool flagged[], const int *level_limits = 0) const;
+    IndexSet* selectFlaggedChildren(const IndexSet *iset, const bool flagged[], const int *level_limits = 0) const;
 
-    void getMaxLevels(const IndexSet *set, int max_levels[], int &total_max) const;
+    void getMaxLevels(const IndexSet *iset, std::vector<int> &max_levels, int &total_max) const;
+    int getMaxLevel(const IndexSet *iset) const;
 
     // use by Local Grids
     UnsortedIndexSet* getToalDegreeDeltas(int level) const;
