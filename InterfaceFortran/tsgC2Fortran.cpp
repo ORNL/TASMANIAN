@@ -43,7 +43,7 @@ extern "C" void tsgc2fmat_(int *rows, int *cols, double *mat);
 
 
 TasmanianSparseGrid **_tsg_grid_list;
-int _tsg_num_grids; 
+int _tsg_num_grids;
 
 
 extern "C"{
@@ -127,12 +127,12 @@ void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *
     be  = (opt_flags[2] != 0 ) ? *beta              : 0.0;
     cfn = (opt_flags[3] != 0 ) ? customRuleFilename : 0;
     ll  = (opt_flags[4] != 0 ) ? llimits            : 0;
-    
+
     _tsg_grid_list[*id]->makeGlobalGrid(*dimensions, *outputs, *depth,
         OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule),
         aw, al, be, cfn, ll);
 }
-void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, int *opt_flags, 
+void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, int *opt_flags,
             const int *aniso_weights, const int *llimits){
     const int *aw, *ll;
 
@@ -142,7 +142,7 @@ void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *
     _tsg_grid_list[*id]->makeSequenceGrid(*dimensions, *outputs, *depth,
         OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule), aw, ll);
 }
-void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags, 
+void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags,
             int *order, int *rule, const int *llimits){
     int ord, ru;
     const int *ll;
@@ -249,7 +249,7 @@ void tsgeac_(int *id, int *type, int *output, int *result){
     for(int i=0; i<num_coeff; i++) result[i] = coeff[i];
     delete[] coeff;
 }
-void tsgssr_(int *id, double *tol, int *output, int *opt_flags, const int *llimits){ 
+void tsgssr_(int *id, double *tol, int *output, int *opt_flags, const int *llimits){
     const int *ll;
     ll = (opt_flags[0] != 0) ? llimits : 0;
     _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output, ll); }
