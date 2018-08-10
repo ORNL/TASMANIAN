@@ -512,8 +512,7 @@ bool TasmanianSparseGrid::isFourier() const{
 
 void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[]){
     if ((base == 0) || (base->getNumDimensions() == 0)){
-        if (logstream != 0){ (*logstream) << "ERROR: cannot call setDomainTransform on uninitialized grid!" << endl; }
-        return;
+        throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
     }
     if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     int num_dimensions = base->getNumDimensions();
@@ -529,8 +528,7 @@ void TasmanianSparseGrid::clearDomainTransform(){
 }
 void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
     if ((base == 0) || (base->getNumDimensions() == 0) || (domain_transform_a.size() == 0)){
-        if (logstream != 0){ (*logstream) << "ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!" << endl; }
-        return;
+        throw std::runtime_error("ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!");
     }
     std::copy(domain_transform_a.begin(), domain_transform_a.end(), a);
     std::copy(domain_transform_b.begin(), domain_transform_b.end(), b);
@@ -650,8 +648,7 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
 
 void TasmanianSparseGrid::setConformalTransformASIN(const int truncation[]){
     if ((base == 0) || (base->getNumDimensions() == 0)){
-        if (logstream != 0){ (*logstream) << "ERROR: cannot call setConformalTransformASIN on uninitialized grid!" << endl; }
-        return;
+        throw std::runtime_error("ERROR: cannot call setConformalTransformASIN on uninitialized grid!");
     }
     clearConformalTransform();
     int num_dimensions = base->getNumDimensions();
@@ -663,8 +660,7 @@ void TasmanianSparseGrid::clearConformalTransform(){
 }
 void TasmanianSparseGrid::getConformalTransformASIN(int truncation[]) const{
     if ((base == 0) || (base->getNumDimensions() == 0) || (conformal_asin_power == 0)){
-        if (logstream != 0){ (*logstream) << "ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!" << endl; }
-        return;
+        throw std::runtime_error("ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!");
     }
     int num_dimensions = base->getNumDimensions();
     std::copy(conformal_asin_power, conformal_asin_power + num_dimensions, truncation);
