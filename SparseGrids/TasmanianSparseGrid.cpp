@@ -979,10 +979,10 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gp
 }
 #else
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double*, int, double*) const{
-    if (logstream != 0) (*logstream) << "ERROR: evaluateHierarchicalFunctionsGPU() called, but the library wasn't compiled with Tasmanian_ENABLE_CUDA=ON!" << endl;
+    throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double*, int, int*&, int*&, double*&, int&) const{
-    if (logstream != 0) (*logstream) << "ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library wasn't compiled with Tasmanian_ENABLE_CUDA=ON!" << endl;
+    throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
 }
 #endif
 
