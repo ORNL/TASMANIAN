@@ -13,11 +13,6 @@
 
 namespace TasDREAM{
 
-using std::cout; // for debugging purposes
-using std::endl; // for debugging purposes
-
-using std::cerr; // for error messages
-
 enum TypeDistribution{
     dist_uniform,
     dist_gaussian,
