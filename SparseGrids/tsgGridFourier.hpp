@@ -59,11 +59,10 @@ public:
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
 
-    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const int* anisotropic_weights = 0, const int* level_limits = 0);
+    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits);
     void copyGrid(const GridFourier *fourier);
 
     void setTensors(IndexSet* &tset, int cnum_outputs);
-    int* referenceExponents(const int levels[], const IndexSet *list);
 
     int getNumDimensions() const;
     int getNumOutputs() const;
@@ -113,6 +112,8 @@ public:
 protected:
     void reset();
     void calculateFourierCoefficients();
+
+    int* referenceExponents(const int levels[], const IndexSet *ilist);
 
     int convertIndexes(const int i, const int levels[]) const;
 

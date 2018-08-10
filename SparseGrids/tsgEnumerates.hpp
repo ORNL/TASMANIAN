@@ -41,11 +41,6 @@
 
 namespace TasGrid{
 
-using std::cout; // for debugging purposes
-using std::endl; // for debugging purposes
-
-using std::cerr; // for error messages
-
 enum TypeIndexRelation{ // internal for IndexSets, unambiguous set comparison
     type_abeforeb, type_bbeforea, type_asameb
 };

@@ -61,14 +61,7 @@ void RuleWavelet::updateOrder(int ord){
 		delete[] data;
 	}
 
-
-	if (! (ord == 1 || ord == 3)){
-		cout << "ERROR: Only first and third-order wavelets are implemented at this time." << endl;
-		cout << "Defaulting to first-order wavelets." << endl;
-		order = 1;
-	}else{
-		order = ord;
-	}
+    order = ord;
 
 	if(order == 3){
 

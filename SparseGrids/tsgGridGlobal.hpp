@@ -58,12 +58,12 @@ public:
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
 
-    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights = 0, double calpha = 0.0, double cbeta = 0.0, const char* custom_filename = 0, const int *level_limits = 0);
+    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const int *level_limits);
     void copyGrid(const GridGlobal *global);
 
     void setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta);
 
-    void updateGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
+    void updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits);
 
     int getNumDimensions() const;
     int getNumOutputs() const;
@@ -103,8 +103,8 @@ public:
 
     int* estimateAnisotropicCoefficients(TypeDepth type, int output) const;
 
-    void setAnisotropicRefinement(TypeDepth type, int min_growth = 1, int output = 0, const int *level_limits = 0);
-    void setSurplusRefinement(double tolerance, int output = 0, const int *level_limits = 0);
+    void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits);
+    void setSurplusRefinement(double tolerance, int output, const int *level_limits);
     void clearRefinement();
     void mergeRefinement();
 

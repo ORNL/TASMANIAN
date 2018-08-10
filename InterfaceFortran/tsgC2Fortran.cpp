@@ -33,18 +33,17 @@
 
 #include "TasmanianSparseGrid.hpp"
 
+using std::cerr;
+using std::endl;
+
 using namespace TasGrid;
 
-//extern "C" void tsgc2fint_(int *i);
-//extern "C" void tsgc2fdouble_(double *i);
 extern "C" void tsgc2fstr_(int *length, const char *str);
 extern "C" void tsgc2fvec_(int *length, double *vect);
 extern "C" void tsgc2fmat_(int *rows, int *cols, double *mat);
 
-
 TasmanianSparseGrid **_tsg_grid_list;
 int _tsg_num_grids;
-
 
 extern "C"{
 

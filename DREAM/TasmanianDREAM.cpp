@@ -88,10 +88,6 @@ void PosteriorFromModel::evaluate(const std::vector<double> x, std::vector<doubl
     std::vector<double> model_output;
     if (grid != 0){
         grid->evaluateBatch(x, model_output); // fastest
-//        for(int i=0; i<num_points; i++){
-//            //grid->evaluate(&(x[i*num_dimensions]), &(model_cache[i*num_outputs])); // slow, thread safe
-//            grid->fastEvaluate(&(x[i*num_dimensions]), &(model_cache[i*num_outputs])); // faster, not thread safe
-//        }
     }else{
         if (cmodel->getAPIversion() < 6){
             model_output.resize(num_points * num_outputs);
@@ -231,10 +227,7 @@ void LikelihoodTSG::evaluate(const std::vector<double> x, std::vector<double> &y
     size_t num_points = x.size() / num_dimensions;
 
     grid->evaluateBatch(x, y); // fastest
-//    for(int i=0; i<num_points; i++){
-//        //grid->evaluate(&(x[i*num_dimensions]), &(y[i])); // slow, thread safe
-//        grid->fastEvaluate(&(x[i*num_dimensions]), &(y[i])); // faster, not thread safe
-//    }
+
     if (savedLogarithmForm ^ useLogForm){ // using form other than the one saved
         if (savedLogarithmForm){
             for(size_t i=0; i<num_points; i++) y[i] = exp(y[i]);
@@ -513,7 +506,7 @@ double* TasmanianDREAM::getPDFHistory() const{
     return hist;
 }
 
-void TasmanianDREAM::getPDFHistory(std::vector<double> history) const{
+void TasmanianDREAM::getPDFHistory(std::vector<double> &history) const{
     history = pdf_history; // copy assignment
 }
 

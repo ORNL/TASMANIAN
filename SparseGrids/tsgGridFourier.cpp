@@ -48,6 +48,8 @@ GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_ou
 GridFourier::~GridFourier(){ reset(); }
 
 void GridFourier::write(std::ofstream &ofs) const{
+    using std::endl;
+
     ofs << std::scientific; ofs.precision(17);
     ofs << num_dimensions << " " << num_outputs << endl;
     if (num_dimensions > 0){
@@ -375,7 +377,7 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
 
 }
 
-int* GridFourier::referenceExponents(const int levels[], const IndexSet *list){
+int* GridFourier::referenceExponents(const int levels[], const IndexSet *ilist){
 
     /*
      * This function ensures the correct match-up between Fourier coefficients and basis functions.
@@ -412,7 +414,7 @@ int* GridFourier::referenceExponents(const int levels[], const IndexSet *list){
             p[j] = (tmp <= (num_points[j]-1)/2 ? tmp : -num_points[j] + tmp);
             t /= num_points[j];
         }
-        refs[i] = list->getSlot(p);
+        refs[i] = ilist->getSlot(p);
     }
 
     delete[] p;

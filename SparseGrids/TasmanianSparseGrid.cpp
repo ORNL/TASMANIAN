@@ -457,7 +457,7 @@ void TasmanianSparseGrid::evaluate(const std::vector<double> x, std::vector<doub
 }
 void TasmanianSparseGrid::evaluateFast(const std::vector<double> x, std::vector<double> &y) const{
     size_t num_outputs = getNumOutputs();
-    if (y.size() < num_outputs){ cout << "Resizing" << endl; y.resize(num_outputs); }
+    if (y.size() < num_outputs){ y.resize(num_outputs); }
     evaluateFast(x.data(), y.data());
 }
 void TasmanianSparseGrid::evaluateBatch(const std::vector<double> x, std::vector<double> &y) const{
@@ -1110,6 +1110,7 @@ const int* TasmanianSparseGrid::getNeededIndexes() const{
 
 void TasmanianSparseGrid::printStats(std::ostream &os) const{
     using std::setw;
+    using std::endl;
 
     const int L1 = 20;
     os << endl;
@@ -1167,6 +1168,8 @@ void TasmanianSparseGrid::printStats(std::ostream &os) const{
 }
 
 void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
+    using std::endl;
+
     ofs << "TASMANIAN SG " << getVersion() << endl;
     ofs << "WARNING: do not edit this manually" << endl;
     if (global != 0){
@@ -1551,6 +1554,9 @@ char* TasmanianSparseGrid::getGPUName(int){
 #endif // Tasmanian_ENABLE_CUDA
 
 // ------------ C Interface for use with Python ctypes and potentially other C codes -------------- //
+using std::cerr;
+using std::endl;
+
 extern "C" {
 void* tsgConstructTasmanianSparseGrid(){ return (void*) new TasmanianSparseGrid(); }
 void tsgDestructTasmanianSparseGrid(void *grid){ delete ((TasmanianSparseGrid*) grid); }
