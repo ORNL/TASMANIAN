@@ -57,6 +57,8 @@ GridGlobal::GridGlobal(const GridGlobal &global) : num_dimensions(0), num_output
 GridGlobal::~GridGlobal(){ reset(true); }
 
 void GridGlobal::write(std::ofstream &ofs) const{
+    using std::endl;
+
     ofs << std::scientific; ofs.precision(17);
     ofs << num_dimensions << " " << num_outputs << " " << alpha << " " << beta << endl;
     if (num_dimensions > 0){

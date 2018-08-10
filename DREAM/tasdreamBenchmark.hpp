@@ -41,6 +41,9 @@
 using namespace TasDREAM;
 using namespace TasGrid;
 
+using std::cout;
+using std::cerr;
+using std::endl;
 using std::setw;
 
 TasmanianSparseGrid* prepareGrid(int num_outputs, int depth, int mpi_me = 0, int mpi_all = 1);

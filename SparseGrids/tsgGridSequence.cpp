@@ -50,6 +50,8 @@ GridSequence::GridSequence(const GridSequence &seq) : num_dimensions(0), num_out
 GridSequence::~GridSequence(){ reset(); }
 
 void GridSequence::write(std::ofstream &ofs) const{
+    using std::endl;
+
     ofs << std::scientific; ofs.precision(17);
     ofs << num_dimensions << " " << num_outputs << endl;
     if (num_dimensions > 0){

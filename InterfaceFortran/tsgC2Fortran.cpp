@@ -33,6 +33,9 @@
 
 #include "TasmanianSparseGrid.hpp"
 
+using std::cerr;
+using std::endl;
+
 using namespace TasGrid;
 
 //extern "C" void tsgc2fint_(int *i);

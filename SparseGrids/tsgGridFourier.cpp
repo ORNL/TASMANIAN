@@ -48,6 +48,8 @@ GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_ou
 GridFourier::~GridFourier(){ reset(); }
 
 void GridFourier::write(std::ofstream &ofs) const{
+    using std::endl;
+
     ofs << std::scientific; ofs.precision(17);
     ofs << num_dimensions << " " << num_outputs << endl;
     if (num_dimensions > 0){

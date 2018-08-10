@@ -54,6 +54,8 @@ void GridWavelet::reset(){
 }
 
 void GridWavelet::write(std::ofstream &ofs) const{
+    using std::endl;
+
     ofs << std::scientific; ofs.precision(17);
     ofs << num_dimensions << " " << num_outputs << " " << order << endl;
     if (num_dimensions > 0){

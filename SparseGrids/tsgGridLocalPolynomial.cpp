@@ -64,6 +64,8 @@ void GridLocalPolynomial::reset(bool clear_rule){
 }
 
 void GridLocalPolynomial::write(std::ofstream &ofs) const{
+    using std::endl;
+
     ofs << std::scientific; ofs.precision(17);
     ofs << num_dimensions << " " << num_outputs << " " << order << " " << top_level << endl;
     if (num_dimensions > 0){

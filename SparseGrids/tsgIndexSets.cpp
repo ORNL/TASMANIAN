@@ -268,7 +268,7 @@ void IndexSet::write(std::ofstream &ofs) const{
     size_t numi = index.size() / num_dimensions;
     ofs << num_dimensions << " " << numi;
     for(auto i : index) ofs << " " << i;
-    ofs << endl;
+    ofs << std::endl;
 }
 void IndexSet::read(std::ifstream &ifs){
     size_t numi;
@@ -457,7 +457,7 @@ void StorageSet::write(std::ofstream &ofs) const{
     }else{
         ofs << " 0";
     }
-    ofs << endl;
+    ofs << std::endl;
 }
 void StorageSet::read(std::ifstream &ifs){
     int has_vals;

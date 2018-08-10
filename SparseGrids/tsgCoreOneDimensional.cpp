@@ -70,15 +70,15 @@ void CustomTabulated::reset(){
 
 // I/O subroutines
 void CustomTabulated::write(std::ofstream &ofs) const{
-    ofs << "description: " << description->c_str() << endl;
-    ofs << "levels: " << num_levels << endl;
+    ofs << "description: " << description->c_str() << std::endl;
+    ofs << "levels: " << num_levels << std::endl;
     for(int i=0; i<num_levels; i++){
-        ofs << num_nodes[i] << " " << precision[i] << endl;
+        ofs << num_nodes[i] << " " << precision[i] << std::endl;
     }
     ofs << std::scientific; ofs.precision(17);
     for(int l=0; l<num_levels; l++){
         for(int i=offsets[l]; i<offsets[l] + num_nodes[l]; i++){
-            ofs << weights[i] << " " << nodes[i] << endl;
+            ofs << weights[i] << " " << nodes[i] << std::endl;
         }
     }
 }
