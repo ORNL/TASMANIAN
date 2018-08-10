@@ -194,9 +194,8 @@ class TestTasmanian(unittest.TestCase):
 
         # test an error message from wrong read
         print("Attempting a bogus read to see if error would be properly registered")
-        gridB.disableLog()
         self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
-        gridB.setErrorLogCerr()
+        print("GOOD: error was registered")
 
         # custom rule test
         grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "GaussPattersonRule.table")
