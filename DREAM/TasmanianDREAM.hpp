@@ -86,12 +86,10 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class PosteriorFromModel : public ProbabilityWeightFunction{
 public:
-    PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model, std::ostream *os = 0);
-    PosteriorFromModel(const CustomModelWrapper *model, std::ostream *os = 0);
+    PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model);
+    PosteriorFromModel(const CustomModelWrapper *model);
     ~PosteriorFromModel();
     void overwritePDF(int dimension, BasePDF* pdf);
-
-    void setErrorLog(std::ostream *os);
 
     int getNumDimensions() const;
 
@@ -116,8 +114,6 @@ private:
     const double *data;
 
     BaseLikelihood *likely;
-
-    std::ostream *logstream;
 };
 
 

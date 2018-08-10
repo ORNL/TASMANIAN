@@ -49,39 +49,27 @@ int ProbabilityWeightFunction::getAPIversion() const{ return TASMANIAN_VERSION_M
 void ProbabilityWeightFunction::getDomainBounds(bool*, bool*){} // kept for backwards compatibility
 void ProbabilityWeightFunction::getDomainBounds(double*, double*){} // kept for backwards compatibility
 
-PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model, std::ostream *os) :
+PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model) :
     grid(model), cmodel(0), num_dimensions(0), num_outputs(0),
-    num_data(0), data(0), likely(0), logstream(os)
+    num_data(0), data(0), likely(0)
 {
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
     num_dimensions = grid->getNumDimensions();
-    if (num_dimensions == 0){
-        if (logstream != 0) (*logstream) << "ERROR: PosteriorFromModel cannot load a grid with no information" << endl;
-    }
+    if (num_dimensions == 0) throw std::runtime_error("ERROR: PosteriorFromModel() cannot load a grid with no dimension");
     num_outputs = grid->getNumOutputs();
-    if (num_outputs < 1){
-        if (logstream != 0) (*logstream) << "ERROR: cannot work with a grid with no outputs" << endl;
-    }
+    if (num_outputs < 1) throw std::runtime_error("ERROR:PosteriorFromModel() cannot work with a grid with no outputs");
+
     SparseGridDomainToPDF::assumeDefaultPDF(model, internal_priors);
     active_priors = internal_priors; // copy assignment
 }
-PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model, std::ostream *os) :
+PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model) :
     grid(0), cmodel(model), num_dimensions(0), num_outputs(0),
-    num_data(0), data(0), likely(0), logstream(os)
+    num_data(0), data(0), likely(0)
 {
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
     num_dimensions = cmodel->getNumDimensions();
-    if (num_dimensions == 0){
-        if (logstream != 0) (*logstream) << "ERROR: PosteriorFromModel cannot load a model with no information" << endl;
-    }
+    if (num_dimensions < 1) throw std::runtime_error("ERROR: PosteriorFromModel() cannot load a model with dimension < 1");
     num_outputs = cmodel->getNumOutputs();
-    if (num_outputs < 1){
-        if (logstream != 0) (*logstream) << "ERROR: cannot work with a model with no outputs" << endl;
-    }
+    if (num_outputs < 1) throw std::runtime_error("ERROR:PosteriorFromModel() cannot work with a model with no outputs");
+
     internal_priors.resize(num_dimensions, 0);
     active_priors.resize(num_dimensions, 0);
 }
@@ -89,10 +77,9 @@ PosteriorFromModel::~PosteriorFromModel(){
     for(auto &p : internal_priors) if (p != 0) delete p;
 }
 void PosteriorFromModel::overwritePDF(int dimension, BasePDF* pdf){
-    if ((dimension < 0) || (dimension >= num_dimensions)) if (logstream != 0) (*logstream) << "ERROR: attempt to overwritePDF for dimension outside of range" << endl;
+    if ((dimension < 0) || (dimension >= num_dimensions)) throw std::invalid_argument("ERROR: overwritePDF() called with incorrect dimension");
     active_priors[dimension] = pdf;
 }
-void PosteriorFromModel::setErrorLog(std::ostream *os){ logstream = os; }
 int PosteriorFromModel::getNumDimensions() const{ return num_dimensions; }
 
 void PosteriorFromModel::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
