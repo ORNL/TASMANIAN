@@ -172,10 +172,6 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     }
 }
 void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int *level_limits){
-    if (outputs < 1){
-        if (logstream != 0){ (*logstream) << "ERROR: makeSequenceGrid is called with zero outputs, for zero outputs use makeGlobalGrid instead" << endl; }
-        return;
-    }
     if (OneDimensionalMeta::isSequence(rule)){
         clear();
         sequence = new GridSequence();
@@ -186,21 +182,18 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
             std::copy(level_limits, level_limits + dimensions, llimits);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: makeSequenceGrid is called with rule " << OneDimensionalMeta::getIORuleString(rule) << " which is not a sequence rule" << endl; }
+        std::string message = "ERROR: makeSequenceGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a sequence rule";
+        throw std::invalid_argument(message);
     }
 }
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
     if (!OneDimensionalMeta::isLocalPolynomial(rule)){
-        if (logstream != 0){
-            (*logstream) << "ERROR: makeLocalPolynomialGrid is called with rule " << OneDimensionalMeta::getIORuleString(rule) << " which is not a local polynomial rule" << endl;
-            (*logstream) << "       use either " << OneDimensionalMeta::getIORuleString(rule_localp) << " or " << OneDimensionalMeta::getIORuleString(rule_semilocalp)
-                         << " or " << OneDimensionalMeta::getIORuleString(rule_localp0)  << endl;
-        }
-        return;
+        std::string message = "ERROR: makeLocalPolynomialGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a local polynomial rule";
+        throw std::invalid_argument(message);
     }
     if (order < -1){
-        if (logstream != 0){ (*logstream) << "ERROR: makeLocalPolynomialGrid is called with order " << order << ", but the order cannot be less than -1." << endl; }
-        return;
+        std::string message = "ERROR: makeLocalPolynomialGrid is called with order: " + std::to_string(order) + ", but the order cannot be less than -1.";
+        throw std::invalid_argument(message);
     }
     clear();
     pwpoly = new GridLocalPolynomial();
@@ -213,8 +206,8 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
 }
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
     if ((order != 1) && (order != 3)){
-        if (logstream != 0){ (*logstream) << "ERROR: makeWaveletGrid is called with order " << order << ", but wavelets are implemented only for orders 1 and 3." << endl; }
-        return;
+        std::string message = "ERROR: makeWaveletGrid is called with order: " + std::to_string(order) + "but wavelets are implemented only for orders 1 and 3.";
+        throw std::invalid_argument(message);
     }
     clear();
     wavelet = new GridWavelet();
