@@ -132,11 +132,9 @@ double TruncatedGaussianPDF::getSample() const{
     return candidate;
 }
 double TruncatedGaussianPDF::getDensity(double x) const{
-    //return ((x < lower) || (x > upper)) ? 0.0 : scale * exp(scaled_precision*(x-mean)*(x-mean));
     return scale * exp(scaled_precision*(x-mean)*(x-mean));
 }
 double TruncatedGaussianPDF::getDensityLog(double x) const{
-    //return ((x < lower) || (x > upper)) ? 0.0 : scale * exp(scaled_precision*(x-mean)*(x-mean));
     return log(scale) + scaled_precision*(x-mean)*(x-mean);
 }
 TypeDistribution TruncatedGaussianPDF::getType() const{ return dist_truncated_gaussian; }

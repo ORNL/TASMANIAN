@@ -292,18 +292,6 @@ private:
     double *data_cache;
 };
 
-
-//double sample_gamma(double alpha){
-//    // George S. Fishman, Sampling from the gamma distribution on a computer, Communications of the ACM, vol. 19, num. 7, pg. 407-409, 1976
-//    double alphap = alpha - 1.0;
-//    double w, v;
-//    do{
-//        v = -log(uniform01());
-//        w = -log(uniform01());
-//    }while(w <= alphap * (v - log(v) - 1.0));
-//    return alpha *v;
-//}
-
 }
 
 
