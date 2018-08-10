@@ -399,7 +399,13 @@ bool TasgridWrapper::updateGrid(){
 void TasgridWrapper::writeGrid() const{ grid->write(gridfilename, !useASCII); }
 bool TasgridWrapper::readGrid(){
     if (grid == 0) grid = new TasmanianSparseGrid();
-    return grid->read(gridfilename);
+    try{
+        grid->read(gridfilename);
+        return true;
+    }catch(std::runtime_error &e){
+        cerr << e.what() << endl;
+        return false;
+    }
 }
 void TasgridWrapper::outputPoints(bool useNeeded) const{
     int num_p, num_d = grid->getNumDimensions();

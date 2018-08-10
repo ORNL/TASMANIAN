@@ -126,7 +126,7 @@ void TasmanianSparseGrid::write(const char *filename, bool binary) const{
     write(ofs, binary);
     ofs.close();
 }
-bool TasmanianSparseGrid::read(const char *filename){
+void TasmanianSparseGrid::read(const char *filename){
     std::ifstream ifs;
     char TSG[3];
     bool binary_format = false;
@@ -141,9 +141,8 @@ bool TasmanianSparseGrid::read(const char *filename){
     }else{
         ifs.open(filename);
     }
-    bool isGood = read(ifs, binary_format);
+    read(ifs, binary_format);
     ifs.close();
-    return isGood;
 }
 
 void TasmanianSparseGrid::write(std::ofstream &ofs, bool binary) const{
@@ -153,11 +152,11 @@ void TasmanianSparseGrid::write(std::ofstream &ofs, bool binary) const{
         writeAscii(ofs);
     }
 }
-bool TasmanianSparseGrid::read(std::ifstream &ifs, bool binary){
+void TasmanianSparseGrid::read(std::ifstream &ifs, bool binary){
     if (binary){
-        return readBinary(ifs);
+        readBinary(ifs);
     }else{
-        return readAscii(ifs);
+        readAscii(ifs);
     }
 }
 
@@ -1286,7 +1285,7 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     }
     flag = 'e'; ofs.write(&flag, sizeof(char)); // E stands for END
 }
-bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
+void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     std::string T;
     std::string message = ""; // used in case there is an exception
     ifs >> T;  if (!(T.compare("TASMANIAN") == 0)){ throw std::runtime_error("ERROR: wrong file format, first word in not 'TASMANIAN'"); }
@@ -1398,10 +1397,8 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
             }
         }
     }
-
-    return true;
 }
-bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
+void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     char *TSG = new char[4];
     ifs.read(TSG, 4*sizeof(char));
     if ((TSG[0] != 'T') || (TSG[1] != 'S') || (TSG[2] != 'G')){
@@ -1463,14 +1460,12 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
         ifs.read((char*) llimits, base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong level limits");
-        return false;
     }
     ifs.read(TSG, sizeof(char)); // end character
     if (TSG[0] != 'e'){
         throw std::runtime_error("ERROR: wrong binary file format, did not reach correct end of Tasmanian block");
     }
     delete[] TSG;
-    return true;
 }
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
