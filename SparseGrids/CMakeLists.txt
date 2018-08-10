@@ -151,7 +151,9 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridExternalTests.hpp
                                   tasgridExternalTests.cpp
                                   tasgridTestFunctions.hpp
-                                  tasgridTestFunctions.cpp)
+                                  tasgridTestFunctions.cpp
+                                  tasgridUnitTests.hpp
+                                  tasgridUnitTests.cpp)
 add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
 
 set_property(TARGET Tasmanian_tasgrid              PROPERTY CXX_STANDARD 11)
@@ -251,6 +253,7 @@ add_test(SparseGridsGlobal       gridtest global)
 add_test(SparseGridsLocal        gridtest local)
 add_test(SparseGridsWavelet      gridtest wavelet)
 add_test(SparseGridsFourier      gridtest fourier)
+add_test(SparseGridsExceptions   gridtest errors)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
     set_tests_properties(SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement SparseGridsGlobal SparseGridsLocal SparseGridsWavelet
         PROPERTIES

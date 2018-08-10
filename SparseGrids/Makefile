@@ -11,7 +11,7 @@ LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp ts
            tsgRuleLocalPolynomial.hpp tsgHardCodedTabulatedRules.hpp tsgGridLocalPolynomial.hpp tsgGridFourier.hpp \
            tsgRuleWavelet.hpp tsgCudaMacros.hpp tsgGridWavelet.hpp \
            tsgCudaLinearAlgebra.hpp tsgCudaBasisEvaluations.hpp tsgAcceleratedDataStructures.hpp \
-           tasgridTestFunctions.hpp tasgridExternalTests.hpp tasgridWrapper.hpp \
+           tasgridTestFunctions.hpp tasgridExternalTests.hpp tasgridWrapper.hpp tasgridUnitTests.hpp \
            TasmanianSparseGrid.hpp
 
 LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlobal.o tsgSequenceOptimizer.o tsgOneDimensionalWrapper.o \
@@ -22,7 +22,7 @@ LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlo
 
 WROBJ = tasgrid_main.o tasgridTestFunctions.o tasgridExternalTests.o tasgridWrapper.o
 
-GTONJ = gridtest_main.o tasgridTestFunctions.o tasgridExternalTests.o
+GTONJ = gridtest_main.o tasgridTestFunctions.o tasgridExternalTests.o tasgridUnitTests.o
 
 LIBNAME = libtasmaniansparsegrid.a
 SHAREDNAME = libtasmaniansparsegrid.so

@@ -39,7 +39,7 @@
 
 #include "TasmanianSparseGrid.hpp"
 #include "tasgridExternalTests.hpp"
-#include "tasgridWrapper.hpp"
+#include "tasgridUnitTests.hpp"
 
 using namespace std;
 using namespace TasGrid;
@@ -63,6 +63,7 @@ int main(int argc, const char ** argv){
     bool seed_reset = false;
 
     TestList test = test_all;
+    UnitTests utest = unit_none;
 
     int gpuid = -1;
     int k = 1;
@@ -81,6 +82,7 @@ int main(int argc, const char ** argv){
         if ((strcmp(argv[k],"local") == 0)) test = test_local;
         if ((strcmp(argv[k],"wavelet") == 0)) test = test_wavelet;
         if ((strcmp(argv[k],"fourier") == 0)) test = test_fourier;
+        if ((strcmp(argv[k],"errors") == 0)) utest = unit_except;
         if ((strcmp(argv[k],"-gpuid") == 0)){
             if (k+1 >= argc){
                 cerr << "ERROR: -gpuid requires a valid number!" << endl;
@@ -98,6 +100,7 @@ int main(int argc, const char ** argv){
     }
 
     ExternalTester tester(1000);
+    GridUnitTester utester;
     tester.setGPUID(gpuid);
     bool pass = true;
     if (debug){
@@ -106,9 +109,16 @@ int main(int argc, const char ** argv){
         tester.debugTestII();
     }else{
         if (verbose) tester.setVerbose(true);
+        if (verbose) utester.setVerbose(true);
+
         if (seed_reset) tester.resetRandomSeed();
-        pass = tester.Test(test);
+
+        if (utest == unit_none){
+            if (test == test_all) pass = pass && utester.Test(unit_all);
+            pass = pass && tester.Test(test);
+        }else{
+            pass = pass && utester.Test(unit_all);
+        }
     }
     return (pass) ? 0 : 1;
-
 }
