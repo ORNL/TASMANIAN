@@ -1248,7 +1248,7 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     ofs << "TASMANIAN SG end" << endl;
 }
 void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
-    const char *TSG = "TSG5"; // last char indicates version
+    const char *TSG = "TSG5"; // last char indicates version (update only if necessary, no need to sync with getVersionMajor())
     ofs.write(TSG, 4 * sizeof(char)); // mark Tasmanian files
     char flag;
     // use Integers to indicate grid types, empty 'e', global 'g', sequence 's', pwpoly 'p', wavelet 'w', Fourier 'f'
@@ -1412,11 +1412,10 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     char *TSG = new char[4];
     ifs.read(TSG, 4*sizeof(char));
     if ((TSG[0] != 'T') || (TSG[1] != 'S') || (TSG[2] != 'G')){
-        if (logstream != 0){ (*logstream) << "ERROR: wrong file format, first 3 bytes are not 'TSG'" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong binary file format, first 3 bytes are not 'TSG'");
     }
     if (TSG[3] != '5'){
-        if (logstream != 0){ (*logstream) << "WARNING: grid seems to be saved in newer format, possibly undefined behavior" << endl; }
+        throw std::runtime_error("ERROR: wrong binary file format, version number is not '5'");
     }
     ifs.read(TSG, sizeof(char)); // what type of grid is it?
     if (TSG[0] == 'g'){
@@ -1447,8 +1446,7 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }else if (TSG[0] == 'e'){
         clear();
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: wrong grid type, wrong file format!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
     }
     ifs.read(TSG, sizeof(char)); // linear domain transform?
     if (TSG[0] == 'y'){
@@ -1457,28 +1455,26 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
         ifs.read((char*) domain_transform_a.data(), base->getNumDimensions() * sizeof(double));
         ifs.read((char*) domain_transform_b.data(), base->getNumDimensions() * sizeof(double));
     }else if (TSG[0] != 'n'){
-        if (logstream != 0){ (*logstream) << "ERROR: wrong domain type, wrong file format!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong binary file format, wrong domain type");
     }
     ifs.read(TSG, sizeof(char)); // conformal domain transform?
     if (TSG[0] == 'a'){
         conformal_asin_power = new int[base->getNumDimensions()];
         ifs.read((char*) conformal_asin_power, base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){
-        if (logstream != 0){ (*logstream) << "ERROR: wrong conformal transform, wrong file format!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong binary file format, wrong conformal transform type");
     }
     ifs.read(TSG, sizeof(char)); // limits
     if (TSG[0] == 'y'){
         llimits = new int[base->getNumDimensions()];
         ifs.read((char*) llimits, base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){
-        if (logstream != 0){ (*logstream) << "ERROR: wrong level limits, wrong file format!" << endl; }
+        throw std::runtime_error("ERROR: wrong binary file format, wrong level limits");
         return false;
     }
     ifs.read(TSG, sizeof(char)); // end character
     if (TSG[0] != 'e'){
-        if (logstream != 0){ (*logstream) << "WARNING: the file did not terminate properly! Possibly undefined behavior." << endl; }
+        throw std::runtime_error("ERROR: wrong binary file format, did not reach correct end of Tasmanian block");
     }
     delete[] TSG;
     return true;
