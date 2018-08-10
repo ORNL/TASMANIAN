@@ -86,12 +86,10 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class PosteriorFromModel : public ProbabilityWeightFunction{
 public:
-    PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model, std::ostream *os = 0);
-    PosteriorFromModel(const CustomModelWrapper *model, std::ostream *os = 0);
+    PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model);
+    PosteriorFromModel(const CustomModelWrapper *model);
     ~PosteriorFromModel();
     void overwritePDF(int dimension, BasePDF* pdf);
-
-    void setErrorLog(std::ostream *os);
 
     int getNumDimensions() const;
 
@@ -116,8 +114,6 @@ private:
     const double *data;
 
     BaseLikelihood *likely;
-
-    std::ostream *logstream;
 };
 
 
@@ -126,10 +122,8 @@ private:
 // Assume likelihood multiply across nodes (so we communicate only scalars)
 class DistributedPosteriorTSGModel : public ProbabilityWeightFunction{
 public:
-    DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior, std::ostream *os = 0);
+    DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior);
     ~DistributedPosteriorTSGModel();
-
-    void setErrorLog(std::ostream *os);
 
     int getNumDimensions() const;
     void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
@@ -151,19 +145,15 @@ private:
     int comm_me, comm_size;
 
     int num_dimensions, num_chains;
-
-    std::ostream *logstream;
 };
 #endif // MPI_VERSION
 
 // use a sparse grid as interpolated likelihood
 class LikelihoodTSG : public ProbabilityWeightFunction{
 public:
-    LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm, std::ostream *os = 0);
+    LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm);
     ~LikelihoodTSG();
     void setPDF(int dimension, BasePDF* pdf);
-
-    void setErrorLog(std::ostream *os);
 
     int getNumDimensions() const;
 
@@ -181,8 +171,6 @@ private:
     int num_dimensions;
     std::vector<BasePDF*> internal_priors;
     std::vector<BasePDF*> active_priors;
-
-    std::ostream *logstream;
 };
 
 
@@ -193,7 +181,7 @@ private:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class TasmanianDREAM{
 public:
-    TasmanianDREAM(std::ostream *os = 0);
+    TasmanianDREAM();
     ~TasmanianDREAM();
     void overwriteBaseUnifrom(const BaseUniform *new_uniform);
 
@@ -201,8 +189,6 @@ public:
     static int getVersionMajor();
     static int getVersionMinor();
     static const char* getLicense();
-
-    void setErrorLog(std::ostream *os);
 
     void setNumChains(int num_dream_chains);
     int getNumChains() const;
@@ -257,8 +243,6 @@ private:
     CppUniformSampler unifrom_cpp;
 
     std::vector<double> pdf_history;
-
-    std::ostream *logstream;
 };
 
 }

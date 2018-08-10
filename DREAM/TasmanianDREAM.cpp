@@ -49,39 +49,27 @@ int ProbabilityWeightFunction::getAPIversion() const{ return TASMANIAN_VERSION_M
 void ProbabilityWeightFunction::getDomainBounds(bool*, bool*){} // kept for backwards compatibility
 void ProbabilityWeightFunction::getDomainBounds(double*, double*){} // kept for backwards compatibility
 
-PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model, std::ostream *os) :
+PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model) :
     grid(model), cmodel(0), num_dimensions(0), num_outputs(0),
-    num_data(0), data(0), likely(0), logstream(os)
+    num_data(0), data(0), likely(0)
 {
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
     num_dimensions = grid->getNumDimensions();
-    if (num_dimensions == 0){
-        if (logstream != 0) (*logstream) << "ERROR: PosteriorFromModel cannot load a grid with no information" << endl;
-    }
+    if (num_dimensions == 0) throw std::runtime_error("ERROR: PosteriorFromModel() cannot load a grid with no dimension");
     num_outputs = grid->getNumOutputs();
-    if (num_outputs < 1){
-        if (logstream != 0) (*logstream) << "ERROR: cannot work with a grid with no outputs" << endl;
-    }
+    if (num_outputs < 1) throw std::runtime_error("ERROR:PosteriorFromModel() cannot work with a grid with no outputs");
+
     SparseGridDomainToPDF::assumeDefaultPDF(model, internal_priors);
     active_priors = internal_priors; // copy assignment
 }
-PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model, std::ostream *os) :
+PosteriorFromModel::PosteriorFromModel(const CustomModelWrapper *model) :
     grid(0), cmodel(model), num_dimensions(0), num_outputs(0),
-    num_data(0), data(0), likely(0), logstream(os)
+    num_data(0), data(0), likely(0)
 {
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
     num_dimensions = cmodel->getNumDimensions();
-    if (num_dimensions == 0){
-        if (logstream != 0) (*logstream) << "ERROR: PosteriorFromModel cannot load a model with no information" << endl;
-    }
+    if (num_dimensions < 1) throw std::runtime_error("ERROR: PosteriorFromModel() cannot load a model with dimension < 1");
     num_outputs = cmodel->getNumOutputs();
-    if (num_outputs < 1){
-        if (logstream != 0) (*logstream) << "ERROR: cannot work with a model with no outputs" << endl;
-    }
+    if (num_outputs < 1) throw std::runtime_error("ERROR:PosteriorFromModel() cannot work with a model with no outputs");
+
     internal_priors.resize(num_dimensions, 0);
     active_priors.resize(num_dimensions, 0);
 }
@@ -89,10 +77,9 @@ PosteriorFromModel::~PosteriorFromModel(){
     for(auto &p : internal_priors) if (p != 0) delete p;
 }
 void PosteriorFromModel::overwritePDF(int dimension, BasePDF* pdf){
-    if ((dimension < 0) || (dimension >= num_dimensions)) if (logstream != 0) (*logstream) << "ERROR: attempt to overwritePDF for dimension outside of range" << endl;
+    if ((dimension < 0) || (dimension >= num_dimensions)) throw std::invalid_argument("ERROR: overwritePDF() called with incorrect dimension");
     active_priors[dimension] = pdf;
 }
-void PosteriorFromModel::setErrorLog(std::ostream *os){ logstream = os; }
 int PosteriorFromModel::getNumDimensions() const{ return num_dimensions; }
 
 void PosteriorFromModel::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
@@ -155,21 +142,14 @@ void PosteriorFromModel::getDomainBounds(std::vector<double> &lower, std::vector
 
 
 #ifdef MPI_VERSION
-DistributedPosteriorTSGModel::DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior, std::ostream *os) :
-    posterior(local_posterior), comm(in_comm), num_chains(0), logstream(os){
-
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
-
+DistributedPosteriorTSGModel::DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior) :
+    posterior(local_posterior), comm(in_comm), num_chains(0){
     MPI_Comm_rank(comm, &comm_me);
     MPI_Comm_size(comm, &comm_size);
 
     num_dimensions = local_posterior->getNumDimensions();
 }
 DistributedPosteriorTSGModel::~DistributedPosteriorTSGModel(){}
-
-void DistributedPosteriorTSGModel::setErrorLog(std::ostream *os){ logstream = os; }
 
 int DistributedPosteriorTSGModel::getNumDimensions() const{ return posterior->getNumDimensions(); }
 
@@ -230,16 +210,11 @@ void DistributedPosteriorTSGModel::endWorkerLoop(){
 #endif // MPI_VERSION
 
 
-LikelihoodTSG::LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm, std::ostream *os) :
-    grid(likely), savedLogarithmForm(savedLogForm), num_dimensions(0), logstream(os)
+LikelihoodTSG::LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm) :
+    grid(likely), savedLogarithmForm(savedLogForm), num_dimensions(0)
 {
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
     num_dimensions = grid->getNumDimensions();
-    if (num_dimensions < 1){
-        if (logstream != 0) (*logstream) << "ERROR: cannot work with an empty Grid" << endl;
-    }
+    if (num_dimensions < 1) throw std::runtime_error("ERROR: in LikelihoodTSG() the likelihood specified has dimension less than 1");
     SparseGridDomainToPDF::assumeDefaultPDF(likely, internal_priors);
     active_priors = internal_priors;
 }
@@ -250,7 +225,6 @@ void LikelihoodTSG::setPDF(int dimension, BasePDF* pdf){
     if ((dimension < 0) || (dimension >= num_dimensions)) return;
     active_priors[dimension] = pdf;
 }
-void LikelihoodTSG::setErrorLog(std::ostream *os){ logstream = os; }
 int LikelihoodTSG::getNumDimensions() const{ return num_dimensions; }
 
 void LikelihoodTSG::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
@@ -304,13 +278,9 @@ void LikelihoodTSG::getDomainBounds(std::vector<double> &lower, std::vector<doub
 //  Actual DREAM Sampler
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-TasmanianDREAM::TasmanianDREAM(std::ostream *os): num_dimensions(-1), num_chains(-1),
-    pdf(0), jump(1.0), state_initialized(false), values_initialized(false), values_logform(false),
-    logstream(os)
+TasmanianDREAM::TasmanianDREAM(): num_dimensions(-1), num_chains(-1),
+    pdf(0), jump(1.0), state_initialized(false), values_initialized(false), values_logform(false)
 {
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
     core = &unifrom_cpp;
 }
 TasmanianDREAM::~TasmanianDREAM(){
@@ -336,8 +306,6 @@ void TasmanianDREAM::clear(){
     jump = 0.0;
 }
 
-void TasmanianDREAM::setErrorLog(std::ostream *os){ logstream = os; }
-
 void TasmanianDREAM::setNumChains(int num_dream_chains){
     num_chains = num_dream_chains;
     state_initialized = false;
@@ -350,18 +318,17 @@ void TasmanianDREAM::setJumpScale(double jump_scale){ jump = jump_scale; }
 double TasmanianDREAM::getJumpScale(){ return jump; }
 
 void TasmanianDREAM::setCorrectionAll(BasePDF *correct){
-    if (num_dimensions == 0) if (logstream != 0) (*logstream) << "ERROR: cannot set correction before the pdf" << endl;
+    if (num_dimensions == 0) throw std::runtime_error("ERROR: cannot setCorrectionAll() before setProbabilityWeightFunction()");
     for(auto &p : corrections) p = correct;
 }
 void TasmanianDREAM::setCorrection(int dim, BasePDF *correct){
-    if (num_dimensions == 0) if (logstream != 0) (*logstream) << "ERROR: cannot set correction before the pdf" << endl;
-    if ((dim < 0) || (dim >= num_dimensions)) if (logstream != 0) (*logstream) << "ERROR: incorrect dimension" << endl;
+    if (num_dimensions == 0) throw std::runtime_error("ERROR: cannot setCorrection() before the setProbabilityWeightFunction()");
+    if ((dim < 0) || (dim >= num_dimensions)) throw std::invalid_argument("ERROR: setCorrection() called with incorrect dimension");
     corrections[dim] = correct;
 }
 const BasePDF* TasmanianDREAM::getCorrection(int dim){
     if ((dim < 0) || (dim >= num_dimensions)){
-        if (logstream != 0) (*logstream) << "ERROR: incorrect dimension" << endl;
-        return 0;
+        throw std::invalid_argument("ERROR: getCorrection() called with incorrect dimension");
     }
     return corrections[dim];
 }
@@ -411,7 +378,7 @@ void TasmanianDREAM::setChainState(const std::vector<double> state){
 }
 
 void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, double *samples, bool useLogForm){
-    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return; } // no chains specified
+    if (num_chains < 1) throw std::runtime_error("ERROR: must call setNumChains() before collectSamples()");
     if (!state_initialized){
         chain_state.resize(num_chains * num_dimensions);
         for(int j=0; j<num_chains; j++){
@@ -441,13 +408,13 @@ void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, double *sam
     }
 }
 double* TasmanianDREAM::collectSamples(int num_burnup, int num_samples, bool useLogForm){
-    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return 0; } // no chains specified
+    if (num_chains < 1) throw std::runtime_error("ERROR: must call setNumChains() before collectSamples()");
     double *samples = new double[num_samples * num_dimensions * num_chains];
     collectSamples(num_burnup, num_samples, samples, useLogForm);
     return samples;
 }
 void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, std::vector<double> &samples, bool useLogForm){
-    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return; } // no chains specified
+    if (num_chains < 1) throw std::runtime_error("ERROR: must call setNumChains() before collectSamples()");
     samples.resize(num_samples * num_dimensions * num_chains);
     collectSamples(num_burnup, num_samples, samples.data(), useLogForm);
 }
