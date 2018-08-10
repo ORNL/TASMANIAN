@@ -105,7 +105,7 @@ void GridFourier::write(std::ofstream &ofs) const{
     }
 }
 
-void GridFourier::read(std::ifstream &ifs, std::ostream *logstream){
+void GridFourier::read(std::ifstream &ifs){
     reset();
     ifs >> num_dimensions >> num_outputs;
     if (num_dimensions > 0){
@@ -213,7 +213,7 @@ void GridFourier::writeBinary(std::ofstream &ofs) const{
     }
 }
 
-void GridFourier::readBinary(std::ifstream &ifs, std::ostream *logstream){
+void GridFourier::readBinary(std::ifstream &ifs){
     reset();
     int num_dim_out[2];
     ifs.read((char*) num_dim_out, 2*sizeof(int));

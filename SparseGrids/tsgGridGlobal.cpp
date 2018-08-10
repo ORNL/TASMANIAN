@@ -147,7 +147,7 @@ void GridGlobal::writeBinary(std::ofstream &ofs) const{
         }
     }
 }
-void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
+void GridGlobal::read(std::ifstream &ifs){
     reset(true); // true deletes any custom rule
     ifs >> num_dimensions >> num_outputs >> alpha >> beta;
     if (num_dimensions > 0){
@@ -200,7 +200,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
     }
 }
 
-void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
+void GridGlobal::readBinary(std::ifstream &ifs){
     reset(true); // true deletes any custom rule
     int num_dim_out[2];
     ifs.read((char*) num_dim_out, 2*sizeof(int));

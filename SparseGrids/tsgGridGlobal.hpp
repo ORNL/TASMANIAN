@@ -53,10 +53,10 @@ public:
     ~GridGlobal();
 
     void write(std::ofstream &ofs) const;
-    void read(std::ifstream &ifs, std::ostream *logstream = 0);
+    void read(std::ifstream &ifs);
 
     void writeBinary(std::ofstream &ofs) const;
-    void readBinary(std::ifstream &ifs, std::ostream *logstream = 0);
+    void readBinary(std::ifstream &ifs);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights = 0, double calpha = 0.0, double cbeta = 0.0, const char* custom_filename = 0, const int *level_limits = 0);
     void copyGrid(const GridGlobal *global);
