@@ -21,7 +21,7 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
           ./include/TasmanianConfig.hpp
 
 ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py testTSG.py sandbox.py example_sparse_grids.cpp example_dream.cpp \
-              libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid tasdream $(HEADERS)
+              libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid tasdream gridtest $(HEADERS)
 
 CONFIGURED_HEADERS = ./SparseGrids/TasmanianConfig.hpp
 
@@ -66,6 +66,12 @@ tasgrid: libtasmaniansparsegrid.a libtasmaniansparsegrid.so ./SparseGrids/tasgri
 	cp ./SparseGrids/tasgrid .
 
 SparseGrids/tasgrid: ./SparseGrids/libtasmaniansparsegrid.so $(TSG_SOURCE) $(CONFIGURED_HEADERS)
+	cd SparseGrids; make
+
+gridtest: libtasmaniansparsegrid.a libtasmaniansparsegrid.so ./SparseGrids/gridtest
+	cp ./SparseGrids/gridtest .
+
+SparseGrids/gridtest: ./SparseGrids/libtasmaniansparsegrid.so $(TSG_SOURCE) $(CONFIGURED_HEADERS)
 	cd SparseGrids; make
 
 # DREAM
@@ -196,7 +202,7 @@ InterfaceFortran/libtasmanianfortran90.a:
 # Testing and examples
 .PHONY: test
 test: $(ALL_TARGETS)
-	./tasgrid -test
+	./gridtest
 	./tasdream -test
 	./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
 
@@ -219,6 +225,7 @@ clean:
 	rm -fr tasmaniansg.mod
 	rm -fr fortester*
 	rm -fr tasgrid
+	rm -fr gridtest
 	rm -fr tasdream
 	rm -fr TasmanianSG.py
 	rm -fr example_sparse_grids.py
