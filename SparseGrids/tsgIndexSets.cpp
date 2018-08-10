@@ -451,9 +451,7 @@ void StorageSet::write(std::ofstream &ofs) const{
     if (values.size() != 0){
         ofs << " 1";
         ofs << std::scientific; ofs.precision(17);
-        for(size_t i=0; i<num_outputs*num_values; i++){
-            ofs << " " << values[i];
-        }
+        for(auto v : values) ofs << " " << v;
     }else{
         ofs << " 0";
     }
@@ -464,9 +462,7 @@ void StorageSet::read(std::ifstream &ifs){
     ifs >> num_outputs >> num_values >> has_vals;
     if (has_vals == 1){
         values.resize(num_outputs * num_values);
-        for(size_t i=0; i<num_outputs*num_values; i++){
-            ifs >> values[i];
-        }
+        for(auto &v : values) ifs >> v;
     }else{
         values.resize(0); // empty values if the file doesn't contain vals
     }
