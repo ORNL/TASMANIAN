@@ -411,10 +411,11 @@ subroutine tsgUpdateSequenceGrid(gridID, depth, gtype, aweights)
   call tsgus(gridID, depth, gtype, opt_flags, aw)
 end subroutine tsgUpdateSequenceGrid
 !=======================================================================
-subroutine tsgRead(gridID, filename)
+function tsgRead(gridID, filename) result(res)
   integer, intent(in) :: gridID
   character(len=*), intent(in) :: filename
-  integer :: N, i
+  logical :: res
+  integer :: N, i, flag
   character, allocatable :: cfilename(:)
   N = len(trim(filename))
   allocate(cfilename(N+1))
@@ -422,9 +423,14 @@ subroutine tsgRead(gridID, filename)
     cfilename(i) = filename(i:i)
   end do
   cfilename(N+1) = CHAR(0)
-  call tsgrea(gridID, cfilename)
+  call tsgrea(gridID, cfilename, flag)
+  if (flag .ne. 0) then
+    res = .true.
+  else
+    res = .false.
+  endif
   deallocate(cfilename)
-end subroutine tsgRead
+end function tsgRead
 !=======================================================================
 subroutine tsgWrite(gridID, filename, useBinary)
   integer, intent(in) :: gridID
