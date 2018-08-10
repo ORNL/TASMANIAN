@@ -1,6 +1,14 @@
 Changelog for version 6.0
 --------------
 
+* API change for error handling (not backward compatible)
+    * errors in C++ now throw exceptions
+    * `std::runtime_error` is thrown on wrong file format
+    * `std::runtime_error` is thrown when requesting level too high
+    * `std::invalid_argument` is thrown when calling function for wrong grid
+    * `logstream` is no longer needed and has been removed
+    * the error handling in the API calls remains the same as before
+
 * added new grids and rules
     * `GridFourier` that uses trigonometric basis functions (see Manual)
     * `localpb` rule to local polynomial grids that favors the boundary

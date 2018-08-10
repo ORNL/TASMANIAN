@@ -59,14 +59,11 @@ public:
     static const char* getCmakeCxxFlags();
     static bool isOpenMPEnabled();
 
-    void setErrorLog(std::ostream *os);
-    void disableLog();
-
     void write(const char *filename, bool binary = false) const;
-    bool read(const char *filename);
+    void read(const char *filename);
 
     void write(std::ofstream &ofs, bool binary = false) const;
-    bool read(std::ifstream &ifs, bool binary = false);
+    void read(std::ifstream &ifs, bool binary = false);
 
     void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const int *level_limits = 0);
     void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, const int *level_limits = 0);
@@ -160,9 +157,7 @@ public:
 
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
-    void printStats() const;
-
-    void printStatsLog() const;
+    void printStats(std::ostream &os = std::cout) const;
 
     void enableAcceleration(TypeAcceleration acc);
     void favorSparseAlgorithmForLocalPolynomials(bool favor);
@@ -204,8 +199,6 @@ public:
 protected:
     void clear();
 
-    void printGridStats(std::ostream *os) const;
-
     void mapCanonicalToTransformed(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
     void mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
     double getQuadratureScale(int num_dimensions, TypeOneDRule rule) const;
@@ -221,10 +214,10 @@ protected:
     void formTransformedPoints(int num_points, double x[]) const; // when calling get***Points()
 
     void writeAscii(std::ofstream &ofs) const;
-    bool readAscii(std::ifstream &ifs);
+    void readAscii(std::ifstream &ifs);
 
     void writeBinary(std::ofstream &ofs) const;
-    bool readBinary(std::ifstream &ifs);
+    void readBinary(std::ifstream &ifs);
 
 private:
     BaseCanonicalGrid *base;
@@ -242,8 +235,6 @@ private:
     TypeAcceleration acceleration;
     int gpuID;
     mutable AccelerationDomainTransform *acc_domain;
-
-    std::ostream *logstream;
 };
 
 }

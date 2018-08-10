@@ -109,11 +109,17 @@ void tsggli_(){
     tsgc2fstr_(&l, lic);
 }
 
-void tsgcer_(int *id){ _tsg_grid_list[*id]->setErrorLog(&cerr); }
-
 // read/write
 void tsgwri_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->write(filename, (*binary != 0)); }
-void tsgrea_(int *id, const char *filename){ _tsg_grid_list[*id]->read(filename); }
+void tsgrea_(int *id, const char *filename, int *status){
+    try{
+        _tsg_grid_list[*id]->read(filename);
+        *status = 1;
+    }catch(std::runtime_error &e){
+        cerr << e.what() << endl;
+        *status = 0;
+    }
+}
 
 // create
 void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, int *opt_flags,

@@ -166,8 +166,6 @@ class TasmanianSparseGrid:
 
         self.pLibTSG.tsgDestructTasmanianSparseGrid.argtypes = [c_void_p]
         self.pLibTSG.tsgCopyGrid.argtypes = [c_void_p, c_void_p]
-        self.pLibTSG.tsgErrorLogCerr.argtypes = [c_void_p]
-        self.pLibTSG.tsgDisableErrorLog.argtypes = [c_void_p]
         self.pLibTSG.tsgWrite.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgWriteBinary.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgRead.argtypes = [c_void_p, c_char_p]
@@ -297,18 +295,6 @@ class TasmanianSparseGrid:
         '''
         return (self.pLibTSG.tsgIsOpenMPEnabled() != 0)
 
-    def setErrorLogCerr(self):
-        '''
-        sets the error log of the C++ class to the cerr stream
-        '''
-        self.pLibTSG.tsgErrorLogCerr(self.pGrid)
-
-    def disableLog(self):
-        '''
-        disables the errors from the C++ class
-        '''
-        self.pLibTSG.tsgDisableErrorLog(self.pGrid)
-
     def read(self, sFilename):
         '''
         reads the grid from a file
@@ -326,7 +312,7 @@ class TasmanianSparseGrid:
         '''
         if (sys.version_info.major == 3):
             sFilename = bytes(sFilename, encoding='utf8')
-        return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) == 0)
+        return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) != 0)
 
     def write(self, sFilename, bUseBinaryFormat = False):
         '''
