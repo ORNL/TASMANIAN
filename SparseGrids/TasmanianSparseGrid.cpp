@@ -1090,8 +1090,8 @@ void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_
     }else if (sequence != 0){
         sequence->getPolynomialSpace(interpolation, num_indexes, poly);
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: getGlobalPolynomialSpace() called for a grid that is neither Global nor Sequence." << endl; }
         num_indexes = 0;
+        throw std::runtime_error("ERROR: getGlobalPolynomialSpace() called for a grid that is neither Global nor Sequence");
     }
 }
 const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
@@ -1119,16 +1119,14 @@ const int* TasmanianSparseGrid::getPointsIndexes() const{
     }else if (sequence != 0){
         return sequence->getPointIndexes();
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: getPointIndexes() called for a grid that is neither local polynomial nor wavelet nor sequence." << endl; }
-        return 0;
+        throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is neither Local Polynomial, nor Wavelet, nor Sequence");
     }
 }
 const int* TasmanianSparseGrid::getNeededIndexes() const{
     if (pwpoly != 0){
         return pwpoly->getNeededIndexes();
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: getPointIndexes() called for a grid that is not local polynomial." << endl; }
-        return 0;
+        throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is not Local Polynomial");
     }
 }
 
