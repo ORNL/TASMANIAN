@@ -56,16 +56,8 @@ void sharedBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int n
 
 #ifdef MPI_VERSION
 
-//TasmanianSparseGrid* prepareLocalGrid(int num_outputs, int depth, int mpi_me, int mpi_all);
-//double* getLocalData(int num_outputs, int mpi_me, int mpi_all);
-
 void mpiBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int num_burnup, int num_mcmc, const char* outfilename);
 
-
 #endif // MPI_VERSION
-
-
-
-
 
 #endif // __TASMANIAN_TASDREAM_BENCHMARKS_HPP
