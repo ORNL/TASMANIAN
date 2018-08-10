@@ -31,6 +31,9 @@
 #ifndef __TASMANIAN_SPARSE_GRID_CPP
 #define __TASMANIAN_SPARSE_GRID_CPP
 
+#include <stdexcept>
+#include <string>
+
 #include "TasmanianSparseGrid.hpp"
 
 #include "tsgCudaMacros.hpp"
@@ -271,7 +274,7 @@ void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const int 
             std::copy(level_limits, level_limits + global->getNumDimensions(), llimits);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: updateGlobalGrid called, but the grid is not global" << endl; }
+        throw std::runtime_error("ERROR: updateGlobalGrid called, but the grid is not global");
     }
 }
 void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
@@ -282,7 +285,7 @@ void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const in
             std::copy(level_limits, level_limits + sequence->getNumDimensions(), llimits);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: updateSequenceGrid called, but the grid is not sequence" << endl; }
+        throw std::runtime_error("ERROR: updateSequenceGrid called, but the grid is not sequence");
     }
 }
 
