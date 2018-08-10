@@ -159,11 +159,9 @@ private:
 // use a sparse grid as interpolated likelihood
 class LikelihoodTSG : public ProbabilityWeightFunction{
 public:
-    LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm, std::ostream *os = 0);
+    LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm);
     ~LikelihoodTSG();
     void setPDF(int dimension, BasePDF* pdf);
-
-    void setErrorLog(std::ostream *os);
 
     int getNumDimensions() const;
 
@@ -181,8 +179,6 @@ private:
     int num_dimensions;
     std::vector<BasePDF*> internal_priors;
     std::vector<BasePDF*> active_priors;
-
-    std::ostream *logstream;
 };
 
 

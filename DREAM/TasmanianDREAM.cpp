@@ -230,16 +230,11 @@ void DistributedPosteriorTSGModel::endWorkerLoop(){
 #endif // MPI_VERSION
 
 
-LikelihoodTSG::LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm, std::ostream *os) :
-    grid(likely), savedLogarithmForm(savedLogForm), num_dimensions(0), logstream(os)
+LikelihoodTSG::LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm) :
+    grid(likely), savedLogarithmForm(savedLogForm), num_dimensions(0)
 {
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
     num_dimensions = grid->getNumDimensions();
-    if (num_dimensions < 1){
-        if (logstream != 0) (*logstream) << "ERROR: cannot work with an empty Grid" << endl;
-    }
+    if (num_dimensions < 1) throw std::runtime_error("ERROR: in LikelihoodTSG() the likelihood specified has dimension less than 1");
     SparseGridDomainToPDF::assumeDefaultPDF(likely, internal_priors);
     active_priors = internal_priors;
 }
@@ -250,7 +245,6 @@ void LikelihoodTSG::setPDF(int dimension, BasePDF* pdf){
     if ((dimension < 0) || (dimension >= num_dimensions)) return;
     active_priors[dimension] = pdf;
 }
-void LikelihoodTSG::setErrorLog(std::ostream *os){ logstream = os; }
 int LikelihoodTSG::getNumDimensions() const{ return num_dimensions; }
 
 void LikelihoodTSG::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
