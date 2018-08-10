@@ -61,22 +61,16 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
 }
 
 TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0),
-                                             conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0){
-#ifndef USE_XSDK_DEFAULTS
-    logstream = &cerr;
-#endif // USE_XSDK_DEFAULTS
+                                             conformal_asin_power(0), llimits(0), acceleration(accel_none), gpuID(0), acc_domain(0){
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
 }
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0),
                                     conformal_asin_power(0), llimits(0),
-                                    acceleration(accel_none), gpuID(0), acc_domain(0), logstream(0)
+                                    acceleration(accel_none), gpuID(0), acc_domain(0)
 {
     copyGrid(&source);
-#ifndef USE_XSDK_DEFAULTS
-    logstream = &cerr;
-#endif // USE_XSDK_DEFAULTS
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
@@ -97,11 +91,6 @@ void TasmanianSparseGrid::clear(){
     domain_transform_a.resize(0);
     domain_transform_b.resize(0);
     base = 0;
-#ifndef USE_XSDK_DEFAULTS
-    logstream = &cerr;
-#else
-    logstream = 0;
-#endif // USE_XSDK_DEFAULTS
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #else
@@ -112,9 +101,6 @@ void TasmanianSparseGrid::clear(){
 #endif // Tasmanian_ENABLE_CUDA
     if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
 }
-
-void TasmanianSparseGrid::setErrorLog(std::ostream *os){ logstream = os; }
-void TasmanianSparseGrid::disableLog(){ logstream = 0; }
 
 void TasmanianSparseGrid::write(const char *filename, bool binary) const{
     std::ofstream ofs;
@@ -1122,71 +1108,62 @@ const int* TasmanianSparseGrid::getNeededIndexes() const{
     }
 }
 
-void TasmanianSparseGrid::printStats() const{
-    printGridStats(&cout);
-}
-void TasmanianSparseGrid::printStatsLog() const{
-    if (logstream == 0) return;
-    printGridStats(logstream);
-}
-
-void TasmanianSparseGrid::printGridStats(std::ostream *os) const{
-    if (os == 0) return;
+void TasmanianSparseGrid::printStats(std::ostream &os) const{
     using std::setw;
 
     const int L1 = 20;
-    (*os) << endl;
-    (*os) << setw(L1) << "Grid Type:" << "  ";
-    if (isGlobal()) (*os) << "Global";
-    if (isSequence()) (*os) << "Sequence";
-    if (isLocalPolynomial()) (*os) << "Local Polynomial";
-    if (isWavelet()) (*os) << "Wavelets";
-    if (isFourier()) (*os) << "Fourier";
-    if (!(isGlobal() || isSequence() || isLocalPolynomial() || isWavelet() || isFourier())) (*os) << "none";
-    (*os) << endl;
+    os << endl;
+    os << setw(L1) << "Grid Type:" << "  ";
+    if (isGlobal()) os << "Global";
+    if (isSequence()) os << "Sequence";
+    if (isLocalPolynomial()) os << "Local Polynomial";
+    if (isWavelet()) os << "Wavelets";
+    if (isFourier()) os << "Fourier";
+    if (!(isGlobal() || isSequence() || isLocalPolynomial() || isWavelet() || isFourier())) os << "none";
+    os << endl;
 
-    (*os) << setw(L1) << "Dimensions:" << "   " << getNumDimensions() << endl;
-    (*os) << setw(L1) << "Outputs:" << "   " << getNumOutputs() << endl;
+    os << setw(L1) << "Dimensions:" << "   " << getNumDimensions() << endl;
+    os << setw(L1) << "Outputs:" << "   " << getNumOutputs() << endl;
     if (getNumOutputs() == 0){
-        (*os) << setw(L1) << "Nodes:" << "   " << getNumPoints() << endl;
+        os << setw(L1) << "Nodes:" << "   " << getNumPoints() << endl;
     }else{
-        (*os) << setw(L1) << "Loaded nodes:" << "   " << getNumLoaded() << endl;
-        (*os) << setw(L1) << "Needed nodes:" << "   " << getNumNeeded() << endl;
+        os << setw(L1) << "Loaded nodes:" << "   " << getNumLoaded() << endl;
+        os << setw(L1) << "Needed nodes:" << "   " << getNumNeeded() << endl;
     }
-    (*os) << setw(L1) << "Rule:" << "  " << OneDimensionalMeta::getHumanString(getRule()) << endl;
+    os << setw(L1) << "Rule:" << "  " << OneDimensionalMeta::getHumanString(getRule()) << endl;
     if (getRule() == rule_customtabulated){
-        (*os) << setw(L1) << "Description:" << "  " << getCustomRuleDescription() << endl;
+        os << setw(L1) << "Description:" << "  " << getCustomRuleDescription() << endl;
     }
     if (isSetDomainTransfrom()){
-        (*os) << setw(L1) << "Domain:" << "  Custom" << endl;
+        os << setw(L1) << "Domain:" << "  Custom" << endl;
     }else{
-        (*os) << setw(L1) << "Domain:" << "  Canonical" << endl;
+        os << setw(L1) << "Domain:" << "  Canonical" << endl;
     }
 
     if (isGlobal()){
         TypeOneDRule rr = getRule();
         if ((rr == rule_gaussgegenbauer) || (rr == rule_gausslaguerre) || (rr == rule_gausshermite) || (rr == rule_gaussgegenbauerodd) || (rr == rule_gausshermiteodd) ){
-            (*os) << setw(L1) << "Alpha:" << "   " << getAlpha() << endl;
+            os << setw(L1) << "Alpha:" << "   " << getAlpha() << endl;
         }
         if (rr == rule_gaussjacobi){
-            (*os) << setw(L1) << "Alpha:" << "   " << getAlpha() << endl;
-            (*os) << setw(L1) << "Beta:" << "   " << getBeta() << endl;
+            os << setw(L1) << "Alpha:" << "   " << getAlpha() << endl;
+            os << setw(L1) << "Beta:" << "   " << getBeta() << endl;
         }
     }else if (isSequence()){
         // sequence rules are simple, nothing to specify here
     }else if (isLocalPolynomial()){
-        (*os) << setw(L1) << "Order:" << "   " << getOrder() << endl;
+        os << setw(L1) << "Order:" << "   " << getOrder() << endl;
     }else if (isWavelet()){
-        (*os) << setw(L1) << "Order:" << "   " << getOrder() << endl;
+        os << setw(L1) << "Order:" << "   " << getOrder() << endl;
     }else{
         // empty grid, show nothing, just like the sequence grid
     }
-    (*os) << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration) << endl;
+    os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration) << endl;
     if (AccelerationMeta::isAccTypeGPU(acceleration)){
-        (*os) << setw(L1) << "GPU:" << "  " << getGPUID() << endl;
+        os << setw(L1) << "GPU:" << "  " << getGPUID() << endl;
     }
 
-    (*os) << endl;
+    os << endl;
 }
 
 void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
@@ -1585,9 +1562,6 @@ const char* tsgGetLicense(){ return TasmanianSparseGrid::getLicense(); }
 int tsgGetVersionMajor(){ return TasmanianSparseGrid::getVersionMajor(); }
 int tsgGetVersionMinor(){ return TasmanianSparseGrid::getVersionMinor(); }
 int tsgIsOpenMPEnabled(){ return (TasmanianSparseGrid::isOpenMPEnabled()) ? 1 : 0; }
-
-void tsgErrorLogCerr(void *grid){ ((TasmanianSparseGrid*) grid)->setErrorLog(&cerr); }
-void tsgDisableErrorLog(void *grid){ ((TasmanianSparseGrid*) grid)->disableLog(); }
 
 void tsgWrite(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename); }
 void tsgWriteBinary(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename, true); }

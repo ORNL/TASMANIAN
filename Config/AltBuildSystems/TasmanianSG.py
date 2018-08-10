@@ -166,8 +166,6 @@ class TasmanianSparseGrid:
 
         self.pLibTSG.tsgDestructTasmanianSparseGrid.argtypes = [c_void_p]
         self.pLibTSG.tsgCopyGrid.argtypes = [c_void_p, c_void_p]
-        self.pLibTSG.tsgErrorLogCerr.argtypes = [c_void_p]
-        self.pLibTSG.tsgDisableErrorLog.argtypes = [c_void_p]
         self.pLibTSG.tsgWrite.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgWriteBinary.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgRead.argtypes = [c_void_p, c_char_p]
@@ -296,18 +294,6 @@ class TasmanianSparseGrid:
         returns True if the library has been compiled with OpenMP support
         '''
         return (self.pLibTSG.tsgIsOpenMPEnabled() != 0)
-
-    def setErrorLogCerr(self):
-        '''
-        sets the error log of the C++ class to the cerr stream
-        '''
-        self.pLibTSG.tsgErrorLogCerr(self.pGrid)
-
-    def disableLog(self):
-        '''
-        disables the errors from the C++ class
-        '''
-        self.pLibTSG.tsgDisableErrorLog(self.pGrid)
 
     def read(self, sFilename):
         '''

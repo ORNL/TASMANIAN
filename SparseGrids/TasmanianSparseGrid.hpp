@@ -59,9 +59,6 @@ public:
     static const char* getCmakeCxxFlags();
     static bool isOpenMPEnabled();
 
-    void setErrorLog(std::ostream *os);
-    void disableLog();
-
     void write(const char *filename, bool binary = false) const;
     void read(const char *filename);
 
@@ -160,9 +157,7 @@ public:
 
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
-    void printStats() const;
-
-    void printStatsLog() const;
+    void printStats(std::ostream &os = std::cout) const;
 
     void enableAcceleration(TypeAcceleration acc);
     void favorSparseAlgorithmForLocalPolynomials(bool favor);
@@ -204,8 +199,6 @@ public:
 protected:
     void clear();
 
-    void printGridStats(std::ostream *os) const;
-
     void mapCanonicalToTransformed(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
     void mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
     double getQuadratureScale(int num_dimensions, TypeOneDRule rule) const;
@@ -242,8 +235,6 @@ private:
     TypeAcceleration acceleration;
     int gpuID;
     mutable AccelerationDomainTransform *acc_domain;
-
-    std::ostream *logstream;
 };
 
 }

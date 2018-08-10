@@ -8,10 +8,10 @@
 # the output is written to this folder, careful not to overwrite things
 
 
-with open("../SparseGrids/TasmanianSparseGrid.hpp") as tsghpp:
+with open("../../SparseGrids/TasmanianSparseGrid.hpp") as tsghpp:
     lTsgHpp = tsghpp.readlines()
 
-with open("../SparseGrids/TasmanianSparseGrid.cpp") as tsgcpp:
+with open("../../SparseGrids/TasmanianSparseGrid.cpp") as tsgcpp:
     lTsgCpp = tsgcpp.readlines()
 
 lTsgH =[]

@@ -109,8 +109,6 @@ void tsggli_(){
     tsgc2fstr_(&l, lic);
 }
 
-void tsgcer_(int *id){ _tsg_grid_list[*id]->setErrorLog(&cerr); }
-
 // read/write
 void tsgwri_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->write(filename, (*binary != 0)); }
 void tsgrea_(int *id, const char *filename, int *status){
