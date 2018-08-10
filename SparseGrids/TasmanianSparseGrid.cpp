@@ -883,12 +883,12 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
         sequence->setAnisotropicRefinement(type, min_growth, output, llimits);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
-            if (logstream != 0){ (*logstream) << "ERROR: setAnisotropicRefinement called for a global grid with non-nested rule" << endl; }
+            throw std::runtime_error("ERROR: setAnisotropicRefinement called for a global grid with non-nested rule");
         }else{
             global->setAnisotropicRefinement(type, min_growth, output, llimits);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: setAnisotropicRefinement called for grid that is neither sequence nor Global with sequence rule" << endl; }
+        throw std::runtime_error("ERROR: setAnisotropicRefinement called for a grid that is neither Sequence nor Global with a sequence rule");
     }
 }
 int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output){
@@ -896,12 +896,12 @@ int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
         return sequence->estimateAnisotropicCoefficients(type, output);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
-            if (logstream != 0){ (*logstream) << "ERROR: estimateAnisotropicCoefficients called for a global grid with non-nested rule" << endl; }
+            throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a Global grid with non-nested rule");
         }else{
             return global->estimateAnisotropicCoefficients(type, output);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: estimateAnisotropicCoefficients called for grid that is neither sequence nor Global with sequence rule" << endl; }
+        throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a grid that is neither Sequence nor Global with a sequence rule");
     }
     return 0;
 }
@@ -916,10 +916,10 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
         if (OneDimensionalMeta::isSequence(global->getRule())){
             global->setSurplusRefinement(tolerance, output, llimits);
         }else{
-            if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement called for a global grid with non-sequence rule" << endl; }
+            throw std::runtime_error("ERROR: setSurplusRefinement called for a Global grid with non-sequence rule");
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement(double, int) called for grid that is neither sequence nor Global with sequence rule" << endl; }
+        throw std::runtime_error("ERROR: setSurplusRefinement(double, int) called for a grid that is neither Sequence nor Global with a sequence rule");
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
@@ -932,7 +932,7 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
     }else if (wavelet != 0){
         wavelet->setSurplusRefinement(tolerance, criteria, output, llimits);
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement(double, TypeRefinement) called for grid that is neither local polynomial nor wavelet" << endl; }
+        throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
     }
 }
 void TasmanianSparseGrid::clearRefinement(){
@@ -943,8 +943,7 @@ void TasmanianSparseGrid::mergeRefinement(){
 }
 void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     if (pwpoly == 0){
-        if (logstream != 0){ (*logstream) << "ERROR: removePointsBySurplus() called for a grid that is not local polynomial." << endl; }
-        return;
+        throw std::runtime_error("ERROR: removePointsBySurplus() called for a grid that is not Local Polynomial.");
     }else{
         if (pwpoly->removePointsByHierarchicalCoefficient(tolerance, output, scale_correction) == 0){
             clear();
