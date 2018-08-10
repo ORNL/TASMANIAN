@@ -54,10 +54,10 @@ public:
     ~GridFourier();
 
     void write(std::ofstream &ofs) const;
-    void read(std::ifstream &ifs, std::ostream *logstream = 0);
+    void read(std::ifstream &ifs);
 
     void writeBinary(std::ofstream &ofs) const;
-    void readBinary(std::ifstream &ifs, std::ostream *logstream = 0);
+    void readBinary(std::ifstream &ifs);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const int* anisotropic_weights = 0, const int* level_limits = 0);
     void copyGrid(const GridFourier *fourier);

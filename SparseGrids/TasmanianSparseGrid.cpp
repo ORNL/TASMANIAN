@@ -31,6 +31,9 @@
 #ifndef __TASMANIAN_SPARSE_GRID_CPP
 #define __TASMANIAN_SPARSE_GRID_CPP
 
+#include <stdexcept>
+#include <string>
+
 #include "TasmanianSparseGrid.hpp"
 
 #include "tsgCudaMacros.hpp"
@@ -169,10 +172,6 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     }
 }
 void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int *level_limits){
-    if (outputs < 1){
-        if (logstream != 0){ (*logstream) << "ERROR: makeSequenceGrid is called with zero outputs, for zero outputs use makeGlobalGrid instead" << endl; }
-        return;
-    }
     if (OneDimensionalMeta::isSequence(rule)){
         clear();
         sequence = new GridSequence();
@@ -183,21 +182,18 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
             std::copy(level_limits, level_limits + dimensions, llimits);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: makeSequenceGrid is called with rule " << OneDimensionalMeta::getIORuleString(rule) << " which is not a sequence rule" << endl; }
+        std::string message = "ERROR: makeSequenceGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a sequence rule";
+        throw std::invalid_argument(message);
     }
 }
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
     if (!OneDimensionalMeta::isLocalPolynomial(rule)){
-        if (logstream != 0){
-            (*logstream) << "ERROR: makeLocalPolynomialGrid is called with rule " << OneDimensionalMeta::getIORuleString(rule) << " which is not a local polynomial rule" << endl;
-            (*logstream) << "       use either " << OneDimensionalMeta::getIORuleString(rule_localp) << " or " << OneDimensionalMeta::getIORuleString(rule_semilocalp)
-                         << " or " << OneDimensionalMeta::getIORuleString(rule_localp0)  << endl;
-        }
-        return;
+        std::string message = "ERROR: makeLocalPolynomialGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a local polynomial rule";
+        throw std::invalid_argument(message);
     }
     if (order < -1){
-        if (logstream != 0){ (*logstream) << "ERROR: makeLocalPolynomialGrid is called with order " << order << ", but the order cannot be less than -1." << endl; }
-        return;
+        std::string message = "ERROR: makeLocalPolynomialGrid is called with order: " + std::to_string(order) + ", but the order cannot be less than -1.";
+        throw std::invalid_argument(message);
     }
     clear();
     pwpoly = new GridLocalPolynomial();
@@ -210,8 +206,8 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
 }
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
     if ((order != 1) && (order != 3)){
-        if (logstream != 0){ (*logstream) << "ERROR: makeWaveletGrid is called with order " << order << ", but wavelets are implemented only for orders 1 and 3." << endl; }
-        return;
+        std::string message = "ERROR: makeWaveletGrid is called with order: " + std::to_string(order) + "but wavelets are implemented only for orders 1 and 3.";
+        throw std::invalid_argument(message);
     }
     clear();
     wavelet = new GridWavelet();
@@ -271,7 +267,7 @@ void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const int 
             std::copy(level_limits, level_limits + global->getNumDimensions(), llimits);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: updateGlobalGrid called, but the grid is not global" << endl; }
+        throw std::runtime_error("ERROR: updateGlobalGrid called, but the grid is not global");
     }
 }
 void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
@@ -282,7 +278,7 @@ void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const in
             std::copy(level_limits, level_limits + sequence->getNumDimensions(), llimits);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: updateSequenceGrid called, but the grid is not sequence" << endl; }
+        throw std::runtime_error("ERROR: updateSequenceGrid called, but the grid is not sequence");
     }
 }
 
@@ -509,8 +505,7 @@ bool TasmanianSparseGrid::isFourier() const{
 
 void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[]){
     if ((base == 0) || (base->getNumDimensions() == 0)){
-        if (logstream != 0){ (*logstream) << "ERROR: cannot call setDomainTransform on uninitialized grid!" << endl; }
-        return;
+        throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
     }
     if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     int num_dimensions = base->getNumDimensions();
@@ -526,13 +521,16 @@ void TasmanianSparseGrid::clearDomainTransform(){
 }
 void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
     if ((base == 0) || (base->getNumDimensions() == 0) || (domain_transform_a.size() == 0)){
-        if (logstream != 0){ (*logstream) << "ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!" << endl; }
-        return;
+        throw std::runtime_error("ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!");
     }
     std::copy(domain_transform_a.begin(), domain_transform_a.end(), a);
     std::copy(domain_transform_b.begin(), domain_transform_b.end(), b);
 }
 void TasmanianSparseGrid::setDomainTransform(const std::vector<double> a, const std::vector<double> b){
+    if ((base == 0) || (base->getNumDimensions() == 0)){
+        throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
+    }
+    if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     domain_transform_a = a; // copy assignment
     domain_transform_b = b;
 }
@@ -647,8 +645,7 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
 
 void TasmanianSparseGrid::setConformalTransformASIN(const int truncation[]){
     if ((base == 0) || (base->getNumDimensions() == 0)){
-        if (logstream != 0){ (*logstream) << "ERROR: cannot call setConformalTransformASIN on uninitialized grid!" << endl; }
-        return;
+        throw std::runtime_error("ERROR: cannot call setConformalTransformASIN on uninitialized grid!");
     }
     clearConformalTransform();
     int num_dimensions = base->getNumDimensions();
@@ -660,8 +657,7 @@ void TasmanianSparseGrid::clearConformalTransform(){
 }
 void TasmanianSparseGrid::getConformalTransformASIN(int truncation[]) const{
     if ((base == 0) || (base->getNumDimensions() == 0) || (conformal_asin_power == 0)){
-        if (logstream != 0){ (*logstream) << "ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!" << endl; }
-        return;
+        throw std::runtime_error("ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!");
     }
     int num_dimensions = base->getNumDimensions();
     std::copy(conformal_asin_power, conformal_asin_power + num_dimensions, truncation);
@@ -880,12 +876,12 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
         sequence->setAnisotropicRefinement(type, min_growth, output, llimits);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
-            if (logstream != 0){ (*logstream) << "ERROR: setAnisotropicRefinement called for a global grid with non-nested rule" << endl; }
+            throw std::runtime_error("ERROR: setAnisotropicRefinement called for a global grid with non-nested rule");
         }else{
             global->setAnisotropicRefinement(type, min_growth, output, llimits);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: setAnisotropicRefinement called for grid that is neither sequence nor Global with sequence rule" << endl; }
+        throw std::runtime_error("ERROR: setAnisotropicRefinement called for a grid that is neither Sequence nor Global with a sequence rule");
     }
 }
 int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output){
@@ -893,12 +889,12 @@ int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
         return sequence->estimateAnisotropicCoefficients(type, output);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
-            if (logstream != 0){ (*logstream) << "ERROR: estimateAnisotropicCoefficients called for a global grid with non-nested rule" << endl; }
+            throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a Global grid with non-nested rule");
         }else{
             return global->estimateAnisotropicCoefficients(type, output);
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: estimateAnisotropicCoefficients called for grid that is neither sequence nor Global with sequence rule" << endl; }
+        throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a grid that is neither Sequence nor Global with a sequence rule");
     }
     return 0;
 }
@@ -913,10 +909,10 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
         if (OneDimensionalMeta::isSequence(global->getRule())){
             global->setSurplusRefinement(tolerance, output, llimits);
         }else{
-            if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement called for a global grid with non-sequence rule" << endl; }
+            throw std::runtime_error("ERROR: setSurplusRefinement called for a Global grid with non-sequence rule");
         }
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement(double, int) called for grid that is neither sequence nor Global with sequence rule" << endl; }
+        throw std::runtime_error("ERROR: setSurplusRefinement(double, int) called for a grid that is neither Sequence nor Global with a sequence rule");
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
@@ -929,7 +925,7 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
     }else if (wavelet != 0){
         wavelet->setSurplusRefinement(tolerance, criteria, output, llimits);
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: setSurplusRefinement(double, TypeRefinement) called for grid that is neither local polynomial nor wavelet" << endl; }
+        throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
     }
 }
 void TasmanianSparseGrid::clearRefinement(){
@@ -940,8 +936,7 @@ void TasmanianSparseGrid::mergeRefinement(){
 }
 void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     if (pwpoly == 0){
-        if (logstream != 0){ (*logstream) << "ERROR: removePointsBySurplus() called for a grid that is not local polynomial." << endl; }
-        return;
+        throw std::runtime_error("ERROR: removePointsBySurplus() called for a grid that is not Local Polynomial.");
     }else{
         if (pwpoly->removePointsByHierarchicalCoefficient(tolerance, output, scale_correction) == 0){
             clear();
@@ -977,10 +972,10 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gp
 }
 #else
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double*, int, double*) const{
-    if (logstream != 0) (*logstream) << "ERROR: evaluateHierarchicalFunctionsGPU() called, but the library wasn't compiled with Tasmanian_ENABLE_CUDA=ON!" << endl;
+    throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double*, int, int*&, int*&, double*&, int&) const{
-    if (logstream != 0) (*logstream) << "ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library wasn't compiled with Tasmanian_ENABLE_CUDA=ON!" << endl;
+    throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
 }
 #endif
 
@@ -1088,8 +1083,8 @@ void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_
     }else if (sequence != 0){
         sequence->getPolynomialSpace(interpolation, num_indexes, poly);
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: getGlobalPolynomialSpace() called for a grid that is neither Global nor Sequence." << endl; }
         num_indexes = 0;
+        throw std::runtime_error("ERROR: getGlobalPolynomialSpace() called for a grid that is neither Global nor Sequence");
     }
 }
 const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
@@ -1117,16 +1112,14 @@ const int* TasmanianSparseGrid::getPointsIndexes() const{
     }else if (sequence != 0){
         return sequence->getPointIndexes();
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: getPointIndexes() called for a grid that is neither local polynomial nor wavelet nor sequence." << endl; }
-        return 0;
+        throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is neither Local Polynomial, nor Wavelet, nor Sequence");
     }
 }
 const int* TasmanianSparseGrid::getNeededIndexes() const{
     if (pwpoly != 0){
         return pwpoly->getNeededIndexes();
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: getPointIndexes() called for a grid that is not local polynomial." << endl; }
-        return 0;
+        throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is not Local Polynomial");
     }
 }
 
@@ -1248,7 +1241,7 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     ofs << "TASMANIAN SG end" << endl;
 }
 void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
-    const char *TSG = "TSG5"; // last char indicates version
+    const char *TSG = "TSG5"; // last char indicates version (update only if necessary, no need to sync with getVersionMajor())
     ofs.write(TSG, 4 * sizeof(char)); // mark Tasmanian files
     char flag;
     // use Integers to indicate grid types, empty 'e', global 'g', sequence 's', pwpoly 'p', wavelet 'w', Fourier 'f'
@@ -1295,10 +1288,24 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
 }
 bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     std::string T;
-    ifs >> T;  if (!(T.compare("TASMANIAN") == 0)){ if (logstream != 0){ (*logstream) << "ERROR: wrong file format, first word in not 'TASMANIAN'" << endl; } return false; }
-    ifs >> T;  if (!(T.compare("SG") == 0)){ if (logstream != 0){ (*logstream) << "ERROR: wrong file format, second word in not 'SG'" << endl; } return false; }
-    getline(ifs, T); T.erase(0,1); if (!(T.compare(getVersion()) == 0)){ if (logstream != 0){ (*logstream) << "WARNING: Version mismatch, possibly undefined behavior!" << endl; } }
-    getline(ifs, T); if (!(T.compare("WARNING: do not edit this manually") == 0)){ if (logstream != 0){ (*logstream) << "ERROR: wrong file format, did not match 'WARNING: do not edit this manually'" << endl; } return false; }
+    std::string message = ""; // used in case there is an exception
+    ifs >> T;  if (!(T.compare("TASMANIAN") == 0)){ throw std::runtime_error("ERROR: wrong file format, first word in not 'TASMANIAN'"); }
+    ifs >> T;  if (!(T.compare("SG") == 0)){ throw std::runtime_error("ERROR: wrong file format, second word in not 'SG'"); }
+    getline(ifs, T); T.erase(0,1);
+    if (!(T.compare(getVersion()) == 0)){
+        // grids with version prior to 3.0 are not supported
+        size_t dec = T.find(".");
+        if (dec == std::string::npos) throw std::runtime_error("ERROR: wrong file format, cannot read the version number");
+        int vmajor = stoi(T.substr(0, dec));
+        int vminor = stoi(T.substr(dec+1));
+        if (vmajor < 3) throw std::runtime_error("ERROR: file formats from versions prior to 3.0 are not supported");
+        if ((vmajor > getVersionMajor()) || ((vmajor == getVersionMajor()) && (vminor > getVersionMinor()))){
+            message += "ERROR: using future file format " + std::to_string(vmajor) + ", Tasmanian cannot time-travel.";
+            throw std::runtime_error(message);
+        }
+        // else: using file format from at least 3.0 by older than current, it is supposed to work
+    }
+    getline(ifs, T); if (!(T.compare("WARNING: do not edit this manually") == 0)){ throw std::runtime_error("ERROR: wrong file format, missing warning message"); }
     ifs >> T;
     if (T.compare("global") == 0){
         clear();
@@ -1333,8 +1340,7 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     }else if (T.compare("empty") == 0){
         clear();
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: wrong file format!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong file format, unknown grid type (or corrupt file)");
     }
     getline(ifs, T);
     bool using_v3_format = false; // for compatibility with version 3.0
@@ -1353,8 +1359,7 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         // for compatibility with version 3.0 and the missing domain transform
         using_v3_format = true;
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: wrong file format! Domain is not specified!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong file format, domain unspecified");
     }
     if (!using_v3_format){
         getline(ifs, T);
@@ -1370,8 +1375,7 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
             // for compatibility with version 4.0/4.1 and the missing conformal maps
             using_v4_format = true;
         }else{
-            if (logstream != 0){ (*logstream) << "ERROR: wrong file format! Conformal mapping is not specified!" << endl; }
-            return false;
+            throw std::runtime_error("ERROR: wrong file format, conformal mapping is unspecified");
         }
         if (!using_v4_format){
             getline(ifs, T);
@@ -1384,13 +1388,12 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
             }else if (T.compare("TASMANIAN SG end") == 0){
                 using_v5_format = true;
             }else{
-                if (logstream != 0){ (*logstream) << "WARNING: file did not end with 'TASMANIAN SG end', this may result in undefined behavior (v5)" << endl; }
+                throw std::runtime_error("ERROR: wrong file format, did not specify level limits");
             }
             if (!using_v5_format){
                 getline(ifs, T);
                 if (!(T.compare("TASMANIAN SG end") == 0)){
-                    if (logstream != 0){ (*logstream) << "WARNING: file did not end with 'TASMANIAN SG end', this may result in undefined behavior (v51)" << endl; }
-                    exit(1);
+                    throw std::runtime_error("ERROR: wrong file format, did not end with 'TASMANIAN SG end' (possibly corrupt file)");
                 }
             }
         }
@@ -1402,11 +1405,10 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     char *TSG = new char[4];
     ifs.read(TSG, 4*sizeof(char));
     if ((TSG[0] != 'T') || (TSG[1] != 'S') || (TSG[2] != 'G')){
-        if (logstream != 0){ (*logstream) << "ERROR: wrong file format, first 3 bytes are not 'TSG'" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong binary file format, first 3 bytes are not 'TSG'");
     }
     if (TSG[3] != '5'){
-        if (logstream != 0){ (*logstream) << "WARNING: grid seems to be saved in newer format, possibly undefined behavior" << endl; }
+        throw std::runtime_error("ERROR: wrong binary file format, version number is not '5'");
     }
     ifs.read(TSG, sizeof(char)); // what type of grid is it?
     if (TSG[0] == 'g'){
@@ -1437,8 +1439,7 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }else if (TSG[0] == 'e'){
         clear();
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: wrong grid type, wrong file format!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
     }
     ifs.read(TSG, sizeof(char)); // linear domain transform?
     if (TSG[0] == 'y'){
@@ -1447,28 +1448,26 @@ bool TasmanianSparseGrid::readBinary(std::ifstream &ifs){
         ifs.read((char*) domain_transform_a.data(), base->getNumDimensions() * sizeof(double));
         ifs.read((char*) domain_transform_b.data(), base->getNumDimensions() * sizeof(double));
     }else if (TSG[0] != 'n'){
-        if (logstream != 0){ (*logstream) << "ERROR: wrong domain type, wrong file format!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong binary file format, wrong domain type");
     }
     ifs.read(TSG, sizeof(char)); // conformal domain transform?
     if (TSG[0] == 'a'){
         conformal_asin_power = new int[base->getNumDimensions()];
         ifs.read((char*) conformal_asin_power, base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){
-        if (logstream != 0){ (*logstream) << "ERROR: wrong conformal transform, wrong file format!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong binary file format, wrong conformal transform type");
     }
     ifs.read(TSG, sizeof(char)); // limits
     if (TSG[0] == 'y'){
         llimits = new int[base->getNumDimensions()];
         ifs.read((char*) llimits, base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){
-        if (logstream != 0){ (*logstream) << "ERROR: wrong level limits, wrong file format!" << endl; }
+        throw std::runtime_error("ERROR: wrong binary file format, wrong level limits");
         return false;
     }
     ifs.read(TSG, sizeof(char)); // end character
     if (TSG[0] != 'e'){
-        if (logstream != 0){ (*logstream) << "WARNING: the file did not terminate properly! Possibly undefined behavior." << endl; }
+        throw std::runtime_error("ERROR: wrong binary file format, did not reach correct end of Tasmanian block");
     }
     delete[] TSG;
     return true;
@@ -1598,8 +1597,15 @@ void tsgDisableErrorLog(void *grid){ ((TasmanianSparseGrid*) grid)->disableLog()
 void tsgWrite(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename); }
 void tsgWriteBinary(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename, true); }
 int tsgRead(void *grid, const char* filename){
-    bool result = ((TasmanianSparseGrid*) grid)->read(filename);
-    return result ? 0 : 1;
+    try{
+        ((TasmanianSparseGrid*) grid)->read(filename);
+        return 0;
+    }catch(std::runtime_error e){
+        #ifndef DNDEBUG
+        cerr << e.what() << endl;
+        #endif // DNDEBUG
+        return 1;
+    }
 }
 
 void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const char * sType, const char *sRule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int *limit_levels){

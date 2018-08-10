@@ -147,7 +147,7 @@ void GridGlobal::writeBinary(std::ofstream &ofs) const{
         }
     }
 }
-void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
+void GridGlobal::read(std::ifstream &ifs){
     reset(true); // true deletes any custom rule
     ifs >> num_dimensions >> num_outputs >> alpha >> beta;
     if (num_dimensions > 0){
@@ -156,7 +156,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
         ifs >> T;
         rule = OneDimensionalMeta::getIORuleString(T.c_str());
         if (rule == rule_customtabulated){
-            custom = new CustomTabulated(logstream);
+            custom = new CustomTabulated();
             custom->read(ifs);
         }
         tensors = new IndexSet(num_dimensions);  tensors->read(ifs);
@@ -179,7 +179,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
             for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
         }
         OneDimensionalMeta meta(custom);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta, logstream);
+        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexSet *work = (points != 0) ? points : needed;
@@ -200,7 +200,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
     }
 }
 
-void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
+void GridGlobal::readBinary(std::ifstream &ifs){
     reset(true); // true deletes any custom rule
     int num_dim_out[2];
     ifs.read((char*) num_dim_out, 2*sizeof(int));
@@ -214,7 +214,7 @@ void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
         ifs.read((char*) num_dim_out, sizeof(int));
         rule = OneDimensionalMeta::getIORuleInt(num_dim_out[0]);
         if (rule == rule_customtabulated){
-            custom = new CustomTabulated(logstream);
+            custom = new CustomTabulated();
             custom->readBinary(ifs);
         }
 
@@ -246,7 +246,7 @@ void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
             for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
         }
         OneDimensionalMeta meta(custom);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta, logstream);
+        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexSet *work = (points != 0) ? points : needed;

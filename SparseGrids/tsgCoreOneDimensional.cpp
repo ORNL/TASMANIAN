@@ -31,22 +31,28 @@
 #ifndef __TSG_CORE_ONE_DIMENSIONAL_CPP
 #define __TSG_CORE_ONE_DIMENSIONAL_CPP
 
+#include <stdexcept>
+#include <string>
+
 #include "tsgCoreOneDimensional.hpp"
 
 namespace TasGrid{
 
-CustomTabulated::CustomTabulated(std::ostream *os) : num_levels(0), num_nodes(0), precision(0), offsets(0), nodes(0), weights(0), description(0), logstream(os){}
-CustomTabulated::CustomTabulated(const char* filename, std::ostream *os) : num_levels(0), num_nodes(0), precision(0), offsets(0), nodes(0),
-                                                                                  weights(0), description(0), logstream(os)
+CustomTabulated::CustomTabulated() : num_levels(0), num_nodes(0), precision(0), offsets(0), nodes(0), weights(0), description(0){}
+CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), num_nodes(0), precision(0), offsets(0), nodes(0),
+                                                         weights(0), description(0)
 {
     std::ifstream ifs; ifs.open(filename);
-    if (!read(ifs)){
-        if (logstream != 0) (*logstream) << "ERROR: could not read the custom rule! Check the file format." << endl;
+    if (!ifs){
+        std::string message = "Could not open the custom rule file: ";
+        message += filename;
+        throw std::invalid_argument(message);
     }
+    read(ifs);
     ifs.close();
 }
-CustomTabulated::CustomTabulated(const CustomTabulated &custom, std::ostream *os) : num_levels(0), num_nodes(0), precision(0), offsets(0), nodes(0),
-                                                                                    weights(0), description(0), logstream(os){
+CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0), num_nodes(0), precision(0), offsets(0), nodes(0),
+                                                                  weights(0), description(0){
     copyRule(&custom);
 }
 CustomTabulated::~CustomTabulated(){
@@ -87,19 +93,19 @@ void CustomTabulated::writeBinary(std::ofstream &ofs) const{
     ofs.write((char*) weights, total_points * sizeof(double));
     ofs.write((char*) nodes, total_points * sizeof(double));
 }
-bool CustomTabulated::read(std::ifstream &ifs){
+void CustomTabulated::read(std::ifstream &ifs){
     reset();
 
     std::string T;
     char dummy;
     ifs >> T;
-    if (!(T.compare("description:") == 0)){ if (logstream != 0) (*logstream) << "ERROR: wrong file format of custom tables on line 1" << endl; ifs.close(); return false; }
+    if (!(T.compare("description:") == 0)){ ifs.close(); throw std::invalid_argument("ERROR: wrong file format of custom tables on line 1"); }
     ifs.get(dummy);
     description = new std::string;
     getline(ifs, *description);
 
     ifs >> T;
-    if (!(T.compare("levels:") == 0)){ if (logstream != 0) (*logstream) << "ERROR: wrong file format of custom tables on line 2" << endl; ifs.close(); return false; }
+    if (!(T.compare("levels:") == 0)){ ifs.close(); throw std::invalid_argument("ERROR: wrong file format of custom tables on line 2"); }
     ifs >> num_levels;
 
     num_nodes = new int[num_levels];
@@ -120,10 +126,8 @@ bool CustomTabulated::read(std::ifstream &ifs){
     for(int i=0; i<total_points; i++){
         ifs >> weights[i] >> nodes[i];
     }
-
-    return true;
 }
-bool CustomTabulated::readBinary(std::ifstream &ifs){
+void CustomTabulated::readBinary(std::ifstream &ifs){
     reset();
 
     int num_description = 0;
@@ -152,8 +156,6 @@ bool CustomTabulated::readBinary(std::ifstream &ifs){
     weights = new double[total_points];
     ifs.read((char*) weights, total_points * sizeof(double));
     ifs.read((char*) nodes, total_points * sizeof(double));
-
-    return true;
 }
 
 void CustomTabulated::copyRule(const CustomTabulated *custom){
@@ -178,22 +180,31 @@ void CustomTabulated::copyRule(const CustomTabulated *custom){
 int CustomTabulated::getNumLevels() const{ return num_levels; }
 int CustomTabulated::getNumPoints(int level) const{
     if (level >= num_levels){
-        if (logstream != 0) (*logstream) << "ERROR: requested custom rule with level " << level << " the tabulated rules end at " << num_levels-1 << endl;
-        return num_nodes[num_levels-1];
+        std::string message = "ERROR: requested custom rule with level ";
+        message += std::to_string(level);
+        message += " the tabulated rules end at ";
+        message += std::to_string(num_levels-1);
+        throw std::runtime_error(message);
     }
     return num_nodes[level];
 }
 int CustomTabulated::getIExact(int level) const{
     if (level >= num_levels){
-        if (logstream != 0) (*logstream) << "ERROR: requested custom rule with level " << level << " the tabulated rules end at " << num_levels-1 << endl;
-        return 1 << 30;
+        std::string message = "ERROR: requested custom rule with level ";
+        message += std::to_string(level);
+        message += " the tabulated rules end at ";
+        message += std::to_string(num_levels-1);
+        throw std::runtime_error(message);
     }
     return num_nodes[level] -1;
 }
 int CustomTabulated::getQExact(int level) const{
     if (level >= num_levels){
-        if (logstream != 0) (*logstream) << "ERROR: requested custom rule with level " << level << " the tabulated rules end at " << num_levels-1 << endl;
-        return 1 << 30;
+        std::string message = "ERROR: requested custom rule with level ";
+        message += std::to_string(level);
+        message += " the tabulated rules end at ";
+        message += std::to_string(num_levels-1);
+        throw std::runtime_error(message);
     }
     return precision[level];
 }
