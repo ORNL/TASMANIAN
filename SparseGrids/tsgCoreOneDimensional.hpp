@@ -41,16 +41,16 @@ namespace TasGrid{
 
 class CustomTabulated{
 public:
-    CustomTabulated(std::ostream *os = 0);
-    CustomTabulated(const char* filename, std::ostream *os = 0);
-    CustomTabulated(const CustomTabulated &custom, std::ostream *os = 0);
+    CustomTabulated();
+    CustomTabulated(const char* filename);
+    CustomTabulated(const CustomTabulated &custom);
     ~CustomTabulated();
 
     // I/O subroutines
     void write(std::ofstream &ofs) const;
-    bool read(std::ifstream &ifs);
+    void read(std::ifstream &ifs);
     void writeBinary(std::ofstream &ofs) const;
-    bool readBinary(std::ifstream &ifs);
+    void readBinary(std::ifstream &ifs);
     void copyRule(const CustomTabulated *custom);
 
     int getNumLevels() const;
@@ -72,7 +72,6 @@ private:
     double *nodes;
     double *weights;
     std::string *description;
-    std::ostream *logstream;
 };
 
 class OneDimensionalMeta{

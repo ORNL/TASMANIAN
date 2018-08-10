@@ -156,7 +156,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
         ifs >> T;
         rule = OneDimensionalMeta::getIORuleString(T.c_str());
         if (rule == rule_customtabulated){
-            custom = new CustomTabulated(logstream);
+            custom = new CustomTabulated();
             custom->read(ifs);
         }
         tensors = new IndexSet(num_dimensions);  tensors->read(ifs);
@@ -214,7 +214,7 @@ void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
         ifs.read((char*) num_dim_out, sizeof(int));
         rule = OneDimensionalMeta::getIORuleInt(num_dim_out[0]);
         if (rule == rule_customtabulated){
-            custom = new CustomTabulated(logstream);
+            custom = new CustomTabulated();
             custom->readBinary(ifs);
         }
 
