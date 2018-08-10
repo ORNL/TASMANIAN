@@ -179,7 +179,7 @@ void GridGlobal::read(std::ifstream &ifs, std::ostream *logstream){
             for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
         }
         OneDimensionalMeta meta(custom);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta, logstream);
+        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexSet *work = (points != 0) ? points : needed;
@@ -246,7 +246,7 @@ void GridGlobal::readBinary(std::ifstream &ifs, std::ostream *logstream){
             for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
         }
         OneDimensionalMeta meta(custom);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta, logstream);
+        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexSet *work = (points != 0) ? points : needed;

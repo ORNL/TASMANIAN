@@ -40,7 +40,7 @@ namespace TasGrid{
 
 class OneDimensionalWrapper{
 public:
-    OneDimensionalWrapper(const OneDimensionalMeta *meta, int max_level, TypeOneDRule crule, double alpha = 0.0, double beta = 0.0, std::ostream *logstream = 0);
+    OneDimensionalWrapper(const OneDimensionalMeta *meta, int max_level, TypeOneDRule crule, double alpha = 0.0, double beta = 0.0);
     ~OneDimensionalWrapper();
 
     int getNumPoints(int level) const;

@@ -31,11 +31,14 @@
 #ifndef __TSG_ONE_DIMENSIONAL_WRAPPER_CPP
 #define __TSG_ONE_DIMENSIONAL_WRAPPER_CPP
 
+#include <stdexcept>
+#include <string>
+
 #include "tsgOneDimensionalWrapper.hpp"
 
 namespace TasGrid{
 
-OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int max_level, TypeOneDRule crule, double alpha, double beta, std::ostream *logstream) :
+OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int max_level, TypeOneDRule crule, double alpha, double beta) :
     num_levels(max_level+1), rule(crule), indx(0), nodes(0)
 {
     // find the points per level and the cumulative pointers
@@ -62,13 +65,12 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
 
         if (rule == rule_customtabulated){
             if (num_levels > meta->getCustom()->getNumLevels()){
-                if (logstream != 0){ (*logstream) << "ERROR: custom-tabulated rule needed with levels " << num_levels << ", but only " << meta->getCustom()->getNumLevels() << " are provided." << endl; }
-                #ifndef USE_XSDK_DEFAULTS
-                exit(1); // disabled by USE_XSDK_DEFAULTS
-                #else
-                max_level = meta->getCustom()->getNumLevels();
-                num_levels = max_level;
-                #endif // USE_XSDK_DEFAULTS
+                std::string message = "ERROR: custom-tabulated rule needed with levels ";
+                message += std::to_string(num_levels);
+                message += ", but only ";
+                message += std::to_string(meta->getCustom()->getNumLevels());
+                message += " are provided.";
+                throw std::runtime_error(message);
             }
         }
 
@@ -148,13 +150,12 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         }else if (rule == rule_gausspatterson){
             gp = new TableGaussPatterson();
             if (num_levels > gp->getNumLevels()){
-                if (logstream != 0){ (*logstream) << "ERROR: gauss-patterson rule needed with level " << max_level << ", but only " << gp->getNumLevels() << " are hardcoded." << endl; }
-                #ifndef USE_XSDK_DEFAULTS
-                exit(1); // disabled by USE_XSDK_DEFAULTS
-                #else
-                max_level = gp->getNumLevels()-1;
-                num_levels = max_level+1;
-                #endif // USE_XSDK_DEFAULTS
+                std::string message = "ERROR: gauss-patterson rule needed with level ";
+                message += std::to_string(max_level);
+                message += ", but only ";
+                message += std::to_string(gp->getNumLevels());
+                message += " are hardcoded.";
+                throw std::runtime_error(message);
             }
             unique = gp->getNodes(max_level);
 

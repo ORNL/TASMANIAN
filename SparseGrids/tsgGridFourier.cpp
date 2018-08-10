@@ -139,7 +139,7 @@ void GridFourier::read(std::ifstream &ifs, std::ostream *logstream){
         for(int j=1; j<num_dimensions; j++){ if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j]; }
 
         OneDimensionalMeta meta(0);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule_fourier, 0.0, 0.0, logstream);
+        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule_fourier, 0.0, 0.0);
 
         UnsortedIndexSet *exponents_unsorted = new UnsortedIndexSet(num_dimensions, work->getNumIndexes());
         int *exponent = new int[num_dimensions];
@@ -253,7 +253,7 @@ void GridFourier::readBinary(std::ifstream &ifs, std::ostream *logstream){
         for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
 
         OneDimensionalMeta meta(0);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule_fourier, 0.0, 0.0, logstream);
+        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule_fourier, 0.0, 0.0);
 
         UnsortedIndexSet* exponents_unsorted = new UnsortedIndexSet(num_dimensions, work->getNumIndexes());
         int *exponent = new int[num_dimensions];
