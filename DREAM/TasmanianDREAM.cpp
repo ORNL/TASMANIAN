@@ -155,21 +155,14 @@ void PosteriorFromModel::getDomainBounds(std::vector<double> &lower, std::vector
 
 
 #ifdef MPI_VERSION
-DistributedPosteriorTSGModel::DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior, std::ostream *os) :
-    posterior(local_posterior), comm(in_comm), num_chains(0), logstream(os){
-
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
-
+DistributedPosteriorTSGModel::DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior) :
+    posterior(local_posterior), comm(in_comm), num_chains(0){
     MPI_Comm_rank(comm, &comm_me);
     MPI_Comm_size(comm, &comm_size);
 
     num_dimensions = local_posterior->getNumDimensions();
 }
 DistributedPosteriorTSGModel::~DistributedPosteriorTSGModel(){}
-
-void DistributedPosteriorTSGModel::setErrorLog(std::ostream *os){ logstream = os; }
 
 int DistributedPosteriorTSGModel::getNumDimensions() const{ return posterior->getNumDimensions(); }
 

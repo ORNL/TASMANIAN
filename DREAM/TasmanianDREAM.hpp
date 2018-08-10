@@ -126,10 +126,8 @@ private:
 // Assume likelihood multiply across nodes (so we communicate only scalars)
 class DistributedPosteriorTSGModel : public ProbabilityWeightFunction{
 public:
-    DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior, std::ostream *os = 0);
+    DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior);
     ~DistributedPosteriorTSGModel();
-
-    void setErrorLog(std::ostream *os);
 
     int getNumDimensions() const;
     void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
@@ -151,8 +149,6 @@ private:
     int comm_me, comm_size;
 
     int num_dimensions, num_chains;
-
-    std::ostream *logstream;
 };
 #endif // MPI_VERSION
 

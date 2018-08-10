@@ -209,7 +209,7 @@ void mpiBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int num_
     GaussianLikelihood *likely = new GaussianLikelihood(num_outputs, likely_gauss_scale, &scale, 1, data);
     post->setLikelihood(likely);
 
-    DistributedPosteriorTSGModel *dist = new DistributedPosteriorTSGModel(MPI_COMM_WORLD, post, &cerr);
+    DistributedPosteriorTSGModel *dist = new DistributedPosteriorTSGModel(MPI_COMM_WORLD, post);
     dist->setNumChanis(num_chains);
     bool useLogForm = true;
 
