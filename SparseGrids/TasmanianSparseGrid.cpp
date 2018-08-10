@@ -1295,10 +1295,24 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
 }
 bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     std::string T;
-    ifs >> T;  if (!(T.compare("TASMANIAN") == 0)){ if (logstream != 0){ (*logstream) << "ERROR: wrong file format, first word in not 'TASMANIAN'" << endl; } return false; }
-    ifs >> T;  if (!(T.compare("SG") == 0)){ if (logstream != 0){ (*logstream) << "ERROR: wrong file format, second word in not 'SG'" << endl; } return false; }
-    getline(ifs, T); T.erase(0,1); if (!(T.compare(getVersion()) == 0)){ if (logstream != 0){ (*logstream) << "WARNING: Version mismatch, possibly undefined behavior!" << endl; } }
-    getline(ifs, T); if (!(T.compare("WARNING: do not edit this manually") == 0)){ if (logstream != 0){ (*logstream) << "ERROR: wrong file format, did not match 'WARNING: do not edit this manually'" << endl; } return false; }
+    std::string message = ""; // used in case there is an exception
+    ifs >> T;  if (!(T.compare("TASMANIAN") == 0)){ throw std::runtime_error("ERROR: wrong file format, first word in not 'TASMANIAN'"); }
+    ifs >> T;  if (!(T.compare("SG") == 0)){ throw std::runtime_error("ERROR: wrong file format, second word in not 'SG'"); }
+    getline(ifs, T); T.erase(0,1);
+    if (!(T.compare(getVersion()) == 0)){
+        // grids with version prior to 3.0 are not supported
+        size_t dec = T.find(".");
+        if (dec == std::string::npos) throw std::runtime_error("ERROR: wrong file format, cannot read the version number");
+        int vmajor = stoi(T.substr(0, dec));
+        int vminor = stoi(T.substr(dec+1));
+        if (vmajor < 3) throw std::runtime_error("ERROR: file formats from versions prior to 3.0 are not supported");
+        if ((vmajor > getVersionMajor()) || ((vmajor == getVersionMajor()) && (vminor > getVersionMinor()))){
+            message += "ERROR: using future file format " + std::to_string(vmajor) + ", Tasmanian cannot time-travel.";
+            throw std::runtime_error(message);
+        }
+        // else: using file format from at least 3.0 by older than current, it is supposed to work
+    }
+    getline(ifs, T); if (!(T.compare("WARNING: do not edit this manually") == 0)){ throw std::runtime_error("ERROR: wrong file format, missing warning message"); }
     ifs >> T;
     if (T.compare("global") == 0){
         clear();
@@ -1333,8 +1347,7 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     }else if (T.compare("empty") == 0){
         clear();
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: wrong file format!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong file format, unknown grid type (or corrupt file)");
     }
     getline(ifs, T);
     bool using_v3_format = false; // for compatibility with version 3.0
@@ -1353,8 +1366,7 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         // for compatibility with version 3.0 and the missing domain transform
         using_v3_format = true;
     }else{
-        if (logstream != 0){ (*logstream) << "ERROR: wrong file format! Domain is not specified!" << endl; }
-        return false;
+        throw std::runtime_error("ERROR: wrong file format, domain unspecified");
     }
     if (!using_v3_format){
         getline(ifs, T);
@@ -1370,8 +1382,7 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
             // for compatibility with version 4.0/4.1 and the missing conformal maps
             using_v4_format = true;
         }else{
-            if (logstream != 0){ (*logstream) << "ERROR: wrong file format! Conformal mapping is not specified!" << endl; }
-            return false;
+            throw std::runtime_error("ERROR: wrong file format, conformal mapping is unspecified");
         }
         if (!using_v4_format){
             getline(ifs, T);
@@ -1384,13 +1395,12 @@ bool TasmanianSparseGrid::readAscii(std::ifstream &ifs){
             }else if (T.compare("TASMANIAN SG end") == 0){
                 using_v5_format = true;
             }else{
-                if (logstream != 0){ (*logstream) << "WARNING: file did not end with 'TASMANIAN SG end', this may result in undefined behavior (v5)" << endl; }
+                throw std::runtime_error("ERROR: wrong file format, did not specify level limits");
             }
             if (!using_v5_format){
                 getline(ifs, T);
                 if (!(T.compare("TASMANIAN SG end") == 0)){
-                    if (logstream != 0){ (*logstream) << "WARNING: file did not end with 'TASMANIAN SG end', this may result in undefined behavior (v51)" << endl; }
-                    exit(1);
+                    throw std::runtime_error("ERROR: wrong file format, did not end with 'TASMANIAN SG end' (possibly corrupt file)");
                 }
             }
         }
@@ -1598,8 +1608,15 @@ void tsgDisableErrorLog(void *grid){ ((TasmanianSparseGrid*) grid)->disableLog()
 void tsgWrite(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename); }
 void tsgWriteBinary(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename, true); }
 int tsgRead(void *grid, const char* filename){
-    bool result = ((TasmanianSparseGrid*) grid)->read(filename);
-    return result ? 0 : 1;
+    try{
+        ((TasmanianSparseGrid*) grid)->read(filename);
+        return 0;
+    }catch(std::runtime_error e){
+        #ifndef DNDEBUG
+        cerr << e.what() << endl;
+        #endif // DNDEBUG
+        return 1;
+    }
 }
 
 void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const char * sType, const char *sRule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int *limit_levels){
