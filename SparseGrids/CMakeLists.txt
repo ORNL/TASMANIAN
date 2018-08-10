@@ -134,15 +134,6 @@ set(Tasmanian_source_libsparsegrid_cuda
        tsgCudaBasisEvaluations.hpp
        tsgCudaLinearAlgebra.hpp)
 
-set(Tasmanian_source_tasgrid
-        tasgrid_main.cpp
-        TasmanianSparseGrid.hpp
-        tasgridExternalTests.hpp
-        tasgridExternalTests.cpp
-        tasgridTestFunctions.hpp
-        tasgridTestFunctions.cpp
-        tasgridWrapper.hpp
-        tasgridWrapper.cpp)
 
 ########################################################################
 # add the tasgrid and examples executables
@@ -155,12 +146,20 @@ add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  tasgridTestFunctions.cpp
                                  tasgridWrapper.hpp
                                  tasgridWrapper.cpp)
+add_executable(Tasmanian_gridtest gridtest_main.cpp
+                                  TasmanianSparseGrid.hpp
+                                  tasgridExternalTests.hpp
+                                  tasgridExternalTests.cpp
+                                  tasgridTestFunctions.hpp
+                                  tasgridTestFunctions.cpp)
 add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
 
 set_property(TARGET Tasmanian_tasgrid              PROPERTY CXX_STANDARD 11)
+set_property(TARGET Tasmanian_gridtest             PROPERTY CXX_STANDARD 11)
 set_property(TARGET Tasmanian_example_sparse_grids PROPERTY CXX_STANDARD 11)
 
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
+set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")
 set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
 
 if (Tasmanian_ENABLE_OPENMP AND OpenMP_CXX_LIBRARIES)
@@ -168,6 +167,8 @@ if (Tasmanian_ENABLE_OPENMP AND OpenMP_CXX_LIBRARIES)
     # also the libs are redundant here, as those will be added by libsparsegrid
     target_link_libraries(Tasmanian_tasgrid ${OpenMP_CXX_LIBRARIES})
     target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
+    target_link_libraries(Tasmanian_gridtest ${OpenMP_CXX_LIBRARIES})
+    target_compile_options(Tasmanian_gridtest PRIVATE ${OpenMP_CXX_FLAGS})
 endif()
 
 
@@ -183,9 +184,11 @@ if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
 
     # if static libraries are available, executables link statically
     target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_static)
+    target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_static)
 else() # if there are not static libs, use shared libs for the executables
     target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_shared)
+    target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid_shared)
     target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_shared)
 endif()
 
@@ -222,6 +225,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_shared)
     else()
         target_compile_definitions(Tasmanian_tasgrid PUBLIC -DTSG_DYNAMIC)
+        target_compile_definitions(Tasmanian_gridtest PUBLIC -DTSG_DYNAMIC)
     endif()
 
     if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
@@ -233,19 +237,20 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     endif()
 
     Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_tasgrid)
+    Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_gridtest)
 endif()
 
 
 ########################################################################
 # Testing
 ########################################################################
-add_test(SparseGridsAcceleration tasgrid -test acceleration -gpuid ${Tasmanian_TESTS_GPU_ID})
-add_test(SparseGridsDomain       tasgrid -test domain)
-add_test(SparseGridsRefinement   tasgrid -test refinement)
-add_test(SparseGridsGlobal       tasgrid -test global)
-add_test(SparseGridsLocal        tasgrid -test local)
-add_test(SparseGridsWavelet      tasgrid -test wavelet)
-add_test(SparseGridsFourier      tasgrid -test fourier)
+add_test(SparseGridsAcceleration gridtest acceleration -gpuid ${Tasmanian_TESTS_GPU_ID})
+add_test(SparseGridsDomain       gridtest domain)
+add_test(SparseGridsRefinement   gridtest refinement)
+add_test(SparseGridsGlobal       gridtest global)
+add_test(SparseGridsLocal        gridtest local)
+add_test(SparseGridsWavelet      gridtest wavelet)
+add_test(SparseGridsFourier      gridtest fourier)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
     set_tests_properties(SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement SparseGridsGlobal SparseGridsLocal SparseGridsWavelet
         PROPERTIES
