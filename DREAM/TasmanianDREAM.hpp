@@ -218,7 +218,7 @@ public:
     void collectSamples(int num_burnup, int num_samples, std::vector<double> &samples, bool useLogForm = false);
 
     double* getPDFHistory() const;
-    void getPDFHistory(std::vector<double> history) const;
+    void getPDFHistory(std::vector<double> &history) const;
 
 protected:
     void clear();

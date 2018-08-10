@@ -513,7 +513,7 @@ double* TasmanianDREAM::getPDFHistory() const{
     return hist;
 }
 
-void TasmanianDREAM::getPDFHistory(std::vector<double> history) const{
+void TasmanianDREAM::getPDFHistory(std::vector<double> &history) const{
     history = pdf_history; // copy assignment
 }
 
