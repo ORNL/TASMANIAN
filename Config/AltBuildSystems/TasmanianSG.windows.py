@@ -326,7 +326,7 @@ class TasmanianSparseGrid:
         '''
         if (sys.version_info.major == 3):
             sFilename = bytes(sFilename, encoding='utf8')
-        return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) == 0)
+        return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) != 0)
 
     def write(self, sFilename, bUseBinaryFormat = False):
         '''

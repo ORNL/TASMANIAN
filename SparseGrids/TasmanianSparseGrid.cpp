@@ -1594,12 +1594,12 @@ void tsgWriteBinary(void *grid, const char* filename){ ((TasmanianSparseGrid*) g
 int tsgRead(void *grid, const char* filename){
     try{
         ((TasmanianSparseGrid*) grid)->read(filename);
-        return 0;
+        return 1;
     }catch(std::runtime_error e){
         #ifndef DNDEBUG
         cerr << e.what() << endl;
         #endif // DNDEBUG
-        return 1;
+        return 0;
     }
 }
 
