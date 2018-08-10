@@ -193,7 +193,7 @@ private:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class TasmanianDREAM{
 public:
-    TasmanianDREAM(std::ostream *os = 0);
+    TasmanianDREAM();
     ~TasmanianDREAM();
     void overwriteBaseUnifrom(const BaseUniform *new_uniform);
 
@@ -201,8 +201,6 @@ public:
     static int getVersionMajor();
     static int getVersionMinor();
     static const char* getLicense();
-
-    void setErrorLog(std::ostream *os);
 
     void setNumChains(int num_dream_chains);
     int getNumChains() const;
@@ -257,8 +255,6 @@ private:
     CppUniformSampler unifrom_cpp;
 
     std::vector<double> pdf_history;
-
-    std::ostream *logstream;
 };
 
 }

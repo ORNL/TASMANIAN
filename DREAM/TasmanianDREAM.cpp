@@ -304,13 +304,9 @@ void LikelihoodTSG::getDomainBounds(std::vector<double> &lower, std::vector<doub
 //  Actual DREAM Sampler
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-TasmanianDREAM::TasmanianDREAM(std::ostream *os): num_dimensions(-1), num_chains(-1),
-    pdf(0), jump(1.0), state_initialized(false), values_initialized(false), values_logform(false),
-    logstream(os)
+TasmanianDREAM::TasmanianDREAM(): num_dimensions(-1), num_chains(-1),
+    pdf(0), jump(1.0), state_initialized(false), values_initialized(false), values_logform(false)
 {
-    #ifndef USE_XSDK_DEFAULTS
-    if (logstream == 0) logstream = &cerr;
-    #endif // USE_XSDK_DEFAULTS
     core = &unifrom_cpp;
 }
 TasmanianDREAM::~TasmanianDREAM(){
@@ -336,8 +332,6 @@ void TasmanianDREAM::clear(){
     jump = 0.0;
 }
 
-void TasmanianDREAM::setErrorLog(std::ostream *os){ logstream = os; }
-
 void TasmanianDREAM::setNumChains(int num_dream_chains){
     num_chains = num_dream_chains;
     state_initialized = false;
@@ -350,18 +344,17 @@ void TasmanianDREAM::setJumpScale(double jump_scale){ jump = jump_scale; }
 double TasmanianDREAM::getJumpScale(){ return jump; }
 
 void TasmanianDREAM::setCorrectionAll(BasePDF *correct){
-    if (num_dimensions == 0) if (logstream != 0) (*logstream) << "ERROR: cannot set correction before the pdf" << endl;
+    if (num_dimensions == 0) throw std::runtime_error("ERROR: cannot setCorrectionAll() before setProbabilityWeightFunction()");
     for(auto &p : corrections) p = correct;
 }
 void TasmanianDREAM::setCorrection(int dim, BasePDF *correct){
-    if (num_dimensions == 0) if (logstream != 0) (*logstream) << "ERROR: cannot set correction before the pdf" << endl;
-    if ((dim < 0) || (dim >= num_dimensions)) if (logstream != 0) (*logstream) << "ERROR: incorrect dimension" << endl;
+    if (num_dimensions == 0) throw std::runtime_error("ERROR: cannot setCorrection() before the setProbabilityWeightFunction()");
+    if ((dim < 0) || (dim >= num_dimensions)) throw std::invalid_argument("ERROR: setCorrection() called with incorrect dimension");
     corrections[dim] = correct;
 }
 const BasePDF* TasmanianDREAM::getCorrection(int dim){
     if ((dim < 0) || (dim >= num_dimensions)){
-        if (logstream != 0) (*logstream) << "ERROR: incorrect dimension" << endl;
-        return 0;
+        throw std::invalid_argument("ERROR: getCorrection() called with incorrect dimension");
     }
     return corrections[dim];
 }
@@ -411,7 +404,7 @@ void TasmanianDREAM::setChainState(const std::vector<double> state){
 }
 
 void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, double *samples, bool useLogForm){
-    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return; } // no chains specified
+    if (num_chains < 1) throw std::runtime_error("ERROR: must call setNumChains() before collectSamples()");
     if (!state_initialized){
         chain_state.resize(num_chains * num_dimensions);
         for(int j=0; j<num_chains; j++){
@@ -441,13 +434,13 @@ void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, double *sam
     }
 }
 double* TasmanianDREAM::collectSamples(int num_burnup, int num_samples, bool useLogForm){
-    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return 0; } // no chains specified
+    if (num_chains < 1) throw std::runtime_error("ERROR: must call setNumChains() before collectSamples()");
     double *samples = new double[num_samples * num_dimensions * num_chains];
     collectSamples(num_burnup, num_samples, samples, useLogForm);
     return samples;
 }
 void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, std::vector<double> &samples, bool useLogForm){
-    if (num_chains < 1){ if (logstream != 0) (*logstream) << "No chains specified, cannot collect samples" << endl; return; } // no chains specified
+    if (num_chains < 1) throw std::runtime_error("ERROR: must call setNumChains() before collectSamples()");
     samples.resize(num_samples * num_dimensions * num_chains);
     collectSamples(num_burnup, num_samples, samples.data(), useLogForm);
 }
