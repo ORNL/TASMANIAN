@@ -50,7 +50,7 @@ public:
     CppUniformSampler();
     ~CppUniformSampler();
 
-    double getSample01() const; // returns a smaple uniformly distributed on 01
+    double getSample01() const; // returns a sample uniformly distributed on (0, 1)
 };
 
 class BasePDF{
