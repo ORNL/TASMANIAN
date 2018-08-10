@@ -22,10 +22,14 @@ LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlo
 
 WROBJ = tasgrid_main.o tasgridTestFunctions.o tasgridExternalTests.o tasgridWrapper.o
 
+GTONJ = gridtest_main.o tasgridTestFunctions.o tasgridExternalTests.o
+
 LIBNAME = libtasmaniansparsegrid.a
 SHAREDNAME = libtasmaniansparsegrid.so
 
 EXECNAME = tasgrid
+
+TESTNAME = gridtest
 
 %.cu.o: %.cu $(LHEADERS)
 	$(NVCC) $(NVCC_OPT) -c $< -o $@
@@ -33,7 +37,7 @@ EXECNAME = tasgrid
 %.o: %.cpp $(LHEADERS)
 	$(CC) $(OPTC) $(IADD) -c $< -o $@
 
-all: $(LIBNAME) $(EXECNAME) $(SHAREDNAME)
+all: $(LIBNAME) $(EXECNAME) $(TESTNAME) $(SHAREDNAME)
 
 $(SHAREDNAME): $(LIBOBJ)
 	$(CC) $(OPTL) $(LIBOBJ) -shared -o $(SHAREDNAME) $(LIBS)
@@ -44,9 +48,12 @@ $(LIBNAME): $(LIBOBJ)
 $(EXECNAME):  $(LIBNAME) $(WROBJ)
 	$(CC) $(OPTL) $(LADD) -L. $(WROBJ) -o $(EXECNAME) $(LIBNAME) $(LIBS)
 
+$(TESTNAME):  $(LIBNAME) $(GTONJ)
+	$(CC) $(OPTL) $(LADD) -L. $(GTONJ) -o $(TESTNAME) $(LIBNAME) $(LIBS)
 
 clean:
 	rm -fr *.o
 	rm -fr $(LIBNAME)
 	rm -fr $(EXECNAME)
+	rm -fr $(TESTNAME)
 	rm -fr $(SHAREDNAME)
