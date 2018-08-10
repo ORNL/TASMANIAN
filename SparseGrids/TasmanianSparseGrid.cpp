@@ -534,6 +534,10 @@ void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
     std::copy(domain_transform_b.begin(), domain_transform_b.end(), b);
 }
 void TasmanianSparseGrid::setDomainTransform(const std::vector<double> a, const std::vector<double> b){
+    if ((base == 0) || (base->getNumDimensions() == 0)){
+        throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
+    }
+    if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     domain_transform_a = a; // copy assignment
     domain_transform_b = b;
 }
