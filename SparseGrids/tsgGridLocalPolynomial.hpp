@@ -53,7 +53,7 @@ public:
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
 
-    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const int *level_limits = 0);
+    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const int *level_limits);
     void copyGrid(const GridLocalPolynomial *pwpoly);
 
     int getNumDimensions() const;
