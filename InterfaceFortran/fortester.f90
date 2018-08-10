@@ -65,7 +65,7 @@ double complex,   pointer :: dcmplx_pnt_1d_a(:), dcmplx_pnt_1d_b(:), dcmplx_pnt_
 write(*,'(a)') 'Testing TASMANIAN FORTRAN interface'
 write(*,*)
 
-! read library meta-data  
+! read library meta-data
 licence => tsgGetLicense()
 write(*,"(A,I2,A,I1)") "Tasmanian Sparse Grid module: ", tsgGetVersionMajor(), ".", tsgGetVersionMinor()
 write(*,"(A,40A)") "Licence: ", licence
@@ -217,7 +217,7 @@ if ( (abs(sum(weights)-0.5d0*sqrt(pi)) > 1.D-11) .OR. (abs(tsgGetBeta(gridID)) >
   stop 1
 endif
 deallocate(weights)
-  
+
 
 ! test anisotropy
 allocate( pointsb(2,4) )
@@ -230,7 +230,7 @@ if ( (norm2d(pointsb-points) > 1.D-11) .OR. (abs(sum(weights)-4.0D+0) > 1.D-11))
   stop 1
 endif
 deallocate(pointsb, points, weights)
-  
+
 
 ! make custom rule file
 open(unit=17,iostat=i,file='tasmanianFortranTestCustomRule.table',status='replace')
@@ -296,7 +296,7 @@ points   => tsgGetPoints(gridID)
 pointsb  => tsgGetPoints(gridID_II)
 weights  => tsgGetQuadratureWeights(gridID)
 weightsb => tsgGetQuadratureWeights(gridID_II)
-if ( (tsgGetNumPoints(gridID_II) .ne. tsgGetNumPoints(gridID)) .or. & 
+if ( (tsgGetNumPoints(gridID_II) .ne. tsgGetNumPoints(gridID)) .or. &
      (norm2d(points-pointsb) > 1.0D-11) .or. (norm1d(weights-weightsb) > 1.0D-11) ) then
   write(*,*) "Mismatch in tsgMakeGlobal: level limits", tsgGetNumPoints(gridID_II), norm2d(points-pointsb)
   stop 1
@@ -374,7 +374,7 @@ if ( (norm2d(pointsb-points) > 1.D-11) .or. (abs(sum(weights)-4.0D+0) > 1.D-11) 
   stop 1
 endif
 deallocate(pointsb, points, weights)
-  
+
 
 ! test conformal
 allocate( pointsb(2,100), double_2d_a(1,100), double_2d_b(1,100), double_2d_c(1,100), double_2d_d(1,100) )
@@ -412,7 +412,7 @@ points   => tsgGetPoints(gridID)
 pointsb  => tsgGetPoints(gridID_II)
 weights  => tsgGetQuadratureWeights(gridID)
 weightsb => tsgGetQuadratureWeights(gridID_II)
-if ( (tsgGetNumPoints(gridID_II) .ne. tsgGetNumPoints(gridID)) .or. & 
+if ( (tsgGetNumPoints(gridID_II) .ne. tsgGetNumPoints(gridID)) .or. &
      (norm2d(points-pointsb) > 1.0D-11)  .or. (norm1d(weights-weightsb) > 1.0D-11) ) then
   write(*,*) "Mismatch in tsgMakeSequenceGrid: level limits", tsgGetNumPoints(gridID_II), norm2d(points-pointsb)
   stop 1
@@ -1391,7 +1391,7 @@ write(*,*) "Refinement functions:     PASS"
 
 call tsgFreeGridID(gridID)
 call tsgFreeGridID(gridID_II)
-  
+
 
 
 
@@ -1412,21 +1412,21 @@ function norm(x,n) result(res)
   double precision :: res
 
   res = sqrt(sum(x**2))
-end function 
+end function
 
 function norm1d(x) result(res)
   double precision :: x(:)
   double precision :: res
 
   res = sqrt(sum(x**2))
-end function 
+end function
 
 function norm2d(x) result(res)
   double precision :: x(:,:)
   double precision :: res
 
   res = sqrt(sum(x**2))
-end function 
+end function
 
 function check_points(points,mustHave,mustNotHave) result(res)
   double precision :: points(:), mustHave(:), mustNotHave(:)
