@@ -181,18 +181,39 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     }
 }
 void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int *level_limits){
-    if (OneDimensionalMeta::isSequence(rule)){
-        clear();
-        sequence = new GridSequence();
-        sequence->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, level_limits);
-        base = sequence;
-        if (level_limits != 0){
-            llimits = new int[dimensions];
-            std::copy(level_limits, level_limits + dimensions, llimits);
-        }
-    }else{
+    std::vector<int> aw, ll;
+    if (anisotropic_weights != 0){
+        int sizeaw = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+        aw.resize(sizeaw);
+        std::copy(anisotropic_weights, anisotropic_weights + sizeaw, aw.data());
+    }
+    if (level_limits != 0){
+        ll.resize(dimensions);
+        std::copy(level_limits, level_limits + dimensions, ll.data());
+    }
+    makeSequenceGrid(dimensions, outputs, depth, type, rule, aw, ll);
+}
+void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeSequenceGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeSequenceGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeSequenceGrid() requires non-negative depth");
+    if (!OneDimensionalMeta::isSequence(rule)){
         std::string message = "ERROR: makeSequenceGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a sequence rule";
         throw std::invalid_argument(message);
+    }
+    size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires anisotropic_weights with either 0 or dimenions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires level_limits with either 0 or dimenions entries");
+    clear();
+    sequence = new GridSequence();
+    const int *ll = 0, *aw = 0;
+    if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
+    if (!level_limits.empty()) ll = level_limits.data();
+    sequence->makeGrid(dimensions, outputs, depth, type, rule, aw, ll);
+    base = sequence;
+    if (!level_limits.empty()){
+        llimits = new int[dimensions];
+        std::copy(level_limits.begin(), level_limits.end(), llimits);
     }
 }
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
