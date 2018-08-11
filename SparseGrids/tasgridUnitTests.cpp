@@ -70,7 +70,7 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<7; i++){
+    for(int i=0; i<15; i++){
         try{
             invalidArgumentCall(i);
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
@@ -113,13 +113,21 @@ bool GridUnitTester::testAllException(){
 void GridUnitTester::invalidArgumentCall(int i){
     TasmanianSparseGrid grid;
     switch(i){
-    case 0: grid.makeGlobalGrid(0, 1, 3, type_level, rule_gausslegendre); break; // dimension is 0
-    case 1: grid.makeGlobalGrid(2, -1, 3, type_level, rule_gausslegendre); break; // output is -1
-    case 2: grid.makeGlobalGrid(2, 2, -1, type_level, rule_rleja); break; // depth is -1
-    case 3: grid.makeGlobalGrid(2, 2, -1, type_level, rule_localp); break; // rule is localp
-    case 4: grid.makeSequenceGrid(2, 1, 3, type_level, rule_localp); break; // localp is not a sequence rule
-    case 5: grid.makeLocalPolynomialGrid(2, 1, 3, -2, rule_localp); break; // -2 is not a valid order
-    case 6: grid.makeWaveletGrid(2, 1, 3, 2, 0); break; // 2 is not a valid order (for wavelets)
+    case  0: grid.makeGlobalGrid(0, 1, 3, type_level, rule_gausslegendre); break; // dimension is 0
+    case  1: grid.makeGlobalGrid(2, -1, 3, type_level, rule_gausslegendre); break; // output is -1
+    case  2: grid.makeGlobalGrid(2, 2, -1, type_level, rule_rleja); break; // depth is -1
+    case  3: grid.makeGlobalGrid(2, 2, 1, type_level, rule_localp); break; // rule is localp
+    case  4: grid.makeGlobalGrid(2, 2, 2, type_level, rule_rleja, std::vector<int>()={3}); break; // aw is too short
+    case  5: grid.makeGlobalGrid(2, 2, 2, type_level, rule_customtabulated, std::vector<int>(), 0.0, 0.0, 0); break; // custom filename is empty
+    case  6: grid.makeGlobalGrid(2, 2, 2, type_level, rule_chebyshev, std::vector<int>(), 0.0, 0.0, 0, std::vector<int>()={3}); break; // level limits is too short
+    case  7: grid.makeSequenceGrid(0, 1, 3, type_level, rule_rleja); break; // dimension is 0
+    case  8: grid.makeSequenceGrid(2, -1, 3, type_level, rule_minlebesgue); break; // output is -1
+    case  9: grid.makeSequenceGrid(2, 2, -1, type_level, rule_rleja); break; // depth is -1
+    case 10: grid.makeSequenceGrid(2, 1, 3, type_level, rule_localp); break; // localp is not a sequence rule
+    case 11: grid.makeSequenceGrid(2, 2, 2, type_level, rule_rleja, std::vector<int>()={3}); break; // aw is too short
+    case 12: grid.makeSequenceGrid(2, 2, 2, type_level, rule_chebyshev, std::vector<int>(), std::vector<int>()={3}); break; // level limits is too short
+    case 13: grid.makeLocalPolynomialGrid(2, 1, 3, -2, rule_localp); break; // -2 is not a valid order
+    case 14: grid.makeWaveletGrid(2, 1, 3, 2, 0); break; // 2 is not a valid order (for wavelets)
     default: break;
     }
 }
