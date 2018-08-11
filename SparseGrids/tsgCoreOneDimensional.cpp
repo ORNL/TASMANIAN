@@ -687,6 +687,10 @@ int OneDimensionalMeta::getIORuleInt(TypeOneDRule rule){
     }
 }
 
+bool OneDimensionalMeta::isTypeCurved(TypeDepth type){
+    return ((type == type_curved) || (type == type_ipcurved) || (type == type_qptotal));
+}
+
 TypeDepth OneDimensionalMeta::getIOTypeString(const char *name){
     if (strcmp(name, "level") == 0){
         return type_level;

@@ -70,7 +70,7 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<3; i++){
+    for(int i=0; i<7; i++){
         try{
             invalidArgumentCall(i);
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
@@ -113,9 +113,13 @@ bool GridUnitTester::testAllException(){
 void GridUnitTester::invalidArgumentCall(int i){
     TasmanianSparseGrid grid;
     switch(i){
-    case 0: grid.makeSequenceGrid(2, 1, 3, type_level, rule_localp); break; // localp is not a sequence rule
-    case 1: grid.makeLocalPolynomialGrid(2, 1, 3, -2, rule_localp); break; // -2 is not a valid order
-    case 2: grid.makeWaveletGrid(2, 1, 3, 2, 0); break; // 2 is not a valid order (for wavelets)
+    case 0: grid.makeGlobalGrid(0, 1, 3, type_level, rule_gausslegendre); break; // dimension is 0
+    case 1: grid.makeGlobalGrid(2, -1, 3, type_level, rule_gausslegendre); break; // output is -1
+    case 2: grid.makeGlobalGrid(2, 2, -1, type_level, rule_rleja); break; // depth is -1
+    case 3: grid.makeGlobalGrid(2, 2, -1, type_level, rule_localp); break; // rule is localp
+    case 4: grid.makeSequenceGrid(2, 1, 3, type_level, rule_localp); break; // localp is not a sequence rule
+    case 5: grid.makeLocalPolynomialGrid(2, 1, 3, -2, rule_localp); break; // -2 is not a valid order
+    case 6: grid.makeWaveletGrid(2, 1, 3, 2, 0); break; // 2 is not a valid order (for wavelets)
     default: break;
     }
 }
