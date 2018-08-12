@@ -249,17 +249,31 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
     }
 }
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
+    std::vector<int> ll;
+    if (level_limits != 0){
+        ll.resize(dimensions);
+        std::copy(level_limits, level_limits + dimensions, ll.data());
+    }
+    makeWaveletGrid(dimensions, outputs, depth, order, ll);
+}
+void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const std::vector<int> &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeWaveletGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeWaveletGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeWaveletGrid() requires non-negative depth");
     if ((order != 1) && (order != 3)){
         std::string message = "ERROR: makeWaveletGrid is called with order: " + std::to_string(order) + "but wavelets are implemented only for orders 1 and 3.";
         throw std::invalid_argument(message);
     }
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeWaveletGrid() requires level_limits with either 0 or dimenions entries");
     clear();
+    const int *ll = 0;
+    if (!level_limits.empty()) ll = level_limits.data();
     wavelet = new GridWavelet();
-    wavelet->makeGrid(dimensions, outputs, depth, order, level_limits);
+    wavelet->makeGrid(dimensions, outputs, depth, order, ll);
     base = wavelet;
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         llimits = new int[dimensions];
-        std::copy(level_limits, level_limits + dimensions, llimits);
+        std::copy(level_limits.begin(), level_limits.end(), llimits);
     }
 }
 void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){

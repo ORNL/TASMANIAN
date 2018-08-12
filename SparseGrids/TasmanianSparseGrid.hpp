@@ -72,6 +72,7 @@ public:
     void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp, const int *level_limits = 0);
     void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const std::vector<int> &level_limits);
     void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, const int *level_limits = 0);
+    void makeWaveletGrid(int dimensions, int outputs, int depth, int order, const std::vector<int> &level_limits);
     void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights = 0, const int* level_limits = 0);
     void copyGrid(const TasmanianSparseGrid *source);
 
