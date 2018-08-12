@@ -70,7 +70,7 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<15; i++){
+    for(int i=0; i<20; i++){
         try{
             invalidArgumentCall(i);
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
@@ -126,8 +126,13 @@ void GridUnitTester::invalidArgumentCall(int i){
     case 10: grid.makeSequenceGrid(2, 1, 3, type_level, rule_localp); break; // localp is not a sequence rule
     case 11: grid.makeSequenceGrid(2, 2, 2, type_level, rule_rleja, std::vector<int>()={3}); break; // aw is too short
     case 12: grid.makeSequenceGrid(2, 2, 2, type_level, rule_chebyshev, std::vector<int>(), std::vector<int>()={3}); break; // level limits is too short
-    case 13: grid.makeLocalPolynomialGrid(2, 1, 3, -2, rule_localp); break; // -2 is not a valid order
-    case 14: grid.makeWaveletGrid(2, 1, 3, 2, 0); break; // 2 is not a valid order (for wavelets)
+    case 13: grid.makeLocalPolynomialGrid(0,  1,  3,  3, rule_localp); break; // 0 is not valid dimensions
+    case 14: grid.makeLocalPolynomialGrid(2, -1,  3,  2, rule_localp); break; // -1 is not valid outputs
+    case 15: grid.makeLocalPolynomialGrid(2,  1, -1,  2, rule_localp); break; // -1 is not valid depth
+    case 16: grid.makeLocalPolynomialGrid(2,  1,  3, -2, rule_localp); break; // -2 is not a valid order
+    case 17: grid.makeLocalPolynomialGrid(2,  1,  3, -2, rule_mindelta); break; // mindelta is not a local rule
+    case 18: grid.makeLocalPolynomialGrid(2,  1,  3,  1, rule_localp, std::vector<int>()={3}); break; // level limits is too short
+    case 19: grid.makeWaveletGrid(2, 1, 3, 2, 0); break; // 2 is not a valid order (for wavelets)
     default: break;
     }
 }
