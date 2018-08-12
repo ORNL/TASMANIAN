@@ -217,21 +217,35 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     }
 }
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
-    if (!OneDimensionalMeta::isLocalPolynomial(rule)){
-        std::string message = "ERROR: makeLocalPolynomialGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a local polynomial rule";
-        throw std::invalid_argument(message);
+    std::vector<int> ll;
+    if (level_limits != 0){
+        ll.resize(dimensions);
+        std::copy(level_limits, level_limits + dimensions, ll.data());
     }
+    makeLocalPolynomialGrid(dimensions, outputs, depth, order, rule, ll);
+}
+void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const std::vector<int> &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires non-negative depth");
     if (order < -1){
         std::string message = "ERROR: makeLocalPolynomialGrid is called with order: " + std::to_string(order) + ", but the order cannot be less than -1.";
         throw std::invalid_argument(message);
     }
+    if (!OneDimensionalMeta::isLocalPolynomial(rule)){
+        std::string message = "ERROR: makeLocalPolynomialGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a local polynomial rule";
+        throw std::invalid_argument(message);
+    }
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires level_limits with either 0 or dimenions entries");
     clear();
+    const int *ll = 0;
+    if (!level_limits.empty()) ll = level_limits.data();
     pwpoly = new GridLocalPolynomial();
-    pwpoly->makeGrid(dimensions, outputs, depth, order, rule, level_limits);
+    pwpoly->makeGrid(dimensions, outputs, depth, order, rule, ll);
     base = pwpoly;
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         llimits = new int[dimensions];
-        std::copy(level_limits, level_limits + dimensions, llimits);
+        std::copy(level_limits.begin(), level_limits.end(), llimits);
     }
 }
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
