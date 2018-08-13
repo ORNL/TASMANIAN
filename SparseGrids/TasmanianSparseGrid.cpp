@@ -201,12 +201,11 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires level_limits with either 0 or dimenions entries");
     clear();
     sequence = new GridSequence();
-    const int *ll = 0, *aw = 0;
+    const int *aw = 0;
     if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
-    if (!level_limits.empty()) ll = level_limits.data();
-    sequence->makeGrid(dimensions, outputs, depth, type, rule, aw, ll);
-    base = sequence;
     llimits = level_limits;
+    sequence->makeGrid(dimensions, outputs, depth, type, rule, aw, llimits);
+    base = sequence;
 }
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
     std::vector<int> ll;
@@ -351,12 +350,26 @@ void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const std:
     }
 }
 void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: updateSequenceGrid called, but the grid is empty");
+    std::vector<int> aw, ll;
+    int dims = base->getNumDimensions();
+    if (anisotropic_weights != 0){
+        int sizeaw = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dims : dims;
+        aw.resize(sizeaw);
+        std::copy(anisotropic_weights, anisotropic_weights + sizeaw, aw.data());
+    }
+    if (level_limits != 0){
+        ll.resize(dims);
+        std::copy(level_limits, level_limits + dims, ll.data());
+    }
+    updateSequenceGrid(depth, type, aw, ll);
+}
+void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     if (sequence != 0){
-        sequence->updateGrid(depth, type, anisotropic_weights, level_limits);
-        if (level_limits != 0){
-            llimits.resize(sequence->getNumDimensions());
-            std::copy(level_limits, level_limits + sequence->getNumDimensions(), llimits.data());
-        }
+        if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
+        const int *aw = 0;
+        if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
+        sequence->updateGrid(depth, type, aw, llimits);
     }else{
         throw std::runtime_error("ERROR: updateSequenceGrid called, but the grid is not sequence");
     }

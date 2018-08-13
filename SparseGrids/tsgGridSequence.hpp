@@ -58,11 +58,11 @@ public:
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
 
-    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights, const int *level_limits);
+    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights, const std::vector<int> &level_limits);
     void copyGrid(const GridSequence *seq);
     void setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule crule);
 
-    void updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits);
+    void updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const std::vector<int> &level_limits);
     void updateGrid(IndexSet* &update);
 
     int getNumDimensions() const;
