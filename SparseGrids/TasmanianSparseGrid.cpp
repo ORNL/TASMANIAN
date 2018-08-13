@@ -975,6 +975,9 @@ void TasmanianSparseGrid::getLevelLimits(int *limits) const{
         std::copy(llimits.begin(), llimits.end(), limits);
     }
 }
+void TasmanianSparseGrid::getLevelLimits(std::vector<int> &limits) const{
+    limits = llimits;
+}
 
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
     if (level_limits != 0){
