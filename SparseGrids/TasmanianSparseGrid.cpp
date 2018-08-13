@@ -320,12 +320,26 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
 }
 
 void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: updateGlobalGrid called, but the grid is empty");
+    std::vector<int> aw, ll;
+    int dims = base->getNumDimensions();
+    if (anisotropic_weights != 0){
+        int sizeaw = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dims : dims;
+        aw.resize(sizeaw);
+        std::copy(anisotropic_weights, anisotropic_weights + sizeaw, aw.data());
+    }
+    if (level_limits != 0){
+        ll.resize(dims);
+        std::copy(level_limits, level_limits + dims, ll.data());
+    }
+    updateGlobalGrid(depth, type, aw, ll);
+}
+void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     if (global != 0){
-        global->updateGrid(depth, type, anisotropic_weights, level_limits);
-        if (level_limits != 0){
-            llimits.resize(global->getNumDimensions());
-            std::copy(level_limits, level_limits + global->getNumDimensions(), llimits.data());
-        }
+        if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
+        const int *aw = 0;
+        if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
+        global->updateGrid(depth, type, aw, llimits);
     }else{
         throw std::runtime_error("ERROR: updateGlobalGrid called, but the grid is not global");
     }

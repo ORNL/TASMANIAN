@@ -63,7 +63,7 @@ public:
 
     void setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta);
 
-    void updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits);
+    void updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const std::vector<int> &level_limits);
 
     int getNumDimensions() const;
     int getNumOutputs() const;

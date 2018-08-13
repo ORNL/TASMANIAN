@@ -390,17 +390,16 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
     }
 }
 
-void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
+void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const std::vector<int> &level_limits){
     if ((num_outputs == 0) || (points == 0)){
-        std::vector<int> ll; if (level_limits != 0){ ll.resize(num_dimensions); std::copy(level_limits, level_limits + num_dimensions, ll.data()); }
-        makeGrid(num_dimensions, num_outputs, depth, type, rule, anisotropic_weights, alpha, beta, 0, ll);
+        makeGrid(num_dimensions, num_outputs, depth, type, rule, anisotropic_weights, alpha, beta, 0, level_limits);
     }else{
         clearRefinement();
 
         IndexManipulator IM(num_dimensions, custom);
 
         updated_tensors = IM.selectTensors(depth, type, anisotropic_weights, rule);
-        if (level_limits != 0){
+        if (!level_limits.empty()){
             IndexSet *limited = IM.removeIndexesByLimit(updated_tensors, level_limits);
             if (limited != 0){
                 delete updated_tensors;
