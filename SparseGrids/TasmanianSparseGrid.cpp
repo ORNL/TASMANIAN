@@ -494,6 +494,9 @@ void TasmanianSparseGrid::loadNeededPoints(const double *vals){
     base->loadNeededPoints(vals, acceleration);
 }
 void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> vals){
+    size_t nump = (size_t) base->getNumNeeded();
+    nump *= (size_t) base->getNumOutputs();
+    if (vals.size() != nump) throw std::runtime_error("ERROR: loadNeededPoints() given the wrong number of inputs, should be getNumNeeded() * getNumOutputs()");
     loadNeededPoints(vals.data());
 }
 

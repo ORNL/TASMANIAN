@@ -89,7 +89,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<5; i++){
+    for(int i=0; i<6; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -163,6 +163,7 @@ void GridUnitTester::runtimeErrorCall(int i){
     case 2: grid.updateSequenceGrid(2, type_level); break; // grid not initialized
     case 3: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(2, type_level); break; // grid not sequence
     case 4: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.getInterpolationWeights(std::vector<double>()={0.33}, v); break; // wrong size of x
+    case 5: grid.makeGlobalGrid(2, 1, 2, type_level, rule_rleja); grid.loadNeededPoints(std::vector<double>()={0.33, 0.22}); break; // wrong size of loaded data
     default: break;
     }
 }
