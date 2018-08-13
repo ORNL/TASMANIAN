@@ -575,8 +575,8 @@ void TasmanianSparseGrid::integrate(double q[]) const{
 }
 
 void TasmanianSparseGrid::evaluate(const std::vector<double> x, std::vector<double> &y) const{
-    size_t num_outputs = getNumOutputs();
-    if (y.size() < num_outputs) y.resize(num_outputs);
+    if (x.size() != (size_t) getNumDimensions()) throw std::runtime_error("ERROR: in evaluate() x must match getNumDimensions()");
+    y.resize((size_t) getNumOutputs());
     evaluate(x.data(), y.data());
 }
 void TasmanianSparseGrid::evaluateFast(const std::vector<double> x, std::vector<double> &y) const{
