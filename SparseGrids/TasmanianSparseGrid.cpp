@@ -402,7 +402,9 @@ int TasmanianSparseGrid::getNumPoints() const{ return (base == 0) ? 0 : base->ge
 
 double* TasmanianSparseGrid::getLoadedPoints() const{
     if (base->getNumLoaded() == 0) return 0;
-    double *x = new double[base->getNumLoaded() * base->getNumDimensions()];
+    size_t nump = (size_t) base->getNumLoaded();
+    size_t numd = (size_t) base->getNumDimensions();
+    double *x = new double[nump * numd];
     getLoadedPoints(x);
     return x;
 }
@@ -412,7 +414,9 @@ void TasmanianSparseGrid::getLoadedPoints(double *x) const{
 }
 double* TasmanianSparseGrid::getNeededPoints() const{
     if (base->getNumNeeded() == 0) return 0;
-    double *x = new double[base->getNumNeeded() * base->getNumDimensions()];
+    size_t nump = (size_t) base->getNumNeeded();
+    size_t numd = (size_t) base->getNumDimensions();
+    double *x = new double[nump * numd];
     getNeededPoints(x);
     return x;
 }
@@ -422,7 +426,9 @@ void TasmanianSparseGrid::getNeededPoints(double *x) const{
 }
 double* TasmanianSparseGrid::getPoints() const{
     if (base->getNumPoints() == 0) return 0;
-    double *x = new double[base->getNumPoints() * base->getNumDimensions()];
+    size_t nump = (size_t) base->getNumPoints();
+    size_t numd = (size_t) base->getNumDimensions();
+    double *x = new double[nump * numd];
     getPoints(x);
     return x;
 }
@@ -431,15 +437,15 @@ void TasmanianSparseGrid::getPoints(double *x) const{
     formTransformedPoints(base->getNumPoints(), x);
 }
 void TasmanianSparseGrid::getLoadedPoints(std::vector<double> &x) const{
-    if (x.size() < (size_t) (base->getNumDimensions() * base->getNumLoaded())) x.resize(base->getNumDimensions() * base->getNumLoaded());
+    x.resize(((size_t) base->getNumLoaded()) * ((size_t) base->getNumDimensions()));
     getLoadedPoints(x.data());
 }
 void TasmanianSparseGrid::getNeededPoints(std::vector<double> &x) const{
-    if (x.size() < (size_t) (base->getNumDimensions() * base->getNumNeeded())) x.resize(base->getNumDimensions() * base->getNumNeeded());
+    x.resize(((size_t) base->getNumNeeded()) * ((size_t) base->getNumDimensions()));
     getNeededPoints(x.data());
 }
 void TasmanianSparseGrid::getPoints(std::vector<double> &x) const{
-    if (x.size() < (size_t) (base->getNumDimensions() * base->getNumPoints())) x.resize(base->getNumDimensions() * base->getNumPoints());
+    x.resize(((size_t) base->getNumPoints()) * ((size_t) base->getNumDimensions()));
     getPoints(x.data());
 }
 
@@ -470,12 +476,13 @@ void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weig
     clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::getQuadratureWeights(std::vector<double> &weights) const{
-    if (weights.size() < (size_t) base->getNumPoints()) weights.resize(base->getNumPoints());
+    weights.resize(base->getNumPoints());
     getQuadratureWeights(weights.data());
 }
-void TasmanianSparseGrid::getInterpolationWeights(const double x[], std::vector<double> &weights) const{
-    if (weights.size() < (size_t) base->getNumPoints()) weights.resize(base->getNumPoints());
-    getInterpolationWeights(x, weights.data());
+void TasmanianSparseGrid::getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const{
+    if (x.size() != (size_t) base->getNumDimensions()) throw std::runtime_error("ERROR: getInterpolationWeights() incorrect size of x, must be same as getNumDimensions()");
+    weights.resize(base->getNumPoints());
+    getInterpolationWeights(x.data(), weights.data());
 }
 
 void TasmanianSparseGrid::loadNeededPoints(const double *vals){
@@ -487,6 +494,9 @@ void TasmanianSparseGrid::loadNeededPoints(const double *vals){
     base->loadNeededPoints(vals, acceleration);
 }
 void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> vals){
+    size_t nump = (size_t) base->getNumNeeded();
+    nump *= (size_t) base->getNumOutputs();
+    if (vals.size() != nump) throw std::runtime_error("ERROR: loadNeededPoints() given the wrong number of inputs, should be getNumNeeded() * getNumOutputs()");
     loadNeededPoints(vals.data());
 }
 
@@ -565,8 +575,8 @@ void TasmanianSparseGrid::integrate(double q[]) const{
 }
 
 void TasmanianSparseGrid::evaluate(const std::vector<double> x, std::vector<double> &y) const{
-    size_t num_outputs = getNumOutputs();
-    if (y.size() < num_outputs) y.resize(num_outputs);
+    if (x.size() != (size_t) getNumDimensions()) throw std::runtime_error("ERROR: in evaluate() x must match getNumDimensions()");
+    y.resize((size_t) getNumOutputs());
     evaluate(x.data(), y.data());
 }
 void TasmanianSparseGrid::evaluateFast(const std::vector<double> x, std::vector<double> &y) const{
@@ -964,6 +974,9 @@ void TasmanianSparseGrid::getLevelLimits(int *limits) const{
     }else{
         std::copy(llimits.begin(), llimits.end(), limits);
     }
+}
+void TasmanianSparseGrid::getLevelLimits(std::vector<int> &limits) const{
+    limits = llimits;
 }
 
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){

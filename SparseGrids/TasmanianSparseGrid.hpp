@@ -110,7 +110,7 @@ public:
     void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
     void getQuadratureWeights(std::vector<double> &weights) const;
-    void getInterpolationWeights(const double x[], std::vector<double> &weights) const;
+    void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const;
 
     void loadNeededPoints(const double *vals);
     void loadNeededPoints(const std::vector<double> vals);
@@ -146,6 +146,7 @@ public:
 
     void clearLevelLimits(); // level limits will be set anew if non-null vector is given to refine command
     void getLevelLimits(int *limits) const; // static, assume limits is already allocated with length getNumDimensions()
+    void getLevelLimits(std::vector<int> &limits) const; // allocates the vector
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = 0);
     int* estimateAnisotropicCoefficients(TypeDepth type, int output);
