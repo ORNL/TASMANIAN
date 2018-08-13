@@ -110,7 +110,7 @@ public:
     void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
     void getQuadratureWeights(std::vector<double> &weights) const;
-    void getInterpolationWeights(const double x[], std::vector<double> &weights) const;
+    void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const;
 
     void loadNeededPoints(const double *vals);
     void loadNeededPoints(const std::vector<double> vals);

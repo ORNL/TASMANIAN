@@ -479,9 +479,10 @@ void TasmanianSparseGrid::getQuadratureWeights(std::vector<double> &weights) con
     weights.resize(base->getNumPoints());
     getQuadratureWeights(weights.data());
 }
-void TasmanianSparseGrid::getInterpolationWeights(const double x[], std::vector<double> &weights) const{
+void TasmanianSparseGrid::getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const{
+    if (x.size() != (size_t) base->getNumDimensions()) throw std::runtime_error("ERROR: getInterpolationWeights() incorrect size of x, must be same as getNumDimensions()");
     weights.resize(base->getNumPoints());
-    getInterpolationWeights(x, weights.data());
+    getInterpolationWeights(x.data(), weights.data());
 }
 
 void TasmanianSparseGrid::loadNeededPoints(const double *vals){

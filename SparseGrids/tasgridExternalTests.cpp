@@ -96,7 +96,9 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         if (type == type_integration){
             grid->getQuadratureWeights(weights);
         }else{
-            grid->getInterpolationWeights(x, weights);
+            std::vector<double> vx(f->getNumInputs());
+            std::copy(x, x + f->getNumInputs(), vx.data());
+            grid->getInterpolationWeights(vx, weights);
         }
 
         std::vector<double> y(num_outputs);
