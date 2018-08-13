@@ -599,6 +599,26 @@ IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *iset, const int limit
 
     return new IndexSet((int) dims, new_idx);
 }
+IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *iset, const std::vector<int> &limits) const{
+    size_t c = 0, dims = iset->getNumDimensions();
+    for(int i=0; i<iset->getNumIndexes(); i++){
+        const int *idx = iset->getIndex(i);
+        bool obeys = true;
+        for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
+        if (obeys) c++;
+    }
+    if (c == (size_t) iset->getNumIndexes()) return 0;
+    std::vector<int> new_idx(dims * c);
+    c = 0;
+    for(int i=0; i<iset->getNumIndexes(); i++){
+        const int *idx = iset->getIndex(i);
+        bool obeys = true;
+        for(size_t j=0; j<dims; j++) if ((limits[j] > -1) && (idx[j] > limits[j])) obeys = false;
+        if (obeys) std::copy(idx, idx + dims, &(new_idx[dims * (c++)]));
+    }
+
+    return new IndexSet((int) dims, new_idx);
+}
 
 void IndexManipulator::computeDAGup(const IndexSet *iset, Data2D<int> &parents) const{
     int n = iset->getNumIndexes();

@@ -170,10 +170,9 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires level_limits with either 0 or dimenions entries");
     clear();
     global = new GridGlobal();
-    const int *ll = 0, *aw = 0;
+    const int *aw = 0;
     if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
-    if (!level_limits.empty()) ll = level_limits.data();
-    global->makeGrid(dimensions, outputs, depth, type, rule, aw, alpha, beta, custom_filename, ll);
+    global->makeGrid(dimensions, outputs, depth, type, rule, aw, alpha, beta, custom_filename, level_limits);
     base = global;
     if (!level_limits.empty()){
         llimits = new int[dimensions];
