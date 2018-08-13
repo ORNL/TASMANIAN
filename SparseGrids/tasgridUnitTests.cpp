@@ -70,7 +70,7 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<24; i++){
+    for(int i=0; i<29; i++){
         try{
             invalidArgumentCall(i);
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
@@ -137,6 +137,11 @@ void GridUnitTester::invalidArgumentCall(int i){
     case 21: grid.makeWaveletGrid(2,  1, -3,  1,  0); break; // -3 is not a valid depth
     case 22: grid.makeWaveletGrid(2,  1,  3,  2,  0); break; // 2 is not a valid order (for wavelets)
     case 23: grid.makeWaveletGrid(2,  1,  3,  2,  std::vector<int>()={3}); break; // level limits is too short
+    case 24: grid.makeFourierGrid(0, 1, 3, type_level); break; // dimension is 0
+    case 25: grid.makeFourierGrid(2, -1, 3, type_level); break; // output is -1
+    case 26: grid.makeFourierGrid(2, 2, -1, type_level); break; // depth is -1
+    case 27: grid.makeFourierGrid(2, 2, 2, type_level, std::vector<int>()={3}); break; // aw is too short
+    case 28: grid.makeFourierGrid(2, 2, 2, type_level, std::vector<int>(), std::vector<int>()={3}); break; // level limits is too short
 
     default: break;
     }
