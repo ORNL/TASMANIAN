@@ -366,6 +366,12 @@ void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const in
 }
 void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     if (sequence != 0){
+        int dims = base->getNumDimensions();
+        if (depth < 0) throw std::invalid_argument("ERROR: updateSequenceGrid() requires non-negative depth");
+        size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dims : dims;
+        if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires anisotropic_weights with either 0 or dimenions entries");
+        if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires level_limits with either 0 or dimenions entries");
+
         if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
         const int *aw = 0;
         if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
