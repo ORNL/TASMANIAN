@@ -74,6 +74,7 @@ public:
     void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, const int *level_limits = 0);
     void makeWaveletGrid(int dimensions, int outputs, int depth, int order, const std::vector<int> &level_limits);
     void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights = 0, const int* level_limits = 0);
+    void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
     void copyGrid(const TasmanianSparseGrid *source);
 
     void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);

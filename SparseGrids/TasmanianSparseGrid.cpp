@@ -277,13 +277,35 @@ void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth
     }
 }
 void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){
+    std::vector<int> aw, ll;
+    if (anisotropic_weights != 0){
+        int sizeaw = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+        aw.resize(sizeaw);
+        std::copy(anisotropic_weights, anisotropic_weights + sizeaw, aw.data());
+    }
+    if (level_limits != 0){
+        ll.resize(dimensions);
+        std::copy(level_limits, level_limits + dimensions, ll.data());
+    }
+    makeFourierGrid(dimensions, outputs, depth, type, aw, ll);
+}
+void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeFourierGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeFourierGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeFourierGrid() requires non-negative depth");
+    size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeFourierGrid() requires anisotropic_weights with either 0 or dimenions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeFourierGrid() requires level_limits with either 0 or dimenions entries");
     clear();
     fourier = new GridFourier();
-    fourier->makeGrid(dimensions, outputs, depth, type, anisotropic_weights, level_limits);
+    const int *ll = 0, *aw = 0;
+    if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
+    if (!level_limits.empty()) ll = level_limits.data();
+    fourier->makeGrid(dimensions, outputs, depth, type, aw, ll);
     base = fourier;
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         llimits = new int[dimensions];
-        std::copy(level_limits, level_limits + dimensions, llimits);
+        std::copy(level_limits.begin(), level_limits.end(), llimits);
     }
 }
 
