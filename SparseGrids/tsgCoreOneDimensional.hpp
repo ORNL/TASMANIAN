@@ -100,6 +100,8 @@ public:
     static TypeOneDRule getIORuleInt(int index);
     static int getIORuleInt(TypeOneDRule rule);
 
+    static bool isTypeCurved(TypeDepth type);
+
     static TypeDepth getIOTypeString(const char *name);
     static TypeDepth getIOTypeInt(int type);
 

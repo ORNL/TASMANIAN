@@ -147,70 +147,165 @@ void TasmanianSparseGrid::read(std::ifstream &ifs, bool binary){
 }
 
 void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int *level_limits){
+    std::vector<int> aw, ll;
+    if (anisotropic_weights != 0){
+        int sizeaw = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+        aw.resize(sizeaw);
+        std::copy(anisotropic_weights, anisotropic_weights + sizeaw, aw.data());
+    }
+    if (level_limits != 0){
+        ll.resize(dimensions);
+        std::copy(level_limits, level_limits + dimensions, ll.data());
+    }
+    makeGlobalGrid(dimensions, outputs, depth, type, rule, aw, alpha, beta, custom_filename, ll);
+}
+void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, double alpha, double beta, const char* custom_filename, const std::vector<int> &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeGlobalGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeGlobalGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeGlobalGrid() requires non-negative depth");
+    if (!OneDimensionalMeta::isGlobal(rule)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires a global rule");
+    if ((rule == rule_customtabulated) && (custom_filename == 0)) throw std::invalid_argument("ERROR: makeGlobalGrid() with custom tabulated rule requires a filename");
+    size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires anisotropic_weights with either 0 or dimenions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires level_limits with either 0 or dimenions entries");
     clear();
     global = new GridGlobal();
-    global->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, level_limits);
+    const int *ll = 0, *aw = 0;
+    if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
+    if (!level_limits.empty()) ll = level_limits.data();
+    global->makeGrid(dimensions, outputs, depth, type, rule, aw, alpha, beta, custom_filename, ll);
     base = global;
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         llimits = new int[dimensions];
-        std::copy(level_limits, level_limits + dimensions, llimits);
+        std::copy(level_limits.begin(), level_limits.end(), llimits);
     }
 }
 void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int *level_limits){
-    if (OneDimensionalMeta::isSequence(rule)){
-        clear();
-        sequence = new GridSequence();
-        sequence->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, level_limits);
-        base = sequence;
-        if (level_limits != 0){
-            llimits = new int[dimensions];
-            std::copy(level_limits, level_limits + dimensions, llimits);
-        }
-    }else{
+    std::vector<int> aw, ll;
+    if (anisotropic_weights != 0){
+        int sizeaw = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+        aw.resize(sizeaw);
+        std::copy(anisotropic_weights, anisotropic_weights + sizeaw, aw.data());
+    }
+    if (level_limits != 0){
+        ll.resize(dimensions);
+        std::copy(level_limits, level_limits + dimensions, ll.data());
+    }
+    makeSequenceGrid(dimensions, outputs, depth, type, rule, aw, ll);
+}
+void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeSequenceGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeSequenceGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeSequenceGrid() requires non-negative depth");
+    if (!OneDimensionalMeta::isSequence(rule)){
         std::string message = "ERROR: makeSequenceGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a sequence rule";
         throw std::invalid_argument(message);
     }
+    size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires anisotropic_weights with either 0 or dimenions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires level_limits with either 0 or dimenions entries");
+    clear();
+    sequence = new GridSequence();
+    const int *ll = 0, *aw = 0;
+    if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
+    if (!level_limits.empty()) ll = level_limits.data();
+    sequence->makeGrid(dimensions, outputs, depth, type, rule, aw, ll);
+    base = sequence;
+    if (!level_limits.empty()){
+        llimits = new int[dimensions];
+        std::copy(level_limits.begin(), level_limits.end(), llimits);
+    }
 }
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
-    if (!OneDimensionalMeta::isLocalPolynomial(rule)){
-        std::string message = "ERROR: makeLocalPolynomialGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a local polynomial rule";
-        throw std::invalid_argument(message);
+    std::vector<int> ll;
+    if (level_limits != 0){
+        ll.resize(dimensions);
+        std::copy(level_limits, level_limits + dimensions, ll.data());
     }
+    makeLocalPolynomialGrid(dimensions, outputs, depth, order, rule, ll);
+}
+void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const std::vector<int> &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires non-negative depth");
     if (order < -1){
         std::string message = "ERROR: makeLocalPolynomialGrid is called with order: " + std::to_string(order) + ", but the order cannot be less than -1.";
         throw std::invalid_argument(message);
     }
+    if (!OneDimensionalMeta::isLocalPolynomial(rule)){
+        std::string message = "ERROR: makeLocalPolynomialGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a local polynomial rule";
+        throw std::invalid_argument(message);
+    }
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires level_limits with either 0 or dimenions entries");
     clear();
+    const int *ll = 0;
+    if (!level_limits.empty()) ll = level_limits.data();
     pwpoly = new GridLocalPolynomial();
-    pwpoly->makeGrid(dimensions, outputs, depth, order, rule, level_limits);
+    pwpoly->makeGrid(dimensions, outputs, depth, order, rule, ll);
     base = pwpoly;
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         llimits = new int[dimensions];
-        std::copy(level_limits, level_limits + dimensions, llimits);
+        std::copy(level_limits.begin(), level_limits.end(), llimits);
     }
 }
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
+    std::vector<int> ll;
+    if (level_limits != 0){
+        ll.resize(dimensions);
+        std::copy(level_limits, level_limits + dimensions, ll.data());
+    }
+    makeWaveletGrid(dimensions, outputs, depth, order, ll);
+}
+void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const std::vector<int> &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeWaveletGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeWaveletGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeWaveletGrid() requires non-negative depth");
     if ((order != 1) && (order != 3)){
         std::string message = "ERROR: makeWaveletGrid is called with order: " + std::to_string(order) + "but wavelets are implemented only for orders 1 and 3.";
         throw std::invalid_argument(message);
     }
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeWaveletGrid() requires level_limits with either 0 or dimenions entries");
     clear();
+    const int *ll = 0;
+    if (!level_limits.empty()) ll = level_limits.data();
     wavelet = new GridWavelet();
-    wavelet->makeGrid(dimensions, outputs, depth, order, level_limits);
+    wavelet->makeGrid(dimensions, outputs, depth, order, ll);
     base = wavelet;
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         llimits = new int[dimensions];
-        std::copy(level_limits, level_limits + dimensions, llimits);
+        std::copy(level_limits.begin(), level_limits.end(), llimits);
     }
 }
 void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){
+    std::vector<int> aw, ll;
+    if (anisotropic_weights != 0){
+        int sizeaw = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+        aw.resize(sizeaw);
+        std::copy(anisotropic_weights, anisotropic_weights + sizeaw, aw.data());
+    }
+    if (level_limits != 0){
+        ll.resize(dimensions);
+        std::copy(level_limits, level_limits + dimensions, ll.data());
+    }
+    makeFourierGrid(dimensions, outputs, depth, type, aw, ll);
+}
+void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeFourierGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeFourierGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeFourierGrid() requires non-negative depth");
+    size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeFourierGrid() requires anisotropic_weights with either 0 or dimenions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeFourierGrid() requires level_limits with either 0 or dimenions entries");
     clear();
     fourier = new GridFourier();
-    fourier->makeGrid(dimensions, outputs, depth, type, anisotropic_weights, level_limits);
+    const int *ll = 0, *aw = 0;
+    if (!anisotropic_weights.empty()) aw = anisotropic_weights.data();
+    if (!level_limits.empty()) ll = level_limits.data();
+    fourier->makeGrid(dimensions, outputs, depth, type, aw, ll);
     base = fourier;
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         llimits = new int[dimensions];
-        std::copy(level_limits, level_limits + dimensions, llimits);
+        std::copy(level_limits.begin(), level_limits.end(), llimits);
     }
 }
 
