@@ -235,7 +235,7 @@ private:
 
     std::vector<double> domain_transform_a, domain_transform_b;
     int *conformal_asin_power;
-    int *llimits;
+    std::vector<int> llimits;
 
     TypeAcceleration acceleration;
     int gpuID;
