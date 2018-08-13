@@ -291,14 +291,14 @@ void GridGlobal::clearRefinement(){
     updated_active_w.resize(0);
 }
 
-void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const int *level_limits){
+void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits){
     if ((crule == rule_customtabulated) && (custom == 0)){
         custom = new CustomTabulated(custom_filename);
     }
     IndexManipulator IM(cnum_dimensions, custom);
 
     IndexSet *tset = IM.selectTensors(depth, type, anisotropic_weights, crule);
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         IndexSet *limited = IM.removeIndexesByLimit(tset, level_limits);
         if (limited != 0){
             delete tset;
@@ -390,7 +390,7 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
     }
 }
 
-void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
+void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const std::vector<int> &level_limits){
     if ((num_outputs == 0) || (points == 0)){
         makeGrid(num_dimensions, num_outputs, depth, type, rule, anisotropic_weights, alpha, beta, 0, level_limits);
     }else{
@@ -399,7 +399,7 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_we
         IndexManipulator IM(num_dimensions, custom);
 
         updated_tensors = IM.selectTensors(depth, type, anisotropic_weights, rule);
-        if (level_limits != 0){
+        if (!level_limits.empty()){
             IndexSet *limited = IM.removeIndexesByLimit(updated_tensors, level_limits);
             if (limited != 0){
                 delete updated_tensors;

@@ -70,7 +70,7 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<29; i++){
+    for(int i=0; i<35; i++){
         try{
             invalidArgumentCall(i);
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
@@ -89,7 +89,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<2; i++){
+    for(int i=0; i<4; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -143,6 +143,13 @@ void GridUnitTester::invalidArgumentCall(int i){
     case 27: grid.makeFourierGrid(2, 2, 2, type_level, std::vector<int>()={3}); break; // aw is too short
     case 28: grid.makeFourierGrid(2, 2, 2, type_level, std::vector<int>(), std::vector<int>()={3}); break; // level limits is too short
 
+    case 29: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateGlobalGrid(-1, type_level); break; // depth is negative
+    case 30: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateGlobalGrid(3, type_level, std::vector<int>()={3}); break; // aw is too small
+    case 31: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateGlobalGrid(3, type_level, std::vector<int>(), std::vector<int>()={3}); break; // ll is too small
+    case 32: grid.makeSequenceGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(-1, type_level); break; // depth is negative
+    case 33: grid.makeSequenceGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(3, type_level, std::vector<int>()={3}); break; // aw is too small
+    case 34: grid.makeSequenceGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(3, type_level, std::vector<int>(), std::vector<int>()={3}); break; // ll is too small
+
     default: break;
     }
 }
@@ -151,7 +158,9 @@ void GridUnitTester::runtimeErrorCall(int i){
     TasmanianSparseGrid grid;
     switch(i){
     case 0: grid.updateGlobalGrid(2, type_level); break; // grid not initialized
-    case 1: grid.updateSequenceGrid(2, type_level); break; // grid not initialized
+    case 1: grid.makeSequenceGrid(2, 1, 3, type_level, rule_rleja); grid.updateGlobalGrid(2, type_level); break; // grid not global
+    case 2: grid.updateSequenceGrid(2, type_level); break; // grid not initialized
+    case 3: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(2, type_level); break; // grid not sequence
     default: break;
     }
 }
