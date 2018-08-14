@@ -459,21 +459,27 @@ int GridGlobal::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : p
 
 void GridGlobal::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = points->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper->getNode(p[j]);
+            xx[j] = wrapper->getNode(p[j]);
         }
     }
 }
 void GridGlobal::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = needed->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper->getNode(p[j]);
+            xx[j] = wrapper->getNode(p[j]);
         }
     }
 }
