@@ -1039,15 +1039,22 @@ void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const int *level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
+    std::vector<int> ll;
     if (level_limits != 0){
-        llimits.resize(base->getNumDimensions());
-        std::copy(level_limits, level_limits + base->getNumDimensions(), llimits.data());
+        int dims = base->getNumDimensions();
+        ll.resize(dims);
+        std::copy(level_limits, level_limits + dims, ll.data());
     }
+    setSurplusRefinement(tolerance, output, ll);
+}
+void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
+    if (!level_limits.empty()) llimits = level_limits;
     if (sequence != 0){
-        sequence->setSurplusRefinement(tolerance, output, llimits.data());
+        sequence->setSurplusRefinement(tolerance, output, llimits);
     }else if (global != 0){
         if (OneDimensionalMeta::isSequence(global->getRule())){
-            global->setSurplusRefinement(tolerance, output, llimits.data());
+            global->setSurplusRefinement(tolerance, output, llimits);
         }else{
             throw std::runtime_error("ERROR: setSurplusRefinement called for a Global grid with non-sequence rule");
         }

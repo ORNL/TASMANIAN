@@ -1065,7 +1065,7 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     }
 }
 
-void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *level_limits){
+void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();
     double *surp = computeSurpluses(output, true);
 
@@ -1077,7 +1077,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const int *l
     }
 
     IndexManipulator IM(num_dimensions);
-    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits);
+    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits.data());
 
     if ((kids != 0) && (kids->getNumIndexes() > 0)){
         kids->addIndexSet(points);

@@ -805,7 +805,7 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
     prepareSequence(max_level+1);
     delete total;
 }
-void GridSequence::setSurplusRefinement(double tolerance, int output, const int *level_limits){
+void GridSequence::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();
 
     int num_points = points->getNumIndexes();
@@ -838,7 +838,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const int 
     delete[] norm;
 
     IndexManipulator IM(num_dimensions);
-    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits);
+    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits.data());
     if ((kids != 0) && (kids->getNumIndexes() > 0)){
         kids->addIndexSet(points);
 
