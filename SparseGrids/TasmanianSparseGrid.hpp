@@ -155,6 +155,7 @@ public:
     void setSurplusRefinement(double tolerance, int output, const int *level_limits = 0);
     void setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits);
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0, const double *scale_correction = 0); // -1 indicates using all outputs
+    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction = std::vector<double>()); // -1 indicates using all outputs
     void clearRefinement();
     void mergeRefinement();
 

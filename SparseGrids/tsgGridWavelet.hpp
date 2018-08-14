@@ -88,7 +88,7 @@ public:
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
 
-    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits);
+    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits);
     void clearRefinement();
     void mergeRefinement();
 
@@ -116,7 +116,7 @@ protected:
 
     bool addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
     void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
-    void addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const int *level_limits) const;
+    void addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const std::vector<int> &level_limits) const;
 
 private:
     RuleWavelet rule1D;

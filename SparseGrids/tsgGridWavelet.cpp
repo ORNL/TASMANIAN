@@ -671,7 +671,7 @@ void GridWavelet::addChild(const int point[], int direction, GranulatedIndexSet 
     }
     delete[] kid;
 }
-void GridWavelet::addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const int *level_limits) const{
+void GridWavelet::addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const std::vector<int> &level_limits) const{
     int *kid = new int[num_dimensions];  std::copy(point, point + num_dimensions, kid);
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
@@ -741,7 +741,7 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
 const int* GridWavelet::getPointIndexes() const{
     return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
 }
-void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits){
+void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits){
     clearRefinement();
 
     int *pmap = buildUpdateMap(tolerance, criteria, output);
@@ -752,7 +752,7 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
 
     int num_points = points->getNumIndexes();
 
-    if (level_limits == 0){
+    if (level_limits.empty()){
         for(int i=0; i<num_points; i++){
             for(int j=0; j<num_dimensions; j++){
                 if (pmap[i*num_dimensions+j] == 1){ // if this dimension needs to be refined

@@ -1077,12 +1077,21 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
         std::copy(level_limits, level_limits + base->getNumDimensions(), llimits.data());
     }
     if (pwpoly != 0){
-        pwpoly->setSurplusRefinement(tolerance, criteria, output, llimits.data(), scale_correction);
+        pwpoly->setSurplusRefinement(tolerance, criteria, output, llimits, scale_correction);
     }else if (wavelet != 0){
-        wavelet->setSurplusRefinement(tolerance, criteria, output, llimits.data());
+        wavelet->setSurplusRefinement(tolerance, criteria, output, llimits);
     }else{
         throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
     }
+}
+void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
+    if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
+    int dims = base->getNumDimensions();
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setSurplusRefinement() requires level_limits with either 0 or dimenions entries");
+    if ((pwpoly == 0) && (wavelet ==0)) throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
+
+    if (!level_limits.empty()) llimits = level_limits;
+    setSurplusRefinement(tolerance, criteria, output, 0, scale_correction.data());
 }
 void TasmanianSparseGrid::clearRefinement(){
     base->clearRefinement();
