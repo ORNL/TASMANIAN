@@ -291,7 +291,7 @@ void GridGlobal::clearRefinement(){
     updated_active_w.resize(0);
 }
 
-void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits){
+void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits){
     if ((crule == rule_customtabulated) && (custom == 0)){
         custom = new CustomTabulated(custom_filename);
     }
@@ -390,7 +390,7 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
     }
 }
 
-void GridGlobal::updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const std::vector<int> &level_limits){
+void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     if ((num_outputs == 0) || (points == 0)){
         makeGrid(num_dimensions, num_outputs, depth, type, rule, anisotropic_weights, alpha, beta, 0, level_limits);
     }else{
@@ -1017,15 +1017,15 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     estimateAnisotropicCoefficients(type, output, weights);
 
     IndexManipulator IM(num_dimensions);
-    int level = IM.getMinChildLevel(tensors, type, weights.data(), rule);
+    int level = IM.getMinChildLevel(tensors, type, weights, rule);
 
-    updated_tensors = IM.selectTensors(level, type, weights.data(), rule);
+    updated_tensors = IM.selectTensors(level, type, weights, rule);
     needed = updated_tensors->diffSets(tensors); // this exploits the 1-1 correspondence between points and tensors for sequence rules (see the correction below)
 
     while((needed == 0) || (needed->getNumIndexes() < min_growth)){ // for CC min_growth is lots of points
         delete updated_tensors;
         if (needed != 0) delete needed;
-        updated_tensors = IM.selectTensors(++level, type, weights.data(), rule);
+        updated_tensors = IM.selectTensors(++level, type, weights, rule);
         needed = updated_tensors->diffSets(tensors);
     }
 

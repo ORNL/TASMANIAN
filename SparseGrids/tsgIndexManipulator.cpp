@@ -54,7 +54,7 @@ long long IndexManipulator::getIndexWeight(const std::vector<int> &index, TypeDe
     }
 }
 
-IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int *anisotropic_weights, TypeOneDRule rule) const{
+IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const std::vector<int> &anisotropic_weights, TypeOneDRule rule) const{
     // construct the minimum tensor set that covers the target_space defined by offset, type, and anisotropic weights
     // consult the manual for the detailed definition of each case
     // used for constructing Global and Sequence grids
@@ -69,19 +69,19 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const int 
         std::vector<int> levels; // how many levels to keep in each direction
         if (type == type_tensor){
             levels.resize(num_dimensions, offset);
-            if (anisotropic_weights != 0) for(int j=0; j<num_dimensions; j++) levels[j] *= anisotropic_weights[j];
+            if (!anisotropic_weights.empty()) for(int j=0; j<num_dimensions; j++) levels[j] *= anisotropic_weights[j];
         }else if (type == type_iptensor){
             levels.resize(num_dimensions, 0);
             for(int j=0; j<num_dimensions; j++){
                 long long target = offset;
-                if (anisotropic_weights != 0) target *= anisotropic_weights[j];
+                if (!anisotropic_weights.empty()) target *= anisotropic_weights[j];
                 while(meta.getIExact(levels[j], rule) < target) levels[j]++;
             }
         }else{
             levels.resize(num_dimensions, 0);
             for(int j=0; j<num_dimensions; j++){
                 long long target = offset;
-                if (anisotropic_weights != 0) target *= anisotropic_weights[j];
+                if (!anisotropic_weights.empty()) target *= anisotropic_weights[j];
                 while(meta.getQExact(levels[j], rule) < target) levels[j]++;
             }
         }
@@ -369,8 +369,8 @@ IndexSet* IndexManipulator::getLowerCompletion(const IndexSet *iset) const{
     }
 }
 
-void IndexManipulator::getProperWeights(TypeDepth type, const int *anisotropic_weights, std::vector<int> &weights) const{
-    if (anisotropic_weights == 0){
+void IndexManipulator::getProperWeights(TypeDepth type, const std::vector<int> &anisotropic_weights, std::vector<int> &weights) const{
+    if (anisotropic_weights.empty()){
         if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
             weights.resize(2*num_dimensions, 1);
             std::fill(&(weights[num_dimensions]), &(weights[num_dimensions]) + num_dimensions, 0);
@@ -380,17 +380,14 @@ void IndexManipulator::getProperWeights(TypeDepth type, const int *anisotropic_w
             weights.resize(num_dimensions, 1);
         }
     }else{
-        if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
-            weights.resize(2*num_dimensions);
-            std::copy(anisotropic_weights, anisotropic_weights + 2*num_dimensions, weights.data());
-        }else if ((type == type_hyperbolic) || (type == type_iphyperbolic) || (type == type_qphyperbolic)){
+        if ((type == type_hyperbolic) || (type == type_iphyperbolic) || (type == type_qphyperbolic)){
             weights.resize(num_dimensions + 1);
-            std::copy(anisotropic_weights, anisotropic_weights + num_dimensions, weights.data());
-            weights[num_dimensions] = weights[0];
-            for(int j=1; j<num_dimensions; j++){ weights[num_dimensions] += weights[j]; }
+            std::copy(anisotropic_weights.begin(), anisotropic_weights.end(), weights.data());
+            int wsum = 0;
+            for(auto w : anisotropic_weights) wsum += w;
+            weights[num_dimensions] = wsum;
         }else{
-            weights.resize(num_dimensions);
-            std::copy(anisotropic_weights, anisotropic_weights + num_dimensions, weights.data());
+            weights = anisotropic_weights; // copy assign
         }
     }
 }
@@ -764,7 +761,7 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
     return s;
 }
 
-int IndexManipulator::getMinChildLevel(const IndexSet *iset, TypeDepth type, const int weights[], TypeOneDRule rule){
+int IndexManipulator::getMinChildLevel(const IndexSet *iset, TypeDepth type, const std::vector<int> &weights, TypeOneDRule rule){
     int n = iset->getNumIndexes();
 
     std::vector<int> w;

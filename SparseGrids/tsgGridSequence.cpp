@@ -190,7 +190,7 @@ void GridSequence::clearRefinement(){
     if (needed != 0){ delete needed; needed = 0; }
 }
 
-void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const int *anisotropic_weights, const std::vector<int> &level_limits){
+void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     IndexManipulator IM(cnum_dimensions);
 
     IndexSet *pset = IM.selectTensors(depth, type, anisotropic_weights, crule);
@@ -247,7 +247,7 @@ void GridSequence::setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule cru
     }
 }
 
-void GridSequence::updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const std::vector<int> &level_limits){
+void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     IndexManipulator IM(num_dimensions);
 
     IndexSet *pset = IM.selectTensors(depth, type, anisotropic_weights, rule);
@@ -776,15 +776,15 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
     estimateAnisotropicCoefficients(type, output, weights);
 
     IndexManipulator IM(num_dimensions);
-    int level = IM.getMinChildLevel(points, type, weights.data(), rule);
+    int level = IM.getMinChildLevel(points, type, weights, rule);
 
-    IndexSet* total = IM.selectTensors(level, type, weights.data(), rule);
+    IndexSet* total = IM.selectTensors(level, type, weights, rule);
     needed = total->diffSets(points); // this exploits the 1-1 correspondence between points and tensors
 
     while((needed == 0) || (needed->getNumIndexes() < min_growth)){
         delete total;
         if (needed != 0) delete needed;
-        total = IM.selectTensors(++level, type, weights.data(), rule);
+        total = IM.selectTensors(++level, type, weights, rule);
         needed = total->diffSets(points);
     }
     total->addIndexSet(points);

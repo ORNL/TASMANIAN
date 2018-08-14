@@ -298,7 +298,7 @@ void GridFourier::reset(){
     num_outputs = 0;
 }
 
-void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){
+void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const int* level_limits){
     IndexManipulator IM(cnum_dimensions);
     IndexSet *tset = IM.selectTensors(depth, type, anisotropic_weights, rule_fourier);
     if (level_limits != 0){

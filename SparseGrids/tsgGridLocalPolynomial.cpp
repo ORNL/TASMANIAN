@@ -296,7 +296,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     rule->setMaxOrder(order);
 
     IndexManipulator IM(num_dimensions);
-    IndexSet* deltas = IM.selectTensors(depth, type_level, 0, rule_leja);
+    IndexSet* deltas = IM.selectTensors(depth, type_level, std::vector<int>(), rule_leja);
 
     // Limits come here
     if (level_limits != 0){
