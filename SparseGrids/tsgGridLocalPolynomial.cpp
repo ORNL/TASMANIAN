@@ -271,7 +271,7 @@ void GridLocalPolynomial::readBinary(std::ifstream &ifs){
     }
 }
 
-void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const int *level_limits){
+void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits){
     reset();
     num_dimensions = cnum_dimensions;
     num_outputs = cnum_outputs;
@@ -296,10 +296,10 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     rule->setMaxOrder(order);
 
     IndexManipulator IM(num_dimensions);
-    IndexSet* deltas = IM.selectTensors(depth, type_level, 0, rule_leja);
+    IndexSet* deltas = IM.selectTensors(depth, type_level, std::vector<int>(), rule_leja);
 
     // Limits come here
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         IndexSet *limited = IM.removeIndexesByLimit(deltas, level_limits);
         if (limited != 0){
             delete deltas;

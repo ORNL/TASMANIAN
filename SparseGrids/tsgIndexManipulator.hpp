@@ -46,7 +46,7 @@ public:
     IndexManipulator(int cnum_dimensions, const CustomTabulated* custom = 0);
     ~IndexManipulator();
 
-    IndexSet* selectTensors(int offset, TypeDepth type, const int *anisotropic_weights, TypeOneDRule rule) const;
+    IndexSet* selectTensors(int offset, TypeDepth type, const std::vector<int> &anisotropic_weights, TypeOneDRule rule) const;
     IndexSet* selectTensors(const IndexSet *target_space, bool integration, TypeOneDRule rule) const;
     IndexSet* getLowerCompletion(const IndexSet *iset) const;
 
@@ -59,7 +59,6 @@ public:
     IndexSet* generateGenericPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const;
     int* referenceGenericPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const;
 
-    IndexSet* removeIndexesByLimit(IndexSet *iset, const int limits[]) const;
     IndexSet* removeIndexesByLimit(IndexSet *iset, const std::vector<int> &limits) const;
 
     void computeDAGup(const IndexSet *iset, Data2D<int> &parents) const;
@@ -70,7 +69,7 @@ public:
 
     IndexSet* getPolynomialSpace(const IndexSet *tensors, TypeOneDRule rule, bool iexact) const;
 
-    int getMinChildLevel(const IndexSet *iset, TypeDepth type, const int weights[], TypeOneDRule rule);
+    int getMinChildLevel(const IndexSet *iset, TypeDepth type, const std::vector<int> &weights, TypeOneDRule rule);
     // find the minimum level of a child of iset
 
     IndexSet* selectFlaggedChildren(const IndexSet *iset, const bool flagged[], const int *level_limits = 0) const;
@@ -84,7 +83,7 @@ public:
     void computeDAGupLocal(const IndexSet *iset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents) const;
 
 protected:
-    void getProperWeights(TypeDepth type, const int *anisotropic_weights, std::vector<int> &weights) const;
+    void getProperWeights(TypeDepth type, const std::vector<int> &anisotropic_weights, std::vector<int> &weights) const;
 
     template<TypeDepth type>
     long long getIndexWeight(const std::vector<int> &index, const std::vector<int> &weights, TypeOneDRule rule) const{
