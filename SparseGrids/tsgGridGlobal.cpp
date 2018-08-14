@@ -928,7 +928,7 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
     return surp;
 }
 
-int* GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output) const{
+void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000.0 * TSG_NUM_TOL;
     double *surp = computeSurpluses(output, false);
 
@@ -983,7 +983,7 @@ int* GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output) con
     double *x = new double[m];
     TasmanianDenseSolver::solveLeastSquares(n, m, A, b, 1.E-5, x);
 
-    int *weights = new int[m--];
+    weights.resize(--m);
     for(int j=0; j<m; j++){
         weights[j] = (int)(x[j] * 1000.0 + 0.5);
     }
@@ -1009,27 +1009,25 @@ int* GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output) con
     delete[] A;
     delete[] b;
     delete[] x;
-
-    return weights;
 }
 
 void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
     clearRefinement();
-    int *weights = estimateAnisotropicCoefficients(type, output); //for(int i=0; i<2*num_dimensions; i++) cout << weights[i] << "  "; cout << endl;
+    std::vector<int> weights;
+    estimateAnisotropicCoefficients(type, output, weights);
 
     IndexManipulator IM(num_dimensions);
-    int level = IM.getMinChildLevel(tensors, type, weights, rule);
+    int level = IM.getMinChildLevel(tensors, type, weights.data(), rule);
 
-    updated_tensors = IM.selectTensors(level, type, weights, rule);
+    updated_tensors = IM.selectTensors(level, type, weights.data(), rule);
     needed = updated_tensors->diffSets(tensors); // this exploits the 1-1 correspondence between points and tensors for sequence rules (see the correction below)
 
     while((needed == 0) || (needed->getNumIndexes() < min_growth)){ // for CC min_growth is lots of points
         delete updated_tensors;
         if (needed != 0) delete needed;
-        updated_tensors = IM.selectTensors(++level, type, weights, rule);
+        updated_tensors = IM.selectTensors(++level, type, weights.data(), rule);
         needed = updated_tensors->diffSets(tensors);
     }
-    delete[] weights;
 
     if (!level_limits.empty()){
         IndexSet *limited = IM.removeIndexesByLimit(updated_tensors, level_limits);

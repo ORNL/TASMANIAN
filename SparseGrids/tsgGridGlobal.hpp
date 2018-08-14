@@ -101,7 +101,7 @@ public:
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
 
-    int* estimateAnisotropicCoefficients(TypeDepth type, int output) const;
+    void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
     void setSurplusRefinement(double tolerance, int output, const int *level_limits);

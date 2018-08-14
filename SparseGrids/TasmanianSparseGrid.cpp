@@ -1013,18 +1013,24 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
     }
 }
 int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output){
+    std::vector<int> weights;
+    estimateAnisotropicCoefficients(type, output, weights);
+    int *w = new int[weights.size()];
+    std::copy(weights.begin(), weights.end(), w);
+    return w;
+}
+void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights){
     if (sequence != 0){
-        return sequence->estimateAnisotropicCoefficients(type, output);
+        sequence->estimateAnisotropicCoefficients(type, output, weights);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
             throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a Global grid with non-nested rule");
         }else{
-            return global->estimateAnisotropicCoefficients(type, output);
+            global->estimateAnisotropicCoefficients(type, output, weights);
         }
     }else{
         throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a grid that is neither Sequence nor Global with a sequence rule");
     }
-    return 0;
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const int *level_limits){
     if (level_limits != 0){
