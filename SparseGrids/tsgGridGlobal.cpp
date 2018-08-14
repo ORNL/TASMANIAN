@@ -178,7 +178,7 @@ void GridGlobal::read(std::ifstream &ifs){
             oned_max_level = IM.getMaxLevel(updated_tensors);
         }else{
             oned_max_level = max_levels[0];
-            for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
+            for(auto l: max_levels) if (oned_max_level < l) oned_max_level = l;
         }
         OneDimensionalMeta meta(custom);
         wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
@@ -245,7 +245,7 @@ void GridGlobal::readBinary(std::ifstream &ifs){
             oned_max_level = IM.getMaxLevel(updated_tensors);
         }else{
             oned_max_level = max_levels[0];
-            for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
+            for(auto l: max_levels) if (oned_max_level < l) oned_max_level = l;
         }
         OneDimensionalMeta meta(custom);
         wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
