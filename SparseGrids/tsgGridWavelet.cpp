@@ -180,9 +180,11 @@ void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int
         }
     }
 
-    WaveletLevels wavelevels(order); // describes the wavelet hierarchy, namely points per delta
-
-    needed = IM.generatePointsFromDeltas(deltas, &wavelevels);
+    if (order == 1){
+        needed = IM.generatePointsFromDeltas(deltas, [](int level) -> int { return (1 << (level + 1)) + 1; });
+    }else{
+        needed = IM.generatePointsFromDeltas(deltas, [](int level) -> int { return (1 << (level + 2)) + 1; });
+    }
     delete deltas;
 
     if (num_outputs == 0){

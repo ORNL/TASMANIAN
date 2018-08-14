@@ -38,24 +38,6 @@ namespace TasGrid{
 BaseRuleLocalPolynomial::BaseRuleLocalPolynomial() : max_order(0){}
 BaseRuleLocalPolynomial::~BaseRuleLocalPolynomial(){}
 
-int BaseRuleLocalPolynomial::getMaxOrder() const{ return max_order; }
-void BaseRuleLocalPolynomial::setMaxOrder(int order){ max_order = order; }
-TypeOneDRule BaseRuleLocalPolynomial::getType() const{ return rule_none; }
-
-double BaseRuleLocalPolynomial::getNode(int) const{ return 0.0; }
-int BaseRuleLocalPolynomial::getLevel(int) const{ return 0; }
-double BaseRuleLocalPolynomial::getSupport(int) const{ return 0; }
-int BaseRuleLocalPolynomial::getMaxNumKids() const{ return 0; }
-int BaseRuleLocalPolynomial::getMaxNumParents() const{ return 0; }
-
-int BaseRuleLocalPolynomial::getParent(int) const{ return 0; }
-int BaseRuleLocalPolynomial::getStepParent(int) const{ return 0; }
-int BaseRuleLocalPolynomial::getKid(int, int) const{ return 0; }
-
-double BaseRuleLocalPolynomial::evalRaw(int, double) const{ return 0.0; }
-double BaseRuleLocalPolynomial::evalSupport(int, double, bool&) const{ return 0.0; }
-double BaseRuleLocalPolynomial::getArea(int, int, const double*, const double*) const{ return 0.0; }
-
 int BaseRuleLocalPolynomial::intlog2(int i){ // this is effectively: floor(log_2(i))
     int result = 0;
     while (i >>= 1){ result++; }

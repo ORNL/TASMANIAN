@@ -307,7 +307,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
         }
     }
 
-    needed = IM.generatePointsFromDeltas(deltas, rule);
+    needed = IM.generatePointsFromDeltas(deltas, [&](int level) -> int { return rule->getNumPoints(level); });
     delete deltas;
 
     buildTree();

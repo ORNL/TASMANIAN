@@ -534,15 +534,4 @@ double RuleWavelet::interpolate(const double *y, double x, int interpolation_ord
 	return ps[0];
 }
 
-WaveletLevels::WaveletLevels(int corder){  order = corder;  }
-WaveletLevels::~WaveletLevels(){}
-
-int WaveletLevels::getNumPoints(int level) const{
-    if(order == 1){
-		return (1 << (level + 1)) + 1;
-	}else{ // order == 3
-		return (1 << (level + 2)) + 1;
-	}
-}
-
 } /* namespace TasGrid */
