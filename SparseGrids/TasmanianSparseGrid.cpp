@@ -980,10 +980,17 @@ void TasmanianSparseGrid::getLevelLimits(std::vector<int> &limits) const{
 }
 
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
+    std::vector<int> ll;
     if (level_limits != 0){
-        llimits.resize(base->getNumDimensions());
-        std::copy(level_limits, level_limits + base->getNumDimensions(), llimits.data());
+        int dims = base->getNumDimensions();
+        ll.resize(dims);
+        std::copy(level_limits, level_limits + dims, ll.data());
     }
+    setAnisotropicRefinement(type, min_growth, output, ll);
+}
+void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
+    if (!level_limits.empty()) llimits = level_limits;
     if (sequence != 0){
         sequence->setAnisotropicRefinement(type, min_growth, output, llimits.data());
     }else if (global != 0){

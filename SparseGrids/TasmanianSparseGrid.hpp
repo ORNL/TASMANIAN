@@ -149,6 +149,7 @@ public:
     void getLevelLimits(std::vector<int> &limits) const; // allocates the vector
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = 0);
+    void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
     int* estimateAnisotropicCoefficients(TypeDepth type, int output);
     void setSurplusRefinement(double tolerance, int output, const int *level_limits = 0);
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0, const double *scale_correction = 0); // -1 indicates using all outputs
