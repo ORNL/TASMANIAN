@@ -130,7 +130,7 @@ void GridUnitTester::invalidArgumentCall(int i){
     case 13: grid.makeLocalPolynomialGrid(0,  1,  3,  3, rule_localp); break; // 0 is not valid dimensions
     case 14: grid.makeLocalPolynomialGrid(2, -1,  3,  2, rule_localp); break; // -1 is not valid outputs
     case 15: grid.makeLocalPolynomialGrid(2,  1, -1,  2, rule_localp); break; // -1 is not valid depth
-    case 16: grid.makeLocalPolynomialGrid(2,  1,  3, -2, rule_localp); break; // -2 is not a valid order
+    case 16: grid.makeLocalPolynomialGrid(2,  1,  3,  2, rule_localp); break; // -2 is not a valid order
     case 17: grid.makeLocalPolynomialGrid(2,  1,  3, -2, rule_mindelta); break; // mindelta is not a local rule
     case 18: grid.makeLocalPolynomialGrid(2,  1,  3,  1, rule_localp, std::vector<int>()={3}); break; // level limits is too short
     case 19: grid.makeWaveletGrid(0,  1,  3,  1,  0); break; // 0 is not a valid dimensions
