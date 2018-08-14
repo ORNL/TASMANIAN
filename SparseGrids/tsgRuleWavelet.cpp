@@ -229,10 +229,6 @@ RuleWavelet::~RuleWavelet(){
 	}
 }
 
-TypeOneDRule RuleWavelet::getType() const{
-	return rule_wavelet;
-}
-
 int RuleWavelet::getOrder() const{
 	return order;
 }
