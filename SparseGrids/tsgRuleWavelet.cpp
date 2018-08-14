@@ -443,18 +443,15 @@ double RuleWavelet::linear_boundary_wavelet(double x) const{
 	/*
 	 * Evaluates the first order boundary wavelet with support on [-1, 0].
 	 */
-	if ((x < -1) || (x > 0)) { return 0.; }
+    if (fabs(x + 0.5) > 0.5) return 0.0;
 
-	if ((x <= -0.75)){
-		return 0.75 * (7. * x + 6.);
-	}
-	if ((x <= -0.5)){
-		return -0.25 * (11. * x + 6.);
-	}
-	if ((x <= 0.)){
-		return 0.25 * x;
-	}
-	return 0.;
+    if ((x <= -0.75)){
+        return 0.75 * (7.0 * x + 6.0);
+    }else if (x <= -0.5){
+        return -0.25 * (11.0 * x + 6.0);
+    }else{
+        return 0.25 * x;
+    }
 }
 
 double RuleWavelet::linear_central_wavelet(double x) const {
