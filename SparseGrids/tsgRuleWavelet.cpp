@@ -458,20 +458,17 @@ double RuleWavelet::linear_central_wavelet(double x) const {
 	/*
 	 * Evaluates the first order central wavelet with support on [-1, .5].
 	 */
-	if ((x < -1) || (x > .5)) { return 0.; }
-	if ((x <= -0.5)){
-		return -0.5 * (x + 1.);
+    if (fabs(x + 0.25) > 0.75) return 0.0;
+
+    if ((x <= -0.5)){
+        return -0.5 * x - 0.5;
+    }else if (x >= 0.0){
+        return 0.5 * x - 0.25;
+    }else if (x <= -0.25){
+        return 4.0 * x + 1.75;
+    }else{
+        return -4.0 * x - 0.25;
 	}
-	if ((x <= -0.25)){
-		return 4. * x + 1.75;
-	}
-	if ((x <= 0.)){
-		return -1 * (4. * x + 0.25);
-	}
-	if ((x <= .5)){
-		return 0.25 * (2. * x - 1);
-	}
-	return 0.;
 }
 
 int RuleWavelet::find_index(double x) const{
