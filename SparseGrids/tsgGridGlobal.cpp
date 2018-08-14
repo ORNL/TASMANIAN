@@ -797,7 +797,7 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         IndexManipulator IM(num_dimensions);
         std::vector<int> level;
         IM.computeLevels(points, level);
-        int top_level = level[0];  for(int i=1; i<num_points; i++){ if (top_level < level[i]) top_level = level[i];  }
+        int top_level = level[0];  for(auto l : level) if (top_level < l) top_level = l;
         int top_1d = 0; const int *id = points->getIndex(0); for(int i=0; i<num_points*num_dimensions; i++) if (top_1d < id[i]) top_1d = id[i];
 
         Data2D<int> parents;
