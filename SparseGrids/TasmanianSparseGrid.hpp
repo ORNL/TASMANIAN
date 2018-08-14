@@ -67,18 +67,24 @@ public:
 
     void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const int *level_limits = 0);
     void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const std::vector<int> &level_limits = std::vector<int>());
+
     void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, const int *level_limits = 0);
     void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+
     void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp, const int *level_limits = 0);
     void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const std::vector<int> &level_limits);
+
     void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, const int *level_limits = 0);
     void makeWaveletGrid(int dimensions, int outputs, int depth, int order, const std::vector<int> &level_limits);
+
     void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights = 0, const int* level_limits = 0);
     void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+
     void copyGrid(const TasmanianSparseGrid *source);
 
     void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
     void updateGlobalGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+
     void updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
     void updateSequenceGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
 
@@ -98,17 +104,21 @@ public:
     double* getLoadedPoints() const;
     double* getNeededPoints() const;
     double* getPoints() const; // returns the loaded points unless no points are loaded, then returns the needed points
+
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
+
     void getLoadedPoints(std::vector<double> &x) const;
     void getNeededPoints(std::vector<double> &x) const;
     void getPoints(std::vector<double> &x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
     double* getQuadratureWeights() const;
     double* getInterpolationWeights(const double x[]) const;
+
     void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
+
     void getQuadratureWeights(std::vector<double> &weights) const;
     void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const;
 
@@ -150,12 +160,16 @@ public:
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = 0);
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
+
     int* estimateAnisotropicCoefficients(TypeDepth type, int output);
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights);
+
     void setSurplusRefinement(double tolerance, int output, const int *level_limits = 0);
     void setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits);
+
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0, const double *scale_correction = 0); // -1 indicates using all outputs
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction = std::vector<double>()); // -1 indicates using all outputs
+
     void clearRefinement();
     void mergeRefinement();
 

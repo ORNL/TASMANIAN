@@ -797,7 +797,7 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         IndexManipulator IM(num_dimensions);
         std::vector<int> level;
         IM.computeLevels(points, level);
-        int top_level = level[0];  for(int i=1; i<num_points; i++){ if (top_level < level[i]) top_level = level[i];  }
+        int top_level = level[0];  for(auto l : level) if (top_level < l) top_level = l;
         int top_1d = 0; const int *id = points->getIndex(0); for(int i=0; i<num_points*num_dimensions; i++) if (top_1d < id[i]) top_1d = id[i];
 
         Data2D<int> parents;
@@ -872,33 +872,34 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         IndexManipulator IM(num_dimensions, custom);
         IndexSet* polynomial_set = IM.getPolynomialSpace(active_tensors, rule, true);
 
-        GridGlobal *gg = new GridGlobal();
+        GridGlobal gg;
         IndexSet *quadrature_tensors = IM.selectTensors(polynomial_set, true, rule_gausspatterson);
 
         int ml = IM.getMaxLevel(quadrature_tensors);
 
         if (ml < TableGaussPatterson::getNumLevels()-1){
-            gg->setTensors(quadrature_tensors, 0, rule_gausspatterson, 0.0, 0.0);
+            gg.setTensors(quadrature_tensors, 0, rule_gausspatterson, 0.0, 0.0);
         }else{
             delete quadrature_tensors;
             quadrature_tensors = IM.selectTensors(polynomial_set, true, rule_clenshawcurtis);
-            gg->setTensors(quadrature_tensors, 0, rule_clenshawcurtis, 0.0, 0.0);
+            gg.setTensors(quadrature_tensors, 0, rule_clenshawcurtis, 0.0, 0.0);
         }
         delete polynomial_set;
 
-        int qn = gg->getNumPoints();
-        double *w = new double[qn];
-        gg->getQuadratureWeights(w);
-        double *x = new double[getNumPoints() * num_dimensions];
-        gg->getPoints(x);
-        double *I = new double[qn];
-        delete gg;
-        #pragma omp parallel for schedule(static)
-        for(int i=0; i<qn; i++){
-            double *y = new double[num_outputs];
-            evaluate(&(x[i*num_dimensions]), y);
-            I[i] = w[i] * y[output];
-            delete[] y;
+        size_t qn = (size_t) gg.getNumPoints();
+        std::vector<double> w(qn);
+        gg.getQuadratureWeights(w.data());
+        std::vector<double> x(qn * ((size_t) num_dimensions));
+        std::vector<double> y(qn * ((size_t) num_outputs));
+        gg.getPoints(x.data());
+        std::vector<double> I(qn);
+
+        evaluateBatch(x.data(), (int) qn, y.data());
+        auto iter_y = y.begin();
+        std::advance(iter_y, output);
+        for(auto &ii : I){
+            ii = *iter_y;
+            std::advance(iter_y, num_outputs);
         }
 
         #pragma omp parallel for schedule(dynamic)
@@ -906,12 +907,11 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
             // for each surp, do the quadrature
             const int* p = points->getIndex(i);
             double c = 0.0;
-            for(int k=0; k<qn; k++){
-                double v = legendre(p[0], x[k*num_dimensions]);
-                for(int j=1; j<num_dimensions; j++){
-                    v *= legendre(p[j], x[k*num_dimensions+j]);
-                }
-                c += v * I[k];
+            auto iter_x = x.begin();
+            for(auto ii: I){
+                double v = 1.0;
+                for(int j=0; j<num_dimensions; j++) v *= legendre(p[j], *iter_x++);
+                c += v * ii;
             }
             double nrm = sqrt((double) p[0] + 0.5);
             for(int j=1; j<num_dimensions; j++){
@@ -919,10 +919,6 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
             }
             surp[i] = c * nrm;
         }
-
-        delete[] I;
-        delete[] x;
-        delete[] w;
     }
 
     return surp;
