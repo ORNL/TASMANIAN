@@ -260,10 +260,9 @@ int RuleWavelet::getLevel(int point) const{
 	 */
 	if(order == 1){
 		return (point <= 2) ? 0 : intlog2(point - 1);
-	}else if(order == 3){
+	}else{
 		return (point < 5) ? 0 : intlog2(point - 1) - 1;
 	}
-	return -1;
 }
 void RuleWavelet::getChildren(int point, int &first, int &second) const{
 	/*
