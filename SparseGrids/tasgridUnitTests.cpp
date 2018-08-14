@@ -70,7 +70,7 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<42; i++){
+    for(int i=0; i<46; i++){
         try{
             invalidArgumentCall(i);
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
@@ -89,7 +89,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<23; i++){
+    for(int i=0; i<28; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -161,6 +161,11 @@ void GridUnitTester::invalidArgumentCall(int i){
     case 40: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 0, std::vector<int>()={3}); break; // ll is too small
     case 41: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setSurplusRefinement(-0.1, 0); break; // tolerance is negative
 
+    case 42: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 2); break; // output out of range
+    case 43: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>()={3}); break; // ll is too small
+    case 44: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(-0.1, refine_classic, 0); break; // tolerance is negative
+    case 45: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(-0.1, refine_classic, 0, std::vector<int>()={3, 2}, std::vector<double>() = {3.0, 3.0}); break; // scale too small
+
     default: break;
     }
 }
@@ -196,6 +201,12 @@ void GridUnitTester::runtimeErrorCall(int i){
     case 20: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // no loaded values
     case 21: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // rule non-nested
     case 22: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // grid is localp
+
+    case 23: grid.setSurplusRefinement(0.01, refine_classic, 0, 0); break; // grid not init
+    case 24: grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>()); break; // grid not init
+    case 25: grid.makeLocalPolynomialGrid(2, 0, 3); grid.setSurplusRefinement(0.01, refine_classic, 0); break; // no outputs
+    case 26: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setSurplusRefinement(0.01, refine_classic, 0); break; // no loaded values
+    case 27: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>()); break; // rule non-local
 
     default: break;
     }

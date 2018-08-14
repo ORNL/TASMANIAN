@@ -1072,9 +1072,18 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
-    if (level_limits != 0){
-        llimits.resize(base->getNumDimensions());
-        std::copy(level_limits, level_limits + base->getNumDimensions(), llimits.data());
+    if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
+    int dims = base->getNumDimensions();
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has no outputs");
+    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid with no loaded values");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid output");
+    if ((pwpoly == 0) && (wavelet == 0)) throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
+    if (tolerance < 0.0) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid tolerance (must be non-negative)");
+
+    if (level_limits != 0){ // can only happen if calling directly with int*, the vector version always passes null for level_limits
+        llimits.resize(dims);
+        std::copy(level_limits, level_limits + dims, llimits.data());
     }
     if (pwpoly != 0){
         pwpoly->setSurplusRefinement(tolerance, criteria, output, llimits, scale_correction);
@@ -1087,8 +1096,11 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
     if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
     int dims = base->getNumDimensions();
+    size_t nscale = (size_t) base->getNumNeeded();
+    if (output != -1) nscale *= (size_t) base->getNumOutputs();
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setSurplusRefinement() requires level_limits with either 0 or dimenions entries");
-    if ((pwpoly == 0) && (wavelet ==0)) throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
+    if ((pwpoly == 0) && (wavelet == 0)) throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
+    if ((!scale_correction.empty()) && (scale_correction.size() != nscale)) throw std::invalid_argument("ERROR: setSurplusRefinement() incorrect size for scale_correction");
 
     if (!level_limits.empty()) llimits = level_limits;
     setSurplusRefinement(tolerance, criteria, output, 0, scale_correction.data());
