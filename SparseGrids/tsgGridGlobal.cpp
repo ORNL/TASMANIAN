@@ -747,8 +747,8 @@ void GridGlobal::makeCheckAccelerationData(TypeAcceleration) const{}
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
-    double *w = new double[getNumPoints()];
-    getQuadratureWeights(w);
+    std::vector<double> w(getNumPoints());
+    getQuadratureWeights(w.data());
     if (conformal_correction != 0) for(int i=0; i<points->getNumIndexes(); i++) w[i] *= conformal_correction[i];
     std::fill(q, q+num_outputs, 0.0);
     #pragma omp parallel for schedule(static)
@@ -758,7 +758,6 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
             q[k] += w[i] * v[k];
         }
     }
-    delete[] w;
 }
 
 void GridGlobal::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
