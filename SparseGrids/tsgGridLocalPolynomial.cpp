@@ -1523,7 +1523,7 @@ void GridLocalPolynomial::addChild(const int point[], int direction, GranulatedI
         }
     }
 }
-void GridLocalPolynomial::addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const int *level_limits) const{
+void GridLocalPolynomial::addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const std::vector<int> &level_limits) const{
     std::vector<int> kid(num_dimensions);  std::copy(point, point + num_dimensions, kid.data());
     int max_1d_kids = rule->getMaxNumKids();
     for(int i=0; i<max_1d_kids; i++){
@@ -1549,7 +1549,7 @@ const int* GridLocalPolynomial::getNeededIndexes() const{
     //cout << "HERE " << needed->getNumIndexes() << endl;
     return ((needed != 0) ? needed->getIndex(0) : 0);
 }
-void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
+void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction){
     clearRefinement();
 
     std::vector<int> pmap; buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
@@ -1560,7 +1560,7 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
 
     int num_points = points->getNumIndexes();
 
-    if (level_limits == 0){
+    if (level_limits.empty()){
         for(int i=0; i<num_points; i++){
             for(int j=0; j<num_dimensions; j++){
                 if (pmap[i*num_dimensions+j] == 1){ // if this dimension needs to be refined

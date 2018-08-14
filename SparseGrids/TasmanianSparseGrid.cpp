@@ -980,46 +980,90 @@ void TasmanianSparseGrid::getLevelLimits(std::vector<int> &limits) const{
 }
 
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
+    std::vector<int> ll;
     if (level_limits != 0){
-        llimits.resize(base->getNumDimensions());
-        std::copy(level_limits, level_limits + base->getNumDimensions(), llimits.data());
+        int dims = base->getNumDimensions();
+        ll.resize(dims);
+        std::copy(level_limits, level_limits + dims, ll.data());
     }
+    setAnisotropicRefinement(type, min_growth, output, ll);
+}
+void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
+    if (min_growth < 1) throw std::invalid_argument("ERROR: setAnisotropicRefinement() requires positive min_growth");
+    int dims = base->getNumDimensions();
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has no outputs");
+    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid with no loaded values");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setAnisotropicRefinement() with invalid output");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setAnisotropicRefinement() requires level_limits with either 0 or dimenions entries");
+
+    if (!level_limits.empty()) llimits = level_limits;
     if (sequence != 0){
-        sequence->setAnisotropicRefinement(type, min_growth, output, llimits.data());
+        sequence->setAnisotropicRefinement(type, min_growth, output, llimits);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
             throw std::runtime_error("ERROR: setAnisotropicRefinement called for a global grid with non-nested rule");
         }else{
-            global->setAnisotropicRefinement(type, min_growth, output, llimits.data());
+            global->setAnisotropicRefinement(type, min_growth, output, llimits);
         }
     }else{
         throw std::runtime_error("ERROR: setAnisotropicRefinement called for a grid that is neither Sequence nor Global with a sequence rule");
     }
 }
 int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output){
+    std::vector<int> weights;
+    estimateAnisotropicCoefficients(type, output, weights);
+    int *w = new int[weights.size()];
+    std::copy(weights.begin(), weights.end(), w);
+    return w;
+}
+void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights){
+    if (base == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid that has not been initialized");
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid that has no outputs");
+    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid with no loaded values");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling estimateAnisotropicCoefficients() with invalid output");
+
     if (sequence != 0){
-        return sequence->estimateAnisotropicCoefficients(type, output);
+        sequence->estimateAnisotropicCoefficients(type, output, weights);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
             throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a Global grid with non-nested rule");
         }else{
-            return global->estimateAnisotropicCoefficients(type, output);
+            global->estimateAnisotropicCoefficients(type, output, weights);
         }
     }else{
         throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a grid that is neither Sequence nor Global with a sequence rule");
     }
-    return 0;
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const int *level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
+    std::vector<int> ll;
     if (level_limits != 0){
-        llimits.resize(base->getNumDimensions());
-        std::copy(level_limits, level_limits + base->getNumDimensions(), llimits.data());
+        int dims = base->getNumDimensions();
+        ll.resize(dims);
+        std::copy(level_limits, level_limits + dims, ll.data());
     }
+    setSurplusRefinement(tolerance, output, ll);
+}
+void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
+    int dims = base->getNumDimensions();
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has no outputs");
+    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid with no loaded values");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid output");
+    if (tolerance < 0.0) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid tolerance (must be non-negative)");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setSurplusRefinement() requires level_limits with either 0 or dimenions entries");
+
+    if (!level_limits.empty()) llimits = level_limits;
     if (sequence != 0){
-        sequence->setSurplusRefinement(tolerance, output, llimits.data());
+        sequence->setSurplusRefinement(tolerance, output, llimits);
     }else if (global != 0){
         if (OneDimensionalMeta::isSequence(global->getRule())){
-            global->setSurplusRefinement(tolerance, output, llimits.data());
+            global->setSurplusRefinement(tolerance, output, llimits);
         }else{
             throw std::runtime_error("ERROR: setSurplusRefinement called for a Global grid with non-sequence rule");
         }
@@ -1028,17 +1072,38 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
-    if (level_limits != 0){
-        llimits.resize(base->getNumDimensions());
-        std::copy(level_limits, level_limits + base->getNumDimensions(), llimits.data());
+    if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
+    int dims = base->getNumDimensions();
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has no outputs");
+    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid with no loaded values");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid output");
+    if ((pwpoly == 0) && (wavelet == 0)) throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
+    if (tolerance < 0.0) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid tolerance (must be non-negative)");
+
+    if (level_limits != 0){ // can only happen if calling directly with int*, the vector version always passes null for level_limits
+        llimits.resize(dims);
+        std::copy(level_limits, level_limits + dims, llimits.data());
     }
     if (pwpoly != 0){
-        pwpoly->setSurplusRefinement(tolerance, criteria, output, llimits.data(), scale_correction);
+        pwpoly->setSurplusRefinement(tolerance, criteria, output, llimits, scale_correction);
     }else if (wavelet != 0){
-        wavelet->setSurplusRefinement(tolerance, criteria, output, llimits.data());
+        wavelet->setSurplusRefinement(tolerance, criteria, output, llimits);
     }else{
         throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
     }
+}
+void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
+    if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
+    int dims = base->getNumDimensions();
+    size_t nscale = (size_t) base->getNumNeeded();
+    if (output != -1) nscale *= (size_t) base->getNumOutputs();
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setSurplusRefinement() requires level_limits with either 0 or dimenions entries");
+    if ((pwpoly == 0) && (wavelet == 0)) throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
+    if ((!scale_correction.empty()) && (scale_correction.size() != nscale)) throw std::invalid_argument("ERROR: setSurplusRefinement() incorrect size for scale_correction");
+
+    if (!level_limits.empty()) llimits = level_limits;
+    setSurplusRefinement(tolerance, criteria, output, 0, scale_correction.data());
 }
 void TasmanianSparseGrid::clearRefinement(){
     base->clearRefinement();

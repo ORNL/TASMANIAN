@@ -661,7 +661,7 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     }
 }
 
-int* GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output) const{
+void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000 * TSG_NUM_TOL;
     int num_points = points->getNumIndexes();
     double *max_surp = new double[num_points];
@@ -741,7 +741,7 @@ int* GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output) c
     double *x = new double[m];
     TasmanianDenseSolver::solveLeastSquares(n, m, A, b, 1.E-5, x);
 
-    int *weights = new int[m--];
+    weights.resize(--m);
     for(int j=0; j<m; j++){
         weights[j] = (int)(x[j] * 1000.0 + 0.5);
     }
@@ -767,31 +767,29 @@ int* GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output) c
     delete[] A;
     delete[] b;
     delete[] x;
-
-    return weights;
 }
 
-void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
+void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
     clearRefinement();
 
-    int *weights = estimateAnisotropicCoefficients(type, output);
+    std::vector<int> weights;
+    estimateAnisotropicCoefficients(type, output, weights);
 
     IndexManipulator IM(num_dimensions);
-    int level = IM.getMinChildLevel(points, type, weights, rule);
+    int level = IM.getMinChildLevel(points, type, weights.data(), rule);
 
-    IndexSet* total = IM.selectTensors(level, type, weights, rule);
+    IndexSet* total = IM.selectTensors(level, type, weights.data(), rule);
     needed = total->diffSets(points); // this exploits the 1-1 correspondence between points and tensors
 
     while((needed == 0) || (needed->getNumIndexes() < min_growth)){
         delete total;
         if (needed != 0) delete needed;
-        total = IM.selectTensors(++level, type, weights, rule);
+        total = IM.selectTensors(++level, type, weights.data(), rule);
         needed = total->diffSets(points);
     }
     total->addIndexSet(points);
-    delete[] weights;
 
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         IndexSet *limited = IM.removeIndexesByLimit(total, level_limits);
         if (limited != 0){
             delete total;
@@ -807,7 +805,7 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
     prepareSequence(max_level+1);
     delete total;
 }
-void GridSequence::setSurplusRefinement(double tolerance, int output, const int *level_limits){
+void GridSequence::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();
 
     int num_points = points->getNumIndexes();
@@ -840,7 +838,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const int 
     delete[] norm;
 
     IndexManipulator IM(num_dimensions);
-    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits);
+    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits.data());
     if ((kids != 0) && (kids->getNumIndexes() > 0)){
         kids->addIndexSet(points);
 
