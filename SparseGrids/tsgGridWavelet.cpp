@@ -162,7 +162,7 @@ void GridWavelet::readBinary(std::ifstream &ifs){
     buildInterpolationMatrix();
 }
 
-void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const int *level_limits){
+void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits){
     reset();
     num_dimensions = cnum_dimensions;
     num_outputs = cnum_outputs;
@@ -172,7 +172,7 @@ void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int
 
     IndexManipulator IM(num_dimensions);
     IndexSet* deltas = IM.selectTensors(depth, type_level, std::vector<int>(), rule_leja);
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         IndexSet *limited = IM.removeIndexesByLimit(deltas, level_limits);
         if (limited != 0){
             delete deltas;

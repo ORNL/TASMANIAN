@@ -225,12 +225,10 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
     }
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires level_limits with either 0 or dimenions entries");
     clear();
-    const int *ll = 0;
-    if (!level_limits.empty()) ll = level_limits.data();
-    pwpoly = new GridLocalPolynomial();
-    pwpoly->makeGrid(dimensions, outputs, depth, order, rule, ll);
-    base = pwpoly;
     llimits = level_limits;
+    pwpoly = new GridLocalPolynomial();
+    pwpoly->makeGrid(dimensions, outputs, depth, order, rule, llimits);
+    base = pwpoly;
 }
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
     std::vector<int> ll;
@@ -250,12 +248,10 @@ void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth
     }
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeWaveletGrid() requires level_limits with either 0 or dimenions entries");
     clear();
-    const int *ll = 0;
-    if (!level_limits.empty()) ll = level_limits.data();
-    wavelet = new GridWavelet();
-    wavelet->makeGrid(dimensions, outputs, depth, order, ll);
-    base = wavelet;
     llimits = level_limits;
+    wavelet = new GridWavelet();
+    wavelet->makeGrid(dimensions, outputs, depth, order, llimits);
+    base = wavelet;
 }
 void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){
     std::vector<int> aw, ll;
@@ -278,12 +274,10 @@ void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth
     if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeFourierGrid() requires anisotropic_weights with either 0 or dimenions entries");
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeFourierGrid() requires level_limits with either 0 or dimenions entries");
     clear();
-    fourier = new GridFourier();
-    const int *ll = 0;
-    if (!level_limits.empty()) ll = level_limits.data();
-    fourier->makeGrid(dimensions, outputs, depth, type, anisotropic_weights, ll);
-    base = fourier;
     llimits = level_limits;
+    fourier = new GridFourier();
+    fourier->makeGrid(dimensions, outputs, depth, type, anisotropic_weights, llimits);
+    base = fourier;
 }
 
 void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
