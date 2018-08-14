@@ -239,10 +239,9 @@ int RuleWavelet::getNumPoints(int level) const{
 	 */
 	if(order == 1){
 		return (1 << (level + 1)) + 1;
-	}else if(order == 3){
+	}else{
 		return (1 << (level + 2)) + 1;
 	}
-	return -1;
 }
 
 const char * RuleWavelet::getDescription() const{
