@@ -1013,7 +1013,7 @@ int* GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output) con
     return weights;
 }
 
-void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
+void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
     clearRefinement();
     int *weights = estimateAnisotropicCoefficients(type, output); //for(int i=0; i<2*num_dimensions; i++) cout << weights[i] << "  "; cout << endl;
 
@@ -1031,7 +1031,7 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     }
     delete[] weights;
 
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         IndexSet *limited = IM.removeIndexesByLimit(updated_tensors, level_limits);
         if (limited != 0){
             delete updated_tensors;

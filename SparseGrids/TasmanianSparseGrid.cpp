@@ -992,12 +992,12 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
     if (!level_limits.empty()) llimits = level_limits;
     if (sequence != 0){
-        sequence->setAnisotropicRefinement(type, min_growth, output, llimits.data());
+        sequence->setAnisotropicRefinement(type, min_growth, output, llimits);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
             throw std::runtime_error("ERROR: setAnisotropicRefinement called for a global grid with non-nested rule");
         }else{
-            global->setAnisotropicRefinement(type, min_growth, output, llimits.data());
+            global->setAnisotropicRefinement(type, min_growth, output, llimits);
         }
     }else{
         throw std::runtime_error("ERROR: setAnisotropicRefinement called for a grid that is neither Sequence nor Global with a sequence rule");

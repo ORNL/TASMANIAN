@@ -771,7 +771,7 @@ int* GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output) c
     return weights;
 }
 
-void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
+void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
     clearRefinement();
 
     int *weights = estimateAnisotropicCoefficients(type, output);
@@ -791,7 +791,7 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
     total->addIndexSet(points);
     delete[] weights;
 
-    if (level_limits != 0){
+    if (!level_limits.empty()){
         IndexSet *limited = IM.removeIndexesByLimit(total, level_limits);
         if (limited != 0){
             delete total;

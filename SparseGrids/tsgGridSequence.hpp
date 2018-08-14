@@ -99,7 +99,7 @@ public:
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
     int* estimateAnisotropicCoefficients(TypeDepth type, int output) const;
-    void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits);
+    void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
     void setSurplusRefinement(double tolerance, int output, const int *level_limits);
     void clearRefinement();
     void mergeRefinement();
