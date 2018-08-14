@@ -990,6 +990,15 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
     setAnisotropicRefinement(type, min_growth, output, ll);
 }
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
+    if (min_growth < 1) throw std::invalid_argument("ERROR: setAnisotropicRefinement() requires positive min_growth");
+    int dims = base->getNumDimensions();
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has no outputs");
+    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid with no loaded values");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setAnisotropicRefinement() with invalid output");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setAnisotropicRefinement() requires level_limits with either 0 or dimenions entries");
+
     if (!level_limits.empty()) llimits = level_limits;
     if (sequence != 0){
         sequence->setAnisotropicRefinement(type, min_growth, output, llimits);

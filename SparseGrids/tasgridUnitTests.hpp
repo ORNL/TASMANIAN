@@ -69,6 +69,8 @@ protected:
     void invalidArgumentCall(int i);
     void runtimeErrorCall(int i);
 
+    void gridLoadEN2(TasmanianSparseGrid *grid) const; // load points using exp( - \| x \|^2 )
+
 private:
     bool verbose;
 };
