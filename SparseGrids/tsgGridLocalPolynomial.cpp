@@ -93,7 +93,7 @@ void GridLocalPolynomial::write(std::ofstream &ofs) const{
         }else{
             ofs << "1";
             size_t n = parents.getTotalEntries();
-            const int *p = parents.getStrip(0);
+            const int *p = parents.getCStrip(0);
             for(size_t i=0; i<n; i++){ ofs << " " << p[i]; } ofs << endl;
         }
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
@@ -137,7 +137,7 @@ void GridLocalPolynomial::writeBinary(std::ofstream &ofs) const{
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) parents.getStrip(0), parents.getTotalEntries() * sizeof(int));
+            ofs.write((char*) parents.getCStrip(0), parents.getTotalEntries() * sizeof(int));
         }
 
         int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
@@ -711,7 +711,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp->getStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp->getCStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
@@ -1298,7 +1298,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp->getStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp->getCStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{

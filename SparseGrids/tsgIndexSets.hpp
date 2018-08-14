@@ -149,22 +149,32 @@ public:
         num_strips = (size_t) new_num_strips;
         vec.resize(stride * num_strips);
         data = vec.data();
+        cdata = vec.data();
     }
     void resize(int new_stride, int new_num_strips, T val){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
         vec.resize(stride * num_strips, val);
         data = vec.data();
+        cdata = vec.data();
     }
     void load(int new_stride, int new_num_strips, T* new_data){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
         data = new_data;
+        cdata = data;
+        vec.resize(0);
+    }
+    void cload(int new_stride, int new_num_strips, const T* new_data){
+        stride = (size_t) new_stride;
+        num_strips = (size_t) new_num_strips;
+        cdata = new_data;
+        data = 0;
         vec.resize(0);
     }
 
     T* getStrip(int i){ return &(data[i*stride]); }
-    const T* getStrip(int i) const{ return &(data[i*stride]); }
+    const T* getCStrip(int i) const{ return &(cdata[i*stride]); }
     int getStride() const{ return (int) stride; }
     int getNumStrips() const{ return (int) num_strips; }
     size_t getTotalEntries() const{ return stride * num_strips; }
@@ -172,6 +182,7 @@ public:
 private:
     size_t stride, num_strips;
     T* data;
+    const T* cdata;
     std::vector<T> vec;
 };
 

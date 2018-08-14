@@ -178,7 +178,7 @@ void GridGlobal::read(std::ifstream &ifs){
             oned_max_level = IM.getMaxLevel(updated_tensors);
         }else{
             oned_max_level = max_levels[0];
-            for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
+            for(auto l: max_levels) if (oned_max_level < l) oned_max_level = l;
         }
         OneDimensionalMeta meta(custom);
         wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
@@ -245,7 +245,7 @@ void GridGlobal::readBinary(std::ifstream &ifs){
             oned_max_level = IM.getMaxLevel(updated_tensors);
         }else{
             oned_max_level = max_levels[0];
-            for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
+            for(auto l: max_levels) if (oned_max_level < l) oned_max_level = l;
         }
         OneDimensionalMeta meta(custom);
         wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
@@ -459,21 +459,27 @@ int GridGlobal::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : p
 
 void GridGlobal::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = points->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper->getNode(p[j]);
+            xx[j] = wrapper->getNode(p[j]);
         }
     }
 }
 void GridGlobal::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = needed->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper->getNode(p[j]);
+            xx[j] = wrapper->getNode(p[j]);
         }
     }
 }
@@ -486,7 +492,7 @@ void GridGlobal::getQuadratureWeights(double weights[]) const{
     int num_points = work->getNumIndexes();
     std::fill(weights, weights + num_points, 0.0);
 
-    int *num_oned_points = new int[num_dimensions];
+    std::vector<int> num_oned_points(num_dimensions);
     for(int n=0; n<active_tensors->getNumIndexes(); n++){
         const int* levels = active_tensors->getIndex(n);
         num_oned_points[0] = wrapper->getNumPoints(levels[0]);
@@ -508,19 +514,17 @@ void GridGlobal::getQuadratureWeights(double weights[]) const{
             weights[tensor_refs[n][i]] += tensor_weight * w;
         }
     }
-    delete[] num_oned_points;
-    work = 0;
 }
 
 void GridGlobal::getInterpolationWeights(const double x[], double weights[]) const{
     IndexSet *work = (points == 0) ? needed : points;
 
-    CacheLagrange<double> *lcache = new CacheLagrange<double>(num_dimensions, max_levels.data(), wrapper, x);
+    CacheLagrange<double> lcache(num_dimensions, max_levels.data(), wrapper, x);
 
     int num_points = work->getNumIndexes();
     std::fill(weights, weights + num_points, 0.0);
 
-    int *num_oned_points = new int[num_dimensions];
+    std::vector<int> num_oned_points(num_dimensions);
     for(int n=0; n<active_tensors->getNumIndexes(); n++){
         const int* levels = active_tensors->getIndex(n);
         num_oned_points[0] = wrapper->getNumPoints(levels[0]);
@@ -534,16 +538,12 @@ void GridGlobal::getInterpolationWeights(const double x[], double weights[]) con
             int t = i;
             double w = 1.0;
             for(int j=num_dimensions-1; j>=0; j--){
-                w *= lcache->getLagrange(j, levels[j], t % num_oned_points[j]);
+                w *= lcache.getLagrange(j, levels[j], t % num_oned_points[j]);
                 t /= num_oned_points[j];
             }
             weights[tensor_refs[n][i]] += tensor_weight * w;
         }
     }
-    delete[] num_oned_points;
-    work = 0;
-
-    delete lcache;
 }
 
 void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
@@ -623,8 +623,8 @@ const double* GridGlobal::getLoadedValues() const{
 }
 
 void GridGlobal::evaluate(const double x[], double y[]) const{
-    double *w = new double[points->getNumIndexes()];
-    getInterpolationWeights(x, w);
+    std::vector<double> w(points->getNumIndexes());
+    getInterpolationWeights(x, w.data());
     TasBLAS::setzero(num_outputs, y);
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<points->getNumIndexes(); i++){
@@ -632,15 +632,13 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
             y[k] += w[i] * v[k];
         }
     }
-    delete[] w;
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateFastCPUblas(const double x[], double y[]) const{
-    double *w = new double[points->getNumIndexes()];
-    getInterpolationWeights(x, w);
-    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), values->getValues(0), w, y);
-    delete[] w;
+    std::vector<double> w(points->getNumIndexes());
+    getInterpolationWeights(x, w.data());
+    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), values->getValues(0), w.data(), y);
 }
 #else
 void GridGlobal::evaluateFastCPUblas(const double[], double[]) const{}
@@ -651,12 +649,10 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[]) const{
     makeCheckAccelerationData(accel_gpu_cublas);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = new double[points->getNumIndexes()];
-    getInterpolationWeights(x, weights);
+    std::vector<double> weights(points->getNumIndexes());
+    getInterpolationWeights(x, weights.data());
 
-    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), weights, y);
-
-    delete[] weights;
+    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), weights.data(), y);
 }
 #else
 void GridGlobal::evaluateFastGPUcublas(const double[], double[]) const{}
@@ -670,36 +666,31 @@ void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) c
     makeCheckAccelerationData(accel_gpu_magma);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = new double[points->getNumIndexes()];
-    getInterpolationWeights(x, weights);
+    std::vector<double> weights(points->getNumIndexes());
+    getInterpolationWeights(x, weights.data());
 
-    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), weights, y);
-
-    delete[] weights;
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), weights.data(), y);
 }
 #else
 void GridGlobal::evaluateFastGPUmagma(int, const double[], double[]) const{}
 #endif // Tasmanian_ENABLE_MAGMA
 
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        evaluate(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_outputs)]));
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
     }
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
-    double *weights = new double[num_points * num_x];
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        getInterpolationWeights(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(weights[((size_t) i) * ((size_t) num_points)]));
-    }
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values->getValues(0), weights, 0.0, y);
-
-    delete[] weights;
+    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values->getValues(0), weights.getStrip(0), 0.0, y);
 }
 #else
 void GridGlobal::evaluateBatchCPUblas(const double[], int, double[]) const{}
@@ -711,12 +702,10 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[])
     makeCheckAccelerationData(accel_gpu_cublas);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, weights);
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, weights, y);
-
-    delete[] weights;
+    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, weights.getStrip(0), y);
 }
 #else
 void GridGlobal::evaluateBatchGPUcublas(const double[], int, double[]) const{}
@@ -731,12 +720,10 @@ void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, d
     makeCheckAccelerationData(accel_gpu_magma);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, weights);
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, weights, y);
-
-    delete[] weights;
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, weights.getStrip(0), y);
 }
 #else
 void GridGlobal::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
@@ -760,8 +747,8 @@ void GridGlobal::makeCheckAccelerationData(TypeAcceleration) const{}
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
-    double *w = new double[getNumPoints()];
-    getQuadratureWeights(w);
+    std::vector<double> w(getNumPoints());
+    getQuadratureWeights(w.data());
     if (conformal_correction != 0) for(int i=0; i<points->getNumIndexes(); i++) w[i] *= conformal_correction[i];
     std::fill(q, q+num_outputs, 0.0);
     #pragma omp parallel for schedule(static)
@@ -771,14 +758,15 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
             q[k] += w[i] * v[k];
         }
     }
-    delete[] w;
 }
 
 void GridGlobal::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
+    Data2D<double> yy; yy.load(num_points, num_x, y);
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        getInterpolationWeights(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_points)]));
+        getInterpolationWeights(xx.getCStrip(i), yy.getStrip(i));
     }
 }
 
