@@ -1020,6 +1020,12 @@ int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
     return w;
 }
 void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights){
+    if (base == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid that has not been initialized");
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid that has no outputs");
+    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid with no loaded values");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling estimateAnisotropicCoefficients() with invalid output");
+
     if (sequence != 0){
         sequence->estimateAnisotropicCoefficients(type, output, weights);
     }else if (global != 0){
