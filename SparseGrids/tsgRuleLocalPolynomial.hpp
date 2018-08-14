@@ -38,31 +38,31 @@ namespace TasGrid{
 class BaseRuleLocalPolynomial{
 public:
     BaseRuleLocalPolynomial();
-    ~BaseRuleLocalPolynomial();
+    virtual ~BaseRuleLocalPolynomial();
 
-    virtual int getMaxOrder() const;
-    virtual void setMaxOrder(int order);
+    virtual int getMaxOrder() const = 0;
+    virtual void setMaxOrder(int order) = 0;
 
-    virtual TypeOneDRule getType() const;
+    virtual TypeOneDRule getType() const = 0;
 
     virtual int getNumPoints(int level) const = 0; // for building the initial grid
 
-    virtual double getNode(int point) const;
+    virtual double getNode(int point) const = 0;
 
-    virtual int getLevel(int point) const;
-    virtual double getSupport(int point) const;
+    virtual int getLevel(int point) const = 0;
+    virtual double getSupport(int point) const = 0;
 
-    virtual int getMaxNumKids() const;
-    virtual int getMaxNumParents() const;
+    virtual int getMaxNumKids() const = 0;
+    virtual int getMaxNumParents() const = 0;
 
-    virtual int getParent(int point) const;
-    virtual int getStepParent(int point) const;
-    virtual int getKid(int point, int kid_number) const;
+    virtual int getParent(int point) const = 0;
+    virtual int getStepParent(int point) const = 0;
+    virtual int getKid(int point, int kid_number) const = 0;
 
-    virtual double evalRaw(int point, double x) const; // normalizes x (i.e., (x-node) / support), but it does not check the support
-    virtual double evalSupport(int point, double x, bool &isSupported) const; // // normalizes x (i.e., (x-node) / support) and checks if x is within the support
+    virtual double evalRaw(int point, double x) const = 0; // normalizes x (i.e., (x-node) / support), but it does not check the support
+    virtual double evalSupport(int point, double x, bool &isSupported) const = 0; // // normalizes x (i.e., (x-node) / support) and checks if x is within the support
 
-    virtual double getArea(int point, int n, const double w[], const double x[]) const;
+    virtual double getArea(int point, int n, const double w[], const double x[]) const = 0;
     // integrate the function associated with the point, constant to cubic are known analytically, higher order need a 1-D quadrature rule
 
     static int intlog2(int i);

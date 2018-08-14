@@ -31,6 +31,8 @@
 #ifndef __TSG_INDEX_MANIPULATOR_HPP
 #define __TSG_INDEX_MANIPULATOR_HPP
 
+#include <functional>
+
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgCoreOneDimensional.hpp"
@@ -77,7 +79,7 @@ public:
     int getMaxLevel(const IndexSet *iset) const;
 
     // use by Local Grids
-    IndexSet* generatePointsFromDeltas(const IndexSet* deltas, const BaseRuleLocalPolynomial *rule) const;
+    IndexSet* generatePointsFromDeltas(const IndexSet* deltas, std::function<int(int)> getNumPoints) const;
 
     void computeDAGupLocal(const IndexSet *iset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents) const;
 

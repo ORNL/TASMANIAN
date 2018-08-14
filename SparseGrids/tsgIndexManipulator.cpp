@@ -867,16 +867,16 @@ int IndexManipulator::getMaxLevel(const IndexSet *iset) const{
     return m;
 }
 
-IndexSet* IndexManipulator::generatePointsFromDeltas(const IndexSet* deltas, const BaseRuleLocalPolynomial *rule) const{
+IndexSet* IndexManipulator::generatePointsFromDeltas(const IndexSet* deltas, std::function<int(int)> getNumPoints) const{
     int num_points = 0;
     for(int i=0; i<deltas->getNumIndexes(); i++){
         const int *p = deltas->getIndex(i);
         int c = 1;
         for(int j=0; j<num_dimensions; j++){
             if (p[j] > 0){
-                c *= (rule->getNumPoints(p[j]) - rule->getNumPoints(p[j]-1));
+                c *= (getNumPoints(p[j]) - getNumPoints(p[j]-1));
             }else{
-                c *= rule->getNumPoints(0);
+                c *= getNumPoints(0);
             }
         }
         num_points += c;
@@ -892,9 +892,9 @@ IndexSet* IndexManipulator::generatePointsFromDeltas(const IndexSet* deltas, con
         const int *p = deltas->getIndex(i);
         int num_total = 1;
         for(int j=0; j<num_dimensions; j++){
-            num_points_delta[j] = rule->getNumPoints(p[j]);
+            num_points_delta[j] = getNumPoints(p[j]);
             if (p[j] > 0){
-                offsets[j] = rule->getNumPoints(p[j]-1);
+                offsets[j] = getNumPoints(p[j]-1);
                 num_points_delta[j] -= offsets[j];
             }else{
                 offsets[j] = 0;

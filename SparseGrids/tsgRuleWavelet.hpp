@@ -76,15 +76,5 @@ protected:
 	double **data;
 };
 
-class WaveletLevels : public BaseRuleLocalPolynomial{ // for the use of the index generator class
-public:
-    WaveletLevels(int corder);
-    ~WaveletLevels();
-
-    int getNumPoints(int level) const;
-private:
-    int order;
-};
-
 } /* namespace TasGrid */
 #endif /* __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP */
