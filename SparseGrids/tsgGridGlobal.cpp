@@ -623,8 +623,8 @@ const double* GridGlobal::getLoadedValues() const{
 }
 
 void GridGlobal::evaluate(const double x[], double y[]) const{
-    double *w = new double[points->getNumIndexes()];
-    getInterpolationWeights(x, w);
+    std::vector<double> w(points->getNumIndexes());
+    getInterpolationWeights(x, w.data());
     TasBLAS::setzero(num_outputs, y);
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<points->getNumIndexes(); i++){
@@ -632,7 +632,6 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
             y[k] += w[i] * v[k];
         }
     }
-    delete[] w;
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
