@@ -70,7 +70,7 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<39; i++){
+    for(int i=0; i<42; i++){
         try{
             invalidArgumentCall(i);
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
@@ -89,7 +89,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<17; i++){
+    for(int i=0; i<23; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -157,6 +157,10 @@ void GridUnitTester::invalidArgumentCall(int i){
 
     case 38: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.estimateAnisotropicCoefficients(type_iptotal, 2, w); break; // output out of range
 
+    case 39: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 2); break; // output out of range
+    case 40: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 0, std::vector<int>()={3}); break; // ll is too small
+    case 41: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setSurplusRefinement(-0.1, 0); break; // tolerance is negative
+
     default: break;
     }
 }
@@ -185,6 +189,13 @@ void GridUnitTester::runtimeErrorCall(int i){
     case 14: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.estimateAnisotropicCoefficients(type_iptotal, 0, w); break; // no loaded values
     case 15: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.estimateAnisotropicCoefficients(type_iptotal, 0, w); break; // rule non-nested
     case 16: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.estimateAnisotropicCoefficients(type_iptotal, 0, w); break; // grid is localp
+
+    case 17: grid.setSurplusRefinement(0.01, 0, 0); break; // grid not init
+    case 18: grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // grid not init
+    case 19: grid.makeGlobalGrid(2, 0, 3, type_level, rule_rleja); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // no outputs
+    case 20: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // no loaded values
+    case 21: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // rule non-nested
+    case 22: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // grid is localp
 
     default: break;
     }

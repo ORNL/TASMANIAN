@@ -1049,6 +1049,15 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
     setSurplusRefinement(tolerance, output, ll);
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
+    if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
+    int dims = base->getNumDimensions();
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has no outputs");
+    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid with no loaded values");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid output");
+    if (tolerance < 0.0) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid tolerance (must be non-negative)");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setSurplusRefinement() requires level_limits with either 0 or dimenions entries");
+
     if (!level_limits.empty()) llimits = level_limits;
     if (sequence != 0){
         sequence->setSurplusRefinement(tolerance, output, llimits);
