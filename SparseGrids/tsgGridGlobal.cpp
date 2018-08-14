@@ -492,7 +492,7 @@ void GridGlobal::getQuadratureWeights(double weights[]) const{
     int num_points = work->getNumIndexes();
     std::fill(weights, weights + num_points, 0.0);
 
-    int *num_oned_points = new int[num_dimensions];
+    std::vector<int> num_oned_points(num_dimensions);
     for(int n=0; n<active_tensors->getNumIndexes(); n++){
         const int* levels = active_tensors->getIndex(n);
         num_oned_points[0] = wrapper->getNumPoints(levels[0]);
@@ -514,19 +514,17 @@ void GridGlobal::getQuadratureWeights(double weights[]) const{
             weights[tensor_refs[n][i]] += tensor_weight * w;
         }
     }
-    delete[] num_oned_points;
-    work = 0;
 }
 
 void GridGlobal::getInterpolationWeights(const double x[], double weights[]) const{
     IndexSet *work = (points == 0) ? needed : points;
 
-    CacheLagrange<double> *lcache = new CacheLagrange<double>(num_dimensions, max_levels.data(), wrapper, x);
+    CacheLagrange<double> lcache(num_dimensions, max_levels.data(), wrapper, x);
 
     int num_points = work->getNumIndexes();
     std::fill(weights, weights + num_points, 0.0);
 
-    int *num_oned_points = new int[num_dimensions];
+    std::vector<int> num_oned_points(num_dimensions);
     for(int n=0; n<active_tensors->getNumIndexes(); n++){
         const int* levels = active_tensors->getIndex(n);
         num_oned_points[0] = wrapper->getNumPoints(levels[0]);
@@ -540,16 +538,12 @@ void GridGlobal::getInterpolationWeights(const double x[], double weights[]) con
             int t = i;
             double w = 1.0;
             for(int j=num_dimensions-1; j>=0; j--){
-                w *= lcache->getLagrange(j, levels[j], t % num_oned_points[j]);
+                w *= lcache.getLagrange(j, levels[j], t % num_oned_points[j]);
                 t /= num_oned_points[j];
             }
             weights[tensor_refs[n][i]] += tensor_weight * w;
         }
     }
-    delete[] num_oned_points;
-    work = 0;
-
-    delete lcache;
 }
 
 void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
