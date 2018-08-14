@@ -321,22 +321,12 @@ int RuleWavelet::intlog2(int i){
 
 double RuleWavelet::getNode(int point) const {
 	/*
-	 * Returns the x-coordinate in the cannonical domain associated with the given wavelet.
+	 * Returns the x-coordinate in the canonical domain associated with the given wavelet.
 	 */
-	if (point == 0) {
-		return 0.0;
-	} else if (point == 1) {
-		return -1.0;
-	} else if (point == 2) {
-		return 1.0;
-	} else if (point == 3) {
-		return -0.5;
-	} else if (point == 4) {
-		return 0.5;
-	}
-	int l = intlog2(point - 1);
-	int subindex = (point - 1) % (1 << l);
-	return -1. + ((2 * subindex + 1.) / (1 << l));
+    if (point == 0) return  0.0;
+    if (point == 1) return -1.0;
+    if (point == 2) return  1.0;
+    return ((double)(2*point - 1)) / ((double) BaseRuleLocalPolynomial::int2log2(point - 1)) - 3.0;
 }
 
 double RuleWavelet::getWeight(int point) const{
