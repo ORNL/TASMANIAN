@@ -505,13 +505,13 @@ double RuleWavelet::interpolate(const double *y, double x, int interpolation_ord
 
 	if (idx == -1){
 		// Outside of table
-		return 0.;
+		return 0.0;
 	}
 
 	// Neville's Algorithm
-	double *ps = new double[interpolation_order + 1],
-		   *xs = new double[interpolation_order + 1],
-		   *xx = data[0];
+	std::vector<double> ps(interpolation_order + 1);
+	std::vector<double> xs(interpolation_order + 1);
+	double *xx = data[0];
 
 	if (idx < interpolation_order/2){
 		idx = interpolation_order/2;
@@ -531,12 +531,7 @@ double RuleWavelet::interpolate(const double *y, double x, int interpolation_ord
 		}
 	}
 
-	double v = ps[0];
-
-	delete[] ps;
-	delete[] xs;
-
-	return v;
+	return ps[0];
 }
 
 WaveletLevels::WaveletLevels(int corder){  order = corder;  }

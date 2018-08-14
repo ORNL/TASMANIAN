@@ -32,6 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP
 
 #include "math.h"
+#include <vector>
 
 #include "tsgEnumerates.hpp"
 #include "tsgRuleLocalPolynomial.hpp"
