@@ -676,23 +676,19 @@ void GridGlobal::evaluateFastGPUmagma(int, const double[], double[]) const{}
 #endif // Tasmanian_ENABLE_MAGMA
 
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        evaluate(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_outputs)]));
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
     }
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
-    Data2D<double> weights;
-    weights.resize(num_points, num_x);
-    Data2D<double> xx;
-    xx.cload(num_dimensions, num_x, x);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        getInterpolationWeights(xx.getCStrip(i), weights.getStrip(i));
-    }
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
     TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values->getValues(0), weights.getStrip(0), 0.0, y);
 }
