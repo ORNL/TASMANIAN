@@ -269,33 +269,32 @@ void RuleWavelet::getChildren(int point, int &first, int &second) const{
 	 * Returns the children of the given node in first and second. If the node has only a
 	 * single child, then second is set to -1.
 	 */
-	if(order == 1){
-		if (point == 0){ first = 3; second =  4; }else
-			if (point == 1){ first = 3; second = -1; }else
-				if (point == 2){ first = 4; second = -1; }else
-				{ first = 2*point-1; second = 2*point; }
-	}else if(order == 3){
-		if (point >= 5){
-			first = 2*point-1; second = 2*point;
-		}else{
-			if(point == 0){
-				first = 6;
-				second = 7;
-			}else if (point == 1){
-				first = 5;
-				second = -1;
-			}else if(point == 2){
-				first = 8;
-				second = -1;
-			}else if(point == 3){
-				first = 5;
-				second = 6;
-			}else if(point == 4){
-				first = 7;
-				second = 8;
-			}
-		}
-	}
+    if (order == 1){
+        if (point >= 3){ // most likely case
+            first = 2*point-1;
+            second = 2*point;
+        }else if (point < 2 ){ // second most likely case
+            first = 3;
+            second = (point == 0) ? 4 : -1;
+        }else{ // point == 2
+            first = 4;
+            second = -1;
+        }
+    }else if (order == 3){
+        if (point >= 3){
+            first = 2*point-1;
+            second = 2*point;
+        }else if (point == 0){
+            first = 6;
+            second = 7;
+        }else if (point == 1){
+            first = 5;
+            second = -1;
+        }else{ // point == 2
+            first = 8;
+            second = -1;
+        }
+    }
 }
 int RuleWavelet::getParent(int point) const{
 	/*
