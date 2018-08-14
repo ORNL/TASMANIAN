@@ -702,12 +702,10 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[])
     makeCheckAccelerationData(accel_gpu_cublas);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, weights);
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, weights, y);
-
-    delete[] weights;
+    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, weights.getStrip(0), y);
 }
 #else
 void GridGlobal::evaluateBatchGPUcublas(const double[], int, double[]) const{}
@@ -722,12 +720,10 @@ void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, d
     makeCheckAccelerationData(accel_gpu_magma);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, weights);
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, weights, y);
-
-    delete[] weights;
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, weights.getStrip(0), y);
 }
 #else
 void GridGlobal::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
