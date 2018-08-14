@@ -229,10 +229,6 @@ RuleWavelet::~RuleWavelet(){
 	}
 }
 
-TypeOneDRule RuleWavelet::getType() const{
-	return rule_wavelet;
-}
-
 int RuleWavelet::getOrder() const{
 	return order;
 }
@@ -243,10 +239,9 @@ int RuleWavelet::getNumPoints(int level) const{
 	 */
 	if(order == 1){
 		return (1 << (level + 1)) + 1;
-	}else if(order == 3){
+	}else{
 		return (1 << (level + 2)) + 1;
 	}
-	return -1;
 }
 
 const char * RuleWavelet::getDescription() const{
@@ -264,44 +259,42 @@ int RuleWavelet::getLevel(int point) const{
 	 * Returns the level to which the given node belongs.
 	 */
 	if(order == 1){
-		return (point <= 2) ? 0 : intlog2(point - 1);
-	}else if(order == 3){
-		return (point < 5) ? 0 : intlog2(point - 1) - 1;
+		return (point <= 2) ? 0 : BaseRuleLocalPolynomial::intlog2(point - 1);
+	}else{
+		return (point < 5) ? 0 : BaseRuleLocalPolynomial::intlog2(point - 1) - 1;
 	}
-	return -1;
 }
 void RuleWavelet::getChildren(int point, int &first, int &second) const{
 	/*
 	 * Returns the children of the given node in first and second. If the node has only a
 	 * single child, then second is set to -1.
 	 */
-	if(order == 1){
-		if (point == 0){ first = 3; second =  4; }else
-			if (point == 1){ first = 3; second = -1; }else
-				if (point == 2){ first = 4; second = -1; }else
-				{ first = 2*point-1; second = 2*point; }
-	}else if(order == 3){
-		if (point >= 5){
-			first = 2*point-1; second = 2*point;
-		}else{
-			if(point == 0){
-				first = 6;
-				second = 7;
-			}else if (point == 1){
-				first = 5;
-				second = -1;
-			}else if(point == 2){
-				first = 8;
-				second = -1;
-			}else if(point == 3){
-				first = 5;
-				second = 6;
-			}else if(point == 4){
-				first = 7;
-				second = 8;
-			}
-		}
-	}
+    if (order == 1){
+        if (point >= 3){ // most likely case
+            first = 2*point-1;
+            second = 2*point;
+        }else if (point < 2 ){ // second most likely case
+            first = 3;
+            second = (point == 0) ? 4 : -1;
+        }else{ // point == 2
+            first = 4;
+            second = -1;
+        }
+    }else if (order == 3){
+        if (point >= 3){
+            first = 2*point-1;
+            second = 2*point;
+        }else if (point == 0){
+            first = 6;
+            second = 7;
+        }else if (point == 1){
+            first = 5;
+            second = -1;
+        }else{ // point == 2
+            first = 8;
+            second = -1;
+        }
+    }
 }
 int RuleWavelet::getParent(int point) const{
 	/*
@@ -317,33 +310,15 @@ int RuleWavelet::getParent(int point) const{
     }
     return (point+1)/2;
 }
-int RuleWavelet::intlog2(int i){
-	/*
-	 * Calculates the smallest power of two, k, such that 2^k <= i.
-	 */
-	int result = 0;
-	while (i >>= 1){ result++; }
-	return result;
-}
 
 double RuleWavelet::getNode(int point) const {
 	/*
-	 * Returns the x-coordinate in the cannonical domain associated with the given wavelet.
+	 * Returns the x-coordinate in the canonical domain associated with the given wavelet.
 	 */
-	if (point == 0) {
-		return 0.0;
-	} else if (point == 1) {
-		return -1.0;
-	} else if (point == 2) {
-		return 1.0;
-	} else if (point == 3) {
-		return -0.5;
-	} else if (point == 4) {
-		return 0.5;
-	}
-	int l = intlog2(point - 1);
-	int subindex = (point - 1) % (1 << l);
-	return -1. + ((2 * subindex + 1.) / (1 << l));
+    if (point == 0) return  0.0;
+    if (point == 1) return -1.0;
+    if (point == 2) return  1.0;
+    return ((double)(2*point - 1)) / ((double) BaseRuleLocalPolynomial::int2log2(point - 1)) - 3.0;
 }
 
 double RuleWavelet::getWeight(int point) const{
@@ -374,19 +349,11 @@ double RuleWavelet::eval(int point, double x) const{
 	/*
 	 * Evaluates a wavelet designated by point at coordinate x.
 	 */
-	if(x > 1. || x < -1.){
-		return 0.;
-	}
-	if(order == 1){
+    if(order == 1){
 		// Level 0
-		if (point == 0){
-			return 1. - fabs(x);
-		}
-		else if (point == 1){
-			return x < 0. ? -x : 0.;
-		}
-		else if (point == 2){
-			return x < 0. ? 0 : x;
+		if (point < 3){
+            double w = 1.0 - fabs(x - getNode(point));
+            return (w < 0.0) ? 0.0 : w;
 		}
 		// Level 1+
 		return eval_linear(point, x);
@@ -413,7 +380,7 @@ double RuleWavelet::eval_cubic(int point, double x) const{
 		double *phi = &data[1][((point+1)/2) * num_data_points];
 		return interpolate(phi, x);
 	}
-	int l = intlog2(point - 1);
+	int l = BaseRuleLocalPolynomial::intlog2(point - 1);
 
 	if(l == 2){
 		if (point > 6){
@@ -456,7 +423,7 @@ double RuleWavelet::eval_linear(int point, double x) const{
 	 * Given a wavelet designated by point and a value x, evaluates the wavelet at x.
 	 */
     // Standard Lifted Wavelets
-    int l = intlog2(point - 1);
+    int l = BaseRuleLocalPolynomial::intlog2(point - 1);
     int subindex = (point - 1) % (1 << l);
     double scale = pow(2,l-2);
 
@@ -476,38 +443,32 @@ double RuleWavelet::linear_boundary_wavelet(double x) const{
 	/*
 	 * Evaluates the first order boundary wavelet with support on [-1, 0].
 	 */
-	if ((x < -1) || (x > 0)) { return 0.; }
+    if (fabs(x + 0.5) > 0.5) return 0.0;
 
-	if ((x <= -0.75)){
-		return 0.75 * (7. * x + 6.);
-	}
-	if ((x <= -0.5)){
-		return -0.25 * (11. * x + 6.);
-	}
-	if ((x <= 0.)){
-		return 0.25 * x;
-	}
-	return 0.;
+    if ((x <= -0.75)){
+        return 0.75 * (7.0 * x + 6.0);
+    }else if (x <= -0.5){
+        return -0.25 * (11.0 * x + 6.0);
+    }else{
+        return 0.25 * x;
+    }
 }
 
 double RuleWavelet::linear_central_wavelet(double x) const {
 	/*
 	 * Evaluates the first order central wavelet with support on [-1, .5].
 	 */
-	if ((x < -1) || (x > .5)) { return 0.; }
-	if ((x <= -0.5)){
-		return -0.5 * (x + 1.);
+    if (fabs(x + 0.25) > 0.75) return 0.0;
+
+    if ((x <= -0.5)){
+        return -0.5 * x - 0.5;
+    }else if (x >= 0.0){
+        return 0.5 * x - 0.25;
+    }else if (x <= -0.25){
+        return 4.0 * x + 1.75;
+    }else{
+        return -4.0 * x - 0.25;
 	}
-	if ((x <= -0.25)){
-		return 4. * x + 1.75;
-	}
-	if ((x <= 0.)){
-		return -1 * (4. * x + 0.25);
-	}
-	if ((x <= .5)){
-		return 0.25 * (2. * x - 1);
-	}
-	return 0.;
 }
 
 int RuleWavelet::find_index(double x) const{
@@ -544,13 +505,13 @@ double RuleWavelet::interpolate(const double *y, double x, int interpolation_ord
 
 	if (idx == -1){
 		// Outside of table
-		return 0.;
+		return 0.0;
 	}
 
 	// Neville's Algorithm
-	double *ps = new double[interpolation_order + 1],
-		   *xs = new double[interpolation_order + 1],
-		   *xx = data[0];
+	std::vector<double> ps(interpolation_order + 1);
+	std::vector<double> xs(interpolation_order + 1);
+	double *xx = data[0];
 
 	if (idx < interpolation_order/2){
 		idx = interpolation_order/2;
@@ -570,12 +531,7 @@ double RuleWavelet::interpolate(const double *y, double x, int interpolation_ord
 		}
 	}
 
-	double v = ps[0];
-
-	delete[] ps;
-	delete[] xs;
-
-	return v;
+	return ps[0];
 }
 
 WaveletLevels::WaveletLevels(int corder){  order = corder;  }
