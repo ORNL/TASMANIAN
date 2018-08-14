@@ -259,9 +259,9 @@ int RuleWavelet::getLevel(int point) const{
 	 * Returns the level to which the given node belongs.
 	 */
 	if(order == 1){
-		return (point <= 2) ? 0 : intlog2(point - 1);
+		return (point <= 2) ? 0 : BaseRuleLocalPolynomial::intlog2(point - 1);
 	}else{
-		return (point < 5) ? 0 : intlog2(point - 1) - 1;
+		return (point < 5) ? 0 : BaseRuleLocalPolynomial::intlog2(point - 1) - 1;
 	}
 }
 void RuleWavelet::getChildren(int point, int &first, int &second) const{
@@ -310,14 +310,6 @@ int RuleWavelet::getParent(int point) const{
     }
     return (point+1)/2;
 }
-int RuleWavelet::intlog2(int i){
-	/*
-	 * Calculates the smallest power of two, k, such that 2^k <= i.
-	 */
-	int result = 0;
-	while (i >>= 1){ result++; }
-	return result;
-}
 
 double RuleWavelet::getNode(int point) const {
 	/*
@@ -357,19 +349,11 @@ double RuleWavelet::eval(int point, double x) const{
 	/*
 	 * Evaluates a wavelet designated by point at coordinate x.
 	 */
-	if(x > 1. || x < -1.){
-		return 0.;
-	}
-	if(order == 1){
+    if(order == 1){
 		// Level 0
-		if (point == 0){
-			return 1. - fabs(x);
-		}
-		else if (point == 1){
-			return x < 0. ? -x : 0.;
-		}
-		else if (point == 2){
-			return x < 0. ? 0 : x;
+		if (point < 3){
+            double w = 1.0 - fabs(x - getNode(point));
+            return (w < 0.0) ? 0.0 : w;
 		}
 		// Level 1+
 		return eval_linear(point, x);
@@ -396,7 +380,7 @@ double RuleWavelet::eval_cubic(int point, double x) const{
 		double *phi = &data[1][((point+1)/2) * num_data_points];
 		return interpolate(phi, x);
 	}
-	int l = intlog2(point - 1);
+	int l = BaseRuleLocalPolynomial::intlog2(point - 1);
 
 	if(l == 2){
 		if (point > 6){
@@ -439,7 +423,7 @@ double RuleWavelet::eval_linear(int point, double x) const{
 	 * Given a wavelet designated by point and a value x, evaluates the wavelet at x.
 	 */
     // Standard Lifted Wavelets
-    int l = intlog2(point - 1);
+    int l = BaseRuleLocalPolynomial::intlog2(point - 1);
     int subindex = (point - 1) % (1 << l);
     double scale = pow(2,l-2);
 

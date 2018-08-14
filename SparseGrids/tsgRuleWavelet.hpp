@@ -56,8 +56,6 @@ public:
 	double getWeight(int point) const; // get the quadrature weight associated with the point
 	double eval(int point, double x) const; // returns the value of point at location x (there is assumed 1-1 correspondence between points and functions)
 
-	static int intlog2(int i); // returns the log base 2 of an integer
-
 	int getLevel(int point) const; // returns the hierarchical level of a point
 	void getChildren(int point, int &first, int &second) const; // Given a point, return the children (if any)
 	int getParent(int point) const; // Returns the parent of the given node
