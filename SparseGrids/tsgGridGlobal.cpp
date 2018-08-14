@@ -636,10 +636,9 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateFastCPUblas(const double x[], double y[]) const{
-    double *w = new double[points->getNumIndexes()];
-    getInterpolationWeights(x, w);
-    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), values->getValues(0), w, y);
-    delete[] w;
+    std::vector<double> w(points->getNumIndexes());
+    getInterpolationWeights(x, w.data());
+    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), values->getValues(0), w.data(), y);
 }
 #else
 void GridGlobal::evaluateFastCPUblas(const double[], double[]) const{}
@@ -650,12 +649,10 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[]) const{
     makeCheckAccelerationData(accel_gpu_cublas);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = new double[points->getNumIndexes()];
-    getInterpolationWeights(x, weights);
+    std::vector<double> weights(points->getNumIndexes());
+    getInterpolationWeights(x, weights.data());
 
-    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), weights, y);
-
-    delete[] weights;
+    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), weights.data(), y);
 }
 #else
 void GridGlobal::evaluateFastGPUcublas(const double[], double[]) const{}
@@ -669,12 +666,10 @@ void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) c
     makeCheckAccelerationData(accel_gpu_magma);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *weights = new double[points->getNumIndexes()];
-    getInterpolationWeights(x, weights);
+    std::vector<double> weights(points->getNumIndexes());
+    getInterpolationWeights(x, weights.data());
 
-    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), weights, y);
-
-    delete[] weights;
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), weights.data(), y);
 }
 #else
 void GridGlobal::evaluateFastGPUmagma(int, const double[], double[]) const{}
