@@ -173,6 +173,7 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     global->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, llimits);
     base = global;
 }
+
 void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int *level_limits){
     std::vector<int> aw, ll;
     if (anisotropic_weights != 0){
@@ -203,6 +204,7 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     sequence->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, llimits);
     base = sequence;
 }
+
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
     std::vector<int> ll;
     if (level_limits != 0){
@@ -230,6 +232,7 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
     pwpoly->makeGrid(dimensions, outputs, depth, order, rule, llimits);
     base = pwpoly;
 }
+
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
     std::vector<int> ll;
     if (level_limits != 0){
@@ -253,6 +256,7 @@ void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth
     wavelet->makeGrid(dimensions, outputs, depth, order, llimits);
     base = wavelet;
 }
+
 void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){
     std::vector<int> aw, ll;
     if (anisotropic_weights != 0){
@@ -337,6 +341,7 @@ void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const std:
         throw std::runtime_error("ERROR: updateGlobalGrid called, but the grid is not global");
     }
 }
+
 void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
     if (base == 0) throw std::runtime_error("ERROR: updateSequenceGrid called, but the grid is empty");
     std::vector<int> aw, ll;
@@ -998,6 +1003,7 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
         throw std::runtime_error("ERROR: setAnisotropicRefinement called for a grid that is neither Sequence nor Global with a sequence rule");
     }
 }
+
 int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output){
     std::vector<int> weights;
     estimateAnisotropicCoefficients(type, output, weights);
@@ -1024,6 +1030,7 @@ void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
         throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a grid that is neither Sequence nor Global with a sequence rule");
     }
 }
+
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const int *level_limits){
     if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
     std::vector<int> ll;
@@ -1057,6 +1064,7 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
         throw std::runtime_error("ERROR: setSurplusRefinement(double, int) called for a grid that is neither Sequence nor Global with a sequence rule");
     }
 }
+
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
     if (base == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
     int dims = base->getNumDimensions();
@@ -1091,12 +1099,14 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
     if (!level_limits.empty()) llimits = level_limits;
     setSurplusRefinement(tolerance, criteria, output, 0, scale_correction.data());
 }
+
 void TasmanianSparseGrid::clearRefinement(){
     base->clearRefinement();
 }
 void TasmanianSparseGrid::mergeRefinement(){
     base->mergeRefinement();
 }
+
 void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     if (pwpoly == 0){
         throw std::runtime_error("ERROR: removePointsBySurplus() called for a grid that is not Local Polynomial.");
