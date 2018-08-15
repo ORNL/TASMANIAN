@@ -590,11 +590,12 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
 }
 
 void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
+    int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
+    Data2D<double> yy; yy.load(num_points, num_x, y);
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        evalHierarchicalFunctions(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_points)]));
+        evalHierarchicalFunctions(xx.getCStrip(i), yy.getStrip(i));
     }
 }
 void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[]) const{
