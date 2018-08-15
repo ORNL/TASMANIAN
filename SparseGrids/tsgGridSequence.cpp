@@ -647,82 +647,82 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
 void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000 * TSG_NUM_TOL;
     int num_points = points->getNumIndexes();
-    double *max_surp = new double[num_points];
+    std::vector<double> max_surp(num_points);
 
     if (output == -1){
-        double *norm = new double[num_outputs]; std::fill(norm, norm + num_outputs, 0.0);
+        std::vector<double> nrm(num_outputs, 0.0);
         for(int i=0; i<num_points; i++){
             const double *val = values->getValues(i);
-            for(int k=0; k<num_outputs; k++){
-                double v = fabs(val[k]);
-                if (norm[k] < v) norm[k] = v;
+            int k=0;
+            for(auto &n : nrm){
+                double v = fabs(val[k++]);
+                if (n < v) n = v;
             }
         }
+        Data2D<double> surp;
+        surp.cload(num_outputs, num_points, surpluses.data());
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
-            double smax = fabs(surpluses[((size_t) i) * ((size_t) num_outputs)]) / norm[0];
-            for(int k=1; k<num_outputs; k++){
-                double v = fabs(surpluses[((size_t) i) * ((size_t) num_outputs) + k]) / norm[k];
+            const double *s = surp.getCStrip(i);
+            double smax = 0.0;
+            for(int k=0; k<num_outputs; k++){
+                double v = fabs(s[k]) / nrm[k];
                 if (smax < v) smax = v;
             }
             max_surp[i] = smax;
         }
-        delete[] norm;
     }else{
-        for(int i=0; i<num_points; i++){
-            max_surp[i] = surpluses[((size_t) i) * ((size_t) num_outputs) + output];
-        }
+        Data2D<double> surp;
+        surp.cload(num_outputs, num_points, surpluses.data());
+        int i = 0;
+        for(auto &m : max_surp) m = surp.getCStrip(i++)[output];
     }
-
-
 
     int n = 0, m;
     for(int i=0; i<num_points; i++){
         n += (max_surp[i] > tol) ? 1 : 0;
     }
 
-    double *A, *b;
+    Data2D<double> A;
+    std::vector<double> b(n);
 
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
         m = 2*num_dimensions + 1;
-        A = new double[n * m];
-        b = new double[n];
+        A.resize(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
             const int *indx = points->getIndex(c);
             if (max_surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
-                    A[j*n + count] = ((double) indx[j]);
+                    A.getStrip(j)[count] = ((double) indx[j]);
                 }
                 for(int j=0; j<num_dimensions; j++){
-                    A[(num_dimensions + j)*n + count] = log((double) (indx[j] + 1));
+                    A.getStrip(j + num_dimensions)[count] = log((double) (indx[j] + 1));
                 }
-                A[2*num_dimensions*n + count] = 1.0;
+                A.getStrip(2*num_dimensions)[count] = 1.0;
                 b[count++] = -log(max_surp[c]);
             }
         }
     }else{
         m = num_dimensions + 1;
-        A = new double[n * m];
-        b = new double[n];
+        A.resize(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
             const int *indx = points->getIndex(c);
             if (max_surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
-                    A[j*n + count] = - ((double) indx[j]);
+                    A.getStrip(j)[count] = - ((double) indx[j]);
                 }
-                A[num_dimensions*n + count] = 1.0;
+                A.getStrip(num_dimensions)[count] = 1.0;
                 b[count++] = log(max_surp[c]);
             }
         }
     }
-    delete[] max_surp;
 
-    double *x = new double[m];
-    TasmanianDenseSolver::solveLeastSquares(n, m, A, b, 1.E-5, x);
+    std::vector<double> x(m);
+    TasmanianDenseSolver::solveLeastSquares(n, m, A.getStrip(0), b.data(), 1.E-5, x.data());
 
     weights.resize(--m);
     for(int j=0; j<m; j++){
@@ -746,10 +746,6 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
             }
         }
     }
-
-    delete[] A;
-    delete[] b;
-    delete[] x;
 }
 
 void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
@@ -794,7 +790,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     int num_points = points->getNumIndexes();
     std::vector<bool> flagged(num_points);
 
-    double *norm = new double[num_outputs]; std::fill(norm, norm + num_outputs, 0.0);
+    std::vector<double> norm(num_outputs, 0.0);
     for(int i=0; i<num_points; i++){
         const double *val = values->getValues(i);
         for(int k=0; k<num_outputs; k++){
@@ -803,21 +799,24 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         }
     }
 
+    Data2D<double> surp;
+    surp.cload(num_outputs, num_points, surpluses.data());
+
     if (output == -1){
         for(int i=0; i<num_points; i++){
-            double smax = fabs(surpluses[((size_t) i) * ((size_t) num_outputs)]) / norm[0];
+            const double *s = surp.getCStrip(i);
+            double smax = fabs(s[0]) / norm[0];
             for(int k=1; k<num_outputs; k++){
-                double v = fabs(surpluses[((size_t) i) * ((size_t) num_outputs) + k]) / norm[k];
+                double v = fabs(s[k]) / norm[k];
                 if (smax < v) smax = v;
             }
             flagged[i] = (smax > tolerance);
         }
     }else{
         for(int i=0; i<num_points; i++){
-            flagged[i] = ((fabs(surpluses[((size_t) i) * ((size_t) num_outputs) + output]) / norm[output]) > tolerance);
+            flagged[i] = ((fabs(surp.getCStrip(i)[output]) / norm[output]) > tolerance);
         }
     }
-    delete[] norm;
 
     IndexManipulator IM(num_dimensions);
     IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits);
