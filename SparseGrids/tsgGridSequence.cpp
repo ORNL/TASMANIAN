@@ -40,11 +40,11 @@
 namespace TasGrid{
 
 GridSequence::GridSequence() : num_dimensions(0), num_outputs(0),
-                               points(0), needed(0), surpluses(0), nodes(0), coeff(0), values(0),
+                               points(0), needed(0), nodes(0), coeff(0), values(0),
                                max_levels(0), accel(0)
 {}
 GridSequence::GridSequence(const GridSequence &seq) : num_dimensions(0), num_outputs(0),
-                                                      points(0), needed(0), surpluses(0), nodes(0), coeff(0), values(0),
+                                                      points(0), needed(0), nodes(0), coeff(0), values(0),
                                                       max_levels(0), accel(0)
 {  copyGrid(&seq); }
 GridSequence::~GridSequence(){ reset(); }
@@ -68,11 +68,11 @@ void GridSequence::write(std::ofstream &ofs) const{
             ofs << "1 ";
             needed->write(ofs);
         }
-        if (surpluses == 0){
+        if (surpluses.empty()){
             ofs << "0";
         }else{
             ofs << "1";
-            for(size_t i=0; i<((size_t) num_outputs) * ((size_t) points->getNumIndexes()); i++) ofs << " " << surpluses[i];
+            for(auto s : surpluses) ofs << " " << s;
         }
         ofs << endl;
         if (num_outputs > 0) values->write(ofs);
@@ -100,11 +100,11 @@ void GridSequence::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             needed->writeBinary(ofs);
         }
-        if (surpluses == 0){
+        if (surpluses.empty()){
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
+            ofs.write((char*) surpluses.data(), surpluses.size() * sizeof(double));
         }
         if (num_outputs > 0) values->writeBinary(ofs);
     }
@@ -122,8 +122,8 @@ void GridSequence::read(std::ifstream &ifs){
         IndexManipulator IM(num_dimensions);
         ifs >> flag;
         if (flag == 1){
-            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())];
-            for(size_t i=0; i<((size_t) num_outputs) * ((size_t) points->getNumIndexes()); i++) ifs >> surpluses[i];
+            surpluses.resize(((size_t) num_outputs) * ((size_t) points->getNumIndexes()));
+            for(auto &s : surpluses) ifs >> s;
         }
         values = new StorageSet(0, 0); values->read(ifs);
         int mp = 0, mn = 0, max_level;
@@ -157,8 +157,8 @@ void GridSequence::readBinary(std::ifstream &ifs){
 
         ifs.read((char*) &flag, sizeof(char));
         if (flag == 'y'){
-            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())];
-            ifs.read((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
+            surpluses.resize(((size_t) num_outputs) * ((size_t) points->getNumIndexes()));
+            ifs.read((char*) surpluses.data(), surpluses.size() * sizeof(double));
         }
 
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
@@ -181,10 +181,11 @@ void GridSequence::reset(){
     clearAccelerationData();
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (surpluses != 0){ delete[] surpluses; surpluses = 0; }
     if (nodes != 0){ delete[] nodes; nodes = 0; }
     if (coeff != 0){ delete[] coeff; coeff = 0; }
     if (values != 0){ delete values; values = 0; }
+    surpluses.resize(0);
+    surpluses.shrink_to_fit();
 }
 void GridSequence::clearRefinement(){
     if (needed != 0){ delete needed; needed = 0; }
@@ -383,9 +384,9 @@ void GridSequence::mergeRefinement(){
         IndexManipulator IM(num_dimensions);
         int m; IM.getMaxLevels(points, max_levels, m);
     }
-    if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[num_vals];
-    std::fill(surpluses, surpluses + num_vals, 0.0);
+    surpluses.resize(num_vals);
+    surpluses.shrink_to_fit();
+    std::fill(surpluses.begin(), surpluses.end(), 0.0);
 }
 
 void GridSequence::evaluate(const double x[], double y[]) const{
@@ -415,7 +416,7 @@ void GridSequence::evaluate(const double x[], double y[]) const{
 #ifdef Tasmanian_ENABLE_BLAS
 void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
     double *fvalues = evalHierarchicalFunctions(x);
-    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), surpluses, fvalues, y);
+    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), surpluses.data(), fvalues, y);
     delete[] fvalues;
 }
 #else
@@ -471,7 +472,7 @@ void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[])
         evalHierarchicalFunctions(&(x[i*num_dimensions]), &(fvalues[i*num_points]));
     }
 
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses, fvalues, 0.0, y);
+    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.data(), fvalues, 0.0, y);
 
     delete[] fvalues;
 }
@@ -545,7 +546,7 @@ void GridSequence::makeCheckAccelerationData(TypeAcceleration acc) const{
         if (accel == 0){ accel = (BaseAccelerationData*) (new AccelerationDataGPUFull()); }
         AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
         double *gpu_values = gpu->getGPUValues();
-        if (gpu_values == 0) gpu->loadGPUValues(((size_t) points->getNumIndexes()) * ((size_t) values->getNumOutputs()), surpluses);
+        if (gpu_values == 0) gpu->loadGPUValues(((size_t) points->getNumIndexes()) * ((size_t) values->getNumOutputs()), surpluses.data());
     }
 }
 #else
@@ -645,9 +646,9 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     }
     vals = values->aliasValues();
     vals->resize(num_vals);
-    if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[num_vals];
-    std::copy(c, c + num_vals, surpluses);
+    surpluses.resize(num_vals);
+    surpluses.shrink_to_fit();
+    std::copy(c, c + num_vals, surpluses.data());
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     if (acc == accel_cpu_blas){
@@ -886,7 +887,7 @@ void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) co
     }
 }
 const double* GridSequence::getSurpluses() const{
-    return surpluses;
+    return surpluses.data();
 }
 const int* GridSequence::getPointIndexes() const{
     return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
@@ -957,8 +958,7 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 
 void GridSequence::recomputeSurpluses(){
     int n = points->getNumIndexes();
-    if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[((size_t) n) * ((size_t) num_outputs)];
+    surpluses.resize(((size_t) n) * ((size_t) num_outputs));
 
     if (num_outputs > 2){
         #pragma omp parallel for schedule(static)
@@ -968,7 +968,7 @@ void GridSequence::recomputeSurpluses(){
         }
     }else{
         const double* v = values->getValues(0);
-        std::copy(v, v + ((size_t) n) * ((size_t) num_outputs), surpluses);
+        std::copy(v, v + ((size_t) n) * ((size_t) num_outputs), surpluses.data());
     }
 
     IndexManipulator IM(num_dimensions);
