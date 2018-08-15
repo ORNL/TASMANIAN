@@ -116,7 +116,6 @@ public:
 protected:
     void reset();
 
-    double* evalHierarchicalFunctions(const double x[]) const;
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 
     void prepareSequence(int n);

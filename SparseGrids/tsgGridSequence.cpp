@@ -425,9 +425,9 @@ void GridSequence::evaluate(const double x[], double y[]) const{
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
-    double *fvalues = evalHierarchicalFunctions(x);
-    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), surpluses.data(), fvalues, y);
-    delete[] fvalues;
+    std::vector<double> fvalues(getNumPoints());
+    evalHierarchicalFunctions(x, fvalues.data());
+    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), surpluses.data(), fvalues.data(), y);
 }
 #else
 void GridSequence::evaluateFastCPUblas(const double[], double[]) const{}
@@ -438,11 +438,10 @@ void GridSequence::evaluateFastGPUcublas(const double x[], double y[]) const{
     makeCheckAccelerationData(accel_gpu_cublas);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *fvalues = evalHierarchicalFunctions(x);
+    std::vector<double> fvalues(getNumPoints());
+    evalHierarchicalFunctions(x, fvalues.data());
 
-    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), fvalues, y);
-
-    delete[] fvalues;
+    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), fvalues.data(), y);
 }
 #else
 void GridSequence::evaluateFastGPUcublas(const double[], double[]) const{}
@@ -456,11 +455,10 @@ void GridSequence::evaluateFastGPUmagma(int gpuID, const double x[], double y[])
     makeCheckAccelerationData(accel_gpu_magma);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *fvalues = evalHierarchicalFunctions(x);
+    std::vector<double> fvalues(getNumPoints());
+    evalHierarchicalFunctions(x, fvalues.data());
 
-    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), fvalues, y);
-
-    delete[] fvalues;
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), fvalues.data(), y);
 }
 #else
 void GridSequence::evaluateFastGPUmagma(int, const double[], double[]) const{}
@@ -604,26 +602,6 @@ void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, do
     for(int i=0; i<num_x; i++){
         evalHierarchicalFunctions(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_points)]));
     }
-}
-double* GridSequence::evalHierarchicalFunctions(const double x[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
-    double *vals = new double[num_points];
-
-    double **cache = cacheBasisValues<double>(x);
-
-    for(int i=0; i<num_points; i++){
-        const int* p = work->getIndex(i);
-        vals[i] = cache[0][p[0]];
-        for(int j=1; j<num_dimensions; j++){
-            vals[i] *= cache[j][p[j]];
-        }
-    }
-
-    for(int j=0; j<num_dimensions; j++) delete[] cache[j];
-    delete[] cache;
-
-    return vals;
 }
 void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[]) const{
     IndexSet *work = (points == 0) ? needed : points;
