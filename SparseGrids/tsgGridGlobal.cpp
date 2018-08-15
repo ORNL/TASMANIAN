@@ -1106,16 +1106,17 @@ void GridGlobal::clearAccelerationData(){
 
 void GridGlobal::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
     IndexManipulator IM(num_dimensions, custom);
-    IndexSet* set = IM.getPolynomialSpace(active_tensors, rule, interpolation);
+    IndexSet* pset = IM.getPolynomialSpace(active_tensors, rule, interpolation);
 
-    n = set->getNumIndexes();
+    n = pset->getNumIndexes();
 
-    poly = new int[n * num_dimensions];
-    const int* p = set->getIndex(0);
+    size_t numi = ((size_t) n) * ((size_t) num_dimensions);
+    poly = new int[numi];
+    const int* p = pset->getIndex(0);
 
-    std::copy(p, p + n * num_dimensions, poly);
+    std::copy(p, p + numi, poly);
 
-    delete set;
+    delete pset;
 }
 const int* GridGlobal::getPointIndexes() const{
     return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
