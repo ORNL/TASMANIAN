@@ -779,12 +779,12 @@ int IndexManipulator::getMinChildLevel(const IndexSet *iset, TypeDepth type, con
     return (int) min_level;
 }
 
-IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *iset, const std::vector<bool> &flagged, const int *level_limits) const{
+IndexSet* IndexManipulator::selectFlaggedChildren(const IndexSet *iset, const std::vector<bool> &flagged, const std::vector<int> &level_limits) const{
     GranulatedIndexSet *next_level = new GranulatedIndexSet(num_dimensions);
     std::vector<int> kid(num_dimensions);
 
     int n = iset->getNumIndexes();
-    if (level_limits == 0){
+    if (level_limits.empty()){
         for(int i=0; i<n; i++){
             if (flagged[i]){
                 const int* p = iset->getIndex(i);

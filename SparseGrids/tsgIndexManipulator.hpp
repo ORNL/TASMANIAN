@@ -72,7 +72,7 @@ public:
     int getMinChildLevel(const IndexSet *iset, TypeDepth type, const std::vector<int> &weights, TypeOneDRule rule);
     // find the minimum level of a child of iset
 
-    IndexSet* selectFlaggedChildren(const IndexSet *iset, const std::vector<bool> &flagged, const int *level_limits = 0) const;
+    IndexSet* selectFlaggedChildren(const IndexSet *iset, const std::vector<bool> &flagged, const std::vector<int> &level_limits) const;
 
     void getMaxLevels(const IndexSet *iset, std::vector<int> &max_levels, int &total_max) const;
     int getMaxLevel(const IndexSet *iset) const;
