@@ -545,7 +545,7 @@ void GridSequence::makeCheckAccelerationData(TypeAcceleration acc) const{
         if (accel == 0){ accel = (BaseAccelerationData*) (new AccelerationDataGPUFull()); }
         AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
         double *gpu_values = gpu->getGPUValues();
-        if (gpu_values == 0) gpu->loadGPUValues(((size_t) points->getNumIndexes()) * ((size_t) values->getNumOutputs()), surpluses.data());
+        if (gpu_values == 0) gpu->loadGPUValues(surpluses.size(), surpluses.data());
     }
 }
 #else
