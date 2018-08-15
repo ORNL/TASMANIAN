@@ -770,9 +770,9 @@ void GridGlobal::evaluateHierarchicalFunctions(const double x[], int num_x, doub
     }
 }
 
-double* GridGlobal::computeSurpluses(int output, bool normalize) const{
+void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double> &surp) const{
     int num_points = points->getNumIndexes();
-    double *surp = new double[num_points];
+    surp.resize(num_points);
 
     if (OneDimensionalMeta::isSequence(rule)){
         double max_surp = 0.0;
@@ -786,13 +786,14 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
         std::vector<int> level;
         IM.computeLevels(points, level);
         int top_level = level[0];  for(auto l : level) if (top_level < l) top_level = l;
-        int top_1d = 0; const int *id = points->getIndex(0); for(int i=0; i<num_points*num_dimensions; i++) if (top_1d < id[i]) top_1d = id[i];
+        int top_1d = 0;
+        for(auto l : *(points->getIndexes())) if (top_1d < l) top_1d = l;
 
         Data2D<int> parents;
         IM.computeDAGup(points, parents);
 
         const double* nodes = wrapper->getNodes(0);
-        double *coeff = new double[top_1d+1];
+        std::vector<double> coeff(top_1d + 1);
         coeff[0] = 1.0;
         for(int i=1; i<=top_1d; i++){
             coeff[i] = 1.0;
@@ -805,10 +806,9 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
                 if (level[i] == l){
                     const int* p = points->getIndex(i);
 
-                    int *monkey_count = new int[top_level + 1];
-                    int *monkey_tail = new int[top_level + 1];
-                    bool *used = new bool[num_points];
-                    std::fill(used, used + num_points, false);
+                    std::vector<int> monkey_count(top_level + 1);
+                    std::vector<int> monkey_tail(top_level + 1);
+                    std::vector<bool> used(num_points, false);
 
                     int current = 0;
 
@@ -842,20 +842,11 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
                             monkey_count[--current]++;
                         }
                     }
-
-                    delete[] used;
-                    delete[] monkey_tail;
-                    delete[] monkey_count;
                 }
             }
         }
 
-        delete[] coeff;
-
-        if (normalize){
-            #pragma omp parallel for schedule(static)
-            for(int i=0; i<num_points; i++) surp[i] /= max_surp;
-        }
+        if (normalize) for(auto &s : surp) s /= max_surp;
     }else{
         IndexManipulator IM(num_dimensions, custom);
         IndexSet* polynomial_set = IM.getPolynomialSpace(active_tensors, rule, true);
@@ -908,13 +899,12 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
             surp[i] = c * nrm;
         }
     }
-
-    return surp;
 }
 
 void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000.0 * TSG_NUM_TOL;
-    double *surp = computeSurpluses(output, false);
+    std::vector<double> surp;
+    computeSurpluses(output, false, surp);
 
     int num_points = points->getNumIndexes();
 
@@ -924,48 +914,46 @@ void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std
         if (surp[j] > tol) n++;
     }
 
-    double *A, *b;
+    std::vector<double> b(n);
+    Data2D<double> A;
 
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
         m = 2*num_dimensions + 1;
-        A = new double[n * m];
-        b = new double[n];
+        A.resize(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
             const int *indx = points->getIndex(c);
             if (surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
-                    A[j*n + count] = ((double) indx[j]);
+                    A.getStrip(j)[count] = ((double) indx[j]);
                 }
                 for(int j=0; j<num_dimensions; j++){
-                    A[(num_dimensions + j)*n + count] = log((double) (indx[j] + 1));
+                    A.getStrip(num_dimensions + j)[count] = log((double) (indx[j] + 1));
                 }
-                A[2*num_dimensions*n + count] = 1.0;
+                A.getStrip(2*num_dimensions)[count] = 1.0;
                 b[count++] = -log(surp[c]);
             }
         }
     }else{
         m = num_dimensions + 1;
-        A = new double[n * m];
-        b = new double[n];
+        A.resize(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
             const int *indx = points->getIndex(c);
             if (surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
-                    A[j*n + count] = ((double) indx[j]);
+                    A.getStrip(j)[count] = ((double) indx[j]);
                 }
-                A[num_dimensions*n + count] = 1.0;
+                A.getStrip(num_dimensions)[count] = 1.0;
                 b[count++] = - log(surp[c]);
             }
         }
     }
-    delete[] surp;
 
-    double *x = new double[m];
-    TasmanianDenseSolver::solveLeastSquares(n, m, A, b, 1.E-5, x);
+    std::vector<double> x(m);
+    TasmanianDenseSolver::solveLeastSquares(n, m, A.getStrip(0), b.data(), 1.E-5, x.data());
 
     weights.resize(--m);
     for(int j=0; j<m; j++){
@@ -989,10 +977,6 @@ void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std
             }
         }
     }
-
-    delete[] A;
-    delete[] b;
-    delete[] x;
 }
 
 void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
@@ -1051,10 +1035,11 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
 
 void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();
-    double *surp = computeSurpluses(output, true);
+    std::vector<double> surp;
+    computeSurpluses(output, true, surp);
 
     int n = points->getNumIndexes();
-    bool *flagged = new bool[n];
+    std::vector<bool> flagged(n);
 
     for(int i=0; i<n; i++){
         flagged[i] = (fabs(surp[i]) > tolerance);
@@ -1093,9 +1078,6 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
 
         needed = updated_tensors->diffSets(tensors);
     }
-
-    delete[] flagged;
-    delete[] surp;
 }
 void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     if (accel != 0) accel->resetGPULoadedData();
@@ -1124,16 +1106,17 @@ void GridGlobal::clearAccelerationData(){
 
 void GridGlobal::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
     IndexManipulator IM(num_dimensions, custom);
-    IndexSet* set = IM.getPolynomialSpace(active_tensors, rule, interpolation);
+    IndexSet* pset = IM.getPolynomialSpace(active_tensors, rule, interpolation);
 
-    n = set->getNumIndexes();
+    n = pset->getNumIndexes();
 
-    poly = new int[n * num_dimensions];
-    const int* p = set->getIndex(0);
+    size_t numi = ((size_t) n) * ((size_t) num_dimensions);
+    poly = new int[numi];
+    const int* p = pset->getIndex(0);
 
-    std::copy(p, p + n * num_dimensions, poly);
+    std::copy(p, p + numi, poly);
 
-    delete set;
+    delete pset;
 }
 const int* GridGlobal::getPointIndexes() const{
     return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));

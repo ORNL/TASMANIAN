@@ -120,7 +120,7 @@ public:
 protected:
     void reset(bool includeCustom);
 
-    double* computeSurpluses(int output, bool normalize) const; // only for sequence rules, select the output to compute the surpluses
+    void computeSurpluses(int output, bool normalize, std::vector<double> &surp) const; // only for sequence rules, select the output to compute the surpluses
 
     static double legendre(int n, double x);
 
