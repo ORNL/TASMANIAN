@@ -89,7 +89,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<29; i++){
+    for(int i=0; i<32; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -209,6 +209,10 @@ void GridUnitTester::runtimeErrorCall(int i){
     case 26: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setSurplusRefinement(0.01, refine_classic, 0); break; // no loaded values
     case 27: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>()); break; // rule non-local
     case 28: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, 0); break; // rule non-local
+
+    case 29: grid.setDomainTransform(a, b); break; // grid is not initialized
+    case 30: grid.getDomainTransform(a, b); break; // grid is not initialized
+    case 31: grid.setDomainTransform(u, v); break; // grid is not initialized
 
     default: break;
     }
