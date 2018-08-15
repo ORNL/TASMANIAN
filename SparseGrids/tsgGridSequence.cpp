@@ -837,7 +837,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     delete[] norm;
 
     IndexManipulator IM(num_dimensions);
-    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits.data());
+    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits);
     if ((kids != 0) && (kids->getNumIndexes() > 0)){
         kids->addIndexSet(points);
 
