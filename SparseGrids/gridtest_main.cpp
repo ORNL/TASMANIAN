@@ -69,21 +69,21 @@ int main(int argc, const char ** argv){
     int k = 1;
     while (k < argc){
         if ((strcmp(argv[k],"debug") == 0)) debug = true;
-        if ((strcmp(argv[k],"db") == 0)) debugII = true;
-        if ((strcmp(argv[k],"verbose") == 0)) verbose = true;
-        if ((strcmp(argv[k],"v") == 0)) verbose = true;
-        if ((strcmp(argv[k],"-v") == 0)) verbose = true;
-        if ((strcmp(argv[k],"-random") == 0)) seed_reset = true;
-        if ((strcmp(argv[k],"random") == 0)) seed_reset = true;
-        if ((strcmp(argv[k],"acceleration") == 0)) test = test_acceleration;
-        if ((strcmp(argv[k],"domain") == 0)) test = test_domain;
-        if ((strcmp(argv[k],"refinement") == 0)) test = test_refinement;
-        if ((strcmp(argv[k],"global") == 0)) test = test_global;
-        if ((strcmp(argv[k],"local") == 0)) test = test_local;
-        if ((strcmp(argv[k],"wavelet") == 0)) test = test_wavelet;
-        if ((strcmp(argv[k],"fourier") == 0)) test = test_fourier;
-        if ((strcmp(argv[k],"errors") == 0)) utest = unit_except;
-        if ((strcmp(argv[k],"-gpuid") == 0)){
+        else if ((strcmp(argv[k],"db") == 0)) debugII = true;
+        else if ((strcmp(argv[k],"verbose") == 0)) verbose = true;
+        else if ((strcmp(argv[k],"v") == 0)) verbose = true;
+        else if ((strcmp(argv[k],"-v") == 0)) verbose = true;
+        else if ((strcmp(argv[k],"-random") == 0)) seed_reset = true;
+        else if ((strcmp(argv[k],"random") == 0)) seed_reset = true;
+        else if ((strcmp(argv[k],"acceleration") == 0)) test = test_acceleration;
+        else if ((strcmp(argv[k],"domain") == 0)) test = test_domain;
+        else if ((strcmp(argv[k],"refinement") == 0)) test = test_refinement;
+        else if ((strcmp(argv[k],"global") == 0)) test = test_global;
+        else if ((strcmp(argv[k],"local") == 0)) test = test_local;
+        else if ((strcmp(argv[k],"wavelet") == 0)) test = test_wavelet;
+        else if ((strcmp(argv[k],"fourier") == 0)) test = test_fourier;
+        else if ((strcmp(argv[k],"errors") == 0)) utest = unit_except;
+        else if ((strcmp(argv[k],"-gpuid") == 0)){
             if (k+1 >= argc){
                 cerr << "ERROR: -gpuid requires a valid number!" << endl;
                 return 1;
@@ -95,6 +95,9 @@ int main(int argc, const char ** argv){
                 cerr << "      see ./tasgrid -v for a list of detected GPUs." << endl;
                 return 1;
             }
+        }else{
+            cerr << "ERROR: unknown option " << argv[k] << endl;
+            return 1;
         }
         k++;
     }
