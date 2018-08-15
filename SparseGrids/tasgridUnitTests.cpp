@@ -45,10 +45,12 @@ bool GridUnitTester::Test(UnitTests test){
     cout << "---------------------------------------------------------------------" << endl << endl;
 
     bool testExceptions = true;
+    bool testAPI = true;
 
     if ((test == unit_all) || (test == unit_except)) testExceptions = testAllException();
+    if ((test == unit_all) || (test == unit_api)) testAPI = testAPIconsistency();
 
-    bool pass = testExceptions;
+    bool pass = testExceptions && testAPI;
     //bool pass = true;
 
     cout << endl;
@@ -250,9 +252,102 @@ bool GridUnitTester::doesMatch(const std::vector<double> &a, const double b[], d
     for(auto x : a) if (fabs(x - *ib++) > prec) return false;
     return true;
 }
+bool GridUnitTester::doesMatch(const std::vector<int> &a, const int b[]) const{
+    auto ib = b;
+    for(auto x : a) if (x != *ib++) return false;
+    return true;
+}
 bool GridUnitTester::doesMatch(size_t n, double a[], const double b[], double prec) const{
     for(size_t i=0; i<n; i++) if (fabs(a[i] - b[i]) > prec) return false;
     return true;
+}
+
+bool GridUnitTester::testAPIconsistency(){
+    bool passAll = true;
+    int wfirst = 15, wsecond = 30, wthird = 15;
+
+    bool pass = true;
+    double *apoints;
+    std::vector<double> vpoints;
+
+    TasmanianSparseGrid grid;
+    grid.makeGlobalGrid(2, 1, 4, type_iptotal, rule_clenshawcurtis);
+    gridLoadEN2(&grid);
+    grid.setAnisotropicRefinement(type_iptotal, 10, 0);
+
+    apoints = grid.getPoints();
+    grid.getPoints(vpoints);
+    pass = pass && doesMatch(vpoints, apoints);
+    delete[] apoints;
+    vpoints.clear();
+
+    apoints = grid.getLoadedPoints();
+    grid.getLoadedPoints(vpoints);
+    pass = pass && doesMatch(vpoints, apoints);
+    delete[] apoints;
+    vpoints.clear();
+
+    apoints = grid.getNeededPoints();
+    grid.getNeededPoints(vpoints);
+    pass = pass && doesMatch(vpoints, apoints);
+    delete[] apoints;
+    vpoints.clear();
+
+    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "getPoints()" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
+    passAll = pass && passAll;
+
+    pass = true;
+    std::vector<double> vy, x = {0.333, -0.333};
+    double *ay = new double[2];
+
+    grid.evaluate(x, vy);
+    grid.evaluate(x.data(), ay);
+    pass = pass && doesMatch(vy, ay);
+    vy.clear();
+
+    grid.integrate(vy);
+    grid.integrate(ay);
+    pass = pass && doesMatch(vy, ay);
+    vy.clear();
+
+    std::vector<double> vf, vx = {0.333, 0.44, -0.1333, 0.2223};
+    double *af = new double[grid.getNumPoints() * 2];
+    grid.evaluateHierarchicalFunctions(vx.data(), 2, af);
+    grid.evaluateHierarchicalFunctions(vx, vf);
+    pass = pass && doesMatch(vf, af);
+    delete[] af;
+
+    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "evaluate/integrate" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
+    passAll = pass && passAll;
+
+    std::vector<double> vtransa = {-2.0, 1.0}, vtransb = {1.0, 2.0};
+    double atransa[2], atransb[2];
+
+    grid.setDomainTransform(vtransa, vtransb);
+    grid.getDomainTransform(atransa, atransb);
+    pass = pass && doesMatch(vtransa, atransa) && doesMatch(vtransb, atransb);
+
+    grid.clearDomainTransform();
+    grid.getDomainTransform(vtransa, vtransb);
+    if (vtransa.size() + vtransb.size() != 0) pass = false;
+
+    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "domain transform" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
+    passAll = pass && passAll;
+
+    std::vector<int> llimits;
+    int allimits[3] = {1, 2, 3};
+    grid.makeGlobalGrid(3, 2, 5, type_iptotal, rule_fejer2, 0, 0.0, 0.0, 0, allimits);
+    grid.getLevelLimits(llimits);
+    pass = pass && doesMatch(llimits, allimits) && (llimits.size() == 3);
+    grid.clearLevelLimits();
+    grid.getLevelLimits(llimits);
+    if (llimits.size() != 0) pass = false;
+
+    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "level limits" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
+    passAll = pass && passAll;
+
+    cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
+    return passAll;
 }
 
 #endif

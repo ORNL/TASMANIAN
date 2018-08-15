@@ -83,6 +83,7 @@ int main(int argc, const char ** argv){
         else if ((strcmp(argv[k],"wavelet") == 0)) test = test_wavelet;
         else if ((strcmp(argv[k],"fourier") == 0)) test = test_fourier;
         else if ((strcmp(argv[k],"errors") == 0)) utest = unit_except;
+        else if ((strcmp(argv[k],"api") == 0)) utest = unit_api;
         else if ((strcmp(argv[k],"-gpuid") == 0)){
             if (k+1 >= argc){
                 cerr << "ERROR: -gpuid requires a valid number!" << endl;

@@ -51,7 +51,7 @@ using std::setw;
 using namespace TasGrid;
 
 enum UnitTests{
-    unit_none, unit_all, unit_except
+    unit_none, unit_all, unit_except, unit_api
 };
 
 class GridUnitTester{
@@ -64,6 +64,7 @@ public:
     bool Test(UnitTests test);
 
     bool testAllException();
+    bool testAPIconsistency();
 
 protected:
     void invalidArgumentCall(int i);
@@ -73,6 +74,7 @@ protected:
 
     bool doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec = 1.E-12) const;
     bool doesMatch(const std::vector<double> &a, const double b[], double prec = 1.E-12) const;
+    bool doesMatch(const std::vector<int> &a, const int b[]) const;
     bool doesMatch(size_t n, double a[], const double b[], double prec = 1.E-12) const;
 
 private:
