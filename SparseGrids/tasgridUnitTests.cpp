@@ -239,4 +239,20 @@ void GridUnitTester::gridLoadEN2(TasmanianSparseGrid *grid) const{
     grid->loadNeededPoints(vals);
 }
 
+bool GridUnitTester::doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec) const{
+    if (a.size() != b.size()) return false;
+    auto ib = b.begin();
+    for(auto x : a) if (fabs(x - *ib++) > prec) return false;
+    return true;
+}
+bool GridUnitTester::doesMatch(const std::vector<double> &a, const double b[], double prec) const{
+    auto ib = b;
+    for(auto x : a) if (fabs(x - *ib++) > prec) return false;
+    return true;
+}
+bool GridUnitTester::doesMatch(size_t n, double a[], const double b[], double prec) const{
+    for(size_t i=0; i<n; i++) if (fabs(a[i] - b[i]) > prec) return false;
+    return true;
+}
+
 #endif
