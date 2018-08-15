@@ -770,9 +770,9 @@ void GridGlobal::evaluateHierarchicalFunctions(const double x[], int num_x, doub
     }
 }
 
-double* GridGlobal::computeSurpluses(int output, bool normalize) const{
+void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double> &surp) const{
     int num_points = points->getNumIndexes();
-    double *surp = new double[num_points];
+    surp.resize(num_points);
 
     if (OneDimensionalMeta::isSequence(rule)){
         double max_surp = 0.0;
@@ -908,13 +908,12 @@ double* GridGlobal::computeSurpluses(int output, bool normalize) const{
             surp[i] = c * nrm;
         }
     }
-
-    return surp;
 }
 
 void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000.0 * TSG_NUM_TOL;
-    double *surp = computeSurpluses(output, false);
+    std::vector<double> surp;
+    computeSurpluses(output, false, surp);
 
     int num_points = points->getNumIndexes();
 
@@ -962,7 +961,6 @@ void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std
             }
         }
     }
-    delete[] surp;
 
     double *x = new double[m];
     TasmanianDenseSolver::solveLeastSquares(n, m, A, b, 1.E-5, x);
@@ -1051,7 +1049,8 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
 
 void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();
-    double *surp = computeSurpluses(output, true);
+    std::vector<double> surp;
+    computeSurpluses(output, true, surp);
 
     int n = points->getNumIndexes();
     bool *flagged = new bool[n];
@@ -1095,7 +1094,6 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
     }
 
     delete[] flagged;
-    delete[] surp;
 }
 void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     if (accel != 0) accel->resetGPULoadedData();
