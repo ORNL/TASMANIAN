@@ -786,7 +786,8 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
         std::vector<int> level;
         IM.computeLevels(points, level);
         int top_level = level[0];  for(auto l : level) if (top_level < l) top_level = l;
-        int top_1d = 0; const int *id = points->getIndex(0); for(int i=0; i<num_points*num_dimensions; i++) if (top_1d < id[i]) top_1d = id[i];
+        int top_1d = 0;
+        for(auto l : *(points->getIndexes())) if (top_1d < l) top_1d = l;
 
         Data2D<int> parents;
         IM.computeDAGup(points, parents);
@@ -845,10 +846,7 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
             }
         }
 
-        if (normalize){
-            #pragma omp parallel for schedule(static)
-            for(int i=0; i<num_points; i++) surp[i] /= max_surp;
-        }
+        if (normalize) for(auto &s : surp) s /= max_surp;
     }else{
         IndexManipulator IM(num_dimensions, custom);
         IndexSet* polynomial_set = IM.getPolynomialSpace(active_tensors, rule, true);
