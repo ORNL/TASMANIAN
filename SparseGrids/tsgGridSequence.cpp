@@ -465,24 +465,21 @@ void GridSequence::evaluateFastGPUmagma(int, const double[], double[]) const{}
 #endif
 
 void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        evaluate(&(x[i*num_dimensions]), &(y[i*num_outputs]));
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
     }
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
-    double *fvalues = new double[num_points * num_x];
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evalHierarchicalFunctions(&(x[i*num_dimensions]), &(fvalues[i*num_points]));
-    }
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.data(), fvalues, 0.0, y);
-
-    delete[] fvalues;
+    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.getStrip(0), 0.0, y);
 }
 #else
 void GridSequence::evaluateBatchCPUblas(const double[], int, double[]) const{}
@@ -492,24 +489,22 @@ void GridSequence::evaluateBatchCPUblas(const double[], int, double[]) const{}
 void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas);
+
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    double *fvalues = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, fvalues);
-
-    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, fvalues, y);
-
-    delete[] fvalues;
+    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, weights.getStrip(0), y);
 }
 void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas);
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
-    double *fvalues = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, fvalues); // this will be replaced by GPU eval function
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0)); // this will be replaced by GPU eval function
 
-    double *gpu_weights = TasCUDA::cudaSend<double>(((size_t) num_points) * ((size_t) num_x), fvalues);
+    double *gpu_weights = TasCUDA::cudaSend<double>(((size_t) num_points) * ((size_t) num_x), weights.getStrip(0));
     double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x));
 
     gpu_acc->cublasDGEMM(false, num_outputs, num_x, num_points, gpu_weights, gpu_result);
@@ -519,8 +514,6 @@ void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[])
 
     TasCUDA::cudaDel<double>(gpu_result);
     TasCUDA::cudaDel<double>(gpu_weights);
-
-    delete[] fvalues;
 }
 #else
 void GridSequence::evaluateBatchGPUcublas(const double[], int, double[]) const{}
@@ -533,12 +526,10 @@ void GridSequence::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x,
     makeCheckAccelerationData(accel_gpu_magma);
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
 
-    double *fvalues = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, fvalues);
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0)); // this will be replaced by GPU eval function
 
-    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, fvalues, y);
-
-    delete[] fvalues;
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, weights.getStrip(0), y);
 }
 #else
 void GridSequence::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
