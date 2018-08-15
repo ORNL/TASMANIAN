@@ -1039,7 +1039,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
     computeSurpluses(output, true, surp);
 
     int n = points->getNumIndexes();
-    bool *flagged = new bool[n];
+    std::vector<bool> flagged(n);
 
     for(int i=0; i<n; i++){
         flagged[i] = (fabs(surp[i]) > tolerance);
@@ -1078,8 +1078,6 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
 
         needed = updated_tensors->diffSets(tensors);
     }
-
-    delete[] flagged;
 }
 void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     if (accel != 0) accel->resetGPULoadedData();

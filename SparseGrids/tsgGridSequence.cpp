@@ -809,7 +809,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     clearRefinement();
 
     int num_points = points->getNumIndexes();
-    bool *flagged = new bool[num_points];
+    std::vector<bool> flagged(num_points);
 
     double *norm = new double[num_outputs]; std::fill(norm, norm + num_outputs, 0.0);
     for(int i=0; i<num_points; i++){
@@ -821,7 +821,6 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     }
 
     if (output == -1){
-        #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             double smax = fabs(surpluses[((size_t) i) * ((size_t) num_outputs)]) / norm[0];
             for(int k=1; k<num_outputs; k++){
@@ -861,7 +860,6 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         delete total;
 
     }
-    delete[] flagged;
 }
 
 void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
