@@ -792,7 +792,7 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
         IM.computeDAGup(points, parents);
 
         const double* nodes = wrapper->getNodes(0);
-        double *coeff = new double[top_1d+1];
+        std::vector<double> coeff(top_1d + 1);
         coeff[0] = 1.0;
         for(int i=1; i<=top_1d; i++){
             coeff[i] = 1.0;
@@ -805,10 +805,9 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
                 if (level[i] == l){
                     const int* p = points->getIndex(i);
 
-                    int *monkey_count = new int[top_level + 1];
-                    int *monkey_tail = new int[top_level + 1];
-                    bool *used = new bool[num_points];
-                    std::fill(used, used + num_points, false);
+                    std::vector<int> monkey_count(top_level + 1);
+                    std::vector<int> monkey_tail(top_level + 1);
+                    std::vector<bool> used(num_points, false);
 
                     int current = 0;
 
@@ -842,15 +841,9 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
                             monkey_count[--current]++;
                         }
                     }
-
-                    delete[] used;
-                    delete[] monkey_tail;
-                    delete[] monkey_count;
                 }
             }
         }
-
-        delete[] coeff;
 
         if (normalize){
             #pragma omp parallel for schedule(static)
