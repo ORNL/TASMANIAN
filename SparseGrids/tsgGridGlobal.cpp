@@ -914,47 +914,46 @@ void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std
         if (surp[j] > tol) n++;
     }
 
-    double *A, *b;
+    std::vector<double> b(n);
+    Data2D<double> A;
 
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
         m = 2*num_dimensions + 1;
-        A = new double[n * m];
-        b = new double[n];
+        A.resize(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
             const int *indx = points->getIndex(c);
             if (surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
-                    A[j*n + count] = ((double) indx[j]);
+                    A.getStrip(j)[count] = ((double) indx[j]);
                 }
                 for(int j=0; j<num_dimensions; j++){
-                    A[(num_dimensions + j)*n + count] = log((double) (indx[j] + 1));
+                    A.getStrip(num_dimensions + j)[count] = log((double) (indx[j] + 1));
                 }
-                A[2*num_dimensions*n + count] = 1.0;
+                A.getStrip(2*num_dimensions)[count] = 1.0;
                 b[count++] = -log(surp[c]);
             }
         }
     }else{
         m = num_dimensions + 1;
-        A = new double[n * m];
-        b = new double[n];
+        A.resize(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
             const int *indx = points->getIndex(c);
             if (surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
-                    A[j*n + count] = ((double) indx[j]);
+                    A.getStrip(j)[count] = ((double) indx[j]);
                 }
-                A[num_dimensions*n + count] = 1.0;
+                A.getStrip(num_dimensions)[count] = 1.0;
                 b[count++] = - log(surp[c]);
             }
         }
     }
 
-    double *x = new double[m];
-    TasmanianDenseSolver::solveLeastSquares(n, m, A, b, 1.E-5, x);
+    std::vector<double> x(m);
+    TasmanianDenseSolver::solveLeastSquares(n, m, A.getStrip(0), b.data(), 1.E-5, x.data());
 
     weights.resize(--m);
     for(int j=0; j<m; j++){
@@ -978,10 +977,6 @@ void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std
             }
         }
     }
-
-    delete[] A;
-    delete[] b;
-    delete[] x;
 }
 
 void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
