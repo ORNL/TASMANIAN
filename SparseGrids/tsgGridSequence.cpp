@@ -223,6 +223,7 @@ void GridSequence::copyGrid(const GridSequence *seq){
 
         needed = new IndexSet(seq->needed);
     }
+    surpluses = seq->surpluses;
 }
 
 void GridSequence::setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule crule){
