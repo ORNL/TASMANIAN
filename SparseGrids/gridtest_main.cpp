@@ -120,7 +120,7 @@ int main(int argc, const char ** argv){
             if (test == test_all) pass = pass && utester.Test(unit_all);
             pass = pass && tester.Test(test);
         }else{
-            pass = pass && utester.Test(unit_all);
+            pass = pass && utester.Test(utest);
         }
     }
     return (pass) ? 0 : 1;
