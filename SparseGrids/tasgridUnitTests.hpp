@@ -51,7 +51,7 @@ using std::setw;
 using namespace TasGrid;
 
 enum UnitTests{
-    unit_none, unit_all, unit_except
+    unit_none, unit_all, unit_except, unit_api
 };
 
 class GridUnitTester{
@@ -64,12 +64,18 @@ public:
     bool Test(UnitTests test);
 
     bool testAllException();
+    bool testAPIconsistency();
 
 protected:
     void invalidArgumentCall(int i);
     void runtimeErrorCall(int i);
 
     void gridLoadEN2(TasmanianSparseGrid *grid) const; // load points using exp( - \| x \|^2 )
+
+    bool doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec = 1.E-12) const;
+    bool doesMatch(const std::vector<double> &a, const double b[], double prec = 1.E-12) const;
+    bool doesMatch(const std::vector<int> &a, const int b[]) const;
+    bool doesMatch(size_t n, double a[], const double b[], double prec = 1.E-12) const;
 
 private:
     bool verbose;
