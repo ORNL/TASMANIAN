@@ -401,18 +401,21 @@ void GridSequence::evaluate(const double x[], double y[]) const{
 
     std::fill(y, y + num_outputs, 0.0);
 
-    int n = points->getNumIndexes();
+    int num_points = points->getNumIndexes();
 
-    for(int i=0; i<n; i++){
+    Data2D<double> surps;
+    surps.cload(num_outputs, num_points, surpluses.data());
+
+    for(int i=0; i<num_points; i++){
         const int* p = points->getIndex(i);
         double basis_value = cache[0][p[0]];
-        const double *surp = &(surpluses[((size_t) i) * ((size_t) num_outputs)]);
+        const double *s = surps.getCStrip(i);
         for(int j=1; j<num_dimensions; j++){
             basis_value *= cache[j][p[j]];
         }
 
         for(int k=0; k<num_outputs; k++){
-            y[k] += basis_value * surp[k];
+            y[k] += basis_value * s[k];
         }
     }
 
