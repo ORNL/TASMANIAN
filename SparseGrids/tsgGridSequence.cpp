@@ -556,6 +556,9 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points->getNumIndexes();
     std::fill(q, q + num_outputs, 0.0);
 
+    Data2D<double> surp;
+    surp.cload(num_outputs, num_points, surpluses.data());
+
     // for sequence grids, quadrature weights are expensive,
     // if using simple integration use the basis integral + surpluses, which is fast
     // if using conformal map, then we have to compute the expensive weights
@@ -565,12 +568,12 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
         for(int i=0; i<num_points; i++){
             const int* p = points->getIndex(i);
             double w = integ[p[0]];
-            const double *surp = &(surpluses[((size_t) i) * ((size_t) num_outputs)]);
+            const double *s = surp.getCStrip(i);
             for(int j=1; j<num_dimensions; j++){
                 w *= integ[p[j]];
             }
             for(int k=0; k<num_outputs; k++){
-                q[k] += w * surp[k];
+                q[k] += w * s[k];
             }
         }
     }else{
