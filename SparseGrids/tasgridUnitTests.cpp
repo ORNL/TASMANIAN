@@ -89,7 +89,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<28; i++){
+    for(int i=0; i<29; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -171,8 +171,9 @@ void GridUnitTester::invalidArgumentCall(int i){
 }
 
 void GridUnitTester::runtimeErrorCall(int i){
-    std::vector<double> v;
+    std::vector<double> v, u;
     std::vector<int> w;
+    double a[2], b[2];
     TasmanianSparseGrid grid;
     switch(i){
     case  0: grid.updateGlobalGrid(2, type_level); break; // grid not initialized
@@ -207,6 +208,7 @@ void GridUnitTester::runtimeErrorCall(int i){
     case 25: grid.makeLocalPolynomialGrid(2, 0, 3); grid.setSurplusRefinement(0.01, refine_classic, 0); break; // no outputs
     case 26: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setSurplusRefinement(0.01, refine_classic, 0); break; // no loaded values
     case 27: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>()); break; // rule non-local
+    case 28: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, 0); break; // rule non-local
 
     default: break;
     }
