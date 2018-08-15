@@ -327,7 +327,8 @@ void GridSequence::getPoints(double *x) const{
 
 void GridSequence::getQuadratureWeights(double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
-    double *integ = cacheBasisIntegrals();
+    std::vector<double> integ;
+    cacheBasisIntegrals(integ);
     int n = work->getNumIndexes();
     for(int i=0; i<n; i++){
         const int* p = work->getIndex(i);
@@ -336,7 +337,6 @@ void GridSequence::getQuadratureWeights(double *weights) const{
             weights[i] *= integ[p[j]];
         }
     }
-    delete[] integ;
 
     applyTransformationTransposed(weights);
 }
@@ -568,7 +568,8 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     // if using simple integration use the basis integral + surpluses, which is fast
     // if using conformal map, then we have to compute the expensive weights
     if (conformal_correction == 0){
-        double *integ = cacheBasisIntegrals();
+        std::vector<double> integ;
+        cacheBasisIntegrals(integ);
         for(int i=0; i<num_points; i++){
             const int* p = points->getIndex(i);
             double w = integ[p[0]];
@@ -580,10 +581,9 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
                 q[k] += w * surp[k];
             }
         }
-        delete[] integ;
     }else{
-        double *w = new double[num_points];
-        getQuadratureWeights(w);
+        std::vector<double> w(num_points);
+        getQuadratureWeights(w.data());
         for(int i=0; i<num_points; i++){
             w[i] *= conformal_correction[i];
             const double *vals = values->getValues(i);
@@ -591,7 +591,6 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
                 q[k] += w[i] * vals[k];
             }
         }
-        delete[] w;
     }
 }
 
@@ -923,13 +922,12 @@ void GridSequence::prepareSequence(int n){
     }
 }
 
-double* GridSequence::cacheBasisIntegrals() const{
+void GridSequence::cacheBasisIntegrals(std::vector<double> &integ) const{
     int max_level = max_levels[0];
 
-    for(int j=1; j<num_dimensions; j++) if (max_level < max_levels[j]) max_level = max_levels[j];
+    for(auto l: max_levels) if (max_level < l) max_level = l;
 
-    double *integ = new double[++max_level]; // integrals of basis functions
-    std::fill(integ, integ + max_level, 0.0);
+    integ.resize(++max_level, 0.0); // integrals of basis functions
 
     int n = 1 + max_level / 2; // number of Gauss-Legendre points needed to integrate the basis functions
     double *lag_x = 0, *lag_w = 0;
@@ -946,8 +944,6 @@ double* GridSequence::cacheBasisIntegrals() const{
 
     delete[] lag_w;
     delete[] lag_x;
-
-    return integ;
 }
 
 double GridSequence::evalBasis(const int f[], const int p[]) const{

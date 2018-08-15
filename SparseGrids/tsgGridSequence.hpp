@@ -120,7 +120,7 @@ protected:
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 
     void prepareSequence(int n);
-    double* cacheBasisIntegrals() const;
+    void cacheBasisIntegrals(std::vector<double> &integ) const;
 
     template<typename T>
     T** cacheBasisValues(const T x[]) const{
