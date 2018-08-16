@@ -115,7 +115,7 @@ protected:
 
     int* referenceExponents(const int levels[], const IndexSet *ilist);
 
-    int convertIndexes(const int i, const int levels[]) const;
+    void generateIndexingMap(std::vector<std::vector<int>> &index_map) const;
 
     template<bool interwoven>
     void computeExponentials(const double x[], double w[]) const{
