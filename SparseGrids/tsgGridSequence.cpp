@@ -848,23 +848,25 @@ void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) co
     IndexSet *work = (points == 0) ? needed : points;
     if (interpolation){
         n = work->getNumIndexes();
+        size_t entries = ((size_t) n) * ((size_t) num_dimensions);
 
-        poly = new int[n * num_dimensions];
+        poly = new int[entries];
         const int* p = work->getIndex(0);
 
-        std::copy(p, p + n * num_dimensions, poly);
+        std::copy(p, p + entries, poly);
     }else{
         IndexManipulator IM(num_dimensions);
-        IndexSet* set = IM.getPolynomialSpace(work, rule, interpolation);
+        IndexSet* pset = IM.getPolynomialSpace(work, rule, interpolation);
 
-        n = set->getNumIndexes();
+        n = pset->getNumIndexes();
+        size_t entries = ((size_t) n) * ((size_t) num_dimensions);
 
-        poly = new int[n * num_dimensions];
-        const int* p = set->getIndex(0);
+        poly = new int[entries];
+        const int* p = pset->getIndex(0);
 
-        std::copy(p, p + n * num_dimensions, poly);
+        std::copy(p, p + entries, poly);
 
-        delete set;
+        delete pset;
     }
 }
 const double* GridSequence::getSurpluses() const{
