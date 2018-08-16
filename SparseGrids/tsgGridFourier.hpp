@@ -115,8 +115,6 @@ protected:
 
     int* referenceExponents(const int levels[], const IndexSet *ilist);
 
-    int convertIndexes(const int i, const int levels[]) const;
-
     template<bool interwoven>
     void computeExponentials(const double x[], double w[]) const{
         std::complex<double> unit_imag(0.0,1.0);
