@@ -40,11 +40,11 @@
 namespace TasGrid{
 
 GridSequence::GridSequence() : num_dimensions(0), num_outputs(0),
-                               points(0), needed(0), surpluses(0), nodes(0), coeff(0), values(0),
+                               points(0), needed(0), nodes(0), coeff(0), values(0),
                                max_levels(0), accel(0)
 {}
 GridSequence::GridSequence(const GridSequence &seq) : num_dimensions(0), num_outputs(0),
-                                                      points(0), needed(0), surpluses(0), nodes(0), coeff(0), values(0),
+                                                      points(0), needed(0), nodes(0), coeff(0), values(0),
                                                       max_levels(0), accel(0)
 {  copyGrid(&seq); }
 GridSequence::~GridSequence(){ reset(); }
@@ -68,11 +68,11 @@ void GridSequence::write(std::ofstream &ofs) const{
             ofs << "1 ";
             needed->write(ofs);
         }
-        if (surpluses == 0){
+        if (surpluses.empty()){
             ofs << "0";
         }else{
             ofs << "1";
-            for(size_t i=0; i<((size_t) num_outputs) * ((size_t) points->getNumIndexes()); i++) ofs << " " << surpluses[i];
+            for(auto s : surpluses) ofs << " " << s;
         }
         ofs << endl;
         if (num_outputs > 0) values->write(ofs);
@@ -100,11 +100,11 @@ void GridSequence::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             needed->writeBinary(ofs);
         }
-        if (surpluses == 0){
+        if (surpluses.empty()){
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
+            ofs.write((char*) surpluses.data(), surpluses.size() * sizeof(double));
         }
         if (num_outputs > 0) values->writeBinary(ofs);
     }
@@ -122,8 +122,8 @@ void GridSequence::read(std::ifstream &ifs){
         IndexManipulator IM(num_dimensions);
         ifs >> flag;
         if (flag == 1){
-            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())];
-            for(size_t i=0; i<((size_t) num_outputs) * ((size_t) points->getNumIndexes()); i++) ifs >> surpluses[i];
+            surpluses.resize(((size_t) num_outputs) * ((size_t) points->getNumIndexes()));
+            for(auto &s : surpluses) ifs >> s;
         }
         values = new StorageSet(0, 0); values->read(ifs);
         int mp = 0, mn = 0, max_level;
@@ -157,8 +157,8 @@ void GridSequence::readBinary(std::ifstream &ifs){
 
         ifs.read((char*) &flag, sizeof(char));
         if (flag == 'y'){
-            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())];
-            ifs.read((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
+            surpluses.resize(((size_t) num_outputs) * ((size_t) points->getNumIndexes()));
+            ifs.read((char*) surpluses.data(), surpluses.size() * sizeof(double));
         }
 
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
@@ -181,10 +181,11 @@ void GridSequence::reset(){
     clearAccelerationData();
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (surpluses != 0){ delete[] surpluses; surpluses = 0; }
     if (nodes != 0){ delete[] nodes; nodes = 0; }
     if (coeff != 0){ delete[] coeff; coeff = 0; }
     if (values != 0){ delete values; values = 0; }
+    surpluses.resize(0);
+    surpluses.shrink_to_fit();
 }
 void GridSequence::clearRefinement(){
     if (needed != 0){ delete needed; needed = 0; }
@@ -222,6 +223,7 @@ void GridSequence::copyGrid(const GridSequence *seq){
 
         needed = new IndexSet(seq->needed);
     }
+    surpluses = seq->surpluses;
 }
 
 void GridSequence::setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule crule){
@@ -295,21 +297,27 @@ int GridSequence::getNumPoints() const{ return ((points == 0) ? getNumNeeded() :
 
 void GridSequence::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
-    #pragma omp parallel for
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
+    #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = points->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = nodes[p[j]];
+            xx[j] = nodes[p[j]];
         }
     }
 }
 void GridSequence::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
-    #pragma omp parallel for
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
+    #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = needed->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = nodes[p[j]];
+            xx[j] = nodes[p[j]];
         }
     }
 }
@@ -319,7 +327,8 @@ void GridSequence::getPoints(double *x) const{
 
 void GridSequence::getQuadratureWeights(double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
-    double *integ = cacheBasisIntegrals();
+    std::vector<double> integ;
+    cacheBasisIntegrals(integ);
     int n = work->getNumIndexes();
     for(int i=0; i<n; i++){
         const int* p = work->getIndex(i);
@@ -328,7 +337,6 @@ void GridSequence::getQuadratureWeights(double *weights) const{
             weights[i] *= integ[p[j]];
         }
     }
-    delete[] integ;
 
     applyTransformationTransposed(weights);
 }
@@ -383,9 +391,9 @@ void GridSequence::mergeRefinement(){
         IndexManipulator IM(num_dimensions);
         int m; IM.getMaxLevels(points, max_levels, m);
     }
-    if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[num_vals];
-    std::fill(surpluses, surpluses + num_vals, 0.0);
+    surpluses.resize(num_vals);
+    surpluses.shrink_to_fit();
+    std::fill(surpluses.begin(), surpluses.end(), 0.0);
 }
 
 void GridSequence::evaluate(const double x[], double y[]) const{
@@ -393,18 +401,21 @@ void GridSequence::evaluate(const double x[], double y[]) const{
 
     std::fill(y, y + num_outputs, 0.0);
 
-    int n = points->getNumIndexes();
+    int num_points = points->getNumIndexes();
 
-    for(int i=0; i<n; i++){
+    Data2D<double> surps;
+    surps.cload(num_outputs, num_points, surpluses.data());
+
+    for(int i=0; i<num_points; i++){
         const int* p = points->getIndex(i);
         double basis_value = cache[0][p[0]];
-        const double *surp = &(surpluses[((size_t) i) * ((size_t) num_outputs)]);
+        const double *s = surps.getCStrip(i);
         for(int j=1; j<num_dimensions; j++){
             basis_value *= cache[j][p[j]];
         }
 
         for(int k=0; k<num_outputs; k++){
-            y[k] += basis_value * surp[k];
+            y[k] += basis_value * s[k];
         }
     }
 
@@ -414,9 +425,9 @@ void GridSequence::evaluate(const double x[], double y[]) const{
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
-    double *fvalues = evalHierarchicalFunctions(x);
-    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), surpluses, fvalues, y);
-    delete[] fvalues;
+    std::vector<double> fvalues(getNumPoints());
+    evalHierarchicalFunctions(x, fvalues.data());
+    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), surpluses.data(), fvalues.data(), y);
 }
 #else
 void GridSequence::evaluateFastCPUblas(const double[], double[]) const{}
@@ -427,11 +438,10 @@ void GridSequence::evaluateFastGPUcublas(const double x[], double y[]) const{
     makeCheckAccelerationData(accel_gpu_cublas);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *fvalues = evalHierarchicalFunctions(x);
+    std::vector<double> fvalues(getNumPoints());
+    evalHierarchicalFunctions(x, fvalues.data());
 
-    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), fvalues, y);
-
-    delete[] fvalues;
+    gpu->cublasDGEMM(true, num_outputs, 1, points->getNumIndexes(), fvalues.data(), y);
 }
 #else
 void GridSequence::evaluateFastGPUcublas(const double[], double[]) const{}
@@ -445,35 +455,31 @@ void GridSequence::evaluateFastGPUmagma(int gpuID, const double x[], double y[])
     makeCheckAccelerationData(accel_gpu_magma);
 
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
-    double *fvalues = evalHierarchicalFunctions(x);
+    std::vector<double> fvalues(getNumPoints());
+    evalHierarchicalFunctions(x, fvalues.data());
 
-    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), fvalues, y);
-
-    delete[] fvalues;
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, 1, points->getNumIndexes(), fvalues.data(), y);
 }
 #else
 void GridSequence::evaluateFastGPUmagma(int, const double[], double[]) const{}
 #endif
 
 void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        evaluate(&(x[i*num_dimensions]), &(y[i*num_outputs]));
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
     }
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
-    double *fvalues = new double[num_points * num_x];
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evalHierarchicalFunctions(&(x[i*num_dimensions]), &(fvalues[i*num_points]));
-    }
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses, fvalues, 0.0, y);
-
-    delete[] fvalues;
+    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.getStrip(0), 0.0, y);
 }
 #else
 void GridSequence::evaluateBatchCPUblas(const double[], int, double[]) const{}
@@ -483,24 +489,22 @@ void GridSequence::evaluateBatchCPUblas(const double[], int, double[]) const{}
 void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas);
+
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    double *fvalues = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, fvalues);
-
-    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, fvalues, y);
-
-    delete[] fvalues;
+    gpu->cublasDGEMM(true, num_outputs, num_x, num_points, weights.getStrip(0), y);
 }
 void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
     makeCheckAccelerationData(accel_gpu_cublas);
     AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
 
-    double *fvalues = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, fvalues); // this will be replaced by GPU eval function
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0)); // this will be replaced by GPU eval function
 
-    double *gpu_weights = TasCUDA::cudaSend<double>(((size_t) num_points) * ((size_t) num_x), fvalues);
+    double *gpu_weights = TasCUDA::cudaSend<double>(((size_t) num_points) * ((size_t) num_x), weights.getStrip(0));
     double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_outputs) * ((size_t) num_x));
 
     gpu_acc->cublasDGEMM(false, num_outputs, num_x, num_points, gpu_weights, gpu_result);
@@ -510,8 +514,6 @@ void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[])
 
     TasCUDA::cudaDel<double>(gpu_result);
     TasCUDA::cudaDel<double>(gpu_weights);
-
-    delete[] fvalues;
 }
 #else
 void GridSequence::evaluateBatchGPUcublas(const double[], int, double[]) const{}
@@ -524,12 +526,10 @@ void GridSequence::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x,
     makeCheckAccelerationData(accel_gpu_magma);
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
 
-    double *fvalues = new double[((size_t) num_points) * ((size_t) num_x)];
-    evaluateHierarchicalFunctions(x, num_x, fvalues);
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0)); // this will be replaced by GPU eval function
 
-    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, fvalues, y);
-
-    delete[] fvalues;
+    gpu->magmaCudaDGEMM(true, gpuID, num_outputs, num_x, num_points, weights.getStrip(0), y);
 }
 #else
 void GridSequence::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
@@ -545,7 +545,7 @@ void GridSequence::makeCheckAccelerationData(TypeAcceleration acc) const{
         if (accel == 0){ accel = (BaseAccelerationData*) (new AccelerationDataGPUFull()); }
         AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
         double *gpu_values = gpu->getGPUValues();
-        if (gpu_values == 0) gpu->loadGPUValues(((size_t) points->getNumIndexes()) * ((size_t) values->getNumOutputs()), surpluses);
+        if (gpu_values == 0) gpu->loadGPUValues(surpluses.size(), surpluses.data());
     }
 }
 #else
@@ -556,26 +556,29 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points->getNumIndexes();
     std::fill(q, q + num_outputs, 0.0);
 
+    Data2D<double> surp;
+    surp.cload(num_outputs, num_points, surpluses.data());
+
     // for sequence grids, quadrature weights are expensive,
     // if using simple integration use the basis integral + surpluses, which is fast
     // if using conformal map, then we have to compute the expensive weights
     if (conformal_correction == 0){
-        double *integ = cacheBasisIntegrals();
+        std::vector<double> integ;
+        cacheBasisIntegrals(integ);
         for(int i=0; i<num_points; i++){
             const int* p = points->getIndex(i);
             double w = integ[p[0]];
-            const double *surp = &(surpluses[((size_t) i) * ((size_t) num_outputs)]);
+            const double *s = surp.getCStrip(i);
             for(int j=1; j<num_dimensions; j++){
                 w *= integ[p[j]];
             }
             for(int k=0; k<num_outputs; k++){
-                q[k] += w * surp[k];
+                q[k] += w * s[k];
             }
         }
-        delete[] integ;
     }else{
-        double *w = new double[num_points];
-        getQuadratureWeights(w);
+        std::vector<double> w(num_points);
+        getQuadratureWeights(w.data());
         for(int i=0; i<num_points; i++){
             w[i] *= conformal_correction[i];
             const double *vals = values->getValues(i);
@@ -583,37 +586,17 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
                 q[k] += w[i] * vals[k];
             }
         }
-        delete[] w;
     }
 }
 
 void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
+    int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
+    Data2D<double> yy; yy.load(num_points, num_x, y);
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        evalHierarchicalFunctions(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_points)]));
+        evalHierarchicalFunctions(xx.getCStrip(i), yy.getStrip(i));
     }
-}
-double* GridSequence::evalHierarchicalFunctions(const double x[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
-    double *vals = new double[num_points];
-
-    double **cache = cacheBasisValues<double>(x);
-
-    for(int i=0; i<num_points; i++){
-        const int* p = work->getIndex(i);
-        vals[i] = cache[0][p[0]];
-        for(int j=1; j<num_dimensions; j++){
-            vals[i] *= cache[j][p[j]];
-        }
-    }
-
-    for(int j=0; j<num_dimensions; j++) delete[] cache[j];
-    delete[] cache;
-
-    return vals;
 }
 void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[]) const{
     IndexSet *work = (points == 0) ? needed : points;
@@ -645,9 +628,9 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     }
     vals = values->aliasValues();
     vals->resize(num_vals);
-    if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[num_vals];
-    std::copy(c, c + num_vals, surpluses);
+    surpluses.resize(num_vals);
+    surpluses.shrink_to_fit();
+    std::copy(c, c + num_vals, surpluses.data());
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     if (acc == accel_cpu_blas){
@@ -664,82 +647,82 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
 void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000 * TSG_NUM_TOL;
     int num_points = points->getNumIndexes();
-    double *max_surp = new double[num_points];
+    std::vector<double> max_surp(num_points);
 
     if (output == -1){
-        double *norm = new double[num_outputs]; std::fill(norm, norm + num_outputs, 0.0);
+        std::vector<double> nrm(num_outputs, 0.0);
         for(int i=0; i<num_points; i++){
             const double *val = values->getValues(i);
-            for(int k=0; k<num_outputs; k++){
-                double v = fabs(val[k]);
-                if (norm[k] < v) norm[k] = v;
+            int k=0;
+            for(auto &n : nrm){
+                double v = fabs(val[k++]);
+                if (n < v) n = v;
             }
         }
+        Data2D<double> surp;
+        surp.cload(num_outputs, num_points, surpluses.data());
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
-            double smax = fabs(surpluses[((size_t) i) * ((size_t) num_outputs)]) / norm[0];
-            for(int k=1; k<num_outputs; k++){
-                double v = fabs(surpluses[((size_t) i) * ((size_t) num_outputs) + k]) / norm[k];
+            const double *s = surp.getCStrip(i);
+            double smax = 0.0;
+            for(int k=0; k<num_outputs; k++){
+                double v = fabs(s[k]) / nrm[k];
                 if (smax < v) smax = v;
             }
             max_surp[i] = smax;
         }
-        delete[] norm;
     }else{
-        for(int i=0; i<num_points; i++){
-            max_surp[i] = surpluses[((size_t) i) * ((size_t) num_outputs) + output];
-        }
+        Data2D<double> surp;
+        surp.cload(num_outputs, num_points, surpluses.data());
+        int i = 0;
+        for(auto &m : max_surp) m = surp.getCStrip(i++)[output];
     }
-
-
 
     int n = 0, m;
     for(int i=0; i<num_points; i++){
         n += (max_surp[i] > tol) ? 1 : 0;
     }
 
-    double *A, *b;
+    Data2D<double> A;
+    std::vector<double> b(n);
 
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
         m = 2*num_dimensions + 1;
-        A = new double[n * m];
-        b = new double[n];
+        A.resize(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
             const int *indx = points->getIndex(c);
             if (max_surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
-                    A[j*n + count] = ((double) indx[j]);
+                    A.getStrip(j)[count] = ((double) indx[j]);
                 }
                 for(int j=0; j<num_dimensions; j++){
-                    A[(num_dimensions + j)*n + count] = log((double) (indx[j] + 1));
+                    A.getStrip(j + num_dimensions)[count] = log((double) (indx[j] + 1));
                 }
-                A[2*num_dimensions*n + count] = 1.0;
+                A.getStrip(2*num_dimensions)[count] = 1.0;
                 b[count++] = -log(max_surp[c]);
             }
         }
     }else{
         m = num_dimensions + 1;
-        A = new double[n * m];
-        b = new double[n];
+        A.resize(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
             const int *indx = points->getIndex(c);
             if (max_surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
-                    A[j*n + count] = - ((double) indx[j]);
+                    A.getStrip(j)[count] = - ((double) indx[j]);
                 }
-                A[num_dimensions*n + count] = 1.0;
+                A.getStrip(num_dimensions)[count] = 1.0;
                 b[count++] = log(max_surp[c]);
             }
         }
     }
-    delete[] max_surp;
 
-    double *x = new double[m];
-    TasmanianDenseSolver::solveLeastSquares(n, m, A, b, 1.E-5, x);
+    std::vector<double> x(m);
+    TasmanianDenseSolver::solveLeastSquares(n, m, A.getStrip(0), b.data(), 1.E-5, x.data());
 
     weights.resize(--m);
     for(int j=0; j<m; j++){
@@ -763,10 +746,6 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
             }
         }
     }
-
-    delete[] A;
-    delete[] b;
-    delete[] x;
 }
 
 void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
@@ -811,7 +790,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     int num_points = points->getNumIndexes();
     std::vector<bool> flagged(num_points);
 
-    double *norm = new double[num_outputs]; std::fill(norm, norm + num_outputs, 0.0);
+    std::vector<double> norm(num_outputs, 0.0);
     for(int i=0; i<num_points; i++){
         const double *val = values->getValues(i);
         for(int k=0; k<num_outputs; k++){
@@ -820,21 +799,24 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         }
     }
 
+    Data2D<double> surp;
+    surp.cload(num_outputs, num_points, surpluses.data());
+
     if (output == -1){
         for(int i=0; i<num_points; i++){
-            double smax = fabs(surpluses[((size_t) i) * ((size_t) num_outputs)]) / norm[0];
+            const double *s = surp.getCStrip(i);
+            double smax = fabs(s[0]) / norm[0];
             for(int k=1; k<num_outputs; k++){
-                double v = fabs(surpluses[((size_t) i) * ((size_t) num_outputs) + k]) / norm[k];
+                double v = fabs(s[k]) / norm[k];
                 if (smax < v) smax = v;
             }
             flagged[i] = (smax > tolerance);
         }
     }else{
         for(int i=0; i<num_points; i++){
-            flagged[i] = ((fabs(surpluses[((size_t) i) * ((size_t) num_outputs) + output]) / norm[output]) > tolerance);
+            flagged[i] = ((fabs(surp.getCStrip(i)[output]) / norm[output]) > tolerance);
         }
     }
-    delete[] norm;
 
     IndexManipulator IM(num_dimensions);
     IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits);
@@ -866,27 +848,29 @@ void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) co
     IndexSet *work = (points == 0) ? needed : points;
     if (interpolation){
         n = work->getNumIndexes();
+        size_t entries = ((size_t) n) * ((size_t) num_dimensions);
 
-        poly = new int[n * num_dimensions];
+        poly = new int[entries];
         const int* p = work->getIndex(0);
 
-        std::copy(p, p + n * num_dimensions, poly);
+        std::copy(p, p + entries, poly);
     }else{
         IndexManipulator IM(num_dimensions);
-        IndexSet* set = IM.getPolynomialSpace(work, rule, interpolation);
+        IndexSet* pset = IM.getPolynomialSpace(work, rule, interpolation);
 
-        n = set->getNumIndexes();
+        n = pset->getNumIndexes();
+        size_t entries = ((size_t) n) * ((size_t) num_dimensions);
 
-        poly = new int[n * num_dimensions];
-        const int* p = set->getIndex(0);
+        poly = new int[entries];
+        const int* p = pset->getIndex(0);
 
-        std::copy(p, p + n * num_dimensions, poly);
+        std::copy(p, p + entries, poly);
 
-        delete set;
+        delete pset;
     }
 }
 const double* GridSequence::getSurpluses() const{
-    return surpluses;
+    return surpluses.data();
 }
 const int* GridSequence::getPointIndexes() const{
     return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
@@ -915,13 +899,12 @@ void GridSequence::prepareSequence(int n){
     }
 }
 
-double* GridSequence::cacheBasisIntegrals() const{
+void GridSequence::cacheBasisIntegrals(std::vector<double> &integ) const{
     int max_level = max_levels[0];
 
-    for(int j=1; j<num_dimensions; j++) if (max_level < max_levels[j]) max_level = max_levels[j];
+    for(auto l: max_levels) if (max_level < l) max_level = l;
 
-    double *integ = new double[++max_level]; // integrals of basis functions
-    std::fill(integ, integ + max_level, 0.0);
+    integ.resize(++max_level, 0.0); // integrals of basis functions
 
     int n = 1 + max_level / 2; // number of Gauss-Legendre points needed to integrate the basis functions
     double *lag_x = 0, *lag_w = 0;
@@ -938,8 +921,6 @@ double* GridSequence::cacheBasisIntegrals() const{
 
     delete[] lag_w;
     delete[] lag_x;
-
-    return integ;
 }
 
 double GridSequence::evalBasis(const int f[], const int p[]) const{
@@ -956,40 +937,31 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 }
 
 void GridSequence::recomputeSurpluses(){
-    int n = points->getNumIndexes();
-    if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[((size_t) n) * ((size_t) num_outputs)];
+    int num_points = points->getNumIndexes();
+    surpluses = *(values->aliasValues());
 
-    if (num_outputs > 2){
-        #pragma omp parallel for schedule(static)
-        for(int i=0; i<n; i++){
-            const double* v = values->getValues(i);
-            std::copy(v, v + num_outputs, &(surpluses[((size_t) i) * ((size_t) num_outputs)]));
-        }
-    }else{
-        const double* v = values->getValues(0);
-        std::copy(v, v + ((size_t) n) * ((size_t) num_outputs), surpluses);
-    }
+    Data2D<double> surp;
+    surp.load(num_outputs, num_points, surpluses.data());
 
     IndexManipulator IM(num_dimensions);
     std::vector<int> level;
     IM.computeLevels(points, level);
-    int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
+    int top_level = level[0];
+    for(auto l: level) if (top_level < l) top_level = l;
 
     Data2D<int> parents;
     IM.computeDAGup(points, parents);
 
     for(int l=1; l<=top_level; l++){
         #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<n; i++){
+        for(int i=0; i<num_points; i++){
             if (level[i] == l){
                 const int* p = points->getIndex(i);
-                double *surpi = &(surpluses[((size_t) i) * ((size_t) num_outputs)]);
+                double *surpi = surp.getStrip(i);
 
-                int *monkey_count = new int[top_level + 1];
-                int *monkey_tail = new int[top_level + 1];
-                bool *used = new bool[n];
-                std::fill(used, used + n, false);
+                std::vector<int> monkey_count(top_level + 1);
+                std::vector<int> monkey_tail(top_level + 1);
+                std::vector<bool> used(num_points, false);
 
                 int current = 0;
 
@@ -1002,7 +974,7 @@ void GridSequence::recomputeSurpluses(){
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
-                            const double *branch_surp = &(surpluses[((size_t) branch) * ((size_t) num_outputs)]);
+                            const double *branch_surp = surp.getCStrip(branch);;
                             double basis_value = evalBasis(points->getIndex(branch), p);
                             for(int k=0; k<num_outputs; k++){
                                  surpi[k] -= basis_value * branch_surp[k];
@@ -1016,10 +988,6 @@ void GridSequence::recomputeSurpluses(){
                         monkey_count[--current]++;
                     }
                 }
-
-                delete[] used;
-                delete[] monkey_tail;
-                delete[] monkey_count;
             }
         }
     }
@@ -1027,7 +995,7 @@ void GridSequence::recomputeSurpluses(){
 
 void GridSequence::applyTransformationTransposed(double weights[]) const{
     IndexSet *work = (points == 0) ? needed : points;
-    int n = work->getNumIndexes();
+    int num_points = work->getNumIndexes();
 
     IndexManipulator IM(num_dimensions);
     std::vector<int> level;
@@ -1036,21 +1004,22 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
     Data2D<int> parents;
     IM.computeDAGup(work, parents);
 
-    int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
+    int top_level = level[0];
+    for(auto l: level) if (top_level < l) top_level = l;
 
-    int *monkey_count = new int[top_level + 1];
-    int *monkey_tail = new int[top_level + 1];
-    bool *used = new bool[n];
+    std::vector<int> monkey_count(top_level + 1);
+    std::vector<int> monkey_tail(top_level + 1);
+    std::vector<bool> used(num_points);
 
     for(int l=top_level; l>0; l--){
-        for(int i=0; i<n; i++){
+        for(int i=0; i<num_points; i++){
             if (level[i] == l){
                 const int* p = work->getIndex(i);
                 int current = 0;
 
                 monkey_count[0] = 0;
                 monkey_tail[0] = i;
-                std::fill(used, used + n, false);
+                std::fill(used.begin(), used.end(), false);
 
                 while(monkey_count[0] < num_dimensions){
                     if (monkey_count[current] < num_dimensions){
@@ -1071,10 +1040,6 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
             }
         }
     }
-
-    delete[] used;
-    delete[] monkey_tail;
-    delete[] monkey_count;
 }
 
 void GridSequence::clearAccelerationData(){

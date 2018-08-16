@@ -116,11 +116,10 @@ public:
 protected:
     void reset();
 
-    double* evalHierarchicalFunctions(const double x[]) const;
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 
     void prepareSequence(int n);
-    double* cacheBasisIntegrals() const;
+    void cacheBasisIntegrals(std::vector<double> &integ) const;
 
     template<typename T>
     T** cacheBasisValues(const T x[]) const{
@@ -153,7 +152,7 @@ private:
     IndexSet *needed;
     //int *parents; // NOTE: this is needed only for computing surpluses, maybe there is no need to store it
 
-    double *surpluses;
+    std::vector<double> surpluses;
     double *nodes;
     double *coeff;
 
