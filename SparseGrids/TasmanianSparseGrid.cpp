@@ -1081,10 +1081,8 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
     }
     if (pwpoly != 0){
         pwpoly->setSurplusRefinement(tolerance, criteria, output, llimits, scale_correction);
-    }else if (wavelet != 0){
-        wavelet->setSurplusRefinement(tolerance, criteria, output, llimits);
     }else{
-        throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
+        wavelet->setSurplusRefinement(tolerance, criteria, output, llimits);
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
