@@ -995,7 +995,7 @@ void GridSequence::recomputeSurpluses(){
 
 void GridSequence::applyTransformationTransposed(double weights[]) const{
     IndexSet *work = (points == 0) ? needed : points;
-    int n = work->getNumIndexes();
+    int num_points = work->getNumIndexes();
 
     IndexManipulator IM(num_dimensions);
     std::vector<int> level;
@@ -1004,21 +1004,22 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
     Data2D<int> parents;
     IM.computeDAGup(work, parents);
 
-    int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
+    int top_level = level[0];
+    for(auto l: level) if (top_level < l) top_level = l;
 
-    int *monkey_count = new int[top_level + 1];
-    int *monkey_tail = new int[top_level + 1];
-    bool *used = new bool[n];
+    std::vector<int> monkey_count(top_level + 1);
+    std::vector<int> monkey_tail(top_level + 1);
+    std::vector<bool> used(num_points);
 
     for(int l=top_level; l>0; l--){
-        for(int i=0; i<n; i++){
+        for(int i=0; i<num_points; i++){
             if (level[i] == l){
                 const int* p = work->getIndex(i);
                 int current = 0;
 
                 monkey_count[0] = 0;
                 monkey_tail[0] = i;
-                std::fill(used, used + n, false);
+                std::fill(used.begin(), used.end(), false);
 
                 while(monkey_count[0] < num_dimensions){
                     if (monkey_count[current] < num_dimensions){
@@ -1039,10 +1040,6 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
             }
         }
     }
-
-    delete[] used;
-    delete[] monkey_tail;
-    delete[] monkey_count;
 }
 
 void GridSequence::clearAccelerationData(){
