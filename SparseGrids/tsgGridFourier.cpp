@@ -470,18 +470,15 @@ void GridFourier::getPoints(double *x) const{
     if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); };
 }
 
-void GridFourier::calculateFourierCoefficients(){
-    int num_points = getNumPoints();
-
+void GridFourier::generateIndexingMap(std::vector<std::vector<int>> &index_map) const{
     // The internal point-indexing of Tasmanian goes 0, 1/3, 2/3, 1/9, 2/9, 4/9 ....
     // Fourier transform (and coefficients) need spacial order 0, 1/9, 2/9, 3/9=1/3, ...
     // Create a map, where at level 0: 0 -> 0, level 1: 0 1 2 -> 0 1 2, level 2: 0 1 2 3 4 5 6 7 8 -> 0 3 4 1 5 6 2 7 8
     // The map takes a point from previous map and adds two more points ...
     // Thus, a spacial point i on level l is Tasmanian point index_map[l][i]
-    IndexSet *work = (points == 0 ? needed : points);
     IndexManipulator IM(num_dimensions);
     int maxl = IM.getMaxLevel(active_tensors) + 1;
-    std::vector<std::vector<int>> index_map(maxl);
+    index_map.resize(maxl);
     index_map[0].resize(1, 0);
     int c = 1;
     for(int l=1; l<maxl; l++){
@@ -493,6 +490,14 @@ void GridFourier::calculateFourierCoefficients(){
             *im++ = c++;
         }
     }
+}
+
+void GridFourier::calculateFourierCoefficients(){
+    int num_points = getNumPoints();
+
+    IndexSet *work = (points == 0 ? needed : points);
+    std::vector<std::vector<int>> index_map;
+    generateIndexingMap(index_map);
 
     if (fourier_coefs != 0){ delete[] fourier_coefs; fourier_coefs = 0; }
     fourier_coefs = new double[2 * num_outputs * num_points];
@@ -542,22 +547,9 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     Note that U is the DFT operator (complex) and the transposes are ONLY REAL transposes, so U^T = U.
     */
 
-    // see comments in GridFourier::calculateFourierCoefficients()
     IndexSet *work = (points == 0 ? needed : points);
-    IndexManipulator IM(num_dimensions);
-    int maxl = IM.getMaxLevel(active_tensors) + 1;
-    std::vector<std::vector<int>> index_map(maxl);
-    index_map[0].resize(1, 0);
-    int c = 1;
-    for(int l=1; l<maxl; l++){
-        index_map[l].resize(3*c); // next level is 3 times the size of the previous
-        auto im = index_map[l].begin();
-        for(auto i: index_map[l-1]){
-            *im++ = i; // point from old level
-            *im++ = c++; // two new points
-            *im++ = c++;
-        }
-    }
+    std::vector<std::vector<int>> index_map;
+    generateIndexingMap(index_map);
 
     std::fill(weights, weights+getNumPoints(), 0.0);
     double *basisFuncs = new double[2* getNumPoints()];
