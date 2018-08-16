@@ -937,39 +937,31 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 }
 
 void GridSequence::recomputeSurpluses(){
-    int n = points->getNumIndexes();
-    surpluses.resize(((size_t) n) * ((size_t) num_outputs));
+    int num_points = points->getNumIndexes();
+    surpluses = *(values->aliasValues());
 
-    if (num_outputs > 2){
-        #pragma omp parallel for schedule(static)
-        for(int i=0; i<n; i++){
-            const double* v = values->getValues(i);
-            std::copy(v, v + num_outputs, &(surpluses[((size_t) i) * ((size_t) num_outputs)]));
-        }
-    }else{
-        const double* v = values->getValues(0);
-        std::copy(v, v + ((size_t) n) * ((size_t) num_outputs), surpluses.data());
-    }
+    Data2D<double> surp;
+    surp.load(num_outputs, num_points, surpluses.data());
 
     IndexManipulator IM(num_dimensions);
     std::vector<int> level;
     IM.computeLevels(points, level);
-    int top_level = level[0];  for(int i=1; i<n; i++){  if (top_level < level[i]) top_level = level[i];  }
+    int top_level = level[0];
+    for(auto l: level) if (top_level < l) top_level = l;
 
     Data2D<int> parents;
     IM.computeDAGup(points, parents);
 
     for(int l=1; l<=top_level; l++){
         #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<n; i++){
+        for(int i=0; i<num_points; i++){
             if (level[i] == l){
                 const int* p = points->getIndex(i);
-                double *surpi = &(surpluses[((size_t) i) * ((size_t) num_outputs)]);
+                double *surpi = surp.getStrip(i);
 
-                int *monkey_count = new int[top_level + 1];
-                int *monkey_tail = new int[top_level + 1];
-                bool *used = new bool[n];
-                std::fill(used, used + n, false);
+                std::vector<int> monkey_count(top_level + 1);
+                std::vector<int> monkey_tail(top_level + 1);
+                std::vector<bool> used(num_points, false);
 
                 int current = 0;
 
@@ -982,7 +974,7 @@ void GridSequence::recomputeSurpluses(){
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
-                            const double *branch_surp = &(surpluses[((size_t) branch) * ((size_t) num_outputs)]);
+                            const double *branch_surp = surp.getCStrip(branch);;
                             double basis_value = evalBasis(points->getIndex(branch), p);
                             for(int k=0; k<num_outputs; k++){
                                  surpi[k] -= basis_value * branch_surp[k];
@@ -996,10 +988,6 @@ void GridSequence::recomputeSurpluses(){
                         monkey_count[--current]++;
                     }
                 }
-
-                delete[] used;
-                delete[] monkey_tail;
-                delete[] monkey_count;
             }
         }
     }
