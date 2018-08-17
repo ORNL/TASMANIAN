@@ -1371,32 +1371,44 @@ void GridLocalPolynomial::getNormalization(std::vector<double> &norms) const{
 void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, std::vector<int> &pmap) const{
     int num_points = points->getNumIndexes();
     pmap.resize(num_points * num_dimensions);
+    if (tolerance == 0.0){
+        std::fill(pmap.begin(), pmap.end(), 1);
+        return;
+    }else{
+        std::fill(pmap.begin(), pmap.end(), 0);
+    }
 
     std::vector<double> norm;
     getNormalization(norm);
 
-    const double *scale = scale_correction;
-    std::vector<double> temp_scale;
-    if (scale == 0){
-        temp_scale = std::vector<double>(((size_t) num_points) * ((size_t) num_outputs), 1.0);
-        scale = temp_scale.data();
+    int active_outputs = (output == -1) ? num_outputs : 1;
+    Data2D<double> scale;
+    if (scale_correction == 0){
+        scale.resize(active_outputs, num_points, 1.0);
+    }else{
+        scale.cload(active_outputs, num_points, scale_correction);
     }
 
-    if (tolerance == 0.0){
-        std::fill(pmap.begin(), pmap.end(), 1);
-    }else if ((criteria == refine_classic) || (criteria == refine_parents_first)){
+    Data2D<double> surp;
+    surp.cload(num_outputs, num_points, surpluses);
+
+    Data2D<int> map2;
+    map2.load(num_dimensions, num_points, pmap.data());
+
+    if ((criteria == refine_classic) || (criteria == refine_parents_first)){
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             bool small = true;
+            const double *s = surp.getCStrip(i);
+            const double *c = scale.getCStrip(i);
             if (output == -1){
-                for(size_t k=0; k<((size_t) num_outputs); k++){
-                    if (small && ((scale[((size_t)i) * ((size_t) num_outputs) + k] * fabs(surpluses[((size_t)i) * ((size_t) num_outputs) + k]) / norm[k]) > tolerance)) small = false;
-                }
+                for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);
             }else{
-                small = !((scale[i] * fabs(surpluses[((size_t)i) * ((size_t) num_outputs) + output]) / norm[output]) > tolerance);
+                small = ((c[0] * fabs(s[output]) / norm[output]) <= tolerance);
             }
             if (!small){
-                std::fill(&(pmap[i*num_dimensions]), &(pmap[i*num_dimensions]) + num_dimensions, 1);
+                int *m = map2.getStrip(i);
+                std::fill(m, m + num_dimensions, 1);
             }
         }
     }else{
@@ -1410,48 +1422,46 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
         SplitDirections split(points);
 
         #pragma omp parallel for
-        for(int s=0; s<split.getNumJobs(); s++){ // split.getNumJobs() gives the number of 1D interpolants to construct
-            int d = split.getJobDirection(s);
-            int nump = split.getJobNumPoints(s);
-            const int *pnts = split.getJobPoints(s);
+        for(int j=0; j<split.getNumJobs(); j++){ // split.getNumJobs() gives the number of 1D interpolants to construct
+            int d = split.getJobDirection(j);
+            int nump = split.getJobNumPoints(j);
+            const int *pnts = split.getJobPoints(j);
 
             std::vector<int> global_to_pnts(num_points);
             std::vector<int> levels(nump);
 
             int max_level = 0;
 
-            int active_outputs = (output == -1) ? num_outputs : 1;
-
-            double *vals = new double[((size_t) nump) * ((size_t) active_outputs)];
+            Data2D<double> vals;
+            vals.resize(active_outputs, nump);
 
             for(int i=0; i<nump; i++){
                 const double* v = values->getValues(pnts[i]);
                 const int *p = points->getIndex(pnts[i]);
                 if (output == -1){
-                    std::copy(v, v + num_outputs, &(vals[((size_t) i) * ((size_t) num_outputs)]));
+                    std::copy(v, v + num_outputs, vals.getStrip(i));
                 }else{
-                    vals[i] = v[output];
+                    vals.getStrip(i)[0] = v[output];
                 }
                 global_to_pnts[pnts[i]] = i;
                 levels[i] = rule->getLevel(p[d]);
                 if (max_level < levels[i]) max_level = levels[i];
             }
 
-            int *monkey_count = new int[max_level + 1];
-            int *monkey_tail = new int[max_level + 1];
-            bool *used = new bool[nump];
+            std::vector<int> monkey_count(max_level + 1);
+            std::vector<int> monkey_tail(max_level + 1);
 
             for(int l=1; l<=max_level; l++){
                 for(int i=0; i<nump; i++){
                     if (levels[i] == l){
                         const int *p = points->getIndex(pnts[i]);
                         double x = rule->getNode(p[d]);
-                        double *valsi = &(vals[((size_t) i) * ((size_t) active_outputs)]);
+                        double *valsi = vals.getStrip(i);
 
                         int current = 0;
                         monkey_count[0] = d * max_1D_parents;
                         monkey_tail[0] = pnts[i]; // uses the global indexes
-                        std::fill(used, used + nump, false);
+                        std::vector<bool> used(nump, false);
 
                         while(monkey_count[0] < (d+1) * max_1D_parents){
                             if (monkey_count[current] < (d+1) * max_1D_parents){
@@ -1461,10 +1471,8 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
                                 }else{
                                     const int *branch_point = points->getIndex(branch);
                                     double basis_value = rule->evalRaw(branch_point[d], x);
-                                    const double *branch_vals = &(vals[((size_t) global_to_pnts[branch]) * ((size_t) active_outputs)]);
-                                    for(int k=0; k<active_outputs; k++){
-                                        valsi[k] -= basis_value * branch_vals[k];
-                                    }
+                                    const double *branch_vals = vals.getCStrip(global_to_pnts[branch]);
+                                    for(int k=0; k<active_outputs; k++) valsi[k] -= basis_value * branch_vals[k];
 
                                     used[global_to_pnts[branch]] = true;
                                     monkey_count[++current] = d * max_1D_parents;
@@ -1478,24 +1486,21 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
                 }
             }
 
-            delete[] used;
-            delete[] monkey_tail;
-            delete[] monkey_count;
-
             // at this point, vals contains the one directional surpluses
-            for(size_t i=0; i<((size_t) nump); i++){
+            for(int i=0; i<nump; i++){
+                const double *s = surp.getCStrip(pnts[i]);
+                const double *c = scale.getCStrip(pnts[i]);
+                const double *v = vals.getCStrip(i);
                 bool small = true;
                 if (output == -1){
-                    for(size_t k=0; k<((size_t) num_outputs); k++){
-                        if (small && ((scale[i*num_outputs + k] * fabs(surpluses[pnts[i]*num_outputs + k]) / norm[k]) > tolerance) && ((scale[i*num_outputs + k] * fabs(vals[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
+                    for(int k=0; k<num_outputs; k++){
+                        small = small && (((c[k] * fabs(s[k]) / norm[k]) <= tolerance) || ((c[k] * fabs(v[k]) / norm[k]) <= tolerance));
                     }
                 }else{
-                    if (((scale[i] * fabs(surpluses[pnts[i]*num_outputs + output]) / norm[output]) > tolerance) && ((scale[i] * fabs(vals[i]) / norm[output]) > tolerance)) small = false;
+                    small = ((c[0] * fabs(s[output]) / norm[output]) <= tolerance) || ((c[0] * fabs(v[0]) / norm[output]) <= tolerance);
                 }
-                pmap[pnts[i]*num_dimensions + d] = (small) ? 0 : 1;;
+                map2.getStrip(pnts[i])[d] = (small) ? 0 : 1;;
             }
-
-            delete[] vals;
         }
     }
 }
