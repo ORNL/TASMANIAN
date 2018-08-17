@@ -744,10 +744,12 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
 void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
+    Data2D<double> yy; yy.load(num_points, num_x, y);
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        const double *this_x = &(x[i*num_dimensions]);
-        double *this_y = &(y[((size_t) i) * ((size_t) num_points)]);
+        const double *this_x = xx.getCStrip(i);
+        double *this_y = yy.getStrip(i);
         bool dummy;
         for(int j=0; j<num_points; j++){
             this_y[j] = evalBasisSupported(work->getIndex(j), this_x, dummy);
