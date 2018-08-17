@@ -367,21 +367,27 @@ int GridLocalPolynomial::getNumPoints() const{ return ((points == 0) ? getNumNee
 
 void GridLocalPolynomial::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = points->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule->getNode(p[j]);
+            xx[j] = rule->getNode(p[j]);
         }
     }
 }
 void GridLocalPolynomial::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = needed->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule->getNode(p[j]);
+            xx[j] = rule->getNode(p[j]);
         }
     }
 }
