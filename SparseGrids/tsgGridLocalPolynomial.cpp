@@ -1252,8 +1252,8 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
     getBasisIntegrals(weights);
 
-    int *monkey_count = new int[top_level+1];
-    int *monkey_tail = new int[top_level+1];
+    std::vector<int> monkey_count(top_level+1);
+    std::vector<int> monkey_tail(top_level+1);
 
     double basis_value;
 
@@ -1268,7 +1268,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     }
 
     int num_points = work->getNumIndexes();
-    int *level = new int[num_points];
+    std::vector<int> level(num_points);
     for(int i=0; i<num_points; i++){
         const int *p = work->getIndex(i);
         level[i] = rule->getLevel(p[0]);
@@ -1277,8 +1277,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
         }
     }
 
-    bool *used = new bool[work->getNumIndexes()];
-    double *node = new double[num_dimensions];
+    std::vector<double> node(num_dimensions);
     int max_parents = rule->getMaxNumParents() * num_dimensions;
 
     for(int l=top_level; l>0; l--){
@@ -1287,7 +1286,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
                 const int* p = work->getIndex(i);
                 for(int j=0; j<num_dimensions; j++) node[j] = rule->getNode(p[j]);
 
-                std::fill(used, used + work->getNumIndexes(), false);
+                std::vector<bool> used(work->getNumIndexes(), false);
 
                 monkey_count[0] = 0;
                 monkey_tail[0] = i;
@@ -1315,14 +1314,6 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
             }
         }
     }
-
-    delete[] used;
-    delete[] node;
-
-    delete[] level;
-
-    delete[] monkey_count;
-    delete[] monkey_tail;
 }
 
 void GridLocalPolynomial::integrate(double q[], double *conformal_correction) const{
