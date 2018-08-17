@@ -408,8 +408,8 @@ void GridSequence::evaluate(const double x[], double y[]) const{
 
     for(int i=0; i<num_points; i++){
         const int* p = points->getIndex(i);
-        double basis_value = cache[0][p[0]];
         const double *s = surps.getCStrip(i);
+        double basis_value = cache[0][p[0]];
         for(int j=1; j<num_dimensions; j++){
             basis_value *= cache[j][p[j]];
         }
