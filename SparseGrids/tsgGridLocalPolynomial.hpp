@@ -287,7 +287,7 @@ protected:
 private:
     int num_dimensions, num_outputs, order, top_level;
 
-    double *surpluses;
+    Data2D<double> surpluses;
 
     IndexSet *points;
     IndexSet *needed;
