@@ -1593,51 +1593,49 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
 int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     clearRefinement();
     int num_points = points->getNumIndexes();
-    bool *pmap = new bool[num_points]; // point map, set to true if the point is to be kept, false otherwise
+    std::vector<bool> pmap(num_points); // point map, set to true if the point is to be kept, false otherwise
 
     std::vector<double> norm;
     getNormalization(norm);
 
-    const double *scale = scale_correction;
-    double *temp_scale = 0;
-    if (scale == 0){
-        temp_scale = new double[num_points * num_outputs]; std::fill(temp_scale, temp_scale + num_points * num_outputs, 1.0);
-        scale = temp_scale;
+    Data2D<double> scale;
+    int active_outputs = (output == -1) ? num_outputs : 1;
+    if (scale_correction == 0){
+        scale.resize(active_outputs, num_points, 1.0);
+    }else{
+        scale.cload(active_outputs, num_points, scale_correction);
     }
 
     for(int i=0; i<num_points; i++){
         bool small = true;
         const double *s = surpluses.getCStrip(i);
+        const double *c = scale.getCStrip(i);
         if (output == -1){
-            for(int k=0; k<num_outputs; k++){
-                if (small && ((scale[i*num_outputs + k] * fabs(s[k]) / norm[k]) > tolerance)) small = false;
-            }
+            for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);
         }else{
-            small = !((scale[i] * fabs(s[output]) / norm[output]) > tolerance);
+            small = ((c[0] * fabs(s[output]) / norm[output]) <= tolerance);
         }
         pmap[i] = !small;
     }
 
     int num_kept = 0; for(int i=0; i<num_points; i++) num_kept += (pmap[i]) ? 1 : 0;
-    if (num_kept == 0){
-        delete[] pmap;
-        return 0;
-    }
 
-    if (num_kept == num_points){
-        delete[] pmap;
-        return num_points;
-    }
+    if (num_kept == 0) return 0; // trivial case, remove all
+    if (num_kept == num_points) return num_points; // trivial case, remove nothing
 
     // save a copy of the points and the values
-    std::vector<int> point_kept(num_kept * num_dimensions);
-    double *values_kept = new double[num_kept * num_outputs];
+    std::vector<int> point_kept(((size_t) num_kept) * ((size_t) num_dimensions));
+    Data2D<int> pp;
+    pp.load(num_dimensions, num_kept, point_kept.data()); // to handle double indexing
+
+    StorageSet *values_kept = new StorageSet(num_outputs, num_kept);
+    values_kept->aliasValues()->resize(((size_t) num_kept) * ((size_t) num_outputs));
 
     num_kept = 0;
     for(int i=0; i<num_points; i++){
         if (pmap[i]){
-            std::copy(points->getIndex(i), points->getIndex(i) + num_dimensions, &(point_kept[num_kept*num_dimensions]));
-            std::copy(values->getValues(i), values->getValues(i) + num_outputs, &(values_kept[num_kept*num_outputs]));
+            std::copy(points->getIndex(i), points->getIndex(i) + num_dimensions, pp.getStrip(num_kept));
+            std::copy(values->getValues(i), values->getValues(i) + num_outputs, values_kept->getValues(num_kept));
             num_kept++;
         }
     }
@@ -1648,15 +1646,10 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     num_dimensions = dims; num_outputs = outs;
 
     points = new IndexSet(num_dimensions, point_kept);
-    values = new StorageSet(num_outputs, num_kept);
-    values->setValues(values_kept);
-    delete[] values_kept;
+    values = values_kept;
 
     buildTree();
     recomputeSurpluses();
-
-    delete[] pmap;
-    if (temp_scale == 0) delete[] temp_scale;
 
     return points->getNumIndexes();
 }

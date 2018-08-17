@@ -206,6 +206,7 @@ public:
     void readBinary(std::ifstream &ifs);
 
     const double* getValues(int i) const;
+    double* getValues(int i);
     std::vector<double>* aliasValues(); // alternative to setValues()
     int getNumOutputs() const;
 
