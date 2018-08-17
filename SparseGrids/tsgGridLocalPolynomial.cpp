@@ -471,9 +471,11 @@ void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[]) cons
 void GridLocalPolynomial::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
 
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        evaluate(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_outputs)]));
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
     }
 }
 void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
@@ -492,17 +494,18 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
 
     if ((sparse_affinity == -1) || ((sparse_affinity == 0) && (nnz / total_size > 0.1))){
         // potentially wastes a lot of memory
-        std::vector<double> A(((size_t) num_x) * ((size_t) num_points), 0.0);
+        Data2D<double> A;
+        A.resize(num_points, num_x, 0.0);
         for(int i=0; i<num_x; i++){
-            for(int j=spntr[i]; j<spntr[i+1]; j++){
-                A[((size_t) i) * ((size_t) num_points) + ((size_t) sindx[j])] = svals[j];
-            }
+            double *row = A.getStrip(i);
+            for(int j=spntr[i]; j<spntr[i+1]; j++) row[sindx[j]] = svals[j];
         }
-        TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.getCStrip(0), A.data(), 0.0, y);
+        TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.getCStrip(0), A.getCStrip(0), 0.0, y);
     }else{
+        Data2D<double> yy; yy.load(num_outputs, num_x, y);
         #pragma omp parallel for
         for(int i=0; i<num_x; i++){
-            double *this_y = &(y[i*num_outputs]);
+            double *this_y = yy.getStrip(i);
             std::fill(this_y, this_y + num_outputs, 0.0);
             for(int j=spntr[i]; j<spntr[i+1]; j++){
                 double v = svals[j];
