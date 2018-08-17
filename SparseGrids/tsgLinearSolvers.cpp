@@ -232,6 +232,145 @@ void TasmanianFourierTransform::discrete_fourier_transform(const int rank, const
     delete[] k_idx;
 }
 
+void TasmanianFourierTransform::fast_fourier_transform(std::vector<std::vector<std::complex<double>>> &data, std::vector<int> &num_points){
+    int num_dimensions = (int) num_points.size();
+    int num_total = 1;
+    for(auto n: num_points) num_total *= n;
+    std::vector<int> cumulative_points(num_dimensions);
+    for(int k=0; k<num_dimensions; k++){
+        // split the data into vectors of 1-D transforms
+        std::vector<std::vector<int>> maps1d(num_total / num_points[k]); // total number of 1-D transforms
+        for(auto &v: maps1d) v.reserve(num_points[k]); // each 1-D transform will have size num_points[k]
+
+        std::fill(cumulative_points.begin(), cumulative_points.end(), 1);
+        for(int j=num_dimensions-2; j>=0; j--) cumulative_points[j] = cumulative_points[j+1] * ((j+1 != k) ? num_points[j+1] : 1);
+
+        // convert i to tuple, i.e., i -> p0, p1, p2 .. pd, where d = num_dimensions
+        // all tuples that differ only in the k-th entry will belong to the same 1-D transform
+        // the index of the 1D transform is i1d = \sum_{j \neq k} pj * cumulative_points[j]
+        for(int i=0; i<num_total; i++){
+            int t = i; // used to construct the tensor index
+            int i1d = 0; // index of the corresponding 1D transform
+            for(int j=num_dimensions-1; j>=0; j--){
+                int pj = t % num_points[j]; // tensor index j
+                if (j != k) i1d += cumulative_points[j] * pj;
+                t /= num_points[j];
+            }
+            maps1d[i1d].push_back(i);
+        }
+
+        #pragma omp parallel for // perform the 1D transforms
+        for(int i=0; i<(int) maps1d.size(); i++){
+            fast_fourier_transform1D(data, maps1d[i]);
+        }
+    }
+}
+
+void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector<std::complex<double>>> &data, std::vector<int> &indexes){
+    //
+    // Given vector x_n with size N, the Fourier transform F_k is defined as: F_k = \sum_{n=0}^{N-1} \exp(- 2 \pi k n / N) x_n
+    // Assuming that N = 3^l for some l, we can sub-divide the transform into strips of 3
+    // let j = 0, 1, 2; let k = 0, .., N/3; let x_{0,m} = x_{3m}; let x_{1,m} = x_{3m+1}; and let x_{2,m} = x_{3m+2}
+    // F_{k + j N / 3} =                                         \sum_{m=0}^{N/3 - 1} x_{0,m} \exp(-2 \pi k m / (N / 3))
+    //                   + \exp(-2 \pi k / N) \exp(-2 \pi j / 3) \sum_{m=0}^{N/3 - 1} x_{1,m} \exp(-2 \pi k m / (N / 3))
+    //                   + \exp(-4 \pi k / N) \exp(-4 \pi j / 3) \sum_{m=0}^{N/3 - 1} x_{2,m} \exp(-2 \pi k m / (N / 3))
+    // The three sums are the Fourier coefficients of x_{0, m}, x_{1, m}, and x_{2, m}
+    // The terms \exp(-2 \pi k / N) \exp(-2 \pi j / 3), and \exp(-4 \pi k / N) \exp(-4 \pi j / 3) are the twiddle factors
+    // The procedure is recursive splitting the transform into small sets, all the way to size 3
+    //
+    int num_outputs = (int) data[0].size(); // get the problem dimensions, num outputs and num entries for the 1D transform
+    int num_entries = (int) indexes.size(); // the size of the 1D problem, i.e., N
+    if (num_entries == 1) return; // nothing to do for size 1
+    // a copy of the data is needed to swap back and forth, thus we make two copies and swap between them
+    std::vector<std::vector<std::complex<double>>> V(num_entries);
+    auto v = V.begin();
+    for(auto i: indexes) *v++ = data[i]; // copy from the data only the indexes needed for the 1D transform
+    std::vector<std::vector<std::complex<double>>> W(num_entries);
+    for(auto &w : W) w.resize(num_outputs); // allocate storage for the second data set
+
+    // the radix-3 FFT algorithm uses two common twiddle factors from known angles +/- 2 pi/3
+    std::complex<double> twidlep(-0.5, -sqrt(3.0) / 2.0); // angle of -2 pi/3
+    std::complex<double> twidlem(-0.5,  sqrt(3.0) / 2.0); // angle of  2 pi/3 = -4 pi/3
+
+    int stride = num_entries / 3; // the jump between entries, e.g., in one level of split stride is 3, split again and stride is 9 ... up to N / 3
+    int length = 3;               // the number of entries in the sub-sequences, i.e., how large k can be (see above), smallest sub-sequence uses length 3
+
+    for(int i=0; i<stride; i++){ // do the 3 transform, multiply by 3 by 3 matrix
+        auto x1 = V[i].begin();
+        auto x2 = V[i + stride].begin();
+        auto x3 = V[i + 2 * stride].begin(); // x1, x2, x3 are the three entries of a sub-sequence
+
+        auto y1 = W[i].begin();
+        auto y2 = W[i + stride].begin();
+        auto y3 = W[i + 2 * stride].begin(); // y1, y2, y3 are the resulting Fourier coefficients
+
+        for(int k=0; k<num_outputs; k++){
+            *y1++ = *x1 + *x2 + *x3;
+            *y2++ = *x1 + twidlep * *x2 + twidlem * *x3;
+            *y3++ = *x1 + twidlem * *x2 + twidlep * *x3;
+            x1++; x2++; x3++;
+        }
+    }
+
+    std::swap(V, W); // swap, now V contains the computed transform of the sub-sequences with size 3, W will be used for scratch space
+
+    // merge smaller sequences, do the recursion
+    while(stride / 3 > 0){ // when the stride that we just computed is equal to 1, then stop the recursion
+        int biglength = 3 * length; // big sequence, i.e., F_k has this total length
+        int bigstride = stride / 3;
+
+        double theta = -2.0 * M_PI  / ((double) biglength);
+        std::complex<double> expstep(cos(theta), sin(theta)); // initialize the twiddle factors common for this level of sub-sequences
+        std::complex<double> expstep2 = expstep * expstep;
+
+        // merge sets of 3 sub-sequences (coefficients of x_{i,m}) into 3 pieces of one sequence F_{k + j N / 3}
+        for(int i=0; i<bigstride; i++){ // total number of triples of sequences is bigstride
+            std::complex<double> t01(1.0, 0.0);
+            std::complex<double> t02(1.0, 0.0);
+
+            std::complex<double> t11 = twidlep;
+            std::complex<double> t12 = twidlem;
+
+            std::complex<double> t21 = twidlem;
+            std::complex<double> t22 = twidlep; // the twiddle factors form a 3 by 3 matrix [1, 1, 1; 1, t11, t12; 1, t21, t22;]
+
+            for(int k=0; k<length; k++){ // number of entries in the sub-sequences
+                auto x1 = V[i + k * stride].begin();
+                auto x2 = V[i + k * stride + bigstride].begin();
+                auto x3 = V[i + k * stride + 2 * bigstride].begin(); // x1, x2, x3 are the next entries of the sub-sequence (i.e., the sums)
+
+                auto y1 = W[i + k * bigstride].begin();
+                auto y2 = W[i + (k + length) * bigstride].begin();
+                auto y3 = W[i + (k + 2 * length) * bigstride].begin(); // y1, y2, y3 are the F_{k + j N / 3}
+
+                for(int o=0; o<num_outputs; o++){ // traverse through all the outputs
+                    *y1++ = *x1 + t01 * *x2 + t02 * *x3;
+                    *y2++ = *x1 + t11 * *x2 + t12 * *x3;
+                    *y3++ = *x1 + t21 * *x2 + t22 * *x3;
+                    x1++; x2++; x3++;
+                }
+
+                // update the twiddle factors for the next index k
+                t01 *= expstep;
+                t11 *= expstep;
+                t21 *= expstep;
+                t02 *= expstep2;
+                t12 *= expstep2;
+                t22 *= expstep2;
+            }
+        }
+
+        std::swap(V, W); // swap the data, V holds the current set of indexes and W is the next set
+
+        stride = bigstride;
+        length = biglength;
+    }
+
+    // copy back the solution into the data structure
+    v = V.begin();
+    for(auto i : indexes) data[i] = *v++;
+}
+
 }
 
 namespace TasSparse{

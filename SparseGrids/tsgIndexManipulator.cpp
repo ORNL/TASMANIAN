@@ -837,7 +837,7 @@ void IndexManipulator::getMaxLevels(const IndexSet *iset, std::vector<int> &max_
 int IndexManipulator::getMaxLevel(const IndexSet *iset) const{
     int n = iset->getNumIndexes();
     int m = 0;
-    for(int i=1; i<n; i++){
+    for(int i=0; i<n; i++){
         const int* t = iset->getIndex(i);
         for(int j=0; j<num_dimensions; j++) if (m < t[j]) m = t[j];
     }

@@ -1755,9 +1755,8 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "local polynomial" << setw(wthird) << "FAIL" << endl;
     }
 
-    // 3K outputs is too slow with Fourier currently; need FFT implementation for speedup
-    grid.makeFourierGrid(f22sincos.getNumInputs(), f22sincos.getNumOutputs(), 5, TasGrid::type_level);
-    pass = pass && testAcceleration(&f22sincos, &grid);
+    grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 4, TasGrid::type_level);
+    pass = pass && testAcceleration(f, &grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
     }else{

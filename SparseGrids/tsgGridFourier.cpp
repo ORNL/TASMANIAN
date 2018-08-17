@@ -502,6 +502,49 @@ void GridFourier::calculateFourierCoefficients(){
     if (fourier_coefs != 0){ delete[] fourier_coefs; fourier_coefs = 0; }
     fourier_coefs = new double[2 * num_outputs * num_points];
     std::fill(fourier_coefs, fourier_coefs + 2*num_outputs*num_points, 0.0);
+
+    if (true){ // use new fft algorithm
+
+    for(int n=0; n<active_tensors->getNumIndexes(); n++){
+        const int* levels = active_tensors->getIndex(n);
+        int num_tensor_points = 1;
+        std::vector<int> num_oned_points(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            num_oned_points[j] = wrapper->getNumPoints(levels[j]);
+            num_tensor_points *= num_oned_points[j];
+        }
+
+        std::vector<std::vector<std::complex<double>>> tensor_data(num_tensor_points);
+        std::vector<int> p(num_dimensions);
+        for(int i=0; i<num_tensor_points; i++){
+            // We interpret this "i" as running through the spatial indexing; convert to internal
+            int t=i;
+            for(int j=num_dimensions-1; j>=0; j--){
+                p[j] = index_map[levels[j]][t % num_oned_points[j]];
+                t /= num_oned_points[j];
+            }
+            const double *v = values->getValues(work->getSlot(p));
+            tensor_data[i].resize(num_outputs);
+            std::copy(v, v + num_outputs, tensor_data[i].data());
+        }
+
+        TasmanianFourierTransform::fast_fourier_transform(tensor_data, num_oned_points);
+
+        double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
+        for(int i=0; i<num_tensor_points; i++){
+            // Combine with tensor weights
+            double *fc_real = &(fourier_coefs[num_outputs*(exponent_refs[n][i])]);
+            double *fc_imag = &(fourier_coefs[num_outputs*(exponent_refs[n][i] + num_points)]);
+
+             for(auto d : tensor_data[i]){
+                 *fc_real++ += tensorw * d.real();
+                 *fc_imag++ += tensorw * d.imag();
+             }
+        }
+    }
+
+    }else{ // use old dft algorithm
+
     for(int k=0; k<num_outputs; k++){
         for(int n=0; n<active_tensors->getNumIndexes(); n++){
             const int* levels = active_tensors->getIndex(n);
@@ -537,6 +580,8 @@ void GridFourier::calculateFourierCoefficients(){
             delete[] out;
         }
     }
+
+    }
 }
 
 void GridFourier::getInterpolationWeights(const double x[], double weights[]) const {
@@ -554,6 +599,41 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     std::fill(weights, weights+getNumPoints(), 0.0);
     double *basisFuncs = new double[2* getNumPoints()];
     computeExponentials<true>(x, basisFuncs);
+
+    if (true){ // use the new fft algorithm
+
+    for(int n=0; n<active_tensors->getNumIndexes(); n++){
+        const int *levels = active_tensors->getIndex(n);
+        int num_tensor_points = 1;
+        std::vector<int> num_oned_points(num_dimensions);
+
+        for(int j=0; j<num_dimensions; j++){
+            num_oned_points[j] = wrapper->getNumPoints(levels[j]);
+            num_tensor_points *= num_oned_points[j];
+        }
+
+        std::vector<std::vector<std::complex<double>>> tensor_data(num_tensor_points);
+        auto v = tensor_data.begin();
+        for(int i=0; i<num_tensor_points; i++) // v++->resize() means apply resize to the vector that v references and then increment v
+            v++->resize(1, std::complex<double> (basisFuncs[2*exponent_refs[n][i]], basisFuncs[2*exponent_refs[n][i] + 1]));
+
+        TasmanianFourierTransform::fast_fourier_transform(tensor_data, num_oned_points);
+
+        std::vector<int> p(num_dimensions);
+        v = tensor_data.begin();
+        double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
+        for(int i=0; i<num_tensor_points; i++){
+            // We interpret this "i" as running through the spatial indexing; convert to internal
+            int t=i;
+            for(int j=num_dimensions-1; j>=0; j--){
+                p[j] = index_map[levels[j]][t % num_oned_points[j]];
+                t /= num_oned_points[j];
+            }
+            weights[work->getSlot(p)] += tensorw * v++->data()->real();
+        }
+    }
+
+    }else{ // use the old dft algorithm
 
     for(int n=0; n<active_tensors->getNumIndexes(); n++){
         const int *levels = active_tensors->getIndex(n);
@@ -587,6 +667,8 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
         delete[] in;
         delete[] out;
     }
+
+    }
     delete[] basisFuncs;
 }
 
@@ -613,16 +695,17 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
 }
 
 void GridFourier::evaluate(const double x[], double y[]) const{
-    int num_points = getNumPoints();
-    double *w = new double[2 * num_points];
-    computeExponentials<false>(x, w);
+    int num_points = points->getNumIndexes();
+    std::vector<double> w(2 * num_points);
+    computeExponentials<false>(x, w.data());
     TasBLAS::setzero(num_outputs, y);
-    for(int k=0; k<num_outputs; k++){
-        for(int i=0; i<num_points; i++){
-            y[k] += (w[i] * fourier_coefs[i*num_outputs+k] - w[i+num_points] * fourier_coefs[(i+num_points)*num_outputs+k]);
-        }
+    for(size_t i=0; i<(size_t) num_points; i++){
+        const double *fcreal = &(fourier_coefs[i*num_outputs]);
+        const double *fcimag = &(fourier_coefs[(i+num_points) * num_outputs]);
+        double wreal = w[i];
+        double wimag = w[i + num_points];
+        for(int k=0; k<num_outputs; k++) y[k] += wreal * fcreal[k] - wimag * fcimag[k];
     }
-    delete[] w;
 }
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for

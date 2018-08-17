@@ -51,6 +51,13 @@ namespace TasmanianTridiagonalSolver{
 
 namespace TasmanianFourierTransform{
     void discrete_fourier_transform(const int rank, const int n[], const std::complex<double> data[], std::complex<double> out[], const int direction = -1);
+
+    void fast_fourier_transform(std::vector<std::vector<std::complex<double>>> &data, std::vector<int> &num_points);
+    // num_points describes the dimension and number of points in the tensor
+    // data holds the corresponding strips with size num_outputs
+    void fast_fourier_transform1D(std::vector<std::vector<std::complex<double>>> &data, std::vector<int> &indexes);
+    // indexes lists the indexes that play a role in this strip, i.e., 1D transform
+    // data holds the corresponding strips with size num_outputs
 }
 
 }
