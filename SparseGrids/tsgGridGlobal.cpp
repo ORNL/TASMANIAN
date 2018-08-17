@@ -626,11 +626,10 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
     std::vector<double> w(points->getNumIndexes());
     getInterpolationWeights(x, w.data());
     TasBLAS::setzero(num_outputs, y);
-    for(int k=0; k<num_outputs; k++){
-        for(int i=0; i<points->getNumIndexes(); i++){
-            const double *v = values->getValues(i);
-            y[k] += w[i] * v[k];
-        }
+    for(int i=0; i<points->getNumIndexes(); i++){
+        const double *v = values->getValues(i);
+        double wi = w[i];
+        for(int k=0; k<num_outputs; k++) y[k] += wi * v[k];
     }
 }
 
