@@ -1132,10 +1132,6 @@ void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double*, int, int*&, i
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridLocalPolynomial::buildTree(){
-    //if (roots != 0) delete[] roots;
-    //if (pntr != 0) delete[] pntr;
-    //if (indx != 0) delete[] indx;
-
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
 
@@ -1151,19 +1147,18 @@ void GridLocalPolynomial::buildTree(){
     }
 
     top_level = 0;
-    for(int i=0; i<num_points; i++) if (top_level < level[i]) top_level = level[i];
+    for(auto l: level) if (top_level < l) top_level = l;
 
     int max_1d_kids = rule->getMaxNumKids();
     int max_kids = max_1d_kids*num_dimensions;
     std::vector<int> monkey_count(top_level + 1);
     std::vector<int> monkey_tail(top_level + 1);
 
-    std::vector<int>  tree(max_kids * num_points);  std::fill(tree.begin(), tree.end(), -1);
-    std::vector<bool> free(num_points);             std::fill(free.begin(), free.end(), true);
+    std::vector<int>  tree(max_kids * num_points, -1);
+    std::vector<bool> free(num_points, true);
     std::vector<int>  kid(num_dimensions);
 
     int next_root = 0;
-    //std::vector<int> rts(0);
     roots.resize(0);
 
     while(next_root != -1){
@@ -1211,11 +1206,6 @@ void GridLocalPolynomial::buildTree(){
         }
     }
 
-    //num_roots = rts.size();
-    //roots = new int[num_roots];
-    //std::copy(rts.begin(), rts.end(), roots);
-
-    //pntr = new int[num_points + 1];
     pntr.resize(num_points + 1);
     pntr[0] = 0;
     for(int i=0; i<num_points; i++){
@@ -1223,7 +1213,6 @@ void GridLocalPolynomial::buildTree(){
         for(int j=0; j<max_kids; j++) if (tree[i * max_kids + j] > -1) pntr[i+1]++;
     }
 
-    //indx = (pntr[num_points] > 0) ? new int[pntr[num_points]] : new int[1]; indx[0] = 0;
     indx.resize((pntr[num_points] > 0) ? pntr[num_points] : 1);
     indx[0] = 0;
     int count = 0;
