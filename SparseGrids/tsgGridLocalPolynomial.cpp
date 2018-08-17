@@ -39,10 +39,10 @@
 namespace TasGrid{
 
 GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0),
-                         surpluses(0), points(0), needed(0), values(0), rule(0),
+                         points(0), needed(0), values(0), rule(0),
                          accel(0), sparse_affinity(0)  {}
 GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0),
-                         surpluses(0), points(0), needed(0), values(0), rule(0),
+                         points(0), needed(0), values(0), rule(0),
                          accel(0), sparse_affinity(0)
 {
     copyGrid(&pwpoly);
@@ -54,13 +54,13 @@ GridLocalPolynomial::~GridLocalPolynomial(){
 void GridLocalPolynomial::reset(bool clear_rule){
     clearAccelerationData();
     num_dimensions = num_outputs = top_level = 0;
-    if (surpluses != 0){ delete[] surpluses; surpluses = 0; }
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
     if (values != 0){ delete values; values = 0; }
     if (clear_rule){ rule = 0; order = 1; }
     parents.load(0, 0, 0);
     sparse_affinity = 0;
+    surpluses.clear();
 }
 
 void GridLocalPolynomial::write(std::ofstream &ofs) const{
@@ -76,11 +76,12 @@ void GridLocalPolynomial::write(std::ofstream &ofs) const{
             ofs << "1 ";
             points->write(ofs);
         }
-        if (surpluses == 0){
+        if (surpluses.getNumStrips() == 0){
             ofs << "0" << endl;
         }else{
             ofs << "1 ";
-            for(size_t i=0; i<((size_t) points->getNumIndexes()) * ((size_t) num_outputs); i++){ ofs << " " << surpluses[i]; } ofs << endl;
+            for(auto s: *surpluses.getVector()) ofs << " " << s;
+            ofs << endl;
         }
         if (needed == 0){
             ofs << "0" << endl;
@@ -127,11 +128,11 @@ void GridLocalPolynomial::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             needed->writeBinary(ofs);
         }
-        if (surpluses == 0){
+        if (surpluses.getNumStrips() == 0){
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
+            ofs.write((char*) surpluses.getCStrip(0), surpluses.getTotalEntries() * sizeof(double));
         }
         if (parents.getTotalEntries() == 0){
             flag = 'n'; ofs.write(&flag, sizeof(char));
@@ -175,8 +176,8 @@ void GridLocalPolynomial::read(std::ifstream &ifs){
         ifs >> flag; if (flag == 1){ points = new IndexSet(num_dimensions); points->read(ifs); }
         ifs >> flag;
         if (flag == 1){
-            surpluses = new double[((size_t) points->getNumIndexes()) * ((size_t) num_outputs)];
-            for(size_t i=0; i<((size_t) points->getNumIndexes()) * ((size_t) num_outputs); i++){ ifs >> surpluses[i]; }
+            surpluses.resize(num_outputs, points->getNumIndexes());
+            for(auto &s: *surpluses.getVector()) ifs >> s;
         }
         ifs >> flag;
         if (flag == 1){
@@ -240,8 +241,8 @@ void GridLocalPolynomial::readBinary(std::ifstream &ifs){
 
         ifs.read((char*) &flag, sizeof(char));
         if (flag == 'y'){
-            surpluses = new double[((size_t) num_outputs) * ((size_t) points->getNumIndexes())];
-            ifs.read((char*) surpluses, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
+            surpluses.resize(num_outputs, points->getNumIndexes());
+            ifs.read((char*) surpluses.getStrip(0), surpluses.getTotalEntries() * sizeof(double));
         }
 
         ifs.read((char*) &flag, sizeof(char));
@@ -350,8 +351,8 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
     if (pwpoly->values != 0) values = new StorageSet(pwpoly->values);
 
     if ((points != 0) && (num_outputs > 0)){ // points are loaded
-        surpluses = new double[((size_t) points->getNumIndexes()) * ((size_t) num_outputs)];
-        std::copy(pwpoly->surpluses, pwpoly->surpluses + ((size_t) points->getNumIndexes()) * ((size_t) num_outputs), surpluses);
+        surpluses.resize(num_outputs, points->getNumIndexes());
+        *surpluses.getVector() = *pwpoly->surpluses.getVector(); // copy assignment
     }
 }
 
@@ -366,21 +367,27 @@ int GridLocalPolynomial::getNumPoints() const{ return ((points == 0) ? getNumNee
 
 void GridLocalPolynomial::getLoadedPoints(double *x) const{
     int num_points = points->getNumIndexes();
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = points->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule->getNode(p[j]);
+            xx[j] = rule->getNode(p[j]);
         }
     }
 }
 void GridLocalPolynomial::getNeededPoints(double *x) const{
     int num_points = needed->getNumIndexes();
+    Data2D<double> split;
+    split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = needed->getIndex(i);
+        double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule->getNode(p[j]);
+            xx[j] = rule->getNode(p[j]);
         }
     }
 }
@@ -397,14 +404,11 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
 
     std::fill(y, y + num_outputs, 0.0);
 
-    Data2D<double> surps;
-    surps.cload(num_outputs, points->getNumIndexes(), surpluses);
-
     for(auto const &r : roots){
         double basis_value = evalBasisSupported(points->getIndex(r), x, isSupported);
 
         if (isSupported){
-            const double *s = surps.getCStrip(r);
+            const double *s = surpluses.getCStrip(r);
             for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
 
             int current = 0;
@@ -416,7 +420,7 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
                     offset = indx[monkey_count[current]];
                     basis_value = evalBasisSupported(points->getIndex(offset), x, isSupported);
                     if (isSupported){
-                        s = surps.getCStrip(offset);
+                        s = surpluses.getCStrip(offset);
                         for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
 
                         monkey_tail[++current] = offset;
@@ -444,8 +448,8 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[]) co
     int num_nz;
     std::vector<int> sindx;
     std::vector<double> svals;
-    buildSparseVector<false>(x, num_nz, sindx, svals);
-    buildSparseVector<true>(x, num_nz, sindx, svals);
+    buildSparseVector<false>(points, x, num_nz, sindx, svals);
+    buildSparseVector<true>(points, x, num_nz, sindx, svals);
     int *gpu_sindx = TasCUDA::cudaSend<int>(sindx);
     double *gpu_svals = TasCUDA::cudaSend<double>(svals);
     double *gpu_y = TasCUDA::cudaNew<double>(num_outputs);
@@ -467,9 +471,11 @@ void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[]) cons
 void GridLocalPolynomial::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
 
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        evaluate(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_outputs)]));
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
     }
 }
 void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
@@ -488,22 +494,23 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
 
     if ((sparse_affinity == -1) || ((sparse_affinity == 0) && (nnz / total_size > 0.1))){
         // potentially wastes a lot of memory
-        std::vector<double> A(((size_t) num_x) * ((size_t) num_points), 0.0);
+        Data2D<double> A;
+        A.resize(num_points, num_x, 0.0);
         for(int i=0; i<num_x; i++){
-            for(int j=spntr[i]; j<spntr[i+1]; j++){
-                A[((size_t) i) * ((size_t) num_points) + ((size_t) sindx[j])] = svals[j];
-            }
+            double *row = A.getStrip(i);
+            for(int j=spntr[i]; j<spntr[i+1]; j++) row[sindx[j]] = svals[j];
         }
-        TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses, A.data(), 0.0, y);
+        TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.getCStrip(0), A.getCStrip(0), 0.0, y);
     }else{
+        Data2D<double> yy; yy.load(num_outputs, num_x, y);
         #pragma omp parallel for
         for(int i=0; i<num_x; i++){
-            double *this_y = &(y[i*num_outputs]);
+            double *this_y = yy.getStrip(i);
             std::fill(this_y, this_y + num_outputs, 0.0);
             for(int j=spntr[i]; j<spntr[i+1]; j++){
                 double v = svals[j];
-                double *this_surp = &(surpluses[((size_t) sindx[j]) * ((size_t) num_outputs)]);
-                for(int k=0; k<num_outputs; k++) this_y[k] += v * this_surp[k];
+                const double *s = surpluses.getCStrip(sindx[j]);
+                for(int k=0; k<num_outputs; k++) this_y[k] += v * s[k];
             }
         }
     }
@@ -620,9 +627,8 @@ void GridLocalPolynomial::mergeRefinement(){
         delete needed; needed = 0;
         buildTree();
     }
-    if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[num_vals];
-    std::fill(surpluses, surpluses + num_vals, 0.0);
+    surpluses.resize(num_outputs, num_all_points);
+    std::fill(surpluses.getVector()->begin(), surpluses.getVector()->end(), 0.0);
 }
 
 void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
@@ -738,10 +744,12 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
 void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
+    Data2D<double> yy; yy.load(num_points, num_x, y);
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        const double *this_x = &(x[i*num_dimensions]);
-        double *this_y = &(y[((size_t) i) * ((size_t) num_points)]);
+        const double *this_x = xx.getCStrip(i);
+        double *this_y = yy.getStrip(i);
         bool dummy;
         for(int j=0; j<num_points; j++){
             this_y[j] = evalBasisSupported(work->getIndex(j), this_x, dummy);
@@ -751,11 +759,9 @@ void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int nu
 
 void GridLocalPolynomial::recomputeSurpluses(){
     int num_points = points->getNumIndexes();
-    if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[((size_t) num_points) * ((size_t) num_outputs)];
 
-    const double* v = values->getValues(0);
-    std::copy(v, v + ((size_t) num_points) * ((size_t) num_outputs), surpluses);
+    surpluses.resize(num_outputs, num_points);
+    *surpluses.getVector() = *values->aliasValues(); // copy assignment
 
     Data2D<int> dagUp;
     IndexManipulator IM(num_dimensions);
@@ -780,7 +786,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
             if (level[i] == l){
                 const int* p = points->getIndex(i);
                 std::vector<double> x(num_dimensions);
-                double *surpi = &(surpluses[((size_t) i) * ((size_t) num_outputs)]);
+                double *surpi = surpluses.getStrip(i);
                 for(int j=0; j<num_dimensions; j++) x[j] = rule->getNode(p[j]);
 
                 std::vector<int> monkey_count(top_level + 1);
@@ -799,7 +805,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
-                            const double *branch_surp = &(surpluses[((size_t) branch) * ((size_t) num_outputs)]);
+                            const double *branch_surp = surpluses.getCStrip(branch);
                             double basis_value = evalBasisRaw(points->getIndex(branch), x.data());
                             for(int k=0; k<num_outputs; k++){
                                 surpi[k] -= basis_value * branch_surp[k];
@@ -925,60 +931,22 @@ void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_
     delete[] stripes;
     delete[] last_stripe_size;
 }
-int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x, int num_chunk) const{
+int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) const{
     IndexSet *work = (points == 0) ? needed : points;
-    int num_blocks = (num_x / num_chunk) + ((num_x % num_chunk > 0) ? 1 : 0); // number of blocks
-    int num_last = ((num_x % num_chunk > 0) ? num_x % num_chunk : num_chunk);
+
+    std::vector<int> sindx; // dummy vectors, never referenced
+    std::vector<double> svals;
+
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    std::vector<int> num_nz(num_x);
+
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++){
+        buildSparseVector<false>(work, xx.getCStrip(i), num_nz[i], sindx, svals);
+    }
 
     int total_nz = 0;
-
-    for(int b=0; b<num_blocks; b++){
-        int c = 0; // count the current entry
-
-        int *monkey_count = new int[top_level+1]; // monkey business (traversing threes)
-        int *monkey_tail = new int[top_level+1];
-        bool isSupported;
-        int offset;
-
-        int this_size = (b == num_blocks-1) ? num_last : num_chunk;
-        for(int i=0; i<this_size; i++){ // for each point
-            const double *this_x = &(x[(b*num_chunk + i) * num_dimensions]);
-
-            for(unsigned r=0; r<roots.size(); r++){
-                evalBasisSupported(work->getIndex(roots[r]), this_x, isSupported);
-
-                if (isSupported){
-                    // add point to this sparse column
-                    c++;
-
-                    int current = 0;
-                    monkey_tail[0] = roots[r];
-                    monkey_count[0] = pntr[roots[r]];
-
-                    while(monkey_count[0] < pntr[monkey_tail[0]+1]){
-                        if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                            offset = indx[monkey_count[current]];
-                            evalBasisSupported(work->getIndex(offset), this_x, isSupported);
-                            if (isSupported){
-                                c++;
-                                monkey_tail[++current] = offset;
-                                monkey_count[current] = pntr[offset];
-                            }else{
-                                monkey_count[current]++;
-                            }
-                        }else{
-                            monkey_count[--current]++;
-                        }
-                    }
-                }
-            }
-        }
-
-        total_nz = c;
-
-        delete[] monkey_count;
-        delete[] monkey_tail;
-    }
+    for(auto n: num_nz) total_nz += n;
 
     return total_nz;
 }
@@ -1126,10 +1094,6 @@ void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double*, int, int*&, i
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridLocalPolynomial::buildTree(){
-    //if (roots != 0) delete[] roots;
-    //if (pntr != 0) delete[] pntr;
-    //if (indx != 0) delete[] indx;
-
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
 
@@ -1145,19 +1109,18 @@ void GridLocalPolynomial::buildTree(){
     }
 
     top_level = 0;
-    for(int i=0; i<num_points; i++) if (top_level < level[i]) top_level = level[i];
+    for(auto l: level) if (top_level < l) top_level = l;
 
     int max_1d_kids = rule->getMaxNumKids();
     int max_kids = max_1d_kids*num_dimensions;
     std::vector<int> monkey_count(top_level + 1);
     std::vector<int> monkey_tail(top_level + 1);
 
-    std::vector<int>  tree(max_kids * num_points);  std::fill(tree.begin(), tree.end(), -1);
-    std::vector<bool> free(num_points);             std::fill(free.begin(), free.end(), true);
+    std::vector<int>  tree(max_kids * num_points, -1);
+    std::vector<bool> free(num_points, true);
     std::vector<int>  kid(num_dimensions);
 
     int next_root = 0;
-    //std::vector<int> rts(0);
     roots.resize(0);
 
     while(next_root != -1){
@@ -1205,11 +1168,6 @@ void GridLocalPolynomial::buildTree(){
         }
     }
 
-    //num_roots = rts.size();
-    //roots = new int[num_roots];
-    //std::copy(rts.begin(), rts.end(), roots);
-
-    //pntr = new int[num_points + 1];
     pntr.resize(num_points + 1);
     pntr[0] = 0;
     for(int i=0; i<num_points; i++){
@@ -1217,7 +1175,6 @@ void GridLocalPolynomial::buildTree(){
         for(int j=0; j<max_kids; j++) if (tree[i * max_kids + j] > -1) pntr[i+1]++;
     }
 
-    //indx = (pntr[num_points] > 0) ? new int[pntr[num_points]] : new int[1]; indx[0] = 0;
     indx.resize((pntr[num_points] > 0) ? pntr[num_points] : 1);
     indx[0] = 0;
     int count = 0;
@@ -1257,8 +1214,8 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     IndexSet *work = (points == 0) ? needed : points;
     getBasisIntegrals(weights);
 
-    int *monkey_count = new int[top_level+1];
-    int *monkey_tail = new int[top_level+1];
+    std::vector<int> monkey_count(top_level+1);
+    std::vector<int> monkey_tail(top_level+1);
 
     double basis_value;
 
@@ -1273,7 +1230,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     }
 
     int num_points = work->getNumIndexes();
-    int *level = new int[num_points];
+    std::vector<int> level(num_points);
     for(int i=0; i<num_points; i++){
         const int *p = work->getIndex(i);
         level[i] = rule->getLevel(p[0]);
@@ -1282,8 +1239,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
         }
     }
 
-    bool *used = new bool[work->getNumIndexes()];
-    double *node = new double[num_dimensions];
+    std::vector<double> node(num_dimensions);
     int max_parents = rule->getMaxNumParents() * num_dimensions;
 
     for(int l=top_level; l>0; l--){
@@ -1292,7 +1248,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
                 const int* p = work->getIndex(i);
                 for(int j=0; j<num_dimensions; j++) node[j] = rule->getNode(p[j]);
 
-                std::fill(used, used + work->getNumIndexes(), false);
+                std::vector<bool> used(work->getNumIndexes(), false);
 
                 monkey_count[0] = 0;
                 monkey_tail[0] = i;
@@ -1320,14 +1276,6 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
             }
         }
     }
-
-    delete[] used;
-    delete[] node;
-
-    delete[] level;
-
-    delete[] monkey_count;
-    delete[] monkey_tail;
 }
 
 void GridLocalPolynomial::integrate(double q[], double *conformal_correction) const{
@@ -1335,25 +1283,21 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
     std::fill(q, q + num_outputs, 0.0);
 
     if (conformal_correction == 0){
-        double *integrals = new double[num_points];
-        getBasisIntegrals(integrals);
+        std::vector<double> integrals(num_points);
+        getBasisIntegrals(integrals.data());
         for(int i=0; i<num_points; i++){
-            for(int k=0; k<num_outputs; k++){
-                q[k] += integrals[i] * surpluses[i*num_outputs + k];
-            }
+            const double *s = surpluses.getCStrip(i);
+            double wi = integrals[i];
+            for(int k=0; k<num_outputs; k++) q[k] += wi * s[k];
         }
-        delete[] integrals;
     }else{
-        double *w = new double[num_points];
-        getQuadratureWeights(w);
+        std::vector<double> w(num_points);
+        getQuadratureWeights(w.data());
         for(int i=0; i<num_points; i++){
-            w[i] *= conformal_correction[i];
+            double wi = w[i] * conformal_correction[i];
             const double *vals = values->getValues(i);
-            for(int k=0; k<num_outputs; k++){
-                q[k] += w[i] * vals[k];
-            }
+            for(int k=0; k<num_outputs; k++) q[k] += wi * vals[k];
         }
-        delete[] w;
     }
 }
 
@@ -1368,35 +1312,41 @@ void GridLocalPolynomial::getNormalization(std::vector<double> &norms) const{
     }
 }
 
-void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, std::vector<int> &pmap) const{
+void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const{
     int num_points = points->getNumIndexes();
-    pmap.resize(num_points * num_dimensions);
+    map2.resize(num_dimensions, num_points);
+    if (tolerance == 0.0){
+        std::fill(map2.getVector()->begin(), map2.getVector()->end(), 0);
+        return;
+    }else{
+        std::fill(map2.getVector()->begin(), map2.getVector()->end(), 0);
+    }
 
     std::vector<double> norm;
     getNormalization(norm);
 
-    const double *scale = scale_correction;
-    std::vector<double> temp_scale;
-    if (scale == 0){
-        temp_scale = std::vector<double>(((size_t) num_points) * ((size_t) num_outputs), 1.0);
-        scale = temp_scale.data();
+    int active_outputs = (output == -1) ? num_outputs : 1;
+    Data2D<double> scale;
+    if (scale_correction == 0){
+        scale.resize(active_outputs, num_points, 1.0);
+    }else{
+        scale.cload(active_outputs, num_points, scale_correction);
     }
 
-    if (tolerance == 0.0){
-        std::fill(pmap.begin(), pmap.end(), 1);
-    }else if ((criteria == refine_classic) || (criteria == refine_parents_first)){
+    if ((criteria == refine_classic) || (criteria == refine_parents_first)){
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             bool small = true;
+            const double *s = surpluses.getCStrip(i);
+            const double *c = scale.getCStrip(i);
             if (output == -1){
-                for(size_t k=0; k<((size_t) num_outputs); k++){
-                    if (small && ((scale[((size_t)i) * ((size_t) num_outputs) + k] * fabs(surpluses[((size_t)i) * ((size_t) num_outputs) + k]) / norm[k]) > tolerance)) small = false;
-                }
+                for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);
             }else{
-                small = !((scale[i] * fabs(surpluses[((size_t)i) * ((size_t) num_outputs) + output]) / norm[output]) > tolerance);
+                small = ((c[0] * fabs(s[output]) / norm[output]) <= tolerance);
             }
             if (!small){
-                std::fill(&(pmap[i*num_dimensions]), &(pmap[i*num_dimensions]) + num_dimensions, 1);
+                int *m = map2.getStrip(i);
+                std::fill(m, m + num_dimensions, 1);
             }
         }
     }else{
@@ -1410,48 +1360,46 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
         SplitDirections split(points);
 
         #pragma omp parallel for
-        for(int s=0; s<split.getNumJobs(); s++){ // split.getNumJobs() gives the number of 1D interpolants to construct
-            int d = split.getJobDirection(s);
-            int nump = split.getJobNumPoints(s);
-            const int *pnts = split.getJobPoints(s);
+        for(int j=0; j<split.getNumJobs(); j++){ // split.getNumJobs() gives the number of 1D interpolants to construct
+            int d = split.getJobDirection(j);
+            int nump = split.getJobNumPoints(j);
+            const int *pnts = split.getJobPoints(j);
 
             std::vector<int> global_to_pnts(num_points);
             std::vector<int> levels(nump);
 
             int max_level = 0;
 
-            int active_outputs = (output == -1) ? num_outputs : 1;
-
-            double *vals = new double[((size_t) nump) * ((size_t) active_outputs)];
+            Data2D<double> vals;
+            vals.resize(active_outputs, nump);
 
             for(int i=0; i<nump; i++){
                 const double* v = values->getValues(pnts[i]);
                 const int *p = points->getIndex(pnts[i]);
                 if (output == -1){
-                    std::copy(v, v + num_outputs, &(vals[((size_t) i) * ((size_t) num_outputs)]));
+                    std::copy(v, v + num_outputs, vals.getStrip(i));
                 }else{
-                    vals[i] = v[output];
+                    vals.getStrip(i)[0] = v[output];
                 }
                 global_to_pnts[pnts[i]] = i;
                 levels[i] = rule->getLevel(p[d]);
                 if (max_level < levels[i]) max_level = levels[i];
             }
 
-            int *monkey_count = new int[max_level + 1];
-            int *monkey_tail = new int[max_level + 1];
-            bool *used = new bool[nump];
+            std::vector<int> monkey_count(max_level + 1);
+            std::vector<int> monkey_tail(max_level + 1);
 
             for(int l=1; l<=max_level; l++){
                 for(int i=0; i<nump; i++){
                     if (levels[i] == l){
                         const int *p = points->getIndex(pnts[i]);
                         double x = rule->getNode(p[d]);
-                        double *valsi = &(vals[((size_t) i) * ((size_t) active_outputs)]);
+                        double *valsi = vals.getStrip(i);
 
                         int current = 0;
                         monkey_count[0] = d * max_1D_parents;
                         monkey_tail[0] = pnts[i]; // uses the global indexes
-                        std::fill(used, used + nump, false);
+                        std::vector<bool> used(nump, false);
 
                         while(monkey_count[0] < (d+1) * max_1D_parents){
                             if (monkey_count[current] < (d+1) * max_1D_parents){
@@ -1461,10 +1409,8 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
                                 }else{
                                     const int *branch_point = points->getIndex(branch);
                                     double basis_value = rule->evalRaw(branch_point[d], x);
-                                    const double *branch_vals = &(vals[((size_t) global_to_pnts[branch]) * ((size_t) active_outputs)]);
-                                    for(int k=0; k<active_outputs; k++){
-                                        valsi[k] -= basis_value * branch_vals[k];
-                                    }
+                                    const double *branch_vals = vals.getCStrip(global_to_pnts[branch]);
+                                    for(int k=0; k<active_outputs; k++) valsi[k] -= basis_value * branch_vals[k];
 
                                     used[global_to_pnts[branch]] = true;
                                     monkey_count[++current] = d * max_1D_parents;
@@ -1478,24 +1424,21 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
                 }
             }
 
-            delete[] used;
-            delete[] monkey_tail;
-            delete[] monkey_count;
-
             // at this point, vals contains the one directional surpluses
-            for(size_t i=0; i<((size_t) nump); i++){
+            for(int i=0; i<nump; i++){
+                const double *s = surpluses.getCStrip(pnts[i]);
+                const double *c = scale.getCStrip(pnts[i]);
+                const double *v = vals.getCStrip(i);
                 bool small = true;
                 if (output == -1){
-                    for(size_t k=0; k<((size_t) num_outputs); k++){
-                        if (small && ((scale[i*num_outputs + k] * fabs(surpluses[pnts[i]*num_outputs + k]) / norm[k]) > tolerance) && ((scale[i*num_outputs + k] * fabs(vals[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
+                    for(int k=0; k<num_outputs; k++){
+                        small = small && (((c[k] * fabs(s[k]) / norm[k]) <= tolerance) || ((c[k] * fabs(v[k]) / norm[k]) <= tolerance));
                     }
                 }else{
-                    if (((scale[i] * fabs(surpluses[pnts[i]*num_outputs + output]) / norm[output]) > tolerance) && ((scale[i] * fabs(vals[i]) / norm[output]) > tolerance)) small = false;
+                    small = ((c[0] * fabs(s[output]) / norm[output]) <= tolerance) || ((c[0] * fabs(v[0]) / norm[output]) <= tolerance);
                 }
-                pmap[pnts[i]*num_dimensions + d] = (small) ? 0 : 1;;
+                map2.getStrip(pnts[i])[d] = (small) ? 0 : 1;;
             }
-
-            delete[] vals;
         }
     }
 }
@@ -1542,7 +1485,7 @@ void GridLocalPolynomial::clearRefinement(){
     if (needed != 0){ delete needed; needed = 0; }
 }
 const double* GridLocalPolynomial::getSurpluses() const{
-    return surpluses;
+    return surpluses.getVector()->data();
 }
 const int* GridLocalPolynomial::getPointIndexes() const{
     return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
@@ -1554,7 +1497,8 @@ const int* GridLocalPolynomial::getNeededIndexes() const{
 void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction){
     clearRefinement();
 
-    std::vector<int> pmap; buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
+    Data2D<int> pmap;
+    buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
 
     bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
 
@@ -1564,8 +1508,9 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
 
     if (level_limits.empty()){
         for(int i=0; i<num_points; i++){
+            const int *map = pmap.getCStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (pmap[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                if (map[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
                         addChild(points->getIndex(i), j, refined, points);
                     }
@@ -1574,8 +1519,9 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
         }
     }else{
         for(int i=0; i<num_points; i++){
+            const int *map = pmap.getCStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (pmap[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                if (map[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
                         addChildLimited(points->getIndex(i), j, refined, points, level_limits);
                     }
@@ -1609,50 +1555,49 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
 int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     clearRefinement();
     int num_points = points->getNumIndexes();
-    bool *pmap = new bool[num_points]; // point map, set to true if the point is to be kept, false otherwise
+    std::vector<bool> pmap(num_points); // point map, set to true if the point is to be kept, false otherwise
 
     std::vector<double> norm;
     getNormalization(norm);
 
-    const double *scale = scale_correction;
-    double *temp_scale = 0;
-    if (scale == 0){
-        temp_scale = new double[num_points * num_outputs]; std::fill(temp_scale, temp_scale + num_points * num_outputs, 1.0);
-        scale = temp_scale;
+    Data2D<double> scale;
+    int active_outputs = (output == -1) ? num_outputs : 1;
+    if (scale_correction == 0){
+        scale.resize(active_outputs, num_points, 1.0);
+    }else{
+        scale.cload(active_outputs, num_points, scale_correction);
     }
 
     for(int i=0; i<num_points; i++){
         bool small = true;
+        const double *s = surpluses.getCStrip(i);
+        const double *c = scale.getCStrip(i);
         if (output == -1){
-            for(int k=0; k<num_outputs; k++){
-                if (small && ((scale[i*num_outputs + k] * fabs(surpluses[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
-            }
+            for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);
         }else{
-            small = !((scale[i] * fabs(surpluses[i*num_outputs + output]) / norm[output]) > tolerance);
+            small = ((c[0] * fabs(s[output]) / norm[output]) <= tolerance);
         }
         pmap[i] = !small;
     }
 
     int num_kept = 0; for(int i=0; i<num_points; i++) num_kept += (pmap[i]) ? 1 : 0;
-    if (num_kept == 0){
-        delete[] pmap;
-        return 0;
-    }
 
-    if (num_kept == num_points){
-        delete[] pmap;
-        return num_points;
-    }
+    if (num_kept == 0) return 0; // trivial case, remove all
+    if (num_kept == num_points) return num_points; // trivial case, remove nothing
 
     // save a copy of the points and the values
-    std::vector<int> point_kept(num_kept * num_dimensions);
-    double *values_kept = new double[num_kept * num_outputs];
+    std::vector<int> point_kept(((size_t) num_kept) * ((size_t) num_dimensions));
+    Data2D<int> pp;
+    pp.load(num_dimensions, num_kept, point_kept.data()); // to handle double indexing
+
+    StorageSet *values_kept = new StorageSet(num_outputs, num_kept);
+    values_kept->aliasValues()->resize(((size_t) num_kept) * ((size_t) num_outputs));
 
     num_kept = 0;
     for(int i=0; i<num_points; i++){
         if (pmap[i]){
-            std::copy(points->getIndex(i), points->getIndex(i) + num_dimensions, &(point_kept[num_kept*num_dimensions]));
-            std::copy(values->getValues(i), values->getValues(i) + num_outputs, &(values_kept[num_kept*num_outputs]));
+            std::copy(points->getIndex(i), points->getIndex(i) + num_dimensions, pp.getStrip(num_kept));
+            std::copy(values->getValues(i), values->getValues(i) + num_outputs, values_kept->getValues(num_kept));
             num_kept++;
         }
     }
@@ -1663,35 +1608,28 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     num_dimensions = dims; num_outputs = outs;
 
     points = new IndexSet(num_dimensions, point_kept);
-    values = new StorageSet(num_outputs, num_kept);
-    values->setValues(values_kept);
-    delete[] values_kept;
+    values = values_kept;
 
     buildTree();
     recomputeSurpluses();
-
-    delete[] pmap;
-    if (temp_scale == 0) delete[] temp_scale;
 
     return points->getNumIndexes();
 }
 
 void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     if (accel != 0) accel->resetGPULoadedData();
-    std::vector<double> *vals = 0;
-    size_t num_ponits = (size_t) getNumPoints();
-    size_t num_vals = num_ponits * ((size_t) num_outputs);
     if (points != 0){
         clearRefinement();
     }else{
         points = needed;
         needed = 0;
     }
-    vals = values->aliasValues();
-    vals->resize(num_vals);
-    if (surpluses != 0) delete[] surpluses;
-    surpluses = new double[num_vals];
-    std::copy(c, c + num_vals, surpluses);
+    surpluses.resize(num_outputs, getNumPoints());
+    std::copy(c, c + surpluses.getTotalEntries(), surpluses.getVector()->data());
+
+    std::vector<double> *vals = values->aliasValues();
+    vals->resize(surpluses.getTotalEntries());
+
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     if (acc == accel_cpu_blas){
@@ -1718,7 +1656,7 @@ void GridLocalPolynomial::makeCheckAccelerationData(TypeAcceleration acc) const{
 void GridLocalPolynomial::checkAccelerationGPUValues() const{
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;
     double *gpu_values = gpu->getGPUValues();
-    if (gpu_values == 0) gpu->loadGPUValues(points->getNumIndexes() * values->getNumOutputs(), surpluses);
+    if (gpu_values == 0) gpu->loadGPUValues(points->getNumIndexes() * values->getNumOutputs(), surpluses.getCStrip(0));
 }
 void GridLocalPolynomial::checkAccelerationGPUNodes() const{
     AccelerationDataGPUFull *gpu = (AccelerationDataGPUFull*) accel;

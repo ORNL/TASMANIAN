@@ -178,6 +178,14 @@ public:
     int getStride() const{ return (int) stride; }
     int getNumStrips() const{ return (int) num_strips; }
     size_t getTotalEntries() const{ return stride * num_strips; }
+    std::vector<T>* getVector(){ return &vec; }
+    const std::vector<T>* getVector() const{ return &vec; }
+    void clear(){
+        stride = 0;
+        num_strips = 0;
+        vec.clear();
+        vec.shrink_to_fit();
+    }
 
 private:
     size_t stride, num_strips;
@@ -198,6 +206,7 @@ public:
     void readBinary(std::ifstream &ifs);
 
     const double* getValues(int i) const;
+    double* getValues(int i);
     std::vector<double>* aliasValues(); // alternative to setValues()
     int getNumOutputs() const;
 

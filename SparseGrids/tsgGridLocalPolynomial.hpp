@@ -105,7 +105,7 @@ public:
 
     void buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, int* &spntr, int* &sindx, double* &svals) const;
     void buildSpareBasisMatrixStatic(const double x[], int num_x, int num_chunk, int *spntr, int *sindx, double *svals) const;
-    int getSpareBasisMatrixNZ(const double x[], int num_x, int num_chunk) const;
+    int getSpareBasisMatrixNZ(const double x[], int num_x) const;
 
     // EXPERIMENTAL: GPU evaluateHierarchicalFunctionsGPU()
     void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
@@ -122,7 +122,7 @@ protected:
                                     int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
 
     template<bool fill_data>
-    void buildSparseVector(const double x[], int &num_nz, std::vector<int> &sindx, std::vector<double> &svals) const{
+    void buildSparseVector(const IndexSet *work, const double x[], int &num_nz, std::vector<int> &sindx, std::vector<double> &svals) const{
         std::vector<int> monkey_count(top_level+1);
         std::vector<int> monkey_tail(top_level+1);
 
@@ -137,7 +137,7 @@ protected:
         num_nz = 0;
 
         for(const auto &r : roots){
-            double basis_value = evalBasisSupported(points->getIndex(r), x, isSupported);
+            double basis_value = evalBasisSupported(work->getIndex(r), x, isSupported);
 
             if (isSupported){
                 if (fill_data){
@@ -153,7 +153,7 @@ protected:
                 while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
                         p = indx[monkey_count[current]];
-                        basis_value = evalBasisSupported(points->getIndex(p), x, isSupported);
+                        basis_value = evalBasisSupported(work->getIndex(p), x, isSupported);
                         if (isSupported){
                             if (fill_data){
                                 sindx[num_nz] = p;
@@ -247,7 +247,7 @@ protected:
 
     void getNormalization(std::vector<double> &norms) const;
 
-    void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, std::vector<int> &pmap) const;
+    void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const;
 
     bool addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
     void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
@@ -287,7 +287,7 @@ protected:
 private:
     int num_dimensions, num_outputs, order, top_level;
 
-    double *surpluses;
+    Data2D<double> surpluses;
 
     IndexSet *points;
     IndexSet *needed;
