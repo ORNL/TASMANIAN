@@ -1195,7 +1195,7 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     int num_nz = 0;
     if (pwpoly != 0){
-        num_nz = pwpoly->getSpareBasisMatrixNZ(x_canonical, num_x, 32);
+        num_nz = pwpoly->getSpareBasisMatrixNZ(x_canonical, num_x);
     }else if (wavelet != 0){
         int num_points = base->getNumPoints();
         double *dense_vals = new double[num_points * num_x];

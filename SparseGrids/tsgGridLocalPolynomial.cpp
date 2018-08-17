@@ -448,8 +448,8 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[]) co
     int num_nz;
     std::vector<int> sindx;
     std::vector<double> svals;
-    buildSparseVector<false>(x, num_nz, sindx, svals);
-    buildSparseVector<true>(x, num_nz, sindx, svals);
+    buildSparseVector<false>(points, x, num_nz, sindx, svals);
+    buildSparseVector<true>(points, x, num_nz, sindx, svals);
     int *gpu_sindx = TasCUDA::cudaSend<int>(sindx);
     double *gpu_svals = TasCUDA::cudaSend<double>(svals);
     double *gpu_y = TasCUDA::cudaNew<double>(num_outputs);
@@ -931,60 +931,22 @@ void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_
     delete[] stripes;
     delete[] last_stripe_size;
 }
-int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x, int num_chunk) const{
+int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) const{
     IndexSet *work = (points == 0) ? needed : points;
-    int num_blocks = (num_x / num_chunk) + ((num_x % num_chunk > 0) ? 1 : 0); // number of blocks
-    int num_last = ((num_x % num_chunk > 0) ? num_x % num_chunk : num_chunk);
+
+    std::vector<int> sindx; // dummy vectors, never referenced
+    std::vector<double> svals;
+
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    std::vector<int> num_nz(num_x);
+
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++){
+        buildSparseVector<false>(work, xx.getCStrip(i), num_nz[i], sindx, svals);
+    }
 
     int total_nz = 0;
-
-    for(int b=0; b<num_blocks; b++){
-        int c = 0; // count the current entry
-
-        int *monkey_count = new int[top_level+1]; // monkey business (traversing threes)
-        int *monkey_tail = new int[top_level+1];
-        bool isSupported;
-        int offset;
-
-        int this_size = (b == num_blocks-1) ? num_last : num_chunk;
-        for(int i=0; i<this_size; i++){ // for each point
-            const double *this_x = &(x[(b*num_chunk + i) * num_dimensions]);
-
-            for(unsigned r=0; r<roots.size(); r++){
-                evalBasisSupported(work->getIndex(roots[r]), this_x, isSupported);
-
-                if (isSupported){
-                    // add point to this sparse column
-                    c++;
-
-                    int current = 0;
-                    monkey_tail[0] = roots[r];
-                    monkey_count[0] = pntr[roots[r]];
-
-                    while(monkey_count[0] < pntr[monkey_tail[0]+1]){
-                        if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                            offset = indx[monkey_count[current]];
-                            evalBasisSupported(work->getIndex(offset), this_x, isSupported);
-                            if (isSupported){
-                                c++;
-                                monkey_tail[++current] = offset;
-                                monkey_count[current] = pntr[offset];
-                            }else{
-                                monkey_count[current]++;
-                            }
-                        }else{
-                            monkey_count[--current]++;
-                        }
-                    }
-                }
-            }
-        }
-
-        total_nz = c;
-
-        delete[] monkey_count;
-        delete[] monkey_tail;
-    }
+    for(auto n: num_nz) total_nz += n;
 
     return total_nz;
 }
