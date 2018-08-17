@@ -1321,27 +1321,21 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
     std::fill(q, q + num_outputs, 0.0);
 
     if (conformal_correction == 0){
-        double *integrals = new double[num_points];
-        getBasisIntegrals(integrals);
+        std::vector<double> integrals(num_points);
+        getBasisIntegrals(integrals.data());
         for(int i=0; i<num_points; i++){
             const double *s = surpluses.getCStrip(i);
             double wi = integrals[i];
-            for(int k=0; k<num_outputs; k++){
-                q[k] += wi * s[k];
-            }
+            for(int k=0; k<num_outputs; k++) q[k] += wi * s[k];
         }
-        delete[] integrals;
     }else{
-        double *w = new double[num_points];
-        getQuadratureWeights(w);
+        std::vector<double> w(num_points);
+        getQuadratureWeights(w.data());
         for(int i=0; i<num_points; i++){
-            w[i] *= conformal_correction[i];
+            double wi = w[i] * conformal_correction[i];
             const double *vals = values->getValues(i);
-            for(int k=0; k<num_outputs; k++){
-                q[k] += w[i] * vals[k];
-            }
+            for(int k=0; k<num_outputs; k++) q[k] += wi * vals[k];
         }
-        delete[] w;
     }
 }
 
