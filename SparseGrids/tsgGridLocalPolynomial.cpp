@@ -397,12 +397,15 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
 
     std::fill(y, y + num_outputs, 0.0);
 
+    Data2D<double> surps;
+    surps.cload(num_outputs, points->getNumIndexes(), surpluses);
+
     for(auto const &r : roots){
         double basis_value = evalBasisSupported(points->getIndex(r), x, isSupported);
 
         if (isSupported){
-            offset = r * num_outputs;
-            for(int k=0; k<num_outputs; k++) y[k] += basis_value * surpluses[offset + k];
+            const double *s = surps.getCStrip(r);
+            for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
 
             int current = 0;
             monkey_tail[0] = r;
@@ -413,9 +416,8 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
                     offset = indx[monkey_count[current]];
                     basis_value = evalBasisSupported(points->getIndex(offset), x, isSupported);
                     if (isSupported){
-                        offset *= num_outputs;
-                        for(int k=0; k<num_outputs; k++) y[k] += basis_value * surpluses[offset + k];
-                        offset /= num_outputs;
+                        s = surps.getCStrip(offset);
+                        for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
 
                         monkey_tail[++current] = offset;
                         monkey_count[current] = pntr[offset];
