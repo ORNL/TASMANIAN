@@ -695,16 +695,17 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
 }
 
 void GridFourier::evaluate(const double x[], double y[]) const{
-    int num_points = getNumPoints();
-    double *w = new double[2 * num_points];
-    computeExponentials<false>(x, w);
+    int num_points = points->getNumIndexes();
+    std::vector<double> w(2 * num_points);
+    computeExponentials<false>(x, w.data());
     TasBLAS::setzero(num_outputs, y);
-    for(int k=0; k<num_outputs; k++){
-        for(int i=0; i<num_points; i++){
-            y[k] += (w[i] * fourier_coefs[i*num_outputs+k] - w[i+num_points] * fourier_coefs[(i+num_points)*num_outputs+k]);
-        }
+    for(size_t i=0; i<(size_t) num_points; i++){
+        const double *fcreal = &(fourier_coefs[i*num_outputs]);
+        const double *fcimag = &(fourier_coefs[(i+num_points) * num_outputs]);
+        double wreal = w[i];
+        double wimag = w[i + num_points];
+        for(int k=0; k<num_outputs; k++) y[k] += wreal * fcreal[k] - wimag * fcimag[k];
     }
-    delete[] w;
 }
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
