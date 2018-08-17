@@ -1350,14 +1350,14 @@ void GridLocalPolynomial::getNormalization(std::vector<double> &norms) const{
     }
 }
 
-void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, std::vector<int> &pmap) const{
+void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const{
     int num_points = points->getNumIndexes();
-    pmap.resize(num_points * num_dimensions);
+    map2.resize(num_dimensions, num_points);
     if (tolerance == 0.0){
-        std::fill(pmap.begin(), pmap.end(), 1);
+        std::fill(map2.getVector()->begin(), map2.getVector()->end(), 0);
         return;
     }else{
-        std::fill(pmap.begin(), pmap.end(), 0);
+        std::fill(map2.getVector()->begin(), map2.getVector()->end(), 0);
     }
 
     std::vector<double> norm;
@@ -1370,9 +1370,6 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
     }else{
         scale.cload(active_outputs, num_points, scale_correction);
     }
-
-    Data2D<int> map2;
-    map2.load(num_dimensions, num_points, pmap.data());
 
     if ((criteria == refine_classic) || (criteria == refine_parents_first)){
         #pragma omp parallel for
@@ -1538,7 +1535,8 @@ const int* GridLocalPolynomial::getNeededIndexes() const{
 void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction){
     clearRefinement();
 
-    std::vector<int> pmap; buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
+    Data2D<int> pmap;
+    buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
 
     bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
 
@@ -1548,8 +1546,9 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
 
     if (level_limits.empty()){
         for(int i=0; i<num_points; i++){
+            const int *map = pmap.getCStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (pmap[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                if (map[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
                         addChild(points->getIndex(i), j, refined, points);
                     }
@@ -1558,8 +1557,9 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
         }
     }else{
         for(int i=0; i<num_points; i++){
+            const int *map = pmap.getCStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (pmap[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                if (map[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
                         addChildLimited(points->getIndex(i), j, refined, points, level_limits);
                     }
