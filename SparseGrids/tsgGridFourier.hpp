@@ -161,6 +161,43 @@ protected:
         delete[] middles;
     }
 
+    template<typename T, bool interwoven>
+    void computeBasis(const IndexSet *work, const T x[], T wreal[], T wimag[]) const{
+        int num_points = work->getNumIndexes();
+
+        std::vector<std::vector<std::complex<T>>> cache(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            cache[j].resize(max_power[j] +1);
+            cache[j][0] = std::complex<T>(1.0, 0.0);
+
+            T theta = -2.0 * M_PI * x[j];
+            std::complex<T> step(cos(theta), sin(theta));
+            std::complex<T> pw(1.0, 0.0);
+            for(int i=1; i<max_power[j]; i += 2){
+                pw *= step;
+                cache[j][i] = pw;
+                cache[j][i+1] = std::conj<T>(pw);
+            }
+        }
+
+        for(int i=0; i<num_points; i++){
+            const int *p = work->getIndex(i);
+
+            std::complex<T> v(1.0, 0.0);
+            for(int j=0; j<num_dimensions; j++){
+                v *= cache[j][p[j]];
+            }
+
+            if (interwoven){
+                wreal[2*i] = v.real();
+                wreal[2*i+1] = v.imag();
+            }else{
+                wreal[i] = v.real();
+                wimag[i] = v.imag();
+            }
+        }
+    }
+
 private:
     int num_dimensions, num_outputs;
 
@@ -179,6 +216,8 @@ private:
     int **tensor_refs;
 
     StorageSet *values;
+
+    std::vector<int> max_power;
 
     mutable BaseAccelerationData *accel;
 
