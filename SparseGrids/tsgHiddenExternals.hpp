@@ -67,8 +67,8 @@ public:
         return nrm * nrm;
     }
     // Level 2
-    inline static void dgemv(int M, int N, const double A[], const double x[], double y[]){ // y = A*x, A is M by N
-        char charN = 'N'; int blas_one = 1; double alpha = 1.0, beta = 0.0;
+    inline static void dgemv(int M, int N, const double A[], const double x[], double y[], double alpha = 1.0, double beta = 0.0){ // y = A*x, A is M by N
+        char charN = 'N'; int blas_one = 1;
         dgemv_(&charN, &M, &N, &alpha, A, &M, x, &blas_one, &beta, y, &blas_one);
     }
     inline static void dgemtv(int M, int N, const double A[], const double x[], double y[]){ // y = A^T*x, A is M by N
