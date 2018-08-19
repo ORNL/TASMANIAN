@@ -584,12 +584,12 @@ void GridFourier::calculateFourierCoefficients(){
 }
 
 void GridFourier::getInterpolationWeights(const double x[], double weights[]) const {
-    /*
-    I[f](x) = c^T * \Phi(x) = (U*P*f)^T * \Phi(x)           (U represents normalized forward Fourier transform; P represents reordering of f_i before going into FT)
-                            = f^T * (P^T * U^T * \Phi(x))   (P^T = P^(-1) since P is a permutation matrix)
-
-    Note that U is the DFT operator (complex) and the transposes are ONLY REAL transposes, so U^T = U.
-    */
+    // if Fourier coefficient are c, Data from the target function is f, and values of the basis functions are b
+    // then we have c = A * f (where A is both the Fourier transform and the reindexing)
+    // and the value of the interpolant is result = <c, b> = <A f, b> = <f, A^* b>, where A^* is conjugate transpose
+    // However, we consider only the real values (the complex ones add-up to zero), thus we really need A^T (regular transpose)
+    // The Fourier transform is symmetric with respect to regular transpose, which leaves only the indexing
+    // Take the basis functions, reindex and reorder to a data strucutre, take FFT, reindex and reorder into the weights
 
     IndexSet *work = (points == 0 ? needed : points);
     std::vector<std::vector<int>> index_map;
@@ -633,7 +633,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
         for(int i=0; i<num_tensor_points; i++){
             // We interpret this "i" as running through the spatial indexing; convert to internal
             int t=i;
-            for(int j=num_dimensions-1; j>=0; j--){
+            for(int j=num_dimensions-1; j>=0; j--){ // here p is the index of the spacial point in Tasmanian indexing
                 p[j] = index_map[levels[j]][t % num_oned_points[j]];
                 t /= num_oned_points[j];
             }
