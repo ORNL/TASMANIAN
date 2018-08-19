@@ -37,11 +37,11 @@
 namespace TasGrid{
 
 GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0), active_w(0),
-    max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), tensor_refs(0), values(0), accel(0)
+    max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), values(0), accel(0)
 {}
 
 GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0),
-    active_w(0), max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), tensor_refs(0), values(0), accel(0){
+    active_w(0), max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), values(0), accel(0){
     copyGrid(&fourier);
 }
 
@@ -137,7 +137,6 @@ void GridFourier::read(std::ifstream &ifs){
 
         IndexManipulator IM(num_dimensions);
         int oned_max_level = max_levels[0];
-        int nz_weights = active_tensors->getNumIndexes();
         for(int j=1; j<num_dimensions; j++){ if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j]; }
 
         OneDimensionalMeta meta(0);
@@ -156,12 +155,6 @@ void GridFourier::read(std::ifstream &ifs){
         exponents = new IndexSet(exponents_unsorted);
         delete[] exponent;
         delete exponents_unsorted;
-
-        tensor_refs = new int*[nz_weights];
-        #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<nz_weights; i++){
-            tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, work);
-        }
 
         int dummy;
         IM.getMaxLevels(work, max_power, dummy);
@@ -249,7 +242,6 @@ void GridFourier::readBinary(std::ifstream &ifs){
         }
 
         IndexManipulator IM(num_dimensions);
-        int nz_weights = active_tensors->getNumIndexes();
         int oned_max_level;
         oned_max_level = max_levels[0];
         for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
@@ -270,12 +262,6 @@ void GridFourier::readBinary(std::ifstream &ifs){
         delete[] exponent;
         delete exponents_unsorted;
 
-        tensor_refs = new int*[nz_weights];
-        #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<nz_weights; i++){
-            tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, work);
-        }
-
         int dummy;
         IM.getMaxLevels(work, max_power, dummy);
     }
@@ -283,7 +269,6 @@ void GridFourier::readBinary(std::ifstream &ifs){
 
 void GridFourier::reset(){
     clearAccelerationData();
-    if (tensor_refs != 0){ for(int i=0; i<active_tensors->getNumIndexes(); i++){ delete[] tensor_refs[i]; tensor_refs[i] = 0; } delete[] tensor_refs; tensor_refs = 0; }
     if (wrapper != 0){ delete wrapper; wrapper = 0; }
     if (tensors != 0){ delete tensors; tensors = 0; }
     if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
@@ -340,7 +325,6 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
     int nz_weights = active_tensors->getNumIndexes();
 
     active_w = new int[nz_weights];
-    tensor_refs = new int*[nz_weights];
     int count = 0;
     for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w[count++] = tensors_w[i]; }
 
@@ -359,11 +343,6 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
     exponents = new IndexSet(exponents_unsorted);
     delete[] exponent;
     delete exponents_unsorted;
-
-    #pragma omp parallel for schedule(dynamic)
-    for(int i=0; i<nz_weights; i++){
-        tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, needed);
-    }
 
     if (num_outputs == 0){
         points = needed;

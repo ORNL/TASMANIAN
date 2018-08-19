@@ -166,7 +166,6 @@ private:
     IndexSet *exponents;
 
     double *fourier_coefs;
-    int **tensor_refs;
 
     StorageSet *values;
 
