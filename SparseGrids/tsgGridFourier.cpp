@@ -596,30 +596,39 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     generateIndexingMap(index_map);
 
     std::fill(weights, weights+getNumPoints(), 0.0);
-    double *basisFuncs = new double[2* getNumPoints()];
-    computeExponentials<true>(x, basisFuncs);
 
-    if (true){ // use the new fft algorithm
+    std::vector<std::complex<double>> basisFuncs(work->getNumIndexes());
+    computeBasis<double, true>(work, x, (double*) basisFuncs.data(), 0);
 
     for(int n=0; n<active_tensors->getNumIndexes(); n++){
         const int *levels = active_tensors->getIndex(n);
         int num_tensor_points = 1;
         std::vector<int> num_oned_points(num_dimensions);
-
+        std::vector<int> cnum_oned_points(num_dimensions, 1);
         for(int j=0; j<num_dimensions; j++){
             num_oned_points[j] = wrapper->getNumPoints(levels[j]);
             num_tensor_points *= num_oned_points[j];
         }
+        for(int j=num_dimensions-2; j>=0; j--) cnum_oned_points[j] = num_oned_points[j+1] * cnum_oned_points[j+1];
 
         std::vector<std::vector<std::complex<double>>> tensor_data(num_tensor_points);
-        auto v = tensor_data.begin();
-        for(int i=0; i<num_tensor_points; i++) // v++->resize() means apply resize to the vector that v references and then increment v
-            v++->resize(1, std::complex<double> (basisFuncs[2*exponent_refs[n][i]], basisFuncs[2*exponent_refs[n][i] + 1]));
+        std::vector<int> p(num_dimensions);
+        for(int i=0; i<num_tensor_points; i++){ // v++->resize() means apply resize to the vector that v references and then increment v
+            int r = 0;
+            int t = i;
+            // here rj is the real multi-index corresponding to "i"
+            for(int j=num_dimensions-1; j>=0; j--){
+                p[j] = t % num_oned_points[j]; // index of the exponent is p, convert to spacial index rj (cumulative r)
+                t /= num_oned_points[j];
+                int rj = (p[j] % 2 == 0) ? (p[j]+1) / 2 : num_oned_points[j] - (p[j]+1) / 2; // +/- index
+                r += rj * cnum_oned_points[j];
+            }
+            tensor_data[r].resize(1, std::complex<double> (basisFuncs[work->getSlot(p)]));
+        }
 
         TasmanianFourierTransform::fast_fourier_transform(tensor_data, num_oned_points);
 
-        std::vector<int> p(num_dimensions);
-        v = tensor_data.begin();
+        auto v = tensor_data.begin(); // v++->data() means: get the 0-th entry from current v and move to the next v
         double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
         for(int i=0; i<num_tensor_points; i++){
             // We interpret this "i" as running through the spatial indexing; convert to internal
@@ -631,44 +640,6 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
             weights[work->getSlot(p)] += tensorw * v++->data()->real();
         }
     }
-
-    }else{ // use the old dft algorithm
-
-    for(int n=0; n<active_tensors->getNumIndexes(); n++){
-        const int *levels = active_tensors->getIndex(n);
-        int num_tensor_points = 1;
-        std::vector<int> num_oned_points(num_dimensions);
-
-        for(int j=0; j<num_dimensions; j++){
-            num_oned_points[j] = wrapper->getNumPoints(levels[j]);
-            num_tensor_points *= num_oned_points[j];
-        }
-
-        std::complex<double> *in = new std::complex<double>[num_tensor_points];
-        std::complex<double> *out = new std::complex<double>[num_tensor_points];
-
-        for(int i=0; i<num_tensor_points; i++){
-            in[i] = std::complex<double>(basisFuncs[2*exponent_refs[n][i]], basisFuncs[2*exponent_refs[n][i] + 1]);
-        }
-
-        TasmanianFourierTransform::discrete_fourier_transform(num_dimensions, num_oned_points.data(), in, out);
-
-        std::vector<int> p(num_dimensions);
-        for(int i=0; i<num_tensor_points; i++){
-            // We interpret this "i" as running through the spatial indexing; convert to internal
-            int t=i;
-            for(int j=num_dimensions-1; j>=0; j--){
-                p[j] = index_map[levels[j]][t % num_oned_points[j]];
-                t /= num_oned_points[j];
-            }
-            weights[work->getSlot(p)] += ((double) active_w[n]) * out[i].real()/((double) num_tensor_points);
-        }
-        delete[] in;
-        delete[] out;
-    }
-
-    }
-    delete[] basisFuncs;
 }
 
 void GridFourier::getQuadratureWeights(double weights[]) const{
