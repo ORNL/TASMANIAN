@@ -694,17 +694,17 @@ void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, dou
         computeBasis<double, true>(((points == 0) ? needed : points), xx.getCStrip(i), yy.getStrip(i), 0);
     }
 }
-void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double M_real[], double M_imag[]) const{
-    // y must be of size num_x * num_nodes * 2
+void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double wreal[], double wimag[]) const{
+    // when performing internal evaluations, split the matrix into real and complex components
+    // thus only two real gemm() operations can be used (as opposed to one complex gemm)
+    IndexSet *work = (points != 0) ? points : needed;
     int num_points = getNumPoints();
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> wr; wr.load(num_points, num_x, wreal);
+    Data2D<double> wi; wi.load(num_points, num_x, wimag);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        double *w = new double[2 * num_points];
-        computeExponentials<false>(&(x[((size_t) i) * ((size_t) num_dimensions)]), w);
-        for(int m=0; m<num_points; m++){
-            M_real[i*num_points+m] = w[m];
-            M_imag[i*num_points+m] = w[m + num_points];
-        }
+        computeBasis<double, false>(work, xx.getCStrip(i), wr.getStrip(i), wi.getStrip(i));
     }
 }
 

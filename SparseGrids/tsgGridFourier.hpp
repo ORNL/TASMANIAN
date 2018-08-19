@@ -98,7 +98,7 @@ public:
     void integrate(double q[], double *conformal_correction) const;
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
-    void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double M_real[], double M_imag[]) const;
+    void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double wreal[], double wimag[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
     void clearAccelerationData();
@@ -114,50 +114,6 @@ protected:
     void calculateFourierCoefficients();
 
     void generateIndexingMap(std::vector<std::vector<int>> &index_map) const;
-
-    template<bool interwoven>
-    void computeExponentials(const double x[], double w[]) const{
-        std::complex<double> unit_imag(0.0,1.0);
-        std::complex<double> **cache = new std::complex<double>*[num_dimensions];
-        int *middles = new int[num_dimensions];
-        for (int j=0; j<num_dimensions; j++){
-            int num_level_points = wrapper->getNumPoints(max_levels[j]);
-            int middle = (num_level_points - 1)/2;
-            middles[j] = middle;
-            cache[j] = new std::complex<double>[num_level_points];
-            cache[j][middle] = std::complex<double>(1.0,0.0);
-            if (num_level_points > 1){
-                cache[j][middle+1] = std::exp(2*M_PI*unit_imag*x[j]);
-                for (int i=middle+2; i<num_level_points; i++){
-                    cache[j][i] = cache[j][middle+1] * cache[j][i-1];
-                }
-
-                cache[j][middle-1] = std::conj(cache[j][middle+1]);
-                for (int i=middle-2; i>=0; i--){
-                    cache[j][i] = cache[j][middle-1] * cache[j][i+1];
-                }
-            }
-        }
-
-        IndexSet *work = (points == 0 ? needed : points);
-        int num_points = work->getNumIndexes();
-
-        for (int i=0; i<num_points; i++){
-            std::complex<double> basis_entry(1.0,0.0);
-            for (int j=0; j<num_dimensions; j++) basis_entry *= cache[j][exponents->getIndex(i)[j] + middles[j]];
-            if (interwoven){
-                w[2*i] = basis_entry.real();
-                w[2*i + 1] = basis_entry.imag();
-            }else{
-                w[i] = basis_entry.real();
-                w[i + num_points] = basis_entry.imag();
-            }
-        }
-
-        for (int j=0; j<num_dimensions; j++) { delete[] cache[j]; }
-        delete[] cache;
-        delete[] middles;
-    }
 
     template<typename T, bool interwoven>
     void computeBasis(const IndexSet *work, const T x[], T wreal[], T wimag[]) const{
