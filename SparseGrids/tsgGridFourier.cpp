@@ -628,6 +628,20 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     }
 }
 
+#ifdef Tasmanian_ENABLE_BLAS
+void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
+    int num_points = points->getNumIndexes();
+    Data2D<double> wreal; wreal.resize(num_points, num_x);
+    Data2D<double> wimag; wimag.resize(num_points, num_x);
+    evaluateHierarchicalFunctionsInternal(x, num_x, wreal.getStrip(0), wimag.getStrip(0));
+    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, fourier_coefs, wreal.getStrip(0), 0.0, y);
+    size_t offset = ((size_t) num_points) * ((size_t) num_outputs);
+    TasBLAS::dgemm(num_outputs, num_x, num_points, -1.0, &(fourier_coefs[offset]), wimag.getStrip(0), 1.0, y);
+}
+#else
+void GridFourier::evaluateBatchCPUblas(const double[], int, double[]) const{}
+#endif
+
 void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
     evaluate(x,y);
 }
@@ -638,9 +652,6 @@ void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[]) const{
     evaluate(x,y);
 }
 
-void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    evaluateBatch(x, num_x, y);
-}
 void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const {
     evaluateBatch(x, num_x, y);
 }
