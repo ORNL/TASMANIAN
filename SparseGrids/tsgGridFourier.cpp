@@ -606,6 +606,21 @@ void GridFourier::evaluate(const double x[], double y[]) const{
         for(int k=0; k<num_outputs; k++) y[k] += wr * fcreal[k] - wi * fcimag[k];
     }
 }
+#ifdef Tasmanian_ENABLE_BLAS
+void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
+    int num_points = points->getNumIndexes();
+    TasBLAS::setzero(num_outputs, y);
+    std::vector<double> wreal(num_points);
+    std::vector<double> wimag(num_points);
+    computeBasis<double, false>(points, x, wreal.data(), wimag.data());
+    TasBLAS::dgemv(num_outputs, num_points, fourier_coefs, wreal.data(), y, 1.0, 0.0);
+    size_t offset = ((size_t) num_points) * ((size_t) num_outputs);
+    TasBLAS::dgemv(num_outputs, num_points, &(fourier_coefs[offset]), wimag.data(), y, -1.0, 1.0);
+}
+#else
+void GridFourier::evaluateFastCPUblas(const double[], double[]) const{}
+#endif
+
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
@@ -613,9 +628,6 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     }
 }
 
-void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
-    evaluate(x,y);
-}
 void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
     evaluate(x,y);
 }
