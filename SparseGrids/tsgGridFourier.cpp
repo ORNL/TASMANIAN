@@ -503,6 +503,22 @@ void GridFourier::generateIndexingMap(std::vector<std::vector<int>> &index_map) 
 }
 
 void GridFourier::calculateFourierCoefficients(){
+    // There are three indexing schemes needed here
+    // First, is the way nodes are indexed and stored in the "work" IndexSet (same as all other nested grids)
+    //       the order is contiguous in level, meaning that node indexed by i is always the same node regardless of level
+    //       and all nodes on level l are indexed from 0 till 3^l
+    // Second, is the spacial order needed by the Fourier transform
+    //       nodes have to appear left to right in order for the transform to work so reindexing has to be done
+    //       see generateIndexingMap() for index detail
+    //       reindexing is done when all data to for the tensor is put into one data structure
+    // Third, the exponents of the basis functions have to be indexed and some functions will have negative exponents
+    //       following the same idea as the first indexing, the exponents are best used contiguously
+    //       reorder the exponents so that 0, 1, 2, 3, 4 ... map to exponents 0, -1, 1, -2, 2, -3, 3 ...
+    //       the formula is exponent = (point + 1) / 2, if point is odd, make exponent negative
+    // The (point + 1) / 2 maps First indexing to Third indexing, generateIndexingMap() takes care of First -> Second
+    // The Second -> Third indexing is done per-tensor, where the non-negative exponents are associated with coefficients
+    //     going from left to right (in the order of the Fourier coefficients), while the negative coefficients go
+    //     in reverse right to left order "int rj = (p[j] % 2 == 0) ? (p[j]+1) / 2 : num_oned_points[j] - (p[j]+1) / 2;"
     int num_points = getNumPoints();
 
     IndexSet *work = (points == 0 ? needed : points);
