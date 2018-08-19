@@ -590,14 +590,13 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
 }
 
 void GridFourier::getQuadratureWeights(double weights[]) const{
+    // When integrating the Fourier series on a tensored grid, all the
+    // nonzero modes vanish, and we're left with the normalized Fourier
+    // coeff for e^0 (sum of the data divided by number of points)
 
-    /*
-     * When integrating the Fourier series on a tensored grid, all the
-     * nonzero modes vanish, and we're left with the normalized Fourier
-     * coeff for e^0 (sum of the data divided by number of points)
-     */
-
-    int num_points = getNumPoints();
+    IndexSet *work = (points != 0) ? points : needed;
+    int num_points = work->getNumIndexes();
+    IndexManipulator IM(num_dimensions);
     std::fill(weights, weights+num_points, 0.0);
     for(int n=0; n<active_tensors->getNumIndexes(); n++){
         const int *levels = active_tensors->getIndex(n);
@@ -605,9 +604,12 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
         for(int j=0; j<num_dimensions; j++){
             num_tensor_points *= wrapper->getNumPoints(levels[j]);
         }
+        int *refs = IM.referenceNestedPoints(levels, wrapper, work);
+        double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
         for(int i=0; i<num_tensor_points; i++){
-            weights[tensor_refs[n][i]] += ((double) active_w[n])/((double) num_tensor_points);
+            weights[refs[i]] += tensorw;
         }
+        delete[] refs;
     }
 }
 
