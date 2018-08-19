@@ -1068,6 +1068,27 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
         delete[] monkey_tail;
     }
 }
+void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz, std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const{
+    // numnz will be resized to (num_x + 1) with the last entry set to a dummy zero
+    numnz.resize(num_x + 1);
+    int num_blocks = num_x / num_chunk + ((num_x % num_chunk != 0) ? 1 : 0);
+
+    tindx.resize(num_blocks);
+    tvals.resize(num_blocks);
+
+    const IndexSet *work = (points != 0) ? points : needed;
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+
+    for(int b=0; b<num_blocks; b++){
+        tindx[b].resize(0);
+        tvals[b].resize(0);
+        int chunk_size = (b < num_blocks - 1) ? num_chunk : (num_x - (num_blocks - 1) * num_chunk);
+        for(int i = b * num_chunk; i < b * num_chunk + chunk_size; i++){
+            buildSparseVector<2>(work, xx.getCStrip(i), numnz[i], tindx[b], tvals[b]);
+        }
+    }
+    numnz[num_x] = 0;
+}
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{

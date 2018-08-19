@@ -120,6 +120,8 @@ protected:
 
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, int &num_blocks, int &num_last, int &stripe_size,
                                     int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
+    void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz,
+                                    std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const;
 
     template<int mode>
     void buildSparseVector(const IndexSet *work, const double x[], int &num_nz, std::vector<int> &sindx, std::vector<double> &svals) const{
