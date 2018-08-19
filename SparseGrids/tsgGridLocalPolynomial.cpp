@@ -448,8 +448,8 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[]) co
     int num_nz;
     std::vector<int> sindx;
     std::vector<double> svals;
-    buildSparseVector<false>(points, x, num_nz, sindx, svals);
-    buildSparseVector<true>(points, x, num_nz, sindx, svals);
+    buildSparseVector<0>(points, x, num_nz, sindx, svals);
+    buildSparseVector<1>(points, x, num_nz, sindx, svals);
     int *gpu_sindx = TasCUDA::cudaSend<int>(sindx);
     double *gpu_svals = TasCUDA::cudaSend<double>(svals);
     double *gpu_y = TasCUDA::cudaNew<double>(num_outputs);
@@ -942,7 +942,7 @@ int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) cons
 
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        buildSparseVector<false>(work, xx.getCStrip(i), num_nz[i], sindx, svals);
+        buildSparseVector<0>(work, xx.getCStrip(i), num_nz[i], sindx, svals);
     }
 
     int total_nz = 0;
