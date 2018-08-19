@@ -37,11 +37,11 @@
 namespace TasGrid{
 
 GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0), active_w(0),
-    max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), exponent_refs(0), tensor_refs(0), values(0), accel(0)
+    max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), tensor_refs(0), values(0), accel(0)
 {}
 
 GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0),
-    active_w(0), max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), exponent_refs(0), tensor_refs(0), values(0), accel(0){
+    active_w(0), max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), tensor_refs(0), values(0), accel(0){
     copyGrid(&fourier);
 }
 
@@ -157,11 +157,9 @@ void GridFourier::read(std::ifstream &ifs){
         delete[] exponent;
         delete exponents_unsorted;
 
-        exponent_refs = new int*[nz_weights];
         tensor_refs = new int*[nz_weights];
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<nz_weights; i++){
-            exponent_refs[i] = referenceExponents(active_tensors->getIndex(i), exponents);
             tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, work);
         }
 
@@ -272,11 +270,9 @@ void GridFourier::readBinary(std::ifstream &ifs){
         delete[] exponent;
         delete exponents_unsorted;
 
-        exponent_refs = new int*[nz_weights];
         tensor_refs = new int*[nz_weights];
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<nz_weights; i++){
-            exponent_refs[i] = referenceExponents(active_tensors->getIndex(i), exponents);
             tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, work);
         }
 
@@ -287,7 +283,6 @@ void GridFourier::readBinary(std::ifstream &ifs){
 
 void GridFourier::reset(){
     clearAccelerationData();
-    if (exponent_refs != 0){ for(int i=0; i<active_tensors->getNumIndexes(); i++){ delete[] exponent_refs[i]; exponent_refs[i] = 0; } delete[] exponent_refs; exponent_refs = 0; }
     if (tensor_refs != 0){ for(int i=0; i<active_tensors->getNumIndexes(); i++){ delete[] tensor_refs[i]; tensor_refs[i] = 0; } delete[] tensor_refs; tensor_refs = 0; }
     if (wrapper != 0){ delete wrapper; wrapper = 0; }
     if (tensors != 0){ delete tensors; tensors = 0; }
@@ -365,10 +360,8 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
     delete[] exponent;
     delete exponents_unsorted;
 
-    exponent_refs = new int*[nz_weights];
     #pragma omp parallel for schedule(dynamic)
     for(int i=0; i<nz_weights; i++){
-        exponent_refs[i] = referenceExponents(active_tensors->getIndex(i), exponents);
         tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, needed);
     }
 
@@ -381,52 +374,6 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
 
     int dummy;
     IM.getMaxLevels(((points != 0) ? points : needed), max_power, dummy);
-}
-
-int* GridFourier::referenceExponents(const int levels[], const IndexSet *ilist){
-
-    /*
-     * This function ensures the correct match-up between Fourier coefficients and basis functions.
-     * The basis exponents are stored in an IndexSet whose ordering is different from the needed/points
-     * IndexSet (since exponents may be negative).
-     *
-     * The 1D Fourier coefficients are \hat{f}^l_j, where j = -(3^l-1)/2, ..., 0, ..., (3^l-1)/2 and
-     *
-     * \hat{f}^l_j = \sum_{n=0}^{3^l-1} f(x_n) exp(-2 * pi * sqrt(-1) * j * x_n)
-     *             = \sum_{n=0}^{3^l-1} f(x_n) exp(-2 * pi * sqrt(-1) * j * n/3^l)
-     *
-     * Now, \hat{f}^l_j is the coefficient of the basis function exp(2 * pi * sqrt(-1) * j * x).
-     * However, the Fourier transform code returns the coefficients with the indexing j' = 0, 1,
-     * ..., 3^l-1.  For j' = 0, 1, ..., (3^l-1)/2, the corresponding basis function has exponent j'.
-     * For j' = (3^l-1)/2 + 1, ..., 3^l-1, we march clockwise around the unit circle to see
-     * the corresponding exponent is -3^l + j'. Algebraically, for j' > (3^l-1)/2,
-     *
-     * \hat{f}^l_{j'} = \sum_{n=0}^{3^l-1} f(x_n) [exp(-2 * pi * sqrt(-1) * j' /3^l)]^n
-     *                = \sum_{n=0}^{3^l-1} f(x_n) [exp(-2 * pi * sqrt(-1) * (j' - 3^l) /3^l) * exp(-2 * pi * sqrt(-1))]^n
-     *                = \sum_{n=0}^{3^l-1} f(x_n) [exp(-2 * pi * sqrt(-1) * (j' - 3^l) /3^l)]^n
-     *                = \hat{f}^l_{j' - 3^l}
-     */
-    int *num_points = new int[num_dimensions];
-    int num_total = 1;
-    for(int j=0; j<num_dimensions; j++){  num_points[j] = wrapper->getNumPoints(levels[j]); num_total *= num_points[j];  }
-
-    int* refs = new int[num_total];
-    int *p = new int[num_dimensions];
-
-    for(int i=0; i<num_total; i++){
-        int t = i;
-        for(int j=num_dimensions-1; j>=0; j--){
-            int tmp = t % num_points[j];
-            p[j] = (tmp <= (num_points[j]-1)/2 ? tmp : -num_points[j] + tmp);
-            t /= num_points[j];
-        }
-        refs[i] = ilist->getSlot(p);
-    }
-
-    delete[] p;
-    delete[] num_points;
-
-    return refs;
 }
 
 int GridFourier::getNumDimensions() const{ return num_dimensions; }

@@ -113,8 +113,6 @@ protected:
     void reset();
     void calculateFourierCoefficients();
 
-    int* referenceExponents(const int levels[], const IndexSet *ilist);
-
     void generateIndexingMap(std::vector<std::vector<int>> &index_map) const;
 
     template<bool interwoven>
@@ -212,7 +210,6 @@ private:
     IndexSet *exponents;
 
     double *fourier_coefs;
-    int **exponent_refs;
     int **tensor_refs;
 
     StorageSet *values;
