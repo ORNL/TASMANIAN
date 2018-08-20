@@ -127,6 +127,7 @@ private:
 class SparseMatrix{
 public:
     SparseMatrix(TsgSparseCOO &M);
+    SparseMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
     ~SparseMatrix();
 
     int getNumRows() const;

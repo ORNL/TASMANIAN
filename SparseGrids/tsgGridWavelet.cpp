@@ -419,78 +419,51 @@ double GridWavelet::evalIntegral(const int p[]) const{
 }
 
 void GridWavelet::buildInterpolationMatrix(){
-    // change the logic here, build the matrix only if num_outputs are zero or if there is need (load surpluses etc)
-	/*
-	 * Using the IndexSet points, constructs the interpolation matrix needed for methods
-	 * such as recomputeCoefficients, solveTransposed, etc.
-	 */
-	IndexSet *work = (points == 0) ? needed : points;
-	if(inter_matrix != 0) { delete inter_matrix; }
+    // updated code, using better parallelism
+    // Wavelets don't have a nice rule of support to use monkeys and graphs (or I cannot find the support rule)
+    IndexSet *work = (points == 0) ? needed : points;
+    if(inter_matrix != 0) { delete inter_matrix; }
 
-	int num_points = work->getNumIndexes();
+    int num_points = work->getNumIndexes();
 
-	TasSparse::TsgSparseCOO coo_mat(num_points, num_points);
+    int num_chunk = 32;
+    int num_blocks = num_points / num_chunk + ((num_points % num_chunk == 0) ? 0 : 1);
 
-#ifdef _OPENMP
-	int num_threads = omp_get_max_threads();
-	TasSparse::TsgSparseCOO *coos = new TasSparse::TsgSparseCOO[num_threads];
-	#pragma omp parallel
-#endif
-	{
-		double *xs = new double[num_dimensions];
+    std::vector<std::vector<int>> indx(num_blocks);
+    std::vector<std::vector<double>> vals(num_blocks);
+    std::vector<int> pntr(num_points);
 
-    // This is O(n^2) but Wavelets don't have a nice rule of support to use monkeys and graphs!
-#ifdef _OPENMP
-		int thread_id = omp_get_thread_num();
-		#pragma omp for
-#endif
-		for(int i = 0; i < num_points; i++){ /* Loop over points */
-			const int *point = work->getIndex(i);
+    #pragma omp parallel for
+    for(int b=0; b<num_blocks; b++){
+        int block_end = (b < num_blocks - 1) ? (b+1) * num_chunk : num_points;
+        for(int i=b * num_chunk; i < block_end; i++){
+            const int *p = work->getIndex(i);
+            std::vector<double> xi(num_dimensions);
+            for(int j = 0; j<num_dimensions; j++) // get the node
+                xi[j] = rule1D.getNode(p[j]);
 
-			for(int k = 0; k < num_dimensions; k++){ /* Fill in x values of point */
-				xs[k] = rule1D.getNode(point[k]);
-			}
+            // loop over the basis functions to see if supported
+            int numpntr = 0;
+            for(int wi=0; wi<num_points; wi++){
+                const int *w = work->getIndex(wi);
 
-			for(int j = 0; j < num_points; j++){ /* Loop over wavelets */
-				const int *wavelet = work->getIndex(j);
-				double v = 1.;
+                double v = 1.0;
+                for(int j=0; j<num_dimensions; j++){
+                    v *= rule1D.eval(w[j], xi[j]);
+                    if (v == 0.0) break; // evaluating the wavelets is expensive, stop if any one of them is zero
+                }
 
-				for(int k = 0; k < num_dimensions; k++){ /* Loop over dimensions */
-					v *= rule1D.eval(wavelet[k], xs[k]);
-					if (v == 0.0){ break; }; // MIRO: evaluating the wavelets is expensive, stop if any one of them is zero
-				} /* End for dimensions */
+                if(v != 0.0){ // testing != is safe since it can only happen in multiplication by 0.0
+                    indx[b].push_back(wi);
+                    vals[b].push_back(v);
+                    numpntr++;
+                }
+            }
+            pntr[i] = numpntr;
+        }
+    }
 
-				if(v != 0.0){
-				/*
-				 * Testing for equal to zero is safe since v*0 is the only way
-				 * for this to happen.
-				 */
-#ifdef _OPENMP
-					coos[thread_id].addPoint(i, j, v);
-#else
-					coo_mat.addPoint(i,j,v);
-#endif
-				}
-
-
-			} /* End for wavelets */
-
-		} /* End for points */
-
-		delete[] xs;
-
-#ifdef _OPENMP
-		#pragma omp master
-		{ /* Master thread combines the sub-thread work */
-
-			for(int i = 0; i < num_threads; i++){
-				coo_mat.combine(coos[i]);
-			}
-			delete[] coos;
-		} /* End master section */
-#endif
-	} /* End parallel section */
-	inter_matrix = new TasSparse::SparseMatrix(coo_mat);
+    inter_matrix = new TasSparse::SparseMatrix(pntr, indx, vals);
 }
 
 void GridWavelet::recomputeCoefficients(){

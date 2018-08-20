@@ -435,6 +435,26 @@ SparseMatrix::SparseMatrix(TsgSparseCOO &M) : tol(TSG_NUM_TOL), num_rows(0), pnt
 
 	computeILU();
 }
+SparseMatrix::SparseMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals)
+ : tol(TSG_NUM_TOL), num_rows(0), pntr(0), indx(0), indxD(0), vals(0), ilu(0){
+     num_rows = (int) lpntr.size();
+
+     pntr = new int[num_rows];
+     pntr[0] = 0;
+     for(int i=0; i<num_rows; i++)
+         pntr[i+1] = pntr[i] + lpntr[i];
+
+     int num_nz = pntr[num_rows];
+     indx = new int[num_nz];
+     vals = new double[num_nz];
+
+    int j = 0;
+    for(const auto &idx : lindx) for(auto i : idx) indx[j++] = i;
+    j = 0;
+    for(const auto &vls : lvals) for(auto v : vls) vals[j++] = v;
+
+    computeILU();
+}
 
 SparseMatrix::~SparseMatrix(){
     clear();
