@@ -38,75 +38,42 @@ namespace TasGrid{
 BaseCanonicalGrid::BaseCanonicalGrid(){}
 BaseCanonicalGrid::~BaseCanonicalGrid(){}
 
-SplitDirections::SplitDirections(const IndexSet *points) : num_dimensions(0), num_allocated_jobs(0), num_jobs(0), job_directions(0), num_job_pnts(0), job_pnts(0) {
+SplitDirections::SplitDirections(const IndexSet *points){
+    // here we split the points into jobs, where each job is a batch of point that belong to the same line
+    // each job will later be used to construct a 1-D interpolant and compute directional surpluses
     int num_points = points->getNumIndexes();
     num_dimensions = points->getNumDimensions();
-    int *map = new int[num_points * num_dimensions];  std::fill(map, map + num_points * num_dimensions, 0);
-
-    num_allocated_jobs = 256;
-    job_directions = new int[num_allocated_jobs];
-    num_job_pnts   = new int[num_allocated_jobs];
-    job_pnts       = new int*[num_allocated_jobs];
 
     // This section is taking too long! Find a way to parallelize it!
-    for(int s=0; s<num_points; s++){
-        const int *p = points->getIndex(s);
-        for(int d=0; d<num_dimensions; d++){
-            if (map[s*num_dimensions + d] == 0){
-                if (num_jobs == num_allocated_jobs){
-                    num_allocated_jobs *= 2;
-                    int *tmp = job_directions;
-                    job_directions = new int[num_allocated_jobs];  std::copy(tmp, tmp + num_jobs, job_directions);
-                    delete[] tmp;
-                    tmp = num_job_pnts;
-                    num_job_pnts = new int[num_allocated_jobs];  std::copy(tmp, tmp + num_jobs, num_job_pnts);
-                    delete[] tmp;
-                    int **ttmp = job_pnts;
-                    job_pnts = new int*[num_allocated_jobs];  std::copy(ttmp, ttmp + num_jobs, job_pnts);
-                    delete[] ttmp;
-                }
+    for(int d=0; d<num_dimensions; d++){
+        std::vector<bool> unused(num_points, true); // start with all points unused in this direction
+        for(int s=0; s<num_points; s++){ // search for unused points
+            if (unused[s]){
+                // if found unused point in this direction, start a new job
+                const int *p = points->getIndex(s); // reference point
 
-                job_directions[num_jobs] = d;
+                job_directions.push_back(d); // set the direction for the job
 
-                int nump_allocated = 128;
-                job_pnts[num_jobs] = new int[nump_allocated];
-                num_job_pnts[num_jobs] = 0;
-                for(int i=0; i<num_points; i++){
-                    if ((map[i*num_dimensions + d] == 0) && (doesBelongSameLine(p, points->getIndex(i), d))){
+                std::vector<int> pnts; // append the here the points that will be found
+
+                for(int i=0; i<num_points; i++){ // look for all points, if unused and belong to the same line
+                    if (unused[i] && doesBelongSameLine(p, points->getIndex(i), d)){
                         // adding a new point
-                        if (num_job_pnts[num_jobs] == nump_allocated){
-                            nump_allocated *= 2;
-                            int *tmp = job_pnts[num_jobs];
-                            job_pnts[num_jobs] = new int[nump_allocated];  std::copy(tmp, tmp + num_job_pnts[num_jobs], job_pnts[num_jobs]);
-                            delete[] tmp;
-                        }
-
-                        job_pnts[num_jobs][num_job_pnts[num_jobs]] = i;
-                        num_job_pnts[num_jobs]++;
-                        map[i*num_dimensions + d] = -1;
+                        pnts.push_back(i);
+                        unused[i] = false;
                     }
                 }
-
-                num_jobs++;
+                job_pnts.push_back(pnts); // hope this does "move assignment"
             }
         }
     }
-
-    delete[] map;
 }
-SplitDirections::~SplitDirections(){
-    for(int s=0; s<num_jobs; s++){
-        delete[] job_pnts[s];
-    }
-    delete[] job_pnts;
-    delete[] num_job_pnts;
-    delete[] job_directions;
-}
+SplitDirections::~SplitDirections(){}
 
-int SplitDirections::getNumJobs() const{  return num_jobs;  }
-int SplitDirections::getJobDirection(int job) const{  return job_directions[job];  }
-int SplitDirections::getJobNumPoints(int job) const{  return num_job_pnts[job];  }
-const int* SplitDirections::getJobPoints(int job) const{  return job_pnts[job];  }
+int SplitDirections::getNumJobs() const{ return (int) job_pnts.size(); }
+int SplitDirections::getJobDirection(int job) const{ return job_directions[job]; }
+int SplitDirections::getJobNumPoints(int job) const{ return (int) job_pnts[job].size(); }
+const int* SplitDirections::getJobPoints(int job) const{ return job_pnts[job].data(); }
 
 bool SplitDirections::doesBelongSameLine(const int a[], const int b[], int direction) const{
     for(int i=0; i<num_dimensions; i++){
