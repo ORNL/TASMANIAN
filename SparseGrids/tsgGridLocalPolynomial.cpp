@@ -862,6 +862,29 @@ void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int
     c = 0;
     for(auto &vls : tvals) for(auto v: vls) svals[c++] = v;
 }
+void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const{
+    std::vector<std::vector<int>> tindx;
+    std::vector<std::vector<double>> tvals;
+    std::vector<int> numnz;
+    buildSparseMatrixBlockForm(x, num_x, num_chunk, numnz, tindx, tvals);
+
+    spntr.resize(num_x + 1);
+
+    int nz = 0;
+    auto inz = numnz.begin();
+    for(auto &s: spntr){
+        s = nz;
+        nz += *inz++;
+    }
+
+    sindx.resize(nz);
+    svals.resize(nz);
+
+    auto ii = sindx.begin();
+    for(auto &idx : tindx) for(auto i: idx) *ii++ = i;
+    auto iv = svals.begin();
+    for(auto &vls : tvals) for(auto v: vls) *iv++ = v;
+}
 void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_x, int num_chunk, int *spntr, int *sindx, double *svals) const{
     std::vector<std::vector<int>> tindx;
     std::vector<std::vector<double>> tvals;
