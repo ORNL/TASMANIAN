@@ -840,52 +840,27 @@ double GridLocalPolynomial::evalBasisSupported(const int point[], const double x
 }
 
 void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, int* &spntr, int* &sindx, double* &svals) const{
-    int num_blocks, num_last, stripe_size;
+    std::vector<std::vector<int>> tindx;
+    std::vector<std::vector<double>> tvals;
+    std::vector<int> numnz;
+    buildSparseMatrixBlockForm(x, num_x, num_chunk, numnz, tindx, tvals);
 
-    int *stripes, *last_stripe_size, **tpntr, ***tindx;
-    double ***tvals;
+    spntr = new int[num_x + 1];
 
-    buildSparseMatrixBlockForm(x, num_x, num_chunk, num_blocks, num_last, stripe_size, stripes, last_stripe_size, tpntr, tindx, tvals);
-
-    // assemble the matrix from the local junks
-    spntr = new int[num_x+1];
-    spntr[0] = 0;
-    int c = 0, block_offset = 0;
-    for(int b=0; b<num_blocks; b++){
-        int this_size = (b == num_blocks-1) ? num_last : num_chunk;
-        for(int i=0; i<this_size; i++){
-            spntr[c+1] = block_offset + tpntr[b][i+1];
-            c++;
-        }
-        block_offset = spntr[c];
-        delete[] tpntr[b];
+    int nz = 0;
+    for(int i=0; i<num_x; i++){
+        spntr[i] = nz;
+        nz += numnz[i];
     }
-    delete[] tpntr;
+    spntr[num_x] = nz;
 
-    int num_nz = spntr[num_x];
-    sindx = new int[num_nz];
-    svals = new double[num_nz];
+    sindx = new int[nz];
+    svals = new double[nz];
+
+    int c = 0;
+    for(auto &idx : tindx) for(auto i: idx) sindx[c++] = i;
     c = 0;
-    for(int b=0; b<num_blocks; b++){
-        for(int s=0; s<stripes[b]-1; s++){
-            std::copy(tindx[b][s], tindx[b][s] + stripe_size, &(sindx[c]));
-            std::copy(tvals[b][s], tvals[b][s] + stripe_size, &(svals[c]));
-            c += stripe_size;
-            delete[] tindx[b][s];
-            delete[] tvals[b][s];
-        }
-        std::copy(tindx[b][stripes[b]-1], tindx[b][stripes[b]-1] + last_stripe_size[b], &(sindx[c]));
-        std::copy(tvals[b][stripes[b]-1], tvals[b][stripes[b]-1] + last_stripe_size[b], &(svals[c]));
-        c += last_stripe_size[b];
-        delete[] tindx[b][stripes[b]-1];
-        delete[] tvals[b][stripes[b]-1];
-        delete[] tindx[b];
-        delete[] tvals[b];
-    }
-    delete[] tindx;
-    delete[] tvals;
-    delete[] stripes;
-    delete[] last_stripe_size;
+    for(auto &vls : tvals) for(auto v: vls) svals[c++] = v;
 }
 void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_x, int num_chunk, int *spntr, int *sindx, double *svals) const{
     std::vector<std::vector<int>> tindx;
