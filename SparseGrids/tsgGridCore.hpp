@@ -97,8 +97,9 @@ protected:
     bool doesBelongSameLine(const int a[], const int b[], int direction) const;
 
 private:
-    int num_dimensions, num_allocated_jobs, num_jobs;
-    int *job_directions, *num_job_pnts, **job_pnts;
+    int num_dimensions;
+    std::vector<int> job_directions, num_job_pnts;
+    std::vector<std::vector<int>> job_pnts;
 };
 
 }

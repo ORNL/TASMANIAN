@@ -1192,7 +1192,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
     int num_points = points->getNumIndexes();
     map2.resize(num_dimensions, num_points);
     if (tolerance == 0.0){
-        std::fill(map2.getVector()->begin(), map2.getVector()->end(), 0);
+        std::fill(map2.getVector()->begin(), map2.getVector()->end(), 1); // if tolerance is 0, refine everything
         return;
     }else{
         std::fill(map2.getVector()->begin(), map2.getVector()->end(), 0);
@@ -1367,7 +1367,6 @@ const int* GridLocalPolynomial::getPointIndexes() const{
     return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
 }
 const int* GridLocalPolynomial::getNeededIndexes() const{
-    //cout << "HERE " << needed->getNumIndexes() << endl;
     return ((needed != 0) ? needed->getIndex(0) : 0);
 }
 void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction){
