@@ -492,8 +492,6 @@ void SparseMatrix::computeILU(){
 }
 
 void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ // using GMRES
-    #ifndef TASMANIAN_CHOLMOD
-
     int max_inner = 30;
     int max_outer = 80;
     double *W = new double[(max_inner+1) * num_rows]; // Krylov basis
@@ -703,51 +701,6 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
     delete[] S;
     delete[] C;
     delete[] Z;
-
-    #else // doesn't seem to perform better!
-
-    int num_nz = pntr[num_rows];
-    cholmod_common *f_cholmod_common = new cholmod_common;
-    cholmod_start(f_cholmod_common);
-    cholmod_sparse *f_cholmod_sparse = cholmod_allocate_sparse(num_rows, num_rows, num_nz, 1, 1, 0, CHOLMOD_REAL, f_cholmod_common);
-    std::copy(pntr, pntr + num_rows + 1, (int*)(f_cholmod_sparse->p));
-    std::copy(indx, indx + pntr[num_rows], (int*)(f_cholmod_sparse->i));
-    std::copy(vals, vals + num_nz, (double*) (f_cholmod_sparse->x));
-
-    cholmod_factor *f_cholmod_factor = cholmod_analyze(f_cholmod_sparse, f_cholmod_common);
-	cholmod_factorize(f_cholmod_sparse, f_cholmod_factor, f_cholmod_common);
-
-    cholmod_dense *cholmod_b = cholmod_allocate_dense(num_rows, 1, num_rows, CHOLMOD_REAL, f_cholmod_common);
-    std::copy(b, b + num_rows, (double*) (cholmod_b->x));
-
-    double alpha[2] = {1.0, 0.0}, beta[2] = {0.0, 0.0};
-
-    cholmod_dense *cholmod_rhs = 0;
-    if (transposed){
-        cholmod_rhs = cholmod_b;
-    }else{
-        cholmod_rhs = cholmod_allocate_dense(num_rows, 1, num_rows, CHOLMOD_REAL, f_cholmod_common);
-        cholmod_sdmult(f_cholmod_sparse, 0, alpha, beta, cholmod_b, cholmod_rhs, f_cholmod_common);
-    }
-
-    cholmod_dense *cholmod_s = cholmod_solve(CHOLMOD_A, f_cholmod_factor, cholmod_rhs, f_cholmod_common);
-
-    if (transposed){
-        cholmod_sdmult(f_cholmod_sparse, 1, alpha, beta, cholmod_s, cholmod_b, f_cholmod_common);
-        std::copy(((double*) (cholmod_b->x)), ((double*) (cholmod_b->x)) + num_rows, x);
-    }else{
-        std::copy(((double*) (cholmod_s->x)), ((double*) (cholmod_s->x)) + num_rows, x);
-        cholmod_free_dense(&cholmod_rhs, f_cholmod_common);
-    }
-
-    cholmod_free_dense(&cholmod_s, f_cholmod_common);
-    cholmod_free_dense(&cholmod_b, f_cholmod_common);
-
-    cholmod_free_sparse(&f_cholmod_sparse, f_cholmod_common);
-    cholmod_free_factor(&f_cholmod_factor, f_cholmod_common);
-    cholmod_finish(f_cholmod_common); delete f_cholmod_common;
-
-    #endif // TASMANIAN_CHOLMOD
 }
 
 } /* namespace TasSparse */
