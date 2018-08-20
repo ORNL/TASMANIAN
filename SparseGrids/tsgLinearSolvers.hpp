@@ -126,7 +126,6 @@ private:
 // Make a new matrix class that would store the ILU preconditioner and solve either the regular or adjoined problem all in one class
 class SparseMatrix{
 public:
-    SparseMatrix(TsgSparseCOO &M);
     SparseMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
     ~SparseMatrix();
 

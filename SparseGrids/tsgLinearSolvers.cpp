@@ -403,38 +403,6 @@ void TsgSparseCOO::coalesce(){
 }
 /* END TsgSparseCOO */
 
-SparseMatrix::SparseMatrix(TsgSparseCOO &M) : tol(TSG_NUM_TOL), num_rows(0), pntr(0), indx(0), indxD(0), vals(0), ilu(0) {
-//
-//      Drayton's code for collapse of COO:
-//	Constructs a sparse matrix in CSR (compressed sparse row / compressed row storage)
-//	format given a sparse matrix in COO (coordinate) format.
-//
-	M.sort(csr_sort);
-	M.coalesce();
-
-	int length = M.nnz; // MIRO: assume the matrix is square
-	num_rows = M.n;
-	vals = new double[length];
-	indx = new int[length];
-	pntr = new int[num_rows+1];
-
-	int current_row = -1;
-
-	std::list<COO_Triplet>::const_iterator it = M.values.begin();
-	for(int i = 0; i < length; i++, ++it){
-		COO_Triplet current = *it;
-		while (((int)current.i) != current_row){
-			/* Either denote the end of the row or add empty rows until we've caught up */
-			current_row++;
-			pntr[current_row] = i;
-		}
-		indx[i] = current.j;
-		vals[i] = current.v;
-	}
-	pntr[current_row+1] = length;
-
-	computeILU();
-}
 SparseMatrix::SparseMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals)
  : tol(TSG_NUM_TOL), num_rows(0), pntr(0), indx(0), indxD(0), vals(0), ilu(0){
      num_rows = (int) lpntr.size();
