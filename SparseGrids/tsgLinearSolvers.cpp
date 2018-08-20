@@ -432,11 +432,8 @@ SparseMatrix::SparseMatrix(TsgSparseCOO &M) : tol(TSG_NUM_TOL), num_rows(0), pnt
 		vals[i] = current.v;
 	}
 	pntr[current_row+1] = length;
-	//std::cout << "rows = " << num_rows << "  nz = " << pntr[current_row+1] << "  fill = " << ((double) pntr[current_row+1]) / ((double) num_rows*num_rows) << std::endl;
 
-	//#ifndef TASMANIAN_CHOLMOD
 	computeILU();
-	//#endif // TASMANIAN_CHOLMOD
 }
 
 SparseMatrix::~SparseMatrix(){
