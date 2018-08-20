@@ -933,6 +933,7 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
     const IndexSet *work = (points != 0) ? points : needed;
     Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
 
+    #pragma omp parallel for
     for(int b=0; b<num_blocks; b++){
         tindx[b].resize(0);
         tvals[b].resize(0);
