@@ -37,11 +37,11 @@
 namespace TasGrid{
 
 GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0), active_w(0),
-    max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), values(0), accel(0)
+    max_levels(0), points(0), needed(0), fourier_coefs(0), values(0), accel(0)
 {}
 
 GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0),
-    active_w(0), max_levels(0), points(0), needed(0), exponents(0), fourier_coefs(0), values(0), accel(0){
+    active_w(0), max_levels(0), points(0), needed(0), fourier_coefs(0), values(0), accel(0){
     copyGrid(&fourier);
 }
 
@@ -142,20 +142,6 @@ void GridFourier::read(std::ifstream &ifs){
         OneDimensionalMeta meta(0);
         wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule_fourier, 0.0, 0.0);
 
-        UnsortedIndexSet *exponents_unsorted = new UnsortedIndexSet(num_dimensions, work->getNumIndexes());
-        int *exponent = new int[num_dimensions];
-
-        for (int i=0; i<work->getNumIndexes(); i++){
-            for(int j=0; j<work->getNumDimensions(); j++){
-                exponent[j] = (work->getIndex(i)[j] % 2 == 0 ? -work->getIndex(i)[j]/2 : (work->getIndex(i)[j]+1)/2);
-            }
-            exponents_unsorted->addIndex(exponent);
-        }
-
-        exponents = new IndexSet(exponents_unsorted);
-        delete[] exponent;
-        delete exponents_unsorted;
-
         int dummy;
         IM.getMaxLevels(work, max_power, dummy);
     }
@@ -249,19 +235,6 @@ void GridFourier::readBinary(std::ifstream &ifs){
         OneDimensionalMeta meta(0);
         wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule_fourier, 0.0, 0.0);
 
-        UnsortedIndexSet* exponents_unsorted = new UnsortedIndexSet(num_dimensions, work->getNumIndexes());
-        int *exponent = new int[num_dimensions];
-
-        for (int i=0; i<work->getNumIndexes(); i++){
-            for(int j=0; j<work->getNumDimensions(); j++){
-                exponent[j] = (work->getIndex(i)[j] % 2 == 0 ? -work->getIndex(i)[j]/2 : (work->getIndex(i)[j]+1)/2);
-            }
-            exponents_unsorted->addIndex(exponent);
-        }
-        exponents = new IndexSet(exponents_unsorted);
-        delete[] exponent;
-        delete exponents_unsorted;
-
         int dummy;
         IM.getMaxLevels(work, max_power, dummy);
     }
@@ -275,7 +248,6 @@ void GridFourier::reset(){
     if (active_w != 0){ delete[] active_w; active_w = 0; }
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (exponents != 0){ delete exponents; exponents = 0; }
     if (values != 0){ delete values; values = 0; }
     if (fourier_coefs != 0){ delete[] fourier_coefs; fourier_coefs = 0; }
     num_dimensions = 0;
@@ -329,20 +301,6 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
     for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w[count++] = tensors_w[i]; }
 
     needed = IM.generateNestedPoints(tensors, wrapper); // nested grids exploit nesting
-
-    UnsortedIndexSet* exponents_unsorted = new UnsortedIndexSet(num_dimensions, needed->getNumIndexes());
-    int *exponent = new int[num_dimensions];
-
-    for (int i=0; i<needed->getNumIndexes(); i++){
-        for(int j=0; j<needed->getNumDimensions(); j++){
-            exponent[j] = (needed->getIndex(i)[j] % 2 == 0 ? -needed->getIndex(i)[j]/2 : (needed->getIndex(i)[j]+1)/2);
-        }
-        exponents_unsorted->addIndex(exponent);
-    }
-
-    exponents = new IndexSet(exponents_unsorted);
-    delete[] exponent;
-    delete exponents_unsorted;
 
     if (num_outputs == 0){
         points = needed;
@@ -666,13 +624,9 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
     std::fill(q, q+num_outputs, 0.0);
     if (conformal_correction == 0){
         // everything vanishes except the Fourier coeff of e^0
-        int *zeros_num_dim = new int[num_dimensions];
-        std::fill(zeros_num_dim, zeros_num_dim + num_dimensions, 0);
-        int idx = exponents->getSlot(zeros_num_dim);
         for(int k=0; k<num_outputs; k++){
-            q[k] = fourier_coefs[num_outputs * idx + k];
+            q[k] = fourier_coefs[k];
         }
-        delete[] zeros_num_dim;
     }else{
         // Do the expensive computation if we have a conformal map
         double *w = new double[getNumPoints()];
@@ -737,9 +691,6 @@ void GridFourier::mergeRefinement(){ return; }     // to be expanded later
 
 const int* GridFourier::getPointIndexes() const{
     return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
-}
-const IndexSet* GridFourier::getExponents() const{
-    return exponents;
 }
 const double* GridFourier::getFourierCoefs() const{
     return ((double*) fourier_coefs);
