@@ -123,7 +123,7 @@ private:
 
     int num_dimensions, num_outputs, order;
 
-    double *coefficients; // a.k.a., surpluses
+    Data2D<double> coefficients; // a.k.a., surpluses
 
     IndexSet *points;
     IndexSet *needed;
