@@ -64,69 +64,10 @@ namespace TasmanianFourierTransform{
 // tsgEnumerates.hpp is needed by TasSparse for the hardcoded constants, i.e., TSG_DROP_TOL
 namespace TasSparse{
 
-using std::endl;
-
-// the enumerates defined here are used only by the sparse code
-enum TsgSparseSorting{
-	unsorted,
-	csc_sort,
-	csr_sort
-};
-
-enum TsgSparseType{
-	coo,
-	csc,
-	csr,
-	none
-};
-
-enum TsgCgStatus{
-	converged,
-	max_iter_reached
-};
-
-// (I,J,V) triplet used to represent a sparse matrix entry where A[i,j] += v.
-typedef struct COO_Triplet {
-	unsigned int i;
-	unsigned int j;
-	double v;
-	inline bool operator==(COO_Triplet &other) const{
-		return (i == other.i) && (j == other.j);
-	}
-} COO_Triplet;
-
-// Sparse matrix represented by above triplets.
-class TsgSparseCOO {
-public:
-	TsgSparseCOO();
-	TsgSparseCOO(int in_m, int in_n);
-	~TsgSparseCOO();
-
-	void addPoint(unsigned int i, unsigned int j, double v);
-	void clear();
-	int getNumRows();
-	int getNumCols();
-	void combine(TsgSparseCOO &m);
-	friend class TsgSparseCSC;
-	friend class TsgSparseCSR;
-	friend class SparseMatrix;
-
-protected:
-	std::list<COO_Triplet> values;
-	static bool csrComp(COO_Triplet a, COO_Triplet b);
-	static bool cscComp(COO_Triplet a, COO_Triplet b);
-	void sort(TsgSparseSorting type);
-	void coalesce();
-	int m, n, nnz;
-private:
-	TsgSparseSorting sorted;
-
-}; // End TsgSparseCOO
-
 // Make a new matrix class that would store the ILU preconditioner and solve either the regular or adjoined problem all in one class
 class SparseMatrix{
 public:
-    SparseMatrix(TsgSparseCOO &M);
+    SparseMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
     ~SparseMatrix();
 
     int getNumRows() const;

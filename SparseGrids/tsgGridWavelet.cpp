@@ -39,18 +39,18 @@
 
 namespace TasGrid{
 
-GridWavelet::GridWavelet() : num_dimensions(0), num_outputs(0), order(1), coefficients(0), points(0), needed(0), values(0), inter_matrix(0)
+GridWavelet::GridWavelet() : num_dimensions(0), num_outputs(0), order(1), points(0), needed(0), values(0), inter_matrix(0)
 {}
-GridWavelet::GridWavelet(const GridWavelet &wav) : num_dimensions(0), num_outputs(0), order(1), coefficients(0), points(0), needed(0), values(0), inter_matrix(0)
+GridWavelet::GridWavelet(const GridWavelet &wav) : num_dimensions(0), num_outputs(0), order(1), points(0), needed(0), values(0), inter_matrix(0)
 {  copyGrid(&wav);  }
 GridWavelet::~GridWavelet(){ reset(); }
 
 void GridWavelet::reset(){
-    if (coefficients != 0){ delete[] coefficients; coefficients = 0; }
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
     if (values != 0){ delete values; values = 0; }
     if (inter_matrix != 0){ delete inter_matrix; inter_matrix = 0; }
+    coefficients.clear();
 }
 
 void GridWavelet::write(std::ofstream &ofs) const{
@@ -65,11 +65,12 @@ void GridWavelet::write(std::ofstream &ofs) const{
             ofs << "1 ";
             points->write(ofs);
         }
-        if (coefficients == 0){
+        if (coefficients.getTotalEntries() == 0){
             ofs << "0" << endl;
         }else{
             ofs << "1 ";
-            for(size_t i=0; i<((size_t) points->getNumIndexes()) * ((size_t) num_outputs); i++){ ofs << " " << coefficients[i]; } ofs << endl;
+            for(auto c: *coefficients.getVector()) ofs << " " << c;
+            ofs << endl;
         }
         if (needed == 0){
             ofs << "0" << endl;
@@ -100,11 +101,11 @@ void GridWavelet::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             needed->writeBinary(ofs);
         }
-        if (coefficients == 0){
+        if (coefficients.getTotalEntries()  == 0){
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) coefficients, ((size_t) num_outputs) * ((size_t) points->getNumIndexes()) * sizeof(double));
+            ofs.write((char*) coefficients.getCStrip(0), coefficients.getTotalEntries() * sizeof(double));
         }
         if (num_outputs > 0) values->writeBinary(ofs);
     }
@@ -123,9 +124,8 @@ void GridWavelet::read(std::ifstream &ifs){
         }
         ifs >> flag;
         if (flag == 1){
-            size_t size_coeff = ((size_t) points->getNumIndexes()) * ((size_t) num_outputs);
-            coefficients = new double[size_coeff];
-            for(size_t i=0; i<size_coeff; i++) ifs >> coefficients[i];
+            coefficients.resize(num_outputs, points->getNumIndexes());
+            for(auto &c : *coefficients.getVector()) ifs >> c;
         }
         ifs >> flag;
         if (flag == 1){
@@ -152,9 +152,8 @@ void GridWavelet::readBinary(std::ifstream &ifs){
 
         ifs.read((char*) &flag, sizeof(char));
         if (flag == 'y'){
-            size_t size_coeff = ((size_t) num_outputs) * ((size_t) points->getNumIndexes());
-            coefficients = new double[size_coeff];
-            ifs.read((char*) coefficients, size_coeff * sizeof(double));
+            coefficients.resize(num_outputs, points->getNumIndexes());
+            ifs.read((char*) coefficients.getStrip(0), coefficients.getTotalEntries() * sizeof(double));
         }
 
         if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
@@ -316,9 +315,8 @@ void GridWavelet::mergeRefinement(){
         delete needed; needed = 0;
         buildInterpolationMatrix();
     }
-    if (coefficients != 0) delete[] coefficients;
-    coefficients = new double[size_vals];
-    std::fill(coefficients, coefficients + size_vals, 0.0);
+    coefficients.resize(num_outputs, num_all_points);
+    std::fill(coefficients.getVector()->begin(), coefficients.getVector()->end(), 0.0);
 }
 void GridWavelet::evaluate(const double x[], double y[]) const{
     int num_points = points->getNumIndexes();
@@ -331,7 +329,7 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
         double sum = 0.0;
         #pragma omp parallel for reduction(+ : sum)
         for(int i=0; i<num_points; i++){
-            sum += basis_values[i] * coefficients[((size_t) i) * ((size_t) num_outputs) + j];
+            sum += basis_values[i] * coefficients.getCStrip(i)[j];
         }
         y[j] = sum;
 	}
@@ -375,7 +373,7 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
             double sum = 0.0;
             #pragma omp parallel for reduction(+ : sum)
             for(int i=0; i<num_points; i++){
-                sum += basis_integrals[i] * coefficients[((size_t) i) * ((size_t) num_outputs) + j];
+                sum += basis_integrals[i] * coefficients.getCStrip(i)[j];
             }
             q[j] = sum;
         }
@@ -419,78 +417,51 @@ double GridWavelet::evalIntegral(const int p[]) const{
 }
 
 void GridWavelet::buildInterpolationMatrix(){
-    // change the logic here, build the matrix only if num_outputs are zero or if there is need (load surpluses etc)
-	/*
-	 * Using the IndexSet points, constructs the interpolation matrix needed for methods
-	 * such as recomputeCoefficients, solveTransposed, etc.
-	 */
-	IndexSet *work = (points == 0) ? needed : points;
-	if(inter_matrix != 0) { delete inter_matrix; }
+    // updated code, using better parallelism
+    // Wavelets don't have a nice rule of support to use monkeys and graphs (or I cannot find the support rule)
+    IndexSet *work = (points == 0) ? needed : points;
+    if(inter_matrix != 0) { delete inter_matrix; }
 
-	int num_points = work->getNumIndexes();
+    int num_points = work->getNumIndexes();
 
-	TasSparse::TsgSparseCOO coo_mat(num_points, num_points);
+    int num_chunk = 32;
+    int num_blocks = num_points / num_chunk + ((num_points % num_chunk == 0) ? 0 : 1);
 
-#ifdef _OPENMP
-	int num_threads = omp_get_max_threads();
-	TasSparse::TsgSparseCOO *coos = new TasSparse::TsgSparseCOO[num_threads];
-	#pragma omp parallel
-#endif
-	{
-		double *xs = new double[num_dimensions];
+    std::vector<std::vector<int>> indx(num_blocks);
+    std::vector<std::vector<double>> vals(num_blocks);
+    std::vector<int> pntr(num_points);
 
-    // This is O(n^2) but Wavelets don't have a nice rule of support to use monkeys and graphs!
-#ifdef _OPENMP
-		int thread_id = omp_get_thread_num();
-		#pragma omp for
-#endif
-		for(int i = 0; i < num_points; i++){ /* Loop over points */
-			const int *point = work->getIndex(i);
+    #pragma omp parallel for
+    for(int b=0; b<num_blocks; b++){
+        int block_end = (b < num_blocks - 1) ? (b+1) * num_chunk : num_points;
+        for(int i=b * num_chunk; i < block_end; i++){
+            const int *p = work->getIndex(i);
+            std::vector<double> xi(num_dimensions);
+            for(int j = 0; j<num_dimensions; j++) // get the node
+                xi[j] = rule1D.getNode(p[j]);
 
-			for(int k = 0; k < num_dimensions; k++){ /* Fill in x values of point */
-				xs[k] = rule1D.getNode(point[k]);
-			}
+            // loop over the basis functions to see if supported
+            int numpntr = 0;
+            for(int wi=0; wi<num_points; wi++){
+                const int *w = work->getIndex(wi);
 
-			for(int j = 0; j < num_points; j++){ /* Loop over wavelets */
-				const int *wavelet = work->getIndex(j);
-				double v = 1.;
+                double v = 1.0;
+                for(int j=0; j<num_dimensions; j++){
+                    v *= rule1D.eval(w[j], xi[j]);
+                    if (v == 0.0) break; // evaluating the wavelets is expensive, stop if any one of them is zero
+                }
 
-				for(int k = 0; k < num_dimensions; k++){ /* Loop over dimensions */
-					v *= rule1D.eval(wavelet[k], xs[k]);
-					if (v == 0.0){ break; }; // MIRO: evaluating the wavelets is expensive, stop if any one of them is zero
-				} /* End for dimensions */
+                if(v != 0.0){ // testing != is safe since it can only happen in multiplication by 0.0
+                    indx[b].push_back(wi);
+                    vals[b].push_back(v);
+                    numpntr++;
+                }
+            }
+            pntr[i] = numpntr;
+        }
+    }
 
-				if(v != 0.0){
-				/*
-				 * Testing for equal to zero is safe since v*0 is the only way
-				 * for this to happen.
-				 */
-#ifdef _OPENMP
-					coos[thread_id].addPoint(i, j, v);
-#else
-					coo_mat.addPoint(i,j,v);
-#endif
-				}
-
-
-			} /* End for wavelets */
-
-		} /* End for points */
-
-		delete[] xs;
-
-#ifdef _OPENMP
-		#pragma omp master
-		{ /* Master thread combines the sub-thread work */
-
-			for(int i = 0; i < num_threads; i++){
-				coo_mat.combine(coos[i]);
-			}
-			delete[] coos;
-		} /* End master section */
-#endif
-	} /* End parallel section */
-	inter_matrix = new TasSparse::SparseMatrix(coo_mat);
+    inter_matrix = new TasSparse::SparseMatrix(pntr, indx, vals);
 }
 
 void GridWavelet::recomputeCoefficients(){
@@ -500,8 +471,7 @@ void GridWavelet::recomputeCoefficients(){
 	 */
 
 	int num_points = points->getNumIndexes();
-	if (coefficients != 0){ delete[] coefficients; }
-	coefficients = new double[((size_t) num_points) * ((size_t) num_outputs)];
+	coefficients.resize(num_outputs, num_points);
 
 	if ((inter_matrix == 0) || (inter_matrix->getNumRows() != num_points)){
         buildInterpolationMatrix();
@@ -525,7 +495,7 @@ void GridWavelet::recomputeCoefficients(){
 
 		// Populate surplus
 		for(int i = 0; i < num_points; i++){
-			coefficients[((size_t) num_outputs) * ((size_t) i) + output] = x[i];
+            coefficients.getStrip(i)[output] = x[i];
 		}
 	}
 
@@ -570,12 +540,13 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             bool small = true;
+            const double *s = coefficients.getCStrip(i);
             if (output == -1){
                 for(size_t k=0; k<((size_t) num_outputs); k++){
-                    if (small && ((fabs(coefficients[((size_t) i) * ((size_t) num_outputs) + k]) / norm[k]) > tolerance)) small = false;
+                    if (small && ((fabs(s[k]) / norm[k]) > tolerance)) small = false;
                 }
             }else{
-                small = !((fabs(coefficients[((size_t) i) * ((size_t) num_outputs) + output]) / norm[output]) > tolerance);
+                small = !((fabs(s[output]) / norm[output]) > tolerance);
             }
             if (!small){
                 std::fill(&(pmap[i*num_dimensions]), &(pmap[i*num_dimensions]) + num_dimensions, 1);
@@ -612,16 +583,17 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);
             direction_grid.loadNeededPoints(vals, accel_none);
-            const double *coeff = direction_grid.coefficients;
 
-            for(size_t i=0; i<((size_t) nump); i++){
+            for(int i=0; i<nump; i++){
                 bool small = true;
+                const double *coeff = direction_grid.coefficients.getCStrip(i);
+                const double *soeff = coefficients.getCStrip(pnts[i]);
                 if (output == -1){
-                    for(size_t k=0; k<((size_t) num_outputs); k++){
-                        if (small && ((fabs(coefficients[pnts[i]*num_outputs + k]) / norm[k]) > tolerance) && ((fabs(coeff[i*num_outputs + k]) / norm[k]) > tolerance)) small = false;
+                    for(int k=0; k<num_outputs; k++){
+                        if (small && ((fabs(soeff[k]) / norm[k]) > tolerance) && ((fabs(coeff[k]) / norm[k]) > tolerance)) small = false;
                     }
                 }else{
-                    if (((fabs(coefficients[pnts[i]*num_outputs + output]) / norm[output]) > tolerance) && ((fabs(vals[i]) / norm[output]) > tolerance)) small = false;
+                    if (((fabs(soeff[output]) / norm[output]) > tolerance) && ((fabs(coeff[0]) / norm[output]) > tolerance)) small = false;
                 }
                 pmap[pnts[i]*num_dimensions + d] = (small) ? 0 : 1;;
             }
@@ -689,7 +661,7 @@ void GridWavelet::clearRefinement(){
     if (needed != 0){ delete needed;  needed = 0; }
 }
 const double* GridWavelet::getSurpluses() const{
-    return coefficients;
+    return coefficients.getCStrip(0);
 }
 
 void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
@@ -712,8 +684,8 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
 
 void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     std::vector<double> *vals = 0;
-    size_t num_ponits = (size_t) getNumPoints();
-    size_t size_coeff = num_ponits * ((size_t) num_outputs);
+    int num_ponits = getNumPoints();
+    size_t size_coeff = ((size_t) num_ponits) * ((size_t) num_outputs);
     if (points != 0){
         clearRefinement();
     }else{
@@ -722,10 +694,9 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     }
     vals = values->aliasValues();
     vals->resize(size_coeff);
-    if (coefficients != 0) delete[] coefficients;
-    coefficients = new double[size_coeff];
-    std::copy(c, c + size_coeff, coefficients);
-    std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
+    coefficients.resize(num_outputs, num_ponits);
+    std::copy(c, c + size_coeff, coefficients.getStrip(0));
+    std::vector<double> x(((size_t) num_ponits) * ((size_t) num_dimensions));
     getPoints(x.data());
     if (acc == accel_cpu_blas){
         evaluateBatchCPUblas(x.data(), points->getNumIndexes(), vals->data());

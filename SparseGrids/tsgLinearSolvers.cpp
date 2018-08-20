@@ -310,130 +310,25 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
 
 namespace TasSparse{
 
-/* BEGIN TsgSparseCOO */
+SparseMatrix::SparseMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals)
+ : tol(TSG_NUM_TOL), num_rows(0), pntr(0), indx(0), indxD(0), vals(0), ilu(0){
+     num_rows = (int) lpntr.size();
 
-TsgSparseCOO::TsgSparseCOO() : m(0), n(0), nnz(0), sorted(unsorted){}
+     pntr = new int[num_rows];
+     pntr[0] = 0;
+     for(int i=0; i<num_rows; i++)
+         pntr[i+1] = pntr[i] + lpntr[i];
 
-TsgSparseCOO::TsgSparseCOO(int in_m, int in_n) : sorted(unsorted) {
-	m = in_m;
-	n = in_n;
-	nnz = 0;
-}
+     int num_nz = pntr[num_rows];
+     indx = new int[num_nz];
+     vals = new double[num_nz];
 
-TsgSparseCOO::~TsgSparseCOO() {
-	clear();
-}
+    int j = 0;
+    for(const auto &idx : lindx) for(auto i : idx) indx[j++] = i;
+    j = 0;
+    for(const auto &vls : lvals) for(auto v : vls) vals[j++] = v;
 
-void TsgSparseCOO::combine(TsgSparseCOO &mat){
-	values.splice(values.end(), mat.values);
-	nnz += mat.nnz;
-	mat.clear();
-}
-
-void TsgSparseCOO::clear(){
-	sorted = unsorted;
-	values.clear();
-	nnz = 0;
-}
-
-bool TsgSparseCOO::csrComp(const COO_Triplet a, const COO_Triplet b){
-	return (a.i < b.i) || (a.i == b.i && a.j < b.j);
-}
-
-bool TsgSparseCOO::cscComp(const COO_Triplet a, const COO_Triplet b){
-	return (a.j < b.j) || (a.j == b.j && a.i < b.i);
-}
-
-void TsgSparseCOO::addPoint(unsigned int i, unsigned int j, double v){
-	/*
-	 * Adds the given point to the sparse matrix. Note: assumes the entry is inside the
-	 * bounds defined in the constructor (i.e. i < m, j < n). If this assumption is
-	 * violated, conversion routines will result in undefined behavior (likely segfault).
-	 */
-	sorted = unsorted;
-	COO_Triplet t;
-	t.i = i;
-	t.j = j;
-	t.v = v;
-	nnz++;
-	values.push_back(t);
-}
-
-void TsgSparseCOO::sort(TsgSparseSorting type){
-	/* Already sorted or no sort specified*/
-	if (sorted == type || type == unsorted) return;
-
-	values.sort((type == csc_sort) ? cscComp : csrComp);
-	sorted = type;
-}
-
-void TsgSparseCOO::coalesce(){
-	/* Assumes any equivalent entries are adjacent e.g. sorted list */
-
-//	If only list would pass references rather than copies.
-//	/* Combines equivalent elements */
-//	values.unique(coalesce_helper);
-//
-//	/* Removes elements below DROP_TOL */
-//	values.remove_if(near_zero);
-
-
-	std::list<COO_Triplet>::iterator it = values.begin();
-	++it;
-	std::list<COO_Triplet>::iterator old_elem = values.begin();
-
-	while(it != values.end()){
-		/* Coalesce duplicate elements */
-		if (*old_elem == *it){
-			old_elem->v += it->v;
-			it = values.erase(it); /* Removes the list element and advances the iter */
-			nnz--;
-		} else{
-			/* Drop elements below DROP_TOL */
-			if (fabs(old_elem->v) < TSG_NUM_TOL){
-				old_elem = values.erase(old_elem);
-				nnz--;
-			}else{
-				++old_elem;
-			}
-			++it;
-		}
-	}
-
-}
-/* END TsgSparseCOO */
-
-SparseMatrix::SparseMatrix(TsgSparseCOO &M) : tol(TSG_NUM_TOL), num_rows(0), pntr(0), indx(0), indxD(0), vals(0), ilu(0) {
-//
-//      Drayton's code for collapse of COO:
-//	Constructs a sparse matrix in CSR (compressed sparse row / compressed row storage)
-//	format given a sparse matrix in COO (coordinate) format.
-//
-	M.sort(csr_sort);
-	M.coalesce();
-
-	int length = M.nnz; // MIRO: assume the matrix is square
-	num_rows = M.n;
-	vals = new double[length];
-	indx = new int[length];
-	pntr = new int[num_rows+1];
-
-	int current_row = -1;
-
-	std::list<COO_Triplet>::const_iterator it = M.values.begin();
-	for(int i = 0; i < length; i++, ++it){
-		COO_Triplet current = *it;
-		while (((int)current.i) != current_row){
-			/* Either denote the end of the row or add empty rows until we've caught up */
-			current_row++;
-			pntr[current_row] = i;
-		}
-		indx[i] = current.j;
-		vals[i] = current.v;
-	}
-	pntr[current_row+1] = length;
-
-	computeILU();
+    computeILU();
 }
 
 SparseMatrix::~SparseMatrix(){
