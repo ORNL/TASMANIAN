@@ -1190,6 +1190,36 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
     }
     clearCanonicalPoints(x_tmp);
 }
+void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const{
+    double *x_tmp = 0;
+    const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
+    if (pwpoly != 0){
+        pwpoly->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
+    }else if (wavelet != 0){
+        int num_points = base->getNumPoints();
+        std::vector<double> dense_vals(((size_t) num_points) * ((size_t) num_x));
+        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.data());
+        int num_nz = 0;
+        for(int i=0; i<num_points * num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
+        pntr.resize(num_x+1);
+        indx.resize(num_nz);
+        vals.resize(num_nz);
+        num_nz = 0;
+        for(int i=0; i<num_x; i++){
+            pntr[i] = num_nz;
+            for(int j=0; j<num_points; j++){
+                if (dense_vals[i*num_points + j] != 0){
+                    indx[num_nz] = j;
+                    vals[num_nz++] = dense_vals[i*num_points + j];
+                }
+            }
+        }
+        pntr[num_x] = num_nz;
+    }else{
+        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctions() called for a grid that is neither localp polynomial not wavelet");
+    }
+    clearCanonicalPoints(x_tmp);
+}
 int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const{
     double *x_tmp = 0;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);

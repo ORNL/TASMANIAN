@@ -104,6 +104,7 @@ public:
     const int* getNeededIndexes() const;
 
     void buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, int* &spntr, int* &sindx, double* &svals) const;
+    void buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const;
     void buildSpareBasisMatrixStatic(const double x[], int num_x, int num_chunk, int *spntr, int *sindx, double *svals) const;
     int getSpareBasisMatrixNZ(const double x[], int num_x) const;
 
@@ -118,15 +119,19 @@ protected:
 
     void recomputeSurpluses();
 
-    void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, int &num_blocks, int &num_last, int &stripe_size,
-                                    int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const;
+    void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz,
+                                    std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const;
 
-    template<bool fill_data>
+    template<int mode>
     void buildSparseVector(const IndexSet *work, const double x[], int &num_nz, std::vector<int> &sindx, std::vector<double> &svals) const{
+        // This operates under several modes, no need to make separate enumerates for internal API, just use integer codes
+        // mode 0, count the non-zeros, sindx and svals will never be accessed can pass dummy empty vectors
+        // mode 1, num_nz is input (already pre-computed), sindx and svals are resized and filled
+        // mode 2, num_nz is output (counded and filled), sindx and svals are NOT resized, std::vector::push_back() is used
         std::vector<int> monkey_count(top_level+1);
         std::vector<int> monkey_tail(top_level+1);
 
-        if (fill_data){
+        if (mode == 1){
             sindx.resize(num_nz);
             svals.resize(num_nz);
         }
@@ -140,9 +145,12 @@ protected:
             double basis_value = evalBasisSupported(work->getIndex(r), x, isSupported);
 
             if (isSupported){
-                if (fill_data){
+                if (mode == 1){
                     sindx[num_nz] = r;
                     svals[num_nz] = basis_value;
+                }else if (mode == 2){
+                    sindx.push_back(r);
+                    svals.push_back(basis_value);
                 }
                 num_nz++;
 
@@ -155,9 +163,12 @@ protected:
                         p = indx[monkey_count[current]];
                         basis_value = evalBasisSupported(work->getIndex(p), x, isSupported);
                         if (isSupported){
-                            if (fill_data){
+                            if (mode == 1){
                                 sindx[num_nz] = p;
                                 svals[num_nz] = basis_value;
+                            }else if (mode == 2){
+                                sindx.push_back(p);
+                                svals.push_back(basis_value);
                             }
                             num_nz++;
 
@@ -177,7 +188,7 @@ protected:
         // "... it is assumed that the indices are provided in increasing order and that each index appears only once."
         // This may not be a requirement for cusparseDgemvi(), but it may be that I have not tested it sufficiently
         // Also, see AccelerationDataGPUFull::cusparseMatveci() for inaccuracies in Nvidia documentation
-        if (fill_data){
+        if (mode == 1){
             bool isNotSorted = false;
             for(int i=0; i<num_nz-1; i++) if (sindx[i] > sindx[i+1]) isNotSorted = true;
             if (isNotSorted){ // sort the vector

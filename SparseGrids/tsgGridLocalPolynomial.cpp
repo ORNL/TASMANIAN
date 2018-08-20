@@ -448,8 +448,8 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[]) co
     int num_nz;
     std::vector<int> sindx;
     std::vector<double> svals;
-    buildSparseVector<false>(points, x, num_nz, sindx, svals);
-    buildSparseVector<true>(points, x, num_nz, sindx, svals);
+    buildSparseVector<0>(points, x, num_nz, sindx, svals);
+    buildSparseVector<1>(points, x, num_nz, sindx, svals);
     int *gpu_sindx = TasCUDA::cudaSend<int>(sindx);
     double *gpu_svals = TasCUDA::cudaSend<double>(svals);
     double *gpu_y = TasCUDA::cudaNew<double>(num_outputs);
@@ -840,96 +840,67 @@ double GridLocalPolynomial::evalBasisSupported(const int point[], const double x
 }
 
 void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, int* &spntr, int* &sindx, double* &svals) const{
-    int num_blocks, num_last, stripe_size;
+    std::vector<std::vector<int>> tindx;
+    std::vector<std::vector<double>> tvals;
+    std::vector<int> numnz;
+    buildSparseMatrixBlockForm(x, num_x, num_chunk, numnz, tindx, tvals);
 
-    int *stripes, *last_stripe_size, **tpntr, ***tindx;
-    double ***tvals;
+    spntr = new int[num_x + 1];
 
-    buildSparseMatrixBlockForm(x, num_x, num_chunk, num_blocks, num_last, stripe_size, stripes, last_stripe_size, tpntr, tindx, tvals);
-
-    // assemble the matrix from the local junks
-    spntr = new int[num_x+1];
-    spntr[0] = 0;
-    int c = 0, block_offset = 0;
-    for(int b=0; b<num_blocks; b++){
-        int this_size = (b == num_blocks-1) ? num_last : num_chunk;
-        for(int i=0; i<this_size; i++){
-            spntr[c+1] = block_offset + tpntr[b][i+1];
-            c++;
-        }
-        block_offset = spntr[c];
-        delete[] tpntr[b];
+    int nz = 0;
+    for(int i=0; i<num_x; i++){
+        spntr[i] = nz;
+        nz += numnz[i];
     }
-    delete[] tpntr;
+    spntr[num_x] = nz;
 
-    int num_nz = spntr[num_x];
-    sindx = new int[num_nz];
-    svals = new double[num_nz];
+    sindx = new int[nz];
+    svals = new double[nz];
+
+    int c = 0;
+    for(auto &idx : tindx) for(auto i: idx) sindx[c++] = i;
     c = 0;
-    for(int b=0; b<num_blocks; b++){
-        for(int s=0; s<stripes[b]-1; s++){
-            std::copy(tindx[b][s], tindx[b][s] + stripe_size, &(sindx[c]));
-            std::copy(tvals[b][s], tvals[b][s] + stripe_size, &(svals[c]));
-            c += stripe_size;
-            delete[] tindx[b][s];
-            delete[] tvals[b][s];
-        }
-        std::copy(tindx[b][stripes[b]-1], tindx[b][stripes[b]-1] + last_stripe_size[b], &(sindx[c]));
-        std::copy(tvals[b][stripes[b]-1], tvals[b][stripes[b]-1] + last_stripe_size[b], &(svals[c]));
-        c += last_stripe_size[b];
-        delete[] tindx[b][stripes[b]-1];
-        delete[] tvals[b][stripes[b]-1];
-        delete[] tindx[b];
-        delete[] tvals[b];
+    for(auto &vls : tvals) for(auto v: vls) svals[c++] = v;
+}
+void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const{
+    std::vector<std::vector<int>> tindx;
+    std::vector<std::vector<double>> tvals;
+    std::vector<int> numnz;
+    buildSparseMatrixBlockForm(x, num_x, num_chunk, numnz, tindx, tvals);
+
+    spntr.resize(num_x + 1);
+
+    int nz = 0;
+    auto inz = numnz.begin();
+    for(auto &s: spntr){
+        s = nz;
+        nz += *inz++;
     }
-    delete[] tindx;
-    delete[] tvals;
-    delete[] stripes;
-    delete[] last_stripe_size;
+
+    sindx.resize(nz);
+    svals.resize(nz);
+
+    auto ii = sindx.begin();
+    for(auto &idx : tindx) for(auto i: idx) *ii++ = i;
+    auto iv = svals.begin();
+    for(auto &vls : tvals) for(auto v: vls) *iv++ = v;
 }
 void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_x, int num_chunk, int *spntr, int *sindx, double *svals) const{
-    int num_blocks, num_last, stripe_size;
+    std::vector<std::vector<int>> tindx;
+    std::vector<std::vector<double>> tvals;
+    std::vector<int> numnz;
+    buildSparseMatrixBlockForm(x, num_x, num_chunk, numnz, tindx, tvals);
 
-    int *stripes, *last_stripe_size, **tpntr, ***tindx;
-    double ***tvals;
-
-    buildSparseMatrixBlockForm(x, num_x, num_chunk, num_blocks, num_last, stripe_size, stripes, last_stripe_size, tpntr, tindx, tvals);
-
-    // assemble the matrix from the local junks
-    spntr[0] = 0;
-    int c = 0, block_offset = 0;
-    for(int b=0; b<num_blocks; b++){
-        int this_size = (b == num_blocks-1) ? num_last : num_chunk;
-        for(int i=0; i<this_size; i++){
-            spntr[c+1] = block_offset + tpntr[b][i+1];
-            c++;
-        }
-        block_offset = spntr[c];
-        delete[] tpntr[b];
+    int nz = 0;
+    for(int i=0; i<num_x; i++){
+        spntr[i] = nz;
+        nz += numnz[i];
     }
-    delete[] tpntr;
-
+    spntr[num_x] = nz;
+    int c = 0;
+    for(auto &idx : tindx) for(auto i: idx) sindx[c++] = i;
     c = 0;
-    for(int b=0; b<num_blocks; b++){
-        for(int s=0; s<stripes[b]-1; s++){
-            std::copy(tindx[b][s], tindx[b][s] + stripe_size, &(sindx[c]));
-            std::copy(tvals[b][s], tvals[b][s] + stripe_size, &(svals[c]));
-            c += stripe_size;
-            delete[] tindx[b][s];
-            delete[] tvals[b][s];
-        }
-        std::copy(tindx[b][stripes[b]-1], tindx[b][stripes[b]-1] + last_stripe_size[b], &(sindx[c]));
-        std::copy(tvals[b][stripes[b]-1], tvals[b][stripes[b]-1] + last_stripe_size[b], &(svals[c]));
-        c += last_stripe_size[b];
-        delete[] tindx[b][stripes[b]-1];
-        delete[] tvals[b][stripes[b]-1];
-        delete[] tindx[b];
-        delete[] tvals[b];
-    }
-    delete[] tindx;
-    delete[] tvals;
-    delete[] stripes;
-    delete[] last_stripe_size;
+    for(auto &vls : tvals) for(auto v: vls) svals[c++] = v;
 }
 int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) const{
     IndexSet *work = (points == 0) ? needed : points;
@@ -942,7 +913,7 @@ int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) cons
 
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        buildSparseVector<false>(work, xx.getCStrip(i), num_nz[i], sindx, svals);
+        buildSparseVector<0>(work, xx.getCStrip(i), num_nz[i], sindx, svals);
     }
 
     int total_nz = 0;
@@ -950,123 +921,27 @@ int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) cons
 
     return total_nz;
 }
-void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, int &num_blocks, int &num_last, int &stripe_size,
-                                                    int* &stripes, int* &last_stripe_size, int** &tpntr, int*** &tindx, double*** &tvals) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    num_blocks = (num_x / num_chunk) + ((num_x % num_chunk > 0) ? 1 : 0); // number of blocks
-    num_last = ((num_x % num_chunk > 0) ? num_x % num_chunk : num_chunk);
-    stripe_size = work->getNumIndexes();
 
-    stripes = new int[num_blocks]; std::fill(stripes, stripes + num_blocks, 1);
-    last_stripe_size = new int[num_blocks];
-    tpntr = new int*[num_blocks];
-    for(int i=0; i<num_blocks-1; i++) tpntr[i] = new int[num_chunk+1];
-    tpntr[num_blocks-1] = new int[num_last+1];
-    tindx = new int**[num_blocks];
-    tvals = new double**[num_blocks];
+void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz, std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const{
+    // numnz will be resized to (num_x + 1) with the last entry set to a dummy zero
+    numnz.resize(num_x + 1);
+    int num_blocks = num_x / num_chunk + ((num_x % num_chunk != 0) ? 1 : 0);
+
+    tindx.resize(num_blocks);
+    tvals.resize(num_blocks);
+
+    const IndexSet *work = (points != 0) ? points : needed;
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+
     for(int b=0; b<num_blocks; b++){
-        tindx[b] = new int*[1]; // start with only one stripe
-        tindx[b][0] = new int[stripe_size];
-        tvals[b] = new double*[1]; // start with only one stripe
-        tvals[b][0] = new double[stripe_size];
-    }
-
-    #pragma omp parallel for
-    for(int b=0; b<num_blocks; b++){
-        int c = 0; // count the current entry
-        int s = 0; // index the current stripe
-        tpntr[b][0] = 0;
-
-        int *monkey_count = new int[top_level+1]; // monkey business (traversing threes)
-        int *monkey_tail = new int[top_level+1];
-        bool isSupported;
-        int offset;
-
-        int this_size = (b == num_blocks-1) ? num_last : num_chunk;
-        for(int i=0; i<this_size; i++){ // for each point
-            tpntr[b][i+1] = tpntr[b][i];
-            const double *this_x = &(x[(b*num_chunk + i) * num_dimensions]);
-
-            for(unsigned r=0; r<roots.size(); r++){
-                double basis_value = evalBasisSupported(work->getIndex(roots[r]), this_x, isSupported);
-
-                if (isSupported){
-                    // add point to this sparse column
-                    if (c == stripe_size){ // add a stripe
-                        stripes[b]++;
-                        int **save_tindx = tindx[b];
-                        double **save_tvals = tvals[b];
-                        tindx[b] = new int*[stripes[b]];
-                        tvals[b] = new double*[stripes[b]];
-                        for(int j=0; j<stripes[b]-1; j++){
-                            tindx[b][j] = save_tindx[j];
-                            tvals[b][j] = save_tvals[j];
-                        }
-                        tindx[b][stripes[b]-1] = new int[stripe_size];
-                        tvals[b][stripes[b]-1] = new double[stripe_size];
-                        c = 0;
-                        s++;
-
-                        delete[] save_tindx;
-                        delete[] save_tvals;
-                    }
-                    // add an entry
-                    tindx[b][s][c] = roots[r];
-                    tvals[b][s][c] = basis_value;
-                    tpntr[b][i+1]++;
-                    c++;
-
-                    int current = 0;
-                    monkey_tail[0] = roots[r];
-                    monkey_count[0] = pntr[roots[r]];
-
-                    while(monkey_count[0] < pntr[monkey_tail[0]+1]){
-                        if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                            offset = indx[monkey_count[current]];
-                            basis_value = evalBasisSupported(work->getIndex(offset), this_x, isSupported);
-                            if (isSupported){
-                                if (c == stripe_size){ // add a stripe
-                                    stripes[b]++;
-                                    int **save_tindx = tindx[b];
-                                    double **save_tvals = tvals[b];
-                                    tindx[b] = new int*[stripes[b]];
-                                    tvals[b] = new double*[stripes[b]];
-                                    for(int j=0; j<stripes[b]-1; j++){
-                                        tindx[b][j] = save_tindx[j];
-                                        tvals[b][j] = save_tvals[j];
-                                    }
-                                    tindx[b][stripes[b]-1] = new int[stripe_size];
-                                    tvals[b][stripes[b]-1] = new double[stripe_size];
-                                    c = 0;
-                                    s++;
-
-                                    delete[] save_tindx;
-                                    delete[] save_tvals;
-                                }
-                                // add an entry
-                                tindx[b][s][c] = offset;
-                                tvals[b][s][c] = basis_value;
-                                tpntr[b][i+1]++;
-                                c++;
-
-                                monkey_tail[++current] = offset;
-                                monkey_count[current] = pntr[offset];
-                            }else{
-                                monkey_count[current]++;
-                            }
-                        }else{
-                            monkey_count[--current]++;
-                        }
-                    }
-                }
-            }
-
+        tindx[b].resize(0);
+        tvals[b].resize(0);
+        int chunk_size = (b < num_blocks - 1) ? num_chunk : (num_x - (num_blocks - 1) * num_chunk);
+        for(int i = b * num_chunk; i < b * num_chunk + chunk_size; i++){
+            buildSparseVector<2>(work, xx.getCStrip(i), numnz[i], tindx[b], tvals[b]);
         }
-        last_stripe_size[b] = c;
-
-        delete[] monkey_count;
-        delete[] monkey_tail;
     }
+    numnz[num_x] = 0;
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
