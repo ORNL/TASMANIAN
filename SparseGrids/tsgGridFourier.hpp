@@ -163,7 +163,6 @@ private:
     std::vector<int> max_levels;
     IndexSet *points;
     IndexSet *needed;
-    IndexSet *exponents;
 
     double *fourier_coefs;
 
