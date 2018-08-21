@@ -42,6 +42,204 @@
 
 namespace TasGrid{
 
+#ifdef Tasmanian_ENABLE_CUDA
+cudaInts::cudaInts() : num(0), gpu_data(0){}
+cudaInts::cudaInts(size_t cnum) : num(cnum){ gpu_data = TasCUDA::cudaNew<int>(num); }
+cudaInts::cudaInts(int a, int b) : num(((size_t) a) * ((size_t) b)){ gpu_data = TasCUDA::cudaNew<int>(num); }
+cudaInts::cudaInts(size_t cnum, const int *cpu_data) : num(cnum){
+    gpu_data = TasCUDA::cudaNew<int>(num);
+    TasCUDA::cudaSend<int>(num, cpu_data, gpu_data);
+}
+cudaInts::cudaInts(int a, int b, const int *cpu_data) : num(((size_t) a) * ((size_t) b)){
+    gpu_data = TasCUDA::cudaNew<int>(num);
+    TasCUDA::cudaSend<int>(num, cpu_data, gpu_data);
+}
+cudaInts::cudaInts(const std::vector<int> &cpu_data) : num(cpu_data.size()){
+    gpu_data = TasCUDA::cudaNew<int>(num);
+    TasCUDA::cudaSend<int>(num, cpu_data.data(), gpu_data);
+}
+cudaInts::~cudaInts(){ clear(); }
+
+size_t cudaInts::size() const{ return num; }
+int* cudaInts::data(){ return gpu_data; }
+const int* cudaInts::data() const{ return gpu_data; }
+void cudaInts::resize(size_t cnum){
+    if (num != cnum) clear();
+    num = cnum;
+    if (gpu_data == 0) gpu_data = TasCUDA::cudaNew<int>(num);
+}
+void cudaInts::clear(){
+    if (gpu_data != 0) TasCUDA::cudaDel<int>(gpu_data);
+    gpu_data = 0;
+    num = 0;
+}
+
+void cudaInts::load(size_t cnum, const int *cpu_data){
+    if (num != cnum) clear();
+    num = cnum;
+    if (gpu_data == 0) gpu_data = TasCUDA::cudaNew<int>(num);
+    TasCUDA::cudaSend<int>(num, cpu_data, gpu_data);
+}
+void cudaInts::load(const std::vector<int> &cpu_data){
+    if (num != cpu_data.size()) clear();
+    num = cpu_data.size();
+    if (gpu_data == 0) gpu_data = TasCUDA::cudaNew<int>(num);
+    TasCUDA::cudaSend<int>(num, cpu_data.data(), gpu_data);
+}
+void cudaInts::unload(int *cpu_data) const{ TasCUDA::cudaRecv<int>(num, gpu_data, cpu_data); }
+void cudaInts::unload(std::vector<int> &cpu_data) const{
+    cpu_data.resize(num);
+    TasCUDA::cudaRecv<int>(num, gpu_data, cpu_data.data());
+}
+
+cudaDoubles::cudaDoubles() : num(0), gpu_data(0){}
+cudaDoubles::cudaDoubles(size_t cnum) : num(cnum){ gpu_data = TasCUDA::cudaNew<double>(num); }
+cudaDoubles::cudaDoubles(int a, int b) : num(((size_t) a) * ((size_t) b)){ gpu_data = TasCUDA::cudaNew<double>(num); }
+cudaDoubles::cudaDoubles(size_t cnum, const double *cpu_data) : num(cnum){
+    gpu_data = TasCUDA::cudaNew<double>(num);
+    TasCUDA::cudaSend<double>(num, cpu_data, gpu_data);
+}
+cudaDoubles::cudaDoubles(int a, int b, const double *cpu_data) : num(((size_t) a) * ((size_t) b)){
+    gpu_data = TasCUDA::cudaNew<double>(num);
+    TasCUDA::cudaSend<double>(num, cpu_data, gpu_data);
+}
+cudaDoubles::cudaDoubles(const std::vector<double> &cpu_data) : num(cpu_data.size()){
+    gpu_data = TasCUDA::cudaNew<double>(num);
+    TasCUDA::cudaSend<double>(num, cpu_data.data(), gpu_data);
+}
+cudaDoubles::~cudaDoubles(){ clear(); }
+
+size_t cudaDoubles::size() const{ return num; }
+double* cudaDoubles::data(){ return gpu_data; }
+const double* cudaDoubles::data() const{ return gpu_data; }
+void cudaDoubles::resize(size_t cnum){
+    if (num != cnum) clear();
+    num = cnum;
+    if (gpu_data == 0) gpu_data = TasCUDA::cudaNew<double>(num);
+}
+void cudaDoubles::clear(){
+    if (gpu_data != 0) TasCUDA::cudaDel<double>(gpu_data);
+    gpu_data = 0;
+    num = 0;
+}
+
+void cudaDoubles::load(size_t cnum, const double *cpu_data){
+    if (num != cnum) clear();
+    num = cnum;
+    if (gpu_data == 0) gpu_data = TasCUDA::cudaNew<double>(num);
+    TasCUDA::cudaSend<double>(num, cpu_data, gpu_data);
+}
+void cudaDoubles::load(const std::vector<double> &cpu_data){
+    if (num != cpu_data.size()) clear();
+    num = cpu_data.size();
+    if (gpu_data == 0) gpu_data = TasCUDA::cudaNew<double>(num);
+    TasCUDA::cudaSend<double>(num, cpu_data.data(), gpu_data);
+}
+void cudaDoubles::unload(double *cpu_data) const{ TasCUDA::cudaRecv<double>(num, gpu_data, cpu_data); }
+void cudaDoubles::unload(std::vector<double> &cpu_data) const{
+    cpu_data.resize(num);
+    TasCUDA::cudaRecv<double>(num, gpu_data, cpu_data.data());
+}
+
+LinearAlgebraEngineGPU::LinearAlgebraEngineGPU() : cublasHandle(0), cusparseHandle(0)
+#ifdef Tasmanian_ENABLE_MAGMA
+    , magma_initialized(false), // call init once per object (must simplify later)
+    magmaCudaStream(0), magmaCudaQueue(0)
+#endif
+{}
+LinearAlgebraEngineGPU::~LinearAlgebraEngineGPU(){ reset(); }
+
+void LinearAlgebraEngineGPU::reset(){
+    if (cublasHandle != 0){
+        cublasDestroy((cublasHandle_t) cublasHandle);
+        cublasHandle = 0;
+    }
+    if (cusparseHandle != 0){
+        cusparseDestroy((cusparseHandle_t) cusparseHandle);
+        cusparseHandle = 0;
+    }
+    #ifdef Tasmanian_ENABLE_MAGMA
+    if (magmaCudaQueue != 0) magma_queue_destroy((magma_queue*) magmaCudaQueue);
+    magmaCudaQueue = 0;
+    if (magma_initialized) magma_finalize();
+    if (magmaCudaStream != 0) cudaStreamDestroy((cudaStream_t) magmaCudaStream);
+    magmaCudaStream = 0;
+    #endif
+}
+
+void LinearAlgebraEngineGPU::makeCuBlasHandle(){
+    if (cublasHandle == 0){
+        cublasHandle_t cbh;
+        cublasCreate(&cbh);
+        cublasHandle = (void*) cbh;
+    }
+}
+void LinearAlgebraEngineGPU::makeCuSparseHandle(){
+    if (cusparseHandle == 0){
+        cusparseHandle_t csh;
+        cusparseCreate(&csh);
+        cusparseHandle = (void*) csh;
+    }
+}
+
+void LinearAlgebraEngineGPU::cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C){
+    makeCuBlasHandle();
+    size_t num_result = ((size_t) M) * ((size_t) N);
+    if (C.size() != num_result) C.resize(num_result);
+    if (N > 1){ // matrix-matrix mode
+        cublasStatus_t stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K,
+                                        &alpha, A.data(), M, B.data(), K, &beta, C.data(), M);
+        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM");
+    }else{ // matrix-vector mode
+        cublasStatus_t stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, M, K,
+                                        &alpha, A.data(), M, B.data(), 1, &beta, C.data(), 1);
+        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in DGEMM");
+    }
+}
+void LinearAlgebraEngineGPU::cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]){
+    cudaDoubles gpuB(B);
+    size_t num_result = ((size_t) M) * ((size_t) N);
+    cudaDoubles gpuC(num_result);
+    cublasDGEMM(M, N, K, alpha, A, gpuB, beta, gpuC);
+    gpuC.unload(C);
+}
+
+#ifdef Tasmanian_ENABLE_MAGMA
+void LinearAlgebraEngineGPU::initializeMagma(int gpuID){
+    if (!magma_initialized){
+        magma_init();
+        magma_initialized = true;
+    }
+    makeCuBlasHandle();
+    makeCuSparseHandle();
+    magma_queue_create_from_cuda(gpuID, (cudaStream_t) magmaCudaStream, (cublasHandle_t) cublasHandle, (cusparseHandle_t) cusparseHandle, ((magma_queue**) &magmaCudaQueue));
+}
+
+void LinearAlgebraEngineGPU::magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C){
+    initializeMagma(gpuID);
+    size_t num_result = ((size_t) M) * ((size_t) N);
+    magma_trans_t noTranspose = MagmaNoTrans;
+    if (C.size() != num_result) C.resize(num_result);
+    if (N > 1){ // matrix-matrix mode
+        magma_dgemm(noTranspose, noTranspose, M, N, K, alpha, A.data(), M,
+                    B.data(), K, beta, C.data(), M, (magma_queue_t) magmaCudaQueue);
+    }else{ // matrix-vector mode
+        magma_dgemv(noTranspose, M, K, alpha, A.data(), M,
+                    B.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
+    }
+}
+void LinearAlgebraEngineGPU::magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]){
+    cudaDoubles gpuB(B);
+    size_t num_result = ((size_t) M) * ((size_t) N);
+    cudaDoubles gpuC(num_result);
+    magmaCudaDGEMM(gpuID, M, N, K, alpha, A, gpuB, beta, gpuC);
+    gpuC.unload(C);
+}
+#endif
+
+#endif
+
+
 BaseAccelerationData::BaseAccelerationData(){}
 BaseAccelerationData::~BaseAccelerationData(){}
 

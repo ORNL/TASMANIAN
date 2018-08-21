@@ -33,10 +33,104 @@
 
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "tsgEnumerates.hpp"
 
 namespace TasGrid{
+
+#ifdef Tasmanian_ENABLE_CUDA
+class cudaInts{
+public:
+    cudaInts();
+    cudaInts(size_t cnum);
+    cudaInts(int a, int b);
+    cudaInts(size_t cnum, const int *cpu_data);
+    cudaInts(int a, int b, const int *cpu_data);
+    cudaInts(const std::vector<int> &cpu_data);
+    ~cudaInts();
+
+    size_t size() const;
+    int* data();
+    const int* data() const;
+    void resize(size_t cnum);
+    void clear();
+
+    void load(size_t cnum, const int *cpu_data);
+    void load(const std::vector<int> &cpu_data);
+    void unload(int *cpu_data) const;
+    void unload(std::vector<int> &cpu_data) const;
+
+private:
+    size_t num;
+    int *gpu_data;
+};
+
+class cudaDoubles{
+public:
+    cudaDoubles();
+    cudaDoubles(size_t cnum);
+    cudaDoubles(int a, int b);
+    cudaDoubles(size_t cnum, const double *cpu_data);
+    cudaDoubles(int a, int b, const double *cpu_data);
+    cudaDoubles(const std::vector<double> &cpu_data);
+    ~cudaDoubles();
+
+    size_t size() const;
+    double* data();
+    const double* data() const;
+    void resize(size_t cnum);
+    void clear();
+
+    void load(size_t cnum, const double *cpu_data);
+    void load(const std::vector<double> &cpu_data);
+    void unload(double *cpu_data) const;
+    void unload(std::vector<double> &cpu_data) const;
+
+private:
+    size_t num;
+    double *gpu_data;
+};
+
+
+class LinearAlgebraEngineGPU{
+public:
+    LinearAlgebraEngineGPU();
+    ~LinearAlgebraEngineGPU();
+
+    void reset();
+
+    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C);
+    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);
+    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for N == 1) product using Nvidai cuBlas
+
+    #ifdef Tasmanian_ENABLE_MAGMA
+    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C);
+    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);
+    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for N == 1) product using UTK MAGMA
+    #endif
+
+protected:
+    void makeCuBlasHandle();
+    void makeCuSparseHandle();
+
+    #ifdef Tasmanian_ENABLE_MAGMA
+    void initializeMagma(int gpuID);
+    #endif
+
+private:
+    #ifdef Tasmanian_ENABLE_CUDA
+    void *cublasHandle;
+    void *cusparseHandle;
+    #endif
+
+    #ifdef Tasmanian_ENABLE_MAGMA
+    bool magma_initialized; // call init once per object (must simplify later)
+    void *magmaCudaStream;
+    void *magmaCudaQueue;
+    #endif
+};
+#endif
 
 class BaseAccelerationData{
 public:
