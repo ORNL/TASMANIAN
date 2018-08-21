@@ -104,6 +104,10 @@ public:
     void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);
     // dense matrix-matrix (dgemm) or matrix-vector (dgemv for N == 1) product using Nvidai cuBlas
 
+    void cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<int> &spntr, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]);
+    void cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, double beta, cudaDoubles &C);
+    // sparse matrix times dense matrix using Nvidia cuSparse (C = alpha * A * (spntr, sindx, svals) + beta *C), the sparse matrix is in column compressed form
+
     #ifdef Tasmanian_ENABLE_MAGMA
     void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C);
     void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);

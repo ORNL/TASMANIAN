@@ -204,6 +204,46 @@ void LinearAlgebraEngineGPU::cublasDGEMM(int M, int N, int K, double alpha, cons
     gpuC.unload(C);
 }
 
+void LinearAlgebraEngineGPU::cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<int> &spntr, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]){
+    cudaInts gpu_pntr(spntr);
+    cudaInts gpu_indx(sindx);
+    cudaDoubles gpu_vals(svals);
+    size_t num_result = ((size_t) M) * ((size_t) N);
+    cudaDoubles gpuC(num_result);
+    cusparseMatmul(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, beta, gpuC);
+    gpuC.unload(C);
+}
+void LinearAlgebraEngineGPU::cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, double beta, cudaDoubles &C){
+    makeCuBlasHandle();
+    makeCuSparseHandle();
+
+    size_t num_result = ((size_t) M) * ((size_t) N);
+    if (C.size() != num_result) C.resize(num_result);
+    cudaDoubles tempC(num_result);
+
+    cusparseStatus_t stat_cuspar;
+    cusparseMatDescr_t mat_desc;
+    stat_cuspar = cusparseCreateMatDescr(&mat_desc);
+    AccelerationMeta::cusparseCheckError((void*) &stat_cuspar, "cusparseCreateMatDescr() in LinearAlgebraEngineGPU::cusparseMatmul()");
+    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
+    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
+
+    stat_cuspar = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
+                                  CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, N, M, K, (int) sindx.size(),
+                                  &alpha, mat_desc, svals.data(), spntr.data(), sindx.data(), A.data(), M, &beta, tempC.data(), N);
+    AccelerationMeta::cusparseCheckError((void*) &stat_cuspar, "cusparseDcsrmm2() in LinearAlgebraEngineGPU::cusparseMatmul()");
+
+    cusparseDestroyMatDescr(mat_desc);
+
+    double talpha = 1.0, tbeta = 0.0;
+    cublasStatus_t stat_cublas;
+    stat_cublas = cublasDgeam((cublasHandle_t) cublasHandle,
+                        CUBLAS_OP_T, CUBLAS_OP_T, M, N,
+                        &talpha, tempC.data(), N, &tbeta, tempC.data(), N, C.data(), M);
+    AccelerationMeta::cublasCheckError((void*) &stat_cublas, "cublasDgeam() in LinearAlgebraEngineGPU::cusparseMatmul()");
+}
+
 #ifdef Tasmanian_ENABLE_MAGMA
 void LinearAlgebraEngineGPU::initializeMagma(int gpuID){
     if (!magma_initialized){
