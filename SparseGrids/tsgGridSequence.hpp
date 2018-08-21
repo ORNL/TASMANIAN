@@ -142,8 +142,6 @@ protected:
 
     double evalBasis(const int f[], const int p[]) const; // evaluate function corresponding to f at p
 
-    void makeCheckAccelerationData(TypeAcceleration acc) const;
-
 private:
     int num_dimensions, num_outputs;
     TypeOneDRule rule;
@@ -160,7 +158,10 @@ private:
 
     std::vector<int> max_levels;
 
-    mutable BaseAccelerationData *accel;
+    #ifdef Tasmanian_ENABLE_CUDA
+    mutable LinearAlgebraEngineGPU cuda_engine;
+    mutable cudaDoubles cuda_surpluses;
+    #endif
 };
 
 }
