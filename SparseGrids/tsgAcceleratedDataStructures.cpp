@@ -243,6 +243,31 @@ void LinearAlgebraEngineGPU::cusparseMatmul(int M, int N, int K, double alpha, c
                         &talpha, tempC.data(), N, &tbeta, tempC.data(), N, C.data(), M);
     AccelerationMeta::cublasCheckError((void*) &stat_cublas, "cublasDgeam() in LinearAlgebraEngineGPU::cusparseMatmul()");
 }
+void LinearAlgebraEngineGPU::cusparseMatveci(int M, int K, double alpha, const cudaDoubles &A, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]){
+    makeCuSparseHandle();
+    cusparseStatus_t stat_cuspar;
+
+    // quote from Nvidia CUDA cusparse manual at https://docs.nvidia.com/cuda/cusparse/index.html#cusparse-lt-t-gt-gemvi
+    // "This function requires no extra storage for the general matrices when operation CUSPARSE_OPERATION_NON_TRANSPOSE is selected."
+    // Yet, buffer is required when num_nz exceeds 32 even with CUSPARSE_OPERATION_NON_TRANSPOSE
+    int buffer_size;
+    cudaDoubles gpu_buffer;
+    stat_cuspar = cusparseDgemvi_bufferSize((cusparseHandle_t) cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                             M, K, (int) sindx.size(), &buffer_size);
+    AccelerationMeta::cusparseCheckError((void*) &stat_cuspar, "cusparseDgemvi_bufferSize() in cusparseMatveci()");
+    gpu_buffer.resize((size_t) buffer_size);
+
+    cudaInts gpu_indx(sindx);
+    cudaDoubles gpu_vals(svals);
+    cudaDoubles gpuC(M);
+
+    stat_cuspar = cusparseDgemvi((cusparseHandle_t) cusparseHandle,
+                                  CUSPARSE_OPERATION_NON_TRANSPOSE, M, K, &alpha, A.data(), M, (int) sindx.size(), gpu_vals.data(),
+                                  gpu_indx.data(), &beta, gpuC.data(), CUSPARSE_INDEX_BASE_ZERO, gpu_buffer.data());
+    AccelerationMeta::cusparseCheckError((void*) &stat_cuspar, "cusparseDgemvi() in cusparseMatveci()");
+
+    gpuC.unload(C);
+}
 
 #ifdef Tasmanian_ENABLE_MAGMA
 void LinearAlgebraEngineGPU::initializeMagma(int gpuID){
