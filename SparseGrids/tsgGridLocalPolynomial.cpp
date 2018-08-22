@@ -441,27 +441,14 @@ void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) cons
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[]) const{
     int num_points = points->getNumIndexes();
-    makeCheckAccelerationData(accel_gpu_cublas);
-    checkAccelerationGPUValues();
-    AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
+    if (cuda_surpluses.size() == 0) loadCudaData();
 
-    int num_nz;
     std::vector<int> sindx;
     std::vector<double> svals;
+    int num_nz;
     buildSparseVector<0>(points, x, num_nz, sindx, svals);
     buildSparseVector<1>(points, x, num_nz, sindx, svals);
-    int *gpu_sindx = TasCUDA::cudaSend<int>(sindx);
-    double *gpu_svals = TasCUDA::cudaSend<double>(svals);
-    double *gpu_y = TasCUDA::cudaNew<double>(num_outputs);
-
-    gpu_acc->cusparseMatveci(num_outputs, num_points, num_nz, gpu_sindx, gpu_svals, gpu_y);
-    //TasCUDA::cudaSparseVecDenseMat(num_outputs, num_points, num_nz, gpu_acc->getGPUValues(), gpu_sindx, gpu_svals, gpu_y);
-
-    TasCUDA::cudaRecv<double>(num_outputs, gpu_y, y);
-
-    TasCUDA::cudaDel<int>(gpu_sindx);
-    TasCUDA::cudaDel<double>(gpu_svals);
-    TasCUDA::cudaDel<double>(gpu_y);
+    cuda_engine.cusparseMatveci(num_outputs, num_points, 1.0, cuda_surpluses, sindx, svals, 0.0, y);
 }
 #else
 void GridLocalPolynomial::evaluateFastGPUcublas(const double[], double[]) const{}
@@ -598,6 +585,9 @@ void GridLocalPolynomial::evaluateBatchGPUmagma(int, const double x[], int num_x
 }
 
 void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration){
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaLoadedData();
+    #endif
     if (points == 0){
         values->setValues(vals);
         points = needed;
@@ -615,6 +605,9 @@ void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration)
 }
 void GridLocalPolynomial::mergeRefinement(){
     if (needed == 0) return; // nothing to do
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaLoadedData();
+    #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
     std::vector<double> vals(num_vals, 0.0);
@@ -1492,6 +1485,9 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 }
 
 void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaLoadedData();
+    #endif
     if (accel != 0) accel->resetGPULoadedData();
     if (points != 0){
         clearRefinement();
@@ -1581,6 +1577,10 @@ void GridLocalPolynomial::checkAccelerationGPUHierarchy() const{}
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridLocalPolynomial::clearAccelerationData(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    cuda_engine.reset();
+    clearCudaLoadedData();
+    #endif
     if (accel != 0){
         delete accel;
         accel = 0;
