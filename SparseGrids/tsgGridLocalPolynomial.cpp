@@ -509,20 +509,13 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-    int num_points = points->getNumIndexes();
-    makeCheckAccelerationData(accel_gpu_cublas);
-    checkAccelerationGPUValues();
-    AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
+    if (cuda_surpluses.size() == 0) cuda_surpluses.load(*(surpluses.getVector()));
 
-    int *sindx, *spntr;
-    double *svals;
-    buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
+    std::vector<int> sindx, spntr;
+    std::vector<double> svals;
+    buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals);
 
-    gpu_acc->cusparseMatmul(true, num_points, num_outputs, num_x, spntr, sindx, svals, 0, y); // true for pointers residing on the cpu
-
-    delete[] svals;
-    delete[] sindx;
-    delete[] spntr;
+    cuda_engine.cusparseMatmul(num_outputs, num_x, points->getNumIndexes(), 1.0, cuda_surpluses, spntr, sindx, svals, 0.0, y);
 }
 void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     if ((order == -1) || (order > 2)){ // GPU evaluations are availabe only for order 0, 1, and 2. Cubic will come later, but higher order will not be supported
