@@ -108,6 +108,9 @@ public:
     void cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, double beta, cudaDoubles &C);
     // sparse matrix times dense matrix using Nvidia cuSparse (C = alpha * A * (spntr, sindx, svals) + beta *C), the sparse matrix is in column compressed form
 
+    void cusparseMatvec(int M, int N, double alpha, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, const cudaDoubles &x, double beta, double y[]);
+    // sparse matrix times a dense vector, makes sense only if the matrix already sits on the gpu (y = alpha * A * x + beta * y)
+
     void cusparseMatveci(int M, int K, double alpha, const cudaDoubles &A, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]);
     // dense matrix times a sparse vector defined by sindx and svals (C = beta * C + alpha * A * b), currently the sparse vector can only be computed on the cpu
 

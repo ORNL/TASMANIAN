@@ -243,6 +243,23 @@ void LinearAlgebraEngineGPU::cusparseMatmul(int M, int N, int K, double alpha, c
                         &talpha, tempC.data(), N, &tbeta, tempC.data(), N, C.data(), M);
     AccelerationMeta::cublasCheckError((void*) &stat_cublas, "cublasDgeam() in LinearAlgebraEngineGPU::cusparseMatmul()");
 }
+void LinearAlgebraEngineGPU::cusparseMatvec(int M, int N, double alpha, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, const cudaDoubles &x, double beta, double y[]){
+    makeCuSparseHandle();
+    cusparseStatus_t stat_cuspar;
+    cusparseMatDescr_t mat_desc;
+    stat_cuspar = cusparseCreateMatDescr(&mat_desc);
+    AccelerationMeta::cusparseCheckError((void*) &stat_cuspar, "cusparseCreateMatDescr() in LinearAlgebraEngineGPU::cusparseMatvec()");
+    cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
+    cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
+
+    stat_cuspar = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
+                                 CUSPARSE_OPERATION_NON_TRANSPOSE, M, N, (int) sindx.size(),
+                                 &alpha, mat_desc, svals.data(), spntr.data(), sindx.data(), x.data(), &beta, y);
+    AccelerationMeta::cusparseCheckError((void*) &stat_cuspar, "cusparseDcsrmv() in LinearAlgebraEngineGPU::cusparseMatvec()");
+
+    cusparseDestroyMatDescr(mat_desc);
+}
 void LinearAlgebraEngineGPU::cusparseMatveci(int M, int K, double alpha, const cudaDoubles &A, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]){
     makeCuSparseHandle();
     cusparseStatus_t stat_cuspar;
