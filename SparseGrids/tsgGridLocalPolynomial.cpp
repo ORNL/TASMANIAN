@@ -523,50 +523,32 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         return;
     }
     int num_points = points->getNumIndexes();
-//    if (cuda_nodes.size() == 0) loadCudaData();
-    makeCheckAccelerationData(accel_gpu_cuda);
-    checkAccelerationGPUValues();
-    checkAccelerationGPUNodes();
-    AccelerationDataGPUFull *gpu_acc = (AccelerationDataGPUFull*) accel;
+    if (cuda_nodes.size() == 0) loadCudaData();
 
     bool useDense = (sparse_affinity == -1) || ((sparse_affinity == 0) && (num_dimensions > 6)); // dimension is the real criteria here
 
     if (useDense){
-        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x);
-        double *gpu_weights = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) points->getNumIndexes()));
-        double *gpu_result = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) values->getNumOutputs()));
+        cudaDoubles gpu_x(num_dimensions, num_x, x);
+        cudaDoubles gpu_basis(num_x, num_points);
+        cudaDoubles gpu_result(num_x, num_outputs);
 
-        buildDenseBasisMatrixGPU(gpu_x, num_x, gpu_weights);
-        gpu_acc->cublasDGEMM(false, values->getNumOutputs(), num_x, num_points, gpu_weights, gpu_result);
-        //TasCUDA::cudaDgemm(values->getNumOutputs(), num_x, num_points, gpu_acc->getGPUValues(), gpu_weights, gpu_result);
-
-        TasCUDA::cudaRecv<double>(num_x * values->getNumOutputs(), gpu_result, y);
-
-        TasCUDA::cudaDel<double>(gpu_result);
-        TasCUDA::cudaDel<double>(gpu_weights);
-        TasCUDA::cudaDel<double>(gpu_x);
+        buildDenseBasisMatrixGPU(gpu_x.data(), num_x, gpu_basis);
+        cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
+        gpu_result.unload(y);
     }else{
-        double *gpu_x = TasCUDA::cudaSend<double>(num_x * num_dimensions, x);
-        double *gpu_y = TasCUDA::cudaNew<double>(((size_t) num_x) * ((size_t) num_outputs));
+        cudaDoubles gpu_x(num_dimensions, num_x, x);
+        cudaDoubles gpu_result(num_x, num_outputs);
 
-        int *gpu_spntr, *gpu_sindx, num_nz = 0;
-        double *gpu_svals;
-        buildSparseBasisMatrixGPU(gpu_x, num_x, gpu_spntr, gpu_sindx, gpu_svals, num_nz);
+        cudaInts gpu_spntr, gpu_sindx;
+        cudaDoubles gpu_svals;
+        buildSparseBasisMatrixGPU(gpu_x.data(), num_x, gpu_spntr, gpu_sindx, gpu_svals);
 
-        if (num_outputs == 1){
-            gpu_acc->cusparseMatvec(num_points, num_x, gpu_spntr, gpu_sindx, gpu_svals, num_nz, gpu_y);
+        if (num_outputs > 1){
+            cuda_engine.cusparseMatmul(num_outputs, num_x, num_points, 1.0, cuda_surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_result);
         }else{
-            gpu_acc->cusparseMatmul(false, num_points, num_outputs, num_x, gpu_spntr, gpu_sindx, gpu_svals, num_nz, gpu_y); // false for pointers already living on the gpu
+            cuda_engine.cusparseMatvec(num_x, num_points, 1.0, gpu_spntr, gpu_sindx, gpu_svals, cuda_surpluses, 0.0, gpu_result.data());
         }
-        //TasCUDA::cudaSparseMatmul(num_x, num_outputs, num_nz, gpu_spntr, gpu_sindx, gpu_svals, gpu_acc->getGPUValues(), gpu_y);
-
-        TasCUDA::cudaRecv<double>(((size_t) num_x) * ((size_t) num_outputs), gpu_y, y);
-
-        TasCUDA::cudaDel<int>(gpu_spntr);
-        TasCUDA::cudaDel<int>(gpu_sindx);
-        TasCUDA::cudaDel<double>(gpu_svals);
-        TasCUDA::cudaDel<double>(gpu_y);
-        TasCUDA::cudaDel<double>(gpu_x);
+        gpu_result.unload(y);
     }
 }
 #else
