@@ -170,8 +170,6 @@ private:
 
     std::vector<int> max_power;
 
-    mutable BaseAccelerationData *accel;
-
 };
 
 }

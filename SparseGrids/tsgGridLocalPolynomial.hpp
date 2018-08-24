@@ -270,11 +270,6 @@ protected:
     void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
     void addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const std::vector<int> &level_limits) const;
 
-    void makeCheckAccelerationData(TypeAcceleration acc) const;
-    void checkAccelerationGPUValues() const;
-    void checkAccelerationGPUNodes() const;
-    void checkAccelerationGPUHierarchy() const;
-
     #ifdef Tasmanian_ENABLE_CUDA
     // synchronize with tasgpu_devalpwpoly_feval
     template<int order, TypeOneDRule crule>
@@ -398,7 +393,6 @@ private:
     templRuleLocalPolynomial<rule_localpb, false> rpolyb;
     templRuleLocalPolynomial<rule_localp, true> rpolyc;
 
-    mutable BaseAccelerationData *accel;
     int sparse_affinity;
 
     #ifdef Tasmanian_ENABLE_CUDA
