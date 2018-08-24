@@ -514,14 +514,23 @@ void AccelerationMeta::cusparseCheckError(void *, const char *){}
 
 
 #ifdef Tasmanian_ENABLE_CUDA
-AccelerationDomainTransform::AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b) :
-    gpu_trans_a(0), gpu_trans_b(0), padded_size(0)
-{
+AccelerationDomainTransform::AccelerationDomainTransform() : num_dimensions(0), padded_size(0){}
+AccelerationDomainTransform::~AccelerationDomainTransform(){}
+
+void AccelerationDomainTransform::clear(){
+    num_dimensions = 0;
+    padded_size = 0;
+    gpu_trans_a.clear();
+    gpu_trans_b.clear();
+}
+bool AccelerationDomainTransform::empty(){ return (num_dimensions == 0); }
+void AccelerationDomainTransform::load(const std::vector<double> &transform_a, const std::vector<double> &transform_b){
+    num_dimensions = (int) transform_a.size();
     padded_size = num_dimensions;
     while(padded_size < 512) padded_size += num_dimensions;
 
-    double *rate = new double[padded_size];
-    double *shift = new double[padded_size];
+    std::vector<double> rate(padded_size);
+    std::vector<double> shift(padded_size);
     int c = 0;
     for(int i=0; i<padded_size; i++){
         double diff = transform_b[c] - transform_a[c];
@@ -531,25 +540,13 @@ AccelerationDomainTransform::AccelerationDomainTransform(int num_dimensions, con
         c = (c % num_dimensions);
     }
 
-    gpu_trans_a = TasCUDA::cudaSend<double>(padded_size, rate);
-    gpu_trans_b = TasCUDA::cudaSend<double>(padded_size, shift);
-
-    delete[] rate;
-    delete[] shift;
+    gpu_trans_a.load(rate);
+    gpu_trans_b.load(shift);
 }
-AccelerationDomainTransform::~AccelerationDomainTransform(){
-    TasCUDA::cudaDel<double>(gpu_trans_a);
-    TasCUDA::cudaDel<double>(gpu_trans_b);
+void AccelerationDomainTransform::getCanonicalPoints(const double *gpu_transformed_x, int num_x, cudaDoubles &gpu_canonical_x){
+    gpu_canonical_x.resize(((size_t) num_dimensions) * ((size_t) num_x));
+    TasCUDA::dtrans2can(num_dimensions, num_x, padded_size, gpu_trans_a.data(), gpu_trans_b.data(), gpu_transformed_x, gpu_canonical_x.data());
 }
-double* AccelerationDomainTransform::getCanonicalPoints(int num_dimensions, int num_x, const double *gpu_transformed_x){
-    double *gpu_x_canonical = TasCUDA::cudaNew<double>(num_dimensions * num_x);
-    TasCUDA::dtrans2can(num_dimensions, num_x, padded_size, gpu_trans_a, gpu_trans_b, gpu_transformed_x, gpu_x_canonical);
-    return gpu_x_canonical;
-}
-#else
-AccelerationDomainTransform::AccelerationDomainTransform(int, const double*, const double*){}
-AccelerationDomainTransform::~AccelerationDomainTransform(){}
-double* AccelerationDomainTransform::getCanonicalPoints(int, int, const double*){ return 0; }
 #endif // Tasmanian_ENABLE_CUDA
 
 

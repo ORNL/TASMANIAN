@@ -144,6 +144,23 @@ private:
     void *magmaCudaQueue;
     #endif
 };
+
+// stores domain transforms, to be used by the top class TasmanianSparseGrid
+class AccelerationDomainTransform{
+public:
+    AccelerationDomainTransform();
+    ~AccelerationDomainTransform();
+
+    void clear();
+    bool empty();
+    void load(const std::vector<double> &transform_a, const std::vector<double> &transform_b);
+    void getCanonicalPoints(const double *gpu_transformed_x, int num_x, cudaDoubles &gpu_canonical_x);
+
+private:
+    // these actually store the rate and shift and not the hard upper/lower limits
+    cudaDoubles gpu_trans_a, gpu_trans_b;
+    int num_dimensions, padded_size;
+};
 #endif
 
 
@@ -207,22 +224,6 @@ namespace AccelerationMeta{
     void cublasCheckError(void *cublasStatus, const char *info);
     void cusparseCheckError(void *cusparseStatus, const char *info);
 }
-
-// stores domain transforms, to be used by the top class TasmanianSparseGrid
-class AccelerationDomainTransform{
-public:
-    AccelerationDomainTransform(int num_dimensions, const double *transform_a, const double *transform_b);
-    ~AccelerationDomainTransform();
-
-    double* getCanonicalPoints(int num_dimensions, int num_x, const double *gpu_transformed_x);
-
-private:
-    // these actually store the rate and shift and not the hard upper/lower limits
-    #ifdef Tasmanian_ENABLE_CUDA
-    double *gpu_trans_a, *gpu_trans_b;
-    int padded_size;
-    #endif // Tasmanian_ENABLE_CUDA
-};
 
 }
 
