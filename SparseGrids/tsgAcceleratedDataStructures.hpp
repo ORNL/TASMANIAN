@@ -33,78 +33,102 @@
 
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "tsgEnumerates.hpp"
 
 namespace TasGrid{
 
-class BaseAccelerationData{
+#ifdef Tasmanian_ENABLE_CUDA
+class cudaInts{
 public:
-    BaseAccelerationData();
-    virtual ~BaseAccelerationData();
+    cudaInts();
+    cudaInts(size_t cnum);
+    cudaInts(int a, int b);
+    cudaInts(size_t cnum, const int *cpu_data);
+    cudaInts(int a, int b, const int *cpu_data);
+    cudaInts(const std::vector<int> &cpu_data);
+    ~cudaInts();
 
-    virtual bool isCompatible(TypeAcceleration acc) const = 0;
+    size_t size() const;
+    int* data();
+    const int* data() const;
+    void resize(size_t cnum);
+    void clear();
 
-    virtual void resetGPULoadedData() = 0;
+    void load(size_t cnum, const int *cpu_data);
+    void load(const std::vector<int> &cpu_data);
+    void unload(int *cpu_data) const;
+    void unload(std::vector<int> &cpu_data) const;
+
+private:
+    size_t num;
+    int *gpu_data;
 };
 
-// wrapper around cublas and cusparse handles, and magma queue
-// it also stores the values and data needed for cuda evaluations
-// (points, support, etc.)
-class AccelerationDataGPUFull : public BaseAccelerationData{
+class cudaDoubles{
 public:
-    AccelerationDataGPUFull();
-    ~AccelerationDataGPUFull();
+    cudaDoubles();
+    cudaDoubles(size_t cnum);
+    cudaDoubles(int a, int b);
+    cudaDoubles(size_t cnum, const double *cpu_data);
+    cudaDoubles(int a, int b, const double *cpu_data);
+    cudaDoubles(const std::vector<double> &cpu_data);
+    ~cudaDoubles();
 
-    bool isCompatible(TypeAcceleration acc) const;
-    // when setting a new acceleration, check if we need to also set a new object or can reuse this one
+    size_t size() const;
+    double* data();
+    const double* data() const;
+    void resize(size_t cnum);
+    void clear();
 
-    double* getGPUValues() const;
-    void loadGPUValues(size_t total_entries, const double *cpu_values);
-    // either values (global grid) or coefficients (sequence, local polynomial, etc.)
+    void load(size_t cnum, const double *cpu_data);
+    void load(const std::vector<double> &cpu_data);
+    void unload(double *cpu_data) const;
+    void unload(std::vector<double> &cpu_data) const;
 
-    double* getGPUNodes() const;
-    double* getGPUSupport() const;
-    void loadGPUNodesSupport(int total_entries, const double *cpu_nodes, const double *cpu_support);
-    // nodes and support for local polynomial evaluations (support also encodes order for special cases)
+private:
+    size_t num;
+    double *gpu_data;
+};
 
-    int* getGPUpntr() const;
-    int* getGPUindx() const;
-    int* getGPUroots() const;
-    void loadGPUHierarchy(int num_points, const int *pntr, const int *indx, int num_roots, const int *roots);
-    // collection of trees to be used in CUDA evaluations of local polynomial grids
 
-    void resetGPULoadedData();
-    // deletes nodes, values, and hierarchy
+class LinearAlgebraEngineGPU{
+public:
+    LinearAlgebraEngineGPU();
+    ~LinearAlgebraEngineGPU();
 
-    void cublasDGEMM(bool cpu_pointers, int num_outputs, int num_x, int num_points, const double weights[], double *result);
-    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for num_x == 1) product using cublas, the matrix is the getGPUValues()
+    void reset();
 
-    void cusparseMatmul(bool cpu_pointers, int num_points, int num_outputs, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
-    // sparse matrix times dense matrix, dense matrix is getGPUValues(), sparse matrix can be given on either cpu or gpu
+    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C);
+    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);
+    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for N == 1) product using Nvidai cuBlas
 
-    void cusparseMatvec(int num_points, int num_x, const int *spntr, const int *sindx, const double *svals, int num_nz, double *result);
-    // sparse matrix times a dense vector, makes sense only if the matrix already sits on the gpu (hence no cpu_pointers flag)
-    // e.g., assumes num_points == 1, the vectors is getGPUValues(), and the sparse matrix was computed on the GPU
+    void cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<int> &spntr, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]);
+    void cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, double beta, cudaDoubles &C);
+    // sparse matrix times dense matrix using Nvidia cuSparse (C = alpha * A * (spntr, sindx, svals) + beta *C), the sparse matrix is in column compressed form
 
-    void cusparseMatveci(int num_outputs, int num_points, int num_nz, const int *sindx, const double *svals, double *result);
-    // dense matrix times a sparse vector defined by sindx and svals, currently the sparse vector can only be computed on the cpu
-    // the dense matrix is getGPUValues()
+    void cusparseMatvec(int M, int N, double alpha, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, const cudaDoubles &x, double beta, double y[]);
+    // sparse matrix times a dense vector, makes sense only if the matrix already sits on the gpu (y = alpha * A * x + beta * y)
 
-    void magmaCudaDGEMM(bool cpu_pointers, int gpuID, int num_outputs, int num_x, int num_points, const double weights[], double *result);
-    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for num_x == 1) product using magma, the matrix is the getGPUValues()
+    void cusparseMatveci(int M, int K, double alpha, const cudaDoubles &A, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]);
+    // dense matrix times a sparse vector defined by sindx and svals (C = beta * C + alpha * A * b), currently the sparse vector can only be computed on the cpu
+
+    #ifdef Tasmanian_ENABLE_MAGMA
+    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C);
+    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);
+    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for N == 1) product using UTK MAGMA
+    #endif
 
 protected:
     void makeCuBlasHandle();
     void makeCuSparseHandle();
 
+    #ifdef Tasmanian_ENABLE_MAGMA
     void initializeMagma(int gpuID);
+    #endif
 
 private:
-    double *gpu_values;
-    double *gpu_nodes, *gpu_support; // support is half support and encodes the level of the function, i.e., constant, linear, or quadratic
-    int *gpu_hpntr, *gpu_hindx, *gpu_roots;
-
     #ifdef Tasmanian_ENABLE_CUDA
     void *cublasHandle;
     void *cusparseHandle;
@@ -116,7 +140,10 @@ private:
     void *magmaCudaQueue;
     #endif
 };
+#endif
 
+
+#ifdef Tasmanian_ENABLE_CUDA
 // namespace realized in tsgCudaKernels.cu, each function corresponds to a CUDA kernel for evaluations of basis matrix, domain transform, or fallback linear algebra
 namespace TasCUDA{
     // convert transformed points to the canonical domain, all inputs live on the GPU
@@ -126,6 +153,8 @@ namespace TasCUDA{
     void devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y);
     void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
                             int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nzm);
+    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const cudaDoubles &gpu_nodes, const cudaDoubles &gpu_support,
+                            const cudaInts &gpu_hpntr, const cudaInts &gpu_hindx, const  cudaInts &gpu_roots, cudaInts &gpu_spntr, cudaInts &gpu_sindx, cudaDoubles &gpu_svals);
     void devalpwpoly_sparse_dense(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support,
                                  int *gpu_hpntr, int *gpu_hindx, int num_roots, int *gpu_roots, double *gpu_dense);
 
@@ -158,6 +187,7 @@ namespace TasCUDA{
     // converts a sparse matrix to a dense representation (all data sits on the gpu and is pre-allocated)
     #endif
 }
+#endif
 
 // generic error checking function and types I/O
 namespace AccelerationMeta{

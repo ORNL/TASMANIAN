@@ -157,6 +157,28 @@ void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num
     devalpwpoly_sparse_realize_rule_order<double, 64, 46, true>
         (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_hpntr, gpu_hindx, num_roots, gpu_roots, gpu_spntr, gpu_sindx, gpu_svals);
 }
+void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const cudaDoubles &gpu_nodes, const cudaDoubles &gpu_support,
+                            const cudaInts &gpu_hpntr, const cudaInts &gpu_hindx, const  cudaInts &gpu_roots, cudaInts &gpu_spntr, cudaInts &gpu_sindx, cudaDoubles &gpu_svals){
+    gpu_spntr.resize(num_x + 1);
+    // call with fill == false to count the non-zeros per row of the matrix
+    devalpwpoly_sparse_realize_rule_order<double, 64, 46, false>
+        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(), gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_roots.size(), gpu_roots.data(), gpu_spntr.data(), 0, 0);
+
+    std::vector<int> cpu_spntr;
+    gpu_spntr.unload(cpu_spntr);
+    cpu_spntr[0] = 0;
+    int nz = 0;
+    for(auto &i : cpu_spntr){
+        i += nz;
+        nz = i;
+    }
+    gpu_spntr.load(cpu_spntr);
+    gpu_sindx.resize(nz);
+    gpu_svals.resize(nz);
+    // call with fill == true to load the non-zeros
+    devalpwpoly_sparse_realize_rule_order<double, 64, 46, true>
+        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(), gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_roots.size(), gpu_roots.data(), gpu_spntr.data(), gpu_sindx.data(), gpu_svals.data());
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

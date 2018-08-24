@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_SPARSE_GRID_LPOLY_HPP
 #define __TASMANIAN_SPARSE_GRID_LPOLY_HPP
 
+#include <vector>
+
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgIndexManipulator.hpp"
@@ -110,6 +112,11 @@ public:
 
     void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
     void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz) const;
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, cudaDoubles &gpu_y) const;
+    void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, cudaInts &gpu_spntr, cudaInts &gpu_sindx, cudaDoubles &gpu_svals) const;
+    #endif
 
 protected:
     void reset(bool clear_rule = true);
@@ -263,11 +270,7 @@ protected:
     void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
     void addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const std::vector<int> &level_limits) const;
 
-    void makeCheckAccelerationData(TypeAcceleration acc) const;
-    void checkAccelerationGPUValues() const;
-    void checkAccelerationGPUNodes() const;
-    void checkAccelerationGPUHierarchy() const;
-
+    #ifdef Tasmanian_ENABLE_CUDA
     // synchronize with tasgpu_devalpwpoly_feval
     template<int order, TypeOneDRule crule>
     void encodeSupportForGPU(const IndexSet *work, double *cpu_support) const{
@@ -293,6 +296,76 @@ protected:
             }
         }
     }
+    // synchronize with tasgpu_devalpwpoly_feval
+    template<int order, TypeOneDRule crule>
+    void encodeSupportForGPU(const IndexSet *work, Data2D<double> &cpu_support) const{
+        cpu_support.resize(num_dimensions, work->getNumIndexes());
+        for(int i=0; i<work->getNumIndexes(); i++){
+            const int* p = work->getIndex(i);
+            double *s = cpu_support.getStrip(i);
+            for(int j=0; j<num_dimensions; j++){
+                s[j] = rule->getSupport(p[j]);
+                if (order != 0){
+                    if (order == 2) s[j] *= s[j];
+                    if ((crule == rule_localp) || (crule == rule_semilocalp)) if (p[j] == 0) s[j] = -1.0; // constant function
+                    if ((crule == rule_localp) && (order == 2)){
+                        if (p[j] == 1) s[j] = -2.0;
+                        else if (p[j] == 2) s[j] = -3.0;
+                    }
+                    if ((crule == rule_semilocalp) && (order == 2)){
+                        if (p[j] == 1) s[j] = -4.0;
+                        else if (p[j] == 2) s[j] = -5.0;
+                    }
+                    if ((crule == rule_localpb) && (order == 2)){
+                        if (p[j] < 2) s[j] = -2.0; // linear functions on level 0
+                    }
+                }
+            }
+        }
+    }
+    void loadCudaData() const{
+        cuda_surpluses.load(*(surpluses.getVector()));
+        std::vector<double> cpu_nodes(((size_t) getNumPoints()) * ((size_t) num_dimensions));
+        getPoints(cpu_nodes.data());
+        cuda_nodes.load(cpu_nodes);
+        Data2D<double> cpu_support;
+        IndexSet *work = (points != 0) ? points : needed;
+        if (rule->getType() == rule_localp){
+            switch(order){
+            case 0: encodeSupportForGPU<0, rule_localp>(work, cpu_support); break;
+            case 2: encodeSupportForGPU<2, rule_localp>(work, cpu_support); break;
+            default:
+                encodeSupportForGPU<1, rule_localp>(work, cpu_support);
+            }
+        }else if (rule->getType() == rule_semilocalp){
+            encodeSupportForGPU<2, rule_semilocalp>(work, cpu_support);
+        }else if (rule->getType() == rule_localpb){
+            switch(order){
+            case 2: encodeSupportForGPU<2, rule_localpb>(work, cpu_support); break;
+            default:
+                encodeSupportForGPU<1, rule_localpb>(work, cpu_support);
+            }
+        }else{
+            switch(order){
+            case 2: encodeSupportForGPU<2, rule_localp0>(work, cpu_support); break;
+            default:
+                encodeSupportForGPU<1, rule_localp0>(work, cpu_support);
+            }
+        }
+        cuda_support.load(*(cpu_support.getVector()));
+        cuda_pntr.load(pntr);
+        cuda_indx.load(indx);
+        cuda_roots.load(roots);
+    }
+    void clearCudaLoadedData(){
+        cuda_surpluses.clear();
+        cuda_nodes.clear();
+        cuda_support.clear();
+        cuda_pntr.clear();
+        cuda_indx.clear();
+        cuda_roots.clear();
+    }
+    #endif
 
 private:
     int num_dimensions, num_outputs, order, top_level;
@@ -320,8 +393,13 @@ private:
     templRuleLocalPolynomial<rule_localpb, false> rpolyb;
     templRuleLocalPolynomial<rule_localp, true> rpolyc;
 
-    mutable BaseAccelerationData *accel;
     int sparse_affinity;
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    mutable LinearAlgebraEngineGPU cuda_engine;
+    mutable cudaDoubles cuda_surpluses, cuda_nodes, cuda_support;
+    mutable cudaInts cuda_pntr, cuda_indx, cuda_roots;
+    #endif
 };
 
 }

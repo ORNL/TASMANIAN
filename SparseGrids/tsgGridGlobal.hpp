@@ -124,8 +124,6 @@ protected:
 
     static double legendre(int n, double x);
 
-    void makeCheckAccelerationData(TypeAcceleration acc) const;
-
 private:
     int num_dimensions, num_outputs;
     TypeOneDRule rule;
@@ -151,7 +149,10 @@ private:
 
     CustomTabulated *custom;
 
-    mutable BaseAccelerationData *accel;
+    #ifdef Tasmanian_ENABLE_CUDA
+    mutable LinearAlgebraEngineGPU cuda_engine;
+    mutable cudaDoubles cuda_vals;
+    #endif
 };
 
 }
