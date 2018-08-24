@@ -61,6 +61,8 @@ public:
     void unload(int *cpu_data) const;
     void unload(std::vector<int> &cpu_data) const;
 
+    void eject(int* &destination); // moves the data to the external pointer
+
 private:
     size_t num;
     int *gpu_data;
@@ -86,6 +88,8 @@ public:
     void load(const std::vector<double> &cpu_data);
     void unload(double *cpu_data) const;
     void unload(std::vector<double> &cpu_data) const;
+
+    void eject(double* &destination); // moves the data to the external pointer
 
 private:
     size_t num;

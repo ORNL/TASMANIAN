@@ -91,6 +91,11 @@ void cudaInts::unload(std::vector<int> &cpu_data) const{
     cpu_data.resize(num);
     TasCUDA::cudaRecv<int>(num, gpu_data, cpu_data.data());
 }
+void cudaInts::eject(int* &destination){
+    destination = gpu_data;
+    gpu_data = 0;
+    num = 0;
+}
 
 cudaDoubles::cudaDoubles() : num(0), gpu_data(0){}
 cudaDoubles::cudaDoubles(size_t cnum) : num(cnum){ gpu_data = TasCUDA::cudaNew<double>(num); }
@@ -139,6 +144,11 @@ void cudaDoubles::unload(double *cpu_data) const{ TasCUDA::cudaRecv<double>(num,
 void cudaDoubles::unload(std::vector<double> &cpu_data) const{
     cpu_data.resize(num);
     TasCUDA::cudaRecv<double>(num, gpu_data, cpu_data.data());
+}
+void cudaDoubles::eject(double* &destination){
+    destination = gpu_data;
+    gpu_data = 0;
+    num = 0;
 }
 
 LinearAlgebraEngineGPU::LinearAlgebraEngineGPU() : cublasHandle(0), cusparseHandle(0)
