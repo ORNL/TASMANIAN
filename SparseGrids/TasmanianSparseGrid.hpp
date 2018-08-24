@@ -235,9 +235,10 @@ protected:
     void mapConformalWeights(int num_dimensions, int num_points, double weights[]) const;
 
     const double* formCanonicalPoints(const double *x, double* &x_temp, int num_x) const;
-    const double* formCanonicalPointsGPU(const double *gpu_x, double* &gpu_x_temp, int num_x) const;
+    #ifdef Tasmanian_ENABLE_CUDA
+    const double* formCanonicalPointsGPU(const double *gpu_x, int num_x, cudaDoubles &gpu_x_temp) const;
+    #endif
     void clearCanonicalPoints(double* &x_temp) const;
-    void clearCanonicalPointsGPU(double* &x_temp) const;
     void formTransformedPoints(int num_points, double x[]) const; // when calling get***Points()
 
     void writeAscii(std::ofstream &ofs) const;
@@ -261,7 +262,10 @@ private:
 
     TypeAcceleration acceleration;
     int gpuID;
-    mutable AccelerationDomainTransform *acc_domain;
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    mutable AccelerationDomainTransform acc_domain;
+    #endif
 };
 
 }

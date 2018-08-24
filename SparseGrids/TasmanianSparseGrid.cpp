@@ -61,14 +61,14 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
 }
 
 TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0),
-                                             conformal_asin_power(0), acceleration(accel_none), gpuID(0), acc_domain(0){
+                                             conformal_asin_power(0), acceleration(accel_none), gpuID(0){
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
 }
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0),
                                     conformal_asin_power(0),
-                                    acceleration(accel_none), gpuID(0), acc_domain(0)
+                                    acceleration(accel_none), gpuID(0)
 {
     copyGrid(&source);
 #ifdef Tasmanian_ENABLE_BLAS
@@ -97,8 +97,8 @@ void TasmanianSparseGrid::clear(){
 #endif // Tasmanian_ENABLE_BLAS
 #ifdef Tasmanian_ENABLE_CUDA
     gpuID = 0;
+    if (!acc_domain.empty()) acc_domain.clear();
 #endif // Tasmanian_ENABLE_CUDA
-    if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
 }
 
 void TasmanianSparseGrid::write(const char *filename, bool binary) const{
@@ -607,10 +607,12 @@ void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[])
     if ((base == 0) || (base->getNumDimensions() == 0)){
         throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
     }
-    if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     int num_dimensions = base->getNumDimensions();
     domain_transform_a.resize(num_dimensions); std::copy(a, a + num_dimensions, domain_transform_a.data());
     domain_transform_b.resize(num_dimensions); std::copy(b, b + num_dimensions, domain_transform_b.data());
+    #ifdef Tasmanian_ENABLE_CUDA
+    acc_domain.clear();
+    #endif
 }
 bool TasmanianSparseGrid::isSetDomainTransfrom() const{
     return (domain_transform_a.size() != 0);
@@ -618,6 +620,9 @@ bool TasmanianSparseGrid::isSetDomainTransfrom() const{
 void TasmanianSparseGrid::clearDomainTransform(){
     domain_transform_a.resize(0);
     domain_transform_b.resize(0);
+    #ifdef Tasmanian_ENABLE_CUDA
+    acc_domain.clear();
+    #endif
 }
 void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
     if ((base == 0) || (base->getNumDimensions() == 0) || (domain_transform_a.size() == 0)){
@@ -630,9 +635,11 @@ void TasmanianSparseGrid::setDomainTransform(const std::vector<double> a, const 
     if ((base == 0) || (base->getNumDimensions() == 0)){
         throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
     }
-    if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
     domain_transform_a = a; // copy assignment
     domain_transform_b = b;
+    #ifdef Tasmanian_ENABLE_CUDA
+    acc_domain.clear();
+    #endif
 }
 void TasmanianSparseGrid::getDomainTransform(std::vector<double> &a, std::vector<double> &b) const{
     a = domain_transform_a; // copy assignment
@@ -942,17 +949,15 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
-const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, double* &gpu_x_temp, int num_x) const{
+const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, int num_x, cudaDoubles &gpu_x_temp) const{
     if (domain_transform_a.size() != 0){
-        if (acc_domain == 0) acc_domain = new AccelerationDomainTransform(base->getNumDimensions(), domain_transform_a.data(), domain_transform_b.data());
-        gpu_x_temp = acc_domain->getCanonicalPoints(base->getNumDimensions(), num_x, gpu_x);
-        return gpu_x_temp;
+        if (acc_domain.empty()) acc_domain.load(domain_transform_a, domain_transform_b);
+        acc_domain.getCanonicalPoints(gpu_x, num_x, gpu_x_temp);
+        return gpu_x_temp.data();
     }else{
         return gpu_x;
     }
 }
-#else
-const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *, double* &, int) const{ return 0; }
 #endif // Tasmanian_ENABLE_CUDA
 
 void TasmanianSparseGrid::clearLevelLimits(){
@@ -1129,17 +1134,15 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double
 #ifdef Tasmanian_ENABLE_CUDA
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
     _TASMANIAN_SETGPU
-    double *gpu_temp_x = 0;
-    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
+    cudaDoubles gpu_temp_x;
+    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
     pwpoly->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y);
-    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x);
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const{
     _TASMANIAN_SETGPU
-    double *gpu_temp_x = 0;
-    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, gpu_temp_x, cpu_num_x);
+    cudaDoubles gpu_temp_x;
+    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
     pwpoly->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_pntr, gpu_indx, gpu_vals, num_nz);
-    if (gpu_temp_x != 0) TasCUDA::cudaDel<double>(gpu_temp_x);
 }
 #else
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double*, int, double*) const{
@@ -1669,7 +1672,9 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     if (effective_acc != acceleration){
         if (base != 0) base->clearAccelerationData();
         acceleration = effective_acc;
-        if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
+        #ifdef Tasmanian_ENABLE_CUDA
+        if (!acc_domain.empty()) acc_domain.clear();
+        #endif
     }
 }
 void TasmanianSparseGrid::favorSparseAlgorithmForLocalPolynomials(bool favor){
@@ -1715,8 +1720,10 @@ void TasmanianSparseGrid::setGPUID(int new_gpuID){
         if (AccelerationMeta::isAccTypeGPU(acceleration)){ // if using GPU acceleration
             if (base != 0) base->clearAccelerationData();
         }
-        if (acc_domain != 0){ delete acc_domain; acc_domain = 0; }
         gpuID = new_gpuID;
+        #ifdef Tasmanian_ENABLE_CUDA
+        if (!acc_domain.empty()) acc_domain.clear();
+        #endif
     }
 }
 int TasmanianSparseGrid::getGPUID() const{ return gpuID; }

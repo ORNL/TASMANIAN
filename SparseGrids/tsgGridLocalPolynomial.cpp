@@ -918,11 +918,14 @@ void GridLocalPolynomial::buildDenseBasisMatrixGPU(const double gpu_x[], int cpu
     TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, cuda_nodes.data(), cuda_support.data(), gpu_y);
 }
 void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz) const{
-    if (cuda_nodes.size() == 0) loadCudaData();
-    int num_points = getNumPoints();
-    TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, cuda_nodes.data(), cuda_support.data(),
-                                cuda_pntr.data(), cuda_indx.data(), (int) cuda_roots.size(), cuda_roots.data(),
-                                gpu_spntr, gpu_sindx, gpu_svals, num_nz);
+    cudaInts vec_pntr, vec_indx;
+    cudaDoubles vec_vals;
+    buildSparseBasisMatrixGPU(gpu_x, cpu_num_x, vec_pntr, vec_indx, vec_vals);
+    num_nz = (int) vec_indx.size();
+    vec_pntr.eject(gpu_spntr);
+    vec_indx.eject(gpu_sindx);
+    vec_vals.eject(gpu_svals);
+
 }
 void GridLocalPolynomial::buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, cudaDoubles &gpu_y) const{
     if (cuda_nodes.size() == 0) loadCudaData();
