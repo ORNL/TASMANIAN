@@ -94,7 +94,7 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
     delete[] Ar;
 }
 
-void TasmanianTridiagonalSolver::decompose(int n, double d[], double e[], double z[]){
+void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
     const double tol = TSG_NUM_TOL;
     if (n == 1){ z[0] = z[0]*z[0]; return; }
 

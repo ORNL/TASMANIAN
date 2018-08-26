@@ -67,7 +67,7 @@ private:
     std::vector<int> indx; // gives a list of the points associated with each level
 
     std::vector<std::vector<double>> weights; // contains the weight associated with each level
-    double *nodes; // contains all nodes for each level
+    std::vector<std::vector<double>> nodes; // contains all nodes for each level
     double *unique; // contains the x-coordinate of each sample point
 
     std::vector<std::vector<double>> coeff; // the coefficients of the Lagrange

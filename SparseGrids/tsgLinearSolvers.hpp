@@ -46,7 +46,7 @@ namespace TasmanianDenseSolver{
 }
 
 namespace TasmanianTridiagonalSolver{
-    void decompose(int n, double d[], double e[], double z[]);
+    void decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z);
 }
 
 namespace TasmanianFourierTransform{

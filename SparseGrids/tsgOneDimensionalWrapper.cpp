@@ -52,16 +52,14 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
     int num_total = pntr[num_levels];
 
     weights.resize(num_levels);
+    nodes.resize(num_levels);
     coeff.resize(num_levels);
 
     if (isNonNested){
         indx.resize(num_total);
-        nodes   = new double[num_total];
 
         int num_unique = 0;
         unique = new double[num_total];
-
-        double *x = 0, *w = 0;
 
         if (rule == rule_customtabulated){
             if (num_levels > meta->getCustom()->getNumLevels()){
@@ -77,29 +75,27 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         for(int l=0; l<num_levels; l++){
             int n = num_points[l];
             if ((rule == rule_chebyshev) || (rule == rule_chebyshevodd)){
-                OneDimensionalNodes::getChebyshev(n, w, x);
+                OneDimensionalNodes::getChebyshev(n, weights[l], nodes[l]);
             }else if ((rule == rule_gausslegendre) || (rule == rule_gausslegendreodd)){
-                OneDimensionalNodes::getGaussLegendre(n, w, x);
+                OneDimensionalNodes::getGaussLegendre(n, weights[l], nodes[l]);
             }else if ((rule == rule_gausschebyshev1) || (rule == rule_gausschebyshev1odd)){
-                OneDimensionalNodes::getGaussChebyshev1(n, w, x);
+                OneDimensionalNodes::getGaussChebyshev1(n, weights[l], nodes[l]);
             }else if ((rule == rule_gausschebyshev2) || (rule == rule_gausschebyshev2odd)){
-                OneDimensionalNodes::getGaussChebyshev2(n, w, x);
+                OneDimensionalNodes::getGaussChebyshev2(n, weights[l], nodes[l]);
             }else if ((rule == rule_gaussgegenbauer) || (rule == rule_gaussgegenbauerodd)){
-                OneDimensionalNodes::getGaussJacobi(n, w, x, alpha, alpha);
+                OneDimensionalNodes::getGaussJacobi(n, weights[l], nodes[l], alpha, alpha);
             }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){
-                OneDimensionalNodes::getGaussHermite(n, w, x, alpha);
+                OneDimensionalNodes::getGaussHermite(n, weights[l], nodes[l], alpha);
             }else if ((rule == rule_gaussjacobi) || (rule == rule_gaussjacobiodd)){
-                OneDimensionalNodes::getGaussJacobi(n, w, x, alpha, beta);
+                OneDimensionalNodes::getGaussJacobi(n, weights[l], nodes[l], alpha, beta);
             }else if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){
-                OneDimensionalNodes::getGaussLaguerre(n, w, x, alpha);
+                OneDimensionalNodes::getGaussLaguerre(n, weights[l], nodes[l], alpha);
             }else if (rule == rule_customtabulated){
-                meta->getCustom()->getWeightsNodes(l, w, x);
+                meta->getCustom()->getWeightsNodes(l, weights[l], nodes[l]);
             }
 
+            double *x = nodes[l].data();
             for(int i=0; i<n; i++){
-                weights[l].resize(num_points[l]);
-                weights[l][i] = w[i];
-                nodes[pntr[l] + i] = x[i];
 
                 int point = -1;
                 for(int j=0; j<num_unique; j++){
@@ -122,14 +118,12 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         std::copy(t, t + num_unique, unique);
 
         delete[] t;
-        delete[] x;
-        delete[] w;
 
         // make coefficients
         for(int l=0; l<num_levels; l++){
             int n = num_points[l];
             coeff[l].resize(n);
-            x = &(nodes[pntr[l]]);
+            double *x = nodes[l].data();
             for(int i=0; i<n; i++){
                 double c = 1.0;
                 for(int j=0; j<i; j++){
@@ -234,7 +228,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
                 (rule == rule_rlejashifted) || (rule == rule_rlejashiftedeven) || (rule == rule_rlejashifteddouble) ||
                (rule == rule_maxlebesgue) || (rule == rule_maxlebesgueodd) || (rule == rule_minlebesgue) || (rule == rule_minlebesgueodd) || (rule == rule_mindelta) || (rule == rule_mindeltaodd)){
             int n = 1 + num_points[max_level] / 2; // number of Gauss-Legendre points needed to integrate the basis functions
-            double *lag_x = 0, *lag_w = 0;
+            std::vector<double> lag_x, lag_w;
             OneDimensionalNodes::getGaussLegendre(n, lag_w, lag_x);
             for(int l=0; l<num_levels; l++){
                 std::fill(weights[l].begin(), weights[l].end(), 0.0);
@@ -257,14 +251,11 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
                 }
                 delete[] v;
             }
-            delete[] lag_w;
-            delete[] lag_x;
         }
     }
 }
 
 OneDimensionalWrapper::~OneDimensionalWrapper(){
-    delete[] nodes;
     delete[] unique;
 }
 
@@ -274,7 +265,7 @@ int OneDimensionalWrapper::getPointIndex(int level, int j) const{ return indx[pn
 double OneDimensionalWrapper::getNode(int j) const{  return unique[j];  }
 double OneDimensionalWrapper::getWeight(int level, int j) const{ return weights[level][j];  }
 
-const double* OneDimensionalWrapper::getNodes(int level) const{  return (isNonNested) ? &(nodes[pntr[level]]) : unique;  }
+const double* OneDimensionalWrapper::getNodes(int level) const{ return (isNonNested) ? nodes[level].data() : unique;  }
 const double* OneDimensionalWrapper::getCoefficients(int level) const{ return coeff[level].data(); }
 
 int OneDimensionalWrapper::getPointsCount(int level) const{ return pntr[level]; }
