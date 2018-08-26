@@ -66,7 +66,7 @@ private:
     std::vector<int> pntr; // gives the cumulative offset of each level
     std::vector<int> indx; // gives a list of the points associated with each level
 
-    double *weights; // contains the weight associated with each level
+    std::vector<std::vector<double>> weights; // contains the weight associated with each level
     double *nodes; // contains all nodes for each level
     double *unique; // contains the x-coordinate of each sample point
 
