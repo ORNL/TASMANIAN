@@ -59,6 +59,7 @@ public:
     int getQExact(int level) const;
 
     void getWeightsNodes(int level, double* &w, double* &x) const;
+    void getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const;
     const char* getDescription() const;
 
 protected:

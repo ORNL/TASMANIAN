@@ -224,6 +224,10 @@ void CustomTabulated::getWeightsNodes(int level, double* &w, double* &x) const{
     std::copy(nodes[level].begin(), nodes[level].end(), x);
     std::copy(weights[level].begin(), weights[level].end(), w);
 }
+void CustomTabulated::getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const{
+    w = weights[level];
+    x = nodes[level];
+}
 const char* CustomTabulated::getDescription() const{  return description->c_str();  }
 
 OneDimensionalMeta::OneDimensionalMeta(): custom(0) {}
