@@ -322,6 +322,7 @@ int GridFourier::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNu
 int GridFourier::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
 void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
+    clearAccelerationData();
     if (points == 0){ //setting points for the first time
         values->setValues(vals);
         points = needed;
@@ -668,6 +669,7 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     // takes c to be length 2*num_outputs*num_points
     // first num_points*num_outputs are the real part; second num_points*num_outputs are the imaginary part
 
+    clearAccelerationData();
     if (points == 0){
         points = needed;
         needed = 0;
@@ -677,7 +679,12 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     for(int i=0; i<2 * getNumPoints() * num_outputs; i++) fourier_coefs[i] = c[i];
 }
 
-void GridFourier::clearAccelerationData(){}
+void GridFourier::clearAccelerationData(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    cuda_real.clear();
+    cuda_imag.clear();
+    #endif
+}
 void GridFourier::clearRefinement(){ return; }     // to be expanded later
 void GridFourier::mergeRefinement(){ return; }     // to be expanded later
 

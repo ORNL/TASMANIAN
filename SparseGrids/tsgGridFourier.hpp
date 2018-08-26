@@ -170,6 +170,10 @@ private:
 
     std::vector<int> max_power;
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    mutable LinearAlgebraEngineGPU cuda_engine;
+    mutable cudaDoubles cuda_real, cuda_imag;
+    #endif
 };
 
 }
