@@ -587,9 +587,9 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 #ifdef Tasmanian_ENABLE_BLAS
 void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
-    Data2D<double> wreal; wreal.resize(num_points, num_x);
-    Data2D<double> wimag; wimag.resize(num_points, num_x);
-    evaluateHierarchicalFunctionsInternal(x, num_x, wreal.getStrip(0), wimag.getStrip(0));
+    Data2D<double> wreal;
+    Data2D<double> wimag;
+    evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
     TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, fourier_coefs, wreal.getStrip(0), 0.0, y);
     size_t offset = ((size_t) num_points) * ((size_t) num_outputs);
     TasBLAS::dgemm(num_outputs, num_x, num_points, -1.0, &(fourier_coefs[offset]), wimag.getStrip(0), 1.0, y);
@@ -650,17 +650,17 @@ void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, dou
         computeBasis<double, true>(((points == 0) ? needed : points), xx.getCStrip(i), yy.getStrip(i), 0);
     }
 }
-void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double wreal[], double wimag[]) const{
+void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const{
     // when performing internal evaluations, split the matrix into real and complex components
     // thus only two real gemm() operations can be used (as opposed to one complex gemm)
     IndexSet *work = (points != 0) ? points : needed;
     int num_points = getNumPoints();
     Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> wr; wr.load(num_points, num_x, wreal);
-    Data2D<double> wi; wi.load(num_points, num_x, wimag);
+    wreal.resize(num_points, num_x);
+    wimag.resize(num_points, num_x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        computeBasis<double, false>(work, xx.getCStrip(i), wr.getStrip(i), wi.getStrip(i));
+        computeBasis<double, false>(work, xx.getCStrip(i), wreal.getStrip(i), wimag.getStrip(i));
     }
 }
 

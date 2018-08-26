@@ -98,7 +98,7 @@ public:
     void integrate(double q[], double *conformal_correction) const;
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
-    void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double wreal[], double wimag[]) const;
+    void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
     void clearAccelerationData();
