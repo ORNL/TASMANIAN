@@ -63,7 +63,7 @@ private:
     TypeOneDRule rule;
 
     std::vector<int> num_points; // give the number of points per level
-    int *pntr; // gives the cumulative offset of each level
+    std::vector<int> pntr; // gives the cumulative offset of each level
     int *indx; // gives a list of the points associated with each level
 
     double *weights; // contains the weight associated with each level

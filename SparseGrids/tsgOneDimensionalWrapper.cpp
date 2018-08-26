@@ -44,7 +44,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
     // find the points per level and the cumulative pointers
     isNonNested = OneDimensionalMeta::isNonNested(rule);
     num_points.resize(num_levels);
-    pntr = new int[num_levels+1]; pntr[0] = 0;
+    pntr.resize(num_levels+1); pntr[0] = 0;
     for(int l=0; l<num_levels; l++){
         num_points[l] = meta->getNumPoints(l, rule);
         pntr[l+1] = pntr[l] + num_points[l];
@@ -261,7 +261,6 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
 }
 
 OneDimensionalWrapper::~OneDimensionalWrapper(){
-    delete[] pntr;
     delete[] indx;
     delete[] weights;
     delete[] nodes;
@@ -278,7 +277,7 @@ double OneDimensionalWrapper::getWeight(int level, int j) const{  return weights
 const double* OneDimensionalWrapper::getNodes(int level) const{  return (isNonNested) ? &(nodes[pntr[level]]) : unique;  }
 const double* OneDimensionalWrapper::getCoefficients(int level) const{  return &(coeff[pntr[level]]);  }
 
-int OneDimensionalWrapper::getPointsCount(int level) const{  return pntr[level]; }
+int OneDimensionalWrapper::getPointsCount(int level) const{ return pntr[level]; }
 
 TypeOneDRule OneDimensionalWrapper::getType() const{ return rule; }
 int OneDimensionalWrapper::getNumLevels() const{ return num_levels; }
