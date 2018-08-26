@@ -326,6 +326,12 @@ void LinearAlgebraEngineGPU::magmaCudaDGEMM(int gpuID, int M, int N, int K, doub
                     B.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
     }
 }
+void LinearAlgebraEngineGPU::magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, cudaDoubles &C){
+    cudaDoubles gpuB(B);
+    size_t num_result = ((size_t) M) * ((size_t) N);
+    if (C.size() != num_result) C.resize(num_result);
+    magmaCudaDGEMM(gpuID, M, N, K, alpha, A, gpuB, beta, C);
+}
 void LinearAlgebraEngineGPU::magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]){
     cudaDoubles gpuB(B);
     size_t num_result = ((size_t) M) * ((size_t) N);
