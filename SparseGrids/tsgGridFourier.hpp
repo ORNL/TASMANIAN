@@ -152,6 +152,15 @@ protected:
         }
     }
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    void prepareCudaData() const{
+        if (cuda_real.size() > 0) return;
+        size_t num_coeff = ((size_t) num_outputs) * ((size_t) points->getNumIndexes());
+        cuda_real.load(num_coeff, fourier_coefs);
+        cuda_imag.load(num_coeff, &(fourier_coefs[num_coeff]));
+    }
+    #endif
+
 private:
     int num_dimensions, num_outputs;
 

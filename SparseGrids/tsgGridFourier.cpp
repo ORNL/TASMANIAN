@@ -578,6 +578,22 @@ void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
 void GridFourier::evaluateFastCPUblas(const double[], double[]) const{}
 #endif
 
+#ifdef Tasmanian_ENABLE_CUDA
+void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
+    prepareCudaData();
+    int num_points = points->getNumIndexes();
+    std::vector<double> wreal(num_points);
+    std::vector<double> wimag(num_points);
+    cudaDoubles gpuY;
+    computeBasis<double, false>(points, x, wreal.data(), wimag.data());
+    cuda_engine.cublasDGEMM(num_outputs, 1, num_points,  1.0, cuda_real, wreal, 0.0, gpuY);
+    cuda_engine.cublasDGEMM(num_outputs, 1, num_points, -1.0, cuda_imag, wimag, 1.0, gpuY);
+    gpuY.unload(y);
+}
+#else
+void GridFourier::evaluateFastGPUcublas(const double[], double[]) const{}
+#endif
+
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
@@ -599,9 +615,6 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
 void GridFourier::evaluateBatchCPUblas(const double[], int, double[]) const{}
 #endif
 
-void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
-    evaluate(x,y);
-}
 void GridFourier::evaluateFastGPUcuda(const double x[], double y[]) const{
     evaluate(x,y);
 }
