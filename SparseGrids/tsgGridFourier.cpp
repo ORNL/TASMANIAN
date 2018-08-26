@@ -594,6 +594,10 @@ void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
 void GridFourier::evaluateFastGPUcublas(const double[], double[]) const{}
 #endif
 
+void GridFourier::evaluateFastGPUcuda(const double x[], double y[]) const{
+    evaluateFastGPUcublas(x,y);
+}
+
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
@@ -615,9 +619,6 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
 void GridFourier::evaluateBatchCPUblas(const double[], int, double[]) const{}
 #endif
 
-void GridFourier::evaluateFastGPUcuda(const double x[], double y[]) const{
-    evaluate(x,y);
-}
 void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[]) const{
     evaluate(x,y);
 }
