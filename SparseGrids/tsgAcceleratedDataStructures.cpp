@@ -206,6 +206,12 @@ void LinearAlgebraEngineGPU::cublasDGEMM(int M, int N, int K, double alpha, cons
         AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in DGEMM");
     }
 }
+void LinearAlgebraEngineGPU::cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, cudaDoubles &C){
+    cudaDoubles gpuB(B);
+    size_t num_result = ((size_t) M) * ((size_t) N);
+    if (C.size() != num_result) C.resize(num_result);
+    cublasDGEMM(M, N, K, alpha, A, gpuB, beta, C);
+}
 void LinearAlgebraEngineGPU::cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]){
     cudaDoubles gpuB(B);
     size_t num_result = ((size_t) M) * ((size_t) N);
