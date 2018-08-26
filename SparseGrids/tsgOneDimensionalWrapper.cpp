@@ -52,7 +52,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
     int num_total = pntr[num_levels];
 
     weights.resize(num_levels);
-    coeff = new double[num_total];
+    coeff.resize(num_levels);
 
     if (isNonNested){
         indx.resize(num_total);
@@ -128,16 +128,17 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         // make coefficients
         for(int l=0; l<num_levels; l++){
             int n = num_points[l];
+            coeff[l].resize(n);
             x = &(nodes[pntr[l]]);
-            w = &(coeff[pntr[l]]);
             for(int i=0; i<n; i++){
-                w[i] = 1.0;
+                double c = 1.0;
                 for(int j=0; j<i; j++){
-                    w[i] /= (x[i] - x[j]);
+                    c /= (x[i] - x[j]);
                 }
                 for(int j=i+1; j<n; j++){
-                    w[i] /= (x[i] - x[j]);
+                    c /= (x[i] - x[j]);
                 }
+                coeff[l][i] = c;
             }
         }
     }else{
@@ -193,18 +194,19 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         for(int l=0; l<num_levels; l++){
             int n = num_points[l];
             weights[l].resize(n);
-            double *c = &(coeff[pntr[l]]);
+            coeff[l].resize(n);
             for(int i=0; i<n; i++){
-                c[i] = 1.0;
+                double c = 1.0;
                 for(int j=0; j<i; j++){
-                    c[i] /= (unique[i] - unique[j]);
+                    c /= (unique[i] - unique[j]);
                 }
                 for(int j=i+1; j<n; j++){
-                    c[i] /= (unique[i] - unique[j]);
+                    c /= (unique[i] - unique[j]);
                 }
                 if (rule == rule_clenshawcurtis0){
-                    c[i] /= (unique[i] - 1.0) * (unique[i] + 1.0);
+                    c /= (unique[i] - 1.0) * (unique[i] + 1.0);
                 }
+                coeff[l][i] = c;
             }
         }
 
@@ -238,17 +240,16 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
                 std::fill(weights[l].begin(), weights[l].end(), 0.0);
                 int npl = num_points[l];
                 double *v = new double[npl];
-                double *c = &(coeff[pntr[l]]);
                 for(int i=0; i<n; i++){
                     v[0] = 1.0;
                     for(int j=0; j<npl-1; j++){
                         v[j+1] = (lag_x[i] - unique[j]) * v[j];
                     }
-                    v[npl-1] *= c[npl-1];
+                    v[npl-1] *= coeff[l][npl-1];
                     double s = 1.0;
                     for(int j=npl-2; j>=0; j--){
                         s *= (lag_x[i] - unique[j+1]);
-                        v[j] *= s * c[j];
+                        v[j] *= s * coeff[l][j];
                     }
                     for(int j=0; j<npl; j++){
                         weights[l][j] += lag_w[i] * v[j];
@@ -265,7 +266,6 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
 OneDimensionalWrapper::~OneDimensionalWrapper(){
     delete[] nodes;
     delete[] unique;
-    delete[] coeff;
 }
 
 int OneDimensionalWrapper::getNumPoints(int level) const{ return num_points[level]; }
@@ -275,7 +275,7 @@ double OneDimensionalWrapper::getNode(int j) const{  return unique[j];  }
 double OneDimensionalWrapper::getWeight(int level, int j) const{ return weights[level][j];  }
 
 const double* OneDimensionalWrapper::getNodes(int level) const{  return (isNonNested) ? &(nodes[pntr[level]]) : unique;  }
-const double* OneDimensionalWrapper::getCoefficients(int level) const{  return &(coeff[pntr[level]]);  }
+const double* OneDimensionalWrapper::getCoefficients(int level) const{ return coeff[level].data(); }
 
 int OneDimensionalWrapper::getPointsCount(int level) const{ return pntr[level]; }
 

@@ -70,7 +70,7 @@ private:
     double *nodes; // contains all nodes for each level
     double *unique; // contains the x-coordinate of each sample point
 
-    double *coeff; // the coefficients of the Lagrange
+    std::vector<std::vector<double>> coeff; // the coefficients of the Lagrange
 };
 
 }
