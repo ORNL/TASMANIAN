@@ -56,10 +56,8 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
     coeff.resize(num_levels);
 
     if (isNonNested){
-        indx.resize(num_total);
-
-        int num_unique = 0;
-        unique = new double[num_total];
+        indx.reserve(num_total);
+        unique.reserve(num_total);
 
         if (rule == rule_customtabulated){
             if (num_levels > meta->getCustom()->getNumLevels()){
@@ -94,30 +92,23 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
                 meta->getCustom()->getWeightsNodes(l, weights[l], nodes[l]);
             }
 
-            double *x = nodes[l].data();
-            for(int i=0; i<n; i++){
-
+            for(auto x : nodes[l]){
                 int point = -1;
-                for(int j=0; j<num_unique; j++){
-                    if (fabs(x[i] - unique[j]) < TSG_NUM_TOL){
+                for(int j=0; j<(int) unique.size(); j++){
+                    if (fabs(x - unique[j]) < TSG_NUM_TOL){
                         point = j;
                         break;
                     }
                 }
                 if (point == - 1){ // new point found
-                    unique[num_unique] = x[i];
-                    point = num_unique++;
+                    unique.push_back(x);
+                    point = (int) (unique.size() - 1);
                 }
-                indx[pntr[l] + i] = point;
+                indx.push_back(point);
             }
-
         }
 
-        double *t = unique;
-        unique = new double[num_unique];
-        std::copy(t, t + num_unique, unique);
-
-        delete[] t;
+        unique.shrink_to_fit();
 
         // make coefficients
         for(int l=0; l<num_levels; l++){
@@ -137,12 +128,13 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         }
     }else{
         TableGaussPatterson *gp;
+        double *nd;
         if (rule == rule_clenshawcurtis){
-            unique = OneDimensionalNodes::getClenshawCurtisNodes(max_level);
+            nd = OneDimensionalNodes::getClenshawCurtisNodes(max_level);
         }else if (rule == rule_clenshawcurtis0){
-            unique = OneDimensionalNodes::getClenshawCurtisNodesZero(max_level);
+            nd = OneDimensionalNodes::getClenshawCurtisNodesZero(max_level);
         }else if (rule == rule_fejer2){
-            unique = OneDimensionalNodes::getFejer2Nodes(max_level);
+            nd = OneDimensionalNodes::getFejer2Nodes(max_level);
         }else if (rule == rule_gausspatterson){
             gp = new TableGaussPatterson();
             if (num_levels > gp->getNumLevels()){
@@ -153,7 +145,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
                 message += " are hardcoded.";
                 throw std::runtime_error(message);
             }
-            unique = gp->getNodes(max_level);
+            nd = gp->getNodes(max_level);
 
             // move here to avoid a warning
             for(int l=0; l<num_levels; l++){
@@ -164,26 +156,30 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
             }
             delete gp;
         }else if (rule == rule_rleja){
-            unique = OneDimensionalNodes::getRLeja(meta->getNumPoints(max_level,rule));
+            nd = OneDimensionalNodes::getRLeja(meta->getNumPoints(max_level,rule));
         }else if ((rule == rule_rlejaodd) || (rule == rule_rlejadouble2) || (rule == rule_rlejadouble4)){
-            unique = OneDimensionalNodes::getRLejaCentered(meta->getNumPoints(max_level,rule));
+            nd = OneDimensionalNodes::getRLejaCentered(meta->getNumPoints(max_level,rule));
         }else if ((rule == rule_rlejashifted) || (rule == rule_rlejashiftedeven) || (rule == rule_rlejashifteddouble)){
-            unique = OneDimensionalNodes::getRLejaShifted(meta->getNumPoints(max_level,rule));
+            nd = OneDimensionalNodes::getRLejaShifted(meta->getNumPoints(max_level,rule));
         }else if ((rule == rule_leja) || (rule == rule_lejaodd)){
             GreedySequences greedy;
-            unique = greedy.getLejaNodes(meta->getNumPoints(max_level, rule));
+            nd = greedy.getLejaNodes(meta->getNumPoints(max_level, rule));
         }else if ((rule == rule_maxlebesgue) || (rule == rule_maxlebesgueodd)){
             GreedySequences greedy;
-            unique = greedy.getMaxLebesgueNodes(meta->getNumPoints(max_level, rule));
+            nd = greedy.getMaxLebesgueNodes(meta->getNumPoints(max_level, rule));
         }else if ((rule == rule_minlebesgue) || (rule == rule_minlebesgueodd)){
             GreedySequences greedy;
-            unique = greedy.getMinLebesgueNodes(meta->getNumPoints(max_level, rule));
+            nd = greedy.getMinLebesgueNodes(meta->getNumPoints(max_level, rule));
         }else if ((rule == rule_mindelta) || (rule == rule_mindeltaodd)){
             GreedySequences greedy;
-            unique = greedy.getMinDeltaNodes(meta->getNumPoints(max_level, rule));
+            nd = greedy.getMinDeltaNodes(meta->getNumPoints(max_level, rule));
         }else if (rule==rule_fourier) {
-            unique = OneDimensionalNodes::getFourierNodes(max_level);
+            nd = OneDimensionalNodes::getFourierNodes(max_level);
         }
+
+        unique.resize(num_points[num_levels - 1]);
+        std::copy(nd, nd + num_points[num_levels - 1], unique.data());
+        delete[] nd;
 
         for(int l=0; l<num_levels; l++){
             int n = num_points[l];
@@ -255,17 +251,15 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
     }
 }
 
-OneDimensionalWrapper::~OneDimensionalWrapper(){
-    delete[] unique;
-}
+OneDimensionalWrapper::~OneDimensionalWrapper(){}
 
 int OneDimensionalWrapper::getNumPoints(int level) const{ return num_points[level]; }
 int OneDimensionalWrapper::getPointIndex(int level, int j) const{ return indx[pntr[level] + j]; }
 
-double OneDimensionalWrapper::getNode(int j) const{  return unique[j];  }
+double OneDimensionalWrapper::getNode(int j) const{ return unique[j]; }
 double OneDimensionalWrapper::getWeight(int level, int j) const{ return weights[level][j];  }
 
-const double* OneDimensionalWrapper::getNodes(int level) const{ return (isNonNested) ? nodes[level].data() : unique;  }
+const double* OneDimensionalWrapper::getNodes(int level) const{ return (isNonNested) ? nodes[level].data() : unique.data(); }
 const double* OneDimensionalWrapper::getCoefficients(int level) const{ return coeff[level].data(); }
 
 int OneDimensionalWrapper::getPointsCount(int level) const{ return pntr[level]; }
