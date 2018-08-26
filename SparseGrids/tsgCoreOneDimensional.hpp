@@ -69,8 +69,8 @@ private:
     int *num_nodes;
     int *precision;
     int *offsets;
-    double *nodes;
-    double *weights;
+    std::vector<std::vector<double>> nodes;
+    std::vector<std::vector<double>> weights;
     std::string *description;
 };
 
