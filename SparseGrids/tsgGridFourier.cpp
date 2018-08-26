@@ -598,6 +598,22 @@ void GridFourier::evaluateFastGPUcuda(const double x[], double y[]) const{
     evaluateFastGPUcublas(x,y);
 }
 
+#ifdef Tasmanian_ENABLE_MAGMA
+void GridFourier::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
+    prepareCudaData();
+    int num_points = points->getNumIndexes();
+    std::vector<double> wreal(num_points);
+    std::vector<double> wimag(num_points);
+    cudaDoubles gpuY;
+    computeBasis<double, false>(points, x, wreal.data(), wimag.data());
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, num_points,  1.0, cuda_real, wreal, 0.0, gpuY);
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, num_points, -1.0, cuda_imag, wimag, 1.0, gpuY);
+    gpuY.unload(y);
+}
+#else
+void GridFourier::evaluateFastGPUmagma(int, const double[], double[]) const{}
+#endif
+
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
@@ -637,10 +653,6 @@ void GridFourier::evaluateBatchGPUcublas(const double[], int, double[]) const{}
 
 void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const {
     evaluateBatchGPUcublas(x, num_x, y);
-}
-
-void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[]) const{
-    evaluate(x,y);
 }
 
 void GridFourier::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const {
