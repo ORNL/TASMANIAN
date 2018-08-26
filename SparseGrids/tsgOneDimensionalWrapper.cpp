@@ -39,7 +39,7 @@
 namespace TasGrid{
 
 OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int max_level, TypeOneDRule crule, double alpha, double beta) :
-    num_levels(max_level+1), rule(crule), indx(0), nodes(0)
+    num_levels(max_level+1), rule(crule), nodes(0)
 {
     // find the points per level and the cumulative pointers
     isNonNested = OneDimensionalMeta::isNonNested(rule);
@@ -55,7 +55,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
     coeff = new double[num_total];
 
     if (isNonNested){
-        indx    = new int[num_total];
+        indx.resize(num_total);
         nodes   = new double[num_total];
 
         int num_unique = 0;
@@ -261,7 +261,6 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
 }
 
 OneDimensionalWrapper::~OneDimensionalWrapper(){
-    delete[] indx;
     delete[] weights;
     delete[] nodes;
     delete[] unique;
@@ -269,7 +268,7 @@ OneDimensionalWrapper::~OneDimensionalWrapper(){
 }
 
 int OneDimensionalWrapper::getNumPoints(int level) const{ return num_points[level]; }
-int OneDimensionalWrapper::getPointIndex(int level, int j) const{  return indx[pntr[level] + j];  }
+int OneDimensionalWrapper::getPointIndex(int level, int j) const{ return indx[pntr[level] + j]; }
 
 double OneDimensionalWrapper::getNode(int j) const{  return unique[j];  }
 double OneDimensionalWrapper::getWeight(int level, int j) const{  return weights[pntr[level] + j];  }
