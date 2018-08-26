@@ -655,9 +655,21 @@ void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) 
     evaluateBatchGPUcublas(x, num_x, y);
 }
 
-void GridFourier::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const {
-    evaluateBatch(x, num_x, y);
+#ifdef Tasmanian_ENABLE_MAGMA
+void GridFourier::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
+    int num_points = points->getNumIndexes();
+    prepareCudaData();
+    Data2D<double> wreal;
+    Data2D<double> wimag;
+    evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
+    cudaDoubles gpuY;
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points,  1.0, cuda_real, *(wreal.getVector()), 0.0, gpuY);
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, -1.0, cuda_imag, *(wimag.getVector()), 1.0, gpuY);
+    gpuY.unload(y);
 }
+#else
+void GridFourier::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
+#endif
 
 void GridFourier::integrate(double q[], double *conformal_correction) const{
     std::fill(q, q+num_outputs, 0.0);
