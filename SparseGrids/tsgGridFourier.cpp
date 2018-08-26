@@ -635,13 +635,14 @@ void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]
 void GridFourier::evaluateBatchGPUcublas(const double[], int, double[]) const{}
 #endif
 
+void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const {
+    evaluateBatchGPUcublas(x, num_x, y);
+}
+
 void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[]) const{
     evaluate(x,y);
 }
 
-void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const {
-    evaluateBatch(x, num_x, y);
-}
 void GridFourier::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const {
     evaluateBatch(x, num_x, y);
 }
