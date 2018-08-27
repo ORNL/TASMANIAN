@@ -160,6 +160,26 @@ void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num
         (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(), gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_roots.size(), gpu_roots.data(), gpu_spntr.data(), gpu_sindx.data(), gpu_svals.data());
 }
 
+// Sequence Grid basis evaluations
+void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, const cudaDoubles &nodes, const cudaDoubles &coeffs, double *gpu_result){
+    std::vector<int> offsets(dims);
+    offsets[0] = 0;
+    for(int d=1; d<dims; d++) offsets[d] = offsets[d-1] + num_x * (max_levels[d-1] + 1);
+    size_t num_total = offsets[dims-1] + num_x * (max_levels[dims-1] + 1);
+
+    int maxl = max_levels[0]; for(auto l : max_levels) if (maxl < l) maxl = l;
+
+    cudaInts gpu_offsets(offsets);
+    cudaDoubles cache1D(num_total);
+    int num_blocks = num_x / _MAX_CUDA_THREADS + ((num_x % _MAX_CUDA_THREADS == 0) ? 0 : 1);
+
+    tasgpu_dseq_build_cache<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
+        (dims, num_x, gpu_x, nodes.data(), coeffs.data(), maxl+1, gpu_offsets.data(), num_nodes.data(), cache1D.data());
+
+    num_blocks = num_x / 32 + ((num_x % 32 == 0) ? 0 : 1);
+    tasgpu_dseq_eval_sharedpoints<double, 32><<<num_blocks, 1024>>>
+        (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_result);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //       Linear Algebra

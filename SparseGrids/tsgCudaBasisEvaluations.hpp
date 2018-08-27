@@ -305,6 +305,76 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
     }
 }
 
+// call with THREADS > dims, THREADS > max_num_nodes
+template <typename T, int THREADS>
+__global__ void tasgpu_dseq_build_cache(int dims, int num_x, const T *gpuX, const T *nodes, const T *coeffs, int max_num_nodes, const int *offsets, const int *num_nodes, T *result){
+    __shared__ int soffsets[THREADS];
+    __shared__ T snodes[THREADS];
+    __shared__ T scoeffs[THREADS];
+    if (threadIdx.x < dims)
+        soffsets[threadIdx.x] = offsets[threadIdx.x];
+
+    if (threadIdx.x < max_num_nodes){
+        snodes[threadIdx.x] = nodes[threadIdx.x];
+        scoeffs[threadIdx.x] = coeffs[threadIdx.x];
+    }
+    __syncthreads();
+
+    int i = blockIdx.x * THREADS + threadIdx.x;
+
+    while(i < num_x){
+        for(int d=0; d<dims; d++){
+            int offset = soffsets[d] + i;
+            T x = gpuX[i * dims + d]; // non-strided read
+
+            T v = 1.0;
+            result[offset] = 1.0;
+            offset += num_x;
+            for(int j=1; j<num_nodes[d]; j++){
+                v *= (x - snodes[j-1]);
+                result[offset] = v / scoeffs[j];
+                offset += num_x;
+            }
+        }
+
+        i += gridDim.x * THREADS;
+    }
+}
+
+// use with SHORT = 32, Dimensions < 32
+template <typename T, int SHORT>
+__global__ void tasgpu_dseq_eval_sharedpoints(int dims, int num_x, int num_points, const int *points, const int *offsets, const T *cache, T *result){
+    __shared__ int cpoints[SHORT][SHORT];
+
+    int height = threadIdx.x % SHORT; // threads are oranized logically in a square of size SHORT by SHORT
+    int swidth = threadIdx.x / SHORT; // height and swidth are the indexes of this thread in the block (relates to num_points and num_x respectively)
+
+    int id_p = SHORT * blockIdx.x;
+
+    while(id_p < num_points){
+        if ((swidth < dims) && (id_p + height < num_points)){
+            cpoints[swidth][height] = points[swidth * num_points + id_p + height];
+        }
+        __syncthreads();
+
+        if (id_p + height < num_points){
+            int id_x = swidth;
+            while(id_x < num_x){
+
+                double v = cache[num_x * cpoints[0][height] + id_x];
+                for(int j=1; j<dims; j++){
+                    v *= cache[offsets[j] + num_x * cpoints[j][height] + id_x];
+                }
+
+                result[num_points * id_x + id_p + height] = v;
+
+                id_x += SHORT;
+            }
+        }
+        id_p += SHORT * gridDim.x;
+        __syncthreads();
+    }
+}
 
 }
 
