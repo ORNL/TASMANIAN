@@ -62,15 +62,15 @@ private:
     int num_levels;
     TypeOneDRule rule;
 
-    int *num_points; // give the number of points per level
-    int *pntr; // gives the cumulative offset of each level
-    int *indx; // gives a list of the points associated with each level
+    std::vector<int> num_points; // give the number of points per level
+    std::vector<int> pntr; // gives the cumulative offset of each level
+    std::vector<int> indx; // gives a list of the points associated with each level
 
-    double *weights; // contains the weight associated with each level
-    double *nodes; // contains all nodes for each level
-    double *unique; // contains the x-coordinate of each sample point
+    std::vector<std::vector<double>> weights; // contains the weight associated with each level
+    std::vector<std::vector<double>> nodes; // contains all nodes for each level
+    std::vector<double> unique; // contains the x-coordinate of each sample point
 
-    double *coeff; // the coefficients of the Lagrange
+    std::vector<std::vector<double>> coeff; // the coefficients of the Lagrange
 };
 
 }

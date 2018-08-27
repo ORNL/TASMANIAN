@@ -59,6 +59,7 @@ public:
     int getQExact(int level) const;
 
     void getWeightsNodes(int level, double* &w, double* &x) const;
+    void getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const;
     const char* getDescription() const;
 
 protected:
@@ -69,8 +70,8 @@ private:
     int *num_nodes;
     int *precision;
     int *offsets;
-    double *nodes;
-    double *weights;
+    std::vector<std::vector<double>> nodes;
+    std::vector<std::vector<double>> weights;
     std::string *description;
 };
 
@@ -115,13 +116,13 @@ private:
 
 namespace OneDimensionalNodes{
     // non-nested rules
-    void getGaussLegendre(int m, double* &w, double* &x);
-    void getChebyshev(int m, double* &w, double* &x);
-    void getGaussChebyshev1(int m, double* &w, double* &x);
-    void getGaussChebyshev2(int m, double* &w, double* &x);
-    void getGaussJacobi(int m, double* &w, double* &x, double alpha, double beta);
-    void getGaussHermite(int m, double* &w, double* &x, double alpha);
-    void getGaussLaguerre(int m, double* &w, double* &x, double alpha);
+    void getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x);
+    void getChebyshev(int m, std::vector<double> &w, std::vector<double> &x);
+    void getGaussChebyshev1(int m, std::vector<double> &w, std::vector<double> &x);
+    void getGaussChebyshev2(int m, std::vector<double> &w, std::vector<double> &x);
+    void getGaussJacobi(int m, std::vector<double> &w, std::vector<double> &x, double alpha, double beta);
+    void getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha);
+    void getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha);
 
     // nested rules
     double* getClenshawCurtisNodes(int level);

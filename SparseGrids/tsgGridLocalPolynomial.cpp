@@ -1041,7 +1041,7 @@ void GridLocalPolynomial::getBasisIntegrals(double *integrals) const{
     IndexSet *work = (points == 0) ? needed : points;
 
     int n = 0;
-    double *w = 0, *x = 0;
+    std::vector<double> w, x;
 
     if ((rule->getMaxOrder() == -1) || (rule->getMaxOrder() > 3) ){
         n = top_level / 2 + 1;
@@ -1050,15 +1050,10 @@ void GridLocalPolynomial::getBasisIntegrals(double *integrals) const{
 
     for(int i=0; i<work->getNumIndexes(); i++){
         const int* p = work->getIndex(i);
-        integrals[i] = rule->getArea(p[0], n, w, x);
+        integrals[i] = rule->getArea(p[0], n, w.data(), x.data());
         for(int j=1; j<num_dimensions; j++){
-            integrals[i] *= rule->getArea(p[j], n, w, x);
+            integrals[i] *= rule->getArea(p[j], n, w.data(), x.data());
         }
-    }
-
-    if ((rule->getMaxOrder() == -1) || (rule->getMaxOrder() > 3)){
-        delete[] x;
-        delete[] w;
     }
 }
 void GridLocalPolynomial::getQuadratureWeights(double *weights) const{

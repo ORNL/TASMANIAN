@@ -877,7 +877,7 @@ void GridSequence::cacheBasisIntegrals(std::vector<double> &integ) const{
     integ.resize(++max_level, 0.0); // integrals of basis functions
 
     int n = 1 + max_level / 2; // number of Gauss-Legendre points needed to integrate the basis functions
-    double *lag_x = 0, *lag_w = 0;
+    std::vector<double> lag_x, lag_w;
     OneDimensionalNodes::getGaussLegendre(n, lag_w, lag_x);
 
     for(int i=0; i<n; i++){
@@ -888,9 +888,6 @@ void GridSequence::cacheBasisIntegrals(std::vector<double> &integ) const{
         }
     }
     integ[0] = 2.0;
-
-    delete[] lag_w;
-    delete[] lag_x;
 }
 
 double GridSequence::evalBasis(const int f[], const int p[]) const{

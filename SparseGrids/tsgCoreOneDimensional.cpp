@@ -38,9 +38,8 @@
 
 namespace TasGrid{
 
-CustomTabulated::CustomTabulated() : num_levels(0), num_nodes(0), precision(0), offsets(0), nodes(0), weights(0), description(0){}
-CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), num_nodes(0), precision(0), offsets(0), nodes(0),
-                                                         weights(0), description(0)
+CustomTabulated::CustomTabulated() : num_levels(0), num_nodes(0), precision(0), offsets(0), description(0){}
+CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), num_nodes(0), precision(0), offsets(0), description(0)
 {
     std::ifstream ifs; ifs.open(filename);
     if (!ifs){
@@ -51,8 +50,7 @@ CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), num_node
     read(ifs);
     ifs.close();
 }
-CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0), num_nodes(0), precision(0), offsets(0), nodes(0),
-                                                                  weights(0), description(0){
+CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0), num_nodes(0), precision(0), offsets(0), description(0){
     copyRule(&custom);
 }
 CustomTabulated::~CustomTabulated(){
@@ -62,8 +60,6 @@ void CustomTabulated::reset(){
     if (num_nodes != 0){ delete[] num_nodes; num_nodes = 0; }
     if (precision != 0){ delete[] precision; precision = 0; }
     if (offsets != 0){ delete[] offsets; offsets = 0; }
-    if (nodes != 0){ delete[] nodes; nodes = 0; }
-    if (weights != 0){ delete[] weights; weights = 0; }
     if (description != 0){ delete description; description = 0; }
     num_levels = 0;
 }
@@ -77,9 +73,8 @@ void CustomTabulated::write(std::ofstream &ofs) const{
     }
     ofs << std::scientific; ofs.precision(17);
     for(int l=0; l<num_levels; l++){
-        for(int i=offsets[l]; i<offsets[l] + num_nodes[l]; i++){
-            ofs << weights[i] << " " << nodes[i] << std::endl;
-        }
+        auto x = nodes[l].begin();
+        for(auto w : weights[l]) ofs << w << " " << *x++ << std::endl;
     }
 }
 void CustomTabulated::writeBinary(std::ofstream &ofs) const{
@@ -89,9 +84,10 @@ void CustomTabulated::writeBinary(std::ofstream &ofs) const{
     ofs.write((char*) &num_levels, sizeof(int));
     ofs.write((char*) num_nodes, num_levels * sizeof(int));
     ofs.write((char*) precision, num_levels * sizeof(int));
-    int total_points = offsets[num_levels-1] + num_nodes[num_levels-1];
-    ofs.write((char*) weights, total_points * sizeof(double));
-    ofs.write((char*) nodes, total_points * sizeof(double));
+    for(int l=0; l<num_levels; l++){
+        ofs.write((char*) weights[l].data(), weights[l].size() * sizeof(double));
+        ofs.write((char*) nodes[l].data(), nodes[l].size() * sizeof(double));
+    }
 }
 void CustomTabulated::read(std::ifstream &ifs){
     reset();
@@ -121,10 +117,13 @@ void CustomTabulated::read(std::ifstream &ifs){
         total_points += num_nodes[i];
     }
 
-    nodes   = new double[total_points];
-    weights = new double[total_points];
-    for(int i=0; i<total_points; i++){
-        ifs >> weights[i] >> nodes[i];
+    nodes.resize(num_levels);
+    weights.resize(num_levels);
+    for(int l=0; l<num_levels; l++){
+        nodes[l].resize(num_nodes[l]);
+        weights[l].resize(num_nodes[l]);
+        auto x = nodes[l].begin();
+        for(auto &w : weights[l]) ifs >> w >> *x++;
     }
 }
 void CustomTabulated::readBinary(std::ifstream &ifs){
@@ -152,10 +151,14 @@ void CustomTabulated::readBinary(std::ifstream &ifs){
         total_points += num_nodes[i];
     }
 
-    nodes   = new double[total_points];
-    weights = new double[total_points];
-    ifs.read((char*) weights, total_points * sizeof(double));
-    ifs.read((char*) nodes, total_points * sizeof(double));
+    nodes.resize(num_levels);
+    weights.resize(num_levels);
+    for(int l=0; l<num_levels; l++){
+        nodes[l].resize(num_nodes[l]);
+        weights[l].resize(num_nodes[l]);
+        ifs.read((char*) weights[l].data(), num_nodes[l] * sizeof(double));
+        ifs.read((char*) nodes[l].data(), num_nodes[l] * sizeof(double));
+    }
 }
 
 void CustomTabulated::copyRule(const CustomTabulated *custom){
@@ -173,8 +176,12 @@ void CustomTabulated::copyRule(const CustomTabulated *custom){
         total_points += num_nodes[i];
     }
 
-    nodes   = new double[total_points]; std::copy(custom->nodes, custom->nodes + total_points, nodes);
-    weights = new double[total_points]; std::copy(custom->weights, custom->weights + total_points, weights);
+    nodes.resize(num_levels);
+    weights.resize(num_levels);
+    for(int l=0; l<num_levels; l++){
+        nodes[l] = custom->nodes[l];
+        weights[l] = custom->weights[l];
+    }
 }
 
 int CustomTabulated::getNumLevels() const{ return num_levels; }
@@ -214,11 +221,12 @@ void CustomTabulated::getWeightsNodes(int level, double* &w, double* &x) const{
     if (x != 0) delete[] x;
     w = new double[num_nodes[level]];
     x = new double[num_nodes[level]];
-    int off = offsets[level];
-    for(int i=0; i<num_nodes[level]; i++){
-        x[i] = nodes[off + i];
-        w[i] = weights[off + i];
-    }
+    std::copy(nodes[level].begin(), nodes[level].end(), x);
+    std::copy(weights[level].begin(), weights[level].end(), w);
+}
+void CustomTabulated::getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const{
+    w = weights[level];
+    x = nodes[level];
 }
 const char* CustomTabulated::getDescription() const{  return description->c_str();  }
 
@@ -765,11 +773,11 @@ TypeRefinement OneDimensionalMeta::getIOTypeRefinementInt(int ref){
 }
 
 // Gauss-Legendre
-void OneDimensionalNodes::getGaussLegendre(int m, double* &w, double* &x){
-    if (w != 0){ delete[] w; }; w = new double[m];
-    if (x != 0){ delete[] x; }; x = new double[m];
+void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x){
+    w.resize(m);
+    x.resize(m);
 
-    double *s = new double[m];
+    std::vector<double> s(m);
     for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
     for(int i=0; i<m; i++){
@@ -778,17 +786,13 @@ void OneDimensionalNodes::getGaussLegendre(int m, double* &w, double* &x){
     w[0] = sqrt(2.0);
 
     TasmanianTridiagonalSolver::decompose(m, x, s, w);
-
-    delete[] s;
 }
 
 // Chebyshev
-void OneDimensionalNodes::getChebyshev(int m, double* &w, double* &x){
+void OneDimensionalNodes::getChebyshev(int m, std::vector<double> &w, std::vector<double> &x){
     // get Clanshaw-Curtis quadrature points
-    if (w != 0){ delete[] w; }
-    if (x != 0){ delete[] x; }
-    w = new double[m];
-    x = new double[m];
+    w.resize(m);
+    x.resize(m);
     int i, j;
     double b;
     if (m == 1){
@@ -824,11 +828,9 @@ void OneDimensionalNodes::getChebyshev(int m, double* &w, double* &x){
 }
 
 // get Gauss-Chebyshev type 1 quadrature points
-void OneDimensionalNodes::getGaussChebyshev1(int m, double* &w, double* &x){
-    if (w != 0){ delete[] w; }
-    if (x != 0){ delete[] x; }
-    w = new double[m];
-    x = new double[m];
+void OneDimensionalNodes::getGaussChebyshev1(int m, std::vector<double> &w, std::vector<double> &x){
+    w.resize(m);
+    x.resize(m);
 
     for(int i=0; i<m; i++){
         x[m-i-1] = cos(M_PI*(2*i+1) / (2*((double)m)));
@@ -836,11 +838,9 @@ void OneDimensionalNodes::getGaussChebyshev1(int m, double* &w, double* &x){
     }
 }
 // get Gauss-Chebyshev-type2 quadrature points
-void OneDimensionalNodes::getGaussChebyshev2(int m, double* &w, double* &x){
-    if (w != 0){ delete[] w; }
-    if (x != 0){ delete[] x; }
-    w = new double[m];
-    x = new double[m];
+void OneDimensionalNodes::getGaussChebyshev2(int m, std::vector<double> &w, std::vector<double> &x){
+    w.resize(m);
+    x.resize(m);
 
     for(int i=0; i<m; i++){
         double theta = M_PI*((double)(i+1))/((double)(m+1));
@@ -849,13 +849,11 @@ void OneDimensionalNodes::getGaussChebyshev2(int m, double* &w, double* &x){
     }
 }
 // get Gauss-Jacobi quadrature points
-void OneDimensionalNodes::getGaussJacobi(int m, double* &w, double* &x, double alpha, double beta){
-    if (w != 0){ delete[] w; }
-    if (x != 0){ delete[] x; }
-    w = new double[m];
-    x = new double[m];
+void OneDimensionalNodes::getGaussJacobi(int m, std::vector<double> &w, std::vector<double> &x, double alpha, double beta){
+    w.resize(m);
+    x.resize(m);
 
-    double *s = new double[m];
+    std::vector<double> s(m);
 
     for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
@@ -873,17 +871,13 @@ void OneDimensionalNodes::getGaussJacobi(int m, double* &w, double* &x, double a
     s[m-1] = 0.0;
 
     TasmanianTridiagonalSolver::decompose(m, x, s, w);
-
-    delete[] s;
 }
 // get Gauss-Hermite quadrature points
-void OneDimensionalNodes::getGaussHermite(int m, double* &w, double* &x, double alpha){
-    if (w != 0){ delete[] w; }
-    if (x != 0){ delete[] x; }
-    w = new double[m];
-    x = new double[m];
+void OneDimensionalNodes::getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha){
+    w.resize(m);
+    x.resize(m);
 
-    double *s = new double[m];
+    std::vector<double> s(m);
 
     for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
@@ -896,17 +890,13 @@ void OneDimensionalNodes::getGaussHermite(int m, double* &w, double* &x, double 
     s[m-1] = 0.0;
 
     TasmanianTridiagonalSolver::decompose(m, x, s, w);
-
-    delete[] s;
 }
 // get Gauss-Laguerre quadrature points
-void OneDimensionalNodes::getGaussLaguerre(int m, double* &w, double* &x, double alpha){
-    if (w != 0){ delete[] w; }
-    if (x != 0){ delete[] x; }
-    w = new double[m];
-    x = new double[m];
+void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha){
+    w.resize(m);
+    x.resize(m);
 
-    double *s = new double[m];
+    std::vector<double> s(m);
 
     for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
@@ -920,8 +910,6 @@ void OneDimensionalNodes::getGaussLaguerre(int m, double* &w, double* &x, double
     s[m-1] = 0.0;
 
     TasmanianTridiagonalSolver::decompose(m, x, s, w);
-
-    delete[] s;
 }
 
 // Clenshaw-Curtis
