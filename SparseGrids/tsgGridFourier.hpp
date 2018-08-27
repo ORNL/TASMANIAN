@@ -98,7 +98,7 @@ public:
     void integrate(double q[], double *conformal_correction) const;
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
-    void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double wreal[], double wimag[]) const;
+    void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
     void clearAccelerationData();
@@ -152,6 +152,15 @@ protected:
         }
     }
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    void prepareCudaData() const{
+        if (cuda_real.size() > 0) return;
+        size_t num_coeff = ((size_t) num_outputs) * ((size_t) points->getNumIndexes());
+        cuda_real.load(num_coeff, fourier_coefs);
+        cuda_imag.load(num_coeff, &(fourier_coefs[num_coeff]));
+    }
+    #endif
+
 private:
     int num_dimensions, num_outputs;
 
@@ -170,6 +179,10 @@ private:
 
     std::vector<int> max_power;
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    mutable LinearAlgebraEngineGPU cuda_engine;
+    mutable cudaDoubles cuda_real, cuda_imag;
+    #endif
 };
 
 }

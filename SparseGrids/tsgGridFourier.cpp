@@ -322,6 +322,7 @@ int GridFourier::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNu
 int GridFourier::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
 
 void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
+    clearAccelerationData();
     if (points == 0){ //setting points for the first time
         values->setValues(vals);
         points = needed;
@@ -577,6 +578,42 @@ void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
 void GridFourier::evaluateFastCPUblas(const double[], double[]) const{}
 #endif
 
+#ifdef Tasmanian_ENABLE_CUDA
+void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
+    prepareCudaData();
+    int num_points = points->getNumIndexes();
+    std::vector<double> wreal(num_points);
+    std::vector<double> wimag(num_points);
+    cudaDoubles gpuY;
+    computeBasis<double, false>(points, x, wreal.data(), wimag.data());
+    cuda_engine.cublasDGEMM(num_outputs, 1, num_points,  1.0, cuda_real, wreal, 0.0, gpuY);
+    cuda_engine.cublasDGEMM(num_outputs, 1, num_points, -1.0, cuda_imag, wimag, 1.0, gpuY);
+    gpuY.unload(y);
+}
+#else
+void GridFourier::evaluateFastGPUcublas(const double[], double[]) const{}
+#endif
+
+void GridFourier::evaluateFastGPUcuda(const double x[], double y[]) const{
+    evaluateFastGPUcublas(x,y);
+}
+
+#ifdef Tasmanian_ENABLE_MAGMA
+void GridFourier::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
+    prepareCudaData();
+    int num_points = points->getNumIndexes();
+    std::vector<double> wreal(num_points);
+    std::vector<double> wimag(num_points);
+    cudaDoubles gpuY;
+    computeBasis<double, false>(points, x, wreal.data(), wimag.data());
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, num_points,  1.0, cuda_real, wreal, 0.0, gpuY);
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, num_points, -1.0, cuda_imag, wimag, 1.0, gpuY);
+    gpuY.unload(y);
+}
+#else
+void GridFourier::evaluateFastGPUmagma(int, const double[], double[]) const{}
+#endif
+
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
@@ -587,9 +624,9 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 #ifdef Tasmanian_ENABLE_BLAS
 void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
     int num_points = points->getNumIndexes();
-    Data2D<double> wreal; wreal.resize(num_points, num_x);
-    Data2D<double> wimag; wimag.resize(num_points, num_x);
-    evaluateHierarchicalFunctionsInternal(x, num_x, wreal.getStrip(0), wimag.getStrip(0));
+    Data2D<double> wreal;
+    Data2D<double> wimag;
+    evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
     TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, fourier_coefs, wreal.getStrip(0), 0.0, y);
     size_t offset = ((size_t) num_points) * ((size_t) num_outputs);
     TasBLAS::dgemm(num_outputs, num_x, num_points, -1.0, &(fourier_coefs[offset]), wimag.getStrip(0), 1.0, y);
@@ -598,25 +635,41 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
 void GridFourier::evaluateBatchCPUblas(const double[], int, double[]) const{}
 #endif
 
-void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
-    evaluate(x,y);
+#ifdef Tasmanian_ENABLE_CUDA
+void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
+    int num_points = points->getNumIndexes();
+    prepareCudaData();
+    Data2D<double> wreal;
+    Data2D<double> wimag;
+    evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
+    cudaDoubles gpuY;
+    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points,  1.0, cuda_real, *(wreal.getVector()), 0.0, gpuY);
+    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, -1.0, cuda_imag, *(wimag.getVector()), 1.0, gpuY);
+    gpuY.unload(y);
 }
-void GridFourier::evaluateFastGPUcuda(const double x[], double y[]) const{
-    evaluate(x,y);
-}
-void GridFourier::evaluateFastGPUmagma(int, const double x[], double y[]) const{
-    evaluate(x,y);
+#else
+void GridFourier::evaluateBatchGPUcublas(const double[], int, double[]) const{}
+#endif
+
+void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const {
+    evaluateBatchGPUcublas(x, num_x, y);
 }
 
-void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const {
-    evaluateBatch(x, num_x, y);
+#ifdef Tasmanian_ENABLE_MAGMA
+void GridFourier::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
+    int num_points = points->getNumIndexes();
+    prepareCudaData();
+    Data2D<double> wreal;
+    Data2D<double> wimag;
+    evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
+    cudaDoubles gpuY;
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points,  1.0, cuda_real, *(wreal.getVector()), 0.0, gpuY);
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, -1.0, cuda_imag, *(wimag.getVector()), 1.0, gpuY);
+    gpuY.unload(y);
 }
-void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const {
-    evaluateBatch(x, num_x, y);
-}
-void GridFourier::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const {
-    evaluateBatch(x, num_x, y);
-}
+#else
+void GridFourier::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
+#endif
 
 void GridFourier::integrate(double q[], double *conformal_correction) const{
     std::fill(q, q+num_outputs, 0.0);
@@ -650,17 +703,17 @@ void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, dou
         computeBasis<double, true>(((points == 0) ? needed : points), xx.getCStrip(i), yy.getStrip(i), 0);
     }
 }
-void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, double wreal[], double wimag[]) const{
+void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const{
     // when performing internal evaluations, split the matrix into real and complex components
     // thus only two real gemm() operations can be used (as opposed to one complex gemm)
     IndexSet *work = (points != 0) ? points : needed;
     int num_points = getNumPoints();
     Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> wr; wr.load(num_points, num_x, wreal);
-    Data2D<double> wi; wi.load(num_points, num_x, wimag);
+    wreal.resize(num_points, num_x);
+    wimag.resize(num_points, num_x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        computeBasis<double, false>(work, xx.getCStrip(i), wr.getStrip(i), wi.getStrip(i));
+        computeBasis<double, false>(work, xx.getCStrip(i), wreal.getStrip(i), wimag.getStrip(i));
     }
 }
 
@@ -668,6 +721,7 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     // takes c to be length 2*num_outputs*num_points
     // first num_points*num_outputs are the real part; second num_points*num_outputs are the imaginary part
 
+    clearAccelerationData();
     if (points == 0){
         points = needed;
         needed = 0;
@@ -677,7 +731,12 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     for(int i=0; i<2 * getNumPoints() * num_outputs; i++) fourier_coefs[i] = c[i];
 }
 
-void GridFourier::clearAccelerationData(){}
+void GridFourier::clearAccelerationData(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    cuda_real.clear();
+    cuda_imag.clear();
+    #endif
+}
 void GridFourier::clearRefinement(){ return; }     // to be expanded later
 void GridFourier::mergeRefinement(){ return; }     // to be expanded later
 
