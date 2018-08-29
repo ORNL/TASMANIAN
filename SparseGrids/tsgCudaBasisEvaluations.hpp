@@ -305,6 +305,89 @@ __global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
     }
 }
 
+// call with THREADS > dims, THREADS > max_num_nodes
+// creates a cache data structure for evaluating basis functions with sequence grids
+// dims and num_x are number of dimensions and number of x points, gpuX holds the points in the same format as the CPU version
+// nodes and coeffs are the 1D sequence nodes and the normalizing hierarchical Newton coefficients (same as the GPU version)
+// max_num_nodes is the maxumum number of nodes in any direction (needed to correctly capture the cache)
+// the result (i.e., cache) has block form, each of the offsets give cumulative index of the next block
+// each bock has size num_nodes[d] X num_x, holding the values of the Newton polynomials associated with x in direction d
+// blocks do not have identical structure, due to anisotropy block sizes can vary
+// num_nodes is the maximum number of nodes in the corresponding direction
+// cache is contiguous in the direction of x
+template <typename T, int THREADS>
+__global__ void tasgpu_dseq_build_cache(int dims, int num_x, const T *gpuX, const T *nodes, const T *coeffs, int max_num_nodes, const int *offsets, const int *num_nodes, T *result){
+    __shared__ int soffsets[THREADS]; // cache offsets, nodes and coefficients
+    __shared__ T snodes[THREADS];
+    __shared__ T scoeffs[THREADS];
+    if (threadIdx.x < dims)
+        soffsets[threadIdx.x] = offsets[threadIdx.x];
+
+    if (threadIdx.x < max_num_nodes){
+        snodes[threadIdx.x] = nodes[threadIdx.x];
+        scoeffs[threadIdx.x] = coeffs[threadIdx.x];
+    }
+    __syncthreads();
+
+    int i = blockIdx.x * THREADS + threadIdx.x;
+
+    while(i < num_x){
+        for(int d=0; d<dims; d++){
+            int offset = soffsets[d] + i;
+            T x = gpuX[i * dims + d]; // non-strided read
+
+            T v = 1.0; // v holds newton polynomial corresponding to x in direction d and node j
+            result[offset] = 1.0;
+            offset += num_x;
+            for(int j=1; j<num_nodes[d]; j++){
+                v *= (x - snodes[j-1]); // everybody in the block will read the same shared node value
+                result[offset] = v / scoeffs[j];
+                offset += num_x;
+            }
+        }
+
+        i += gridDim.x * THREADS;
+    }
+}
+
+// use with SHORT = 32, Dimensions < 32
+// cache is computed above, dims is the number of dimensions
+// num_x and num_points give the dimension of the basis matrix (data is contiguous in index of points)
+// points is an array of integers, but it the transpose of the CPU points
+template <typename T, int SHORT>
+__global__ void tasgpu_dseq_eval_sharedpoints(int dims, int num_x, int num_points, const int *points, const int *offsets, const T *cache, T *result){
+    __shared__ int cpoints[SHORT][SHORT]; // uses only 32 * 32 * 4 = 4K of 48K shared memory
+
+    int height = threadIdx.x % SHORT; // threads are oranized logically in a square of size SHORT by SHORT
+    int swidth = threadIdx.x / SHORT; // height and swidth are the indexes of this thread in the block (relates to num_points and num_x respectively)
+
+    int id_p = SHORT * blockIdx.x;
+
+    while(id_p < num_points){
+        if ((swidth < dims) && (id_p + height < num_points)){
+            cpoints[swidth][height] = points[swidth * num_points + id_p + height]; // load a block of points
+        }
+        __syncthreads();
+
+        if (id_p + height < num_points){
+            int id_x = swidth;
+            while(id_x < num_x){ // loop over the x-values
+
+                // read and multiply from cached data strucutre, but uses only L2/1 cache, no shared GPU memory
+                double v = cache[num_x * cpoints[0][height] + id_x];
+                for(int j=1; j<dims; j++){
+                    v *= cache[offsets[j] + num_x * cpoints[j][height] + id_x];
+                }
+
+                result[num_points * id_x + id_p + height] = v;
+
+                id_x += SHORT;
+            }
+        }
+        id_p += SHORT * gridDim.x;
+        __syncthreads();
+    }
+}
 
 }
 

@@ -362,6 +362,7 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
 void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_surpluses.clear();
+    clearCudaNodes();
     #endif
     if (points == 0){
         values->setValues(vals);
@@ -496,11 +497,17 @@ void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[
 }
 void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
+    loadCudaNodes();
 
-    Data2D<double> hweights; hweights.resize(points->getNumIndexes(), num_x);
-    evaluateHierarchicalFunctions(x, num_x, hweights.getStrip(0));
+    int num_points = points->getNumIndexes();
+    cudaDoubles gpu_x(num_dimensions, num_x, x);
+    cudaDoubles gpu_basis(num_x, num_points);
+    cudaDoubles gpu_result(num_x, num_outputs);
 
-    cuda_engine.cublasDGEMM(num_outputs, num_x, points->getNumIndexes(), 1.0, cuda_surpluses, *(hweights.getVector()), 0.0, y);
+    evaluateHierarchicalFunctionsGPU(gpu_x.data(), num_x, gpu_basis.data());
+
+    cuda_engine.cublasDGEMM(num_outputs, num_x, points->getNumIndexes(), 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
+    gpu_result.unload(y);
 }
 #else
 void GridSequence::evaluateBatchGPUcublas(const double[], int, double[]) const{}
@@ -510,11 +517,17 @@ void GridSequence::evaluateBatchGPUcuda(const double[], int, double[]) const{}
 #ifdef Tasmanian_ENABLE_MAGMA
 void GridSequence::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
+    loadCudaNodes();
 
-    Data2D<double> hweights; hweights.resize(points->getNumIndexes(), num_x);
-    evaluateHierarchicalFunctions(x, num_x, hweights.getStrip(0));
+    int num_points = points->getNumIndexes();
+    cudaDoubles gpu_x(num_dimensions, num_x, x);
+    cudaDoubles gpu_basis(num_x, num_points);
+    cudaDoubles gpu_result(num_x, num_outputs);
 
-    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, points->getNumIndexes(), 1.0, cuda_surpluses, *(hweights.getVector()), 0.0, y);
+    evaluateHierarchicalFunctionsGPU(gpu_x.data(), num_x, gpu_basis.data());
+
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, points->getNumIndexes(), 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
+    gpu_result.unload(y);
 }
 #else
 void GridSequence::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
@@ -583,9 +596,16 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
     for(int j=0; j<num_dimensions; j++) delete[] cache[j];
     delete[] cache;
 }
+#ifdef Tasmanian_ENABLE_CUDA
+void GridSequence::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
+    loadCudaNodes();
+    TasCUDA::devalseq(num_dimensions, num_x, max_levels, gpu_x, cuda_num_nodes, cuda_points, cuda_nodes, cuda_coeffs, gpu_y);
+}
+#endif
 void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_surpluses.clear();
+    clearCudaNodes();
     #endif
     std::vector<double> *vals = 0;
     size_t num_ponits = (size_t) getNumPoints();
@@ -1013,6 +1033,7 @@ void GridSequence::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_engine.reset();
     cuda_surpluses.clear();
+    clearCudaNodes();
     #endif
 }
 

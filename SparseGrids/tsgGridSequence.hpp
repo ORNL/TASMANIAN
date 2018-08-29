@@ -97,6 +97,9 @@ public:
     void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
+    #ifdef Tasmanian_ENABLE_CUDA
+    void evaluateHierarchicalFunctionsGPU(const double x[], int num_x, double y[]) const;
+    #endif
 
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
@@ -142,6 +145,34 @@ protected:
 
     double evalBasis(const int f[], const int p[]) const; // evaluate function corresponding to f at p
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    void loadCudaNodes() const{
+        if (cuda_num_nodes.size() != 0) return;
+        int maxl = max_levels[0];
+        for(auto l : max_levels) if (maxl < l) maxl = l;
+        cuda_nodes.load(maxl + 1, nodes);
+        cuda_coeffs.load(maxl + 1, coeff);
+        std::vector<int> num_nodes = max_levels;
+        for(auto &n : num_nodes) n++;
+        cuda_num_nodes.load(num_nodes);
+        IndexSet *work = (points != 0) ? points : needed;
+        int num_points = work->getNumIndexes();
+        Data2D<int> transpoints; transpoints.resize(work->getNumIndexes(), num_dimensions);
+        for(int i=0; i<num_points; i++){
+            for(int j=0; j<num_dimensions; j++){
+                transpoints.getStrip(j)[i] = work->getIndex(i)[j];
+            }
+        }
+        cuda_points.load(*(transpoints.getVector()));
+    }
+    void clearCudaNodes(){
+        cuda_nodes.clear();
+        cuda_coeffs.clear();
+        cuda_num_nodes.clear();
+        cuda_points.clear();
+    }
+    #endif
+
 private:
     int num_dimensions, num_outputs;
     TypeOneDRule rule;
@@ -161,6 +192,8 @@ private:
     #ifdef Tasmanian_ENABLE_CUDA
     mutable LinearAlgebraEngineGPU cuda_engine;
     mutable cudaDoubles cuda_surpluses;
+    mutable cudaInts cuda_num_nodes, cuda_points;
+    mutable cudaDoubles cuda_nodes, cuda_coeffs;
     #endif
 };
 
