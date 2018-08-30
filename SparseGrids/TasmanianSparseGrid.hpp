@@ -257,7 +257,7 @@ private:
     GridFourier *fourier;
 
     std::vector<double> domain_transform_a, domain_transform_b;
-    int *conformal_asin_power;
+    std::vector<int> conformal_asin_power;
     std::vector<int> llimits;
 
     TypeAcceleration acceleration;
