@@ -387,21 +387,21 @@ void SparseMatrix::computeILU(){
 void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ // using GMRES
     int max_inner = 30;
     int max_outer = 80;
-    double *W = new double[(max_inner+1) * num_rows]; // Krylov basis
+    std::vector<double> W((max_inner+1) * num_rows); // Krylov basis
 
-    double *H = new double[max_inner * (max_inner+1)]; // holds the transformation for the normalized basis
-    double *S = new double[max_inner]; // sin and cos of the Givens rotations
-    double *C = new double[max_inner+1];
-    double *Z = new double[max_inner]; // holds the coefficients of the solution
+    std::vector<double> H(max_inner * (max_inner+1)); // holds the transformation for the normalized basis
+    std::vector<double> S(max_inner); // sin and cos of the Givens rotations
+    std::vector<double> C(max_inner+1);
+    std::vector<double> Z(max_inner); // holds the coefficients of the solution
 
     double alpha, h_k; // temp variables
 
     double outer_res = tol + 1.0; // outer and inner residual
     int outer_itr = 0; // counts the inner and outer iterations
 
-    double *pb = new double[num_rows];
+    std::vector<double> pb(num_rows);
     if (!transposed){
-        std::copy(b, b + num_rows, pb);
+        std::copy(b, b + num_rows, pb.data());
 
         // action of the preconditioner
         for(int i=1; i<num_rows; i++){
@@ -420,9 +420,9 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
     std::fill(x, x + num_rows, 0.0); // zero initial guess, I wonder if we can improve this
 
     while ((outer_res > tol) && (outer_itr < max_outer)){
-        std::fill(W, W + num_rows, 0.0);
+        for(int i=0; i<num_rows; i++) W[i] = 0.0;
         if (transposed){
-            std::copy(x, x + num_rows, pb);
+            std::copy(x, x + num_rows, pb.data());
             for(int i=0; i<num_rows; i++){
                 pb[i] /= ilu[indxD[i]];
                 for(int j=indxD[i]+1; j<pntr[i+1]; j++){
@@ -477,7 +477,7 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
 
             std::fill(&(W[inner_itr*num_rows]), &(W[inner_itr*num_rows]) + num_rows, 0.0);
             if (transposed){
-                std::copy(&(W[num_rows*(inner_itr-1)]), &(W[num_rows*(inner_itr-1)]) + num_rows, pb);
+                std::copy(&(W[num_rows*(inner_itr-1)]), &(W[num_rows*(inner_itr-1)]) + num_rows, pb.data());
                 for(int i=0; i<num_rows; i++){
                     pb[i] /= ilu[indxD[i]];
                     for(int j=indxD[i]+1; j<pntr[i+1]; j++){
@@ -586,14 +586,6 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
         outer_res = inner_res;
         outer_itr++;
     }
-
-    delete[] pb;
-    delete[] W;
-
-    delete[] H;
-    delete[] S;
-    delete[] C;
-    delete[] Z;
 }
 
 } /* namespace TasSparse */
