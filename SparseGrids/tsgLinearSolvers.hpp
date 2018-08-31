@@ -82,8 +82,8 @@ protected:
 private:
     const double tol;
     int num_rows;
-    int *pntr, *indx, *indxD;
-    double *vals, *ilu;
+    std::vector<int> pntr, indx, indxD;
+    std::vector<double> vals, ilu;
 };
 
 }
