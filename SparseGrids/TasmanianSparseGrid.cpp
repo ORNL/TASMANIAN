@@ -459,9 +459,8 @@ double* TasmanianSparseGrid::getInterpolationWeights(const double x[]) const{
     return w;
 }
 void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weights) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     base->getInterpolationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::getQuadratureWeights(std::vector<double> &weights) const{
     weights.resize(base->getNumPoints());
@@ -489,12 +488,11 @@ void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> vals){
 }
 
 void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     base->evaluate(formCanonicalPoints(x, x_tmp, 1), y);
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, 1);
     switch (acceleration){
         case accel_gpu_default:
@@ -517,11 +515,10 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
             base->evaluate(x_canonical, y);
             break;
     }
-    clearCanonicalPoints(x_tmp);
 }
 
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     switch (acceleration){
         case accel_gpu_default:
@@ -544,7 +541,6 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
             base->evaluateBatch(x_canonical, num_x, y);
             break;
     }
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::integrate(double q[]) const{
     if (conformal_asin_power.size() != 0){
@@ -922,20 +918,15 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
     }
 }
 
-const double* TasmanianSparseGrid::formCanonicalPoints(const double *x, double* &x_temp, int num_x) const{
+const double* TasmanianSparseGrid::formCanonicalPoints(const double *x, Data2D<double> &x_temp, int num_x) const{
     if ((domain_transform_a.size() != 0) || (conformal_asin_power.size() != 0)){
         int num_dimensions = base->getNumDimensions();
-        x_temp = new double[num_dimensions*num_x]; std::copy(x, x + num_dimensions*num_x, x_temp);
-        mapConformalTransformedToCanonical(num_dimensions, num_x, x_temp);
-        if (domain_transform_a.size() != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_temp);
-        return x_temp;
+        x_temp.resize(num_dimensions, num_x); std::copy(x, x + ((size_t) num_dimensions) * ((size_t) num_x), x_temp.getStrip(0));
+        mapConformalTransformedToCanonical(num_dimensions, num_x, x_temp.getStrip(0));
+        if (domain_transform_a.size() != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_temp.getStrip(0));
+        return x_temp.getStrip(0);
     }else{
         return x;
-    }
-}
-void TasmanianSparseGrid::clearCanonicalPoints(double* &x_temp) const{
-    if ((domain_transform_a.size() != 0) || (conformal_asin_power.size() != 0)){
-        delete[] x_temp;
     }
 }
 void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) const{
@@ -1118,9 +1109,8 @@ void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance
 }
 
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     base->evaluateHierarchicalFunctions(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const{
     int num_points = getNumPoints();
@@ -1155,7 +1145,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double*, 
 #endif
 
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     if (pwpoly != 0){
         pwpoly->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
@@ -1192,10 +1182,9 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
             for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
         }
     }
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     if (pwpoly != 0){
         pwpoly->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
@@ -1222,10 +1211,9 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
     }else{
         throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctions() called for a grid that is neither localp polynomial not wavelet");
     }
-    clearCanonicalPoints(x_tmp);
 }
 int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     int num_nz = 0;
     if (pwpoly != 0){
@@ -1240,10 +1228,9 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
         return num_x * base->getNumPoints();
     }
     return num_nz;
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     if (pwpoly != 0){
         pwpoly->buildSpareBasisMatrixStatic(x_canonical, num_x, 32, pntr, indx, vals);
@@ -1274,7 +1261,6 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
             for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
         }
     }
-    clearCanonicalPoints(x_tmp);
 }
 
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
