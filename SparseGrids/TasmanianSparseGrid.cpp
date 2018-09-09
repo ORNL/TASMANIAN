@@ -857,8 +857,9 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
 void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points, double weights[]) const{
     if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
-        double *x = new double[base->getNumPoints() * base->getNumDimensions()];
-        base->getPoints(x);
+        Data2D<double> x;
+        x.resize(num_dimensions, num_points);
+        base->getPoints(x.getStrip(0));
         double **c = new double*[num_dimensions], **p = new double*[num_dimensions];
         int sum_powers = 0; for(int j=0; j<num_dimensions; j++) sum_powers += (conformal_asin_power[j] + 1);
         c[0] = new double[sum_powers]; p[0] = new double[sum_powers];
@@ -881,9 +882,10 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
             }
         }
         for(int i=0; i<num_points; i++){
+            const double *this_x = x.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (x[i*num_dimensions+j] != 0.0){ // derivative at zero is 1/cm[j] and zero makes the log unstable
-                    double logx = log(fabs(x[i*num_dimensions+j]));
+                if (this_x[j] != 0.0){ // derivative at zero is 1/cm[j] and zero makes the log unstable
+                    double logx = log(fabs(this_x[j]));
                     double trans = 1.0;
                     for(int k=1; k<=conformal_asin_power[j]; k++){
                         trans += exp(c[j][k] + p[j][k] * logx);
@@ -897,7 +899,6 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
         delete[] cm;
         delete[] c[0]; delete[] c;
         delete[] p[0]; delete[] p;
-        delete[] x;
     }
 }
 
