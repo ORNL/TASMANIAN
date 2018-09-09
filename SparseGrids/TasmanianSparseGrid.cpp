@@ -860,17 +860,13 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
         Data2D<double> x;
         x.resize(num_dimensions, num_points);
         base->getPoints(x.getStrip(0));
-        double **c = new double*[num_dimensions], **p = new double*[num_dimensions];
-        int sum_powers = 0; for(int j=0; j<num_dimensions; j++) sum_powers += (conformal_asin_power[j] + 1);
-        c[0] = new double[sum_powers]; p[0] = new double[sum_powers];
-        sum_powers = 0;
-        for(int j=1; j<num_dimensions; j++){
-            sum_powers += (conformal_asin_power[j-1] + 1);
-            c[j] = &(c[0][sum_powers]);
-            p[j] = &(p[0][sum_powers]);
+        std::vector<std::vector<double>> c(num_dimensions), p(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            c[j].resize(conformal_asin_power[j] + 1);
+            p[j].resize(conformal_asin_power[j] + 1);
         }
         double lgamma_half = lgamma(0.5);
-        double *cm = new double[num_dimensions];
+        std::vector<double> cm(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
             double factorial = 0.0;
             cm[j] = 0.0;
@@ -896,9 +892,6 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
                 }
             }
         }
-        delete[] cm;
-        delete[] c[0]; delete[] c;
-        delete[] p[0]; delete[] p;
     }
 }
 
