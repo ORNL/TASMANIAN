@@ -1125,25 +1125,26 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
         pwpoly->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
     }else if (wavelet != 0){
         int num_points = base->getNumPoints();
-        double *dense_vals = new double[num_points * num_x];
-        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals);
+        Data2D<double> dense_vals;
+        dense_vals.resize(num_points, num_x);
+        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         int num_nz = 0;
-        for(int i=0; i<num_points * num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
+        for(auto v : *dense_vals.getVector()) if (v != 0.0) num_nz++;
         pntr = new int[num_x+1];
         indx = new int[num_nz];
         vals = new double[num_nz];
         num_nz = 0;
         for(int i=0; i<num_x; i++){
             pntr[i] = num_nz;
+            const double *v = dense_vals.getStrip(i);
             for(int j=0; j<num_points; j++){
-                if (dense_vals[i*num_points + j] != 0){
+                if (v[j] != 0.0){
                     indx[num_nz] = j;
-                    vals[num_nz++] = dense_vals[i*num_points + j];
+                    vals[num_nz++] = v[j];
                 }
             }
         }
         pntr[num_x] = num_nz;
-        delete[] dense_vals;
     }else{
         int num_points = base->getNumPoints();
         vals = new double[(fourier != 0 ? 2 * num_x * num_points : num_x * num_points)];
