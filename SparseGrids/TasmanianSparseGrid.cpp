@@ -61,13 +61,12 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
 }
 
 TasmanianSparseGrid::TasmanianSparseGrid() : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0),
-                                             conformal_asin_power(0), acceleration(accel_none), gpuID(0){
+                                             acceleration(accel_none), gpuID(0){
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
 }
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : base(0), global(0), sequence(0), pwpoly(0), wavelet(0), fourier(0),
-                                    conformal_asin_power(0),
                                     acceleration(accel_none), gpuID(0)
 {
     copyGrid(&source);
@@ -86,9 +85,9 @@ void TasmanianSparseGrid::clear(){
     if (pwpoly != 0){ delete pwpoly; pwpoly = 0; }
     if (wavelet != 0){ delete wavelet; wavelet = 0; }
     if (fourier != 0){ delete fourier; fourier = 0; }
-    if (conformal_asin_power != 0){ delete[] conformal_asin_power; conformal_asin_power = 0; }
     domain_transform_a.resize(0);
     domain_transform_b.resize(0);
+    conformal_asin_power.clear();
     base = 0;
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
@@ -305,9 +304,7 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
     if (source->domain_transform_a.size() > 0){
         setDomainTransform(source->domain_transform_a, source->domain_transform_b);
     }
-    if (source->conformal_asin_power != 0){
-        setConformalTransformASIN(source->conformal_asin_power);
-    }
+    conformal_asin_power = source->conformal_asin_power;
     llimits = source->llimits;
 }
 
@@ -462,9 +459,8 @@ double* TasmanianSparseGrid::getInterpolationWeights(const double x[]) const{
     return w;
 }
 void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weights) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     base->getInterpolationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::getQuadratureWeights(std::vector<double> &weights) const{
     weights.resize(base->getNumPoints());
@@ -492,12 +488,11 @@ void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> vals){
 }
 
 void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     base->evaluate(formCanonicalPoints(x, x_tmp, 1), y);
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, 1);
     switch (acceleration){
         case accel_gpu_default:
@@ -520,11 +515,10 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
             base->evaluate(x_canonical, y);
             break;
     }
-    clearCanonicalPoints(x_tmp);
 }
 
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     switch (acceleration){
         case accel_gpu_default:
@@ -547,15 +541,13 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
             base->evaluateBatch(x_canonical, num_x, y);
             break;
     }
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::integrate(double q[]) const{
-    if (conformal_asin_power != 0){
+    if (conformal_asin_power.size() != 0){
         int num_points = base->getNumPoints();
-        double *correction = new double[num_points];  std::fill(correction, correction + num_points, 1.0);
-        mapConformalWeights(base->getNumDimensions(), num_points, correction);
-        base->integrate(q, correction);
-        delete[] correction;
+        std::vector<double> correction(num_points, 1.0);
+        mapConformalWeights(base->getNumDimensions(), num_points, correction.data());
+        base->integrate(q, correction.data());
     }else{
         base->integrate(q, 0);
     }
@@ -654,14 +646,13 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
             x[i] += domain_transform_a[j];
         }
     }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){ // (-infty, +infty)
-        double *sqrt_b = new double[num_dimensions];
+        std::vector<double> sqrt_b(num_dimensions);
         for(int j=0; j<num_dimensions; j++) sqrt_b[j] = sqrt(domain_transform_b[j]);
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
             x[i] /= sqrt_b[j];
             x[i] += domain_transform_a[j];
         }
-        delete[] sqrt_b;
     }else if (rule == rule_fourier){
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
@@ -669,8 +660,8 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
             x[i] += domain_transform_a[j];
         }
     }else{ // canonical [-1,1]
-        double *rate = new double[num_dimensions];
-        double *shift = new double[num_dimensions];
+        std::vector<double> rate(num_dimensions);
+        std::vector<double> shift(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
             rate[j]  = 0.5* (domain_transform_b[j] - domain_transform_a[j]);
             shift[j] = 0.5* (domain_transform_b[j] + domain_transform_a[j]);
@@ -680,8 +671,6 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
             x[i] *= rate[j];
             x[i] += shift[j];
         }
-        delete[] rate;
-        delete[] shift;
     }
 }
 void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const{
@@ -692,14 +681,13 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
             x[i] *= domain_transform_b[j];
         }
     }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){ // (-infty, +infty)
-        double *sqrt_b = new double[num_dimensions];
+        std::vector<double> sqrt_b(num_dimensions);
         for(int j=0; j<num_dimensions; j++) sqrt_b[j] = sqrt(domain_transform_b[j]);
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
             x[i] -= domain_transform_a[j];
             x[i] *= sqrt_b[j];
         }
-        delete[] sqrt_b;
     }else if (rule == rule_fourier){   // map to [0,1]^d
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
@@ -707,8 +695,8 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
             x[i] /= domain_transform_b[j]-domain_transform_a[j];
         }
     }else{ // canonical [-1,1]
-        double *rate = new double[num_dimensions];
-        double *shift = new double[num_dimensions];
+        std::vector<double> rate(num_dimensions);
+        std::vector<double> shift(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
             rate[j]  = 2.0 / (domain_transform_b[j] - domain_transform_a[j]);
             shift[j] = (domain_transform_b[j] + domain_transform_a[j]) / (domain_transform_b[j] - domain_transform_a[j]);
@@ -718,8 +706,6 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
             x[i] *= rate[j];
             x[i] -= shift[j];
         }
-        delete[] rate;
-        delete[] shift;
     }
 }
 double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule rule) const{
@@ -756,37 +742,32 @@ void TasmanianSparseGrid::setConformalTransformASIN(const int truncation[]){
     }
     clearConformalTransform();
     int num_dimensions = base->getNumDimensions();
-    conformal_asin_power = new int[num_dimensions];  std::copy(truncation, truncation + num_dimensions, conformal_asin_power);
+    conformal_asin_power.resize(num_dimensions);
+    std::copy(truncation, truncation + num_dimensions, conformal_asin_power.data());
 }
-bool TasmanianSparseGrid::isSetConformalTransformASIN() const{ return (conformal_asin_power != 0); }
+bool TasmanianSparseGrid::isSetConformalTransformASIN() const{ return (conformal_asin_power.size() != 0); }
 void TasmanianSparseGrid::clearConformalTransform(){
-    if (conformal_asin_power != 0){ delete[] conformal_asin_power; conformal_asin_power = 0; }
+    conformal_asin_power.clear();
 }
 void TasmanianSparseGrid::getConformalTransformASIN(int truncation[]) const{
-    if ((base == 0) || (base->getNumDimensions() == 0) || (conformal_asin_power == 0)){
+    if ((base == 0) || (base->getNumDimensions() == 0) || (conformal_asin_power.size() == 0)){
         throw std::runtime_error("ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!");
     }
-    int num_dimensions = base->getNumDimensions();
-    std::copy(conformal_asin_power, conformal_asin_power + num_dimensions, truncation);
+    std::copy(conformal_asin_power.begin(), conformal_asin_power.end(), truncation);
 }
 
 void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions, int num_points, double x[]) const{
-    if (conformal_asin_power != 0){
+    if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
-        double **c = new double*[num_dimensions], **p = new double*[num_dimensions];
-        int sum_powers = 0; for(int j=0; j<num_dimensions; j++) sum_powers += (conformal_asin_power[j] + 1);
-        c[0] = new double[sum_powers]; p[0] = new double[sum_powers];
-        sum_powers = 0;
-        for(int j=1; j<num_dimensions; j++){
-            sum_powers += (conformal_asin_power[j-1] + 1);
-            c[j] = &(c[0][sum_powers]);
-            p[j] = &(p[0][sum_powers]);
+        std::vector<std::vector<double>> c(num_dimensions), p(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            c[j].resize(conformal_asin_power[j] + 1);
+            p[j].resize(conformal_asin_power[j] + 1);
         }
         double lgamma_half = lgamma(0.5);
-        double *cm = new double[num_dimensions];
+        std::vector<double> cm(num_dimensions, 0.0);
         for(int j=0; j<num_dimensions; j++){
             double factorial = 0.0;
-            cm[j] = 0.0;
             for(int k=0; k<=conformal_asin_power[j]; k++){
                 p[j][k] = (double)(2*k+1);
                 c[j][k] = lgamma(0.5 + ((double) k)) - lgamma_half - log(p[j][k]) - factorial;
@@ -794,43 +775,38 @@ void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions,
                 factorial += log((double)(k+1));
             }
         }
+        Data2D<double> xdata;
+        xdata.load(num_dimensions, num_points, x);
         for(int i=0; i<num_points; i++){
+            double *this_x = xdata.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (x[i*num_dimensions+j] != 0.0){ // zero maps to zero and makes the log unstable
-                    double sign = (x[i*num_dimensions+j] > 0.0) ? 1.0 : -1.0;
-                    double logx = log(fabs(x[i*num_dimensions+j]));
-                    x[i*num_dimensions+j] = 0.0;
+                if (this_x[j] != 0.0){ // zero maps to zero and makes the log unstable
+                    double sign = (this_x[j] > 0.0) ? 1.0 : -1.0;
+                    double logx = log(fabs(this_x[j]));
+                    this_x[j] = 0.0;
                     for(int k=0; k<=conformal_asin_power[j]; k++){
-                        x[i*num_dimensions+j] += exp(c[j][k] + p[j][k] * logx);
+                        this_x[j] += exp(c[j][k] + p[j][k] * logx);
                     }
-                    x[i*num_dimensions+j] *= sign / cm[j];
+                    this_x[j] *= sign / cm[j];
                 }
             }
         }
-        delete[] cm;
-        delete[] c[0]; delete[] c;
-        delete[] p[0]; delete[] p;
     }
 }
-void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions, int num_points, double x[]) const{
-    if (conformal_asin_power != 0){
+void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions, int num_points, Data2D<double> &x) const{
+    if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
-        double **c = new double*[num_dimensions], **p = new double*[num_dimensions], **dc = new double*[num_dimensions], **dp = new double*[num_dimensions];
-        int sum_powers = 0; for(int j=0; j<num_dimensions; j++) sum_powers += (conformal_asin_power[j] + 1);
-        c[0] = new double[sum_powers]; p[0] = new double[sum_powers]; dc[0] = new double[sum_powers]; dp[0] = new double[sum_powers];
-        sum_powers = 0;
-        for(int j=1; j<num_dimensions; j++){
-            sum_powers += (conformal_asin_power[j-1] + 1);
-            c[j] = &(c[0][sum_powers]);
-            p[j] = &(p[0][sum_powers]);
-            dc[j] = &(dc[0][sum_powers]);
-            dp[j] = &(dp[0][sum_powers]);
+        std::vector<std::vector<double>> c(num_dimensions), p(num_dimensions), dc(num_dimensions), dp(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            c[j].resize(conformal_asin_power[j] + 1);
+            p[j].resize(conformal_asin_power[j] + 1);
+            dc[j].resize(conformal_asin_power[j] + 1);
+            dp[j].resize(conformal_asin_power[j] + 1);
         }
         double lgamma_half = lgamma(0.5);
-        double *cm = new double[num_dimensions];
+        std::vector<double> cm(num_dimensions, 0.0);
         for(int j=0; j<num_dimensions; j++){
             double factorial = 0.0;
-            cm[j] = 0.0;
             for(int k=0; k<=conformal_asin_power[j]; k++){
                 p[j][k] = (double)(2*k+1);
                 c[j][k] = lgamma(0.5 + ((double) k)) - lgamma_half - log(p[j][k]) - factorial;
@@ -841,13 +817,14 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
             }
         }
         for(int i=0; i<num_points; i++){
+            double *this_x = x.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (x[i*num_dimensions+j] != 0.0){ // zero maps to zero and makes the log unstable
-                    double sign = (x[i*num_dimensions+j] > 0.0) ? 1.0 : -1.0;
-                    x[i*num_dimensions+j] = fabs(x[i*num_dimensions+j]);
-                    double b = x[i*num_dimensions+j];
-                    double logx = log(x[i*num_dimensions+j]);
-                    double r = x[i*num_dimensions+j];
+                if (this_x[j] != 0.0){ // zero maps to zero and makes the log unstable
+                    double sign = (this_x[j] > 0.0) ? 1.0 : -1.0;
+                    this_x[j] = fabs(this_x[j]);
+                    double b = this_x[j];
+                    double logx = log(this_x[j]);
+                    double r = this_x[j];
                     double dr = 1.0;
                     for(int k=1; k<=conformal_asin_power[j]; k++){
                         r  += exp( c[j][k] +  p[j][k] * logx);
@@ -856,10 +833,11 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
                     r /= cm[j];
                     r -= b; // transformed_x -b = 0
                     while(fabs(r) > TSG_NUM_TOL){
-                        x[i*num_dimensions+j] -= r * cm[j] / dr;
+                        this_x[j] -= r * cm[j] / dr;
 
-                        logx = log(fabs(x[i*num_dimensions+j]));
-                        r = x[i*num_dimensions+j]; dr = 1.0;
+                        logx = log(fabs(this_x[j]));
+                        r = this_x[j];
+                        dr = 1.0;
                         for(int k=1; k<=conformal_asin_power[j]; k++){
                             r  += exp( c[j][k] +  p[j][k] * logx);
                             dr += exp(dc[j][k] + dp[j][k] * logx);
@@ -867,33 +845,25 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
                         r /= cm[j];
                         r -= b;
                    }
-                    x[i*num_dimensions+j] *= sign;
+                    this_x[j] *= sign;
                 }
             }
         }
-        delete[] cm;
-        delete[] c[0]; delete[] c;
-        delete[] p[0]; delete[] p;
-        delete[] dc[0]; delete[] dc;
-        delete[] dp[0]; delete[] dp;
     }
 }
 void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points, double weights[]) const{
-    if (conformal_asin_power != 0){
+    if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
-        double *x = new double[base->getNumPoints() * base->getNumDimensions()];
-        base->getPoints(x);
-        double **c = new double*[num_dimensions], **p = new double*[num_dimensions];
-        int sum_powers = 0; for(int j=0; j<num_dimensions; j++) sum_powers += (conformal_asin_power[j] + 1);
-        c[0] = new double[sum_powers]; p[0] = new double[sum_powers];
-        sum_powers = 0;
-        for(int j=1; j<num_dimensions; j++){
-            sum_powers += (conformal_asin_power[j-1] + 1);
-            c[j] = &(c[0][sum_powers]);
-            p[j] = &(p[0][sum_powers]);
+        Data2D<double> x;
+        x.resize(num_dimensions, num_points);
+        base->getPoints(x.getStrip(0));
+        std::vector<std::vector<double>> c(num_dimensions), p(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            c[j].resize(conformal_asin_power[j] + 1);
+            p[j].resize(conformal_asin_power[j] + 1);
         }
         double lgamma_half = lgamma(0.5);
-        double *cm = new double[num_dimensions];
+        std::vector<double> cm(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
             double factorial = 0.0;
             cm[j] = 0.0;
@@ -905,9 +875,10 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
             }
         }
         for(int i=0; i<num_points; i++){
+            const double *this_x = x.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (x[i*num_dimensions+j] != 0.0){ // derivative at zero is 1/cm[j] and zero makes the log unstable
-                    double logx = log(fabs(x[i*num_dimensions+j]));
+                if (this_x[j] != 0.0){ // derivative at zero is 1/cm[j] and zero makes the log unstable
+                    double logx = log(fabs(this_x[j]));
                     double trans = 1.0;
                     for(int k=1; k<=conformal_asin_power[j]; k++){
                         trans += exp(c[j][k] + p[j][k] * logx);
@@ -918,27 +889,18 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
                 }
             }
         }
-        delete[] cm;
-        delete[] c[0]; delete[] c;
-        delete[] p[0]; delete[] p;
-        delete[] x;
     }
 }
 
-const double* TasmanianSparseGrid::formCanonicalPoints(const double *x, double* &x_temp, int num_x) const{
-    if ((domain_transform_a.size() != 0) || (conformal_asin_power != 0)){
+const double* TasmanianSparseGrid::formCanonicalPoints(const double *x, Data2D<double> &x_temp, int num_x) const{
+    if ((domain_transform_a.size() != 0) || (conformal_asin_power.size() != 0)){
         int num_dimensions = base->getNumDimensions();
-        x_temp = new double[num_dimensions*num_x]; std::copy(x, x + num_dimensions*num_x, x_temp);
+        x_temp.resize(num_dimensions, num_x); std::copy(x, x + ((size_t) num_dimensions) * ((size_t) num_x), x_temp.getStrip(0));
         mapConformalTransformedToCanonical(num_dimensions, num_x, x_temp);
-        if (domain_transform_a.size() != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_temp);
-        return x_temp;
+        if (domain_transform_a.size() != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_temp.getStrip(0));
+        return x_temp.getStrip(0);
     }else{
         return x;
-    }
-}
-void TasmanianSparseGrid::clearCanonicalPoints(double* &x_temp) const{
-    if ((domain_transform_a.size() != 0) || (conformal_asin_power != 0)){
-        delete[] x_temp;
     }
 }
 void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) const{
@@ -1121,9 +1083,8 @@ void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance
 }
 
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     base->evaluateHierarchicalFunctions(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const{
     int num_points = getNumPoints();
@@ -1158,31 +1119,32 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double*, 
 #endif
 
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     if (pwpoly != 0){
         pwpoly->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
     }else if (wavelet != 0){
         int num_points = base->getNumPoints();
-        double *dense_vals = new double[num_points * num_x];
-        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals);
+        Data2D<double> dense_vals;
+        dense_vals.resize(num_points, num_x);
+        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         int num_nz = 0;
-        for(int i=0; i<num_points * num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
+        for(auto v : *dense_vals.getVector()) if (v != 0.0) num_nz++;
         pntr = new int[num_x+1];
         indx = new int[num_nz];
         vals = new double[num_nz];
         num_nz = 0;
         for(int i=0; i<num_x; i++){
             pntr[i] = num_nz;
+            const double *v = dense_vals.getStrip(i);
             for(int j=0; j<num_points; j++){
-                if (dense_vals[i*num_points + j] != 0){
+                if (v[j] != 0.0){
                     indx[num_nz] = j;
-                    vals[num_nz++] = dense_vals[i*num_points + j];
+                    vals[num_nz++] = v[j];
                 }
             }
         }
         pntr[num_x] = num_nz;
-        delete[] dense_vals;
     }else{
         int num_points = base->getNumPoints();
         vals = new double[(fourier != 0 ? 2 * num_x * num_points : num_x * num_points)];
@@ -1195,10 +1157,9 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
             for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
         }
     }
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     if (pwpoly != 0){
         pwpoly->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
@@ -1225,49 +1186,48 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
     }else{
         throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctions() called for a grid that is neither localp polynomial not wavelet");
     }
-    clearCanonicalPoints(x_tmp);
 }
 int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     int num_nz = 0;
     if (pwpoly != 0){
         num_nz = pwpoly->getSpareBasisMatrixNZ(x_canonical, num_x);
     }else if (wavelet != 0){
         int num_points = base->getNumPoints();
-        double *dense_vals = new double[num_points * num_x];
-        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals);
-        for(int i=0; i<num_points*num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
-        delete[] dense_vals;
+        Data2D<double> dense_vals;
+        dense_vals.resize(num_points, num_x);
+        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
+        for(auto v : *dense_vals.getVector()) if (v != 0.0) num_nz++;
     }else{
         return num_x * base->getNumPoints();
     }
     return num_nz;
-    clearCanonicalPoints(x_tmp);
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const{
-    double *x_tmp = 0;
+    Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     if (pwpoly != 0){
         pwpoly->buildSpareBasisMatrixStatic(x_canonical, num_x, 32, pntr, indx, vals);
     }else if (wavelet != 0){
         int num_points = base->getNumPoints();
-        double *dense_vals = new double[num_points * num_x];
-        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals);
+        Data2D<double> dense_vals;
+        dense_vals.resize(num_points, num_x);
+        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         int num_nz = 0;
-        for(int i=0; i<num_points*num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
+        for(auto v : *dense_vals.getVector()) if (v != 0.0) num_nz++;
         num_nz = 0;
         for(int i=0; i<num_x; i++){
             pntr[i] = num_nz;
+            const double *v = dense_vals.getStrip(i);
             for(int j=0; j<num_points; j++){
-                if (dense_vals[i*num_points + j] != 0){
+                if (v[j] != 0){
                     indx[num_nz] = j;
-                    vals[num_nz++] = dense_vals[i*num_points + j];
+                    vals[num_nz++] = v[j];
                 }
             }
         }
         pntr[num_x] = num_nz;
-        delete[] dense_vals;
     }else{
         int num_points = base->getNumPoints();
         base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);
@@ -1277,7 +1237,6 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
             for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
         }
     }
-    clearCanonicalPoints(x_tmp);
 }
 
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
@@ -1422,7 +1381,7 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     }else{
         ofs << "canonical" << endl;
     }
-    if (conformal_asin_power != 0){
+    if (conformal_asin_power.size() != 0){
         ofs << "asinconformal" << endl;
         ofs << conformal_asin_power[0];
         for(int j=1; j<base->getNumDimensions(); j++){
@@ -1474,9 +1433,9 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
         flag = 'n'; ofs.write(&flag, sizeof(char));
     }
     // conformal transforms: none 'n', asin 'a'
-    if (conformal_asin_power != 0){
+    if (conformal_asin_power.size() != 0){
         flag = 'a'; ofs.write(&flag, sizeof(char));
-        ofs.write((char*) conformal_asin_power, base->getNumDimensions() * sizeof(int));
+        ofs.write((char*) conformal_asin_power.data(), base->getNumDimensions() * sizeof(int));
     }else{
         flag = 'n'; ofs.write(&flag, sizeof(char));
     }
@@ -1568,10 +1527,8 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         if (T.compare("nonconformal") == 0){
             // do nothing, no conformal transform
         }else if (T.compare("asinconformal") == 0){
-            conformal_asin_power = new int[base->getNumDimensions()];
-            for(int j=0; j<base->getNumDimensions(); j++){
-                ifs >> conformal_asin_power[j];
-            }
+            conformal_asin_power.resize(base->getNumDimensions());
+            for(auto & a : conformal_asin_power) ifs >> a;
             getline(ifs, T);
         }else if (T.compare("TASMANIAN SG end") == 0){
             // for compatibility with version 4.0/4.1 and the missing conformal maps
@@ -1652,8 +1609,8 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }
     ifs.read(TSG, sizeof(char)); // conformal domain transform?
     if (TSG[0] == 'a'){
-        conformal_asin_power = new int[base->getNumDimensions()];
-        ifs.read((char*) conformal_asin_power, base->getNumDimensions() * sizeof(int));
+        conformal_asin_power.resize(base->getNumDimensions());
+        ifs.read((char*) conformal_asin_power.data(), base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong conformal transform type");
     }

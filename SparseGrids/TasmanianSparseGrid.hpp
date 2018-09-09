@@ -231,14 +231,13 @@ protected:
     double getQuadratureScale(int num_dimensions, TypeOneDRule rule) const;
 
     void mapConformalCanonicalToTransformed(int num_dimensions, int num_points, double x[]) const;
-    void mapConformalTransformedToCanonical(int num_dimensions, int num_points, double x[]) const;
+    void mapConformalTransformedToCanonical(int num_dimensions, int num_points, Data2D<double> &x) const;
     void mapConformalWeights(int num_dimensions, int num_points, double weights[]) const;
 
-    const double* formCanonicalPoints(const double *x, double* &x_temp, int num_x) const;
+    const double* formCanonicalPoints(const double *x, Data2D<double> &x_temp, int num_x) const;
     #ifdef Tasmanian_ENABLE_CUDA
     const double* formCanonicalPointsGPU(const double *gpu_x, int num_x, cudaDoubles &gpu_x_temp) const;
     #endif
-    void clearCanonicalPoints(double* &x_temp) const;
     void formTransformedPoints(int num_points, double x[]) const; // when calling get***Points()
 
     void writeAscii(std::ofstream &ofs) const;
@@ -257,7 +256,7 @@ private:
     GridFourier *fourier;
 
     std::vector<double> domain_transform_a, domain_transform_b;
-    int *conformal_asin_power;
+    std::vector<int> conformal_asin_power;
     std::vector<int> llimits;
 
     TypeAcceleration acceleration;
