@@ -797,22 +797,17 @@ void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions,
 void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions, int num_points, double x[]) const{
     if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
-        double **c = new double*[num_dimensions], **p = new double*[num_dimensions], **dc = new double*[num_dimensions], **dp = new double*[num_dimensions];
-        int sum_powers = 0; for(int j=0; j<num_dimensions; j++) sum_powers += (conformal_asin_power[j] + 1);
-        c[0] = new double[sum_powers]; p[0] = new double[sum_powers]; dc[0] = new double[sum_powers]; dp[0] = new double[sum_powers];
-        sum_powers = 0;
-        for(int j=1; j<num_dimensions; j++){
-            sum_powers += (conformal_asin_power[j-1] + 1);
-            c[j] = &(c[0][sum_powers]);
-            p[j] = &(p[0][sum_powers]);
-            dc[j] = &(dc[0][sum_powers]);
-            dp[j] = &(dp[0][sum_powers]);
+        std::vector<std::vector<double>> c(num_dimensions), p(num_dimensions), dc(num_dimensions), dp(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            c[j].resize(conformal_asin_power[j] + 1);
+            p[j].resize(conformal_asin_power[j] + 1);
+            dc[j].resize(conformal_asin_power[j] + 1);
+            dp[j].resize(conformal_asin_power[j] + 1);
         }
         double lgamma_half = lgamma(0.5);
-        double *cm = new double[num_dimensions];
+        std::vector<double> cm(num_dimensions, 0.0);
         for(int j=0; j<num_dimensions; j++){
             double factorial = 0.0;
-            cm[j] = 0.0;
             for(int k=0; k<=conformal_asin_power[j]; k++){
                 p[j][k] = (double)(2*k+1);
                 c[j][k] = lgamma(0.5 + ((double) k)) - lgamma_half - log(p[j][k]) - factorial;
@@ -853,11 +848,6 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
                 }
             }
         }
-        delete[] cm;
-        delete[] c[0]; delete[] c;
-        delete[] p[0]; delete[] p;
-        delete[] dc[0]; delete[] dc;
-        delete[] dp[0]; delete[] dp;
     }
 }
 void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points, double weights[]) const{
