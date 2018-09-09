@@ -1195,10 +1195,10 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
         num_nz = pwpoly->getSpareBasisMatrixNZ(x_canonical, num_x);
     }else if (wavelet != 0){
         int num_points = base->getNumPoints();
-        double *dense_vals = new double[num_points * num_x];
-        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals);
-        for(int i=0; i<num_points*num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
-        delete[] dense_vals;
+        Data2D<double> dense_vals;
+        dense_vals.resize(num_points, num_x);
+        wavelet->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
+        for(auto v : *dense_vals.getVector()) if (v != 0.0) num_nz++;
     }else{
         return num_x * base->getNumPoints();
     }
