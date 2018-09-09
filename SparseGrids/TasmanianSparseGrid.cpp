@@ -545,10 +545,9 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
 void TasmanianSparseGrid::integrate(double q[]) const{
     if (conformal_asin_power.size() != 0){
         int num_points = base->getNumPoints();
-        double *correction = new double[num_points];  std::fill(correction, correction + num_points, 1.0);
-        mapConformalWeights(base->getNumDimensions(), num_points, correction);
-        base->integrate(q, correction);
-        delete[] correction;
+        std::vector<double> correction(num_points, 1.0);
+        mapConformalWeights(base->getNumDimensions(), num_points, correction.data());
+        base->integrate(q, correction.data());
     }else{
         base->integrate(q, 0);
     }
