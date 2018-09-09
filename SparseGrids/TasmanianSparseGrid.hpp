@@ -231,7 +231,7 @@ protected:
     double getQuadratureScale(int num_dimensions, TypeOneDRule rule) const;
 
     void mapConformalCanonicalToTransformed(int num_dimensions, int num_points, double x[]) const;
-    void mapConformalTransformedToCanonical(int num_dimensions, int num_points, double x[]) const;
+    void mapConformalTransformedToCanonical(int num_dimensions, int num_points, Data2D<double> &x) const;
     void mapConformalWeights(int num_dimensions, int num_points, double weights[]) const;
 
     const double* formCanonicalPoints(const double *x, Data2D<double> &x_temp, int num_x) const;

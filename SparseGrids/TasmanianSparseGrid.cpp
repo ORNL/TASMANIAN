@@ -794,7 +794,7 @@ void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions,
         }
     }
 }
-void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions, int num_points, double x[]) const{
+void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions, int num_points, Data2D<double> &x) const{
     if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
         std::vector<std::vector<double>> c(num_dimensions), p(num_dimensions), dc(num_dimensions), dp(num_dimensions);
@@ -818,13 +818,14 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
             }
         }
         for(int i=0; i<num_points; i++){
+            double *this_x = x.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (x[i*num_dimensions+j] != 0.0){ // zero maps to zero and makes the log unstable
-                    double sign = (x[i*num_dimensions+j] > 0.0) ? 1.0 : -1.0;
-                    x[i*num_dimensions+j] = fabs(x[i*num_dimensions+j]);
-                    double b = x[i*num_dimensions+j];
-                    double logx = log(x[i*num_dimensions+j]);
-                    double r = x[i*num_dimensions+j];
+                if (this_x[j] != 0.0){ // zero maps to zero and makes the log unstable
+                    double sign = (this_x[j] > 0.0) ? 1.0 : -1.0;
+                    this_x[j] = fabs(this_x[j]);
+                    double b = this_x[j];
+                    double logx = log(this_x[j]);
+                    double r = this_x[j];
                     double dr = 1.0;
                     for(int k=1; k<=conformal_asin_power[j]; k++){
                         r  += exp( c[j][k] +  p[j][k] * logx);
@@ -833,10 +834,11 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
                     r /= cm[j];
                     r -= b; // transformed_x -b = 0
                     while(fabs(r) > TSG_NUM_TOL){
-                        x[i*num_dimensions+j] -= r * cm[j] / dr;
+                        this_x[j] -= r * cm[j] / dr;
 
-                        logx = log(fabs(x[i*num_dimensions+j]));
-                        r = x[i*num_dimensions+j]; dr = 1.0;
+                        logx = log(fabs(this_x[j]));
+                        r = this_x[j];
+                        dr = 1.0;
                         for(int k=1; k<=conformal_asin_power[j]; k++){
                             r  += exp( c[j][k] +  p[j][k] * logx);
                             dr += exp(dc[j][k] + dp[j][k] * logx);
@@ -844,7 +846,7 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
                         r /= cm[j];
                         r -= b;
                    }
-                    x[i*num_dimensions+j] *= sign;
+                    this_x[j] *= sign;
                 }
             }
         }
@@ -901,7 +903,7 @@ const double* TasmanianSparseGrid::formCanonicalPoints(const double *x, Data2D<d
     if ((domain_transform_a.size() != 0) || (conformal_asin_power.size() != 0)){
         int num_dimensions = base->getNumDimensions();
         x_temp.resize(num_dimensions, num_x); std::copy(x, x + ((size_t) num_dimensions) * ((size_t) num_x), x_temp.getStrip(0));
-        mapConformalTransformedToCanonical(num_dimensions, num_x, x_temp.getStrip(0));
+        mapConformalTransformedToCanonical(num_dimensions, num_x, x_temp);
         if (domain_transform_a.size() != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_temp.getStrip(0));
         return x_temp.getStrip(0);
     }else{
