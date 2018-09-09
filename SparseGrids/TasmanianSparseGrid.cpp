@@ -681,14 +681,13 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
             x[i] *= domain_transform_b[j];
         }
     }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){ // (-infty, +infty)
-        double *sqrt_b = new double[num_dimensions];
+        std::vector<double> sqrt_b(num_dimensions);
         for(int j=0; j<num_dimensions; j++) sqrt_b[j] = sqrt(domain_transform_b[j]);
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
             x[i] -= domain_transform_a[j];
             x[i] *= sqrt_b[j];
         }
-        delete[] sqrt_b;
     }else if (rule == rule_fourier){   // map to [0,1]^d
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
@@ -696,8 +695,8 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
             x[i] /= domain_transform_b[j]-domain_transform_a[j];
         }
     }else{ // canonical [-1,1]
-        double *rate = new double[num_dimensions];
-        double *shift = new double[num_dimensions];
+        std::vector<double> rate(num_dimensions);
+        std::vector<double> shift(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
             rate[j]  = 2.0 / (domain_transform_b[j] - domain_transform_a[j]);
             shift[j] = (domain_transform_b[j] + domain_transform_a[j]) / (domain_transform_b[j] - domain_transform_a[j]);
@@ -707,8 +706,6 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
             x[i] *= rate[j];
             x[i] -= shift[j];
         }
-        delete[] rate;
-        delete[] shift;
     }
 }
 double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule rule) const{
