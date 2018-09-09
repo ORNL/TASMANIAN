@@ -779,16 +779,19 @@ void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions,
                 factorial += log((double)(k+1));
             }
         }
+        Data2D<double> xdata;
+        xdata.load(num_dimensions, num_points, x);
         for(int i=0; i<num_points; i++){
+            double *this_x = xdata.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (x[i*num_dimensions+j] != 0.0){ // zero maps to zero and makes the log unstable
-                    double sign = (x[i*num_dimensions+j] > 0.0) ? 1.0 : -1.0;
-                    double logx = log(fabs(x[i*num_dimensions+j]));
-                    x[i*num_dimensions+j] = 0.0;
+                if (this_x[j] != 0.0){ // zero maps to zero and makes the log unstable
+                    double sign = (this_x[j] > 0.0) ? 1.0 : -1.0;
+                    double logx = log(fabs(this_x[j]));
+                    this_x[j] = 0.0;
                     for(int k=0; k<=conformal_asin_power[j]; k++){
-                        x[i*num_dimensions+j] += exp(c[j][k] + p[j][k] * logx);
+                        this_x[j] += exp(c[j][k] + p[j][k] * logx);
                     }
-                    x[i*num_dimensions+j] *= sign / cm[j];
+                    this_x[j] *= sign / cm[j];
                 }
             }
         }
