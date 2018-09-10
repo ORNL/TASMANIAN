@@ -185,6 +185,10 @@ namespace TasCUDA{
     // most data structures are identical to the CPU version, except num_nodes = max_levels + 1, and points is transposed from the IndexSet data
     void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, const cudaDoubles &nodes, const cudaDoubles &coeffs, double *gpu_result);
 
+    // evaluate basis functions for Fourier grids
+    // most data structures are identical to the CPU version, except num_nodes = max_levels + 1, and points is transposed from the IndexSet data
+    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, double *gpu_wreal, double *gpu_wimag);
+
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
     #ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__

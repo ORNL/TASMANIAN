@@ -181,6 +181,37 @@ void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, 
         (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_result);
 }
 
+// Fourier Grid basis evaluations
+void TasCUDA::devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, double *gpu_wreal, double *gpu_wimag){
+    std::vector<int> max_nodes(dims);
+    for(int j=0; j<dims; j++){
+        int n = 1;
+        for(int i=0; i<max_levels[j]; i++) n *= 3;
+        max_nodes[j] = n;
+    }
+
+    std::vector<int> offsets(dims);
+    offsets[0] = 0;
+    for(int d=1; d<dims; d++) offsets[d] = offsets[d-1] + 2 * num_x * (max_nodes[d-1] + 1);
+    size_t num_total = offsets[dims-1] + 2 * num_x * (max_nodes[dims-1] + 1);
+
+    cudaInts gpu_offsets(offsets);
+    cudaDoubles cache1D(num_total);
+    int num_blocks = num_x / _MAX_CUDA_THREADS + ((num_x % _MAX_CUDA_THREADS == 0) ? 0 : 1);
+
+    tasgpu_dfor_build_cache<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
+        (dims, num_x, gpu_x, gpu_offsets.data(), num_nodes.data(), cache1D.data());
+
+    num_blocks = num_x / 32 + ((num_x % 32 == 0) ? 0 : 1);
+    if (gpu_wimag == 0){
+        tasgpu_dfor_eval_sharedpoints<double, 32, true><<<num_blocks, 1024>>>
+            (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, 0);
+    }else{
+        tasgpu_dfor_eval_sharedpoints<double, 32, false><<<num_blocks, 1024>>>
+            (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, gpu_wimag);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //       Linear Algebra
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

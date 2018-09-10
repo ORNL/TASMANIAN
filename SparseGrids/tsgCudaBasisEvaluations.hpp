@@ -389,6 +389,109 @@ __global__ void tasgpu_dseq_eval_sharedpoints(int dims, int num_x, int num_point
     }
 }
 
+// call with THREADS > dims
+// creates a cache data structure for evaluating basis functions with fourier grids
+// dims and num_x are number of dimensions and number of x points, gpuX holds the points in the same format as the CPU version
+// each bock has size 2 X num_nodes[d] X num_x, holding the values of the Fourier basis associated with x in direction d
+// the result (i.e., cache) has block form, each of the offsets give cumulative index of the next block
+// blocks do not have identical structure, due to anisotropy block sizes can vary
+// num_nodes is the maximum number of nodes in the corresponding direction (i.e., maximum power)
+// cache is contiguous in the direction of x
+template <typename T, int THREADS>
+__global__ void tasgpu_dfor_build_cache(int dims, int num_x, const T *gpuX, const int *offsets, const int *num_nodes, T *result){
+    __shared__ int soffsets[THREADS]; // cache offsets, nodes and coefficients
+    if (threadIdx.x < dims)
+        soffsets[threadIdx.x] = offsets[threadIdx.x];
+    __syncthreads();
+
+    int i = blockIdx.x * THREADS + threadIdx.x;
+
+    while(i < num_x){
+        for(int d=0; d<dims; d++){
+            int offset = soffsets[d] + i;
+            T x = gpuX[i * dims + d]; // non-strided read
+
+            T step_real = cos(-2.0 * M_PI * x);
+            T step_imag = sin(-2.0 * M_PI * x); // start with exp(-i x)
+
+            T vreal = 1.0; // start with 1.0 (holds the current power)
+            T vimag = 0.0;
+
+            result[offset] = 1.0;
+            offset += num_x;
+            result[offset] = 0.0;
+            offset += num_x;
+            for(int j=1; j<num_nodes[d]; j+=2){
+                T v = vreal * step_real - vimag * step_imag;
+                vimag = vreal * step_imag + vimag * step_real;
+                vreal = v;
+
+                result[offset] = vreal;
+                offset += num_x;
+                result[offset] = vimag; // exp(-((j+1)/2) * i * x)
+                offset += num_x;
+                result[offset] = vreal;
+                offset += num_x;
+                result[offset] = -vimag; // conjugate for exp( ((j+1)/2) * i * x)
+                offset += num_x;
+            }
+        }
+
+        i += gridDim.x * THREADS;
+    }
+}
+
+// use with SHORT = 32, Dimensions < 32
+// cache is computed above, dims is the number of dimensions
+// num_x and num_points give the dimension of the basis matrix (data is contiguous in index of points)
+// points is an array of integers, but it the transpose of the CPU points
+template <typename T, int SHORT, bool interlace>
+__global__ void tasgpu_dfor_eval_sharedpoints(int dims, int num_x, int num_points, const int *points, const int *offsets, const T *cache, T *wreal, T *wimag){
+    __shared__ int cpoints[SHORT][SHORT]; // uses only 32 * 32 * 4 = 4K of 48K shared memory
+
+    int height = threadIdx.x % SHORT; // threads are oranized logically in a square of size SHORT by SHORT
+    int swidth = threadIdx.x / SHORT; // height and swidth are the indexes of this thread in the block (relates to num_points and num_x respectively)
+
+    int id_p = SHORT * blockIdx.x;
+
+    while(id_p < num_points){
+        if ((swidth < dims) && (id_p + height < num_points)){
+            cpoints[swidth][height] = points[swidth * num_points + id_p + height]; // load a block of points
+        }
+        __syncthreads();
+
+        if (id_p + height < num_points){
+            int id_x = swidth;
+            while(id_x < num_x){ // loop over the x-values
+
+                // read and multiply from cached data strucutre, but uses only L2/1 cache, no shared GPU memory
+                T vreal = cache[2 * num_x * cpoints[0][height] + id_x];
+                T vimag = cache[2 * num_x * cpoints[0][height] + num_x + id_x];
+                for(int j=1; j<dims; j++){
+                    T sreal = cache[offsets[j] + 2 * num_x * cpoints[j][height] + id_x];
+                    T simag = cache[offsets[j] + 2 * num_x * cpoints[j][height] + num_x + id_x];
+
+                    T v = vreal * sreal - vimag * simag;
+                    vimag = vreal * simag + vimag * sreal;
+                    vreal = v;
+                }
+
+                if (interlace){
+                    wreal[2 * (num_points * id_x + id_p + height)] = vreal;
+                    wreal[2 * (num_points * id_x + id_p + height) + 1] = vimag;
+                }else{
+                    wreal[num_points * id_x + id_p + height] = vreal;
+                    wimag[num_points * id_x + id_p + height] = vimag;
+                }
+
+                id_x += SHORT;
+            }
+        }
+        id_p += SHORT * gridDim.x;
+        __syncthreads();
+    }
+}
+
 }
 
 #endif
