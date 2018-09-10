@@ -731,10 +731,21 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     for(int i=0; i<2 * getNumPoints() * num_outputs; i++) fourier_coefs[i] = c[i];
 }
 
+#ifdef Tasmanian_ENABLE_CUDA
+void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
+    loadCudaPoints();
+    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_num_nodes, cuda_points, gpu_y, 0);
+}
+void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const double gpu_x[], int num_x, cudaDoubles &wreal, cudaDoubles &wimag) const{
+}
+#endif
+
 void GridFourier::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_real.clear();
     cuda_imag.clear();
+    cuda_num_nodes.clear();
+    cuda_points.clear();
     cuda_engine.reset();
     #endif
 }

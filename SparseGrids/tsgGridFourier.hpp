@@ -101,6 +101,11 @@ public:
     void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const;
+    void evaluateHierarchicalFunctionsInternalGPU(const double gpu_x[], int num_x, cudaDoubles &wreal, cudaDoubles &wimag) const;
+    #endif
+
     void clearAccelerationData();
     void clearRefinement();
     void mergeRefinement();
@@ -159,6 +164,25 @@ protected:
         cuda_real.load(num_coeff, fourier_coefs);
         cuda_imag.load(num_coeff, &(fourier_coefs[num_coeff]));
     }
+    void loadCudaPoints() const{
+        if (cuda_num_nodes.size() != 0) return;
+        std::vector<int> num_nodes(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            int n = 1;
+            for(int i=0; i<max_levels[j]; i++) n *= 3;
+            num_nodes[j] = n;
+        }
+        cuda_num_nodes.load(num_nodes); // num powers in each direction
+        IndexSet *work = (points != 0) ? points : needed;
+        int num_points = work->getNumIndexes();
+        Data2D<int> transpoints; transpoints.resize(work->getNumIndexes(), num_dimensions);
+        for(int i=0; i<num_points; i++){
+            for(int j=0; j<num_dimensions; j++){
+                transpoints.getStrip(j)[i] = work->getIndex(i)[j];
+            }
+        }
+        cuda_points.load(*(transpoints.getVector()));
+    }
     #endif
 
 private:
@@ -182,6 +206,7 @@ private:
     #ifdef Tasmanian_ENABLE_CUDA
     mutable LinearAlgebraEngineGPU cuda_engine;
     mutable cudaDoubles cuda_real, cuda_imag;
+    mutable cudaInts cuda_num_nodes, cuda_points;
     #endif
 };
 
