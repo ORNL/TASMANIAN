@@ -914,7 +914,7 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
 const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, int num_x, cudaDoubles &gpu_x_temp) const{
     if (domain_transform_a.size() != 0){
         if (acc_domain.empty()) acc_domain.load(domain_transform_a, domain_transform_b);
-        acc_domain.getCanonicalPoints(gpu_x, num_x, gpu_x_temp);
+        acc_domain.getCanonicalPoints(isFourier(), gpu_x, num_x, gpu_x_temp);
         return gpu_x_temp.data();
     }else{
         return gpu_x;

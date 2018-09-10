@@ -68,6 +68,19 @@ __global__ void tasgpu_transformed_to_canonical(int dims, int num_x, int size_a,
     }
 }
 
+// convert (-1, 1) to (0, 1)
+template<typename T, int THREADS>
+__global__ void tasgpu_m11_to_01(int num_points, T *gpu_x){
+    int i = blockIdx.x * THREADS + threadIdx.x;
+    while (i < num_points){
+        T v = gpu_x[i];
+        v += 1.0;
+        v /= 2.0;
+        gpu_x[i] = v;
+        i += THREADS * gridDim.x;
+    }
+}
+
 // evaluates a single basis function
 // syncronize with GridLocalPolynomial::encodeSupportForGPU() for the meaning of negative support
 // in essense, the formula is that feval = 1 - |x - node| / support, or feval = 1 - (x - node)^2 / support^2
