@@ -132,11 +132,11 @@ if (Tasmanian_ENABLE_CUDA)
     find_package(CUDA)
 
     if (CUDA_FOUND)
+        # newer cmake versions use "CUDA_STANDARD" target property to set the C++ 2011 standard
+        # while Tasmanian sets the property for every target, sometimes cmake does not respect that property (e.g., cmake 3.11.4)
+        list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
         if(${CMAKE_VERSION} VERSION_LESS "3.7.0")
-            # cmake versions prior to 3.7.0 do not respect c++11 flags and include directories defined per target
-            # there is no other way to pass the "c++11" flag to CUDA or to include the condifured folder
-            # cmake versions 3.7.0 and above do not need the statements below
-            list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
+            # cmake prior to 3.7.0 CUDA does not respect include folders added per-target
             include_directories("${CMAKE_CURRENT_BINARY_DIR}/configured/")
         endif()
     else()
