@@ -735,6 +735,7 @@ void GridFourier::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_real.clear();
     cuda_imag.clear();
+    cuda_engine.reset();
     #endif
 }
 void GridFourier::clearRefinement(){ return; }     // to be expanded later
