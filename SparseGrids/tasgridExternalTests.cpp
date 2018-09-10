@@ -1536,6 +1536,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             grid->setGPUID(testGpuID);
         }
         //grid->printStats();
+        //cout << "Testing Batch evaluations" << endl;
 
         test_y.resize(1); // makes sure that evaluate sets the right dimension
 
@@ -1556,6 +1557,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             exit(1);
         }
 
+        //cout << "Testing Fast evaluations" << endl;
         grid->evaluateFast(x, test_y);
         for(int i= 1; i<num_fast; i++){
             grid->evaluateFast(&(x[i*dims]), &(test_y[i*outs]));
@@ -1586,6 +1588,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
     }
 
+    //cout << "End of acceleration test." << endl;
     return pass;
 }
 
