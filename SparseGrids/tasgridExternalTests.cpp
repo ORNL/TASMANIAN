@@ -1750,6 +1750,51 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         TasCUDA::cudaDel<double>(gpux);
     }}
 
+    // Fourier Grid evaluations of the basis functions
+    {int numx = 2020;
+
+    std::vector<double> cpux(numx * dims);
+    setRandomX(numx * dims, cpux.data());
+    for(int i=0; i<numx; i++){
+        for(int j=0; j<dims; j++){
+            cpux[dims*i + j] = cpux[dims*i + j] * (b[j] - a[j]) + a[j];
+        }
+    }
+
+    grid.makeFourierGrid(dims, 0, 5, type_level); //cout << grid.getNumPoints() << endl;
+    grid.setDomainTransform(a, b);
+    //cout << "Memory requirements = " << (grid.getNumPoints() * numx * 16) / (1024 * 1024) << "MB" << endl;
+    std::vector<double> truey;
+    grid.evaluateHierarchicalFunctions(cpux, truey);
+
+    for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
+        grid.makeFourierGrid(dims, 0, 5, type_level);
+        grid.setDomainTransform(a, b);
+        cudaSetDevice(gpuID);
+        grid.enableAcceleration(TasGrid::accel_gpu_cuda);
+        grid.setGPUID(gpuID);
+
+        double *gpux = TasCUDA::cudaSend(cpux);
+        double *gpuy = TasCUDA::cudaNew<double>(2 * numx * grid.getNumPoints());
+        grid.evaluateHierarchicalFunctionsGPU(gpux, numx, gpuy);
+        double *cpuy = new double[2 * numx * grid.getNumPoints()];
+        TasCUDA::cudaRecv<double>(2 * numx * grid.getNumPoints(), gpuy, cpuy);
+
+        double err = 0.0;
+        for(int i=0; i<2 * numx * grid.getNumPoints(); i++){
+            //cout << cpuy[i] << "  " << truey[i] << "  " << fabs(cpuy[i] - truey[i]) << endl;
+            if (err < fabs(cpuy[i] - truey[i])) err = fabs(cpuy[i] - truey[i]);
+        }
+        if (err > TSG_NUM_TOL){
+            cout << "ERROR: failed Sequence grid GPU basis evaluations with error: " << err << endl;
+            grid.printStats();
+            pass = false;
+        }
+        delete[] cpuy;
+        TasCUDA::cudaDel<double>(gpuy);
+        TasCUDA::cudaDel<double>(gpux);
+    }}
+
     return pass;
 
     #else
