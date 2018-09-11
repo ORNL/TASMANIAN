@@ -156,7 +156,7 @@ public:
     void clear();
     bool empty();
     void load(const std::vector<double> &transform_a, const std::vector<double> &transform_b);
-    void getCanonicalPoints(const double *gpu_transformed_x, int num_x, cudaDoubles &gpu_canonical_x);
+    void getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, cudaDoubles &gpu_canonical_x);
 
 private:
     // these actually store the rate and shift and not the hard upper/lower limits
@@ -170,7 +170,7 @@ private:
 // namespace realized in tsgCudaKernels.cu, each function corresponds to a CUDA kernel for evaluations of basis matrix, domain transform, or fallback linear algebra
 namespace TasCUDA{
     // convert transformed points to the canonical domain, all inputs live on the GPU
-    void dtrans2can(int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b, const double *gpu_x_transformed, double *gpu_x_canonical);
+    void dtrans2can(bool use01, int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b, const double *gpu_x_transformed, double *gpu_x_canonical);
 
     // evaluate local polynomial rules
     void devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y);
@@ -184,6 +184,10 @@ namespace TasCUDA{
     // evaluata basis functions for sequence rules
     // most data structures are identical to the CPU version, except num_nodes = max_levels + 1, and points is transposed from the IndexSet data
     void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, const cudaDoubles &nodes, const cudaDoubles &coeffs, double *gpu_result);
+
+    // evaluate basis functions for Fourier grids
+    // most data structures are identical to the CPU version, except num_nodes = max_levels + 1, and points is transposed from the IndexSet data
+    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, double *gpu_wreal, double *gpu_wimag);
 
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas

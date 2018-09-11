@@ -914,7 +914,7 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
 const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, int num_x, cudaDoubles &gpu_x_temp) const{
     if (domain_transform_a.size() != 0){
         if (acc_domain.empty()) acc_domain.load(domain_transform_a, domain_transform_b);
-        acc_domain.getCanonicalPoints(gpu_x, num_x, gpu_x_temp);
+        acc_domain.getCanonicalPoints(isFourier(), gpu_x, num_x, gpu_x_temp);
         return gpu_x_temp.data();
     }else{
         return gpu_x;
@@ -1089,7 +1089,8 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int nu
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const{
     int num_points = getNumPoints();
     size_t num_x = x.size() / getNumDimensions();
-    if (y.size() < num_points * num_x) y.resize(num_points * num_x);
+    size_t expected_size = num_points * num_x * (isFourier() ? 2 : 1);
+    if (y.size() < expected_size) y.resize(expected_size);
     evaluateHierarchicalFunctions(x.data(), (int) num_x, y.data());
 }
 #ifdef Tasmanian_ENABLE_CUDA
@@ -1099,6 +1100,8 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[],
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
     if (pwpoly != 0){
         pwpoly->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y);
+    }else if (fourier != 0){
+        fourier->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
     }else{
         sequence->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
     }
