@@ -666,14 +666,13 @@ void GridFourier::evaluateBatchGPUcuda(const double[], int, double[]) const{}
 
 #ifdef Tasmanian_ENABLE_MAGMA
 void GridFourier::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
-    int num_points = points->getNumIndexes();
     prepareCudaData();
-    Data2D<double> wreal;
-    Data2D<double> wimag;
-    evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
+    int num_points = points->getNumIndexes();
+    cudaDoubles wreal, wimag, gpu_x(num_dimensions, num_x, x);
+    evaluateHierarchicalFunctionsInternalGPU(gpu_x.data(), num_x, wreal, wimag);
     cudaDoubles gpuY;
-    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points,  1.0, cuda_real, *(wreal.getVector()), 0.0, gpuY);
-    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, -1.0, cuda_imag, *(wimag.getVector()), 1.0, gpuY);
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points,  1.0, cuda_real, wreal, 0.0, gpuY);
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, -1.0, cuda_imag, wimag, 1.0, gpuY);
     gpuY.unload(y);
 }
 #else
