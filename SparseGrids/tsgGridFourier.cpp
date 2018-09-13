@@ -36,12 +36,12 @@
 
 namespace TasGrid{
 
-GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0), active_w(0),
+GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0),
     max_levels(0), points(0), needed(0), values(0)
 {}
 
 GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0),
-    active_w(0), max_levels(0), points(0), needed(0), values(0){
+    max_levels(0), points(0), needed(0), values(0){
     copyGrid(&fourier);
 }
 
@@ -113,7 +113,7 @@ void GridFourier::read(std::ifstream &ifs){
 
         tensors = new IndexSet(num_dimensions);  tensors->read(ifs);
         active_tensors = new IndexSet(num_dimensions);  active_tensors->read(ifs);
-        active_w = new int[active_tensors->getNumIndexes()];  for(int i=0; i<active_tensors->getNumIndexes(); i++){ ifs >> active_w[i]; }
+        active_w.resize(active_tensors->getNumIndexes());  for(auto &w : active_w) ifs >> w;
         ifs >> flag; if (flag == 1){ points = new IndexSet(num_dimensions); points->read(ifs); }
         ifs >> flag; if (flag == 1){ needed = new IndexSet(num_dimensions); needed->read(ifs); }
         max_levels.resize(num_dimensions); for(auto &m : max_levels){ ifs >> m; }
@@ -149,7 +149,7 @@ void GridFourier::writeBinary(std::ofstream &ofs) const{
     if (num_dimensions > 0){
         tensors->writeBinary(ofs);
         active_tensors->writeBinary(ofs);
-        ofs.write((char*) active_w, active_tensors->getNumIndexes() * sizeof(int));
+        ofs.write((char*) active_w.data(), active_tensors->getNumIndexes() * sizeof(int));
         char flag;
         if (points == 0){
             flag = 'n'; ofs.write(&flag, sizeof(char));
@@ -198,8 +198,8 @@ void GridFourier::readBinary(std::ifstream &ifs){
     if (num_dimensions > 0){
         tensors = new IndexSet(num_dimensions);  tensors->readBinary(ifs);
         active_tensors = new IndexSet(num_dimensions);  active_tensors->readBinary(ifs);
-        active_w = new int[active_tensors->getNumIndexes()];
-        ifs.read((char*) active_w, active_tensors->getNumIndexes() * sizeof(int));
+        active_w.resize(active_tensors->getNumIndexes());
+        ifs.read((char*) active_w.data(), active_tensors->getNumIndexes() * sizeof(int));
 
         char flag;
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ points = new IndexSet(num_dimensions); points->readBinary(ifs); }
@@ -237,10 +237,10 @@ void GridFourier::reset(){
     if (wrapper != 0){ delete wrapper; wrapper = 0; }
     if (tensors != 0){ delete tensors; tensors = 0; }
     if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
-    if (active_w != 0){ delete[] active_w; active_w = 0; }
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
     if (values != 0){ delete values; values = 0; }
+    active_w.clear();
     fourier_coefs.clear();
     num_dimensions = 0;
     num_outputs = 0;
@@ -288,9 +288,8 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
 
     int nz_weights = active_tensors->getNumIndexes();
 
-    active_w = new int[nz_weights];
-    int count = 0;
-    for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w[count++] = tensors_w[i]; }
+    active_w.reserve(nz_weights);
+    for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w.push_back(tensors_w[i]); }
 
     needed = IM.generateNestedPoints(tensors, wrapper); // nested grids exploit nesting
 
