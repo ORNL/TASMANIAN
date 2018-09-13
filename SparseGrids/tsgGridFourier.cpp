@@ -86,6 +86,8 @@ void GridFourier::write(std::ofstream &ofs) const{
                 ofs << "0";
             }
         }
+        ofs << endl;
+        ofs << "0"; // indicate no refinement, will implement in the future
 
         /* not needed right now; will need later for refinement
         if (updated_tensors != 0){
@@ -128,6 +130,7 @@ void GridFourier::read(std::ifstream &ifs){
                 for(auto &c : *fourier_coefs.getVector()) ifs >> c;
             }
         }
+        ifs >> flag;
 
         IndexManipulator IM(num_dimensions);
         int oned_max_level = max_levels[0];
@@ -174,6 +177,7 @@ void GridFourier::writeBinary(std::ofstream &ofs) const{
                 flag = 'n'; ofs.write(&flag, sizeof(char));
             }
         }
+        flag = 'n'; ofs.write(&flag, sizeof(char)); // no refinement, will implement in the future
 
         /* don't need this right now; will need later when refinement is added
         if (updated_tensors != 0){
@@ -218,6 +222,7 @@ void GridFourier::readBinary(std::ifstream &ifs){
                 ifs.read((char*) fourier_coefs.getStrip(0), 2 * ((size_t) num_outputs) * ((size_t) work->getNumIndexes()) * sizeof(double));
             }
         }
+        ifs.read((char*) &flag, sizeof(char));
 
         IndexManipulator IM(num_dimensions);
         int oned_max_level;
