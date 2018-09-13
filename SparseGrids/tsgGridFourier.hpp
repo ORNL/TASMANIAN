@@ -160,9 +160,10 @@ protected:
     #ifdef Tasmanian_ENABLE_CUDA
     void prepareCudaData() const{
         if (cuda_real.size() > 0) return;
-        size_t num_coeff = ((size_t) num_outputs) * ((size_t) points->getNumIndexes());
-        cuda_real.load(num_coeff, fourier_coefs);
-        cuda_imag.load(num_coeff, &(fourier_coefs[num_coeff]));
+        int num_points = points->getNumIndexes();
+        size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
+        cuda_real.load(num_coeff, fourier_coefs.getCStrip(0));
+        cuda_imag.load(num_coeff, fourier_coefs.getCStrip(num_points));
     }
     void loadCudaPoints() const{
         if (cuda_num_nodes.size() != 0) return;
@@ -192,12 +193,12 @@ private:
 
     IndexSet *tensors;
     IndexSet *active_tensors;
-    int *active_w;
+    std::vector<int> active_w;
     std::vector<int> max_levels;
     IndexSet *points;
     IndexSet *needed;
 
-    double *fourier_coefs;
+    Data2D<double> fourier_coefs;
 
     StorageSet *values;
 
