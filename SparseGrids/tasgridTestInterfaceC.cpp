@@ -28,60 +28,18 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASGRID_UNIT_TESTS_HPP
-#define __TASGRID_UNIT_TESTS_HPP
+extern "C"{
 
-#include <cstdlib>
-#include <cstdio>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip>
-#include <string.h>
-#include <math.h>
+#include "stdio.h"
+#include "stdlib.h"
+#include "math.h"
+#include "TasmanianSparseGrid.h"
 
-#include "TasmanianSparseGrid.hpp"
+// The bulk of the C interface is tested through the Python wrapper
+// The purpose of this function is to test the C header and the few untested functions
+int testInterfaceC(){
+    return 1;
+}
 
-#include "tasgridTestFunctions.hpp"
 
-using std::cout;
-using std::endl;
-using std::setw;
-
-using namespace TasGrid;
-
-enum UnitTests{
-    unit_none, unit_all, unit_except, unit_api, unit_c
-};
-
-class GridUnitTester{
-public:
-    GridUnitTester();
-    ~GridUnitTester();
-
-    void setVerbose(bool new_verbose);
-
-    bool Test(UnitTests test);
-
-    bool testAllException();
-    bool testAPIconsistency();
-    bool testCInterface();
-
-protected:
-    void invalidArgumentCall(int i);
-    void runtimeErrorCall(int i);
-
-    void gridLoadEN2(TasmanianSparseGrid *grid) const; // load points using exp( - \| x \|^2 )
-
-    bool doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec = 1.E-12) const;
-    bool doesMatch(const std::vector<double> &a, const double b[], double prec = 1.E-12) const;
-    bool doesMatch(const std::vector<int> &a, const int b[]) const;
-    bool doesMatch(size_t n, double a[], const double b[], double prec = 1.E-12) const;
-
-private:
-    bool verbose;
-};
-
-extern "C" int testInterfaceC();
-
-#endif
+}

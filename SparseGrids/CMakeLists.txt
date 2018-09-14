@@ -153,7 +153,8 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridTestFunctions.hpp
                                   tasgridTestFunctions.cpp
                                   tasgridUnitTests.hpp
-                                  tasgridUnitTests.cpp)
+                                  tasgridUnitTests.cpp
+                                  tasgridTestInterfaceC.cpp)
 add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
 
 set_property(TARGET Tasmanian_tasgrid              PROPERTY CXX_STANDARD 11)

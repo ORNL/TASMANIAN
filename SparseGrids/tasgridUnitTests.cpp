@@ -46,11 +46,13 @@ bool GridUnitTester::Test(UnitTests test){
 
     bool testExceptions = true;
     bool testAPI = true;
+    bool testC = true;
 
     if ((test == unit_all) || (test == unit_except)) testExceptions = testAllException();
     if ((test == unit_all) || (test == unit_api)) testAPI = testAPIconsistency();
+    if ((test == unit_all) || (test == unit_c)) testC = testCInterface();
 
-    bool pass = testExceptions && testAPI;
+    bool pass = testExceptions && testAPI && testC;
     //bool pass = true;
 
     cout << endl;
@@ -349,6 +351,13 @@ bool GridUnitTester::testAPIconsistency(){
 
     cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
     return passAll;
+}
+
+bool GridUnitTester::testCInterface(){
+    bool pass = (testInterfaceC() != 0);
+    int wfirst = 15, wsecond = 30, wthird = 15;
+    cout << setw(wfirst+1) << "C interface" << setw(wsecond-1) << "" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
+    return pass;
 }
 
 #endif
