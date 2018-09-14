@@ -38,6 +38,15 @@ extern "C"{
 // The bulk of the C interface is tested through the Python wrapper
 // The purpose of this function is to test the C header and the few untested functions
 int testInterfaceC(){
+
+    void *grid = tsgConstructTasmanianSparseGrid();
+    tsgMakeGlobalGrid(grid, 2, 1, 1, "level", "clenshaw-curtis", 0, 0.0, 0.0, 0, 0);
+    int num_points = tsgGetNumPoints(grid);
+    if (num_points != 5){
+        printf("ERROR: simple Clenshaw-Curtis grid doesn't have 5 points.");
+        return 0;
+    }
+
     return 1;
 }
 
