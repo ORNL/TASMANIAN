@@ -374,6 +374,11 @@ bool GridUnitTester::testCoverUnimportant(){
         return false;
     }
 
+    #ifndef Tasmanian_ENABLE_CUDA
+    AccelerationMeta::cudaCheckError(0, 0);
+    AccelerationMeta::cublasCheckError(0, 0);
+    AccelerationMeta::cusparseCheckError(0, 0);
+    #endif
 
     return true;
 }
