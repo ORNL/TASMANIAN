@@ -78,6 +78,16 @@ int testInterfaceC(){
     for(i=0; i<5; i++) if (fabs(weights[i] - tiweights[i]) > 1.E-15){ printf("ERROR: mismatch iweights i = %d, expected = %1.16e, actual = %1.16e\n",i,tiweights[i],weights[i]); return 0; }
     free(weights);
 
+    int j, n = tsgGetNumPoints(grid);
+    points = tsgGetPoints(grid);
+    weights = tsgBatchGetInterpolationWeights(grid, points, n);
+    for(i=0; i<n; i++){
+        for(j=0; j<n; j++){
+            double expect = (i == j) ? 1.0 : 0.0;
+            if (fabs(weights[i*n + j] - expect) > 1.E-15){ printf("ERROR: mismatch batch iweights i = %d, expected = %1.16e, actual = %1.16e\n",i,expect,weights[i]); return 0; }
+        }
+    }
+
 
 
     return 1;
