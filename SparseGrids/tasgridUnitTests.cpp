@@ -44,15 +44,17 @@ bool GridUnitTester::Test(UnitTests test){
     cout << "       Tasmanian Sparse Grids Module: Unit Tests" << endl;
     cout << "---------------------------------------------------------------------" << endl << endl;
 
+    bool testCover = true;
     bool testExceptions = true;
     bool testAPI = true;
     bool testC = true;
 
+    if ((test == unit_all) || (test == unit_cover)) testCover = testCoverUnimportant();
     if ((test == unit_all) || (test == unit_except)) testExceptions = testAllException();
     if ((test == unit_all) || (test == unit_api)) testAPI = testAPIconsistency();
     if ((test == unit_all) || (test == unit_c)) testC = testCInterface();
 
-    bool pass = testExceptions && testAPI && testC;
+    bool pass = testCover && testExceptions && testAPI && testC;
     //bool pass = true;
 
     cout << endl;
@@ -358,6 +360,22 @@ bool GridUnitTester::testCInterface(){
     int wfirst = 15, wsecond = 30, wthird = 15;
     cout << setw(wfirst+1) << "C interface" << setw(wsecond-1) << "" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     return pass;
+}
+
+bool GridUnitTester::testCoverUnimportant(){
+    // some code is hard/impractical to test automatically, but untested code shows in coverage reports
+    // this function gives coverage to such special cases to avoid confusion in the report
+
+    const char *str = TasmanianSparseGrid::getGitCommitHash();
+    const char *str2 = TasmanianSparseGrid::getCmakeCxxFlags();
+    str = TasmanianSparseGrid::getCmakeCxxFlags();
+    if (str[0] != str2[0]){
+        cout << "ERROR: mismatch in strings in testCoverUnimportant()" << endl;
+        return false;
+    }
+
+
+    return true;
 }
 
 #endif
