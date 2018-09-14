@@ -84,6 +84,8 @@ int main(int argc, const char ** argv){
         else if ((strcmp(argv[k],"fourier") == 0)) test = test_fourier;
         else if ((strcmp(argv[k],"errors") == 0)) utest = unit_except;
         else if ((strcmp(argv[k],"api") == 0)) utest = unit_api;
+        else if ((strcmp(argv[k],"c") == 0)) utest = unit_c;
+        else if ((strcmp(argv[k],"cover") == 0)) utest = unit_cover;
         else if ((strcmp(argv[k],"-gpuid") == 0)){
             if (k+1 >= argc){
                 cerr << "ERROR: -gpuid requires a valid number!" << endl;

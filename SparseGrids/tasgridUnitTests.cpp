@@ -44,13 +44,17 @@ bool GridUnitTester::Test(UnitTests test){
     cout << "       Tasmanian Sparse Grids Module: Unit Tests" << endl;
     cout << "---------------------------------------------------------------------" << endl << endl;
 
+    bool testCover = true;
     bool testExceptions = true;
     bool testAPI = true;
+    bool testC = true;
 
+    if ((test == unit_all) || (test == unit_cover)) testCover = testCoverUnimportant();
     if ((test == unit_all) || (test == unit_except)) testExceptions = testAllException();
     if ((test == unit_all) || (test == unit_api)) testAPI = testAPIconsistency();
+    if ((test == unit_all) || (test == unit_c)) testC = testCInterface();
 
-    bool pass = testExceptions && testAPI;
+    bool pass = testCover && testExceptions && testAPI && testC;
     //bool pass = true;
 
     cout << endl;
@@ -349,6 +353,37 @@ bool GridUnitTester::testAPIconsistency(){
 
     cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
     return passAll;
+}
+
+bool GridUnitTester::testCInterface(){
+    bool pass = (testInterfaceC() != 0);
+    int wfirst = 15, wsecond = 30, wthird = 15;
+    cout << setw(wfirst+1) << "C interface" << setw(wsecond-1) << "" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
+    return pass;
+}
+
+bool GridUnitTester::testCoverUnimportant(){
+    // some code is hard/impractical to test automatically, but untested code shows in coverage reports
+    // this function gives coverage to such special cases to avoid confusion in the report
+
+    const char *str = TasmanianSparseGrid::getGitCommitHash();
+    const char *str2 = TasmanianSparseGrid::getCmakeCxxFlags();
+    str = TasmanianSparseGrid::getCmakeCxxFlags();
+    if (str[0] != str2[0]){
+        cout << "ERROR: mismatch in strings in testCoverUnimportant()" << endl;
+        return false;
+    }
+
+    #ifndef Tasmanian_ENABLE_CUDA
+    AccelerationMeta::cudaCheckError(0, 0);
+    AccelerationMeta::cublasCheckError(0, 0);
+    AccelerationMeta::cusparseCheckError(0, 0);
+    #endif
+
+    TypeOneDRule rules[43] = { rule_none, rule_clenshawcurtis, rule_clenshawcurtis0, rule_chebyshev, rule_chebyshevodd, rule_gausslegendre, rule_gausslegendreodd, rule_gausspatterson, rule_leja, rule_lejaodd, rule_rleja, rule_rlejadouble2, rule_rlejadouble4, rule_rlejaodd, rule_rlejashifted, rule_rlejashiftedeven, rule_rlejashifteddouble, rule_maxlebesgue, rule_maxlebesgueodd, rule_minlebesgue, rule_minlebesgueodd, rule_mindelta, rule_mindeltaodd, rule_gausschebyshev1, rule_gausschebyshev1odd, rule_gausschebyshev2, rule_gausschebyshev2odd, rule_fejer2, rule_gaussgegenbauer, rule_gaussgegenbauerodd, rule_gaussjacobi, rule_gaussjacobiodd, rule_gausslaguerre, rule_gausslaguerreodd, rule_gausshermite, rule_gausshermiteodd, rule_customtabulated, rule_localp, rule_localp0, rule_semilocalp, rule_localpb, rule_wavelet, rule_fourier};
+    for(int i=0; i<43; i++) str = OneDimensionalMeta::getHumanString(rules[i]);
+
+    return true;
 }
 
 #endif

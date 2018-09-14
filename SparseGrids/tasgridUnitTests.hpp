@@ -51,7 +51,7 @@ using std::setw;
 using namespace TasGrid;
 
 enum UnitTests{
-    unit_none, unit_all, unit_except, unit_api
+    unit_none, unit_all, unit_cover, unit_except, unit_api, unit_c
 };
 
 class GridUnitTester{
@@ -65,6 +65,8 @@ public:
 
     bool testAllException();
     bool testAPIconsistency();
+    bool testCInterface();
+    bool testCoverUnimportant();
 
 protected:
     void invalidArgumentCall(int i);
@@ -80,5 +82,7 @@ protected:
 private:
     bool verbose;
 };
+
+extern "C" int testInterfaceC();
 
 #endif
