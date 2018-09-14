@@ -67,6 +67,19 @@ int testInterfaceC(){
     for(i=0; i<10; i++) if (fabs(points[i] - tpoints[i]) > 1.E-15){ printf("ERROR: mismatch in loaded points i = %d, expected = %1.16e, actual = %1.16e\n",i,tpoints[i],points[i]); return 0; }
     free(points);
 
+    double tweights[5] = {4.0/3.0, 2.0/3.0, 2.0/3.0, 2.0/3.0, 2.0/3.0};
+    double *weights = tsgGetQuadratureWeights(grid);
+    for(i=0; i<5; i++) if (fabs(weights[i] - tweights[i]) > 1.E-15){ printf("ERROR: mismatch quadrature i = %d, expected = %1.16e, actual = %1.16e\n",i,tweights[i],weights[i]); return 0; }
+    free(weights);
+
+    double x[2] = {0.0, 1.0};
+    double tiweights[5] = {0.0, 0.0, 1.0, 0.0, 0.0};
+    weights = tsgGetInterpolationWeights(grid, x);
+    for(i=0; i<5; i++) if (fabs(weights[i] - tiweights[i]) > 1.E-15){ printf("ERROR: mismatch iweights i = %d, expected = %1.16e, actual = %1.16e\n",i,tiweights[i],weights[i]); return 0; }
+    free(weights);
+
+
+
     return 1;
 }
 
