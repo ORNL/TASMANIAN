@@ -380,6 +380,9 @@ bool GridUnitTester::testCoverUnimportant(){
     AccelerationMeta::cusparseCheckError(0, 0);
     #endif
 
+    TypeOneDRule rules[43] = { rule_none, rule_clenshawcurtis, rule_clenshawcurtis0, rule_chebyshev, rule_chebyshevodd, rule_gausslegendre, rule_gausslegendreodd, rule_gausspatterson, rule_leja, rule_lejaodd, rule_rleja, rule_rlejadouble2, rule_rlejadouble4, rule_rlejaodd, rule_rlejashifted, rule_rlejashiftedeven, rule_rlejashifteddouble, rule_maxlebesgue, rule_maxlebesgueodd, rule_minlebesgue, rule_minlebesgueodd, rule_mindelta, rule_mindeltaodd, rule_gausschebyshev1, rule_gausschebyshev1odd, rule_gausschebyshev2, rule_gausschebyshev2odd, rule_fejer2, rule_gaussgegenbauer, rule_gaussgegenbauerodd, rule_gaussjacobi, rule_gaussjacobiodd, rule_gausslaguerre, rule_gausslaguerreodd, rule_gausshermite, rule_gausshermiteodd, rule_customtabulated, rule_localp, rule_localp0, rule_semilocalp, rule_localpb, rule_wavelet, rule_fourier};
+    for(int i=0; i<43; i++) str = OneDimensionalMeta::getHumanString(rules[i]);
+
     return true;
 }
 
