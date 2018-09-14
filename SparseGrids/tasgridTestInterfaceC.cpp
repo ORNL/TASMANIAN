@@ -53,6 +53,17 @@ int testInterfaceC(){
     for(i=0; i<10; i++) if (fabs(points[i] - tpoints[i]) > 1.E-15){ printf("ERROR: mismatch in points i = %d, expected = %1.16e, actual = %1.16e\n",i,tpoints[i],points[i]); return 0; }
     free(points);
 
+    points = tsgGetNeededPoints(grid);
+    for(i=0; i<10; i++) if (fabs(points[i] - tpoints[i]) > 1.E-15){ printf("ERROR: mismatch in needed points i = %d, expected = %1.16e, actual = %1.16e\n",i,tpoints[i],points[i]); return 0; }
+    free(points);
+
+    double values[5] = {0.0, 1.0, 1.0, 1.0, 1.0};
+    tsgLoadNeededPoints(grid, values);
+
+    points = tsgGetLoadedPoints(grid);
+    for(i=0; i<10; i++) if (fabs(points[i] - tpoints[i]) > 1.E-15){ printf("ERROR: mismatch in loaded points i = %d, expected = %1.16e, actual = %1.16e\n",i,tpoints[i],points[i]); return 0; }
+    free(points);
+
     return 1;
 }
 
