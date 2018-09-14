@@ -40,6 +40,7 @@ extern "C"{
 int testInterfaceC(){
 
     void *grid = tsgConstructTasmanianSparseGrid();
+    if (tsgGetPoints(grid) != 0){ printf("ERROR: empty grid did not return null pointer on tsgGetPoints()\n"); return 0; }
     tsgMakeGlobalGrid(grid, 2, 1, 1, "level", "clenshaw-curtis", 0, 0.0, 0.0, 0, 0);
     int num_points = tsgGetNumPoints(grid);
     if (num_points != 5){
@@ -47,6 +48,7 @@ int testInterfaceC(){
         return 0;
     }
 
+    if (tsgGetLoadedPoints(grid) != 0){ printf("ERROR: empty grid did not return null pointer on tsgGetLoadedPoints()\n"); return 0; }
     double tpoints[10] = {0.0, 0.0, 0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 0.0};
     double *points = tsgGetPoints(grid);
     int i;
@@ -60,6 +62,7 @@ int testInterfaceC(){
     double values[5] = {0.0, 1.0, 1.0, 1.0, 1.0};
     tsgLoadNeededPoints(grid, values);
 
+    if (tsgGetNeededPoints(grid) != 0){ printf("ERROR: empty grid did not return null pointer on tsgGetNeededPoints()\n"); return 0; }
     points = tsgGetLoadedPoints(grid);
     for(i=0; i<10; i++) if (fabs(points[i] - tpoints[i]) > 1.E-15){ printf("ERROR: mismatch in loaded points i = %d, expected = %1.16e, actual = %1.16e\n",i,tpoints[i],points[i]); return 0; }
     free(points);
