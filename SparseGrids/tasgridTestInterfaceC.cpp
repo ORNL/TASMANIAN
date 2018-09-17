@@ -87,12 +87,17 @@ int testInterfaceC(){
             if (fabs(weights[i*n + j] - expect) > 1.E-15){ printf("ERROR: mismatch batch iweights i = %d, expected = %1.16e, actual = %1.16e\n",i,expect,weights[i]); return 0; }
         }
     }
+    free(weights);
+    free(points);
 
     int tcoeffs[4];
     tsgEstimateAnisotropicCoefficientsStatic(grid, "ipcurved", 0, tcoeffs);
     int *coeffs = tsgEstimateAnisotropicCoefficients(grid, "ipcurved", 0, &n);
     if (n != 4){ printf("ERROR: mismatch in number of anisotropic coefficients\n"); return 0; }
     for(i=0; i<n; i++) if (fabs(coeffs[i] - tcoeffs[i]) > 1.E-15){ printf("ERROR: mismatch acoeffs i = %d, expected = %d, actual = %d\n",i,tcoeffs[i],coeffs[i]); return 0; }
+    free(coeffs);
+
+    tsgDestructTasmanianSparseGrid(grid);
 
     return 1;
 }
