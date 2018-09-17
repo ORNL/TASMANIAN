@@ -95,7 +95,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<34; i++){
+    for(int i=0; i<35; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -223,6 +223,14 @@ void GridUnitTester::runtimeErrorCall(int i){
 
     case 32: grid.setConformalTransformASIN(transformAsin.data()); break; // grid is not initialized
     case 33: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); grid.getConformalTransformASIN(transformAsin.data()); break; // transform not initialized
+
+    case 34: {
+             grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
+             std::vector<int> pntr, indx;
+             std::vector<double> vals;
+             std::vector<double> x = {-0.33, 0.33};
+             grid.evaluateSparseHierarchicalFunctions(x, pntr, indx, vals);
+             }
 
     default: break;
     }
