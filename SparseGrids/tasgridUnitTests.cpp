@@ -95,7 +95,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<32; i++){
+    for(int i=0; i<34; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -179,6 +179,7 @@ void GridUnitTester::invalidArgumentCall(int i){
 void GridUnitTester::runtimeErrorCall(int i){
     std::vector<double> v, u;
     std::vector<int> w;
+    std::vector<int> transformAsin = {4, 4};
     double a[2], b[2];
     TasmanianSparseGrid grid;
     switch(i){
@@ -219,6 +220,9 @@ void GridUnitTester::runtimeErrorCall(int i){
     case 29: grid.setDomainTransform(a, b); break; // grid is not initialized
     case 30: grid.getDomainTransform(a, b); break; // grid is not initialized
     case 31: grid.setDomainTransform(u, v); break; // grid is not initialized
+
+    case 32: grid.setConformalTransformASIN(transformAsin.data()); break; // grid is not initialized
+    case 33: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); grid.getConformalTransformASIN(transformAsin.data()); break; // transform not initialized
 
     default: break;
     }
