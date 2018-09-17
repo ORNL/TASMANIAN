@@ -1171,9 +1171,10 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
         }
     }
 }
-void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const{
+void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const{
+    int num_x = ((int) x.size()) / getNumDimensions();
     Data2D<double> x_tmp;
-    const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
+    const double *x_canonical = formCanonicalPoints(x.data(), x_tmp, num_x);
     if (pwpoly != 0){
         pwpoly->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
     }else if (wavelet != 0){
