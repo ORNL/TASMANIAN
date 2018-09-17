@@ -256,6 +256,7 @@ add_test(SparseGridsWavelet      gridtest wavelet)
 add_test(SparseGridsFourier      gridtest fourier)
 add_test(SparseGridsExceptions   gridtest errors)
 add_test(SparseGridsAPI          gridtest api)
+add_test(SparseGridsC            gridtest c)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
     set_tests_properties(SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement SparseGridsGlobal SparseGridsLocal SparseGridsWavelet
         PROPERTIES
