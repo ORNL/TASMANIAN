@@ -495,7 +495,7 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, 1);
     switch (acceleration){
-        case accel_gpu_default:
+        #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_cublas:
             _TASMANIAN_SETGPU
             base->evaluateFastGPUcublas(x_canonical, y);
@@ -504,13 +504,18 @@ void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
             _TASMANIAN_SETGPU
             base->evaluateFastGPUcuda(x_canonical, y);
             break;
+        #ifdef Tasmanian_ENABLE_MAGMA
         case accel_gpu_magma:
             _TASMANIAN_SETGPU
             base->evaluateFastGPUmagma(gpuID, x_canonical, y);
             break;
+        #endif
+        #endif
+        #ifdef Tasmanian_ENABLE_BLAS
         case accel_cpu_blas:
             base->evaluateFastCPUblas(x_canonical, y);
             break;
+        #endif
         default:
             base->evaluate(x_canonical, y);
             break;
@@ -521,7 +526,7 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     switch (acceleration){
-        case accel_gpu_default:
+        #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_cublas:
             _TASMANIAN_SETGPU
             base->evaluateBatchGPUcublas(x_canonical, num_x, y);
@@ -530,13 +535,18 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
             _TASMANIAN_SETGPU
             base->evaluateBatchGPUcuda(x_canonical, num_x, y);
             break;
+        #ifdef Tasmanian_ENABLE_MAGMA
         case accel_gpu_magma:
             _TASMANIAN_SETGPU
             base->evaluateBatchGPUmagma(gpuID, x_canonical, num_x, y);
             break;
+        #endif
+        #endif
+        #ifdef Tasmanian_ENABLE_BLAS
         case accel_cpu_blas:
             base->evaluateBatchCPUblas(x_canonical, num_x, y);
             break;
+        #endif
         default:
             base->evaluateBatch(x_canonical, num_x, y);
             break;
