@@ -46,60 +46,52 @@ RuleWavelet::RuleWavelet(int ord, int iter_depth){
 }
 
 void RuleWavelet::updateOrder(int ord){
-	/*
-	 * Changes the order of the rule to the specified order. If order other than 1 is
-	 * specified, then the approximation to the wavelets will be recalculated.
-	 */
-	if(order == ord) return;
+    // Changes the order of the rule to the specified order. If order other than 1 is
+    // specified, then the approximation to the wavelets will be recalculated.
+    if(order == ord) return;
 
     // clear is practically free, call it every time
     data.clear();
 
     order = ord;
 
-	if(order == 3){
+    if(order == 3){
 
-		int num_data_points = (1 << iteration_depth) + 1;
+        int num_data_points = (1 << iteration_depth) + 1;
 
         data.resize(5); // (xs, level1 (scaling), level2, level3, level4)
         data[0].resize(num_data_points);
         double *xs = data[0].data();
 
-		for(int i = 0; i < num_data_points; i++){
-			xs[i] = -1. + 2*(double (i)) / (double (num_data_points - 1));
-		}
+        for(int i = 0; i < num_data_points; i++){
+            xs[i] = -1. + 2*(double (i)) / (double (num_data_points - 1));
+        }
 
-		// Coefficients derived by solving linear system involving scaling function
-		// integrals and moments.
-
-		double _coeff[8+16+24] =
-		{0.95958116146167449, 0.27778015867946454, -0.042754937296610125, -0.014317145809288835, // Second level
-				-0.34358723961941895, 0.36254192315551625, 0.20438681551383264, 0.012027193241660438,
-				// third level
-				0.90985488901447964, 0.29866296454372104, -0.077377811931657145, 0.017034083534297827,
-				-0.28361250628699103, 0.33723841173046543, 0.24560604387620491, -0.023811935316236606,
-				0.015786802304611155, 0.23056985382971185, 0.31221657974498912, -0.03868102549989539,
-				0.194797093133632, -0.099050236091189195, 0.51520570019738199, -0.073403162960780324,
-				// fourth level
-				0.90985443399962629, 0.29866318097339162, -0.077377917373678995, 0.017034105626588848,
-				-0.28361254472311259, 0.33723844527609648, 0.24560602528531161, -0.023811931411878345,
-				0.015786801751471, 0.23056986060092344, 0.31221657434994671, -0.038681024059425327,
-				0.14697942814289319, -0.047340431972365773, 0.51871874565793186, -0.093244980946745618,
-				-0.019628614067688826, 0.25611706552019509, 0.30090457777800012, -0.036629694186987166,
-				-1.0/32.0, 9.0/32.0, 9.0/32.0, -1.0/32.0
-		};
-
-		double *coeffs[3] = {_coeff, _coeff + 8, _coeff+24};
+        // Coefficients derived by solving linear system involving scaling function
+        // integrals and moments.
+        std::vector<std::vector<double>> coeffs(3);
+        coeffs[0] = {0.95958116146167449, 0.27778015867946454, -0.042754937296610125, -0.014317145809288835, // Second level
+                    -0.34358723961941895, 0.36254192315551625, 0.20438681551383264, 0.012027193241660438};
+        coeffs[1] = {0.90985488901447964, 0.29866296454372104, -0.077377811931657145, 0.017034083534297827, // third level
+                    -0.28361250628699103, 0.33723841173046543, 0.24560604387620491, -0.023811935316236606,
+                     0.015786802304611155, 0.23056985382971185, 0.31221657974498912, -0.03868102549989539,
+                     0.194797093133632, -0.099050236091189195, 0.51520570019738199, -0.073403162960780324};
+        coeffs[2] = {0.90985443399962629, 0.29866318097339162, -0.077377917373678995, 0.017034105626588848, // fourth level
+                    -0.28361254472311259, 0.33723844527609648, 0.24560602528531161, -0.023811931411878345,
+                     0.015786801751471, 0.23056986060092344, 0.31221657434994671, -0.038681024059425327,
+                     0.14697942814289319, -0.047340431972365773, 0.51871874565793186, -0.093244980946745618,
+                    -0.019628614067688826, 0.25611706552019509, 0.30090457777800012, -0.036629694186987166,
+                    -1.0/32.0, 9.0/32.0, 9.0/32.0, -1.0/32.0};
 
         // Initialize scaling functions
         data[1].resize(3*num_data_points);
         std::fill(data[1].begin(), data[1].end(), 0.0);
 
-		// Point (sparse grid numbering):
-		// 1     3     0     4     2
-		// X --- X --- X --- X --- X
-		// 0     1     2     3     4
-		// Point (level 2 coarse indexing)
+        // Point (sparse grid numbering):
+        // 1     3     0     4     2
+        // X --- X --- X --- X --- X
+        // 0     1     2     3     4
+        // Point (level 2 coarse indexing)
 
         // This ordering makes phi1 -> point 0, phi2 -> point 1, phi3 -> point 3
         // Points 2 & 4 can be found by reflection of phi2, phi3, respectively.
