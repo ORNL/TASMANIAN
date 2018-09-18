@@ -529,9 +529,15 @@ void GridWavelet::getNormalization(std::vector<double> &norm) const{
         }
     }
 }
-int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const{
+void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, Data2D<int> &pmap) const{
     int num_points = points->getNumIndexes();
-    int *pmap = new int[num_points * num_dimensions];  std::fill(pmap, pmap + num_points * num_dimensions, 0);
+    pmap.resize(num_dimensions, num_points);
+    if (tolerance == 0.0){
+        std::fill(pmap.getVector()->begin(), pmap.getVector()->end(), 1); // if tolerance is 0, refine everything
+        return;
+    }else{
+        std::fill(pmap.getVector()->begin(), pmap.getVector()->end(), 0);
+    }
 
     std::vector<double> norm;
     getNormalization(norm);
@@ -550,7 +556,8 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
                 small = !((fabs(s[output]) / norm[output]) > tolerance);
             }
             if (!small){
-                std::fill(&(pmap[i*num_dimensions]), &(pmap[i*num_dimensions]) + num_dimensions, 1);
+                int *p = pmap.getStrip(i);
+                std::fill(p, p + num_dimensions, 1);
             }
         }
     }else{
@@ -596,15 +603,13 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
                 }else{
                     if (((fabs(soeff[output]) / norm[output]) > tolerance) && ((fabs(coeff[0]) / norm[output]) > tolerance)) small = false;
                 }
-                pmap[pnts[i]*num_dimensions + d] = (small) ? 0 : 1;;
+                pmap.getStrip(pnts[i])[d] = (small) ? 0 : 1;
             }
 
             delete[] vals;
             delete[] global_to_pnts;
         }
     }
-
-    return pmap;
 }
 
 bool GridWavelet::addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const{
@@ -710,7 +715,8 @@ const int* GridWavelet::getPointIndexes() const{
 void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits){
     clearRefinement();
 
-    int *pmap = buildUpdateMap(tolerance, criteria, output);
+    Data2D<int> pmap;
+    buildUpdateMap(tolerance, criteria, output, pmap);
 
     bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
 
@@ -720,8 +726,9 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
 
     if (level_limits.empty()){
         for(int i=0; i<num_points; i++){
+            int *p = pmap.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (pmap[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                if (p[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
                         addChild(points->getIndex(i), j, refined, points);
                     }
@@ -730,8 +737,9 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
         }
     }else{
         for(int i=0; i<num_points; i++){
+            int *p = pmap.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                if (pmap[i*num_dimensions+j] == 1){ // if this dimension needs to be refined
+                if (p[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points->getIndex(i), j, refined, points))){
                         addChildLimited(points->getIndex(i), j, refined, points, level_limits);
                     }
@@ -744,8 +752,6 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
         needed = new IndexSet(refined);
     }
     delete refined;
-
-    delete[] pmap;
 }
 
 void GridWavelet::clearAccelerationData(){}
