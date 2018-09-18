@@ -534,12 +534,12 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
         for(int j=0; j<num_dimensions; j++){
             num_tensor_points *= wrapper->getNumPoints(levels[j]);
         }
-        int *refs = IM.referenceNestedPoints(levels, wrapper, work);
+        std::vector<int> refs;
+        IM.referencePoints<true>(levels, wrapper, work, refs);
         double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
         for(int i=0; i<num_tensor_points; i++){
             weights[refs[i]] += tensorw;
         }
-        delete[] refs;
     }
 }
 

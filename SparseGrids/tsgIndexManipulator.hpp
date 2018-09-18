@@ -64,7 +64,6 @@ public:
 
     IndexSet* tensorNestedPoints(const int levels[], const OneDimensionalWrapper *rule) const;
     IndexSet* generateNestedPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const;
-    int* referenceNestedPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const;
 
     template<bool nested> void referencePoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points, std::vector<int> &refs) const{
         std::vector<int> num_points(num_dimensions);

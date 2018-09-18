@@ -644,27 +644,6 @@ IndexSet* IndexManipulator::generateNestedPoints(const IndexSet *tensors, const 
     return result;
 }
 
-int* IndexManipulator::referenceNestedPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const{
-    std::vector<int> num_points(num_dimensions);
-    int num_total = 1;
-    for(int j=0; j<num_dimensions; j++){  num_points[j] = rule->getNumPoints(levels[j]); num_total *= num_points[j];  }
-
-    int* refs = new int[num_total];
-    std::vector<int> p(num_dimensions);
-
-    for(int i=num_total-1; i>=0; i--){
-        int t = i;
-        auto n = num_points.rbegin();
-        for(int j=num_dimensions-1; j>=0; j--){
-            p[j] = t % *n;
-            t /= *n++;
-        }
-        refs[i] = points->getSlot(p);
-    }
-
-    return refs;
-}
-
 IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneDRule rule, bool iexact) const{
     // may optimize this to consider deltas only
     int num_tensors = tensors->getNumIndexes();
