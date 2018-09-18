@@ -95,7 +95,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<32; i++){
+    for(int i=0; i<35; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -179,6 +179,7 @@ void GridUnitTester::invalidArgumentCall(int i){
 void GridUnitTester::runtimeErrorCall(int i){
     std::vector<double> v, u;
     std::vector<int> w;
+    std::vector<int> transformAsin = {4, 4};
     double a[2], b[2];
     TasmanianSparseGrid grid;
     switch(i){
@@ -219,6 +220,17 @@ void GridUnitTester::runtimeErrorCall(int i){
     case 29: grid.setDomainTransform(a, b); break; // grid is not initialized
     case 30: grid.getDomainTransform(a, b); break; // grid is not initialized
     case 31: grid.setDomainTransform(u, v); break; // grid is not initialized
+
+    case 32: grid.setConformalTransformASIN(transformAsin.data()); break; // grid is not initialized
+    case 33: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); grid.getConformalTransformASIN(transformAsin.data()); break; // transform not initialized
+
+    case 34: {
+             grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
+             std::vector<int> pntr, indx;
+             std::vector<double> vals;
+             std::vector<double> x = {-0.33, 0.33};
+             grid.evaluateSparseHierarchicalFunctions(x, pntr, indx, vals);
+             }
 
     default: break;
     }
@@ -349,6 +361,42 @@ bool GridUnitTester::testAPIconsistency(){
     if (llimits.size() != 0) pass = false;
 
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "level limits" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
+    passAll = pass && passAll;
+
+    pass = true;
+    grid.makeLocalPolynomialGrid(3, 2, 4, rule_localp);
+    int *apntr, *aindx;
+    double *avals;
+    std::vector<int> vpntr, vindx;
+    std::vector<double> vvals;
+    x = {0.33, 0.33, 0.33, 0.0, 0.44, 0.66, 0.1, -0.33, -0.66};
+    grid.evaluateSparseHierarchicalFunctions(x.data(), 3, apntr, aindx, avals);
+    grid.evaluateSparseHierarchicalFunctions(x, vpntr, vindx, vvals);
+    pass = doesMatch(vpntr, apntr) && doesMatch(vindx, aindx) && doesMatch(vvals, avals);
+    delete[] apntr;
+    delete[] aindx;
+    delete[] avals;
+    vpntr.clear();
+    vindx.clear();
+    vvals.clear();
+
+    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "localp sparse basis" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
+    passAll = pass && passAll;
+
+    pass = true;
+    grid.makeWaveletGrid(3, 3, 2, 3);
+    x = {0.33, 0.33, 0.33, 0.0, 0.44, 0.66, 0.1, -0.33, -0.66};
+    grid.evaluateSparseHierarchicalFunctions(x.data(), 3, apntr, aindx, avals);
+    grid.evaluateSparseHierarchicalFunctions(x, vpntr, vindx, vvals);
+    pass = doesMatch(vpntr, apntr) && doesMatch(vindx, aindx) && doesMatch(vvals, avals);
+    delete[] apntr;
+    delete[] aindx;
+    delete[] avals;
+    vpntr.clear();
+    vindx.clear();
+    vvals.clear();
+
+    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "wavelet sparse basis" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
 
     cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
