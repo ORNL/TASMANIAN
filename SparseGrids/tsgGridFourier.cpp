@@ -678,8 +678,8 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
         std::copy(fourier_coefs.getCStrip(0), fourier_coefs.getCStrip(0) + num_outputs, q);
     }else{
         // Do the expensive computation if we have a conformal map
-        double *w = new double[getNumPoints()];
-        getQuadratureWeights(w);
+        std::vector<double> w(getNumPoints());
+        getQuadratureWeights(w.data());
         for(int i=0; i<points->getNumIndexes(); i++){
             w[i] *= conformal_correction[i];
             const double *v = values->getValues(i);
@@ -687,7 +687,6 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
                 q[k] += w[i] * v[k];
             }
         }
-        delete[] w;
     }
 }
 
