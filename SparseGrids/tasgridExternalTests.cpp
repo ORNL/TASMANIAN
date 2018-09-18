@@ -394,8 +394,8 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             std::vector<double> minleb;
             greed.getMinLebesgueNodes(n, minleb);
 
-            MinLebesgue g(n, minleb.data());
-            OptimizerResult R = Optimizer::argMaxGlobal(&g);
+            tempFunctional<rule_minlebesgue> g(minleb);
+            OptimizerResult R = Optimizer::argMaxGlobal(g);
             if (fabs(R.xmax - greed.getMinLebesgueStored(n)) > 1.E-8){
                 pass = false;
                 cout << "ERROR: mismatch in stored vs computed nodes for rule_minlebesgue rule" << endl;

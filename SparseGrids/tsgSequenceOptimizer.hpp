@@ -169,11 +169,27 @@ public:
     static void sortIntervals(const std::vector<double> &nodes, std::vector<double> &intervals);
 };
 
+namespace Optimizer{
+    OptimizerResult argMaxGlobal(const Functional *F); // assumes range is [-1,1] and both points are included
+    OptimizerResult argMaxLocalPattern(const Functional *F, double left, double right);
+    double argMaxLocalSecant(const Functional *F, double left, double right);
+
+    OptimizerResult argMaxGlobal(const VectorFunctional &F); // assumes range is [-1,1] and both points are included
+    OptimizerResult argMaxLocalPattern(const VectorFunctional &F, double left, double right);
+    double argMaxLocalSecant(const VectorFunctional &F, double left, double right);
+};
+
 template<TypeOneDRule rule>
 class tempFunctional : public VectorFunctional{
 public:
     tempFunctional(const std::vector<double> &cnodes) : nodes(cnodes){
         if (rule != rule_leja) makeCoeff(nodes, coeff);
+    }
+    tempFunctional(const std::vector<double> &cnodes, double new_node){
+        nodes.resize(cnodes.size() + 1);
+        std::copy(cnodes.begin(), cnodes.end(), nodes.data());
+        nodes[cnodes.size()] = new_node;
+        makeCoeff(nodes, coeff);
     }
     ~tempFunctional(){}
 
@@ -188,11 +204,17 @@ public:
             double sum = 0.0;
             for(auto l : lag) sum += fabs(l);
             return sum;
+        }else if (rule == rule_minlebesgue){
+            // points almost overlap, will cause an explosion in the Lebesgue constant
+            for(auto n : nodes) if (fabs(x - n) < 10*TSG_NUM_TOL) return -1.E+100;
+            tempFunctional<rule_maxlebesgue> M(nodes, x);
+            OptimizerResult R = Optimizer::argMaxGlobal(M);
+            return -R.fmax;
         }
     }
 
     bool hasDerivative() const{
-        return true;
+        return (rule != rule_minlebesgue);
     }
 
     double getDiff(double x) const{
@@ -216,6 +238,7 @@ public:
             }
             return sum;
         }
+        return 0.0;
     }
 
     void getIntervals(std::vector<double> &intervals) const{
@@ -225,16 +248,6 @@ public:
 private:
     std::vector<double> nodes;
     std::vector<double> coeff;
-};
-
-namespace Optimizer{
-    OptimizerResult argMaxGlobal(const Functional *F); // assumes range is [-1,1] and both points are included
-    OptimizerResult argMaxLocalPattern(const Functional *F, double left, double right);
-    double argMaxLocalSecant(const Functional *F, double left, double right);
-
-    OptimizerResult argMaxGlobal(const VectorFunctional &F); // assumes range is [-1,1] and both points are included
-    OptimizerResult argMaxLocalPattern(const VectorFunctional &F, double left, double right);
-    double argMaxLocalSecant(const VectorFunctional &F, double left, double right);
 };
 
 }

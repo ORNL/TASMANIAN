@@ -65,17 +65,18 @@ void GreedySequences::getMaxLebesgueNodes(int n, std::vector<double> &nodes) con
     }
 }
 void GreedySequences::getMinLebesgueNodes(int n, std::vector<double> &nodes) const{
-    nodes.resize(n);
+    nodes.clear();
+    nodes.reserve(n);
     int stored = getNumMinLebesgueStored();
     int usefirst = (n > stored) ? stored : n;
     for(int i=0; i<usefirst; i++){
-        nodes[i] = getMinLebesgueStored(i);
+        nodes.push_back(getMinLebesgueStored(i));
     }
     if (n > stored){
         for(int i=stored; i<n; i++){
-            MinLebesgue g(i, nodes.data());
-            OptimizerResult R = Optimizer::argMaxGlobal(&g);
-            nodes[i] = R.xmax;
+            tempFunctional<rule_minlebesgue> g(nodes);
+            OptimizerResult R = Optimizer::argMaxGlobal(g);
+            nodes.push_back(R.xmax);
         }
     }
 }
