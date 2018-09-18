@@ -609,7 +609,7 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
 }
 
 bool GridWavelet::addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const{
-    int *dad = new int[num_dimensions];  std::copy(point, point + num_dimensions, dad);
+    std::vector<int> dad(num_dimensions);  std::copy(point, point + num_dimensions, dad.data());
     bool added = false;
     dad[direction] = rule1D.getParent(point[direction]);
     if (dad[direction] == -2){
@@ -626,12 +626,10 @@ bool GridWavelet::addParent(const int point[], int direction, GranulatedIndexSet
             added = true;
         }
     }
-
-    delete[] dad;
     return added;
 }
 void GridWavelet::addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const{
-    int *kid = new int[num_dimensions];  std::copy(point, point + num_dimensions, kid);
+    std::vector<int> kid(num_dimensions);  std::copy(point, point + num_dimensions, kid.data());
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
     if ((kid[direction] != -1) && (exclude->getSlot(kid) == -1)){
@@ -641,10 +639,9 @@ void GridWavelet::addChild(const int point[], int direction, GranulatedIndexSet 
     if ((kid[direction] != -1) && (exclude->getSlot(kid) == -1)){
         destination->addIndex(kid);
     }
-    delete[] kid;
 }
 void GridWavelet::addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const std::vector<int> &level_limits) const{
-    int *kid = new int[num_dimensions];  std::copy(point, point + num_dimensions, kid);
+    std::vector<int> kid(num_dimensions);  std::copy(point, point + num_dimensions, kid.data());
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
     if ((kid[direction] != -1) && (rule1D.getLevel(L) <= level_limits[direction]) && (exclude->getSlot(kid) == -1)){
@@ -654,7 +651,6 @@ void GridWavelet::addChildLimited(const int point[], int direction, GranulatedIn
     if ( (kid[direction] != -1) && (rule1D.getLevel(R) <= level_limits[direction]) && (exclude->getSlot(kid) == -1)){
         destination->addIndex(kid);
     }
-    delete[] kid;
 }
 
 void GridWavelet::clearRefinement(){
