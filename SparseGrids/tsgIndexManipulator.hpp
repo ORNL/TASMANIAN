@@ -57,7 +57,6 @@ public:
 
     UnsortedIndexSet* tensorGenericPoints(const int levels[], const OneDimensionalWrapper *rule) const;
     IndexSet* generateGenericPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const;
-    int* referenceGenericPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const;
 
     IndexSet* removeIndexesByLimit(IndexSet *iset, const std::vector<int> &limits) const;
 
@@ -66,6 +65,26 @@ public:
     IndexSet* tensorNestedPoints(const int levels[], const OneDimensionalWrapper *rule) const;
     IndexSet* generateNestedPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const;
     int* referenceNestedPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const;
+
+    template<bool nested> void referencePoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points, std::vector<int> &refs) const{
+        std::vector<int> num_points(num_dimensions);
+        int num_total = 1; // this will be a subset of all points, no danger of overflow
+        for(int j=0; j<num_dimensions; j++) num_points[j] = rule->getNumPoints(levels[j]);
+        for(auto n : num_points) num_total *= n;
+
+        refs.resize(num_total);
+        std::vector<int> p(num_dimensions);
+
+        for(int i=0; i<num_total; i++){
+            int t = i;
+            auto n = num_points.rbegin();
+            for(int j=num_dimensions-1; j>=0; j--){
+                p[j] = (nested) ? t % *n : rule->getPointIndex(levels[j], t % *n);
+                t /= *n++;
+            }
+            refs[i] = points->getSlot(p);
+        }
+    }
 
     IndexSet* getPolynomialSpace(const IndexSet *tensors, TypeOneDRule rule, bool iexact) const;
 

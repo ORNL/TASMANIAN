@@ -137,7 +137,7 @@ private:
     IndexSet *points;
     IndexSet *needed;
 
-    int **tensor_refs;
+    std::vector<std::vector<int>> tensor_refs;
 
     std::vector<int> max_levels; // for evaluation purposes, counts the maximum level in each direction (only counts tensors)
 

@@ -553,29 +553,6 @@ IndexSet* IndexManipulator::generateGenericPoints(const IndexSet *tensors, const
     return result;
 }
 
-int* IndexManipulator::referenceGenericPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const{
-    std::vector<int> num_points(num_dimensions);
-    int num_total = 1; // this will be a subset of all points, no danger of overflow
-    for(int j=0; j<num_dimensions; j++){
-        num_points[j] = rule->getNumPoints(levels[j]);
-        num_total *= num_points[j];
-    }
-
-    int* refs = new int[num_total];
-    std::vector<int> p(num_dimensions);
-
-    for(int i=0; i<num_total; i++){
-        int t = i;
-        for(int j=num_dimensions-1; j>=0; j--){
-            p[j] = rule->getPointIndex(levels[j], t % num_points[j]);
-            t /= num_points[j];
-        }
-        refs[i] = points->getSlot(p);
-    }
-
-    return refs;
-}
-
 IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *iset, const std::vector<int> &limits) const{
     size_t c = 0, dims = iset->getNumDimensions();
     for(int i=0; i<iset->getNumIndexes(); i++){

@@ -45,11 +45,11 @@
 namespace TasGrid{
 
 GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0), wrapper(0), tensors(0), active_tensors(0),
-    points(0), needed(0), tensor_refs(0), max_levels(0), values(0),
+    points(0), needed(0), max_levels(0), values(0),
     updated_tensors(0), updated_active_tensors(0), custom(0)
 {}
 GridGlobal::GridGlobal(const GridGlobal &global) : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0), wrapper(0), tensors(0), active_tensors(0),
-    points(0), needed(0), tensor_refs(0), max_levels(0), values(0),
+    points(0), needed(0), max_levels(0), values(0),
     updated_tensors(0), updated_active_tensors(0), custom(0)
 {
     copyGrid(&global);
@@ -185,18 +185,15 @@ void GridGlobal::read(std::ifstream &ifs){
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexSet *work = (points != 0) ? points : needed;
+        tensor_refs.resize(nz_weights);
         if (OneDimensionalMeta::isNonNested(rule)){
-            tensor_refs = new int*[nz_weights];
             #pragma omp parallel for schedule(dynamic)
-            for(int i=0; i<nz_weights; i++){
-                tensor_refs[i] = IM.referenceGenericPoints(active_tensors->getIndex(i), wrapper, work);
-            }
+            for(int i=0; i<nz_weights; i++)
+                IM.referencePoints<false>(active_tensors->getIndex(i), wrapper, work, tensor_refs[i]);
         }else{
-            tensor_refs = new int*[nz_weights];
             #pragma omp parallel for schedule(dynamic)
-            for(int i=0; i<nz_weights; i++){
-                tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, work);
-            }
+            for(int i=0; i<nz_weights; i++)
+                IM.referencePoints<true>(active_tensors->getIndex(i), wrapper, work, tensor_refs[i]);
         }
         work = 0;
     }
@@ -252,18 +249,15 @@ void GridGlobal::readBinary(std::ifstream &ifs){
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexSet *work = (points != 0) ? points : needed;
+        tensor_refs.resize(nz_weights);
         if (OneDimensionalMeta::isNonNested(rule)){
-            tensor_refs = new int*[nz_weights];
             #pragma omp parallel for schedule(dynamic)
-            for(int i=0; i<nz_weights; i++){
-                tensor_refs[i] = IM.referenceGenericPoints(active_tensors->getIndex(i), wrapper, work);
-            }
+            for(int i=0; i<nz_weights; i++)
+                IM.referencePoints<false>(active_tensors->getIndex(i), wrapper, work, tensor_refs[i]);
         }else{
-            tensor_refs = new int*[nz_weights];
             #pragma omp parallel for schedule(dynamic)
-            for(int i=0; i<nz_weights; i++){
-                tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, work);
-            }
+            for(int i=0; i<nz_weights; i++)
+                IM.referencePoints<true>(active_tensors->getIndex(i), wrapper, work, tensor_refs[i]);
         }
         work = 0;
     }
@@ -271,7 +265,7 @@ void GridGlobal::readBinary(std::ifstream &ifs){
 
 void GridGlobal::reset(bool includeCustom){
     clearAccelerationData();
-    if (tensor_refs != 0){ for(int i=0; i<active_tensors->getNumIndexes(); i++){ delete[] tensor_refs[i]; tensor_refs[i] = 0; } delete[] tensor_refs; tensor_refs = 0; }
+    tensor_refs.clear();
     if (wrapper != 0){ delete wrapper; wrapper = 0; }
     if (tensors != 0){ delete tensors; tensors = 0; }
     if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
@@ -364,22 +358,19 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
     int count = 0;
     for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w[count++] = tensors_w[i]; }
 
+    tensor_refs.resize(nz_weights);
     if (OneDimensionalMeta::isNonNested(rule)){
         needed = IM.generateGenericPoints(active_tensors, wrapper);
 
-        tensor_refs = new int*[nz_weights];
         #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<nz_weights; i++){
-            tensor_refs[i] = IM.referenceGenericPoints(active_tensors->getIndex(i), wrapper, needed);
-        }
+        for(int i=0; i<nz_weights; i++)
+            IM.referencePoints<false>(active_tensors->getIndex(i), wrapper, needed, tensor_refs[i]);
     }else{
         needed = IM.generateNestedPoints(tensors, wrapper); // nested grids exploit nesting
 
-        tensor_refs = new int*[nz_weights];
         #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<nz_weights; i++){
-            tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, needed);
-        }
+        for(int i=0; i<nz_weights; i++)
+            IM.referencePoints<true>(active_tensors->getIndex(i), wrapper, needed, tensor_refs[i]);
     }
 
     if (num_outputs == 0){
@@ -560,7 +551,6 @@ void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
         values->addValues(points, needed, vals);
         points->addIndexSet(needed);
         delete needed; needed = 0;
-        for(int i=0; i<active_tensors->getNumIndexes(); i++){ delete[] tensor_refs[i]; } delete[] tensor_refs;
 
         delete tensors; tensors = updated_tensors; updated_tensors = 0;
         delete active_tensors; active_tensors = updated_active_tensors; updated_active_tensors = 0;
@@ -569,18 +559,15 @@ void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
         int nz_weights = active_tensors->getNumIndexes();
         IndexManipulator IM(num_dimensions, custom);
         int m; IM.getMaxLevels(tensors, max_levels, m);
+        tensor_refs.resize(nz_weights);
         if (OneDimensionalMeta::isNonNested(rule)){
-            tensor_refs = new int*[nz_weights];
             #pragma omp parallel for schedule(dynamic)
-            for(int i=0; i<nz_weights; i++){
-                tensor_refs[i] = IM.referenceGenericPoints(active_tensors->getIndex(i), wrapper, points);
-            }
+            for(int i=0; i<nz_weights; i++)
+                IM.referencePoints<false>(active_tensors->getIndex(i), wrapper, points, tensor_refs[i]);
         }else{
-            tensor_refs = new int*[nz_weights];
             #pragma omp parallel for schedule(dynamic)
-            for(int i=0; i<nz_weights; i++){
-                tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, points);
-            }
+            for(int i=0; i<nz_weights; i++)
+                IM.referencePoints<true>(active_tensors->getIndex(i), wrapper, points, tensor_refs[i]);
         }
     }
 }
@@ -595,7 +582,6 @@ void GridGlobal::mergeRefinement(){
     }else{
         points->addIndexSet(needed);
         delete needed; needed = 0;
-        for(int i=0; i<active_tensors->getNumIndexes(); i++){ delete[] tensor_refs[i]; } delete[] tensor_refs;
 
         delete tensors; tensors = updated_tensors; updated_tensors = 0;
         delete active_tensors; active_tensors = updated_active_tensors; updated_active_tensors = 0;
@@ -604,18 +590,15 @@ void GridGlobal::mergeRefinement(){
         int nz_weights = active_tensors->getNumIndexes();
         IndexManipulator IM(num_dimensions, custom);
         int m; IM.getMaxLevels(tensors, max_levels, m);
+        tensor_refs.resize(nz_weights);
         if (OneDimensionalMeta::isNonNested(rule)){
-            tensor_refs = new int*[nz_weights];
             #pragma omp parallel for schedule(dynamic)
-            for(int i=0; i<nz_weights; i++){
-                tensor_refs[i] = IM.referenceGenericPoints(active_tensors->getIndex(i), wrapper, points);
-            }
+            for(int i=0; i<nz_weights; i++)
+                IM.referencePoints<false>(active_tensors->getIndex(i), wrapper, points, tensor_refs[i]);
         }else{
-            tensor_refs = new int*[nz_weights];
             #pragma omp parallel for schedule(dynamic)
-            for(int i=0; i<nz_weights; i++){
-                tensor_refs[i] = IM.referenceNestedPoints(active_tensors->getIndex(i), wrapper, points);
-            }
+            for(int i=0; i<nz_weights; i++)
+                IM.referencePoints<true>(active_tensors->getIndex(i), wrapper, points, tensor_refs[i]);
         }
     }
 }
