@@ -58,7 +58,6 @@ public:
     int getIExact(int level) const;
     int getQExact(int level) const;
 
-    void getWeightsNodes(int level, double* &w, double* &x) const;
     void getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const;
     const char* getDescription() const;
 
@@ -67,9 +66,9 @@ protected:
 
 private:
     int num_levels;
-    int *num_nodes;
-    int *precision;
-    int *offsets;
+    std::vector<int> num_nodes;
+    std::vector<int> precision;
+
     std::vector<std::vector<double>> nodes;
     std::vector<std::vector<double>> weights;
     std::string *description;

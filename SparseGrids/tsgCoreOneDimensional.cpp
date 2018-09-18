@@ -38,8 +38,8 @@
 
 namespace TasGrid{
 
-CustomTabulated::CustomTabulated() : num_levels(0), num_nodes(0), precision(0), offsets(0), description(0){}
-CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), num_nodes(0), precision(0), offsets(0), description(0)
+CustomTabulated::CustomTabulated() : num_levels(0), description(0){}
+CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), description(0)
 {
     std::ifstream ifs; ifs.open(filename);
     if (!ifs){
@@ -50,16 +50,13 @@ CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), num_node
     read(ifs);
     ifs.close();
 }
-CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0), num_nodes(0), precision(0), offsets(0), description(0){
+CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0), description(0){
     copyRule(&custom);
 }
 CustomTabulated::~CustomTabulated(){
     reset();
 }
 void CustomTabulated::reset(){
-    if (num_nodes != 0){ delete[] num_nodes; num_nodes = 0; }
-    if (precision != 0){ delete[] precision; precision = 0; }
-    if (offsets != 0){ delete[] offsets; offsets = 0; }
     if (description != 0){ delete description; description = 0; }
     num_levels = 0;
 }
@@ -82,8 +79,8 @@ void CustomTabulated::writeBinary(std::ofstream &ofs) const{
     ofs.write((char*) &num_description, sizeof(int));
     ofs.write(description->c_str(), num_description * sizeof(char));
     ofs.write((char*) &num_levels, sizeof(int));
-    ofs.write((char*) num_nodes, num_levels * sizeof(int));
-    ofs.write((char*) precision, num_levels * sizeof(int));
+    ofs.write((char*) num_nodes.data(), num_levels * sizeof(int));
+    ofs.write((char*) precision.data(), num_levels * sizeof(int));
     for(int l=0; l<num_levels; l++){
         ofs.write((char*) weights[l].data(), weights[l].size() * sizeof(double));
         ofs.write((char*) nodes[l].data(), nodes[l].size() * sizeof(double));
@@ -104,17 +101,10 @@ void CustomTabulated::read(std::ifstream &ifs){
     if (!(T.compare("levels:") == 0)){ ifs.close(); throw std::invalid_argument("ERROR: wrong file format of custom tables on line 2"); }
     ifs >> num_levels;
 
-    num_nodes = new int[num_levels];
-    precision = new int[num_levels];
+    num_nodes.resize(num_levels);
+    precision.resize(num_levels);
     for(int i=0; i<num_levels; i++){
         ifs >> num_nodes[i] >> precision[i];
-    }
-
-    int total_points = 0;
-    offsets = new int[num_levels];
-    for(int i=0; i<num_levels; i++){
-        offsets[i] = total_points;
-        total_points += num_nodes[i];
     }
 
     nodes.resize(num_levels);
@@ -139,17 +129,10 @@ void CustomTabulated::readBinary(std::ifstream &ifs){
     delete[] desc;
 
     ifs.read((char*) &num_levels, sizeof(int));
-    num_nodes = new int[num_levels];
-    precision = new int[num_levels];
-    ifs.read((char*) num_nodes, num_levels * sizeof(int));
-    ifs.read((char*) precision, num_levels * sizeof(int));
-
-    int total_points = 0;
-    offsets = new int[num_levels];
-    for(int i=0; i<num_levels; i++){
-        offsets[i] = total_points;
-        total_points += num_nodes[i];
-    }
+    num_nodes.resize(num_levels);
+    precision.resize(num_levels);
+    ifs.read((char*) num_nodes.data(), num_levels * sizeof(int));
+    ifs.read((char*) precision.data(), num_levels * sizeof(int));
 
     nodes.resize(num_levels);
     weights.resize(num_levels);
@@ -166,15 +149,8 @@ void CustomTabulated::copyRule(const CustomTabulated *custom){
 
     num_levels = custom->num_levels;
 
-    num_nodes = new int[num_levels]; std::copy(custom->num_nodes, custom->num_nodes+custom->num_levels, num_nodes);
-    precision = new int[num_levels]; std::copy(custom->precision, custom->precision+custom->num_levels, precision);
-
-    int total_points = 0;
-    offsets = new int[num_levels];
-    for(int i=0; i<num_levels; i++){
-        offsets[i] = total_points;
-        total_points += num_nodes[i];
-    }
+    num_nodes = custom->num_nodes;
+    precision = custom->precision;
 
     nodes.resize(num_levels);
     weights.resize(num_levels);
@@ -216,14 +192,6 @@ int CustomTabulated::getQExact(int level) const{
     return precision[level];
 }
 
-void CustomTabulated::getWeightsNodes(int level, double* &w, double* &x) const{
-    if (w != 0) delete[] w;
-    if (x != 0) delete[] x;
-    w = new double[num_nodes[level]];
-    x = new double[num_nodes[level]];
-    std::copy(nodes[level].begin(), nodes[level].end(), x);
-    std::copy(weights[level].begin(), weights[level].end(), w);
-}
 void CustomTabulated::getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const{
     w = weights[level];
     x = nodes[level];
