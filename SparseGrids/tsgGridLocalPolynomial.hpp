@@ -379,8 +379,6 @@ private:
     Data2D<int> parents;
 
     // tree for evaluation
-    //int num_roots, *roots;
-    //int *pntr, *indx;
     std::vector<int> roots;
     std::vector<int> pntr;
     std::vector<int> indx;

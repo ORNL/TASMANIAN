@@ -40,24 +40,18 @@ namespace TasGrid{
 template <typename T>
 class CacheLagrange{
 public:
-    CacheLagrange(int num_dimensions, const int max_levels[], const OneDimensionalWrapper *crule, const double x[]) : rule(crule){
-        cache = new T*[num_dimensions];
-        int full_cache = rule->getPointsCount(max_levels[0] + 1);
-        for(int j=1; j<num_dimensions; j++){
-            full_cache += rule->getPointsCount(max_levels[j]+1);
-        }
-        cache[0] = new T[full_cache];
-        for(int j=0; j<num_dimensions-1; j++){
-            cache[j+1] = &(cache[j][rule->getPointsCount(max_levels[j]+1)]);
-        }
+    CacheLagrange(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper *rule, const double x[]){
+        cache.resize(num_dimensions);
+        offsets = *(rule->getPointsCount());
 
         for(int dim=0; dim<num_dimensions; dim++){
+            cache[dim].resize(offsets[max_levels[dim] + 1]);
             for(int level=0; level <= max_levels[dim]; level++){
                 const double *nodes = rule->getNodes(level);
                 const double *coeff = rule->getCoefficients(level);
                 int num_points = rule->getNumPoints(level);
 
-                T *c = &(cache[dim][rule->getPointsCount(level)]);
+                T *c = &(cache[dim][offsets[level]]);
                 c[0] = 1.0;
                 for(int j=0; j<num_points-1; j++){
                     c[j+1] = (x[dim] - nodes[j]) * c[j];
@@ -71,21 +65,15 @@ public:
             }
         }
     }
-    ~CacheLagrange(){
-        if (cache != 0){
-            delete[] cache[0];
-            delete[] cache;
-        }
-        rule = 0;
-    }
+    ~CacheLagrange(){}
 
     T getLagrange(int dimension, int level, int local) const{
-        return cache[dimension][rule->getPointsCount(level) + local];
+        return cache[dimension][offsets[level] + local];
     }
 
 private:
-    T **cache;
-    const OneDimensionalWrapper *rule;
+    std::vector<std::vector<T>> cache;
+    std::vector<int> offsets;
 };
 
 

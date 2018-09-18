@@ -125,19 +125,21 @@ protected:
     void cacheBasisIntegrals(std::vector<double> &integ) const;
 
     template<typename T>
-    T** cacheBasisValues(const T x[]) const{
-        T **cache = new T*[num_dimensions];
+    void cacheBasisValues(const T x[], std::vector<std::vector<T>> &cache) const{
+        cache.resize(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
-            cache[j] = new T[max_levels[j] + 1];
-            cache[j][0] = 1.0;
+            cache[j].resize(max_levels[j] + 1);
+            T b = 1.0;
+            T this_x = x[j];
+            cache[j][0] = b;
             for(int i=0; i<max_levels[j]; i++){
-                cache[j][i+1] = cache[j][i] * (x[j] - nodes[i]);
+                b *= (this_x - nodes[i]);
+                cache[j][i+1] = b;
             }
             for(int i=1; i<=max_levels[j]; i++){
                 cache[j][i] /= coeff[i];
             }
         }
-        return cache;
     }
 
     void recomputeSurpluses();
@@ -150,8 +152,8 @@ protected:
         if (cuda_num_nodes.size() != 0) return;
         int maxl = max_levels[0];
         for(auto l : max_levels) if (maxl < l) maxl = l;
-        cuda_nodes.load(maxl + 1, nodes);
-        cuda_coeffs.load(maxl + 1, coeff);
+        cuda_nodes.load(nodes);
+        cuda_coeffs.load(coeff);
         std::vector<int> num_nodes = max_levels;
         for(auto &n : num_nodes) n++;
         cuda_num_nodes.load(num_nodes);
@@ -182,8 +184,8 @@ private:
     //int *parents; // NOTE: this is needed only for computing surpluses, maybe there is no need to store it
 
     std::vector<double> surpluses;
-    double *nodes;
-    double *coeff;
+    std::vector<double> nodes;
+    std::vector<double> coeff;
 
     StorageSet *values;
 

@@ -40,12 +40,10 @@
 namespace TasGrid{
 
 GridSequence::GridSequence() : num_dimensions(0), num_outputs(0),
-                               points(0), needed(0), nodes(0), coeff(0), values(0),
-                               max_levels(0)
+                               points(0), needed(0), values(0)
 {}
 GridSequence::GridSequence(const GridSequence &seq) : num_dimensions(0), num_outputs(0),
-                                                      points(0), needed(0), nodes(0), coeff(0), values(0),
-                                                      max_levels(0)
+                                                      points(0), needed(0), values(0)
 {  copyGrid(&seq); }
 GridSequence::~GridSequence(){ reset(); }
 
@@ -181,9 +179,9 @@ void GridSequence::reset(){
     clearAccelerationData();
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (nodes != 0){ delete[] nodes; nodes = 0; }
-    if (coeff != 0){ delete[] coeff; coeff = 0; }
     if (values != 0){ delete values; values = 0; }
+    nodes.clear();
+    coeff.clear();
     surpluses.resize(0);
     surpluses.shrink_to_fit();
 }
@@ -218,7 +216,6 @@ void GridSequence::copyGrid(const GridSequence *seq){
         m1 = IM.getMaxLevel(seq->points);
         m2 = IM.getMaxLevel(seq->needed);
         int max_level = (m1 > m2) ? m1 : m2;
-        delete[] nodes; delete[] coeff;
         prepareSequence(max_level+1);
 
         needed = new IndexSet(seq->needed);
@@ -275,8 +272,6 @@ void GridSequence::updateGrid(IndexSet* &update){
             OneDimensionalMeta meta;
             IndexManipulator IM(num_dimensions);
             int max_level = IM.getMaxLevel(update);
-            delete[] nodes; delete[] coeff;
-            nodes = 0; coeff = 0;
             prepareSequence(max_level+1);
         }else if ((needed != 0) && (needed->getNumIndexes() == 0)){
             delete needed;
@@ -342,7 +337,8 @@ void GridSequence::getQuadratureWeights(double *weights) const{
 }
 
 void GridSequence::getInterpolationWeights(const double x[], double *weights) const{
-    double **cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> cache;
+    cacheBasisValues<double>(x, cache);
     IndexSet *work = (points == 0) ? needed : points;
     int n = work->getNumIndexes();
     weights[0] = 1.0;
@@ -353,9 +349,6 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
             weights[i] *= cache[j][p[j]];
         }
     }
-    for(int j=0; j<num_dimensions; j++) delete[] cache[j];
-    delete[] cache;
-
     applyTransformationTransposed(weights);
 }
 
@@ -400,7 +393,8 @@ void GridSequence::mergeRefinement(){
 }
 
 void GridSequence::evaluate(const double x[], double y[]) const{
-    double **cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> cache;
+    cacheBasisValues<double>(x, cache);
 
     std::fill(y, y + num_outputs, 0.0);
 
@@ -421,9 +415,6 @@ void GridSequence::evaluate(const double x[], double y[]) const{
             y[k] += basis_value * s[k];
         }
     }
-
-    for(int j=0; j<num_dimensions; j++) delete[] cache[j];
-    delete[] cache;
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
@@ -583,7 +574,8 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
 
-    double **cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> cache;
+    cacheBasisValues<double>(x, cache);
 
     for(int i=0; i<num_points; i++){
         const int* p = work->getIndex(i);
@@ -592,9 +584,6 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
             fvalues[i] *= cache[j][p[j]];
         }
     }
-
-    for(int j=0; j<num_dimensions; j++) delete[] cache[j];
-    delete[] cache;
 }
 #ifdef Tasmanian_ENABLE_CUDA
 void GridSequence::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
@@ -770,7 +759,6 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
     total->addIndexSet(points); // avoids the case where existing points in tensor are not included in the update
 
     int max_level = IM.getMaxLevel(total);
-    delete[] nodes; delete[] coeff;
     prepareSequence(max_level+1);
     delete total;
 }
@@ -825,7 +813,6 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         OneDimensionalMeta meta;
         int max_level;
         max_level = IM.getMaxLevel(total);
-        delete[] nodes; delete[] coeff;
         prepareSequence(max_level+1);
 
         needed = total->diffSets(points);
@@ -869,19 +856,19 @@ const int* GridSequence::getPointIndexes() const{
 void GridSequence::prepareSequence(int n){
     GreedySequences greedy;
     if (rule == rule_leja){
-        nodes = greedy.getLejaNodes(n);
+        greedy.getLejaNodes(n, nodes);
     }else if (rule == rule_maxlebesgue){
-        nodes = greedy.getMaxLebesgueNodes(n);
+        greedy.getMaxLebesgueNodes(n, nodes);
     }else if (rule == rule_minlebesgue){
-        nodes = greedy.getMinLebesgueNodes(n);
+        greedy.getMinLebesgueNodes(n, nodes);
     }else if (rule == rule_mindelta){
-        nodes = greedy.getMinDeltaNodes(n);
+        greedy.getMinDeltaNodes(n, nodes);
     }else if (rule == rule_rleja){
-        nodes = OneDimensionalNodes::getRLeja(n);
+        OneDimensionalNodes::getRLeja(n, nodes);
     }else if (rule == rule_rlejashifted){
-        nodes = OneDimensionalNodes::getRLejaShifted(n);
+        OneDimensionalNodes::getRLejaShifted(n, nodes);
     }
-    coeff = new double[n];
+    coeff.resize(n);
     coeff[0] = 1.0;
     for(int i=1; i<n; i++){
         coeff[i] = 1.0;

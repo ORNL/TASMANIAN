@@ -52,7 +52,7 @@ public:
     const double* getNodes(int level) const;
     const double* getCoefficients(int level) const;
 
-    int getPointsCount(int level) const;
+    const std::vector<int>* getPointsCount() const;
 
     TypeOneDRule getType() const;
     int getNumLevels() const;

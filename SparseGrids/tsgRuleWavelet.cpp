@@ -41,143 +41,120 @@ RuleWavelet::RuleWavelet(int ord, int iter_depth){
 	 * Note: Only orders 1 & 3 wavelets are currently implemented.
 	 */
 	iteration_depth = iter_depth;
-	data = 0;
 	order = 0;
 	updateOrder(ord);
 }
 
 void RuleWavelet::updateOrder(int ord){
-	/*
-	 * Changes the order of the rule to the specified order. If order other than 1 is
-	 * specified, then the approximation to the wavelets will be recalculated.
-	 */
-	if(order == ord) return;
+    // Changes the order of the rule to the specified order. If order other than 1 is
+    // specified, then the approximation to the wavelets will be recalculated.
+    if(order == ord) return;
 
-	// If previous order was cubic, clean up data.
-	if(order == 3 && data != 0){
-		for(int i = 0; i < 4; i++){
-			delete[] data[i];
-		}
-		delete[] data;
-	}
+    // clear is practically free, call it every time
+    data.clear();
 
     order = ord;
 
-	if(order == 3){
+    if(order == 3){
 
-		int num_data_points = (1 << iteration_depth) + 1;
+        int num_data_points = (1 << iteration_depth) + 1;
 
-		data = new double*[5]; // (xs, level1 (scaling), level2, level3, level4)
-		double *xs = new double[num_data_points];
-		data[0] = xs;
+        data.resize(5); // (xs, level1 (scaling), level2, level3, level4)
+        data[0].resize(num_data_points);
+        double *xs = data[0].data();
 
-        #pragma omp parallel for
-		for(int i = 0; i < num_data_points; i++){
-			xs[i] = -1. + 2*(double (i)) / (double (num_data_points - 1));
-		}
+        for(int i = 0; i < num_data_points; i++){
+            xs[i] = -1. + 2*(double (i)) / (double (num_data_points - 1));
+        }
 
-		// Coefficients derived by solving linear system involving scaling function
-		// integrals and moments.
+        // Coefficients derived by solving linear system involving scaling function
+        // integrals and moments.
+        std::vector<std::vector<double>> coeffs(3);
+        coeffs[0] = {0.95958116146167449, 0.27778015867946454, -0.042754937296610125, -0.014317145809288835, // Second level
+                    -0.34358723961941895, 0.36254192315551625, 0.20438681551383264, 0.012027193241660438};
+        coeffs[1] = {0.90985488901447964, 0.29866296454372104, -0.077377811931657145, 0.017034083534297827, // third level
+                    -0.28361250628699103, 0.33723841173046543, 0.24560604387620491, -0.023811935316236606,
+                     0.015786802304611155, 0.23056985382971185, 0.31221657974498912, -0.03868102549989539,
+                     0.194797093133632, -0.099050236091189195, 0.51520570019738199, -0.073403162960780324};
+        coeffs[2] = {0.90985443399962629, 0.29866318097339162, -0.077377917373678995, 0.017034105626588848, // fourth level
+                    -0.28361254472311259, 0.33723844527609648, 0.24560602528531161, -0.023811931411878345,
+                     0.015786801751471, 0.23056986060092344, 0.31221657434994671, -0.038681024059425327,
+                     0.14697942814289319, -0.047340431972365773, 0.51871874565793186, -0.093244980946745618,
+                    -0.019628614067688826, 0.25611706552019509, 0.30090457777800012, -0.036629694186987166,
+                    -1.0/32.0, 9.0/32.0, 9.0/32.0, -1.0/32.0};
 
-		double _coeff[8+16+24] =
-		{0.95958116146167449, 0.27778015867946454, -0.042754937296610125, -0.014317145809288835, // Second level
-				-0.34358723961941895, 0.36254192315551625, 0.20438681551383264, 0.012027193241660438,
-				// third level
-				0.90985488901447964, 0.29866296454372104, -0.077377811931657145, 0.017034083534297827,
-				-0.28361250628699103, 0.33723841173046543, 0.24560604387620491, -0.023811935316236606,
-				0.015786802304611155, 0.23056985382971185, 0.31221657974498912, -0.03868102549989539,
-				0.194797093133632, -0.099050236091189195, 0.51520570019738199, -0.073403162960780324,
-				// fourth level
-				0.90985443399962629, 0.29866318097339162, -0.077377917373678995, 0.017034105626588848,
-				-0.28361254472311259, 0.33723844527609648, 0.24560602528531161, -0.023811931411878345,
-				0.015786801751471, 0.23056986060092344, 0.31221657434994671, -0.038681024059425327,
-				0.14697942814289319, -0.047340431972365773, 0.51871874565793186, -0.093244980946745618,
-				-0.019628614067688826, 0.25611706552019509, 0.30090457777800012, -0.036629694186987166,
-				-1.0/32.0, 9.0/32.0, 9.0/32.0, -1.0/32.0
-		};
+        // Initialize scaling functions
+        data[1].resize(3*num_data_points);
+        std::fill(data[1].begin(), data[1].end(), 0.0);
 
-		double *coeffs[3] = {_coeff, _coeff + 8, _coeff+24};
+        // Point (sparse grid numbering):
+        // 1     3     0     4     2
+        // X --- X --- X --- X --- X
+        // 0     1     2     3     4
+        // Point (level 2 coarse indexing)
 
-		double *workspace = new double[4 * num_data_points];
+        // This ordering makes phi1 -> point 0, phi2 -> point 1, phi3 -> point 3
+        // Points 2 & 4 can be found by reflection of phi2, phi3, respectively.
+        data[1][ACCESS_COARSE(2, 2, iteration_depth)] = 1.0;
+        data[1][num_data_points + ACCESS_COARSE(0, 2, iteration_depth)] = 1.0;
+        data[1][2*num_data_points + ACCESS_COARSE(1, 2, iteration_depth)] = 1.0;
+        cubic_cascade(data[1].data(), 2, iteration_depth);
+        cubic_cascade(&(data[1][num_data_points]), 2, iteration_depth);
+        cubic_cascade(&(data[1][2*num_data_points]), 2, iteration_depth);
 
-		// Initialize scaling functions
-		data[1] = new double[3*num_data_points];
-		std::fill(data[1], data[1] + 3*num_data_points, 0.0);
-		double  *phi1 = data[1],
-				*phi2 = data[1] + num_data_points,
-				*phi3 = data[1] + 2*num_data_points,
-				*phi4;
+        for(int level = 2; level <= 4; level++){
+            // Scaling functions at current level.
+            std::vector<double> phi1(num_data_points, 0.0);
+            std::vector<double> phi2(num_data_points, 0.0);
+            std::vector<double> phi3(num_data_points, 0.0);
+            std::vector<double> phi4(num_data_points, 0.0);
+            int num_saved = 2 * (level-1); // 2 'unique' functions at level 2, 4 at 3, 6 at 4.
+            data[level].resize(num_saved * num_data_points);
+            std::fill(data[level].begin(), data[level].end(), 0.0);
 
-		// Point (sparse grid numbering):
-		// 1     3     0     4     2
-		// X --- X --- X --- X --- X
-		// 0     1     2     3     4
-		// Point (level 2 coarse indexing)
+            // Initialize first four scaling functions
+            phi1[ACCESS_COARSE(0, level, iteration_depth)] = 1.0;
+            phi2[ACCESS_COARSE(1, level, iteration_depth)] = 1.0;
+            phi3[ACCESS_COARSE(2, level, iteration_depth)] = 1.0;
+            phi4[ACCESS_COARSE(3, level, iteration_depth)] = 1.0;
+            cubic_cascade(phi1.data(), level, iteration_depth);
+            cubic_cascade(phi2.data(), level, iteration_depth);
+            cubic_cascade(phi3.data(), level, iteration_depth);
+            cubic_cascade(phi4.data(), level, iteration_depth);
 
-		// This ordering makes phi1 -> point 0, phi2 -> point 1, phi3 -> point 3
-		// Points 2 & 4 can be found by reflection of phi2, phi3, respectively.
-		phi1[ACCESS_COARSE(2, 2, iteration_depth)] = 1;
-		phi2[ACCESS_COARSE(0, 2, iteration_depth)] = 1;
-		phi3[ACCESS_COARSE(1, 2, iteration_depth)] = 1;
-		cubic_cascade(phi1, 2, iteration_depth);
-		cubic_cascade(phi2, 2, iteration_depth);
-		cubic_cascade(phi3, 2, iteration_depth);
+            for(int index = 0; index < num_saved; index++){
+                // Initialize unlifted wavelet
+                double *wavelet = &data[level][index*(num_data_points)];
+                wavelet[ACCESS_FINE(index, level, iteration_depth)] = 1;
+                cubic_cascade(wavelet, level, iteration_depth);
+                double  c1 = coeffs[level-2][4*index],
+                        c2 = coeffs[level-2][4*index+1],
+                        c3 = coeffs[level-2][4*index+2],
+                        c4 = coeffs[level-2][4*index+3];
 
+                if(level > 2 && index >= 2){
+                    // Change pointers around to avoid copying data
+                    std::vector<double> tmp;
+                    std::swap(tmp, phi1);
+                    std::swap(phi1, phi2);
+                    std::swap(phi2, phi3);
+                    std::swap(phi3, phi4);
+                    std::swap(phi4, tmp);
 
-		// Scaling functions at current level.
-		phi1 = workspace,
-		phi2 = workspace + num_data_points,
-		phi3 = workspace + (2 * num_data_points),
-		phi4 = workspace + (3 * num_data_points);
-		for(int level = 2; level <= 4; level++){
-			std::fill(workspace, workspace + 4 * num_data_points, 0.0);
-			int num_saved = 2 * (level-1); // 2 'unique' functions at level 2, 4 at 3, 6 at 4.
-			data[level] = new double[num_saved * num_data_points];
-			std::fill(data[level], data[level] + num_saved * num_data_points, 0.0);
+                    // Initialize new scaling function
+                    std::fill(phi4.begin(), phi4.end(), 0.0);
+                    phi4[ACCESS_COARSE(index+2, level, iteration_depth)] = 1;
+                    cubic_cascade(phi4.data(), level, iteration_depth);
 
-			// Initialize first four scaling functions
-			phi1[ACCESS_COARSE(0, level, iteration_depth)] = 1;
-			phi2[ACCESS_COARSE(1, level, iteration_depth)] = 1;
-			phi3[ACCESS_COARSE(2, level, iteration_depth)] = 1;
-			phi4[ACCESS_COARSE(3, level, iteration_depth)] = 1;
-			cubic_cascade(phi1, level, iteration_depth);
-			cubic_cascade(phi2, level, iteration_depth);
-			cubic_cascade(phi3, level, iteration_depth);
-			cubic_cascade(phi4, level, iteration_depth);
+                }
 
-			for(int index = 0; index < num_saved; index++){
-				// Initialize unlifted wavelet
-				double *wavelet = &data[level][index*(num_data_points)];
-				wavelet[ACCESS_FINE(index, level, iteration_depth)] = 1;
-				cubic_cascade(wavelet, level, iteration_depth);
-				double  c1 = coeffs[level-2][4*index],
-						c2 = coeffs[level-2][4*index+1],
-						c3 = coeffs[level-2][4*index+2],
-						c4 = coeffs[level-2][4*index+3];
-
-				if(level > 2 && index >= 2){
-					// Change pointers around to avoid copying data
-					double *tmp = phi1;
-					phi1 = phi2;
-					phi2 = phi3;
-					phi3 = phi4;
-					phi4 = tmp;
-					// Initialize new scaling function
-					std::fill(phi4, phi4 + num_data_points, 0.0);
-					phi4[ACCESS_COARSE(index+2, level, iteration_depth)] = 1;
-					cubic_cascade(phi4, level, iteration_depth);
-
-				}
-
-                #pragma omp parallel for
-				for(int i = 0; i < num_data_points; i++){
-					// Lift the wavelet
-					wavelet[i] -= c1 * phi1[i] + c2 * phi2[i] + c3 * phi3[i] + c4 * phi4[i];
-				}
-			}
-		}
-		delete[] workspace;
-	}
+                for(int i = 0; i < num_data_points; i++){
+                    // Lift the wavelet
+                    wavelet[i] -= c1 * phi1[i] + c2 * phi2[i] + c3 * phi3[i] + c4 * phi4[i];
+                }
+            }
+        }
+    }
 }
 
 void RuleWavelet::cubic_cascade(double *y, int starting_level, int in_iteration_depth){
@@ -220,14 +197,7 @@ void RuleWavelet::cubic_cascade(double *y, int starting_level, int in_iteration_
 	}
 }
 
-RuleWavelet::~RuleWavelet(){
-	if(order == 3){
-		for(int i = 0; i < 5; i++){
-			delete[] data[i];
-		}
-		delete[] data;
-	}
-}
+RuleWavelet::~RuleWavelet(){}
 
 int RuleWavelet::getOrder() const{
 	return order;
@@ -377,7 +347,7 @@ double RuleWavelet::eval_cubic(int point, double x) const{
 			point = 3;
 			x = -x;
 		}
-		double *phi = &data[1][((point+1)/2) * num_data_points];
+        const double *phi = &(data[1][((point+1)/2) * num_data_points]);
 		return interpolate(phi, x);
 	}
 	int l = BaseRuleLocalPolynomial::intlog2(point - 1);
@@ -480,7 +450,7 @@ int RuleWavelet::find_index(double x) const{
 	}
 	// Bisection search
 	int num_points = (1 << iteration_depth) + 1;
-	double *xs = data[0];
+    const double *xs = data[0].data();
 	int low = 0;
 	int high = num_points-1;
 	while(high - low > 1){
@@ -511,7 +481,7 @@ double RuleWavelet::interpolate(const double *y, double x, int interpolation_ord
 	// Neville's Algorithm
 	std::vector<double> ps(interpolation_order + 1);
 	std::vector<double> xs(interpolation_order + 1);
-	double *xx = data[0];
+    const double *xx = data[0].data();
 
 	if (idx < interpolation_order/2){
 		idx = interpolation_order/2;

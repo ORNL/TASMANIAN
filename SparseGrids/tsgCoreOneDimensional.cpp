@@ -38,8 +38,8 @@
 
 namespace TasGrid{
 
-CustomTabulated::CustomTabulated() : num_levels(0), num_nodes(0), precision(0), offsets(0), description(0){}
-CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), num_nodes(0), precision(0), offsets(0), description(0)
+CustomTabulated::CustomTabulated() : num_levels(0), description(0){}
+CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), description(0)
 {
     std::ifstream ifs; ifs.open(filename);
     if (!ifs){
@@ -50,16 +50,13 @@ CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), num_node
     read(ifs);
     ifs.close();
 }
-CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0), num_nodes(0), precision(0), offsets(0), description(0){
+CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0), description(0){
     copyRule(&custom);
 }
 CustomTabulated::~CustomTabulated(){
     reset();
 }
 void CustomTabulated::reset(){
-    if (num_nodes != 0){ delete[] num_nodes; num_nodes = 0; }
-    if (precision != 0){ delete[] precision; precision = 0; }
-    if (offsets != 0){ delete[] offsets; offsets = 0; }
     if (description != 0){ delete description; description = 0; }
     num_levels = 0;
 }
@@ -82,8 +79,8 @@ void CustomTabulated::writeBinary(std::ofstream &ofs) const{
     ofs.write((char*) &num_description, sizeof(int));
     ofs.write(description->c_str(), num_description * sizeof(char));
     ofs.write((char*) &num_levels, sizeof(int));
-    ofs.write((char*) num_nodes, num_levels * sizeof(int));
-    ofs.write((char*) precision, num_levels * sizeof(int));
+    ofs.write((char*) num_nodes.data(), num_levels * sizeof(int));
+    ofs.write((char*) precision.data(), num_levels * sizeof(int));
     for(int l=0; l<num_levels; l++){
         ofs.write((char*) weights[l].data(), weights[l].size() * sizeof(double));
         ofs.write((char*) nodes[l].data(), nodes[l].size() * sizeof(double));
@@ -104,17 +101,10 @@ void CustomTabulated::read(std::ifstream &ifs){
     if (!(T.compare("levels:") == 0)){ ifs.close(); throw std::invalid_argument("ERROR: wrong file format of custom tables on line 2"); }
     ifs >> num_levels;
 
-    num_nodes = new int[num_levels];
-    precision = new int[num_levels];
+    num_nodes.resize(num_levels);
+    precision.resize(num_levels);
     for(int i=0; i<num_levels; i++){
         ifs >> num_nodes[i] >> precision[i];
-    }
-
-    int total_points = 0;
-    offsets = new int[num_levels];
-    for(int i=0; i<num_levels; i++){
-        offsets[i] = total_points;
-        total_points += num_nodes[i];
     }
 
     nodes.resize(num_levels);
@@ -139,17 +129,10 @@ void CustomTabulated::readBinary(std::ifstream &ifs){
     delete[] desc;
 
     ifs.read((char*) &num_levels, sizeof(int));
-    num_nodes = new int[num_levels];
-    precision = new int[num_levels];
-    ifs.read((char*) num_nodes, num_levels * sizeof(int));
-    ifs.read((char*) precision, num_levels * sizeof(int));
-
-    int total_points = 0;
-    offsets = new int[num_levels];
-    for(int i=0; i<num_levels; i++){
-        offsets[i] = total_points;
-        total_points += num_nodes[i];
-    }
+    num_nodes.resize(num_levels);
+    precision.resize(num_levels);
+    ifs.read((char*) num_nodes.data(), num_levels * sizeof(int));
+    ifs.read((char*) precision.data(), num_levels * sizeof(int));
 
     nodes.resize(num_levels);
     weights.resize(num_levels);
@@ -166,15 +149,8 @@ void CustomTabulated::copyRule(const CustomTabulated *custom){
 
     num_levels = custom->num_levels;
 
-    num_nodes = new int[num_levels]; std::copy(custom->num_nodes, custom->num_nodes+custom->num_levels, num_nodes);
-    precision = new int[num_levels]; std::copy(custom->precision, custom->precision+custom->num_levels, precision);
-
-    int total_points = 0;
-    offsets = new int[num_levels];
-    for(int i=0; i<num_levels; i++){
-        offsets[i] = total_points;
-        total_points += num_nodes[i];
-    }
+    num_nodes = custom->num_nodes;
+    precision = custom->precision;
 
     nodes.resize(num_levels);
     weights.resize(num_levels);
@@ -216,14 +192,6 @@ int CustomTabulated::getQExact(int level) const{
     return precision[level];
 }
 
-void CustomTabulated::getWeightsNodes(int level, double* &w, double* &x) const{
-    if (w != 0) delete[] w;
-    if (x != 0) delete[] x;
-    w = new double[num_nodes[level]];
-    x = new double[num_nodes[level]];
-    std::copy(nodes[level].begin(), nodes[level].end(), x);
-    std::copy(weights[level].begin(), weights[level].end(), w);
-}
 void CustomTabulated::getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const{
     w = weights[level];
     x = nodes[level];
@@ -913,22 +881,21 @@ void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::v
 }
 
 // Clenshaw-Curtis
-double* OneDimensionalNodes::getClenshawCurtisNodes(int level){
+void OneDimensionalNodes::getClenshawCurtisNodes(int level, std::vector<double> &nodes){
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level, rule_clenshawcurtis);
-    double* x = new double[n];
-    x[0] = 0.0;
+    nodes.resize(n);
+    nodes[0] = 0.0;
     if (level > 0){
-        x[1] = -1.0; x[2] = 1.0;
+        nodes[1] = -1.0; nodes[2] = 1.0;
         int count = 3;
         for(int l=2; l<=level; l++){
             n = meta.getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                  x[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
+                  nodes[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
-    return x;
 }
 double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     OneDimensionalMeta meta;
@@ -959,21 +926,20 @@ double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     return weight;
 }
 // Clenshaw-Curtis-Zero
-double* OneDimensionalNodes::getClenshawCurtisNodesZero(int level){
+void OneDimensionalNodes::getClenshawCurtisNodesZero(int level, std::vector<double> &nodes){
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level+1, rule_clenshawcurtis);
-    double* x = new double[n-2];
-    x[0] = 0.0;
+    nodes.resize(n-2);
+    nodes[0] = 0.0;
     if (level > 0){
         int count = 1;
         for(int l=2; l<=level+1; l++){
             n = meta.getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                  x[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
+                nodes[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
-    return x;
 }
 double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     // this should be equivalent to  return getClenshawCurtisWeight(level + 1, ((point == 0) ? 0 : point +2));
@@ -1000,21 +966,20 @@ double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     return weight;
 }
 // Fejer-2
-double* OneDimensionalNodes::getFejer2Nodes(int level){
+void OneDimensionalNodes::getFejer2Nodes(int level, std::vector<double> &nodes){
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level, rule_fejer2);
-    double *x = new double[n];
-    x[0] = 0.0;
+    nodes.resize(n);
+    nodes[0] = 0.0;
     if (level > 0){
         int count = 1;
         for(int l=2; l<=level+1; l++){
             n = meta.getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                  x[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
+                nodes[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
-    return x;
 }
 double OneDimensionalNodes::getFejer2Weight(int level, int point){
     if (level == 0){ return 2.0; }
@@ -1041,8 +1006,8 @@ double OneDimensionalNodes::getFejer2Weight(int level, int point){
     return weight;
 }
 
-double* OneDimensionalNodes::getRLeja(int n){
-    double* nodes = new double[n];
+void OneDimensionalNodes::getRLeja(int n, std::vector<double> &nodes){
+    nodes.resize(n);
     nodes[0] = 0.0;
     if (n > 1){ nodes[1] = M_PI; }
     if (n > 2){ nodes[2] = 0.5 * M_PI; }
@@ -1055,17 +1020,15 @@ double* OneDimensionalNodes::getRLeja(int n){
     }
     for(int i=0; i<n; i++){  nodes[i] = cos(nodes[i]);  }
     if (n > 2){ nodes[2] = 0.0; } // not sure which version is better, starting at 0 or starting at 1
-    return nodes;
 }
-double* OneDimensionalNodes::getRLejaCentered(int n){
-    double* nodes = getRLeja(n);
+void OneDimensionalNodes::getRLejaCentered(int n, std::vector<double> &nodes){
+    getRLeja(n, nodes);
     nodes[0] = 0.0;
     if (n > 1){ nodes[1] = 1.0; }
     if (n > 2){ nodes[2] = -1.0; }
-    return nodes;
 }
-double* OneDimensionalNodes::getRLejaShifted(int n){
-    double* nodes = new double[n];
+void OneDimensionalNodes::getRLejaShifted(int n, std::vector<double> &nodes){
+    nodes.resize(n);
     nodes[0] = -0.5;
     if (n > 1){ nodes[1] = 0.5; }
     for(int i=2; i<n; i++){
@@ -1075,24 +1038,23 @@ double* OneDimensionalNodes::getRLejaShifted(int n){
             nodes[i] = -nodes[i-1];
         }
     }
-    return nodes;
 }
 
-double* OneDimensionalNodes::getFourierNodes(int level) {
+void OneDimensionalNodes::getFourierNodes(int level, std::vector<double> &nodes) {
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level, rule_fourier);
-    double* x = new double[n];
-    x[0]=0.0;
-    if(level > 0) { x[1] = 1.0/3.0; x[2] = 2.0/3.0; }
-    int count = 3;
+    nodes.resize(n);
+    nodes[0]=0.0;
+    if(level > 0){ nodes[1] = 1.0/3.0; nodes[2] = 2.0/3.0; }
+    auto node = nodes.begin();
+    std::advance(node, 3);
     for(int l=2; l<=level; l++) {
         n = meta.getNumPoints(l, rule_fourier);
         for(int i=1; i<n; i+=3) {
-            x[count++] = (double) i / (double) n;
-            x[count++] = (double) (i+1) / (double) n;
+            *node++ = (double) i / (double) n;
+            *node++ = (double) (i+1) / (double) n;
         }
     }
-    return x;
 }
 
 }

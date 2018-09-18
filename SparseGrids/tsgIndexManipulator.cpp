@@ -137,7 +137,6 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const std:
         }
         total = new IndexSet(num_dimensions, index_dump);
     }else{ // use slower algorithm, but more general
-        GranulatedIndexSet **sets;
         std::vector<int> root(num_dimensions, 0);
         GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root.data());
         total = new IndexSet(num_dimensions);
@@ -145,7 +144,7 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const std:
         while(adding){
             int num_sets = (set_level->getNumIndexes() / 8) + 1;
 
-            sets = new GranulatedIndexSet*[num_sets];
+            std::vector<GranulatedIndexSet*> sets(num_sets);
 
             for(int me=0; me<num_sets; me++){
 
@@ -186,7 +185,6 @@ IndexSet* IndexManipulator::selectTensors(int offset, TypeDepth type, const std:
             delete set_level;
             set_level = sets[0];
             sets[0] = 0;
-            delete[] sets;
         }
 
         if (total == 0){
@@ -214,7 +212,6 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
     // Stoyanov, Webster: "A dynamically adaptive sparse grids method for quasi-optimal interpolation of multidimensional functions"
     // Computers & Mathematics with Applications, 71(11):2449–2465, 2016
     // the other selectTensors() function cover the special case of Corollary 1
-    GranulatedIndexSet **sets;
     std::vector<int> root(num_dimensions, 0);
     GranulatedIndexSet *set_level = new GranulatedIndexSet(num_dimensions, 1);  set_level->addIndex(root.data());
     IndexSet *total = new IndexSet(num_dimensions);
@@ -223,7 +220,7 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
     while(adding){
         int num_sets = (set_level->getNumIndexes() / 8) + 1;
 
-        sets = new GranulatedIndexSet*[num_sets];
+        std::vector<GranulatedIndexSet*> sets(num_sets);
 
         #pragma omp parallel for schedule(dynamic)
         for(int me=0; me<num_sets; me++){
@@ -290,6 +287,7 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
             for(int i=0; i<warp-1; i+=2){
                 sets[i]->addGranulatedSet(sets[i+1]);
                 delete sets[i+1];
+                sets[i+1] = 0;
             }
 
             for(int i=1; i<warp/2; i++){
@@ -303,7 +301,7 @@ IndexSet* IndexManipulator::selectTensors(const IndexSet *target_space, bool int
         total->addGranulatedSet(set_level);
         delete set_level;
         set_level = sets[0];
-        delete[] sets;
+        sets[0] = 0;
     }
 
     if (total == 0){
@@ -512,7 +510,7 @@ UnsortedIndexSet* IndexManipulator::tensorGenericPoints(const int levels[], cons
 
 IndexSet* IndexManipulator::generateGenericPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const{
     int num_tensors = tensors->getNumIndexes();
-    UnsortedIndexSet **usets = new UnsortedIndexSet*[num_tensors];
+    std::vector<UnsortedIndexSet*> usets(num_tensors);
 
     #pragma omp parallel for schedule(dynamic)
     for(int i=0; i<num_tensors; i++){
@@ -520,25 +518,28 @@ IndexSet* IndexManipulator::generateGenericPoints(const IndexSet *tensors, const
     }
 
     int warp = num_tensors / 2 + num_tensors % 2;
-    IndexSet **psets = new IndexSet*[warp];
+    std::vector<IndexSet*> psets(warp);
     #pragma omp parallel for schedule(dynamic)
     for(int i=0; i<num_tensors/2; i++){
         psets[i] = new IndexSet(usets[2*i]);
         delete usets[2*i];
+        usets[2*i] = 0;
         psets[i]->addUnsortedSet(usets[2*i+1]);
         delete usets[2*i+1];
+        usets[2*i+1] = 0;
     }
     if (num_tensors % 2 == 1){
         psets[num_tensors/2] = new IndexSet(usets[num_tensors-1]);
         delete usets[num_tensors-1];
+        usets[num_tensors-1] = 0;
     }
-    delete[] usets;
 
     while(warp > 1){
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<warp-1; i+=2){
             psets[i]->addIndexSet(psets[i+1]);
             delete psets[i+1];
+            psets[i+1] = 0;
         }
 
         for(int i=1; i<warp/2; i++){
@@ -549,31 +550,8 @@ IndexSet* IndexManipulator::generateGenericPoints(const IndexSet *tensors, const
     }
 
     IndexSet *result = psets[0];
-    delete[] psets;
+    psets[0] = 0;
     return result;
-}
-
-int* IndexManipulator::referenceGenericPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const{
-    std::vector<int> num_points(num_dimensions);
-    int num_total = 1; // this will be a subset of all points, no danger of overflow
-    for(int j=0; j<num_dimensions; j++){
-        num_points[j] = rule->getNumPoints(levels[j]);
-        num_total *= num_points[j];
-    }
-
-    int* refs = new int[num_total];
-    std::vector<int> p(num_dimensions);
-
-    for(int i=0; i<num_total; i++){
-        int t = i;
-        for(int j=num_dimensions-1; j>=0; j--){
-            p[j] = rule->getPointIndex(levels[j], t % num_points[j]);
-            t /= num_points[j];
-        }
-        refs[i] = points->getSlot(p);
-    }
-
-    return refs;
 }
 
 IndexSet* IndexManipulator::removeIndexesByLimit(IndexSet *iset, const std::vector<int> &limits) const{
@@ -642,7 +620,7 @@ IndexSet* IndexManipulator::tensorNestedPoints(const int levels[], const OneDime
 
 IndexSet* IndexManipulator::generateNestedPoints(const IndexSet *tensors, const OneDimensionalWrapper *rule) const{
     int num_tensors = tensors->getNumIndexes();
-    IndexSet **psets = new IndexSet*[num_tensors];
+    std::vector<IndexSet*> psets(num_tensors);
     for(int i=0; i<num_tensors; i++){
         psets[i] = tensorNestedPoints(tensors->getIndex(i), rule);
     }
@@ -653,6 +631,7 @@ IndexSet* IndexManipulator::generateNestedPoints(const IndexSet *tensors, const 
         for(int i=0; i<warp-1; i+=2){
             psets[i]->addIndexSet(psets[i+1]);
             delete psets[i+1];
+            psets[i+1] = 0;
         }
 
         for(int i=1; i<warp/2; i++){
@@ -663,35 +642,14 @@ IndexSet* IndexManipulator::generateNestedPoints(const IndexSet *tensors, const 
     }
 
     IndexSet *result = psets[0];
-    delete[] psets;
+    psets[0] = 0;
     return result;
-}
-
-int* IndexManipulator::referenceNestedPoints(const int levels[], const OneDimensionalWrapper *rule, const IndexSet *points) const{
-    std::vector<int> num_points(num_dimensions);
-    int num_total = 1;
-    for(int j=0; j<num_dimensions; j++){  num_points[j] = rule->getNumPoints(levels[j]); num_total *= num_points[j];  }
-
-    int* refs = new int[num_total];
-    std::vector<int> p(num_dimensions);
-
-    for(int i=num_total-1; i>=0; i--){
-        int t = i;
-        auto n = num_points.rbegin();
-        for(int j=num_dimensions-1; j>=0; j--){
-            p[j] = t % *n;
-            t /= *n++;
-        }
-        refs[i] = points->getSlot(p);
-    }
-
-    return refs;
 }
 
 IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneDRule rule, bool iexact) const{
     // may optimize this to consider deltas only
     int num_tensors = tensors->getNumIndexes();
-    IndexSet **sets = new IndexSet*[num_tensors];
+    std::vector<IndexSet*> sets(num_tensors);
 
     for(int t=0; t<num_tensors; t++){
         const int *ti = tensors->getIndex(t);
@@ -726,6 +684,7 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
         for(int i=0; i<warp-1; i+=2){
             sets[i]->addIndexSet(sets[i+1]);
             delete sets[i+1];
+            sets[i+1] = 0;
         }
 
         for(int i=1; i<warp/2; i++){
@@ -736,7 +695,7 @@ IndexSet* IndexManipulator::getPolynomialSpace(const IndexSet *tensors, TypeOneD
     }
 
     IndexSet *s = sets[0];
-    delete[] sets;
+    sets[0] = 0;
 
     return s;
 }

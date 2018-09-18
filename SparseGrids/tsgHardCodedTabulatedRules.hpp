@@ -41,7 +41,7 @@ public:
     ~TableGaussPatterson();
 
     static int getNumLevels();
-    double* getNodes(int level) const;
+    void getNodes(int level, std::vector<double> &x) const;
     double getWeight(int level, int point) const;
 
 protected:
@@ -50,10 +50,10 @@ protected:
 
 private:
     int max_levels;
-    double *nodes; // contains the x-coordinate of each sample point
-    double *weights; // contains the weight associated with each level
+    std::vector<double> nodes; // contains the x-coordinate of each sample point
+    std::vector<double> weights; // contains the weight associated with each level
 
-    int *weights_offsets;
+    std::vector<int> weights_offsets;
 
     OneDimensionalMeta meta;
 };

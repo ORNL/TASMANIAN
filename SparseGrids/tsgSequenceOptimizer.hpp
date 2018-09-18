@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_SPARSE_GRID_SEQUENCE_OPTIMIZER_HPP
 #define __TASMANIAN_SPARSE_GRID_SEQUENCE_OPTIMIZER_HPP
 
+#include <vector>
+
 #include "tsgEnumerates.hpp"
 
 namespace TasGrid{
@@ -40,10 +42,10 @@ public:
     GreedySequences();
     ~GreedySequences();
 
-    double* getLejaNodes(int n) const;
-    double* getMaxLebesgueNodes(int n) const;
-    double* getMinLebesgueNodes(int n) const;
-    double* getMinDeltaNodes(int n) const;
+    void getLejaNodes(int n, std::vector<double> &nodes) const;
+    void getMaxLebesgueNodes(int n, std::vector<double> &nodes) const;
+    void getMinLebesgueNodes(int n, std::vector<double> &nodes) const;
+    void getMinDeltaNodes(int n, std::vector<double> &nodes) const;
 
     double findLebesgueConstant(int n, const double nodes[]) const;
 
