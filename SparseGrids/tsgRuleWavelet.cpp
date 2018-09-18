@@ -91,12 +91,9 @@ void RuleWavelet::updateOrder(int ord){
 
 		double *coeffs[3] = {_coeff, _coeff + 8, _coeff+24};
 
-		double *workspace = new double[4 * num_data_points];
-
         // Initialize scaling functions
         data[1].resize(3*num_data_points);
         std::fill(data[1].begin(), data[1].end(), 0.0);
-        double  *phi1, *phi2, *phi3, *phi4;
 
 		// Point (sparse grid numbering):
 		// 1     3     0     4     2
@@ -113,60 +110,59 @@ void RuleWavelet::updateOrder(int ord){
         cubic_cascade(&(data[1][num_data_points]), 2, iteration_depth);
         cubic_cascade(&(data[1][2*num_data_points]), 2, iteration_depth);
 
-		// Scaling functions at current level.
-		phi1 = workspace,
-		phi2 = workspace + num_data_points,
-		phi3 = workspace + (2 * num_data_points),
-		phi4 = workspace + (3 * num_data_points);
-		for(int level = 2; level <= 4; level++){
-			std::fill(workspace, workspace + 4 * num_data_points, 0.0);
-			int num_saved = 2 * (level-1); // 2 'unique' functions at level 2, 4 at 3, 6 at 4.
+        for(int level = 2; level <= 4; level++){
+            // Scaling functions at current level.
+            std::vector<double> phi1(num_data_points, 0.0);
+            std::vector<double> phi2(num_data_points, 0.0);
+            std::vector<double> phi3(num_data_points, 0.0);
+            std::vector<double> phi4(num_data_points, 0.0);
+            int num_saved = 2 * (level-1); // 2 'unique' functions at level 2, 4 at 3, 6 at 4.
             data[level].resize(num_saved * num_data_points);
             std::fill(data[level].begin(), data[level].end(), 0.0);
 
-			// Initialize first four scaling functions
-			phi1[ACCESS_COARSE(0, level, iteration_depth)] = 1;
-			phi2[ACCESS_COARSE(1, level, iteration_depth)] = 1;
-			phi3[ACCESS_COARSE(2, level, iteration_depth)] = 1;
-			phi4[ACCESS_COARSE(3, level, iteration_depth)] = 1;
-			cubic_cascade(phi1, level, iteration_depth);
-			cubic_cascade(phi2, level, iteration_depth);
-			cubic_cascade(phi3, level, iteration_depth);
-			cubic_cascade(phi4, level, iteration_depth);
+            // Initialize first four scaling functions
+            phi1[ACCESS_COARSE(0, level, iteration_depth)] = 1.0;
+            phi2[ACCESS_COARSE(1, level, iteration_depth)] = 1.0;
+            phi3[ACCESS_COARSE(2, level, iteration_depth)] = 1.0;
+            phi4[ACCESS_COARSE(3, level, iteration_depth)] = 1.0;
+            cubic_cascade(phi1.data(), level, iteration_depth);
+            cubic_cascade(phi2.data(), level, iteration_depth);
+            cubic_cascade(phi3.data(), level, iteration_depth);
+            cubic_cascade(phi4.data(), level, iteration_depth);
 
-			for(int index = 0; index < num_saved; index++){
-				// Initialize unlifted wavelet
-				double *wavelet = &data[level][index*(num_data_points)];
-				wavelet[ACCESS_FINE(index, level, iteration_depth)] = 1;
-				cubic_cascade(wavelet, level, iteration_depth);
-				double  c1 = coeffs[level-2][4*index],
-						c2 = coeffs[level-2][4*index+1],
-						c3 = coeffs[level-2][4*index+2],
-						c4 = coeffs[level-2][4*index+3];
+            for(int index = 0; index < num_saved; index++){
+                // Initialize unlifted wavelet
+                double *wavelet = &data[level][index*(num_data_points)];
+                wavelet[ACCESS_FINE(index, level, iteration_depth)] = 1;
+                cubic_cascade(wavelet, level, iteration_depth);
+                double  c1 = coeffs[level-2][4*index],
+                        c2 = coeffs[level-2][4*index+1],
+                        c3 = coeffs[level-2][4*index+2],
+                        c4 = coeffs[level-2][4*index+3];
 
-				if(level > 2 && index >= 2){
-					// Change pointers around to avoid copying data
-					double *tmp = phi1;
-					phi1 = phi2;
-					phi2 = phi3;
-					phi3 = phi4;
-					phi4 = tmp;
-					// Initialize new scaling function
-					std::fill(phi4, phi4 + num_data_points, 0.0);
-					phi4[ACCESS_COARSE(index+2, level, iteration_depth)] = 1;
-					cubic_cascade(phi4, level, iteration_depth);
+                if(level > 2 && index >= 2){
+                    // Change pointers around to avoid copying data
+                    std::vector<double> tmp;
+                    std::swap(tmp, phi1);
+                    std::swap(phi1, phi2);
+                    std::swap(phi2, phi3);
+                    std::swap(phi3, phi4);
+                    std::swap(phi4, tmp);
 
-				}
+                    // Initialize new scaling function
+                    std::fill(phi4.begin(), phi4.end(), 0.0);
+                    phi4[ACCESS_COARSE(index+2, level, iteration_depth)] = 1;
+                    cubic_cascade(phi4.data(), level, iteration_depth);
 
-                #pragma omp parallel for
-				for(int i = 0; i < num_data_points; i++){
-					// Lift the wavelet
-					wavelet[i] -= c1 * phi1[i] + c2 * phi2[i] + c3 * phi3[i] + c4 * phi4[i];
-				}
-			}
-		}
-		delete[] workspace;
-	}
+                }
+
+                for(int i = 0; i < num_data_points; i++){
+                    // Lift the wavelet
+                    wavelet[i] -= c1 * phi1[i] + c2 * phi2[i] + c3 * phi3[i] + c4 * phi4[i];
+                }
+            }
+        }
+    }
 }
 
 void RuleWavelet::cubic_cascade(double *y, int starting_level, int in_iteration_depth){
