@@ -469,8 +469,8 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
         return;
     }
 
-    int *sindx, *spntr;
-    double *svals;
+    std::vector<int> sindx, spntr;
+    std::vector<double> svals;
     buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals); // build sparse matrix corresponding to x
 
     int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
@@ -499,10 +499,6 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
             }
         }
     }
-
-    delete[] sindx;
-    delete[] spntr;
-    delete[] svals;
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
