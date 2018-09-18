@@ -39,15 +39,16 @@ GreedySequences::GreedySequences(){}
 GreedySequences::~GreedySequences(){}
 
 void GreedySequences::getLejaNodes(int n, std::vector<double> &nodes) const{
-    nodes.resize(n);
-    nodes[0] = 0.0;
-    if (n > 1) nodes[1] =  1.0;
-    if (n > 2) nodes[2] = -1.0;
-    if (n > 3) nodes[3] = sqrt(1.0 / 3.0);
+    nodes.clear();
+    nodes.reserve(n);
+    nodes.push_back(0.0);
+    if (n > 1) nodes.push_back(1.0);
+    if (n > 2) nodes.push_back(-1.0);
+    if (n > 3) nodes.push_back(sqrt(1.0/3.0));
     for(int i=4; i<n; i++){
-        Residual g(i, nodes.data());
-        OptimizerResult R = Optimizer::argMaxGlobal(&g);
-        nodes[i] = R.xmax;
+        tempFunctional<rule_leja> g(nodes);
+        OptimizerResult R = Optimizer::argMaxGlobal(g);
+        nodes.push_back(R.xmax);
     }
 }
 void GreedySequences::getMaxLebesgueNodes(int n, std::vector<double> &nodes) const{
@@ -413,8 +414,119 @@ int MinDelta::getNumIntervals() const{  return num_nodes-1;  }
 double* MinDelta::getIntervals() const{  return sortIntervals(num_nodes, nodes);  }
 
 
-Optimizer::Optimizer(){}
-Optimizer::~Optimizer(){}
+VectorFunctional::VectorFunctional(){};
+VectorFunctional::~VectorFunctional(){};
+
+void VectorFunctional::makeCoeff(const std::vector<double> &nodes, std::vector<double> &coeffs){
+    size_t num_nodes = nodes.size();
+    coeffs.resize(num_nodes);
+    for(size_t i=0; i<num_nodes; i++){
+        double c = 1.0;
+        for(size_t j=0; j<i; j++){
+            c *= (nodes[i] - nodes[j]);
+        }
+        for(size_t j=i+1; j<num_nodes; j++){
+            c *= (nodes[i] - nodes[j]);
+        }
+        coeffs[i] = c;
+    }
+}
+void VectorFunctional::evalLag(const std::vector<double> &nodes, const std::vector<double> &coeffs, double x, std::vector<double> &lag){
+    int num_nodes = (int) nodes.size();
+    lag.resize(num_nodes);
+    lag[0] = 1.0;
+    for(int i=0; i<num_nodes-1; i++){
+        lag[i+1] = (x - nodes[i]) * lag[i];
+    }
+    double w = 1.0;
+    lag[num_nodes-1] /= coeffs[num_nodes-1];
+    for(int i= num_nodes-2; i>=0; i--){
+        w *= (x - nodes[i+1]);
+        lag[i] *= w / coeffs[i];
+    }
+}
+double VectorFunctional::basisDx(const std::vector<double> &nodes, const std::vector<double> &coeffs, int inode, double x){
+    size_t num_nodes = nodes.size();
+    double s = 1.0;
+    double p = 1.0;
+    double n = (inode != 0) ? (x - nodes[0]) : (x - nodes[1]);
+
+    for(int j=1; j<inode; j++){
+        p *= n;
+        n = (x - nodes[j]);
+        s *= n;
+        s += p;
+    }
+    for(size_t j = (size_t) ((inode == 0) ? 2 : inode+1); j<num_nodes; j++){
+        p *= n;
+        n = (x - nodes[j]);
+        s *= n;
+        s += p;
+    }
+    return s / coeffs[inode];
+}
+void VectorFunctional::sortIntervals(const std::vector<double> &nodes, std::vector<double> &intervals){
+    size_t num_nodes = nodes.size();
+
+    std::vector<double> v1(num_nodes), v2(num_nodes);
+    size_t loop_end = (num_nodes % 2 == 1) ? num_nodes - 1 : num_nodes;
+    for(size_t i=0; i<loop_end; i+=2){
+        if (nodes[i] < nodes[i+1]){
+            v1[i]   = nodes[i];
+            v1[i+1] = nodes[i+1];
+        }else{
+            v1[i]   = nodes[i+1];
+            v1[i+1] = nodes[i];
+        }
+    }
+    if (loop_end != num_nodes){
+        v1[num_nodes-1] = nodes[num_nodes-1];
+    }
+
+    size_t stride = 2;
+    while(stride < num_nodes){
+        auto ic = v2.begin();
+        auto i2 = v1.begin();
+        while(ic < v2.end()){
+            auto ia = i2;
+            auto ib = i2;
+            std::advance(ib, stride);
+            auto iaend = ia;
+            std::advance(iaend, stride);
+            if (iaend > v1.end()) iaend = v1.end();
+            auto ibend = ib;
+            std::advance(ibend, stride);
+            if (ibend > v1.end()) ibend = v1.end();
+            bool aless = (ia < iaend);
+            bool bless = (ib < ibend);
+            while(aless || bless){
+                bool picka;
+                if (aless && bless){
+                    picka = *ia < *ib;
+                }else{
+                    picka = aless;
+                }
+
+                if (picka){
+                    *ic++ = *ia++;
+                }else{
+                    *ic++ = *ib++;
+                }
+
+                aless = (ia < iaend);
+                bless = (ib < ibend);
+            }
+
+            std::advance(i2, 2 * stride);
+        }
+        stride *= 2;
+        std::swap(v1, v2);
+    }
+
+    intervals = std::move(v1);
+}
+
+
 
 OptimizerResult Optimizer::argMaxGlobal(const Functional *F){
     double *sorted = F->getIntervals();
@@ -535,6 +647,131 @@ double Optimizer::argMaxLocalSecant(const Functional *F, double left, double rig
         xm = x; dm = d; x = xp;
 
         d = F->getDiff(x); // Functional1DDx(type, num_nodes, nodes, x);
+
+        itr++;
+    }
+    return (fabs(d) < fabs(dm)) ? x : xm;
+}
+
+OptimizerResult Optimizer::argMaxGlobal(const VectorFunctional &F){
+    std::vector<double> sorted;
+    F.getIntervals(sorted);
+    int num_intervals = (int) sorted.size() - 1;
+
+    OptimizerResult MaxResult;
+
+    MaxResult.xmax = -1.0;
+    MaxResult.fmax = F.getValue(MaxResult.xmax);
+
+    double x = 1.0;
+    double f = F.getValue(x);
+    if (f > MaxResult.fmax){
+        MaxResult.xmax = x;
+        MaxResult.fmax = f;
+    }
+
+    #pragma omp parallel
+    {
+        OptimizerResult LocalMaxResult = MaxResult, LocalResult;
+
+        #pragma omp for schedule(dynamic)
+        for(int i=0; i<num_intervals; i++){
+            LocalResult = argMaxLocalPattern(F, sorted[i], sorted[i+1]);
+            if (LocalResult.fmax > LocalMaxResult.fmax){
+                LocalMaxResult = LocalResult;
+            }
+
+            #pragma omp critical
+            {
+                if (LocalMaxResult.fmax > MaxResult.fmax){
+                    MaxResult = LocalMaxResult;
+                }
+            }
+        }
+    }
+
+    return MaxResult;
+}
+
+OptimizerResult Optimizer::argMaxLocalPattern(const VectorFunctional &F, double left, double right){
+    double xl = left;
+    double xr = right;
+    double xm = 0.5 * (left + right);
+    double fl = F.getValue(xl);
+    double fm = F.getValue(xm);
+    double fr = F.getValue(xr);
+    double d = xr - xm;
+
+    double tol = (F.hasDerivative()) ? TSG_NUM_TOL * 1.E-3 : TSG_NUM_TOL;
+
+    while(d > tol){
+        if ((fm >= fl) && (fm >= fr)){ // shrink the pattern
+            d /= 2.0;
+            xl = xm - d;
+            xr = xm + d;
+            fr = F.getValue(xr);
+            fl = F.getValue(xl);
+        }else if ((fl >= fm) && (fl >= fr)){ // if the left point is the maximum
+            if (xl - d < left){ // if shifting left would get us outside the interval
+                d /= 2.0;
+                xm = xl + d;
+                xr = xm + d;
+                fm = F.getValue(xm);
+                fr = F.getValue(xr);
+            }else{ // shift left
+                xr = xm;
+                fr = fm;
+                xm = xl;
+                fm = fl;
+                xl -= d;
+                fl = F.getValue(xl);
+            }
+        }else{ // the right point is the largest
+            if (xr + d > right){ // if shifting right would get us outside the interval
+                d /= 2.0;
+                xm = xr - d;
+                xl = xm - d;
+                fm = F.getValue(xm);
+                fl = F.getValue(xl);
+            }else{ // shift right
+                xl = xm;
+                fl = fm;
+                xm = xr;
+                fm = fr;
+                xr += d;
+                fr = F.getValue(xr);
+            }
+        }
+    }
+    // the post-processing here can give you a digit or two of extra accuracy
+    // however, the secant method by itself is unstable when the number of poitns grows
+    OptimizerResult R;
+    if (F.hasDerivative()){
+        R.xmax = argMaxLocalSecant(F, xl, xr);
+        R.fmax = F.getValue(R.xmax);
+    }else{
+        R.fmax = fm;
+        R.xmax = xm;
+    }
+    return R;
+}
+
+double Optimizer::argMaxLocalSecant(const VectorFunctional &F, double left, double right){
+    double xm = left;
+    double dm = F.getDiff(xm);
+    double x = right;
+    double d = F.getDiff(x);
+
+    if (fabs(d) > fabs(dm)){
+        double t = x; x = xm; xm = t;
+        t = d; d = dm; dm = t;
+    }
+    int itr = 0;
+    while((fabs(d) > 3*TSG_NUM_TOL) && (itr < TSG_MAX_SECANT_ITERATIONS)){
+        double xp = x - d * (x - xm) / (d - dm);
+        xm = x; dm = d; x = xp;
+
+        d = F.getDiff(x);
 
         itr++;
     }

@@ -169,14 +169,73 @@ struct OptimizerResult{
     double xmax, fmax;
 };
 
-class Optimizer{
+class VectorFunctional{
 public:
-    Optimizer();
-    ~Optimizer();
+    VectorFunctional();
+    virtual ~VectorFunctional();
 
-    static OptimizerResult argMaxGlobal(const Functional *F); // assumes range is [-1,1] and both points are included
-    static OptimizerResult argMaxLocalPattern(const Functional *F, double left, double right);
-    static double argMaxLocalSecant(const Functional *F, double left, double right);
+    virtual double getValue(double x) const = 0;
+
+    virtual bool hasDerivative() const = 0;
+    virtual double getDiff(double x) const = 0;
+
+    virtual void getIntervals(std::vector<double> &intervals) const = 0;
+
+    static void makeCoeff(const std::vector<double> &nodes, std::vector<double> &coeffs);
+    static void evalLag(const std::vector<double> &nodes, const std::vector<double> &coeffs, double x, std::vector<double> &lag);
+    static double basisDx(const std::vector<double> &nodes, const std::vector<double> &coeffs, int inode, double x);
+    static void sortIntervals(const std::vector<double> &nodes, std::vector<double> &intervals);
+};
+
+template<TypeOneDRule rule>
+class tempFunctional : public VectorFunctional{
+public:
+    tempFunctional(const std::vector<double> &cnodes) : nodes(cnodes){}
+    ~tempFunctional(){}
+
+    double getValue(double x) const{
+        if (rule == rule_leja){
+            double p = 1.0;
+            for(auto n : nodes) p *= (x - n);
+            return fabs(p);
+        }
+    }
+
+    bool hasDerivative() const{
+        if (rule == rule_leja){
+            return true;
+        }
+    }
+
+    double getDiff(double x) const{
+        if (rule == rule_leja){
+            double s = 1.0, p = 1.0, n = (x - nodes[0]);
+            for(size_t j=1; j<nodes.size(); j++){
+                p *= n;
+                n = (x - nodes[j]);
+                s *= n;
+                s += p;
+            }
+            return s;
+        }
+    }
+
+    void getIntervals(std::vector<double> &intervals) const{
+        sortIntervals(nodes, intervals);
+    }
+
+private:
+    std::vector<double> nodes;
+};
+
+namespace Optimizer{
+    OptimizerResult argMaxGlobal(const Functional *F); // assumes range is [-1,1] and both points are included
+    OptimizerResult argMaxLocalPattern(const Functional *F, double left, double right);
+    double argMaxLocalSecant(const Functional *F, double left, double right);
+
+    OptimizerResult argMaxGlobal(const VectorFunctional &F); // assumes range is [-1,1] and both points are included
+    OptimizerResult argMaxLocalPattern(const VectorFunctional &F, double left, double right);
+    double argMaxLocalSecant(const VectorFunctional &F, double left, double right);
 };
 
 }
