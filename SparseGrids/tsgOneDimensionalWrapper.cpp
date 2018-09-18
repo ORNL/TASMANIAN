@@ -254,7 +254,7 @@ double OneDimensionalWrapper::getWeight(int level, int j) const{ return weights[
 const double* OneDimensionalWrapper::getNodes(int level) const{ return (isNonNested) ? nodes[level].data() : unique.data(); }
 const double* OneDimensionalWrapper::getCoefficients(int level) const{ return coeff[level].data(); }
 
-int OneDimensionalWrapper::getPointsCount(int level) const{ return pntr[level]; }
+const std::vector<int>* OneDimensionalWrapper::getPointsCount() const{ return &pntr; }
 
 TypeOneDRule OneDimensionalWrapper::getType() const{ return rule; }
 int OneDimensionalWrapper::getNumLevels() const{ return num_levels; }

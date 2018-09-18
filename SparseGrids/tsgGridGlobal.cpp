@@ -510,7 +510,7 @@ void GridGlobal::getQuadratureWeights(double weights[]) const{
 void GridGlobal::getInterpolationWeights(const double x[], double weights[]) const{
     IndexSet *work = (points == 0) ? needed : points;
 
-    CacheLagrange<double> lcache(num_dimensions, max_levels.data(), wrapper, x);
+    CacheLagrange<double> lcache(num_dimensions, max_levels, wrapper, x);
 
     int num_points = work->getNumIndexes();
     std::fill(weights, weights + num_points, 0.0);
