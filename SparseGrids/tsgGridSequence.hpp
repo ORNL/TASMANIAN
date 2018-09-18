@@ -153,7 +153,7 @@ protected:
         int maxl = max_levels[0];
         for(auto l : max_levels) if (maxl < l) maxl = l;
         cuda_nodes.load(nodes);
-        cuda_coeffs.load(maxl + 1, coeff);
+        cuda_coeffs.load(coeff);
         std::vector<int> num_nodes = max_levels;
         for(auto &n : num_nodes) n++;
         cuda_num_nodes.load(num_nodes);
@@ -185,7 +185,7 @@ private:
 
     std::vector<double> surpluses;
     std::vector<double> nodes;
-    double *coeff;
+    std::vector<double> coeff;
 
     StorageSet *values;
 
