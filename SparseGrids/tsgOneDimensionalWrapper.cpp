@@ -127,7 +127,6 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
             }
         }
     }else{
-        TableGaussPatterson *gp;
         if (rule == rule_clenshawcurtis){
             OneDimensionalNodes::getClenshawCurtisNodes(max_level, unique);
         }else if (rule == rule_clenshawcurtis0){
@@ -135,25 +134,24 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         }else if (rule == rule_fejer2){
             OneDimensionalNodes::getFejer2Nodes(max_level, unique);
         }else if (rule == rule_gausspatterson){
-            gp = new TableGaussPatterson();
-            if (num_levels > gp->getNumLevels()){
+            TableGaussPatterson gp;
+            if (num_levels > gp.getNumLevels()){
                 std::string message = "ERROR: gauss-patterson rule needed with level ";
                 message += std::to_string(max_level);
                 message += ", but only ";
-                message += std::to_string(gp->getNumLevels());
+                message += std::to_string(gp.getNumLevels());
                 message += " are hardcoded.";
                 throw std::runtime_error(message);
             }
-            gp->getNodes(max_level, unique);
+            gp.getNodes(max_level, unique);
 
             // move here to avoid a warning
             for(int l=0; l<num_levels; l++){
                 weights[l].resize(num_points[l]);
                 for(int i=0; i<num_points[l]; i++){
-                    weights[l][i] = gp->getWeight(l, i);
+                    weights[l][i] = gp.getWeight(l, i);
                 }
             }
-            delete gp;
         }else if (rule == rule_rleja){
             OneDimensionalNodes::getRLeja(meta->getNumPoints(max_level,rule), unique);
         }else if ((rule == rule_rlejaodd) || (rule == rule_rlejadouble2) || (rule == rule_rlejadouble4)){
