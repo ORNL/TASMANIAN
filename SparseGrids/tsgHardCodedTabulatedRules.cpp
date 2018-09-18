@@ -35,11 +35,10 @@
 
 namespace TasGrid{
 
-TableGaussPatterson::TableGaussPatterson() : max_levels(0), weights_offsets(0) {
-    max_levels = 9;
-    weights_offsets = new int[max_levels];
+TableGaussPatterson::TableGaussPatterson(){
+    weights_offsets.resize(9);
     weights_offsets[0] = 0;
-    for(int l=0; l<max_levels-1; l++){
+    for(int l=0; l<8; l++){
         weights_offsets[l+1] = weights_offsets[l] + meta.getNumPoints(l, rule_gausspatterson);
     }
 
@@ -47,9 +46,7 @@ TableGaussPatterson::TableGaussPatterson() : max_levels(0), weights_offsets(0) {
     loadWeights();
 }
 
-TableGaussPatterson::~TableGaussPatterson(){
-    if (weights_offsets != 0){ delete[] weights_offsets; weights_offsets = 0; };
-}
+TableGaussPatterson::~TableGaussPatterson(){}
 
 int TableGaussPatterson::getNumLevels(){
     return 9; // sync this with max_levels

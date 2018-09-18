@@ -53,7 +53,7 @@ private:
     std::vector<double> nodes; // contains the x-coordinate of each sample point
     std::vector<double> weights; // contains the weight associated with each level
 
-    int *weights_offsets;
+    std::vector<int> weights_offsets;
 
     OneDimensionalMeta meta;
 };
