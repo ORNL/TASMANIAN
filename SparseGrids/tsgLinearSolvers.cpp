@@ -42,14 +42,15 @@ namespace TasGrid{
 void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x){
     // form Ar = A' * A
     // form x = A' * b
-    double* Ar = new double[m * m];
+    std::vector<double> Ar(m * m);
     #pragma omp parallel for
     for(int i=0; i<m; i++){
         for(int j=0; j<m; j++){
-            Ar[i*m + j] = 0.0;
+            double sum = 0.0;
             for(int k=0; k<n; k++){
-                Ar[i*m + j] += A[i*n + k] * A[j*n + k];
+                sum += A[i*n + k] * A[j*n + k];
             }
+            Ar[i*m + j] = sum;
         }
         x[i] = 0.0;
         for(int k=0; k<n; k++){
@@ -90,8 +91,6 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
         }
         x[i] /= Ar[i*m + i];
     }
-
-    delete[] Ar;
 }
 
 void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
