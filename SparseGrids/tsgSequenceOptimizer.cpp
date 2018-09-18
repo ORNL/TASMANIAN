@@ -272,32 +272,6 @@ double* Functional::sortIntervals(int num_nodes, const double nodes[]){
 }
 int Functional::nodeCompar(const void * a, const void * b){ return (*(double*) a < *(double*) b) ? -1 : 1; }
 
-Residual::Residual(int cnum_nodes, const double cnodes[]) : num_nodes(cnum_nodes){
-    nodes = new double[num_nodes];
-    std::copy(cnodes, cnodes + num_nodes, nodes);
-}
-Residual::~Residual(){  delete[] nodes;  }
-double Residual::getValue(double x) const{
-    double prod = 1.0;
-    for(int j=0; j<num_nodes; j++){ prod *= (x - nodes[j]); }
-    return fabs(prod);
-}
-bool Residual::hasDerivative() const{  return true;  }
-double Residual::getDiff(double x) const{
-    double s = 1.0, p = 1.0, n = (x - nodes[0]);
-    for(int j=1; j<num_nodes; j++){
-        p *= n;
-        n = (x - nodes[j]);
-        s *= n;
-        s += p;
-    }
-    return s;
-}
-int Residual::getNumIntervals() const{  return num_nodes-1;  }
-double* Residual::getIntervals() const{
-    return sortIntervals(num_nodes, nodes);
-}
-
 MaxLebesgue::MaxLebesgue(int cnum_nodes, const double cnodes[], double new_node) : num_nodes(cnum_nodes+1){
     nodes = new double[num_nodes];
     std::copy(cnodes, cnodes + num_nodes-1, nodes);

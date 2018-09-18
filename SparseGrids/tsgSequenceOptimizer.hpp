@@ -75,24 +75,6 @@ public:
     static int nodeCompar(const void * a, const void * b);
 };
 
-class Residual : public Functional{
-public:
-    Residual(int cnum_nodes, const double cnodes[]);
-    ~Residual();
-
-    double getValue(double x) const;
-
-    bool hasDerivative() const;
-    double getDiff(double x) const;
-
-    int getNumIntervals() const;
-    double* getIntervals() const;
-
-private:
-    int num_nodes;
-    double *nodes;
-};
-
 class MaxLebesgue : public Functional{
 public:
     MaxLebesgue(int cnum_nodes, const double cnodes[], double new_node);
