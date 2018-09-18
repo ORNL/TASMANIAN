@@ -406,8 +406,8 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             std::vector<double> mindel;
             greed.getMinDeltaNodes(n, mindel);
 
-            MinDelta d(n, mindel.data());
-            OptimizerResult R = Optimizer::argMaxGlobal(&d);
+            tempFunctional<rule_mindelta> d(mindel);
+            OptimizerResult R = Optimizer::argMaxGlobal(d);
             if (fabs(R.xmax - greed.getMinDeltaStored(n)) > 1.E-9){ // this seems large, double-check
                 pass = false;
                 cout << "ERROR: mismatch in stored vs computed nodes for rule_mindelta rule" << endl;

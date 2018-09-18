@@ -154,6 +154,10 @@ public:
         std::copy(cnodes.begin(), cnodes.end(), nodes.data());
         nodes[cnodes.size()] = new_node;
         makeCoeff(nodes, coeff);
+        if (rule == rule_mindeltaodd){ // hack, rule_mindeltaodd indicates the companion functional to rule_mindelta (for the min-max problem)
+            nodes_less1 = cnodes;
+            makeCoeff(nodes_less1, coeff_less1);
+        }
     }
     ~tempFunctional(){}
 
@@ -174,11 +178,25 @@ public:
             tempFunctional<rule_maxlebesgue> M(nodes, x);
             OptimizerResult R = Optimizer::argMaxGlobal(M);
             return -R.fmax;
+        }else if (rule == rule_mindeltaodd){
+            std::vector<double> lag, lag_less1;
+            evalLag(nodes, coeff, x, lag);
+            evalLag(nodes_less1, coeff_less1, x, lag_less1);
+            auto il = lag.begin();
+            double sum = 0.0;
+            for(auto l : lag_less1) sum += fabs(l - *il++);
+            return sum + fabs(*il);
+        }else if (rule == rule_mindelta){
+            // points almost overlap, will cause an explosion in the Lebesgue constant
+            for(auto n : nodes) if (fabs(x - n) < 10*TSG_NUM_TOL) return -1.E+100;
+            tempFunctional<rule_mindeltaodd> M(nodes, x);
+            OptimizerResult R = Optimizer::argMaxGlobal(M);
+            return -R.fmax;
         }
     }
 
     bool hasDerivative() const{
-        return (rule != rule_minlebesgue);
+        return ((rule != rule_minlebesgue) && (rule != rule_mindelta));
     }
 
     double getDiff(double x) const{
@@ -201,6 +219,20 @@ public:
                 sum += (l > 0.0) ? diff : -diff;
             }
             return sum;
+        }else if (rule == rule_mindeltaodd){
+            std::vector<double> lag, lag_less1;
+            evalLag(nodes, coeff, x, lag);
+            evalLag(nodes_less1, coeff_less1, x, lag_less1);
+            auto il = lag.begin();
+            int i = 0;
+            double sum = 0.0;
+            for(auto l : lag_less1){
+                double diff = basisDx(nodes, coeff, i, x) - basisDx(nodes_less1, coeff_less1, i, x);
+                sum += ((*il++ - l) > 0.0) ? diff : -diff;
+                i++;
+            }
+            sum += basisDx(nodes, coeff, (int) (nodes.size() - 1), x) * ((*il > 0.0) ? 1.0 : -1.0);
+            return sum;
         }
         return 0.0;
     }
@@ -212,6 +244,8 @@ public:
 private:
     std::vector<double> nodes;
     std::vector<double> coeff;
+    std::vector<double> nodes_less1;
+    std::vector<double> coeff_less1;
 };
 
 }

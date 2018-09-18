@@ -81,17 +81,18 @@ void GreedySequences::getMinLebesgueNodes(int n, std::vector<double> &nodes) con
     }
 }
 void GreedySequences::getMinDeltaNodes(int n, std::vector<double> &nodes) const{
-    nodes.resize(n);
+    nodes.clear();
+    nodes.reserve(n);
     int stored = getNumMinDeltaStored();
     int usefirst = (n > stored) ? stored : n;
     for(int i=0; i<usefirst; i++){
-        nodes[i] = getMinDeltaStored(i);
+        nodes.push_back(getMinDeltaStored(i));
     }
     if (n > stored){
         for(int i=stored; i<n; i++){
-            MinDelta g(i, nodes.data());
-            OptimizerResult R = Optimizer::argMaxGlobal(&g);
-            nodes[i] = R.xmax;
+            tempFunctional<rule_mindelta> g(nodes);
+            OptimizerResult R = Optimizer::argMaxGlobal(g);
+            nodes.push_back(R.xmax);
         }
     }
 }
