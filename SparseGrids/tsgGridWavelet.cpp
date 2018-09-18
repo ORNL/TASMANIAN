@@ -568,29 +568,29 @@ void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
             int nump = split.getJobNumPoints(s);
             const int *pnts = split.getJobPoints(s);
 
-            int *global_to_pnts = new int[num_points];
-
             int active_outputs = (output == -1) ? num_outputs : 1;
 
-            double *vals = new double[nump * active_outputs];
-            std::vector<int> indexes(nump * num_dimensions);
+            Data2D<double> vals;
+            vals.resize(active_outputs, nump);
+            Data2D<int> indexes;
+            indexes.resize(num_dimensions, nump);
 
             for(int i=0; i<nump; i++){
                 const double* v = values->getValues(pnts[i]);
+                double *vls = vals.getStrip(i);
                 if (output == -1){
-                    std::copy(v, v + num_outputs, &(vals[((size_t) i) * ((size_t) num_outputs)]));
+                    std::copy(v, v + num_outputs, vls);
                 }else{
-                    vals[i] = v[output];
+                    vls[0] = v[output];
                 }
                 const int *p = points->getIndex(pnts[i]);
-                std::copy(p, p + num_dimensions, &(indexes[((size_t) i) * ((size_t) num_dimensions)]));
-                global_to_pnts[pnts[i]] = i;
+                std::copy(p, p + num_dimensions, indexes.getStrip(i));
             }
-            IndexSet *pointset = new IndexSet(num_dimensions, indexes);
+            IndexSet *pointset = new IndexSet(num_dimensions, *(indexes.getVector()));
 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);
-            direction_grid.loadNeededPoints(vals, accel_none);
+            direction_grid.loadNeededPoints(vals.getStrip(0), accel_none);
 
             for(int i=0; i<nump; i++){
                 bool small = true;
@@ -605,9 +605,6 @@ void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
                 }
                 pmap.getStrip(pnts[i])[d] = (small) ? 0 : 1;
             }
-
-            delete[] vals;
-            delete[] global_to_pnts;
         }
     }
 }
