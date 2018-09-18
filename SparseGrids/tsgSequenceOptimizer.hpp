@@ -75,42 +75,6 @@ public:
     static int nodeCompar(const void * a, const void * b);
 };
 
-class MaxLebesgue : public Functional{
-public:
-    MaxLebesgue(int cnum_nodes, const double cnodes[], double new_node);
-    MaxLebesgue(int cnum_nodes, const double cnodes[]);
-    ~MaxLebesgue();
-
-    double getValue(double x) const;
-
-    bool hasDerivative() const;
-    double getDiff(double x) const;
-
-    int getNumIntervals() const;
-    double* getIntervals() const;
-
-private:
-    int num_nodes;
-    double *nodes;
-    double *coeff;
-};
-
-class MinLebesgue : public Functional{
-public:
-    MinLebesgue(int cnum_nodes, const double cnodes[]);
-    ~MinLebesgue();
-
-    double getValue(double x) const;
-    bool hasDerivative() const;
-
-    int getNumIntervals() const;
-    double* getIntervals() const;
-
-private:
-    int num_nodes;
-    double *nodes;
-};
-
 class MaxDelta : public Functional{
 public:
     MaxDelta(int cnum_nodes, const double cnodes[], double new_node);

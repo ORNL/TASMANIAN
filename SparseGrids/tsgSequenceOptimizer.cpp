@@ -97,8 +97,10 @@ void GreedySequences::getMinDeltaNodes(int n, std::vector<double> &nodes) const{
 }
 double GreedySequences::findLebesgueConstant(int n, const double nodes[]) const{
     OptimizerResult R;
-    MaxLebesgue g(n, nodes);
-    R = Optimizer::argMaxGlobal(&g);
+    std::vector<double> vnodes(n);
+    std::copy(nodes, nodes + n, vnodes.data());
+    tempFunctional<rule_maxlebesgue> g(vnodes);
+    R = Optimizer::argMaxGlobal(g);
     return R.fmax;
 }
 int GreedySequences::getNumMinLebesgueStored() const{ return 50; }
@@ -272,62 +274,6 @@ double* Functional::sortIntervals(int num_nodes, const double nodes[]){
     return sorted;
 }
 int Functional::nodeCompar(const void * a, const void * b){ return (*(double*) a < *(double*) b) ? -1 : 1; }
-
-MaxLebesgue::MaxLebesgue(int cnum_nodes, const double cnodes[], double new_node) : num_nodes(cnum_nodes+1){
-    nodes = new double[num_nodes];
-    std::copy(cnodes, cnodes + num_nodes-1, nodes);
-    nodes[num_nodes-1] = new_node;
-
-    coeff = makeCoeff(num_nodes, nodes);
-}
-MaxLebesgue::MaxLebesgue(int cnum_nodes, const double cnodes[]) : num_nodes(cnum_nodes){
-    nodes = new double[num_nodes];
-    std::copy(cnodes, cnodes + num_nodes, nodes);
-
-    coeff = makeCoeff(num_nodes, nodes);
-}
-MaxLebesgue::~MaxLebesgue(){  delete[] nodes;  delete[] coeff;  }
-double MaxLebesgue::getValue(double x) const{
-    double *lag = evalLag(num_nodes, nodes, coeff, x);
-    double sum = fabs(lag[0]); for(int i=1; i<num_nodes; i++) sum += fabs(lag[i]);
-    delete[] lag;
-    return sum;
-}
-bool MaxLebesgue::hasDerivative() const{  return true;  }
-double MaxLebesgue::getDiff(double x) const{
-    double *lag = evalLag(num_nodes, nodes, coeff, x);
-    double sum = 0.0;
-    for(int i=0; i<num_nodes; i++) sum += (lag[i] > 0.0) ? basisDx(num_nodes, nodes, coeff, i, x) : -basisDx(num_nodes, nodes, coeff, i, x);
-    delete[] lag;
-    return sum;
-}
-int MaxLebesgue::getNumIntervals() const{  return num_nodes-1;  }
-double* MaxLebesgue::getIntervals() const{
-    return sortIntervals(num_nodes, nodes);
-}
-
-
-MinLebesgue::MinLebesgue(int cnum_nodes, const double cnodes[]) : num_nodes(cnum_nodes) {
-    nodes = new double[num_nodes];
-    std::copy(cnodes, cnodes + num_nodes, nodes);
-}
-MinLebesgue::~MinLebesgue(){  delete[] nodes;  }
-
-double MinLebesgue::getValue(double x) const{
-    for(int i=0; i<num_nodes; i++){
-        if (fabs(x - nodes[i]) < 10*TSG_NUM_TOL){ // points almost overlap, will cause an explosion in the Lebesgue constant
-            return -1.E+100;
-        }
-    }
-    MaxLebesgue M(num_nodes, nodes, x);
-    OptimizerResult R = Optimizer::argMaxGlobal(&M);
-    return -R.fmax;
-}
-bool MinLebesgue::hasDerivative() const{  return false;  }
-int MinLebesgue::getNumIntervals() const{ return num_nodes - 1; }
-double* MinLebesgue::getIntervals() const{
-    return sortIntervals(num_nodes, nodes);
-}
 
 MaxDelta::MaxDelta(int cnum_nodes, const double cnodes[], double new_node) : num_nodes(cnum_nodes + 1){
     nodes = new double[num_nodes];
