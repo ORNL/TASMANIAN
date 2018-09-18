@@ -50,8 +50,8 @@ protected:
 
 private:
     int max_levels;
-    double *nodes; // contains the x-coordinate of each sample point
-    double *weights; // contains the weight associated with each level
+    std::vector<double> nodes; // contains the x-coordinate of each sample point
+    std::vector<double> weights; // contains the weight associated with each level
 
     int *weights_offsets;
 
