@@ -320,7 +320,7 @@ void GridWavelet::mergeRefinement(){
 }
 void GridWavelet::evaluate(const double x[], double y[]) const{
     int num_points = points->getNumIndexes();
-	double *basis_values = new double[num_points];
+	std::vector<double> basis_values(num_points);
 	#pragma omp parallel for
 	for(int i=0; i<num_points; i++){
         basis_values[i] = evalBasis(points->getIndex(i), x);
@@ -333,7 +333,6 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
         }
         y[j] = sum;
 	}
-	delete[] basis_values;
 }
 
 void GridWavelet::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
@@ -364,7 +363,7 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
     int num_points = points->getNumIndexes();
 
     if (conformal_correction == 0){
-        double *basis_integrals = new double[num_points];
+        std::vector<double> basis_integrals(num_points);
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             basis_integrals[i] = evalIntegral(points->getIndex(i));
@@ -377,11 +376,10 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
             }
             q[j] = sum;
         }
-        delete[] basis_integrals;
     }else{
         std::fill(q, q + num_outputs, 0.0);
-        double *w = new double[num_points];
-        getQuadratureWeights(w);
+        std::vector<double> w(num_points);
+        getQuadratureWeights(w.data());
         for(int i=0; i<num_points; i++){
             w[i] *= conformal_correction[i];
             const double *vals = values->getValues(i);
@@ -389,7 +387,6 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
                 q[k] += w[i] * vals[k];
             }
         }
-        delete[] w;
     }
 }
 
@@ -477,13 +474,12 @@ void GridWavelet::recomputeCoefficients(){
         buildInterpolationMatrix();
 	}
 
-	double *workspace = new double[2*num_points];
-	double *b = workspace;
-	double *x = workspace + num_points;
+    std::vector<double> b(num_points), x(num_points);
 
 	for(int output = 0; output < num_outputs; output++){
 		// Copy relevant portion
-		std::fill(workspace, workspace + 2*num_points, 0.0);
+		std::fill(x.begin(), x.end(), 0.0);
+		std::fill(b.begin(), b.end(), 0.0);
 
 		// Populate RHS
 		for(int i = 0; i < num_points; i++){
@@ -491,15 +487,13 @@ void GridWavelet::recomputeCoefficients(){
 		}
 
 		// Solve system
-		inter_matrix->solve(b, x);
+		inter_matrix->solve(b.data(), x.data());
 
 		// Populate surplus
 		for(int i = 0; i < num_points; i++){
             coefficients.getStrip(i)[output] = x[i];
 		}
 	}
-
-	delete[] workspace;
 }
 
 void GridWavelet::solveTransposed(double w[]) const{
@@ -510,13 +504,11 @@ void GridWavelet::solveTransposed(double w[]) const{
 	 */
 	int num_points = inter_matrix->getNumRows();
 
-	double *y = new double[num_points];
+	std::vector<double> y(num_points);
 
-	std::copy(w, w + num_points, y);
+	std::copy(w, w + num_points, y.data());
 
-	inter_matrix->solve(y, w, true);
-
-	delete[] y;
+	inter_matrix->solve(y.data(), w, true);
 }
 
 void GridWavelet::getNormalization(std::vector<double> &norm) const{
