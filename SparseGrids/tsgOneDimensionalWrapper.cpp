@@ -222,7 +222,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
             for(int l=0; l<num_levels; l++){
                 std::fill(weights[l].begin(), weights[l].end(), 0.0);
                 int npl = num_points[l];
-                double *v = new double[npl];
+                std::vector<double> v(npl);
                 for(int i=0; i<n; i++){
                     v[0] = 1.0;
                     for(int j=0; j<npl-1; j++){
@@ -238,7 +238,6 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
                         weights[l][j] += lag_w[i] * v[j];
                     }
                 }
-                delete[] v;
             }
         }
     }
