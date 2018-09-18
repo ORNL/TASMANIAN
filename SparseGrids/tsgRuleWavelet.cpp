@@ -41,7 +41,6 @@ RuleWavelet::RuleWavelet(int ord, int iter_depth){
 	 * Note: Only orders 1 & 3 wavelets are currently implemented.
 	 */
 	iteration_depth = iter_depth;
-	data = 0;
 	order = 0;
 	updateOrder(ord);
 }
@@ -53,13 +52,8 @@ void RuleWavelet::updateOrder(int ord){
 	 */
 	if(order == ord) return;
 
-	// If previous order was cubic, clean up data.
-	if(order == 3 && data != 0){
-		for(int i = 0; i < 4; i++){
-			delete[] data[i];
-		}
-		delete[] data;
-	}
+    // clear is practically free, call it every time
+    data.clear();
 
     order = ord;
 
@@ -67,11 +61,10 @@ void RuleWavelet::updateOrder(int ord){
 
 		int num_data_points = (1 << iteration_depth) + 1;
 
-		data = new double*[5]; // (xs, level1 (scaling), level2, level3, level4)
-		double *xs = new double[num_data_points];
-		data[0] = xs;
+        data.resize(5); // (xs, level1 (scaling), level2, level3, level4)
+        data[0].resize(num_data_points);
+        double *xs = data[0].data();
 
-        #pragma omp parallel for
 		for(int i = 0; i < num_data_points; i++){
 			xs[i] = -1. + 2*(double (i)) / (double (num_data_points - 1));
 		}
@@ -100,13 +93,10 @@ void RuleWavelet::updateOrder(int ord){
 
 		double *workspace = new double[4 * num_data_points];
 
-		// Initialize scaling functions
-		data[1] = new double[3*num_data_points];
-		std::fill(data[1], data[1] + 3*num_data_points, 0.0);
-		double  *phi1 = data[1],
-				*phi2 = data[1] + num_data_points,
-				*phi3 = data[1] + 2*num_data_points,
-				*phi4;
+        // Initialize scaling functions
+        data[1].resize(3*num_data_points);
+        std::fill(data[1].begin(), data[1].end(), 0.0);
+        double  *phi1, *phi2, *phi3, *phi4;
 
 		// Point (sparse grid numbering):
 		// 1     3     0     4     2
@@ -114,15 +104,14 @@ void RuleWavelet::updateOrder(int ord){
 		// 0     1     2     3     4
 		// Point (level 2 coarse indexing)
 
-		// This ordering makes phi1 -> point 0, phi2 -> point 1, phi3 -> point 3
-		// Points 2 & 4 can be found by reflection of phi2, phi3, respectively.
-		phi1[ACCESS_COARSE(2, 2, iteration_depth)] = 1;
-		phi2[ACCESS_COARSE(0, 2, iteration_depth)] = 1;
-		phi3[ACCESS_COARSE(1, 2, iteration_depth)] = 1;
-		cubic_cascade(phi1, 2, iteration_depth);
-		cubic_cascade(phi2, 2, iteration_depth);
-		cubic_cascade(phi3, 2, iteration_depth);
-
+        // This ordering makes phi1 -> point 0, phi2 -> point 1, phi3 -> point 3
+        // Points 2 & 4 can be found by reflection of phi2, phi3, respectively.
+        data[1][ACCESS_COARSE(2, 2, iteration_depth)] = 1.0;
+        data[1][num_data_points + ACCESS_COARSE(0, 2, iteration_depth)] = 1.0;
+        data[1][2*num_data_points + ACCESS_COARSE(1, 2, iteration_depth)] = 1.0;
+        cubic_cascade(data[1].data(), 2, iteration_depth);
+        cubic_cascade(&(data[1][num_data_points]), 2, iteration_depth);
+        cubic_cascade(&(data[1][2*num_data_points]), 2, iteration_depth);
 
 		// Scaling functions at current level.
 		phi1 = workspace,
@@ -132,8 +121,8 @@ void RuleWavelet::updateOrder(int ord){
 		for(int level = 2; level <= 4; level++){
 			std::fill(workspace, workspace + 4 * num_data_points, 0.0);
 			int num_saved = 2 * (level-1); // 2 'unique' functions at level 2, 4 at 3, 6 at 4.
-			data[level] = new double[num_saved * num_data_points];
-			std::fill(data[level], data[level] + num_saved * num_data_points, 0.0);
+            data[level].resize(num_saved * num_data_points);
+            std::fill(data[level].begin(), data[level].end(), 0.0);
 
 			// Initialize first four scaling functions
 			phi1[ACCESS_COARSE(0, level, iteration_depth)] = 1;
@@ -220,14 +209,7 @@ void RuleWavelet::cubic_cascade(double *y, int starting_level, int in_iteration_
 	}
 }
 
-RuleWavelet::~RuleWavelet(){
-	if(order == 3){
-		for(int i = 0; i < 5; i++){
-			delete[] data[i];
-		}
-		delete[] data;
-	}
-}
+RuleWavelet::~RuleWavelet(){}
 
 int RuleWavelet::getOrder() const{
 	return order;
@@ -377,7 +359,7 @@ double RuleWavelet::eval_cubic(int point, double x) const{
 			point = 3;
 			x = -x;
 		}
-		double *phi = &data[1][((point+1)/2) * num_data_points];
+        const double *phi = &(data[1][((point+1)/2) * num_data_points]);
 		return interpolate(phi, x);
 	}
 	int l = BaseRuleLocalPolynomial::intlog2(point - 1);
@@ -480,7 +462,7 @@ int RuleWavelet::find_index(double x) const{
 	}
 	// Bisection search
 	int num_points = (1 << iteration_depth) + 1;
-	double *xs = data[0];
+    const double *xs = data[0].data();
 	int low = 0;
 	int high = num_points-1;
 	while(high - low > 1){
@@ -511,7 +493,7 @@ double RuleWavelet::interpolate(const double *y, double x, int interpolation_ord
 	// Neville's Algorithm
 	std::vector<double> ps(interpolation_order + 1);
 	std::vector<double> xs(interpolation_order + 1);
-	double *xx = data[0];
+    const double *xx = data[0].data();
 
 	if (idx < interpolation_order/2){
 		idx = interpolation_order/2;

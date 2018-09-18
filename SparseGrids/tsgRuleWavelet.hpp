@@ -73,7 +73,7 @@ protected:
 	int find_index(double x) const;
 	double interpolate(const double *y, double x, int interpolation_order = 3) const;
 
-	double **data;
+	std::vector<std::vector<double>> data;
 };
 
 } /* namespace TasGrid */
