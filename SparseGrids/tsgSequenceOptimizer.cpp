@@ -38,35 +38,33 @@ namespace TasGrid{
 GreedySequences::GreedySequences(){}
 GreedySequences::~GreedySequences(){}
 
-double* GreedySequences::getLejaNodes(int n) const{
-    double *nodes = new double[n];
+void GreedySequences::getLejaNodes(int n, std::vector<double> &nodes) const{
+    nodes.resize(n);
     nodes[0] = 0.0;
     if (n > 1) nodes[1] =  1.0;
     if (n > 2) nodes[2] = -1.0;
     if (n > 3) nodes[3] = sqrt(1.0 / 3.0);
     for(int i=4; i<n; i++){
-        Residual g(i, nodes);
+        Residual g(i, nodes.data());
         OptimizerResult R = Optimizer::argMaxGlobal(&g);
         nodes[i] = R.xmax;
     }
-    return nodes;
 }
-double* GreedySequences::getMaxLebesgueNodes(int n) const{
-    double *nodes = new double[n];
+void GreedySequences::getMaxLebesgueNodes(int n, std::vector<double> &nodes) const{
+    nodes.resize(n);
     nodes[0] = 0.0;
     if (n > 1) nodes[1] =  1.0;
     if (n > 2) nodes[2] = -1.0;
     if (n > 3) nodes[3] = 0.5;
     for(int i=4; i<n; i++){
-        MaxLebesgue g(i, nodes);
+        MaxLebesgue g(i, nodes.data());
         OptimizerResult R = Optimizer::argMaxGlobal(&g);
         nodes[i] = R.xmax;
         //nodes[i] = argMaxGlobal(functional_lebesgue_function, i, nodes);
     }
-    return nodes;
 }
-double* GreedySequences::getMinLebesgueNodes(int n) const{
-    double *nodes = new double[n];
+void GreedySequences::getMinLebesgueNodes(int n, std::vector<double> &nodes) const{
+    nodes.resize(n);
     int stored = getNumMinLebesgueStored();
     int usefirst = (n > stored) ? stored : n;
     for(int i=0; i<usefirst; i++){
@@ -74,15 +72,14 @@ double* GreedySequences::getMinLebesgueNodes(int n) const{
     }
     if (n > stored){
         for(int i=stored; i<n; i++){
-            MinLebesgue g(i, nodes);
+            MinLebesgue g(i, nodes.data());
             OptimizerResult R = Optimizer::argMaxGlobal(&g);
             nodes[i] = R.xmax;
         }
     }
-    return nodes;
 }
-double* GreedySequences::getMinDeltaNodes(int n) const{
-    double *nodes = new double[n];
+void GreedySequences::getMinDeltaNodes(int n, std::vector<double> &nodes) const{
+    nodes.resize(n);
     int stored = getNumMinDeltaStored();
     int usefirst = (n > stored) ? stored : n;
     for(int i=0; i<usefirst; i++){
@@ -90,12 +87,11 @@ double* GreedySequences::getMinDeltaNodes(int n) const{
     }
     if (n > stored){
         for(int i=stored; i<n; i++){
-            MinDelta g(i, nodes);
+            MinDelta g(i, nodes.data());
             OptimizerResult R = Optimizer::argMaxGlobal(&g);
             nodes[i] = R.xmax;
         }
     }
-    return nodes;
 }
 double GreedySequences::findLebesgueConstant(int n, const double nodes[]) const{
     OptimizerResult R;

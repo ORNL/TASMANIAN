@@ -41,7 +41,7 @@ public:
     ~TableGaussPatterson();
 
     static int getNumLevels();
-    double* getNodes(int level) const;
+    void getNodes(int level, std::vector<double> &x) const;
     double getWeight(int level, int point) const;
 
 protected:

@@ -152,7 +152,7 @@ protected:
         if (cuda_num_nodes.size() != 0) return;
         int maxl = max_levels[0];
         for(auto l : max_levels) if (maxl < l) maxl = l;
-        cuda_nodes.load(maxl + 1, nodes);
+        cuda_nodes.load(nodes);
         cuda_coeffs.load(maxl + 1, coeff);
         std::vector<int> num_nodes = max_levels;
         for(auto &n : num_nodes) n++;
@@ -184,7 +184,7 @@ private:
     //int *parents; // NOTE: this is needed only for computing surpluses, maybe there is no need to store it
 
     std::vector<double> surpluses;
-    double *nodes;
+    std::vector<double> nodes;
     double *coeff;
 
     StorageSet *values;

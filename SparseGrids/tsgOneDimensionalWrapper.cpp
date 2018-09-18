@@ -128,13 +128,12 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         }
     }else{
         TableGaussPatterson *gp;
-        double *nd;
         if (rule == rule_clenshawcurtis){
-            nd = OneDimensionalNodes::getClenshawCurtisNodes(max_level);
+            OneDimensionalNodes::getClenshawCurtisNodes(max_level, unique);
         }else if (rule == rule_clenshawcurtis0){
-            nd = OneDimensionalNodes::getClenshawCurtisNodesZero(max_level);
+            OneDimensionalNodes::getClenshawCurtisNodesZero(max_level, unique);
         }else if (rule == rule_fejer2){
-            nd = OneDimensionalNodes::getFejer2Nodes(max_level);
+            OneDimensionalNodes::getFejer2Nodes(max_level, unique);
         }else if (rule == rule_gausspatterson){
             gp = new TableGaussPatterson();
             if (num_levels > gp->getNumLevels()){
@@ -145,7 +144,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
                 message += " are hardcoded.";
                 throw std::runtime_error(message);
             }
-            nd = gp->getNodes(max_level);
+            gp->getNodes(max_level, unique);
 
             // move here to avoid a warning
             for(int l=0; l<num_levels; l++){
@@ -156,30 +155,26 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
             }
             delete gp;
         }else if (rule == rule_rleja){
-            nd = OneDimensionalNodes::getRLeja(meta->getNumPoints(max_level,rule));
+            OneDimensionalNodes::getRLeja(meta->getNumPoints(max_level,rule), unique);
         }else if ((rule == rule_rlejaodd) || (rule == rule_rlejadouble2) || (rule == rule_rlejadouble4)){
-            nd = OneDimensionalNodes::getRLejaCentered(meta->getNumPoints(max_level,rule));
+            OneDimensionalNodes::getRLejaCentered(meta->getNumPoints(max_level,rule), unique);
         }else if ((rule == rule_rlejashifted) || (rule == rule_rlejashiftedeven) || (rule == rule_rlejashifteddouble)){
-            nd = OneDimensionalNodes::getRLejaShifted(meta->getNumPoints(max_level,rule));
+            OneDimensionalNodes::getRLejaShifted(meta->getNumPoints(max_level,rule), unique);
         }else if ((rule == rule_leja) || (rule == rule_lejaodd)){
             GreedySequences greedy;
-            nd = greedy.getLejaNodes(meta->getNumPoints(max_level, rule));
+            greedy.getLejaNodes(meta->getNumPoints(max_level, rule), unique);
         }else if ((rule == rule_maxlebesgue) || (rule == rule_maxlebesgueodd)){
             GreedySequences greedy;
-            nd = greedy.getMaxLebesgueNodes(meta->getNumPoints(max_level, rule));
+            greedy.getMaxLebesgueNodes(meta->getNumPoints(max_level, rule), unique);
         }else if ((rule == rule_minlebesgue) || (rule == rule_minlebesgueodd)){
             GreedySequences greedy;
-            nd = greedy.getMinLebesgueNodes(meta->getNumPoints(max_level, rule));
+            greedy.getMinLebesgueNodes(meta->getNumPoints(max_level, rule), unique);
         }else if ((rule == rule_mindelta) || (rule == rule_mindeltaodd)){
             GreedySequences greedy;
-            nd = greedy.getMinDeltaNodes(meta->getNumPoints(max_level, rule));
+            greedy.getMinDeltaNodes(meta->getNumPoints(max_level, rule), unique);
         }else{ // if (rule==rule_fourier)
-            nd = OneDimensionalNodes::getFourierNodes(max_level);
+            OneDimensionalNodes::getFourierNodes(max_level, unique);
         }
-
-        unique.resize(num_points[num_levels - 1]);
-        std::copy(nd, nd + num_points[num_levels - 1], unique.data());
-        delete[] nd;
 
         for(int l=0; l<num_levels; l++){
             int n = num_points[l];

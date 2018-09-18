@@ -125,20 +125,20 @@ namespace OneDimensionalNodes{
     void getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha);
 
     // nested rules
-    double* getClenshawCurtisNodes(int level);
+    void getClenshawCurtisNodes(int level, std::vector<double> &nodes);
     double getClenshawCurtisWeight(int level, int point);
 
-    double* getClenshawCurtisNodesZero(int level); // assuming zero boundary
+    void getClenshawCurtisNodesZero(int level, std::vector<double> &nodes); // assuming zero boundary
     double getClenshawCurtisWeightZero(int level, int point); // assuming zero boundary
 
-    double* getFejer2Nodes(int level);
+    void getFejer2Nodes(int level, std::vector<double> &nodes);
     double getFejer2Weight(int level, int point);
 
-    double* getRLeja(int n);
-    double* getRLejaCentered(int n);
-    double* getRLejaShifted(int n);
+    void getRLeja(int n, std::vector<double> &nodes);
+    void getRLejaCentered(int n, std::vector<double> &nodes);
+    void getRLejaShifted(int n, std::vector<double> &nodes);
 
-    double* getFourierNodes(int level);
+    void getFourierNodes(int level, std::vector<double> &nodes);
 }
 
 }

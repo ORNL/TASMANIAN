@@ -57,11 +57,10 @@ int TableGaussPatterson::getNumLevels(){
     return 9; // sync this with max_levels
 }
 
-double* TableGaussPatterson::getNodes(int level) const{
+void TableGaussPatterson::getNodes(int level, std::vector<double> &x) const{
     int num_points = meta.getNumPoints(level, rule_gausspatterson);
-    double* x = new double[num_points];
-    std::copy(nodes, nodes + num_points, x);
-    return x;
+    x.resize(num_points);
+    std::copy(nodes, nodes + num_points, x.data());
 }
 
 double TableGaussPatterson::getWeight(int level, int point) const{

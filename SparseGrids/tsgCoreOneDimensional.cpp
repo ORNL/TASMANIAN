@@ -913,22 +913,21 @@ void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::v
 }
 
 // Clenshaw-Curtis
-double* OneDimensionalNodes::getClenshawCurtisNodes(int level){
+void OneDimensionalNodes::getClenshawCurtisNodes(int level, std::vector<double> &nodes){
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level, rule_clenshawcurtis);
-    double* x = new double[n];
-    x[0] = 0.0;
+    nodes.resize(n);
+    nodes[0] = 0.0;
     if (level > 0){
-        x[1] = -1.0; x[2] = 1.0;
+        nodes[1] = -1.0; nodes[2] = 1.0;
         int count = 3;
         for(int l=2; l<=level; l++){
             n = meta.getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                  x[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
+                  nodes[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
-    return x;
 }
 double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     OneDimensionalMeta meta;
@@ -959,21 +958,20 @@ double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     return weight;
 }
 // Clenshaw-Curtis-Zero
-double* OneDimensionalNodes::getClenshawCurtisNodesZero(int level){
+void OneDimensionalNodes::getClenshawCurtisNodesZero(int level, std::vector<double> &nodes){
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level+1, rule_clenshawcurtis);
-    double* x = new double[n-2];
-    x[0] = 0.0;
+    nodes.resize(n-2);
+    nodes[0] = 0.0;
     if (level > 0){
         int count = 1;
         for(int l=2; l<=level+1; l++){
             n = meta.getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                  x[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
+                nodes[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
-    return x;
 }
 double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     // this should be equivalent to  return getClenshawCurtisWeight(level + 1, ((point == 0) ? 0 : point +2));
@@ -1000,21 +998,20 @@ double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     return weight;
 }
 // Fejer-2
-double* OneDimensionalNodes::getFejer2Nodes(int level){
+void OneDimensionalNodes::getFejer2Nodes(int level, std::vector<double> &nodes){
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level, rule_fejer2);
-    double *x = new double[n];
-    x[0] = 0.0;
+    nodes.resize(n);
+    nodes[0] = 0.0;
     if (level > 0){
         int count = 1;
         for(int l=2; l<=level+1; l++){
             n = meta.getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                  x[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
+                nodes[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
-    return x;
 }
 double OneDimensionalNodes::getFejer2Weight(int level, int point){
     if (level == 0){ return 2.0; }
@@ -1041,8 +1038,8 @@ double OneDimensionalNodes::getFejer2Weight(int level, int point){
     return weight;
 }
 
-double* OneDimensionalNodes::getRLeja(int n){
-    double* nodes = new double[n];
+void OneDimensionalNodes::getRLeja(int n, std::vector<double> &nodes){
+    nodes.resize(n);
     nodes[0] = 0.0;
     if (n > 1){ nodes[1] = M_PI; }
     if (n > 2){ nodes[2] = 0.5 * M_PI; }
@@ -1055,17 +1052,15 @@ double* OneDimensionalNodes::getRLeja(int n){
     }
     for(int i=0; i<n; i++){  nodes[i] = cos(nodes[i]);  }
     if (n > 2){ nodes[2] = 0.0; } // not sure which version is better, starting at 0 or starting at 1
-    return nodes;
 }
-double* OneDimensionalNodes::getRLejaCentered(int n){
-    double* nodes = getRLeja(n);
+void OneDimensionalNodes::getRLejaCentered(int n, std::vector<double> &nodes){
+    getRLeja(n, nodes);
     nodes[0] = 0.0;
     if (n > 1){ nodes[1] = 1.0; }
     if (n > 2){ nodes[2] = -1.0; }
-    return nodes;
 }
-double* OneDimensionalNodes::getRLejaShifted(int n){
-    double* nodes = new double[n];
+void OneDimensionalNodes::getRLejaShifted(int n, std::vector<double> &nodes){
+    nodes.resize(n);
     nodes[0] = -0.5;
     if (n > 1){ nodes[1] = 0.5; }
     for(int i=2; i<n; i++){
@@ -1075,24 +1070,23 @@ double* OneDimensionalNodes::getRLejaShifted(int n){
             nodes[i] = -nodes[i-1];
         }
     }
-    return nodes;
 }
 
-double* OneDimensionalNodes::getFourierNodes(int level) {
+void OneDimensionalNodes::getFourierNodes(int level, std::vector<double> &nodes) {
     OneDimensionalMeta meta;
     int n = meta.getNumPoints(level, rule_fourier);
-    double* x = new double[n];
-    x[0]=0.0;
-    if(level > 0) { x[1] = 1.0/3.0; x[2] = 2.0/3.0; }
-    int count = 3;
+    nodes.resize(n);
+    nodes[0]=0.0;
+    if(level > 0){ nodes[1] = 1.0/3.0; nodes[2] = 2.0/3.0; }
+    auto node = nodes.begin();
+    std::advance(node, 3);
     for(int l=2; l<=level; l++) {
         n = meta.getNumPoints(l, rule_fourier);
         for(int i=1; i<n; i+=3) {
-            x[count++] = (double) i / (double) n;
-            x[count++] = (double) (i+1) / (double) n;
+            *node++ = (double) i / (double) n;
+            *node++ = (double) (i+1) / (double) n;
         }
     }
-    return x;
 }
 
 }
