@@ -125,19 +125,21 @@ protected:
     void cacheBasisIntegrals(std::vector<double> &integ) const;
 
     template<typename T>
-    T** cacheBasisValues(const T x[]) const{
-        T **cache = new T*[num_dimensions];
+    void cacheBasisValues(const T x[], std::vector<std::vector<T>> &cache) const{
+        cache.resize(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
-            cache[j] = new T[max_levels[j] + 1];
-            cache[j][0] = 1.0;
+            cache[j].resize(max_levels[j] + 1);
+            T b = 1.0;
+            T this_x = x[j];
+            cache[j][0] = b;
             for(int i=0; i<max_levels[j]; i++){
-                cache[j][i+1] = cache[j][i] * (x[j] - nodes[i]);
+                b *= (this_x - nodes[i]);
+                cache[j][i+1] = b;
             }
             for(int i=1; i<=max_levels[j]; i++){
                 cache[j][i] /= coeff[i];
             }
         }
-        return cache;
     }
 
     void recomputeSurpluses();

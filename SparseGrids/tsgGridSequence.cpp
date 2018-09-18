@@ -342,7 +342,8 @@ void GridSequence::getQuadratureWeights(double *weights) const{
 }
 
 void GridSequence::getInterpolationWeights(const double x[], double *weights) const{
-    double **cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> cache;
+    cacheBasisValues<double>(x, cache);
     IndexSet *work = (points == 0) ? needed : points;
     int n = work->getNumIndexes();
     weights[0] = 1.0;
@@ -353,9 +354,6 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
             weights[i] *= cache[j][p[j]];
         }
     }
-    for(int j=0; j<num_dimensions; j++) delete[] cache[j];
-    delete[] cache;
-
     applyTransformationTransposed(weights);
 }
 
@@ -400,7 +398,8 @@ void GridSequence::mergeRefinement(){
 }
 
 void GridSequence::evaluate(const double x[], double y[]) const{
-    double **cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> cache;
+    cacheBasisValues<double>(x, cache);
 
     std::fill(y, y + num_outputs, 0.0);
 
@@ -421,9 +420,6 @@ void GridSequence::evaluate(const double x[], double y[]) const{
             y[k] += basis_value * s[k];
         }
     }
-
-    for(int j=0; j<num_dimensions; j++) delete[] cache[j];
-    delete[] cache;
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
@@ -583,7 +579,8 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
     IndexSet *work = (points == 0) ? needed : points;
     int num_points = work->getNumIndexes();
 
-    double **cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> cache;
+    cacheBasisValues<double>(x, cache);
 
     for(int i=0; i<num_points; i++){
         const int* p = work->getIndex(i);
@@ -592,9 +589,6 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
             fvalues[i] *= cache[j][p[j]];
         }
     }
-
-    for(int j=0; j<num_dimensions; j++) delete[] cache[j];
-    delete[] cache;
 }
 #ifdef Tasmanian_ENABLE_CUDA
 void GridSequence::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
