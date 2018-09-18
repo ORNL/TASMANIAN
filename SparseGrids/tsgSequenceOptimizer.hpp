@@ -172,7 +172,9 @@ public:
 template<TypeOneDRule rule>
 class tempFunctional : public VectorFunctional{
 public:
-    tempFunctional(const std::vector<double> &cnodes) : nodes(cnodes){}
+    tempFunctional(const std::vector<double> &cnodes) : nodes(cnodes){
+        if (rule != rule_leja) makeCoeff(nodes, coeff);
+    }
     ~tempFunctional(){}
 
     double getValue(double x) const{
@@ -180,13 +182,17 @@ public:
             double p = 1.0;
             for(auto n : nodes) p *= (x - n);
             return fabs(p);
+        }else if (rule == rule_maxlebesgue){
+            std::vector<double> lag;
+            evalLag(nodes, coeff, x, lag);
+            double sum = 0.0;
+            for(auto l : lag) sum += fabs(l);
+            return sum;
         }
     }
 
     bool hasDerivative() const{
-        if (rule == rule_leja){
-            return true;
-        }
+        return true;
     }
 
     double getDiff(double x) const{
@@ -199,6 +205,16 @@ public:
                 s += p;
             }
             return s;
+        }else if (rule == rule_maxlebesgue){
+            std::vector<double> lag;
+            evalLag(nodes, coeff, x, lag);
+            double sum = 0.0;
+            int i = 0;
+            for(auto l : lag){
+                double diff = basisDx(nodes, coeff, i++, x);
+                sum += (l > 0.0) ? diff : -diff;
+            }
+            return sum;
         }
     }
 
@@ -208,6 +224,7 @@ public:
 
 private:
     std::vector<double> nodes;
+    std::vector<double> coeff;
 };
 
 namespace Optimizer{

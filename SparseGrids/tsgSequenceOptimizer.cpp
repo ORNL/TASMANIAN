@@ -52,16 +52,16 @@ void GreedySequences::getLejaNodes(int n, std::vector<double> &nodes) const{
     }
 }
 void GreedySequences::getMaxLebesgueNodes(int n, std::vector<double> &nodes) const{
-    nodes.resize(n);
-    nodes[0] = 0.0;
-    if (n > 1) nodes[1] =  1.0;
-    if (n > 2) nodes[2] = -1.0;
-    if (n > 3) nodes[3] = 0.5;
+    nodes.clear();
+    nodes.reserve(n);
+    nodes.push_back(0.0);
+    if (n > 1) nodes.push_back(1.0);
+    if (n > 2) nodes.push_back(-1.0);
+    if (n > 3) nodes.push_back(0.5);
     for(int i=4; i<n; i++){
-        MaxLebesgue g(i, nodes.data());
-        OptimizerResult R = Optimizer::argMaxGlobal(&g);
-        nodes[i] = R.xmax;
-        //nodes[i] = argMaxGlobal(functional_lebesgue_function, i, nodes);
+        tempFunctional<rule_maxlebesgue> g(nodes);
+        OptimizerResult R = Optimizer::argMaxGlobal(g);
+        nodes.push_back(R.xmax);
     }
 }
 void GreedySequences::getMinLebesgueNodes(int n, std::vector<double> &nodes) const{
