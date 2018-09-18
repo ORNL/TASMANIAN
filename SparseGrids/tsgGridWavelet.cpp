@@ -519,21 +519,22 @@ void GridWavelet::solveTransposed(double w[]) const{
 	delete[] y;
 }
 
-double* GridWavelet::getNormalization() const{
-    double* norm = new double[num_outputs];  std::fill(norm, norm + num_outputs, 0.0);
+void GridWavelet::getNormalization(std::vector<double> &norm) const{
+    norm.resize(num_outputs);
+    std::fill(norm.begin(), norm.end(), 0.0);
     for(int i=0; i<points->getNumIndexes(); i++){
         const double *v = values->getValues(i);
         for(int j=0; j<num_outputs; j++){
             if (norm[j] < fabs(v[j])) norm[j] = fabs(v[j]);
         }
     }
-    return norm;
 }
 int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const{
     int num_points = points->getNumIndexes();
     int *pmap = new int[num_points * num_dimensions];  std::fill(pmap, pmap + num_points * num_dimensions, 0);
 
-    double *norm = getNormalization();
+    std::vector<double> norm;
+    getNormalization(norm);
 
     if ((criteria == refine_classic) || (criteria == refine_parents_first)){
         // classic refinement
@@ -602,8 +603,6 @@ int* GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
             delete[] global_to_pnts;
         }
     }
-
-    delete[] norm;
 
     return pmap;
 }
