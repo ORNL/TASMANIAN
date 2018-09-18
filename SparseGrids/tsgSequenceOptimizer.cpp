@@ -276,66 +276,6 @@ double* Functional::sortIntervals(int num_nodes, const double nodes[]){
 }
 int Functional::nodeCompar(const void * a, const void * b){ return (*(double*) a < *(double*) b) ? -1 : 1; }
 
-MaxDelta::MaxDelta(int cnum_nodes, const double cnodes[], double new_node) : num_nodes(cnum_nodes + 1){
-    nodes = new double[num_nodes];
-    std::copy(cnodes, cnodes + num_nodes-1, nodes);
-    nodes[num_nodes-1] = new_node;
-
-    coeff_plus  = makeCoeff(num_nodes,   nodes);
-    coeff_minus = makeCoeff(num_nodes-1, nodes);
-}
-MaxDelta::MaxDelta(int cnum_nodes, const double cnodes[]) : num_nodes(cnum_nodes){
-    nodes = new double[num_nodes];
-    std::copy(cnodes, cnodes + num_nodes, nodes);
-    coeff_plus  = makeCoeff(num_nodes,   nodes);
-    coeff_minus = makeCoeff(num_nodes-1, nodes);
-}
-MaxDelta::~MaxDelta(){  delete[] nodes;  delete[] coeff_plus;  delete[] coeff_minus;  }
-double MaxDelta::getValue(double x) const{
-    double* lag_plus  = evalLag(num_nodes, nodes, coeff_plus, x);
-    double* lag_minus = evalLag(num_nodes-1, nodes, coeff_minus, x);
-    double sum = 0.0;
-    for(int i=0; i<num_nodes-1; i++) sum += fabs(lag_plus[i] - lag_minus[i]);
-    sum += fabs(lag_plus[num_nodes-1]);
-    delete[] lag_plus;  delete[] lag_minus;
-    return sum;
-}
-bool MaxDelta::hasDerivative() const{  return true; }
-double MaxDelta::getDiff(double x) const{
-    double* lag_plus  = evalLag(num_nodes, nodes, coeff_plus, x);
-    double* lag_minus = evalLag(num_nodes-1, nodes, coeff_minus, x);
-    double sum = 0.0;
-    for(int i=0; i<num_nodes-1; i++) sum += ((lag_plus[i] - lag_minus[i]) > 0.0) ?
-            basisDx(num_nodes, nodes, coeff_plus, i, x) - basisDx(num_nodes-1, nodes, coeff_minus, i, x) :
-            basisDx(num_nodes-1, nodes, coeff_minus, i, x) - basisDx(num_nodes, nodes, coeff_plus, i, x);
-    sum += (lag_plus[num_nodes-1] > 0.0) ? basisDx(num_nodes, nodes, coeff_plus, num_nodes-1, x) :
-                         -basisDx(num_nodes, nodes, coeff_plus, num_nodes-1, x);
-    delete[] lag_plus;  delete[] lag_minus;
-    return sum;
-}
-int MaxDelta::getNumIntervals() const{ return num_nodes - 1; }
-double* MaxDelta::getIntervals() const{  return sortIntervals(num_nodes, nodes);  }
-
-MinDelta::MinDelta(int cnum_nodes, const double cnodes[]) : num_nodes(cnum_nodes) {
-    nodes = new double[num_nodes];
-    std::copy(cnodes, cnodes + num_nodes, nodes);
-}
-MinDelta::~MinDelta(){  delete[] nodes;  }
-double MinDelta::getValue(double x) const{
-    for(int i=0; i<num_nodes; i++){
-        if (fabs(x - nodes[i]) < 10*TSG_NUM_TOL){ // points almost overlap, will cause an explosion in the Lebesgue constant
-            return -1.E+100;
-        }
-    }
-    MaxDelta M(num_nodes, nodes, x);
-    OptimizerResult R = Optimizer::argMaxGlobal(&M);
-    return -R.fmax;
-}
-bool MinDelta::hasDerivative() const{  return false;  }
-int MinDelta::getNumIntervals() const{  return num_nodes-1;  }
-double* MinDelta::getIntervals() const{  return sortIntervals(num_nodes, nodes);  }
-
-
 VectorFunctional::VectorFunctional(){};
 VectorFunctional::~VectorFunctional(){};
 
