@@ -37,23 +37,6 @@
 
 namespace TasGrid{
 
-class GreedySequences{
-public:
-    GreedySequences();
-    ~GreedySequences();
-
-    void getMaxLebesgueNodes(int n, std::vector<double> &nodes) const;
-    void getMinLebesgueNodes(int n, std::vector<double> &nodes) const;
-    void getMinDeltaNodes(int n, std::vector<double> &nodes) const;
-
-    double findLebesgueConstant(int n, const double nodes[]) const;
-
-    int getNumMinLebesgueStored() const;
-    double getMinLebesgueStored(int i) const;
-    int getNumMinDeltaStored() const;
-    double getMinDeltaStored(int i) const;
-};
-
 namespace Optimizer{
 
 class VectorFunctional{
