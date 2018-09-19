@@ -856,7 +856,7 @@ const int* GridSequence::getPointIndexes() const{
 void GridSequence::prepareSequence(int n){
     GreedySequences greedy;
     if (rule == rule_leja){
-        greedy.getLejaNodes(n, nodes);
+        Optimizer::getGreedyNodes<rule_leja>(n, nodes);
     }else if (rule == rule_maxlebesgue){
         greedy.getMaxLebesgueNodes(n, nodes);
     }else if (rule == rule_minlebesgue){

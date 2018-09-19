@@ -42,7 +42,6 @@ public:
     GreedySequences();
     ~GreedySequences();
 
-    void getLejaNodes(int n, std::vector<double> &nodes) const;
     void getMaxLebesgueNodes(int n, std::vector<double> &nodes) const;
     void getMinLebesgueNodes(int n, std::vector<double> &nodes) const;
     void getMinDeltaNodes(int n, std::vector<double> &nodes) const;
@@ -292,6 +291,30 @@ private:
     std::vector<double> nodes_less1;
     std::vector<double> coeff_less1;
 };
+
+
+template<TypeOneDRule rule>
+void getGreedyNodes(int n, std::vector<double> &nodes){
+    nodes.clear();
+    nodes.reserve(n);
+    // load the first few precomputed nodes
+    std::vector<double> precomputed;
+    if (rule == rule_leja){
+        precomputed = {0.0, 1.0, -1.0, sqrt(1.0/3.0)};
+    }
+    int usefirst = (n > (int) precomputed.size()) ? (int) precomputed.size() : n;
+    nodes.resize(usefirst);
+    std::copy(precomputed.data(), precomputed.data() + usefirst, nodes.data());
+    if (n > (int) precomputed.size()){
+        for(int i = (int) precomputed.size(); i<n; i++){
+            Optimizer::tempFunctional<rule> g(nodes);
+            Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(g);
+            nodes.push_back(R.xmax);
+        }
+    }
+}
+
+}
 
 }
 

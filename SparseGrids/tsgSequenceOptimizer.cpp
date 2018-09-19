@@ -38,19 +38,6 @@ namespace TasGrid{
 GreedySequences::GreedySequences(){}
 GreedySequences::~GreedySequences(){}
 
-void GreedySequences::getLejaNodes(int n, std::vector<double> &nodes) const{
-    nodes.clear();
-    nodes.reserve(n);
-    nodes.push_back(0.0);
-    if (n > 1) nodes.push_back(1.0);
-    if (n > 2) nodes.push_back(-1.0);
-    if (n > 3) nodes.push_back(sqrt(1.0/3.0));
-    for(int i=4; i<n; i++){
-        tempFunctional<rule_leja> g(nodes);
-        OptimizerResult R = Optimizer::argMaxGlobal(g);
-        nodes.push_back(R.xmax);
-    }
-}
 void GreedySequences::getMaxLebesgueNodes(int n, std::vector<double> &nodes) const{
     nodes.clear();
     nodes.reserve(n);

@@ -159,8 +159,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         }else if ((rule == rule_rlejashifted) || (rule == rule_rlejashiftedeven) || (rule == rule_rlejashifteddouble)){
             OneDimensionalNodes::getRLejaShifted(meta->getNumPoints(max_level,rule), unique);
         }else if ((rule == rule_leja) || (rule == rule_lejaodd)){
-            GreedySequences greedy;
-            greedy.getLejaNodes(meta->getNumPoints(max_level, rule), unique);
+            Optimizer::getGreedyNodes<rule_leja>(meta->getNumPoints(max_level, rule), unique);
         }else if ((rule == rule_maxlebesgue) || (rule == rule_maxlebesgueodd)){
             GreedySequences greedy;
             greedy.getMaxLebesgueNodes(meta->getNumPoints(max_level, rule), unique);
