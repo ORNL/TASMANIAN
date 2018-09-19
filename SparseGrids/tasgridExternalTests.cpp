@@ -387,6 +387,32 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
+        // test the hard-coded sequence values vs the optimizer
+        if (rule == rule_minlebesgue){
+            int n = 22;
+            std::vector<double> minleb, precomputed;
+            Optimizer::getGreedyNodes<rule_minlebesgue>(n, minleb);
+            Optimizer::getPrecomputedMinLebesgueNodes(precomputed);
+
+            TasGrid::Optimizer::tempFunctional<rule_minlebesgue> g(minleb);
+            TasGrid::Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(g);
+            if (fabs(R.xmax - precomputed[n]) > 1.E-8){
+                pass = false;
+                cout << "ERROR: mismatch in stored vs computed nodes for rule_minlebesgue rule" << endl;
+            }
+        }else if (rule == rule_mindelta){
+            int n = 22;
+            std::vector<double> mindel, precomputed;
+            Optimizer::getGreedyNodes<rule_mindelta>(n, mindel);
+            Optimizer::getPrecomputedMinDeltaNodes(precomputed);
+
+            TasGrid::Optimizer::tempFunctional<rule_mindelta> d(mindel);
+            TasGrid::Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(d);
+            if (fabs(R.xmax - precomputed[n]) > 1.E-9){ // this seems large, double-check
+                pass = false;
+                cout << "ERROR: mismatch in stored vs computed nodes for rule_mindelta rule" << endl;
+            }
+        }
     }else if ((rule == TasGrid::rule_gausslegendre) || (rule == TasGrid::rule_gausslegendreodd)){
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[3] = { 20, 36, 38 };

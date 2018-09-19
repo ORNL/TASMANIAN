@@ -159,17 +159,13 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         }else if ((rule == rule_rlejashifted) || (rule == rule_rlejashiftedeven) || (rule == rule_rlejashifteddouble)){
             OneDimensionalNodes::getRLejaShifted(meta->getNumPoints(max_level,rule), unique);
         }else if ((rule == rule_leja) || (rule == rule_lejaodd)){
-            GreedySequences greedy;
-            greedy.getLejaNodes(meta->getNumPoints(max_level, rule), unique);
+            Optimizer::getGreedyNodes<rule_leja>(meta->getNumPoints(max_level, rule), unique);
         }else if ((rule == rule_maxlebesgue) || (rule == rule_maxlebesgueodd)){
-            GreedySequences greedy;
-            greedy.getMaxLebesgueNodes(meta->getNumPoints(max_level, rule), unique);
+            Optimizer::getGreedyNodes<rule_maxlebesgue>(meta->getNumPoints(max_level, rule), unique);
         }else if ((rule == rule_minlebesgue) || (rule == rule_minlebesgueodd)){
-            GreedySequences greedy;
-            greedy.getMinLebesgueNodes(meta->getNumPoints(max_level, rule), unique);
+            Optimizer::getGreedyNodes<rule_minlebesgue>(meta->getNumPoints(max_level, rule), unique);
         }else if ((rule == rule_mindelta) || (rule == rule_mindeltaodd)){
-            GreedySequences greedy;
-            greedy.getMinDeltaNodes(meta->getNumPoints(max_level, rule), unique);
+            Optimizer::getGreedyNodes<rule_mindelta>(meta->getNumPoints(max_level, rule), unique);
         }else{ // if (rule==rule_fourier)
             OneDimensionalNodes::getFourierNodes(max_level, unique);
         }
