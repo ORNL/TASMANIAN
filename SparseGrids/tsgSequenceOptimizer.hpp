@@ -292,6 +292,8 @@ private:
     std::vector<double> coeff_less1;
 };
 
+void getPrecomputedMinLebesgueNodes(std::vector<double> &precomputed);
+void getPrecomputedMinDeltaNodes(std::vector<double> &precomputed);
 
 template<TypeOneDRule rule>
 void getGreedyNodes(int n, std::vector<double> &nodes){
@@ -303,6 +305,10 @@ void getGreedyNodes(int n, std::vector<double> &nodes){
         precomputed = {0.0, 1.0, -1.0, sqrt(1.0/3.0)};
     }else if (rule == rule_maxlebesgue){
         precomputed = {0.0, 1.0, -1.0, 0.5};
+    }else if (rule == rule_minlebesgue){
+        getPrecomputedMinLebesgueNodes(precomputed);
+    }else if (rule == rule_mindelta){
+        getPrecomputedMinDeltaNodes(precomputed);
     }
     int usefirst = (n > (int) precomputed.size()) ? (int) precomputed.size() : n;
     nodes.resize(usefirst);

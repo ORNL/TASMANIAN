@@ -860,9 +860,9 @@ void GridSequence::prepareSequence(int n){
     }else if (rule == rule_maxlebesgue){
         Optimizer::getGreedyNodes<rule_maxlebesgue>(n, nodes);
     }else if (rule == rule_minlebesgue){
-        greedy.getMinLebesgueNodes(n, nodes);
+        Optimizer::getGreedyNodes<rule_minlebesgue>(n, nodes);
     }else if (rule == rule_mindelta){
-        greedy.getMinDeltaNodes(n, nodes);
+        Optimizer::getGreedyNodes<rule_mindelta>(n, nodes);
     }else if (rule == rule_rleja){
         OneDimensionalNodes::getRLeja(n, nodes);
     }else if (rule == rule_rlejashifted){
