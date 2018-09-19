@@ -858,7 +858,7 @@ void GridSequence::prepareSequence(int n){
     if (rule == rule_leja){
         Optimizer::getGreedyNodes<rule_leja>(n, nodes);
     }else if (rule == rule_maxlebesgue){
-        greedy.getMaxLebesgueNodes(n, nodes);
+        Optimizer::getGreedyNodes<rule_maxlebesgue>(n, nodes);
     }else if (rule == rule_minlebesgue){
         greedy.getMinLebesgueNodes(n, nodes);
     }else if (rule == rule_mindelta){

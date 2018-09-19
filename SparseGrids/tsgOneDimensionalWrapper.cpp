@@ -161,8 +161,7 @@ OneDimensionalWrapper::OneDimensionalWrapper(const OneDimensionalMeta *meta, int
         }else if ((rule == rule_leja) || (rule == rule_lejaodd)){
             Optimizer::getGreedyNodes<rule_leja>(meta->getNumPoints(max_level, rule), unique);
         }else if ((rule == rule_maxlebesgue) || (rule == rule_maxlebesgueodd)){
-            GreedySequences greedy;
-            greedy.getMaxLebesgueNodes(meta->getNumPoints(max_level, rule), unique);
+            Optimizer::getGreedyNodes<rule_maxlebesgue>(meta->getNumPoints(max_level, rule), unique);
         }else if ((rule == rule_minlebesgue) || (rule == rule_minlebesgueodd)){
             GreedySequences greedy;
             greedy.getMinLebesgueNodes(meta->getNumPoints(max_level, rule), unique);

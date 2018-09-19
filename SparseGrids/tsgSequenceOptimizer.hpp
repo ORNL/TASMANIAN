@@ -301,6 +301,8 @@ void getGreedyNodes(int n, std::vector<double> &nodes){
     std::vector<double> precomputed;
     if (rule == rule_leja){
         precomputed = {0.0, 1.0, -1.0, sqrt(1.0/3.0)};
+    }else if (rule == rule_maxlebesgue){
+        precomputed = {0.0, 1.0, -1.0, 0.5};
     }
     int usefirst = (n > (int) precomputed.size()) ? (int) precomputed.size() : n;
     nodes.resize(usefirst);
