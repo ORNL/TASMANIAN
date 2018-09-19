@@ -55,26 +55,6 @@ public:
     double getMinDeltaStored(int i) const;
 };
 
-class Functional{
-public:
-    Functional();
-    ~Functional();
-
-    virtual double getValue(double x) const = 0;
-
-    virtual bool hasDerivative() const = 0;
-    virtual double getDiff(double x) const;
-
-    virtual int getNumIntervals() const = 0;
-    virtual double* getIntervals() const = 0;
-
-    static double* makeCoeff(int num_nodes, const double nodes[]); // may not be the best place to put this
-    static double* evalLag(int num_nodes, const double nodes[], const double coeff[], double x);
-    static double basisDx(int num_nodes, const double nodes[], const double coeff[], int inode, double x);
-    static double* sortIntervals(int num_nodes, const double nodes[]);
-    static int nodeCompar(const void * a, const void * b);
-};
-
 struct OptimizerResult{
     double xmax, fmax;
 };
@@ -98,10 +78,6 @@ public:
 };
 
 namespace Optimizer{
-    OptimizerResult argMaxGlobal(const Functional *F); // assumes range is [-1,1] and both points are included
-    OptimizerResult argMaxLocalPattern(const Functional *F, double left, double right);
-    double argMaxLocalSecant(const Functional *F, double left, double right);
-
     OptimizerResult argMaxGlobal(const VectorFunctional &F); // assumes range is [-1,1] and both points are included
     OptimizerResult argMaxLocalPattern(const VectorFunctional &F, double left, double right);
     double argMaxLocalSecant(const VectorFunctional &F, double left, double right);
