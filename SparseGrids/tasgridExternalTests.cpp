@@ -394,8 +394,8 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             std::vector<double> minleb;
             greed.getMinLebesgueNodes(n, minleb);
 
-            tempFunctional<rule_minlebesgue> g(minleb);
-            OptimizerResult R = Optimizer::argMaxGlobal(g);
+            TasGrid::Optimizer::tempFunctional<rule_minlebesgue> g(minleb);
+            TasGrid::Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(g);
             if (fabs(R.xmax - greed.getMinLebesgueStored(n)) > 1.E-8){
                 pass = false;
                 cout << "ERROR: mismatch in stored vs computed nodes for rule_minlebesgue rule" << endl;
@@ -406,8 +406,8 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             std::vector<double> mindel;
             greed.getMinDeltaNodes(n, mindel);
 
-            tempFunctional<rule_mindelta> d(mindel);
-            OptimizerResult R = Optimizer::argMaxGlobal(d);
+            TasGrid::Optimizer::tempFunctional<rule_mindelta> d(mindel);
+            TasGrid::Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(d);
             if (fabs(R.xmax - greed.getMinDeltaStored(n)) > 1.E-9){ // this seems large, double-check
                 pass = false;
                 cout << "ERROR: mismatch in stored vs computed nodes for rule_mindelta rule" << endl;

@@ -55,9 +55,7 @@ public:
     double getMinDeltaStored(int i) const;
 };
 
-struct OptimizerResult{
-    double xmax, fmax;
-};
+namespace Optimizer{
 
 class VectorFunctional{
 public:
@@ -70,18 +68,16 @@ public:
     virtual double getDiff(double x) const = 0;
 
     virtual void getIntervals(std::vector<double> &intervals) const = 0;
-
-    static void makeCoeff(const std::vector<double> &nodes, std::vector<double> &coeffs);
-    static void evalLag(const std::vector<double> &nodes, const std::vector<double> &coeffs, double x, std::vector<double> &lag);
-    static double basisDx(const std::vector<double> &nodes, const std::vector<double> &coeffs, int inode, double x);
-    static void sortIntervals(const std::vector<double> &nodes, std::vector<double> &intervals);
 };
 
-namespace Optimizer{
-    OptimizerResult argMaxGlobal(const VectorFunctional &F); // assumes range is [-1,1] and both points are included
-    OptimizerResult argMaxLocalPattern(const VectorFunctional &F, double left, double right);
-    double argMaxLocalSecant(const VectorFunctional &F, double left, double right);
+struct OptimizerResult{
+    double xmax, fmax;
 };
+
+OptimizerResult argMaxGlobal(const VectorFunctional &F); // assumes range is [-1,1] and both points are included
+OptimizerResult argMaxLocalPattern(const VectorFunctional &F, double left, double right);
+double argMaxLocalSecant(const VectorFunctional &F, double left, double right);
+
 
 template<TypeOneDRule rule>
 class tempFunctional : public VectorFunctional{
@@ -179,6 +175,115 @@ public:
 
     void getIntervals(std::vector<double> &intervals) const{
         sortIntervals(nodes, intervals);
+    }
+
+    static void makeCoeff(const std::vector<double> &nodes, std::vector<double> &coeffs){
+        size_t num_nodes = nodes.size();
+        coeffs.resize(num_nodes);
+        for(size_t i=0; i<num_nodes; i++){
+            double c = 1.0;
+            for(size_t j=0; j<i; j++){
+                c *= (nodes[i] - nodes[j]);
+            }
+            for(size_t j=i+1; j<num_nodes; j++){
+                c *= (nodes[i] - nodes[j]);
+            }
+            coeffs[i] = c;
+        }
+    }
+    static void evalLag(const std::vector<double> &nodes, const std::vector<double> &coeffs, double x, std::vector<double> &lag){
+        int num_nodes = (int) nodes.size();
+        lag.resize(num_nodes);
+        lag[0] = 1.0;
+        for(int i=0; i<num_nodes-1; i++){
+            lag[i+1] = (x - nodes[i]) * lag[i];
+        }
+        double w = 1.0;
+        lag[num_nodes-1] /= coeffs[num_nodes-1];
+        for(int i= num_nodes-2; i>=0; i--){
+            w *= (x - nodes[i+1]);
+            lag[i] *= w / coeffs[i];
+        }
+    }
+    static double basisDx(const std::vector<double> &nodes, const std::vector<double> &coeffs, int inode, double x){
+        size_t num_nodes = nodes.size();
+        double s = 1.0;
+        double p = 1.0;
+        double n = (inode != 0) ? (x - nodes[0]) : (x - nodes[1]);
+
+        for(int j=1; j<inode; j++){
+            p *= n;
+            n = (x - nodes[j]);
+            s *= n;
+            s += p;
+        }
+        for(size_t j = (size_t) ((inode == 0) ? 2 : inode+1); j<num_nodes; j++){
+            p *= n;
+            n = (x - nodes[j]);
+            s *= n;
+            s += p;
+        }
+        return s / coeffs[inode];
+    }
+    static void sortIntervals(const std::vector<double> &nodes, std::vector<double> &intervals){
+        size_t num_nodes = nodes.size();
+
+        std::vector<double> v1(num_nodes), v2(num_nodes);
+        size_t loop_end = (num_nodes % 2 == 1) ? num_nodes - 1 : num_nodes;
+        for(size_t i=0; i<loop_end; i+=2){
+            if (nodes[i] < nodes[i+1]){
+                v1[i]   = nodes[i];
+                v1[i+1] = nodes[i+1];
+            }else{
+                v1[i]   = nodes[i+1];
+                v1[i+1] = nodes[i];
+            }
+        }
+        if (loop_end != num_nodes){
+            v1[num_nodes-1] = nodes[num_nodes-1];
+        }
+
+        size_t stride = 2;
+        while(stride < num_nodes){
+            auto ic = v2.begin();
+            auto i2 = v1.begin();
+            while(ic < v2.end()){
+                auto ia = i2;
+                auto ib = i2;
+                std::advance(ib, stride);
+                auto iaend = ia;
+                std::advance(iaend, stride);
+                if (iaend > v1.end()) iaend = v1.end();
+                auto ibend = ib;
+                std::advance(ibend, stride);
+                if (ibend > v1.end()) ibend = v1.end();
+                bool aless = (ia < iaend);
+                bool bless = (ib < ibend);
+                while(aless || bless){
+                    bool picka;
+                    if (aless && bless){
+                        picka = *ia < *ib;
+                    }else{
+                        picka = aless;
+                    }
+
+                    if (picka){
+                        *ic++ = *ia++;
+                    }else{
+                        *ic++ = *ib++;
+                    }
+
+                    aless = (ia < iaend);
+                    bless = (ib < ibend);
+                }
+
+                std::advance(i2, 2 * stride);
+            }
+            stride *= 2;
+            std::swap(v1, v2);
+        }
+
+        intervals = std::move(v1);
     }
 
 private:
