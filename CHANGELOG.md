@@ -1,19 +1,30 @@
 Changelog for version 6.0
 --------------
 
+* the library is more robust when working with large data sets
+    * number of points, outputs, or batch size is still `int`
+    * in most cases the product (i.e., matrix size) can exceed `MAX_INT`
+
+* acceleration with custom CUDA kernels is now available
+    * Sequence grids, i.e., build with `makeSequenceGrid()`
+    * Fourier grids, i.e., build with `makeFourierGrid()`
+
+* updated C++ API with overloaded functions
+    * using `std::vector` as opposed to arrays
+    * error checking is provided based on the vector size
+    * massive portion of the internal API has also changed
+
 * API change for error handling (not backward compatible)
     * errors in C++ now throw exceptions
     * `std::runtime_error` is thrown on wrong file format
     * `std::runtime_error` is thrown when requesting level too high
     * `std::invalid_argument` is thrown when calling function for wrong grid
     * `logstream` is no longer needed and has been removed
-    * the error handling in the API calls remains the same as before
+    * the error handling in the interface calls remains the same as before
 
 * added new grids and rules
     * `GridFourier` that uses trigonometric basis functions (see Manual)
     * `localpb` rule to local polynomial grids that favors the boundary
-
-* added `std::vector` to the API in addition to the previous arrays
 
 * added package-config file, now it is possible to use the command
 ```
@@ -26,7 +37,7 @@ find_package(Tasmanian 6.0 PATHS "<Tasmanian install prefix>")
     * `<prefix>/bin` takes the executable files
     * `<prefix>/lib` takes the libraries and Fortran `.mod` files
     * `<prefix>/include` takes the headers
-    * `<prefix>/Tasmanian` takes everything else
+    * `<prefix>/share/Tasmanian` takes everything else
 
 * new option Tasmanian_ENABLE_RECOMMENDED
     * searches for OpenMP, BLAS, and Python, and enables if found
