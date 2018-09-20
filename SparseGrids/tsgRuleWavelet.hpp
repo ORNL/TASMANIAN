@@ -42,39 +42,39 @@ namespace TasGrid{
 
 class RuleWavelet{
 public:
-	RuleWavelet(int order = 1, int iter_depth = 10);
-	~RuleWavelet();
+    RuleWavelet(int order = 1, int iter_depth = 10);
+    ~RuleWavelet();
 
-	// Interface to Extend
-	int getNumPoints(int level) const; // get the number of points associated with level (also the index of the first point on the level+1)
+    // Interface to Extend
+    int getNumPoints(int level) const; // get the number of points associated with level (also the index of the first point on the level+1)
 
-	const char* getDescription() const;
+    const char* getDescription() const;
 
-	double getNode(int point) const; // returns the x-value of a point
-	int getOrder() const;
-	void updateOrder(int new_order); // Sets the order of the underlying wavelet rule. Involves recalculating approximations if order==3.
+    double getNode(int point) const; // returns the x-value of a point
+    int getOrder() const;
+    void updateOrder(int new_order); // Sets the order of the underlying wavelet rule. Involves recalculating approximations if order==3.
 
-	double getWeight(int point) const; // get the quadrature weight associated with the point
-	double eval(int point, double x) const; // returns the value of point at location x (there is assumed 1-1 correspondence between points and functions)
+    double getWeight(int point) const; // get the quadrature weight associated with the point
+    double eval(int point, double x) const; // returns the value of point at location x (there is assumed 1-1 correspondence between points and functions)
 
-	int getLevel(int point) const; // returns the hierarchical level of a point
-	void getChildren(int point, int &first, int &second) const; // Given a point, return the children (if any)
-	int getParent(int point) const; // Returns the parent of the given node
+    int getLevel(int point) const; // returns the hierarchical level of a point
+    void getChildren(int point, int &first, int &second) const; // Given a point, return the children (if any)
+    int getParent(int point) const; // Returns the parent of the given node
 
 protected:
-	double eval_linear(int pt, double x) const;
-	double eval_cubic(int pt, double x) const;
-	double linear_boundary_wavelet(double x) const;
-	double linear_central_wavelet(double x) const;
-	int order;
-	int iteration_depth;
-	static void cubic_cascade(double *y, int starting_level, int iteration_depth);
+    double eval_linear(int pt, double x) const;
+    double eval_cubic(int pt, double x) const;
+    double linear_boundary_wavelet(double x) const;
+    double linear_central_wavelet(double x) const;
+    int order;
+    int iteration_depth;
+    static void cubic_cascade(double *y, int starting_level, int iteration_depth);
 
-	int find_index(double x) const;
-	double interpolate(const double *y, double x, int interpolation_order = 3) const;
+    int find_index(double x) const;
+    double interpolate(const double *y, double x, int interpolation_order = 3) const;
 
-	std::vector<std::vector<double>> data;
+    std::vector<std::vector<double>> data;
 };
 
-} /* namespace TasGrid */
-#endif /* __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP */
+} // namespace TasGrid
+#endif // __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP

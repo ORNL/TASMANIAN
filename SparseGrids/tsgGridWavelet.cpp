@@ -391,26 +391,22 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
 }
 
 double GridWavelet::evalBasis(const int p[], const double x[]) const{
-	/*
-	 * Evaluates the wavelet basis given at point p at the coordinates given by x.
-	 */
-	double v = 1.0;
-	for(int i = 0; i < num_dimensions; i++){
-		v *= rule1D.eval(p[i], x[i]);
-		if (v == 0.0){ break; }; // MIRO: reduce the expensive wavelet evaluations
-	}
-	return v;
+    // Evaluates the wavelet basis given at point p at the coordinates given by x.
+    double v = 1.0;
+    for(int i = 0; i < num_dimensions; i++){
+        v *= rule1D.eval(p[i], x[i]);
+        if (v == 0.0){ break; }; // MIRO: reduce the expensive wavelet evaluations
+    }
+    return v;
 }
 double GridWavelet::evalIntegral(const int p[]) const{
-	/*
-	 * For a given node p, evaluate the integral of the associated wavelet.
-	 */
-	double v = 1.0;
-	for(int i = 0; i < num_dimensions; i++){
-		v *= rule1D.getWeight(p[i]);
-		if (v == 0.0){ break; }; // MIRO: reduce the expensive wavelet evaluations
-	}
-	return v;
+    // For a given node p, evaluate the integral of the associated wavelet.
+    double v = 1.0;
+    for(int i = 0; i < num_dimensions; i++){
+        v *= rule1D.getWeight(p[i]);
+        if (v == 0.0){ break; }; // MIRO: reduce the expensive wavelet evaluations
+    }
+    return v;
 }
 
 void GridWavelet::buildInterpolationMatrix(){
@@ -462,53 +458,49 @@ void GridWavelet::buildInterpolationMatrix(){
 }
 
 void GridWavelet::recomputeCoefficients(){
-	/*
-	 * Recalculates the coefficients to interpolate the values in points.
-	 * Make sure buildInterpolationMatrix has been called since the list was updated.
-	 */
+    // Recalculates the coefficients to interpolate the values in points.
+    //  Make sure buildInterpolationMatrix has been called since the list was updated.
 
-	int num_points = points->getNumIndexes();
-	coefficients.resize(num_outputs, num_points);
+    int num_points = points->getNumIndexes();
+    coefficients.resize(num_outputs, num_points);
 
-	if ((inter_matrix == 0) || (inter_matrix->getNumRows() != num_points)){
+    if ((inter_matrix == 0) || (inter_matrix->getNumRows() != num_points)){
         buildInterpolationMatrix();
-	}
+    }
 
     std::vector<double> b(num_points), x(num_points);
 
 	for(int output = 0; output < num_outputs; output++){
-		// Copy relevant portion
-		std::fill(x.begin(), x.end(), 0.0);
-		std::fill(b.begin(), b.end(), 0.0);
+        // Copy relevant portion
+        std::fill(x.begin(), x.end(), 0.0);
+        std::fill(b.begin(), b.end(), 0.0);
 
-		// Populate RHS
-		for(int i = 0; i < num_points; i++){
-			b[i] = values->getValues(i)[output];
-		}
+        // Populate RHS
+        for(int i = 0; i < num_points; i++){
+            b[i] = values->getValues(i)[output];
+        }
 
-		// Solve system
-		inter_matrix->solve(b.data(), x.data());
+        // Solve system
+        inter_matrix->solve(b.data(), x.data());
 
-		// Populate surplus
-		for(int i = 0; i < num_points; i++){
+        // Populate surplus
+        for(int i = 0; i < num_points; i++){
             coefficients.getStrip(i)[output] = x[i];
-		}
-	}
+        }
+    }
 }
 
 void GridWavelet::solveTransposed(double w[]) const{
-	/*
-	 * Solves the system A^T * w = y. Used to calculate interpolation and integration
-	 * weights. RHS values should be passed in through w. At exit, w will contain the
-	 * required weights.
-	 */
-	int num_points = inter_matrix->getNumRows();
+    // Solves the system A^T * w = y. Used to calculate interpolation and integration
+    // weights. RHS values should be passed in through w. At exit, w will contain the
+    // required weights.
+    int num_points = inter_matrix->getNumRows();
 
-	std::vector<double> y(num_points);
+    std::vector<double> y(num_points);
 
-	std::copy(w, w + num_points, y.data());
+    std::copy(w, w + num_points, y.data());
 
-	inter_matrix->solve(y.data(), w, true);
+    inter_matrix->solve(y.data(), w, true);
 }
 
 void GridWavelet::getNormalization(std::vector<double> &norm) const{
