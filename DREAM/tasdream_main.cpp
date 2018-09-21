@@ -160,19 +160,7 @@ int main(int argc, const char ** argv){
         return 1;
     }
 
-
-    bool commandHelp = false;
-
-    //int k = 1;
-    //while(k <= argc){
-
-    //}
-
-    if (commandHelp) printHelp();
-
-
     return 0;
-
 }
 
 void printHelp(TypeHelp ht){
@@ -184,7 +172,6 @@ void printHelp(TypeHelp ht){
 
         cout << " -help\t"         << "\t\t-h,--help" << "\tshow verbose help options" << endl;
         cout << " -test\t"         << "\t\t\t"    << "\tperform a number of internal tests" << endl;
-        //cout << " -benchmark\t"         << "\t\t-bench" << "\texecute a benchmark" << endl;
 
     }else if (ht == help_benchmark){
 
@@ -204,5 +191,5 @@ void printHelp(TypeHelp ht){
         cout << "  basic-alpha-mpi" << "\tRequires build with mpi support" << endl;
         #endif
 
-    }//int num_outputs, int depth, int num_chains, int num_burnup, int num_mcmc, const char* outfilename
+    }
 }
