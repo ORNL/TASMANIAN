@@ -53,6 +53,7 @@ Quick Install
   ctest -C Release
   cmake --build . --config Release --target install
 ```
+* Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
 Basic Usage of Tasmanian
 --------------
