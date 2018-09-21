@@ -13,6 +13,8 @@ lib tsg*.obj Tasmanian*.obj /OUT:libtasmaniansparsegrid_static.lib
 
 cl tasgrid*.obj libtasmaniansparsegrid_static.lib /Fe:tasgrid.exe
 
+cl gridtest_main.obj tasgridE*.obj tasgridU*.obj tasgridT*.obj libtasmaniansparsegrid_static.lib /Fe:gridtest.exe
+
 del *.obj
 
 @ECHO Compiling shared library
