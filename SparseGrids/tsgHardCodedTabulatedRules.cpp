@@ -49,7 +49,7 @@ TableGaussPatterson::TableGaussPatterson(){
 TableGaussPatterson::~TableGaussPatterson(){}
 
 int TableGaussPatterson::getNumLevels(){
-    return 9; // sync this with max_levels
+    return 9; // sync this with the rest of the code
 }
 
 void TableGaussPatterson::getNodes(int level, std::vector<double> &x) const{
