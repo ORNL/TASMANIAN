@@ -211,11 +211,9 @@ int RuleWavelet::getNumPoints(int level) const{
 const char * RuleWavelet::getDescription() const{
     if (order == 1){
         return "First-Order Wavelet Basis";
-    }
-    if (order == 3){
+    }else{
         return "Third-Order Wavelet Basis";
     }
-    return "Wavelet Basis";
 }
 
 int RuleWavelet::getLevel(int point) const{

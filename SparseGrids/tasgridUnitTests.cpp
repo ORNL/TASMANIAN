@@ -459,6 +459,11 @@ bool GridUnitTester::testCoverUnimportant(){
         return false;
     }
 
+    RuleWavelet rule(1, 10);
+    str = rule.getDescription();
+    rule.updateOrder(3);
+    str = rule.getDescription();
+
     return true;
 }
 
