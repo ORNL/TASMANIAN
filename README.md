@@ -47,6 +47,12 @@ Quick Install
   make install
   make test_install
 ```
+* under MS Windows: use the cmake gui to set the folders and options then use the command prompt (`cmd.exe`) to enter the build folder
+```
+  cmake --build . --config Release
+  ctest -C Release
+  cmake --build . --config Release --target install
+```
 
 Basic Usage of Tasmanian
 --------------
