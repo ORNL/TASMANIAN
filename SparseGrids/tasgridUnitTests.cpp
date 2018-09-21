@@ -282,6 +282,7 @@ bool GridUnitTester::testAPIconsistency(){
     bool passAll = true;
     int wfirst = 15, wsecond = 30, wthird = 15;
 
+    // test array and vector consistency between the two versions of the API
     bool pass = true;
     double *apoints;
     std::vector<double> vpoints;
@@ -398,6 +399,20 @@ bool GridUnitTester::testAPIconsistency(){
 
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "wavelet sparse basis" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
+
+    // test integer-to-enumerate and string-to-enumerate conversion
+    pass = true;
+    std::vector<TypeAcceleration> allacc = {accel_none, accel_cpu_blas, accel_gpu_default, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma};
+    for(auto acc : allacc){
+        if (acc != AccelerationMeta::getIOAccelerationString(AccelerationMeta::getIOAccelerationString(acc))){
+            cout << "ERROR: mismatch in string to accel conversion: " << AccelerationMeta::getIOAccelerationString(acc) << endl;
+            pass = false;
+        }
+        if (acc != AccelerationMeta::getIOIntAcceleration(AccelerationMeta::getIOAccelerationInt(acc))){
+            cout << "ERROR: mismatch in string to accel conversion: " << AccelerationMeta::getIOIntAcceleration(acc) << endl;
+            pass = false;
+        }
+    }
 
     cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
     return passAll;
