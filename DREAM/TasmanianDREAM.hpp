@@ -205,7 +205,6 @@ public:
     // read/write chain state
     void setChainState(const double* state);
     void setChainState(const std::vector<double> state);
-    //void clearPDFValues(); // delete cached pdf values, use when the state has been saved from a different pdf
 
     void setProbabilityWeightFunction(ProbabilityWeightFunction *probability_weight);
     // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
@@ -233,7 +232,6 @@ private:
     std::vector<BasePDF*> corrections;
 
     bool state_initialized, values_initialized, values_logform;
-    //double *old_state, *new_pdf_values;
     std::vector<double> chain_state, pdf_values;
 
     std::vector<bool> isBoudnedBelow, isBoudnedAbove;
