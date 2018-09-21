@@ -223,6 +223,7 @@ namespace AccelerationMeta{
     TypeAcceleration getIOAccelerationString(const char * name);
     const char* getIOAccelerationString(TypeAcceleration accel);
     int getIOAccelerationInt(TypeAcceleration accel);
+    TypeAcceleration getIOIntAcceleration(int accel);
     bool isAccTypeFullMemoryGPU(TypeAcceleration accel);
     bool isAccTypeGPU(TypeAcceleration accel);
 

@@ -288,20 +288,11 @@ void tsgpri_(int *id){ _tsg_grid_list[*id]->printStats(); }
 
 // get/enableAcceleration
 void tsgacc_(int *id, int *acc){
-    TypeAcceleration accel = accel_none;
-    if (*acc == 1){ accel = accel_cpu_blas;   }else
-    if (*acc == 2){ accel = accel_gpu_cublas; }else
-    if (*acc == 3){ accel = accel_gpu_cuda;   }else
-    if (*acc == 4){ accel = accel_gpu_magma;  }
-    _tsg_grid_list[*id]->enableAcceleration(accel);
+    _tsg_grid_list[*id]->enableAcceleration(AccelerationMeta::getIOIntAcceleration(*acc));
 }
 void tsggac_(int *id, int *acc){
     TypeAcceleration accel = _tsg_grid_list[*id]->getAccelerationType();
-    if (accel == accel_none){       *acc = 0; }else
-    if (accel == accel_cpu_blas){   *acc = 1; }else
-    if (accel == accel_gpu_cublas){ *acc = 2; }else
-    if (accel == accel_gpu_cuda){   *acc = 3; }else
-    if (accel == accel_gpu_magma){  *acc = 4; }
+    *acc = AccelerationMeta::getIOAccelerationInt(accel);
 }
 void tsgsgi_(int *id, int *gpuID){ _tsg_grid_list[*id]->setGPUID(*gpuID); }
 void tsgggi_(int *id, int *gpuID){ *gpuID = _tsg_grid_list[*id]->getGPUID(); }
