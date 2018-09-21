@@ -39,15 +39,31 @@ endif()
 # Stage 1: Build folder paths
 ########################################################################
 set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-# windows puts the temp .dll files in ${CMAKE_BUILD_TYPE} subfolder, as opposed to directly in ${CMAKE_BINARY_DIR}
-    set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/${CMAKE_BUILD_TYPE}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
-endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG.py")
 
 set(Tasmanian_string_python_hashbang "${PYTHON_EXECUTABLE}")
 set(Tasmanian_cmake_synctest_enable "True") # enable tests that check if the library reports the same options as given by the cmake variables
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testTSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py") # also uses Tasmanian_libsparsegrid_path
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+# windows puts the temp .dll files in Release or Debug subfolder, as opposed to directly in ${CMAKE_CURRENT_BINARY_DIR}
+# add different configure file for each build type and copy the appropriate one with a custom command
+    set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_Release.py")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testTSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG_Release.py")
+    set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_Debug.py")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testTSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG_Debug.py")
+    add_custom_target(Tasmanian_python_interface ALL DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py")
+    add_custom_command(TARGET Tasmanian_python_interface PRE_BUILD
+                       COMMAND "${CMAKE_COMMAND}"
+                       ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_$<CONFIG>.py ${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG.py
+                       COMMENT "Copying Python module for config $<CONFIG>")
+    add_custom_command(TARGET Tasmanian_python_interface PRE_BUILD
+                       COMMAND "${CMAKE_COMMAND}"
+                       ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/testTSG_$<CONFIG>.py ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py
+                       COMMENT "Copying Python module for config $<CONFIG>")
+endif()
 
 set(Tasmanian_python_example_import "sys.path.append(\"${CMAKE_CURRENT_BINARY_DIR}\")\n")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
