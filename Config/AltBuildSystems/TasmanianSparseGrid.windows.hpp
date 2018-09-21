@@ -31,17 +31,22 @@
 #ifndef __TASMANIAN_SPARSE_GRID_HPP
 #define __TASMANIAN_SPARSE_GRID_HPP
 
+#include <vector>
 #ifdef TSG_DLL
 #define TSG_API __declspec(dllexport)
+template class __declspec(dllexport) std::vector<int>;
+template class __declspec(dllexport) std::vector<double>;
 #else
 #ifdef TSG_DYNAMIC
 #define TSG_API __declspec(dllimport)
+extern template class __declspec(dllexport) std::vector<int>;
+extern template class __declspec(dllexport) std::vector<double>;
 #else
 #define TSG_API
 #endif
 #endif
 
-#include "tasmanianConfig.hpp"
+#include "TasmanianConfig.hpp"
 
 #include "tsgEnumerates.hpp"
 
@@ -49,6 +54,7 @@
 #include "tsgGridSequence.hpp"
 #include "tsgGridLocalPolynomial.hpp"
 #include "tsgGridWavelet.hpp"
+#include "tsgGridFourier.hpp"
 
 #include <iomanip> // only needed for printStats()
 
@@ -64,25 +70,38 @@ public:
     static int getVersionMajor();
     static int getVersionMinor();
     static const char* getLicense(); // human readable
+    static const char* getGitCommitHash();
+    static const char* getCmakeCxxFlags();
     static bool isOpenMPEnabled();
 
-    void setErrorLog(std::ostream *os);
-    void disableLog();
-
     void write(const char *filename, bool binary = false) const;
-    bool read(const char *filename);
+    void read(const char *filename);
 
     void write(std::ofstream &ofs, bool binary = false) const;
-    bool read(std::ifstream &ifs, bool binary = false);
+    void read(std::ifstream &ifs, bool binary = false);
 
     void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const int *level_limits = 0);
+    void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const std::vector<int> &level_limits = std::vector<int>());
+
     void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, const int *level_limits = 0);
+    void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+
     void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp, const int *level_limits = 0);
+    void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const std::vector<int> &level_limits);
+
     void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, const int *level_limits = 0);
+    void makeWaveletGrid(int dimensions, int outputs, int depth, int order, const std::vector<int> &level_limits);
+
+    void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights = 0, const int* level_limits = 0);
+    void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+
     void copyGrid(const TasmanianSparseGrid *source);
 
     void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
+    void updateGlobalGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+
     void updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
+    void updateSequenceGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
 
     double getAlpha() const;
     double getBeta() const;
@@ -100,31 +119,50 @@ public:
     double* getLoadedPoints() const;
     double* getNeededPoints() const;
     double* getPoints() const; // returns the loaded points unless no points are loaded, then returns the needed points
+
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
+    void getLoadedPoints(std::vector<double> &x) const;
+    void getNeededPoints(std::vector<double> &x) const;
+    void getPoints(std::vector<double> &x) const; // returns the loaded points unless no points are loaded, then returns the needed points
+
     double* getQuadratureWeights() const;
     double* getInterpolationWeights(const double x[]) const;
+
     void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
 
+    void getQuadratureWeights(std::vector<double> &weights) const;
+    void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const;
+
     void loadNeededPoints(const double *vals);
+    void loadNeededPoints(const std::vector<double> vals);
 
     void evaluate(const double x[], double y[]) const;
     void evaluateFast(const double x[], double y[]) const; // evaluate that is potentially not thread safe!
     void evaluateBatch(const double x[], int num_x, double y[]) const; // uses acceleration, OpenMP, BLAS, GPU, etc.
     void integrate(double q[]) const;
 
+    // same as above, but resizes the output vector (is too small)
+    void evaluate(const std::vector<double> x, std::vector<double> &y) const;
+    void evaluateFast(const std::vector<double> x, std::vector<double> &y) const;
+    void evaluateBatch(const std::vector<double> x, std::vector<double> &y) const;
+    void integrate(std::vector<double> &q) const;
+
     bool isGlobal() const;
     bool isSequence() const;
     bool isLocalPolynomial() const;
     bool isWavelet() const;
+    bool isFourier() const;
 
     void setDomainTransform(const double a[], const double b[]); // set the ranges of the box
     bool isSetDomainTransfrom() const;
     void clearDomainTransform();
     void getDomainTransform(double a[], double b[]) const;
+    void setDomainTransform(const std::vector<double> a, const std::vector<double> b);
+    void getDomainTransform(std::vector<double> &a, std::vector<double> &b) const;
 
     void setConformalTransformASIN(const int truncation[]);
     bool isSetConformalTransformASIN() const;
@@ -133,27 +171,38 @@ public:
 
     void clearLevelLimits(); // level limits will be set anew if non-null vector is given to refine command
     void getLevelLimits(int *limits) const; // static, assume limits is already allocated with length getNumDimensions()
+    void getLevelLimits(std::vector<int> &limits) const; // allocates the vector
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = 0);
+    void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
+
     int* estimateAnisotropicCoefficients(TypeDepth type, int output);
+    void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights);
+
     void setSurplusRefinement(double tolerance, int output, const int *level_limits = 0);
+    void setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits);
+
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0, const double *scale_correction = 0); // -1 indicates using all outputs
+    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction = std::vector<double>()); // -1 indicates using all outputs
+
     void clearRefinement();
     void mergeRefinement();
 
     const double* getHierarchicalCoefficients() const; // formerly getSurpluses();
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const;
+    void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
     void setHierarchicalCoefficients(const double c[]);
+
+    void evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const;
+    void setHierarchicalCoefficients(const std::vector<double> c);
 
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
-    void printStats() const;
-
-    void printStatsLog() const;
+    void printStats(std::ostream &os = std::cout) const;
 
     void enableAcceleration(TypeAcceleration acc);
-    void forceSparseAlgorithmForLocalPolynomials();
+    void favorSparseAlgorithmForLocalPolynomials(bool favor);
     TypeAcceleration getAccelerationType() const;
     static bool isAccelerationAvailable(TypeAcceleration acc);
 
@@ -173,7 +222,7 @@ public:
     // EXPERIMENTAL: works only for LocalPolynomial grids (will be moved to sequences and others)
     void removePointsByHierarchicalCoefficient(double tolerance, int output = -1, const double *scale_correction = 0); // have python error tests, but needs math consistency test
 
-    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // EXPERIMENTAL, works only for localPolynomial with order 1 or 2
+    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // does not work for Global or LocalPolynomial with order > 2
     void evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const;
 
     // TODO
@@ -192,27 +241,25 @@ public:
 protected:
     void clear();
 
-    void printGridStats(std::ostream *os) const;
-
     void mapCanonicalToTransformed(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
     void mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
     double getQuadratureScale(int num_dimensions, TypeOneDRule rule) const;
 
     void mapConformalCanonicalToTransformed(int num_dimensions, int num_points, double x[]) const;
-    void mapConformalTransformedToCanonical(int num_dimensions, int num_points, double x[]) const;
+    void mapConformalTransformedToCanonical(int num_dimensions, int num_points, Data2D<double> &x) const;
     void mapConformalWeights(int num_dimensions, int num_points, double weights[]) const;
 
-    const double* formCanonicalPoints(const double *x, double* &x_temp, int num_x) const;
-    const double* formCanonicalPointsGPU(const double *gpu_x, double* &gpu_x_temp, int num_x) const;
-    void clearCanonicalPoints(double* &x_temp) const;
-    void clearCanonicalPointsGPU(double* &x_temp) const;
+    const double* formCanonicalPoints(const double *x, Data2D<double> &x_temp, int num_x) const;
+    #ifdef Tasmanian_ENABLE_CUDA
+    const double* formCanonicalPointsGPU(const double *gpu_x, int num_x, cudaDoubles &gpu_x_temp) const;
+    #endif
     void formTransformedPoints(int num_points, double x[]) const; // when calling get***Points()
 
     void writeAscii(std::ofstream &ofs) const;
-    bool readAscii(std::ifstream &ifs);
+    void readAscii(std::ifstream &ifs);
 
     void writeBinary(std::ofstream &ofs) const;
-    bool readBinary(std::ifstream &ifs);
+    void readBinary(std::ifstream &ifs);
 
 private:
     BaseCanonicalGrid *base;
@@ -221,16 +268,18 @@ private:
     GridSequence *sequence;
     GridLocalPolynomial *pwpoly;
     GridWavelet *wavelet;
+    GridFourier *fourier;
 
-    double *domain_transform_a, *domain_transform_b;
-    int *conformal_asin_power;
-    int *llimits;
+    std::vector<double> domain_transform_a, domain_transform_b;
+    std::vector<int> conformal_asin_power;
+    std::vector<int> llimits;
 
     TypeAcceleration acceleration;
     int gpuID;
-    mutable AccelerationDomainTransform *acc_domain;
 
-    std::ostream *logstream;
+    #ifdef Tasmanian_ENABLE_CUDA
+    mutable AccelerationDomainTransform acc_domain;
+    #endif
 };
 
 extern "C" TSG_API void* tsgConstructTasmanianSparseGrid();
@@ -241,8 +290,6 @@ extern "C" TSG_API const char* tsgGetLicense();
 extern "C" TSG_API int tsgGetVersionMajor();
 extern "C" TSG_API int tsgGetVersionMinor();
 extern "C" TSG_API int tsgIsOpenMPEnabled();
-extern "C" TSG_API void tsgErrorLogCerr(void *grid);
-extern "C" TSG_API void tsgDisableErrorLog(void *grid);
 extern "C" TSG_API void tsgWrite(void *grid, const char* filename);
 extern "C" TSG_API void tsgWriteBinary(void *grid, const char* filename);
 extern "C" TSG_API int tsgRead(void *grid, const char* filename);
@@ -250,6 +297,7 @@ extern "C" TSG_API void tsgMakeGlobalGrid(void *grid, int dimensions, int output
 extern "C" TSG_API void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const char *sRule, const int *anisotropic_weights, const int *limit_levels);
 extern "C" TSG_API void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int depth, int order, const char *sRule, const int *limit_levels);
 extern "C" TSG_API void tsgMakeWaveletGrid(void *grid, int dimensions, int outputs, int depth, int order, const int *limit_levels);
+extern "C" TSG_API void tsgMakeFourierGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const int *anisotropic_weights, const int *limit_levels);
 extern "C" TSG_API void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels);
 extern "C" TSG_API void tsgUpdateSequenceGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels);
 extern "C" TSG_API double tsgGetAlpha(void *grid);
@@ -283,6 +331,7 @@ extern "C" TSG_API int tsgIsGlobal(void *grid);
 extern "C" TSG_API int tsgIsSequence(void *grid);
 extern "C" TSG_API int tsgIsLocalPolynomial(void *grid);
 extern "C" TSG_API int tsgIsWavelet(void *grid);
+extern "C" TSG_API int tsgIsFourier(void *grid);
 extern "C" TSG_API void tsgSetDomainTransform(void *grid, const double a[], const double b[]);
 extern "C" TSG_API int tsgIsSetDomainTransfrom(void *grid);
 extern "C" TSG_API void tsgClearDomainTransform(void *grid);

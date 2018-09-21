@@ -17,6 +17,8 @@ copy SparseGrids\libtasmaniansparsegrid_static.lib libtasmaniansparsegrid_static
 copy SparseGrids\libtasmaniansparsegrid.lib libtasmaniansparsegrid.lib
 copy SparseGrids\libtasmaniansparsegrid.dll libtasmaniansparsegrid.dll
 copy SparseGrids\tasgrid.exe tasgrid.exe
+copy SparseGrids\gridtest.exe gridtest.exe
+copy Config\AltBuildSystems\example_sparse_grids.py example_sparse_grids.py
 
 copy SparseGrids\GaussPattersonRule.table GaussPattersonRule.table
 
@@ -58,7 +60,8 @@ del testSave
 
 :Test
 
-tasgrid.exe -test
+gridtest.exe
+tasdream.exe -test
 
 @GOTO End
 

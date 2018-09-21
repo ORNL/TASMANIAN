@@ -214,10 +214,11 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     # in Windows, shared .dll libs need another file for linking which shares .lib extension with the static libs
     # thus on Windows, we specifically add _static to the name of the lib
     # furthermore, additional defines are needed to suppress extraneous warnings and adjust some system calls
-    macro(Tasmanian_macro_sparsegrids_windows_defines Tasmanian_dream_target)
-        target_compile_definitions(${Tasmanian_dream_target} PRIVATE -D_TASMANIAN_WINDOWS_) # overwrittes gettime()
-        target_compile_definitions(${Tasmanian_dream_target} PRIVATE -D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
-        target_compile_definitions(${Tasmanian_dream_target} PUBLIC  -D_USE_MATH_DEFINES) # needed to include M_PI constant
+    macro(Tasmanian_macro_sparsegrids_windows_defines Tasmanian_sg_target)
+        target_compile_definitions(${Tasmanian_sg_target} PRIVATE -D_TASMANIAN_WINDOWS_) # overwrittes gettime()
+        target_compile_definitions(${Tasmanian_sg_target} PRIVATE -D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
+        target_compile_definitions(${Tasmanian_sg_target} PUBLIC  -D_USE_MATH_DEFINES) # needed to include M_PI constant
+        target_compile_definitions(${Tasmanian_sg_target} PUBLIC  -D_HAS_ITERATOR_DEBUGGING=0) # needed to prevent crash on using STL vector iterators
     endmacro()
 
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/TasmanianSparseGrid.windows.hpp"  "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp" COPYONLY)

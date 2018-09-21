@@ -1,4 +1,5 @@
-In order to compile TASMANIAN using VC++
+In order to compile TASMANIAN using VC++ 
+(skip to the last note if you want to use cmake)
 
 1. Install Microsoft Visual C++
 
@@ -59,8 +60,14 @@ Note: if you experience problems with OpenMP or other compile options
 
       for example, removing /openmp will remove OpenMP
 
-Note: cmake can be used under Windows and the projects compile from
-      the command prompt using the msbuild.exe <project> command.
-      The INSTALL.vcxproj works as intended, i.e., it install the
-      source files as appropriate.
-
+Note: cmake can be used under Windows, the cmake GUI is a good tool
+      for configuring and generating the project and for editing all
+      the cmake variables
+      After configuration, the project can be build from the command
+      line by calling the following (from the build folder)
+      ```
+      cmake --build . --config Release
+      ctest -C Release
+      cmake --build . --config Release --target install
+      ```
+      Debug is also supported but the binaries are too slow

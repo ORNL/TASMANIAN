@@ -66,7 +66,7 @@ void UnsortedIndexSet::getIndexesSorted(std::vector<int> &sorted) const{
     while(warp < num_indexes){
         size_t full_warps = 2*warp * ((num_indexes) / (2*warp));
         #pragma omp parallel for
-        for(size_t i=0; i<full_warps; i+=2*warp){
+        for(long long i=0; (size_t) i<full_warps; i+=2*warp){
             mergeLists(&(list_source[i]), warp, &(list_source[i+warp]), warp, &(list_destination[i]));
         }
 
