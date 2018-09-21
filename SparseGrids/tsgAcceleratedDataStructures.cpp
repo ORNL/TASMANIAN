@@ -44,16 +44,6 @@ namespace TasGrid{
 
 #ifdef Tasmanian_ENABLE_CUDA
 cudaInts::cudaInts() : num(0), gpu_data(0){}
-cudaInts::cudaInts(size_t cnum) : num(cnum){ gpu_data = TasCUDA::cudaNew<int>(num); }
-cudaInts::cudaInts(int a, int b) : num(((size_t) a) * ((size_t) b)){ gpu_data = TasCUDA::cudaNew<int>(num); }
-cudaInts::cudaInts(size_t cnum, const int *cpu_data) : num(cnum){
-    gpu_data = TasCUDA::cudaNew<int>(num);
-    TasCUDA::cudaSend<int>(num, cpu_data, gpu_data);
-}
-cudaInts::cudaInts(int a, int b, const int *cpu_data) : num(((size_t) a) * ((size_t) b)){
-    gpu_data = TasCUDA::cudaNew<int>(num);
-    TasCUDA::cudaSend<int>(num, cpu_data, gpu_data);
-}
 cudaInts::cudaInts(const std::vector<int> &cpu_data) : num(cpu_data.size()){
     gpu_data = TasCUDA::cudaNew<int>(num);
     TasCUDA::cudaSend<int>(num, cpu_data.data(), gpu_data);
@@ -74,19 +64,12 @@ void cudaInts::clear(){
     num = 0;
 }
 
-void cudaInts::load(size_t cnum, const int *cpu_data){
-    if (num != cnum) clear();
-    num = cnum;
-    if (gpu_data == 0) gpu_data = TasCUDA::cudaNew<int>(num);
-    TasCUDA::cudaSend<int>(num, cpu_data, gpu_data);
-}
 void cudaInts::load(const std::vector<int> &cpu_data){
     if (num != cpu_data.size()) clear();
     num = cpu_data.size();
     if (gpu_data == 0) gpu_data = TasCUDA::cudaNew<int>(num);
     TasCUDA::cudaSend<int>(num, cpu_data.data(), gpu_data);
 }
-void cudaInts::unload(int *cpu_data) const{ TasCUDA::cudaRecv<int>(num, gpu_data, cpu_data); }
 void cudaInts::unload(std::vector<int> &cpu_data) const{
     cpu_data.resize(num);
     TasCUDA::cudaRecv<int>(num, gpu_data, cpu_data.data());
@@ -100,10 +83,6 @@ void cudaInts::eject(int* &destination){
 cudaDoubles::cudaDoubles() : num(0), gpu_data(0){}
 cudaDoubles::cudaDoubles(size_t cnum) : num(cnum){ gpu_data = TasCUDA::cudaNew<double>(num); }
 cudaDoubles::cudaDoubles(int a, int b) : num(((size_t) a) * ((size_t) b)){ gpu_data = TasCUDA::cudaNew<double>(num); }
-cudaDoubles::cudaDoubles(size_t cnum, const double *cpu_data) : num(cnum){
-    gpu_data = TasCUDA::cudaNew<double>(num);
-    TasCUDA::cudaSend<double>(num, cpu_data, gpu_data);
-}
 cudaDoubles::cudaDoubles(int a, int b, const double *cpu_data) : num(((size_t) a) * ((size_t) b)){
     gpu_data = TasCUDA::cudaNew<double>(num);
     TasCUDA::cudaSend<double>(num, cpu_data, gpu_data);
@@ -141,10 +120,6 @@ void cudaDoubles::load(const std::vector<double> &cpu_data){
     TasCUDA::cudaSend<double>(num, cpu_data.data(), gpu_data);
 }
 void cudaDoubles::unload(double *cpu_data) const{ TasCUDA::cudaRecv<double>(num, gpu_data, cpu_data); }
-void cudaDoubles::unload(std::vector<double> &cpu_data) const{
-    cpu_data.resize(num);
-    TasCUDA::cudaRecv<double>(num, gpu_data, cpu_data.data());
-}
 void cudaDoubles::eject(double* &destination){
     destination = gpu_data;
     gpu_data = 0;

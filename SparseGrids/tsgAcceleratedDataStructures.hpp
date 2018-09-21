@@ -43,10 +43,6 @@ namespace TasGrid{
 class cudaInts{
 public:
     cudaInts();
-    cudaInts(size_t cnum);
-    cudaInts(int a, int b);
-    cudaInts(size_t cnum, const int *cpu_data);
-    cudaInts(int a, int b, const int *cpu_data);
     cudaInts(const std::vector<int> &cpu_data);
     ~cudaInts();
 
@@ -56,9 +52,7 @@ public:
     void resize(size_t cnum);
     void clear();
 
-    void load(size_t cnum, const int *cpu_data);
     void load(const std::vector<int> &cpu_data);
-    void unload(int *cpu_data) const;
     void unload(std::vector<int> &cpu_data) const;
 
     void eject(int* &destination); // moves the data to the external pointer
@@ -73,7 +67,6 @@ public:
     cudaDoubles();
     cudaDoubles(size_t cnum);
     cudaDoubles(int a, int b);
-    cudaDoubles(size_t cnum, const double *cpu_data);
     cudaDoubles(int a, int b, const double *cpu_data);
     cudaDoubles(const std::vector<double> &cpu_data);
     ~cudaDoubles();
@@ -87,7 +80,6 @@ public:
     void load(size_t cnum, const double *cpu_data);
     void load(const std::vector<double> &cpu_data);
     void unload(double *cpu_data) const;
-    void unload(std::vector<double> &cpu_data) const;
 
     void eject(double* &destination); // moves the data to the external pointer
 
