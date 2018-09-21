@@ -39,9 +39,9 @@
 
 namespace TasGrid{
 
-GridWavelet::GridWavelet() : num_dimensions(0), num_outputs(0), order(1), points(0), needed(0), values(0), inter_matrix(0)
+GridWavelet::GridWavelet() : rule1D(1, 10), num_dimensions(0), num_outputs(0), order(1), points(0), needed(0), values(0), inter_matrix(0)
 {}
-GridWavelet::GridWavelet(const GridWavelet &wav) : num_dimensions(0), num_outputs(0), order(1), points(0), needed(0), values(0), inter_matrix(0)
+GridWavelet::GridWavelet(const GridWavelet &wav) : rule1D(1, 10), num_dimensions(0), num_outputs(0), order(1), points(0), needed(0), values(0), inter_matrix(0)
 {  copyGrid(&wav);  }
 GridWavelet::~GridWavelet(){ reset(); }
 
