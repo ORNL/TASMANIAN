@@ -200,11 +200,7 @@ int main(int argc, const char ** argv){
     // doing actual work with a grid
     // get the command
     TasgridWrapper wrap;
-    bool deprecatedMakeGrid = false;
-    if (strcmp(argv[1],"-makegrid") == 0){
-        cerr << "WARNING: -makegrid is a deprecated command, in the future use -makeglobal, -makesequence, -makelocalpoly, -makewavelet, or -makefourier" << endl;
-        deprecatedMakeGrid = true; // use the correct command by guessing the grid type form the 1-D rule, wait for the 1-D rule
-    }else if ((strcmp(argv[1],"-makeglobal") == 0) || (strcmp(argv[1],"-mg") == 0)){
+    if ((strcmp(argv[1],"-makeglobal") == 0) || (strcmp(argv[1],"-mg") == 0)){
         wrap.setCommand(command_makeglobal);
     }else if ((strcmp(argv[1],"-makesequence") == 0) || (strcmp(argv[1],"-ms") == 0)){
         wrap.setCommand(command_makesequence);
@@ -534,21 +530,6 @@ int main(int argc, const char ** argv){
     if (commandHelp){
         printHelp(help_command, wrap.getCommand());
         return 0;
-    }
-
-    if (deprecatedMakeGrid){
-        if (OneDimensionalMeta::isGlobal(wrap.getRule())){
-            wrap.setCommand(command_makeglobal);
-        }else if (OneDimensionalMeta::isLocalPolynomial(wrap.getRule())){
-            wrap.setCommand(command_makelocalp);
-        }else if (OneDimensionalMeta::isWavelet(wrap.getRule())){
-            wrap.setCommand(command_makewavelet);
-        }else if (OneDimensionalMeta::isFourier(wrap.getRule())){
-            wrap.setCommand(command_makefourier);
-        }else{
-            cerr << "ERROR: deprecated -makegrid used but no -onedim specified" << endl;
-            return 1;
-        }
     }
 
     if (!wrap.executeCommand()){

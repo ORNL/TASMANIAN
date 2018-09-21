@@ -282,6 +282,7 @@ bool GridUnitTester::testAPIconsistency(){
     bool passAll = true;
     int wfirst = 15, wsecond = 30, wthird = 15;
 
+    // test array and vector consistency between the two versions of the API
     bool pass = true;
     double *apoints;
     std::vector<double> vpoints;
@@ -399,6 +400,20 @@ bool GridUnitTester::testAPIconsistency(){
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "wavelet sparse basis" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
 
+    // test integer-to-enumerate and string-to-enumerate conversion
+    pass = true;
+    std::vector<TypeAcceleration> allacc = {accel_none, accel_cpu_blas, accel_gpu_default, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma};
+    for(auto acc : allacc){
+        if (acc != AccelerationMeta::getIOAccelerationString(AccelerationMeta::getIOAccelerationString(acc))){
+            cout << "ERROR: mismatch in string to accel conversion: " << AccelerationMeta::getIOAccelerationString(acc) << endl;
+            pass = false;
+        }
+        if (acc != AccelerationMeta::getIOIntAcceleration(AccelerationMeta::getIOAccelerationInt(acc))){
+            cout << "ERROR: mismatch in string to accel conversion: " << AccelerationMeta::getIOIntAcceleration(acc) << endl;
+            pass = false;
+        }
+    }
+
     cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
     return passAll;
 }
@@ -428,8 +443,26 @@ bool GridUnitTester::testCoverUnimportant(){
     AccelerationMeta::cusparseCheckError(0, 0);
     #endif
 
-    TypeOneDRule rules[43] = { rule_none, rule_clenshawcurtis, rule_clenshawcurtis0, rule_chebyshev, rule_chebyshevodd, rule_gausslegendre, rule_gausslegendreodd, rule_gausspatterson, rule_leja, rule_lejaodd, rule_rleja, rule_rlejadouble2, rule_rlejadouble4, rule_rlejaodd, rule_rlejashifted, rule_rlejashiftedeven, rule_rlejashifteddouble, rule_maxlebesgue, rule_maxlebesgueodd, rule_minlebesgue, rule_minlebesgueodd, rule_mindelta, rule_mindeltaodd, rule_gausschebyshev1, rule_gausschebyshev1odd, rule_gausschebyshev2, rule_gausschebyshev2odd, rule_fejer2, rule_gaussgegenbauer, rule_gaussgegenbauerodd, rule_gaussjacobi, rule_gaussjacobiodd, rule_gausslaguerre, rule_gausslaguerreodd, rule_gausshermite, rule_gausshermiteodd, rule_customtabulated, rule_localp, rule_localp0, rule_semilocalp, rule_localpb, rule_wavelet, rule_fourier};
-    for(int i=0; i<43; i++) str = OneDimensionalMeta::getHumanString(rules[i]);
+    std::vector<TypeOneDRule> rules = {rule_none, rule_clenshawcurtis, rule_clenshawcurtis0, rule_chebyshev, rule_chebyshevodd, rule_gausslegendre, rule_gausslegendreodd, rule_gausspatterson, rule_leja, rule_lejaodd, rule_rleja, rule_rlejadouble2, rule_rlejadouble4, rule_rlejaodd, rule_rlejashifted, rule_rlejashiftedeven, rule_rlejashifteddouble, rule_maxlebesgue, rule_maxlebesgueodd, rule_minlebesgue, rule_minlebesgueodd, rule_mindelta, rule_mindeltaodd, rule_gausschebyshev1, rule_gausschebyshev1odd, rule_gausschebyshev2, rule_gausschebyshev2odd, rule_fejer2, rule_gaussgegenbauer, rule_gaussgegenbauerodd, rule_gaussjacobi, rule_gaussjacobiodd, rule_gausslaguerre, rule_gausslaguerreodd, rule_gausshermite, rule_gausshermiteodd, rule_customtabulated, rule_localp, rule_localp0, rule_semilocalp, rule_localpb, rule_wavelet, rule_fourier};
+    for(auto r : rules) str = OneDimensionalMeta::getHumanString(r);
+
+    if (!AccelerationMeta::isAccTypeFullMemoryGPU(accel_gpu_default)){
+        cout << "ERROR: mismatch in isAccTypeFullMemoryGPU(accel_gpu_default)" << endl;
+        return false;
+    }
+    if (AccelerationMeta::isAccTypeFullMemoryGPU(accel_cpu_blas)){
+        cout << "ERROR: mismatch in isAccTypeFullMemoryGPU(accel_cpu_blas)" << endl;
+        return false;
+    }
+    if (!AccelerationMeta::isAccTypeGPU(accel_gpu_default)){
+        cout << "ERROR: mismatch in isAccTypeFullMemoryGPU()" << endl;
+        return false;
+    }
+
+    RuleWavelet rule(1, 10);
+    str = rule.getDescription();
+    rule.updateOrder(3);
+    str = rule.getDescription();
 
     return true;
 }

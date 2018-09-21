@@ -49,7 +49,6 @@ protected:
     void loadWeights();
 
 private:
-    int max_levels;
     std::vector<double> nodes; // contains the x-coordinate of each sample point
     std::vector<double> weights; // contains the weight associated with each level
 

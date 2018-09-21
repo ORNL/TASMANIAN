@@ -42,7 +42,7 @@ namespace TasGrid{
 
 class RuleWavelet{
 public:
-    RuleWavelet(int order = 1, int iter_depth = 10);
+    RuleWavelet(int order, int iter_depth);
     ~RuleWavelet();
 
     // Interface to Extend
