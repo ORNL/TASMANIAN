@@ -42,13 +42,9 @@ UnsortedIndexSet::UnsortedIndexSet(int cnum_dimensions, int cnum_slots) : num_in
 UnsortedIndexSet::~UnsortedIndexSet(){}
 
 int UnsortedIndexSet::getNumDimensions() const{ return (int) num_dimensions; }
-int UnsortedIndexSet::getNumIndexes() const{ return (int) num_indexes; }
 
 void UnsortedIndexSet::addIndex(const int p[]){
     std::copy(p, p + num_dimensions, &(index[num_dimensions * num_indexes++]));
-}
-const int* UnsortedIndexSet::getIndex(int i) const{
-    return &(index[i * num_dimensions]);
 }
 
 void UnsortedIndexSet::getIndexesSorted(std::vector<int> &sorted) const{

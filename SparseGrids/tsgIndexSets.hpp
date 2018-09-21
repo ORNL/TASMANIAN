@@ -42,10 +42,8 @@ public:
     ~UnsortedIndexSet();
 
     int getNumDimensions() const;
-    int getNumIndexes() const;
 
     void addIndex(const int p[]);
-    const int* getIndex(int i) const;
 
     void getIndexesSorted(std::vector<int> &sorted) const;
     // returns a vector of num_dimensions X num_indexes of the sorted indexes
