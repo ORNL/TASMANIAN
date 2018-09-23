@@ -198,7 +198,7 @@ class TestTasmanian(unittest.TestCase):
         print("GOOD: error was registered")
 
         # custom rule test
-        grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "GaussPattersonRule.table")
+        grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "@CMAKE_CURRENT_BINARY_DIR@/GaussPattersonRule.table")
         grid1 = TasmanianSG.TasmanianSparseGrid()
         grid1.makeGlobalGrid(2, 0, 4, 'level', 'gauss-patterson')
         self.compareGrids(grid, grid1, bTestRuleNames = False)
@@ -378,7 +378,7 @@ class TestTasmanian(unittest.TestCase):
         for sType in TasmanianSG.lsTsgGlobalTypes:
             for sRule in TasmanianSG.lsTsgGlobalRules:
                 if ("custom-tabulated" in sRule):
-                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "@CMAKE_CURRENT_BINARY_DIR@/GaussPattersonRule.table")
                 else:
                     gridA.makeGlobalGrid(2, 0, 2, sType, sRule)
                 gridA.write("testSave", bUseBinaryFormat = False)
