@@ -1701,25 +1701,45 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             std::vector<int> cindx; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx);
             std::vector<double> cvals; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals);
 
-            if (pntr[nump] != num_nz){
-                cout << "ERROR: mismatch in the numnz from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
-                grid.printStats();
-                sparse_pass = false;
-            }
-            if (sparse_pass){
-                for(int i=0; i<nump; i++){
-                    for(int j=pntr[i]; j<pntr[i+1]; j++){
-                        if (sparse_pass && (indx[j] != cindx[j])){
-                            cout << "ERROR: mismatch in index i = " << i << "   j = " << j << "  indx[j] = " << indx[j] << "  cindx[j] = " << cindx[j] << endl;
-                            sparse_pass = false;
-                        }
-                        if (sparse_pass && (fabs(vals[i] - cvals[i]) > 1.E-12)){
-                            cout << "ERROR: i = " << i << "  cpu value = " << vals[i] << "  gpu value = " << cvals[i] << endl;
-                            sparse_pass = false;
-                        }
-                    }
+            int num_points = grid.getNumPoints();
+            std::vector<double> cpu_dense(nump * num_points, 0.0);
+            std::vector<double> gpu_dense(nump * num_points, 0.0);
+            for(int i=0; i<nump; i++){
+                for(int j=pntr[i]; j < pntr[i+1]; j++){
+                    cpu_dense[i * num_points + indx[j]] = vals[j];
+                }
+                for(int j=cpntr[i]; j < cpntr[i+1]; j++){
+                    gpu_dense[i * num_points + cindx[j]] = cvals[j];
                 }
             }
+            auto igpu = gpu_dense.begin();
+            for(auto c : cpu_dense){
+                double diff = fabs(c - *igpu++);
+                if (diff > 1.E-12){
+                    cout << "ERROR: difference in sparse matrix: " << diff << endl;
+                    sparse_pass = false;
+                }
+            }
+            // simple test, works on Linux but Windows CUDA seems to round differently (keep in case of performance regression)
+            //if (pntr[nump] != num_nz){
+            //    cout << "ERROR: mismatch in the numnz from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
+            //    grid.printStats();
+            //    sparse_pass = false;
+            //}
+            //if (sparse_pass){
+            //    for(int i=0; i<nump; i++){
+            //        for(int j=pntr[i]; j<pntr[i+1]; j++){
+            //            if (sparse_pass && (indx[j] != cindx[j])){
+            //                cout << "ERROR: mismatch in index i = " << i << "   j = " << j << "  indx[j] = " << indx[j] << "  cindx[j] = " << cindx[j] << endl;
+            //                sparse_pass = false;
+            //            }
+            //            if (sparse_pass && (fabs(vals[i] - cvals[i]) > 1.E-12)){
+            //                cout << "ERROR: i = " << i << "  cpu value = " << vals[i] << "  gpu value = " << cvals[i] << endl;
+            //                sparse_pass = false;
+            //            }
+            //        }
+            //    }
+            //}
             if (!sparse_pass){
                 cout << "Failed evaluateSparseHierarchicalFunctionsGPU() when using grid: " << endl;
                 grid.printStats();

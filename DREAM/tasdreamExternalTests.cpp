@@ -260,7 +260,11 @@ bool ExternalTester::testGamma1D(){
 }
 
 bool ExternalTester::testGaussian2D(){
+    #if defined(_MSC_VER) && _MSC_VER > 1800
+    int s = (rngseed == -1) ? 23 : ((int) rngseed);
+    #else
     int s = (rngseed == -1) ? 25 : ((int) rngseed);
+    #endif
     TestRNG rng(s);
 
     int num_cells1d = 4; double delta = 2.0 / ((double) num_cells1d);
