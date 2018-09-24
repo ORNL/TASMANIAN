@@ -637,6 +637,11 @@ void TasmanianSparseGrid::setDomainTransform(const std::vector<double> &a, const
     if ((base == 0) || (base->getNumDimensions() == 0)){
         throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
     }
+    size_t num_dimensions = (size_t) base->getNumDimensions();
+    if ((a.size() != num_dimensions) || (b.size() != num_dimensions)){
+        std::string message = "ERROR: setDomainTransform() is called with a.size() = " + std::to_string(a.size()) + " and b.size() = " + std::to_string(b.size()) + ", but both should have length equal to getNumDimensions(), which is: " + std::to_string(num_dimensions);
+        throw std::invalid_argument(message);
+    }
     domain_transform_a = a; // copy assignment
     domain_transform_b = b;
     #ifdef Tasmanian_ENABLE_CUDA
