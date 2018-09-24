@@ -174,11 +174,11 @@ void LinearAlgebraEngineGPU::cublasDGEMM(int M, int N, int K, double alpha, cons
     if (N > 1){ // matrix-matrix mode
         cublasStatus_t stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K,
                                         &alpha, A.data(), M, B.data(), K, &beta, C.data(), M);
-        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm in DGEMM");
+        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemm() in DGEMM");
     }else{ // matrix-vector mode
         cublasStatus_t stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, M, K,
                                         &alpha, A.data(), M, B.data(), 1, &beta, C.data(), 1);
-        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv in DGEMM");
+        AccelerationMeta::cublasCheckError((void*) &stat, "cublasDgemv() in DGEMM");
     }
 }
 void LinearAlgebraEngineGPU::cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, cudaDoubles &C){

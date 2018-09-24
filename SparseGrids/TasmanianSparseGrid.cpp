@@ -475,7 +475,7 @@ void TasmanianSparseGrid::getInterpolationWeights(const std::vector<double> &x, 
 void TasmanianSparseGrid::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     if (AccelerationMeta::isAccTypeGPU(acceleration)){
-
+        _TASMANIAN_SETGPU
     }
     #endif
     base->loadNeededPoints(vals, acceleration);
