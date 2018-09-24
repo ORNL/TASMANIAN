@@ -221,7 +221,9 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         target_compile_definitions(${Tasmanian_sg_target} PUBLIC  -D_HAS_ITERATOR_DEBUGGING=0) # needed to prevent crash on using STL vector iterators
     endmacro()
 
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/TasmanianSparseGrid.windows.hpp"  "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp" COPYONLY)
+    if (TARGET Tasmanian_libsparsegrid_shared)
+        set_target_properties(Tasmanian_libsparsegrid_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    endif()
 
     if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
         target_compile_definitions(Tasmanian_libsparsegrid_shared PUBLIC -DTSG_DLL)
