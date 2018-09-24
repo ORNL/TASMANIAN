@@ -99,6 +99,10 @@ int testInterfaceC(){
 
     tsgDestructTasmanianSparseGrid(grid);
 
+    char name[256];
+    int num_char;
+    tsgGetGPUName(0, 256, name, &num_char); // checks for memory leaks
+
     return 1;
 }
 
