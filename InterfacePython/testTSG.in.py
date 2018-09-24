@@ -146,7 +146,11 @@ class TestTasmanian(unittest.TestCase):
         print("                Available GPUs:")
         if (grid.getNumGPUs() > 0):
             for iGPU in range(grid.getNumGPUs()):
-                sName = grid.getGPUName(iGPU)
+                sName = ""
+                if ("@CMAKE_CXX_COMPILER_ID@" == "MSVC"):
+                    sName = "Unavailable under Windows"
+                else:
+                    sName = grid.getGPUName(iGPU)
                 sMem = grid.getGPUMemory(iGPU)
                 print("     {0:2d}: {1:20s} with{2:6d}MB RAM".format(iGPU, sName, sMem))
         else:
@@ -432,12 +436,14 @@ class TestTasmanian(unittest.TestCase):
         if (grid.getNumGPUs() > 1):
             grid.setGPUID(1)
             self.assertTrue((grid.getGPUID() == 1), "did not set to gpu 1")
-            sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
+            if (not ("@CMAKE_CXX_COMPILER_ID@" == "MSVC")):
+                sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
 
         if (grid.getNumGPUs() > 0):
             grid.setGPUID(0)
             self.assertTrue((grid.getGPUID() == 0), "did not set to gpu 0")
-            sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
+            if (not ("@CMAKE_CXX_COMPILER_ID@" == "MSVC")):
+                sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
 
         # consistency with evaluate, not a timing test
         grid = TasmanianSG.TasmanianSparseGrid()
