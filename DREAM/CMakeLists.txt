@@ -99,6 +99,18 @@ else() # if there are not static libs, use shared libs for the executables
 endif()
 
 ########################################################################
+# Testing
+########################################################################
+add_test(DREAM_Analytic tasdream -test analytic)
+add_test(DREAM_Model    tasdream -test model)
+if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
+    set_tests_properties(DREAM_Analytic DREAM_Model
+        PROPERTIES
+        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
+        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
+endif()
+
+########################################################################
 # Windows specific support (DLL export/import directives and names)
 ########################################################################
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
@@ -112,35 +124,23 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         target_compile_definitions(${Tasmanian_dream_target} PUBLIC  -D_USE_MATH_DEFINES) # needed to include M_PI constant
     endmacro()
 
-    if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
-        target_compile_definitions(Tasmanian_libdream_shared PUBLIC -DTSG_DLL)
-
+    if (TARGET Tasmanian_libdream_shared)
+        set_target_properties(Tasmanian_libdream_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
         Tasmanian_macro_dream_windows_defines(Tasmanian_libdream_shared)
-    else()
-        target_compile_definitions(Tasmanian_tasdream PUBLIC -DTSG_DYNAMIC)
     endif()
 
-    if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
-        target_compile_definitions(Tasmanian_libdream_static PUBLIC -DTSG_STATIC)
-
+    if (TARGET Tasmanian_libdream_static)
         Tasmanian_macro_dream_windows_defines(Tasmanian_libdream_static)
+        set_target_properties(Tasmanian_libdream_static PROPERTIES OUTPUT_NAME "tasmaniandream_static")
+    endif()
 
-        set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream_static")
+    if ("${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
+        set(Tasmanian_MSVC_PATH_STRING "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release;${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug;$ENV{PATH}")
+        string(REPLACE ";" "\\;" Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING}")
+        set_tests_properties(DREAM_Analytic DREAM_Model PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
     endif()
 
     Tasmanian_macro_dream_windows_defines(Tasmanian_tasdream)
-endif()
-
-########################################################################
-# Testing
-########################################################################
-add_test(DREAM_Analytic tasdream -test analytic)
-add_test(DREAM_Model    tasdream -test model)
-if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(DREAM_Analytic DREAM_Model
-        PROPERTIES
-        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
-        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
 endif()
 
 ########################################################################

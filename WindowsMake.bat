@@ -39,6 +39,9 @@ copy Config\AltBuildSystems\tsgGetPaths.m InterfaceMATLAB\tsgGetPaths.m
 @ECHO addpath('%cd%\InterfaceMATLAB')
 @ECHO.
 
+@ECHO WARNING: the WindowsMake.bat script is deprecated and will be soon removed
+@ECHO          CMake is the recommended way to use Tasmanian under MS Windows
+
 @GOTO End
 
 :Clean

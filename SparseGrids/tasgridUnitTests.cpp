@@ -82,7 +82,7 @@ bool GridUnitTester::testAllException(){
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
             pass = false;
             break;
-        }catch(std::invalid_argument &e){
+        }catch(std::invalid_argument &){
             //cout << "Got argument error exception i = " << i << " with message: " << e.what() << endl;
         }
     }
@@ -101,7 +101,7 @@ bool GridUnitTester::testAllException(){
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
             pass = false;
             break;
-        }catch(std::runtime_error &e){
+        }catch(std::runtime_error &){
             //cout << "Got runtime error exception i = " << i << " with message: " << e.what() << endl;
         }
     }

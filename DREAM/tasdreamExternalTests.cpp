@@ -54,7 +54,7 @@ ExternalTester::ExternalTester(int num_monte_carlo) : num_mc(num_monte_carlo), r
     verbose = false;
 }
 ExternalTester::~ExternalTester(){}
-void ExternalTester::resetRandomSeed(){ rngseed = time(0); }
+void ExternalTester::resetRandomSeed(){ rngseed = (int) time(0); }
 
 void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 
@@ -115,7 +115,7 @@ bool ExternalTester::Test(TestList test){
 }
 
 bool ExternalTester::testUniform1D(){
-    int s = (rngseed == -1) ? 12 : ((int) rngseed);
+    int s = (rngseed == -1) ? 12 : rngseed;
     TestRNG rng(s);
 
     int num_cells = 16; double delta = 2.0 / ((double) num_cells);
@@ -159,7 +159,7 @@ bool ExternalTester::testUniform1D(){
 }
 
 bool ExternalTester::testBeta1D(){
-    int s = (rngseed == -1) ? 12 : ((int) rngseed);
+    int s = (rngseed == -1) ? 12 : rngseed;
     TestRNG rng(s);
 
     int num_cells = 10; double delta = 2.0 / ((double) num_cells);
@@ -207,7 +207,7 @@ bool ExternalTester::testBeta1D(){
 }
 
 bool ExternalTester::testGamma1D(){
-    int s = (rngseed == -1) ? 12 : ((int) rngseed);
+    int s = (rngseed == -1) ? 12 : rngseed;
     TestRNG rng(s);
 
     int num_cells = 20; double delta = 10.0 / ((double) num_cells);
@@ -260,11 +260,7 @@ bool ExternalTester::testGamma1D(){
 }
 
 bool ExternalTester::testGaussian2D(){
-    #if defined(_MSC_VER) && _MSC_VER > 1800
-    int s = (rngseed == -1) ? 23 : ((int) rngseed);
-    #else
-    int s = (rngseed == -1) ? 25 : ((int) rngseed);
-    #endif
+    int s = (rngseed == -1) ? 23 : rngseed;
     TestRNG rng(s);
 
     int num_cells1d = 4; double delta = 2.0 / ((double) num_cells1d);
@@ -354,7 +350,7 @@ bool ExternalTester::testGaussian2D(){
 }
 
 bool ExternalTester::testModelLikelihoodAlpha(){
-    int s = (rngseed == -1) ? 12 : ((int) rngseed);
+    int s = (rngseed == -1) ? 12 : rngseed;
     TestRNG rng(s);
 
     // model sin(p_0 t M_PI + p_1), data cos(M_PI t) / cos(M_PI t) + cos(5 M_PI y)
@@ -439,7 +435,7 @@ bool ExternalTester::testKS(int num_cells, const int count_a[], const int count_
     for(int i=1; i<num_cells; i++) total_b += count_b[i];
     if (verbose) cout << "Totals: " << total_a << "  " << total_b << endl;
 
-    int sum_a = 0.0, sum_b = 0.0;
+    int sum_a = 0, sum_b = 0;
     double sum_max = 0.0;
 
     for(int i=0; i<num_cells; i++){

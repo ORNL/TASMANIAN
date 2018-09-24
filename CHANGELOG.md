@@ -1,6 +1,13 @@
 Changelog for version 6.0
 --------------
 
+* improved MS Windows support using cmake
+    * recommended optimization flags are properly set (Debug and Release)
+    * shared symbols are exported by cmake
+    * CUDA is now supported under Windows
+    * `getGPUName()` under Python currently does not work
+    * the old `WindowsMake.bat` script is deprecated
+
 * the library is more robust when working with large data sets
     * number of points, outputs, or batch size is still `int`
     * in most cases the product (i.e., matrix size) can exceed `MAX_INT`

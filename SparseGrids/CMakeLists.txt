@@ -221,22 +221,13 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         target_compile_definitions(${Tasmanian_sg_target} PUBLIC  -D_HAS_ITERATOR_DEBUGGING=0) # needed to prevent crash on using STL vector iterators
     endmacro()
 
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/TasmanianSparseGrid.windows.hpp"  "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.hpp" COPYONLY)
-
-    if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
-        target_compile_definitions(Tasmanian_libsparsegrid_shared PUBLIC -DTSG_DLL)
-
+    if (TARGET Tasmanian_libsparsegrid_shared)
+        set_target_properties(Tasmanian_libsparsegrid_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
         Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_shared)
-    else()
-        target_compile_definitions(Tasmanian_tasgrid PUBLIC -DTSG_DYNAMIC)
-        target_compile_definitions(Tasmanian_gridtest PUBLIC -DTSG_DYNAMIC)
     endif()
 
-    if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
-        target_compile_definitions(Tasmanian_libsparsegrid_static PUBLIC -DTSG_STATIC)
-
+    if (TARGET Tasmanian_libsparsegrid_static)
         Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_static)
-
         set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid_static")
     endif()
 

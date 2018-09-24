@@ -146,7 +146,11 @@ class TestTasmanian(unittest.TestCase):
         print("                Available GPUs:")
         if (grid.getNumGPUs() > 0):
             for iGPU in range(grid.getNumGPUs()):
-                sName = grid.getGPUName(iGPU)
+                sName = ""
+                if ("@CMAKE_CXX_COMPILER_ID@" == "MSVC"):
+                    sName = "Unavailable under Windows"
+                else:
+                    sName = grid.getGPUName(iGPU)
                 sMem = grid.getGPUMemory(iGPU)
                 print("     {0:2d}: {1:20s} with{2:6d}MB RAM".format(iGPU, sName, sMem))
         else:
@@ -198,7 +202,7 @@ class TestTasmanian(unittest.TestCase):
         print("GOOD: error was registered")
 
         # custom rule test
-        grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "GaussPattersonRule.table")
+        grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "@CMAKE_CURRENT_BINARY_DIR@/GaussPattersonRule.table")
         grid1 = TasmanianSG.TasmanianSparseGrid()
         grid1.makeGlobalGrid(2, 0, 4, 'level', 'gauss-patterson')
         self.compareGrids(grid, grid1, bTestRuleNames = False)
@@ -378,7 +382,7 @@ class TestTasmanian(unittest.TestCase):
         for sType in TasmanianSG.lsTsgGlobalTypes:
             for sRule in TasmanianSG.lsTsgGlobalRules:
                 if ("custom-tabulated" in sRule):
-                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "@CMAKE_CURRENT_BINARY_DIR@/GaussPattersonRule.table")
                 else:
                     gridA.makeGlobalGrid(2, 0, 2, sType, sRule)
                 gridA.write("testSave", bUseBinaryFormat = False)
@@ -432,12 +436,14 @@ class TestTasmanian(unittest.TestCase):
         if (grid.getNumGPUs() > 1):
             grid.setGPUID(1)
             self.assertTrue((grid.getGPUID() == 1), "did not set to gpu 1")
-            sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
+            if (not ("@CMAKE_CXX_COMPILER_ID@" == "MSVC")):
+                sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
 
         if (grid.getNumGPUs() > 0):
             grid.setGPUID(0)
             self.assertTrue((grid.getGPUID() == 0), "did not set to gpu 0")
-            sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
+            if (not ("@CMAKE_CXX_COMPILER_ID@" == "MSVC")):
+                sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
 
         # consistency with evaluate, not a timing test
         grid = TasmanianSG.TasmanianSparseGrid()
