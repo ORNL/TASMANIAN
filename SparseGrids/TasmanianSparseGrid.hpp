@@ -60,7 +60,7 @@ public:
     static bool isOpenMPEnabled();
 
     void write(const char *filename, bool binary = false) const;
-    void read(const char *filename);
+    void read(const char *filename); // auto-check if format is binary or ascii
 
     void write(std::ofstream &ofs, bool binary = false) const;
     void read(std::ifstream &ifs, bool binary = false);
@@ -105,35 +105,35 @@ public:
     double* getNeededPoints() const;
     double* getPoints() const; // returns the loaded points unless no points are loaded, then returns the needed points
 
-    void getLoadedPoints(double *x) const;
+    void getLoadedPoints(double *x) const; // using static memory, assuming x has size num_dimensions X get***Points()
     void getNeededPoints(double *x) const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
-    void getLoadedPoints(std::vector<double> &x) const;
+    void getLoadedPoints(std::vector<double> &x) const; // dynamic memory, resizes x
     void getNeededPoints(std::vector<double> &x) const;
     void getPoints(std::vector<double> &x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
     double* getQuadratureWeights() const;
     double* getInterpolationWeights(const double x[]) const;
 
-    void getQuadratureWeights(double weights[]) const;
-    void getInterpolationWeights(const double x[], double weights[]) const;
+    void getQuadratureWeights(double weights[]) const; // static memory, assumes that weights has size getNumPoints()
+    void getInterpolationWeights(const double x[], double weights[]) const; // static memory, assumes that weights has size getNumPoints()
 
-    void getQuadratureWeights(std::vector<double> &weights) const;
-    void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const;
+    void getQuadratureWeights(std::vector<double> &weights) const; // dynamic memory, resizes weights
+    void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const; // dynamic memory, resizes weights
 
-    void loadNeededPoints(const double *vals);
-    void loadNeededPoints(const std::vector<double> vals);
+    void loadNeededPoints(const double *vals); // no error checking
+    void loadNeededPoints(const std::vector<double> &vals); // checks if vals has size num_outputs X getNumNeeded()
 
-    void evaluate(const double x[], double y[]) const;
+    void evaluate(const double x[], double y[]) const; // has size num_dimensions, y has size num_outputs
     void evaluateFast(const double x[], double y[]) const; // evaluate that is potentially not thread safe!
-    void evaluateBatch(const double x[], int num_x, double y[]) const; // uses acceleration, OpenMP, BLAS, GPU, etc.
-    void integrate(double q[]) const;
+    void evaluateBatch(const double x[], int num_x, double y[]) const; // uses acceleration, OpenMP, BLAS, GPU, etc., x is num_dimensions X num_x, y is num_outputs X num_x
+    void integrate(double q[]) const; // y has size num_outputs
 
-    // same as above, but resizes the output vector (is too small)
-    void evaluate(const std::vector<double> x, std::vector<double> &y) const;
-    void evaluateFast(const std::vector<double> x, std::vector<double> &y) const;
-    void evaluateBatch(const std::vector<double> x, std::vector<double> &y) const;
+    // same as above, but num_x = x.size() / num_dimensions, and y is resized
+    void evaluate(const std::vector<double> &x, std::vector<double> &y) const;
+    void evaluateFast(const std::vector<double> &x, std::vector<double> &y) const;
+    void evaluateBatch(const std::vector<double> &x, std::vector<double> &y) const;
     void integrate(std::vector<double> &q) const;
 
     bool isGlobal() const;
@@ -142,11 +142,11 @@ public:
     bool isWavelet() const;
     bool isFourier() const;
 
-    void setDomainTransform(const double a[], const double b[]); // set the ranges of the box
+    void setDomainTransform(const double a[], const double b[]); // set the ranges of the box, a[] and b[] must have size num_dimensions
     bool isSetDomainTransfrom() const;
     void clearDomainTransform();
     void getDomainTransform(double a[], double b[]) const;
-    void setDomainTransform(const std::vector<double> a, const std::vector<double> b);
+    void setDomainTransform(const std::vector<double> &a, const std::vector<double> &b);
     void getDomainTransform(std::vector<double> &a, std::vector<double> &b) const;
 
     void setConformalTransformASIN(const int truncation[]);
@@ -155,7 +155,7 @@ public:
     void getConformalTransformASIN(int truncation[]) const;
 
     void clearLevelLimits(); // level limits will be set anew if non-null vector is given to refine command
-    void getLevelLimits(int *limits) const; // static, assume limits is already allocated with length getNumDimensions()
+    void getLevelLimits(int *limits) const; // static, assume limits is already allocated with length num_dimensions
     void getLevelLimits(std::vector<int> &limits) const; // allocates the vector
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = 0);
@@ -169,18 +169,21 @@ public:
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0, const double *scale_correction = 0); // -1 indicates using all outputs
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction = std::vector<double>()); // -1 indicates using all outputs
+    // if using only one output, scale_correction has size getNumPoints(), if using all outputs, scale_correction has size num_outputs X getNumDimensions()
+    // correction is multiplied by the relative coefficient (normalized across outputs) when comparing against the tolerance
+    // empty scale_correction is equivalent to passing constant 1.0 vector
 
     void clearRefinement();
-    void mergeRefinement();
+    void mergeRefinement(); // merges all points but resets all loaded values to 0.0
 
-    const double* getHierarchicalCoefficients() const; // formerly getSurpluses();
+    const double* getHierarchicalCoefficients() const; // formerly getSurpluses();  returns an alias to internal data structure
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const;
     void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
     void setHierarchicalCoefficients(const double c[]);
 
-    void evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const;
-    void setHierarchicalCoefficients(const std::vector<double> c);
+    void evaluateHierarchicalFunctions(const std::vector<double> &x, std::vector<double> &y) const;
+    void setHierarchicalCoefficients(const std::vector<double> &c);
 
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
@@ -198,6 +201,11 @@ public:
     static int getGPUMemory(int gpu); // returns the MB of a given GPU
     static char* getGPUName(int gpu); // returns a null-terminated char array
 
+    // functions assuming vectors are pre-allocated on the GPU (stable for the implemented cases)
+    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // does not work for Global or LocalPolynomial with order > 2
+    void evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const; // LocalPolynomial only with order 0, 1, or 2
+
+
     // Do not use these functions within C++, not as efficient as evaluateSparseHierarchicalFunctions()
     // these functions are needed for interfaces with other languages
     int evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const;
@@ -207,21 +215,18 @@ public:
     // EXPERIMENTAL: works only for LocalPolynomial grids (will be moved to sequences and others)
     void removePointsByHierarchicalCoefficient(double tolerance, int output = -1, const double *scale_correction = 0); // have python error tests, but needs math consistency test
 
-    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // does not work for Global or LocalPolynomial with order > 2
-    void evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const;
-
-    // TODO
-    // int* getIndexOfRefinedPoints(); // tells you the index of the refined points in the big vector after mergeRefinement (or loadNeededPoints())
 
     // WARNING: the functions below are mostly for debugging and research purposes
     // do not modify the returned pointers, unless you really know what you are doing
+    #ifndef DNDEBUG
     const int* getPointsIndexes() const;
     const int* getNeededIndexes() const;
 
-    // Expose the internal pointers, for testing and debugging only, must be suppressed for an official release
-    //inline GridGlobal*          getGridGlobalPointer(){ return global; }
-    //inline GridSequence*        getGridSequencePointer(){ return sequence; }
-    //inline GridLocalPolynomial* getGridLocalPolyPointer(){ return pwpoly; }
+    // Expose the internal pointers, for testing and debugging only, do not use for "production"
+    inline GridGlobal*          getGridGlobalPointer(){ return global; }
+    inline GridSequence*        getGridSequencePointer(){ return sequence; }
+    inline GridLocalPolynomial* getGridLocalPolyPointer(){ return pwpoly; }
+    #endif
 
 protected:
     void clear();

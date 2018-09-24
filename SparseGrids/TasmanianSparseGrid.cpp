@@ -165,7 +165,7 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     if ((rule == rule_customtabulated) && (custom_filename == 0)) throw std::invalid_argument("ERROR: makeGlobalGrid() with custom tabulated rule requires a filename");
     size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
     if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires anisotropic_weights with either 0 or dimenions entries");
-    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires level_limits with either 0 or dimenions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     global = new GridGlobal();
     llimits = level_limits;
@@ -191,12 +191,12 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     if (outputs < 0) throw std::invalid_argument("ERROR: makeSequenceGrid() requires non-negative outputs");
     if (depth < 0) throw std::invalid_argument("ERROR: makeSequenceGrid() requires non-negative depth");
     if (!OneDimensionalMeta::isSequence(rule)){
-        std::string message = "ERROR: makeSequenceGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a sequence rule";
+        std::string message = "ERROR: makeSequenceGrid() is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a sequence rule";
         throw std::invalid_argument(message);
     }
     size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
-    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires anisotropic_weights with either 0 or dimenions entries");
-    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires level_limits with either 0 or dimenions entries");
+    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires anisotropic_weights with either 0 or dimensions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     sequence = new GridSequence();
     llimits = level_limits;
@@ -217,14 +217,14 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
     if (outputs < 0) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires non-negative outputs");
     if (depth < 0) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires non-negative depth");
     if (order < -1){
-        std::string message = "ERROR: makeLocalPolynomialGrid is called with order: " + std::to_string(order) + ", but the order cannot be less than -1.";
+        std::string message = "ERROR: makeLocalPolynomialGrid() is called with order: " + std::to_string(order) + ", but the order cannot be less than -1.";
         throw std::invalid_argument(message);
     }
     if (!OneDimensionalMeta::isLocalPolynomial(rule)){
-        std::string message = "ERROR: makeLocalPolynomialGrid is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a local polynomial rule";
+        std::string message = "ERROR: makeLocalPolynomialGrid() is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a local polynomial rule";
         throw std::invalid_argument(message);
     }
-    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires level_limits with either 0 or dimenions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
     pwpoly = new GridLocalPolynomial();
@@ -248,7 +248,7 @@ void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth
         std::string message = "ERROR: makeWaveletGrid() is called with order: " + std::to_string(order) + ", but wavelets are implemented only for orders 1 and 3.";
         throw std::invalid_argument(message);
     }
-    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeWaveletGrid() requires level_limits with either 0 or dimenions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeWaveletGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
     wavelet = new GridWavelet();
@@ -274,8 +274,8 @@ void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth
     if (outputs < 0) throw std::invalid_argument("ERROR: makeFourierGrid() requires non-negative outputs");
     if (depth < 0) throw std::invalid_argument("ERROR: makeFourierGrid() requires non-negative depth");
     size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
-    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeFourierGrid() requires anisotropic_weights with either 0 or dimenions entries");
-    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeFourierGrid() requires level_limits with either 0 or dimenions entries");
+    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeFourierGrid() requires anisotropic_weights with either 0 or dimensions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeFourierGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
     fourier = new GridFourier();
@@ -309,7 +309,7 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
 }
 
 void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
-    if (base == 0) throw std::runtime_error("ERROR: updateGlobalGrid called, but the grid is empty");
+    if (base == 0) throw std::runtime_error("ERROR: updateGlobalGrid() called, but the grid is empty");
     std::vector<int> aw, ll;
     int dims = base->getNumDimensions();
     if (anisotropic_weights != 0){
@@ -328,14 +328,14 @@ void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const std:
         int dims = base->getNumDimensions();
         if (depth < 0) throw std::invalid_argument("ERROR: updateGlobalGrid() requires non-negative depth");
         size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dims : dims;
-        if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: updateGlobalGrid() requires anisotropic_weights with either 0 or dimenions entries");
-        if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateGlobalGrid() requires level_limits with either 0 or dimenions entries");
+        if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: updateGlobalGrid() requires anisotropic_weights with either 0 or dimensions entries");
+        if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateGlobalGrid() requires level_limits with either 0 or dimensions entries");
 
         if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
 
         global->updateGrid(depth, type, anisotropic_weights, llimits);
     }else{
-        throw std::runtime_error("ERROR: updateGlobalGrid called, but the grid is not global");
+        throw std::runtime_error("ERROR: updateGlobalGrid() called, but the grid is not global");
     }
 }
 
@@ -360,7 +360,7 @@ void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const st
         if (depth < 0) throw std::invalid_argument("ERROR: updateSequenceGrid() requires non-negative depth");
         size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dims : dims;
         if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires anisotropic_weights with either 0 or dimenions entries");
-        if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires level_limits with either 0 or dimenions entries");
+        if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires level_limits with either 0 or dimensions entries");
 
         if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
         sequence->updateGrid(depth, type, anisotropic_weights, llimits);
@@ -480,7 +480,7 @@ void TasmanianSparseGrid::loadNeededPoints(const double *vals){
     #endif
     base->loadNeededPoints(vals, acceleration);
 }
-void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> vals){
+void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> &vals){
     size_t nump = (size_t) base->getNumNeeded();
     nump *= (size_t) base->getNumOutputs();
     if (vals.size() != nump) throw std::runtime_error("ERROR: loadNeededPoints() given the wrong number of inputs, should be getNumNeeded() * getNumOutputs()");
@@ -567,17 +567,17 @@ void TasmanianSparseGrid::integrate(double q[]) const{
     }
 }
 
-void TasmanianSparseGrid::evaluate(const std::vector<double> x, std::vector<double> &y) const{
+void TasmanianSparseGrid::evaluate(const std::vector<double> &x, std::vector<double> &y) const{
     if (x.size() != (size_t) getNumDimensions()) throw std::runtime_error("ERROR: in evaluate() x must match getNumDimensions()");
     y.resize((size_t) getNumOutputs());
     evaluate(x.data(), y.data());
 }
-void TasmanianSparseGrid::evaluateFast(const std::vector<double> x, std::vector<double> &y) const{
+void TasmanianSparseGrid::evaluateFast(const std::vector<double> &x, std::vector<double> &y) const{
     size_t num_outputs = getNumOutputs();
     if (y.size() < num_outputs){ y.resize(num_outputs); }
     evaluateFast(x.data(), y.data());
 }
-void TasmanianSparseGrid::evaluateBatch(const std::vector<double> x, std::vector<double> &y) const{
+void TasmanianSparseGrid::evaluateBatch(const std::vector<double> &x, std::vector<double> &y) const{
     int num_outputs = getNumOutputs();
     size_t num_x = x.size() / getNumDimensions();
     if (y.size() < num_outputs * num_x) y.resize(num_outputs * num_x);
@@ -633,9 +633,14 @@ void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
     std::copy(domain_transform_a.begin(), domain_transform_a.end(), a);
     std::copy(domain_transform_b.begin(), domain_transform_b.end(), b);
 }
-void TasmanianSparseGrid::setDomainTransform(const std::vector<double> a, const std::vector<double> b){
+void TasmanianSparseGrid::setDomainTransform(const std::vector<double> &a, const std::vector<double> &b){
     if ((base == 0) || (base->getNumDimensions() == 0)){
         throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
+    }
+    size_t num_dimensions = (size_t) base->getNumDimensions();
+    if ((a.size() != num_dimensions) || (b.size() != num_dimensions)){
+        std::string message = "ERROR: setDomainTransform() is called with a.size() = " + std::to_string(a.size()) + " and b.size() = " + std::to_string(b.size()) + ", but both should have length equal to getNumDimensions(), which is: " + std::to_string(num_dimensions);
+        throw std::invalid_argument(message);
     }
     domain_transform_a = a; // copy assignment
     domain_transform_b = b;
@@ -972,12 +977,12 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
         sequence->setAnisotropicRefinement(type, min_growth, output, llimits);
     }else if (global != 0){
         if (OneDimensionalMeta::isNonNested(global->getRule())){
-            throw std::runtime_error("ERROR: setAnisotropicRefinement called for a global grid with non-nested rule");
+            throw std::runtime_error("ERROR: setAnisotropicRefinement() called for a global grid with non-nested rule");
         }else{
             global->setAnisotropicRefinement(type, min_growth, output, llimits);
         }
     }else{
-        throw std::runtime_error("ERROR: setAnisotropicRefinement called for a grid that is neither Sequence nor Global with a sequence rule");
+        throw std::runtime_error("ERROR: setAnisotropicRefinement() called for a grid that is neither Sequence nor Global with a sequence rule");
     }
 }
 
@@ -1096,7 +1101,7 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int nu
     Data2D<double> x_tmp;
     base->evaluateHierarchicalFunctions(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
 }
-void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const{
+void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> &x, std::vector<double> &y) const{
     int num_points = getNumPoints();
     size_t num_x = x.size() / getNumDimensions();
     size_t expected_size = num_points * num_x * (isFourier() ? 2 : 1);
@@ -1198,7 +1203,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const std::vector<
         }
         pntr[num_x] = num_nz;
     }else{
-        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctions() called for a grid that is neither localp polynomial not wavelet");
+        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctions() called for a grid that is neither local polynomial not wavelet");
     }
 }
 int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const{
@@ -1256,7 +1261,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
     base->setHierarchicalCoefficients(c, acceleration);
 }
-void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> c){ setHierarchicalCoefficients(c.data()); }
+void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> &c){ setHierarchicalCoefficients(c.data()); }
 
 void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const{
     if (global != 0){
@@ -1283,6 +1288,7 @@ const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
         return 0;
     }
 }
+#ifndef DNDEBUG
 const int* TasmanianSparseGrid::getPointsIndexes() const{
     if (pwpoly != 0){
         return pwpoly->getPointIndexes();
@@ -1303,6 +1309,7 @@ const int* TasmanianSparseGrid::getNeededIndexes() const{
         throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is not Local Polynomial");
     }
 }
+#endif
 
 void TasmanianSparseGrid::printStats(std::ostream &os) const{
     using std::setw;
@@ -1478,7 +1485,7 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
             message += "ERROR: using future file format " + std::to_string(vmajor) + ", Tasmanian cannot time-travel.";
             throw std::runtime_error(message);
         }
-        // else: using file format from at least 3.0 by older than current, it is supposed to work
+        // else: using file format older than current but newer than 3.0, it is supposed to work
     }
     getline(ifs, T); if (!(T.compare("WARNING: do not edit this manually") == 0)){ throw std::runtime_error("ERROR: wrong file format, missing warning message"); }
     ifs >> T;
@@ -1681,11 +1688,11 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
         case accel_gpu_magma:   return false;
         #endif // TASMANIAN_ENABLE_MAGMA
 
-        #if defined(Tasmanian_ENABLE_CUDA) || defined(TASMANIAN_ENABLE_MAGMA)
+        #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_default:   return true;
         #else
         case accel_gpu_default:   return false;
-        #endif // TASMANIAN_ENABLE_GPU
+        #endif // Tasmanian_ENABLE_CUDA
         default: return false;
     }
 }
@@ -2059,7 +2066,8 @@ void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual){
         c++;
     }
     buffer[c] = '\0';
-    *num_actual = c;
+    num_actual[0] = c;
+    delete[] name;
 }
 
 void tsgDeleteInts(int *p){ delete[] p; }

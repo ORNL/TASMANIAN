@@ -76,7 +76,7 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<46; i++){
+    for(int i=0; i<48; i++){
         try{
             invalidArgumentCall(i);
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
@@ -171,6 +171,9 @@ void GridUnitTester::invalidArgumentCall(int i){
     case 43: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>()={3}); break; // ll is too small
     case 44: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(-0.1, refine_classic, 0); break; // tolerance is negative
     case 45: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(-0.1, refine_classic, 0, std::vector<int>()={3, 2}, std::vector<double>() = {3.0, 3.0}); break; // scale too small
+
+    case 46: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setDomainTransform(std::vector<double>() = {1.0}, std::vector<double>() = {3.0, 4.0}); break; // a is too small
+    case 47: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setDomainTransform(std::vector<double>() = {1.0, 2.0}, std::vector<double>() = {4.0}); break; // b is too small
 
     default: break;
     }
