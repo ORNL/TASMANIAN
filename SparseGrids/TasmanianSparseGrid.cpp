@@ -2059,7 +2059,8 @@ void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual){
         c++;
     }
     buffer[c] = '\0';
-    *num_actual = c;
+    num_actual[0] = c;
+    delete[] name;
 }
 
 void tsgDeleteInts(int *p){ delete[] p; }
