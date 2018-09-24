@@ -126,23 +126,15 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
     if (TARGET Tasmanian_libdream_shared)
         set_target_properties(Tasmanian_libdream_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
-    endif()
-
-    if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
-        target_compile_definitions(Tasmanian_libdream_shared PUBLIC -DTSG_DLL)
-
         Tasmanian_macro_dream_windows_defines(Tasmanian_libdream_shared)
-    else()
-        target_compile_definitions(Tasmanian_tasdream PUBLIC -DTSG_DYNAMIC)
     endif()
 
-    if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
-        target_compile_definitions(Tasmanian_libdream_static PUBLIC -DTSG_STATIC)
-
+    if (TARGET Tasmanian_libdream_static)
         Tasmanian_macro_dream_windows_defines(Tasmanian_libdream_static)
-
         set_target_properties(Tasmanian_libdream_static PROPERTIES OUTPUT_NAME "tasmaniandream_static")
-    else()
+    endif()
+
+    if ("${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
         set(Tasmanian_MSVC_PATH_STRING "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release;${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug;$ENV{PATH}")
         string(REPLACE ";" "\\;" Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING}")
         set_tests_properties(DREAM_Analytic DREAM_Model PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")

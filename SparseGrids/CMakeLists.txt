@@ -223,22 +223,11 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
     if (TARGET Tasmanian_libsparsegrid_shared)
         set_target_properties(Tasmanian_libsparsegrid_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
-    endif()
-
-    if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
-        target_compile_definitions(Tasmanian_libsparsegrid_shared PUBLIC -DTSG_DLL)
-
         Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_shared)
-    else()
-        target_compile_definitions(Tasmanian_tasgrid PUBLIC -DTSG_DYNAMIC)
-        target_compile_definitions(Tasmanian_gridtest PUBLIC -DTSG_DYNAMIC)
     endif()
 
-    if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
-        target_compile_definitions(Tasmanian_libsparsegrid_static PUBLIC -DTSG_STATIC)
-
+    if (TARGET Tasmanian_libsparsegrid_static)
         Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_static)
-
         set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid_static")
     endif()
 
