@@ -1721,7 +1721,7 @@ int TasmanianSparseGrid::getGPUMemory(int gpu){
     if (gpu >= gpu_count) return 0;
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, gpu);
-    unsigned long int memB = prop.totalGlobalMem;
+    unsigned long long memB = prop.totalGlobalMem;
     return (int) (memB / 1048576);
 }
 char* TasmanianSparseGrid::getGPUName(int gpu){
