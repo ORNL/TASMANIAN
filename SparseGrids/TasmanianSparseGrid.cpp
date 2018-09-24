@@ -480,7 +480,7 @@ void TasmanianSparseGrid::loadNeededPoints(const double *vals){
     #endif
     base->loadNeededPoints(vals, acceleration);
 }
-void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> vals){
+void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> &vals){
     size_t nump = (size_t) base->getNumNeeded();
     nump *= (size_t) base->getNumOutputs();
     if (vals.size() != nump) throw std::runtime_error("ERROR: loadNeededPoints() given the wrong number of inputs, should be getNumNeeded() * getNumOutputs()");
@@ -567,17 +567,17 @@ void TasmanianSparseGrid::integrate(double q[]) const{
     }
 }
 
-void TasmanianSparseGrid::evaluate(const std::vector<double> x, std::vector<double> &y) const{
+void TasmanianSparseGrid::evaluate(const std::vector<double> &x, std::vector<double> &y) const{
     if (x.size() != (size_t) getNumDimensions()) throw std::runtime_error("ERROR: in evaluate() x must match getNumDimensions()");
     y.resize((size_t) getNumOutputs());
     evaluate(x.data(), y.data());
 }
-void TasmanianSparseGrid::evaluateFast(const std::vector<double> x, std::vector<double> &y) const{
+void TasmanianSparseGrid::evaluateFast(const std::vector<double> &x, std::vector<double> &y) const{
     size_t num_outputs = getNumOutputs();
     if (y.size() < num_outputs){ y.resize(num_outputs); }
     evaluateFast(x.data(), y.data());
 }
-void TasmanianSparseGrid::evaluateBatch(const std::vector<double> x, std::vector<double> &y) const{
+void TasmanianSparseGrid::evaluateBatch(const std::vector<double> &x, std::vector<double> &y) const{
     int num_outputs = getNumOutputs();
     size_t num_x = x.size() / getNumDimensions();
     if (y.size() < num_outputs * num_x) y.resize(num_outputs * num_x);
@@ -633,7 +633,7 @@ void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
     std::copy(domain_transform_a.begin(), domain_transform_a.end(), a);
     std::copy(domain_transform_b.begin(), domain_transform_b.end(), b);
 }
-void TasmanianSparseGrid::setDomainTransform(const std::vector<double> a, const std::vector<double> b){
+void TasmanianSparseGrid::setDomainTransform(const std::vector<double> &a, const std::vector<double> &b){
     if ((base == 0) || (base->getNumDimensions() == 0)){
         throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
     }
@@ -1096,7 +1096,7 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int nu
     Data2D<double> x_tmp;
     base->evaluateHierarchicalFunctions(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
 }
-void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const{
+void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> &x, std::vector<double> &y) const{
     int num_points = getNumPoints();
     size_t num_x = x.size() / getNumDimensions();
     size_t expected_size = num_points * num_x * (isFourier() ? 2 : 1);
@@ -1256,7 +1256,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
     base->setHierarchicalCoefficients(c, acceleration);
 }
-void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> c){ setHierarchicalCoefficients(c.data()); }
+void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> &c){ setHierarchicalCoefficients(c.data()); }
 
 void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const{
     if (global != 0){
@@ -1283,6 +1283,7 @@ const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
         return 0;
     }
 }
+#ifndef DNDEBUG
 const int* TasmanianSparseGrid::getPointsIndexes() const{
     if (pwpoly != 0){
         return pwpoly->getPointIndexes();
@@ -1303,6 +1304,7 @@ const int* TasmanianSparseGrid::getNeededIndexes() const{
         throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is not Local Polynomial");
     }
 }
+#endif
 
 void TasmanianSparseGrid::printStats(std::ostream &os) const{
     using std::setw;
