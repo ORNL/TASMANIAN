@@ -203,6 +203,7 @@ if (Tasmanian_ENABLE_RECOMMENDED)
 #        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         set(CMAKE_CXX_FLAGS_RELEASE "/MD /Ox /DNDEBUG ${OpenMP_CXX_FLAGS}") # cmake overwrites flags a lot, careful how you set those
+        set(CMAKE_CXX_FLAGS_DEBUG "/MD /Ox ${OpenMP_CXX_FLAGS}")
         if (Tasmanian_ENABLE_CUDA)
             list(REMOVE_ITEM CUDA_NVCC_FLAGS "-std=c++11")
         endif()
