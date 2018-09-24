@@ -704,7 +704,7 @@ int main(int argc, const char**){
         int getNumDimensions() const{ return 6; }
         int getNumOutputs() const{ return N; }
         void evaluate(const std::vector<double> x, std::vector<double> &y) const{
-            size_t num_points = x.size() / 2;
+            size_t num_points = x.size() / 6;
             if (y.size() < N * num_points) y.resize(N * num_points);
             for(size_t i=0; i<num_points; i++){
                 for(int j=0; j<N; j++){
