@@ -42,7 +42,7 @@ endif()
 
 # The flag below is needed only if Tasmanian was build with cmake older than 3.9.6 and _ENABLE_OPENMP=ON
 # see if the long comment further below
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Tasmanian_CXX_FLAGS}")
+@Tasmanian_openmp_hack@
 
 # OpenMP is a CXX language extension which is usually enabled with a compiler flag and a library
 # the flag tells the compiler to interpret the OpenMP language directives
