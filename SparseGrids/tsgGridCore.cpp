@@ -54,7 +54,7 @@ SplitDirections::SplitDirections(const IndexSet *points){
 
                 job_directions.push_back(d); // set the direction for the job
 
-                std::vector<int> pnts; // append the here the points that will be found
+                std::vector<int> pnts; // append here the points that will be found
 
                 for(int i=0; i<num_points; i++){ // look for all points, if unused and belong to the same line
                     if (unused[i] && doesBelongSameLine(p, points->getIndex(i), d)){
@@ -63,7 +63,7 @@ SplitDirections::SplitDirections(const IndexSet *points){
                         unused[i] = false;
                     }
                 }
-                job_pnts.push_back(pnts); // hope this does "move assignment"
+                job_pnts.push_back(pnts); // hope the compiler does "move assignment"
             }
         }
     }
