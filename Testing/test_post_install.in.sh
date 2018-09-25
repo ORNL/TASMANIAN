@@ -57,7 +57,6 @@ if [[ "@Tasmanian_ENABLE_PYTHON@" == "ON" ]]; then
     @PYTHON_EXECUTABLE@ @CMAKE_INSTALL_PREFIX@/share/Tasmanian/examples/example_sparse_grids.py -fast > /dev/null || { echo "ERROR: could not run the python example post install!"; sPSuccess=0; }
     echo 'import TasmanianSG' >> dummy.py
     echo 'print("TasmanianSG Python module version: {0:1s}".format(TasmanianSG.__version__))' >> dummy.py
-    chmod 755 dummy.py
     @PYTHON_EXECUTABLE@ dummy.py || { echo "ERROR: Could not run the dummy python test"; echo "      This is a problem either with Python install or the Tasmanian library."; sPSuccess=0; }
 else
     echo "Python not enabled, skipping"
