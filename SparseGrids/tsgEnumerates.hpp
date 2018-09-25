@@ -55,7 +55,7 @@ enum TypeDepth{
 };
 
 enum TypeOneDRule{ // list of one-d rules
-    rule_none, // encountering is an indication of error
+    rule_none, // encountering is an indication of an error
     rule_clenshawcurtis,
     rule_clenshawcurtis0, // assumes zero boundary
     rule_chebyshev,
@@ -93,9 +93,9 @@ enum TypeOneDRule{ // list of one-d rules
     rule_gausshermiteodd,
     rule_customtabulated,
     // Piece-Wise rules
-    rule_localp,
-    rule_localp0,
-    rule_semilocalp,
+    rule_localp,  // piece-wise local rule
+    rule_localp0, // assume zero-boundary
+    rule_semilocalp, // use global polynomials for level 0 and 1
     rule_localpb, // starts with points on the boundary
     // Wavelet rules
     rule_wavelet,
@@ -104,7 +104,7 @@ enum TypeOneDRule{ // list of one-d rules
 };
 
 enum TypeRefinement{
-    refine_classic, refine_parents_first, refine_direction_selective, refine_fds, refine_none /* FDS = parents_first + direction_selective */
+    refine_classic, refine_parents_first, refine_direction_selective, refine_fds, refine_none // FDS = parents_first + direction_selective
 };
 
 enum TypeAcceleration{
@@ -113,7 +113,7 @@ enum TypeAcceleration{
     accel_gpu_default, // currently magma (in v5.1 it was cuda)
     accel_gpu_cublas, // CPU + CUBLAS (effective for large num_outputs only)
     accel_gpu_cuda, // CUDA kernels, automatically couples with cublas
-    accel_gpu_magma // implies combination with CUDA kernels, if CUDA is ON
+    accel_gpu_magma // CUDA kernels, couples with MAGMA linear algebra
 };
 
 

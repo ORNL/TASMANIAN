@@ -39,8 +39,8 @@
 
 #include "tsgCudaBasisEvaluations.hpp"
 
-// several kernels assume linear distribution the threads and can be executed with "practically unlimited" number of threads
-// thus we can set this to the CUDA max number of threads, based on the computer version
+// several kernels assume a linear distribution of the threads and can be executed with "practically unlimited" number of threads
+// thus we can set this to the CUDA max number of threads, based on the current cuda version
 #define _MAX_CUDA_THREADS 1024
 
 namespace TasGrid{

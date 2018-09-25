@@ -1,25 +1,43 @@
 Changelog for version 6.0
 --------------
 
-* improved MS Windows support using cmake
-    * recommended optimization flags are properly set (Debug and Release)
-    * shared symbols are exported by cmake
-    * CUDA is now supported under Windows
-    * `getGPUName()` under Python currently does not work
-    * the old `WindowsMake.bat` script is deprecated
+* as always, a new version includes numerous bug fixes and performance enhancements
 
-* the library is more robust when working with large data sets
-    * number of points, outputs, or batch size is still `int`
-    * in most cases the product (i.e., matrix size) can exceed `MAX_INT`
+* CXX standard 2011 is now required and enabled by default
 
-* acceleration with custom CUDA kernels is now available
-    * Sequence grids, i.e., build with `makeSequenceGrid()`
-    * Fourier grids, i.e., build with `makeFourierGrid()`
+* required cmake 3.5 or newer (as opposed to 2.8 in version 5.1)
 
-* updated C++ API with overloaded functions
-    * using `std::vector` as opposed to arrays
-    * error checking is provided based on the vector size
-    * massive portion of the internal API has also changed
+* merged Tasmanian_ENABLE_CUBLAS option into Tasmanian_ENABLE_CUDA
+    * the option is OFF by default
+    * two distinct acceleration modes use this variable: `gpu-cublas` and `gpu-cuda`
+
+* added new acceleration mode `gpu-magma` that uses UTK MAGMA library (requires CUDA)
+
+* removed Tasmanian_STRICT_OPTIONS, now all options are considered strict by default
+
+* new option Tasmanian_ENABLE_RECOMMENDED
+    * searches for OpenMP, BLAS, and Python, and enables if found
+    * set the `-O3` flag for Debug and Release
+    * adjusted the install script, see `./install --help`
+
+* modified install folder structure now everything sits in four places
+    * `<prefix>/bin` takes the executable files
+    * `<prefix>/lib` takes the libraries and Fortran `.mod` files
+    * `<prefix>/lib/Tasmanian` takes the cmake package-config
+    * `<prefix>/lib/PythonX.Y` takes the python module
+    * `<prefix>/include` takes the headers
+    * `<prefix>/share/Tasmanian` takes everything else
+
+* added package-config file, now it is possible to use the command
+```
+find_package(Tasmanian 6.0 PATHS "<Tasmanian install prefix>")
+# PATHS "<Tasmanian install prefix>" not needed if the install folder
+# is included in CMAKE_PREFIX_PATH
+```
+
+* added new grids and rules
+    * `GridFourier` that uses trigonometric basis functions (see Manual)
+    * `localpb` rule to local polynomial grids that favors the boundary
 
 * API change for error handling (not backward compatible)
     * errors in C++ now throw exceptions
@@ -29,41 +47,25 @@ Changelog for version 6.0
     * `logstream` is no longer needed and has been removed
     * the error handling in the interface calls remains the same as before
 
-* added new grids and rules
-    * `GridFourier` that uses trigonometric basis functions (see Manual)
-    * `localpb` rule to local polynomial grids that favors the boundary
+* updated C++ API with overloaded functions
+    * using `std::vector<int/double>` as opposed to arrays
+    * error checking is provided based on the vector size
+    * massive portion of the internal API has also changed
 
-* added package-config file, now it is possible to use the command
-```
-find_package(Tasmanian 6.0 PATHS "<Tasmanian install prefix>")
-# PATHS "<Tasmanian install prefix>" not needed if the install folder
-# is included in CMAKE_PREFIX_PATH
-```
+* acceleration with custom CUDA kernels is now available
+    * Sequence grids, i.e., build with `makeSequenceGrid()`
+    * Fourier grids, i.e., build with `makeFourierGrid()`
 
-* modified install folder structure now everything sits in four places
-    * `<prefix>/bin` takes the executable files
-    * `<prefix>/lib` takes the libraries and Fortran `.mod` files
-    * `<prefix>/include` takes the headers
-    * `<prefix>/share/Tasmanian` takes everything else
+* the library is more robust when working with large data sets
+    * number of points, outputs, or batch size is still `int`
+    * in most cases the product (i.e., matrix size) can exceed `MAX_INT`
 
-* new option Tasmanian_ENABLE_RECOMMENDED
-    * searches for OpenMP, BLAS, and Python, and enables if found
-    * set the `-O3` flag for Debug and Release
-    * adjusted the install script, see `./install --help`
-
-* removed Tasmanian_STRICT_OPTIONS, now all options are considered strict by default
-
-* added new acceleration mode `gpu-magma` that uses UTK MAGMA library (requires CUDA)
-
-* merged Tasmanian_ENABLE_CUBLAS option into Tasmanian_ENABLE_CUDA
-    * the option is OFF by default
-    * two distinct acceleration modes use this variable: `gpu-cublas` and `gpu-cuda`
-
-* required cmake 3.5 or newer (as opposed to 2.8 in version 5.1)
-
-* CXX standard 2011 is now required and enabled by default
-
-* as always, a new version includes numerous bug fixes and performance enhancements
+* improved MS Windows support using cmake
+    * recommended optimization flags are properly set (Debug and Release)
+    * shared symbols are exported by cmake
+    * CUDA is now supported under Windows
+    * `getGPUName()` under Python currently does not work
+    * the old `WindowsMake.bat` script is deprecated
 
 
 Changelog for version 5.1

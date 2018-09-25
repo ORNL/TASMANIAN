@@ -15,7 +15,7 @@ DREAM
 DiffeRential Evolution Adaptive Metropolis (DREAM) is an algorithm for sampling from a general probability density when only the probability density function is known. The method can be applied to problems of Bayesian inference and optimization, including custom defined models as well as surrogate models constructed with the Tasmanian Sparse Grids module.
 
 ### Please cite us
-If you use TASMANIAN for your research, pleace cite the Manual and our work on global and locally adaptive grids.
+If you use TASMANIAN for your research, please cite the Manual and our work on global and locally adaptive grids.
 
 [http://tasmanian.ornl.gov/documents/Tasmanian.bib](http://tasmanian.ornl.gov/documents/Tasmanian.bib)
 
@@ -34,10 +34,10 @@ Quick Install
 ```
 * the easy way: using cmake and the `install` script
 ```
-  ./install <install-path> <optional matlab work folder>
+  ./install <install-path> <optional: matlab-work-folder> <additional options>
   ./install --help  (lists all options)
 ```
-* the cmake way: see the top comment in CMakeLists.txt for available options
+* the cmake way: see the top comment in `CMakeLists.txt` for all available cmake options
 ```
   mkdir Build
   cd Build
@@ -53,7 +53,7 @@ Quick Install
   cmake --build . --config Release
   ctest -C Release
   cmake --build . --config Release --target install
-  # both Debug and Release are supported config modes above
+  # both Debug and Release are the supported config modes above
 ```
 * Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
