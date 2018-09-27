@@ -41,7 +41,6 @@ extern "C" double ddot_(const int *N, const double *x, const int *incx, const do
 extern "C" double dnrm2_(const int *N, const double *x, const int *incx);
 extern "C" void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda, const double *x, const int *incx, const double *beta, const double *y, const int *incy);
 extern "C" void dtrsv_(const char *uplo, const char *trans, const char *diag, const int *N, const double *A, const int *lda, const double *x, const int *incx);
-extern "C" void zgemv_(const char *transa, const int *M, const int *N, const double *alpha, const std::complex<double> *A, const int *lda, const std::complex<double> *x, const int *incx, const double *beta, const std::complex<double> *y, const int *incy);
 extern "C" void dgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, const double *C, const int *ldc);
 extern "C" void dtrsm_(const char *side, const char *uplo, const char* transa, const char* diag, const int *m, const int *n, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb);
 #endif // Tasmanian_ENABLE_BLAS

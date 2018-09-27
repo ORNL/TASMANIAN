@@ -190,7 +190,7 @@ public:
     void printStats(std::ostream &os = std::cout) const;
 
     void enableAcceleration(TypeAcceleration acc);
-    void favorSparseAlgorithmForLocalPolynomials(bool favor);
+    void favorSparseAcceleration(bool favor);
     TypeAcceleration getAccelerationType() const;
     static bool isAccelerationAvailable(TypeAcceleration acc);
 
