@@ -138,7 +138,7 @@ public:
     void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const;
 
     void loadNeededPoints(const double *vals);
-    void loadNeededPoints(const std::vector<double> vals);
+    void loadNeededPoints(const std::vector<double> &vals);
 
     void evaluate(const double x[], double y[]) const;
     void evaluateFast(const double x[], double y[]) const; // evaluate that is potentially not thread safe!
@@ -146,9 +146,9 @@ public:
     void integrate(double q[]) const;
 
     // same as above, but resizes the output vector (is too small)
-    void evaluate(const std::vector<double> x, std::vector<double> &y) const;
-    void evaluateFast(const std::vector<double> x, std::vector<double> &y) const;
-    void evaluateBatch(const std::vector<double> x, std::vector<double> &y) const;
+    void evaluate(const std::vector<double> &x, std::vector<double> &y) const;
+    void evaluateFast(const std::vector<double> &x, std::vector<double> &y) const;
+    void evaluateBatch(const std::vector<double> &x, std::vector<double> &y) const;
     void integrate(std::vector<double> &q) const;
 
     bool isGlobal() const;
@@ -161,7 +161,7 @@ public:
     bool isSetDomainTransfrom() const;
     void clearDomainTransform();
     void getDomainTransform(double a[], double b[]) const;
-    void setDomainTransform(const std::vector<double> a, const std::vector<double> b);
+    void setDomainTransform(const std::vector<double> &a, const std::vector<double> &b);
     void getDomainTransform(std::vector<double> &a, std::vector<double> &b) const;
 
     void setConformalTransformASIN(const int truncation[]);
@@ -194,15 +194,15 @@ public:
     void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
     void setHierarchicalCoefficients(const double c[]);
 
-    void evaluateHierarchicalFunctions(const std::vector<double> x, std::vector<double> &y) const;
-    void setHierarchicalCoefficients(const std::vector<double> c);
+    void evaluateHierarchicalFunctions(const std::vector<double> &x, std::vector<double> &y) const;
+    void setHierarchicalCoefficients(const std::vector<double> &c);
 
     void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
 
     void printStats(std::ostream &os = std::cout) const;
 
     void enableAcceleration(TypeAcceleration acc);
-    void favorSparseAlgorithmForLocalPolynomials(bool favor);
+    void favorSparseAcceleration(bool favor);
     TypeAcceleration getAccelerationType() const;
     static bool isAccelerationAvailable(TypeAcceleration acc);
 
