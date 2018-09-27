@@ -120,13 +120,13 @@ protected:
             l += (long long) ceil(c);
         }else if ((type == type_iptotal) || (type == type_qptotal)){
             auto witer = weights.begin();
-            for(auto i : index) l += ((i > 0) ? 1 + ((type == type_iptotal) ? meta.getIExact(i-1, rule) : meta.getQExact(i-1, rule)) : 0) * *witer++;
+            for(auto i : index) l += ((i > 0) ? (1 + ((type == type_iptotal) ? meta.getIExact(i-1, rule) : meta.getQExact(i-1, rule))) : 0) * *witer++;
         }else if ((type == type_ipcurved) || (type == type_qpcurved)){
             auto walpha = weights.begin();
             auto wbeta = weights.begin(); std::advance(wbeta, num_dimensions);
             double c = 0.0;
             for(auto i : index){
-                long long pex = (i > 0) ? 1 + ((type == type_ipcurved) ? meta.getIExact(i-1, rule) : meta.getQExact(i-1, rule)) : 0;
+                long long pex = (i > 0) ? (1 + ((type == type_ipcurved) ? meta.getIExact(i-1, rule) : meta.getQExact(i-1, rule))) : 0;
                 l += pex * *walpha++;
                 c += log1p((double) pex) * *wbeta++;
             }
@@ -141,7 +141,7 @@ protected:
             double nweight = (double) weights[num_dimensions];
             double s = 1.0;
             auto witer = weights.begin();
-            for(auto i : index) s *= pow((i>0) ? 2.0 + (double) ((type == type_iphyperbolic) ? meta.getIExact(i-1, rule) : meta.getQExact(i-1, rule)) : 1.0,
+            for(auto i : index) s *= pow((i>0) ? (2.0 + (double) ((type == type_iphyperbolic) ? meta.getIExact(i-1, rule) : meta.getQExact(i-1, rule))) : 1.0,
                                          ((double) *witer++) / nweight);
             l = (long long) ceil(s);
         }
