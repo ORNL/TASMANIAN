@@ -1659,7 +1659,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
         #endif
     }
 }
-void TasmanianSparseGrid::favorSparseAlgorithmForLocalPolynomials(bool favor){
+void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
     if (pwpoly != 0) pwpoly->setFavorSparse(favor);
 }
 TypeAcceleration TasmanianSparseGrid::getAccelerationType() const{

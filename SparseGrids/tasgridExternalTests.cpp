@@ -1566,6 +1566,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
 
         test_y.resize(1); // makes sure that evaluate sets the right dimension
 
+        //grid->favorSparseAcceleration(false); // switch between explicit test for the dense and sparse algorithms
         grid->evaluateBatch(x, test_y);
 
         double err = 0.0;
