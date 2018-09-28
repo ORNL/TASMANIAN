@@ -49,7 +49,7 @@ public:
     virtual int getNumDimensions() const = 0;
     virtual int getNumOutputs() const = 0;
     virtual void evaluate(const double x[], int num_points, double y[]) const;
-    virtual void evaluate(const std::vector<double> x, std::vector<double> &y) const = 0;
+    virtual void evaluate(const std::vector<double> &x, std::vector<double> &y) const = 0;
 };
 
 
@@ -68,7 +68,7 @@ public:
     virtual int getNumDimensions() const = 0;
 
     virtual void evaluate(int num_points, const double x[], double y[], bool useLogForm);
-    virtual void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm) = 0;
+    virtual void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm) = 0;
     // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
 
     virtual void getDomainBounds(bool* lower_bound, bool* upper_bound);
@@ -93,7 +93,7 @@ public:
 
     int getNumDimensions() const;
 
-    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
+    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
 
     void getInitialSample(double x[]);
     void setLikelihood(BaseLikelihood *likelihood);
@@ -126,7 +126,7 @@ public:
     ~DistributedPosteriorTSGModel();
 
     int getNumDimensions() const;
-    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
+    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
 
     void getInitialSample(double x[]);
 
@@ -157,7 +157,7 @@ public:
 
     int getNumDimensions() const;
 
-    void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm);
+    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
 
     void getInitialSample(double x[]);
 
@@ -204,7 +204,7 @@ public:
 
     // read/write chain state
     void setChainState(const double* state);
-    void setChainState(const std::vector<double> state);
+    void setChainState(const std::vector<double> &state);
 
     void setProbabilityWeightFunction(ProbabilityWeightFunction *probability_weight);
     // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function

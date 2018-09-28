@@ -82,7 +82,7 @@ void PosteriorFromModel::overwritePDF(int dimension, BasePDF* pdf){
 }
 int PosteriorFromModel::getNumDimensions() const{ return num_dimensions; }
 
-void PosteriorFromModel::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+void PosteriorFromModel::evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm){
     size_t num_points = x.size() / num_dimensions;
 
     std::vector<double> model_output;
@@ -149,7 +149,7 @@ DistributedPosteriorTSGModel::~DistributedPosteriorTSGModel(){}
 
 int DistributedPosteriorTSGModel::getNumDimensions() const{ return posterior->getNumDimensions(); }
 
-void DistributedPosteriorTSGModel::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+void DistributedPosteriorTSGModel::evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm){
     int num_points = x.size() / num_dimensions;
     // MPI witchcraft
     std::vector<double> local_y(num_points);
@@ -223,7 +223,7 @@ void LikelihoodTSG::setPDF(int dimension, BasePDF* pdf){
 }
 int LikelihoodTSG::getNumDimensions() const{ return num_dimensions; }
 
-void LikelihoodTSG::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+void LikelihoodTSG::evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm){
     size_t num_points = x.size() / num_dimensions;
 
     grid->evaluateBatch(x, y); // fastest
@@ -363,7 +363,7 @@ void TasmanianDREAM::setChainState(const double* state){
     state_initialized = true;
     values_initialized = false;
 }
-void TasmanianDREAM::setChainState(const std::vector<double> state){
+void TasmanianDREAM::setChainState(const std::vector<double> &state){
     chain_state = state; // copy assignment
     if (chain_state.size() != (size_t) (num_dimensions * num_chains)) num_chains = (int) (chain_state.size() / num_dimensions);
     state_initialized = true;
