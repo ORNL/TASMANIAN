@@ -36,7 +36,7 @@
 UnscaledUniform1D::UnscaledUniform1D(){}
 UnscaledUniform1D::~UnscaledUniform1D(){}
 int UnscaledUniform1D::getNumDimensions() const{ return 1; }
-void UnscaledUniform1D::evaluate(const std::vector<double> x, std::vector<double> &y, bool){
+void UnscaledUniform1D::evaluate(const std::vector<double> &x, std::vector<double> &y, bool){
     if (y.size() < x.size()) y.resize(x.size());
     for(size_t i=0; i<x.size(); i++) y[i] = 1.0;
 }
@@ -67,7 +67,7 @@ void Beta1D::evaluate(int num_points, const double x[], double y[], bool useLogF
         for(int i=0; i<num_points; i++) y[i] = b->getDensity(x[i]);
     }
 }
-void Beta1D::evaluate(const std::vector<double>, std::vector<double> &, bool){} // test backward compatibility
+void Beta1D::evaluate(const std::vector<double> &, std::vector<double> &, bool){} // test backward compatibility
 void Beta1D::getDomainBounds(bool* lower_bound, bool* upper_bound){ lower_bound[0] = true; upper_bound[0] = true; }
 void Beta1D::getDomainBounds(double* lower_bound, double* upper_bound){ lower_bound[0] = -1.0; upper_bound[0] = 1.0; }
 void Beta1D::getDomainBounds(std::vector<bool> &, std::vector<bool> &){}
@@ -79,7 +79,7 @@ Gamma1D::Gamma1D(){
 }
 Gamma1D::~Gamma1D(){ delete g; }
 int Gamma1D::getNumDimensions() const{ return 1; }
-void Gamma1D::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+void Gamma1D::evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm){
     size_t num_points = x.size();
     if (y.size() < x.size()) y.resize(x.size());
     if (useLogForm){
@@ -108,7 +108,7 @@ Gaussian2D::Gaussian2D(){
 }
 Gaussian2D::~Gaussian2D(){ delete g1; delete g2; }
 int Gaussian2D::getNumDimensions() const{ return 2; }
-void Gaussian2D::evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+void Gaussian2D::evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm){
     size_t num_points = x.size() / 2;
     if (y.size() < x.size()) y.resize(x.size());
     if (useLogForm){

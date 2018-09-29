@@ -42,7 +42,7 @@ int main(int argc, const char**){
         UnscaledPDF(){}
         ~UnscaledPDF(){}
         int getNumDimensions() const{ return 1; }
-        void evaluate(const std::vector<double> x, std::vector<double> &y, bool useLogForm){
+        void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm){
             size_t num_points = x.size();
             if (y.size() < num_points) y.resize(num_points);
             for(size_t i=0; i<num_points; i++){ // set the pdf values
@@ -578,7 +578,7 @@ int main(int argc, const char**){
 
         int getNumDimensions() const{ return 2; }
         int getNumOutputs() const{ return N; }
-        void evaluate(const std::vector<double> x, std::vector<double> &y) const{
+        void evaluate(const std::vector<double> &x, std::vector<double> &y) const{
             size_t num_points = x.size() / 2;
             if (y.size() < N * num_points) y.resize(N * num_points);
             for(size_t i=0; i<num_points; i++){
@@ -703,7 +703,7 @@ int main(int argc, const char**){
 
         int getNumDimensions() const{ return 6; }
         int getNumOutputs() const{ return N; }
-        void evaluate(const std::vector<double> x, std::vector<double> &y) const{
+        void evaluate(const std::vector<double> &x, std::vector<double> &y) const{
             size_t num_points = x.size() / 6;
             if (y.size() < N * num_points) y.resize(N * num_points);
             for(size_t i=0; i<num_points; i++){
