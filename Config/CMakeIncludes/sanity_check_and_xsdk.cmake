@@ -96,6 +96,10 @@ if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
                 message(FATAL_ERROR "Tasmanian_ENABLE_BLAS is ON, but find_package(BLAS) failed")
             endif()
         endif()
+    else()
+        if (Tasmanian_ENABLE_RECOMMENDED)
+            set(Tasmanian_ENABLE_BLAS ON) # set ON if using Tasmanian_ENABLE_RECOMMENDED
+        endif()
     endif()
 endif()
 
