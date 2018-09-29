@@ -108,7 +108,7 @@ public:
     void readBinary(std::ifstream &ifs);
 
     int getSlot(const int p[]) const;
-    inline int getSlot(const std::vector<int> p) const{ return getSlot(p.data()); }
+    inline int getSlot(const std::vector<int> &p) const{ return getSlot(p.data()); }
 
     const int* getIndex(int i) const;
     const std::vector<int>* getIndexes() const;
