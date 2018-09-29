@@ -285,7 +285,7 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
 
     OneDimensionalMeta meta(0);
     int max_level; IM.getMaxLevels(tensors, max_levels, max_level);
-    wrapper = new OneDimensionalWrapper(&meta, max_level, rule_fourier);
+    wrapper = new OneDimensionalWrapper(&meta, max_level, rule_fourier, 0.0, 0.0);
 
     std::vector<int> tensors_w;
     IM.makeTensorWeights(tensors, tensors_w);
