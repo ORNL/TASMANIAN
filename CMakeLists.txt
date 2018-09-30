@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 cmake_policy(VERSION 3.5)
 project(Tasmanian VERSION 6.0.0 LANGUAGES CXX)
-message(STATUS "This is a development version of Tasmanian")
+#message(STATUS "This is a development version of Tasmanian") # silenced for a release
 set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some headers and python modules (only human readable)
 
 ########################################################################
