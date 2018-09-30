@@ -41,13 +41,15 @@ ProbabilityWeightFunction::ProbabilityWeightFunction(){}
 ProbabilityWeightFunction::~ProbabilityWeightFunction(){}
 
 void CustomModelWrapper::evaluate(const double*, int, double*) const{} // kept for backwards compatibility
-void ProbabilityWeightFunction::evaluate(int, const double*, double*, bool){} // kept for backwards compatibility
+void CustomModelWrapper::evaluate(const std::vector<double> &, std::vector<double> &y) const{ y.clear(); }
 
-int CustomModelWrapper::getAPIversion() const{ return TASMANIAN_VERSION_MAJOR; }
-int ProbabilityWeightFunction::getAPIversion() const{ return TASMANIAN_VERSION_MAJOR; }
+void ProbabilityWeightFunction::evaluate(int, const double*, double*, bool){} // kept for backwards compatibility
+void ProbabilityWeightFunction::evaluate(const std::vector<double> &, std::vector<double> &y, bool){ y.clear(); }
 
 void ProbabilityWeightFunction::getDomainBounds(bool*, bool*){} // kept for backwards compatibility
 void ProbabilityWeightFunction::getDomainBounds(double*, double*){} // kept for backwards compatibility
+void ProbabilityWeightFunction::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){ lower.clear(); upper.clear(); }
+void ProbabilityWeightFunction::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){ lower.clear(); upper.clear(); }
 
 PosteriorFromModel::PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model) :
     grid(model), cmodel(0), num_dimensions(0), num_outputs(0),
@@ -89,11 +91,10 @@ void PosteriorFromModel::evaluate(const std::vector<double> &x, std::vector<doub
     if (grid != 0){
         grid->evaluateBatch(x, model_output); // fastest
     }else{
-        if (cmodel->getAPIversion() < 6){
+        cmodel->evaluate(x, model_output); // default vector API
+        if ((num_points > 0) && (model_output.size() == 0)){
             model_output.resize(num_points * num_outputs);
-            cmodel->evaluate(x.data(), (int) num_points, model_output.data()); // fastest
-        }else{
-            cmodel->evaluate(x, model_output);
+            cmodel->evaluate(x.data(), (int) num_points, model_output.data());
         }
     }
 
@@ -338,8 +339,16 @@ void TasmanianDREAM::setProbabilityWeightFunction(ProbabilityWeightFunction *pro
     boundBelow.resize(num_dimensions);
     boundAbove.resize(num_dimensions);
 
-    if (pdf->getAPIversion() < 6){
-        // std::vector<bool> is a special class without .data() member ... hack for now
+    probability_weight->getDomainBounds(isBoudnedBelow, isBoudnedAbove);
+    probability_weight->getDomainBounds(boundBelow, boundAbove);
+
+    if (boundBelow.size() == 0){ // vector API not present, use the array version
+        isBoudnedBelow.resize(num_dimensions);
+        isBoudnedAbove.resize(num_dimensions);
+        boundBelow.resize(num_dimensions);
+        boundAbove.resize(num_dimensions);
+
+        // std::vector<bool> is a special class without .data() member
         bool *bbelow = new bool[num_dimensions];
         bool *babove = new bool[num_dimensions];
         probability_weight->getDomainBounds(bbelow, babove);
@@ -351,9 +360,6 @@ void TasmanianDREAM::setProbabilityWeightFunction(ProbabilityWeightFunction *pro
         delete[] babove;
 
         probability_weight->getDomainBounds(boundBelow.data(), boundAbove.data());
-    }else{
-        probability_weight->getDomainBounds(isBoudnedBelow, isBoudnedAbove);
-        probability_weight->getDomainBounds(boundBelow, boundAbove);
     }
 }
 
@@ -458,10 +464,10 @@ void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
     }
 
     std::vector<double> new_pdf_values(num_chains);
-    if (pdf->getAPIversion() < 6){
+    pdf->evaluate(*need_evaluation, new_pdf_values, useLogForm);
+    if (new_pdf_values.size() == 0){
+        new_pdf_values.resize(num_chains);
         pdf->evaluate(num_need_evaluation, need_evaluation->data(), new_pdf_values.data(), useLogForm);
-    }else{
-        pdf->evaluate(*need_evaluation, new_pdf_values, useLogForm);
     }
 
     // clean memory and reorder the pdf values putting 0 in the invalid spots (for log case 0 should be -infty, hence using valid for accept/reject too
