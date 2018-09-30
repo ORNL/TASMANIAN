@@ -464,10 +464,14 @@ void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
     }
 
     std::vector<double> new_pdf_values(num_chains);
-    pdf->evaluate(*need_evaluation, new_pdf_values, useLogForm);
-    if (new_pdf_values.size() == 0){
+    std::vector<double> computed_values;
+
+    pdf->evaluate(*need_evaluation, computed_values, useLogForm);
+    if (computed_values.size() == 0){
         new_pdf_values.resize(num_chains);
         pdf->evaluate(num_need_evaluation, need_evaluation->data(), new_pdf_values.data(), useLogForm);
+    }else{
+        std::copy(computed_values.begin(), computed_values.end(), new_pdf_values.data());
     }
 
     // clean memory and reorder the pdf values putting 0 in the invalid spots (for log case 0 should be -infty, hence using valid for accept/reject too
