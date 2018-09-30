@@ -107,7 +107,7 @@ Gaussian2D::~Gaussian2D(){ delete g1; delete g2; }
 int Gaussian2D::getNumDimensions() const{ return 2; }
 void Gaussian2D::evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm){
     size_t num_points = x.size() / 2;
-    if (y.size() < x.size()) y.resize(x.size());
+    if (y.size() < x.size()) y.resize(num_points);
     if (useLogForm){
         for(size_t i=0; i<num_points; i++) y[i] = g1->getDensityLog(x[2*i]) + g2->getDensityLog(x[2*i+1]);
     }else{

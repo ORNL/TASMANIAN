@@ -386,8 +386,12 @@ void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, double *sam
         state_initialized = true;
     }
     if (!values_initialized || (values_logform != useLogForm)){ // if log form is changed mid evaluations
-        pdf_values.resize(num_chains);
-        pdf->evaluate(num_chains, chain_state.data(), pdf_values.data(), useLogForm);
+        pdf_values.clear();
+        pdf->evaluate(chain_state, pdf_values, useLogForm);
+        if (pdf_values.size() == 0){
+            pdf_values.resize(num_dimensions * num_chains);
+            pdf->evaluate(num_chains, chain_state.data(), pdf_values.data(), useLogForm);
+        }
         values_initialized = true;
         values_logform = useLogForm;
     }
@@ -424,14 +428,13 @@ void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
     int num_need_evaluation = num_chains;
 
     bool allValid = true; //, savedGaussian = false;
-    double unilength = 1.0 / ((double) num_chains);
+    double unilength = ((double) num_chains);
 
     for(int i=0; i<num_chains; i++){
-        int index1 = (int) (core->getSample01() / unilength);
-        int index2 = (int) (core->getSample01() / unilength);
-        if (index1 >= num_chains) index1 = num_chains; // this is needed in case core->getSample01() returns 1.0
-        if (index2 >= num_chains) index2 = num_chains;
-
+        int index1 = (int) (core->getSample01() * unilength);
+        int index2 = (int) (core->getSample01() * unilength);
+        if (index1 >= num_chains) index1 = num_chains - 1; // this is needed in case core->getSample01() returns 1.0
+        if (index2 >= num_chains) index2 = num_chains - 1;
 
         valid[i] = true;
 

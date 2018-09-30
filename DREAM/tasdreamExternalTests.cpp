@@ -260,7 +260,7 @@ bool ExternalTester::testGamma1D(){
 }
 
 bool ExternalTester::testGaussian2D(){
-    int s = (rngseed == -1) ? 23 : rngseed;
+    int s = (rngseed == -1) ? 12 : rngseed;
     TestRNG rng(s);
 
     int num_cells1d = 4; double delta = 2.0 / ((double) num_cells1d);
