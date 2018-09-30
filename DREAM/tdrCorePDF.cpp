@@ -334,19 +334,19 @@ GaussianLikelihood::~GaussianLikelihood(){
     if (data_cache != 0){ delete[] data_cache; data_cache = 0; }
 }
 
-double* GaussianLikelihood::getLikelihood(int num_model, const double *model, int, const double*, double *likelihood, bool useLogForm){
-    double *result = (likelihood != 0) ? likelihood : (new double[num_model]);
+void GaussianLikelihood::getLikelihood(int num_model, const double *model, std::vector<double> &likelihood, int, const double*, bool useLogForm){
+    likelihood.resize(num_model);
     switch (likely_type){
     case likely_gauss_scale:{
         for(int i=0; i<num_model; i++){
-            result[i] = model_scale * TasGrid::TasBLAS::ddot(num_outputs, &(model[i*num_outputs])) + covariance_cache[0] * TasGrid::TasBLAS::ddot(num_outputs, data_cache, &(model[i*num_outputs]));
+            likelihood[i] = model_scale * TasGrid::TasBLAS::ddot(num_outputs, &(model[i*num_outputs])) + covariance_cache[0] * TasGrid::TasBLAS::ddot(num_outputs, data_cache, &(model[i*num_outputs]));
         }
         break;}
     case likely_gauss_diagonal:{
         double *scaled_model = new double[num_outputs];
         for(int i=0; i<num_model; i++){
             for(int j=0; j<num_outputs; j++) scaled_model[j] = covariance_cache[j] * model[i*num_outputs + j];
-            result[i] = model_scale * TasGrid::TasBLAS::ddot(num_outputs, scaled_model, &(model[i*num_outputs])) + TasGrid::TasBLAS::ddot(num_outputs, data_cache, scaled_model);
+            likelihood[i] = model_scale * TasGrid::TasBLAS::ddot(num_outputs, scaled_model, &(model[i*num_outputs])) + TasGrid::TasBLAS::ddot(num_outputs, data_cache, scaled_model);
         }
         delete[] scaled_model;
         break;}
@@ -356,8 +356,8 @@ double* GaussianLikelihood::getLikelihood(int num_model, const double *model, in
         std::copy(model, model + num_model * num_outputs, cov_by_model);
         TasGrid::TasBLAS::dtrsm_LUTN(num_outputs, num_model, covariance_cache, cov_by_model);
         TasGrid::TasBLAS::dtrsm_LUNN(num_outputs, num_model, covariance_cache, cov_by_model);
-        TasGrid::TasBLAS::dgemtv(num_outputs, num_model, cov_by_model, data_cache, result);
-        for(int i=0; i<num_model; i++) result[i] += model_scale * TasGrid::TasBLAS::ddot(num_outputs, &(cov_by_model[i*num_outputs]), &(model[i*num_outputs]));
+        TasGrid::TasBLAS::dgemtv(num_outputs, num_model, cov_by_model, data_cache, likelihood.data());
+        for(int i=0; i<num_model; i++) likelihood[i] += model_scale * TasGrid::TasBLAS::ddot(num_outputs, &(cov_by_model[i*num_outputs]), &(model[i*num_outputs]));
         delete[] cov_by_model;
         #else // conserve RAM, cannot use level 3 BLAS anyway
         double *cov_by_model = new double[num_outputs];
@@ -365,14 +365,13 @@ double* GaussianLikelihood::getLikelihood(int num_model, const double *model, in
             std::copy(&(model[i*num_outputs]), &(model[i*num_outputs]) + num_outputs, cov_by_model);
             TasGrid::TasBLAS::dtrsv_UTN(num_outputs, covariance_cache, cov_by_model);
             TasGrid::TasBLAS::dtrsv_UNN(num_outputs, covariance_cache, cov_by_model);
-            result[i] = model_scale * TasGrid::TasBLAS::ddot(num_outputs, cov_by_model, &(model[i*num_outputs])) + TasGrid::TasBLAS::ddot(num_outputs, data_cache, &(model[i*num_outputs]));
+            likelihood[i] = model_scale * TasGrid::TasBLAS::ddot(num_outputs, cov_by_model, &(model[i*num_outputs])) + TasGrid::TasBLAS::ddot(num_outputs, data_cache, &(model[i*num_outputs]));
         }
         delete[] cov_by_model;
         #endif // TASMANIAN_CPU_BLAS
         break;}
     }
-    if (!useLogForm) for(int i=0; i<num_model; i++) result[i] = exp(result[i]);
-    return (likelihood != 0) ? 0 : result;
+    if (!useLogForm) for(auto &l : likelihood) l = exp(l);
 }
 
 }
