@@ -156,7 +156,7 @@ class TestTasmanian(unittest.TestCase):
         else:
             print("            none")
 
-        grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
+        #grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
 
         # test I/O for Global Grids
         # iDimension, iOutputs, iDepth, sType, sRule, fAlpha, fBeta, useTransform, loadFunciton, limitLevels
