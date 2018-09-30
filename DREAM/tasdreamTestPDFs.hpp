@@ -63,11 +63,8 @@ public:
     int getNumDimensions() const;
 
     void evaluate(int num_points, const double x[], double y[], bool useLogForm);
-    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
     void getDomainBounds(bool* lower_bound, bool* upper_bound);
     void getDomainBounds(double* lower_bound, double* upper_bound);
-    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
-    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
     void getInitialSample(double x[]);
 private:
     TasDREAM::BetaPDF *b;

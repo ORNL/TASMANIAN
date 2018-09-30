@@ -67,11 +67,8 @@ void Beta1D::evaluate(int num_points, const double x[], double y[], bool useLogF
         for(int i=0; i<num_points; i++) y[i] = b->getDensity(x[i]);
     }
 }
-void Beta1D::evaluate(const std::vector<double> &, std::vector<double> &, bool){} // test backward compatibility
 void Beta1D::getDomainBounds(bool* lower_bound, bool* upper_bound){ lower_bound[0] = true; upper_bound[0] = true; }
 void Beta1D::getDomainBounds(double* lower_bound, double* upper_bound){ lower_bound[0] = -1.0; upper_bound[0] = 1.0; }
-void Beta1D::getDomainBounds(std::vector<bool> &, std::vector<bool> &){}
-void Beta1D::getDomainBounds(std::vector<double> &, std::vector<double> &){}
 void Beta1D::getInitialSample(double y[]){ y[0] = -1.0 + 2.0 * u.getSample01(); }
 
 Gamma1D::Gamma1D(){
