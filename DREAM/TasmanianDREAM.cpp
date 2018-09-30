@@ -98,8 +98,7 @@ void PosteriorFromModel::evaluate(const std::vector<double> &x, std::vector<doub
         }
     }
 
-    if (y.size() < num_points) y.resize(num_points);
-    likely->getLikelihood((int) num_points, model_output.data(), num_data, data, y.data(), useLogForm);
+    likely->getLikelihood((int) num_points, model_output.data(), y, num_data, data, useLogForm);
 
     if (useLogForm){
         for(size_t i=0; i<num_points; i++){
@@ -121,16 +120,16 @@ void PosteriorFromModel::setData(int num_data_samples, const double *posterior_d
 void PosteriorFromModel::getInitialSample(double x[]){ for(int j=0; j<num_dimensions; j++) x[j] = active_priors[j]->getSample(); }
 
 void PosteriorFromModel::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
-    if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
-    if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
+    lower.resize(num_dimensions);
+    upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         lower[j] = active_priors[j]->isBoundedBelow();
         upper[j] = active_priors[j]->isBoundedAbove();
     }
 }
 void PosteriorFromModel::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
-    if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
-    if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
+    lower.resize(num_dimensions);
+    upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         lower[j] = active_priors[j]->getBoundBelow();
         upper[j] = active_priors[j]->getBoundAbove();
@@ -162,7 +161,7 @@ void DistributedPosteriorTSGModel::evaluate(const std::vector<double> &x, std::v
 
     posterior->evaluate(x, local_y, useLogForm);
 
-    if (y.size() < (size_t) num_points) y.resize(num_points);
+    y.resize(num_points);
     MPI_Reduce(local_y.data(), y.data(), num_points, MPI_DOUBLE, (useLogForm) ? MPI_SUM : MPI_PROD, 0, comm);
 }
 
@@ -251,16 +250,16 @@ void LikelihoodTSG::evaluate(const std::vector<double> &x, std::vector<double> &
 void LikelihoodTSG::getInitialSample(double x[]){ for(int j=0; j<num_dimensions; j++) x[j] = active_priors[j]->getSample(); }
 
 void LikelihoodTSG::getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
-    if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
-    if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
+    lower.resize(num_dimensions);
+    upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         lower[j] = active_priors[j]->isBoundedBelow();
         upper[j] = active_priors[j]->isBoundedAbove();
     }
 }
 void LikelihoodTSG::getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
-    if (lower.size() < (size_t) num_dimensions) lower.resize(num_dimensions);
-    if (upper.size() < (size_t) num_dimensions) upper.resize(num_dimensions);
+    lower.resize(num_dimensions);
+    upper.resize(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         lower[j] = active_priors[j]->getBoundBelow();
         upper[j] = active_priors[j]->getBoundAbove();
@@ -332,7 +331,7 @@ void TasmanianDREAM::setProbabilityWeightFunction(ProbabilityWeightFunction *pro
     pdf = probability_weight;
     num_dimensions = probability_weight->getNumDimensions();
 
-    corrections.resize(num_dimensions, 0);
+    corrections.resize(num_dimensions, 0); // clear sets this vector to zero size
 
     isBoudnedBelow.resize(num_dimensions);
     isBoudnedAbove.resize(num_dimensions);
@@ -386,8 +385,12 @@ void TasmanianDREAM::collectSamples(int num_burnup, int num_samples, double *sam
         state_initialized = true;
     }
     if (!values_initialized || (values_logform != useLogForm)){ // if log form is changed mid evaluations
-        pdf_values.resize(num_chains);
-        pdf->evaluate(num_chains, chain_state.data(), pdf_values.data(), useLogForm);
+        pdf_values.clear();
+        pdf->evaluate(chain_state, pdf_values, useLogForm);
+        if (pdf_values.size() == 0){
+            pdf_values.resize(num_dimensions * num_chains);
+            pdf->evaluate(num_chains, chain_state.data(), pdf_values.data(), useLogForm);
+        }
         values_initialized = true;
         values_logform = useLogForm;
     }
@@ -424,14 +427,13 @@ void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
     int num_need_evaluation = num_chains;
 
     bool allValid = true; //, savedGaussian = false;
-    double unilength = 1.0 / ((double) num_chains);
+    double unilength = ((double) num_chains);
 
     for(int i=0; i<num_chains; i++){
-        int index1 = (int) (core->getSample01() / unilength);
-        int index2 = (int) (core->getSample01() / unilength);
-        if (index1 >= num_chains) index1 = num_chains; // this is needed in case core->getSample01() returns 1.0
-        if (index2 >= num_chains) index2 = num_chains;
-
+        int index1 = (int) (core->getSample01() * unilength);
+        int index2 = (int) (core->getSample01() * unilength);
+        if (index1 >= num_chains) index1 = num_chains - 1; // this is needed in case core->getSample01() returns 1.0
+        if (index2 >= num_chains) index2 = num_chains - 1;
 
         valid[i] = true;
 
@@ -464,10 +466,13 @@ void TasmanianDREAM::advanceMCMCDREAM(bool useLogForm){
     }
 
     std::vector<double> new_pdf_values(num_chains);
-    pdf->evaluate(*need_evaluation, new_pdf_values, useLogForm);
-    if (new_pdf_values.size() == 0){
-        new_pdf_values.resize(num_chains);
+    std::vector<double> computed_values;
+
+    pdf->evaluate(*need_evaluation, computed_values, useLogForm);
+    if (computed_values.size() == 0){
         pdf->evaluate(num_need_evaluation, need_evaluation->data(), new_pdf_values.data(), useLogForm);
+    }else{
+        std::copy(computed_values.begin(), computed_values.end(), new_pdf_values.data());
     }
 
     // clean memory and reorder the pdf values putting 0 in the invalid spots (for log case 0 should be -infty, hence using valid for accept/reject too

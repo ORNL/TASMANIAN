@@ -274,7 +274,7 @@ public:
     BaseLikelihood();
     virtual ~BaseLikelihood();
 
-    virtual double* getLikelihood(int num_model, const double *model, int num_data, const double *data, double *likelihood = 0, bool useLogForm = true) = 0;
+    virtual void getLikelihood(int num_model, const double *model, std::vector<double> &likelihood, int num_data, const double *data, bool useLogForm = true) = 0;
 };
 
 class GaussianLikelihood : public BaseLikelihood{
@@ -282,7 +282,7 @@ public:
     GaussianLikelihood(int outputs, TypeLikelihood likelihood, const double covariance[], int data_entries, const double data[]);
     ~GaussianLikelihood();
 
-    double* getLikelihood(int num_model, const double *model, int num_data = 0, const double *data = 0, double *likelihood = 0, bool useLogForm = true);
+    void getLikelihood(int num_model, const double *model, std::vector<double> &likelihood, int num_data = 0, const double *data = 0, bool useLogForm = true);
 
 private:
     int num_outputs;

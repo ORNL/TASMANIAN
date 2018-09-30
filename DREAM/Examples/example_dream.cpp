@@ -705,7 +705,7 @@ int main(int argc, const char**){
         int getNumOutputs() const{ return N; }
         void evaluate(const std::vector<double> &x, std::vector<double> &y) const{
             size_t num_points = x.size() / 6;
-            if (y.size() < N * num_points) y.resize(N * num_points);
+            y.resize(N * num_points);
             for(size_t i=0; i<num_points; i++){
                 for(int j=0; j<N; j++){
                     double t = snap[j];
@@ -776,26 +776,25 @@ int main(int argc, const char**){
         L1Likelihood(int num_outputs, double difference_scale) : N(num_outputs), scale(difference_scale){}
         ~L1Likelihood(){}
 
-        double* getLikelihood(int num_model, const double *model, int num_data, const double *ddata, double *likelihood = 0, bool useLogForm = true){
-			double *result = (likelihood != 0) ? likelihood : (new double[num_model]);
-			for(int i=0; i<num_model; i++){
-				result[i] = 0.0;
-				for(int j=0; j<num_data; j++){
-					for(int k=0; k<N; k++){
-						result[i] -= fabs(model[i*N + k] - ddata[j*N + k]);
-					}
-				}
-			}
-			if (!useLogForm){
-				for(int i=0; i<num_model; i++) result[i] = exp(scale * result[i]);
-			}else{
-				for(int i=0; i<num_model; i++) result[i] *= scale;
-			}
-			return (likelihood != 0) ? 0 : result;
-		}
+        void getLikelihood(int num_model, const double *model, std::vector<double> &likelihood, int num_data, const double *ddata, bool useLogForm = true){
+            likelihood.resize(num_model);
+            for(int i=0; i<num_model; i++){
+                likelihood[i] = 0.0;
+                for(int j=0; j<num_data; j++){
+                    for(int k=0; k<N; k++){
+                        likelihood[i] -= fabs(model[i*N + k] - ddata[j*N + k]);
+                    }
+                }
+            }
+            if (!useLogForm){
+                for(auto &l : likelihood) l = exp(scale * l);
+            }else{
+                for(auto &l : likelihood) l *= scale;
+            }
+        }
     private:
-		int N;
-		double scale;
+        int N;
+        double scale;
     };
 
     L1Likelihood *likely1 = new L1Likelihood(N, ((double) N));
