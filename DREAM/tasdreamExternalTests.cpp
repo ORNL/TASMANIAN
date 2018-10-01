@@ -261,6 +261,11 @@ bool ExternalTester::testGamma1D(){
 
 bool ExternalTester::testGaussian2D(){
     int s = (rngseed == -1) ? 12 : rngseed;
+    #ifdef _MSC_VER // using MS Visual Studio
+    #if _MSC_VER > 1909 // using MSVC 2017 or newer
+    s = 23;
+    #endif
+    #endif
     TestRNG rng(s);
 
     int num_cells1d = 4; double delta = 2.0 / ((double) num_cells1d);
