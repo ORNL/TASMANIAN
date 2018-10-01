@@ -95,7 +95,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<35; i++){
+    for(int i=0; i<36; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -192,6 +192,11 @@ void GridUnitTester::runtimeErrorCall(int i){
     case  3: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(2, type_level); break; // grid not sequence
     case  4: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.getInterpolationWeights(std::vector<double>()={0.33}, v); break; // wrong size of x
     case  5: grid.makeGlobalGrid(2, 1, 2, type_level, rule_rleja); grid.loadNeededPoints(std::vector<double>()={0.33, 0.22}); break; // wrong size of loaded data
+    case 35: {
+             grid.makeGlobalGrid(2, 1, 1, type_level, rule_clenshawcurtis);
+             grid.loadNeededPoints(std::vector<double>()={0.33, 0.22, 0.22, 0.22, 0.33});
+             grid.loadNeededPoints(std::vector<double>()={0.33, 0.22}); break; // wrong size of loaded data (when overwriting)
+             }
 
     case  6: grid.setAnisotropicRefinement(type_iptotal, 1, 0, 0); break; // grid not init
     case  7: grid.setAnisotropicRefinement(type_iptotal, 1, 0, std::vector<int>()); break; // grid not init

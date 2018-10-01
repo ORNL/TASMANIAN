@@ -1036,12 +1036,11 @@ class TasmanianSparseGrid:
         '''
         if (len(llfVals.shape) != 2):
             raise TasmanianInputError("llfVals", "ERROR: llfVals should be a 2-D numpy.ndarray, instead it has {0:1d} dimensions".format(len(llfVals.shape)))
-        if (llfVals.shape[0] != self.getNumNeeded()):
-            if (self.getNumNeeded() == 0):
-                if (llfVals.shape[0] != self.getNumLoaded()):
-                    raise TasmanianInputError("llfVals", "ERROR: leading dimension of llfVals is {0:1d} but the number of current points is {1:1d}".format(llfVals.shape[0], self.getNumNeeded()))
-            else:
-                raise TasmanianInputError("llfVals", "ERROR: leading dimension of llfVals is {0:1d} but the number of needed points is {1:1d}".format(llfVals.shape[0], self.getNumNeeded()))
+        if (self.getNumNeeded() == 0):
+            if (llfVals.shape[0] != self.getNumLoaded()):
+                raise TasmanianInputError("llfVals", "ERROR: leading dimension of llfVals is {0:1d} but the number of current points is {1:1d}".format(llfVals.shape[0], self.getNumLoaded()))
+        elif (llfVals.shape[0] != self.getNumNeeded()):
+            raise TasmanianInputError("llfVals", "ERROR: leading dimension of llfVals is {0:1d} but the number of needed points is {1:1d}".format(llfVals.shape[0], self.getNumNeeded()))
         if (llfVals.shape[1] != self.getNumOutputs()):
             raise TasmanianInputError("llfVals", "ERROR: second dimension of llfVals is {0:1d} but the number of outputs is set to {1:1d}".format(llfVals.shape[1], self.getNumOutputs()))
         iNumPoints = llfVals.shape[0]

@@ -605,6 +605,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -conformalfile\t"  << "\t-tf\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain" << endl;
         cout << " -levellimitsfile"  << "\t-lf\t"      << "\t<filename>"   << "\tset the limits for the levels" << endl;
         cout << " -customfile\t"     << "\t-cf\t"      << "\t<filename>"   << "\tset the file with the custom-tabulated rule" << endl;
+        cout << " -gpuid\t\t"    << "\t\t"     << "\t<int>\t"   << "\tset the gpu to use for evaluations" << endl;
         cout << " -print\t\t"    << "\t-p\t"       << "\t<none>"       << "\t\tprint to standard output" << endl;
         cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format" << endl;
 

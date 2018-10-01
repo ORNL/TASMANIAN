@@ -500,8 +500,13 @@ bool TasgridWrapper::loadValues(){
     size_t rows, cols;
     double *vals = 0;
     readMatrix(valsfilename, rows, cols, vals);
-    if (rows != (size_t) grid->getNumNeeded()){
+    if (grid->getNumNeeded() == 0){
         if (rows != (size_t) grid->getNumLoaded()){
+            cerr << "ERROR: grid has " << grid->getNumLoaded() << " new values, but " << valsfilename << " specifies " << rows << endl;
+            return false;
+        }
+    }else{
+        if (rows != (size_t) grid->getNumNeeded()){
             cerr << "ERROR: grid is awaiting " << grid->getNumNeeded() << " new values, but " << valsfilename << " specifies " << rows << endl;
             return false;
         }
