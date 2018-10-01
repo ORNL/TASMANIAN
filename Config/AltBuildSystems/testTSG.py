@@ -146,13 +146,17 @@ class TestTasmanian(unittest.TestCase):
         print("                Available GPUs:")
         if (grid.getNumGPUs() > 0):
             for iGPU in range(grid.getNumGPUs()):
-                sName = grid.getGPUName(iGPU)
+                sName = ""
+                if ("GNU" == "MSVC"):
+                    sName = "Unavailable under Windows"
+                else:
+                    sName = grid.getGPUName(iGPU)
                 sMem = grid.getGPUMemory(iGPU)
                 print("     {0:2d}: {1:20s} with{2:6d}MB RAM".format(iGPU, sName, sMem))
         else:
             print("            none")
 
-        grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
+        #grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
 
         # test I/O for Global Grids
         # iDimension, iOutputs, iDepth, sType, sRule, fAlpha, fBeta, useTransform, loadFunciton, limitLevels
@@ -193,9 +197,9 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
         # test an error message from wrong read
-        print("Attempting a bogus read to see if error would be properly registered")
-        self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
-        print("GOOD: error was registered")
+        #print("Attempting a bogus read to see if error would be properly registered")
+        #self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
+        #print("GOOD: error was registered")
 
         # custom rule test
         grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "GaussPattersonRule.table")
