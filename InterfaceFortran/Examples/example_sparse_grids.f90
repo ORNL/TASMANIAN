@@ -404,11 +404,7 @@ IMPLICIT NONE
 ! prepare random smaples for future tests
   call random_seed()
 
-  DO i = 1, 1000
-    DO j = 1, 4
-      call random_number(randPoints(j,i))
-    END DO
-  END DO
+  call random_number(randPoints)
 
 ! ==================================================================== !
 ! EXAMPLE 5:
