@@ -685,7 +685,7 @@ function tsgGetComplexHierarchicalCoefficients(gridID) result(c)
     allocate(c_real(2*tsgGetNumOutputs(gridID)*tsgGetNumPoints(gridID)))
     call tsgghc(gridID, c_real)
     do i = 1,size(c)
-      c(i) = complex( c_real(i), c_real(i + size(c)) )
+      c(i) = cmplx( c_real(i), c_real(i + size(c)), kind(c) )
     enddo
     deallocate(c_real)
   else
@@ -702,7 +702,7 @@ subroutine tsgGetComplexHierarchicalCoefficientsStatic(gridID, c)
   if ( tsgIsFourier(gridID) ) then
     call tsgghc(gridID, c_real)
     do i = 1,size(c)
-      c(i) = complex( c_real(i), c_real(i + size(c)) )
+      c(i) = cmplx( c_real(i), c_real(i + size(c)), kind(c) )
     enddo
   else
     write(*,*) "ERROR: called tsgGetComplexHierarchicalCoefficientsStatic() on a non-Fourier grid, "

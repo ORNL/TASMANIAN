@@ -44,8 +44,8 @@ endmacro()
 add_executable(Tasmanian_fortester                fortester.f90)
 add_executable(Tasmanian_example_sparse_grids_f90 Examples/example_sparse_grids.f90)
 
-set_target_properties(Tasmanian_fortester                PROPERTIES OUTPUT_NAME "fortester")
-set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES OUTPUT_NAME "example_sparse_grids_f90")
+set_target_properties(Tasmanian_fortester                PROPERTIES OUTPUT_NAME "fortester" LINKER_LANGUAGE Fortran)
+set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES OUTPUT_NAME "example_sparse_grids_f90" LINKER_LANGUAGE Fortran)
 
 ########################################################################
 # add the libraries

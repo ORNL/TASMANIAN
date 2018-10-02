@@ -39,7 +39,7 @@ echo 'Compiling "make"'
 make > /dev/null || { echo "ERROR: Could not compile the C++ examples"; exit 1; }
 echo 'Executing "./example_sparse_grids"'
 ./example_sparse_grids -fast >/dev/null || { echo "ERROR: Could not run the C++ Sparse Grid example"; exit 1; }
-if [ -f @CMAKE_INSTALL_PREFIX@/examples/Tasmanian/example_sparse_grids.f90 ]; then
+if [ -f @CMAKE_INSTALL_PREFIX@/share/Tasmanian/examples/example_sparse_grids.f90 ]; then
     echo 'Executing "./example_sparse_grids_f90"'
     ./example_sparse_grids_f90 -fast >/dev/null 2>&1 || { echo "ERROR: Could not run the Fortran Sparse Grid example"; exit 1; }
 fi

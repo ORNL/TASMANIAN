@@ -24,6 +24,7 @@ else()
 endif()
 
 if (@Tasmanian_ENABLE_FORTRAN@)
+    @Tasmanian_openmp_hack_fortran@
     add_library(Tasmanian_libfortran90 INTERFACE)
     if (TARGET Tasmanian_libfortran90_static)
         target_link_libraries(Tasmanian_libfortran90 INTERFACE Tasmanian_libfortran90_static)

@@ -61,6 +61,11 @@ else()
     set(Tasmanian_libs_type "BOTH")
 endif()
 
+# check for Fortran, note that enable_language always gives FATAL_ERROR if the compiler is missing
+if (Tasmanian_ENABLE_FORTRAN)
+    enable_language(Fortran)
+endif()
+
 # OpenMP setup
 if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     find_package(OpenMP)
@@ -77,6 +82,9 @@ if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
         if (NOT DEFINED OpenMP_CXX_LIBRARIES)
             # on older versions of cmake use global flags, see comment in SparseGrids/CMakeLists.txt
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+            if (Tasmanian_ENABLE_FORTRAN)
+                set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+            endif()
         endif()
     endif()
 endif()
@@ -182,10 +190,6 @@ if (Tasmanian_ENABLE_MPI)
     endif()
 endif()
 
-# check for Fortran, note that enable_language always gives FATAL_ERROR if the compiler is missing
-if (Tasmanian_ENABLE_FORTRAN)
-    enable_language(Fortran)
-endif()
 
 ########################################################################
 # Needed for TasmanianConfig.cmake and TasmanianConfigVersion.cmake

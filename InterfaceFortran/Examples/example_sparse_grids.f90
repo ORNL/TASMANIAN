@@ -402,13 +402,9 @@ IMPLICIT NONE
   ENDIF
 
 ! prepare random smaples for future tests
-  call srand(TIME())
+  call random_seed()
 
-  DO i = 1, 1000
-    DO j = 1, 4
-      randPoints(j,i) = rand()
-    END DO
-  END DO
+  call random_number(randPoints)
 
 ! ==================================================================== !
 ! EXAMPLE 5:
