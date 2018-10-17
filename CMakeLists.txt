@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
-cmake_policy(VERSION 3.5)
-project(Tasmanian VERSION 6.0.0 LANGUAGES CXX)
-#message(STATUS "This is a development version of Tasmanian") # silenced for a release
+cmake_policy(VERSION 3.10)
+project(Tasmanian VERSION 6.1.0 LANGUAGES CXX)
 set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some headers and python modules (only human readable)
 
 ########################################################################
@@ -231,7 +230,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianENVsetup.sh"
 ########################################################################
 if (NOT USE_XSDK_DEFAULTS)
     message("")
-    message("TASMANIAN: summary of all compile options")
+    message("Tasmanian ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR} (development version): summary of build options")
     message(" -D CMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
     message(" -D CMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}")
     message(" -D CMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}")
