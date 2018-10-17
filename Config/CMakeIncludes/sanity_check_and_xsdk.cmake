@@ -215,20 +215,20 @@ endif()
 ########################################################################
 # Check for the git commit hash, if using a git repo
 ########################################################################
-#if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git") # this is a git repo
-#    find_package(Git)
-#    # do not set the hash if git is missing or
-#    # if we are gnerating files for simple GNU Make compatiblity
-#    if (Git_FOUND AND (NOT Tasmanian_DEVELOPMENT_BACKWARDS))
-#        execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:%H -n 1
-#                        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-#                        OUTPUT_VARIABLE   Tasmanian_git_hash)
-#    endif()
-#endif()
-#if (NOT Tasmanian_git_hash)
-    # if not in a git repo, or there is no git executable, or if generating GNU Make files
-    set(Tasmanian_git_hash "Tasmanian git hash is not available here")
-#endif()
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git") # this is a git repo
+    find_package(Git)
+    # do not set the hash if git is missing or
+    # if we are gnerating files for simple GNU Make compatiblity
+    if (Git_FOUND AND (NOT Tasmanian_DEVELOPMENT_BACKWARDS))
+        execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:%H -n 1
+                        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                        OUTPUT_VARIABLE   Tasmanian_git_hash)
+    endif()
+endif()
+if (NOT Tasmanian_git_hash)
+   # if not in a git repo, or there is no git executable, or if generating GNU Make files
+   set(Tasmanian_git_hash "Tasmanian git hash is not available here")
+endif()
 
 
 ########################################################################
