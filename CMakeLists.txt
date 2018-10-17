@@ -173,16 +173,6 @@ endif()
 # The current setup allows the parent project to append more targets to "${CMAKE_PROJECT_NAME}-exports" and install in a different spot
 # The parent project can also completely ignore any Tasmanian exports and config files and make thier own files
 # END NOTE
-# NOTE: see the OpenMP remark in the SparseGirds sub-directory
-# unset(OpenMP_CXX_LIBRARIES) # use this to test on newer cmake
-set(Tasmanian_openmp_hack "")
-set(Tasmanian_openmp_hack_fortran "")
-if (Tasmanian_ENABLE_OPENMP AND (NOT (DEFINED OpenMP_CXX_LIBRARIES)))
-    set(Tasmanian_openmp_hack "set(Tasmanian_CXX_FLAGS \"${OpenMP_CXX_FLAGS}\")")
-    if (Tasmanian_ENABLE_FORTRAN)
-        set(Tasmanian_openmp_hack_fortran "set(Tasmanian_Fortran_FLAGS \"${OpenMP_Fortran_FLAGS}\")")
-    endif()
-endif()
 configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianConfig.in.cmake"
                               "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.cmake"
                               INSTALL_DESTINATION "lib/Tasmanian/")
@@ -202,17 +192,6 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 # cmake file for the examples, to be used post-install
-if (Tasmanian_ENABLE_OPENMP AND (NOT (DEFINED OpenMP_CXX_LIBRARIES))) # set the OpenMP command for the examples CMakeLists.txt
-    set(Tasmanian_openmp_hack "set(CMAKE_CXX_FLAGS \"\${CMAKE_CXX_FLAGS} \${Tasmanian_CXX_FLAGS}\")")
-    if (Tasmanian_ENABLE_FORTRAN)
-        set(Tasmanian_openmp_hack_fortran "set(CMAKE_Fortran_FLAGS \"\${CMAKE_Fortran_FLAGS} \${Tasmanian_Fortran_FLAGS}\")")
-    endif()
-else()
-    set(Tasmanian_openmp_hack "# set(CMAKE_CXX_FLAGS \"\${CMAKE_CXX_FLAGS} \${Tasmanian_CXX_FLAGS}\")")
-    if (Tasmanian_ENABLE_FORTRAN)
-        set(Tasmanian_openmp_hack_fortran "# set(CMAKE_Fortran_FLAGS \"\${CMAKE_Fortran_FLAGS} \${Tasmanian_Fortran_FLAGS}\")")
-    endif()
-endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.txt" "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt"
         DESTINATION "share/Tasmanian/examples/"

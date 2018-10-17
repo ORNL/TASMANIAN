@@ -79,13 +79,6 @@ if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
         endif()
     else()
         set(Tasmanian_ENABLE_OPENMP ON) # if using RECOMMENDED, make sure OPENMP is ON
-        if (NOT DEFINED OpenMP_CXX_LIBRARIES)
-            # on older versions of cmake use global flags, see comment in SparseGrids/CMakeLists.txt
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-            if (Tasmanian_ENABLE_FORTRAN)
-                set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-            endif()
-        endif()
     endif()
 endif()
 

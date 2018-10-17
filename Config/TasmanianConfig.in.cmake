@@ -9,8 +9,6 @@ include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cm
 
 check_required_components(Tasmanian)
 
-@Tasmanian_openmp_hack@
-
 add_library(Tasmanian_libsparsegrid INTERFACE)
 add_library(Tasmanian_libdream INTERFACE)
 
@@ -24,7 +22,6 @@ else()
 endif()
 
 if (@Tasmanian_ENABLE_FORTRAN@)
-    @Tasmanian_openmp_hack_fortran@
     add_library(Tasmanian_libfortran90 INTERFACE)
     if (TARGET Tasmanian_libfortran90_static)
         target_link_libraries(Tasmanian_libfortran90 INTERFACE Tasmanian_libfortran90_static)
