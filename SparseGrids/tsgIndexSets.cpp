@@ -434,6 +434,47 @@ void IndexSet::mergeMapped(const std::vector<int> *newIndex, const std::vector<i
 
 void IndexSet::cacheNumIndexes(){ cache_num_indexes = (int) (index.size() / num_dimensions); }
 
+
+MultiIndexSet::MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
+MultiIndexSet::MultiIndexSet(int cnum_dimensions)  : num_dimensions(cnum_dimensions), cache_num_indexes(0){};
+MultiIndexSet::~MultiIndexSet(){}
+
+void MultiIndexSet::clear(){
+    num_dimensions = 0;
+    cache_num_indexes = 0;
+    indexes.clear();
+    indexes.shrink_to_fit();
+}
+void MultiIndexSet::move(MultiIndexSet &other){
+    num_dimensions = other.num_dimensions;
+    cache_num_indexes = other.cache_num_indexes;
+    indexes = std::move(other.indexes);
+    other.empty();
+}
+bool MultiIndexSet::empty() const{ return indexes.empty(); }
+
+void MultiIndexSet::setNumDimensions(int new_dimensions){
+    clear();
+    num_dimensions = (size_t) new_dimensions;
+}
+int MultiIndexSet::getNumDimensions() const{ return (int) num_dimensions; }
+int MultiIndexSet::getNumIndexes() const{ return cache_num_indexes; }
+
+void MultiIndexSet::setIndexes(std::vector<int> &new_indexes){
+    indexes = std::move(new_indexes);
+    cache_num_indexes = (int) (indexes.size() / num_dimensions);
+}
+void MultiIndexSet::addSortedInsexes(const std::vector<int> &addition){
+    if (indexes.empty()){
+        indexes.resize(addition.size());
+        std::copy(addition.begin(), addition.end(), indexes.data());
+    }else{
+        // TODO: merge sets
+    }
+    cache_num_indexes = (int) (indexes.size() / num_dimensions);
+}
+
+
 StorageSet::StorageSet(int cnum_outputs, int cnum_values) : num_outputs((size_t) cnum_outputs), num_values((size_t) cnum_values){}
 StorageSet::StorageSet(const StorageSet *storage) : values(0){
     num_outputs = storage->num_outputs;

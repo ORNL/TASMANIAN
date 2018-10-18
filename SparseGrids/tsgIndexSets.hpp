@@ -197,6 +197,29 @@ private:
     std::vector<T> vec;
 };
 
+class MultiIndexSet{
+public:
+    MultiIndexSet();
+    MultiIndexSet(int cnum_dimensions);
+    ~MultiIndexSet();
+
+    void clear();
+    void move(MultiIndexSet &other); // this becomes other, other becomes empty
+    bool empty() const;
+
+    void setNumDimensions(int new_dimensions);
+    int getNumDimensions() const;
+    int getNumIndexes() const;
+
+    void setIndexes(std::vector<int> &new_indexes); // move assignment
+    void addSortedInsexes(const std::vector<int> &addition); // merge/copy assignment
+
+private:
+    size_t num_dimensions;
+    int cache_num_indexes;
+    std::vector<int> indexes;
+};
+
 class StorageSet{ // stores the values of the function
 public:
     StorageSet(int cnum_outputs, int cnum_values);
