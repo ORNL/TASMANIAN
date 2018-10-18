@@ -185,6 +185,11 @@ public:
         vec.shrink_to_fit();
     }
 
+    void appendStrip(const std::vector<T> &x){
+        vec.insert(vec.end(), x.begin(), x.end());
+        num_strips++;
+    }
+
 private:
     size_t stride, num_strips;
     T* data;
