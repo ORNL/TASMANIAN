@@ -140,6 +140,11 @@ if (Tasmanian_ENABLE_CUDA)
         # newer cmake versions use "CUDA_STANDARD" target property to set the C++ 2011 standard
         # while Tasmanian sets the property for every target, sometimes cmake does not respect that property (e.g., cmake 3.11.4)
         list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
+
+        # CUDA 10 no longer uses cuBlas device library, but "older" cmake (e.g., cmake 3.11) look for that
+        # if CUDA is found but some library is missing, try to build anyway
+        list(FILTER CUDA_CUBLAS_LIBRARIES EXCLUDE REGEX "-NOTFOUND$")
+
         if(${CMAKE_VERSION} VERSION_LESS "3.7.0")
             # cmake prior to 3.7.0 CUDA does not respect include folders added per-target
             include_directories("${CMAKE_CURRENT_BINARY_DIR}/configured/")
