@@ -186,13 +186,11 @@ include(CMakePackageConfigHelpers)
 # Recommended compiler flags: Intel hasn't been tested in a while
 ########################################################################
 if (Tasmanian_ENABLE_RECOMMENDED)
-    if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang"))
+    if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel"))
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3") # there is no point in making a slow debug
         if (Tasmanian_ENABLE_FORTRAN)
             set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -O3")
         endif()
-#    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         set(CMAKE_CXX_FLAGS_RELEASE "/MD /Ox /DNDEBUG ${OpenMP_CXX_FLAGS}") # cmake overwrites flags a lot, careful how you set those
         set(CMAKE_CXX_FLAGS_DEBUG "/MD /Ox ${OpenMP_CXX_FLAGS}")
