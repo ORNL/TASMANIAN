@@ -170,11 +170,7 @@ endif()
 # check for MPI
 if (Tasmanian_ENABLE_MPI)
     if (NOT DEFINED MPI_CXX_LIBRARIES) # user defined MPI libraries is XSDK requirement
-        find_package(MPI)
-
-        if (NOT MPI_CXX_FOUND)
-            message(FATAL_ERROR "Tasmanian_ENABLE_MPI is ON, but find_package(MPI) failed")
-        endif()
+        find_package(MPI REQUIRED)
     endif()
 endif()
 
