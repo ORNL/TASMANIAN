@@ -33,6 +33,8 @@
 
 #include "tsgEnumerates.hpp"
 #include <vector>
+#include <functional>
+#include <algorithm>
 
 namespace TasGrid{
 
@@ -133,6 +135,35 @@ private:
     std::vector<int> index;
 };
 
+namespace SetManipulations{
+template<typename T>
+void push_merge_map(const std::vector<T> &a, const std::vector<T> &b,
+                    std::function<void(typename std::vector<T>::const_iterator &ia)> iadvance,
+                    std::function<TypeIndexRelation(typename std::vector<T>::const_iterator ia, typename std::vector<T>::const_iterator ib)> compare,
+                    std::vector<typename std::vector<T>::const_iterator> &merge_map){
+    auto ia = a.begin(), ib = b.begin();
+    auto aend = a.end(), bend = b.end();
+    while((ia != aend) || (ib != bend)){
+        TypeIndexRelation relation;
+        if (ib == bend){
+            relation = type_abeforeb;
+        }else if (ia == aend){
+            relation = type_bbeforea;
+        }else{
+            relation = compare(ia, ib);
+        }
+        if (relation == type_bbeforea){
+            merge_map.push_back(ib);
+            iadvance(ib);
+        }else{
+            merge_map.push_back(ia);
+            iadvance(ia);
+            if (relation == type_asameb) iadvance(ib);
+        }
+    }
+}
+}
+
 template<typename T>
 class Data2D{
 // this class is a work around of using indexing of type [i * stride + j] where i, j, and stride are int and can overflow
@@ -212,7 +243,10 @@ public:
     int getNumIndexes() const;
 
     void setIndexes(std::vector<int> &new_indexes); // move assignment
-    void addSortedInsexes(const std::vector<int> &addition); // merge/copy assignment
+    void addSortedInsexes(const std::vector<int> &addition);   // merge/copy assignment
+    void addUnsortedInsexes(const std::vector<int> &addition); // sort/merge/copy assignment
+
+    const std::vector<int>* getVector() const;
 
 private:
     size_t num_dimensions;

@@ -464,15 +464,41 @@ void MultiIndexSet::setIndexes(std::vector<int> &new_indexes){
     indexes = std::move(new_indexes);
     cache_num_indexes = (int) (indexes.size() / num_dimensions);
 }
+
 void MultiIndexSet::addSortedInsexes(const std::vector<int> &addition){
     if (indexes.empty()){
         indexes.resize(addition.size());
         std::copy(addition.begin(), addition.end(), indexes.data());
     }else{
-        // TODO: merge sets
+        std::vector<int> old_indexes;
+        std::swap(old_indexes, indexes);
+        std::vector<std::vector<int>::const_iterator> merge_map;
+        SetManipulations::push_merge_map<int>(old_indexes, addition,
+                [&](std::vector<int>::const_iterator &ia) -> void{ std::advance(ia, num_dimensions); },
+                [&](std::vector<int>::const_iterator ia, std::vector<int>::const_iterator ib) ->
+                TypeIndexRelation{
+                    for(size_t j=0; j<num_dimensions; j++){
+                        std::cout << "ia = " << *ia << "  ib = " << *ib << std::endl;
+                        if (*ia   < *ib)   return type_abeforeb;
+                        if (*ia++ > *ib++) return type_bbeforea;
+                    }
+                    return type_asameb;
+                },
+                merge_map);
+
+        indexes.resize(merge_map.size() * num_dimensions); // merge map will reference only indexes in both sets
+        auto iindexes = indexes.begin();
+        for(auto &i : merge_map){
+            std::copy_n(i, num_dimensions, iindexes);
+            std::advance(iindexes, num_dimensions);
+        }
     }
     cache_num_indexes = (int) (indexes.size() / num_dimensions);
 }
+void MultiIndexSet::addUnsortedInsexes(const std::vector<int> &addition){
+}
+
+const std::vector<int>* MultiIndexSet::getVector() const{ return &indexes; }
 
 
 StorageSet::StorageSet(int cnum_outputs, int cnum_values) : num_outputs((size_t) cnum_outputs), num_values((size_t) cnum_values){}
