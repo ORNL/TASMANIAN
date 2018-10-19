@@ -54,25 +54,12 @@ endif()
 if (Tasmanian_ENABLE_CUDA) # this must come after MAGMA, since MAGMA doesn't come with package config
     target_link_libraries(${Tasmanian_libtsg_target_name} ${CUDA_cusparse_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_LIBRARIES})
 
-    #if (DEFINED CUDA_INCLUDE_DIRS)
-        target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC ${CUDA_INCLUDE_DIRS})
-    #endif()
+    target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC ${CUDA_INCLUDE_DIRS})
 endif()
 
 if (Tasmanian_ENABLE_OPENMP)
-    if (OpenMP_CXX_LIBRARIES)
-        # using the OpenMP target leads to a problem with the exports
-        # the OpenMP target cannot be exported, which means that a
-        # project importing an already installed Tasmanian would also
-        # have to "know" whether Tasmanian was build with OpenMP and
-        # then call find_package(OpenMP) manually
-        # Furthermore, using find_package(OpenMP) from a different
-        # compiler can generate a wrong target, e.g., building Tasmanian
-        # with gcc links to libgomp, but calling find_package(OpenMP)
-        # from clang will create an OpenMP target that uses libiomp
-        target_link_libraries(${Tasmanian_libtsg_target_name} ${OpenMP_CXX_LIBRARIES})
-        target_compile_options(${Tasmanian_libtsg_target_name} PRIVATE ${OpenMP_CXX_FLAGS})
-    endif()
+    target_link_libraries(${Tasmanian_libtsg_target_name} ${OpenMP_CXX_LIBRARIES})
+    target_compile_options(${Tasmanian_libtsg_target_name} PRIVATE ${OpenMP_CXX_FLAGS})
 endif()
 
 install(TARGETS "${Tasmanian_libtsg_target_name}"

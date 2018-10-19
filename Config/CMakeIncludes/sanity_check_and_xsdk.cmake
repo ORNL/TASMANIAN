@@ -79,13 +79,6 @@ if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
         endif()
     else()
         set(Tasmanian_ENABLE_OPENMP ON) # if using RECOMMENDED, make sure OPENMP is ON
-        if (NOT DEFINED OpenMP_CXX_LIBRARIES)
-            # on older versions of cmake use global flags, see comment in SparseGrids/CMakeLists.txt
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-            if (Tasmanian_ENABLE_FORTRAN)
-                set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-            endif()
-        endif()
     endif()
 endif()
 
@@ -141,19 +134,14 @@ endif()
 
 # Tasmanian_ENABLE_CUDA support for the add_library vs cuda_add_library
 if (Tasmanian_ENABLE_CUDA)
-    find_package(CUDA)
+    find_package(CUDA REQUIRED)
 
-    if (CUDA_FOUND)
-        # newer cmake versions use "CUDA_STANDARD" target property to set the C++ 2011 standard
-        # while Tasmanian sets the property for every target, sometimes cmake does not respect that property (e.g., cmake 3.11.4)
-        list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
-        if(${CMAKE_VERSION} VERSION_LESS "3.7.0")
-            # cmake prior to 3.7.0 CUDA does not respect include folders added per-target
-            include_directories("${CMAKE_CURRENT_BINARY_DIR}/configured/")
-        endif()
-    else()
-        message(FATAL_ERROR "Tasmanian_ENABLE_CUDA is ON, but find_package(CUDA) failed")
-    endif()
+    # "CUDA_STANDARD" per-target is used only by enable_language(CUDA), set the flag manually
+    list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
+
+    # CUDA 10 no longer uses cuBlas device library, but "older" cmake (e.g., cmake 3.11) look for that
+    # if CUDA is found but some library is missing, try to build anyway
+    list(FILTER CUDA_CUBLAS_LIBRARIES EXCLUDE REGEX "-NOTFOUND$")
 endif()
 
 # check for MAGMA
@@ -182,11 +170,7 @@ endif()
 # check for MPI
 if (Tasmanian_ENABLE_MPI)
     if (NOT DEFINED MPI_CXX_LIBRARIES) # user defined MPI libraries is XSDK requirement
-        find_package(MPI)
-
-        if (NOT MPI_CXX_FOUND)
-            message(FATAL_ERROR "Tasmanian_ENABLE_MPI is ON, but find_package(MPI) failed")
-        endif()
+        find_package(MPI REQUIRED)
     endif()
 endif()
 
@@ -202,13 +186,11 @@ include(CMakePackageConfigHelpers)
 # Recommended compiler flags: Intel hasn't been tested in a while
 ########################################################################
 if (Tasmanian_ENABLE_RECOMMENDED)
-    if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang"))
+    if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel"))
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3") # there is no point in making a slow debug
         if (Tasmanian_ENABLE_FORTRAN)
-            set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -O3 -fno-f2c")
+            set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS} -O3")
         endif()
-#    elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-#        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mtune=native -diag-disable 11074 -diag-disable 11076 -Wall -Wextra -Wshadow -Wno-unused-parameter -pedantic")
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         set(CMAKE_CXX_FLAGS_RELEASE "/MD /Ox /DNDEBUG ${OpenMP_CXX_FLAGS}") # cmake overwrites flags a lot, careful how you set those
         set(CMAKE_CXX_FLAGS_DEBUG "/MD /Ox ${OpenMP_CXX_FLAGS}")
@@ -222,20 +204,20 @@ endif()
 ########################################################################
 # Check for the git commit hash, if using a git repo
 ########################################################################
-#if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git") # this is a git repo
-#    find_package(Git)
-#    # do not set the hash if git is missing or
-#    # if we are gnerating files for simple GNU Make compatiblity
-#    if (Git_FOUND AND (NOT Tasmanian_DEVELOPMENT_BACKWARDS))
-#        execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:%H -n 1
-#                        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-#                        OUTPUT_VARIABLE   Tasmanian_git_hash)
-#    endif()
-#endif()
-#if (NOT Tasmanian_git_hash)
-    # if not in a git repo, or there is no git executable, or if generating GNU Make files
-    set(Tasmanian_git_hash "Tasmanian git hash is not available here")
-#endif()
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git") # this is a git repo
+    find_package(Git)
+    # do not set the hash if git is missing or
+    # if we are gnerating files for simple GNU Make compatiblity
+    if (Git_FOUND AND (NOT Tasmanian_DEVELOPMENT_BACKWARDS))
+        execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:%H -n 1
+                        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                        OUTPUT_VARIABLE   Tasmanian_git_hash)
+    endif()
+endif()
+if (NOT Tasmanian_git_hash)
+   # if not in a git repo, or there is no git executable, or if generating GNU Make files
+   set(Tasmanian_git_hash "Tasmanian git hash is not available here")
+endif()
 
 
 ########################################################################
