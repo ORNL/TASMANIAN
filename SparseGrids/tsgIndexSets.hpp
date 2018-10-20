@@ -141,6 +141,15 @@ void push_merge_map(const std::vector<T> &a, const std::vector<T> &b,
                     std::function<void(typename std::vector<T>::const_iterator &ia)> iadvance,
                     std::function<TypeIndexRelation(typename std::vector<T>::const_iterator ia, typename std::vector<T>::const_iterator ib)> compare,
                     std::vector<typename std::vector<T>::const_iterator> &merge_map){
+//! \internal
+//! \brief merge two index-sets, creates a vector of iterators (pointers) to the multi-indexes in the merged (set union) index-set
+//! \ingroup TasmanianMultiIndexSet
+//!
+//! Takes two sets **a** and **b**, generates a vector that describes the uniton set.
+//! * **a** and **b** are sets of vectors/tuples/multi-indexes of type T, each set has equal number of entries implicitly given in **iadvance()**; entries associated to the same multi-index are adjacent
+//! * **iadvance(ia)** takes an iterator pointing to multi-index and jumpt it to the next multi-index, e.g., std::advance(ia, num_dimensions)
+//! * **compare(ia, ib)** returns the order relation between the multi-indexes, *type_abeforeb*, *type_asameb* and *type_bbeforea*
+//! * on exit, **merge_map** holds the references to the multi-indexes of the union set
     auto ia = a.begin(), ib = b.begin();
     auto aend = a.end(), bend = b.end();
     while((ia != aend) || (ib != bend)){
