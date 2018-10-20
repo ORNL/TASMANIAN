@@ -136,19 +136,28 @@ private:
 };
 
 namespace SetManipulations{
-template<typename T>
-void push_merge_map(const std::vector<T> &a, const std::vector<T> &b,
+template<typename T, class B>
+void push_merge_map(const std::vector<T> &a, const std::vector<B> &b,
                     std::function<void(typename std::vector<T>::const_iterator &ia)> iadvance,
-                    std::function<TypeIndexRelation(typename std::vector<T>::const_iterator ia, typename std::vector<T>::const_iterator ib)> compare,
+                    std::function<void(typename std::vector<B>::const_iterator &ib)> ibdvance,
+                    std::function<TypeIndexRelation(typename std::vector<T>::const_iterator ia, typename std::vector<B>::const_iterator ib)> compare,
+                    std::function<void(typename std::vector<B>::const_iterator ib, std::vector<typename std::vector<T>::const_iterator> &merge_map)> pushB,
                     std::vector<typename std::vector<T>::const_iterator> &merge_map){
 //! \internal
 //! \brief merge two index-sets, creates a vector of iterators (pointers) to the multi-indexes in the merged (set union) index-set
 //! \ingroup TasmanianMultiIndexSet
 //!
-//! Takes two sets **a** and **b**, generates a vector that describes the uniton set.
-//! * **a** and **b** are sets of vectors/tuples/multi-indexes of type T, each set has equal number of entries implicitly given in **iadvance()**; entries associated to the same multi-index are adjacent
-//! * **iadvance(ia)** takes an iterator pointing to multi-index and jumpt it to the next multi-index, e.g., std::advance(ia, num_dimensions)
-//! * **compare(ia, ib)** returns the order relation between the multi-indexes, *type_abeforeb*, *type_asameb* and *type_bbeforea*
+//! Takes two multi-index sets described by **a** and **b**, generates a vector **merge_map** that describes the union set.
+//! This operation is used when two multi-index sets are merged, which can happen which can happen with set **b** sorted or unsorted.
+//! In the sorted case, the type for **a** and **b** is the same and **iadvance()** is the same as **ibadvance()**.
+//! In the unsorted case, **b** will sorted references to the multi-indexes, i.e., B = std::vector<T>::const_iterator
+//! * T is a type of multi-index entries, e.g., int, unsigned int, long long;
+//! * **a** is a sorted set of multi-indexes of type T, each multi-index has size implicitly defined by **iadvance()**; entries associated to the same multi-index are adjacent
+//! * **b** gives a description of the second set, in the simple case **b** has the same type as **a** (e.g., B == T); alternatively **b** can be a list of sorted references to the multi-indexes, e.g., when the **b** set was first sorted and then it is being merged;
+//! * **iadvance(ia)** takes an iterator pointing to multi-index and moves it to the next multi-index, e.g., std::advance(ia, num_dimensions);
+//! * **ibdvance(ib)** takes an iterator pointing to the multi-index described in **b** and moves it to the next multi-index, e.g., std::advance(ib, num_dimensions) or ib++;
+//! * **compare(ia, ib)** returns the order relation between the multi-indexes, *type_abeforeb*, *type_asameb* and *type_bbeforea* (note that **ia** and **ib** always point to **a** and **b**);
+//! * **pushB()** add the multi-index described by **b** to the **merge_map**, i.e., pushes **ib** or pushes deference of **ib** (note that **ib** always points to an element in **b**);
 //! * on exit, **merge_map** holds the references to the multi-indexes of the union set
     auto ia = a.begin(), ib = b.begin();
     auto aend = a.end(), bend = b.end();
@@ -162,12 +171,12 @@ void push_merge_map(const std::vector<T> &a, const std::vector<T> &b,
             relation = compare(ia, ib);
         }
         if (relation == type_bbeforea){
-            merge_map.push_back(ib);
-            iadvance(ib);
+            pushB(ib, merge_map);
+            ibdvance(ib);
         }else{
             merge_map.push_back(ia);
             iadvance(ia);
-            if (relation == type_asameb) iadvance(ib);
+            if (relation == type_asameb) ibdvance(ib);
         }
     }
 }
@@ -243,7 +252,7 @@ public:
     MultiIndexSet(int cnum_dimensions);
     ~MultiIndexSet();
 
-    void clear();
+    void reset(); // empty and free memory
     void move(MultiIndexSet &other); // this becomes other, other becomes empty
     bool empty() const;
 
