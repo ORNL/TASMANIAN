@@ -265,6 +265,8 @@ public:
     void addUnsortedInsexes(const std::vector<int> &addition); // sort/merge/copy assignment
 
     const std::vector<int>* getVector() const;
+    int getSlot(const int *p) const;
+    inline int getSlot(const std::vector<int> &p) const{ return getSlot(p.data()); }
 
 private:
     size_t num_dimensions;
