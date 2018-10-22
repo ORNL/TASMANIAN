@@ -267,6 +267,7 @@ public:
     const std::vector<int>* getVector() const;
     int getSlot(const int *p) const;
     inline int getSlot(const std::vector<int> &p) const{ return getSlot(p.data()); }
+    inline const int *getIndex(int i) const{ return &(indexes[((size_t) i) * num_dimensions]); }
 
 private:
     size_t num_dimensions;
