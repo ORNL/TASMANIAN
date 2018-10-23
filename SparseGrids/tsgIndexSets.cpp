@@ -685,13 +685,12 @@ void StorageSet::write(std::ofstream &ofs) const{
     ofs << std::endl;
 }
 void StorageSet::read(std::ifstream &ifs){
+    reset(); // empty values if the file doesn't contain vals
     int has_vals;
     ifs >> num_outputs >> num_values >> has_vals;
     if (has_vals == 1){
         values.resize(num_outputs * num_values);
         for(auto &v : values) ifs >> v;
-    }else{
-        values.resize(0); // empty values if the file doesn't contain vals
     }
 }
 void StorageSet::writeBinary(std::ofstream &ofs) const{
@@ -701,7 +700,7 @@ void StorageSet::writeBinary(std::ofstream &ofs) const{
     ofs.write((char*) num_out_vals, 2*sizeof(int));
     if (values.size() != 0){
         char flag = 'y'; ofs.write((char*) &flag, sizeof(char));
-        ofs.write((char*) values.data(), num_outputs * num_values * sizeof(double));
+        ofs.write((char*) values.data(), values.size() * sizeof(double));
     }else{
         char flag = 'n'; ofs.write((char*) &flag, sizeof(char));
     }
@@ -714,10 +713,27 @@ void StorageSet::readBinary(std::ifstream &ifs){
     char flag; ifs.read((char*) &flag, sizeof(char));
     if (flag == 'y'){
         values.resize(num_outputs * num_values);
-        ifs.read((char*) values.data(), num_outputs * num_values * sizeof(double));
+        ifs.read((char*) values.data(), values.size() * sizeof(double));
     }else{
         values.resize(0); // empty values if the file doesn't contain vals
     }
+}
+
+void StorageSet::reset(){
+    num_outputs = 0;
+    num_values = 0;
+    std::vector<double> temp;
+    std::swap(values, temp); // ensures that values is empty in size() and capacity()
+}
+void StorageSet::copy(const StorageSet &other){
+    num_outputs = other.num_outputs;
+    num_values = other.num_values;
+    values = other.values;
+}
+void StorageSet::resize(int cnum_outputs, int cnum_values){
+    reset();
+    num_outputs = cnum_outputs;
+    num_values = cnum_values;
 }
 
 int StorageSet::getNumOutputs() const{ return (int) num_outputs; }
@@ -727,7 +743,7 @@ std::vector<double>* StorageSet::aliasValues(){ return &values; }
 
 void StorageSet::setValues(const double vals[]){
     values.resize(num_outputs * num_values);
-    std::copy(vals, vals + num_values * num_outputs, values.data());
+    std::copy_n(vals, num_values * num_outputs, values.data());
 }
 void StorageSet::setValues(std::vector<double> &vals){
     num_values = vals.size() / num_outputs;
@@ -760,6 +776,41 @@ void StorageSet::addValues(const IndexSet *old_set, const IndexSet *new_set, con
             offsetOld++;
         }
     }
+}
+void StorageSet::addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]){
+    int num_old = old_set.getNumIndexes();
+    int num_new = new_set.getNumIndexes();
+    int num_dimensions = old_set.getNumDimensions();
+
+    num_values += (size_t) num_new;
+    std::vector<double> combined_values(num_values * num_outputs);
+
+    int iold = 0, inew = 0;
+    size_t off_vals = 0;
+    auto ivals = values.begin();
+    auto icombined = combined_values.begin();
+
+    for(size_t i=0; i<num_values; i++){
+        TypeIndexRelation relation;
+        if (iold >= num_old){
+            relation = type_abeforeb;
+        }else if (inew >= num_new){
+            relation = type_bbeforea;
+        }else{
+            relation = compareIndexes(num_dimensions, new_set.getIndex(inew), old_set.getIndex(iold));
+        }
+        if (relation == type_abeforeb){
+            std::copy_n(&(new_vals[off_vals]), num_outputs, icombined);
+            inew++;
+            off_vals += num_outputs;
+        }else{
+            std::copy_n(ivals, num_outputs, icombined);
+            iold++;
+            std::advance(ivals, num_outputs);
+        }
+        std::advance(icombined, num_outputs);
+    }
+    std::swap(values, combined_values);
 }
 
 TypeIndexRelation StorageSet::compareIndexes(int num_dimensions, const int a[], const int b[]) const{

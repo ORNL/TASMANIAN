@@ -295,6 +295,10 @@ public:
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
 
+    void reset();
+    void copy(const StorageSet &other);
+    void resize(int cnum_outputs, int cnum_values);
+
     const double* getValues(int i) const;
     double* getValues(int i);
     std::vector<double>* aliasValues(); // alternative to setValues()
@@ -303,6 +307,7 @@ public:
     void setValues(const double vals[]);
     void setValues(std::vector<double> &vals);
     void addValues(const IndexSet *old_set, const IndexSet *new_set, const double new_vals[]);
+    void addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]);
 
 protected:
     TypeIndexRelation compareIndexes(int num_dimensions, const int a[], const int b[]) const;
