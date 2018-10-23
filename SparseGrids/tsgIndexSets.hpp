@@ -159,8 +159,10 @@ void push_merge_map(const std::vector<T> &a, const std::vector<B> &b,
 //! * **compare(ia, ib)** returns the order relation between the multi-indexes, *type_abeforeb*, *type_asameb* and *type_bbeforea* (note that **ia** and **ib** always point to **a** and **b**);
 //! * **pushB()** add the multi-index described by **b** to the **merge_map**, i.e., pushes **ib** or pushes deference of **ib** (note that **ib** always points to an element in **b**);
 //! * on exit, **merge_map** holds the references to the multi-indexes of the union set
-    auto ia = a.begin(), ib = b.begin();
-    auto aend = a.end(), bend = b.end();
+    auto ia = a.begin();
+    auto ib = b.begin();
+    auto aend = a.end();
+    auto bend = b.end();
     while((ia != aend) || (ib != bend)){
         TypeIndexRelation relation;
         if (ib == bend){
@@ -259,7 +261,7 @@ public:
     void readBinary(std::ifstream &ifs);
 
     void reset(); // empty and free memory
-    void copy(MultiIndexSet &other); // duplicate other, for grid copy functionality
+    void copy(const MultiIndexSet &other); // duplicate other, for grid copy functionality
     void move(MultiIndexSet &other); // this becomes other, other becomes empty
     bool empty() const;
 
@@ -270,6 +272,7 @@ public:
     void setIndexes(std::vector<int> &new_indexes); // move assignment
     void addSortedInsexes(const std::vector<int> &addition);   // merge/copy assignment
     void addUnsortedInsexes(const std::vector<int> &addition); // sort/merge/copy assignment
+    inline void addMultiIndexSet(const MultiIndexSet &addition){ addSortedInsexes(*addition.getVector()); }
 
     const std::vector<int>* getVector() const;
     int getSlot(const int *p) const;

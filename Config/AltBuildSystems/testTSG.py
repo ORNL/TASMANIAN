@@ -436,12 +436,14 @@ class TestTasmanian(unittest.TestCase):
         if (grid.getNumGPUs() > 1):
             grid.setGPUID(1)
             self.assertTrue((grid.getGPUID() == 1), "did not set to gpu 1")
-            sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
+            if (not ("GNU" == "MSVC")):
+                sName = grid.getGPUName(1) # mostly checks for memory leaks and crashes
 
         if (grid.getNumGPUs() > 0):
             grid.setGPUID(0)
             self.assertTrue((grid.getGPUID() == 0), "did not set to gpu 0")
-            sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
+            if (not ("GNU" == "MSVC")):
+                sName = grid.getGPUName(0) # mostly checks for memory leaks and crashes
 
         # consistency with evaluate, not a timing test
         grid = TasmanianSG.TasmanianSparseGrid()
@@ -963,17 +965,17 @@ class TestTasmanian(unittest.TestCase):
         self.checkPoints(aPoints[:,1], lMustHave = [0.0, -1.0, 1.0], lMustNotHave = [1.0/np.sqrt(3.0)])
         self.checkPoints(aPoints[:,2], lMustHave = [0.0, 1.0], lMustNotHave = [-1.0, 1.0/np.sqrt(3.0)])
         self.loadExpN2(grid)
-        grid.setAnisotropicRefinement('iptotal', 30, 0)
+        grid.setAnisotropicRefinement('iptotal', 5, 0)
         self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')
         aPoints = grid.getNeededPoints()
         self.checkPoints(aPoints[:,1], lMustHave = [], lMustNotHave = [1.0/np.sqrt(3.0)])
         self.checkPoints(aPoints[:,2], lMustHave = [], lMustNotHave = [-1.0, 1.0/np.sqrt(3.0)])
         grid.clearRefinement()
-        grid.setAnisotropicRefinement('iptotal', 30, 0, [3, 2, 2])
+        grid.setAnisotropicRefinement('iptotal', 10, 0, [3, 2, 2])
         self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')
         aPoints = grid.getNeededPoints()
         self.checkPoints(aPoints[:,1], lMustHave = [], lMustNotHave = [1.0/np.sqrt(3.0)])
-        self.checkPoints(aPoints[:,2], lMustHave = [-1.0], lMustNotHave = [1.0/np.sqrt(3.0)])
+        self.checkPoints(aPoints[:,2], lMustHave = [1.0], lMustNotHave = [1.0/np.sqrt(3.0)])
         grid.clearRefinement()
         grid.setSurplusRefinement(1.E-8, 0, '', [3, 2, 1])
         self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')

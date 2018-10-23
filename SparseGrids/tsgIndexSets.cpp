@@ -436,12 +436,13 @@ void IndexSet::cacheNumIndexes(){ cache_num_indexes = (int) (index.size() / num_
 
 
 MultiIndexSet::MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
-MultiIndexSet::MultiIndexSet(int cnum_dimensions)  : num_dimensions(cnum_dimensions), cache_num_indexes(0){};
+MultiIndexSet::MultiIndexSet(int cnum_dimensions)  : num_dimensions(cnum_dimensions), cache_num_indexes(0){}
 MultiIndexSet::~MultiIndexSet(){}
 
 void MultiIndexSet::write(std::ofstream &ofs) const{
     ofs << num_dimensions << " " << cache_num_indexes;
     for(auto i : indexes) ofs << " " << i;
+    ofs << std::endl;
 }
 void MultiIndexSet::read(std::ifstream &ifs){
     reset();
@@ -472,7 +473,7 @@ void MultiIndexSet::reset(){
     std::vector<int> tmp; // create empty vector
     std::swap(tmp, indexes); // swap with empty vector (destroy the empty vector)
 }
-void MultiIndexSet::copy(MultiIndexSet &other){
+void MultiIndexSet::copy(const MultiIndexSet &other){
     num_dimensions = other.num_dimensions;
     cache_num_indexes = other.cache_num_indexes;
     indexes = other.indexes;
@@ -481,7 +482,7 @@ void MultiIndexSet::move(MultiIndexSet &other){
     num_dimensions = other.num_dimensions;
     cache_num_indexes = other.cache_num_indexes;
     indexes = std::move(other.indexes);
-    other.empty();
+    other.reset();
 }
 bool MultiIndexSet::empty() const{ return indexes.empty(); }
 
@@ -647,7 +648,7 @@ void MultiIndexSet::diffSets(const MultiIndexSet &substract, MultiIndexSet &resu
             if (t == type_abeforeb){
                 kept_indexes.push_back(ithis);
                 std::advance(ithis, num_dimensions);
-            }else if (t == type_asameb){
+            }else{
                 std::advance(iother, num_dimensions);
                 if (t == type_asameb) std::advance(ithis, num_dimensions);
             }

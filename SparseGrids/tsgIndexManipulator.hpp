@@ -63,6 +63,7 @@ void generateFullTensorSet(const std::vector<I> &num_entries, MultiIndexSet &set
             t /= *l++;
         }
     }
+    set.setNumDimensions((int) num_dimensions);
     set.setIndexes(indexes);
 }
 
@@ -143,20 +144,52 @@ void unionSets(std::vector<MultiIndexSet> &level_sets, MultiIndexSet &set){
 //! \brief **set** is combines with the union of the **level_sets**, if **overwrite** is **true** the content of **set** is discarded
 //! \ingroup TasmanianMultiIndexManipulations
     int num_levels = (int) level_sets.size();
-    while(num_levels > 2){
+    while(num_levels > 1){
         int stride = num_levels / 2 + (((num_levels % 2) > 0) ? 1 : 0);
-        for(int i=0; i<stride; i++){
-            if (i + stride < num_levels) level_sets[i].addSortedInsexes(*level_sets[i + stride].getVector());
-        }
-        num_levels /= 2;
+        for(int i=0; i<stride; i++)
+            if (i + stride < num_levels)
+                level_sets[i].addMultiIndexSet(level_sets[i + stride]);
+        num_levels = stride;
     }
     if (overwrite){
         set.move(level_sets[0]);
     }else{
-        set.addSortedInsexes(*level_sets[0].getVector());
+        set.addMultiIndexSet(level_sets[0]);
     }
-    if (num_levels == 2) set.addSortedInsexes(*level_sets[1].getVector());
 }
+
+template<typename I>
+void completeSetToLower(MultiIndexSet &set){
+//! \internal
+//! \brief if **set** is a lower set, then do nothing, otherwise add the the multi-indexes needed to make **set** a lower-set
+//! \ingroup TasmanianMultiIndexManipulations
+    size_t num_dimensions = set.getNumDimensions();
+    int num = set.getNumIndexes();
+    Data2D<I> completion;
+    completion.resize((size_t) set.getNumDimensions(), 0);
+    for(int i=0; i<num; i++){
+        std::vector<I> point(num_dimensions);
+        std::copy_n(set.getIndex(i), num_dimensions, point.data());
+        for(auto &p : point){
+            if (p != 0){
+                p--;
+                if (set.getSlot(point) == -1) completion.appendStrip(point);
+                p++;
+            }
+        }
+    }
+
+    if (completion.getNumStrips() > 0){
+        std::vector<MultiIndexSet> level_sets(1);
+        level_sets[0].setNumDimensions((int) num_dimensions);
+        level_sets[0].addUnsortedInsexes(*completion.getVector());
+
+        recursiveLoadPoints<I, true>([](const std::vector<I> &) -> bool{ return true; }, set, level_sets);
+
+        unionSets<false>(level_sets, set);
+    }
+}
+
 
 template<typename I>
 void generateGeneralMultiIndexSet(std::function<bool(const std::vector<I> &index)> criteria, MultiIndexSet &set){
@@ -173,31 +206,7 @@ void generateGeneralMultiIndexSet(std::function<bool(const std::vector<I> &index
 
     unionSets<true>(level_sets, set);
 
-    int num = set.getNumIndexes();
-    Data2D<I> completion;
-    completion.resize(set.getNumDimensions(), 0);
-    for(int i=0; i<num; i++){
-        std::vector<I> point(num_dimensions);
-        std::copy_n(set.getIndex(i), num_dimensions, point.data());
-        for(auto &p : point){
-            if (p != 0){
-                p--;
-                if (set.getSlot(point) != -1) completion.appendStrip(point);
-                p++;
-            }
-        }
-    }
-
-    if (completion.getNumStrips() > 0){
-        level_sets.resize(1);
-        level_sets[0].reset();
-        level_sets[0].setNumDimensions((int) num_dimensions);
-        level_sets[0].addUnsortedInsexes(*completion.getVector());
-
-        recursiveLoadPoints<I, true>(criteria, set, level_sets);
-
-        unionSets<false>(level_sets, set);
-    }
+    completeSetToLower<I>(set);
 }
 
 template<typename I>
@@ -232,7 +241,7 @@ void getProperWeights(size_t num_dimensions, I offset, TypeDepth type, const std
             known_lower = true;
         }else{
             weights = anisotropic_weights; // copy assign
-            normalized_offset = offset * *std::max_element(weights.begin(), weights.begin() + num_dimensions);
+            normalized_offset = offset * *std::min_element(weights.begin(), weights.begin() + num_dimensions);
             if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
                 known_lower = false;
                 for(size_t i=0; i<num_dimensions; i++) if (weights[i] + weights[i+num_dimensions] < 0) known_lower = false;
@@ -279,7 +288,6 @@ void generateWeightedTensorsCached(const std::vector<I> &weights, CacheType norm
                 weight1d = ((CacheType) exactness) * xi + eta * log1p((CacheType) exactness);
             }else{
                 weight1d = pow((CacheType) (1 + exactness), xi / eta);
-                std::cout << weight1d << std::endl;
             }
             cache[j].push_back(weight1d);
         }while(ceil(weight1d) <= normalized_offset);
@@ -351,6 +359,11 @@ void computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents);
 //! \brief using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
 //! \ingroup TasmanianMultiIndexManipulations
 void selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set);
+
+//! \internal
+//! \brief using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
+//! \ingroup TasmanianMultiIndexManipulations
+void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset);
 }
 
 

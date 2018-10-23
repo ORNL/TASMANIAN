@@ -816,7 +816,7 @@ if ((sum((abs(p(:,1) - sqrt(1.0/3.0)) < 0.0001)) == 0) || (sum((abs(p(:,2) - sqr
 end
 v = [exp(-p(:,1).^2 - p(:,2).^2)];
 tsgLoadValues(lGrid, v);
-tsgRefineAnisotropic(lGrid, 'iptotal', 30, 0);
+tsgRefineAnisotropic(lGrid, 'iptotal', 5, 0);
 [p] = tsgGetNeededPoints(lGrid);
 if (size(p, 1) == 0)
     error('Mismatch in tsgRefineAnisotropic(): did not refine');
@@ -824,7 +824,7 @@ end
 if ((sum((abs(p(:,2) - sqrt(1.0/3.0)) < 0.0001)) > 0) || (sum((abs(p(:,3) - sqrt(1.0/3.0)) < 0.0001)) > 0))
     error('Mismatch in tsgRefineAnisotropic(): limits refine using existing limits');
 end
-tsgRefineAnisotropic(lGrid, 'iptotal', 30, 0, [3, 2, 2]);
+tsgRefineAnisotropic(lGrid, 'iptotal', 10, 0, [3, 2, 2]);
 [p] = tsgGetNeededPoints(lGrid);
 if (size(p, 1) == 0)
     error('Mismatch in tsgRefineAnisotropic(): did not refine');

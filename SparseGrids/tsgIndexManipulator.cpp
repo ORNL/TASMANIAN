@@ -49,7 +49,7 @@ void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::fun
                         [&](int w)-> int{
                             int l = 0;
                             while(rule_exactness(l) < w) l++; // get the first level that covers the weight
-                            return l;
+                            return l+1;
                         });
         generateFullTensorSet<int>(levels, mset);
     }else if (known_lower){ // using lower-set logic (cache can be pre-computed)
@@ -61,7 +61,6 @@ void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::fun
             generateWeightedTensorsCached<int, double, type_hyperbolic>(weights, (double) normalized_offset, rule_exactness, mset);
         }
     }else{
-        std::cout << "Dynamic cache  norm off = " << normalized_offset << std::endl;
         generateWeightedTensorsDynamicCached<int, double>(weights, (double) normalized_offset, rule_exactness, mset);
     }
 }
@@ -145,6 +144,34 @@ void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, c
     }
     if (children_unsorted.getNumStrips() > 0)
         new_set.addUnsortedInsexes(*children_unsorted.getVector());
+}
+
+void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    int num_indexes = mset.getNumIndexes();
+    std::vector<int> keep;
+    keep.reserve((size_t) num_indexes);
+    auto imset = mset.getVector()->begin();
+    for(int i=0; i<num_indexes; i++){
+        bool obey = true;
+        for(auto l : level_limits){
+            if ((l > -1) && (*imset > l)) obey = false;
+            imset++;
+        }
+        if (obey) keep.push_back(i);
+    }
+    if (keep.size() == 0){
+        mset.reset();
+        mset.setNumDimensions((int) num_dimensions);
+    }else if (keep.size() < (size_t) num_indexes){
+        std::vector<int> new_indexes(num_dimensions * keep.size());
+        auto inew = new_indexes.begin();
+        for(auto i : keep){
+            std::copy_n(mset.getIndex(i), num_dimensions, inew);
+            std::advance(inew, num_dimensions);
+        }
+        mset.setIndexes(new_indexes);
+    }
 }
 
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
