@@ -35,6 +35,37 @@
 
 namespace TasGrid{
 
+void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::function<long long(int i)> rule_exactness, const std::vector<int> &anisotropic_weights, MultiIndexSet &mset){
+    size_t num_dimension = (size_t) mset.getNumDimensions();
+    std::vector<int> weights;
+    int normalized_offset;
+    bool known_lower;
+
+    MultiIndexManipulations::getProperWeights<int>(num_dimension, offset, type, anisotropic_weights, weights, normalized_offset, known_lower);
+
+    if ((type == type_tensor) || (type == type_iptensor) || (type == type_qptensor)){ // special case, full tensor
+        std::vector<int> levels(num_dimension, 0); // how many levels to keep in each direction
+        std::transform(weights.begin(), weights.end(), levels.begin(),
+                        [&](int w)-> int{
+                            int l = 0;
+                            while(rule_exactness(l) < w) l++; // get the first level that covers the weight
+                            return l;
+                        });
+        generateFullTensorSet<int>(levels, mset);
+    }else if (known_lower){ // using lower-set logic (cache can be pre-computed)
+        if ((type == type_level) || (type == type_iptotal) || (type == type_qptotal)){
+            generateWeightedTensorsCached<int, int, type_level>(weights, normalized_offset, rule_exactness, mset);
+        }else if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+            generateWeightedTensorsCached<int, double, type_curved>(weights, (double) normalized_offset, rule_exactness, mset);
+        }else{ // some type_hyperbolic type
+            generateWeightedTensorsCached<int, double, type_hyperbolic>(weights, (double) normalized_offset, rule_exactness, mset);
+        }
+    }else{
+        std::cout << "Dynamic cache  norm off = " << normalized_offset << std::endl;
+        generateWeightedTensorsDynamicCached<int, double>(weights, (double) normalized_offset, rule_exactness, mset);
+    }
+}
+
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
 IndexManipulator::~IndexManipulator(){}
 

@@ -197,6 +197,138 @@ void generateGeneralMultiIndexSet(std::function<bool(const std::vector<I> &index
         unionSets<false>(level_sets, set);
     }
 }
+
+template<typename I>
+void getProperWeights(size_t num_dimensions, I offset, TypeDepth type, const std::vector<I> &anisotropic_weights,
+                      std::vector<I> &weights, I &normalized_offset, bool &known_lower){
+//! \internal
+//! \brief set an empty vector **weights** to the canonical weights of the type (if **anisotropic_weights** is empty) or the actual weights with scaling adjustment
+//! \ingroup TasmanianMultiIndexManipulations
+//!
+//! Based on the **anisotropic_weights** and selection parameters, create canonical/normalized weights and run basic analysis on the resulting multi-index set.
+//! * **num_dimensions** specifies the number of dimensions of the multi-index
+//! * **type** is the selection type, e.g., type_iptotal
+//! * **anisotropic_weights** is either an empty vector or a vector containing the user specified (non-normalized) weights
+//! * *weights* contains either the normalized weights or the canonical normalized weights
+//! * **normalized_offset** returns the normalized selection threshold
+//! * **known_lower** returns true if the combination of weights and type will guarantee a lower multi-index set
+    if ((type == type_tensor) || (type == type_iptensor) || (type == type_qptensor)){ // special case, full tensor
+        weights.resize(num_dimensions, offset);
+        if (!anisotropic_weights.empty()) for(size_t j=0; j<num_dimensions; j++) weights[j] *= anisotropic_weights[j];
+        normalized_offset = 0; // dummy value, not used
+        known_lower = true; // full-tensors are always lower
+    }else{
+        if (anisotropic_weights.empty()){
+            if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+                weights.resize(2*num_dimensions);
+                std::fill_n(weights.begin(), num_dimensions, 1);
+                std::fill_n(&(weights[num_dimensions]), num_dimensions, 0);
+            }else{
+                weights.resize(num_dimensions, 1);
+            }
+            normalized_offset = offset;
+            known_lower = true;
+        }else{
+            weights = anisotropic_weights; // copy assign
+            normalized_offset = offset * *std::max_element(weights.begin(), weights.begin() + num_dimensions);
+            if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+                known_lower = false;
+                for(size_t i=0; i<num_dimensions; i++) if (weights[i] + weights[i+num_dimensions] < 0) known_lower = false;
+            }else{
+                known_lower = true;
+            }
+        }
+    }
+}
+
+template<typename I, typename CacheType, TypeDepth TotalCurvedHyper>
+void generateWeightedTensorsCached(const std::vector<I> &weights, CacheType normalized_offset, std::function<long long(I i)> rule_exactness, MultiIndexSet &mset){
+//! \internal
+//! \brief generates a multi-index set based on the combination of weights, rule_exactness, offset and type
+//! \ingroup TasmanianMultiIndexManipulations
+//!
+//! Simplifies the calls to caching and generating multi-indexes
+//! * **I** is the Int type of multi-index (use int)
+//! * **CacheType** should wither match **I** (for level, iptotal and qptotal types) or **double** for curved and hyperbolic rules
+//! * **TotalCurvedHyper** should be either `type_level`, `type_curved` or `type_hyperbolic`, indicating the selection strategy
+//! * **rule_exactness()** handles the cases of quadrature, interpolation or level based selection
+//! * **mset** is the resulting multi-index set
+    size_t num_dimension = (size_t) mset.getNumDimensions();
+    std::vector<std::vector<CacheType>> cache(num_dimension);
+    for(size_t j=0; j<num_dimension; j++){
+        CacheType xi = (CacheType) weights[j]; // anisotropic weight for this direction
+        CacheType eta;
+        if (TotalCurvedHyper == type_curved){
+            eta = (CacheType) weights[j + num_dimension]; //curved correction
+        }else if (TotalCurvedHyper == type_hyperbolic){
+            eta = 1;
+            if (std::any_of(weights.begin(), weights.end(), [](I w)->bool{ return (w != 1); })) // if not using canonical weights
+                for(auto w : weights) eta += (CacheType) w;
+        }
+        I i = 0;
+        CacheType weight1d = (TotalCurvedHyper == type_hyperbolic) ? 1 : 0;
+        cache[j].push_back(weight1d);
+        do{
+            i++;
+            long long exactness = 1 + rule_exactness(i - 1);
+            if (TotalCurvedHyper == type_level){
+                weight1d = ((CacheType) exactness) * xi;
+            }else if (TotalCurvedHyper == type_curved){
+                weight1d = ((CacheType) exactness) * xi + eta * log1p((CacheType) exactness);
+            }else{
+                weight1d = pow((CacheType) (1 + exactness), xi / eta);
+                std::cout << weight1d << std::endl;
+            }
+            cache[j].push_back(weight1d);
+        }while(ceil(weight1d) <= normalized_offset);
+    }
+    generateLowerMultiIndexSet<I>([&](const std::vector<I> &index) -> bool{
+                                        CacheType w = 0;
+                                        auto i = index.begin();
+                                        if (TotalCurvedHyper == type_hyperbolic){
+                                            w = 1;
+                                            for(const auto &v : cache) w *= v[*i++];
+                                        }else{
+                                            for(const auto &v : cache) w += v[*i++];
+                                        }
+                                        return (ceil(w) > normalized_offset);
+                                    }, mset);
+}
+
+template<typename I, typename CacheType>
+void generateWeightedTensorsDynamicCached(const std::vector<I> &weights, CacheType normalized_offset, std::function<long long(I i)> rule_exactness, MultiIndexSet &mset){
+//! \internal
+//! \brief generates a multi-index set based on the combination of weights, rule_exactness, offset and type, assume cache has to be build dynamically (non-lower set case)
+//! \ingroup TasmanianMultiIndexManipulations
+//!
+//! Simplifies the calls to caching and generating multi-indexes
+//! * **I** is the Int type of multi-index (use int)
+//! * **CacheType** should wither match **I** (for level, iptotal and qptotal types) or **double** for curved and hyperbolic rules
+//! * **rule_exactness()** handles the cases of quadrature, interpolation or level based selection
+//! * **mset** is the resulting multi-index set
+    size_t num_dimension = (size_t) mset.getNumDimensions();
+    std::vector<std::vector<CacheType>> cache(num_dimension);
+    for(size_t j=0; j<num_dimension; j++) cache[j].push_back(0);
+    generateGeneralMultiIndexSet<I>([&](const std::vector<I> &index) -> bool{
+                                            CacheType w = 0;
+                                            for(size_t j=0; j<num_dimension; j++){
+                                                while(index[j] >= (I) cache[j].size()){
+                                                    CacheType xi = (CacheType) weights[j]; // anisotropic weight for this direction
+                                                    CacheType eta = (CacheType) weights[j + num_dimension];
+                                                    I i = (I) cache[j].size();
+                                                    long long exactness = 1 + rule_exactness(i - 1);
+                                                    cache[j].push_back( ((CacheType) exactness) * xi + eta * log1p((CacheType) exactness) );
+                                                }
+                                                w += cache[j][index[j]];
+                                            }
+                                            return (ceil(w) <= normalized_offset);
+                                        }, mset);
+}
+
+//! \internal
+//! \brief generate the multi-index set defined by the parameters, **rule** cannot be custom
+//! \ingroup TasmanianMultiIndexManipulations
+void selectTensors(int offset, TypeDepth type, std::function<long long(int i)> rule_exactness, const std::vector<int> &anisotropic_weights, MultiIndexSet &set);
 }
 
 
