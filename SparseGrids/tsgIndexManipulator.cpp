@@ -77,6 +77,35 @@ void MultiIndexManipulations::computeLevels(const MultiIndexSet &mset, std::vect
     }
 }
 
+void MultiIndexManipulations::getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &total_max){
+    size_t num_dimension = (size_t) mset.getNumDimensions();
+    max_levels.resize(num_dimension, 0);
+    int n = mset.getNumIndexes();
+    for(int i=0; i<n; i++){
+        const int* t = mset.getIndex(i);
+        for(size_t j=0; j<num_dimension; j++) if (max_levels[j] < t[j]) max_levels[j] = t[j];
+    }
+    total_max = *std::max_element(max_levels.begin(), max_levels.end());
+}
+
+void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents){
+    size_t num_dimension = (size_t) mset.getNumDimensions();
+    int n = mset.getNumIndexes();
+    parents.resize(mset.getNumDimensions(), n);
+    #pragma omp parallel for schedule(static)
+    for(int i=0; i<n; i++){
+        std::vector<int> dad(num_dimension);
+        std::copy_n(mset.getIndex(i), num_dimension, dad.data());
+        int *v = parents.getStrip(i);
+        for(auto &d : dad){
+            d--;
+            *v = (d < 0) ? -1 : mset.getSlot(dad);
+            d++;
+            v++;
+        }
+    }
+}
+
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
 IndexManipulator::~IndexManipulator(){}
 

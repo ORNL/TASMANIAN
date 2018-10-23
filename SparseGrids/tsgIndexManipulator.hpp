@@ -335,6 +335,16 @@ void selectTensors(int offset, TypeDepth type, std::function<long long(int i)> r
 //! \brief returns a vector that is the sum of entries of each multi-index in the set
 //! \ingroup TasmanianMultiIndexManipulations
 void computeLevels(const MultiIndexSet &mset, std::vector<int> &level);
+
+//! \internal
+//! \brief returns a vector that is the maximum index in each direction and a total maximum index, **max_levels** must be empty
+//! \ingroup TasmanianMultiIndexManipulations
+void getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &total_max);
+
+//! \internal
+//! \brief returns a Data2D structure where each strip holds the indexes of all parents (for all directions) associates with the index
+//! \ingroup TasmanianMultiIndexManipulations
+void computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents);
 }
 
 
