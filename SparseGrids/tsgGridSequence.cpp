@@ -40,10 +40,10 @@
 namespace TasGrid{
 
 GridSequence::GridSequence() : num_dimensions(0), num_outputs(0),
-                               points(0), needed(0), values(0)
+                               points(0), needed(0)
 {}
 GridSequence::GridSequence(const GridSequence &seq) : num_dimensions(0), num_outputs(0),
-                                                      points(0), needed(0), values(0)
+                                                      points(0), needed(0)
 {  copyGrid(&seq); }
 GridSequence::~GridSequence(){ reset(); }
 
@@ -73,7 +73,7 @@ void GridSequence::write(std::ofstream &ofs) const{
             for(auto s : surpluses) ofs << " " << s;
         }
         ofs << endl;
-        if (num_outputs > 0) values->write(ofs);
+        if (num_outputs > 0) values.write(ofs);
     }
 }
 void GridSequence::writeBinary(std::ofstream &ofs) const{
@@ -104,7 +104,7 @@ void GridSequence::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             ofs.write((char*) surpluses.data(), surpluses.size() * sizeof(double));
         }
-        if (num_outputs > 0) values->writeBinary(ofs);
+        if (num_outputs > 0) values.writeBinary(ofs);
     }
 }
 void GridSequence::read(std::ifstream &ifs){
@@ -123,7 +123,7 @@ void GridSequence::read(std::ifstream &ifs){
             surpluses.resize(((size_t) num_outputs) * ((size_t) points->getNumIndexes()));
             for(auto &s : surpluses) ifs >> s;
         }
-        values = new StorageSet(0, 0); values->read(ifs);
+        values.read(ifs);
         int mp = 0, mn = 0, max_level;
         if (needed == 0){ // points must be non-zero
             IM.getMaxLevels(points, max_levels, mp);
@@ -159,7 +159,7 @@ void GridSequence::readBinary(std::ifstream &ifs){
             ifs.read((char*) surpluses.data(), surpluses.size() * sizeof(double));
         }
 
-        if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
+        if (num_outputs > 0) values.readBinary(ifs);
 
         int mp = 0, mn = 0, max_level;
         if (needed == 0){ // points must be non-zero
@@ -179,7 +179,7 @@ void GridSequence::reset(){
     clearAccelerationData();
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (values != 0){ delete values; values = 0; }
+    values.reset();
     nodes.clear();
     coeff.clear();
     surpluses.resize(0);
@@ -207,7 +207,7 @@ void GridSequence::copyGrid(const GridSequence *seq){
     IndexSet *pset = new IndexSet(work);
     setPoints(pset, seq->num_outputs, seq->rule);
     if ((num_outputs > 0) && (seq->points != 0)){ // if there are values inside the source object
-        loadNeededPoints(seq->values->getValues(0));
+        loadNeededPoints(seq->values.getValues(0));
     }
 
     if ((seq->points != 0) && (seq->needed != 0)){ // there is a refinement
@@ -242,7 +242,7 @@ void GridSequence::setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule cru
         points = needed;
         needed = 0;
     }else{
-        values = new StorageSet(num_outputs, needed->getNumIndexes());
+        values.resize(num_outputs, needed->getNumIndexes());
     }
 }
 
@@ -358,13 +358,13 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
     clearCudaNodes();
     #endif
     if (points == 0){
-        values->setValues(vals);
+        values.setValues(vals);
         points = needed;
         needed = 0;
     }else if (needed == 0){
-        values->setValues(vals);
+        values.setValues(vals);
     }else{
-        values->addValues(points, needed, vals);
+        values.addValues(points, needed, vals);
         points->addIndexSet(needed);
         delete needed; needed = 0;
         IndexManipulator IM(num_dimensions);
@@ -377,7 +377,7 @@ void GridSequence::mergeRefinement(){
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
     std::vector<double> vals(num_vals, 0.0);
-    values->setValues(vals);
+    values.setValues(vals);
     if (points == 0){
         points = needed;
         needed = 0;
@@ -553,7 +553,7 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
         getQuadratureWeights(w.data());
         for(int i=0; i<num_points; i++){
             w[i] *= conformal_correction[i];
-            const double *vals = values->getValues(i);
+            const double *vals = values.getValues(i);
             for(int k=0; k<num_outputs; k++){
                 q[k] += w[i] * vals[k];
             }
@@ -605,11 +605,10 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
         points = needed;
         needed = 0;
     }
-    vals = values->aliasValues();
+    vals = values.aliasValues();
     vals->resize(num_vals);
     surpluses.resize(num_vals);
-    surpluses.shrink_to_fit();
-    std::copy(c, c + num_vals, surpluses.data());
+    std::copy_n(c, num_vals, surpluses.data());
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     if (acc == accel_cpu_blas){
@@ -631,7 +630,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
     if (output == -1){
         std::vector<double> nrm(num_outputs, 0.0);
         for(int i=0; i<num_points; i++){
-            const double *val = values->getValues(i);
+            const double *val = values.getValues(i);
             int k=0;
             for(auto &n : nrm){
                 double v = fabs(val[k++]);
@@ -770,7 +769,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
 
     std::vector<double> norm(num_outputs, 0.0);
     for(int i=0; i<num_points; i++){
-        const double *val = values->getValues(i);
+        const double *val = values.getValues(i);
         for(int k=0; k<num_outputs; k++){
             double v = fabs(val[k]);
             if (norm[k] < v) norm[k] = v;
@@ -911,7 +910,7 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 
 void GridSequence::recomputeSurpluses(){
     int num_points = points->getNumIndexes();
-    surpluses = *(values->aliasValues());
+    surpluses = *(values.aliasValues());
 
     Data2D<double> surp;
     surp.load(num_outputs, num_points, surpluses.data());

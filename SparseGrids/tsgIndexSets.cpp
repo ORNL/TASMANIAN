@@ -665,6 +665,7 @@ void MultiIndexSet::diffSets(const MultiIndexSet &substract, MultiIndexSet &resu
     }
 }
 
+StorageSet::StorageSet() : num_outputs(0), num_values(0){}
 StorageSet::StorageSet(int cnum_outputs, int cnum_values) : num_outputs((size_t) cnum_outputs), num_values((size_t) cnum_values){}
 StorageSet::StorageSet(const StorageSet *storage) : values(0){
     num_outputs = storage->num_outputs;

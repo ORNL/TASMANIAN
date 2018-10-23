@@ -286,6 +286,7 @@ private:
 
 class StorageSet{ // stores the values of the function
 public:
+    StorageSet();
     StorageSet(int cnum_outputs, int cnum_values);
     StorageSet(const StorageSet *storage);
     ~StorageSet();

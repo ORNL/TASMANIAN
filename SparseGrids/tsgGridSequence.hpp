@@ -187,7 +187,7 @@ private:
     std::vector<double> nodes;
     std::vector<double> coeff;
 
-    StorageSet *values;
+    StorageSet values;
 
     std::vector<int> max_levels;
 
