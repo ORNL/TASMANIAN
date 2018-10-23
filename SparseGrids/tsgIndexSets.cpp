@@ -620,6 +620,51 @@ int MultiIndexSet::getSlot(const int *p) const{
     return -1;
 }
 
+void MultiIndexSet::diffSets(const MultiIndexSet &substract, MultiIndexSet &result){
+    result.reset();
+    result.setNumDimensions((int) num_dimensions);
+
+    std::vector<std::vector<int>::iterator> kept_indexes;
+
+    auto ithis = indexes.begin();
+    auto endthis = indexes.end();
+    auto iother = substract.getVector()->begin();
+    auto endother = substract.getVector()->end();
+
+    while(ithis != endthis){
+        if (iother == endother){
+            kept_indexes.push_back(ithis);
+            std::advance(ithis, num_dimensions);
+        }else{
+            TypeIndexRelation t = [&](std::vector<int>::iterator ia, std::vector<int>::const_iterator ib) ->
+                                        TypeIndexRelation{
+                                            for(size_t j=0; j<num_dimensions; j++){
+                                                if (*ia   < *ib)   return type_abeforeb;
+                                                if (*ia++ > *ib++) return type_bbeforea;
+                                            }
+                                            return type_asameb;
+                                        }(ithis, iother);
+            if (t == type_abeforeb){
+                kept_indexes.push_back(ithis);
+                std::advance(ithis, num_dimensions);
+            }else if (t == type_asameb){
+                std::advance(iother, num_dimensions);
+                if (t == type_asameb) std::advance(ithis, num_dimensions);
+            }
+        }
+    }
+
+    if (kept_indexes.size() > 0){
+        std::vector<int> new_indexes(num_dimensions * kept_indexes.size());
+        auto inew = new_indexes.begin();
+        for(auto i : kept_indexes){
+            std::copy_n(i, num_dimensions, inew);
+            std::advance(inew, num_dimensions);
+        }
+        result.setIndexes(new_indexes);
+    }
+}
+
 StorageSet::StorageSet(int cnum_outputs, int cnum_values) : num_outputs((size_t) cnum_outputs), num_values((size_t) cnum_values){}
 StorageSet::StorageSet(const StorageSet *storage) : values(0){
     num_outputs = storage->num_outputs;
