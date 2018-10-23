@@ -439,11 +439,43 @@ MultiIndexSet::MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
 MultiIndexSet::MultiIndexSet(int cnum_dimensions)  : num_dimensions(cnum_dimensions), cache_num_indexes(0){};
 MultiIndexSet::~MultiIndexSet(){}
 
+void MultiIndexSet::write(std::ofstream &ofs) const{
+    ofs << num_dimensions << " " << cache_num_indexes;
+    for(auto i : indexes) ofs << " " << i;
+}
+void MultiIndexSet::read(std::ifstream &ifs){
+    reset();
+    ifs >> num_dimensions >> cache_num_indexes;
+    indexes.resize(num_dimensions * ((size_t) cache_num_indexes));
+    for(auto &i : indexes) ifs >> i;
+}
+
+void MultiIndexSet::writeBinary(std::ofstream &ofs) const{
+    int sizes[2];
+    sizes[0] = (int) num_dimensions;
+    sizes[1] = cache_num_indexes;
+    ofs.write((char*) sizes, 2*sizeof(int));
+    ofs.write((char*) indexes.data(), indexes.size() * sizeof(int));
+}
+void MultiIndexSet::readBinary(std::ifstream &ifs){
+    int sizes[2];
+    ifs.read((char*) sizes, 2*sizeof(int));
+    num_dimensions = (size_t) sizes[0];
+    cache_num_indexes = sizes[1];
+    indexes.resize(num_dimensions * ((size_t) cache_num_indexes));
+    ifs.read((char*) indexes.data(), indexes.size() * sizeof(int));
+}
+
 void MultiIndexSet::reset(){
     num_dimensions = 0;
     cache_num_indexes = 0;
     std::vector<int> tmp; // create empty vector
     std::swap(tmp, indexes); // swap with empty vector (destroy the empty vector)
+}
+void MultiIndexSet::copy(MultiIndexSet &other){
+    num_dimensions = other.num_dimensions;
+    cache_num_indexes = other.cache_num_indexes;
+    indexes = other.indexes;
 }
 void MultiIndexSet::move(MultiIndexSet &other){
     num_dimensions = other.num_dimensions;

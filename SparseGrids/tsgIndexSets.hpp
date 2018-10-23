@@ -252,7 +252,14 @@ public:
     MultiIndexSet(int cnum_dimensions);
     ~MultiIndexSet();
 
+    void write(std::ofstream &ofs) const;
+    void read(std::ifstream &ifs);
+
+    void writeBinary(std::ofstream &ofs) const;
+    void readBinary(std::ifstream &ifs);
+
     void reset(); // empty and free memory
+    void copy(MultiIndexSet &other); // duplicate other, for grid copy functionality
     void move(MultiIndexSet &other); // this becomes other, other becomes empty
     bool empty() const;
 
