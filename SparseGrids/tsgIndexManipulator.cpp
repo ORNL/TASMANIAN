@@ -66,6 +66,17 @@ void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::fun
     }
 }
 
+void MultiIndexManipulations::computeLevels(const MultiIndexSet &mset, std::vector<int> &level){
+    int num_indexes = mset.getNumIndexes();
+    size_t num_dimension = (size_t) mset.getNumDimensions();
+    level.resize((size_t) num_indexes);
+    #pragma omp parallel for
+    for(int i=0; i<num_indexes; i++){
+        const int* p = mset.getIndex(i);
+        level[i] = std::accumulate(p, p + num_dimension, 0);
+    }
+}
+
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
 IndexManipulator::~IndexManipulator(){}
 

@@ -32,6 +32,7 @@
 #define __TSG_INDEX_MANIPULATOR_HPP
 
 #include <functional>
+#include <numeric>
 
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
@@ -329,6 +330,11 @@ void generateWeightedTensorsDynamicCached(const std::vector<I> &weights, CacheTy
 //! \brief generate the multi-index set defined by the parameters, **rule** cannot be custom
 //! \ingroup TasmanianMultiIndexManipulations
 void selectTensors(int offset, TypeDepth type, std::function<long long(int i)> rule_exactness, const std::vector<int> &anisotropic_weights, MultiIndexSet &set);
+
+//! \internal
+//! \brief returns a vector that is the sum of entries of each multi-index in the set
+//! \ingroup TasmanianMultiIndexManipulations
+void computeLevels(const MultiIndexSet &mset, std::vector<int> &level);
 }
 
 
