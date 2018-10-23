@@ -36,15 +36,15 @@
 namespace TasGrid{
 
 void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::function<long long(int i)> rule_exactness, const std::vector<int> &anisotropic_weights, MultiIndexSet &mset){
-    size_t num_dimension = (size_t) mset.getNumDimensions();
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
     std::vector<int> weights;
     int normalized_offset;
     bool known_lower;
 
-    MultiIndexManipulations::getProperWeights<int>(num_dimension, offset, type, anisotropic_weights, weights, normalized_offset, known_lower);
+    MultiIndexManipulations::getProperWeights<int>(num_dimensions, offset, type, anisotropic_weights, weights, normalized_offset, known_lower);
 
     if ((type == type_tensor) || (type == type_iptensor) || (type == type_qptensor)){ // special case, full tensor
-        std::vector<int> levels(num_dimension, 0); // how many levels to keep in each direction
+        std::vector<int> levels(num_dimensions, 0); // how many levels to keep in each direction
         std::transform(weights.begin(), weights.end(), levels.begin(),
                         [&](int w)-> int{
                             int l = 0;
@@ -68,34 +68,34 @@ void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::fun
 
 void MultiIndexManipulations::computeLevels(const MultiIndexSet &mset, std::vector<int> &level){
     int num_indexes = mset.getNumIndexes();
-    size_t num_dimension = (size_t) mset.getNumDimensions();
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
     level.resize((size_t) num_indexes);
     #pragma omp parallel for
     for(int i=0; i<num_indexes; i++){
         const int* p = mset.getIndex(i);
-        level[i] = std::accumulate(p, p + num_dimension, 0);
+        level[i] = std::accumulate(p, p + num_dimensions, 0);
     }
 }
 
 void MultiIndexManipulations::getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &total_max){
-    size_t num_dimension = (size_t) mset.getNumDimensions();
-    max_levels.resize(num_dimension, 0);
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    max_levels.resize(num_dimensions, 0);
     int n = mset.getNumIndexes();
     for(int i=0; i<n; i++){
         const int* t = mset.getIndex(i);
-        for(size_t j=0; j<num_dimension; j++) if (max_levels[j] < t[j]) max_levels[j] = t[j];
+        for(size_t j=0; j<num_dimensions; j++) if (max_levels[j] < t[j]) max_levels[j] = t[j];
     }
     total_max = *std::max_element(max_levels.begin(), max_levels.end());
 }
 
 void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents){
-    size_t num_dimension = (size_t) mset.getNumDimensions();
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
     int n = mset.getNumIndexes();
     parents.resize(mset.getNumDimensions(), n);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<n; i++){
-        std::vector<int> dad(num_dimension);
-        std::copy_n(mset.getIndex(i), num_dimension, dad.data());
+        std::vector<int> dad(num_dimensions);
+        std::copy_n(mset.getIndex(i), num_dimensions, dad.data());
         int *v = parents.getStrip(i);
         for(auto &d : dad){
             d--;
@@ -104,6 +104,47 @@ void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, Data2D<int
             v++;
         }
     }
+}
+
+void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set){
+    new_set.reset();
+    new_set.setNumDimensions(mset.getNumDimensions());
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+
+    Data2D<int> children_unsorted;
+    children_unsorted.resize(mset.getNumDimensions(), 0);
+
+    std::vector<int> kid(num_dimensions);
+
+    int n = mset.getNumIndexes();
+    if (level_limits.empty()){
+        for(int i=0; i<n; i++){
+            if (flagged[i]){
+                std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+                for(auto &k : kid){
+                    k++;
+                    if (mset.getSlot(kid) == -1) children_unsorted.appendStrip(kid);
+                    k--;
+                }
+            }
+        }
+    }else{
+        for(int i=0; i<n; i++){
+            if (flagged[i]){
+                std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+                auto ill = level_limits.begin();
+                for(auto &k : kid){
+                    k++;
+                    if (((*ill == -1) || (k <= *ill)) && (mset.getSlot(kid) == -1))
+                        children_unsorted.appendStrip(kid);
+                    k--;
+                    ill++;
+                }
+            }
+        }
+    }
+    if (children_unsorted.getNumStrips() > 0)
+        new_set.addUnsortedInsexes(*children_unsorted.getVector());
 }
 
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}

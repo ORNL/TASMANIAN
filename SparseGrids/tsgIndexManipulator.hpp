@@ -175,6 +175,7 @@ void generateGeneralMultiIndexSet(std::function<bool(const std::vector<I> &index
 
     int num = set.getNumIndexes();
     Data2D<I> completion;
+    completion.resize(set.getNumDimensions(), 0);
     for(int i=0; i<num; i++){
         std::vector<I> point(num_dimensions);
         std::copy_n(set.getIndex(i), num_dimensions, point.data());
@@ -345,6 +346,11 @@ void getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &t
 //! \brief returns a Data2D structure where each strip holds the indexes of all parents (for all directions) associates with the index
 //! \ingroup TasmanianMultiIndexManipulations
 void computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents);
+
+//! \internal
+//! \brief using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
+//! \ingroup TasmanianMultiIndexManipulations
+void selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set);
 }
 
 
