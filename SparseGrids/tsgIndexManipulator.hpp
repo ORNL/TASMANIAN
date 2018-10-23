@@ -92,6 +92,15 @@ void generateLowerMultiIndexSet(std::function<bool(const std::vector<I> &index)>
 
 template<typename I, bool completion>
 void recursiveLoadPoints(std::function<bool(const std::vector<I> &index)> criteria, const MultiIndexSet &set, std::vector<MultiIndexSet> &level_sets){
+//! \internal
+//! \brief take the last set of **level_sets** append a new set of the parents or children that satisfy **criteria()**, repeat recursively until there are no more indexes to add
+//! \ingroup TasmanianMultiIndexManipulations
+//!
+//! **level_sets** must contain at least one set, then this function considers all the children/parents of the entries of the last set (given by `level_sets.back()`)
+//! and then creates a new set with only the children/parents that satisfy the **criteria()**. The new set is appended to the **level_sets**
+//! (similar to `push_back()`, but using `resize()`). The recursion terminates at the set where all children/parents fail the **criteria()**.
+//! * **I** defines the Int type for the set (should be `int` right now)
+//! * **completion** equal `true` indicates the use of *parents* (i.e., do the lower completion), set to `false` indicates the use of *children*
     size_t num_dimensions = level_sets.back().getNumDimensions();
     bool adding = true;
     while(adding){
@@ -127,8 +136,11 @@ void recursiveLoadPoints(std::function<bool(const std::vector<I> &index)> criter
     }
 }
 
-template<typename I, bool overwrite>
+template<bool overwrite>
 void unionSets(std::vector<MultiIndexSet> &level_sets, MultiIndexSet &set){
+//! \internal
+//! \brief **set** is combines with the union of the **level_sets**, if **overwrite** is **true** the content of **set** is discarded
+//! \ingroup TasmanianMultiIndexManipulations
     int num_levels = (int) level_sets.size();
     while(num_levels > 2){
         int stride = num_levels / 2 + (((num_levels % 2) > 0) ? 1 : 0);
@@ -158,7 +170,7 @@ void generateGeneralMultiIndexSet(std::function<bool(const std::vector<I> &index
 
     recursiveLoadPoints<I, false>(criteria, set, level_sets);
 
-    unionSets<I, true>(level_sets, set);
+    unionSets<true>(level_sets, set);
 
     int num = set.getNumIndexes();
     Data2D<I> completion;
@@ -182,7 +194,7 @@ void generateGeneralMultiIndexSet(std::function<bool(const std::vector<I> &index
 
         recursiveLoadPoints<I, true>(criteria, set, level_sets);
 
-        unionSets<I, false>(level_sets, set);
+        unionSets<false>(level_sets, set);
     }
 }
 }
