@@ -706,11 +706,6 @@ void StorageSet::reset(){
     std::vector<double> temp;
     std::swap(values, temp); // ensures that values is empty in size() and capacity()
 }
-void StorageSet::copy(const StorageSet &other){
-    num_outputs = other.num_outputs;
-    num_values = other.num_values;
-    values = other.values;
-}
 void StorageSet::resize(int cnum_outputs, int cnum_values){
     reset();
     num_outputs = cnum_outputs;

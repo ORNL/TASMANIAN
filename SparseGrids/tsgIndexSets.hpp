@@ -300,7 +300,6 @@ public:
     void readBinary(std::ifstream &ifs);
 
     void reset();
-    void copy(const StorageSet &other);
     void resize(int cnum_outputs, int cnum_values);
 
     const double* getValues(int i) const;
