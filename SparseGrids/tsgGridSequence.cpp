@@ -754,28 +754,28 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
 
 void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
     MultiIndexSet space; // used only when interpolation is false
-    const MultiIndexSet *work = (points.empty()) ? &needed : &points;
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
     if (!interpolation){
         OneDimensionalMeta meta;
-        int num_tensors = work->getNumIndexes();
+        int num_tensors = work.getNumIndexes();
         std::vector<MultiIndexSet> tensors((size_t) num_tensors);
 
         #pragma omp parallel for
         for(int i=0; i<num_tensors; i++){
             std::vector<int> npoints((size_t) num_dimensions);
-            const int *p = work->getIndex(i);
+            const int *p = work.getIndex(i);
             for(int j=0; j<num_dimensions; j++)
                 npoints[j] = meta.getQExact(p[j], rule) + 1;
             MultiIndexManipulations::generateFullTensorSet<int>(npoints, tensors[i]);
         }
 
         MultiIndexManipulations::unionSets<true>(tensors, space);
-        work = &space;
     }
+    const MultiIndexSet &result = (interpolation) ? work : space;
 
-    n = work->getNumIndexes();
-    poly = new int[work->getVector()->size()];
-    std::copy(work->getVector()->begin(), work->getVector()->end(), poly);
+    n = result.getNumIndexes();
+    poly = new int[result.getVector()->size()];
+    std::copy(result.getVector()->begin(), result.getVector()->end(), poly);
 }
 const double* GridSequence::getSurpluses() const{
     return surpluses.data();
