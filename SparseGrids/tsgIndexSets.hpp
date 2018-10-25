@@ -260,11 +260,11 @@ public:
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
 
-    bool empty() const;
+    inline bool empty() const{ return indexes.empty(); }
 
     void setNumDimensions(int new_dimensions);
-    int getNumDimensions() const;
-    int getNumIndexes() const;
+    inline int getNumDimensions() const{ return (int) num_dimensions; }
+    inline int getNumIndexes() const{ return cache_num_indexes; }
 
     void setIndexes(std::vector<int> &new_indexes); // move assignment
     void addSortedInsexes(const std::vector<int> &addition);   // merge/copy assignment

@@ -467,15 +467,11 @@ void MultiIndexSet::readBinary(std::ifstream &ifs){
     ifs.read((char*) indexes.data(), indexes.size() * sizeof(int));
 }
 
-bool MultiIndexSet::empty() const{ return indexes.empty(); }
-
 void MultiIndexSet::setNumDimensions(int new_dimensions){
     indexes = std::vector<int>();
     cache_num_indexes = 0;
     num_dimensions = (size_t) new_dimensions;
 }
-int MultiIndexSet::getNumDimensions() const{ return (int) num_dimensions; }
-int MultiIndexSet::getNumIndexes() const{ return cache_num_indexes; }
 
 void MultiIndexSet::setIndexes(std::vector<int> &new_indexes){
     indexes = std::move(new_indexes);
