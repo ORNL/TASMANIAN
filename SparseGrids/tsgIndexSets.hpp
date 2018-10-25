@@ -274,6 +274,8 @@ public:
     const std::vector<int>* getVector() const;
     int getSlot(const int *p) const;
     inline int getSlot(const std::vector<int> &p) const{ return getSlot(p.data()); }
+    inline bool missing(const std::vector<int> &p) const{ return (getSlot(p.data()) == -1); }
+
     inline const int *getIndex(int i) const{ return &(indexes[((size_t) i) * num_dimensions]); }
 
     void diffSets(const MultiIndexSet &substract, MultiIndexSet &result); // result = this - substract (set difference)

@@ -134,7 +134,7 @@ void recursiveLoadPoints(std::function<bool(const std::vector<I> &index)> criter
                 for(auto &p : point){
                     if (p != 0){
                         p--;
-                        if (set.getSlot(point) == -1) level.appendStrip(point);
+                        if (set.missing(point)) level.appendStrip(point);
                         p++;
                     }
                 }
@@ -191,7 +191,7 @@ void completeSetToLower(MultiIndexSet &set){
         for(auto &p : point){
             if (p != 0){
                 p--;
-                if (set.getSlot(point) == -1) completion.appendStrip(point);
+                if (set.missing(point)) completion.appendStrip(point);
                 p++;
             }
         }

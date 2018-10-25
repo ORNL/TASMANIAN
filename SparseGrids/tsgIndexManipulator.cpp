@@ -121,7 +121,7 @@ void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, c
                 std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
                 for(auto &k : kid){
                     k++;
-                    if (mset.getSlot(kid) == -1) children_unsorted.appendStrip(kid);
+                    if (mset.missing(kid)) children_unsorted.appendStrip(kid);
                     k--;
                 }
             }
@@ -133,7 +133,7 @@ void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, c
                 auto ill = level_limits.begin();
                 for(auto &k : kid){
                     k++;
-                    if (((*ill == -1) || (k <= *ill)) && (mset.getSlot(kid) == -1))
+                    if (((*ill == -1) || (k <= *ill)) && mset.missing(kid))
                         children_unsorted.appendStrip(kid);
                     k--;
                     ill++;
