@@ -203,9 +203,9 @@ void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule
     rule = crule;
 
     if (num_outputs == 0){
-        points.move(pset);
+        points = std::move(pset);
     }else{
-        needed.move(pset);
+        needed = std::move(pset);
         values.resize(num_outputs, needed.getNumIndexes());
     }
     prepareSequence();
@@ -315,7 +315,8 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
     #endif
     if (points.empty()){
         values.setValues(vals);
-        points.move(needed);
+        points = std::move(needed);
+        needed = MultiIndexSet();
     }else if (needed.empty()){
         values.setValues(vals);
     }else{
@@ -333,7 +334,8 @@ void GridSequence::mergeRefinement(){
     std::vector<double> vals(num_vals, 0.0);
     values.setValues(vals);
     if (points.empty()){
-        points.move(needed);
+        points = std::move(needed);
+        needed = MultiIndexSet();
     }else{
         points.addMultiIndexSet(needed);
         needed.reset();
@@ -554,7 +556,8 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     if (!points.empty()){
         clearRefinement();
     }else{
-        points.move(needed);
+        points = std::move(needed);
+        needed = MultiIndexSet();
     }
     vals = values.aliasValues();
     vals->resize(num_vals);

@@ -152,7 +152,7 @@ void unionSets(std::vector<MultiIndexSet> &level_sets, MultiIndexSet &set){
         num_levels = stride;
     }
     if (overwrite){
-        set.move(level_sets[0]);
+        set = std::move(level_sets[0]);
     }else{
         set.addMultiIndexSet(level_sets[0]);
     }

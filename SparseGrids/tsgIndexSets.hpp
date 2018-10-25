@@ -262,7 +262,6 @@ public:
 
     void reset(); // empty and free memory
     void copy(const MultiIndexSet &other); // duplicate other, for grid copy functionality
-    void move(MultiIndexSet &other); // this becomes other, other becomes empty
     bool empty() const;
 
     void setNumDimensions(int new_dimensions);

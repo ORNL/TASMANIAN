@@ -478,12 +478,7 @@ void MultiIndexSet::copy(const MultiIndexSet &other){
     cache_num_indexes = other.cache_num_indexes;
     indexes = other.indexes;
 }
-void MultiIndexSet::move(MultiIndexSet &other){
-    num_dimensions = other.num_dimensions;
-    cache_num_indexes = other.cache_num_indexes;
-    indexes = std::move(other.indexes);
-    other.reset();
-}
+
 bool MultiIndexSet::empty() const{ return indexes.empty(); }
 
 void MultiIndexSet::setNumDimensions(int new_dimensions){
