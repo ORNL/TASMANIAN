@@ -39,7 +39,7 @@ except:
     bTsgPlotting = False
     tsgPlot = []
 
-__version__ = "6.0"
+__version__ = "6.1"
 __license__ = "BSD 3-Clause with UT-Battelle disclaimer"
 __author__ = "Miroslav Stoyanov"
 __git_commit_hash__ = "Tasmanian git hash is not available here"
