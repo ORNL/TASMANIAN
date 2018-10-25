@@ -261,7 +261,6 @@ public:
     void readBinary(std::ifstream &ifs);
 
     void reset(); // empty and free memory
-    void copy(const MultiIndexSet &other); // duplicate other, for grid copy functionality
     bool empty() const;
 
     void setNumDimensions(int new_dimensions);

@@ -473,11 +473,6 @@ void MultiIndexSet::reset(){
     std::vector<int> tmp; // create empty vector
     std::swap(tmp, indexes); // swap with empty vector (destroy the empty vector)
 }
-void MultiIndexSet::copy(const MultiIndexSet &other){
-    num_dimensions = other.num_dimensions;
-    cache_num_indexes = other.cache_num_indexes;
-    indexes = other.indexes;
-}
 
 bool MultiIndexSet::empty() const{ return indexes.empty(); }
 

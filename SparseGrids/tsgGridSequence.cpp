@@ -179,9 +179,9 @@ void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Ty
 void GridSequence::copyGrid(const GridSequence *seq){
     MultiIndexSet pset;
     if (seq->points.empty()){
-        pset.copy(seq->needed);
+        pset = seq->needed;
     }else{
-        pset.copy(seq->points);
+        pset = seq->points;
     }
     setPoints(pset, seq->num_outputs, seq->rule);
 
@@ -190,7 +190,7 @@ void GridSequence::copyGrid(const GridSequence *seq){
     }
 
     if ((!seq->points.empty()) && (!seq->needed.empty())){ // there is a refinement
-        needed.copy(seq->needed);
+        needed = seq->needed;
         prepareSequence();
     }
     surpluses = seq->surpluses;
