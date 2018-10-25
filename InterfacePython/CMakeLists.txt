@@ -20,9 +20,6 @@ endif()
 #          to be used only for development
 ########################################################################
 if (Tasmanian_DEVELOPMENT_BACKWARDS)
-    set(Tasmanian_libsparsegrid_path "libtasmaniansparsegrid.dll")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/TasmanianSG.windows.py")
-
     set(Tasmanian_libsparsegrid_path "./libtasmaniansparsegrid.so")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/TasmanianSG.py")
 
