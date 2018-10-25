@@ -270,6 +270,7 @@ public:
     void addSortedInsexes(const std::vector<int> &addition);   // merge/copy assignment
     void addUnsortedInsexes(const std::vector<int> &addition); // sort/merge/copy assignment
     inline void addMultiIndexSet(const MultiIndexSet &addition){ addSortedInsexes(*addition.getVector()); }
+    inline void addData2D(const Data2D<int> &addition){ addUnsortedInsexes(*addition.getVector()); }
 
     const std::vector<int>* getVector() const;
     int getSlot(const int *p) const;

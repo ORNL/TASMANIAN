@@ -142,7 +142,7 @@ void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, c
         }
     }
     if (children_unsorted.getNumStrips() > 0)
-        new_set.addUnsortedInsexes(*children_unsorted.getVector());
+        new_set.addData2D(children_unsorted);
 }
 
 void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset){

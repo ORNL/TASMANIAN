@@ -151,7 +151,7 @@ void recursiveLoadPoints(std::function<bool(const std::vector<I> &index)> criter
         if (adding){
             level_sets.resize(level_sets.size() + 1);
             level_sets.back().setNumDimensions((int) num_dimensions);
-            level_sets.back().addUnsortedInsexes(*level.getVector());
+            level_sets.back().addData2D(level);
         }
     }
 }
@@ -200,7 +200,7 @@ void completeSetToLower(MultiIndexSet &set){
     if (completion.getNumStrips() > 0){
         std::vector<MultiIndexSet> level_sets(1);
         level_sets[0].setNumDimensions((int) num_dimensions);
-        level_sets[0].addUnsortedInsexes(*completion.getVector());
+        level_sets[0].addData2D(completion);
 
         recursiveLoadPoints<I, true>([](const std::vector<I> &) -> bool{ return true; }, set, level_sets);
 
