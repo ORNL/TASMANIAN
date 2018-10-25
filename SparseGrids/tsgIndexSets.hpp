@@ -260,7 +260,6 @@ public:
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
 
-    void reset(); // empty and free memory
     bool empty() const;
 
     void setNumDimensions(int new_dimensions);

@@ -445,7 +445,7 @@ void MultiIndexSet::write(std::ofstream &ofs) const{
     ofs << std::endl;
 }
 void MultiIndexSet::read(std::ifstream &ifs){
-    reset();
+    indexes = std::vector<int>();
     ifs >> num_dimensions >> cache_num_indexes;
     indexes.resize(num_dimensions * ((size_t) cache_num_indexes));
     for(auto &i : indexes) ifs >> i;
@@ -467,17 +467,11 @@ void MultiIndexSet::readBinary(std::ifstream &ifs){
     ifs.read((char*) indexes.data(), indexes.size() * sizeof(int));
 }
 
-void MultiIndexSet::reset(){
-    num_dimensions = 0;
-    cache_num_indexes = 0;
-    std::vector<int> tmp; // create empty vector
-    std::swap(tmp, indexes); // swap with empty vector (destroy the empty vector)
-}
-
 bool MultiIndexSet::empty() const{ return indexes.empty(); }
 
 void MultiIndexSet::setNumDimensions(int new_dimensions){
-    reset();
+    indexes = std::vector<int>();
+    cache_num_indexes = 0;
     num_dimensions = (size_t) new_dimensions;
 }
 int MultiIndexSet::getNumDimensions() const{ return (int) num_dimensions; }
@@ -612,8 +606,7 @@ int MultiIndexSet::getSlot(const int *p) const{
 }
 
 void MultiIndexSet::diffSets(const MultiIndexSet &substract, MultiIndexSet &result){
-    result.reset();
-    result.setNumDimensions((int) num_dimensions);
+    result = MultiIndexSet((int) num_dimensions);
 
     std::vector<std::vector<int>::iterator> kept_indexes;
 

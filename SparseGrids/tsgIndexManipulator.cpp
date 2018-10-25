@@ -106,8 +106,7 @@ void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, Data2D<int
 }
 
 void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set){
-    new_set.reset();
-    new_set.setNumDimensions(mset.getNumDimensions());
+    new_set = MultiIndexSet(mset.getNumDimensions());
     size_t num_dimensions = (size_t) mset.getNumDimensions();
 
     Data2D<int> children_unsorted;
@@ -161,8 +160,7 @@ void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level
         if (obey) keep.push_back(i);
     }
     if (keep.size() == 0){
-        mset.reset();
-        mset.setNumDimensions((int) num_dimensions);
+        mset = MultiIndexSet((int) num_dimensions);
     }else if (keep.size() < (size_t) num_indexes){
         std::vector<int> new_indexes(num_dimensions * keep.size());
         auto inew = new_indexes.begin();

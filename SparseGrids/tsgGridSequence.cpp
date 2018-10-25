@@ -151,15 +151,15 @@ void GridSequence::readBinary(std::ifstream &ifs){
 
 void GridSequence::reset(){
     clearAccelerationData();
-    points.reset();
-    needed.reset();
+    points = MultiIndexSet();
+    needed = MultiIndexSet();
     values.reset();
     nodes.clear();
     coeff.clear();
     surpluses.resize(0);
     surpluses.shrink_to_fit();
 }
-void GridSequence::clearRefinement(){ needed.reset(); }
+void GridSequence::clearRefinement(){ needed = MultiIndexSet(); }
 
 void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
 
@@ -322,7 +322,7 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
     }else{
         values.addValues(points, needed, vals);
         points.addSortedInsexes(*needed.getVector());
-        needed.reset();
+        needed = MultiIndexSet();
         prepareSequence();
     }
     recomputeSurpluses();
@@ -338,7 +338,7 @@ void GridSequence::mergeRefinement(){
         needed = MultiIndexSet();
     }else{
         points.addMultiIndexSet(needed);
-        needed.reset();
+        needed = MultiIndexSet();
         prepareSequence();
     }
     surpluses.resize(num_vals);
