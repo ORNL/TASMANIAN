@@ -346,7 +346,8 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
 
     buildTree();
 
-    if (pwpoly->values != 0) values = new StorageSet(pwpoly->values);
+    if (pwpoly->values != 0) values = new StorageSet();
+    *values = *pwpoly->values;
 
     if ((points != 0) && (num_outputs > 0)){ // points are loaded
         surpluses.resize(num_outputs, points->getNumIndexes());

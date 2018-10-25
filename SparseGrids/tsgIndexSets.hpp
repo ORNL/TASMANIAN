@@ -291,7 +291,6 @@ class StorageSet{ // stores the values of the function
 public:
     StorageSet();
     StorageSet(int cnum_outputs, int cnum_values);
-    StorageSet(const StorageSet *storage);
     ~StorageSet();
 
     void write(std::ofstream &ofs) const;
@@ -299,7 +298,6 @@ public:
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
 
-    void reset();
     void resize(int cnum_outputs, int cnum_values);
 
     const double* getValues(int i) const;

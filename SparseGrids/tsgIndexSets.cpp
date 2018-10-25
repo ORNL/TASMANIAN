@@ -647,11 +647,6 @@ void MultiIndexSet::diffSets(const MultiIndexSet &substract, MultiIndexSet &resu
 
 StorageSet::StorageSet() : num_outputs(0), num_values(0){}
 StorageSet::StorageSet(int cnum_outputs, int cnum_values) : num_outputs((size_t) cnum_outputs), num_values((size_t) cnum_values){}
-StorageSet::StorageSet(const StorageSet *storage) : values(0){
-    num_outputs = storage->num_outputs;
-    num_values = storage->num_values;
-    values = storage->values; // copy assignment
-}
 StorageSet::~StorageSet(){}
 
 void StorageSet::write(std::ofstream &ofs) const{
@@ -666,7 +661,7 @@ void StorageSet::write(std::ofstream &ofs) const{
     ofs << std::endl;
 }
 void StorageSet::read(std::ifstream &ifs){
-    reset(); // empty values if the file doesn't contain vals
+    values = std::vector<double>(); // empty values if the file doesn't contain vals
     int has_vals;
     ifs >> num_outputs >> num_values >> has_vals;
     if (has_vals == 1){
@@ -700,14 +695,8 @@ void StorageSet::readBinary(std::ifstream &ifs){
     }
 }
 
-void StorageSet::reset(){
-    num_outputs = 0;
-    num_values = 0;
-    std::vector<double> temp;
-    std::swap(values, temp); // ensures that values is empty in size() and capacity()
-}
 void StorageSet::resize(int cnum_outputs, int cnum_values){
-    reset();
+    values = std::vector<double>();
     num_outputs = cnum_outputs;
     num_values = cnum_values;
 }

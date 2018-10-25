@@ -153,7 +153,7 @@ void GridSequence::reset(){
     clearAccelerationData();
     points = MultiIndexSet();
     needed = MultiIndexSet();
-    values.reset();
+    values = StorageSet();
     nodes.clear();
     coeff.clear();
     surpluses.resize(0);
