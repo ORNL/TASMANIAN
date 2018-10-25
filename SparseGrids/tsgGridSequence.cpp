@@ -277,12 +277,12 @@ void GridSequence::getPoints(double *x) const{
 }
 
 void GridSequence::getQuadratureWeights(double *weights) const{
-    const MultiIndexSet *work = (points.empty()) ? &needed : &points;
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
     std::vector<double> integ;
     cacheBasisIntegrals(integ);
-    int n = work->getNumIndexes();
+    int n = work.getNumIndexes();
     for(int i=0; i<n; i++){
-        const int* p = work->getIndex(i);
+        const int* p = work.getIndex(i);
         weights[i] = integ[p[0]];
         for(int j=1; j<num_dimensions; j++){
             weights[i] *= integ[p[j]];
@@ -295,11 +295,11 @@ void GridSequence::getQuadratureWeights(double *weights) const{
 void GridSequence::getInterpolationWeights(const double x[], double *weights) const{
     std::vector<std::vector<double>> cache;
     cacheBasisValues<double>(x, cache);
-    const MultiIndexSet *work = (points.empty()) ? &needed : &points;
-    int n = work->getNumIndexes();
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int n = work.getNumIndexes();
     weights[0] = 1.0;
     for(int i=1; i<n; i++){
-        const int* p = work->getIndex(i);
+        const int* p = work.getIndex(i);
         weights[i] = cache[0][p[0]];
         for(int j=1; j<num_dimensions; j++){
             weights[i] *= cache[j][p[j]];
@@ -523,14 +523,14 @@ void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, do
     }
 }
 void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[]) const{
-    const MultiIndexSet *work = (points.empty()) ? &needed : &points;
-    int num_points = work->getNumIndexes();
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int num_points = work.getNumIndexes();
 
     std::vector<std::vector<double>> cache;
     cacheBasisValues<double>(x, cache);
 
     for(int i=0; i<num_points; i++){
-        const int* p = work->getIndex(i);
+        const int* p = work.getIndex(i);
         fvalues[i] = cache[0][p[0]];
         for(int j=1; j<num_dimensions; j++){
             fvalues[i] *= cache[j][p[j]];
@@ -908,15 +908,15 @@ void GridSequence::recomputeSurpluses(){
 }
 
 void GridSequence::applyTransformationTransposed(double weights[]) const{
-    const MultiIndexSet *work = (points.empty()) ? &needed : &points;
-    int num_points = work->getNumIndexes();
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int num_points = work.getNumIndexes();
 
     std::vector<int> level;
-    MultiIndexManipulations::computeLevels(*work, level);
+    MultiIndexManipulations::computeLevels(work, level);
     int top_level = *std::max_element(level.begin(), level.end());
 
     Data2D<int> parents;
-    MultiIndexManipulations::computeDAGup(*work, parents);
+    MultiIndexManipulations::computeDAGup(work, parents);
 
     std::vector<int> monkey_count(top_level + 1);
     std::vector<int> monkey_tail(top_level + 1);
@@ -925,7 +925,7 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
     for(int l=top_level; l>0; l--){
         for(int i=0; i<num_points; i++){
             if (level[i] == l){
-                const int* p = work->getIndex(i);
+                const int* p = work.getIndex(i);
                 int current = 0;
 
                 monkey_count[0] = 0;
@@ -938,7 +938,7 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
-                            weights[branch] -= weights[i] * evalBasis(work->getIndex(branch), p);
+                            weights[branch] -= weights[i] * evalBasis(work.getIndex(branch), p);
                             used[branch] = true;
 
                             monkey_count[++current] = 0;
