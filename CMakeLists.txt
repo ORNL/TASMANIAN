@@ -87,6 +87,7 @@ option(Tasmanian_ENABLE_CUDA        "Enable Nvidia CUDA kernels and libraries wi
 option(Tasmanian_ENABLE_MAGMA       "Enable acceleration using UTK Magma library within Tasmanian (stable)" OFF)
 option(Tasmanian_ENABLE_FORTRAN     "Enable Fortran interface for Tasmanian (mostly stable)" OFF)
 option(Tasmanian_ENABLE_MPI         "Enable MPI support for Tasmanian (experimental)"       OFF)
+option(Tasmanian_ENABLE_DOXYGEN     "Enable Dogygen documentation for Tasmanian (not fully complete)" OFF)
 
 # treat those similar to options, but give values other than ON/OFF
 set(Tasmanian_MATLAB_WORK_FOLDER     ""  CACHE PATH   "Enable MATLAB interface and use the path for the MATLAB work folder (stable)")
@@ -135,6 +136,9 @@ if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceMATLAB"  "${CMAKE_CURRENT_BINARY_DIR}/MATLAB")
 endif()
 
+if (Tasmanian_ENABLE_DOXYGEN)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Doxygen"  "${CMAKE_CURRENT_BINARY_DIR}/Doxygen")
+endif()
 
 ########################################################################
 # Testing: post install, make test_install
@@ -228,7 +232,7 @@ if (NOT USE_XSDK_DEFAULTS)
     foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS
                              Tasmanian_ENABLE_MPI     Tasmanian_ENABLE_PYTHON
                              Tasmanian_ENABLE_CUDA    Tasmanian_ENABLE_MAGMA
-                             Tasmanian_ENABLE_FORTRAN)
+                             Tasmanian_ENABLE_FORTRAN Tasmanian_ENABLE_DOXYGEN)
         if (${Tasmanian_option})
             message(" -D ${Tasmanian_option}:BOOL=ON")
         else()
