@@ -1217,7 +1217,7 @@ endif
 allocate( double_2d_a(1,i_b) )
 double_2d_a(1,:) = exp( -points(1,:)**2 - points(2,:)**2 )
 call tsgLoadNeededPoints(gridID, double_2d_a)
-call tsgSetAnisotropicRefinement( gridID, tsg_iptotal, 30, 1 )
+call tsgSetAnisotropicRefinement( gridID, tsg_iptotal, 5, 1 )
 pointsb => tsgGetNeededPoints(gridID)
 if ( size(pointsb,2) .eq. 0 ) then
   write(*,*) "Mismatch in tsgSetAnisotropicRefinement: did not refine"
@@ -1229,7 +1229,7 @@ if ( check_points( points(2,:), (/12345.d0/), (/1.d0/sqrt(3.d0)/) ) .or. &
   stop 1
 endif
 deallocate( pointsb )
-call tsgSetAnisotropicRefinement(gridID,tsg_iptotal,30,1,levelLimits=(/3,2,2/))
+call tsgSetAnisotropicRefinement(gridID,tsg_iptotal,10,1,levelLimits=(/3,2,2/))
 pointsb => tsgGetNeededPoints(gridID)
 if ( size(pointsb) .eq. 0 ) then
   write(*,*) "Mismatch in tsgSetAnisotropicRefinement: did not refine"

@@ -35,6 +35,143 @@
 
 namespace TasGrid{
 
+void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::function<long long(int i)> rule_exactness, const std::vector<int> &anisotropic_weights, MultiIndexSet &mset){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    std::vector<int> weights;
+    int normalized_offset;
+    bool known_lower;
+
+    MultiIndexManipulations::getProperWeights<int>(num_dimensions, offset, type, anisotropic_weights, weights, normalized_offset, known_lower);
+
+    if ((type == type_tensor) || (type == type_iptensor) || (type == type_qptensor)){ // special case, full tensor
+        std::vector<int> levels(num_dimensions, 0); // how many levels to keep in each direction
+        std::transform(weights.begin(), weights.end(), levels.begin(),
+                        [&](int w)-> int{
+                            int l = 0;
+                            while(rule_exactness(l) < w) l++; // get the first level that covers the weight
+                            return l+1;
+                        });
+        generateFullTensorSet<int>(levels, mset);
+    }else if (known_lower){ // using lower-set logic (cache can be pre-computed)
+        if ((type == type_level) || (type == type_iptotal) || (type == type_qptotal)){
+            generateWeightedTensorsCached<int, int, type_level>(weights, normalized_offset, rule_exactness, mset);
+        }else if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+            generateWeightedTensorsCached<int, double, type_curved>(weights, (double) normalized_offset, rule_exactness, mset);
+        }else{ // some type_hyperbolic type
+            generateWeightedTensorsCached<int, double, type_hyperbolic>(weights, (double) normalized_offset, rule_exactness, mset);
+        }
+    }else{
+        generateWeightedTensorsDynamicCached<int, double>(weights, (double) normalized_offset, rule_exactness, mset);
+    }
+}
+
+void MultiIndexManipulations::computeLevels(const MultiIndexSet &mset, std::vector<int> &level){
+    int num_indexes = mset.getNumIndexes();
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    level.resize((size_t) num_indexes);
+    #pragma omp parallel for
+    for(int i=0; i<num_indexes; i++){
+        const int* p = mset.getIndex(i);
+        level[i] = std::accumulate(p, p + num_dimensions, 0);
+    }
+}
+
+void MultiIndexManipulations::getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &total_max){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    max_levels.resize(num_dimensions, 0);
+    int n = mset.getNumIndexes();
+    for(int i=0; i<n; i++){
+        const int* t = mset.getIndex(i);
+        for(size_t j=0; j<num_dimensions; j++) if (max_levels[j] < t[j]) max_levels[j] = t[j];
+    }
+    total_max = *std::max_element(max_levels.begin(), max_levels.end());
+}
+
+void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    int n = mset.getNumIndexes();
+    parents.resize(mset.getNumDimensions(), n);
+    #pragma omp parallel for schedule(static)
+    for(int i=0; i<n; i++){
+        std::vector<int> dad(num_dimensions);
+        std::copy_n(mset.getIndex(i), num_dimensions, dad.data());
+        int *v = parents.getStrip(i);
+        for(auto &d : dad){
+            d--;
+            *v = (d < 0) ? -1 : mset.getSlot(dad);
+            d++;
+            v++;
+        }
+    }
+}
+
+void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set){
+    new_set = MultiIndexSet(mset.getNumDimensions());
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+
+    Data2D<int> children_unsorted;
+    children_unsorted.resize(mset.getNumDimensions(), 0);
+
+    std::vector<int> kid(num_dimensions);
+
+    int n = mset.getNumIndexes();
+    if (level_limits.empty()){
+        for(int i=0; i<n; i++){
+            if (flagged[i]){
+                std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+                for(auto &k : kid){
+                    k++;
+                    if (mset.missing(kid)) children_unsorted.appendStrip(kid);
+                    k--;
+                }
+            }
+        }
+    }else{
+        for(int i=0; i<n; i++){
+            if (flagged[i]){
+                std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+                auto ill = level_limits.begin();
+                for(auto &k : kid){
+                    k++;
+                    if (((*ill == -1) || (k <= *ill)) && mset.missing(kid))
+                        children_unsorted.appendStrip(kid);
+                    k--;
+                    ill++;
+                }
+            }
+        }
+    }
+    if (children_unsorted.getNumStrips() > 0)
+        new_set.addData2D(children_unsorted);
+}
+
+void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    int num_indexes = mset.getNumIndexes();
+    std::vector<int> keep;
+    keep.reserve((size_t) num_indexes);
+    auto imset = mset.getVector()->begin();
+    for(int i=0; i<num_indexes; i++){
+        bool obey = true;
+        for(auto l : level_limits){
+            if ((l > -1) && (*imset > l)) obey = false;
+            imset++;
+        }
+        if (obey) keep.push_back(i);
+    }
+    if (keep.size() == 0){
+        mset = MultiIndexSet((int) num_dimensions);
+    }else if (keep.size() < (size_t) num_indexes){
+        std::vector<int> new_indexes(num_dimensions * keep.size());
+        auto inew = new_indexes.begin();
+        for(auto i : keep){
+            std::copy_n(mset.getIndex(i), num_dimensions, inew);
+            std::advance(inew, num_dimensions);
+        }
+        mset.setIndexes(new_indexes);
+    }
+}
+
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
 IndexManipulator::~IndexManipulator(){}
 

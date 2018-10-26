@@ -39,12 +39,8 @@
 
 namespace TasGrid{
 
-GridSequence::GridSequence() : num_dimensions(0), num_outputs(0),
-                               points(0), needed(0), values(0)
-{}
-GridSequence::GridSequence(const GridSequence &seq) : num_dimensions(0), num_outputs(0),
-                                                      points(0), needed(0), values(0)
-{  copyGrid(&seq); }
+GridSequence::GridSequence() : num_dimensions(0), num_outputs(0){}
+GridSequence::GridSequence(const GridSequence &seq) : num_dimensions(0), num_outputs(0){ copyGrid(&seq); }
 GridSequence::~GridSequence(){ reset(); }
 
 void GridSequence::write(std::ofstream &ofs) const{
@@ -54,17 +50,17 @@ void GridSequence::write(std::ofstream &ofs) const{
     ofs << num_dimensions << " " << num_outputs << endl;
     if (num_dimensions > 0){
         ofs << OneDimensionalMeta::getIORuleString(rule) << endl;
-        if (points == 0){
+        if (points.empty()){
             ofs << "0" << endl;
         }else{
             ofs << "1 ";
-            points->write(ofs);
+            points.write(ofs);
         }
-        if (needed == 0){
+        if (needed.empty()){
             ofs << "0" << endl;
         }else{
             ofs << "1 ";
-            needed->write(ofs);
+            needed.write(ofs);
         }
         if (surpluses.empty()){
             ofs << "0";
@@ -73,7 +69,7 @@ void GridSequence::write(std::ofstream &ofs) const{
             for(auto s : surpluses) ofs << " " << s;
         }
         ofs << endl;
-        if (num_outputs > 0) values->write(ofs);
+        if (num_outputs > 0) values.write(ofs);
     }
 }
 void GridSequence::writeBinary(std::ofstream &ofs) const{
@@ -86,17 +82,17 @@ void GridSequence::writeBinary(std::ofstream &ofs) const{
         ofs.write((char*) num_dim_out, sizeof(int));
 
         char flag;
-        if (points == 0){
+        if (points.empty()){
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            points->writeBinary(ofs);
+            points.writeBinary(ofs);
         }
-        if (needed == 0){
+        if (needed.empty()){
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            needed->writeBinary(ofs);
+            needed.writeBinary(ofs);
         }
         if (surpluses.empty()){
             flag = 'n'; ofs.write(&flag, sizeof(char));
@@ -104,7 +100,7 @@ void GridSequence::writeBinary(std::ofstream &ofs) const{
             flag = 'y'; ofs.write(&flag, sizeof(char));
             ofs.write((char*) surpluses.data(), surpluses.size() * sizeof(double));
         }
-        if (num_outputs > 0) values->writeBinary(ofs);
+        if (num_outputs > 0) values.writeBinary(ofs);
     }
 }
 void GridSequence::read(std::ifstream &ifs){
@@ -115,26 +111,16 @@ void GridSequence::read(std::ifstream &ifs){
         std::string T;
         ifs >> T;
         rule = OneDimensionalMeta::getIORuleString(T.c_str());
-        ifs >> flag;  if (flag == 1){  points = new IndexSet(num_dimensions); points->read(ifs);  }
-        ifs >> flag;  if (flag == 1){  needed = new IndexSet(num_dimensions); needed->read(ifs);  }
-        IndexManipulator IM(num_dimensions);
+        ifs >> flag;  if (flag == 1) points.read(ifs);
+        ifs >> flag;  if (flag == 1) needed.read(ifs);
         ifs >> flag;
         if (flag == 1){
-            surpluses.resize(((size_t) num_outputs) * ((size_t) points->getNumIndexes()));
+            surpluses.resize(((size_t) num_outputs) * ((size_t) points.getNumIndexes()));
             for(auto &s : surpluses) ifs >> s;
         }
-        values = new StorageSet(0, 0); values->read(ifs);
-        int mp = 0, mn = 0, max_level;
-        if (needed == 0){ // points must be non-zero
-            IM.getMaxLevels(points, max_levels, mp);
-        }else if (points == 0){ // only needed, no points (right after creation)
-            IM.getMaxLevels(needed, max_levels, mn);
-        }else{ // both points and needed are set
-            IM.getMaxLevels(points, max_levels, mp);
-            mn = IM.getMaxLevel(needed);
-        }
-        max_level = (mp > mn) ? mp : mn;
-        prepareSequence(max_level + 1);
+        if (num_outputs > 0) values.read(ifs);
+
+        prepareSequence();
     }
 }
 void GridSequence::readBinary(std::ifstream &ifs){
@@ -148,137 +134,107 @@ void GridSequence::readBinary(std::ifstream &ifs){
         rule = OneDimensionalMeta::getIORuleInt(num_dim_out[0]);
 
         char flag;
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ points = new IndexSet(num_dimensions); points->readBinary(ifs); }
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ needed = new IndexSet(num_dimensions); needed->readBinary(ifs); }
-
-        IndexManipulator IM(num_dimensions);
+        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') points.readBinary(ifs);
+        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') needed.readBinary(ifs);
 
         ifs.read((char*) &flag, sizeof(char));
         if (flag == 'y'){
-            surpluses.resize(((size_t) num_outputs) * ((size_t) points->getNumIndexes()));
+            surpluses.resize(((size_t) num_outputs) * ((size_t) points.getNumIndexes()));
             ifs.read((char*) surpluses.data(), surpluses.size() * sizeof(double));
         }
 
-        if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
+        if (num_outputs > 0) values.readBinary(ifs);
 
-        int mp = 0, mn = 0, max_level;
-        if (needed == 0){ // points must be non-zero
-            IM.getMaxLevels(points, max_levels, mp);
-        }else if (points == 0){ // only needed, no points (right after creation)
-            IM.getMaxLevels(needed, max_levels, mn);
-        }else{ // both points and needed are set
-            IM.getMaxLevels(points, max_levels, mp);
-            mn = IM.getMaxLevel(needed);
-        }
-        max_level = (mp > mn) ? mp : mn;
-        prepareSequence(max_level + 1);
+        prepareSequence();
     }
 }
 
 void GridSequence::reset(){
     clearAccelerationData();
-    if (points != 0){ delete points; points = 0; }
-    if (needed != 0){ delete needed; needed = 0; }
-    if (values != 0){ delete values; values = 0; }
+    points = MultiIndexSet();
+    needed = MultiIndexSet();
+    values = StorageSet();
     nodes.clear();
     coeff.clear();
     surpluses.resize(0);
     surpluses.shrink_to_fit();
 }
-void GridSequence::clearRefinement(){
-    if (needed != 0){ delete needed; needed = 0; }
-}
+void GridSequence::clearRefinement(){ needed = MultiIndexSet(); }
 
 void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-    IndexManipulator IM(cnum_dimensions);
 
-    IndexSet *pset = IM.selectTensors(depth, type, anisotropic_weights, crule);
-    if (!level_limits.empty()){
-        IndexSet *limited = IM.removeIndexesByLimit(pset, level_limits);
-        if (limited != 0){
-            delete pset;
-            pset = limited;
-        }
+    MultiIndexSet pset(cnum_dimensions);
+    if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
+        OneDimensionalMeta meta;
+        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return meta.getQExact(i, crule); },
+                                               anisotropic_weights, pset);
+    }else{
+        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, pset);
     }
+
+    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, pset);
+
     setPoints(pset, cnum_outputs, crule);
 }
 void GridSequence::copyGrid(const GridSequence *seq){
-    IndexSet *work = (seq->points == 0) ? seq->needed : seq->points;
-    IndexSet *pset = new IndexSet(work);
+    MultiIndexSet pset;
+    if (seq->points.empty()){
+        pset = seq->needed;
+    }else{
+        pset = seq->points;
+    }
     setPoints(pset, seq->num_outputs, seq->rule);
-    if ((num_outputs > 0) && (seq->points != 0)){ // if there are values inside the source object
-        loadNeededPoints(seq->values->getValues(0));
+
+    if ((num_outputs > 0) && (!seq->points.empty())){ // if there are values inside the source object
+        loadNeededPoints(seq->values.getValues(0));
     }
 
-    if ((seq->points != 0) && (seq->needed != 0)){ // there is a refinement
-        IndexManipulator IM(num_dimensions);
-        int m1, m2;
-        m1 = IM.getMaxLevel(seq->points);
-        m2 = IM.getMaxLevel(seq->needed);
-        int max_level = (m1 > m2) ? m1 : m2;
-        prepareSequence(max_level+1);
-
-        needed = new IndexSet(seq->needed);
+    if ((!seq->points.empty()) && (!seq->needed.empty())){ // there is a refinement
+        needed = seq->needed;
+        prepareSequence();
     }
     surpluses = seq->surpluses;
 }
 
-void GridSequence::setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule crule){
+void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule crule){
     reset();
-    num_dimensions = pset->getNumDimensions();
+    num_dimensions = pset.getNumDimensions();
     num_outputs = cnum_outputs;
     rule = crule;
 
-    IndexManipulator IM(num_dimensions);
-
-    needed = pset;
-    pset = 0;
-
-    int max_level; IM.getMaxLevels(needed, max_levels, max_level);
-
-    prepareSequence(max_level + 1);
-
     if (num_outputs == 0){
-        points = needed;
-        needed = 0;
+        points = std::move(pset);
     }else{
-        values = new StorageSet(num_outputs, needed->getNumIndexes());
+        needed = std::move(pset);
+        values.resize(num_outputs, needed.getNumIndexes());
     }
+    prepareSequence();
 }
 
 void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-    IndexManipulator IM(num_dimensions);
-
-    IndexSet *pset = IM.selectTensors(depth, type, anisotropic_weights, rule);
-    if (!level_limits.empty()){
-        IndexSet *limited = IM.removeIndexesByLimit(pset, level_limits);
-        if (limited != 0){
-            delete pset;
-            pset = limited;
-        }
+    MultiIndexSet pset(num_dimensions);
+    if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
+        OneDimensionalMeta meta;
+        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return meta.getQExact(i, rule); },
+                                               anisotropic_weights, pset);
+    }else{
+        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, pset);
     }
+
+    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, pset);
+
     updateGrid(pset);
 }
 
-void GridSequence::updateGrid(IndexSet* &update){
+void GridSequence::updateGrid(MultiIndexSet &update){
     clearRefinement();
-    if ((num_outputs == 0) || (points == 0)){
+    if ((num_outputs == 0) || (points.empty())){
         setPoints(update, num_outputs, rule);
     }else{
-        update->addIndexSet(points);
-        needed = update->diffSets(points);
+        update.addSortedInsexes(*points.getVector());
+        update.diffSets(points, needed);
 
-        if ((needed != 0) && (needed->getNumIndexes() > 0)){
-            OneDimensionalMeta meta;
-            IndexManipulator IM(num_dimensions);
-            int max_level = IM.getMaxLevel(update);
-            prepareSequence(max_level+1);
-        }else if ((needed != 0) && (needed->getNumIndexes() == 0)){
-            delete needed;
-            needed = 0;
-        }
-
-        delete update;
+        if (!needed.empty()) prepareSequence();
     }
 }
 
@@ -286,17 +242,17 @@ int GridSequence::getNumDimensions() const{ return num_dimensions; }
 int GridSequence::getNumOutputs() const{ return num_outputs; }
 TypeOneDRule GridSequence::getRule() const{ return rule; }
 
-int GridSequence::getNumLoaded() const{ return (((points == 0) || (num_outputs == 0)) ? 0 : points->getNumIndexes()); }
-int GridSequence::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
-int GridSequence::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
+int GridSequence::getNumLoaded() const{ return (((points.empty()) || (num_outputs == 0)) ? 0 : points.getNumIndexes()); }
+int GridSequence::getNumNeeded() const{ return needed.getNumIndexes(); }
+int GridSequence::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
 void GridSequence::getLoadedPoints(double *x) const{
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     Data2D<double> split;
     split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
-        const int *p = points->getIndex(i);
+        const int *p = points.getIndex(i);
         double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
             xx[j] = nodes[p[j]];
@@ -304,12 +260,12 @@ void GridSequence::getLoadedPoints(double *x) const{
     }
 }
 void GridSequence::getNeededPoints(double *x) const{
-    int num_points = needed->getNumIndexes();
+    int num_points = needed.getNumIndexes();
     Data2D<double> split;
     split.load(num_dimensions, num_points, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
-        const int *p = needed->getIndex(i);
+        const int *p = needed.getIndex(i);
         double *xx = split.getStrip(i);
         for(int j=0; j<num_dimensions; j++){
             xx[j] = nodes[p[j]];
@@ -317,16 +273,16 @@ void GridSequence::getNeededPoints(double *x) const{
     }
 }
 void GridSequence::getPoints(double *x) const{
-    if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); }
+    if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); }
 }
 
 void GridSequence::getQuadratureWeights(double *weights) const{
-    IndexSet *work = (points == 0) ? needed : points;
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
     std::vector<double> integ;
     cacheBasisIntegrals(integ);
-    int n = work->getNumIndexes();
+    int n = work.getNumIndexes();
     for(int i=0; i<n; i++){
-        const int* p = work->getIndex(i);
+        const int* p = work.getIndex(i);
         weights[i] = integ[p[0]];
         for(int j=1; j<num_dimensions; j++){
             weights[i] *= integ[p[j]];
@@ -339,11 +295,11 @@ void GridSequence::getQuadratureWeights(double *weights) const{
 void GridSequence::getInterpolationWeights(const double x[], double *weights) const{
     std::vector<std::vector<double>> cache;
     cacheBasisValues<double>(x, cache);
-    IndexSet *work = (points == 0) ? needed : points;
-    int n = work->getNumIndexes();
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int n = work.getNumIndexes();
     weights[0] = 1.0;
     for(int i=1; i<n; i++){
-        const int* p = work->getIndex(i);
+        const int* p = work.getIndex(i);
         weights[i] = cache[0][p[0]];
         for(int j=1; j<num_dimensions; j++){
             weights[i] *= cache[j][p[j]];
@@ -357,35 +313,33 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
     cuda_surpluses.clear();
     clearCudaNodes();
     #endif
-    if (points == 0){
-        values->setValues(vals);
-        points = needed;
-        needed = 0;
-    }else if (needed == 0){
-        values->setValues(vals);
+    if (points.empty()){
+        values.setValues(vals);
+        points = std::move(needed);
+        needed = MultiIndexSet();
+    }else if (needed.empty()){
+        values.setValues(vals);
     }else{
-        values->addValues(points, needed, vals);
-        points->addIndexSet(needed);
-        delete needed; needed = 0;
-        IndexManipulator IM(num_dimensions);
-        int m; IM.getMaxLevels(points, max_levels, m);
+        values.addValues(points, needed, vals);
+        points.addSortedInsexes(*needed.getVector());
+        needed = MultiIndexSet();
+        prepareSequence();
     }
     recomputeSurpluses();
 }
 void GridSequence::mergeRefinement(){
-    if (needed == 0) return; // nothing to do
+    if (needed.empty()) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
     std::vector<double> vals(num_vals, 0.0);
-    values->setValues(vals);
-    if (points == 0){
-        points = needed;
-        needed = 0;
+    values.setValues(vals);
+    if (points.empty()){
+        points = std::move(needed);
+        needed = MultiIndexSet();
     }else{
-        points->addIndexSet(needed);
-        delete needed; needed = 0;
-        IndexManipulator IM(num_dimensions);
-        int m; IM.getMaxLevels(points, max_levels, m);
+        points.addMultiIndexSet(needed);
+        needed = MultiIndexSet();
+        prepareSequence();
     }
     surpluses.resize(num_vals);
     surpluses.shrink_to_fit();
@@ -398,13 +352,13 @@ void GridSequence::evaluate(const double x[], double y[]) const{
 
     std::fill(y, y + num_outputs, 0.0);
 
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
 
     Data2D<double> surps;
     surps.cload(num_outputs, num_points, surpluses.data());
 
     for(int i=0; i<num_points; i++){
-        const int* p = points->getIndex(i);
+        const int* p = points.getIndex(i);
         const double *s = surps.getCStrip(i);
         double basis_value = cache[0][p[0]];
         for(int j=1; j<num_dimensions; j++){
@@ -421,7 +375,7 @@ void GridSequence::evaluate(const double x[], double y[]) const{
 void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
     std::vector<double> fvalues(getNumPoints());
     evalHierarchicalFunctions(x, fvalues.data());
-    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), surpluses.data(), fvalues.data(), y);
+    TasBLAS::dgemv(num_outputs, points.getNumIndexes(), surpluses.data(), fvalues.data(), y);
 }
 #else
 void GridSequence::evaluateFastCPUblas(const double[], double[]) const{}
@@ -431,10 +385,10 @@ void GridSequence::evaluateFastCPUblas(const double[], double[]) const{}
 void GridSequence::evaluateFastGPUcublas(const double x[], double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
 
-    std::vector<double> hweights(points->getNumIndexes());
+    std::vector<double> hweights(points.getNumIndexes());
     evalHierarchicalFunctions(x, hweights.data());
 
-    cuda_engine.cublasDGEMM(num_outputs, 1, points->getNumIndexes(), 1.0, cuda_surpluses, hweights, 0.0, y);
+    cuda_engine.cublasDGEMM(num_outputs, 1, points.getNumIndexes(), 1.0, cuda_surpluses, hweights, 0.0, y);
 }
 #else
 void GridSequence::evaluateFastGPUcublas(const double[], double[]) const{}
@@ -447,10 +401,10 @@ void GridSequence::evaluateFastGPUcuda(const double x[], double y[]) const{
 void GridSequence::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
 
-    std::vector<double> hweights(points->getNumIndexes());
+    std::vector<double> hweights((size_t) points.getNumIndexes());
     evalHierarchicalFunctions(x, hweights.data());
 
-    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, points->getNumIndexes(), 1.0, cuda_surpluses, hweights, 0.0, y);
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, points.getNumIndexes(), 1.0, cuda_surpluses, hweights, 0.0, y);
 }
 #else
 void GridSequence::evaluateFastGPUmagma(int, const double[], double[]) const{}
@@ -467,7 +421,7 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     Data2D<double> weights; weights.resize(num_points, num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
@@ -481,23 +435,23 @@ void GridSequence::evaluateBatchCPUblas(const double[], int, double[]) const{}
 void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
 
-    Data2D<double> hweights; hweights.resize(points->getNumIndexes(), num_x);
+    Data2D<double> hweights; hweights.resize(points.getNumIndexes(), num_x);
     evaluateHierarchicalFunctions(x, num_x, hweights.getStrip(0));
 
-    cuda_engine.cublasDGEMM(num_outputs, num_x, points->getNumIndexes(), 1.0, cuda_surpluses, *(hweights.getVector()), 0.0, y);
+    cuda_engine.cublasDGEMM(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, *(hweights.getVector()), 0.0, y);
 }
 void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
     loadCudaNodes();
 
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     cudaDoubles gpu_x(num_dimensions, num_x, x);
     cudaDoubles gpu_basis(num_x, num_points);
     cudaDoubles gpu_result(num_x, num_outputs);
 
     evaluateHierarchicalFunctionsGPU(gpu_x.data(), num_x, gpu_basis.data());
 
-    cuda_engine.cublasDGEMM(num_outputs, num_x, points->getNumIndexes(), 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
+    cuda_engine.cublasDGEMM(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
     gpu_result.unload(y);
 }
 #else
@@ -510,14 +464,14 @@ void GridSequence::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x,
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
     loadCudaNodes();
 
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     cudaDoubles gpu_x(num_dimensions, num_x, x);
     cudaDoubles gpu_basis(num_x, num_points);
     cudaDoubles gpu_result(num_x, num_outputs);
 
     evaluateHierarchicalFunctionsGPU(gpu_x.data(), num_x, gpu_basis.data());
 
-    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, points->getNumIndexes(), 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
     gpu_result.unload(y);
 }
 #else
@@ -525,7 +479,7 @@ void GridSequence::evaluateBatchGPUmagma(int, const double[], int, double[]) con
 #endif // Tasmanian_ENABLE_MAGMA
 
 void GridSequence::integrate(double q[], double *conformal_correction) const{
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     std::fill(q, q + num_outputs, 0.0);
 
     Data2D<double> surp;
@@ -538,7 +492,7 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
         std::vector<double> integ;
         cacheBasisIntegrals(integ);
         for(int i=0; i<num_points; i++){
-            const int* p = points->getIndex(i);
+            const int* p = points.getIndex(i);
             double w = integ[p[0]];
             const double *s = surp.getCStrip(i);
             for(int j=1; j<num_dimensions; j++){
@@ -553,7 +507,7 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
         getQuadratureWeights(w.data());
         for(int i=0; i<num_points; i++){
             w[i] *= conformal_correction[i];
-            const double *vals = values->getValues(i);
+            const double *vals = values.getValues(i);
             for(int k=0; k<num_outputs; k++){
                 q[k] += w[i] * vals[k];
             }
@@ -562,7 +516,7 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
 }
 
 void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
-    int num_points = (points == 0) ? needed->getNumIndexes() : points->getNumIndexes();
+    int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
     Data2D<double> yy; yy.load(num_points, num_x, y);
     Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     #pragma omp parallel for
@@ -571,14 +525,14 @@ void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, do
     }
 }
 void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int num_points = work.getNumIndexes();
 
     std::vector<std::vector<double>> cache;
     cacheBasisValues<double>(x, cache);
 
     for(int i=0; i<num_points; i++){
-        const int* p = work->getIndex(i);
+        const int* p = work.getIndex(i);
         fvalues[i] = cache[0][p[0]];
         for(int j=1; j<num_dimensions; j++){
             fvalues[i] *= cache[j][p[j]];
@@ -599,39 +553,38 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     std::vector<double> *vals = 0;
     size_t num_ponits = (size_t) getNumPoints();
     size_t num_vals = num_ponits * ((size_t) num_outputs);
-    if (points != 0){
+    if (!points.empty()){
         clearRefinement();
     }else{
-        points = needed;
-        needed = 0;
+        points = std::move(needed);
+        needed = MultiIndexSet();
     }
-    vals = values->aliasValues();
+    vals = values.aliasValues();
     vals->resize(num_vals);
     surpluses.resize(num_vals);
-    surpluses.shrink_to_fit();
-    std::copy(c, c + num_vals, surpluses.data());
+    std::copy_n(c, num_vals, surpluses.data());
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     if (acc == accel_cpu_blas){
-        evaluateBatchCPUblas(x.data(), points->getNumIndexes(), vals->data());
+        evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x.data(), points->getNumIndexes(), vals->data());
+        evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals->data());
     }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x.data(), points->getNumIndexes(), vals->data());
+        evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals->data());
     }else{
-        evaluateBatch(x.data(), points->getNumIndexes(), vals->data());
+        evaluateBatch(x.data(), points.getNumIndexes(), vals->data());
     }
 }
 
 void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000 * TSG_NUM_TOL;
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     std::vector<double> max_surp(num_points);
 
     if (output == -1){
         std::vector<double> nrm(num_outputs, 0.0);
         for(int i=0; i<num_points; i++){
-            const double *val = values->getValues(i);
+            const double *val = values.getValues(i);
             int k=0;
             for(auto &n : nrm){
                 double v = fabs(val[k++]);
@@ -671,7 +624,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
 
         int count = 0;
         for(int c=0; c<num_points; c++){
-            const int *indx = points->getIndex(c);
+            const int *indx = points.getIndex(c);
             if (max_surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
                     A.getStrip(j)[count] = ((double) indx[j]);
@@ -689,7 +642,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
 
         int count = 0;
         for(int c=0; c<num_points; c++){
-            const int *indx = points->getIndex(c);
+            const int *indx = points.getIndex(c);
             if (max_surp[c] > tol){
                 for(int j=0; j<num_dimensions; j++){
                     A.getStrip(j)[count] = - ((double) indx[j]);
@@ -733,44 +686,36 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
     std::vector<int> weights;
     estimateAnisotropicCoefficients(type, output, weights);
 
-    IndexManipulator IM(num_dimensions);
-    int level = IM.getMinChildLevel(points, type, weights, rule);
+    int level = 0; // find a better way to guess the offset, will tie to new refinement procedures
 
-    IndexSet* total = IM.selectTensors(level, type, weights, rule);
-    needed = total->diffSets(points); // this exploits the 1-1 correspondence between points and tensors
+    do{
+        MultiIndexSet total(num_dimensions);
 
-    while((needed == 0) || (needed->getNumIndexes() < min_growth)){
-        delete total;
-        if (needed != 0) delete needed;
-        total = IM.selectTensors(++level, type, weights, rule);
-        needed = total->diffSets(points);
-    }
-    total->addIndexSet(points);
-
-    if (!level_limits.empty()){
-        IndexSet *limited = IM.removeIndexesByLimit(total, level_limits);
-        if (limited != 0){
-            delete total;
-            total = limited;
-            if (needed != 0) delete needed;
-            needed = total->diffSets(points);
+        if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
+            OneDimensionalMeta meta;
+            MultiIndexManipulations::selectTensors(++level, type, [&](int i) -> long long{ return meta.getQExact(i, rule); },
+                                                   weights, total);
+        }else{
+            MultiIndexManipulations::selectTensors(++level, type, [&](int i) -> long long{ return i; }, weights, total);
         }
-    }
-    total->addIndexSet(points); // avoids the case where existing points in tensor are not included in the update
 
-    int max_level = IM.getMaxLevel(total);
-    prepareSequence(max_level+1);
-    delete total;
+        total.diffSets(points, needed);
+
+        if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, needed);
+
+    }while(needed.empty() || (needed.getNumIndexes() < min_growth));
+
+    prepareSequence();
 }
 void GridSequence::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();
 
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     std::vector<bool> flagged(num_points);
 
     std::vector<double> norm(num_outputs, 0.0);
     for(int i=0; i<num_points; i++){
-        const double *val = values->getValues(i);
+        const double *val = values.getValues(i);
         for(int k=0; k<num_outputs; k++){
             double v = fabs(val[k]);
             if (norm[k] < v) norm[k] = v;
@@ -796,80 +741,80 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         }
     }
 
-    IndexManipulator IM(num_dimensions);
-    IndexSet *kids = IM.selectFlaggedChildren(points, flagged, level_limits);
-    if ((kids != 0) && (kids->getNumIndexes() > 0)){
-        kids->addIndexSet(points);
+    MultiIndexSet kids(num_dimensions);
+    MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits, kids);
+    if (kids.getNumIndexes() > 0){
+        kids.addMultiIndexSet(points);
+        MultiIndexManipulations::completeSetToLower<int>(kids);
 
-        IndexSet *total = IM.getLowerCompletion(kids);
-        if (total == 0){
-            total = kids;
-            kids = 0;
-        }else{
-            total->addIndexSet(kids);
-            delete kids;
-        }
-
-        OneDimensionalMeta meta;
-        int max_level;
-        max_level = IM.getMaxLevel(total);
-        prepareSequence(max_level+1);
-
-        needed = total->diffSets(points);
-        delete total;
-
+        kids.diffSets(points, needed);
+        if (!needed.empty()) prepareSequence();
     }
 }
 
 void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    if (interpolation){
-        n = work->getNumIndexes();
-        size_t entries = ((size_t) n) * ((size_t) num_dimensions);
+    MultiIndexSet space; // used only when interpolation is false
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
+    if (!interpolation){
+        OneDimensionalMeta meta;
+        int num_tensors = work.getNumIndexes();
+        std::vector<MultiIndexSet> tensors((size_t) num_tensors);
 
-        poly = new int[entries];
-        const int* p = work->getIndex(0);
+        #pragma omp parallel for
+        for(int i=0; i<num_tensors; i++){
+            std::vector<int> npoints((size_t) num_dimensions);
+            const int *p = work.getIndex(i);
+            for(int j=0; j<num_dimensions; j++)
+                npoints[j] = meta.getQExact(p[j], rule) + 1;
+            MultiIndexManipulations::generateFullTensorSet<int>(npoints, tensors[i]);
+        }
 
-        std::copy(p, p + entries, poly);
-    }else{
-        IndexManipulator IM(num_dimensions);
-        IndexSet* pset = IM.getPolynomialSpace(work, rule, interpolation);
-
-        n = pset->getNumIndexes();
-        size_t entries = ((size_t) n) * ((size_t) num_dimensions);
-
-        poly = new int[entries];
-        const int* p = pset->getIndex(0);
-
-        std::copy(p, p + entries, poly);
-
-        delete pset;
+        MultiIndexManipulations::unionSets<true>(tensors, space);
     }
+    const MultiIndexSet &result = (interpolation) ? work : space;
+
+    n = result.getNumIndexes();
+    poly = new int[result.getVector()->size()];
+    std::copy(result.getVector()->begin(), result.getVector()->end(), poly);
 }
 const double* GridSequence::getSurpluses() const{
     return surpluses.data();
 }
 const int* GridSequence::getPointIndexes() const{
-    return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
+    return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
 }
 
-void GridSequence::prepareSequence(int n){
-    if (rule == rule_leja){
-        Optimizer::getGreedyNodes<rule_leja>(n, nodes);
-    }else if (rule == rule_maxlebesgue){
-        Optimizer::getGreedyNodes<rule_maxlebesgue>(n, nodes);
-    }else if (rule == rule_minlebesgue){
-        Optimizer::getGreedyNodes<rule_minlebesgue>(n, nodes);
-    }else if (rule == rule_mindelta){
-        Optimizer::getGreedyNodes<rule_mindelta>(n, nodes);
-    }else if (rule == rule_rleja){
-        OneDimensionalNodes::getRLeja(n, nodes);
-    }else if (rule == rule_rlejashifted){
-        OneDimensionalNodes::getRLejaShifted(n, nodes);
+void GridSequence::prepareSequence(){
+    int mp = 0, mn = 0, max_level;
+    if (needed.empty()){ // points must be non-empty
+        MultiIndexManipulations::getMaxIndex(points, max_levels, mp);
+    }else if (points.empty()){ // only needed, no points (right after creation)
+        MultiIndexManipulations::getMaxIndex(needed, max_levels, mn);
+    }else{ // both points and needed are set
+        MultiIndexManipulations::getMaxIndex(points, max_levels, mp);
+        mn = *std::max_element(needed.getVector()->begin(), needed.getVector()->end());
     }
-    coeff.resize(n);
+    max_level = (mp > mn) ? mp : mn;
+    max_level++;
+
+    if ((size_t) max_level > nodes.size()){
+        if (rule == rule_leja){
+            Optimizer::getGreedyNodes<rule_leja>(max_level, nodes);
+        }else if (rule == rule_maxlebesgue){
+            Optimizer::getGreedyNodes<rule_maxlebesgue>(max_level, nodes);
+        }else if (rule == rule_minlebesgue){
+            Optimizer::getGreedyNodes<rule_minlebesgue>(max_level, nodes);
+        }else if (rule == rule_mindelta){
+            Optimizer::getGreedyNodes<rule_mindelta>(max_level, nodes);
+        }else if (rule == rule_rleja){
+            OneDimensionalNodes::getRLeja(max_level, nodes);
+        }else if (rule == rule_rlejashifted){
+            OneDimensionalNodes::getRLejaShifted(max_level, nodes);
+        }
+    }
+    coeff.resize((size_t) max_level);
     coeff[0] = 1.0;
-    for(int i=1; i<n; i++){
+    for(int i=1; i<max_level; i++){
         coeff[i] = 1.0;
         for(int j=0; j<i; j++) coeff[i] *= (nodes[i] - nodes[j]);
     }
@@ -910,26 +855,25 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 }
 
 void GridSequence::recomputeSurpluses(){
-    int num_points = points->getNumIndexes();
-    surpluses = *(values->aliasValues());
+    int num_points = points.getNumIndexes();
+    surpluses = *(values.aliasValues());
 
     Data2D<double> surp;
     surp.load(num_outputs, num_points, surpluses.data());
 
     IndexManipulator IM(num_dimensions);
     std::vector<int> level;
-    IM.computeLevels(points, level);
-    int top_level = level[0];
-    for(auto l: level) if (top_level < l) top_level = l;
+    MultiIndexManipulations::computeLevels(points, level);
+    int top_level = *std::max_element(level.begin(), level.end());
 
     Data2D<int> parents;
-    IM.computeDAGup(points, parents);
+    MultiIndexManipulations::computeDAGup(points, parents);
 
     for(int l=1; l<=top_level; l++){
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<num_points; i++){
             if (level[i] == l){
-                const int* p = points->getIndex(i);
+                const int* p = points.getIndex(i);
                 double *surpi = surp.getStrip(i);
 
                 std::vector<int> monkey_count(top_level + 1);
@@ -948,7 +892,7 @@ void GridSequence::recomputeSurpluses(){
                             monkey_count[current]++;
                         }else{
                             const double *branch_surp = surp.getCStrip(branch);;
-                            double basis_value = evalBasis(points->getIndex(branch), p);
+                            double basis_value = evalBasis(points.getIndex(branch), p);
                             for(int k=0; k<num_outputs; k++){
                                  surpi[k] -= basis_value * branch_surp[k];
                             }
@@ -967,18 +911,15 @@ void GridSequence::recomputeSurpluses(){
 }
 
 void GridSequence::applyTransformationTransposed(double weights[]) const{
-    IndexSet *work = (points == 0) ? needed : points;
-    int num_points = work->getNumIndexes();
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int num_points = work.getNumIndexes();
 
-    IndexManipulator IM(num_dimensions);
     std::vector<int> level;
-    IM.computeLevels(work, level);
+    MultiIndexManipulations::computeLevels(work, level);
+    int top_level = *std::max_element(level.begin(), level.end());
 
     Data2D<int> parents;
-    IM.computeDAGup(work, parents);
-
-    int top_level = level[0];
-    for(auto l: level) if (top_level < l) top_level = l;
+    MultiIndexManipulations::computeDAGup(work, parents);
 
     std::vector<int> monkey_count(top_level + 1);
     std::vector<int> monkey_tail(top_level + 1);
@@ -987,7 +928,7 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
     for(int l=top_level; l>0; l--){
         for(int i=0; i<num_points; i++){
             if (level[i] == l){
-                const int* p = work->getIndex(i);
+                const int* p = work.getIndex(i);
                 int current = 0;
 
                 monkey_count[0] = 0;
@@ -1000,7 +941,7 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
-                            weights[branch] -= weights[i] * evalBasis(work->getIndex(branch), p);
+                            weights[branch] -= weights[i] * evalBasis(work.getIndex(branch), p);
                             used[branch] = true;
 
                             monkey_count[++current] = 0;

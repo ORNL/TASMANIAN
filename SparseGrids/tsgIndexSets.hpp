@@ -33,6 +33,8 @@
 
 #include "tsgEnumerates.hpp"
 #include <vector>
+#include <functional>
+#include <algorithm>
 
 namespace TasGrid{
 
@@ -133,6 +135,55 @@ private:
     std::vector<int> index;
 };
 
+namespace SetManipulations{
+template<typename T, class B>
+void push_merge_map(const std::vector<T> &a, const std::vector<B> &b,
+                    std::function<void(typename std::vector<T>::const_iterator &ia)> iadvance,
+                    std::function<void(typename std::vector<B>::const_iterator &ib)> ibdvance,
+                    std::function<TypeIndexRelation(typename std::vector<T>::const_iterator ia, typename std::vector<B>::const_iterator ib)> compare,
+                    std::function<void(typename std::vector<B>::const_iterator ib, std::vector<typename std::vector<T>::const_iterator> &merge_map)> pushB,
+                    std::vector<typename std::vector<T>::const_iterator> &merge_map){
+//! \internal
+//! \brief merge two index-sets, creates a vector of iterators (pointers) to the multi-indexes in the merged (set union) index-set
+//! \ingroup TasmanianMultiIndexSet
+//!
+//! Takes two multi-index sets described by **a** and **b**, generates a vector **merge_map** that describes the union set.
+//! This operation is used when two multi-index sets are merged, which can happen which can happen with set **b** sorted or unsorted.
+//! In the sorted case, the type for **a** and **b** is the same and **iadvance()** is the same as **ibadvance()**.
+//! In the unsorted case, **b** will sorted references to the multi-indexes, i.e., B = std::vector<T>::const_iterator
+//! * T is a type of multi-index entries, e.g., int, unsigned int, long long;
+//! * **a** is a sorted set of multi-indexes of type T, each multi-index has size implicitly defined by **iadvance()**; entries associated to the same multi-index are adjacent
+//! * **b** gives a description of the second set, in the simple case **b** has the same type as **a** (e.g., B == T); alternatively **b** can be a list of sorted references to the multi-indexes, e.g., when the **b** set was first sorted and then it is being merged;
+//! * **iadvance(ia)** takes an iterator pointing to multi-index and moves it to the next multi-index, e.g., std::advance(ia, num_dimensions);
+//! * **ibdvance(ib)** takes an iterator pointing to the multi-index described in **b** and moves it to the next multi-index, e.g., std::advance(ib, num_dimensions) or ib++;
+//! * **compare(ia, ib)** returns the order relation between the multi-indexes, *type_abeforeb*, *type_asameb* and *type_bbeforea* (note that **ia** and **ib** always point to **a** and **b**);
+//! * **pushB()** add the multi-index described by **b** to the **merge_map**, i.e., pushes **ib** or pushes deference of **ib** (note that **ib** always points to an element in **b**);
+//! * on exit, **merge_map** holds the references to the multi-indexes of the union set
+    auto ia = a.begin();
+    auto ib = b.begin();
+    auto aend = a.end();
+    auto bend = b.end();
+    while((ia != aend) || (ib != bend)){
+        TypeIndexRelation relation;
+        if (ib == bend){
+            relation = type_abeforeb;
+        }else if (ia == aend){
+            relation = type_bbeforea;
+        }else{
+            relation = compare(ia, ib);
+        }
+        if (relation == type_bbeforea){
+            pushB(ib, merge_map);
+            ibdvance(ib);
+        }else{
+            merge_map.push_back(ia);
+            iadvance(ia);
+            if (relation == type_asameb) ibdvance(ib);
+        }
+    }
+}
+}
+
 template<typename T>
 class Data2D{
 // this class is a work around of using indexing of type [i * stride + j] where i, j, and stride are int and can overflow
@@ -185,6 +236,11 @@ public:
         vec.shrink_to_fit();
     }
 
+    void appendStrip(const std::vector<T> &x){
+        vec.insert(vec.end(), x.begin(), x.end());
+        num_strips++;
+    }
+
 private:
     size_t stride, num_strips;
     T* data;
@@ -192,16 +248,57 @@ private:
     std::vector<T> vec;
 };
 
+class MultiIndexSet{
+public:
+    MultiIndexSet();
+    MultiIndexSet(int cnum_dimensions);
+    ~MultiIndexSet();
+
+    void write(std::ofstream &ofs) const;
+    void read(std::ifstream &ifs);
+
+    void writeBinary(std::ofstream &ofs) const;
+    void readBinary(std::ifstream &ifs);
+
+    inline bool empty() const{ return indexes.empty(); }
+
+    void setNumDimensions(int new_dimensions);
+    inline int getNumDimensions() const{ return (int) num_dimensions; }
+    inline int getNumIndexes() const{ return cache_num_indexes; }
+
+    void setIndexes(std::vector<int> &new_indexes); // move assignment
+    void addSortedInsexes(const std::vector<int> &addition);   // merge/copy assignment
+    void addUnsortedInsexes(const std::vector<int> &addition); // sort/merge/copy assignment
+    inline void addMultiIndexSet(const MultiIndexSet &addition){ addSortedInsexes(*addition.getVector()); }
+    inline void addData2D(const Data2D<int> &addition){ addUnsortedInsexes(*addition.getVector()); }
+
+    const std::vector<int>* getVector() const;
+    int getSlot(const int *p) const;
+    inline int getSlot(const std::vector<int> &p) const{ return getSlot(p.data()); }
+    inline bool missing(const std::vector<int> &p) const{ return (getSlot(p.data()) == -1); }
+
+    inline const int *getIndex(int i) const{ return &(indexes[((size_t) i) * num_dimensions]); }
+
+    void diffSets(const MultiIndexSet &substract, MultiIndexSet &result); // result = this - substract (set difference)
+
+private:
+    size_t num_dimensions;
+    int cache_num_indexes;
+    std::vector<int> indexes;
+};
+
 class StorageSet{ // stores the values of the function
 public:
+    StorageSet();
     StorageSet(int cnum_outputs, int cnum_values);
-    StorageSet(const StorageSet *storage);
     ~StorageSet();
 
     void write(std::ofstream &ofs) const;
     void read(std::ifstream &ifs);
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
+
+    void resize(int cnum_outputs, int cnum_values);
 
     const double* getValues(int i) const;
     double* getValues(int i);
@@ -211,6 +308,7 @@ public:
     void setValues(const double vals[]);
     void setValues(std::vector<double> &vals);
     void addValues(const IndexSet *old_set, const IndexSet *new_set, const double new_vals[]);
+    void addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]);
 
 protected:
     TypeIndexRelation compareIndexes(int num_dimensions, const int a[], const int b[]) const;

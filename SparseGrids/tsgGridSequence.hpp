@@ -60,10 +60,10 @@ public:
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void copyGrid(const GridSequence *seq);
-    void setPoints(IndexSet* &pset, int cnum_outputs, TypeOneDRule crule);
+    void setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule crule);
 
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
-    void updateGrid(IndexSet* &update);
+    void updateGrid(MultiIndexSet &update);
 
     int getNumDimensions() const;
     int getNumOutputs() const;
@@ -121,7 +121,7 @@ protected:
 
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 
-    void prepareSequence(int n);
+    void prepareSequence();
     void cacheBasisIntegrals(std::vector<double> &integ) const;
 
     template<typename T>
@@ -157,7 +157,7 @@ protected:
         std::vector<int> num_nodes = max_levels;
         for(auto &n : num_nodes) n++;
         cuda_num_nodes.load(num_nodes);
-        IndexSet *work = (points != 0) ? points : needed;
+        const MultiIndexSet *work = (points.empty()) ? &needed : &points;
         int num_points = work->getNumIndexes();
         Data2D<int> transpoints; transpoints.resize(work->getNumIndexes(), num_dimensions);
         for(int i=0; i<num_points; i++){
@@ -179,15 +179,15 @@ private:
     int num_dimensions, num_outputs;
     TypeOneDRule rule;
 
-    IndexSet *points;
-    IndexSet *needed;
+    MultiIndexSet points;
+    MultiIndexSet needed;
     //int *parents; // NOTE: this is needed only for computing surpluses, maybe there is no need to store it
 
     std::vector<double> surpluses;
     std::vector<double> nodes;
     std::vector<double> coeff;
 
-    StorageSet *values;
+    StorageSet values;
 
     std::vector<int> max_levels;
 

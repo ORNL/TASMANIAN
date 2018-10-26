@@ -206,7 +206,8 @@ void GridWavelet::copyGrid(const GridWavelet *wav){
     if (wav->points != 0) points = new IndexSet(wav->points);
     if (wav->needed != 0) needed = new IndexSet(wav->needed);
 
-    if (wav->values != 0) values = new StorageSet(wav->values);
+    if (wav->values != 0) values = new StorageSet();
+    *values = *wav->values;
 
     buildInterpolationMatrix();
 
