@@ -41,12 +41,16 @@
 #include "tsgRuleLocalPolynomial.hpp"
 
 //! \internal
-//! \file halaCuda.hpp
+//! \file tsgIndexManipulator.hpp
 //! \brief Algorithms for manipulating sets of multi-indexes.
 //! \author Miroslav Stoyanov
 //! \ingroup TasmanianMultiIndexManipulations
 //!
-//! Contains the HALA-CUDA wrapper templates.
+//! A series of templates, lambda, and regular functions that allow the manipulation of
+//! multi-indexes and sets of multi-indexes. The algorithms include the selection of
+//! multi-indexes according to a criteria, union of a vector of multi-index sets,
+//! normalization of anisotropic weights, map parents and children within a set (which
+//! generates a DAG structure), complete a set to satisfy the lower-property, etc.
 
 //! \internal
 //! \defgroup TasmanianMultiIndexManipulations Multi-Index manipulation algorithms.
