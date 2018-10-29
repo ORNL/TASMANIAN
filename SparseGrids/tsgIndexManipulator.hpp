@@ -382,6 +382,18 @@ void selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &f
 //! \brief using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
 //! \ingroup TasmanianMultiIndexManipulations
 void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset);
+
+//! \internal
+//! \brief assuming that **tensors** describe a set of nested tensor operators, and each 1-D operators has **getNumPoints()**, then generate the actual points
+//! \ingroup TasmanianMultiIndexManipulations
+//!
+//! Assuming that we are working with a nested rule, then instead of generating the points for all tensor rules and taking the union,
+//! it is much faster to generate just the surplus points and union those, i.e., the points included by this tensor and excluded from the other differences.
+//! Working with surplus points ensures that there is no repetition of points.
+//! * **tensors** is a lower set of tensor rules
+//! * **getNumPoints()** described the number of points for each rule in 1-D
+//! * **points** is the union of the points of all tensors
+void generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points);
 }
 
 

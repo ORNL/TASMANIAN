@@ -172,6 +172,45 @@ void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level
     }
 }
 
+void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points){
+    size_t num_dimensions = (size_t) tensors.getNumDimensions();
+    Data2D<int> raw_points;
+    raw_points.resize((int) num_dimensions, 0);
+
+    std::vector<int> num_points_delta(num_dimensions);
+    std::vector<int> offsets(num_dimensions);
+    std::vector<int> index(num_dimensions);
+
+    for(int i=0; i<tensors.getNumIndexes(); i++){
+        const int *p = tensors.getIndex(i);
+        size_t num_total = 1;
+        for(size_t j=0; j<num_dimensions; j++){
+            num_points_delta[j] = getNumPoints(p[j]);
+            if (p[j] > 0){
+                offsets[j] = getNumPoints(p[j]-1);
+                num_points_delta[j] -= offsets[j];
+            }else{
+                offsets[j] = 0;
+            }
+
+            num_total *= (size_t) num_points_delta[j];
+        }
+
+        for(size_t k=0; k<num_total; k++){
+            size_t t = k;
+            for(int j = (int) num_dimensions-1; j>=0; j--){
+                index[j] = offsets[j] + (int) (t % num_points_delta[j]);
+                t /= (size_t) num_points_delta[j];
+            }
+            raw_points.appendStrip(index);
+        }
+    }
+
+    points = MultiIndexSet();
+    points.setNumDimensions((int) num_dimensions);
+    points.addData2D(raw_points);
+}
+
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
 IndexManipulator::~IndexManipulator(){}
 
