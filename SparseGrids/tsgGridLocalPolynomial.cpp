@@ -39,9 +39,9 @@
 namespace TasGrid{
 
 GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0),
-                         points(0), needed(0), values(0), rule(0), sparse_affinity(0)  {}
+                         points(0), needed(0), rule(0), sparse_affinity(0)  {}
 GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0),
-                         points(0), needed(0), values(0), rule(0), sparse_affinity(0)
+                         points(0), needed(0), rule(0), sparse_affinity(0)
 {
     copyGrid(&pwpoly);
 }
@@ -54,7 +54,7 @@ void GridLocalPolynomial::reset(bool clear_rule){
     num_dimensions = num_outputs = top_level = 0;
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (values != 0){ delete values; values = 0; }
+    values = StorageSet();
     if (clear_rule){ rule = 0; order = 1; }
     parents.load(0, 0, 0);
     sparse_affinity = 0;
@@ -99,7 +99,7 @@ void GridLocalPolynomial::write(std::ofstream &ofs) const{
         ofs << roots.size(); for(auto const &r : roots){ ofs << " " << r; } ofs << endl;
         ofs << pntr[0]; for(int i=1; i<=num_points; i++){  ofs << " " << pntr[i];  }  ofs << endl;
         ofs << indx[0]; for(int i=1; i<pntr[num_points]; i++){  ofs << " " << indx[i];  }  ofs << endl;
-        if (num_outputs > 0) values->write(ofs);
+        if (num_outputs > 0) values.write(ofs);
     }
 }
 void GridLocalPolynomial::writeBinary(std::ofstream &ofs) const{
@@ -146,7 +146,7 @@ void GridLocalPolynomial::writeBinary(std::ofstream &ofs) const{
         ofs.write((char*) pntr.data(), (num_points+1) * sizeof(int));
         ofs.write((char*) indx.data(), pntr[num_points] * sizeof(int));
 
-        if (num_outputs > 0) values->writeBinary(ofs);
+        if (num_outputs > 0) values.writeBinary(ofs);
     }
 }
 void GridLocalPolynomial::read(std::ifstream &ifs){
@@ -205,7 +205,7 @@ void GridLocalPolynomial::read(std::ifstream &ifs){
             indx.resize(1);  ifs >> indx[0]; // there is a special case when the grid has only one point without any children
         }
 
-        if (num_outputs > 0){ values = new StorageSet(0, 0); values->read(ifs); }
+        if (num_outputs > 0) values.read(ifs);
     }
 }
 void GridLocalPolynomial::readBinary(std::ifstream &ifs){
@@ -266,7 +266,7 @@ void GridLocalPolynomial::readBinary(std::ifstream &ifs){
             ifs.read((char*) indx.data(), sizeof(int));
         }
 
-        if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
+        if (num_outputs > 0) values.readBinary(ifs);
     }
 }
 
@@ -316,7 +316,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
         needed = 0;
         IM.computeDAGupLocal(points, rule, parents);
     }else{
-        values = new StorageSet(num_outputs, needed->getNumIndexes());
+        values.resize(num_outputs, needed->getNumIndexes());
     }
 }
 
@@ -346,8 +346,7 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
 
     buildTree();
 
-    if (pwpoly->values != 0) values = new StorageSet();
-    *values = *pwpoly->values;
+    values = pwpoly->values;
 
     if ((points != 0) && (num_outputs > 0)){ // points are loaded
         surpluses.resize(num_outputs, points->getNumIndexes());
@@ -560,13 +559,13 @@ void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration)
     clearCudaLoadedData();
     #endif
     if (points == 0){
-        values->setValues(vals);
+        values.setValues(vals);
         points = needed;
         needed = 0;
     }else if (needed == 0){
-        values->setValues(vals);
+        values.setValues(vals);
     }else{
-        values->addValues(points, needed, vals);
+        values.addValues(points, needed, vals);
         points->addIndexSet(needed);
         delete needed; needed = 0;
         buildTree();
@@ -581,7 +580,7 @@ void GridLocalPolynomial::mergeRefinement(){
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
     std::vector<double> vals(num_vals, 0.0);
-    values->setValues(vals);
+    values.setValues(vals);
     if (points == 0){
         points = needed;
         needed = 0;
@@ -724,7 +723,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
     int num_points = points->getNumIndexes();
 
     surpluses.resize(num_outputs, num_points);
-    *surpluses.getVector() = *values->aliasValues(); // copy assignment
+    *surpluses.getVector() = *values.aliasValues(); // copy assignment
 
     Data2D<int> dagUp;
     IndexManipulator IM(num_dimensions);
@@ -1138,7 +1137,7 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
         getQuadratureWeights(w.data());
         for(int i=0; i<num_points; i++){
             double wi = w[i] * conformal_correction[i];
-            const double *vals = values->getValues(i);
+            const double *vals = values.getValues(i);
             for(int k=0; k<num_outputs; k++) q[k] += wi * vals[k];
         }
     }
@@ -1148,7 +1147,7 @@ void GridLocalPolynomial::getNormalization(std::vector<double> &norms) const{
     norms.resize(num_outputs);
     std::fill(norms.begin(), norms.end(), 0.0);
     for(int i=0; i<points->getNumIndexes(); i++){
-        const double *v = values->getValues(i);
+        const double *v = values.getValues(i);
         for(int j=0; j<num_outputs; j++){
             if (norms[j] < fabs(v[j])) norms[j] = fabs(v[j]);
         }
@@ -1217,7 +1216,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
             vals.resize(active_outputs, nump);
 
             for(int i=0; i<nump; i++){
-                const double* v = values->getValues(pnts[i]);
+                const double* v = values.getValues(pnts[i]);
                 const int *p = points->getIndex(pnts[i]);
                 if (output == -1){
                     std::copy(v, v + num_outputs, vals.getStrip(i));
@@ -1432,14 +1431,15 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     Data2D<int> pp;
     pp.load(num_dimensions, num_kept, point_kept.data()); // to handle double indexing
 
-    StorageSet *values_kept = new StorageSet(num_outputs, num_kept);
-    values_kept->aliasValues()->resize(((size_t) num_kept) * ((size_t) num_outputs));
+    StorageSet values_kept;
+    values_kept.resize(num_outputs, num_kept);
+    values_kept.aliasValues()->resize(((size_t) num_kept) * ((size_t) num_outputs));
 
     num_kept = 0;
     for(int i=0; i<num_points; i++){
         if (pmap[i]){
             std::copy(points->getIndex(i), points->getIndex(i) + num_dimensions, pp.getStrip(num_kept));
-            std::copy(values->getValues(i), values->getValues(i) + num_outputs, values_kept->getValues(num_kept));
+            std::copy_n(values.getValues(i), num_outputs, values_kept.getValues(num_kept));
             num_kept++;
         }
     }
@@ -1450,7 +1450,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     num_dimensions = dims; num_outputs = outs;
 
     points = new IndexSet(num_dimensions, point_kept);
-    values = values_kept;
+    values = std::move(values_kept);
 
     buildTree();
     recomputeSurpluses();
@@ -1471,7 +1471,7 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
     surpluses.resize(num_outputs, getNumPoints());
     std::copy(c, c + surpluses.getTotalEntries(), surpluses.getVector()->data());
 
-    std::vector<double> *vals = values->aliasValues();
+    std::vector<double> *vals = values.aliasValues();
     vals->resize(surpluses.getTotalEntries());
 
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));

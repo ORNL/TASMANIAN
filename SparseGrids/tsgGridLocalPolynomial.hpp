@@ -375,7 +375,7 @@ private:
     IndexSet *points;
     IndexSet *needed;
 
-    StorageSet *values;
+    StorageSet values;
     Data2D<int> parents;
 
     // tree for evaluation
