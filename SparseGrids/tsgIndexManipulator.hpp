@@ -369,9 +369,14 @@ void computeLevels(const MultiIndexSet &mset, std::vector<int> &level);
 void getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &total_max);
 
 //! \internal
-//! \brief returns a Data2D structure where each strip holds the indexes of all parents (for all directions) associates with the index
+//! \brief returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using one-point-growth hierarchy
 //! \ingroup TasmanianMultiIndexManipulations
 void computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents);
+
+//! \internal
+//! \brief returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using hierarchy defined by **rule**
+//! \ingroup TasmanianMultiIndexManipulations
+void computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents);
 
 //! \internal
 //! \brief using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**

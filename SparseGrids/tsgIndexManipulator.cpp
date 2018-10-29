@@ -105,6 +105,62 @@ void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, Data2D<int
     }
 }
 
+void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    int num_points = mset.getNumIndexes();
+    if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
+        int max_parents = rule->getMaxNumParents() * (int) num_dimensions;
+        parents.resize(max_parents, num_points, -1);
+        int level0_offset = rule->getNumPoints(0);
+        #pragma omp parallel for schedule(static)
+        for(int i=0; i<num_points; i++){
+            const int *p = mset.getIndex(i);
+            std::vector<int> dad(num_dimensions);
+            std::copy_n(p, num_dimensions, dad.data());
+            int *pp = parents.getStrip(i);
+            for(size_t j=0; j<num_dimensions; j++){
+                if (dad[j] >= level0_offset){
+                    int current = p[j];
+                    dad[j] = rule->getParent(current);
+                    pp[2*j] = mset.getSlot(dad);
+                    while ((dad[j] >= level0_offset) && (pp[2*j] == -1)){
+                        current = dad[j];
+                        dad[j] = rule->getParent(current);
+                        pp[2*j] = mset.getSlot(dad);
+                    }
+                    dad[j] = rule->getStepParent(current);
+                    if (dad[j] != -1){
+                        pp[2*j + 1] = mset.getSlot(dad);
+                    }
+                    dad[j] = p[j];
+                }
+            }
+        }
+    }else{ // this assumes that level zero has only one node
+        parents.resize((int) num_dimensions, num_points);
+        #pragma omp parallel for schedule(static)
+        for(int i=0; i<num_points; i++){
+            const int *p = mset.getIndex(i);
+            std::vector<int> dad(num_dimensions);
+            std::copy_n(p, num_dimensions, dad.data());
+            int *pp = parents.getStrip(i);
+            for(size_t j=0; j<num_dimensions; j++){
+                if (dad[j] == 0){
+                    pp[j] = -1;
+                }else{
+                    dad[j] = rule->getParent(dad[j]);
+                    pp[j] = mset.getSlot(dad.data());
+                    while((dad[j] != 0) && (pp[j] == -1)){
+                        dad[j] = rule->getParent(dad[j]);
+                        pp[j] = mset.getSlot(dad);
+                    }
+                    dad[j] = p[j];
+                }
+            }
+        }
+    }
+}
+
 void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set){
     new_set = MultiIndexSet(mset.getNumDimensions());
     size_t num_dimensions = (size_t) mset.getNumDimensions();
