@@ -38,32 +38,17 @@
 
 namespace TasGrid{
 
-CustomTabulated::CustomTabulated() : num_levels(0), description(0){}
-CustomTabulated::CustomTabulated(const char* filename) : num_levels(0), description(0)
-{
-    std::ifstream ifs; ifs.open(filename);
-    if (!ifs){
-        std::string message = "Could not open the custom rule file: ";
-        message += filename;
-        throw std::invalid_argument(message);
-    }
-    read(ifs);
-    ifs.close();
-}
-CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0), description(0){
+CustomTabulated::CustomTabulated() : num_levels(0){}
+CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0){
     copyRule(&custom);
 }
-CustomTabulated::~CustomTabulated(){
-    reset();
-}
-void CustomTabulated::reset(){
-    if (description != 0){ delete description; description = 0; }
-    num_levels = 0;
-}
+CustomTabulated::~CustomTabulated(){}
+
+void CustomTabulated::reset(){ num_levels = 0; }
 
 // I/O subroutines
 void CustomTabulated::write(std::ofstream &ofs) const{
-    ofs << "description: " << description->c_str() << std::endl;
+    ofs << "description: " << description.c_str() << std::endl;
     ofs << "levels: " << num_levels << std::endl;
     for(int i=0; i<num_levels; i++){
         ofs << num_nodes[i] << " " << precision[i] << std::endl;
@@ -75,9 +60,9 @@ void CustomTabulated::write(std::ofstream &ofs) const{
     }
 }
 void CustomTabulated::writeBinary(std::ofstream &ofs) const{
-    int num_description = (int) description->size();
+    int num_description = (int) description.size();
     ofs.write((char*) &num_description, sizeof(int));
-    ofs.write(description->c_str(), num_description * sizeof(char));
+    ofs.write(description.c_str(), num_description * sizeof(char));
     ofs.write((char*) &num_levels, sizeof(int));
     ofs.write((char*) num_nodes.data(), num_levels * sizeof(int));
     ofs.write((char*) precision.data(), num_levels * sizeof(int));
@@ -85,6 +70,16 @@ void CustomTabulated::writeBinary(std::ofstream &ofs) const{
         ofs.write((char*) weights[l].data(), weights[l].size() * sizeof(double));
         ofs.write((char*) nodes[l].data(), nodes[l].size() * sizeof(double));
     }
+}
+void CustomTabulated::read(const char* filename){
+    std::ifstream ifs; ifs.open(filename);
+    if (!ifs){
+        std::string message = "Could not open the custom rule file: ";
+        message += filename;
+        throw std::invalid_argument(message);
+    }
+    read(ifs);
+    ifs.close();
 }
 void CustomTabulated::read(std::ifstream &ifs){
     reset();
@@ -94,8 +89,8 @@ void CustomTabulated::read(std::ifstream &ifs){
     ifs >> T;
     if (!(T.compare("description:") == 0)){ ifs.close(); throw std::invalid_argument("ERROR: wrong file format of custom tables on line 1"); }
     ifs.get(dummy);
-    description = new std::string;
-    getline(ifs, *description);
+    description = std::string();
+    getline(ifs, description);
 
     ifs >> T;
     if (!(T.compare("levels:") == 0)){ ifs.close(); throw std::invalid_argument("ERROR: wrong file format of custom tables on line 2"); }
@@ -121,12 +116,10 @@ void CustomTabulated::readBinary(std::ifstream &ifs){
 
     int num_description = 0;
     ifs.read((char*) &num_description, sizeof(int));
-    char *desc = new char[num_description+1];
-    ifs.read(desc, num_description);
+    std::vector<char> desc((size_t) num_description+1);
+    ifs.read(desc.data(), num_description);
     desc[num_description] = '\0';
-    description = new std::string;
-    *description = desc;
-    delete[] desc;
+    description = desc.data();
 
     ifs.read((char*) &num_levels, sizeof(int));
     num_nodes.resize(num_levels);
@@ -145,7 +138,7 @@ void CustomTabulated::readBinary(std::ifstream &ifs){
 }
 
 void CustomTabulated::copyRule(const CustomTabulated *custom){
-    description = new std::string(*(custom->description));
+    description = custom->description;
 
     num_levels = custom->num_levels;
 
@@ -196,7 +189,7 @@ void CustomTabulated::getWeightsNodes(int level, std::vector<double> &w, std::ve
     w = weights[level];
     x = nodes[level];
 }
-const char* CustomTabulated::getDescription() const{  return description->c_str();  }
+const char* CustomTabulated::getDescription() const{ return description.c_str(); }
 
 OneDimensionalMeta::OneDimensionalMeta(): custom(0) {}
 OneDimensionalMeta::OneDimensionalMeta(const CustomTabulated *ccustom) : custom(ccustom) {}

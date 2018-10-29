@@ -244,8 +244,9 @@ void GridGlobal::readBinary(std::ifstream &ifs){
             oned_max_level = max_levels[0];
             for(auto l: max_levels) if (oned_max_level < l) oned_max_level = l;
         }
-        OneDimensionalMeta meta(custom);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
+
+        wrapper = new OneDimensionalWrapper();
+        wrapper->load(*custom, oned_max_level, rule, alpha, beta);
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexSet *work = (points != 0) ? points : needed;
@@ -287,7 +288,8 @@ void GridGlobal::clearRefinement(){
 
 void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits){
     if ((crule == rule_customtabulated) && (custom == 0)){
-        custom = new CustomTabulated(custom_filename);
+        custom = new CustomTabulated();
+        custom->read(custom_filename);
     }
     IndexManipulator IM(cnum_dimensions, custom);
 

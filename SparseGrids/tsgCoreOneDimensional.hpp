@@ -42,12 +42,12 @@ namespace TasGrid{
 class CustomTabulated{
 public:
     CustomTabulated();
-    CustomTabulated(const char* filename);
     CustomTabulated(const CustomTabulated &custom);
     ~CustomTabulated();
 
     // I/O subroutines
     void write(std::ofstream &ofs) const;
+    void read(const char* filename);
     void read(std::ifstream &ifs);
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
@@ -71,7 +71,7 @@ private:
 
     std::vector<std::vector<double>> nodes;
     std::vector<std::vector<double>> weights;
-    std::string *description;
+    std::string description;
 };
 
 class OneDimensionalMeta{
