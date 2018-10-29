@@ -85,7 +85,8 @@ public:
 
 class SplitDirections{
 public:
-    SplitDirections(const IndexSet *points);
+    SplitDirections(const MultiIndexSet &points);
+    SplitDirections(const IndexSet &points);
     ~SplitDirections();
 
     int getNumJobs() const;

@@ -129,11 +129,11 @@ protected:
                                     std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const;
 
     template<int mode>
-    void buildSparseVector(const IndexSet *work, const double x[], int &num_nz, std::vector<int> &sindx, std::vector<double> &svals) const{
+    void buildSparseVector(const MultiIndexSet &work, const double x[], int &num_nz, std::vector<int> &sindx, std::vector<double> &svals) const{
         // This operates under several modes, no need to make separate enumerates for internal API, just use integer codes
         // mode 0, count the non-zeros, sindx and svals will never be accessed can pass dummy empty vectors
         // mode 1, num_nz is input (already pre-computed), sindx and svals are resized and filled
-        // mode 2, num_nz is output (counded and filled), sindx and svals are NOT resized, std::vector::push_back() is used
+        // mode 2, num_nz is output (counted and filled), sindx and svals are NOT resized, std::vector::push_back() is used
         std::vector<int> monkey_count(top_level+1);
         std::vector<int> monkey_tail(top_level+1);
 
@@ -148,7 +148,7 @@ protected:
         num_nz = 0;
 
         for(const auto &r : roots){
-            double basis_value = evalBasisSupported(work->getIndex(r), x, isSupported);
+            double basis_value = evalBasisSupported(work.getIndex(r), x, isSupported);
 
             if (isSupported){
                 if (mode == 1){
@@ -167,7 +167,7 @@ protected:
                 while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
                         p = indx[monkey_count[current]];
-                        basis_value = evalBasisSupported(work->getIndex(p), x, isSupported);
+                        basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
                         if (isSupported){
                             if (mode == 1){
                                 sindx[num_nz] = p;
@@ -266,16 +266,16 @@ protected:
 
     void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const;
 
-    bool addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
-    void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
-    void addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const std::vector<int> &level_limits) const;
+    bool addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;
+    void addChild(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;
+    void addChildLimited(const int point[], int direction, const MultiIndexSet &exclude, const std::vector<int> &level_limits, Data2D<int> &destination) const;
 
     #ifdef Tasmanian_ENABLE_CUDA
     // synchronize with tasgpu_devalpwpoly_feval
     template<int order, TypeOneDRule crule>
-    void encodeSupportForGPU(const IndexSet *work, double *cpu_support) const{
-        for(int i=0; i<work->getNumIndexes(); i++){
-            const int* p = work->getIndex(i);
+    void encodeSupportForGPU(const MultiIndexSet &work, double *cpu_support) const{
+        for(int i=0; i<work.getNumIndexes(); i++){
+            const int* p = work.getIndex(i);
             for(int j=0; j<num_dimensions; j++){
                 cpu_support[i*num_dimensions + j] = rule->getSupport(p[j]);
                 if (order != 0){
@@ -298,10 +298,10 @@ protected:
     }
     // synchronize with tasgpu_devalpwpoly_feval
     template<int order, TypeOneDRule crule>
-    void encodeSupportForGPU(const IndexSet *work, Data2D<double> &cpu_support) const{
-        cpu_support.resize(num_dimensions, work->getNumIndexes());
-        for(int i=0; i<work->getNumIndexes(); i++){
-            const int* p = work->getIndex(i);
+    void encodeSupportForGPU(const MultiIndexSet &work, Data2D<double> &cpu_support) const{
+        cpu_support.resize(num_dimensions, work.getNumIndexes());
+        for(int i=0; i<work.getNumIndexes(); i++){
+            const int* p = work.getIndex(i);
             double *s = cpu_support.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 s[j] = rule->getSupport(p[j]);
@@ -329,7 +329,7 @@ protected:
         getPoints(cpu_nodes.data());
         cuda_nodes.load(cpu_nodes);
         Data2D<double> cpu_support;
-        IndexSet *work = (points != 0) ? points : needed;
+        const MultiIndexSet &work = (points.empty()) ? needed : points;
         if (rule->getType() == rule_localp){
             switch(order){
             case 0: encodeSupportForGPU<0, rule_localp>(work, cpu_support); break;
@@ -372,8 +372,8 @@ private:
 
     Data2D<double> surpluses;
 
-    IndexSet *points;
-    IndexSet *needed;
+    MultiIndexSet points;
+    MultiIndexSet needed;
 
     StorageSet values;
     Data2D<int> parents;

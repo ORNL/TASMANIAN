@@ -356,6 +356,7 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
             IM.referencePoints<false>(active_tensors->getIndex(i), &wrapper, needed, tensor_refs[i]);
     }else{
         needed = IM.generateNestedPoints(tensors, &wrapper); // nested grids exploit nesting
+        //needed = IM.generatePointsFromDeltas(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<nz_weights; i++)
