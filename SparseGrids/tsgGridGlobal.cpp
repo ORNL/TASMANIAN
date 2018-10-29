@@ -45,11 +45,11 @@
 namespace TasGrid{
 
 GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0), wrapper(0), tensors(0), active_tensors(0),
-    points(0), needed(0), max_levels(0), values(0),
+    points(0), needed(0), max_levels(0),
     updated_tensors(0), updated_active_tensors(0), custom(0)
 {}
 GridGlobal::GridGlobal(const GridGlobal &global) : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0), wrapper(0), tensors(0), active_tensors(0),
-    points(0), needed(0), max_levels(0), values(0),
+    points(0), needed(0), max_levels(0),
     updated_tensors(0), updated_active_tensors(0), custom(0)
 {
     copyGrid(&global);
@@ -90,7 +90,7 @@ void GridGlobal::write(std::ofstream &ofs) const{
             ofs << " " << max_levels[j];
         }
         ofs << endl;
-        if (num_outputs > 0) values->write(ofs);
+        if (num_outputs > 0) values.write(ofs);
         if (updated_tensors != 0){
             ofs << "1" << endl;
             updated_tensors->write(ofs);
@@ -138,7 +138,7 @@ void GridGlobal::writeBinary(std::ofstream &ofs) const{
         }
         ofs.write((char*) max_levels.data(), num_dimensions * sizeof(int));
 
-        if (num_outputs > 0) values->writeBinary(ofs);
+        if (num_outputs > 0) values.writeBinary(ofs);
         if (updated_tensors != 0){
             flag = 'y'; ofs.write(&flag, sizeof(char));
             updated_tensors->writeBinary(ofs);
@@ -167,7 +167,7 @@ void GridGlobal::read(std::ifstream &ifs){
         ifs >> flag; if (flag == 1){ points = new IndexSet(num_dimensions); points->read(ifs); }
         ifs >> flag; if (flag == 1){ needed = new IndexSet(num_dimensions); needed->read(ifs); }
         max_levels.resize(num_dimensions);  for(auto &m : max_levels){ ifs >> m; }
-        if (num_outputs > 0){ values = new StorageSet(0, 0); values->read(ifs); }
+        if (num_outputs > 0) values.read(ifs);
         ifs >> flag;
         IndexManipulator IM(num_dimensions);
         int oned_max_level;
@@ -229,7 +229,7 @@ void GridGlobal::readBinary(std::ifstream &ifs){
         max_levels.resize(num_dimensions);
         ifs.read((char*) max_levels.data(), num_dimensions * sizeof(int));
 
-        if (num_outputs > 0){ values = new StorageSet(0, 0); values->readBinary(ifs); }
+        if (num_outputs > 0) values.readBinary(ifs);
 
         ifs.read((char*) &flag, sizeof(char));
         IndexManipulator IM(num_dimensions);
@@ -271,7 +271,7 @@ void GridGlobal::reset(bool includeCustom){
     if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (values != 0){ delete values;  values = 0; }
+    values = StorageSet();
     if (updated_tensors != 0){ delete updated_tensors; updated_tensors = 0; }
     if (updated_active_tensors != 0){ delete updated_active_tensors; updated_active_tensors = 0; }
     if (includeCustom && (custom != 0)){ delete custom; custom = 0; }
@@ -312,7 +312,7 @@ void GridGlobal::copyGrid(const GridGlobal *global){
     setTensors(tset, global->num_outputs, global->rule, global->alpha, global->beta);
 
     if ((num_outputs > 0) && (global->points != 0)){ // if there are values inside the source object
-        loadNeededPoints(global->values->getValues(0));
+        loadNeededPoints(global->values.getValues(0));
     }
 
     // if there is an active refinement awaiting values
@@ -377,7 +377,7 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
         points = needed;
         needed = 0;
     }else{
-        values = new StorageSet(num_outputs, needed->getNumIndexes());
+        values.resize(num_outputs, needed->getNumIndexes());
     }
 }
 
@@ -542,13 +542,13 @@ void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
     cuda_vals.clear();
     #endif
     if (points == 0){
-        values->setValues(vals);
+        values.setValues(vals);
         points = needed;
         needed = 0;
     }else if (needed == 0){ // resetting the points
-        values->setValues(vals);
+        values.setValues(vals);
     }else{
-        values->addValues(points, needed, vals);
+        values.addValues(points, needed, vals);
         points->addIndexSet(needed);
         delete needed; needed = 0;
 
@@ -575,7 +575,7 @@ void GridGlobal::mergeRefinement(){
     if (needed == 0) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
     std::vector<double> vals(((size_t) num_all_points) * ((size_t) num_outputs), 0.0);
-    values->setValues(vals);
+    values.setValues(vals);
     if (points == 0){
         points = needed;
         needed = 0;
@@ -604,7 +604,7 @@ void GridGlobal::mergeRefinement(){
 }
 const double* GridGlobal::getLoadedValues() const{
     if (getNumLoaded() == 0) return 0;
-    return values->getValues(0);
+    return values.getValues(0);
 }
 
 void GridGlobal::evaluate(const double x[], double y[]) const{
@@ -612,7 +612,7 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
     getInterpolationWeights(x, w.data());
     TasBLAS::setzero(num_outputs, y);
     for(int i=0; i<points->getNumIndexes(); i++){
-        const double *v = values->getValues(i);
+        const double *v = values.getValues(i);
         double wi = w[i];
         for(int k=0; k<num_outputs; k++) y[k] += wi * v[k];
     }
@@ -622,7 +622,7 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
 void GridGlobal::evaluateFastCPUblas(const double x[], double y[]) const{
     std::vector<double> w(points->getNumIndexes());
     getInterpolationWeights(x, w.data());
-    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), values->getValues(0), w.data(), y);
+    TasBLAS::dgemv(num_outputs, points->getNumIndexes(), values.getValues(0), w.data(), y);
 }
 #else
 void GridGlobal::evaluateFastCPUblas(const double[], double[]) const{}
@@ -630,7 +630,7 @@ void GridGlobal::evaluateFastCPUblas(const double[], double[]) const{}
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateFastGPUcublas(const double x[], double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(*(values->aliasValues()));
+    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
 
     std::vector<double> weights(points->getNumIndexes());
     getInterpolationWeights(x, weights.data());
@@ -646,7 +646,7 @@ void GridGlobal::evaluateFastGPUcuda(const double x[], double y[]) const{
 
 #ifdef Tasmanian_ENABLE_MAGMA
 void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(*(values->aliasValues()));
+    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
 
     std::vector<double> weights(points->getNumIndexes());
     getInterpolationWeights(x, weights.data());
@@ -672,7 +672,7 @@ void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) c
     Data2D<double> weights; weights.resize(num_points, num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values->getValues(0), weights.getStrip(0), 0.0, y);
+    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
 }
 #else
 void GridGlobal::evaluateBatchCPUblas(const double[], int, double[]) const{}
@@ -680,7 +680,7 @@ void GridGlobal::evaluateBatchCPUblas(const double[], int, double[]) const{}
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(*(values->aliasValues()));
+    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
 
     int num_points = points->getNumIndexes();
     Data2D<double> weights; weights.resize(num_points, num_x);
@@ -697,7 +697,7 @@ void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) c
 
 #ifdef Tasmanian_ENABLE_MAGMA
 void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(*(values->aliasValues()));
+    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
 
     int num_points = points->getNumIndexes();
     Data2D<double> weights; weights.resize(num_points, num_x);
@@ -717,7 +717,7 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
     #pragma omp parallel for schedule(static)
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<points->getNumIndexes(); i++){
-            const double *v = values->getValues(i);
+            const double *v = values.getValues(i);
             q[k] += w[i] * v[k];
         }
     }
@@ -740,7 +740,7 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
     if (OneDimensionalMeta::isSequence(rule)){
         double max_surp = 0.0;
         for(int i=0; i<num_points; i++){
-            const double* v = values->getValues(i);
+            const double* v = values.getValues(i);
             surp[i] = v[output];
             if (fabs(surp[i]) > max_surp) max_surp = fabs(surp[i]);
         }
