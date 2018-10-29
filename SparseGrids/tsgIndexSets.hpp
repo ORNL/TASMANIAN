@@ -303,6 +303,7 @@ public:
     const double* getValues(int i) const;
     double* getValues(int i);
     std::vector<double>* aliasValues(); // alternative to setValues()
+    const std::vector<double>* aliasValues() const; // alternative to setValues()
     int getNumOutputs() const;
 
     void setValues(const double vals[]);
