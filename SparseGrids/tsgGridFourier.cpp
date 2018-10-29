@@ -37,11 +37,11 @@
 namespace TasGrid{
 
 GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0),
-    max_levels(0), points(0), needed(0), values(0)
+    max_levels(0), points(0), needed(0)
 {}
 
 GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0),
-    max_levels(0), points(0), needed(0), values(0){
+    max_levels(0), points(0), needed(0){
     copyGrid(&fourier);
 }
 
@@ -78,7 +78,7 @@ void GridFourier::write(std::ofstream &ofs) const{
         }
         ofs << endl;
         if (num_outputs > 0){
-            values->write(ofs);
+            values.write(ofs);
             if (fourier_coefs.getNumStrips() > 0){
                 ofs << "1";
                 for(auto c : *fourier_coefs.getVector()) ofs << " " << c;
@@ -123,7 +123,7 @@ void GridFourier::read(std::ifstream &ifs){
         IndexSet *work = (points != 0) ? points : needed;
 
         if (num_outputs > 0){
-            values = new StorageSet(0, 0); values->read(ifs);
+            values.read(ifs);
             ifs >> flag;
             if (flag == 1){
                 fourier_coefs.resize(num_outputs, 2 * work->getNumIndexes());
@@ -169,7 +169,7 @@ void GridFourier::writeBinary(std::ofstream &ofs) const{
         ofs.write((char*) max_levels.data(), num_dimensions * sizeof(int));
 
         if (num_outputs > 0){
-            values->writeBinary(ofs);
+            values.writeBinary(ofs);
             if (fourier_coefs.getNumStrips() > 0){
                 flag = 'y'; ofs.write(&flag, sizeof(char));
                 ofs.write((char*) fourier_coefs.getCStrip(0), 2 * ((size_t) getNumPoints()) * ((size_t) num_outputs) * sizeof(double));
@@ -215,7 +215,7 @@ void GridFourier::readBinary(std::ifstream &ifs){
         ifs.read((char*) max_levels.data(), num_dimensions * sizeof(int));
 
         if (num_outputs > 0){
-            values = new StorageSet(0, 0); values->readBinary(ifs);
+            values.readBinary(ifs);
             ifs.read((char*) &flag, sizeof(char));
             if (flag == 'y'){
                 fourier_coefs.resize(num_outputs, 2 * work->getNumIndexes());
@@ -244,7 +244,7 @@ void GridFourier::reset(){
     if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
     if (points != 0){ delete points; points = 0; }
     if (needed != 0){ delete needed; needed = 0; }
-    if (values != 0){ delete values; values = 0; }
+    values = StorageSet();
     active_w.clear();
     fourier_coefs.clear();
     num_dimensions = 0;
@@ -269,7 +269,7 @@ void GridFourier::copyGrid(const GridFourier *fourier){
     IndexSet *tset = new IndexSet(fourier->tensors);
     setTensors(tset, fourier->num_outputs);
     if ((num_outputs > 0) && (fourier->points != 0)){ // if there are values inside the source object
-        loadNeededPoints(fourier->values->getValues(0));
+        loadNeededPoints(fourier->values.getValues(0));
     }
 }
 
@@ -302,7 +302,7 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
         points = needed;
         needed = 0;
     }else{
-        values = new StorageSet(num_outputs, needed->getNumIndexes());
+        values.resize(num_outputs, needed->getNumIndexes());
     }
 
     int dummy;
@@ -320,11 +320,11 @@ int GridFourier::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : 
 void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
     clearAccelerationData();
     if (points == 0){ //setting points for the first time
-        values->setValues(vals);
+        values.setValues(vals);
         points = needed;
         needed = 0;
     }else{ //resetting the points
-        values->setValues(vals);
+        values.setValues(vals);
     }
     //if we add anisotropic or surplus refinement, I'll need to add a third case here
 
@@ -428,7 +428,7 @@ void GridFourier::calculateFourierCoefficients(){
                 t /= num_oned_points[j];
             }
             //refs[i] = ; // refs[i] is the index of Tasmanian (index set) corresponding to real index "i"
-            const double *v = values->getValues(work->getSlot(p));
+            const double *v = values.getValues(work->getSlot(p));
             tensor_data[i].resize(num_outputs);
             std::copy(v, v + num_outputs, tensor_data[i].data());
         }
@@ -682,7 +682,7 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
         getQuadratureWeights(w.data());
         for(int i=0; i<points->getNumIndexes(); i++){
             w[i] *= conformal_correction[i];
-            const double *v = values->getValues(i);
+            const double *v = values.getValues(i);
             for(int k=0; k<num_outputs; k++){
                 q[k] += w[i] * v[k];
             }
