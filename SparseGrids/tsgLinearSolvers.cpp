@@ -309,18 +309,20 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
 
 namespace TasSparse{
 
-SparseMatrix::SparseMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals)
- : tol(TSG_NUM_TOL), num_rows(0), pntr(0), indx(0), indxD(0), vals(0), ilu(0){
-     num_rows = (int) lpntr.size();
+SparseMatrix::SparseMatrix() : tol(TSG_NUM_TOL), num_rows(0){}
+SparseMatrix::~SparseMatrix(){}
 
-     pntr.resize(num_rows+1);
-     pntr[0] = 0;
-     for(int i=0; i<num_rows; i++)
-         pntr[i+1] = pntr[i] + lpntr[i];
+void SparseMatrix::load(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals){
+    num_rows = (int) lpntr.size();
 
-     int num_nz = pntr[num_rows];
-     indx.resize(num_nz);
-     vals.resize(num_nz);
+    pntr.resize(num_rows+1);
+    pntr[0] = 0;
+    for(int i=0; i<num_rows; i++)
+        pntr[i+1] = pntr[i] + lpntr[i];
+
+    int num_nz = pntr[num_rows];
+    indx.resize(num_nz);
+    vals.resize(num_nz);
 
     int j = 0;
     for(const auto &idx : lindx) for(auto i : idx) indx[j++] = i;
@@ -328,20 +330,6 @@ SparseMatrix::SparseMatrix(const std::vector<int> &lpntr, const std::vector<std:
     for(const auto &vls : lvals) for(auto v : vls) vals[j++] = v;
 
     computeILU();
-}
-
-SparseMatrix::~SparseMatrix(){
-    clear();
-}
-
-
-void SparseMatrix::clear(){
-    pntr.clear();
-    indx.clear();
-    indxD.clear();
-    vals.clear();
-    ilu.clear();
-    num_rows = 0;
 }
 
 int SparseMatrix::getNumRows() const{ return num_rows; }

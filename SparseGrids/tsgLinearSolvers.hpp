@@ -67,8 +67,10 @@ namespace TasSparse{
 // Make a new matrix class that would store the ILU preconditioner and solve either the regular or adjoined problem all in one class
 class SparseMatrix{
 public:
-    SparseMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
+    SparseMatrix();
     ~SparseMatrix();
+
+    void load(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
 
     int getNumRows() const;
 
@@ -80,7 +82,7 @@ protected:
     void computeILU();
 
 private:
-    const double tol;
+    double tol;
     int num_rows;
     std::vector<int> pntr, indx, indxD;
     std::vector<double> vals, ilu;
