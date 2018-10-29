@@ -137,7 +137,8 @@ void GridFourier::read(std::ifstream &ifs){
         for(int j=1; j<num_dimensions; j++){ if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j]; }
 
         OneDimensionalMeta meta(0);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule_fourier, 0.0, 0.0);
+        wrapper = new OneDimensionalWrapper();
+        wrapper->load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
 
         int dummy;
         IM.getMaxLevels(work, max_power, dummy);
@@ -229,8 +230,8 @@ void GridFourier::readBinary(std::ifstream &ifs){
         oned_max_level = max_levels[0];
         for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
 
-        OneDimensionalMeta meta(0);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule_fourier, 0.0, 0.0);
+        wrapper = new OneDimensionalWrapper();
+        wrapper->load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
 
         int dummy;
         IM.getMaxLevels(work, max_power, dummy);
@@ -285,7 +286,8 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
 
     OneDimensionalMeta meta(0);
     int max_level; IM.getMaxLevels(tensors, max_levels, max_level);
-    wrapper = new OneDimensionalWrapper(&meta, max_level, rule_fourier, 0.0, 0.0);
+    wrapper = new OneDimensionalWrapper();
+    wrapper->load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
 
     std::vector<int> tensors_w;
     IM.makeTensorWeights(tensors, tensors_w);

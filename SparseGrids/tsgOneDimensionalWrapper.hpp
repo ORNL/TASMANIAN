@@ -40,8 +40,10 @@ namespace TasGrid{
 
 class OneDimensionalWrapper{
 public:
-    OneDimensionalWrapper(const OneDimensionalMeta *meta, int max_level, TypeOneDRule crule, double alpha, double beta);
+    OneDimensionalWrapper();
     ~OneDimensionalWrapper();
+
+    void load(const CustomTabulated &custom, int max_level, TypeOneDRule crule, double alpha, double beta);
 
     int getNumPoints(int level) const;
     int getPointIndex(int level, int j) const;

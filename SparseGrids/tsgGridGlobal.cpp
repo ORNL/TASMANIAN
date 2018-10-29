@@ -180,8 +180,9 @@ void GridGlobal::read(std::ifstream &ifs){
             oned_max_level = max_levels[0];
             for(auto l: max_levels) if (oned_max_level < l) oned_max_level = l;
         }
-        OneDimensionalMeta meta(custom);
-        wrapper = new OneDimensionalWrapper(&meta, oned_max_level, rule, alpha, beta);
+
+        wrapper = new OneDimensionalWrapper();
+        wrapper->load(*custom, oned_max_level, rule, alpha, beta);
 
         int nz_weights = active_tensors->getNumIndexes();
         IndexSet *work = (points != 0) ? points : needed;
@@ -326,9 +327,8 @@ void GridGlobal::copyGrid(const GridGlobal *global){
 
         needed = new IndexSet(global->needed);
 
-        OneDimensionalMeta meta(custom);
-        delete wrapper;
-        wrapper = new OneDimensionalWrapper(&meta, global->wrapper->getNumLevels(), rule, alpha, beta);
+        wrapper = new OneDimensionalWrapper();
+        wrapper->load(*custom, global->wrapper->getNumLevels(), rule, alpha, beta);
     }
 }
 
@@ -344,11 +344,11 @@ void GridGlobal::setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crul
 
     IndexManipulator IM(num_dimensions, custom);
 
-    OneDimensionalMeta meta(custom);
     int max_level;
     IM.getMaxLevels(tensors, max_levels, max_level);
-    wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
 
+    wrapper = new OneDimensionalWrapper();
+    wrapper->load(*custom, max_level, rule, alpha, beta);
 
     std::vector<int> tensors_w;
     IM.makeTensorWeights(tensors, tensors_w);
@@ -406,11 +406,11 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
 
             updated_tensors->addIndexSet(tensors); // avoids the case where existing points in tensor are not included in the update
 
-            OneDimensionalMeta meta(custom);
             int max_level;
             max_level = IM.getMaxLevel(updated_tensors);
             delete wrapper;
-            wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
+            wrapper = new OneDimensionalWrapper();
+            wrapper->load(*custom, max_level, rule, alpha, beta);
 
             std::vector<int> updates_tensor_w;
             IM.makeTensorWeights(updated_tensors, updates_tensor_w);
@@ -971,11 +971,11 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
     }
     updated_tensors->addIndexSet(tensors); // avoids the case where existing points in tensor are not included in the update
 
-    OneDimensionalMeta meta(custom);
     int max_level;
     max_level = IM.getMaxLevel(updated_tensors);
-    delete wrapper;
-    wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
+
+    wrapper = new OneDimensionalWrapper();
+    wrapper->load(*custom, max_level, rule, alpha, beta);
 
     std::vector<int> updates_tensor_w;
     IM.makeTensorWeights(updated_tensors, updates_tensor_w);
@@ -1025,11 +1025,11 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
             delete kids;
         }
 
-        OneDimensionalMeta meta(custom);
         int max_level;
         max_level = IM.getMaxLevel(updated_tensors);
         delete wrapper;
-        wrapper = new OneDimensionalWrapper(&meta, max_level, rule, alpha, beta);
+        wrapper = new OneDimensionalWrapper();
+        wrapper->load(*custom, max_level, rule, alpha, beta);
 
         std::vector<int> updates_tensor_w;
         IM.makeTensorWeights(updated_tensors, updates_tensor_w);
