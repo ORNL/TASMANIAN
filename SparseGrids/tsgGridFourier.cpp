@@ -36,11 +36,11 @@
 
 namespace TasGrid{
 
-GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0),
+GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), tensors(0), active_tensors(0),
     max_levels(0), points(0), needed(0)
 {}
 
-GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), wrapper(0), tensors(0), active_tensors(0),
+GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), tensors(0), active_tensors(0),
     max_levels(0), points(0), needed(0){
     copyGrid(&fourier);
 }
@@ -136,9 +136,7 @@ void GridFourier::read(std::ifstream &ifs){
         int oned_max_level = max_levels[0];
         for(int j=1; j<num_dimensions; j++){ if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j]; }
 
-        OneDimensionalMeta meta(0);
-        wrapper = new OneDimensionalWrapper();
-        wrapper->load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
+        wrapper.load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
 
         int dummy;
         IM.getMaxLevels(work, max_power, dummy);
@@ -230,8 +228,7 @@ void GridFourier::readBinary(std::ifstream &ifs){
         oned_max_level = max_levels[0];
         for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
 
-        wrapper = new OneDimensionalWrapper();
-        wrapper->load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
+        wrapper.load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
 
         int dummy;
         IM.getMaxLevels(work, max_power, dummy);
@@ -240,7 +237,7 @@ void GridFourier::readBinary(std::ifstream &ifs){
 
 void GridFourier::reset(){
     clearAccelerationData();
-    if (wrapper != 0){ delete wrapper; wrapper = 0; }
+    wrapper = OneDimensionalWrapper();
     if (tensors != 0){ delete tensors; tensors = 0; }
     if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
     if (points != 0){ delete points; points = 0; }
@@ -286,8 +283,8 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
 
     OneDimensionalMeta meta(0);
     int max_level; IM.getMaxLevels(tensors, max_levels, max_level);
-    wrapper = new OneDimensionalWrapper();
-    wrapper->load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
+
+    wrapper.load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
 
     std::vector<int> tensors_w;
     IM.makeTensorWeights(tensors, tensors_w);
@@ -298,7 +295,7 @@ void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
     active_w.reserve(nz_weights);
     for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w.push_back(tensors_w[i]); }
 
-    needed = IM.generateNestedPoints(tensors, wrapper); // nested grids exploit nesting
+    needed = IM.generateNestedPoints(tensors, &wrapper); // nested grids exploit nesting
 
     if (num_outputs == 0){
         points = needed;
@@ -343,7 +340,7 @@ void GridFourier::getLoadedPoints(double *x) const{
     for(int i=0; i<num_points; i++){
         const int *p = points->getIndex(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper->getNode(p[j]);
+            x[i*num_dimensions + j] = wrapper.getNode(p[j]);
         }
     }
 }
@@ -353,7 +350,7 @@ void GridFourier::getNeededPoints(double *x) const{
     for(int i=0; i<num_points; i++){
         const int *p = needed->getIndex(i);
         for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper->getNode(p[j]);
+            x[i*num_dimensions + j] = wrapper.getNode(p[j]);
         }
     }
 }
@@ -414,7 +411,7 @@ void GridFourier::calculateFourierCoefficients(){
         std::vector<int> num_oned_points(num_dimensions);
         std::vector<int> cnum_oned_points(num_dimensions, 1); // cumulative number of points
         for(int j=0; j<num_dimensions; j++){
-            num_oned_points[j] = wrapper->getNumPoints(levels[j]);
+            num_oned_points[j] = wrapper.getNumPoints(levels[j]);
             num_tensor_points *= num_oned_points[j];
         }
         for(int j=num_dimensions-2; j>=0; j--) cnum_oned_points[j] = num_oned_points[j+1] * cnum_oned_points[j+1];
@@ -485,7 +482,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
         std::vector<int> num_oned_points(num_dimensions);
         std::vector<int> cnum_oned_points(num_dimensions, 1);
         for(int j=0; j<num_dimensions; j++){
-            num_oned_points[j] = wrapper->getNumPoints(levels[j]);
+            num_oned_points[j] = wrapper.getNumPoints(levels[j]);
             num_tensor_points *= num_oned_points[j];
         }
         for(int j=num_dimensions-2; j>=0; j--) cnum_oned_points[j] = num_oned_points[j+1] * cnum_oned_points[j+1];
@@ -534,10 +531,10 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
         const int *levels = active_tensors->getIndex(n);
         int num_tensor_points = 1;
         for(int j=0; j<num_dimensions; j++){
-            num_tensor_points *= wrapper->getNumPoints(levels[j]);
+            num_tensor_points *= wrapper.getNumPoints(levels[j]);
         }
         std::vector<int> refs;
-        IM.referencePoints<true>(levels, wrapper, work, refs);
+        IM.referencePoints<true>(levels, &wrapper, work, refs);
         double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
         for(int i=0; i<num_tensor_points; i++){
             weights[refs[i]] += tensorw;
