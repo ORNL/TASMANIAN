@@ -42,6 +42,21 @@
 
 #include "tsgAcceleratedDataStructures.hpp"
 
+//! \internal
+//! \file tsgGridLocalPolynomial.hpp
+//! \brief Algorithms for manipulating sets of multi-indexes.
+//! \author Miroslav Stoyanov
+//! \ingroup TasmanianLocalPolynomialGrids
+//!
+//! Contains the implementation of the Local Polynomial Grids
+
+//! \internal
+//! \defgroup TasmanianLocalPolynomialGrids Local Polynomial Grid
+//!
+//! \par Local Polynomial Grid
+//! A grid constructed from a hierarchy of one dimensional points and
+//! basis with compact support.
+
 namespace TasGrid{
 
 class GridLocalPolynomial : public BaseCanonicalGrid{
