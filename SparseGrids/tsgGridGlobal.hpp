@@ -44,6 +44,8 @@
 
 #include "tsgAcceleratedDataStructures.hpp"
 
+#include "tsgGridSequence.hpp"
+
 namespace TasGrid{
 
 class GridGlobal : public BaseCanonicalGrid{
@@ -61,7 +63,7 @@ public:
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits);
     void copyGrid(const GridGlobal *global);
 
-    void setTensors(IndexSet* &tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta);
+    void setTensors(MultiIndexSet &tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta);
 
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
 
@@ -127,6 +129,11 @@ protected:
     // assumes that if rule == rule_customtabulated, then custom is already loaded; NOTE: tset.getNumDimensions() must be set already
     void selectTensors(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, TypeOneDRule rule, MultiIndexSet &tset) const;
 
+    void recomputeTensorRefs(const MultiIndexSet &work);
+    void proposeUpdatedTensors();
+    void acceptUpdatedTensors();
+    void getPolynomialSpace(bool interpolation, MultiIndexSet &polynomial_set) const;
+
 private:
     int num_dimensions, num_outputs;
     TypeOneDRule rule;
@@ -134,11 +141,11 @@ private:
 
     OneDimensionalWrapper wrapper;
 
-    IndexSet *tensors;
-    IndexSet *active_tensors;
+    MultiIndexSet tensors;
+    MultiIndexSet active_tensors;
     std::vector<int> active_w;
-    IndexSet *points;
-    IndexSet *needed;
+    MultiIndexSet points;
+    MultiIndexSet needed;
 
     std::vector<std::vector<int>> tensor_refs;
 
@@ -146,8 +153,8 @@ private:
 
     StorageSet values;
 
-    IndexSet *updated_tensors;
-    IndexSet *updated_active_tensors;
+    MultiIndexSet updated_tensors;
+    MultiIndexSet updated_active_tensors;
     std::vector<int> updated_active_w;
 
     CustomTabulated custom;

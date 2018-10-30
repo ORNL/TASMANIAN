@@ -278,13 +278,16 @@ void MultiIndexManipulations::generateNonNestedPoints(const MultiIndexSet &tenso
         const int *p = tensors.getIndex(i);
         for(size_t j=0; j<num_dimensions; j++)
             npoints[j] = wrapper.getNumPoints(p[j]);
-        MultiIndexManipulations::generateFullTensorSet<int>(npoints, point_tensors[i]);
+        MultiIndexSet raw_points;
+        MultiIndexManipulations::generateFullTensorSet<int>(npoints, raw_points);
 
         size_t j = 0;
-        for(auto &g : *(point_tensors[i].getVector())){
+        for(auto &g : *(raw_points.getVector())){
             g = wrapper.getPointIndex(p[j++], g); // remap local-order-to-global-index
             if (j == num_dimensions) j = 0;
         }
+        point_tensors[i].setNumDimensions((int) num_dimensions);
+        point_tensors[i].addUnsortedInsexes(*raw_points.getVector());
     }
 
     MultiIndexManipulations::unionSets<true>(point_tensors, points);
