@@ -429,6 +429,11 @@ void referencePoints(const int levels[], const OneDimensionalWrapper &rule, cons
 //! \brief computes the weights for the tensor linear combination, **mset** is a lower multi-index set and **weight** is resized
 //! \ingroup TasmanianMultiIndexManipulations
 void computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights);
+
+//! \internal
+//! \brief on exit, **active** is the set containing the multi-indexes of **mset** corresponding to non-zero **weights**
+//! \ingroup TasmanianMultiIndexManipulations
+void createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights, MultiIndexSet &active);
 }
 
 

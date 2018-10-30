@@ -331,6 +331,25 @@ void MultiIndexManipulations::computeTensorWeights(const MultiIndexSet &mset, st
     }
 }
 
+void MultiIndexManipulations::createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights, MultiIndexSet &active){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    size_t nz_weights = 0;
+    for(auto w: weights) if (w != 0) nz_weights++;
+
+    std::vector<int> indexes(nz_weights * num_dimensions);
+    nz_weights = 0;
+    auto iter = indexes.begin();
+    for(int i=0; i<mset.getNumIndexes(); i++){
+        if (weights[i] != 0){
+            std::copy_n(mset.getIndex(i), num_dimensions, iter);
+            std::advance(iter, num_dimensions);
+        }
+    }
+
+    active.setNumDimensions((int) num_dimensions);
+    active.setIndexes(indexes);
+}
+
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
 IndexManipulator::~IndexManipulator(){}
 
