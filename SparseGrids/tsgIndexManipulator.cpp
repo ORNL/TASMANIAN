@@ -105,6 +105,62 @@ void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, Data2D<int
     }
 }
 
+void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    int num_points = mset.getNumIndexes();
+    if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
+        int max_parents = rule->getMaxNumParents() * (int) num_dimensions;
+        parents.resize(max_parents, num_points, -1);
+        int level0_offset = rule->getNumPoints(0);
+        #pragma omp parallel for schedule(static)
+        for(int i=0; i<num_points; i++){
+            const int *p = mset.getIndex(i);
+            std::vector<int> dad(num_dimensions);
+            std::copy_n(p, num_dimensions, dad.data());
+            int *pp = parents.getStrip(i);
+            for(size_t j=0; j<num_dimensions; j++){
+                if (dad[j] >= level0_offset){
+                    int current = p[j];
+                    dad[j] = rule->getParent(current);
+                    pp[2*j] = mset.getSlot(dad);
+                    while ((dad[j] >= level0_offset) && (pp[2*j] == -1)){
+                        current = dad[j];
+                        dad[j] = rule->getParent(current);
+                        pp[2*j] = mset.getSlot(dad);
+                    }
+                    dad[j] = rule->getStepParent(current);
+                    if (dad[j] != -1){
+                        pp[2*j + 1] = mset.getSlot(dad);
+                    }
+                    dad[j] = p[j];
+                }
+            }
+        }
+    }else{ // this assumes that level zero has only one node
+        parents.resize((int) num_dimensions, num_points);
+        #pragma omp parallel for schedule(static)
+        for(int i=0; i<num_points; i++){
+            const int *p = mset.getIndex(i);
+            std::vector<int> dad(num_dimensions);
+            std::copy_n(p, num_dimensions, dad.data());
+            int *pp = parents.getStrip(i);
+            for(size_t j=0; j<num_dimensions; j++){
+                if (dad[j] == 0){
+                    pp[j] = -1;
+                }else{
+                    dad[j] = rule->getParent(dad[j]);
+                    pp[j] = mset.getSlot(dad.data());
+                    while((dad[j] != 0) && (pp[j] == -1)){
+                        dad[j] = rule->getParent(dad[j]);
+                        pp[j] = mset.getSlot(dad);
+                    }
+                    dad[j] = p[j];
+                }
+            }
+        }
+    }
+}
+
 void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set){
     new_set = MultiIndexSet(mset.getNumDimensions());
     size_t num_dimensions = (size_t) mset.getNumDimensions();
@@ -170,6 +226,45 @@ void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level
         }
         mset.setIndexes(new_indexes);
     }
+}
+
+void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points){
+    size_t num_dimensions = (size_t) tensors.getNumDimensions();
+    Data2D<int> raw_points;
+    raw_points.resize((int) num_dimensions, 0);
+
+    std::vector<int> num_points_delta(num_dimensions);
+    std::vector<int> offsets(num_dimensions);
+    std::vector<int> index(num_dimensions);
+
+    for(int i=0; i<tensors.getNumIndexes(); i++){
+        const int *p = tensors.getIndex(i);
+        size_t num_total = 1;
+        for(size_t j=0; j<num_dimensions; j++){
+            num_points_delta[j] = getNumPoints(p[j]);
+            if (p[j] > 0){
+                offsets[j] = getNumPoints(p[j]-1);
+                num_points_delta[j] -= offsets[j];
+            }else{
+                offsets[j] = 0;
+            }
+
+            num_total *= (size_t) num_points_delta[j];
+        }
+
+        for(size_t k=0; k<num_total; k++){
+            size_t t = k;
+            for(int j = (int) num_dimensions-1; j>=0; j--){
+                index[j] = offsets[j] + (int) (t % num_points_delta[j]);
+                t /= (size_t) num_points_delta[j];
+            }
+            raw_points.appendStrip(index);
+        }
+    }
+
+    points = MultiIndexSet();
+    points.setNumDimensions((int) num_dimensions);
+    points.addData2D(raw_points);
 }
 
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}

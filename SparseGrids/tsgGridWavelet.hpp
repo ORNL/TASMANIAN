@@ -54,7 +54,7 @@ public:
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
     void copyGrid(const GridWavelet *wav);
-    void setNodes(IndexSet* &nodes, int cnum_outputs, int corder); // for FDS purposes
+    void setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder); // for FDS purposes
 
     int getNumDimensions() const;
     int getNumOutputs() const;
@@ -114,9 +114,9 @@ protected:
 
     void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, Data2D<int> &pmap) const;
 
-    bool addParent(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
-    void addChild(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude) const;
-    void addChildLimited(const int point[], int direction, GranulatedIndexSet *destination, IndexSet *exclude, const std::vector<int> &level_limits) const;
+    bool addParent(const int point[], int direction, Data2D<int> &destination) const;
+    void addChild(const int point[], int direction, Data2D<int> &destination) const;
+    void addChildLimited(const int point[], int direction, const std::vector<int> &level_limits, Data2D<int> &destination) const;
 
 private:
     RuleWavelet rule1D;
@@ -125,8 +125,8 @@ private:
 
     Data2D<double> coefficients; // a.k.a., surpluses
 
-    IndexSet *points;
-    IndexSet *needed;
+    MultiIndexSet points;
+    MultiIndexSet needed;
 
     StorageSet values;
 
