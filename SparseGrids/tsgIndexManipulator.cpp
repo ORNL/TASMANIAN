@@ -267,6 +267,134 @@ void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors,
     points.addData2D(raw_points);
 }
 
+void MultiIndexManipulations::generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper, MultiIndexSet &points){
+    size_t num_dimensions = (size_t) tensors.getNumDimensions();
+    int num_tensors = tensors.getNumIndexes();
+    std::vector<MultiIndexSet> point_tensors((size_t) num_tensors);
+
+    #pragma omp parallel for
+    for(int i=0; i<num_tensors; i++){
+        std::vector<int> npoints(num_dimensions);
+        const int *p = tensors.getIndex(i);
+        for(size_t j=0; j<num_dimensions; j++)
+            npoints[j] = wrapper.getNumPoints(p[j]);
+        MultiIndexSet raw_points;
+        MultiIndexManipulations::generateFullTensorSet<int>(npoints, raw_points);
+
+        size_t j = 0;
+        for(auto &g : *(raw_points.getVector())){
+            g = wrapper.getPointIndex(p[j++], g); // remap local-order-to-global-index
+            if (j == num_dimensions) j = 0;
+        }
+        point_tensors[i].setNumDimensions((int) num_dimensions);
+        point_tensors[i].addUnsortedInsexes(*raw_points.getVector());
+    }
+
+    MultiIndexManipulations::unionSets<true>(point_tensors, points);
+}
+
+void MultiIndexManipulations::computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    int num_tensors = mset.getNumIndexes();
+
+    std::vector<int> level;
+    computeLevels(mset, level);
+    int max_level = *std::max_element(level.begin(), level.end());
+
+    Data2D<int> dag_down;
+    dag_down.resize((int) num_dimensions, num_tensors);
+
+    weights.resize(num_tensors);
+
+    #pragma omp parallel for schedule(static)
+    for(int i=0; i<num_tensors; i++){
+        std::vector<int> kid(num_dimensions);
+        std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+
+        int *ref_kids = dag_down.getStrip(i);
+        for(size_t j=0; j<num_dimensions; j++){
+            kid[j]++;
+            ref_kids[j] = mset.getSlot(kid);
+            kid[j]--;
+        }
+
+        if (level[i] == max_level) weights[i] = 1;
+    }
+
+    for(int l=max_level-1; l>=0; l--){
+        #pragma omp parallel for schedule(dynamic)
+        for(int i=0; i<num_tensors; i++){
+            if (level[i] == l){
+                std::vector<int> monkey_tail(max_level-l+1);
+                std::vector<int> monkey_count(max_level-l+1);
+                std::vector<bool> used(num_tensors, false);
+
+                int current = 0;
+                monkey_count[0] = 0;
+                monkey_tail[0] = i;
+
+                int sum = 0;
+
+                while(monkey_count[0] < (int) num_dimensions){
+                    if (monkey_count[current] < (int) num_dimensions){
+                        int branch = dag_down.getStrip(monkey_tail[current])[monkey_count[current]];
+                        if ((branch == -1) || (used[branch])){
+                            monkey_count[current]++;
+                        }else{
+                            used[branch] = true;
+                            sum += weights[branch];
+                            monkey_count[++current] = 0;
+                            monkey_tail[current] = branch;
+                        }
+                    }else{
+                        monkey_count[--current]++;
+                    }
+                }
+
+                weights[i] = 1 - sum;
+            }
+        }
+    }
+}
+
+void MultiIndexManipulations::createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights, MultiIndexSet &active){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    size_t nz_weights = 0;
+    for(auto w: weights) if (w != 0) nz_weights++;
+
+    std::vector<int> indexes(nz_weights * num_dimensions);
+    nz_weights = 0;
+    auto iter = indexes.begin();
+    auto iset = mset.getVector()->begin();
+    for(auto w: weights){
+        if (w != 0){
+            std::copy_n(iset, num_dimensions, iter);
+            std::advance(iter, num_dimensions);
+        }
+        std::advance(iset, num_dimensions);
+    }
+
+    active.setNumDimensions((int) num_dimensions);
+    active.setIndexes(indexes);
+}
+
+void MultiIndexManipulations::createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness, MultiIndexSet &space){
+    size_t num_dimensions = (size_t) tensors.getNumDimensions();
+    int num_tensors = tensors.getNumIndexes();
+    std::vector<MultiIndexSet> polynomial_tensors((size_t) num_tensors);
+
+    #pragma omp parallel for
+    for(int i=0; i<num_tensors; i++){
+        std::vector<int> npoints(num_dimensions);
+        const int *p = tensors.getIndex(i);
+        for(size_t j=0; j<num_dimensions; j++)
+            npoints[j] = exactness(p[j]) + 1;
+        MultiIndexManipulations::generateFullTensorSet<int>(npoints, polynomial_tensors[i]);
+    }
+
+    MultiIndexManipulations::unionSets<true>(polynomial_tensors, space);
+}
+
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
 IndexManipulator::~IndexManipulator(){}
 
