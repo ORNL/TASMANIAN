@@ -38,8 +38,8 @@
 
 namespace TasGrid{
 
-GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0), rule(0), sparse_affinity(0)  {}
-GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0), rule(0), sparse_affinity(0){
+GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0), sparse_affinity(0)  {}
+GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0), sparse_affinity(0){
     copyGrid(&pwpoly);
 }
 
@@ -52,10 +52,26 @@ void GridLocalPolynomial::reset(bool clear_rule){
     points = MultiIndexSet();
     needed = MultiIndexSet();
     values = StorageSet();
-    if (clear_rule){ rule = 0; order = 1; }
+    if (clear_rule){ rule = std::unique_ptr<BaseRuleLocalPolynomial>(); order = 1; }
     parents.load(0, 0, 0);
     sparse_affinity = 0;
     surpluses.clear();
+}
+template<class T> std::unique_ptr<T> make_unique_ptr(){ return std::unique_ptr<T>(new T()); } // in C++14 this is called std::make_unique()
+void GridLocalPolynomial::makeRule(TypeOneDRule crule){
+    if (crule == rule_localp){
+        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localp, false>>();
+    }else if (crule == rule_semilocalp){
+        rule = make_unique_ptr<templRuleLocalPolynomial<rule_semilocalp, false>>();
+    }else if (crule == rule_localp0){
+        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localp0, false>>();
+    }else if (crule == rule_localpb){
+        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localpb, false>>();
+    }
+    if (order == 0){
+        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localp, true>>();
+    }
+    rule->setMaxOrder(order);
 }
 
 void GridLocalPolynomial::write(std::ofstream &ofs) const{
@@ -154,19 +170,7 @@ void GridLocalPolynomial::read(std::ifstream &ifs){
         std::string T;
         ifs >> T;
         TypeOneDRule crule = OneDimensionalMeta::getIORuleString(T.c_str());
-        if (crule == rule_localp){
-            rule = &rpoly;
-        }else if (crule == rule_semilocalp){
-            rule = &rsemipoly;
-        }else if (crule == rule_localp0){
-            rule = &rpoly0;
-        }else if (crule == rule_localpb){
-            rule = &rpolyb;
-        }
-        if (order == 0){
-            rule = &rpolyc;
-        }
-        rule->setMaxOrder(order);
+        makeRule(crule);
 
         ifs >> flag;
         if (flag == 1) points.read(ifs);
@@ -214,19 +218,7 @@ void GridLocalPolynomial::readBinary(std::ifstream &ifs){
     if (num_dimensions > 0){
         ifs.read((char*) dims, sizeof(int));
         TypeOneDRule crule = OneDimensionalMeta::getIORuleInt(dims[0]);
-        if (crule == rule_localp){
-            rule = &rpoly;
-        }else if (crule == rule_semilocalp){
-            rule = &rsemipoly;
-        }else if (crule == rule_localp0){
-            rule = &rpoly0;
-        }else if (crule == rule_localpb){
-            rule = &rpolyb;
-        }
-        if (order == 0){
-            rule = &rpolyc;
-        }
-        rule->setMaxOrder(order);
+        makeRule(crule);
 
         char flag;
         ifs.read((char*) &flag, sizeof(char));
@@ -277,19 +269,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     if (crule == rule_localp0) effective_rule = rule_localp0;
     if (crule == rule_localpb) effective_rule = rule_localpb;
 
-    if (effective_rule == rule_localp){
-        rule = &rpoly;
-    }else if (effective_rule == rule_semilocalp){
-        rule = &rsemipoly;
-    }else if (effective_rule == rule_localp0){
-        rule = &rpoly0;
-    }else if (effective_rule == rule_localpb){
-        rule = &rpolyb;
-    }
-    if (order == 0){ // if the rule is zero-order
-        rule = &rpolyc;
-    }
-    rule->setMaxOrder(order);
+    makeRule(effective_rule);
 
     MultiIndexSet tensors;
     tensors.setNumDimensions(num_dimensions);
@@ -304,7 +284,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     if (num_outputs == 0){
         points = std::move(needed);
         needed = MultiIndexSet();
-        MultiIndexManipulations::computeDAGup(points, rule, parents);
+        MultiIndexManipulations::computeDAGup(points, rule.get(), parents);
     }else{
         values.resize(num_outputs, needed.getNumIndexes());
     }
@@ -316,19 +296,7 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
     num_outputs = pwpoly->num_outputs;
     order = pwpoly->order;
 
-    if (pwpoly->rule->getType() == rule_localp){
-        rule = &rpoly;
-    }else if (pwpoly->rule->getType() == rule_semilocalp){
-        rule = &rsemipoly;
-    }else if (pwpoly->rule->getType() == rule_localp0){
-        rule = &rpoly0;
-    }else if (pwpoly->rule->getType() == rule_localpb){
-        rule = &rpolyb;
-    }
-    if (pwpoly->rule->getMaxOrder() == 0){
-        rule = &rpolyc;
-    }
-    rule->setMaxOrder(pwpoly->rule->getMaxOrder());
+    makeRule(pwpoly->rule->getType());
 
     points = pwpoly->points;
     needed = pwpoly->needed;
@@ -633,7 +601,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     // apply the transpose of the surplus transformation
     Data2D<int> lparents;
     if (parents.getNumStrips() != work.getNumIndexes()) // if the current dag loaded in parents does not reflect the indexes in work
-        MultiIndexManipulations::computeDAGup(work, rule, lparents);
+        MultiIndexManipulations::computeDAGup(work, rule.get(), lparents);
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -712,7 +680,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
     *surpluses.getVector() = *values.aliasValues(); // copy assignment
 
     Data2D<int> dagUp;
-    MultiIndexManipulations::computeDAGup(points, rule, dagUp);
+    MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
 
     int max_parents = rule->getMaxNumParents() * num_dimensions;
 
@@ -1047,7 +1015,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
     Data2D<int> lparents;
     if (parents.getNumStrips() != work.getNumIndexes())
-        MultiIndexManipulations::computeDAGup(work, rule, lparents);
+        MultiIndexManipulations::computeDAGup(work, rule.get(), lparents);
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -1174,7 +1142,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
     }else{
         // construct a series of 1D interpolants and use a refinement criteria that is a combination of the two hierarchical coefficients
         Data2D<int> dagUp;
-        MultiIndexManipulations::computeDAGup(points, rule, dagUp);
+        MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
 
         int max_1D_parents = rule->getMaxNumParents();
 

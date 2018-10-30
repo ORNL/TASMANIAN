@@ -32,6 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_LPOLY_HPP
 
 #include <vector>
+#include <memory>
 
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
@@ -120,6 +121,11 @@ public:
 
 protected:
     void reset(bool clear_rule = true);
+
+    //! \internal
+    //! \brief makes the unique pointer associated with this rule, assuming that **order** is already set
+    //! \ingroup TasmanianLocalPolynomialGrids
+    void makeRule(TypeOneDRule trule);
 
     void buildTree();
 
@@ -383,13 +389,7 @@ private:
     std::vector<int> pntr;
     std::vector<int> indx;
 
-    BaseRuleLocalPolynomial *rule;
-
-    templRuleLocalPolynomial<rule_localp, false> rpoly;
-    templRuleLocalPolynomial<rule_semilocalp, false> rsemipoly;
-    templRuleLocalPolynomial<rule_localp0, false> rpoly0;
-    templRuleLocalPolynomial<rule_localpb, false> rpolyb;
-    templRuleLocalPolynomial<rule_localp, true> rpolyc;
+    std::unique_ptr<BaseRuleLocalPolynomial> rule;
 
     int sparse_affinity;
 
