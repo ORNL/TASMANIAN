@@ -352,6 +352,23 @@ void MultiIndexManipulations::createActiveTensors(const MultiIndexSet &mset, con
     active.setIndexes(indexes);
 }
 
+void MultiIndexManipulations::createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness, MultiIndexSet &space){
+    size_t num_dimensions = (size_t) tensors.getNumDimensions();
+    int num_tensors = tensors.getNumIndexes();
+    std::vector<MultiIndexSet> polynomial_tensors((size_t) num_tensors);
+
+    #pragma omp parallel for
+    for(int i=0; i<num_tensors; i++){
+        std::vector<int> npoints(num_dimensions);
+        const int *p = tensors.getIndex(i);
+        for(size_t j=0; j<num_dimensions; j++)
+            npoints[j] = exactness(p[j]) + 1;
+        MultiIndexManipulations::generateFullTensorSet<int>(npoints, polynomial_tensors[i]);
+    }
+
+    MultiIndexManipulations::unionSets<true>(polynomial_tensors, space);
+}
+
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
 IndexManipulator::~IndexManipulator(){}
 

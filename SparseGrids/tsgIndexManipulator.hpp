@@ -434,6 +434,11 @@ void computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights);
 //! \brief on exit, **active** is the set containing the multi-indexes of **mset** corresponding to non-zero **weights**
 //! \ingroup TasmanianMultiIndexManipulations
 void createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights, MultiIndexSet &active);
+
+//! \internal
+//! \brief for a set of **tensors** compute the corresponding polynomial **space** assuming the 1D rules have given **exactness**
+//! \ingroup TasmanianMultiIndexManipulations
+void createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness, MultiIndexSet &space);
 }
 
 
