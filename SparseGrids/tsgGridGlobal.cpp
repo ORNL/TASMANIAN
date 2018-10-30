@@ -279,6 +279,27 @@ void GridGlobal::clearRefinement(){
     updated_active_w.resize(0);
 }
 
+void GridGlobal::selectTensors(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, TypeOneDRule crule, MultiIndexSet &tset) const{
+    if ((type == type_level) || (type == type_tensor) || (type == type_hyperbolic)){ // no need to know exactness
+        MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return l; }, anisotropic_weights, tset);
+    }else{ // work with exactness specific to the rule
+        if (crule == rule_customtabulated){
+            if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
+                MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return custom.getQExact(l); }, anisotropic_weights, tset);
+            }else{
+                MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return custom.getIExact(l); }, anisotropic_weights, tset);
+            }
+        }else{ // using regular OneDimensionalMeta
+            OneDimensionalMeta meta;
+            if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
+                MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return meta.getQExact(l, crule); }, anisotropic_weights, tset);
+            }else{
+                MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return meta.getIExact(l, crule); }, anisotropic_weights, tset);
+            }
+        }
+    }
+}
+
 void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits){
     if (crule == rule_customtabulated){
         custom.read(custom_filename);
