@@ -130,7 +130,7 @@ private:
 
     StorageSet values;
 
-    TasSparse::SparseMatrix *inter_matrix;
+    TasSparse::SparseMatrix inter_matrix;
 };
 
 }

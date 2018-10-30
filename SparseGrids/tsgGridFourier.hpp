@@ -189,7 +189,7 @@ protected:
 private:
     int num_dimensions, num_outputs;
 
-    OneDimensionalWrapper *wrapper;
+    OneDimensionalWrapper wrapper;
 
     IndexSet *tensors;
     IndexSet *active_tensors;

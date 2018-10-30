@@ -129,7 +129,7 @@ private:
     TypeOneDRule rule;
     double alpha, beta;
 
-    OneDimensionalWrapper *wrapper;
+    OneDimensionalWrapper wrapper;
 
     IndexSet *tensors;
     IndexSet *active_tensors;
@@ -147,7 +147,7 @@ private:
     IndexSet *updated_active_tensors;
     std::vector<int> updated_active_w;
 
-    CustomTabulated *custom;
+    CustomTabulated custom;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable LinearAlgebraEngineGPU cuda_engine;
