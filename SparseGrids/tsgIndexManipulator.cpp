@@ -267,6 +267,70 @@ void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors,
     points.addData2D(raw_points);
 }
 
+void MultiIndexManipulations::computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    int num_tensors = mset.getNumIndexes();
+
+    std::vector<int> level;
+    computeLevels(mset, level);
+    int max_level = *std::max_element(level.begin(), level.end());
+
+    Data2D<int> dag_down;
+    dag_down.resize((int) num_dimensions, num_tensors);
+
+    weights.resize(num_tensors);
+
+    #pragma omp parallel for schedule(static)
+    for(int i=0; i<num_tensors; i++){
+        std::vector<int> kid(num_dimensions);
+        std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+
+        int *ref_kids = dag_down.getStrip(i);
+        for(size_t j=0; j<num_dimensions; j++){
+            kid[j]++;
+            ref_kids[j] = mset.getSlot(kid);
+            kid[j]--;
+        }
+
+        if (level[i] == max_level) weights[i] = 1;
+    }
+
+    for(int l=max_level-1; l>=0; l--){
+        #pragma omp parallel for schedule(dynamic)
+        for(int i=0; i<num_tensors; i++){
+            if (level[i] == l){
+                std::vector<int> monkey_tail(max_level-l+1);
+                std::vector<int> monkey_count(max_level-l+1);
+                std::vector<bool> used(num_tensors, false);
+
+                int current = 0;
+                monkey_count[0] = 0;
+                monkey_tail[0] = i;
+
+                int sum = 0;
+
+                while(monkey_count[0] < (int) num_dimensions){
+                    if (monkey_count[current] < (int) num_dimensions){
+                        int branch = dag_down.getStrip(monkey_tail[current])[monkey_count[current]];
+                        if ((branch == -1) || (used[branch])){
+                            monkey_count[current]++;
+                        }else{
+                            used[branch] = true;
+                            sum += weights[branch];
+                            monkey_count[++current] = 0;
+                            monkey_tail[current] = branch;
+                        }
+                    }else{
+                        monkey_count[--current]++;
+                    }
+                }
+
+                weights[i] = 1 - sum;
+            }
+        }
+    }
+}
+
 IndexManipulator::IndexManipulator(int cnum_dimensions, const CustomTabulated* custom) : num_dimensions(cnum_dimensions), meta(custom){}
 IndexManipulator::~IndexManipulator(){}
 

@@ -399,6 +399,11 @@ void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &m
 //! * **getNumPoints()** described the number of points for each rule in 1-D
 //! * **points** is the union of the points of all tensors
 void generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points);
+
+//! \internal
+//! \brief computes the weights for the tensor linear combination, **mset** is a lower multi-index set and **weight** is resized
+//! \ingroup TasmanianMultiIndexManipulations
+void computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights);
 }
 
 
