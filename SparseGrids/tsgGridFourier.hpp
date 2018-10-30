@@ -62,7 +62,7 @@ public:
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void copyGrid(const GridFourier *fourier);
 
-    void setTensors(IndexSet* &tset, int cnum_outputs);
+    void setTensors(MultiIndexSet &tset, int cnum_outputs);
 
     int getNumDimensions() const;
     int getNumOutputs() const;
@@ -121,8 +121,8 @@ protected:
     void generateIndexingMap(std::vector<std::vector<int>> &index_map) const;
 
     template<typename T, bool interwoven>
-    void computeBasis(const IndexSet *work, const T x[], T wreal[], T wimag[]) const{
-        int num_points = work->getNumIndexes();
+    void computeBasis(const MultiIndexSet &work, const T x[], T wreal[], T wimag[]) const{
+        int num_points = work.getNumIndexes();
 
         std::vector<std::vector<std::complex<T>>> cache(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
@@ -140,7 +140,7 @@ protected:
         }
 
         for(int i=0; i<num_points; i++){
-            const int *p = work->getIndex(i);
+            const int *p = work.getIndex(i);
 
             std::complex<T> v(1.0, 0.0);
             for(int j=0; j<num_dimensions; j++){
@@ -160,7 +160,7 @@ protected:
     #ifdef Tasmanian_ENABLE_CUDA
     void prepareCudaData() const{
         if (cuda_real.size() > 0) return;
-        int num_points = points->getNumIndexes();
+        int num_points = points.getNumIndexes();
         size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
         cuda_real.load(num_coeff, fourier_coefs.getCStrip(0));
         cuda_imag.load(num_coeff, fourier_coefs.getCStrip(num_points));
@@ -174,12 +174,12 @@ protected:
             num_nodes[j] = n;
         }
         cuda_num_nodes.load(num_nodes); // num powers in each direction
-        IndexSet *work = (points != 0) ? points : needed;
-        int num_points = work->getNumIndexes();
-        Data2D<int> transpoints; transpoints.resize(work->getNumIndexes(), num_dimensions);
+        const MultiIndexSet &work = (points.empty()) ? needed : points;
+        int num_points = work.getNumIndexes();
+        Data2D<int> transpoints; transpoints.resize(work.getNumIndexes(), num_dimensions);
         for(int i=0; i<num_points; i++){
             for(int j=0; j<num_dimensions; j++){
-                transpoints.getStrip(j)[i] = work->getIndex(i)[j];
+                transpoints.getStrip(j)[i] = work.getIndex(i)[j];
             }
         }
         cuda_points.load(*(transpoints.getVector()));
@@ -191,12 +191,12 @@ private:
 
     OneDimensionalWrapper wrapper;
 
-    IndexSet *tensors;
-    IndexSet *active_tensors;
+    MultiIndexSet tensors;
+    MultiIndexSet active_tensors;
     std::vector<int> active_w;
     std::vector<int> max_levels;
-    IndexSet *points;
-    IndexSet *needed;
+    MultiIndexSet points;
+    MultiIndexSet needed;
 
     Data2D<double> fourier_coefs;
 

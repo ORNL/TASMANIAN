@@ -36,12 +36,10 @@
 
 namespace TasGrid{
 
-GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), tensors(0), active_tensors(0),
-    max_levels(0), points(0), needed(0)
+GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), max_levels(0)
 {}
 
-GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), tensors(0), active_tensors(0),
-    max_levels(0), points(0), needed(0){
+GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), max_levels(0){
     copyGrid(&fourier);
 }
 
@@ -53,24 +51,24 @@ void GridFourier::write(std::ofstream &ofs) const{
     ofs << std::scientific; ofs.precision(17);
     ofs << num_dimensions << " " << num_outputs << endl;
     if (num_dimensions > 0){
-        tensors->write(ofs);
-        active_tensors->write(ofs);
+        tensors.write(ofs);
+        active_tensors.write(ofs);
         ofs << active_w[0];
-        for(int i=1; i<active_tensors->getNumIndexes(); i++){
+        for(int i=1; i<active_tensors.getNumIndexes(); i++){
             ofs << " " << active_w[i];
         }
         ofs << endl;
-        if (points == 0){
+        if (points.empty()){
             ofs << "0" << endl;
         }else{
             ofs << "1 ";
-            points->write(ofs);
+            points.write(ofs);
         }
-        if (needed == 0){
+        if (needed.empty()){
             ofs << "0" << endl;
         }else{
             ofs << "1 ";
-            needed->write(ofs);
+            needed.write(ofs);
         }
         ofs << max_levels[0];
         for(int j=1; j<num_dimensions; j++){
@@ -113,33 +111,36 @@ void GridFourier::read(std::ifstream &ifs){
     if (num_dimensions > 0){
         int flag;
 
-        tensors = new IndexSet(num_dimensions);  tensors->read(ifs);
-        active_tensors = new IndexSet(num_dimensions);  active_tensors->read(ifs);
-        active_w.resize(active_tensors->getNumIndexes());  for(auto &w : active_w) ifs >> w;
-        ifs >> flag; if (flag == 1){ points = new IndexSet(num_dimensions); points->read(ifs); }
-        ifs >> flag; if (flag == 1){ needed = new IndexSet(num_dimensions); needed->read(ifs); }
-        max_levels.resize(num_dimensions); for(auto &m : max_levels){ ifs >> m; }
+        tensors.read(ifs);
+        active_tensors.read(ifs);
 
-        IndexSet *work = (points != 0) ? points : needed;
+        active_w.resize(active_tensors.getNumIndexes());
+        for(auto &w : active_w) ifs >> w;
+
+        ifs >> flag; if (flag == 1) points.read(ifs);
+        ifs >> flag; if (flag == 1) needed.read(ifs);
+
+        max_levels.resize(num_dimensions);
+        for(auto &m : max_levels) ifs >> m;
+
+        MultiIndexSet &work = (points.empty()) ? needed : points;
 
         if (num_outputs > 0){
             values.read(ifs);
             ifs >> flag;
             if (flag == 1){
-                fourier_coefs.resize(num_outputs, 2 * work->getNumIndexes());
+                fourier_coefs.resize(num_outputs, 2 * work.getNumIndexes());
                 for(auto &c : *fourier_coefs.getVector()) ifs >> c;
             }
         }
         ifs >> flag;
 
-        IndexManipulator IM(num_dimensions);
-        int oned_max_level = max_levels[0];
-        for(int j=1; j<num_dimensions; j++){ if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j]; }
+        int oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
 
         wrapper.load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
 
         int dummy;
-        IM.getMaxLevels(work, max_power, dummy);
+        MultiIndexManipulations::getMaxIndex(work, max_power, dummy);
     }
 }
 
@@ -149,21 +150,21 @@ void GridFourier::writeBinary(std::ofstream &ofs) const{
     num_dim_out[1] = num_outputs;
     ofs.write((char*) num_dim_out, 2*sizeof(int));
     if (num_dimensions > 0){
-        tensors->writeBinary(ofs);
-        active_tensors->writeBinary(ofs);
-        ofs.write((char*) active_w.data(), active_tensors->getNumIndexes() * sizeof(int));
+        tensors.writeBinary(ofs);
+        active_tensors.writeBinary(ofs);
+        ofs.write((char*) active_w.data(), active_tensors.getNumIndexes() * sizeof(int));
         char flag;
-        if (points == 0){
+        if (points.empty()){
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            points->writeBinary(ofs);
+            points.writeBinary(ofs);
         }
-        if (needed == 0){
+        if (needed.empty()){
             flag = 'n'; ofs.write(&flag, sizeof(char));
         }else{
             flag = 'y'; ofs.write(&flag, sizeof(char));
-            needed->writeBinary(ofs);
+            needed.writeBinary(ofs);
         }
         ofs.write((char*) max_levels.data(), num_dimensions * sizeof(int));
 
@@ -199,16 +200,17 @@ void GridFourier::readBinary(std::ifstream &ifs){
     num_outputs = num_dim_out[1];
 
     if (num_dimensions > 0){
-        tensors = new IndexSet(num_dimensions);  tensors->readBinary(ifs);
-        active_tensors = new IndexSet(num_dimensions);  active_tensors->readBinary(ifs);
-        active_w.resize(active_tensors->getNumIndexes());
-        ifs.read((char*) active_w.data(), active_tensors->getNumIndexes() * sizeof(int));
+        tensors.readBinary(ifs);
+        active_tensors.readBinary(ifs);
+
+        active_w.resize(active_tensors.getNumIndexes());
+        ifs.read((char*) active_w.data(), active_w.size() * sizeof(int));
 
         char flag;
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ points = new IndexSet(num_dimensions); points->readBinary(ifs); }
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y'){ needed = new IndexSet(num_dimensions); needed->readBinary(ifs); }
+        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') points.readBinary(ifs);
+        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') needed.readBinary(ifs);
 
-        IndexSet *work = (points != 0) ? points : needed;
+        MultiIndexSet &work = (points.empty()) ? needed : points;
 
         max_levels.resize(num_dimensions);
         ifs.read((char*) max_levels.data(), num_dimensions * sizeof(int));
@@ -217,31 +219,28 @@ void GridFourier::readBinary(std::ifstream &ifs){
             values.readBinary(ifs);
             ifs.read((char*) &flag, sizeof(char));
             if (flag == 'y'){
-                fourier_coefs.resize(num_outputs, 2 * work->getNumIndexes());
-                ifs.read((char*) fourier_coefs.getStrip(0), 2 * ((size_t) num_outputs) * ((size_t) work->getNumIndexes()) * sizeof(double));
+                fourier_coefs.resize(num_outputs, 2 * work.getNumIndexes());
+                ifs.read((char*) fourier_coefs.getStrip(0), 2 * ((size_t) num_outputs) * ((size_t) work.getNumIndexes()) * sizeof(double));
             }
         }
         ifs.read((char*) &flag, sizeof(char));
 
-        IndexManipulator IM(num_dimensions);
-        int oned_max_level;
-        oned_max_level = max_levels[0];
-        for(int j=1; j<num_dimensions; j++) if (oned_max_level < max_levels[j]) oned_max_level = max_levels[j];
+        int oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
 
         wrapper.load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
 
         int dummy;
-        IM.getMaxLevels(work, max_power, dummy);
+        MultiIndexManipulations::getMaxIndex(work, max_power, dummy);
     }
 }
 
 void GridFourier::reset(){
     clearAccelerationData();
     wrapper = OneDimensionalWrapper();
-    if (tensors != 0){ delete tensors; tensors = 0; }
-    if (active_tensors != 0){ delete active_tensors; active_tensors = 0; }
-    if (points != 0){ delete points; points = 0; }
-    if (needed != 0){ delete needed; needed = 0; }
+    tensors = MultiIndexSet();
+    active_tensors = MultiIndexSet();
+    points = MultiIndexSet();
+    needed = MultiIndexSet();
     values = StorageSet();
     active_w.clear();
     fourier_coefs.clear();
@@ -250,112 +249,111 @@ void GridFourier::reset(){
 }
 
 void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-    IndexManipulator IM(cnum_dimensions);
-    IndexSet *tset = IM.selectTensors(depth, type, anisotropic_weights, rule_fourier);
-    if (!level_limits.empty()){
-        IndexSet *limited = IM.removeIndexesByLimit(tset, level_limits);
-        if (limited != 0){
-            delete tset;
-            tset = limited;
-        }
+
+    MultiIndexSet tset(cnum_dimensions);
+    if ((type == type_level) || (type == type_tensor) || (type == type_hyperbolic)){
+        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, tset);
+    }else{
+        OneDimensionalMeta meta;
+        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return meta.getIExact(i, rule_fourier); }, anisotropic_weights, tset);
     }
+
+    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, tset);
 
     setTensors(tset, cnum_outputs);
 }
 
 void GridFourier::copyGrid(const GridFourier *fourier){
-    IndexSet *tset = new IndexSet(fourier->tensors);
+    MultiIndexSet tset = fourier->tensors;
     setTensors(tset, fourier->num_outputs);
-    if ((num_outputs > 0) && (fourier->points != 0)){ // if there are values inside the source object
+    if ((num_outputs > 0) && (!fourier->points.empty())){ // if there are values inside the source object
         loadNeededPoints(fourier->values.getValues(0));
     }
 }
 
-void GridFourier::setTensors(IndexSet* &tset, int cnum_outputs){
+void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
     reset();
-    num_dimensions = tset->getNumDimensions();
+    num_dimensions = tset.getNumDimensions();
     num_outputs = cnum_outputs;
 
-    tensors = tset;
-    tset = 0;
+    tensors = std::move(tset);
 
     IndexManipulator IM(num_dimensions);
 
-    OneDimensionalMeta meta(0);
-    int max_level; IM.getMaxLevels(tensors, max_levels, max_level);
+    int max_level;
+    MultiIndexManipulations::getMaxIndex(tensors, max_levels, max_level);
 
     wrapper.load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
 
     std::vector<int> tensors_w;
-    IM.makeTensorWeights(tensors, tensors_w);
-    active_tensors = IM.nonzeroSubset(tensors, tensors_w);
+    MultiIndexManipulations::computeTensorWeights(tensors, tensors_w);
+    MultiIndexManipulations::createActiveTensors(tensors, tensors_w, active_tensors);
 
-    int nz_weights = active_tensors->getNumIndexes();
+    int nz_weights = active_tensors.getNumIndexes();
 
     active_w.reserve(nz_weights);
-    for(int i=0; i<tensors->getNumIndexes(); i++){ if (tensors_w[i] != 0) active_w.push_back(tensors_w[i]); }
+    for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
 
-    needed = IM.generateNestedPoints(tensors, &wrapper); // nested grids exploit nesting
+    MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); }, needed);
 
     if (num_outputs == 0){
-        points = needed;
-        needed = 0;
+        points = std::move(needed);
+        needed = MultiIndexSet();
     }else{
-        values.resize(num_outputs, needed->getNumIndexes());
+        values.resize(num_outputs, needed.getNumIndexes());
     }
 
     int dummy;
-    IM.getMaxLevels(((points != 0) ? points : needed), max_power, dummy);
+    MultiIndexManipulations::getMaxIndex(((points.empty()) ? needed : points), max_power, dummy);
 }
 
 int GridFourier::getNumDimensions() const{ return num_dimensions; }
 int GridFourier::getNumOutputs() const{ return num_outputs; }
 TypeOneDRule GridFourier::getRule() const{ return rule_fourier; }
 
-int GridFourier::getNumLoaded() const{ return (((points == 0) || (num_outputs == 0)) ? 0 : points->getNumIndexes()); }
-int GridFourier::getNumNeeded() const{ return ((needed == 0) ? 0 : needed->getNumIndexes()); }
-int GridFourier::getNumPoints() const{ return ((points == 0) ? getNumNeeded() : points->getNumIndexes()); }
+int GridFourier::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
+int GridFourier::getNumNeeded() const{ return needed.getNumIndexes(); }
+int GridFourier::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
 void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
     clearAccelerationData();
-    if (points == 0){ //setting points for the first time
+    if (points.empty()){ //setting points for the first time
         values.setValues(vals);
-        points = needed;
-        needed = 0;
+        points = std::move(needed);
+        needed = MultiIndexSet();
     }else{ //resetting the points
         values.setValues(vals);
     }
     //if we add anisotropic or surplus refinement, I'll need to add a third case here
 
     int dummy;
-    IndexManipulator IM(num_dimensions);
-    IM.getMaxLevels(points, max_power, dummy);
+    MultiIndexManipulations::getMaxIndex(points, max_power, dummy);
 
     calculateFourierCoefficients();
 }
 
 void GridFourier::getLoadedPoints(double *x) const{
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
-        const int *p = points->getIndex(i);
+        const int *p = points.getIndex(i);
         for(int j=0; j<num_dimensions; j++){
             x[i*num_dimensions + j] = wrapper.getNode(p[j]);
         }
     }
 }
 void GridFourier::getNeededPoints(double *x) const{
-    int num_points = needed->getNumIndexes();
+    int num_points = needed.getNumIndexes();
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
-        const int *p = needed->getIndex(i);
+        const int *p = needed.getIndex(i);
         for(int j=0; j<num_dimensions; j++){
             x[i*num_dimensions + j] = wrapper.getNode(p[j]);
         }
     }
 }
 void GridFourier::getPoints(double *x) const{
-    if (points == 0){ getNeededPoints(x); }else{ getLoadedPoints(x); };
+    if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
 }
 
 void GridFourier::generateIndexingMap(std::vector<std::vector<int>> &index_map) const{
@@ -364,8 +362,7 @@ void GridFourier::generateIndexingMap(std::vector<std::vector<int>> &index_map) 
     // Create a map, where at level 0: 0 -> 0, level 1: 0 1 2 -> 0 1 2, level 2: 0 1 2 3 4 5 6 7 8 -> 0 3 4 1 5 6 2 7 8
     // The map takes a point from previous map and adds two more points ...
     // Thus, a spacial point i on level l is Tasmanian point index_map[l][i]
-    IndexManipulator IM(num_dimensions);
-    int maxl = IM.getMaxLevel(active_tensors) + 1;
+    int maxl = 1 + *std::max_element(active_tensors.getVector()->begin(), active_tensors.getVector()->end());
     index_map.resize(maxl);
     index_map[0].resize(1, 0);
     int c = 1;
@@ -399,14 +396,14 @@ void GridFourier::calculateFourierCoefficients(){
     //     in reverse right to left order "int rj = (p[j] % 2 == 0) ? (p[j]+1) / 2 : num_oned_points[j] - (p[j]+1) / 2;"
     int num_points = getNumPoints();
 
-    IndexSet *work = (points == 0 ? needed : points);
+    MultiIndexSet &work = (points.empty()) ? needed : points;
     std::vector<std::vector<int>> index_map;
     generateIndexingMap(index_map);
 
     fourier_coefs.resize(num_outputs, 2 * num_points, 0.0);
 
-    for(int n=0; n<active_tensors->getNumIndexes(); n++){
-        const int* levels = active_tensors->getIndex(n);
+    for(int n=0; n<active_tensors.getNumIndexes(); n++){
+        const int* levels = active_tensors.getIndex(n);
         int num_tensor_points = 1;
         std::vector<int> num_oned_points(num_dimensions);
         std::vector<int> cnum_oned_points(num_dimensions, 1); // cumulative number of points
@@ -427,7 +424,7 @@ void GridFourier::calculateFourierCoefficients(){
                 t /= num_oned_points[j];
             }
             //refs[i] = ; // refs[i] is the index of Tasmanian (index set) corresponding to real index "i"
-            const double *v = values.getValues(work->getSlot(p));
+            const double *v = values.getValues(work.getSlot(p));
             tensor_data[i].resize(num_outputs);
             std::copy(v, v + num_outputs, tensor_data[i].data());
         }
@@ -445,7 +442,7 @@ void GridFourier::calculateFourierCoefficients(){
                 r += rj * cnum_oned_points[j];
                 t /= num_oned_points[j];
             }
-            t = work->getSlot(p); // holds the Tasmanian index corresponding to real index p
+            t = work.getSlot(p); // holds the Tasmanian index corresponding to real index p
 
             // Combine with tensor weights
             double *fc_real = fourier_coefs.getStrip(t);
@@ -467,17 +464,17 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     // The Fourier transform is symmetric with respect to regular transpose, which leaves only the indexing
     // Take the basis functions, reindex and reorder to a data strucutre, take FFT, reindex and reorder into the weights
 
-    IndexSet *work = (points == 0 ? needed : points);
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
     std::vector<std::vector<int>> index_map;
     generateIndexingMap(index_map);
 
-    std::fill(weights, weights+getNumPoints(), 0.0);
+    std::fill(weights, weights + getNumPoints(), 0.0);
 
-    std::vector<std::complex<double>> basisFuncs(work->getNumIndexes());
+    std::vector<std::complex<double>> basisFuncs(work.getNumIndexes());
     computeBasis<double, true>(work, x, (double*) basisFuncs.data(), 0);
 
-    for(int n=0; n<active_tensors->getNumIndexes(); n++){
-        const int *levels = active_tensors->getIndex(n);
+    for(int n=0; n<active_tensors.getNumIndexes(); n++){
+        const int *levels = active_tensors.getIndex(n);
         int num_tensor_points = 1;
         std::vector<int> num_oned_points(num_dimensions);
         std::vector<int> cnum_oned_points(num_dimensions, 1);
@@ -499,7 +496,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
                 int rj = (p[j] % 2 == 0) ? (p[j]+1) / 2 : num_oned_points[j] - (p[j]+1) / 2; // +/- index
                 r += rj * cnum_oned_points[j];
             }
-            tensor_data[r].resize(1, std::complex<double> (basisFuncs[work->getSlot(p)]));
+            tensor_data[r].resize(1, std::complex<double> (basisFuncs[work.getSlot(p)]));
         }
 
         TasmanianFourierTransform::fast_fourier_transform(tensor_data, num_oned_points);
@@ -513,7 +510,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
                 p[j] = index_map[levels[j]][t % num_oned_points[j]];
                 t /= num_oned_points[j];
             }
-            weights[work->getSlot(p)] += tensorw * v++->data()->real();
+            weights[work.getSlot(p)] += tensorw * v++->data()->real();
         }
     }
 }
@@ -523,18 +520,19 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
     // nonzero modes vanish, and we're left with the normalized Fourier
     // coeff for e^0 (sum of the data divided by number of points)
 
-    IndexSet *work = (points != 0) ? points : needed;
-    int num_points = work->getNumIndexes();
-    IndexManipulator IM(num_dimensions);
-    std::fill(weights, weights+num_points, 0.0);
-    for(int n=0; n<active_tensors->getNumIndexes(); n++){
-        const int *levels = active_tensors->getIndex(n);
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
+    int num_points = work.getNumIndexes();
+    std::fill(weights, weights + num_points, 0.0);
+
+    for(int n=0; n<active_tensors.getNumIndexes(); n++){
+        const int *levels = active_tensors.getIndex(n);
         int num_tensor_points = 1;
         for(int j=0; j<num_dimensions; j++){
             num_tensor_points *= wrapper.getNumPoints(levels[j]);
         }
         std::vector<int> refs;
-        IM.referencePoints<true>(levels, &wrapper, work, refs);
+        MultiIndexManipulations::referencePoints<true>(levels, wrapper, work, refs);
+
         double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
         for(int i=0; i<num_tensor_points; i++){
             weights[refs[i]] += tensorw;
@@ -543,7 +541,7 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
 }
 
 void GridFourier::evaluate(const double x[], double y[]) const{
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     TasBLAS::setzero(num_outputs, y);
     std::vector<double> wreal(num_points);
     std::vector<double> wimag(num_points);
@@ -558,7 +556,7 @@ void GridFourier::evaluate(const double x[], double y[]) const{
 }
 #ifdef Tasmanian_ENABLE_BLAS
 void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     TasBLAS::setzero(num_outputs, y);
     std::vector<double> wreal(num_points);
     std::vector<double> wimag(num_points);
@@ -573,7 +571,7 @@ void GridFourier::evaluateFastCPUblas(const double[], double[]) const{}
 #ifdef Tasmanian_ENABLE_CUDA
 void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
     prepareCudaData();
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     std::vector<double> wreal(num_points);
     std::vector<double> wimag(num_points);
     cudaDoubles gpuY;
@@ -593,7 +591,7 @@ void GridFourier::evaluateFastGPUcuda(const double x[], double y[]) const{
 #ifdef Tasmanian_ENABLE_MAGMA
 void GridFourier::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
     prepareCudaData();
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     std::vector<double> wreal(num_points);
     std::vector<double> wimag(num_points);
     cudaDoubles gpuY;
@@ -615,7 +613,7 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     Data2D<double> wreal;
     Data2D<double> wimag;
     evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
@@ -628,7 +626,7 @@ void GridFourier::evaluateBatchCPUblas(const double[], int, double[]) const{}
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     prepareCudaData();
     Data2D<double> wreal;
     Data2D<double> wimag;
@@ -640,7 +638,7 @@ void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]
 }
 void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     prepareCudaData();
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     cudaDoubles wreal, wimag, gpu_x(num_dimensions, num_x, x);
     evaluateHierarchicalFunctionsInternalGPU(gpu_x.data(), num_x, wreal, wimag);
     cudaDoubles gpuY;
@@ -658,7 +656,7 @@ void GridFourier::evaluateBatchGPUcuda(const double[], int, double[]) const{}
 #ifdef Tasmanian_ENABLE_MAGMA
 void GridFourier::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
     prepareCudaData();
-    int num_points = points->getNumIndexes();
+    int num_points = points.getNumIndexes();
     cudaDoubles wreal, wimag, gpu_x(num_dimensions, num_x, x);
     evaluateHierarchicalFunctionsInternalGPU(gpu_x.data(), num_x, wreal, wimag);
     cudaDoubles gpuY;
@@ -679,7 +677,7 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
         // Do the expensive computation if we have a conformal map
         std::vector<double> w(getNumPoints());
         getQuadratureWeights(w.data());
-        for(int i=0; i<points->getNumIndexes(); i++){
+        for(int i=0; i<points.getNumIndexes(); i++){
             w[i] *= conformal_correction[i];
             const double *v = values.getValues(i);
             for(int k=0; k<num_outputs; k++){
@@ -696,20 +694,19 @@ void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, dou
     Data2D<double> yy; yy.load(2 * num_points, num_x, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        computeBasis<double, true>(((points == 0) ? needed : points), xx.getCStrip(i), yy.getStrip(i), 0);
+        computeBasis<double, true>(((points.empty()) ? needed : points), xx.getCStrip(i), yy.getStrip(i), 0);
     }
 }
 void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const{
     // when performing internal evaluations, split the matrix into real and complex components
     // thus only two real gemm() operations can be used (as opposed to one complex gemm)
-    IndexSet *work = (points != 0) ? points : needed;
     int num_points = getNumPoints();
     Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     wreal.resize(num_points, num_x);
     wimag.resize(num_points, num_x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        computeBasis<double, false>(work, xx.getCStrip(i), wreal.getStrip(i), wimag.getStrip(i));
+        computeBasis<double, false>(((points.empty()) ? needed : points), xx.getCStrip(i), wreal.getStrip(i), wimag.getStrip(i));
     }
 }
 
@@ -718,12 +715,12 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     // first num_points*num_outputs are the real part; second num_points*num_outputs are the imaginary part
 
     clearAccelerationData();
-    if (points == 0){
-        points = needed;
-        needed = 0;
+    if (points.empty()){
+        points = std::move(needed);
+        needed = MultiIndexSet();
     }
     fourier_coefs.resize(num_outputs, 2 * getNumPoints());
-    std::copy(c, c + 2 * ((size_t) num_outputs) * ((size_t) getNumPoints()), fourier_coefs.getStrip(0));
+    std::copy_n(c, 2 * ((size_t) num_outputs) * ((size_t) getNumPoints()), fourier_coefs.getStrip(0));
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
@@ -732,7 +729,7 @@ void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num
     TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_num_nodes, cuda_points, gpu_y, 0);
 }
 void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const double gpu_x[], int num_x, cudaDoubles &wreal, cudaDoubles &wimag) const{
-    size_t num_weights = ((size_t) points->getNumIndexes()) * ((size_t) num_x);
+    size_t num_weights = ((size_t) points.getNumIndexes()) * ((size_t) num_x);
     if (wreal.size() != num_weights) wreal.resize(num_weights);
     if (wimag.size() != num_weights) wimag.resize(num_weights);
     loadCudaPoints();
@@ -753,7 +750,7 @@ void GridFourier::clearRefinement(){ return; }     // to be expanded later
 void GridFourier::mergeRefinement(){ return; }     // to be expanded later
 
 const int* GridFourier::getPointIndexes() const{
-    return ((points == 0) ? needed->getIndex(0) : points->getIndex(0));
+    return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
 }
 const double* GridFourier::getFourierCoefs() const{
     return fourier_coefs.getCStrip(0);
