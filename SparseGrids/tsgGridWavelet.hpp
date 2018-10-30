@@ -128,7 +128,7 @@ private:
     IndexSet *points;
     IndexSet *needed;
 
-    StorageSet *values;
+    StorageSet values;
 
     TasSparse::SparseMatrix *inter_matrix;
 };

@@ -200,7 +200,7 @@ private:
 
     Data2D<double> fourier_coefs;
 
-    StorageSet *values;
+    StorageSet values;
 
     std::vector<int> max_power;
 
