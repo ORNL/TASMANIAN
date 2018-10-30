@@ -401,6 +401,31 @@ void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &m
 void generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points);
 
 //! \internal
+//! \brief given a tensor defined by **levels** find the references to all tensor points in the **points** set (assuming the standard order of the tensor entries)
+//! \ingroup TasmanianMultiIndexManipulations
+template<bool nested>
+void referencePoints(const int levels[], const OneDimensionalWrapper &rule, const MultiIndexSet &points, std::vector<int> &refs){
+    size_t num_dimensions = (size_t) points.getNumDimensions();
+    std::vector<int> num_points(num_dimensions);
+    int num_total = 1; // this will be a subset of all points, no danger of overflow
+    for(size_t j=0; j<num_dimensions; j++) num_points[j] = rule.getNumPoints(levels[j]);
+    for(auto n : num_points) num_total *= n;
+
+    refs.resize(num_total);
+    std::vector<int> p(num_dimensions);
+
+    for(int i=0; i<num_total; i++){
+        int t = i;
+        auto n = num_points.rbegin();
+        for(int j=(int) num_dimensions-1; j>=0; j--){
+            p[j] = (nested) ? t % *n : rule.getPointIndex(levels[j], t % *n);
+            t /= *n++;
+        }
+        refs[i] = points.getSlot(p);
+    }
+}
+
+//! \internal
 //! \brief computes the weights for the tensor linear combination, **mset** is a lower multi-index set and **weight** is resized
 //! \ingroup TasmanianMultiIndexManipulations
 void computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights);
