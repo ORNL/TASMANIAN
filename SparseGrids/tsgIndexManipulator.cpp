@@ -339,11 +339,13 @@ void MultiIndexManipulations::createActiveTensors(const MultiIndexSet &mset, con
     std::vector<int> indexes(nz_weights * num_dimensions);
     nz_weights = 0;
     auto iter = indexes.begin();
-    for(int i=0; i<mset.getNumIndexes(); i++){
-        if (weights[i] != 0){
-            std::copy_n(mset.getIndex(i), num_dimensions, iter);
+    auto iset = mset.getVector()->begin();
+    for(auto w: weights){
+        if (w != 0){
+            std::copy_n(iset, num_dimensions, iter);
             std::advance(iter, num_dimensions);
         }
+        std::advance(iset, num_dimensions);
     }
 
     active.setNumDimensions((int) num_dimensions);
