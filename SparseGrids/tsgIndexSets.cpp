@@ -575,8 +575,6 @@ void MultiIndexSet::addUnsortedInsexes(const std::vector<int> &addition){
     cache_num_indexes = (int) (indexes.size() / num_dimensions);
 }
 
-const std::vector<int>* MultiIndexSet::getVector() const{ return &indexes; }
-
 int MultiIndexSet::getSlot(const int *p) const{
     size_t sstart = 0, send = (size_t)(cache_num_indexes - 1);
     size_t current = (sstart + send) / 2;

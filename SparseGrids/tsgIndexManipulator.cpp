@@ -267,6 +267,29 @@ void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors,
     points.addData2D(raw_points);
 }
 
+void MultiIndexManipulations::generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper, MultiIndexSet &points){
+    size_t num_dimensions = (size_t) tensors.getNumDimensions();
+    int num_tensors = tensors.getNumIndexes();
+    std::vector<MultiIndexSet> point_tensors((size_t) num_tensors);
+
+    #pragma omp parallel for
+    for(int i=0; i<num_tensors; i++){
+        std::vector<int> npoints(num_dimensions);
+        const int *p = tensors.getIndex(i);
+        for(size_t j=0; j<num_dimensions; j++)
+            npoints[j] = wrapper.getNumPoints(p[j]);
+        MultiIndexManipulations::generateFullTensorSet<int>(npoints, point_tensors[i]);
+
+        size_t j = 0;
+        for(auto &g : *(point_tensors[i].getVector())){
+            g = wrapper.getPointIndex(p[j++], g); // remap local-order-to-global-index
+            if (j == num_dimensions) j = 0;
+        }
+    }
+
+    MultiIndexManipulations::unionSets<true>(point_tensors, points);
+}
+
 void MultiIndexManipulations::computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights){
     size_t num_dimensions = (size_t) mset.getNumDimensions();
     int num_tensors = mset.getNumIndexes();

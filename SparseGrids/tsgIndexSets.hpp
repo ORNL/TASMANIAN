@@ -272,7 +272,9 @@ public:
     inline void addMultiIndexSet(const MultiIndexSet &addition){ addSortedInsexes(*addition.getVector()); }
     inline void addData2D(const Data2D<int> &addition){ addUnsortedInsexes(*addition.getVector()); }
 
-    const std::vector<int>* getVector() const;
+    inline const std::vector<int>* getVector() const{ return &indexes; }
+    inline std::vector<int>* getVector(){ return &indexes; } // used for remapping during tensor generic points
+
     int getSlot(const int *p) const;
     inline int getSlot(const std::vector<int> &p) const{ return getSlot(p.data()); }
     inline bool missing(const std::vector<int> &p) const{ return (getSlot(p.data()) == -1); }

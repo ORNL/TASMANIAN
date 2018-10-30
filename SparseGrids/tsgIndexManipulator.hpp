@@ -401,6 +401,17 @@ void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &m
 void generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points);
 
 //! \internal
+//! \brief assuming that **tensors** describe a set of non-nested tensor operators described by the **wrapper**, then generate the actual **points**
+//! \ingroup TasmanianMultiIndexManipulations
+//!
+//! Assuming that we are working with a non-nested rule, then for each tensor we must generate the points and map them to the global indexing,
+//! then take the union of all the tensors
+//! * **tensors** is a set of tensor rules, non-necessarily lower
+//! * **wrapper** described the one dimensional rules (most notably the level-order-to-global-index mapping)
+//! * **points** is the union of the points of all tensors
+void generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper, MultiIndexSet &points);
+
+//! \internal
 //! \brief given a tensor defined by **levels** find the references to all tensor points in the **points** set (assuming the standard order of the tensor entries)
 //! \ingroup TasmanianMultiIndexManipulations
 template<bool nested>
