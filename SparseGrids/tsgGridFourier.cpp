@@ -254,8 +254,7 @@ void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Typ
     if ((type == type_level) || (type == type_tensor) || (type == type_hyperbolic)){
         MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, tset);
     }else{
-        OneDimensionalMeta meta;
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return meta.getIExact(i, rule_fourier); }, anisotropic_weights, tset);
+        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, tset);
     }
 
     if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, tset);
@@ -277,8 +276,6 @@ void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
     num_outputs = cnum_outputs;
 
     tensors = std::move(tset);
-
-    IndexManipulator IM(num_dimensions);
 
     int max_level;
     MultiIndexManipulations::getMaxIndex(tensors, max_levels, max_level);

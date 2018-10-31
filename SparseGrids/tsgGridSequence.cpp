@@ -165,8 +165,7 @@ void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Ty
 
     MultiIndexSet pset(cnum_dimensions);
     if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-        OneDimensionalMeta meta;
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return meta.getQExact(i, crule); },
+        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return OneDimensionalMeta::getQExact(i, crule); },
                                                anisotropic_weights, pset);
     }else{
         MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, pset);
@@ -214,8 +213,7 @@ void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule
 void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     MultiIndexSet pset(num_dimensions);
     if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-        OneDimensionalMeta meta;
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return meta.getQExact(i, rule); },
+        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return OneDimensionalMeta::getQExact(i, rule); },
                                                anisotropic_weights, pset);
     }else{
         MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, pset);
@@ -692,8 +690,7 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
         MultiIndexSet total(num_dimensions);
 
         if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-            OneDimensionalMeta meta;
-            MultiIndexManipulations::selectTensors(++level, type, [&](int i) -> long long{ return meta.getQExact(i, rule); },
+            MultiIndexManipulations::selectTensors(++level, type, [&](int i) -> long long{ return OneDimensionalMeta::getQExact(i, rule); },
                                                    weights, total);
         }else{
             MultiIndexManipulations::selectTensors(++level, type, [&](int i) -> long long{ return i; }, weights, total);
@@ -756,8 +753,7 @@ void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) co
     MultiIndexSet space; // used only when interpolation is false
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     if (!interpolation){ // when using interpolation, the polynomial space coincides with points/needed
-        OneDimensionalMeta meta;
-        MultiIndexManipulations::createPolynomialSpace(work, [&](int l) -> int{ return meta.getQExact(l, rule); }, space);
+        MultiIndexManipulations::createPolynomialSpace(work, [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); }, space);
     }
     const MultiIndexSet &result = (interpolation) ? work : space;
 
@@ -849,7 +845,6 @@ void GridSequence::recomputeSurpluses(){
     Data2D<double> surp;
     surp.load(num_outputs, num_points, surpluses.data());
 
-    IndexManipulator IM(num_dimensions);
     std::vector<int> level;
     MultiIndexManipulations::computeLevels(points, level);
     int top_level = *std::max_element(level.begin(), level.end());

@@ -42,7 +42,6 @@ namespace TasGrid{
 class CustomTabulated{
 public:
     CustomTabulated();
-    CustomTabulated(const CustomTabulated &custom);
     ~CustomTabulated();
 
     // I/O subroutines
@@ -51,7 +50,6 @@ public:
     void read(std::ifstream &ifs);
     void writeBinary(std::ofstream &ofs) const;
     void readBinary(std::ifstream &ifs);
-    void copyRule(const CustomTabulated *custom);
 
     int getNumLevels() const;
     int getNumPoints(int level) const;
@@ -74,44 +72,33 @@ private:
     std::string description;
 };
 
-class OneDimensionalMeta{
-public:
-    OneDimensionalMeta();
-    OneDimensionalMeta(const CustomTabulated *ccustom);
-    ~OneDimensionalMeta();
+namespace OneDimensionalMeta{
+    int getNumPoints(int level, TypeOneDRule rule);
+    int getIExact(int level, TypeOneDRule rule);
+    int getQExact(int level, TypeOneDRule rule);
 
-    int getNumPoints(int level, TypeOneDRule rule) const;
-    int getIExact(int level, TypeOneDRule rule) const;
-    int getQExact(int level, TypeOneDRule rule) const;
+    bool isNonNested(TypeOneDRule rule);
+    bool isSequence(TypeOneDRule rule);
+    bool isGlobal(TypeOneDRule rule);
+    bool isSingleNodeGrowth(TypeOneDRule rule);
+    bool isLocalPolynomial(TypeOneDRule rule);
+    bool isWavelet(TypeOneDRule rule);
+    bool isFourier(TypeOneDRule rule);
 
-    const CustomTabulated *getCustom() const;
+    TypeOneDRule getIORuleString(const char *name);
+    const char* getIORuleString(TypeOneDRule rule);
+    const char* getHumanString(TypeOneDRule rule);
+    TypeOneDRule getIORuleInt(int index);
+    int getIORuleInt(TypeOneDRule rule);
 
-    static bool isNonNested(TypeOneDRule rule);
-    static bool isSequence(TypeOneDRule rule);
-    static bool isGlobal(TypeOneDRule rule);
-    static bool isSingleNodeGrowth(TypeOneDRule rule);
-    static bool isLocalPolynomial(TypeOneDRule rule);
-    static bool isWavelet(TypeOneDRule rule);
-    static bool isFourier(TypeOneDRule rule);
+    bool isTypeCurved(TypeDepth type);
 
-    static TypeOneDRule getIORuleString(const char *name);
-    static const char* getIORuleString(TypeOneDRule rule);
-    static const char* getHumanString(TypeOneDRule rule);
-    static TypeOneDRule getIORuleInt(int index);
-    static int getIORuleInt(TypeOneDRule rule);
+    TypeDepth getIOTypeString(const char *name);
+    TypeDepth getIOTypeInt(int type);
 
-    static bool isTypeCurved(TypeDepth type);
-
-    static TypeDepth getIOTypeString(const char *name);
-    static TypeDepth getIOTypeInt(int type);
-
-    static TypeRefinement getIOTypeRefinementString(const char *name);
-    static TypeRefinement getIOTypeRefinementInt(int ref);
-
-private:
-    // add the custom class here, but alias to something created by GlobalGrid
-    const CustomTabulated *custom;
-};
+    TypeRefinement getIOTypeRefinementString(const char *name);
+    TypeRefinement getIOTypeRefinementInt(int ref);
+}
 
 namespace OneDimensionalNodes{
     // non-nested rules

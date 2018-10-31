@@ -183,7 +183,6 @@ private:
 
     MultiIndexSet points;
     MultiIndexSet needed;
-    //int *parents; // NOTE: this is needed only for computing surpluses, maybe there is no need to store it
 
     std::vector<double> surpluses;
     std::vector<double> nodes;
