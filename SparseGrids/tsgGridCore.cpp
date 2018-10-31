@@ -68,36 +68,6 @@ SplitDirections::SplitDirections(const MultiIndexSet &points){
         }
     }
 }
-SplitDirections::SplitDirections(const IndexSet &points){
-    // here we split the points into jobs, where each job is a batch of point that belong to the same line
-    // each job will later be used to construct a 1-D interpolant and compute directional surpluses
-    int num_points = points.getNumIndexes();
-    num_dimensions = points.getNumDimensions();
-
-    // This section is taking too long! Find a way to parallelize it!
-    for(int d=0; d<num_dimensions; d++){
-        std::vector<bool> unused(num_points, true); // start with all points unused in this direction
-        for(int s=0; s<num_points; s++){ // search for unused points
-            if (unused[s]){
-                // if found unused point in this direction, start a new job
-                const int *p = points.getIndex(s); // reference point
-
-                job_directions.push_back(d); // set the direction for the job
-
-                std::vector<int> pnts; // append here the points that will be found
-
-                for(int i=0; i<num_points; i++){ // look for all points, if unused and belong to the same line
-                    if (unused[i] && doesBelongSameLine(p, points.getIndex(i), d)){
-                        // adding a new point
-                        pnts.push_back(i);
-                        unused[i] = false;
-                    }
-                }
-                job_pnts.push_back(pnts); // hope the compiler does "move assignment"
-            }
-        }
-    }
-}
 SplitDirections::~SplitDirections(){}
 
 int SplitDirections::getNumJobs() const{ return (int) job_pnts.size(); }

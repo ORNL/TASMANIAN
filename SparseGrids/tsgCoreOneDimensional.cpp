@@ -39,9 +39,6 @@
 namespace TasGrid{
 
 CustomTabulated::CustomTabulated() : num_levels(0){}
-CustomTabulated::CustomTabulated(const CustomTabulated &custom) : num_levels(0){
-    copyRule(&custom);
-}
 CustomTabulated::~CustomTabulated(){}
 
 void CustomTabulated::reset(){ num_levels = 0; }
@@ -137,22 +134,6 @@ void CustomTabulated::readBinary(std::ifstream &ifs){
     }
 }
 
-void CustomTabulated::copyRule(const CustomTabulated *custom){
-    description = custom->description;
-
-    num_levels = custom->num_levels;
-
-    num_nodes = custom->num_nodes;
-    precision = custom->precision;
-
-    nodes.resize(num_levels);
-    weights.resize(num_levels);
-    for(int l=0; l<num_levels; l++){
-        nodes[l] = custom->nodes[l];
-        weights[l] = custom->weights[l];
-    }
-}
-
 int CustomTabulated::getNumLevels() const{ return num_levels; }
 int CustomTabulated::getNumPoints(int level) const{
     if (level >= num_levels){
@@ -191,12 +172,7 @@ void CustomTabulated::getWeightsNodes(int level, std::vector<double> &w, std::ve
 }
 const char* CustomTabulated::getDescription() const{ return description.c_str(); }
 
-OneDimensionalMeta::OneDimensionalMeta(): custom(0) {}
-OneDimensionalMeta::OneDimensionalMeta(const CustomTabulated *ccustom) : custom(ccustom) {}
-OneDimensionalMeta::~OneDimensionalMeta(){}
-const CustomTabulated* OneDimensionalMeta::getCustom() const{  return custom;  }
-
-int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule) const{
+int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule){
     int lcc;
     switch (rule){
         case rule_chebyshev:
@@ -240,15 +216,13 @@ int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule) const{
         case rule_rlejadouble4:       if (level < 3){ return getNumPoints(level, rule_clenshawcurtis); }; lcc = 2 + (level-3)/4; return (getNumPoints(lcc,rule_clenshawcurtis) + ((getNumPoints(lcc+1,rule_clenshawcurtis)-getNumPoints(lcc,rule_clenshawcurtis))/4) * ((level-3)%4 +1));
         case rule_fejer2:             return ((1 << (level+1)) - 1);
 
-        case rule_customtabulated:    return custom->getNumPoints(level);
-
         case rule_fourier:            lcc = 1; for(int k=0; k<level; k++) { lcc *= 3; } return lcc;
 
         default:
             return level;
     }
 }
-int OneDimensionalMeta::getIExact(int level, TypeOneDRule rule) const{
+int OneDimensionalMeta::getIExact(int level, TypeOneDRule rule){
     switch (rule){
         case rule_chebyshev:
         case rule_gausslegendre:
@@ -291,12 +265,11 @@ int OneDimensionalMeta::getIExact(int level, TypeOneDRule rule) const{
         case rule_rlejadouble2:       return getNumPoints(level,rule_rlejadouble2)-1;
         case rule_rlejadouble4:       return getNumPoints(level,rule_rlejadouble4)-1;
         case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
-        case rule_customtabulated:    return custom->getIExact(level);
         default:
             return level;
     }
 }
-int OneDimensionalMeta::getQExact(int level, TypeOneDRule rule) const{
+int OneDimensionalMeta::getQExact(int level, TypeOneDRule rule){
     switch (rule){
         case rule_chebyshevodd:
         case rule_gausslegendre:
@@ -340,7 +313,6 @@ int OneDimensionalMeta::getQExact(int level, TypeOneDRule rule) const{
         case rule_rlejadouble4:       return getNumPoints(level,rule_rlejadouble4)-1;
         case rule_fejer2:             return ((1 << (level+1)) - 1);
         case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
-        case rule_customtabulated:    return custom->getQExact(level);
         default:
             return level;
     }
@@ -875,15 +847,14 @@ void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::v
 
 // Clenshaw-Curtis
 void OneDimensionalNodes::getClenshawCurtisNodes(int level, std::vector<double> &nodes){
-    OneDimensionalMeta meta;
-    int n = meta.getNumPoints(level, rule_clenshawcurtis);
+    int n = OneDimensionalMeta::getNumPoints(level, rule_clenshawcurtis);
     nodes.resize(n);
     nodes[0] = 0.0;
     if (level > 0){
         nodes[1] = -1.0; nodes[2] = 1.0;
         int count = 3;
         for(int l=2; l<=level; l++){
-            n = meta.getNumPoints(l, rule_clenshawcurtis);
+            n = OneDimensionalMeta::getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
                   nodes[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
             }
@@ -891,8 +862,7 @@ void OneDimensionalNodes::getClenshawCurtisNodes(int level, std::vector<double> 
     }
 }
 double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
-    OneDimensionalMeta meta;
-    int ieffective, n = meta.getNumPoints(level, rule_clenshawcurtis);
+    int ieffective, n = OneDimensionalMeta::getNumPoints(level, rule_clenshawcurtis);
     if (level == 0){ return 2.0; }
     if (point == 0){
         ieffective = (n-1) / 2;
@@ -903,7 +873,7 @@ double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     }else{
         int z = point - 1, l = 1;
         while (z >>= 1){ l++; };
-        ieffective = (1 + 2 *(point - meta.getNumPoints(l-1, rule_clenshawcurtis))) * (n-1) / (1 << l);
+        ieffective = (1 + 2 *(point - OneDimensionalMeta::getNumPoints(l-1, rule_clenshawcurtis))) * (n-1) / (1 << l);
     }
 
     double weight = 1.0;
@@ -920,14 +890,13 @@ double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
 }
 // Clenshaw-Curtis-Zero
 void OneDimensionalNodes::getClenshawCurtisNodesZero(int level, std::vector<double> &nodes){
-    OneDimensionalMeta meta;
-    int n = meta.getNumPoints(level+1, rule_clenshawcurtis);
+    int n = OneDimensionalMeta::getNumPoints(level+1, rule_clenshawcurtis);
     nodes.resize(n-2);
     nodes[0] = 0.0;
     if (level > 0){
         int count = 1;
         for(int l=2; l<=level+1; l++){
-            n = meta.getNumPoints(l, rule_clenshawcurtis);
+            n = OneDimensionalMeta::getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
                 nodes[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
             }
@@ -936,15 +905,14 @@ void OneDimensionalNodes::getClenshawCurtisNodesZero(int level, std::vector<doub
 }
 double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     // this should be equivalent to  return getClenshawCurtisWeight(level + 1, ((point == 0) ? 0 : point +2));
-    OneDimensionalMeta meta;
-    int ieffective, n = meta.getNumPoints(level+1, rule_clenshawcurtis);
+    int ieffective, n = OneDimensionalMeta::getNumPoints(level+1, rule_clenshawcurtis);
     if (level == 0){ return 4.0/3.0; }
     if (point == 0){
         ieffective = (n-1) / 2;
     }else{
         int z = point +1, l = 1;
         while (z >>= 1){ l++; };
-        ieffective = (1 + 2 *(point + 2 - meta.getNumPoints(l-1, rule_clenshawcurtis))) * (n-1) / (1 << l);
+        ieffective = (1 + 2 *(point + 2 - OneDimensionalMeta::getNumPoints(l-1, rule_clenshawcurtis))) * (n-1) / (1 << l);
     }
 
     double weight = 1.0;
@@ -960,14 +928,13 @@ double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
 }
 // Fejer-2
 void OneDimensionalNodes::getFejer2Nodes(int level, std::vector<double> &nodes){
-    OneDimensionalMeta meta;
-    int n = meta.getNumPoints(level, rule_fejer2);
+    int n = OneDimensionalMeta::getNumPoints(level, rule_fejer2);
     nodes.resize(n);
     nodes[0] = 0.0;
     if (level > 0){
         int count = 1;
         for(int l=2; l<=level+1; l++){
-            n = meta.getNumPoints(l, rule_clenshawcurtis);
+            n = OneDimensionalMeta::getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
                 nodes[count++] = cos(M_PI * ((double) (n-i-1)) / ((double) (n - 1)));
             }
@@ -976,17 +943,15 @@ void OneDimensionalNodes::getFejer2Nodes(int level, std::vector<double> &nodes){
 }
 double OneDimensionalNodes::getFejer2Weight(int level, int point){
     if (level == 0){ return 2.0; }
-    OneDimensionalMeta meta;
-    int ieffective, n = meta.getNumPoints(level, rule_fejer2);
+    int ieffective, n = OneDimensionalMeta::getNumPoints(level, rule_fejer2);
     if (point == 0){
         ieffective = (n-1) / 2;
     }else{
         int z = point + 1, l = 0;
         while (z >>= 1){ l++; };
         z = (1 << (level-l))-1;
-        ieffective = z + (point - meta.getNumPoints(l-1, rule_fejer2)) * ((n-1) / (1 << (l))+1);
+        ieffective = z + (point - OneDimensionalMeta::getNumPoints(l-1, rule_fejer2)) * ((n-1) / (1 << (l))+1);
     }
-
 
     double weight = 1.0;
     double theta = ((double) (n-ieffective)) * M_PI / ((double) (n+1));
@@ -1034,15 +999,14 @@ void OneDimensionalNodes::getRLejaShifted(int n, std::vector<double> &nodes){
 }
 
 void OneDimensionalNodes::getFourierNodes(int level, std::vector<double> &nodes) {
-    OneDimensionalMeta meta;
-    int n = meta.getNumPoints(level, rule_fourier);
+    int n = OneDimensionalMeta::getNumPoints(level, rule_fourier);
     nodes.resize(n);
     nodes[0]=0.0;
     if(level > 0){ nodes[1] = 1.0/3.0; nodes[2] = 2.0/3.0; }
     auto node = nodes.begin();
     std::advance(node, 3);
     for(int l=2; l<=level; l++) {
-        n = meta.getNumPoints(l, rule_fourier);
+        n = OneDimensionalMeta::getNumPoints(l, rule_fourier);
         for(int i=1; i<n; i+=3) {
             *node++ = (double) i / (double) n;
             *node++ = (double) (i+1) / (double) n;

@@ -38,103 +38,6 @@
 
 namespace TasGrid{
 
-class UnsortedIndexSet{ // assumes the elements would be added in a sorted order
-public:
-    UnsortedIndexSet(int cnum_dimensions, int cnum_slots);
-    ~UnsortedIndexSet();
-
-    int getNumDimensions() const;
-
-    void addIndex(const int p[]);
-
-    void getIndexesSorted(std::vector<int> &sorted) const;
-    // returns a vector of num_dimensions X num_indexes of the sorted indexes
-
-protected:
-    TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
-    void mergeLists(const int listA[], size_t sizeA, const int listB[], size_t sizeB, int destination[]) const;
-
-private:
-    size_t num_dimensions;
-    size_t num_indexes;
-    std::vector<int> index;
-};
-
-class GranulatedIndexSet{ // optimized to add one index at a time
-public:
-    GranulatedIndexSet(int cnum_dimensions, int cnum_slots = 64);
-    ~GranulatedIndexSet();
-
-    int getNumDimensions() const;
-    int getNumIndexes() const;
-
-    void addIndex(const int p[]);
-    inline void addIndex(const std::vector<int> p){ addIndex(p.data()); }
-    int getSlot(const int p[]) const;
-
-    const int* getIndex(int j) const;
-
-    void addGranulatedSet(const GranulatedIndexSet *gset);
-
-    const std::vector<int>* getIndexes() const;
-    const std::vector<int>* getMap() const;
-
-protected:
-    TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
-
-    void mergeMapped(const std::vector<int> newIndex, const std::vector<int> newMap, int sizeNew);
-
-private:
-    size_t num_dimensions;
-    size_t num_indexes;
-    std::vector<int> index;
-    std::vector<int> imap;
-};
-
-class IndexSet{ // rigid set but optimal in storage size
-public:
-    IndexSet(int cnum_dimensions);
-    IndexSet(const UnsortedIndexSet *uset);
-    IndexSet(const GranulatedIndexSet *gset);
-    IndexSet(const IndexSet *iset);
-    IndexSet(int cnum_dimensions, std::vector<int> &cindex); // move assignment
-    ~IndexSet();
-
-    int getNumDimensions() const;
-    int getNumIndexes() const;
-
-    void write(std::ofstream &ofs) const;
-    void read(std::ifstream &ifs);
-
-    void writeBinary(std::ofstream &ofs) const;
-    void readBinary(std::ifstream &ifs);
-
-    int getSlot(const int p[]) const;
-    inline int getSlot(const std::vector<int> &p) const{ return getSlot(p.data()); }
-
-    const int* getIndex(int i) const;
-    const std::vector<int>* getIndexes() const;
-
-    void addUnsortedSet(const UnsortedIndexSet *uset);
-    void addGranulatedSet(const GranulatedIndexSet *gset);
-    void addIndexSet(const IndexSet *iset);
-
-    IndexSet* diffSets(const IndexSet *iset) const; // returns this set minus the points in set
-
-protected:
-    TypeIndexRelation compareIndexes(const int a[], const int b[]) const;
-
-    void mergeSet(const std::vector<int> newIndex);
-    void mergeMapped(const std::vector<int> *newIndex, const std::vector<int> *imap);
-
-    void cacheNumIndexes();
-
-private:
-    size_t num_dimensions;
-    int cache_num_indexes;
-    std::vector<int> index;
-};
-
 namespace SetManipulations{
 template<typename T, class B>
 void push_merge_map(const std::vector<T> &a, const std::vector<B> &b,
@@ -292,7 +195,6 @@ private:
 class StorageSet{ // stores the values of the function
 public:
     StorageSet();
-    StorageSet(int cnum_outputs, int cnum_values);
     ~StorageSet();
 
     void write(std::ofstream &ofs) const;
@@ -310,7 +212,6 @@ public:
 
     void setValues(const double vals[]);
     void setValues(std::vector<double> &vals);
-    void addValues(const IndexSet *old_set, const IndexSet *new_set, const double new_vals[]);
     void addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]);
 
 protected:

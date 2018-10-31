@@ -113,7 +113,6 @@ public:
     void mergeRefinement();
 
     const int* getPointIndexes() const;
-    const IndexSet* getExponents() const;
     const double* getFourierCoefs() const;
 
 protected:

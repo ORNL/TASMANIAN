@@ -39,7 +39,7 @@ TableGaussPatterson::TableGaussPatterson(){
     weights_offsets.resize(9);
     weights_offsets[0] = 0;
     for(int l=0; l<8; l++){
-        weights_offsets[l+1] = weights_offsets[l] + meta.getNumPoints(l, rule_gausspatterson);
+        weights_offsets[l+1] = weights_offsets[l] + OneDimensionalMeta::getNumPoints(l, rule_gausspatterson);
     }
 
     loadNodes();
@@ -53,7 +53,7 @@ int TableGaussPatterson::getNumLevels(){
 }
 
 void TableGaussPatterson::getNodes(int level, std::vector<double> &x) const{
-    int num_points = meta.getNumPoints(level, rule_gausspatterson);
+    int num_points = OneDimensionalMeta::getNumPoints(level, rule_gausspatterson);
     x.resize(num_points);
     std::copy(nodes.begin(), nodes.begin() + num_points, x.data());
 }

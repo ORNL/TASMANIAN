@@ -53,8 +53,6 @@ private:
     std::vector<double> weights; // contains the weight associated with each level
 
     std::vector<int> weights_offsets;
-
-    OneDimensionalMeta meta;
 };
 
 }
