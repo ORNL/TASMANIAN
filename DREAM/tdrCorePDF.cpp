@@ -34,6 +34,7 @@
 #include "tdrCorePDF.hpp"
 
 #include "tsgHiddenExternals.hpp"
+#include "tdrDreamDenseLinearAlgebra.hpp"
 
 namespace TasDREAM{
 
@@ -316,7 +317,7 @@ GaussianLikelihood::GaussianLikelihood(int outputs, TypeLikelihood likelihood, c
     }else if (likely_type == likely_gauss_dense){
         covariance_cache = new double[num_outputs * num_outputs];
         std::copy(covariance, covariance + num_outputs * num_outputs, covariance_cache);
-        TasGrid::TasBLAS::cholUTU(num_outputs, covariance_cache); // lazy cholesky, add some error checking here
+        TasDREAM::TasBLAS::cholUTU(num_outputs, covariance_cache); // lazy cholesky, add some error checking here
     } // when more likelihood types are added, add else error check. For now we get invalid type error so no need to check
 
     data_cache = new double[num_outputs];
@@ -354,8 +355,8 @@ void GaussianLikelihood::getLikelihood(int num_model, const double *model, std::
         #ifdef TASMANIAN_CPU_BLAS // leverage level 3 operations (uses more RAM)
         double *cov_by_model = new double[num_model * num_outputs];
         std::copy(model, model + num_model * num_outputs, cov_by_model);
-        TasGrid::TasBLAS::dtrsm_LUTN(num_outputs, num_model, covariance_cache, cov_by_model);
-        TasGrid::TasBLAS::dtrsm_LUNN(num_outputs, num_model, covariance_cache, cov_by_model);
+        TasDREAM::TasBLAS::dtrsm_LUTN(num_outputs, num_model, covariance_cache, cov_by_model);
+        TasDREAM::TasBLAS::dtrsm_LUNN(num_outputs, num_model, covariance_cache, cov_by_model);
         TasGrid::TasBLAS::dgemtv(num_outputs, num_model, cov_by_model, data_cache, likelihood.data());
         for(int i=0; i<num_model; i++) likelihood[i] += model_scale * TasGrid::TasBLAS::ddot(num_outputs, &(cov_by_model[i*num_outputs]), &(model[i*num_outputs]));
         delete[] cov_by_model;
@@ -363,8 +364,8 @@ void GaussianLikelihood::getLikelihood(int num_model, const double *model, std::
         double *cov_by_model = new double[num_outputs];
         for(int i=0; i<num_model; i++){
             std::copy(&(model[i*num_outputs]), &(model[i*num_outputs]) + num_outputs, cov_by_model);
-            TasGrid::TasBLAS::dtrsv_UTN(num_outputs, covariance_cache, cov_by_model);
-            TasGrid::TasBLAS::dtrsv_UNN(num_outputs, covariance_cache, cov_by_model);
+            TasDREAM::TasBLAS::dtrsv_UTN(num_outputs, covariance_cache, cov_by_model);
+            TasDREAM::TasBLAS::dtrsv_UNN(num_outputs, covariance_cache, cov_by_model);
             likelihood[i] = model_scale * TasGrid::TasBLAS::ddot(num_outputs, cov_by_model, &(model[i*num_outputs])) + TasGrid::TasBLAS::ddot(num_outputs, data_cache, &(model[i*num_outputs]));
         }
         delete[] cov_by_model;
