@@ -531,7 +531,7 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
 
             // Z is used to reconstruct the solution in the end
             Z[inner_itr] = S[inner_itr-1]*Z[inner_itr-1];
-			Z[inner_itr-1] = C[inner_itr-1]*Z[inner_itr-1]; // apply it on z
+            Z[inner_itr-1] = C[inner_itr-1]*Z[inner_itr-1]; // apply it on z
 
             inner_res = fabs(Z[inner_itr]);
         }
@@ -539,22 +539,22 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
         inner_itr--;
 
         if (inner_itr > -1){ // if the first guess was not within TOL of the true solution
-			Z[inner_itr] /= H[inner_itr * max_inner + inner_itr];
-			for(int i=inner_itr-1; i>-1; i--){
-				h_k = 0.0;
-				for(int j=i+1; j<=inner_itr; j++){
-					h_k += H[i*max_inner + j] * Z[j];
-				};
-				Z[i] = (Z[i] - h_k) / H[i * max_inner + i];
-			}
+            Z[inner_itr] /= H[inner_itr * max_inner + inner_itr];
+            for(int i=inner_itr-1; i>-1; i--){
+                h_k = 0.0;
+                for(int j=i+1; j<=inner_itr; j++){
+                    h_k += H[i*max_inner + j] * Z[j];
+                };
+                Z[i] = (Z[i] - h_k) / H[i * max_inner + i];
+            }
 
-			for(int i=0; i<=inner_itr; i++){
-				for(int j=0; j<num_rows; j++){
+            for(int i=0; i<=inner_itr; i++){
+                for(int j=0; j<num_rows; j++){
                     x[j] += Z[i] * W[i*num_rows+j];
-				}
-			}
+                }
+            }
 
-			if (transposed){
+            if (transposed){
                 for(int i=0; i<num_rows; i++){
                     x[i] /= ilu[indxD[i]];
                     for(int j=indxD[i]+1; j<pntr[i+1]; j++){
@@ -566,9 +566,9 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
                         x[indx[j]] -= ilu[j] * x[i];
                     }
                 }
-			}
+            }
 
-		}
+        }
 
         outer_res = inner_res;
         outer_itr++;

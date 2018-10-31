@@ -14,7 +14,8 @@ add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} Tasman
                                                                           TasmanianDREAM.cpp
                                                                           tdrEnumerates.hpp
                                                                           tdrCorePDF.hpp
-                                                                          tdrCorePDF.cpp)
+                                                                          tdrCorePDF.cpp
+                                                                          tdrDreamDenseLinearAlgebra.hpp)
 
 target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
