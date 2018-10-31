@@ -46,6 +46,8 @@ public:
     GridWavelet(const GridWavelet &wav);
     ~GridWavelet();
 
+    bool isWavelet() const{ return true; }
+
     void write(std::ofstream &ofs) const;
     void read(std::ifstream &ifs);
 

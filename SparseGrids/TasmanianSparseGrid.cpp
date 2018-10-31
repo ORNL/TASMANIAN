@@ -590,21 +590,11 @@ void TasmanianSparseGrid::integrate(std::vector<double> &q) const{
     integrate(q.data());
 }
 
-bool TasmanianSparseGrid::isGlobal() const{
-    return (global != 0);
-}
-bool TasmanianSparseGrid::isSequence() const{
-    return (sequence != 0);
-}
-bool TasmanianSparseGrid::isLocalPolynomial() const{
-    return (pwpoly != 0);
-}
-bool TasmanianSparseGrid::isWavelet() const{
-    return (wavelet != 0);
-}
-bool TasmanianSparseGrid::isFourier() const{
-    return (fourier != 0);
-}
+bool TasmanianSparseGrid::isGlobal() const{          return base->isGlobal(); }
+bool TasmanianSparseGrid::isSequence() const{        return base->isSequence(); }
+bool TasmanianSparseGrid::isLocalPolynomial() const{ return base->isLocalPolynomial(); }
+bool TasmanianSparseGrid::isWavelet() const{         return base->isWavelet(); }
+bool TasmanianSparseGrid::isFourier() const{         return base->isFourier(); }
 
 void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[]){
     if ((base == 0) || (base->getNumDimensions() == 0)){

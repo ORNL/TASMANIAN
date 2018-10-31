@@ -41,6 +41,12 @@ public:
     BaseCanonicalGrid();
     virtual ~BaseCanonicalGrid();
 
+    virtual bool isGlobal() const{ return false; }
+    virtual bool isSequence() const{ return false; }
+    virtual bool isLocalPolynomial() const{ return false; }
+    virtual bool isWavelet() const{ return false; }
+    virtual bool isFourier() const{ return false; }
+
     virtual int getNumDimensions() const = 0;
     virtual int getNumOutputs() const = 0;
     virtual TypeOneDRule getRule() const = 0;

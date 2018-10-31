@@ -52,6 +52,8 @@ public:
     GridSequence(const GridSequence &seq);
     ~GridSequence();
 
+    bool isSequence() const{ return true; }
+
     void write(std::ofstream &ofs) const;
     void read(std::ifstream &ifs);
 
