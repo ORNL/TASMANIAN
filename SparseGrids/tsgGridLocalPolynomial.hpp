@@ -65,6 +65,8 @@ public:
     GridLocalPolynomial(const GridLocalPolynomial &pwpoly);
     ~GridLocalPolynomial();
 
+    bool isLocalPolynomial() const{ return true; }
+
     void write(std::ofstream &ofs) const;
     void read(std::ifstream &ifs);
 

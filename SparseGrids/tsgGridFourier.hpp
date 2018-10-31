@@ -53,6 +53,8 @@ public:
     GridFourier(const GridFourier &fourier);
     ~GridFourier();
 
+    bool isFourier() const{ return true; }
+
     void write(std::ofstream &ofs) const;
     void read(std::ifstream &ifs);
 

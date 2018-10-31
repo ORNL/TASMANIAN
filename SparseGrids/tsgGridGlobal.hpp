@@ -54,6 +54,8 @@ public:
     GridGlobal(const GridGlobal &global);
     ~GridGlobal();
 
+    bool isGlobal() const{ return true; }
+
     void write(std::ofstream &ofs) const;
     void read(std::ifstream &ifs);
 
