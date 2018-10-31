@@ -141,6 +141,7 @@ public:
     bool isLocalPolynomial() const;
     bool isWavelet() const;
     bool isFourier() const;
+    inline bool empty() const{ return (base.get() == nullptr); }
 
     void setDomainTransform(const double a[], const double b[]); // set the ranges of the box, a[] and b[] must have size num_dimensions
     bool isSetDomainTransfrom() const;
@@ -221,12 +222,19 @@ public:
     #ifndef DNDEBUG
     const int* getPointsIndexes() const;
     const int* getNeededIndexes() const;
-
-    // Expose the internal pointers, for testing and debugging only, do not use for "production"
-    inline GridGlobal*          getGridGlobalPointer(){ return global; }
-    inline GridSequence*        getGridSequencePointer(){ return sequence; }
-    inline GridLocalPolynomial* getGridLocalPolyPointer(){ return pwpoly; }
     #endif
+
+    // make these protected for a release
+    inline GridGlobal*          getGridGlobal(){          return (GridGlobal*)          base.get(); }
+    inline GridSequence*        getGridSequence(){        return (GridSequence*)        base.get(); }
+    inline GridLocalPolynomial* getGridLocalPolynomial(){ return (GridLocalPolynomial*) base.get(); }
+    inline GridFourier*         getGridFourier(){         return (GridFourier*)         base.get(); }
+    inline GridWavelet*         getGridWavelet(){         return (GridWavelet*)         base.get(); }
+    inline const GridGlobal*          getGridGlobal() const{          return (const GridGlobal*)          base.get(); }
+    inline const GridSequence*        getGridSequence() const{        return (const GridSequence*)        base.get(); }
+    inline const GridLocalPolynomial* getGridLocalPolynomial() const{ return (const GridLocalPolynomial*) base.get(); }
+    inline const GridFourier*         getGridFourier() const{         return (const GridFourier*)         base.get(); }
+    inline const GridWavelet*         getGridWavelet() const{         return (const GridWavelet*)         base.get(); }
 
 protected:
     void clear();
@@ -252,13 +260,7 @@ protected:
     void readBinary(std::ifstream &ifs);
 
 private:
-    BaseCanonicalGrid *base;
-
-    GridGlobal *global;
-    GridSequence *sequence;
-    GridLocalPolynomial *pwpoly;
-    GridWavelet *wavelet;
-    GridFourier *fourier;
+    std::unique_ptr<BaseCanonicalGrid> base;
 
     std::vector<double> domain_transform_a, domain_transform_b;
     std::vector<int> conformal_asin_power;

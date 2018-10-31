@@ -2052,7 +2052,6 @@ void ExternalTester::benchmark(int argc, const char **argv){
     }
 }
 
-template<class T> std::unique_ptr<T> make_unique_ptr(){ return std::unique_ptr<T>(new T()); }
 void ExternalTester::debugTest(){
     cout << "Debug Test" << endl;
     cout << "Put here testing code and call this with ./tasgrid -test debug" << endl;
