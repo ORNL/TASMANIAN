@@ -100,11 +100,11 @@ public:
     void debugTest(); // call this with -test debug
     void debugTestII(); // call this with -test debug
 
+    static const char* findGaussPattersonTable();
+
 protected:
 
     void setRandomX(int n, double x[]) const;
-
-    static const char* findGaussPattersonTable();
 
 private:
     int num_mc;
