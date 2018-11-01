@@ -62,7 +62,6 @@ namespace TasGrid{
 class GridLocalPolynomial : public BaseCanonicalGrid{
 public:
     GridLocalPolynomial();
-    GridLocalPolynomial(const GridLocalPolynomial &pwpoly);
     ~GridLocalPolynomial();
 
     bool isLocalPolynomial() const{ return true; }

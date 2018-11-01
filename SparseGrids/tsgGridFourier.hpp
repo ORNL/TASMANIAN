@@ -50,7 +50,6 @@ namespace TasGrid{
 class GridFourier : public BaseCanonicalGrid {
 public:
     GridFourier();
-    GridFourier(const GridFourier &fourier);
     ~GridFourier();
 
     bool isFourier() const{ return true; }

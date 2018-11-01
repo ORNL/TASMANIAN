@@ -41,6 +41,17 @@ namespace TasGrid{
 OneDimensionalWrapper::OneDimensionalWrapper() : num_levels(0), rule(rule_none){}
 
 void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, TypeOneDRule crule, double alpha, double beta){
+    if (crule == rule_customtabulated){
+        if (max_level + 1 > custom.getNumLevels()){
+            std::string message = "ERROR: custom-tabulated rule needed with levels ";
+            message += std::to_string(num_levels);
+            message += ", but only ";
+            message += std::to_string(custom.getNumLevels());
+            message += " are provided.";
+            throw std::runtime_error(message);
+        }
+    }
+
     num_levels = max_level + 1;
     rule = crule;
 
@@ -68,17 +79,6 @@ void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, T
     if (isNonNested){
         indx.reserve(num_total);
         unique.reserve(num_total);
-
-        if (rule == rule_customtabulated){
-            if (num_levels > custom.getNumLevels()){
-                std::string message = "ERROR: custom-tabulated rule needed with levels ";
-                message += std::to_string(num_levels);
-                message += ", but only ";
-                message += std::to_string(custom.getNumLevels());
-                message += " are provided.";
-                throw std::runtime_error(message);
-            }
-        }
 
         for(int l=0; l<num_levels; l++){
             int n = num_points[l];

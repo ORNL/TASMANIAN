@@ -36,14 +36,8 @@
 
 namespace TasGrid{
 
-GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), max_levels(0)
-{}
-
-GridFourier::GridFourier(const GridFourier &fourier) : num_dimensions(0), num_outputs(0), max_levels(0){
-    copyGrid(&fourier);
-}
-
-GridFourier::~GridFourier(){ reset(); }
+GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), max_levels(0){}
+GridFourier::~GridFourier(){}
 
 void GridFourier::write(std::ofstream &ofs) const{
     using std::endl;

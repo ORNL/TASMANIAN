@@ -32,6 +32,7 @@
 #define __TASGRID_UNIT_TESTS_CPP
 
 #include "tasgridUnitTests.hpp"
+#include "tasgridExternalTests.hpp"
 
 GridUnitTester::GridUnitTester() : verbose(false){}
 GridUnitTester::~GridUnitTester(){}
@@ -95,7 +96,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<36; i++){
+    for(int i=0; i<38; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -239,6 +240,14 @@ void GridUnitTester::runtimeErrorCall(int i){
              std::vector<double> x = {-0.33, 0.33};
              grid.evaluateSparseHierarchicalFunctions(x, pntr, indx, vals);
              }
+             break;
+
+    case 36: grid.makeGlobalGrid(1, 1, 10, type_level, rule_gausspatterson); break; // gauss-patterson rule with very large level
+    case 37: {
+             const char *custom_filename = ExternalTester::findGaussPattersonTable();
+             grid.makeGlobalGrid(1, 1, 10, type_level, rule_customtabulated, 0, 0.0, 0.0, custom_filename); // custom-tabulated rule with very large level
+             }
+             break;
 
     default: break;
     }

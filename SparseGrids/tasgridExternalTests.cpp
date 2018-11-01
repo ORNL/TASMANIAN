@@ -47,6 +47,20 @@ void ExternalTester::setRandomX(int n, double x[]) const{
         x[i] = 2.0 * ((double) rand()) / ((double) RAND_MAX) -1.0;
 }
 
+const char* ExternalTester::findGaussPattersonTable(){
+    std::ifstream ftest("SparseGrids/GaussPattersonRule.table");
+    if (ftest.good()){
+        ftest.close();
+        return "SparseGrids/GaussPattersonRule.table";
+    }else{
+        ftest.close();
+        ftest.open("GaussPattersonRule.table");
+        if (!ftest.good()) throw std::runtime_error("Cannot open custom file GaussPattersonRule.table or SparseGrids/GaussPattersonRule.table, cannot perform tests!");
+        ftest.close();
+        return "GaussPattersonRule.table";
+    }
+}
+
 bool ExternalTester::Test(TestList test) const{
     cout << endl << endl;
     cout << "---------------------------------------------------------------------" << endl;
@@ -177,7 +191,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
     if (rule == rule_fourier){ for(int i=0; i<f->getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
     bool bPass = true;
-    const char *custom_filename = (rule == rule_customtabulated) ? "SparseGrids/GaussPattersonRule.table" : 0;
+    const char *custom_filename = (rule == rule_customtabulated) ? findGaussPattersonTable() : 0;
     for(int i=0; i<num_global_tests; i++){
         if (rule == rule_fourier){
             grid.makeFourierGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, anisotropic);
@@ -436,23 +450,15 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
     }else if (rule == TasGrid::rule_customtabulated){
-        {
-        std::ifstream ftest("SparseGrids/GaussPattersonRule.table");
-        if (!ftest.good()){
-            ftest.close();
-            cout << "WARNING: cannot find GaussPattersonRule.table file and cannot test the custom rule!" << endl;
+        { TasGrid::TypeOneDRule oned = TasGrid::rule_customtabulated;
+        const int depths1[3] = { 20, 36, 38 };
+        const double tols1[3] = { 1.E-10, 1.E-07, 1.E-07 };
+        const int depths2[3] = { 24, 36, 36 };
+        const double tols2[3] = { 1.E-10, 1.E-07, 1.E-07 };
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
+            if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
-            ftest.close();
-            TasGrid::TypeOneDRule oned = TasGrid::rule_customtabulated;
-            const int depths1[3] = { 20, 36, 38 };
-            const double tols1[3] = { 1.E-10, 1.E-07, 1.E-07 };
-            const int depths2[3] = { 24, 36, 36 };
-            const double tols2[3] = { 1.E-10, 1.E-07, 1.E-07 };
-            if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
-                if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "Pass" << endl;
-            }else{
-                cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
-            }
+            cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
     }else if (rule == TasGrid::rule_fejer2){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_fejer2;

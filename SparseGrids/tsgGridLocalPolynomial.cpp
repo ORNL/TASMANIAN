@@ -39,13 +39,8 @@
 namespace TasGrid{
 
 GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0), sparse_affinity(0)  {}
-GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial &pwpoly) : num_dimensions(0), num_outputs(0), order(1), top_level(0), sparse_affinity(0){
-    copyGrid(&pwpoly);
-}
+GridLocalPolynomial::~GridLocalPolynomial(){}
 
-GridLocalPolynomial::~GridLocalPolynomial(){
-    reset();
-}
 void GridLocalPolynomial::reset(bool clear_rule){
     clearAccelerationData();
     num_dimensions = num_outputs = top_level = 0;

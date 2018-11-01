@@ -137,7 +137,7 @@ void CustomTabulated::readBinary(std::ifstream &ifs){
 int CustomTabulated::getNumLevels() const{ return num_levels; }
 int CustomTabulated::getNumPoints(int level) const{
     if (level >= num_levels){
-        std::string message = "ERROR: requested custom rule with level ";
+        std::string message = "ERROR: requested custom rule number of points with level ";
         message += std::to_string(level);
         message += " the tabulated rules end at ";
         message += std::to_string(num_levels-1);
@@ -147,7 +147,7 @@ int CustomTabulated::getNumPoints(int level) const{
 }
 int CustomTabulated::getIExact(int level) const{
     if (level >= num_levels){
-        std::string message = "ERROR: requested custom rule with level ";
+        std::string message = "ERROR: requested custom rule i-exactness with level ";
         message += std::to_string(level);
         message += " the tabulated rules end at ";
         message += std::to_string(num_levels-1);
@@ -157,7 +157,7 @@ int CustomTabulated::getIExact(int level) const{
 }
 int CustomTabulated::getQExact(int level) const{
     if (level >= num_levels){
-        std::string message = "ERROR: requested custom rule with level ";
+        std::string message = "ERROR: requested custom rule q-exactness with level ";
         message += std::to_string(level);
         message += " the tabulated rules end at ";
         message += std::to_string(num_levels-1);
