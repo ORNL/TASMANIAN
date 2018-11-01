@@ -122,7 +122,7 @@ namespace TasBLAS{
     inline void setzero(int N, double *A){ std::fill(A, A + N, 0.0); } // fill A with N zeros
     inline void setzero(int N, int *A){ std::fill(A, A + N, 0); } // fill A with N zeros
 
-};
+}
 
 }
 
