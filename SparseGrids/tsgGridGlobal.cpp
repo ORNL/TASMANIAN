@@ -45,7 +45,7 @@
 namespace TasGrid{
 
 GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0){}
-GridGlobal::~GridGlobal(){ reset(true); }
+GridGlobal::~GridGlobal(){}
 
 void GridGlobal::write(std::ofstream &ofs) const{
     using std::endl;
