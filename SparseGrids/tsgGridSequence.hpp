@@ -49,7 +49,6 @@ namespace TasGrid{
 class GridSequence : public BaseCanonicalGrid{
 public:
     GridSequence();
-    GridSequence(const GridSequence &seq);
     ~GridSequence();
 
     bool isSequence() const{ return true; }

@@ -51,7 +51,6 @@ namespace TasGrid{
 class GridGlobal : public BaseCanonicalGrid{
 public:
     GridGlobal();
-    GridGlobal(const GridGlobal &global);
     ~GridGlobal();
 
     bool isGlobal() const{ return true; }

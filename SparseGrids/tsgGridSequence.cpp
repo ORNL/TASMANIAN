@@ -40,7 +40,6 @@
 namespace TasGrid{
 
 GridSequence::GridSequence() : num_dimensions(0), num_outputs(0){}
-GridSequence::GridSequence(const GridSequence &seq) : num_dimensions(0), num_outputs(0){ copyGrid(&seq); }
 GridSequence::~GridSequence(){ reset(); }
 
 void GridSequence::write(std::ofstream &ofs) const{

@@ -43,7 +43,6 @@ namespace TasGrid{
 class GridWavelet : public BaseCanonicalGrid{
 public:
     GridWavelet();
-    GridWavelet(const GridWavelet &wav);
     ~GridWavelet();
 
     bool isWavelet() const{ return true; }

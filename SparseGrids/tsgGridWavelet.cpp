@@ -40,7 +40,6 @@
 namespace TasGrid{
 
 GridWavelet::GridWavelet() : rule1D(1, 10), num_dimensions(0), num_outputs(0), order(1){}
-GridWavelet::GridWavelet(const GridWavelet &wav) : rule1D(1, 10), num_dimensions(0), num_outputs(0), order(1){ copyGrid(&wav); }
 GridWavelet::~GridWavelet(){ reset(); }
 
 void GridWavelet::reset(){
