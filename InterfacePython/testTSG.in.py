@@ -156,7 +156,25 @@ class TestTasmanian(unittest.TestCase):
         else:
             print("            none")
 
-        #grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
+        # covers the printStats() in python and C++
+        grid.printStats() # empty grid
+        grid.makeGlobalGrid(2, 0, 1, "level", "gauss-gegenbauer", [], 3.0)
+        grid.printStats()
+        grid.makeGlobalGrid(2, 0, 1, "level", "gauss-jacobi", [], 3.0, 3.0)
+        grid.printStats()
+        grid.makeGlobalGrid(2, 1, 1, "level", "custom-tabulated", [], 0.0, 0.0, "@CMAKE_CURRENT_BINARY_DIR@/GaussPattersonRule.table")
+        grid.printStats()
+        grid.makeSequenceGrid(2, 1, 3, "level", "rleja")
+        self.loadExpN2(grid)
+        grid.printStats()
+        grid.makeLocalPolynomialGrid(1, 1, 3)
+        grid.setDomainTransform(np.array([[2.0, 3.0]]))
+        grid.printStats()
+        grid.makeWaveletGrid(2, 1, 1)
+        grid.printStats()
+        grid.makeFourierGrid(3, 1, 1, "level")
+        grid.enableAcceleration("gpu-cuda")
+        grid.printStats()
 
         # test I/O for Global Grids
         # iDimension, iOutputs, iDepth, sType, sRule, fAlpha, fBeta, useTransform, loadFunciton, limitLevels
