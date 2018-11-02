@@ -4,6 +4,7 @@ set(DOXYGEN_GENERATE_HTML      "YES")
 set(DOXYGEN_DISABLE_INDEX       "NO")
 set(DOXYGEN_GENERATE_TREEVIEW  "YES") # left-hand index
 set(DOXYGEN_SORT_GROUP_NAMES    "NO") # use the order in the source files (logical order)
+set(DOXYGEN_SORT_MEMBER_DOCS    "NO") # use the order in the source files (logical order)
 set(DOXYGEN_INTERNAL_DOCS      "YES") # silence eventually, especially for a release
 
 set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP") # indicate sections to skip from documentation
@@ -18,6 +19,7 @@ set(DOXYGEN_PROJECT_NUMBER "") # if project number if given, the rendered font i
 doxygen_add_docs(Tasmanian_docs
                  ${CMAKE_CURRENT_SOURCE_DIR}/DoxygenMainPage.hpp
                  ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgIndexManipulator.hpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgIndexSets.hpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                  COMMENT "Tasmanian Doxygen documentation")
 
