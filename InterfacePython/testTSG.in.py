@@ -253,6 +253,7 @@ class TestTasmanian(unittest.TestCase):
         # test I/O for Local Polynomial Grids
         # iDimension, iOutputs, iDepth, iorder, sRule, useTransform, loadFunciton, limitLevels
         lGrids = [[3, 2, 2, 0, "localp", False, False, False],
+                  [3, 0, 2, 0, "localp-boundary", False, False, False],
                   [2, 1, 4, 1, "semi-localp", False, False, False],
                   [3, 1, 3, 2, "localp", True, False, False],
                   [3, 1, 2, 3, "localp-zero", False, True, False],
@@ -289,6 +290,7 @@ class TestTasmanian(unittest.TestCase):
         # test I/O for Local Wavelet Grids
         # iDimension, iOutputs, iDepth, iOrder, useTransform, loadFunciton
         lGrids = [[3, 2, 2, 1, False, False, False],
+                  [3, 0, 2, 1, False, False, False],
                   [2, 1, 4, 1, False, False, False],
                   [3, 1, 1, 3, True, False, False],
                   [3, 1, 1, 3, True, False, True],
