@@ -8,6 +8,7 @@ import numpy as np
 from random import uniform
 from ctypes import cdll
 
+sGaussPattersonTableFile = "GaussPattersonRule.table"
 grid = TasmanianSG.TasmanianSparseGrid()
 
 # python-coverage run testTSG.py
@@ -165,7 +166,7 @@ class TestTasmanian(unittest.TestCase):
         grid.printStats()
         grid.makeGlobalGrid(2, 0, 1, "level", "gauss-jacobi", [], 3.0, 3.0)
         grid.printStats()
-        grid.makeGlobalGrid(2, 1, 1, "level", "custom-tabulated", [], 0.0, 0.0, "GaussPattersonRule.table")
+        grid.makeGlobalGrid(2, 1, 1, "level", "custom-tabulated", [], 0.0, 0.0, sGaussPattersonTableFile)
         grid.printStats()
         grid.makeSequenceGrid(2, 1, 3, "level", "rleja")
         self.loadExpN2(grid)
@@ -225,7 +226,7 @@ class TestTasmanian(unittest.TestCase):
         print("GOOD: error was registered")
 
         # custom rule test
-        grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "GaussPattersonRule.table")
+        grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, sGaussPattersonTableFile)
         grid1 = TasmanianSG.TasmanianSparseGrid()
         grid1.makeGlobalGrid(2, 0, 4, 'level', 'gauss-patterson')
         self.compareGrids(grid, grid1, bTestRuleNames = False)
@@ -418,7 +419,7 @@ class TestTasmanian(unittest.TestCase):
         for sType in TasmanianSG.lsTsgGlobalTypes:
             for sRule in TasmanianSG.lsTsgGlobalRules:
                 if ("custom-tabulated" in sRule):
-                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "/home/miz/RAM/TasBuild/Python/GaussPattersonRule.table")
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = sGaussPattersonTableFile)
                 else:
                     gridA.makeGlobalGrid(2, 0, 2, sType, sRule)
                 gridA.write("testSave", bUseBinaryFormat = False)
