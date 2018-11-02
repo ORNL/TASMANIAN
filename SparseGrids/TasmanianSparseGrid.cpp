@@ -2014,7 +2014,7 @@ void tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes
     *num_indexes = num_ind;
     if (indx != 0){
         *indexes = (int*) malloc(((*num_indexes) * num_dims) * sizeof(int));
-        for(int i=0; i<((*num_indexes) * num_dims); i++) *indexes[i] = indx[i];
+        for(int i=0; i<((*num_indexes) * num_dims); i++) (*indexes)[i] = indx[i];
         delete[] indx;
     }
 }
