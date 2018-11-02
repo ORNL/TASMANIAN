@@ -22,6 +22,9 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(gridA.getNumLoaded(), gridB.getNumLoaded(), "error in getNumLoaded()")
         self.assertEqual(gridA.getNumNeeded(), gridB.getNumNeeded(), "error in getNumNeeded()")
 
+        if (gridA.getNumPoints() == 0): # emptry grid, nothing else to check
+            return
+
         mX1 = np.array([1.0/3.0, 1.0/6.0])
         mX2 = np.array([-1.0/3.0, 1.0/6.0])
         mX3 = np.array([-1.0/5.0, -1.0/7.0])
@@ -389,7 +392,8 @@ class TestTasmanian(unittest.TestCase):
         lGrids = ['gridA.makeGlobalGrid(3, 2, 4, "level", "clenshaw-curtis"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([3,4,5]))',
                   'gridA.makeGlobalGrid(3, 2, 4, "level", "gauss-legendre"); gridA.setConformalTransformASIN(np.array([3,5,1]))',
                   'gridA.makeSequenceGrid(2, 2, 5, "level", "leja"); gridA.setConformalTransformASIN(np.array([0,4]))',
-                  'gridA.makeLocalPolynomialGrid(3, 1, 4, 2, "localp"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([5,3,0]))',]
+                  'gridA.makeLocalPolynomialGrid(3, 1, 4, 2, "localp"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([5,3,0]))',
+                  'gridA.getNumPoints()']
 
         for sGrid in lGrids:
             gridA = TasmanianSG.TasmanianSparseGrid()
