@@ -197,9 +197,9 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
         # test an error message from wrong read
-        #print("Attempting a bogus read to see if error would be properly registered")
-        #self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
-        #print("GOOD: error was registered")
+        print("Attempting a bogus read to see if error would be properly registered")
+        self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
+        print("GOOD: error was registered")
 
         # custom rule test
         grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "@CMAKE_CURRENT_BINARY_DIR@/GaussPattersonRule.table")
