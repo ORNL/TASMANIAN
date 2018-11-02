@@ -1048,6 +1048,27 @@ class TestTasmanian(unittest.TestCase):
         self.assertLess(aC[2], 0.0, 'wrong anisotropic weights estimated, beta 1')
         self.assertLess(aC[3], 0.0, 'wrong anisotropic weights estimated, beta 2')
 
+        sRefinementIOGrids = ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis')",
+                              "grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja')"]
+        for sTest in sRefinementIOGrids:
+            exec(sTest)
+            self.loadExpN2(grid)
+            grid.setAnisotropicRefinement('iptotal', 20, 0)
+            self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')
+            gridB = TasmanianSG.TasmanianSparseGrid()
+            gridB.copyGrid(grid)
+            self.compareGrids(grid, gridB)
+
+            grid.write("refTestFlename.grid", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0, 1)
+            gridB.read("refTestFlename.grid")
+            self.compareGrids(grid, gridB)
+
+            grid.write("refTestFlename.grid")
+            gridB.makeLocalPolynomialGrid(1, 1, 0, 1)
+            gridB.read("refTestFlename.grid")
+            self.compareGrids(grid, gridB)
+
         aA = np.array([[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2], [3, 0], [4, 0]])
         grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis')
         aP = grid.getGlobalPolynomialSpace(True)
