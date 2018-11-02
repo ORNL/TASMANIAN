@@ -48,16 +48,16 @@ void ExternalTester::setRandomX(int n, double x[]) const{
 }
 
 const char* ExternalTester::findGaussPattersonTable(){
-    std::ifstream ftest("SparseGrids/GaussPattersonRule.table");
+    std::ifstream ftest("GaussPattersonRule.table");
     if (ftest.good()){
         ftest.close();
-        return "SparseGrids/GaussPattersonRule.table";
+        return "GaussPattersonRule.table";
     }else{
         ftest.close();
-        ftest.open("GaussPattersonRule.table");
+        ftest.open("SparseGrids/GaussPattersonRule.table");
         if (!ftest.good()) throw std::runtime_error("Cannot open custom file GaussPattersonRule.table or SparseGrids/GaussPattersonRule.table, cannot perform tests!");
         ftest.close();
-        return "GaussPattersonRule.table";
+        return "SparseGrids/GaussPattersonRule.table";
     }
 }
 
