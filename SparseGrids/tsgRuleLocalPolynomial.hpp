@@ -37,8 +37,8 @@ namespace TasGrid{
 
 class BaseRuleLocalPolynomial{
 public:
-    BaseRuleLocalPolynomial();
-    virtual ~BaseRuleLocalPolynomial();
+    BaseRuleLocalPolynomial() : max_order(0){}
+    virtual ~BaseRuleLocalPolynomial(){}
 
     virtual int getMaxOrder() const = 0;
     virtual void setMaxOrder(int order) = 0;
@@ -65,9 +65,21 @@ public:
     virtual double getArea(int point, int n, const double w[], const double x[]) const = 0;
     // integrate the function associated with the point, constant to cubic are known analytically, higher order need a 1-D quadrature rule
 
-    static int intlog2(int i);
-    static int int2log2(int i);
-    static int int3log3(int i);
+    static int intlog2(int i){ // this is effectively: floor(log_2(i))
+        int result = 0;
+        while (i >>= 1){ result++; }
+        return result;
+    }
+    static int int2log2(int i){ // this is effectively: 2^(floor(log_2(i))), when i == 0, this returns 1
+        int result = 1;
+        while (i >>= 1){ result <<= 1; }
+        return result;
+    }
+    static int int3log3(int i){ // this is effectively: 3^(ceil(log_3(i+1)))
+        int result = 1;
+        while(i >= 1){ i /= 3; result *= 3; }
+        return result;
+    }
 
 protected:
     int max_order;
