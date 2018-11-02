@@ -1275,7 +1275,6 @@ const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
         return nullptr;
     }
 }
-#ifndef DNDEBUG
 const int* TasmanianSparseGrid::getPointsIndexes() const{
     if (isLocalPolynomial()){
         return getGridLocalPolynomial()->getPointIndexes();
@@ -1296,7 +1295,6 @@ const int* TasmanianSparseGrid::getNeededIndexes() const{
         throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is not Local Polynomial");
     }
 }
-#endif
 
 void TasmanianSparseGrid::printStats(std::ostream &os) const{
     using std::setw;
@@ -1754,9 +1752,9 @@ int tsgRead(void *grid, const char* filename){
         ((TasmanianSparseGrid*) grid)->read(filename);
         return 1;
     }catch(std::runtime_error e){
-        #ifndef DNDEBUG
+        #ifndef NDEBUG
         cerr << e.what() << endl;
-        #endif // DNDEBUG
+        #endif // NDEBUG
         return 0;
     }
 }
