@@ -15,7 +15,7 @@ LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp ts
            TasmanianSparseGrid.hpp
 
 LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlobal.o tsgSequenceOptimizer.o tsgOneDimensionalWrapper.o \
-         tsgGridCore.o tsgLinearSolvers.o tsgGridSequence.o tsgRuleLocalPolynomial.o tsgHardCodedTabulatedRules.o \
+         tsgGridCore.o tsgLinearSolvers.o tsgGridSequence.o tsgHardCodedTabulatedRules.o \
          tsgGridLocalPolynomial.o tsgRuleWavelet.o tsgGridWavelet.o tsgGridFourier.o \
          tsgAcceleratedDataStructures.o $(TASMANIAN_CUDA_KERNELS) \
          TasmanianSparseGrid.o

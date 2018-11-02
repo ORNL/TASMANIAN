@@ -219,7 +219,7 @@ int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule){
         case rule_fourier:            lcc = 1; for(int k=0; k<level; k++) { lcc *= 3; } return lcc;
 
         default:
-            return level;
+            return level; // should not be called, but compiler complains for the lack of return/default
     }
 }
 int OneDimensionalMeta::getIExact(int level, TypeOneDRule rule){
@@ -266,7 +266,7 @@ int OneDimensionalMeta::getIExact(int level, TypeOneDRule rule){
         case rule_rlejadouble4:       return getNumPoints(level,rule_rlejadouble4)-1;
         case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
         default:
-            return level;
+            return level; // should not be called, but compiler complains for the lack of return/default
     }
 }
 int OneDimensionalMeta::getQExact(int level, TypeOneDRule rule){
@@ -314,7 +314,7 @@ int OneDimensionalMeta::getQExact(int level, TypeOneDRule rule){
         case rule_fejer2:             return ((1 << (level+1)) - 1);
         case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
         default:
-            return level;
+            return level; // should not be called, but compiler complains for the lack of return/default
     }
 }
 
@@ -339,10 +339,10 @@ bool OneDimensionalMeta::isSingleNodeGrowth(TypeOneDRule rule){
 bool OneDimensionalMeta::isLocalPolynomial(TypeOneDRule rule){
     return ((rule == rule_localp) || (rule == rule_localp0) || (rule == rule_semilocalp) || (rule == rule_localpb));
 }
-bool OneDimensionalMeta::isWavelet(TypeOneDRule rule){
+bool OneDimensionalMeta::isWavelet(TypeOneDRule rule){ // used by the tasgrid wrapper
     return (rule == rule_wavelet);
 }
-bool OneDimensionalMeta::isFourier(TypeOneDRule rule){
+bool OneDimensionalMeta::isFourier(TypeOneDRule rule){ // used by the tasgrid wrapper
     return (rule == rule_fourier);
 }
 

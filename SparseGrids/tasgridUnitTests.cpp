@@ -77,7 +77,7 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<48; i++){
+    for(int i=0; i<49; i++){
         try{
             invalidArgumentCall(i);
             cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
@@ -96,7 +96,7 @@ bool GridUnitTester::testAllException(){
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<38; i++){
+    for(int i=0; i<41; i++){
         try{
             runtimeErrorCall(i);
             cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
@@ -119,6 +119,7 @@ bool GridUnitTester::testAllException(){
 
 void GridUnitTester::invalidArgumentCall(int i){
     TasmanianSparseGrid grid;
+    CustomTabulated custom;
     std::vector<int> w;
     switch(i){
     case  0: grid.makeGlobalGrid(0, 1, 3, type_level, rule_gausslegendre); break; // dimension is 0
@@ -176,6 +177,8 @@ void GridUnitTester::invalidArgumentCall(int i){
     case 46: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setDomainTransform(std::vector<double>() = {1.0}, std::vector<double>() = {3.0, 4.0}); break; // a is too small
     case 47: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setDomainTransform(std::vector<double>() = {1.0, 2.0}, std::vector<double>() = {4.0}); break; // b is too small
 
+    case 48: custom.read("phantom.file"); break;
+
     default: break;
     }
 }
@@ -186,6 +189,7 @@ void GridUnitTester::runtimeErrorCall(int i){
     std::vector<int> transformAsin = {4, 4};
     double a[2], b[2];
     TasmanianSparseGrid grid;
+    CustomTabulated custom;
     switch(i){
     case  0: grid.updateGlobalGrid(2, type_level); break; // grid not initialized
     case  1: grid.makeSequenceGrid(2, 1, 3, type_level, rule_rleja); grid.updateGlobalGrid(2, type_level); break; // grid not global
@@ -248,6 +252,10 @@ void GridUnitTester::runtimeErrorCall(int i){
              grid.makeGlobalGrid(1, 1, 10, type_level, rule_customtabulated, 0, 0.0, 0.0, custom_filename); // custom-tabulated rule with very large level
              }
              break;
+
+    case 38: custom.read(ExternalTester::findGaussPattersonTable()); custom.getNumPoints(11); break;
+    case 39: custom.read(ExternalTester::findGaussPattersonTable()); custom.getIExact(11); break;
+    case 40: custom.read(ExternalTester::findGaussPattersonTable()); custom.getQExact(11); break;
 
     default: break;
     }

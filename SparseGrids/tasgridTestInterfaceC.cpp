@@ -51,7 +51,7 @@ int testInterfaceC(){
     if (tsgGetLoadedPoints(grid) != 0){ printf("ERROR: empty grid did not return null pointer on tsgGetLoadedPoints()\n"); return 0; }
     double tpoints[10] = {0.0, 0.0, 0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 0.0};
     double *points = tsgGetPoints(grid);
-    int i;
+    int i, j;
     for(i=0; i<10; i++) if (fabs(points[i] - tpoints[i]) > 1.E-15){ printf("ERROR: mismatch in points i = %d, expected = %1.16e, actual = %1.16e\n",i,tpoints[i],points[i]); return 0; }
     free(points);
 
@@ -78,7 +78,7 @@ int testInterfaceC(){
     for(i=0; i<5; i++) if (fabs(weights[i] - tiweights[i]) > 1.E-15){ printf("ERROR: mismatch iweights i = %d, expected = %1.16e, actual = %1.16e\n",i,tiweights[i],weights[i]); return 0; }
     free(weights);
 
-    int j, n = tsgGetNumPoints(grid);
+    int n = tsgGetNumPoints(grid);
     points = tsgGetPoints(grid);
     weights = tsgBatchGetInterpolationWeights(grid, points, n);
     for(i=0; i<n; i++){
@@ -102,6 +102,63 @@ int testInterfaceC(){
     char name[256];
     int num_char;
     tsgGetGPUName(0, 256, name, &num_char); // checks for memory leaks
+
+    // check tsgEvaluateSparseHierarchicalFunctions()
+    grid = tsgConstructTasmanianSparseGrid();
+    tsgMakeLocalPolynomialGrid(grid, 4, 1, 5, 1, "localp", 0);
+    double *pnts = tsgGetPoints(grid);
+    int nump = tsgGetNumPoints(grid);
+    double *model = (double*) malloc(nump * sizeof(double));
+    for(i=0; i<nump; i++)
+        model[i] = exp(pnts[4*i] + pnts[4*i+1] + pnts[4*i+2] + pnts[4*i+3]);
+    tsgLoadNeededPoints(grid, model);
+
+    int numx = 10;
+    double *x2 = (double*) malloc(4 * numx * sizeof(double));
+    for(i=0; i<4 * numx; i++)
+        x2[i] = 1.0 / (1.0 + (double) i);
+    double *internal_result = (double*) malloc(numx * sizeof(double));
+    tsgEvaluateBatch(grid, x2, numx, internal_result);
+
+    double *external_result = (double*) malloc(numx * sizeof(double));
+    int *pntr, *indx;
+    double *vals;
+    const double *coeff = tsgGetHierarchicalCoefficients(grid);
+    tsgEvaluateSparseHierarchicalFunctions(grid, x2, numx, &pntr, &indx, &vals);
+
+    for(i=0; i<numx; i++){
+        double sum = 0.0;
+        for(j=pntr[i]; j<pntr[i+1]; j++)
+            sum += vals[j] * coeff[indx[j]];
+        external_result[i] = sum;
+    }
+
+    double err = 0.0;
+    for(i=0; i<numx; i++) if (fabs(external_result[i] - internal_result[i]) > err) err = fabs(external_result[i] - internal_result[i]);
+    if (err > 1.E-13){ printf("ERROR: mismatch in external and internal sparse hierarchical matrix.\n"); return 0; }
+
+    free(pntr);
+    free(indx);
+    free(vals);
+    free(external_result);
+    free(internal_result);
+    free(model);
+    free(pnts);
+    free(x2);
+
+    tsgDestructTasmanianSparseGrid(grid);
+
+    // test global polynomial space
+    grid = tsgConstructTasmanianSparseGrid();
+    tsgMakeGlobalGrid(grid, 2, 1, 1, "level", "clenshaw-curtis", 0, 0.0, 0.0, 0, 0);
+    int *pspace;
+    int tspace[10] = {0, 0, 0, 1, 0, 2, 1, 0, 2, 0};
+    tsgGetGlobalPolynomialSpace(grid, 1, &n, &pspace);
+    if (n != 5){ printf("ERROR: mismatch in size of the interpolated polynomial space.\n"); return 0; }
+    for(i=0; i<10; i++) if (fabs(pspace[i] - tspace[i]) > 1.E-15){ printf("ERROR: mismatch in polynomial space i = %d, expected = %d, actual = %d\n",i,tspace[i],pspace[i]); return 0; }
+
+    free(pspace);
+    tsgDestructTasmanianSparseGrid(grid);
 
     return 1;
 }

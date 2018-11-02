@@ -219,10 +219,8 @@ public:
 
     // WARNING: the functions below are mostly for debugging and research purposes
     // do not modify the returned pointers, unless you really know what you are doing
-    #ifndef DNDEBUG
     const int* getPointsIndexes() const;
     const int* getNeededIndexes() const;
-    #endif
 
     // make these protected for a release
     inline GridGlobal*          getGridGlobal(){          return (GridGlobal*)          base.get(); }

@@ -22,6 +22,9 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(gridA.getNumLoaded(), gridB.getNumLoaded(), "error in getNumLoaded()")
         self.assertEqual(gridA.getNumNeeded(), gridB.getNumNeeded(), "error in getNumNeeded()")
 
+        if (gridA.getNumPoints() == 0): # emptry grid, nothing else to check
+            return
+
         mX1 = np.array([1.0/3.0, 1.0/6.0])
         mX2 = np.array([-1.0/3.0, 1.0/6.0])
         mX3 = np.array([-1.0/5.0, -1.0/7.0])
@@ -156,7 +159,25 @@ class TestTasmanian(unittest.TestCase):
         else:
             print("            none")
 
-        #grid.printStats() # covers the printStats(), but silence for a release as it prints an empty grid
+        # covers the printStats() in python and C++
+        grid.printStats() # empty grid
+        grid.makeGlobalGrid(2, 0, 1, "level", "gauss-gegenbauer", [], 3.0)
+        grid.printStats()
+        grid.makeGlobalGrid(2, 0, 1, "level", "gauss-jacobi", [], 3.0, 3.0)
+        grid.printStats()
+        grid.makeGlobalGrid(2, 1, 1, "level", "custom-tabulated", [], 0.0, 0.0, "GaussPattersonRule.table")
+        grid.printStats()
+        grid.makeSequenceGrid(2, 1, 3, "level", "rleja")
+        self.loadExpN2(grid)
+        grid.printStats()
+        grid.makeLocalPolynomialGrid(1, 1, 3)
+        grid.setDomainTransform(np.array([[2.0, 3.0]]))
+        grid.printStats()
+        grid.makeWaveletGrid(2, 1, 1)
+        grid.printStats()
+        grid.makeFourierGrid(3, 1, 1, "level")
+        grid.enableAcceleration("gpu-cuda")
+        grid.printStats()
 
         # test I/O for Global Grids
         # iDimension, iOutputs, iDepth, sType, sRule, fAlpha, fBeta, useTransform, loadFunciton, limitLevels
@@ -189,17 +210,19 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
         # test an error message from wrong read
-        #print("Attempting a bogus read to see if error would be properly registered")
-        #self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
-        #print("GOOD: error was registered")
+        print("Attempting a bogus read to see if error would be properly registered")
+        self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
+        print("GOOD: error was registered")
 
         # custom rule test
         grid.makeGlobalGrid(2, 0, 4, 'level', 'custom-tabulated', [], 0.0, 0.0, "GaussPattersonRule.table")
@@ -243,16 +266,19 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
         # test I/O for Local Polynomial Grids
         # iDimension, iOutputs, iDepth, iorder, sRule, useTransform, loadFunciton, limitLevels
         lGrids = [[3, 2, 2, 0, "localp", False, False, False],
+                  [3, 0, 2, 0, "localp-boundary", False, False, False],
                   [2, 1, 4, 1, "semi-localp", False, False, False],
                   [3, 1, 3, 2, "localp", True, False, False],
                   [3, 1, 2, 3, "localp-zero", False, True, False],
@@ -279,16 +305,19 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
         # test I/O for Local Wavelet Grids
         # iDimension, iOutputs, iDepth, iOrder, useTransform, loadFunciton
         lGrids = [[3, 2, 2, 1, False, False, False],
+                  [3, 0, 2, 1, False, False, False],
                   [2, 1, 4, 1, False, False, False],
                   [3, 1, 1, 3, True, False, False],
                   [3, 1, 1, 3, True, False, True],
@@ -314,10 +343,12 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
@@ -349,17 +380,20 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
         lGrids = ['gridA.makeGlobalGrid(3, 2, 4, "level", "clenshaw-curtis"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([3,4,5]))',
                   'gridA.makeGlobalGrid(3, 2, 4, "level", "gauss-legendre"); gridA.setConformalTransformASIN(np.array([3,5,1]))',
                   'gridA.makeSequenceGrid(2, 2, 5, "level", "leja"); gridA.setConformalTransformASIN(np.array([0,4]))',
-                  'gridA.makeLocalPolynomialGrid(3, 1, 4, 2, "localp"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([5,3,0]))',]
+                  'gridA.makeLocalPolynomialGrid(3, 1, 4, 2, "localp"); gridA.setDomainTransform(aTransform); gridA.setConformalTransformASIN(np.array([5,3,0]))',
+                  'gridA.getNumPoints()']
 
         for sGrid in lGrids:
             gridA = TasmanianSG.TasmanianSparseGrid()
@@ -371,10 +405,12 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeSequenceGrid(1, 1, 0, "level", "leja");
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
@@ -382,7 +418,7 @@ class TestTasmanian(unittest.TestCase):
         for sType in TasmanianSG.lsTsgGlobalTypes:
             for sRule in TasmanianSG.lsTsgGlobalRules:
                 if ("custom-tabulated" in sRule):
-                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "GaussPattersonRule.table")
+                    gridA.makeGlobalGrid(2, 0, 2, sType, sRule, sCustomFilename = "/home/miz/RAM/TasBuild/Python/GaussPattersonRule.table")
                 else:
                     gridA.makeGlobalGrid(2, 0, 2, sType, sRule)
                 gridA.write("testSave", bUseBinaryFormat = False)
@@ -1047,6 +1083,27 @@ class TestTasmanian(unittest.TestCase):
         self.assertLess(np.abs(float(aC[0]) / float(aC[1]) - 2.0), 0.2, 'wrong anisotropic weights estimated, alpha curved')
         self.assertLess(aC[2], 0.0, 'wrong anisotropic weights estimated, beta 1')
         self.assertLess(aC[3], 0.0, 'wrong anisotropic weights estimated, beta 2')
+
+        sRefinementIOGrids = ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis')",
+                              "grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja')"]
+        for sTest in sRefinementIOGrids:
+            exec(sTest)
+            self.loadExpN2(grid)
+            grid.setAnisotropicRefinement('iptotal', 20, 0)
+            self.assertTrue(grid.getNumNeeded() > 0, 'did not refine')
+            gridB = TasmanianSG.TasmanianSparseGrid()
+            gridB.copyGrid(grid)
+            self.compareGrids(grid, gridB)
+
+            grid.write("refTestFlename.grid", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0, 1)
+            gridB.read("refTestFlename.grid")
+            self.compareGrids(grid, gridB)
+
+            grid.write("refTestFlename.grid")
+            gridB.makeLocalPolynomialGrid(1, 1, 0, 1)
+            gridB.read("refTestFlename.grid")
+            self.compareGrids(grid, gridB)
 
         aA = np.array([[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2], [3, 0], [4, 0]])
         grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis')

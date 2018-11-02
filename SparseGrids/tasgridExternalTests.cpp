@@ -48,16 +48,16 @@ void ExternalTester::setRandomX(int n, double x[]) const{
 }
 
 const char* ExternalTester::findGaussPattersonTable(){
-    std::ifstream ftest("SparseGrids/GaussPattersonRule.table");
+    std::ifstream ftest("GaussPattersonRule.table");
     if (ftest.good()){
         ftest.close();
-        return "SparseGrids/GaussPattersonRule.table";
+        return "GaussPattersonRule.table";
     }else{
         ftest.close();
-        ftest.open("GaussPattersonRule.table");
+        ftest.open("SparseGrids/GaussPattersonRule.table");
         if (!ftest.good()) throw std::runtime_error("Cannot open custom file GaussPattersonRule.table or SparseGrids/GaussPattersonRule.table, cannot perform tests!");
         ftest.close();
-        return "GaussPattersonRule.table";
+        return "SparseGrids/GaussPattersonRule.table";
     }
 }
 
@@ -188,7 +188,8 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     int num_global_tests = (interpolation) ? 3 : 1;
     TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
     TasGrid::TypeDepth type = (rule == rule_fourier ? TasGrid::type_level : TasGrid::type_iptotal);
-    double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
+    std::vector<double> x(f->getNumInputs());
+    setRandomX(f->getNumInputs(), x.data());
     if (rule == rule_fourier){ for(int i=0; i<f->getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
     bool bPass = true;
     const char *custom_filename = (rule == rule_customtabulated) ? findGaussPattersonTable() : 0;
@@ -198,7 +199,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         }else{
             grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
         }
-        R = getError(f, &grid, ((interpolation) ? tests[i] : type_integration), x);
+        R = getError(f, &grid, ((interpolation) ? tests[i] : type_integration), x.data());
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
@@ -222,7 +223,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         for(int i=0; i<num_global_tests; i++){
             grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             grid_copy = new TasGrid::TasmanianSparseGrid(grid);
-            R = getError(f, grid_copy, ((interpolation) ? tests[i] : type_integration), x);
+            R = getError(f, grid_copy, ((interpolation) ? tests[i] : type_integration), x.data());
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
@@ -248,7 +249,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         for(int i=0; i<num_global_tests; i++){
             if (interpolation){
                 grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic);
-                R = getError(f, &grid, tests[i], x);
+                R = getError(f, &grid, tests[i], x.data());
             }else{
                 grid.makeSequenceGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic);
                 R = getError(f, &grid, type_integration);
@@ -272,7 +273,6 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             }
         }
     }
-    delete[] x;
     return bPass;
 }
 
@@ -560,8 +560,10 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         grid.makeGlobalGrid(1, 1, 10, type_level, oned);
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
-        double *w = grid.getQuadratureWeights();
-        double *p = grid.getNeededPoints();
+        std::vector<double> w;
+        grid.getQuadratureWeights(w);
+        std::vector<double> p;
+        grid.getNeededPoints(p);
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
         if (fabs(sum - 9.0 * M_PI / 8.0) > TSG_NUM_TOL){
@@ -575,8 +577,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: disrepancy in transformed gauss-chebyshev-2 rule is: " << fabs(sum - 4.5) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        delete[] w;
-        delete[] p;
     }else if ((oned == TasGrid::rule_gaussgegenbauer) || (oned == TasGrid::rule_gaussgegenbauerodd)){
         // Gauss-Gegenbauer translated to [4, 7], area = 8.1, integral of f(x) = x^3 is 389367.0 / 280.0
         TasGrid::TasmanianSparseGrid grid;
@@ -1678,14 +1678,11 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             grid.setGPUID(gpuID);
             grid.evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
 
-            double *y = new double[grid.getNumPoints() * nump];
-            TasGrid::TasCUDA::cudaRecv<double>(grid.getNumPoints() * nump, gpuy, y);
+            std::vector<double> y(grid.getNumPoints() * nump);
+            TasGrid::TasCUDA::cudaRecv<double>(grid.getNumPoints() * nump, gpuy, y.data());
 
-            for(int i=0; i<grid.getNumPoints() * nump; i++){
-                if (fabs(y[i] - y_true_dense[i]) > 1.E-11){
-                    dense_pass = false;
-                }
-            }
+            auto iy = y.begin();
+            for(auto y_true : y_true_dense) if (fabs(*iy++ - y_true) > 1.E-11) dense_pass = false;
 
             if (!dense_pass){
                 cout << "Failed evaluateHierarchicalFunctionsGPU() when using grid: " << endl;
@@ -1694,7 +1691,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             pass = pass && dense_pass;
 
             TasGrid::TasCUDA::cudaDel<double>(gpuy);
-            delete[] y;
 
             // Sparse version:
             bool sparse_pass = true;
@@ -1708,45 +1704,32 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             std::vector<int> cindx; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx);
             std::vector<double> cvals; TasGrid::TasCUDA::cudaRecv<double>(num_nz, gpu_vals, cvals);
 
-            int num_points = grid.getNumPoints();
-            std::vector<double> cpu_dense(nump * num_points, 0.0);
-            std::vector<double> gpu_dense(nump * num_points, 0.0);
-            for(int i=0; i<nump; i++){
-                for(int j=pntr[i]; j < pntr[i+1]; j++){
-                    cpu_dense[i * num_points + indx[j]] = vals[j];
-                }
-                for(int j=cpntr[i]; j < cpntr[i+1]; j++){
-                    gpu_dense[i * num_points + cindx[j]] = cvals[j];
+            for(int i=1; i<=nump; i++){
+                int cj = cpntr[i-1], gj = pntr[i-1];
+                while((cj < cpntr[i]) || (gj < pntr[i])){
+                    double cv, gv;
+                    if (cj >= cpntr[i]){
+                        cv = 0.0;
+                        gv = vals[gj++];
+                    }else if (gj >= pntr[i]){
+                        cv = cvals[cj++];
+                        gv = 0.0;
+                    }else if (cindx[cj] == indx[gj]){
+                        cv = cvals[cj++];
+                        gv = vals[gj++];
+                    }else if (cindx[cj] < indx[gj]){
+                        cv = cvals[cj++];
+                        gv = 0.0;
+                    }else{
+                        cv = 0.0;
+                        gv = vals[gj++];
+                    }
+                    if (fabs(cv - gv) > 1.E-12){
+                        cout << "ERROR: difference in sparse matrix: " << fabs(cv - gv) << endl;
+                        sparse_pass = false;
+                    }
                 }
             }
-            auto igpu = gpu_dense.begin();
-            for(auto c : cpu_dense){
-                double diff = fabs(c - *igpu++);
-                if (diff > 1.E-12){
-                    cout << "ERROR: difference in sparse matrix: " << diff << endl;
-                    sparse_pass = false;
-                }
-            }
-            // simple test, works on Linux but Windows CUDA seems to round differently (keep in case of performance regression)
-            //if (pntr[nump] != num_nz){
-            //    cout << "ERROR: mismatch in the numnz from cuda: " << num_nz << " and cpu " << pntr[nump] << endl;
-            //    grid.printStats();
-            //    sparse_pass = false;
-            //}
-            //if (sparse_pass){
-            //    for(int i=0; i<nump; i++){
-            //        for(int j=pntr[i]; j<pntr[i+1]; j++){
-            //            if (sparse_pass && (indx[j] != cindx[j])){
-            //                cout << "ERROR: mismatch in index i = " << i << "   j = " << j << "  indx[j] = " << indx[j] << "  cindx[j] = " << cindx[j] << endl;
-            //                sparse_pass = false;
-            //            }
-            //            if (sparse_pass && (fabs(vals[i] - cvals[i]) > 1.E-12)){
-            //                cout << "ERROR: i = " << i << "  cpu value = " << vals[i] << "  gpu value = " << cvals[i] << endl;
-            //                sparse_pass = false;
-            //            }
-            //        }
-            //    }
-            //}
             if (!sparse_pass){
                 cout << "Failed evaluateSparseHierarchicalFunctionsGPU() when using grid: " << endl;
                 grid.printStats();
@@ -1976,7 +1959,7 @@ void ExternalTester::benchmark(int argc, const char **argv){
             grid->makeLocalPolynomialGrid(dims, outs, depth, 2, r);
         }else if (OneDimensionalMeta::isSequence(r)){
             grid->makeSequenceGrid(dims, outs, depth, d, r);
-        }else if (OneDimensionalMeta::isFourier(r)){
+        }else if (r == rule_fourier){
             grid->makeFourierGrid(dims, outs, depth, d);
         }else{
             grid->makeGlobalGrid(dims, outs, depth, d, r);
