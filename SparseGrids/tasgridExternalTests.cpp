@@ -1959,7 +1959,7 @@ void ExternalTester::benchmark(int argc, const char **argv){
             grid->makeLocalPolynomialGrid(dims, outs, depth, 2, r);
         }else if (OneDimensionalMeta::isSequence(r)){
             grid->makeSequenceGrid(dims, outs, depth, d, r);
-        }else if (OneDimensionalMeta::isFourier(r)){
+        }else if (r == rule_fourier){
             grid->makeFourierGrid(dims, outs, depth, d);
         }else{
             grid->makeGlobalGrid(dims, outs, depth, d, r);
