@@ -188,7 +188,8 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     int num_global_tests = (interpolation) ? 3 : 1;
     TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
     TasGrid::TypeDepth type = (rule == rule_fourier ? TasGrid::type_level : TasGrid::type_iptotal);
-    double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
+    std::vector<double> x(f->getNumInputs());
+    setRandomX(f->getNumInputs(), x.data());
     if (rule == rule_fourier){ for(int i=0; i<f->getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
     bool bPass = true;
     const char *custom_filename = (rule == rule_customtabulated) ? findGaussPattersonTable() : 0;
@@ -198,7 +199,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         }else{
             grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
         }
-        R = getError(f, &grid, ((interpolation) ? tests[i] : type_integration), x);
+        R = getError(f, &grid, ((interpolation) ? tests[i] : type_integration), x.data());
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
@@ -222,7 +223,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         for(int i=0; i<num_global_tests; i++){
             grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             grid_copy = new TasGrid::TasmanianSparseGrid(grid);
-            R = getError(f, grid_copy, ((interpolation) ? tests[i] : type_integration), x);
+            R = getError(f, grid_copy, ((interpolation) ? tests[i] : type_integration), x.data());
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
@@ -248,7 +249,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         for(int i=0; i<num_global_tests; i++){
             if (interpolation){
                 grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic);
-                R = getError(f, &grid, tests[i], x);
+                R = getError(f, &grid, tests[i], x.data());
             }else{
                 grid.makeSequenceGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic);
                 R = getError(f, &grid, type_integration);
@@ -272,7 +273,6 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             }
         }
     }
-    delete[] x;
     return bPass;
 }
 
