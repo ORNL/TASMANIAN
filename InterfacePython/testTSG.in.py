@@ -207,10 +207,12 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
@@ -261,10 +263,12 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
@@ -298,10 +302,12 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
@@ -334,10 +340,12 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
@@ -369,10 +377,12 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeGlobalGrid(1, 0, 1, "level", "rleja")
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
@@ -391,10 +401,12 @@ class TestTasmanian(unittest.TestCase):
             self.compareGrids(gridA, gridB)
 
             gridA.write("testSave", bUseBinaryFormat = True)
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
 
             gridB.makeSequenceGrid(1, 1, 0, "level", "leja");
+            gridB.makeLocalPolynomialGrid(1, 1, 0)
             gridB.copyGrid(gridA)
             self.compareGrids(gridA, gridB)
 
