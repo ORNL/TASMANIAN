@@ -1678,14 +1678,11 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             grid.setGPUID(gpuID);
             grid.evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
 
-            double *y = new double[grid.getNumPoints() * nump];
-            TasGrid::TasCUDA::cudaRecv<double>(grid.getNumPoints() * nump, gpuy, y);
+            std::vector<double> y(grid.getNumPoints() * nump);
+            TasGrid::TasCUDA::cudaRecv<double>(grid.getNumPoints() * nump, gpuy, y.data());
 
-            for(int i=0; i<grid.getNumPoints() * nump; i++){
-                if (fabs(y[i] - y_true_dense[i]) > 1.E-11){
-                    dense_pass = false;
-                }
-            }
+            auto iy = y.begin();
+            for(auto y_true : y_true_dense) if (fabs(*iy++ - y_true) > 1.E-11) dense_pass = false;
 
             if (!dense_pass){
                 cout << "Failed evaluateHierarchicalFunctionsGPU() when using grid: " << endl;
@@ -1694,7 +1691,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             pass = pass && dense_pass;
 
             TasGrid::TasCUDA::cudaDel<double>(gpuy);
-            delete[] y;
 
             // Sparse version:
             bool sparse_pass = true;
