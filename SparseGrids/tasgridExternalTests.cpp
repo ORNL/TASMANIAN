@@ -560,8 +560,10 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         grid.makeGlobalGrid(1, 1, 10, type_level, oned);
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
-        double *w = grid.getQuadratureWeights();
-        double *p = grid.getNeededPoints();
+        std::vector<double> w;
+        grid.getQuadratureWeights(w);
+        std::vector<double> p;
+        grid.getNeededPoints(p);
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
         if (fabs(sum - 9.0 * M_PI / 8.0) > TSG_NUM_TOL){
@@ -575,8 +577,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: disrepancy in transformed gauss-chebyshev-2 rule is: " << fabs(sum - 4.5) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        delete[] w;
-        delete[] p;
     }else if ((oned == TasGrid::rule_gaussgegenbauer) || (oned == TasGrid::rule_gaussgegenbauerodd)){
         // Gauss-Gegenbauer translated to [4, 7], area = 8.1, integral of f(x) = x^3 is 389367.0 / 280.0
         TasGrid::TasmanianSparseGrid grid;
