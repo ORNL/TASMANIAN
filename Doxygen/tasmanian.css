@@ -19,18 +19,23 @@ h4{
     font-size: 1.8em;
 }
 
-p{
+body p{
     font-family: "Arial", Helvetica, sans-serif;
-    font-size: 1.3em;
+    font-size: 1.4em;
 }
 
 li{
     font-family: "Arial", Helvetica, sans-serif;
-    font-size: 1.1em;
+    font-size: 1.2em;
+    line-height: 1.5em
 }
 ul{
     font-family: "Arial", Helvetica, sans-serif;
     font-size: 1.2em;
+}
+ul ul li{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 0.85em;
 }
 
 td.memname{
@@ -76,7 +81,8 @@ div.title{
     font-size: 2.5em;
 }
 div.line{
-    font-size: 1.1em;
+    font-size: 1.2em;
+    line-height: 1.2em
 }
 div.contents{
     font-family: "Arial", Helvetica, sans-serif;
@@ -85,4 +91,9 @@ div.contents{
 div.memtemplate{
     font-family: "Arial", Helvetica, sans-serif;
     font-size: 1.2em;
+}
+div.fragment{
+    background-color: rgb(240,247,238);
+    border-color: rgb(240,247,238);
+    border-width: thick;
 }

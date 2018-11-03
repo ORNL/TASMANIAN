@@ -21,6 +21,7 @@ set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
 
 doxygen_add_docs(Tasmanian_docs
                  ${CMAKE_CURRENT_SOURCE_DIR}/../README.md
+                 ${CMAKE_CURRENT_SOURCE_DIR}/Installation.md
                  ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgIndexManipulator.hpp
                  ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgIndexSets.hpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
