@@ -1,0 +1,99 @@
+#projectname{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 2.0em;
+}
+h1{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 2.2em;
+}
+h2{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.8em;
+}
+h3{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.8em;
+}
+h4{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.8em;
+}
+
+body p{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.4em;
+}
+
+li{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.2em;
+    line-height: 1.5em
+}
+ul{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.2em;
+}
+ul ul li{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 0.85em;
+}
+
+td.memname{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.2em;
+}
+td.paramtype{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.2em;
+}
+td.paramname{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.2em;
+}
+td.memTemplParams{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.1em;
+}
+
+dt{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.2em;
+}
+dl{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.2em;
+}
+dd{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.1em;
+}
+table{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.1em;
+}
+
+div a{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.1em;
+}
+div.title{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 2.5em;
+}
+div.line{
+    font-size: 1.2em;
+    line-height: 1.2em
+}
+div.contents{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.1em;
+}
+div.memtemplate{
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 1.2em;
+}
+div.fragment{
+    background-color: rgb(240,247,238);
+    border-color: rgb(240,247,238);
+    border-width: thick;
+}
