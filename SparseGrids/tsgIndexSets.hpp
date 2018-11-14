@@ -109,7 +109,6 @@ void push_merge_map(const std::vector<T> &a, const std::vector<B> &b,
 }
 }
 
-//! \internal
 //! \brief Generic 2D data structure divided into contiguous strips of fixed length (similar to a matrix)
 //! \ingroup TasmanianSets
 
@@ -124,12 +123,12 @@ void push_merge_map(const std::vector<T> &a, const std::vector<B> &b,
 template<typename T>
 class Data2D{
 public:
-    //! \internal \brief Default constructor makes an empty data-structure
+    //! \brief Default constructor makes an empty data-structure
     Data2D() : stride(0), num_strips(0), data(0){}
-    //! \internal \brief Default destructor
+    //! \brief Default destructor
     ~Data2D(){}
 
-    //! \internal \brief Clear any existing data and allocate a new data-structure with given **stride** and number of **strips**
+    //! \brief Clear any existing data and allocate a new data-structure with given **stride** and number of **strips**
     void resize(int new_stride, int new_num_strips){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
@@ -137,7 +136,7 @@ public:
         data = vec.data();
         cdata = vec.data();
     }
-    //! \internal \brief Clear any existing data, allocate a new data-structure with given **stride** and number of **strips** and initializes the data to **val** (using `std::vector::resize()`)
+    //! \brief Clear any existing data, allocate a new data-structure with given **stride** and number of **strips** and initializes the data to **val** (using `std::vector::resize()`)
     void resize(int new_stride, int new_num_strips, T val){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
@@ -145,7 +144,7 @@ public:
         data = vec.data();
         cdata = vec.data();
     }
-    //! \internal \brief Wrap around an existing array, the size of the array must be at least **new_stride** times **new_num_strips**
+    //! \brief Wrap around an existing array, the size of the array must be at least **new_stride** times **new_num_strips**
     void load(int new_stride, int new_num_strips, T* new_data){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
@@ -153,7 +152,7 @@ public:
         cdata = data;
         vec.resize(0);
     }
-    //! \internal \brief Wrap around an existing const array, the size of the array must be at least **new_stride** times **new_num_strips**
+    //! \brief Wrap around an existing const array, the size of the array must be at least **new_stride** times **new_num_strips**
     void cload(int new_stride, int new_num_strips, const T* new_data){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
@@ -162,21 +161,21 @@ public:
         vec.resize(0);
     }
 
-    //! \internal \brief Returns a reference to the **i**-th strip, cannot be called after **cload()** since the reference is non-const
+    //! \brief Returns a reference to the **i**-th strip, cannot be called after **cload()** since the reference is non-const
     T* getStrip(int i){ return &(data[i*stride]); }
-    //! \internal \brief Returns a const reference to the **i**-th strip, can be called even after **cload()**
+    //! \brief Returns a const reference to the **i**-th strip, can be called even after **cload()**
     const T* getCStrip(int i) const{ return &(cdata[i*stride]); }
-    //! \internal \brief Returns the stride
+    //! \brief Returns the stride
     int getStride() const{ return (int) stride; }
-    //! \internal \brief Returns the number of strips
+    //! \brief Returns the number of strips
     int getNumStrips() const{ return (int) num_strips; }
-    //! \internal \brief Returns **getStride()** times **getNumStrips()** but using `size_t` arithmetic avoiding a potential `int` overflow
+    //! \brief Returns **getStride()** times **getNumStrips()** but using `size_t` arithmetic avoiding a potential `int` overflow
     size_t getTotalEntries() const{ return stride * num_strips; }
-    //! \internal \brief Returns a reference to the `std::vector` that holds the internal data, can be used only after a call to **resize()**
+    //! \brief Returns a reference to the `std::vector` that holds the internal data, can be used only after a call to **resize()**
     std::vector<T>* getVector(){ return &vec; }
-    //! \internal \brief Returns a const reference to the `std::vector` that holds the internal data, can be used only after a call to **resize()**
+    //! \brief Returns a const reference to the `std::vector` that holds the internal data, can be used only after a call to **resize()**
     const std::vector<T>* getVector() const{ return &vec; }
-    //! \internal \brief Clear all used data (redundant, remove)
+    //! \brief Clear all used data (redundant, remove)
     void clear(){
         stride = 0;
         num_strips = 0;
@@ -184,7 +183,7 @@ public:
         vec.shrink_to_fit();
     }
 
-    //! \internal \brief Uses `std::vector::insert` to append a strip **x** to the existing data
+    //! \brief Uses `std::vector::insert` to append a strip **x** to the existing data
     void appendStrip(const std::vector<T> &x){
         vec.insert(vec.end(), x.begin(), x.end());
         num_strips++;
@@ -197,7 +196,7 @@ private:
     std::vector<T> vec;
 };
 
-//! \internal
+
 //! \brief Class that stores multi-indexes in sorted (lexicographical) order
 //! \ingroup TasmanianSets
 
@@ -210,76 +209,71 @@ private:
 //! * basic file I/O
 class MultiIndexSet{
 public:
-    //! \internal \brief Default constructor, makes an empty set
+    //! \brief Default constructor, makes an empty set
     MultiIndexSet();
-    //! \internal \brief Constructor, makes an empty set and assigns the dimension of the future indexes
+    //! \brief Constructor, makes an empty set and assigns the dimension of the future indexes
     MultiIndexSet(int cnum_dimensions);
-    //! \internal \brief Default destructor
+    //! \brief Default destructor
     ~MultiIndexSet();
 
-    //! \internal
     //! \brief Write to file **ofs** in ASCII format
     //!
     //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
     //! followed by all the entries of the array on a single line separated by a space.
     void write(std::ofstream &ofs) const;
 
-    //! \internal
     //! \brief Read from file **ofs** in ASCII format
     //!
     //! See **write()** for the ASCII file format.
     void read(std::ifstream &ifs);
 
-    //! \internal
     //! \brief Write to file **ofs** in binary format
     //!
     //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
     //! followed by all the entries of the array written by a single `write()` command.
     void writeBinary(std::ofstream &ofs) const;
 
-    //! \internal
     //! \brief Write to file **ofs** in binary format
     //!
     //! See **writeBinary()** for the binary file format.
     void readBinary(std::ifstream &ifs);
 
-    //! \internal \brief Returns **true** if there are no multi-indexes in the set, **false** otherwise
+    //! \brief Returns **true** if there are no multi-indexes in the set, **false** otherwise
     inline bool empty() const{ return indexes.empty(); }
 
-    //! \internal \brief Clears any currently loaded multi-indexes and set the dimensions to **new_dimensions**
+    //! \brief Clears any currently loaded multi-indexes and set the dimensions to **new_dimensions**
     void setNumDimensions(int new_dimensions);
-    //! \internal \brief Returns the number of dimensions
+    //! \brief Returns the number of dimensions
     inline int getNumDimensions() const{ return (int) num_dimensions; }
-    //! \internal \brief Returns the number of indexes
+    //! \brief Returns the number of indexes
     inline int getNumIndexes() const{ return cache_num_indexes; }
 
-    //! \internal \brief Overwrites the existing set of indexes using `std::move()`, note that **new_indexes** must be sorted before this call
+    //! \brief Overwrites the existing set of indexes using `std::move()`, note that **new_indexes** must be sorted before this call
     void setIndexes(std::vector<int> &new_indexes);
-    //! \internal \brief Add more indexes to the set, note that **addition** must be sorted before this call
+    //! \brief Add more indexes to the set, note that **addition** must be sorted before this call
     void addSortedInsexes(const std::vector<int> &addition);
-    //! \internal \brief Add more indexes to the set, **addition** is assumed unsorted (will be sorted first)
+    //! \brief Add more indexes to the set, **addition** is assumed unsorted (will be sorted first)
     void addUnsortedInsexes(const std::vector<int> &addition);
-    //! \internal \brief Add indexes from another **MultiIndexSet**, makes a call to **addSortedInsexes()**
+    //! \brief Add indexes from another **MultiIndexSet**, makes a call to **addSortedInsexes()**
     inline void addMultiIndexSet(const MultiIndexSet &addition){ addSortedInsexes(*addition.getVector()); }
-    //! \internal \brief Add indexes from a general **Data<>** structure, makes a call to **addUnsortedInsexes()**
+    //! \brief Add indexes from a general **Data<>** structure, makes a call to **addUnsortedInsexes()**
     inline void addData2D(const Data2D<int> &addition){ addUnsortedInsexes(*addition.getVector()); }
 
-    //! \internal \brief Returns a const reference to the internal data
+    //! \brief Returns a const reference to the internal data
     inline const std::vector<int>* getVector() const{ return &indexes; }
-    //! \internal \brief Returns a reference to the internal data, must not modify the lexicographical order or the size of the vector
+    //! \brief Returns a reference to the internal data, must not modify the lexicographical order or the size of the vector
     inline std::vector<int>* getVector(){ return &indexes; } // used for remapping during tensor generic points
 
-    //! \internal \brief Returns the slot containing index **p**, returns `-1` if not found
+    //! \brief Returns the slot containing index **p**, returns `-1` if not found
     int getSlot(const int *p) const;
-    //! \internal \brief Returns the slot containing index **p**, returns `-1` if not found
+    //! \brief Returns the slot containing index **p**, returns `-1` if not found
     inline int getSlot(const std::vector<int> &p) const{ return getSlot(p.data()); }
-    //! \internal \brief Returns **true** if **p** is missing from the set, **false** otherwise
+    //! \brief Returns **true** if **p** is missing from the set, **false** otherwise
     inline bool missing(const std::vector<int> &p) const{ return (getSlot(p.data()) == -1); }
 
-    //! \internal \brief Returns the **i**-th index of the set, useful to loop over all indexes or to cross reference with values
+    //! \brief Returns the **i**-th index of the set, useful to loop over all indexes or to cross reference with values
     inline const int *getIndex(int i) const{ return &(indexes[((size_t) i) * num_dimensions]); }
 
-    //! \internal
     //! \brief A new ordered set is created in **result**, which holds the indexes from this set that are not present in **substract**
     //!
     //! The implementation uses an algorithm similar to merge with complexity linear in the number of multi-indexes of the two sets,
@@ -292,7 +286,6 @@ private:
     std::vector<int> indexes;
 };
 
-//! \internal
 //! \brief Class that stores values, i.e., model outputs, the order of the values is in sync with the order of some **MultiIndexSet**
 //! \ingroup TasmanianSets
 
@@ -303,57 +296,52 @@ private:
 //! the **addValues()** is called with the old and new multi-index sets and the new values.
 class StorageSet{
 public:
-    //! \internal \brief Default constructor, makes an empty set
+    //! \brief Default constructor, makes an empty set
     StorageSet();
-    //! \internal \brief Default destructor
+    //! \brief Default destructor
     ~StorageSet();
 
-    //! \internal
     //! \brief Write to file **ofs** in ASCII format
     //!
     //! The format consists of two `int` values corresponding to the number of outputs and number of values,
     //! followed by all the entries of the array on a single line separated by a space.
     void write(std::ofstream &ofs) const;
 
-    //! \internal
     //! \brief Read from file **ofs** in ASCII format
     //!
     //! See **write()** for the ASCII file format.
     void read(std::ifstream &ifs);
 
-    //! \internal
     //! \brief Write to file **ofs** in binary format
     //!
     //! The format consists of two `int` values corresponding to the number of outputs and number of values,
     //! followed by all the entries of the array written in a single `write()` command.
     void writeBinary(std::ofstream &ofs) const;
 
-    //! \internal
     //! \brief Write to file **ofs** in binary format
     //!
     //! See **writeBinary()** for the binary file format.
     void readBinary(std::ifstream &ifs);
 
-    //! \internal \brief Clear the existing values and assigns new dimensions, does not allocate memory for the new values
+    //! \brief Clear the existing values and assigns new dimensions, does not allocate memory for the new values
     void resize(int cnum_outputs, int cnum_values);
 
-    //! \internal \brief Returns const reference to the **i**-th value, the **i** index matches the corresponding **MultiIndexSet**
+    //! \brief Returns const reference to the **i**-th value, the **i** index matches the corresponding **MultiIndexSet**
     const double* getValues(int i) const;
-    //! \internal \brief Returns reference to the **i**-th value, the **i** index matches the corresponding **MultiIndexSet**
+    //! \brief Returns reference to the **i**-th value, the **i** index matches the corresponding **MultiIndexSet**
     double* getValues(int i);
-    //! \internal \brief Returns reference to the internal data vector
+    //! \brief Returns reference to the internal data vector
     std::vector<double>* aliasValues(); // alternative to setValues()
-    //! \internal \brief Returns const reference to the internal data vector
+    //! \brief Returns const reference to the internal data vector
     const std::vector<double>* aliasValues() const; // alternative to setValues()
-    //! \internal \brief Read the number of outputs
+    //! \brief Read the number of outputs
     int getNumOutputs() const;
 
-    //! \internal \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
+    //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
     void setValues(const double vals[]);
-    //! \internal \brief Replace the existing values with **vals** using `std::move()`, the size of **vals** must be **num_outputs** times **num_values**
+    //! \brief Replace the existing values with **vals** using `std::move()`, the size of **vals** must be **num_outputs** times **num_values**
     void setValues(std::vector<double> &vals);
 
-    //! \internal
     //! \brief Add more values to the set, the **old_set** and **new_set** define the order of the current values and the **new_vals**
     //!
     //! Add more values to an existing set of values, where **old_set** and **new_set** indicate the order.
@@ -362,7 +350,7 @@ public:
     void addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]);
 
 protected:
-    //! \internal \brief Returns the relation between **a** and **b**, used for the merge
+    //! \brief Returns the relation between **a** and **b**, used for the merge
     TypeIndexRelation compareIndexes(int num_dimensions, const int a[], const int b[]) const;
 
 private:

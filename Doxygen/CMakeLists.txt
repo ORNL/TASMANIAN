@@ -18,6 +18,12 @@ set(DOXYGEN_PROJECT_NUMBER "") # if project number if given, the rendered font i
 
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
 
+if (NOT DOXYGEN_INTERNAL_DOCS)
+# the \internal command works for functions and namespaces, but not classes
+# have to exclude the classes manually
+    set(DOXYGEN_EXCLUDE_SYMBOLS TasGrid::Data2D TasGrid::MultiIndexSet TasGrid::StorageSet TasGrid::CustomTabulated)
+endif()
+
 doxygen_add_docs(Tasmanian_doxygen
                  ${CMAKE_CURRENT_SOURCE_DIR}/../README.md
                  ${CMAKE_CURRENT_SOURCE_DIR}/Installation.md

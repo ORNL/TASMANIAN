@@ -55,7 +55,6 @@
 
 namespace TasGrid{
 
-//! \internal
 //! \brief Class providing manipulation of custom tabulated rules, file I/O and structured access to the points, weights, and meta-data.
 //! \ingroup TasmanianCoreOneDimensional
 class CustomTabulated{
