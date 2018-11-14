@@ -66,11 +66,11 @@ namespace TasGrid{
 
 namespace MultiIndexManipulations{
 
+//! \internal
+//! \brief Generate a full tensor multi-index set with **num_entries**  in each direction
+//! \ingroup TasmanianMultiIndexManipulations
 template<typename I>
 void generateFullTensorSet(const std::vector<I> &num_entries, MultiIndexSet &set){
-//! \internal
-//! \brief generate a full tensor multi-index set with **num_entries**  in each direction
-//! \ingroup TasmanianMultiIndexManipulations
     I num_total = 1;
     for(auto &l : num_entries) num_total *= l;
     size_t num_dimensions = num_entries.size();
@@ -89,11 +89,11 @@ void generateFullTensorSet(const std::vector<I> &num_entries, MultiIndexSet &set
     set.setIndexes(indexes);
 }
 
+//! \internal
+//! \brief Generate the multi-index with entries satisfying the **!outside()**, assumes that the **!outside()** defines a lower set
+//! \ingroup TasmanianMultiIndexManipulations
 template<typename I>
 void generateLowerMultiIndexSet(std::function<bool(const std::vector<I> &index)> outside, MultiIndexSet &set){
-//! \internal
-//! \brief generate the multi-index with entries satisfying the **!outside()**, assumes that the **!outside()** defines a lower set
-//! \ingroup TasmanianMultiIndexManipulations
     size_t num_dimensions = set.getNumDimensions();
     size_t c = num_dimensions -1;
     bool out = false;
@@ -114,17 +114,16 @@ void generateLowerMultiIndexSet(std::function<bool(const std::vector<I> &index)>
     set.setIndexes(indexes);
 }
 
+//! \internal
+//! \brief Take the last set of **level_sets** append a new set of the parents or children that satisfy **inside()**, repeat recursively until there are no more indexes to add
+//! \ingroup TasmanianMultiIndexManipulations
 template<typename I, bool completion>
 void recursiveLoadPoints(std::function<bool(const std::vector<I> &index)> inside, const MultiIndexSet &set, std::vector<MultiIndexSet> &level_sets){
-//! \internal
-//! \brief take the last set of **level_sets** append a new set of the parents or children that satisfy **inside()**, repeat recursively until there are no more indexes to add
-//! \ingroup TasmanianMultiIndexManipulations
-//!
-//! **level_sets** must contain at least one set, then this function considers all the children/parents of the entries of the last set (given by `level_sets.back()`)
-//! and then creates a new set with only the children/parents that satisfy the **inside()**. The new set is appended to the **level_sets**
-//! (similar to `push_back()`, but using `resize()`). The recursion terminates at the set where all children/parents fail the **inside()**.
-//! * **I** defines the Int type for the set (should be `int` right now)
-//! * **completion** equal `true` indicates the use of *parents* (i.e., do the lower completion), set to `false` indicates the use of *children*
+//! \b level_sets must contain at least one set, then this function considers all the children/parents of the entries of the last set (given by `level_sets.back()`)
+//! and then creates a new set with only the children that satisfy the \b inside() or the parents (regardless of \b inside()). The new set is appended to the \b level_sets
+//! (similar to `push_back()`, but using `resize()`). The recursion terminates at the set where all children fail the \b inside() or all parents are already included.
+//! - \b I defines the Int type for the set (should be `int` right now)
+//! - \b completion equal \b True indicates the use of *parents* (i.e., do the lower completion), set to \b False indicates the use of *children*
     size_t num_dimensions = level_sets.back().getNumDimensions();
     bool adding = true;
     while(adding){
@@ -160,11 +159,11 @@ void recursiveLoadPoints(std::function<bool(const std::vector<I> &index)> inside
     }
 }
 
+//! \internal
+//! \brief Take the union of all \b level_sets and either \b overwrite the \b set or if \b overwrite is \b False then add to the \b set
+//! \ingroup TasmanianMultiIndexManipulations
 template<bool overwrite>
 void unionSets(std::vector<MultiIndexSet> &level_sets, MultiIndexSet &set){
-//! \internal
-//! \brief **set** is combines with the union of the **level_sets**, if **overwrite** is **true** the content of **set** is discarded
-//! \ingroup TasmanianMultiIndexManipulations
     int num_levels = (int) level_sets.size();
     while(num_levels > 1){
         int stride = num_levels / 2 + (((num_levels % 2) > 0) ? 1 : 0);
@@ -180,11 +179,11 @@ void unionSets(std::vector<MultiIndexSet> &level_sets, MultiIndexSet &set){
     }
 }
 
+//! \internal
+//! \brief If **set** is a lower set, then do nothing, otherwise add the the multi-indexes needed to make **set** a lower-set
+//! \ingroup TasmanianMultiIndexManipulations
 template<typename I>
 void completeSetToLower(MultiIndexSet &set){
-//! \internal
-//! \brief if **set** is a lower set, then do nothing, otherwise add the the multi-indexes needed to make **set** a lower-set
-//! \ingroup TasmanianMultiIndexManipulations
     size_t num_dimensions = set.getNumDimensions();
     int num = set.getNumIndexes();
     Data2D<I> completion;
@@ -212,12 +211,11 @@ void completeSetToLower(MultiIndexSet &set){
     }
 }
 
-
+//! \internal
+//! \brief Generate the multi-index with entries satisfying the **criteria()**, the result is a lower set regardless of the **criteria()**
+//! \ingroup TasmanianMultiIndexManipulations
 template<typename I>
 void generateGeneralMultiIndexSet(std::function<bool(const std::vector<I> &index)> criteria, MultiIndexSet &set){
-//! \internal
-//! \brief generate the multi-index with entries satisfying the **criteria()**, the result is a lower set regardless of the **criteria()**
-//! \ingroup TasmanianMultiIndexManipulations
     size_t num_dimensions = set.getNumDimensions();
     std::vector<MultiIndexSet> level_sets(1);
     level_sets[0].setNumDimensions((int) num_dimensions);
@@ -231,13 +229,12 @@ void generateGeneralMultiIndexSet(std::function<bool(const std::vector<I> &index
     completeSetToLower<I>(set);
 }
 
+//! \internal
+//! \brief Set an empty vector **weights** to the canonical weights of the type (if **anisotropic_weights** is empty) or the actual weights with scaling adjustment
+//! \ingroup TasmanianMultiIndexManipulations
 template<typename I>
 void getProperWeights(size_t num_dimensions, I offset, TypeDepth type, const std::vector<I> &anisotropic_weights,
                       std::vector<I> &weights, I &normalized_offset, bool &known_lower){
-//! \internal
-//! \brief set an empty vector **weights** to the canonical weights of the type (if **anisotropic_weights** is empty) or the actual weights with scaling adjustment
-//! \ingroup TasmanianMultiIndexManipulations
-//!
 //! Based on the **anisotropic_weights** and selection parameters, create canonical/normalized weights and run basic analysis on the resulting multi-index set.
 //! * **num_dimensions** specifies the number of dimensions of the multi-index
 //! * **type** is the selection type, e.g., type_iptotal
@@ -274,12 +271,11 @@ void getProperWeights(size_t num_dimensions, I offset, TypeDepth type, const std
     }
 }
 
+//! \internal
+//! \brief Generates a multi-index set based on the combination of weights, rule_exactness, offset and type
+//! \ingroup TasmanianMultiIndexManipulations
 template<typename I, typename CacheType, TypeDepth TotalCurvedHyper>
 void generateWeightedTensorsCached(const std::vector<I> &weights, CacheType normalized_offset, std::function<long long(I i)> rule_exactness, MultiIndexSet &mset){
-//! \internal
-//! \brief generates a multi-index set based on the combination of weights, rule_exactness, offset and type
-//! \ingroup TasmanianMultiIndexManipulations
-//!
 //! Simplifies the calls to caching and generating multi-indexes
 //! * **I** is the Int type of multi-index (use int)
 //! * **CacheType** should wither match **I** (for level, iptotal and qptotal types) or **double** for curved and hyperbolic rules
@@ -327,12 +323,11 @@ void generateWeightedTensorsCached(const std::vector<I> &weights, CacheType norm
                                     }, mset);
 }
 
+//! \internal
+//! \brief Generates a multi-index set based on the combination of weights, rule_exactness, offset and type, assume cache has to be build dynamically (non-lower set case)
+//! \ingroup TasmanianMultiIndexManipulations
 template<typename I, typename CacheType>
 void generateWeightedTensorsDynamicCached(const std::vector<I> &weights, CacheType normalized_offset, std::function<long long(I i)> rule_exactness, MultiIndexSet &mset){
-//! \internal
-//! \brief generates a multi-index set based on the combination of weights, rule_exactness, offset and type, assume cache has to be build dynamically (non-lower set case)
-//! \ingroup TasmanianMultiIndexManipulations
-//!
 //! Simplifies the calls to caching and generating multi-indexes
 //! * **I** is the Int type of multi-index (use int)
 //! * **CacheType** should wither match **I** (for level, iptotal and qptotal types) or **double** for curved and hyperbolic rules
@@ -358,44 +353,44 @@ void generateWeightedTensorsDynamicCached(const std::vector<I> &weights, CacheTy
 }
 
 //! \internal
-//! \brief generate the multi-index set defined by the parameters, **rule** cannot be custom
+//! \brief Generate the multi-index set defined by the parameters, **rule** cannot be custom
 //! \ingroup TasmanianMultiIndexManipulations
 void selectTensors(int offset, TypeDepth type, std::function<long long(int i)> rule_exactness, const std::vector<int> &anisotropic_weights, MultiIndexSet &set);
 
 //! \internal
-//! \brief returns a vector that is the sum of entries of each multi-index in the set
+//! \brief Returns a vector that is the sum of entries of each multi-index in the set
 //! \ingroup TasmanianMultiIndexManipulations
 void computeLevels(const MultiIndexSet &mset, std::vector<int> &level);
 
 //! \internal
-//! \brief returns a vector that is the maximum index in each direction and a total maximum index, **max_levels** must be empty
+//! \brief Returns a vector that is the maximum index in each direction and a total maximum index, **max_levels** must be empty
 //! \ingroup TasmanianMultiIndexManipulations
 void getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &total_max);
 
 //! \internal
-//! \brief returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using one-point-growth hierarchy
+//! \brief Returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using one-point-growth hierarchy
 //! \ingroup TasmanianMultiIndexManipulations
 void computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents);
 
 //! \internal
-//! \brief returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using hierarchy defined by **rule**
+//! \brief Returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using hierarchy defined by **rule**
 //! \ingroup TasmanianMultiIndexManipulations
 void computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents);
 
 //! \internal
-//! \brief using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
+//! \brief Using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
 //! \ingroup TasmanianMultiIndexManipulations
 void selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set);
 
 //! \internal
-//! \brief using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
+//! \brief Using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
 //! \ingroup TasmanianMultiIndexManipulations
 void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset);
 
 //! \internal
-//! \brief assuming that **tensors** describe a set of nested tensor operators, and each 1-D operators has **getNumPoints()**, then generate the actual points
+//! \brief Assuming that **tensors** describe a set of nested tensor operators, and each 1-D operators has **getNumPoints()**, then generate the actual points
 //! \ingroup TasmanianMultiIndexManipulations
-//!
+
 //! Assuming that we are working with a nested rule, then instead of generating the points for all tensor rules and taking the union,
 //! it is much faster to generate just the surplus points and union those, i.e., the points included by this tensor and excluded from the other differences.
 //! Working with surplus points ensures that there is no repetition of points.
@@ -405,9 +400,9 @@ void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &m
 void generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points);
 
 //! \internal
-//! \brief assuming that **tensors** describe a set of non-nested tensor operators described by the **wrapper**, then generate the actual **points**
+//! \brief Assuming that **tensors** describe a set of non-nested tensor operators described by the **wrapper**, then generate the actual **points**
 //! \ingroup TasmanianMultiIndexManipulations
-//!
+
 //! Assuming that we are working with a non-nested rule, then for each tensor we must generate the points and map them to the global indexing,
 //! then take the union of all the tensors
 //! * **tensors** is a set of tensor rules, non-necessarily lower
@@ -416,7 +411,7 @@ void generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> 
 void generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper, MultiIndexSet &points);
 
 //! \internal
-//! \brief given a tensor defined by **levels** find the references to all tensor points in the **points** set (assuming the standard order of the tensor entries)
+//! \brief Given a tensor defined by **levels** find the references to all tensor points in the **points** set (assuming the standard order of the tensor entries)
 //! \ingroup TasmanianMultiIndexManipulations
 template<bool nested>
 void referencePoints(const int levels[], const OneDimensionalWrapper &wrapper, const MultiIndexSet &points, std::vector<int> &refs){
@@ -441,17 +436,17 @@ void referencePoints(const int levels[], const OneDimensionalWrapper &wrapper, c
 }
 
 //! \internal
-//! \brief computes the weights for the tensor linear combination, **mset** is a lower multi-index set and **weight** is resized
+//! \brief Computes the weights for the tensor linear combination, **mset** is a lower multi-index set and **weight** is resized
 //! \ingroup TasmanianMultiIndexManipulations
 void computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights);
 
 //! \internal
-//! \brief on exit, **active** is the set containing the multi-indexes of **mset** corresponding to non-zero **weights**
+//! \brief On exit, **active** is the set containing the multi-indexes of **mset** corresponding to non-zero **weights**
 //! \ingroup TasmanianMultiIndexManipulations
 void createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights, MultiIndexSet &active);
 
 //! \internal
-//! \brief for a set of **tensors** compute the corresponding polynomial **space** assuming the 1D rules have given **exactness**
+//! \brief For a set of **tensors** compute the corresponding polynomial **space** assuming the 1D rules have given **exactness**
 //! \ingroup TasmanianMultiIndexManipulations
 void createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness, MultiIndexSet &space);
 }
