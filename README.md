@@ -48,7 +48,9 @@ If you use Tasmanian for your research, please cite the Manual and our work on g
 Quick Install
 --------------
 
-* the basic way: using GNU Make, `g++` and optionally `gfortran` and `/usr/bin/python`
+See also the detailed [Installation](Doxygen/Installation.md) instructions.
+
+* The basic way: using GNU Make, `g++` and optionally `gfortran` and `/usr/bin/python`
 ```
   make
   make test     (will fail if /usr/bin/env python is missing numpy or ctypes modules)
@@ -58,12 +60,12 @@ Quick Install
   make examples
   make clean
 ```
-* the easy way: using cmake and the `install` script
+* The easy way: using cmake and the `install` script
 ```
-  ./install <install-path> <optional: matlab-work-folder> <additional options>
-  ./install --help  (lists all options)
+  ./install <install-path> <optional: matlab-work-folder> <extra switches>
+  ./install --help  (list all switches)
 ```
-* the CMake way: see the detailed instruction for a full list of commands
+* The CMake way: see the detailed instruction for a full list of options
 ```
   mkdir Build
   cd Build
@@ -73,7 +75,7 @@ Quick Install
   make install
   make test_install
 ```
-* under MS Windows: use the cmake gui to set the folders and options then use the command prompt (`cmd.exe`) to enter the build folder
+* The MS Windows way: use the CMake GUI to set the folders and options then use the command prompt (`cmd.exe`) to enter the build folder
 ```
   cd <cmake build folder>
   cmake --build . --config Release
@@ -86,11 +88,11 @@ Quick Install
 Basic Usage of Tasmanian
 --------------
 
-* see the Examples in the install prefix:
+* See the Examples in the install prefix:
 ```
   <install-prefix>/share/Tasmanian/examples/
 ```
-* the Examples source code is in:
+* The Examples source code is in:
 ```
   <source-root>/<module>/Examples/
 ```

@@ -97,3 +97,6 @@ div.fragment{
     border-color: rgb(240,247,238);
     border-width: thick;
 }
+a{
+    text-decoration: underline;
+}

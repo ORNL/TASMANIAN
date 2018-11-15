@@ -373,8 +373,13 @@ void getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &t
 void computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents);
 
 //! \internal
-//! \brief Returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using hierarchy defined by **rule**
+//! \brief Cache the single-indexes of the parents of the multi-indexes (points) in \b mset.
 //! \ingroup TasmanianMultiIndexManipulations
+
+//! Each node defined by a multi-index in \b mset can have one or more parents in each direction,
+//! where the parent-offspring relation is defined by the \b rule. For each index in \b mset, the
+//! Data2D structure \b parents will hold a strip with the location of each parent in \b mset
+//! (or -1 if the parent is missing from \b mset).
 void computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents);
 
 //! \internal
@@ -383,7 +388,7 @@ void computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule
 void selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set);
 
 //! \internal
-//! \brief Using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
+//! \brief Replace \b mset with the subset of \b mset that obeys the \b level_limits
 //! \ingroup TasmanianMultiIndexManipulations
 void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset);
 
@@ -392,11 +397,11 @@ void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &m
 //! \ingroup TasmanianMultiIndexManipulations
 
 //! Assuming that we are working with a nested rule, then instead of generating the points for all tensor rules and taking the union,
-//! it is much faster to generate just the surplus points and union those, i.e., the points included by this tensor and excluded from the other differences.
-//! Working with surplus points ensures that there is no repetition of points.
-//! * **tensors** is a lower set of tensor rules
-//! * **getNumPoints()** described the number of points for each rule in 1-D
-//! * **points** is the union of the points of all tensors
+//! it is much faster to generate just the surplus points and union those, i.e., the points associated with the surplus tensor operator.
+//! Working with surplus points ensures that there is no repetition of points when merging the sets.
+//! * \b tensors is a lower set of multi-indexes describing tensor rules
+//! * \b getNumPoints() described the number of points for each 1-D rule
+//! * On exit, \b points is the union of the points of all tensors
 void generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points);
 
 //! \internal

@@ -26,12 +26,12 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
 endif()
 
 doxygen_add_docs(Tasmanian_doxygen
-                 ${CMAKE_CURRENT_SOURCE_DIR}/../README.md
-                 ${CMAKE_CURRENT_SOURCE_DIR}/Installation.md
-                 ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgIndexManipulator.hpp
-                 ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgIndexSets.hpp
-                 ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgCoreOneDimensional.hpp
-                 ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgOneDimensionalWrapper.hpp
-                 ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgLinearSolvers.hpp
-                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                 README.md
+                 Doxygen/Installation.md
+                 SparseGrids/tsgIndexManipulator.hpp
+                 SparseGrids/tsgIndexSets.hpp
+                 SparseGrids/tsgCoreOneDimensional.hpp
+                 SparseGrids/tsgOneDimensionalWrapper.hpp
+                 SparseGrids/tsgLinearSolvers.hpp
+                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../
                  COMMENT "Tasmanian Doxygen documentation")
