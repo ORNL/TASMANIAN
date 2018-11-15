@@ -305,8 +305,6 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
     for(auto i : indexes) data[i] = *v++;
 }
 
-}
-
 namespace TasSparse{
 
 SparseMatrix::SparseMatrix() : tol(TSG_NUM_TOL), num_rows(0){}
@@ -577,4 +575,5 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
 
 } /* namespace TasSparse */
 
+}
 #endif
