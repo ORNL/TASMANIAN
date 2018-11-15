@@ -21,7 +21,8 @@ set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
 if (NOT DOXYGEN_INTERNAL_DOCS)
 # the \internal command works for functions and namespaces, but not classes
 # have to exclude the classes manually
-    set(DOXYGEN_EXCLUDE_SYMBOLS TasGrid::Data2D TasGrid::MultiIndexSet TasGrid::StorageSet TasGrid::CustomTabulated TasGrid::OneDimensionalWrapper)
+    set(DOXYGEN_EXCLUDE_SYMBOLS TasGrid::Data2D TasGrid::MultiIndexSet TasGrid::StorageSet TasGrid::CustomTabulated TasGrid::OneDimensionalWrapper
+        TasGrid::TasSparse::SparseMatrix)
 endif()
 
 doxygen_add_docs(Tasmanian_doxygen
@@ -31,5 +32,6 @@ doxygen_add_docs(Tasmanian_doxygen
                  ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgIndexSets.hpp
                  ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgCoreOneDimensional.hpp
                  ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgOneDimensionalWrapper.hpp
+                 ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/tsgLinearSolvers.hpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                  COMMENT "Tasmanian Doxygen documentation")
