@@ -1,11 +1,13 @@
 Changelog for version 6.1 (may rename this to 7.0 later)
 --------------
 
+* added Doxygen documentation (CMake option, extra pages, etc.)
+
 * added support for CUDA 10
 
 * removed the deprecated MS Windows build system with batch scripts
 
-* require cmake 3.10.2 or newer
+* require cmake 3.10 or newer
     * removed the clumsy work-around for OpenMP on old cmake systems
     * removed other small legacy cmake fixes
 
