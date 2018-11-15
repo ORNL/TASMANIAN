@@ -13,6 +13,8 @@ set(DOXYGEN_HTML_COLORSTYLE_HUE    "110") # green-ish pages
 set(DOXYGEN_HTML_COLORSTYLE_SAT    "100")
 set(DOXYGEN_HTML_COLORSTYLE_GAMMA  "240")
 
+set(DOXYGEN_FORMULA_FONTSIZE "16")
+
 set(DOXYGEN_PROJECT_NAME   "Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN: ${PROJECT_NAME} v${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
 set(DOXYGEN_PROJECT_NUMBER "") # if project number if given, the rendered font is too small
 
@@ -28,6 +30,7 @@ endif()
 doxygen_add_docs(Tasmanian_doxygen
                  README.md
                  Doxygen/Installation.md
+                 SparseGrids/tsgEnumerates.hpp
                  SparseGrids/tsgIndexManipulator.hpp
                  SparseGrids/tsgIndexSets.hpp
                  SparseGrids/tsgCoreOneDimensional.hpp
