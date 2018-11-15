@@ -109,10 +109,9 @@ namespace TasmanianFourierTransform{
     void fast_fourier_transform1D(std::vector<std::vector<std::complex<double>>> &data, std::vector<int> &indexes);
 }
 
-}
-
-// Sparse linear algebra is used by the wavelet grids only
-// tsgEnumerates.hpp is needed by TasSparse for the hardcoded constants, i.e., TSG_DROP_TOL
+//! \internal
+//! \brief Methods for sparse linear algebra.
+//! \ingroup TasmanianLinearSolvers
 namespace TasSparse{
 
 //! \internal
@@ -147,6 +146,8 @@ private:
     std::vector<int> pntr, indx, indxD;
     std::vector<double> vals, ilu;
 };
+
+}
 
 }
 
