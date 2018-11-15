@@ -36,27 +36,54 @@
 #include "tsgSequenceOptimizer.hpp"
 #include "tsgHardCodedTabulatedRules.hpp"
 
+//! \internal
+//! \file tsgOneDimensionalWrapper.hpp
+//! \brief Cache for one dimensional rules.
+//! \author Miroslav Stoyanov
+//! \ingroup TasmanianCoreOneDimensional
+//!
+//! A class to cache one dimensional rules, nodes, weight, etc.
+
 namespace TasGrid{
 
+//! \brief A class to cache one dimensional rules, nodes, weight, meta-data, etc.
+//! \ingroup TasmanianCoreOneDimensional
 class OneDimensionalWrapper{
 public:
+    //! \brief Default constructor, create an emptry cache.
     OneDimensionalWrapper();
+    //! \brief Default destructor.
     ~OneDimensionalWrapper();
 
+    //! \brief Load the cache.
+
+    //! Load \b max_level of cache for a rule given by \b crule. If the rule is not
+    //! custom tabulated, then \b custom is not used (could be empty).
+    //! Similarly, \b alpha and \b beta are used only by rules that use the corresponding
+    //! transformation parameters.
     void load(const CustomTabulated &custom, int max_level, TypeOneDRule crule, double alpha, double beta);
 
+    //! \brief Get the number of points for the \b level, can only querry loaded levels.
     int getNumPoints(int level) const;
+    //! \brief Get the global index of point \b j on \b level (used only by non-nested rules).
     int getPointIndex(int level, int j) const;
 
+    //! \brief Get the canonical coordinate of the node with global index \b j.
     double getNode(int j) const;
+    //! \brief Get the quadrature weight of the \b j-th node on the \b level (for non-nested rules, using index local to the level)
     double getWeight(int level, int j) const;
 
+    //! \brief Get an array of all nodes associated with the \b level (the array is ordered by local index).
     const double* getNodes(int level) const;
+    //! \brief Get an array of the Lagrange coefficients associated with the \b level, the order matches \b getNodes().
     const double* getCoefficients(int level) const;
 
+    //! \brief Get a reference to the offsets of all point counts used by the \b CacheLagrange class.
     const std::vector<int>* getPointsCount() const;
 
+    //! \brief Get the loaded rule.
     TypeOneDRule getType() const;
+    //! \brief Get the number of cached levels.
     int getNumLevels() const;
 
 private:
