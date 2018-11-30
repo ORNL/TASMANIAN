@@ -83,6 +83,8 @@ set(Tasmanian_source_libsparsegrid
         tsgCacheLagrange.hpp
         tsgCoreOneDimensional.hpp
         tsgCoreOneDimensional.cpp
+        tsgDConstructGridGlobal.hpp
+        tsgDConstructGridGlobal.cpp
         tsgCudaMacros.hpp
         tsgEnumerates.hpp
         tsgGridCore.hpp

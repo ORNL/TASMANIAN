@@ -40,6 +40,7 @@
 #include "tsgLinearSolvers.hpp"
 #include "tsgCacheLagrange.hpp"
 #include "tsgOneDimensionalWrapper.hpp"
+#include "tsgDConstructGridGlobal.hpp"
 #include "tsgGridCore.hpp"
 
 #include "tsgAcceleratedDataStructures.hpp"
