@@ -32,6 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_HPP
 
 #include <cstdlib>
+#include <memory>
 
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
@@ -160,6 +161,8 @@ private:
     std::vector<int> updated_active_w;
 
     CustomTabulated custom;
+
+    std::unique_ptr<DynamicConstructorDataGlobal> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable LinearAlgebraEngineGPU cuda_engine;

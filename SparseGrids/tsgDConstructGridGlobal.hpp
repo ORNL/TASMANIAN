@@ -31,15 +31,53 @@
 #ifndef __TASMANIAN_SPARSE_GRID_DYNAMIC_CONST_GLOBAL_HPP
 #define __TASMANIAN_SPARSE_GRID_DYNAMIC_CONST_GLOBAL_HPP
 
+#include <forward_list>
+
 #include "tsgEnumerates.hpp"
+#include "tsgIndexSets.hpp"
+#include "tsgIndexManipulator.hpp"
 
 namespace TasGrid{
 
+struct NodeData{
+    std::vector<int> point;
+    std::vector<double> value;
+};
+
+struct TensorData{
+    std::vector<int> tensor;
+    MultiIndexSet points;
+    std::vector<bool> loaded;
+    double weight;
+};
+
 class DynamicConstructorDataGlobal{
 public:
-    DynamicConstructorDataGlobal();
+    DynamicConstructorDataGlobal(int cnum_dimensions, int cnum_outputs);
     ~DynamicConstructorDataGlobal();
+
+    //! \brief Delete the tensors with non-negative weights, i.e., clear all by the tensors selected by the initial grid.
+    void clearTesnors();
+
+    //! \brief Get a set of all tensors with negative weight, i.e., the tensors selected for the initial run.
+    void getInitialTensors(MultiIndexSet &set) const;
+
+    //! \brief Add a new tensor to the candidates, with the given \b weight and using \b getNumPoints() to define the associated nodes.
+    void addTensor(const int *tensor, std::function<int(int)> getNumPoints, double weight);
+
+    //! \brief Get the node indexes of the points associated with the candidate tensors, the order matches the weights of the tensors.
+    void getNodesIndexes(std::vector<int> &inodes);
+
+    //! \brief Add a new data point with the index and the value, returns \b true if there is enough data to complete a tensor.
+    bool addNewNode(const std::vector<int> &point, const std::vector<double> &value); // returns whether a tensor is complete
+
+    //! \brief Return a completed tensor with parent-tensors included in tensors, returns \b true if such tensor has been found.
+    bool ejectCompleteTensor(const MultiIndexSet &current_tensors, std::vector<int> &tensor, MultiIndexSet &points, std::vector<double> &vals);
+
 private:
+    int num_dimensions, num_outputs;
+    std::forward_list<NodeData> data;
+    std::forward_list<TensorData> tensors;
 };
 
 }
