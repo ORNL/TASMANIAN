@@ -114,7 +114,7 @@ public:
     void mergeRefinement();
 
     void beginConstruction();
-    void getCandidateConstructionPoints(std::vector<double> &x);
+    void getCandidateConstructionPoints(std::vector<double> &x, const std::vector<int> &level_limits);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void finishConstruction();
 

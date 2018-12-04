@@ -179,8 +179,8 @@ public:
 
     //! \brief Begin a dynamic construction procedure, also calls \b clearRefinement() (cheap to call, only sets some flags)
     void beginConstruction();
-    //! \brief Generate a sorted list of points weighted by descending importance (expensive call, equivalent to set-refinement)
-    void getCandidateConstructionPoints(std::vector<double> &x);
+    //! \brief Generate a sorted list of points weighted by descending importance (expensive call, roughly equivalent to set-refinement)
+    void getCandidateConstructionPoints(std::vector<double> &x, const std::vector<int> &level_limits = std::vector<int>());
     //! \brief Add the value of a single point (if the tensor of the point is not complete, the grid will not be updated but the value will be stored)
     void loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y);
     //! \brief End the procedure, clears flags and unused constructed points, can go back to using regular refinement

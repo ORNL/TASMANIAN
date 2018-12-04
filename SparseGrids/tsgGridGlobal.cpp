@@ -551,23 +551,17 @@ void GridGlobal::beginConstruction(){
         values.resize(num_outputs, 0);
     }
 }
-void GridGlobal::getCandidateConstructionPoints(std::vector<double> &x){
+void GridGlobal::getCandidateConstructionPoints(std::vector<double> &x, const std::vector<int> &level_limits){
     dynamic_values->clearTesnors(); // clear old tensors
     MultiIndexSet init_tensors;
     dynamic_values->getInitialTensors(init_tensors); // get the initial tensors (created with make grid)
-    Data2D<int> tens;
-    tens.resize(num_dimensions, 0);
-    for(int i=0; i<tensors.getNumIndexes(); i++){ // add the new tensors (so long as they are not included in the initial grid)
-        const int *t = tensors.getIndex(i);
-        std::vector<int> kid(t, t + num_dimensions);
-        for(auto &k : kid){
-            k++;
-            if (init_tensors.missing(kid) && tensors.missing(kid)) tens.appendStrip(kid);
-            k--;
-        }
+
+    MultiIndexSet new_tensors;
+    if (level_limits.empty()){
+        MultiIndexManipulations::addExclusiveChildren<false>(tensors, init_tensors, level_limits, new_tensors);
+    }else{
+        MultiIndexManipulations::addExclusiveChildren<true>(tensors, init_tensors, level_limits, new_tensors);
     }
-    MultiIndexSet new_tensors(num_dimensions); // set of new tensors
-    new_tensors.addData2D(tens);
 
     if (!new_tensors.empty()){
         int max_level;

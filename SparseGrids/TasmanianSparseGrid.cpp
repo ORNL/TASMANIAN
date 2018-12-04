@@ -1085,9 +1085,13 @@ void TasmanianSparseGrid::beginConstruction(){
         getGridGlobal()->beginConstruction();
     }
 }
-void TasmanianSparseGrid::getCandidateConstructionPoints(std::vector<double> &x){
+void TasmanianSparseGrid::getCandidateConstructionPoints(std::vector<double> &x, const std::vector<int> &level_limits){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
-    getGridGlobal()->getCandidateConstructionPoints(x);
+    int dims = base->getNumDimensions();
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
+
+    if (!level_limits.empty()) llimits = level_limits;
+    getGridGlobal()->getCandidateConstructionPoints(x, llimits);
 }
 void TasmanianSparseGrid::loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
