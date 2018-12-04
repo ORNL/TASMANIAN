@@ -1079,17 +1079,25 @@ void TasmanianSparseGrid::mergeRefinement(){
 
 void TasmanianSparseGrid::beginConstruction(){
     if (!isGlobal()) throw std::runtime_error("ERROR: beginConstruction() called for grid that is not Global");
-    clearRefinement();
-    usingDynamicConstruction = false;
+    if (!usingDynamicConstruction){
+        if (getNumLoaded() > 0) clearRefinement();
+        usingDynamicConstruction = true;
+        getGridGlobal()->beginConstruction();
+    }
 }
 void TasmanianSparseGrid::getCandidateConstructionPoints(std::vector<double> &x){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
+    getGridGlobal()->getCandidateConstructionPoints(x);
 }
 void TasmanianSparseGrid::loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
+    Data2D<double> x_tmp;
+    const double *x_canonical = formCanonicalPoints(x.data(), x_tmp, 1);
+    getGridGlobal()->loadConstructedPoint(x_canonical, y);
 }
 void TasmanianSparseGrid::finishConstruction(){
-    usingDynamicConstruction = true;
+    if (usingDynamicConstruction) getGridGlobal()->finishConstruction();
+    usingDynamicConstruction = false;
 }
 
 void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){

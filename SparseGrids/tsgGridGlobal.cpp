@@ -414,31 +414,26 @@ int GridGlobal::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.get
 int GridGlobal::getNumNeeded() const{ return needed.getNumIndexes(); }
 int GridGlobal::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
-void GridGlobal::getLoadedPoints(double *x) const{
-    int num_points = points.getNumIndexes();
-    Data2D<double> split;
-    split.load(num_dimensions, num_points, x);
+void GridGlobal::mapIndexesToNodes(const std::vector<int> *indexes, double *x) const{
+    int num_points = (int) (indexes->size() / (size_t) num_dimensions);
+    Data2D<double> splitx;
+    splitx.load(num_dimensions, num_points, x);
+    Data2D<int> spliti;
+    spliti.cload(num_dimensions, num_points, indexes->data());
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
-        const int *p = points.getIndex(i);
-        double *xx = split.getStrip(i);
-        for(int j=0; j<num_dimensions; j++){
+        const int *p = spliti.getCStrip(i);
+        double *xx = splitx.getStrip(i);
+        for(int j=0; j<num_dimensions; j++)
             xx[j] = wrapper.getNode(p[j]);
-        }
     }
 }
+
+void GridGlobal::getLoadedPoints(double *x) const{
+    mapIndexesToNodes(points.getVector(), x);
+}
 void GridGlobal::getNeededPoints(double *x) const{
-    int num_points = needed.getNumIndexes();
-    Data2D<double> split;
-    split.load(num_dimensions, num_points, x);
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = needed.getIndex(i);
-        double *xx = split.getStrip(i);
-        for(int j=0; j<num_dimensions; j++){
-            xx[j] = wrapper.getNode(p[j]);
-        }
-    }
+    mapIndexesToNodes(needed.getVector(), x);
 }
 void GridGlobal::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -540,6 +535,105 @@ void GridGlobal::mergeRefinement(){
     values.setValues(vals);
     acceptUpdatedTensors();
 }
+
+void GridGlobal::beginConstruction(){
+    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(num_dimensions, num_outputs));
+    if (points.empty()){ // if we start dynamic construction from an empty grid
+        for(int i=0; i<tensors.getNumIndexes(); i++){
+            const int *t = tensors.getIndex(i);
+            double weight = -1.0 / (1.0 + (double) std::accumulate(t, t + num_dimensions, 0));
+            dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, weight);
+        }
+        tensors = MultiIndexSet(num_dimensions);
+        active_tensors = MultiIndexSet();
+        active_w = std::vector<int>();
+        needed = MultiIndexSet();
+        values.resize(num_outputs, 0);
+    }
+}
+void GridGlobal::getCandidateConstructionPoints(std::vector<double> &x){
+    dynamic_values->clearTesnors(); // clear old tensors
+    MultiIndexSet init_tensors;
+    dynamic_values->getInitialTensors(init_tensors); // get the initial tensors (created with make grid)
+    Data2D<int> tens;
+    tens.resize(num_dimensions, 0);
+    for(int i=0; i<tensors.getNumIndexes(); i++){ // add the new tensors (so long as they are not included in the initial grid)
+        const int *t = tensors.getIndex(i);
+        std::vector<int> kid(t, t + num_dimensions);
+        for(auto &k : kid){
+            k++;
+            if (init_tensors.missing(kid) && tensors.missing(kid)) tens.appendStrip(kid);
+            k--;
+        }
+    }
+    MultiIndexSet new_tensors(num_dimensions); // set of new tensors
+    new_tensors.addData2D(tens);
+
+    if (!new_tensors.empty()){
+        int max_level;
+        MultiIndexManipulations::getMaxIndex(new_tensors, max_levels, max_level);
+        if (max_level+1 > wrapper.getNumLevels())
+            wrapper.load(custom, max_level, rule, alpha, beta);
+    }
+
+    for(int i=0; i<new_tensors.getNumIndexes(); i++){
+        const int *t = new_tensors.getIndex(i);
+        dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, (double) std::accumulate(t, t + num_dimensions, 0));
+    }
+    std::vector<int> node_indexes;
+    dynamic_values->getNodesIndexes(node_indexes);
+    x.resize(node_indexes.size());
+    mapIndexesToNodes(&node_indexes, x.data());
+}
+void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double> &y){
+    std::vector<int> p(num_dimensions);
+    for(int j=0; j<num_dimensions; j++){
+        int i = 0;
+        while(fabs(wrapper.getNode(i) - x[j]) > TSG_NUM_TOL) i++; // convert canonical node to index
+        p[j] = i;
+    }
+
+    if (dynamic_values->addNewNode(p, y)){ // if a new tensor is complete
+        loadConstructedTensors();
+    }
+}
+void GridGlobal::loadConstructedTensors(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    cuda_vals.clear();
+    #endif
+    std::vector<int> tensor;
+    MultiIndexSet new_points;
+    std::vector<double> new_values;
+    bool added_any = false;
+    while(dynamic_values->ejectCompleteTensor(tensors, tensor, new_points, new_values)){
+        if (points.empty()){
+            values.setValues(new_values);
+            points = std::move(new_points);
+        }else{
+            values.addValues(points, new_points, new_values.data());
+            points.addMultiIndexSet(new_points);
+        }
+
+        tensors.addSortedInsexes(tensor);
+        added_any = true;
+    }
+
+    if (added_any){
+        std::vector<int> tensors_w;
+        MultiIndexManipulations::computeTensorWeights(tensors, tensors_w);
+        MultiIndexManipulations::createActiveTensors(tensors, tensors_w, active_tensors);
+
+        active_w = std::vector<int>();
+        active_w.reserve(active_tensors.getNumIndexes());
+        for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
+
+        recomputeTensorRefs(points);
+    }
+}
+void GridGlobal::finishConstruction(){
+    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>();
+}
+
 const double* GridGlobal::getLoadedValues() const{
     if (getNumLoaded() == 0) return 0;
     return values.getValues(0);

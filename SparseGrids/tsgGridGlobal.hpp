@@ -113,6 +113,11 @@ public:
     void clearRefinement();
     void mergeRefinement();
 
+    void beginConstruction();
+    void getCandidateConstructionPoints(std::vector<double> &x);
+    void loadConstructedPoint(const double x[], const std::vector<double> &y);
+    void finishConstruction();
+
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
@@ -136,6 +141,9 @@ protected:
     void proposeUpdatedTensors();
     void acceptUpdatedTensors();
     void getPolynomialSpace(bool interpolation, MultiIndexSet &polynomial_set) const;
+
+    void mapIndexesToNodes(const std::vector<int> *indexes, double *x) const;
+    void loadConstructedTensors();
 
 private:
     int num_dimensions, num_outputs;
