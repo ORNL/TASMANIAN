@@ -551,6 +551,15 @@ void GridGlobal::beginConstruction(){
         values.resize(num_outputs, 0);
     }
 }
+void GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+    std::vector<int> weights;
+    if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
+        int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
+        if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
+            estimateAnisotropicCoefficients(type, output, weights);
+    }
+    getCandidateConstructionPoints(type, weights, x, level_limits);
+}
 void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){
     std::vector<int> proper_weights = weights;
     std::vector<double> curved_weights;
