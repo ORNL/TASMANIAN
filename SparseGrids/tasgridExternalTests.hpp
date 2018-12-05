@@ -37,6 +37,7 @@
 #include <fstream>
 #include <string>
 #include <iomanip>
+#include <random>
 #include <string.h>
 #include <math.h>
 
@@ -82,6 +83,7 @@ public:
     bool testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[]) const;
     bool testSurplusRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const;
     bool testAnisotropicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const;
+    bool testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, const std::vector<int> &np, const std::vector<double> &errs) const;
     bool testAcceleration(const BaseFunction *f, TasmanianSparseGrid *grid) const;
     bool testGPU2GPUevaluations() const;
 
