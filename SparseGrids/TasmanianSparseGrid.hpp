@@ -177,6 +177,22 @@ public:
     void clearRefinement();
     void mergeRefinement(); // merges all points but resets all loaded values to 0.0
 
+    //! \brief Begin a dynamic construction procedure, also calls \b clearRefinement() (cheap to call, only sets some flags)
+    void beginConstruction();
+    //! \brief Generate a sorted list of points weighted by descending importance using the \b type and provided anisotropic_weights (expensive call, roughly equivalent to set-refinement)
+
+    //! If no weights are provided, isotropic weights will be imposed. Tensor types fall-back to \b type_level (not recommended to use here).
+    void getCandidateConstructionPoints(TypeDepth type, std::vector<double> &x, const std::vector<int> &anisotropic_weights = std::vector<int>(), const std::vector<int> &level_limits = std::vector<int>());
+    //! \brief Same as \b getCandidateConstructionPoints() but the weights are obtained from a call to \b estimateAnisotropicCoefficients().
+
+    //! Unlike \b estimateAnisotropicCoefficients(), this function will not throw if the grid is empty; instead, isotropic coefficient will be used
+    //! until enough points are loaded so that coefficients can be estimated.
+    void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits = std::vector<int>());
+    //! \brief Add the value of a single point (if the tensor of the point is not complete, the grid will not be updated but the value will be stored)
+    void loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y);
+    //! \brief End the procedure, clears flags and unused constructed points, can go back to using regular refinement
+    void finishConstruction();
+
     const double* getHierarchicalCoefficients() const; // formerly getSurpluses();  returns an alias to internal data structure
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const;
@@ -266,6 +282,8 @@ private:
 
     TypeAcceleration acceleration;
     int gpuID;
+
+    bool usingDynamicConstruction;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable AccelerationDomainTransform acc_domain;

@@ -414,31 +414,26 @@ int GridGlobal::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.get
 int GridGlobal::getNumNeeded() const{ return needed.getNumIndexes(); }
 int GridGlobal::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
-void GridGlobal::getLoadedPoints(double *x) const{
-    int num_points = points.getNumIndexes();
-    Data2D<double> split;
-    split.load(num_dimensions, num_points, x);
+void GridGlobal::mapIndexesToNodes(const std::vector<int> *indexes, double *x) const{
+    int num_points = (int) (indexes->size() / (size_t) num_dimensions);
+    Data2D<double> splitx;
+    splitx.load(num_dimensions, num_points, x);
+    Data2D<int> spliti;
+    spliti.cload(num_dimensions, num_points, indexes->data());
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
-        const int *p = points.getIndex(i);
-        double *xx = split.getStrip(i);
-        for(int j=0; j<num_dimensions; j++){
+        const int *p = spliti.getCStrip(i);
+        double *xx = splitx.getStrip(i);
+        for(int j=0; j<num_dimensions; j++)
             xx[j] = wrapper.getNode(p[j]);
-        }
     }
 }
+
+void GridGlobal::getLoadedPoints(double *x) const{
+    mapIndexesToNodes(points.getVector(), x);
+}
 void GridGlobal::getNeededPoints(double *x) const{
-    int num_points = needed.getNumIndexes();
-    Data2D<double> split;
-    split.load(num_dimensions, num_points, x);
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = needed.getIndex(i);
-        double *xx = split.getStrip(i);
-        for(int j=0; j<num_dimensions; j++){
-            xx[j] = wrapper.getNode(p[j]);
-        }
-    }
+    mapIndexesToNodes(needed.getVector(), x);
 }
 void GridGlobal::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -540,6 +535,193 @@ void GridGlobal::mergeRefinement(){
     values.setValues(vals);
     acceptUpdatedTensors();
 }
+
+void GridGlobal::beginConstruction(){
+    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(num_dimensions, num_outputs));
+    if (points.empty()){ // if we start dynamic construction from an empty grid
+        for(int i=0; i<tensors.getNumIndexes(); i++){
+            const int *t = tensors.getIndex(i);
+            double weight = -1.0 / (1.0 + (double) std::accumulate(t, t + num_dimensions, 0));
+            dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, weight);
+        }
+        tensors = MultiIndexSet(num_dimensions);
+        active_tensors = MultiIndexSet();
+        active_w = std::vector<int>();
+        needed = MultiIndexSet();
+        values.resize(num_outputs, 0);
+    }
+}
+void GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+    std::vector<int> weights;
+    if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
+        int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
+        if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
+            estimateAnisotropicCoefficients(type, output, weights);
+    }
+    getCandidateConstructionPoints(type, weights, x, level_limits);
+}
+void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){
+    std::vector<int> proper_weights = weights;
+    std::vector<double> curved_weights;
+    double hyper_denom;
+    TypeDepth contour_type = type;
+    if ((type == type_hyperbolic) || (type == type_iphyperbolic) || (type == type_qphyperbolic)){
+        contour_type = type_hyperbolic;
+        if (proper_weights.empty()){
+            curved_weights = std::vector<double>(num_dimensions, 1.0);
+            hyper_denom = 1.0;
+        }else{
+            curved_weights.resize(num_dimensions);
+            std::transform(proper_weights.begin(), proper_weights.end(), curved_weights.begin(), [&](int i)->double{ return (double) i; });
+            hyper_denom = (double) std::accumulate(proper_weights.begin(), proper_weights.end(), 1);
+        }
+    }else if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+        contour_type = type_curved;
+        if (proper_weights.empty()){
+            proper_weights = std::vector<int>(num_dimensions, 1);
+            contour_type = type_level;
+        }else{
+            proper_weights.resize(num_dimensions);
+            curved_weights = std::vector<double>(num_dimensions);
+            auto itr = weights.begin() + num_dimensions;
+            for(auto &w : curved_weights) w = (double) *itr++;
+        }
+    }else{
+        contour_type = type_level;
+        if (proper_weights.empty()) proper_weights = std::vector<int>(num_dimensions, 1);
+    }
+
+    std::vector<int> cached_weights;
+
+    getCandidateConstructionPoints([&](const int *t) -> double{
+        // cache the exactness (interpolation/quadrature) or the level for the tensors
+        // the lambda defined here is called after wrapper is updated, thus can use wrapper.getNumLevels()
+        // the caching will be performed once
+        if (cached_weights.size() < (size_t) wrapper.getNumLevels()){
+            cached_weights.resize(wrapper.getNumLevels());
+            if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_iphyperbolic)){
+                cached_weights[0] = 0;
+                if (rule == rule_customtabulated){
+                    for(size_t i=1; i<cached_weights.size(); i++) cached_weights[i] = custom.getIExact((int) i - 1) + 1;
+                }else{
+                    for(size_t i=1; i<cached_weights.size(); i++) cached_weights[i] = OneDimensionalMeta::getIExact((int) i - 1, rule) + 1;
+                }
+            }else if ((type == type_qptotal) || (type == type_qpcurved) || (type == type_qphyperbolic)){
+                cached_weights[0] = 0;
+                if (rule == rule_customtabulated){
+                    for(size_t i=1; i<cached_weights.size(); i++) cached_weights[i] = custom.getQExact((int) i - 1) + 1;
+                }else{
+                    for(size_t i=1; i<cached_weights.size(); i++) cached_weights[i] = OneDimensionalMeta::getQExact((int) i - 1, rule) + 1;
+                }
+            }else{
+                for(size_t i=0; i<cached_weights.size(); i++) cached_weights[i] = (int) i;
+            }
+        }
+
+        // replace the tensor with the cached_weights which correspond to interpolation/quadrature exactness or simple level
+        std::vector<int> wt(num_dimensions);
+        std::transform(t, t + num_dimensions, wt.begin(), [&](const int &i)->int{ return cached_weights[i]; });
+
+        if (contour_type == type_level){
+            return (double) std::inner_product(wt.begin(), wt.end(), proper_weights.data(), 0);
+        }else if (contour_type == type_hyperbolic){
+            double result = 1.0;
+            auto itr = curved_weights.begin();
+            for(auto w : wt){
+                result *= pow((double) (1.0 + w), *itr++ / hyper_denom);
+            }
+            return result;
+        }else{
+            double result = (double) std::inner_product(t, t + num_dimensions, proper_weights.data(), 0);
+            auto itr = curved_weights.begin();
+            for(auto w : wt){
+                result += *itr++ * log1p((double) w);
+            }
+            return result;
+        }
+    }, x, level_limits);
+}
+void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){
+    dynamic_values->clearTesnors(); // clear old tensors
+    MultiIndexSet init_tensors;
+    dynamic_values->getInitialTensors(init_tensors); // get the initial tensors (created with make grid)
+
+    MultiIndexSet new_tensors;
+    if (level_limits.empty()){
+        MultiIndexManipulations::addExclusiveChildren<false>(tensors, init_tensors, level_limits, new_tensors);
+    }else{
+        MultiIndexManipulations::addExclusiveChildren<true>(tensors, init_tensors, level_limits, new_tensors);
+    }
+
+    if (!new_tensors.empty()){
+        int max_level;
+        MultiIndexManipulations::getMaxIndex(new_tensors, max_levels, max_level);
+        if (max_level+1 > wrapper.getNumLevels())
+            wrapper.load(custom, max_level, rule, alpha, beta);
+    }
+
+    std::vector<double> tweights(new_tensors.getNumIndexes());
+    for(int i=0; i<new_tensors.getNumIndexes(); i++)
+        tweights[i] = (double) getTensorWeight(new_tensors.getIndex(i));
+
+    for(int i=0; i<new_tensors.getNumIndexes(); i++){
+        const int *t = new_tensors.getIndex(i);
+        dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
+    }
+    std::vector<int> node_indexes;
+    dynamic_values->getNodesIndexes(node_indexes);
+    x.resize(node_indexes.size());
+    mapIndexesToNodes(&node_indexes, x.data());
+}
+void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double> &y){
+    std::vector<int> p(num_dimensions);
+    for(int j=0; j<num_dimensions; j++){
+        int i = 0;
+        while(fabs(wrapper.getNode(i) - x[j]) > TSG_NUM_TOL) i++; // convert canonical node to index
+        p[j] = i;
+    }
+
+    if (dynamic_values->addNewNode(p, y)){ // if a new tensor is complete
+        loadConstructedTensors();
+    }
+}
+void GridGlobal::loadConstructedTensors(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    cuda_vals.clear();
+    #endif
+    std::vector<int> tensor;
+    MultiIndexSet new_points;
+    std::vector<double> new_values;
+    bool added_any = false;
+    while(dynamic_values->ejectCompleteTensor(tensors, tensor, new_points, new_values)){
+        if (points.empty()){
+            values.setValues(new_values);
+            points = std::move(new_points);
+        }else{
+            values.addValues(points, new_points, new_values.data());
+            points.addMultiIndexSet(new_points);
+        }
+
+        tensors.addSortedInsexes(tensor);
+        added_any = true;
+    }
+
+    if (added_any){
+        std::vector<int> tensors_w;
+        MultiIndexManipulations::computeTensorWeights(tensors, tensors_w);
+        MultiIndexManipulations::createActiveTensors(tensors, tensors_w, active_tensors);
+
+        active_w = std::vector<int>();
+        active_w.reserve(active_tensors.getNumIndexes());
+        for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
+
+        recomputeTensorRefs(points);
+    }
+}
+void GridGlobal::finishConstruction(){
+    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>();
+}
+
 const double* GridGlobal::getLoadedValues() const{
     if (getNumLoaded() == 0) return 0;
     return values.getValues(0);

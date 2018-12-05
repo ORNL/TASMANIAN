@@ -829,6 +829,57 @@ bool ExternalTester::testAnisotropicRefinement(const BaseFunction *f, TasmanianS
     return true;
 }
 
+bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, const std::vector<int> &np, const std::vector<double> &errs) const{
+    grid->beginConstruction();
+    size_t dims = (size_t) grid->getNumDimensions();
+    size_t outs = (size_t) grid->getNumOutputs();
+    for(size_t itr = 0; itr < np.size(); itr++){
+        std::vector<double> points;
+        grid->getCandidateConstructionPoints(type, 0, points);
+        size_t num_points = points.size() / dims;
+
+        // only compute half of the points
+        num_points /= 2;
+
+        std::vector<size_t> pindex(num_points);
+        for(size_t i=0; i<num_points; i++) pindex[i] = i;
+        std::shuffle(pindex.begin(), pindex.end(), std::default_random_engine(random()));
+
+        for(auto i : pindex){
+            std::vector<double> x(&(points[i * dims]), &(points[i * dims]) + dims);
+            std::vector<double> y(outs);
+            f->eval(x.data(), y.data());
+            grid->loadConstructedPoint(x, y);
+        }
+
+        // make sure that getError() does not load values but only does evaluations
+        if (grid->getNumNeeded() != 0){
+            cout << "ERROR: dynamic construction did not clear the needed points at iteration: " << itr << endl;
+            return false;
+        }
+        if (grid->getNumLoaded() == 0){
+            cout << "ERROR: dynamic construction failed to load any tensors at iteration: " << itr << endl;
+            return false;
+        }
+        TestResults R = getError(f, grid, type_internal_interpolation);
+
+        //cout << "points = " << R.num_points << "  err = " << R.error << std::endl;
+        if ((R.num_points != np[itr]) || (R.error > errs[itr])){
+            cout << "ERROR: dynamic construction failed at iteration: " << itr << endl;
+            cout << "function: " << f->getDescription() << "  expected = " << np[itr] << "  " << errs[itr]
+                 << "   observed points = " << R.num_points << "  error = " << R.error << std::endl;
+            return false;
+        }
+
+        if (itr % 3 == 2){
+            grid->finishConstruction();
+            grid->beginConstruction();
+        }
+    }
+    grid->finishConstruction();
+    return true;
+}
+
 bool ExternalTester::testAllPWLocal() const{
     bool pass = true;
     int wfirst = 10, wsecond = 35, wthird = 15;
@@ -1264,7 +1315,20 @@ bool ExternalTester::testAllRefinement() const{
 
     cout << "      Refinement                  anisotropic" << setw(15) << ((pass2) ? "Pass" : "FAIL") << endl;
 
-    return (pass && pass2);
+    bool pass3 = true;
+    {
+        const BaseFunction *f = &f21aniso;
+        std::vector<int> np = {29, 45, 73, 113, 193, 305};
+        std::vector<double> err = {0.06, 0.02, 0.008, 0.002, 0.0009, 3.E-6};
+        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_level, rule_clenshawcurtis);
+        if (!testDynamicRefinement(f, &grid, type_iptotal, np, err)){
+            cout << "ERROR: failed dynamic anisotropic refinement using clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
+        }
+    }
+
+    cout << "    Construction               dynamic/global" << setw(15) << ((pass3) ? "Pass" : "FAIL") << endl;
+
+    return (pass && pass2 && pass3);
 }
 
 bool ExternalTester::testAllDomain() const{

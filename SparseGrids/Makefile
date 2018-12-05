@@ -11,12 +11,14 @@ LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp ts
            tsgRuleLocalPolynomial.hpp tsgHardCodedTabulatedRules.hpp tsgGridLocalPolynomial.hpp tsgGridFourier.hpp \
            tsgRuleWavelet.hpp tsgCudaMacros.hpp tsgGridWavelet.hpp \
            tsgCudaLinearAlgebra.hpp tsgCudaBasisEvaluations.hpp tsgAcceleratedDataStructures.hpp \
+           tsgDConstructGridGlobal.hpp \
            tasgridTestFunctions.hpp tasgridExternalTests.hpp tasgridWrapper.hpp tasgridUnitTests.hpp \
            TasmanianSparseGrid.hpp
 
 LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlobal.o tsgSequenceOptimizer.o tsgOneDimensionalWrapper.o \
          tsgGridCore.o tsgLinearSolvers.o tsgGridSequence.o tsgHardCodedTabulatedRules.o \
          tsgGridLocalPolynomial.o tsgRuleWavelet.o tsgGridWavelet.o tsgGridFourier.o \
+         tsgDConstructGridGlobal.o \
          tsgAcceleratedDataStructures.o $(TASMANIAN_CUDA_KERNELS) \
          TasmanianSparseGrid.o
 

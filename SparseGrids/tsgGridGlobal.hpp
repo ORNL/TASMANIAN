@@ -32,6 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_HPP
 
 #include <cstdlib>
+#include <memory>
 
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
@@ -40,6 +41,7 @@
 #include "tsgLinearSolvers.hpp"
 #include "tsgCacheLagrange.hpp"
 #include "tsgOneDimensionalWrapper.hpp"
+#include "tsgDConstructGridGlobal.hpp"
 #include "tsgGridCore.hpp"
 
 #include "tsgAcceleratedDataStructures.hpp"
@@ -111,6 +113,13 @@ public:
     void clearRefinement();
     void mergeRefinement();
 
+    void beginConstruction();
+    void getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits);
+    void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits);
+    void getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits);
+    void loadConstructedPoint(const double x[], const std::vector<double> &y);
+    void finishConstruction();
+
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
@@ -134,6 +143,9 @@ protected:
     void proposeUpdatedTensors();
     void acceptUpdatedTensors();
     void getPolynomialSpace(bool interpolation, MultiIndexSet &polynomial_set) const;
+
+    void mapIndexesToNodes(const std::vector<int> *indexes, double *x) const;
+    void loadConstructedTensors();
 
 private:
     int num_dimensions, num_outputs;
@@ -159,6 +171,8 @@ private:
     std::vector<int> updated_active_w;
 
     CustomTabulated custom;
+
+    std::unique_ptr<DynamicConstructorDataGlobal> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable LinearAlgebraEngineGPU cuda_engine;

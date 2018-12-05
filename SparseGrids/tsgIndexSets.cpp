@@ -176,8 +176,8 @@ void MultiIndexSet::addUnsortedInsexes(const std::vector<int> &addition){
 }
 
 int MultiIndexSet::getSlot(const int *p) const{
-    size_t sstart = 0, send = (size_t)(cache_num_indexes - 1);
-    size_t current = (sstart + send) / 2;
+    int sstart = 0, send = cache_num_indexes - 1;
+    int current = (sstart + send) / 2;
     while (sstart <= send){
         TypeIndexRelation t = [&](const int *a, const int *b) ->
             TypeIndexRelation{
@@ -186,13 +186,13 @@ int MultiIndexSet::getSlot(const int *p) const{
                     if (a[j] > b[j]) return type_bbeforea;
                 }
                 return type_asameb;
-            }(&(indexes[current * num_dimensions]), p);
+            }(&(indexes[(size_t) current * num_dimensions]), p);
         if (t == type_abeforeb){
             sstart = current+1;
         }else if (t == type_bbeforea){
             send = current-1;
         }else{
-            return (int) current;
+            return current;
         };
         current = (sstart + send) / 2;
     }

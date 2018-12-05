@@ -454,6 +454,37 @@ void createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weig
 //! \brief For a set of **tensors** compute the corresponding polynomial **space** assuming the 1D rules have given **exactness**
 //! \ingroup TasmanianMultiIndexManipulations
 void createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness, MultiIndexSet &space);
+
+//! \internal
+//! \brief For a set of \b tensors create an \b mset that contain the children of indexes in \b tensors that are missing from \b exclude and obey the \b level_limits.
+//! \ingroup TasmanianMultiIndexManipulations
+template<bool limited>
+void addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exclude, const std::vector<int> level_limits, MultiIndexSet &mset){
+    int num_dimensions = tensors.getNumDimensions();
+    Data2D<int> tens;
+    tens.resize(num_dimensions, 0);
+    for(int i=0; i<tensors.getNumIndexes(); i++){ // add the new tensors (so long as they are not included in the initial grid)
+        const int *t = tensors.getIndex(i);
+        std::vector<int> kid(t, t + num_dimensions);
+        auto ilimit = level_limits.begin();
+        for(auto &k : kid){
+            k++;
+            if (exclude.missing(kid) && tensors.missing(kid)){
+                if (limited){
+                    if ((*ilimit == -1) || (k <= *ilimit))
+                        tens.appendStrip(kid);
+                    ilimit++;
+                }else{
+                    tens.appendStrip(kid);
+                }
+            }
+            k--;
+        }
+    }
+    mset.setNumDimensions(num_dimensions); // set of new tensors
+    mset.addData2D(tens);
+}
+
 }
 
 }

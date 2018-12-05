@@ -62,12 +62,12 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     #endif // _OPENMP
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(accel_none), gpuID(0){
+TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(accel_none), gpuID(0), usingDynamicConstruction(false){
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
 }
-TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : acceleration(accel_none), gpuID(0)
+TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : acceleration(accel_none), gpuID(0), usingDynamicConstruction(false)
 {
     copyGrid(&source);
 #ifdef Tasmanian_ENABLE_BLAS
@@ -935,6 +935,7 @@ void TasmanianSparseGrid::getLevelLimits(std::vector<int> &limits) const{
 }
 
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
+    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (base.get() == nullptr) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
     std::vector<int> ll;
     if (level_limits != 0){
@@ -945,6 +946,7 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
     setAnisotropicRefinement(type, min_growth, output, ll);
 }
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
+    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
     if (min_growth < 1) throw std::invalid_argument("ERROR: setAnisotropicRefinement() requires positive min_growth");
     int dims = base->getNumDimensions();
@@ -996,6 +998,7 @@ void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
 }
 
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const int *level_limits){
+    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
     std::vector<int> ll;
     if (level_limits != 0){
@@ -1006,6 +1009,7 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
     setSurplusRefinement(tolerance, output, ll);
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
+    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
     int dims = base->getNumDimensions();
     int outs = base->getNumOutputs();
@@ -1030,6 +1034,7 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
 }
 
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
+    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
     int dims = base->getNumDimensions();
     int outs = base->getNumOutputs();
@@ -1051,6 +1056,7 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
+    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
     int dims = base->getNumDimensions();
     size_t nscale = (size_t) base->getNumNeeded();
@@ -1069,6 +1075,51 @@ void TasmanianSparseGrid::clearRefinement(){
 }
 void TasmanianSparseGrid::mergeRefinement(){
     if (!empty()) base->mergeRefinement();
+}
+
+void TasmanianSparseGrid::beginConstruction(){
+    if (!isGlobal()) throw std::runtime_error("ERROR: beginConstruction() called for grid that is not Global");
+    if (!usingDynamicConstruction){
+        if (getNumLoaded() > 0) clearRefinement();
+        usingDynamicConstruction = true;
+        getGridGlobal()->beginConstruction();
+    }
+}
+void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, std::vector<double> &x, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+    if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
+    size_t dims = (size_t) base->getNumDimensions();
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
+    if (!anisotropic_weights.empty()){
+        if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+            if (anisotropic_weights.size() != 2 * dims) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() called with curved type and incorrect size for anisotropic_weights (must be twice the number of dimensions)");
+        }else{
+            if (anisotropic_weights.size() != dims) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() called with incorrect size for anisotropic_weights (must match number of dimensions)");
+        }
+    }
+
+    if (!level_limits.empty()) llimits = level_limits;
+    getGridGlobal()->getCandidateConstructionPoints(type, anisotropic_weights, x, llimits);
+}
+void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+    if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
+    size_t dims = (size_t) base->getNumDimensions();
+    if ((!level_limits.empty()) && (level_limits.size() != dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling getCandidateConstructionPoints() for a grid that has no outputs");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling getCandidateConstructionPoints() with invalid output");
+
+    if (!level_limits.empty()) llimits = level_limits;
+    getGridGlobal()->getCandidateConstructionPoints(type, output, x, llimits);
+}
+void TasmanianSparseGrid::loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y){
+    if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
+    Data2D<double> x_tmp;
+    const double *x_canonical = formCanonicalPoints(x.data(), x_tmp, 1);
+    getGridGlobal()->loadConstructedPoint(x_canonical, y);
+}
+void TasmanianSparseGrid::finishConstruction(){
+    if (usingDynamicConstruction) getGridGlobal()->finishConstruction();
+    usingDynamicConstruction = false;
 }
 
 void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
