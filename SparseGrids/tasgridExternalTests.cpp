@@ -1326,7 +1326,7 @@ bool ExternalTester::testAllRefinement() const{
         }
     }
 
-    cout << "    Construction               dynamic/global" << setw(15) << ((pass3) ? "Pass" : "FAIL") << endl;
+    cout << "      Construction             dynamic/global" << setw(15) << ((pass3) ? "Pass" : "FAIL") << endl;
 
     return (pass && pass2 && pass3);
 }
