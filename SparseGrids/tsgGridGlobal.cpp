@@ -586,8 +586,6 @@ void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vecto
             auto itr = weights.begin() + num_dimensions;
             for(auto &w : curved_weights) w = (double) *itr++;
         }
-        for(auto w : proper_weights) std::cout << w << "  "; std::cout << std::endl;
-        for(auto w : curved_weights) std::cout << w << "  "; std::cout << std::endl;
     }else{
         contour_type = type_level;
         if (proper_weights.empty()) proper_weights = std::vector<int>(num_dimensions, 1);

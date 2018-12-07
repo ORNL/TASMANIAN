@@ -838,8 +838,9 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
         grid->getCandidateConstructionPoints(type, 0, points);
         size_t num_points = points.size() / dims;
 
-        // only compute half of the points
+        // only compute half of the points but no more than 32
         num_points /= 2;
+        num_points = (num_points <= 32) ? num_points : 32;
 
         std::vector<size_t> pindex(num_points);
         for(size_t i=0; i<num_points; i++) pindex[i] = i;
@@ -1318,11 +1319,19 @@ bool ExternalTester::testAllRefinement() const{
     bool pass3 = true;
     {
         const BaseFunction *f = &f21aniso;
-        std::vector<int> np = {29, 45, 73, 113, 193, 305};
-        std::vector<double> err = {0.06, 0.02, 0.008, 0.002, 0.0009, 3.E-6};
+        std::vector<int> np     = {  29,   45,    65,    97,   129,    145,    161,    193,   241,   257,   289,    321,  353,    353,  417};
+        std::vector<double> err = {0.06, 0.02, 0.008, 0.002, 0.002, 0.0015, 0.0015, 0.0015, 0.0009, 4.E-4, 3.E-4, 5.E-5, 3.E-6, 3.E-6, 3.E-6};
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_level, rule_clenshawcurtis);
         if (!testDynamicRefinement(f, &grid, type_iptotal, np, err)){
-            cout << "ERROR: failed dynamic anisotropic refinement using clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
+            cout << "ERROR: failed dynamic anisotropic refinement using iptotal and clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
+        }
+    }{
+        const BaseFunction *f = &f21aniso;
+        std::vector<int> np     = {  29,   45,   65,   97,   129,   145,   177,   209,   241,   273,   289,   321,  321,    385,   417,   449};
+        std::vector<double> err = {0.06, 0.02, 0.01, 0.01, 0.001, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-5, 3.E-6};
+        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_level, rule_clenshawcurtis);
+        if (!testDynamicRefinement(f, &grid, type_ipcurved, np, err)){
+            cout << "ERROR: failed dynamic anisotropic refinement using ipcurved and clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
         }
     }
 
