@@ -586,41 +586,43 @@ void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vecto
             auto itr = weights.begin() + num_dimensions;
             for(auto &w : curved_weights) w = (double) *itr++;
         }
+        for(auto w : proper_weights) std::cout << w << "  "; std::cout << std::endl;
+        for(auto w : curved_weights) std::cout << w << "  "; std::cout << std::endl;
     }else{
         contour_type = type_level;
         if (proper_weights.empty()) proper_weights = std::vector<int>(num_dimensions, 1);
     }
 
-    std::vector<int> cached_weights;
+    std::vector<int> cached_exactness;
 
     getCandidateConstructionPoints([&](const int *t) -> double{
         // cache the exactness (interpolation/quadrature) or the level for the tensors
         // the lambda defined here is called after wrapper is updated, thus can use wrapper.getNumLevels()
         // the caching will be performed once
-        if (cached_weights.size() < (size_t) wrapper.getNumLevels()){
-            cached_weights.resize(wrapper.getNumLevels());
+        if (cached_exactness.size() < (size_t) wrapper.getNumLevels()){
+            cached_exactness.resize(wrapper.getNumLevels());
             if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_iphyperbolic)){
-                cached_weights[0] = 0;
+                cached_exactness[0] = 0;
                 if (rule == rule_customtabulated){
-                    for(size_t i=1; i<cached_weights.size(); i++) cached_weights[i] = custom.getIExact((int) i - 1) + 1;
+                    for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = custom.getIExact((int) i - 1) + 1;
                 }else{
-                    for(size_t i=1; i<cached_weights.size(); i++) cached_weights[i] = OneDimensionalMeta::getIExact((int) i - 1, rule) + 1;
+                    for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = OneDimensionalMeta::getIExact((int) i - 1, rule) + 1;
                 }
             }else if ((type == type_qptotal) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-                cached_weights[0] = 0;
+                cached_exactness[0] = 0;
                 if (rule == rule_customtabulated){
-                    for(size_t i=1; i<cached_weights.size(); i++) cached_weights[i] = custom.getQExact((int) i - 1) + 1;
+                    for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = custom.getQExact((int) i - 1) + 1;
                 }else{
-                    for(size_t i=1; i<cached_weights.size(); i++) cached_weights[i] = OneDimensionalMeta::getQExact((int) i - 1, rule) + 1;
+                    for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = OneDimensionalMeta::getQExact((int) i - 1, rule) + 1;
                 }
             }else{
-                for(size_t i=0; i<cached_weights.size(); i++) cached_weights[i] = (int) i;
+                for(size_t i=0; i<cached_exactness.size(); i++) cached_exactness[i] = (int) i;
             }
         }
 
-        // replace the tensor with the cached_weights which correspond to interpolation/quadrature exactness or simple level
+        // replace the tensor with the cached_exactness which correspond to interpolation/quadrature exactness or simple level
         std::vector<int> wt(num_dimensions);
-        std::transform(t, t + num_dimensions, wt.begin(), [&](const int &i)->int{ return cached_weights[i]; });
+        std::transform(t, t + num_dimensions, wt.begin(), [&](const int &i)->int{ return cached_exactness[i]; });
 
         if (contour_type == type_level){
             return (double) std::inner_product(wt.begin(), wt.end(), proper_weights.data(), 0);
