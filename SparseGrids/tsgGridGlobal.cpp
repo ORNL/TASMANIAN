@@ -632,7 +632,7 @@ void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vecto
             }
             return result;
         }else{
-            double result = (double) std::inner_product(t, t + num_dimensions, proper_weights.data(), 0);
+            double result = (double) std::inner_product(wt.begin(), wt.end(), proper_weights.data(), 0);
             auto itr = curved_weights.begin();
             for(auto w : wt){
                 result += *itr++ * log1p((double) w);
