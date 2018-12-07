@@ -469,13 +469,24 @@ void addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exc
         auto ilimit = level_limits.begin();
         for(auto &k : kid){
             k++;
-            if (exclude.missing(kid) && tensors.missing(kid)){
-                if (limited){
-                    if ((*ilimit == -1) || (k <= *ilimit))
+            if (exclude.missing(kid) && tensors.missing(kid)){ // if the kid is not to be excluded and if not included in the current set
+                std::vector<int> dad = kid;
+                bool orphan = false; // make sure that all parents of kid are included in the tensor set (i.e., preserve lower structure)
+                for(auto &d : dad){
+                    if (d > 0){
+                        d--;
+                        if (tensors.missing(dad)) orphan = true;
+                        d++;
+                    }
+                }
+                if (!orphan){
+                    if (limited){
+                        if ((*ilimit == -1) || (k <= *ilimit))
+                            tens.appendStrip(kid);
+                        ilimit++;
+                    }else{
                         tens.appendStrip(kid);
-                    ilimit++;
-                }else{
-                    tens.appendStrip(kid);
+                    }
                 }
             }
             k--;
