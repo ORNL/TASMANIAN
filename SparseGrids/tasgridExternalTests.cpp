@@ -1333,6 +1333,14 @@ bool ExternalTester::testAllRefinement() const{
         if (!testDynamicRefinement(f, &grid, type_ipcurved, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using ipcurved and clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
         }
+    }{
+        const BaseFunction *f = &f21aniso;
+        std::vector<int> np     = { 32,    55,    71,    77,    85,    95,   105,   115,   125,   137,   149,   168,   182,   204,   226,   247,   269,   291,   322,   354};
+        std::vector<double> err = {0.5, 2.E-2, 2.E-2, 1.E-2, 1.E-2, 1.E-2, 1.E-2, 9.E-3, 5.E-3, 5.E-3, 5.E-3, 5.E-3, 2.E-3, 2.E-3, 2.E-3, 8.E-4, 8.E-4, 8.E-4, 3.E-4, 3.E-4};
+        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 20, type_iphyperbolic, rule_rlejadouble4);
+        if (!testDynamicRefinement(f, &grid, type_iphyperbolic, np, err)){
+            cout << "ERROR: failed dynamic anisotropic refinement using iphyperbolic and rule_rlejadouble4 nodes for " << f->getDescription() << endl;
+        }
     }
 
     cout << "      Construction             dynamic/global" << setw(15) << ((pass3) ? "Pass" : "FAIL") << endl;
