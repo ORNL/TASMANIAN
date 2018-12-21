@@ -852,7 +852,11 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
             std::vector<double> x(&(points[i * dims]), &(points[i * dims]) + dims);
             std::vector<double> y(outs);
             f->eval(x.data(), y.data());
-            grid->loadConstructedPoint(x, y);
+            if (i % 3 == 0){ // every third point uses the array interface for testing purpose
+                grid->loadConstructedPoint(x.data(), y.data());
+            }else{
+                grid->loadConstructedPoint(x, y);
+            }
         }
 
         // make sure that getError() does not load values but only does evaluations

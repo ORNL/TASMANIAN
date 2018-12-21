@@ -1113,9 +1113,16 @@ void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int out
 }
 void TasmanianSparseGrid::loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
+    if (x.size() != (size_t) getNumDimensions()) throw std::runtime_error("ERROR: loadConstructedPoint() called with incorrect size for x");
+    if (y.size() != (size_t) getNumOutputs()) throw std::runtime_error("ERROR: loadConstructedPoint() called with incorrect size for y");
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x.data(), x_tmp, 1);
     getGridGlobal()->loadConstructedPoint(x_canonical, y);
+}
+void TasmanianSparseGrid::loadConstructedPoint(const double x[], const double y[]){
+    if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
+    std::vector<double> vecx(x, x + getNumDimensions()), vecy(y, y + getNumOutputs());
+    loadConstructedPoint(vecx, vecy);
 }
 void TasmanianSparseGrid::finishConstruction(){
     if (usingDynamicConstruction) getGridGlobal()->finishConstruction();
@@ -2016,6 +2023,16 @@ void tsgClearRefinement(void *grid){
 void tsgMergeRefinement(void *grid){
     ((TasmanianSparseGrid*) grid)->mergeRefinement();
 }
+void tsgBeginConstruction(void *grid){
+    ((TasmanianSparseGrid*) grid)->beginConstruction();
+}
+int tsgIsUsingConstruction(void *grid){
+    return (((TasmanianSparseGrid*) grid)->isUsingConstruction()) ? 1 : 0;
+}
+void tsgFinishConstruction(void *grid){
+    ((TasmanianSparseGrid*) grid)->finishConstruction();
+}
+
 void tsgRemovePointsByHierarchicalCoefficient(void *grid, double tolerance, int output, const double *scale_correction){
     ((TasmanianSparseGrid*) grid)->removePointsByHierarchicalCoefficient(tolerance, output, scale_correction);
 }
