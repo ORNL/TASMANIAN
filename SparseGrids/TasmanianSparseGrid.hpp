@@ -179,6 +179,8 @@ public:
 
     //! \brief Begin a dynamic construction procedure, also calls \b clearRefinement() (cheap to call, only sets some flags)
     void beginConstruction();
+    //! \brief Returns \b true if the dynamic construction procedure has been initialized, \b false otherwise.
+    bool isUsingConstruction() const{ return usingDynamicConstruction; }
     //! \brief Generate a sorted list of points weighted by descending importance using the \b type and provided anisotropic_weights (expensive call, roughly equivalent to set-refinement)
 
     //! If no weights are provided, isotropic weights will be imposed. Tensor types fall-back to \b type_level (not recommended to use here).
