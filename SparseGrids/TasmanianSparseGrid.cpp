@@ -2029,6 +2029,42 @@ void tsgBeginConstruction(void *grid){
 int tsgIsUsingConstruction(void *grid){
     return (((TasmanianSparseGrid*) grid)->isUsingConstruction()) ? 1 : 0;
 }
+void tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, int output, const int *anisotropic_weights, const int *limit_levels, void *vecx){ // internal use only
+    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    #ifndef NDEBUG
+    if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
+    #endif // NDEBUG
+    if (depth_type == type_none){ depth_type = type_iptotal; }
+    size_t dims = (size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    vecx = (void*) new std::vector<double>();
+    std::vector<int> veclimits;
+    if (limit_levels != nullptr) veclimits = std::vector<int>(limit_levels, limit_levels + dims);
+    if (anisotropic_weights == nullptr){
+        ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, output, *((std::vector<double>*) vecx), veclimits);
+    }else{
+        int num_weights = ((TasmanianSparseGrid*) grid)->getNumDimensions();
+        if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
+            num_weights *= 2;
+        }
+        std::vector<int> vecweights(anisotropic_weights, anisotropic_weights +
+                                    (((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)) ? 2*dims : dims));
+        ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, *((std::vector<double>*) vecx), vecweights, veclimits);
+    }
+}
+void tsgGetCandidateConstructionPoints(void *grid, const char *sType, int output, const int *anisotropic_weights, const int *limit_levels, int *num_points, double **x){
+    size_t dims = (size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    std::vector<double> *vecx = nullptr;
+    tsgGetCandidateConstructionPointsVoidPntr(grid, sType, output, anisotropic_weights, limit_levels, vecx);
+    *num_points = (int)(vecx->size() / dims);
+    *x = (double*) malloc(vecx->size() * sizeof(double));
+    std::copy_n(vecx->data(), vecx->size(), *x);
+    delete vecx;
+}
+int tsgGetCandidateConstructionPointsPythonGetNP(void *grid, const void *vecx){
+    return (int) (((std::vector<double>*) vecx)->size() / ((size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions()));
+}
+void tsgGetCandidateConstructionPointsPythonStatic(const void *vecx, double *x){ std::copy_n(((std::vector<double>*) vecx)->data(), ((std::vector<double>*) vecx)->size(), x); }
+void tsgGetCandidateConstructionPointsPythonDeleteVect(void *vecx){ delete ((std::vector<double>*) vecx); }
 void tsgLoadConstructedPoint(void *grid, const double *x, const double *y){
     ((TasmanianSparseGrid*) grid)->loadConstructedPoint(x, y);
 }
