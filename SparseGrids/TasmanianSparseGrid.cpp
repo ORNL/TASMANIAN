@@ -2029,6 +2029,9 @@ void tsgBeginConstruction(void *grid){
 int tsgIsUsingConstruction(void *grid){
     return (((TasmanianSparseGrid*) grid)->isUsingConstruction()) ? 1 : 0;
 }
+void tsgLoadConstructedPoint(void *grid, const double *x, const double *y){
+    ((TasmanianSparseGrid*) grid)->loadConstructedPoint(x, y);
+}
 void tsgFinishConstruction(void *grid){
     ((TasmanianSparseGrid*) grid)->finishConstruction();
 }
