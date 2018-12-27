@@ -92,9 +92,11 @@ void DynamicConstructorDataGlobal::getNodesIndexes(std::vector<int> &inodes){
     tensors.sort([&](const TensorData &a, const TensorData &b)->bool{ return (a.weight < b.weight); });
     auto t = tensors.begin();
     while(t != tensors.end()){
-        for(int i=0; i<(*t).points.getNumIndexes(); i++){
-            if (!(*t).loaded[i])
-                inodes.insert(inodes.end(), (*t).points.getIndex(i), (*t).points.getIndex(i) + num_dimensions);
+        if (!t->loaded.empty()){
+            for(int i=0; i<t->points.getNumIndexes(); i++){
+                if (!t->loaded[i])
+                    inodes.insert(inodes.end(), t->points.getIndex(i), t->points.getIndex(i) + num_dimensions);
+            }
         }
         t++;
     }
