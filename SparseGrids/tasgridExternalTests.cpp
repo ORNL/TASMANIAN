@@ -830,7 +830,9 @@ bool ExternalTester::testAnisotropicRefinement(const BaseFunction *f, TasmanianS
 }
 
 bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, const std::vector<int> &np, const std::vector<double> &errs) const{
+    if (grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction initialized for no reason." << endl; return false; }
     grid->beginConstruction();
+    if (!grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to initialize." << endl; return false; }
     size_t dims = (size_t) grid->getNumDimensions();
     size_t outs = (size_t) grid->getNumOutputs();
     for(size_t itr = 0; itr < np.size(); itr++){
@@ -850,7 +852,11 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
             std::vector<double> x(&(points[i * dims]), &(points[i * dims]) + dims);
             std::vector<double> y(outs);
             f->eval(x.data(), y.data());
-            grid->loadConstructedPoint(x, y);
+            if (i % 3 == 0){ // every third point uses the array interface for testing purpose
+                grid->loadConstructedPoint(x.data(), y.data());
+            }else{
+                grid->loadConstructedPoint(x, y);
+            }
         }
 
         // make sure that getError() does not load values but only does evaluations
@@ -878,6 +884,7 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
         }
     }
     grid->finishConstruction();
+    if (grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to finalize." << endl; return false; }
     return true;
 }
 
