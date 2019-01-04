@@ -43,7 +43,7 @@ void DynamicConstructorDataGlobal::clearTesnors(){
     auto p = tensors.before_begin();
     auto t = tensors.begin();
     while(t != tensors.end()){
-        if ((*t).weight >= 0.0){
+        if (t->weight >= 0.0){
             tensors.erase_after(p);
             t = p;
         }else{
@@ -58,7 +58,7 @@ void DynamicConstructorDataGlobal::getInitialTensors(MultiIndexSet &set) const{
     tens.resize(num_dimensions, 0);
     auto t = tensors.begin();
     while(t != tensors.end()){
-        if ((*t).weight < 0.0){
+        if (t->weight < 0.0){
             tens.appendStrip((*t).tensor);
         }
         t++;
@@ -79,7 +79,7 @@ void DynamicConstructorDataGlobal::addTensor(const int *tensor, std::function<in
     t.loaded = std::vector<bool>(t.points.getNumIndexes(), false);
     auto d = data.begin();
     while(d != data.end()){
-        int slot = t.points.getSlot((*d).point);
+        int slot = t.points.getSlot(d->point);
         if (slot != -1) t.loaded[slot] = true;
         d++;
     }
@@ -106,11 +106,11 @@ bool DynamicConstructorDataGlobal::addNewNode(const std::vector<int> &point, con
     data.push_front({point, value});
     auto t = tensors.begin();
     while(t != tensors.end()){
-        int slot = (*t).points.getSlot(point);
+        int slot = t->points.getSlot(point);
         if (slot != -1){
-            (*t).loaded[slot] = true;
-            if (std::all_of((*t).loaded.begin(), (*t).loaded.end(), [](bool a)-> bool{ return a; })){ // if all entries are true
-                (*t).loaded = std::vector<bool>();
+            t->loaded[slot] = true;
+            if (std::all_of(t->loaded.begin(), t->loaded.end(), [](bool a)-> bool{ return a; })){ // if all entries are true
+                t->loaded = std::vector<bool>();
                 return true; // all points associated with this tensor have been loaded, signal to call ejectCompleteTensor()
             }else{
                 return false; // point added to the tensor, but the tensor is not complete yet
@@ -125,8 +125,8 @@ bool DynamicConstructorDataGlobal::ejectCompleteTensor(const MultiIndexSet &curr
     auto p = tensors.before_begin();
     auto t = tensors.begin();
     while(t != tensors.end()){
-        if ((*t).loaded.empty()){ // empty loaded means all have been loaded
-            std::vector<int> test = (*t).tensor;
+        if (t->loaded.empty()){ // empty loaded means all have been loaded
+            std::vector<int> test = t->tensor;
             bool parents_exist = true;
             for(auto &pt : test){
                 if (pt > 0){
@@ -136,19 +136,19 @@ bool DynamicConstructorDataGlobal::ejectCompleteTensor(const MultiIndexSet &curr
                 }
             }
             if (parents_exist){
-                tensor = (*t).tensor;
-                points = (*t).points;
+                tensor = t->tensor;
+                points = t->points;
                 vals.resize(points.getNumIndexes() *  num_outputs);
                 auto d = data.before_begin();
                 auto v = data.begin();
                 int found = 0;
                 while(found < points.getNumIndexes()){
-                    int slot = points.getSlot((*v).point);
+                    int slot = points.getSlot(v->point);
                     if (slot == -1){
                         d++;
                         v++;
                     }else{
-                        std::copy_n((*v).value.begin(), num_outputs, &(vals[slot * num_outputs]));
+                        std::copy_n(v->value.begin(), num_outputs, &(vals[slot * num_outputs]));
                         data.erase_after(d);
                         v = d;
                         v++;
