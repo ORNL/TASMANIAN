@@ -50,24 +50,24 @@
 
 //! \defgroup TasmanianEnumerates Enumerate types.
 //!
-//! \par Enumerate types
-//! The enumerates are used as input to many Tasmanian functions
+//! \par Enumerated types
+//! Enumerations are used as input to many Tasmanian functions
 //! in both internal and external API.
 //!
 //! \internal
 //! \par Hardcoded constants
 //! Hardcoding constants is a bad coding practice and should be avoided,
-//! but numerical algorithms depend on many small tweaking parameters which
-//! encumbers the user.
+//! but numerical algorithms depend on many small tweaking parameters that require
+//! meaningful default values.
 //! For example, Tasmanian computes the nodes and abscissas of the Gauss-Legendre rule on the fly,
 //! which is done with an iterative eigenvalue decomposition method that needs a stopping criteria.
-//! An extra input parameter can be added to \b makeGlobalGrid() which will allow the user to
-//! control the numeric tolerance, but this will also add an extra variable that the user
-//! has to understand and control.
+//! Extra input parameters can be added to \b makeGlobalGrid() which will allow the user to
+//! choose the numeric tolerance and maximum number of iterations, but this will also
+//! add extra variables that the user has to understand and specify.
 //! The goal of Tasmanian is to provide a seamless experience where the user
 //! focuses on the desired properties of a quadrature/interpolation rule, and not
-//! about convergence of a hidden iterative scheme.
-//! Therefore, we hardcodes such variables with \a reasonable value,
+//! worry about convergence of a hidden iterative schemes.
+//! Therefore, we hardcoded such variables with \a reasonable value,
 //! i.e., values that will work well for most use cases.
 //! In fringe cases, the values can be adjusted here and Tasmanian can be recompiled
 //! with new constants.
@@ -78,12 +78,12 @@ namespace TasGrid{
 //! \brief Describes the relation between two multi-indexes when compared during sorting.
 //! \ingroup TasmanianEnumerates
 
-//! The standard C++-2011 algorithms for sorting merging and searching use bools as return
-//! types for when comparing entries, thus in the case of many repeated entries, two
+//! The standard C++11 algorithms std::merge and std::binary_search use bools as return
+//! types when comparing entries, thus in the case of many repeated entries, two
 //! comparisons have to be performed. Repeated entries are encountered in many sparse
 //! grids algorithms, especially when dealing with nested one dimensional rules.
-//! Thus, for performance reasons, Tasmanian implements sorting merging and searching
-//! methods that compare multi-indexes and produce three outcomes in a single compare.
+//! Thus, for performance reasons, Tasmanian implements merging and searching
+//! methods that compare multi-indexes and produce three outcomes in a single comparison.
 //!
 //! Specifically, see \b SetManipulations::push_merge_map() and \b MultiIndexSet::getSlot()
 //! and \b MultiIndexSet::addSortedInsexes()
