@@ -1563,57 +1563,50 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         throw std::runtime_error("ERROR: wrong file format, unknown grid type (or corrupt file)");
     }
     getline(ifs, T);
-    bool using_v3_format = false; // for compatibility with version 3.0
-    bool using_v4_format = false; // for compatibility with version 3.1 and 4.0
-    bool using_v5_format = false; // for compatibility with version 3.1 and 4.0
-    if (T.compare("custom") == 0){
+    bool reached_eof = false;
+    if (T.compare("TASMANIAN SG end") == 0){ // version 3.0 did not include domain transform
+        reached_eof = true;
+    }else if (T.compare("custom") == 0){ // handle domain transform
         domain_transform_a.resize(base->getNumDimensions());
         domain_transform_b.resize(base->getNumDimensions());
         for(int j=0; j<base->getNumDimensions(); j++){
             ifs >> domain_transform_a[j] >> domain_transform_b[j];
        }
         getline(ifs, T);
-    }else if (T.compare("canonical") == 0){
-        // do nothing, no domain transform
-    }else if (T.compare("TASMANIAN SG end") == 0){
-        // for compatibility with version 3.0 and the missing domain transform
-        using_v3_format = true;
-    }else{
+    }else if (T.compare("canonical") != 0){ // canonical transform requires no action
         throw std::runtime_error("ERROR: wrong file format, domain unspecified");
     }
-    if (!using_v3_format){
+    if (!reached_eof){ // handle conformal maps, added in version 5.0
         getline(ifs, T);
-        if (T.compare("nonconformal") == 0){
-            // do nothing, no conformal transform
-        }else if (T.compare("asinconformal") == 0){
+        if (T.compare("asinconformal") == 0){
             conformal_asin_power.resize(base->getNumDimensions());
             for(auto & a : conformal_asin_power) ifs >> a;
             getline(ifs, T);
         }else if (T.compare("TASMANIAN SG end") == 0){
             // for compatibility with version 4.0/4.1 and the missing conformal maps
-            using_v4_format = true;
-        }else{
+            reached_eof = true;
+        }else if (T.compare("nonconformal") != 0){
             throw std::runtime_error("ERROR: wrong file format, conformal mapping is unspecified");
         }
-        if (!using_v4_format){
+    }
+    if (!reached_eof){ // handle level limits, added in version 5.1
+        getline(ifs, T);
+        if (T.compare("limited") == 0){
+            llimits.resize(base->getNumDimensions());
+            for(auto &l : llimits) ifs >> l;
             getline(ifs, T);
-            if (T.compare("limited") == 0){
-                llimits.resize(base->getNumDimensions());
-                for(auto &l : llimits) ifs >> l;
-                getline(ifs, T);
-            }else if (T.compare("unlimited") == 0){
-                llimits.clear();
-            }else if (T.compare("TASMANIAN SG end") == 0){
-                using_v5_format = true;
-            }else{
-                throw std::runtime_error("ERROR: wrong file format, did not specify level limits");
-            }
-            if (!using_v5_format){
-                getline(ifs, T);
-                if (!(T.compare("TASMANIAN SG end") == 0)){
-                    throw std::runtime_error("ERROR: wrong file format, did not end with 'TASMANIAN SG end' (possibly corrupt file)");
-                }
-            }
+        }else if (T.compare("unlimited") == 0){
+            llimits.clear();
+        }else if (T.compare("TASMANIAN SG end") == 0){
+            reached_eof = true;
+        }else{
+            throw std::runtime_error("ERROR: wrong file format, did not specify level limits");
+        }
+    }
+    if (!reached_eof){
+        getline(ifs, T);
+        if (!(T.compare("TASMANIAN SG end") == 0)){
+            throw std::runtime_error("ERROR: wrong file format, did not end with 'TASMANIAN SG end' (possibly corrupt file)");
         }
     }
 }
