@@ -36,5 +36,6 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/tsgCoreOneDimensional.hpp
                  SparseGrids/tsgOneDimensionalWrapper.hpp
                  SparseGrids/tsgLinearSolvers.hpp
+                 SparseGrids/tsgDConstructGridGlobal.hpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../
                  COMMENT "Tasmanian Doxygen documentation")

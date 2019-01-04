@@ -52,10 +52,6 @@ namespace TasBLAS{
     // can't find BLAS implementation that is generally reliable
     // if dgemv_ is called within OpenMP region with large matrices, it returns wrong result!
     // Level 1
-    inline void daxpy(int N, double alpha, const double x[], double y[]){
-        int ione = 1;
-        daxpy_(&N, &alpha, x, &ione, y, &ione);
-    }
     inline double ddot(int N, const double x[], const double y[]){
         int ione = 1;
         return ddot_(&N, x, &ione, y, &ione);
@@ -70,10 +66,6 @@ namespace TasBLAS{
         char charN = 'N'; int blas_one = 1;
         dgemv_(&charN, &M, &N, &alpha, A, &M, x, &blas_one, &beta, y, &blas_one);
     }
-    inline void dgemtv(int M, int N, const double A[], const double x[], double y[]){ // y = A^T*x, A is M by N
-        char charT = 'T'; int blas_one = 1; double alpha = 1.0, beta = 0.0;
-        dgemv_(&charT, &M, &N, &alpha, A, &M, x, &blas_one, &beta, y, &blas_one);
-    }
     // Level 3
     inline void dgemm(int M, int N, int K, double alpha, const double A[], const double B[], double beta, double C[]){
         char charN = 'N';
@@ -81,9 +73,6 @@ namespace TasBLAS{
     }
 #else
     // non optimal BLAS subroutines, in case there is no BLAS available
-    inline void daxpy(int N, double alpha, const double x[], double y[]){
-        for(int i=0; i<N; i++) y[i] += alpha * x[i];
-    }
     inline double ddot(int N, const double x[], const double y[]){
         double sum = 0.0;
         for(int i=0; i<N; i++) sum += x[i] * y[i];
@@ -111,17 +100,9 @@ namespace TasBLAS{
             for(int j=1; j<N; j++) y[i] += A[j*M + i] * x[j];
         }
     }
-    inline void dgemtv(int M, int N, const double A[], const double x[], double y[]){ // y = A^T*x, A^T is M by N
-        for(int i=0; i<M; i++){
-            y[i] = A[i*M] * x[0];
-            for(int j=1; j<N; j++) y[i] += A[i*M + j] * x[j];
-        }
-    }
 #endif // Tasmanian_ENABLE_BLAS
 
     inline void setzero(int N, double *A){ std::fill(A, A + N, 0.0); } // fill A with N zeros
-    inline void setzero(int N, int *A){ std::fill(A, A + N, 0); } // fill A with N zeros
-
 }
 
 }

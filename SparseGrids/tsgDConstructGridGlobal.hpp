@@ -37,26 +37,86 @@
 #include "tsgIndexSets.hpp"
 #include "tsgIndexManipulator.hpp"
 
+//! \file tsgDConstructGridGlobal.hpp
+//! \brief Class and data types used for dynamic construction of Global grids.
+//! \author Miroslav Stoyanov
+//! \ingroup TasmanianRefinement
+//!
+//! Defines the storage class and struct types used for
+//! construction of Global grids. The class is more complex than other
+//! examples because rules with growth of more than one point need
+//! to collect several samples before the grid can be extended with another
+//! tensor.
+
+//! \internal
+//! \defgroup TasmanianRefinement Refinement related classes, structures, and methods.
+//!
+//! \par Adaptive Refinement
+//! The most efficient sparse grids approximation strategies are adaptive,
+//! i.e., the grid is constructed to best capture the behavior of the specific
+//! target model. Adapting a grid requires analysis of the existing loaded
+//! model values followed by a decision on how to best expand the grid.
+//! Sometimes the complexity of the refinement algorithms requires additional
+//! data storage and methods implemented outside of the main grid classes.
+
 namespace TasGrid{
 
+//! \internal
+//! \brief Holds the pair of point index and model value, the struct is used in a \b std::forward_list.
+//! \ingroup TasmanianRefinement
+
+//! Global grids can be expanded by a full tensor index at a time,
+//! which requires model outputs data from multiple nodes.
+//! However, the user provides the model data only a single node at a time.
+//! Thus, node data has to be stored separately until it can be included in the grid.
 struct NodeData{
+    //! \brief The multi-index of the point.
     std::vector<int> point;
+    //! \brief The values of the model outputs at the point.
     std::vector<double> value;
 };
 
+//! \internal
+//! \brief Holds the description of a single tensor, points associated with the delta and whether model data has been loaded.
+//! \ingroup TasmanianRefinement
+
+//! Each candidate tensor is described by the tensor multi-index and the points associated with the corresponding delta.
+//! Using the delta definition guarantees that each point appears in only one tensor.
+//! A vector of booleans indicates which of the points have been \b loaded,
+//! i.e., whether the user has already provided model data for the corresponding points.
+//! If the \b loaded vector is empty, then all the needed data has been loaded,
+//! i.e., equivalent to all entries being \b true but faster than traversing a vector.
+//! The tensor \b weight is also stored here, where negative weights are used to indicate the initial sparse grid
+//! which ensures that the initial set of nodes will always come first in order.
+//! The tensor data is stored in a \b std::forward_list for easy random insertions and deletions.
 struct TensorData{
+    //! \brief Multi-index of the tensor.
     std::vector<int> tensor;
+    //! \brief The points associated with the delta multi-index.
     MultiIndexSet points;
+    //! \brief For each point \b false if the model data is not yet available for the point, true otherwise.
     std::vector<bool> loaded;
+    //! \brief The weight indicates the relative importance of the tensor.
     double weight;
 };
 
+//! \internal
+//! \brief Helper class that stores data from dynamic construction of a Global grid.
+//! \ingroup TasmanianRefinement
+
+//! The class stores candidate tensors with corresponding weights
+//! as well as the model data provided by the user.
+//! When enough data has been computed to complete a tensor,
+//! the tensor can be ejected with the points and model data returned in a format
+//! that is easy to incorporate within the data structures of the \b GridGlobal class.
 class DynamicConstructorDataGlobal{
 public:
+    //! \brief The only constructor, requires that the dimension and the number of model outputs is specified.
     DynamicConstructorDataGlobal(int cnum_dimensions, int cnum_outputs);
+    //! \brief Default destructor, release all used memory and erase all stored data.
     ~DynamicConstructorDataGlobal();
 
-    //! \brief Delete the tensors with non-negative weights, i.e., clear all by the tensors selected by the initial grid.
+    //! \brief Delete the tensors with non-negative weights, i.e., clear all but the tensors selected by the initial grid.
     void clearTesnors();
 
     //! \brief Get a set of all tensors with negative weight, i.e., the tensors selected for the initial run.
@@ -65,7 +125,7 @@ public:
     //! \brief Add a new tensor to the candidates, with the given \b weight and using \b getNumPoints() to define the associated nodes.
     void addTensor(const int *tensor, std::function<int(int)> getNumPoints, double weight);
 
-    //! \brief Get the node indexes of the points associated with the candidate tensors, the order matches the weights of the tensors.
+    //! \brief Get the node indexes of the points associated with the candidate tensors, the order is the same as the tensors sorted by ascending weight.
     void getNodesIndexes(std::vector<int> &inodes);
 
     //! \brief Add a new data point with the index and the value, returns \b true if there is enough data to complete a tensor.

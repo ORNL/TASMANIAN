@@ -157,6 +157,9 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgIsSetDomainTransfrom.restype = c_int
         self.pLibTSG.tsgIsSetConformalTransformASIN.restype = c_int
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.restype = c_int
+        self.pLibTSG.tsgIsUsingConstruction.restype = c_int
+        self.pLibTSG.tsgGetCandidateConstructionPointsVoidPntr.restype = c_void_p
+        self.pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP.restype = c_int
         self.pLibTSG.tsgGetAccelerationType.restype = c_char_p
         self.pLibTSG.tsgIsAccelerationAvailable.restype = c_int
         self.pLibTSG.tsgGetGPUID.restype = c_int
@@ -230,6 +233,14 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_int), POINTER(c_int), POINTER(c_double)]
         self.pLibTSG.tsgGetHierarchicalCoefficientsStatic.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgBeginConstruction.argtypes = [c_void_p]
+        self.pLibTSG.tsgIsUsingConstruction.argtypes = [c_void_p]
+        self.pLibTSG.tsgGetCandidateConstructionPointsVoidPntr.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int), POINTER(c_int)]
+        self.pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP.argtypes = [c_void_p, c_void_p]
+        self.pLibTSG.tsgGetCandidateConstructionPointsPythonStatic.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetCandidateConstructionPointsPythonDeleteVect.argtypes = [c_void_p]
+        self.pLibTSG.tsgLoadConstructedPoint.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
+        self.pLibTSG.tsgFinishConstruction.argtypes = [c_void_p]
         self.pLibTSG.tsgPrintStats.argtypes = [c_void_p]
         self.pLibTSG.tsgEnableAcceleration.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgGetAccelerationType.argtypes = [c_void_p]
@@ -1513,6 +1524,95 @@ class TasmanianSparseGrid:
 
         '''
         self.pLibTSG.tsgMergeRefinement(self.pGrid)
+
+    def beginConstruction(self):
+        '''
+        start dynamic construction procedure
+        '''
+        self.pLibTSG.tsgBeginConstruction(self.pGrid)
+
+    def isUsingConstruction(self):
+        '''
+        check if using dynamic construction
+        '''
+        return (self.pLibTSG.tsgIsUsingConstruction(self.pGrid) != 0)
+
+    def getCandidateConstructionPoints(self, sType, liAnisotropicWeightsOrOutput, liLevelLimits = []):
+        '''
+        returns the sorted points for the construction
+        '''
+        if (not self.isUsingConstruction()):
+            raise TasmanianInputError("getCandidateConstructionPoints", "ERROR: calling getCandidateConstructionPoints() before beginConstruction()")
+        if (sType not in lsTsgGlobalTypes):
+            raise TasmanianInputError("sType", "ERROR: invalid type, see TasmanianSG.lsTsgGlobalTypes for list of accepted types")
+        iNumDims = self.getNumDimensions()
+        pAnisoWeights = None
+        iOutput = -1
+
+        if (((sys.version_info.major == 3) and isinstance(liAnisotropicWeightsOrOutput, int))
+            or ((sys.version_info.major == 2) and isinstance(liAnisotropicWeightsOrOutput, (int, long)))):
+            iOutput = liAnisotropicWeightsOrOutput
+        elif (isinstance(liAnisotropicWeightsOrOutput, (list, np.ndarray))):
+            if (len(liAnisotropicWeights) > 0):
+                if (sType in lsTsgCurvedTypes):
+                    iNumWeights = 2*iNumDims
+                else:
+                    iNumWeights = iNumDims
+                if (len(liAnisotropicWeights) != iNumWeights):
+                    raise TasmanianInputError("liAnisotropicWeights", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
+                else:
+                    aAWeights = np.array([liAnisotropicWeights[i] for i in range(iNumWeights)], np.int32)
+                    pAnisoWeights = np.ctypeslib.as_ctypes(aAWeights)
+        else:
+            raise TasmanianInputError("liAnisotropicWeightsOrOutput", "ERROR: liAnisotropicWeightsOrOutput should be either an integer or numpy.ndarray")
+
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iNumDims):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to the grid dimension")
+            pLevelLimits = (c_int*iNumDims)()
+            for iI in range(iNumDims):
+                pLevelLimits[iI] = liLevelLimits[iI]
+
+        if (sys.version_info.major == 3):
+            sType = bytes(sType, encoding='utf8')
+
+        pVector = self.pLibTSG.tsgGetCandidateConstructionPointsVoidPntr(self.pGrid, c_char_p(sType), iOutput, pAnisoWeights, pLevelLimits)
+
+        iNumPoints = self.pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP(self.pGrid, pVector)
+        if (iNumPoints == 0):
+            return np.empty([0, 0], np.float64)
+        aPoints = np.empty([iNumPoints * iNumDims], np.float64)
+
+        self.pLibTSG.tsgGetCandidateConstructionPointsPythonStatic(pVector, np.ctypeslib.as_ctypes(aPoints))
+        self.pLibTSG.tsgGetCandidateConstructionPointsPythonDeleteVect(pVector)
+
+        return aPoints.reshape([iNumPoints, iNumDims])
+
+    def loadConstructedPoint(self, lfX, lfY):
+        '''
+        load the currently computed point
+        '''
+        if (not self.isUsingConstruction()):
+            raise TasmanianInputError("loadConstructedPoint", "ERROR: calling loadConstructedPoint() before beginConstruction()")
+        iNumDims = self.getNumDimensions()
+        iNumOuts = self.getNumOutputs()
+        if (not isinstance(lfX, np.ndarray)):
+            lfX = np.array(lfX)
+        if (lfX.shape[0] != iNumDims):
+            raise TasmanianInputError("lfX", "ERROR: lfX should be numpy.ndarray with length equal to the grid dimension")
+        if (not isinstance(lfY, np.ndarray)):
+            lfY = np.array(lfY)
+        if (lfY.shape[0] != iNumOuts):
+            raise TasmanianInputError("lfY", "ERROR: lfY should be numpy.ndarray with length equal to the model outputs")
+
+        self.pLibTSG.tsgLoadConstructedPoint(self.pGrid, np.ctypeslib.as_ctypes(lfX), np.ctypeslib.as_ctypes(lfY))
+
+    def finishConstruction(self):
+        '''
+        end the dynamic construction procedure
+        '''
+        self.pLibTSG.tsgFinishConstruction(self.pGrid)
 
     def removePointsByHierarchicalCoefficient(self, fTolerance, iOutput = -1, aScaleCorrection = []):
         '''
