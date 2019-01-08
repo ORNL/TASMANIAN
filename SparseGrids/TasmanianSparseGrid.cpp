@@ -1603,6 +1603,15 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
             throw std::runtime_error("ERROR: wrong file format, did not specify level limits");
         }
     }
+    if (!reached_eof){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
+        getline(ifs, T);
+        if (T.compare("constructing") == 0){
+        }else if (T.compare("TASMANIAN SG end") == 0){
+            reached_eof = true;
+        }else if (T.compare("static") != 0){ // static construction requires no additional work
+            throw std::runtime_error("ERROR: wrong file format, did not specify construction method");
+        }
+    }
     if (!reached_eof){
         getline(ifs, T);
         if (!(T.compare("TASMANIAN SG end") == 0)){
@@ -1664,9 +1673,19 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }else if (TSG[0] != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong level limits");
     }
-    ifs.read(TSG, sizeof(char)); // end character
-    if (TSG[0] != 'e'){
-        throw std::runtime_error("ERROR: wrong binary file format, did not reach correct end of Tasmanian block");
+    bool reached_eof = false;
+
+    if (TSG[0] == 'd'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
+    }else if (TSG[0] == 'e'){
+        reached_eof = true;
+    }else if (TSG[0] != 's'){
+        throw std::runtime_error("ERROR: wrong binary file format, wrong construction method specified");
+    }
+    if (!reached_eof){
+        ifs.read(TSG, sizeof(char));
+        if (TSG[0] != 'e'){
+            throw std::runtime_error("ERROR: wrong binary file format, did not reach correct end of Tasmanian block");
+        }
     }
     delete[] TSG;
 }
