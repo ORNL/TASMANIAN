@@ -1464,7 +1464,8 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
         ofs << "unlimited" << endl;
     }
     if (usingDynamicConstruction){
-        ofs << "dynamic" << endl;
+        ofs << "constructing" << endl;
+        if (isGlobal()) getGridGlobal()->writeConstructionData(ofs);
     }else{
         ofs << "static" << endl;
     }
@@ -1515,7 +1516,8 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
         flag = 'n'; ofs.write(&flag, sizeof(char));
     }
     if (usingDynamicConstruction){
-        flag = 'd'; ofs.write(&flag, sizeof(char));
+        flag = 'c'; ofs.write(&flag, sizeof(char));
+        if (isGlobal()) getGridGlobal()->writeConstructionDataBinary(ofs);
     }else{
         flag = 's'; ofs.write(&flag, sizeof(char));
     }
@@ -1546,32 +1548,28 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         clear();
         base = make_unique_ptr<GridGlobal>();
         getGridGlobal()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("sequence") == 0){
         clear();
         base = make_unique_ptr<GridSequence>();
         getGridSequence()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("localpolynomial") == 0){
         clear();
         base = make_unique_ptr<GridLocalPolynomial>();
         getGridLocalPolynomial()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("wavelet") == 0){
         clear();
         base = make_unique_ptr<GridWavelet>();
         getGridWavelet()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("fourier") == 0){
         clear();
         base = make_unique_ptr<GridFourier>();
         getGridFourier()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("empty") == 0){
         clear();
     }else{
         throw std::runtime_error("ERROR: wrong file format, unknown grid type (or corrupt file)");
     }
+    getline(ifs, T); // read an empty line
     getline(ifs, T);
     bool reached_eof = false;
     if (T.compare("TASMANIAN SG end") == 0){ // version 3.0 did not include domain transform
@@ -1616,6 +1614,9 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     if (!reached_eof){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
         getline(ifs, T);
         if (T.compare("constructing") == 0){
+            usingDynamicConstruction = true;
+            if (isGlobal()) getGridGlobal()->readConstructionData(ifs);
+            getline(ifs, T); // clear the final std::endl after reading the block
         }else if (T.compare("TASMANIAN SG end") == 0){
             reached_eof = true;
         }else if (T.compare("static") != 0){ // static construction requires no additional work
@@ -1685,7 +1686,9 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }
     bool reached_eof = false;
     ifs.read(TSG.data(), sizeof(char));
-    if (TSG[0] == 'd'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
+    if (TSG[0] == 'c'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
+        usingDynamicConstruction = true;
+        if (isGlobal()) getGridGlobal()->readConstructionDataBinary(ifs);
     }else if (TSG[0] == 'e'){
         reached_eof = true;
     }else if (TSG[0] != 's'){
