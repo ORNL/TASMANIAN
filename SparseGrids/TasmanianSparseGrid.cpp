@@ -1463,6 +1463,11 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     }else{
         ofs << "unlimited" << endl;
     }
+    if (usingDynamicConstruction){
+        ofs << "dynamic" << endl;
+    }else{
+        ofs << "static" << endl;
+    }
     ofs << "TASMANIAN SG end" << endl;
 }
 void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
@@ -1508,6 +1513,11 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
         ofs.write((char*) llimits.data(), base->getNumDimensions() * sizeof(int));
     }else{
         flag = 'n'; ofs.write(&flag, sizeof(char));
+    }
+    if (usingDynamicConstruction){
+        flag = 'd'; ofs.write(&flag, sizeof(char));
+    }else{
+        flag = 's'; ofs.write(&flag, sizeof(char));
     }
     flag = 'e'; ofs.write(&flag, sizeof(char)); // E stands for END
 }
@@ -1674,6 +1684,7 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
         throw std::runtime_error("ERROR: wrong binary file format, wrong level limits");
     }
     bool reached_eof = false;
+    ifs.read(TSG.data(), sizeof(char));
     if (TSG[0] == 'd'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
     }else if (TSG[0] == 'e'){
         reached_eof = true;
