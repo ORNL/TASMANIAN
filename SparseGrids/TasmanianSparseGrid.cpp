@@ -1620,15 +1620,15 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     }
 }
 void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
-    char *TSG = new char[4];
-    ifs.read(TSG, 4*sizeof(char));
+    std::vector<char>  TSG(4);
+    ifs.read(TSG.data(), 4*sizeof(char));
     if ((TSG[0] != 'T') || (TSG[1] != 'S') || (TSG[2] != 'G')){
         throw std::runtime_error("ERROR: wrong binary file format, first 3 bytes are not 'TSG'");
     }
     if (TSG[3] != '5'){
         throw std::runtime_error("ERROR: wrong binary file format, version number is not '5'");
     }
-    ifs.read(TSG, sizeof(char)); // what type of grid is it?
+    ifs.read(TSG.data(), sizeof(char)); // what type of grid is it?
     clear();
     if (TSG[0] == 'g'){
         base = make_unique_ptr<GridGlobal>();
@@ -1650,7 +1650,7 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }else{
         throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
     }
-    ifs.read(TSG, sizeof(char)); // linear domain transform?
+    ifs.read(TSG.data(), sizeof(char)); // linear domain transform?
     if (TSG[0] == 'y'){
         domain_transform_a.resize(base->getNumDimensions());
         domain_transform_b.resize(base->getNumDimensions());
@@ -1659,14 +1659,14 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }else if (TSG[0] != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong domain type");
     }
-    ifs.read(TSG, sizeof(char)); // conformal domain transform?
+    ifs.read(TSG.data(), sizeof(char)); // conformal domain transform?
     if (TSG[0] == 'a'){
         conformal_asin_power.resize(base->getNumDimensions());
         ifs.read((char*) conformal_asin_power.data(), base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong conformal transform type");
     }
-    ifs.read(TSG, sizeof(char)); // limits
+    ifs.read(TSG.data(), sizeof(char)); // limits
     if (TSG[0] == 'y'){
         llimits.resize(base->getNumDimensions());
         ifs.read((char*) llimits.data(), base->getNumDimensions() * sizeof(int));
@@ -1674,7 +1674,6 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
         throw std::runtime_error("ERROR: wrong binary file format, wrong level limits");
     }
     bool reached_eof = false;
-
     if (TSG[0] == 'd'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
     }else if (TSG[0] == 'e'){
         reached_eof = true;
@@ -1682,12 +1681,11 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
         throw std::runtime_error("ERROR: wrong binary file format, wrong construction method specified");
     }
     if (!reached_eof){
-        ifs.read(TSG, sizeof(char));
+        ifs.read(TSG.data(), sizeof(char));
         if (TSG[0] != 'e'){
             throw std::runtime_error("ERROR: wrong binary file format, did not reach correct end of Tasmanian block");
         }
     }
-    delete[] TSG;
 }
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
