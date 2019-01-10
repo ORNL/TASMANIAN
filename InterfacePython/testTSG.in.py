@@ -5,7 +5,7 @@ import TasmanianSG
 import math
 import sys, os
 import numpy as np
-from random import uniform
+from random import uniform, shuffle
 from ctypes import cdll
 
 sGaussPattersonTableFile = "@CMAKE_CURRENT_BINARY_DIR@/GaussPattersonRule.table"
@@ -22,6 +22,7 @@ class TestTasmanian(unittest.TestCase):
         self.assertEqual(gridA.getNumPoints(), gridB.getNumPoints(), "error in getNumPoints()")
         self.assertEqual(gridA.getNumLoaded(), gridB.getNumLoaded(), "error in getNumLoaded()")
         self.assertEqual(gridA.getNumNeeded(), gridB.getNumNeeded(), "error in getNumNeeded()")
+        self.assertEqual(gridA.isUsingConstruction(), gridB.isUsingConstruction(), "error in isUsingConstruction()")
 
         if (gridA.getNumPoints() == 0): # emptry grid, nothing else to check
             return
@@ -400,7 +401,7 @@ class TestTasmanian(unittest.TestCase):
             gridA = TasmanianSG.TasmanianSparseGrid()
             gridB = TasmanianSG.TasmanianSparseGrid()
 
-            exec(sGrid)
+            exec(sGrid, globals(), locals())
             gridA.write("testSave")
             gridB.read("testSave")
             self.compareGrids(gridA, gridB)
@@ -438,6 +439,57 @@ class TestTasmanian(unittest.TestCase):
                 gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
                 gridA.write("testSave", bUseBinaryFormat = True)
                 gridB.read("testSave")
+
+        #def testConstructionIO(self):
+        for sFormat in [False, True]: # test binary and ascii format
+            gridA = TasmanianSG.TasmanianSparseGrid()
+            gridB = TasmanianSG.TasmanianSparseGrid()
+
+            gridA.makeGlobalGrid(3, 2, 2, "level", "clenshaw-curtis")
+            gridB.makeGlobalGrid(3, 2, 2, "level", "clenshaw-curtis")
+
+            gridA.beginConstruction()
+            gridB.beginConstruction()
+
+            gridB.write("testSave", bUseBinaryFormat = sFormat)
+            gridB.makeSequenceGrid(1, 1, 0, "level", "rleja") # clean the grid
+            gridB.read("testSave")
+            self.compareGrids(gridA, gridB)
+
+            for t in range(5): # use 5 iterations
+                aPointsA = gridA.getCandidateConstructionPoints("level", 0)
+                aPointsB = gridB.getCandidateConstructionPoints("level", 0)
+                np.testing.assert_almost_equal(aPointsA, aPointsB, decimal=11)
+
+                iNumPoints = int(aPointsA.shape[0] / 2)
+                if (iNumPoints > 32): iNumPoints = 32
+
+                # use the first samples (up to 32) and shuffle the order
+                # add one of the samples further in the list
+                liSamples = list(range(iNumPoints + 1))
+                shuffle(liSamples)
+                liSamples = map(lambda i: i if i < iNumPoints else iNumPoints + 1, liSamples)
+
+                for iI in liSamples: # compute and load the samples
+                    aPoint = aPointsA[iI, :]
+                    aValue = np.array([np.exp(aPoint[0] + aPoint[1]), 1.0 / ((aPoint[0] - 1.3) * (aPoint[1] - 1.6) * (aPoint[2] - 2.0))])
+
+                    gridA.loadConstructedPoint(aPoint, aValue)
+                    gridB.loadConstructedPoint(aPoint, aValue)
+
+                # using straight construction or read/write should produce the same result
+                gridB.write("testSave", bUseBinaryFormat = sFormat)
+                gridB.makeSequenceGrid(1, 1, 0, "level", "rleja")
+                gridB.read("testSave")
+                self.compareGrids(gridA, gridB)
+
+            gridA.finishConstruction()
+            gridB.finishConstruction()
+
+            gridB.write("testSave", bUseBinaryFormat = sFormat)
+            gridB.makeSequenceGrid(1, 1, 0, "level", "rleja")
+            gridB.read("testSave")
+            self.compareGrids(gridA, gridB)
 
     def testAcceleratedEvaluate(self):
         print("\nTesting accelerated evaluate consistency")
