@@ -1463,6 +1463,12 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     }else{
         ofs << "unlimited" << endl;
     }
+    if (usingDynamicConstruction){
+        ofs << "constructing" << endl;
+        if (isGlobal()) getGridGlobal()->writeConstructionData(ofs);
+    }else{
+        ofs << "static" << endl;
+    }
     ofs << "TASMANIAN SG end" << endl;
 }
 void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
@@ -1509,6 +1515,12 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     }else{
         flag = 'n'; ofs.write(&flag, sizeof(char));
     }
+    if (usingDynamicConstruction){
+        flag = 'c'; ofs.write(&flag, sizeof(char));
+        if (isGlobal()) getGridGlobal()->writeConstructionDataBinary(ofs);
+    }else{
+        flag = 's'; ofs.write(&flag, sizeof(char));
+    }
     flag = 'e'; ofs.write(&flag, sizeof(char)); // E stands for END
 }
 void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
@@ -1536,97 +1548,98 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         clear();
         base = make_unique_ptr<GridGlobal>();
         getGridGlobal()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("sequence") == 0){
         clear();
         base = make_unique_ptr<GridSequence>();
         getGridSequence()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("localpolynomial") == 0){
         clear();
         base = make_unique_ptr<GridLocalPolynomial>();
         getGridLocalPolynomial()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("wavelet") == 0){
         clear();
         base = make_unique_ptr<GridWavelet>();
         getGridWavelet()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("fourier") == 0){
         clear();
         base = make_unique_ptr<GridFourier>();
         getGridFourier()->read(ifs);
-        getline(ifs, T);
     }else if (T.compare("empty") == 0){
         clear();
     }else{
         throw std::runtime_error("ERROR: wrong file format, unknown grid type (or corrupt file)");
     }
+    getline(ifs, T); // read an empty line
     getline(ifs, T);
-    bool using_v3_format = false; // for compatibility with version 3.0
-    bool using_v4_format = false; // for compatibility with version 3.1 and 4.0
-    bool using_v5_format = false; // for compatibility with version 3.1 and 4.0
-    if (T.compare("custom") == 0){
+    bool reached_eof = false;
+    if (T.compare("TASMANIAN SG end") == 0){ // version 3.0 did not include domain transform
+        reached_eof = true;
+    }else if (T.compare("custom") == 0){ // handle domain transform
         domain_transform_a.resize(base->getNumDimensions());
         domain_transform_b.resize(base->getNumDimensions());
         for(int j=0; j<base->getNumDimensions(); j++){
             ifs >> domain_transform_a[j] >> domain_transform_b[j];
        }
         getline(ifs, T);
-    }else if (T.compare("canonical") == 0){
-        // do nothing, no domain transform
-    }else if (T.compare("TASMANIAN SG end") == 0){
-        // for compatibility with version 3.0 and the missing domain transform
-        using_v3_format = true;
-    }else{
+    }else if (T.compare("canonical") != 0){ // canonical transform requires no action
         throw std::runtime_error("ERROR: wrong file format, domain unspecified");
     }
-    if (!using_v3_format){
+    if (!reached_eof){ // handle conformal maps, added in version 5.0
         getline(ifs, T);
-        if (T.compare("nonconformal") == 0){
-            // do nothing, no conformal transform
-        }else if (T.compare("asinconformal") == 0){
+        if (T.compare("asinconformal") == 0){
             conformal_asin_power.resize(base->getNumDimensions());
             for(auto & a : conformal_asin_power) ifs >> a;
             getline(ifs, T);
         }else if (T.compare("TASMANIAN SG end") == 0){
             // for compatibility with version 4.0/4.1 and the missing conformal maps
-            using_v4_format = true;
-        }else{
+            reached_eof = true;
+        }else if (T.compare("nonconformal") != 0){
             throw std::runtime_error("ERROR: wrong file format, conformal mapping is unspecified");
         }
-        if (!using_v4_format){
+    }
+    if (!reached_eof){ // handle level limits, added in version 5.1
+        getline(ifs, T);
+        if (T.compare("limited") == 0){
+            llimits.resize(base->getNumDimensions());
+            for(auto &l : llimits) ifs >> l;
             getline(ifs, T);
-            if (T.compare("limited") == 0){
-                llimits.resize(base->getNumDimensions());
-                for(auto &l : llimits) ifs >> l;
-                getline(ifs, T);
-            }else if (T.compare("unlimited") == 0){
-                llimits.clear();
-            }else if (T.compare("TASMANIAN SG end") == 0){
-                using_v5_format = true;
-            }else{
-                throw std::runtime_error("ERROR: wrong file format, did not specify level limits");
-            }
-            if (!using_v5_format){
-                getline(ifs, T);
-                if (!(T.compare("TASMANIAN SG end") == 0)){
-                    throw std::runtime_error("ERROR: wrong file format, did not end with 'TASMANIAN SG end' (possibly corrupt file)");
-                }
-            }
+        }else if (T.compare("unlimited") == 0){
+            llimits.clear();
+        }else if (T.compare("TASMANIAN SG end") == 0){
+            reached_eof = true;
+        }else{
+            throw std::runtime_error("ERROR: wrong file format, did not specify level limits");
+        }
+    }
+    if (!reached_eof){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
+        getline(ifs, T);
+        if (T.compare("constructing") == 0){
+            usingDynamicConstruction = true;
+            if (isGlobal()) getGridGlobal()->readConstructionData(ifs);
+            getline(ifs, T); // clear the final std::endl after reading the block
+        }else if (T.compare("TASMANIAN SG end") == 0){
+            reached_eof = true;
+        }else if (T.compare("static") != 0){ // static construction requires no additional work
+            throw std::runtime_error("ERROR: wrong file format, did not specify construction method");
+        }
+    }
+    if (!reached_eof){
+        getline(ifs, T);
+        if (!(T.compare("TASMANIAN SG end") == 0)){
+            throw std::runtime_error("ERROR: wrong file format, did not end with 'TASMANIAN SG end' (possibly corrupt file)");
         }
     }
 }
 void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
-    char *TSG = new char[4];
-    ifs.read(TSG, 4*sizeof(char));
+    std::vector<char>  TSG(4);
+    ifs.read(TSG.data(), 4*sizeof(char));
     if ((TSG[0] != 'T') || (TSG[1] != 'S') || (TSG[2] != 'G')){
         throw std::runtime_error("ERROR: wrong binary file format, first 3 bytes are not 'TSG'");
     }
     if (TSG[3] != '5'){
         throw std::runtime_error("ERROR: wrong binary file format, version number is not '5'");
     }
-    ifs.read(TSG, sizeof(char)); // what type of grid is it?
+    ifs.read(TSG.data(), sizeof(char)); // what type of grid is it?
     clear();
     if (TSG[0] == 'g'){
         base = make_unique_ptr<GridGlobal>();
@@ -1648,7 +1661,7 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }else{
         throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
     }
-    ifs.read(TSG, sizeof(char)); // linear domain transform?
+    ifs.read(TSG.data(), sizeof(char)); // linear domain transform?
     if (TSG[0] == 'y'){
         domain_transform_a.resize(base->getNumDimensions());
         domain_transform_b.resize(base->getNumDimensions());
@@ -1657,25 +1670,36 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     }else if (TSG[0] != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong domain type");
     }
-    ifs.read(TSG, sizeof(char)); // conformal domain transform?
+    ifs.read(TSG.data(), sizeof(char)); // conformal domain transform?
     if (TSG[0] == 'a'){
         conformal_asin_power.resize(base->getNumDimensions());
         ifs.read((char*) conformal_asin_power.data(), base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong conformal transform type");
     }
-    ifs.read(TSG, sizeof(char)); // limits
+    ifs.read(TSG.data(), sizeof(char)); // limits
     if (TSG[0] == 'y'){
         llimits.resize(base->getNumDimensions());
         ifs.read((char*) llimits.data(), base->getNumDimensions() * sizeof(int));
     }else if (TSG[0] != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong level limits");
     }
-    ifs.read(TSG, sizeof(char)); // end character
-    if (TSG[0] != 'e'){
-        throw std::runtime_error("ERROR: wrong binary file format, did not reach correct end of Tasmanian block");
+    bool reached_eof = false;
+    ifs.read(TSG.data(), sizeof(char));
+    if (TSG[0] == 'c'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
+        usingDynamicConstruction = true;
+        if (isGlobal()) getGridGlobal()->readConstructionDataBinary(ifs);
+    }else if (TSG[0] == 'e'){
+        reached_eof = true;
+    }else if (TSG[0] != 's'){
+        throw std::runtime_error("ERROR: wrong binary file format, wrong construction method specified");
     }
-    delete[] TSG;
+    if (!reached_eof){
+        ifs.read(TSG.data(), sizeof(char));
+        if (TSG[0] != 'e'){
+            throw std::runtime_error("ERROR: wrong binary file format, did not reach correct end of Tasmanian block");
+        }
+    }
 }
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){

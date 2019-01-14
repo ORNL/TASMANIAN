@@ -116,6 +116,18 @@ public:
     //! \brief Default destructor, release all used memory and erase all stored data.
     ~DynamicConstructorDataGlobal();
 
+    //! \brief Write the data to a file in ascii format.
+    void write(std::ofstream &ofs) const;
+    //! \brief Write the data to a file in binary format.
+    void writeBinary(std::ofstream &ofs) const;
+    //! \brief Read the data from a file in ascii format, returns the maximum tensor index so the 1D wrapper cache structure can be updated.
+    int read(std::ifstream &ifs);
+    //! \brief Read the data from a file in binary format, returns the maximum tensor index so the 1D wrapper cache structure can be updated.
+    int readBinary(std::ifstream &ifs);
+
+    //! \brief Called after read, reinitializes the points and loaded structures for the tensors.
+    void reloadPoints(std::function<int(int)> getNumPoints);
+
     //! \brief Delete the tensors with non-negative weights, i.e., clear all but the tensors selected by the initial grid.
     void clearTesnors();
 
@@ -133,6 +145,16 @@ public:
 
     //! \brief Return a completed tensor with parent-tensors included in tensors, returns \b true if such tensor has been found.
     bool ejectCompleteTensor(const MultiIndexSet &current_tensors, std::vector<int> &tensor, MultiIndexSet &points, std::vector<double> &vals);
+
+protected:
+    //! \brief Takes a list and creates a vector of references in reversed order, needed for I/O so that read can be followed by push_front.
+    template <class T> void makeReverseReferenceVector(const std::forward_list<T> &list, std::vector<const T*> &refs) const{
+        size_t num_entries = (size_t) std::distance(list.begin(), list.end());
+        refs.resize(num_entries);
+        auto p = list.begin();
+        auto r = refs.rbegin();
+        while(p != list.end()) *r++ = &*p++;
+    }
 
 private:
     int num_dimensions, num_outputs;

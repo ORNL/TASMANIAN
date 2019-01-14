@@ -59,11 +59,11 @@ void GridGlobal::write(std::ofstream &ofs) const{
         }
         tensors.write(ofs);
         active_tensors.write(ofs);
-        ofs << active_w[0];
-        for(int i=1; i<active_tensors.getNumIndexes(); i++){
-            ofs << " " << active_w[i];
+        if (!active_w.empty()){
+            ofs << active_w[0];
+            for(int i=1; i<active_tensors.getNumIndexes(); i++) ofs << " " << active_w[i];
+            ofs << endl;
         }
-        ofs << endl;
         if (points.empty()){
             ofs << "0" << endl;
         }else{
@@ -113,7 +113,7 @@ void GridGlobal::writeBinary(std::ofstream &ofs) const{
         }
         tensors.writeBinary(ofs);
         active_tensors.writeBinary(ofs);
-        ofs.write((char*) (active_w.data()), active_tensors.getNumIndexes() * sizeof(int));
+        if (!active_w.empty()) ofs.write((char*) (active_w.data()), active_tensors.getNumIndexes() * sizeof(int));
         char flag;
         if (points.empty()){
             flag = 'n'; ofs.write(&flag, sizeof(char));
@@ -200,7 +200,7 @@ void GridGlobal::readBinary(std::ifstream &ifs){
         tensors.readBinary(ifs);
         active_tensors.readBinary(ifs);
         active_w.resize(active_tensors.getNumIndexes());
-        ifs.read((char*) (active_w.data()), active_tensors.getNumIndexes() * sizeof(int));
+        if (!active_w.empty()) ifs.read((char*) (active_w.data()), active_tensors.getNumIndexes() * sizeof(int));
 
         char flag;
         ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') points.readBinary(ifs);
@@ -550,6 +550,26 @@ void GridGlobal::beginConstruction(){
         needed = MultiIndexSet();
         values.resize(num_outputs, 0);
     }
+}
+void GridGlobal::writeConstructionDataBinary(std::ofstream &ofs) const{
+    dynamic_values->writeBinary(ofs);
+}
+void GridGlobal::writeConstructionData(std::ofstream &ofs) const{
+    dynamic_values->write(ofs);
+}
+void GridGlobal::readConstructionDataBinary(std::ifstream &ifs){
+    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(num_dimensions, num_outputs));
+    int max_level = dynamic_values->readBinary(ifs);
+    if (max_level + 1 > wrapper.getNumLevels())
+        wrapper.load(custom, max_level, rule, alpha, beta);
+    dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
+}
+void GridGlobal::readConstructionData(std::ifstream &ifs){
+    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(num_dimensions, num_outputs));
+    int max_level = dynamic_values->read(ifs);
+    if (max_level + 1 > wrapper.getNumLevels())
+        wrapper.load(custom, max_level, rule, alpha, beta);
+    dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
 void GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
     std::vector<int> weights;

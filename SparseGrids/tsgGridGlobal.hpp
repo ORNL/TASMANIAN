@@ -114,6 +114,10 @@ public:
     void mergeRefinement();
 
     void beginConstruction();
+    void writeConstructionDataBinary(std::ofstream &ofs) const;
+    void writeConstructionData(std::ofstream &ofs) const;
+    void readConstructionDataBinary(std::ifstream &ifs);
+    void readConstructionData(std::ifstream &ifs);
     void getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits);
     void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits);
     void getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits);
