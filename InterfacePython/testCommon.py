@@ -152,3 +152,14 @@ class TestTasCommon(unittest.TestCase):
         iOut = grid.getNumOutputs()
         iDim = grid.getNumDimensions()
         grid.loadNeededPoints(np.column_stack([np.exp(-np.sum(mPoints**2, axis=1)) for i in range(iOut)]))
+
+    def checkPoints(self, aPoints, lMustHave, lMustNotHave):
+        '''
+        aPoints is 1D array of points
+        lMustHave and lMustNotHave are the points to test
+        Example: checkPoints(aPoints[:,0], [0.0, 1.0, -1.0], [0.5, -0.5])
+        '''
+        for x in lMustHave:
+            self.assertTrue((np.sum(np.where(np.abs(aPoints - x) < 0.001, 1, 0)) > 0), 'did not properly limit level, did not find {0:1.5e}'.format(x))
+        for x in lMustNotHave:
+            self.assertTrue((np.sum(np.where(np.abs(aPoints - x) < 0.001, 1, 0)) == 0), 'did not properly limit level, did find {0:1.5e}'.format(x))

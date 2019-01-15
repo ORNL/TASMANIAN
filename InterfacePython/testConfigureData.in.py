@@ -6,6 +6,8 @@
 
 bEnableSyncTests = @Tasmanian_cmake_synctest_enable@
 
+sLibPath = "@Tasmanian_libsparsegrid_path@"
+
 iGPUID = @Tasmanian_TESTS_GPU_ID@
 
 bHasBlas = ("@Tasmanian_ENABLE_BLAS@" == "ON")
