@@ -4,7 +4,7 @@
 # environment, which will reduce the need for configuring.
 ########################################################################
 
-bEnableSyncTests = @Tasmanian_cmake_synctest_enable@
+bEnableSyncTests = True
 
 sLibPath = "@Tasmanian_libsparsegrid_path@"
 

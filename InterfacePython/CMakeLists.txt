@@ -24,9 +24,6 @@ if (Tasmanian_DEVELOPMENT_BACKWARDS)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/TasmanianSG.py")
 
     set(Tasmanian_string_python_hashbang "/usr/bin/env python")
-    set(Tasmanian_cmake_synctest_enable "False") # disable tests that check if the library reports the same options as given by the cmake variables
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testTSG.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/testTSG.py") # also using Tasmanian_libsparsegrid_path
-
     set(Tasmanian_python_example_import "#")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 endif()
@@ -39,26 +36,24 @@ set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/${C
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG.py")
 
 set(Tasmanian_string_python_hashbang "${PYTHON_EXECUTABLE}")
-set(Tasmanian_cmake_synctest_enable "True") # enable tests that check if the library reports the same options as given by the cmake variables
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testTSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py") # also uses Tasmanian_libsparsegrid_path
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 # windows puts the temp .dll files in Release or Debug subfolder, as opposed to directly in ${CMAKE_CURRENT_BINARY_DIR}
 # add different configure file for each build type and copy the appropriate one with a custom command
     set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_Release.py")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testTSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG_Release.py")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testConfigureData.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData_Release.py")
     set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_Debug.py")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testTSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG_Debug.py")
-    add_custom_target(Tasmanian_python_interface ALL DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testConfigureData.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData_Debug.py")
+    add_custom_target(Tasmanian_python_interface ALL DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData.py")
     add_custom_command(TARGET Tasmanian_python_interface PRE_BUILD
                        COMMAND "${CMAKE_COMMAND}"
                        ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_$<CONFIG>.py ${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG.py
                        COMMENT "Copying Python module for config $<CONFIG>")
     add_custom_command(TARGET Tasmanian_python_interface PRE_BUILD
                        COMMAND "${CMAKE_COMMAND}"
-                       ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/testTSG_$<CONFIG>.py ${CMAKE_CURRENT_BINARY_DIR}/testTSG.py
+                       ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/testConfigureData_$<CONFIG>.py ${CMAKE_CURRENT_BINARY_DIR}/testConfigureData.py
                        COMMENT "Copying Python module for config $<CONFIG>")
 endif()
 
@@ -68,6 +63,21 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sandbox.py" "${CMAKE_CURRENT_BINARY_DIR}/sandbox.py") # only uses Tasmanian_string_python_hashbang
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY) # needed for testing
+
+# See the matlab CMakeText.txt on how to copy multiple scripts
+set(Tasmanian_python_test_files testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py testRefinement.py testUnstructuredData.py testMisc.py)
+
+foreach(Tasmanian_python_testing_file ${Tasmanian_python_test_files})
+    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${Tasmanian_python_testing_file}"
+                       COMMAND "${CMAKE_COMMAND}"
+                       ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${Tasmanian_python_testing_file} ${CMAKE_CURRENT_BINARY_DIR}//${Tasmanian_python_testing_file}
+                       DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${Tasmanian_python_testing_file}"
+                       COMMENT "Copying ${CMAKE_CURRENT_SOURCE_DIR}/${Tasmanian_python_testing_file}")
+    list(APPEND Tasmanian_python_testing_files_stage1 "${CMAKE_CURRENT_BINARY_DIR}/${Tasmanian_python_testing_file}")
+endforeach()
+add_custom_target(Tasmanian_python_testing ALL DEPENDS "${Tasmanian_python_testing_files_stage1}")
+
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testConfigureData.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData.py")
 
 
 ########################################################################
@@ -90,10 +100,10 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE
 add_test(NAME PythonIO           COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBasicIO)
 add_test(NAME PythonAcceleration COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAcceleratedEvaluate)
 add_test(NAME PythonExceptions   COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBasicException)
-add_test(NAME PythonMakeUpdate   COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testFullCoverageA)
-add_test(NAME PythonRefine       COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testFullCoverageB)
-add_test(NAME PythonLearning     COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testFullCoverageC)
-add_test(NAME PythonMisc         COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testFullCoverageZ)
+add_test(NAME PythonMakeUpdate   COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAMakeUpdate)
+add_test(NAME PythonRefine       COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBRefinement)
+add_test(NAME PythonLearning     COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testCUnsructuredData)
+add_test(NAME PythonMisc         COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testZMisc)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
     set_tests_properties(PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc
         PROPERTIES
