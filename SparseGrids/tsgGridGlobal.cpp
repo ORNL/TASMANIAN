@@ -757,6 +757,13 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
         for(int k=0; k<num_outputs; k++) y[k] += wi * v[k];
     }
 }
+void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++)
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
+}
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateFastCPUblas(const double x[], double y[]) const{
@@ -818,15 +825,6 @@ void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, d
     cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, 1.0, cuda_vals, *(weights.getVector()), 0.0, y);
 }
 #endif // Tasmanian_ENABLE_MAGMA
-
-void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
-    }
-}
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
     std::vector<double> w(getNumPoints());

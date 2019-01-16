@@ -545,6 +545,14 @@ void GridFourier::evaluate(const double x[], double y[]) const{
         for(int k=0; k<num_outputs; k++) y[k] += wr * fcreal[k] - wi * fcimag[k];
     }
 }
+void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++)
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
+}
+
 #ifdef Tasmanian_ENABLE_BLAS
 void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
     int num_points = points.getNumIndexes();
@@ -624,13 +632,6 @@ void GridFourier::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, 
     gpuY.unload(y);
 }
 #endif
-
-void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evaluate(&(x[((size_t) i) * ((size_t) num_dimensions)]), &(y[((size_t) i) * ((size_t) num_outputs)]));
-    }
-}
 
 void GridFourier::integrate(double q[], double *conformal_correction) const{
     std::fill(q, q+num_outputs, 0.0);

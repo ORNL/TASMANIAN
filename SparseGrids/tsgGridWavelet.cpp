@@ -317,6 +317,13 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
         y[j] = sum;
 	}
 }
+void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++)
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
+}
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridWavelet::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
@@ -334,13 +341,6 @@ void GridWavelet::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) 
 void GridWavelet::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
 void GridWavelet::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 #endif
-
-void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evaluate(&(x[i*num_dimensions]), &(y[i*num_outputs]));
-    }
-}
 
 void GridWavelet::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();

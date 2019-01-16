@@ -386,6 +386,13 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
         }
     }
 }
+void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++)
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
+}
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
@@ -492,15 +499,6 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
 void GridLocalPolynomial::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
 void GridLocalPolynomial::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const{ evaluateBatchGPUcublas(x, num_x, y); }
 #endif
-
-void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
-    }
-}
 
 void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA

@@ -367,6 +367,13 @@ void GridSequence::evaluate(const double x[], double y[]) const{
         }
     }
 }
+void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++)
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
+}
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
@@ -441,15 +448,6 @@ void GridSequence::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x,
     gpu_result.unload(y);
 }
 #endif
-
-void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
-    }
-}
 
 void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();
