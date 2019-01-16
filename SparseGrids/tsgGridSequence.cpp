@@ -374,8 +374,13 @@ void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
     evalHierarchicalFunctions(x, fvalues.data());
     TasBLAS::dgemv(num_outputs, points.getNumIndexes(), surpluses.data(), fvalues.data(), y);
 }
-#else
-void GridSequence::evaluateFastCPUblas(const double[], double[]) const{}
+void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
+    int num_points = points.getNumIndexes();
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+
+    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.getStrip(0), 0.0, y);
+}
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
@@ -415,18 +420,6 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
         evaluate(xx.getCStrip(i), yy.getStrip(i));
     }
 }
-
-#ifdef Tasmanian_ENABLE_BLAS
-void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.getStrip(0), 0.0, y);
-}
-#else
-void GridSequence::evaluateBatchCPUblas(const double[], int, double[]) const{}
-#endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
@@ -562,14 +555,16 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     std::copy_n(c, num_vals, surpluses.data());
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
-    if (acc == accel_cpu_blas){
-        evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals->data());
-    }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals->data());
-    }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals->data());
-    }else{
-        evaluateBatch(x.data(), points.getNumIndexes(), vals->data());
+    switch(acc){
+        #ifdef Tasmanian_ENABLE_BLAS
+        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals->data()); break;
+        #endif
+        #ifdef Tasmanian_ENABLE_CUDA
+        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals->data()); break;
+        #endif
+        default:
+            evaluateBatch(x.data(), points.getNumIndexes(), vals->data());
     }
 }
 

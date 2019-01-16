@@ -764,8 +764,13 @@ void GridGlobal::evaluateFastCPUblas(const double x[], double y[]) const{
     getInterpolationWeights(x, w.data());
     TasBLAS::dgemv(num_outputs, points.getNumIndexes(), values.getValues(0), w.data(), y);
 }
-#else
-void GridGlobal::evaluateFastCPUblas(const double[], double[]) const{}
+void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
+    int num_points = points.getNumIndexes();
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+
+    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
+}
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
@@ -805,18 +810,6 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
         evaluate(xx.getCStrip(i), yy.getStrip(i));
     }
 }
-
-#ifdef Tasmanian_ENABLE_BLAS
-void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
-}
-#else
-void GridGlobal::evaluateBatchCPUblas(const double[], int, double[]) const{}
-#endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
