@@ -100,8 +100,10 @@ public:
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
     #endif
 
+    #ifdef Tasmanian_ENABLE_MAGMA
     void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
     void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
+    #endif
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     #ifdef Tasmanian_ENABLE_CUDA

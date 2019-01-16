@@ -426,20 +426,6 @@ void GridSequence::evaluateFastGPUmagma(int gpuID, const double x[], double y[])
 
     cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, points.getNumIndexes(), 1.0, cuda_surpluses, hweights, 0.0, y);
 }
-#else
-void GridSequence::evaluateFastGPUmagma(int, const double[], double[]) const{}
-#endif
-
-void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
-    }
-}
-
-#ifdef Tasmanian_ENABLE_MAGMA
 void GridSequence::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
     loadCudaNodes();
@@ -454,9 +440,16 @@ void GridSequence::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x,
     cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
     gpu_result.unload(y);
 }
-#else
-void GridSequence::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
-#endif // Tasmanian_ENABLE_MAGMA
+#endif
+
+void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++){
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
+    }
+}
 
 void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();
