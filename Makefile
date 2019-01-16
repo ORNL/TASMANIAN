@@ -20,7 +20,8 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
           $(patsubst ./SparseGrids/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./SparseGrids/*.h*))) \
           ./include/TasmanianConfig.hpp
 
-ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py testTSG.py sandbox.py example_sparse_grids.cpp example_dream.cpp \
+ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py \
+              sandbox.py example_sparse_grids.cpp example_dream.cpp \
               libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid tasdream gridtest $(HEADERS)
 
 CONFIGURED_HEADERS = ./SparseGrids/TasmanianConfig.hpp
@@ -133,8 +134,11 @@ TasmanianSG.py: ./Config/AltBuildSystems/TasmanianSG.py
 example_sparse_grids.py: ./Config/AltBuildSystems/example_sparse_grids.py
 	cp ./Config/AltBuildSystems/example_sparse_grids.py .
 
-testTSG.py: ./Config/AltBuildSystems/testTSG.py
-	cp ./Config/AltBuildSystems/testTSG.py .
+InterfacePython/testConfigureData.py: ./Config/AltBuildSystems/testConfigureData.py
+	cp ./Config/AltBuildSystems/testConfigureData.py InterfacePython/
+
+testTSG.py: ./InterfacePython/testTSG.py
+	cp ./InterfacePython/testTSG.py .
 
 sandbox.py: ./InterfacePython/sandbox.py
 	cp ./InterfacePython/sandbox.py .
@@ -204,7 +208,7 @@ InterfaceFortran/libtasmanianfortran90.a:
 test: $(ALL_TARGETS)
 	./gridtest
 	./tasdream -test
-	./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
+	PYTHONPATH=$PYTHONPATH:./InterfacePython ./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
 
 .PHONY: examples
 examples: $(ALL_TARGETS)

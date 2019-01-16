@@ -182,9 +182,7 @@ if (( $bGCC == 1 )); then
     cp -r $sTempSource $sTempBuild/Tasmanian || { exit 1; }
     cd $sTempBuild/Tasmanian || { exit 1; }
     make -j || { echo "Legacy build failed!"; exit 1; }
-    ./gridtest || { echo "Legacy tasgrid failed!"; exit 1; }
-    ./tasdream -test || { echo "Legacy tasdream failed!"; exit 1; }
-    ./testTSG.py || { echo "Legacy python test failed!"; exit 1; }
+    make test || { echo "Legacy test failed!"; exit 1; }
     make examples || { echo "Legacy build examples failed!"; exit 1; }
     ./example_sparse_grids -fast || { echo "Legacy SG examples failed!"; exit 1; }
     ./example_dream -fast || { echo "Legacy dream examples failed!"; exit 1; }
