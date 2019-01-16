@@ -191,7 +191,7 @@ protected:
     static void printMatrix(int rows, int cols, const double mat[], bool isComplex = false);
 
 private:
-    TasmanianSparseGrid *grid;
+    TasmanianSparseGrid grid;
 
     TypeCommand command;
 

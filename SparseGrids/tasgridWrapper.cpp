@@ -33,7 +33,7 @@
 
 #include "tasgridWrapper.hpp"
 
-TasgridWrapper::TasgridWrapper() : grid(0), command(command_none), num_dimensions(0), num_outputs(-1), depth(-1), order(1),
+TasgridWrapper::TasgridWrapper() : command(command_none), num_dimensions(0), num_outputs(-1), depth(-1), order(1),
     depth_type(type_none), rule(rule_none),
     conformal(conformal_none), alpha(0.0), beta(0.0), set_alpha(false), set_beta(false), tolerance(0.0), set_tolerance(false),
     ref_output(-1), min_growth(-1), tref(refine_fds), set_tref(false),
@@ -41,9 +41,7 @@ TasgridWrapper::TasgridWrapper() : grid(0), command(command_none), num_dimension
     levellimitfilename(0),
     printCout(false), useASCII(false), set_gpuid(-1)
 {}
-TasgridWrapper::~TasgridWrapper(){
-    if (grid != 0) delete grid;
-}
+TasgridWrapper::~TasgridWrapper(){}
 
 TypeConformalMap TasgridWrapper::getConfromalType(const char* name){
     if (strcmp(name, "asin") == 0){
@@ -288,13 +286,12 @@ void TasgridWrapper::createGlobalGird(){
     }else{
         weights = readAnisotropicFile(num_dimensions);
     }
-    if (grid == 0) grid = new TasmanianSparseGrid();
     int* llimits = readLevelLimits(num_dimensions);
-    grid->makeGlobalGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, alpha, beta, customfilename, llimits);
+    grid.makeGlobalGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, alpha, beta, customfilename, llimits);
     if (weights == 0) delete[] weights;
     if (transformfilename != 0){
         double *transforms = readTransform();
-        grid->setDomainTransform(transforms, &(transforms[num_dimensions]));
+        grid.setDomainTransform(transforms, &(transforms[num_dimensions]));
         delete[] transforms;
     }
     if ((conformal != conformal_none) && (conformalfilename != 0)){
@@ -311,17 +308,16 @@ void TasgridWrapper::createSequenceOrFourierGird(){
     }else{
         weights = readAnisotropicFile(num_dimensions);
     }
-    if (grid == 0) grid = new TasmanianSparseGrid();
     int* llimits = readLevelLimits(num_dimensions);
     if (command == command_makefourier || rule == rule_fourier){    // rule condition is for quadrature
-        grid->makeFourierGrid(num_dimensions, num_outputs, depth, depth_type, weights, llimits);
+        grid.makeFourierGrid(num_dimensions, num_outputs, depth, depth_type, weights, llimits);
     }else{
-        grid->makeSequenceGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, llimits);
+        grid.makeSequenceGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, llimits);
     }
     if (weights == 0) delete[] weights;
     if (transformfilename != 0){
         double *transforms = readTransform();
-        grid->setDomainTransform(transforms, &(transforms[num_dimensions]));
+        grid.setDomainTransform(transforms, &(transforms[num_dimensions]));
         delete[] transforms;
     }
     if ((conformal != conformal_none) && (conformalfilename != 0)){
@@ -332,12 +328,11 @@ void TasgridWrapper::createSequenceOrFourierGird(){
     if (llimits != 0) delete[] llimits;
 }
 void TasgridWrapper::createLocalPolynomialGird(){
-    if (grid == 0) grid = new TasmanianSparseGrid();
     int* llimits = readLevelLimits(num_dimensions);
-    grid->makeLocalPolynomialGrid(num_dimensions, num_outputs, depth, order, rule, llimits);
+    grid.makeLocalPolynomialGrid(num_dimensions, num_outputs, depth, order, rule, llimits);
     if (transformfilename != 0){
         double *transforms = readTransform();
-        grid->setDomainTransform(transforms, &(transforms[num_dimensions]));
+        grid.setDomainTransform(transforms, &(transforms[num_dimensions]));
         delete[] transforms;
     }
     if ((conformal != conformal_none) && (conformalfilename != 0)){
@@ -348,12 +343,11 @@ void TasgridWrapper::createLocalPolynomialGird(){
     if (llimits != 0) delete[] llimits;
 }
 void TasgridWrapper::createWaveletGird(){
-    if (grid == 0) grid = new TasmanianSparseGrid();
     int* llimits = readLevelLimits(num_dimensions);
-    grid->makeWaveletGrid(num_dimensions, num_outputs, depth, order, llimits);
+    grid.makeWaveletGrid(num_dimensions, num_outputs, depth, order, llimits);
     if (transformfilename != 0){
         double *transforms = readTransform();
-        grid->setDomainTransform(transforms, &(transforms[num_dimensions]));
+        grid.setDomainTransform(transforms, &(transforms[num_dimensions]));
         delete[] transforms;
     }
     if ((conformal != conformal_none) && (conformalfilename != 0)){
@@ -378,29 +372,28 @@ void TasgridWrapper::createQuadrature(){
     }
 }
 bool TasgridWrapper::updateGrid(){
-    if (!(grid->isGlobal() || grid->isSequence())){
+    if (!(grid.isGlobal() || grid.isSequence())){
         cerr << "ERROR: -makeupdate can be called only for Global and Sequence grids" << endl;
         return false;
     }
-    int nd = grid->getNumDimensions();
+    int nd = grid.getNumDimensions();
     int *weights = 0;
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
         weights = readAnisotropicFile(2*nd);
     }else{
         weights = readAnisotropicFile(nd);
     }
-    if (grid->isGlobal()){
-        grid->updateGlobalGrid(depth, depth_type, weights);
+    if (grid.isGlobal()){
+        grid.updateGlobalGrid(depth, depth_type, weights);
     }else{
-        grid->updateSequenceGrid(depth, depth_type, weights);
+        grid.updateSequenceGrid(depth, depth_type, weights);
     }
     return true;
 }
-void TasgridWrapper::writeGrid() const{ grid->write(gridfilename, !useASCII); }
+void TasgridWrapper::writeGrid() const{ grid.write(gridfilename, !useASCII); }
 bool TasgridWrapper::readGrid(){
-    if (grid == 0) grid = new TasmanianSparseGrid();
     try{
-        grid->read(gridfilename);
+        grid.read(gridfilename);
         return true;
     }catch(std::runtime_error &e){
         cerr << e.what() << endl;
@@ -408,15 +401,15 @@ bool TasgridWrapper::readGrid(){
     }
 }
 void TasgridWrapper::outputPoints(bool useNeeded) const{
-    int num_p, num_d = grid->getNumDimensions();
+    int num_p, num_d = grid.getNumDimensions();
     double *points;
     if ((outfilename == 0) && (!printCout)) return;
     if (useNeeded){
-        num_p = grid->getNumNeeded();
-        points = grid->getNeededPoints();
+        num_p = grid.getNumNeeded();
+        points = grid.getNeededPoints();
     }else{
-        num_p = grid->getNumPoints();
-        points = grid->getPoints();
+        num_p = grid.getNumPoints();
+        points = grid.getPoints();
     }
     if (outfilename != 0) writeMatrix(outfilename, num_p, num_d, points, useASCII);
     if (printCout) printMatrix(num_p, num_d, points);
@@ -425,11 +418,11 @@ void TasgridWrapper::outputPoints(bool useNeeded) const{
 void TasgridWrapper::outputQuadrature() const{
     double *points, *weights, *combined;
     if ((outfilename == 0) && (!printCout)) return;
-    int num_p = grid->getNumPoints();
-    int num_d = grid->getNumDimensions();
+    int num_p = grid.getNumPoints();
+    int num_d = grid.getNumDimensions();
     int offset = num_d + 1;
-    points  = grid->getPoints();
-    weights = grid->getQuadratureWeights();
+    points  = grid.getPoints();
+    weights = grid.getQuadratureWeights();
     combined = new double[num_p * offset];
     for(int i=0; i<num_p; i++){
         combined[i * offset] = weights[i];
@@ -446,10 +439,10 @@ void TasgridWrapper::outputQuadrature() const{
     delete[] points;
 }
 void TasgridWrapper::outputHierarchicalCoefficients() const{
-    const double *coeff = grid->getHierarchicalCoefficients();
-    int num_p = grid->getNumPoints();
-    int num_d = grid->getNumOutputs();
-    if (grid->isFourier()){
+    const double *coeff = grid.getHierarchicalCoefficients();
+    int num_p = grid.getNumPoints();
+    int num_d = grid.getNumOutputs();
+    if (grid.isFourier()){
         // use interwoven format for complex coefficients
         double *coeff_fourier = new double[2 * num_p * num_d];
         for(int i=0; i<num_p*num_d; i++){
@@ -481,13 +474,13 @@ bool TasgridWrapper::setConformalTransformation(){
             cerr << "ERROR: the conformal file for asin should contain only one row" << endl;
             return false;
         }
-        if (cols != (size_t) grid->getNumDimensions()){
-            cerr << "ERROR: the conformal file for asin should contain " << grid->getNumDimensions() << " columns, instead it has " << cols << endl;
+        if (cols != (size_t) grid.getNumDimensions()){
+            cerr << "ERROR: the conformal file for asin should contain " << grid.getNumDimensions() << " columns, instead it has " << cols << endl;
             return false;
         }
         int *coef = new int[cols];
         for(size_t j=0; j<cols; j++) coef[j] = (int) mat[j];
-        grid->setConformalTransformASIN(coef);
+        grid.setConformalTransformASIN(coef);
         delete[] mat;
         delete[] coef;
         return true;
@@ -500,22 +493,22 @@ bool TasgridWrapper::loadValues(){
     size_t rows, cols;
     double *vals = 0;
     readMatrix(valsfilename, rows, cols, vals);
-    if (grid->getNumNeeded() == 0){
-        if (rows != (size_t) grid->getNumLoaded()){
-            cerr << "ERROR: grid has " << grid->getNumLoaded() << " new values, but " << valsfilename << " specifies " << rows << endl;
+    if (grid.getNumNeeded() == 0){
+        if (rows != (size_t) grid.getNumLoaded()){
+            cerr << "ERROR: grid has " << grid.getNumLoaded() << " new values, but " << valsfilename << " specifies " << rows << endl;
             return false;
         }
     }else{
-        if (rows != (size_t) grid->getNumNeeded()){
-            cerr << "ERROR: grid is awaiting " << grid->getNumNeeded() << " new values, but " << valsfilename << " specifies " << rows << endl;
+        if (rows != (size_t) grid.getNumNeeded()){
+            cerr << "ERROR: grid is awaiting " << grid.getNumNeeded() << " new values, but " << valsfilename << " specifies " << rows << endl;
             return false;
         }
     }
-    if (cols != (size_t) grid->getNumOutputs()){
-        cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
+    if (cols != (size_t) grid.getNumOutputs()){
+        cerr << "ERROR: grid is set for " << grid.getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
         return false;
     }
-    grid->loadNeededPoints(vals);
+    grid.loadNeededPoints(vals);
     delete[] vals;
     return true;
 }
@@ -523,19 +516,19 @@ bool TasgridWrapper::getInterWeights(){
     size_t rows, cols;
     double *x = 0, *res;
     readMatrix(xfilename, rows, cols, x);
-    if (cols != (size_t) grid->getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid->getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
+    if (cols != (size_t) grid.getNumDimensions()){
+        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
         return false;
     }
     if (rows < 1){
         cerr << "ERROR: no points specified in " << xfilename << endl;
         return false;
     }
-    int num_p = grid->getNumPoints();
+    int num_p = grid.getNumPoints();
     res = new double[((size_t) num_p) * rows];
     #pragma omp parallel for
     for(int i=0; i<(int) rows; i++){ // in windows OpenMP loop counters must be signed ??
-        double *r = grid->getInterpolationWeights(&(x[i*cols]));
+        double *r = grid.getInterpolationWeights(&(x[i*cols]));
         std::copy(r, r + num_p, &(res[i * ((size_t) num_p)]));
         delete[] r;
     }
@@ -550,38 +543,38 @@ bool TasgridWrapper::getInterWeights(){
     return true;
 }
 bool TasgridWrapper::getEvaluate(){
-    if (grid->getNumLoaded() == 0){
+    if (grid.getNumLoaded() == 0){
         cerr << "ERROR: no values loaded in the grid, cannot evaluate!" << endl;
         return false;
     }
-    if (grid->getNumOutputs() == 0){
+    if (grid.getNumOutputs() == 0){
         cerr << "ERROR: no outputs set for the grid, nothing to evaluate!" << endl;
         return false;
     }
     size_t rows, cols;
     double *x = 0, *res;
     readMatrix(xfilename, rows, cols, x);
-    if (cols != (size_t) grid->getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid->getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
+    if (cols != (size_t) grid.getNumDimensions()){
+        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
         return false;
     }
     if (rows < 1){
         cerr << "ERROR: no points specified in " << xfilename << endl;
         return false;
     }
-    int num_out = grid->getNumOutputs();
+    int num_out = grid.getNumOutputs();
     res = new double[((size_t) num_out) * rows];
 
     if (set_gpuid > -1){
-        if (set_gpuid < grid->getNumGPUs()){
-            grid->enableAcceleration(accel_gpu_cuda);
-            grid->setGPUID(set_gpuid);
+        if (set_gpuid < grid.getNumGPUs()){
+            grid.enableAcceleration(accel_gpu_cuda);
+            grid.setGPUID(set_gpuid);
         }else{
             cerr << "WARNING: invalud GPU specified " << set_gpuid << endl;
         }
     }
 
-    grid->evaluateBatch(x, (int) rows, res);
+    grid.evaluateBatch(x, (int) rows, res);
 
     if (outfilename != 0){
         writeMatrix(outfilename, (int) rows, (int) num_out, res, useASCII);
@@ -594,17 +587,17 @@ bool TasgridWrapper::getEvaluate(){
     return true;
 }
 bool TasgridWrapper::getIntegrate(){
-    if (grid->getNumLoaded() == 0){
+    if (grid.getNumLoaded() == 0){
         cerr << "ERROR: no values loaded in the grid, cannot evaluate!" << endl;
         return false;
     }
-    if (grid->getNumOutputs() == 0){
+    if (grid.getNumOutputs() == 0){
         cerr << "ERROR: no outputs set for the grid, nothing to evaluate!" << endl;
         return false;
     }
-    int num_out = grid->getNumOutputs();
+    int num_out = grid.getNumOutputs();
     double *q = new double[num_out];
-    grid->integrate(q);
+    grid.integrate(q);
     if (outfilename != 0){
         writeMatrix(outfilename, 1, num_out, q, useASCII);
     }
@@ -615,31 +608,31 @@ bool TasgridWrapper::getIntegrate(){
     return true;
 }
 bool TasgridWrapper::getAnisoCoeff(){
-    if (grid->getNumOutputs() == 0){
+    if (grid.getNumOutputs() == 0){
         cerr << "ERROR: cannot estimate coefficients with no outputs!" << endl;
         return false;
     }
-    if (grid->getNumLoaded() == 0){
+    if (grid.getNumLoaded() == 0){
         cerr << "ERROR: cannot estimate coefficients for a grid with no loaded values!" << endl;
         return false;
     }
     int *ab;
-    if (grid->isSequence()){
-        ab = grid->estimateAnisotropicCoefficients(depth_type, ref_output);
+    if (grid.isSequence()){
+        ab = grid.estimateAnisotropicCoefficients(depth_type, ref_output);
     }else{
-        if (ref_output >= grid->getNumOutputs()){
-            cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid->getNumOutputs() << " outputs!" << endl;
+        if (ref_output >= grid.getNumOutputs()){
+            cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid.getNumOutputs() << " outputs!" << endl;
             cerr << " HINT: the outputs are indexed starting at zero!" << endl;
             return false;
         }
-        if ((ref_output == -1) && (grid->getNumOutputs() > 1)){
+        if ((ref_output == -1) && (grid.getNumOutputs() > 1)){
             cerr << "ERROR: must specify a refinement output with -ref_output option!" << endl;
             return false;
         }else if (ref_output == -1) ref_output = 0;
-        ab = grid->estimateAnisotropicCoefficients(depth_type, ref_output);
+        ab = grid.estimateAnisotropicCoefficients(depth_type, ref_output);
     }
     double *coeff;
-    int num_coeff = grid->getNumDimensions();
+    int num_coeff = grid.getNumDimensions();
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
         num_coeff *= 2;
     }
@@ -661,25 +654,25 @@ bool TasgridWrapper::getAnisoCoeff(){
 
 bool TasgridWrapper::refineGrid(){
     // put the sanity check code here, since many of the parameters of the refinement depend on the type of grid being used
-    if (grid->getNumOutputs() == 0){
+    if (grid.getNumOutputs() == 0){
         cerr << "ERROR: cannot refine a grid with no outputs!" << endl;
         return false;
     }
-    if (grid->getNumLoaded() == 0){
+    if (grid.getNumLoaded() == 0){
         cerr << "ERROR: cannot refine a grid with no loaded values!" << endl;
         return false;
     }
-    int* llimits = readLevelLimits(grid->getNumDimensions());
+    int* llimits = readLevelLimits(grid.getNumDimensions());
     TypeCommand effective_command = command;
     if (command == command_refine){
-        if (grid->isGlobal() || grid->isSequence()){
+        if (grid.isGlobal() || grid.isSequence()){
             effective_command = command_refine_aniso;
         }else{
             effective_command = command_refine_surp;
         }
     }
     if (effective_command == command_refine_aniso){
-        if ((!grid->isGlobal()) && (!grid->isSequence())){
+        if ((!grid.isGlobal()) && (!grid.isSequence())){
             cerr << "ERROR: anisotropic refinement can be used only for global and sequence grids!" << endl;
             return false;
         }
@@ -694,26 +687,26 @@ bool TasgridWrapper::refineGrid(){
             cerr << "WARNING: anisotropic refinement ignores the -reftype option!" << endl;
         }
         if (min_growth < 1) min_growth = 1;
-        if (grid->isSequence()){
-            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
+        if (grid.isSequence()){
+            grid.setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
         }else{
-            if (ref_output >= grid->getNumOutputs()){
-                cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid->getNumOutputs() << " outputs!" << endl;
+            if (ref_output >= grid.getNumOutputs()){
+                cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid.getNumOutputs() << " outputs!" << endl;
                 cerr << " HINT: the outputs are indexed starting at zero!" << endl;
                 return false;
             }
-            if ((ref_output == -1) && (grid->getNumOutputs() > 1)){
+            if ((ref_output == -1) && (grid.getNumOutputs() > 1)){
                 cerr << "ERROR: must specify a refinement output with -ref_output option!" << endl;
                 return false;
             }else if (ref_output == -1) ref_output = 0;
-            grid->setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
+            grid.setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
         }
     }else{ // using surplus refinement
         if (!set_tolerance){
             cerr << "ERROR: must specify -tolerance for surplus refinement!" << endl;
             return false;
         }
-        if ((grid->isLocalPolynomial()) || (grid->isWavelet())){
+        if ((grid.isLocalPolynomial()) || (grid.isWavelet())){
             if (!set_tref){
                 cerr << "ERROR: must specify -reftype option!" << endl;
                 return false;
@@ -722,11 +715,11 @@ bool TasgridWrapper::refineGrid(){
             if (valsfilename != 0){
                 size_t rows, cols;
                 readMatrix(valsfilename, rows, cols, mat);
-                if (rows != ((size_t) grid->getNumPoints())){
+                if (rows != ((size_t) grid.getNumPoints())){
                     cerr << "ERROR: the number of weights must match the number of points." << endl;
                     return false;
                 }
-                if ((ref_output == -1) && (cols != ((size_t) grid->getNumOutputs()))){
+                if ((ref_output == -1) && (cols != ((size_t) grid.getNumOutputs()))){
                     cerr << "ERROR: the number of weights must match the number of outputs." << endl;
                     return false;
                 }
@@ -735,40 +728,40 @@ bool TasgridWrapper::refineGrid(){
                     return false;
                 }
             }
-            grid->setSurplusRefinement(tolerance, tref, ref_output, llimits, mat);
+            grid.setSurplusRefinement(tolerance, tref, ref_output, llimits, mat);
             delete[] mat;
-        }else if (grid->isSequence()){
-            grid->setSurplusRefinement(tolerance, ref_output, llimits);
+        }else if (grid.isSequence()){
+            grid.setSurplusRefinement(tolerance, ref_output, llimits);
         }else{
-            if (ref_output >= grid->getNumOutputs()){
-                cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid->getNumOutputs() << " outputs!" << endl;
+            if (ref_output >= grid.getNumOutputs()){
+                cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid.getNumOutputs() << " outputs!" << endl;
                 cerr << " HINT: the outputs are indexed starting at zero!" << endl;
                 return false;
             }
-            if ((ref_output == -1) && (grid->getNumOutputs() > 1)){
+            if ((ref_output == -1) && (grid.getNumOutputs() > 1)){
                 cerr << "ERROR: must specify a refinement output with -ref_output option!" << endl;
                 return false;
             }else if (ref_output == -1) ref_output = 0;
-            grid->setSurplusRefinement(tolerance, ref_output, llimits);
+            grid.setSurplusRefinement(tolerance, ref_output, llimits);
         }
     }
     writeGrid();
     return true;
 }
 bool TasgridWrapper::cancelRefine(){
-    grid->clearRefinement();
+    grid.clearRefinement();
     return true;
 }
 bool TasgridWrapper::mergeRefine(){
-    grid->mergeRefinement();
+    grid.mergeRefinement();
     return true;
 }
 bool TasgridWrapper::getPoly(){
-    if ((grid->isGlobal()) || (grid->isSequence())){
-        int num_d = grid->getNumDimensions();
+    if ((grid.isGlobal()) || (grid.isSequence())){
+        int num_d = grid.getNumDimensions();
         bool integrate = ((depth_type == type_iptotal) || (depth_type == type_ipcurved) || (depth_type == type_iptensor) || (depth_type == type_iphyperbolic));
         int n, *poly = 0;
-        grid->getGlobalPolynomialSpace(integrate, n, poly);
+        grid.getGlobalPolynomialSpace(integrate, n, poly);
         double *double_poly = new double[n * num_d];
         for(int i=0; i<num_d * n; i++) double_poly[i] = (double) poly[i];
         if (outfilename != 0){
@@ -786,14 +779,14 @@ bool TasgridWrapper::getPoly(){
     return true;
 }
 bool TasgridWrapper::getSummary(){
-    grid->printStats();
+    grid.printStats();
     return true;
 }
 bool TasgridWrapper::getSurpluses(){
-    const double *surp = grid->getHierarchicalCoefficients();
-    int num_p = grid->getNumLoaded();
-    int num_o = grid->getNumOutputs();
-    if (grid->isFourier()){
+    const double *surp = grid.getHierarchicalCoefficients();
+    int num_p = grid.getNumLoaded();
+    int num_o = grid.getNumOutputs();
+    if (grid.isFourier()){
         // use interwoven format for complex coefficients
         double *surp_fourier = new double[2 * num_p * num_o];
         for(int i=0; i<num_p*num_o; i++){
@@ -822,22 +815,22 @@ bool TasgridWrapper::getEvalHierarchyDense(){
     size_t rows, cols;
     double *x = 0, *res;
     readMatrix(xfilename, rows, cols, x);
-    if (cols != (size_t) grid->getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid->getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
+    if (cols != (size_t) grid.getNumDimensions()){
+        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
         return false;
     }
     if (rows < 1){
         cerr << "ERROR: no points specified in " << xfilename << endl;
         return false;
     }
-    int num_p = grid->getNumPoints();
-    res = new double[((size_t) (grid->isFourier() ? 2 : 1) * num_p) * ((size_t) rows)];
-    grid->evaluateHierarchicalFunctions(x, (int) rows, res);
+    int num_p = grid.getNumPoints();
+    res = new double[((size_t) (grid.isFourier() ? 2 : 1) * num_p) * ((size_t) rows)];
+    grid.evaluateHierarchicalFunctions(x, (int) rows, res);
     if (outfilename != 0){
-        writeMatrix(outfilename, (int) rows, ((grid->isFourier()) ? 2 * num_p : num_p), res, useASCII);
+        writeMatrix(outfilename, (int) rows, ((grid.isFourier()) ? 2 * num_p : num_p), res, useASCII);
     }
     if (printCout){
-        printMatrix((int) rows, (int) num_p, res, grid->isFourier());
+        printMatrix((int) rows, (int) num_p, res, grid.isFourier());
     }
     delete[] x;
     delete[] res;
@@ -847,8 +840,8 @@ bool TasgridWrapper::getEvalHierarchySparse(){
     size_t rows, cols;
     double *x = 0;
     readMatrix(xfilename, rows, cols, x);
-    if (cols != (size_t) grid->getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid->getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
+    if (cols != (size_t) grid.getNumDimensions()){
+        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << cols << endl;
         return false;
     }
     if (rows < 1){
@@ -857,8 +850,8 @@ bool TasgridWrapper::getEvalHierarchySparse(){
     }
     int *pntr = 0, *indx = 0;
     double *vals = 0;
-    grid->evaluateSparseHierarchicalFunctions(x, (int) rows, pntr, indx, vals);
-    int num_p = grid->getNumPoints();
+    grid.evaluateSparseHierarchicalFunctions(x, (int) rows, pntr, indx, vals);
+    int num_p = grid.getNumPoints();
     int num_nz = pntr[rows];
     if (outfilename != 0){
         if (useASCII){
@@ -870,7 +863,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             for(size_t i=1; i<rows+1; i++) ofs << " " << pntr[i];
             ofs << endl << indx[0];
             for(int i=1; i<num_nz; i++) ofs << " " << indx[i];
-            if (grid->isFourier()){
+            if (grid.isFourier()){
                 ofs << endl << vals[0] << " " << vals[1];
                 for(int i=1; i<num_nz; i++) ofs << " " << vals[2*i] << " " << vals[2*i+1];
             }else{
@@ -891,7 +884,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             ofs.write((char*) matrix_dims, 3 * sizeof(int));
             ofs.write((char*) pntr, (rows+1) * sizeof(int));
             ofs.write((char*) indx, num_nz * sizeof(int));
-            ofs.write((char*) vals, (grid->isFourier() ? 2 : 1) * num_nz * sizeof(double));
+            ofs.write((char*) vals, (grid.isFourier() ? 2 : 1) * num_nz * sizeof(double));
             ofs.close();
         }
     }
@@ -902,7 +895,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
         for(size_t i=1; i<rows+1; i++) cout << " " << pntr[i];
         cout << endl << indx[0];
         for(int i=1; i<num_nz; i++) cout << " " << indx[i];
-        if (grid->isFourier()){
+        if (grid.isFourier()){
             cout << endl << vals[0] << " " << vals[1];
             for(int i=1; i<num_nz; i++) cout << " " << vals[2*i] << " " << vals[2*i+1];
         }else{
@@ -921,26 +914,26 @@ bool TasgridWrapper::setHierarchy(){
     size_t rows, cols;
     double *vals = 0;
     readMatrix(valsfilename, rows, cols, vals);
-    if (rows != (size_t) grid->getNumPoints()){
-        cerr << "ERROR: grid is awaiting " << grid->getNumPoints() << " hierarchical surpluses, but " << valsfilename << " specifies " << rows << endl;
+    if (rows != (size_t) grid.getNumPoints()){
+        cerr << "ERROR: grid is awaiting " << grid.getNumPoints() << " hierarchical surpluses, but " << valsfilename << " specifies " << rows << endl;
         return false;
     }
-    if (!(grid->isFourier()) && cols != (size_t) grid->getNumOutputs()){
-        cerr << "ERROR: grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
+    if (!(grid.isFourier()) && cols != (size_t) grid.getNumOutputs()){
+        cerr << "ERROR: grid is set for " << grid.getNumOutputs() << " outputs, but " << valsfilename << " specifies " << cols << endl;
         return false;
-    }else if (grid->isFourier() && cols != (size_t) (2 * grid->getNumOutputs())){
-        cerr << "ERROR: fourier grid is set for " << grid->getNumOutputs() << " outputs, but " << valsfilename << " specifies " << (cols / 2) << endl;
+    }else if (grid.isFourier() && cols != (size_t) (2 * grid.getNumOutputs())){
+        cerr << "ERROR: fourier grid is set for " << grid.getNumOutputs() << " outputs, but " << valsfilename << " specifies " << (cols / 2) << endl;
         return false;
     }
-    grid->setHierarchicalCoefficients(vals);
+    grid.setHierarchicalCoefficients(vals);
     delete[] vals;
     return true;
 }
 
 bool TasgridWrapper::getPointsIndexes(){
-    const int *p = grid->getPointsIndexes();
-    int num_p = grid->getNumPoints();
-    int num_d = grid->getNumDimensions();
+    const int *p = grid.getPointsIndexes();
+    int num_p = grid.getNumPoints();
+    int num_d = grid.getNumDimensions();
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
     if (outfilename != 0){
@@ -953,9 +946,9 @@ bool TasgridWrapper::getPointsIndexes(){
     return true;
 }
 bool TasgridWrapper::getNeededIndexes(){
-    const int *p = grid->getNeededIndexes();
-    int num_p = grid->getNumNeeded();
-    int num_d = grid->getNumDimensions();
+    const int *p = grid.getNeededIndexes();
+    int num_p = grid.getNumNeeded();
+    int num_d = grid.getNumDimensions();
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
     if (outfilename != 0){
