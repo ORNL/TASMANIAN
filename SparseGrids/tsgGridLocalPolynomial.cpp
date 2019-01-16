@@ -441,23 +441,8 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[]) co
     buildSparseVector<1>(points, x, num_nz, sindx, svals);
     cuda_engine.cusparseMatveci(num_outputs, num_points, 1.0, cuda_surpluses, sindx, svals, 0.0, y);
 }
-#else
-void GridLocalPolynomial::evaluateFastGPUcublas(const double[], double[]) const{}
-#endif
 // evaluation of a single x cannot be accelerated with a gpu (not parallelizable), do that on the CPU and use the GPU only for the case of many outputs
 void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[]) const{ evaluateFastGPUcublas(x, y); }
-void GridLocalPolynomial::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
-
-void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
-    }
-}
-
-#ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(*(surpluses.getVector()));
 
@@ -501,13 +486,23 @@ void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, doub
         gpu_result.unload(y);
     }
 }
-#else
-void GridLocalPolynomial::evaluateBatchGPUcublas(const double[], int, double[]) const{}
-void GridLocalPolynomial::evaluateBatchGPUcuda(const double[], int, double[]) const{}
-#endif // Tasmanian_ENABLE_CUDA
+#endif
+
+void GridLocalPolynomial::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
+
+void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++){
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
+    }
+}
 
 void GridLocalPolynomial::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const{
+#ifdef Tasmanian_ENABLE_CUDA
     evaluateBatchGPUcublas(x, num_x, y);
+#endif
 }
 
 void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration){

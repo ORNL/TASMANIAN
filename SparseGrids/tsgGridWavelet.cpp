@@ -323,8 +323,13 @@ void GridWavelet::evaluateFastCPUblas(const double x[], double y[]) const{ evalu
 void GridWavelet::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 #endif
 
+#ifdef Tasmanian_ENABLE_CUDA
 void GridWavelet::evaluateFastGPUcublas(const double x[], double y[]) const{ evaluate(x, y); }
 void GridWavelet::evaluateFastGPUcuda(const double x[], double y[]) const{ evaluate(x, y); }
+void GridWavelet::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+void GridWavelet::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+#endif
+
 void GridWavelet::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
 
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
@@ -332,12 +337,6 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
     for(int i=0; i<num_x; i++){
         evaluate(&(x[i*num_dimensions]), &(y[i*num_outputs]));
     }
-}
-void GridWavelet::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-    evaluateBatch(x, num_x, y);
-}
-void GridWavelet::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
-    evaluateBatch(x, num_x, y);
 }
 void GridWavelet::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const{
     evaluateBatch(x, num_x, y);

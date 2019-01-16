@@ -782,12 +782,22 @@ void GridGlobal::evaluateFastGPUcublas(const double x[], double y[]) const{
 
     cuda_engine.cublasDGEMM(num_outputs, 1, points.getNumIndexes(), 1.0, cuda_vals, weights, 0.0, y);
 }
-#else
-void GridGlobal::evaluateFastGPUcublas(const double[], double[]) const{}
-#endif // Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateFastGPUcuda(const double x[], double y[]) const{
     evaluateFastGPUcublas(x, y);
 }
+void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
+    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
+
+    int num_points = points.getNumIndexes();
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+
+    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, 1.0, cuda_vals, *(weights.getVector()), 0.0, y);
+}
+void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
+    evaluateBatchGPUcublas(x, num_x, y);
+}
+#endif // Tasmanian_ENABLE_CUDA
 
 #ifdef Tasmanian_ENABLE_MAGMA
 void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
@@ -809,23 +819,6 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
     for(int i=0; i<num_x; i++){
         evaluate(xx.getCStrip(i), yy.getStrip(i));
     }
-}
-
-#ifdef Tasmanian_ENABLE_CUDA
-void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
-
-    int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-
-    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, 1.0, cuda_vals, *(weights.getVector()), 0.0, y);
-}
-#else
-void GridGlobal::evaluateBatchGPUcublas(const double[], int, double[]) const{}
-#endif // Tasmanian_ENABLE_CUDA
-void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
-    evaluateBatchGPUcublas(x, num_x, y);
 }
 
 #ifdef Tasmanian_ENABLE_MAGMA

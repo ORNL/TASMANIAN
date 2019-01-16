@@ -93,12 +93,14 @@ public:
     void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const;
     #endif
 
+    #ifdef Tasmanian_ENABLE_CUDA
     void evaluateFastGPUcublas(const double x[], double y[]) const;
     void evaluateFastGPUcuda(const double x[], double y[]) const;
-    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
-
     void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
+    #endif
+
+    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
     void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;

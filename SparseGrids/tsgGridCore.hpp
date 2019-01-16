@@ -74,12 +74,14 @@ public:
     virtual void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const = 0;
     #endif
 
+    #ifdef Tasmanian_ENABLE_CUDA
     virtual void evaluateFastGPUcublas(const double x[], double y[]) const = 0;
     virtual void evaluateFastGPUcuda(const double x[], double y[]) const = 0;
-    virtual void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const = 0;
-
     virtual void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const = 0;
+    #endif
+
+    virtual void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const = 0;
     virtual void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const = 0;
 
     virtual void clearRefinement() = 0;
