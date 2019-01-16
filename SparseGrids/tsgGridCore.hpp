@@ -67,18 +67,24 @@ public:
     virtual void evaluate(const double x[], double y[]) const = 0;
     virtual void integrate(double q[], double *conformal_correction) const = 0;
 
-    virtual void evaluateFastCPUblas(const double x[], double y[]) const = 0;
+    virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
 
+    #ifdef Tasmanian_ENABLE_BLAS
+    virtual void evaluateFastCPUblas(const double x[], double y[]) const = 0;
+    virtual void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const = 0;
+    #endif
+
+    #ifdef Tasmanian_ENABLE_CUDA
     virtual void evaluateFastGPUcublas(const double x[], double y[]) const = 0;
     virtual void evaluateFastGPUcuda(const double x[], double y[]) const = 0;
-    virtual void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const = 0;
-
-    virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
-    virtual void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const = 0;
-
     virtual void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const = 0;
+    #endif
+
+    #ifdef Tasmanian_ENABLE_MAGMA
+    virtual void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const = 0;
     virtual void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const = 0;
+    #endif
 
     virtual void clearRefinement() = 0;
     virtual void mergeRefinement() = 0;

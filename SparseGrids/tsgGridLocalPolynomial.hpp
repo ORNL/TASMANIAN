@@ -96,16 +96,24 @@ public:
     void evaluate(const double x[], double y[]) const;
     void integrate(double q[], double *conformal_correction) const;
 
+    void evaluateBatch(const double x[], int num_x, double y[]) const;
+
+    #ifdef Tasmanian_ENABLE_BLAS
     void evaluateFastCPUblas(const double x[], double y[]) const;
+    void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const;
+    #endif
+
+    #ifdef Tasmanian_ENABLE_CUDA
     void evaluateFastGPUcublas(const double x[], double y[]) const;
     void evaluateFastGPUcuda(const double x[], double y[]) const;
-    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
-
-    void evaluateBatch(const double x[], int num_x, double y[]) const;
-    void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
+    #endif
+
+    #ifdef Tasmanian_ENABLE_MAGMA
+    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
     void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
+    #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction);
     void clearRefinement();

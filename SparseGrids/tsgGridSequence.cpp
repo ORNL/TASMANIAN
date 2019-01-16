@@ -367,6 +367,13 @@ void GridSequence::evaluate(const double x[], double y[]) const{
         }
     }
 }
+void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
+    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    #pragma omp parallel for
+    for(int i=0; i<num_x; i++)
+        evaluate(xx.getCStrip(i), yy.getStrip(i));
+}
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
@@ -374,8 +381,13 @@ void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
     evalHierarchicalFunctions(x, fvalues.data());
     TasBLAS::dgemv(num_outputs, points.getNumIndexes(), surpluses.data(), fvalues.data(), y);
 }
-#else
-void GridSequence::evaluateFastCPUblas(const double[], double[]) const{}
+void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
+    int num_points = points.getNumIndexes();
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+
+    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.getStrip(0), 0.0, y);
+}
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
@@ -387,48 +399,7 @@ void GridSequence::evaluateFastGPUcublas(const double x[], double y[]) const{
 
     cuda_engine.cublasDGEMM(num_outputs, 1, points.getNumIndexes(), 1.0, cuda_surpluses, hweights, 0.0, y);
 }
-#else
-void GridSequence::evaluateFastGPUcublas(const double[], double[]) const{}
-#endif // Tasmanian_ENABLE_CUDA
-void GridSequence::evaluateFastGPUcuda(const double x[], double y[]) const{
-    evaluateFastGPUcublas(x, y);
-}
-
-#ifdef Tasmanian_ENABLE_MAGMA
-void GridSequence::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
-    if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
-
-    std::vector<double> hweights((size_t) points.getNumIndexes());
-    evalHierarchicalFunctions(x, hweights.data());
-
-    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, points.getNumIndexes(), 1.0, cuda_surpluses, hweights, 0.0, y);
-}
-#else
-void GridSequence::evaluateFastGPUmagma(int, const double[], double[]) const{}
-#endif
-
-void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
-    }
-}
-
-#ifdef Tasmanian_ENABLE_BLAS
-void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
-    int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.getStrip(0), 0.0, y);
-}
-#else
-void GridSequence::evaluateBatchCPUblas(const double[], int, double[]) const{}
-#endif // Tasmanian_ENABLE_BLAS
-
-#ifdef Tasmanian_ENABLE_CUDA
+void GridSequence::evaluateFastGPUcuda(const double x[], double y[]) const{ evaluateFastGPUcublas(x, y); }
 void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
 
@@ -451,12 +422,17 @@ void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[])
     cuda_engine.cublasDGEMM(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
     gpu_result.unload(y);
 }
-#else
-void GridSequence::evaluateBatchGPUcublas(const double[], int, double[]) const{}
-void GridSequence::evaluateBatchGPUcuda(const double[], int, double[]) const{}
 #endif // Tasmanian_ENABLE_CUDA
 
 #ifdef Tasmanian_ENABLE_MAGMA
+void GridSequence::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
+    if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
+
+    std::vector<double> hweights((size_t) points.getNumIndexes());
+    evalHierarchicalFunctions(x, hweights.data());
+
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, points.getNumIndexes(), 1.0, cuda_surpluses, hweights, 0.0, y);
+}
 void GridSequence::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
     loadCudaNodes();
@@ -471,9 +447,7 @@ void GridSequence::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x,
     cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
     gpu_result.unload(y);
 }
-#else
-void GridSequence::evaluateBatchGPUmagma(int, const double[], int, double[]) const{}
-#endif // Tasmanian_ENABLE_MAGMA
+#endif
 
 void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();
@@ -562,14 +536,16 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     std::copy_n(c, num_vals, surpluses.data());
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
-    if (acc == accel_cpu_blas){
-        evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals->data());
-    }else if (acc == accel_gpu_cublas){
-        evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals->data());
-    }else if (acc == accel_gpu_cuda){
-        evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals->data());
-    }else{
-        evaluateBatch(x.data(), points.getNumIndexes(), vals->data());
+    switch(acc){
+        #ifdef Tasmanian_ENABLE_BLAS
+        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals->data()); break;
+        #endif
+        #ifdef Tasmanian_ENABLE_CUDA
+        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals->data()); break;
+        #endif
+        default:
+            evaluateBatch(x.data(), points.getNumIndexes(), vals->data());
     }
 }
 
