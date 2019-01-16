@@ -83,17 +83,6 @@ namespace TasBLAS{
         for(int i=0; i<N; i++) sum += x[i] * x[i];
         return sum;
     }
-    inline void dgemm(int M, int N, int K, double alpha, const double A[], const double B[], double beta, double C[]){
-        for(int j=0; j<N; j++){
-            for(int i=0; i<M; i++){
-                double sum = 0.0;
-                for(int k=0; k<K; k++){
-                    sum += A[k*M + i] * B[j*N + k];
-                }
-                C[j*M + i] = beta*C[j*M + i] + alpha * sum;
-            }
-        }
-    }
     inline void dgemv(int M, int N, const double A[], const double x[], double y[]){ // y = A*x, A is M by N
         for(int i=0; i<M; i++){
             y[i] = A[i] * x[0];
