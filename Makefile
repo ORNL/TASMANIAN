@@ -163,7 +163,7 @@ matlab:
 
 # Python 3
 .PHONY: python3
-python3: ./Config/AltBuildSystems/TasmanianSG.py ./Config/AltBuildSystems/testTSG.py ./Config/AltBuildSystems/example_sparse_grids.py
+python3: TasmanianSG.py testTSG.py example_sparse_grids.py
 	cp ./Config/AltBuildSystems/TasmanianSG.py .
 	cp ./Config/AltBuildSystems/example_sparse_grids.py .
 	cp ./InterfacePython/testTSG.py .
@@ -208,7 +208,7 @@ InterfaceFortran/libtasmanianfortran90.a:
 test: $(ALL_TARGETS)
 	./gridtest
 	./tasdream -test
-	PYTHONPATH=$PYTHONPATH:./InterfacePython ./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
+	PYTHONPATH=$(PYTHONPATH):./InterfacePython ./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
 
 .PHONY: examples
 examples: $(ALL_TARGETS)
