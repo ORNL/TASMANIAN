@@ -235,6 +235,9 @@ clean:
 	rm -fr example_sparse_grids.py
 	rm -fr GaussPattersonRule.table
 	rm -fr *.pyc
+	rm -fr ./InterfacePython/*.pyc
+	rm -fr __pycache__
+	rm -fr ./InterfacePython/__pycache__
 	rm -fr example_sparse_grids
 	rm -fr example_sparse_grids.o
 	rm -fr example_sparse_grids.cpp
