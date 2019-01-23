@@ -28,35 +28,54 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_DREAM_HPP
-#define __TASMANIAN_DREAM_HPP
+#ifndef __TASMANIAN_DREAM_CORE_RANDOM_HPP
+#define __TASMANIAN_DREAM_CORE_RANDOM_HPP
 
-#include <vector>
-
-//#include "TasmanianSparseGrid.hpp"
-
-#include "tsgDreamEnumerates.hpp"
-#include "tsgDreamState.hpp"
-#include "tsgDreamCoreRandom.hpp"
-#include "tsgDreamSample.hpp"
-#include "tsgDreamSampleGrid.hpp"
-
-//! \file TasmanianDREAM.hpp
-//! \brief DiffeRential Evolution Adaptive Metropolis methods.
+//! \file tsgDreamCoreRandom.hpp
+//! \brief Core random sampling methods
 //! \author Miroslav Stoyanov
 //! \ingroup TasmanianDREAM
+//! \internal
 //!
-//! The main header required to gain access to the DREAM capabilities of Tasmanian.
-//! The header will include all files needed by the DREAM module including
-//! the TasmanianSparseGrid.hpp header.
+//! Implements several methods for random sampling and defines specific probability density functions.
 
-//! \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis.
-//!
-//! \par DREAM
-//! DiffeRential Evolution Adaptive Metropolis ...
+#include <math.h>
 
-//! \brief Encapsulates the Tasmanian DREAM module.
+namespace TasDREAM{
+
+//! \internal
+//! \brief Default random sampler, using \b rand() divided by \b RAND_MAX
 //! \ingroup TasmanianDREAM
-namespace TasDREAM{}
+inline double tsgCoreUniform01(){ return ((double) rand()) / ((double) RAND_MAX); }
+
+//! \brief Add a correction to every entry in \b x, use uniform samples over (-\b magnitude, \b magnitude).
+
+//! The function \b get_random01() returns random numbers distributed over (0, 1).
+inline void applyUniformUpdate(std::vector<double> &x, double magnitude, std::function<double(void)> get_random01 = tsgCoreUniform01){
+    if (magnitude == 0.0) return;
+    for(auto &v : x) v += magnitude * (2.0 * get_random01() -1.0);
+}
+
+//! \brief  Add a correction to every entry in \b x, sue Gaussian distribution with zero mean and standard deviation equal to \b magnitude.
+
+//! The function \b get_random01() returns random numbers distributed over (0, 1).
+//! Gaussian numbers are generated using the Box-Muller algorithm.
+inline void applyGaussianUpdate(std::vector<double> &x, double magnitude, std::function<double(void)> get_random01 = tsgCoreUniform01){
+    if (magnitude == 0.0) return;
+    bool tictoc = false;
+    double g = 0.0;
+    for(auto &v : x){
+        tictoc = !tictoc;
+        if (tictoc){
+            double r = magnitude * sqrt(-2.0 * log(get_random01())), t = 2.0 * M_PI * get_random01(); // radius and angle
+            v += r * cos(t);
+            g = r * sin(t);
+        }else{
+            v += g;
+        }
+    }
+}
+
+}
 
 #endif

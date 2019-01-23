@@ -29,19 +29,15 @@
  */
 
 #include <iostream>
-#include <time.h>
-#include <string.h>
 
-#include "TasmanianDREAM.hpp"
+//#include "TasmanianDREAM.hpp"
 
-#include "TasmanianSparseGrid.hpp"
-
-//#include "tasdreamExternalTests.hpp"
+#include "tasdreamExternalTests.hpp"
 //#include "tasdreamBenchmark.hpp"
 
 using namespace std;
-using namespace TasGrid;
-using namespace TasDREAM;
+//using namespace TasGrid;
+//using namespace TasDREAM;
 
 
 enum TypeHelp{
@@ -52,7 +48,40 @@ enum TypeHelp{
 //void printHelp(TypeHelp ht = help_generic);
 
 int main(int argc, const char ** argv){
-    cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
+    //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
+
+    bool debug = false;
+    TypeDREAMTest test = test_all;
+
+    DreamExternalTester tester;
+    int k = 1;
+    while(k < argc){
+        if ((strcmp(argv[k],"verbose") == 0) || (strcmp(argv[k],"-verbose") == 0)){
+            tester.showVerbose();
+            tester.showStatsValues();
+        }else if ((strcmp(argv[k],"v") == 0) || (strcmp(argv[k],"-v") == 0)){
+            tester.showVerbose();
+        }else if ((strcmp(argv[k],"random") == 0) || (strcmp(argv[k],"-random") == 0)){
+            tester.useRandomRandomSeed();
+        }else if ((strcmp(argv[k],"debug") == 0)) debug = true;
+        else if ((strcmp(argv[k],"analytic") == 0)) test = test_analytic;
+        else{
+            cerr << "ERROR: Unknown option '" << argv[k] << "'" << endl;
+            cerr << "   to see list of available options use: ./gridtest --help" << endl;
+            return 1;
+        }
+        k++;
+    }
+
+    if (debug){
+        testDebug();
+        return 0;
+    }
+
+    return (tester.performTests(test)) ? 0 : 1;
+
+
+    //cout << TasDREAM::tsgCoreUniform01() << endl;
 
 //     if (argc < 2){
 //         cerr << "ERROR: no command specified" << endl << endl;

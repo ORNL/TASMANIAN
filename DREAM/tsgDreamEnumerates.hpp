@@ -28,35 +28,55 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_DREAM_HPP
-#define __TASMANIAN_DREAM_HPP
+#ifndef __TASMANIAN_DREAM_ENUMERATES_HPP
+#define __TASMANIAN_DREAM_ENUMERATES_HPP
 
-#include <vector>
+#include "TasmanianConfig.hpp"
 
-//#include "TasmanianSparseGrid.hpp"
+namespace TasDREAM{
 
-#include "tsgDreamEnumerates.hpp"
-#include "tsgDreamState.hpp"
-#include "tsgDreamCoreRandom.hpp"
-#include "tsgDreamSample.hpp"
-#include "tsgDreamSampleGrid.hpp"
-
-//! \file TasmanianDREAM.hpp
-//! \brief DiffeRential Evolution Adaptive Metropolis methods.
-//! \author Miroslav Stoyanov
+//! \brief Describes whether sampling should be done with the regular or logarithm form of the probability density.
 //! \ingroup TasmanianDREAM
-//!
-//! The main header required to gain access to the DREAM capabilities of Tasmanian.
-//! The header will include all files needed by the DREAM module including
-//! the TasmanianSparseGrid.hpp header.
 
-//! \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis.
-//!
-//! \par DREAM
-//! DiffeRential Evolution Adaptive Metropolis ...
+//! Probability distributions with very localized support will have values close to zero over most of the sampling domain.
+//! Sampling using the logarithm of the probability density can be more stable, when operations with very small numbers cause problems.
+//! In most cases, it is up to the user to provide the appropriate values, but the sampling algorithm needs to know which form is being used.
+enum TypeSamplingForm{
+    //! \brief Use the standard form for the probability density.
+    regform,
 
-//! \brief Encapsulates the Tasmanian DREAM module.
+    //! \brief Use the logarithm form for the probability density.
+    logform
+};
+
+//! \brief Indicates a specific probability distribution for the associated function.
 //! \ingroup TasmanianDREAM
-namespace TasDREAM{}
+
+//! Used to instantiate the \b getDensity() variadric template. See the template documentation for the specific formulas.
+enum TypeDistribution{
+    //! \brief Uniform distribution.
+    dist_uniform,
+
+    //! \brief Gaussian or Normal distribution defined by mean and variance.
+    dist_gaussian,
+
+    //! \brief Exponential distribution (i.e., special case of the Gamma distribution).
+    dist_exponential,
+
+    //! \brief Beta distribution, corresponds to Gauss-Jacobi sparse grid rule \b TasGrid::rule_gaussjacobi.
+    dist_beta,
+
+    //! \brief Gamma distribution, corresponds to Gauss-Laguerre sparse grid rule \b TasGrid::rule_gausslaguerre.
+    dist_gamma
+};
+
+
+// enum TypeLikelihood{
+//     likely_gauss_scale, // scale, diagonal and dense refer to the type of covariance
+//     likely_gauss_diagonal,
+//     likely_gauss_dense
+// };
+
+}
 
 #endif

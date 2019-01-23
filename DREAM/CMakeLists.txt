@@ -11,11 +11,13 @@ else()
 endif()
 
 add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} TasmanianDREAM.hpp
-                                                                          TasmanianDREAM.cpp)
-                                                                          #tdrEnumerates.hpp
-                                                                          #tdrCorePDF.hpp
-                                                                          #tdrCorePDF.cpp
-                                                                          #tdrDreamDenseLinearAlgebra.hpp)
+                                                                          tsgDreamState.hpp
+                                                                          tsgDreamState.cpp
+                                                                          tsgDreamSample.hpp
+                                                                          tsgDreamSampleGrid.hpp
+                                                                          tsgDreamCoreRandom.hpp
+                                                                          tsgDreamCorePDF.hpp
+                                                                          tsgDreamEnumerates.hpp)
 
 target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
@@ -63,9 +65,9 @@ endmacro()
 ########################################################################
 # add tasdream and examples executables
 ########################################################################
-add_executable(Tasmanian_tasdream tasdream_main.cpp)
-                                  #tasdreamExternalTests.hpp
-                                  #tasdreamExternalTests.cpp
+add_executable(Tasmanian_tasdream dreamtest_main.cpp
+                                  tasdreamExternalTests.hpp
+                                  tasdreamExternalTests.cpp)
                                   #tasdreamTestPDFs.hpp
                                   #tasdreamTestPDFs.cpp
                                   #tasdreamBenchmark.hpp
@@ -75,7 +77,7 @@ add_executable(Tasmanian_tasdream tasdream_main.cpp)
 set_property(TARGET Tasmanian_tasdream      PROPERTY CXX_STANDARD 11)
 #set_property(TARGET Tasmanian_example_dream PROPERTY CXX_STANDARD 11)
 
-set_target_properties(Tasmanian_tasdream      PROPERTIES OUTPUT_NAME "tasdream")
+set_target_properties(Tasmanian_tasdream      PROPERTIES OUTPUT_NAME "dreamtest")
 #set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
 
 ########################################################################
@@ -102,7 +104,7 @@ endif()
 ########################################################################
 # Testing
 ########################################################################
-#add_test(DREAM_Analytic tasdream -test analytic)
+add_test(DREAM_Analytic dreamtest -test analytic)
 #add_test(DREAM_Model    tasdream -test model)
 #if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
 #    set_tests_properties(DREAM_Analytic DREAM_Model

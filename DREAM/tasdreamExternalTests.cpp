@@ -33,11 +33,326 @@
 
 #include "tasdreamExternalTests.hpp"
 
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::setw;
+double DreamExternalTester::getChiValue(size_t num_degrees){
+    switch(num_degrees){
+        case   9: return  21.666;
+        case  15: return  30.578;
+        case  19: return  36.191;
+        case  20: return  37.566;
+        case  24: return  42.980;
+        case  49: return  74.919;
+        case  99: return 134.642;
+        case 124: return 163.546;
+        default:
+            throw std::runtime_error("ERROR: Unknown degrees of freedom for the Chi-squared test.");
+    }
+}
 
+bool DreamExternalTester::testFit(const std::vector<int> &cell_count_a, const std::vector<int> &cell_count_b){
+    double suma = (double) std::accumulate(cell_count_a.begin(), cell_count_a.end(), 0);
+    double sumb = (double) std::accumulate(cell_count_b.begin(), cell_count_b.end(), 0);
+
+    double scale = sqrt(sumb / suma);
+
+    double test_value = 0.0;
+
+    auto ia = cell_count_a.begin(), ib = cell_count_b.begin();
+    while(ia != cell_count_a.end()){
+        double diff = ((double) *ia) * scale - ((double) *ib) / scale;
+        double sum = (double) (*ia++ + *ib++);
+        if (sum > 0.0) test_value += diff * diff / sum;
+    }
+
+    bool pass = (test_value < getChiValue(cell_count_a.size() - 1));
+    if (!pass || showvalues){
+        if (!pass) cout << "Chi-Squared test FAILED" << endl;
+        cout << "Totals: " << suma << "  " << sumb << endl;
+        cout << "Chi-Squared test value = " << test_value << " num cells: " << cell_count_a.size() << endl;
+        cout << "Critical Chi-Squared value = " << getChiValue(cell_count_a.size() - 1) << endl;
+    }
+
+    return pass;
+}
+
+void DreamExternalTester::binHypercubeSamples(const std::vector<double> &lower, const std::vector<double> &upper, int num_bins1D, const std::vector<double> &data, std::vector<int> &bin_count){
+    size_t num_dimensions = lower.size();
+    if (upper.size() != num_dimensions) throw std::runtime_error("ERROR: upper and lower must have the same size in binHypercubeSamples() DREAM testing");
+
+    std::vector<double> dx(num_dimensions);
+    auto il = lower.begin(), iu = upper.begin();
+    for(auto &d : dx) d = (*iu++ - *il++) / ((double) num_bins1D);
+
+    size_t num_bins = 1;
+    for(size_t i=0; i<num_dimensions; i++) num_bins *= num_bins1D;
+    bin_count = std::vector<int>(num_bins, 0);
+
+    auto id = data.begin();
+    while(id != data.end()){
+        std::vector<size_t> binid(num_dimensions);
+        il = lower.begin();
+        iu = dx.begin();
+        for(auto &i : binid){
+            i = (size_t) ((*id++ - *il++) / *iu++);
+            if (i >= (size_t) num_bins1D) i = num_bins1D-1;
+        }
+        size_t bin_index = 0;
+        for(auto i : binid) bin_index = num_dimensions * bin_index + i;
+        bin_count[bin_index]++;
+    }
+}
+
+bool DreamExternalTester::compareSamples(const std::vector<double> &lower, const std::vector<double> &upper, int num_bins1D,
+                                         const std::vector<double> &data1, const std::vector<double> &data2){
+    std::vector<int> count1, count2;
+    binHypercubeSamples(lower, upper, num_bins1D, data1, count1);
+    binHypercubeSamples(lower, upper, num_bins1D, data2, count2);
+    return testFit(count1, count2);
+}
+
+bool DreamExternalTester::testGaussian3D(){
+    bool passAll = true;
+    int num_dimensions = 3;
+    int rseed = 42, num_samples = 1000, num_chains = 20;
+    int num_iterations = num_samples / num_chains + 2;
+    int num_burnup = 20 * num_iterations;
+    if (usetimeseed) rseed = getRandomRandomSeed();
+
+    std::minstd_rand park_miller;
+    park_miller.seed(rseed);
+    std::uniform_real_distribution<double> unif(0.0, 1.0);
+
+    // compute reference samples, mean 2.0, std 3.0
+    std::vector<double> tresult(num_dimensions * num_samples, 2.0);
+    applyGaussianUpdate(tresult, 3.0, [&]()->double{ return unif(park_miller); });
+
+    // Use DREAM with zero-weight (i.e., standard Metropolis-Hastings)
+    TasmanianDREAM state(num_chains, num_dimensions);
+    std::vector<double> initial_set(num_chains * num_dimensions, 2.0); // initialize with correct mean 2.0, std 3.0
+    applyGaussianUpdate(initial_set, 3.0, [&]()->double{ return unif(park_miller); });
+    state.setState(initial_set);
+
+    SampleDREAM(num_burnup, num_iterations,
+        [&](const std::vector<double> &candidates, std::vector<double> &values){
+            // 3D Gaussian PDF with standard deviation of 3.0
+            auto ix = candidates.begin();
+            for(auto &v : values)
+                v = getDensity<dist_gaussian>(*ix++, 2.0, 9.0) * getDensity<dist_gaussian>(*ix++, 2.0, 9.0) * getDensity<dist_gaussian>(*ix++, 2.0, 9.0);
+        },
+        [&](const std::vector<double>&)->bool{ return true; }, // unbounded domain
+        [&](std::vector<double> &x){
+            applyGaussianUpdate(x, 3.0, [&]()->double{ return unif(park_miller); });
+        },
+        state,
+        const_percent<0>, // independent chains, no differential proposal
+        [&]()->double{ return unif(park_miller); }
+    );
+
+    std::vector<double> upper(num_dimensions, 11.0), lower(num_dimensions, -7.0); // compute over a box of 3 standard deviations
+
+    bool pass = compareSamples(lower, upper, 5, tresult, state.getHistory());
+    passAll = passAll && pass;
+    if (verbose || !pass) reportPassFail(pass, "Gaussian 3D", "with independent chains");
+
+    state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
+    state.setState(initial_set);
+
+    SampleDREAM(num_burnup, 2*num_iterations,
+        [&](const std::vector<double> &candidates, std::vector<double> &values){
+            // 3D Gaussian PDF with standard deviation of 3.0
+            auto ix = candidates.begin();
+            for(auto &v : values)
+                v = getDensity<dist_gaussian>(*ix++, 2.0, 9.0) * getDensity<dist_gaussian>(*ix++, 2.0, 9.0) * getDensity<dist_gaussian>(*ix++, 2.0, 9.0);
+        },
+        lower, upper, // large domain
+        dist_uniform, 0.2, // uniform proposal
+        state,
+        const_percent<50>, // differential proposal is weighted by 50%
+        [&]()->double{ return unif(park_miller); }
+    );
+
+    pass = compareSamples(lower, upper, 5, tresult, state.getHistory());
+    passAll = passAll && pass;
+
+    if (verbose || !pass) reportPassFail(pass, "Gaussian 3D", "with correlated chains");
+
+    reportPassFail(passAll, "Gaussian 3D", "DREAM vs Box-Muller");
+
+    return passAll;
+}
+
+bool DreamExternalTester::testGaussian2D(){
+    bool passAll = true;
+    int num_dimensions = 2;
+    int rseed = 42, num_samples = 1000, num_chains = 20;
+    int num_iterations = num_samples / num_chains + 2;
+    int num_burnup = 20 * num_iterations;
+    if (usetimeseed) rseed = getRandomRandomSeed();
+
+    std::minstd_rand park_miller;
+    park_miller.seed(rseed);
+    std::uniform_real_distribution<double> unif(0.0, 1.0);
+
+    // compute reference samples, mean 0.3, std 0.15 (3 deviations fit in [-1, 1]^2)
+    std::vector<double> tresult(num_dimensions * num_samples, 0.3);
+    applyGaussianUpdate(tresult, 0.15, [&]()->double{ return unif(park_miller); });
+
+    // approximate the pdf in log-form, log-form of the Gaussian pdf is quadratic, the grid gives exact match
+    TasGrid::TasmanianSparseGrid grid;
+    grid.makeSequenceGrid(2, 1, 2, TasGrid::type_iptotal, TasGrid::rule_rleja); // interpolates exactly all quadratic polynomials
+    std::vector<double> grid_points, values;
+    grid.getNeededPoints(grid_points);
+    values.resize(grid_points.size() / 2);
+    auto ip = grid_points.begin();
+    for(auto &v : values)
+        v = getDensity<dist_gaussian, logform>(*ip++, 0.3, 0.0225) + getDensity<dist_gaussian, logform>(*ip++, 0.3, 0.0225);
+    grid.loadNeededPoints(values);
+
+    // initialize the DREAM state
+    TasmanianDREAM state(num_chains, num_dimensions);
+    std::vector<double> initial_set(num_chains * num_dimensions, 0.0); // initialize with uniform samples
+    applyUniformUpdate(initial_set, 1.0, [&]()->double{ return unif(park_miller); });
+    state.setState(initial_set);
+
+    SampleDREAMGrid<logform>(num_burnup, num_iterations, grid, uniform_prior,
+        dist_gaussian, 0.1,
+        state,
+        const_percent<98>, // correlated chains
+        [&]()->double{ return unif(park_miller); }
+    );
+
+    std::vector<double> upper(num_dimensions, 1.0), lower(num_dimensions, -1.0); // compute over a box of over 3 standard deviations
+    bool pass = compareSamples(lower, upper, 10, tresult, state.getHistory());
+
+    passAll = passAll && pass;
+    if (verbose || !pass) reportPassFail(pass, "Gaussian 2D", "with inferred domain");
+
+
+    // ------------------------------------------------------------ //
+    // next test uses a sub-domain of the first quadrant, the standard deviation is smaller
+    std::fill(tresult.begin(), tresult.end(), 0.3);
+    applyGaussianUpdate(tresult, 0.1, [&]()->double{ return unif(park_miller); });
+
+    // approximate the pdf in regular form, true approximation
+    grid.makeSequenceGrid(2, 1, 24, TasGrid::type_iptotal, TasGrid::rule_rleja); // interpolates exactly all quadratic polynomials
+    grid.getNeededPoints(grid_points);
+    values.resize(grid_points.size() / 2);
+    ip = grid_points.begin();
+    for(auto &v : values) // using tighter variance of 0.01
+        v = getDensity<dist_gaussian>(*ip++, 0.3, 0.01) * getDensity<dist_gaussian>(*ip++, 0.3, 0.01);
+    grid.loadNeededPoints(values);
+
+    // re-initialize the DREAM state
+    state = TasmanianDREAM(num_chains, num_dimensions);
+    initial_set = std::vector<double>(tresult.begin(), tresult.begin() + num_chains * num_dimensions);
+    state.setState(initial_set);
+
+    lower = std::vector<double>(num_dimensions, 0.0); // consider only the first quadrant
+    upper = std::vector<double>(num_dimensions, 1.0);
+
+    SampleDREAMGrid<regform>(num_burnup, num_iterations, grid, uniform_prior,
+        lower, upper,
+        dist_uniform, 0.1,
+        state,
+        const_percent<98>, // correlated chains
+        [&]()->double{ return unif(park_miller); }
+    );
+
+    // check if any of the samples fall outside of the domain
+    pass = compareSamples(lower, upper, 10, tresult, state.getHistory()) &&
+           std::none_of(state.getHistory().begin(), state.getHistory().end(), [&](double x)->bool{ return ((x < 0.0) || (x>1.0)); });
+
+    passAll = passAll && pass;
+    if (verbose || !pass) reportPassFail(pass, "Gaussian 2D", "with manual domain");
+
+
+    // ------------------------------------------------------------ //
+    // next test uses the same sub-domain of the first quadrant, but the grid and prior each define different dimensions
+
+    // approximate the pdf in regular form, true approximation
+    grid.makeSequenceGrid(2, 1, 24, TasGrid::type_iptotal, TasGrid::rule_rleja); // interpolates exactly all quadratic polynomials
+    grid.getNeededPoints(grid_points);
+    values.resize(grid_points.size() / 2);
+    ip = grid_points.begin();
+    for(auto &v : values){ // using tighter variance of 0.01
+        v = getDensity<dist_gaussian>(*ip++, 0.3, 0.01);
+        ip++; // skip the second dimension in the likelihood
+    }
+    grid.loadNeededPoints(values);
+
+    // re-initialize the DREAM state
+    state = TasmanianDREAM(num_chains, num_dimensions);
+    initial_set = std::vector<double>(tresult.begin(), tresult.begin() + num_chains * num_dimensions);
+    state.setState(initial_set);
+
+    SampleDREAMGrid<regform>(num_burnup, num_iterations, grid,
+        [&](const std::vector<double> &candidates, std::vector<double> &vals)->void{
+            auto ic = candidates.begin();
+            for(auto &v : vals){ // using tighter variance of 0.01
+                ic++; // skip the first dimension in the likelihood
+                v = getDensity<dist_gaussian>(*ic++, 0.3, 0.01);
+            }
+        },
+        lower, upper,
+        dist_uniform, 0.1,
+        state,
+        const_percent<98>, // correlated chains
+        [&]()->double{ return unif(park_miller); }
+    );
+
+    // check if any of the samples fall outside of the domain
+    pass = compareSamples(lower, upper, 10, tresult, state.getHistory()) &&
+           std::none_of(state.getHistory().begin(), state.getHistory().end(), [&](double x)->bool{ return ((x < 0.0) || (x>1.0)); });
+
+    passAll = passAll && pass;
+    if (verbose || !pass) reportPassFail(pass, "Gaussian 2D", "with subdomain and manual prior");
+
+    reportPassFail(passAll, "Gaussian 2D", "DREAM-Grid vs Box-Muller");
+
+    return passAll;
+}
+
+bool DreamExternalTester::testKnownDistributions(){
+    // Test Gaussian distribution
+
+    bool pass1 = testGaussian3D();
+    bool pass2 = testGaussian2D();
+
+    return pass1 && pass2;
+}
+
+bool DreamExternalTester::performTests(TypeDREAMTest test){
+    cout << endl << endl;
+    cout << "---------------------------------------------------------------------" << endl;
+    cout << "           Tasmanian DREAM Module: Functionality Test" << endl;
+    cout << "---------------------------------------------------------------------" << endl << endl;
+
+    bool pass = true;
+
+    std::vector<int> results(10, 1); // results for all possible tests
+
+    if ((test == test_all) || (test == test_analytic)) results[0] = (testKnownDistributions()) ? 1 : 0;
+
+    pass = std::all_of(results.begin(), results.end(), [&](int i)->bool{ return (i == 1); });
+
+    cout << endl;
+    if (pass){
+        cout << "---------------------------------------------------------------------" << endl;
+        cout << "           All Tests Completed Successfully" << endl;
+        cout << "---------------------------------------------------------------------" << endl << endl;
+    }else{
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl;
+        cout << "         Some Tests Have Failed" << endl;
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
+    }
+    return pass;
+}
+
+void testDebug(){
+    cout << "Debug Test" << endl;
+    cout << "Put here testing code and call this with ./dreamtest debug" << endl;
+}
+
+/*
 TestRNG::TestRNG(int seed): s(seed % 2097165){}
 TestRNG::~TestRNG(){}
 
@@ -501,5 +816,5 @@ double ExternalTester::getChiValue(int num_degrees){
             return -1.0;
     }
 }
-
+*/
 #endif
