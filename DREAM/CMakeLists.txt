@@ -11,11 +11,11 @@ else()
 endif()
 
 add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} TasmanianDREAM.hpp
-                                                                          TasmanianDREAM.cpp
-                                                                          tdrEnumerates.hpp
-                                                                          tdrCorePDF.hpp
-                                                                          tdrCorePDF.cpp
-                                                                          tdrDreamDenseLinearAlgebra.hpp)
+                                                                          TasmanianDREAM.cpp)
+                                                                          #tdrEnumerates.hpp
+                                                                          #tdrCorePDF.hpp
+                                                                          #tdrCorePDF.cpp
+                                                                          #tdrDreamDenseLinearAlgebra.hpp)
 
 target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
@@ -52,31 +52,31 @@ if (Tasmanian_ENABLE_MPI)
     endif()
 endif()
 
-install(TARGETS "${Tasmanian_libtdr_target_name}"
-        EXPORT  "${CMAKE_PROJECT_NAME}-exports"
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib")
+#install(TARGETS "${Tasmanian_libtdr_target_name}"
+#        EXPORT  "${CMAKE_PROJECT_NAME}-exports"
+#        RUNTIME DESTINATION "bin"
+#        LIBRARY DESTINATION "lib"
+#        ARCHIVE DESTINATION "lib")
 
 endmacro()
 
 ########################################################################
 # add tasdream and examples executables
 ########################################################################
-add_executable(Tasmanian_tasdream tasdream_main.cpp
-                                  tasdreamExternalTests.hpp
-                                  tasdreamExternalTests.cpp
-                                  tasdreamTestPDFs.hpp
-                                  tasdreamTestPDFs.cpp
-                                  tasdreamBenchmark.hpp
-                                  tasdreamBenchmark.cpp)
-add_executable(Tasmanian_example_dream Examples/example_dream.cpp)
+add_executable(Tasmanian_tasdream tasdream_main.cpp)
+                                  #tasdreamExternalTests.hpp
+                                  #tasdreamExternalTests.cpp
+                                  #tasdreamTestPDFs.hpp
+                                  #tasdreamTestPDFs.cpp
+                                  #tasdreamBenchmark.hpp
+                                  #tasdreamBenchmark.cpp)
+#add_executable(Tasmanian_example_dream Examples/example_dream.cpp)
 
 set_property(TARGET Tasmanian_tasdream      PROPERTY CXX_STANDARD 11)
-set_property(TARGET Tasmanian_example_dream PROPERTY CXX_STANDARD 11)
+#set_property(TARGET Tasmanian_example_dream PROPERTY CXX_STANDARD 11)
 
 set_target_properties(Tasmanian_tasdream      PROPERTIES OUTPUT_NAME "tasdream")
-set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
+#set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
 
 ########################################################################
 # add the libraries
@@ -93,23 +93,23 @@ if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
     # if static libraries are available, executables link statically
     target_link_libraries(Tasmanian_libdream_static  Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_tasdream         Tasmanian_libdream_static)
-    target_link_libraries(Tasmanian_example_dream    Tasmanian_libdream_static)
+#    target_link_libraries(Tasmanian_example_dream    Tasmanian_libdream_static)
 else() # if there are not static libs, use shared libs for the executables
     target_link_libraries(Tasmanian_tasdream       Tasmanian_libdream_shared)
-    target_link_libraries(Tasmanian_example_dream  Tasmanian_libdream_shared)
+#    target_link_libraries(Tasmanian_example_dream  Tasmanian_libdream_shared)
 endif()
 
 ########################################################################
 # Testing
 ########################################################################
-add_test(DREAM_Analytic tasdream -test analytic)
-add_test(DREAM_Model    tasdream -test model)
-if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(DREAM_Analytic DREAM_Model
-        PROPERTIES
-        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
-        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
-endif()
+#add_test(DREAM_Analytic tasdream -test analytic)
+#add_test(DREAM_Model    tasdream -test model)
+#if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
+#    set_tests_properties(DREAM_Analytic DREAM_Model
+#        PROPERTIES
+#        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
+#        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
+#endif()
 
 ########################################################################
 # Windows specific support (DLL export/import directives and names)
@@ -147,19 +147,19 @@ endif()
 ########################################################################
 # Install headers and config files
 ########################################################################
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
-        DESTINATION include
-        FILES_MATCHING PATTERN "*.hpp"
-        PATTERN "*.windows.*" EXCLUDE
-        PATTERN "*.in.*" EXCLUDE
-        PATTERN "Examples" EXCLUDE)
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
-        DESTINATION "share/Tasmanian/examples/"
-        FILES_MATCHING PATTERN "*.cpp"
-        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
-
-install(TARGETS Tasmanian_tasdream
-        EXPORT "${CMAKE_PROJECT_NAME}-exports"
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib")
+#install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
+#        DESTINATION include
+#        FILES_MATCHING PATTERN "*.hpp"
+#        PATTERN "*.windows.*" EXCLUDE
+#        PATTERN "*.in.*" EXCLUDE
+#        PATTERN "Examples" EXCLUDE)
+#install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
+#        DESTINATION "share/Tasmanian/examples/"
+#        FILES_MATCHING PATTERN "*.cpp"
+#        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+#
+#install(TARGETS Tasmanian_tasdream
+#        EXPORT "${CMAKE_PROJECT_NAME}-exports"
+#        RUNTIME DESTINATION "bin"
+#        LIBRARY DESTINATION "lib"
+#        ARCHIVE DESTINATION "lib")

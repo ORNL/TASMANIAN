@@ -35,208 +35,208 @@
 
 #include "TasmanianSparseGrid.hpp"
 
-#include "tdrEnumerates.hpp"
-#include "tdrCorePDF.hpp"
+//#include "tdrEnumerates.hpp"
+//#include "tdrCorePDF.hpp"
 
 namespace TasDREAM{
 
-class CustomModelWrapper{ // use this class for inheritance purposes only
-public:
-    CustomModelWrapper();
-    virtual ~CustomModelWrapper();
-
-    virtual int getNumDimensions() const = 0;
-    virtual int getNumOutputs() const = 0;
-    virtual void evaluate(const double x[], int num_points, double y[]) const;
-    virtual void evaluate(const std::vector<double> &x, std::vector<double> &y) const;
-};
-
-
-class ProbabilityWeightFunction{ // use this class for inheritance purposes only
-// WARNING: TasmanianDREAM class holds an alias to an instance of this class,
-//      modifying the class after calling setProbabilityWeightFunction could result in undefined behavior
-//      TasmanianDREAM class does not call delete on the pointer
-public:
-    ProbabilityWeightFunction();
-    virtual ~ProbabilityWeightFunction();
-
-    virtual int getNumDimensions() const = 0;
-
-    virtual void evaluate(int num_points, const double x[], double y[], bool useLogForm);
-    virtual void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
-    // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
-
-    virtual void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    virtual void getDomainBounds(double* lower_bound, double* upper_bound);
-    virtual void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
-    virtual void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
-    virtual void getInitialSample(double x[]) = 0;
-};
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// class CustomModelWrapper{ // use this class for inheritance purposes only
+// public:
+//     CustomModelWrapper();
+//     virtual ~CustomModelWrapper();
 //
-//  Link between Sparse Grids and DREAM modules
+//     virtual int getNumDimensions() const = 0;
+//     virtual int getNumOutputs() const = 0;
+//     virtual void evaluate(const double x[], int num_points, double y[]) const;
+//     virtual void evaluate(const std::vector<double> &x, std::vector<double> &y) const;
+// };
 //
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class PosteriorFromModel : public ProbabilityWeightFunction{
-public:
-    PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model);
-    PosteriorFromModel(const CustomModelWrapper *model);
-    ~PosteriorFromModel();
-    void overwritePDF(int dimension, BasePDF* pdf);
-
-    int getNumDimensions() const;
-
-    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
-
-    void getInitialSample(double x[]);
-    void setLikelihood(BaseLikelihood *likelihood);
-    void setData(int num_data_samples, const double *posterior_data);
-
-    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
-    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
-
-private:
-    const TasGrid::TasmanianSparseGrid *grid;
-    const CustomModelWrapper *cmodel;
-
-    int num_dimensions, num_outputs;
-    std::vector<BasePDF*> internal_priors;
-    std::vector<BasePDF*> active_priors;
-
-    int num_data;
-    const double *data;
-
-    BaseLikelihood *likely;
-};
-
-
-#ifdef MPI_VERSION
-// Assumes grids split by outputs, each chunk sits on a different node
-// Assume likelihood multiply across nodes (so we communicate only scalars)
-class DistributedPosteriorTSGModel : public ProbabilityWeightFunction{
-public:
-    DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior);
-    ~DistributedPosteriorTSGModel();
-
-    int getNumDimensions() const;
-    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
-
-    void getInitialSample(double x[]);
-
-    void setNumChanis(int num_dream_chains); // needed for MPI communication purposes
-
-    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
-    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
-
-    void workerLoop(bool useLogForm);
-    void endWorkerLoop();
-
-private:
-    PosteriorFromModel *posterior;
-
-    MPI_Comm comm;
-    int comm_me, comm_size;
-
-    int num_dimensions, num_chains;
-};
-#endif // MPI_VERSION
-
-// use a sparse grid as interpolated likelihood
-class LikelihoodTSG : public ProbabilityWeightFunction{
-public:
-    LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm);
-    ~LikelihoodTSG();
-    void setPDF(int dimension, BasePDF* pdf);
-
-    int getNumDimensions() const;
-
-    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
-
-    void getInitialSample(double x[]);
-
-    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
-    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
-
-private:
-    const TasGrid::TasmanianSparseGrid *grid;
-    bool savedLogarithmForm;
-
-    int num_dimensions;
-    std::vector<BasePDF*> internal_priors;
-    std::vector<BasePDF*> active_priors;
-};
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  DREAM Samples
+// class ProbabilityWeightFunction{ // use this class for inheritance purposes only
+// // WARNING: TasmanianDREAM class holds an alias to an instance of this class,
+// //      modifying the class after calling setProbabilityWeightFunction could result in undefined behavior
+// //      TasmanianDREAM class does not call delete on the pointer
+// public:
+//     ProbabilityWeightFunction();
+//     virtual ~ProbabilityWeightFunction();
 //
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class TasmanianDREAM{
-public:
-    TasmanianDREAM();
-    ~TasmanianDREAM();
-    void overwriteBaseUnifrom(const BaseUniform *new_uniform);
-
-    static const char* getVersion();
-    static int getVersionMajor();
-    static int getVersionMinor();
-    static const char* getLicense();
-
-    void setNumChains(int num_dream_chains);
-    int getNumChains() const;
-
-    void setJumpScale(double jump_scale);
-    double getJumpScale();
-
-    void setCorrectionAll(BasePDF *correct);
-    void setCorrection(int dim, BasePDF *correct);
-    const BasePDF* getCorrection(int dim);
-
-    int getNumDimensions() const;
-
-    // read/write chain state
-    void setChainState(const double* state);
-    void setChainState(const std::vector<double> &state);
-
-    void setProbabilityWeightFunction(ProbabilityWeightFunction *probability_weight);
-    // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
-    // WARNING: TasmanianDREAM class holds an alias to an instance of the ProbabilityWeightFunction class,
-    //      modifying the class after calling setProbabilityWeightFunction could result in undefined behavior
-    //      TasmanianDREAM class does not call delete on the pointer
-
-    double* collectSamples(int num_burnup, int num_samples, bool useLogForm = false);
-    void collectSamples(int num_burnup, int num_samples, double *samples, bool useLogForm = false);
-    void collectSamples(int num_burnup, int num_samples, std::vector<double> &samples, bool useLogForm = false);
-
-    double* getPDFHistory() const;
-    void getPDFHistory(std::vector<double> &history) const;
-
-protected:
-    void clear();
-
-    void advanceMCMCDREAM(bool useLogForm);
-
-private:
-    int num_dimensions, num_chains;
-    ProbabilityWeightFunction *pdf;
-
-    double jump;
-    std::vector<BasePDF*> corrections;
-
-    bool state_initialized, values_initialized, values_logform;
-    std::vector<double> chain_state, pdf_values;
-
-    std::vector<bool> isBoudnedBelow, isBoudnedAbove;
-    std::vector<double> boundBelow, boundAbove;
-
-    const BaseUniform *core;
-    CppUniformSampler unifrom_cpp;
-
-    std::vector<double> pdf_history;
-};
+//     virtual int getNumDimensions() const = 0;
+//
+//     virtual void evaluate(int num_points, const double x[], double y[], bool useLogForm);
+//     virtual void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
+//     // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
+//
+//     virtual void getDomainBounds(bool* lower_bound, bool* upper_bound);
+//     virtual void getDomainBounds(double* lower_bound, double* upper_bound);
+//     virtual void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+//     virtual void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
+//     virtual void getInitialSample(double x[]) = 0;
+// };
+//
+//
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// //
+// //  Link between Sparse Grids and DREAM modules
+// //
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// class PosteriorFromModel : public ProbabilityWeightFunction{
+// public:
+//     PosteriorFromModel(const TasGrid::TasmanianSparseGrid *model);
+//     PosteriorFromModel(const CustomModelWrapper *model);
+//     ~PosteriorFromModel();
+//     void overwritePDF(int dimension, BasePDF* pdf);
+//
+//     int getNumDimensions() const;
+//
+//     void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
+//
+//     void getInitialSample(double x[]);
+//     void setLikelihood(BaseLikelihood *likelihood);
+//     void setData(int num_data_samples, const double *posterior_data);
+//
+//     void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+//     void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
+//
+// private:
+//     const TasGrid::TasmanianSparseGrid *grid;
+//     const CustomModelWrapper *cmodel;
+//
+//     int num_dimensions, num_outputs;
+//     std::vector<BasePDF*> internal_priors;
+//     std::vector<BasePDF*> active_priors;
+//
+//     int num_data;
+//     const double *data;
+//
+//     BaseLikelihood *likely;
+// };
+//
+//
+// #ifdef MPI_VERSION
+// // Assumes grids split by outputs, each chunk sits on a different node
+// // Assume likelihood multiply across nodes (so we communicate only scalars)
+// class DistributedPosteriorTSGModel : public ProbabilityWeightFunction{
+// public:
+//     DistributedPosteriorTSGModel(MPI_Comm in_comm, PosteriorFromModel *local_posterior);
+//     ~DistributedPosteriorTSGModel();
+//
+//     int getNumDimensions() const;
+//     void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
+//
+//     void getInitialSample(double x[]);
+//
+//     void setNumChanis(int num_dream_chains); // needed for MPI communication purposes
+//
+//     void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+//     void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
+//
+//     void workerLoop(bool useLogForm);
+//     void endWorkerLoop();
+//
+// private:
+//     PosteriorFromModel *posterior;
+//
+//     MPI_Comm comm;
+//     int comm_me, comm_size;
+//
+//     int num_dimensions, num_chains;
+// };
+// #endif // MPI_VERSION
+//
+// // use a sparse grid as interpolated likelihood
+// class LikelihoodTSG : public ProbabilityWeightFunction{
+// public:
+//     LikelihoodTSG(const TasGrid::TasmanianSparseGrid *likely, bool savedLogForm);
+//     ~LikelihoodTSG();
+//     void setPDF(int dimension, BasePDF* pdf);
+//
+//     int getNumDimensions() const;
+//
+//     void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
+//
+//     void getInitialSample(double x[]);
+//
+//     void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
+//     void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
+//
+// private:
+//     const TasGrid::TasmanianSparseGrid *grid;
+//     bool savedLogarithmForm;
+//
+//     int num_dimensions;
+//     std::vector<BasePDF*> internal_priors;
+//     std::vector<BasePDF*> active_priors;
+// };
+//
+//
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// //
+// //  DREAM Samples
+// //
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// class TasmanianDREAM{
+// public:
+//     TasmanianDREAM();
+//     ~TasmanianDREAM();
+//     void overwriteBaseUnifrom(const BaseUniform *new_uniform);
+//
+//     static const char* getVersion();
+//     static int getVersionMajor();
+//     static int getVersionMinor();
+//     static const char* getLicense();
+//
+//     void setNumChains(int num_dream_chains);
+//     int getNumChains() const;
+//
+//     void setJumpScale(double jump_scale);
+//     double getJumpScale();
+//
+//     void setCorrectionAll(BasePDF *correct);
+//     void setCorrection(int dim, BasePDF *correct);
+//     const BasePDF* getCorrection(int dim);
+//
+//     int getNumDimensions() const;
+//
+//     // read/write chain state
+//     void setChainState(const double* state);
+//     void setChainState(const std::vector<double> &state);
+//
+//     void setProbabilityWeightFunction(ProbabilityWeightFunction *probability_weight);
+//     // in most cases evaluate should be const, but for caching purposes you may want it to be not a const function
+//     // WARNING: TasmanianDREAM class holds an alias to an instance of the ProbabilityWeightFunction class,
+//     //      modifying the class after calling setProbabilityWeightFunction could result in undefined behavior
+//     //      TasmanianDREAM class does not call delete on the pointer
+//
+//     double* collectSamples(int num_burnup, int num_samples, bool useLogForm = false);
+//     void collectSamples(int num_burnup, int num_samples, double *samples, bool useLogForm = false);
+//     void collectSamples(int num_burnup, int num_samples, std::vector<double> &samples, bool useLogForm = false);
+//
+//     double* getPDFHistory() const;
+//     void getPDFHistory(std::vector<double> &history) const;
+//
+// protected:
+//     void clear();
+//
+//     void advanceMCMCDREAM(bool useLogForm);
+//
+// private:
+//     int num_dimensions, num_chains;
+//     ProbabilityWeightFunction *pdf;
+//
+//     double jump;
+//     std::vector<BasePDF*> corrections;
+//
+//     bool state_initialized, values_initialized, values_logform;
+//     std::vector<double> chain_state, pdf_values;
+//
+//     std::vector<bool> isBoudnedBelow, isBoudnedAbove;
+//     std::vector<double> boundBelow, boundAbove;
+//
+//     const BaseUniform *core;
+//     CppUniformSampler unifrom_cpp;
+//
+//     std::vector<double> pdf_history;
+// };
 
 }
 
