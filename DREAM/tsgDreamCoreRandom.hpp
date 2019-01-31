@@ -46,9 +46,12 @@ namespace TasDREAM{
 //! \internal
 //! \brief Default random sampler, using \b rand() divided by \b RAND_MAX
 //! \ingroup TasmanianDREAM
+    
+//! Generates random numbers uniformly distributed in (0, 1), uses the \b rand() command.
 inline double tsgCoreUniform01(){ return ((double) rand()) / ((double) RAND_MAX); }
 
 //! \brief Add a correction to every entry in \b x, use uniform samples over (-\b magnitude, \b magnitude).
+//! \ingroup TasmanianDREAM
 
 //! The function \b get_random01() returns random numbers distributed over (0, 1).
 inline void applyUniformUpdate(std::vector<double> &x, double magnitude, std::function<double(void)> get_random01 = tsgCoreUniform01){
@@ -57,6 +60,7 @@ inline void applyUniformUpdate(std::vector<double> &x, double magnitude, std::fu
 }
 
 //! \brief  Add a correction to every entry in \b x, sue Gaussian distribution with zero mean and standard deviation equal to \b magnitude.
+//! \ingroup TasmanianDREAM
 
 //! The function \b get_random01() returns random numbers distributed over (0, 1).
 //! Gaussian numbers are generated using the Box-Muller algorithm.
@@ -72,6 +76,30 @@ inline void applyGaussianUpdate(std::vector<double> &x, double magnitude, std::f
             g = r * sin(t);
         }else{
             v += g;
+        }
+    }
+}
+
+//! \brief Generate uniform random samples in the hypercube defined by \b lower and \b upper limits.
+//! \ingroup TasmanianDREAM
+
+//! The size of the \b lower and \b upper must match.
+//! The output vector \b x will be resized to match \b num_samples times \b upper.size(), and the values will be overwritten.
+//! The function \b get_random01() returns random numbers distributed over (0, 1).
+inline void genUniformSamples(const std::vector<double> &lower, const std::vector<double> &upper, int num_samples, std::vector<double> &x, std::function<double(void)> get_random01 = tsgCoreUniform01){
+    if (lower.size() != upper.size()) throw std::runtime_error("ERROR: genUniformSamples() requires lower and upper vectors with matching size.");
+    if (x.size() != lower.size() * num_samples) x.resize(lower.size() * num_samples);
+    for(auto &v : x) v = get_random01();
+    
+    std::vector<double> length(lower.size());
+    std::transform(lower.begin(), lower.end(), upper.begin(), length.begin(), [&](double l, double u)->double{ return (u - l); });
+    
+    auto ix = x.begin();
+    while(ix != x.end()){
+        auto ilow = lower.begin();
+        for(auto l : length){
+            *ix *= l;
+            *ix++ += *ilow++;
         }
     }
 }

@@ -52,15 +52,15 @@ namespace TasBLAS{
     // can't find BLAS implementation that is generally reliable
     // if dgemv_ is called within OpenMP region with large matrices, it returns wrong result!
     // Level 1
-    inline double ddot(int N, const double x[], const double y[]){
-        int ione = 1;
-        return ddot_(&N, x, &ione, y, &ione);
-    }
-    inline double ddot(int N, const double x[]){
-        int ione = 1;
-        double nrm = dnrm2_(&N, x, &ione);
-        return nrm * nrm;
-    }
+//     inline double ddot(int N, const double x[], const double y[]){
+//         int ione = 1;
+//         return ddot_(&N, x, &ione, y, &ione);
+//     }
+//     inline double ddot(int N, const double x[]){
+//         int ione = 1;
+//         double nrm = dnrm2_(&N, x, &ione);
+//         return nrm * nrm;
+//     }
     // Level 2
     inline void dgemv(int M, int N, const double A[], const double x[], double y[], double alpha = 1.0, double beta = 0.0){ // y = A*x, A is M by N
         char charN = 'N'; int blas_one = 1;
@@ -73,16 +73,16 @@ namespace TasBLAS{
     }
 #else
     // non optimal BLAS subroutines, in case there is no BLAS available
-    inline double ddot(int N, const double x[], const double y[]){
-        double sum = 0.0;
-        for(int i=0; i<N; i++) sum += x[i] * y[i];
-        return sum;
-    }
-    inline double ddot(int N, const double x[]){
-        double sum = 0.0;
-        for(int i=0; i<N; i++) sum += x[i] * x[i];
-        return sum;
-    }
+//     inline double ddot(int N, const double x[], const double y[]){
+//         double sum = 0.0;
+//         for(int i=0; i<N; i++) sum += x[i] * y[i];
+//         return sum;
+//     }
+//     inline double ddot(int N, const double x[]){
+//         double sum = 0.0;
+//         for(int i=0; i<N; i++) sum += x[i] * x[i];
+//         return sum;
+//     }
     inline void dgemv(int M, int N, const double A[], const double x[], double y[]){ // y = A*x, A is M by N
         for(int i=0; i<M; i++){
             y[i] = A[i] * x[0];

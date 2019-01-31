@@ -15,6 +15,12 @@ add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} Tasman
                                                                           tsgDreamState.cpp
                                                                           tsgDreamSample.hpp
                                                                           tsgDreamSampleGrid.hpp
+                                                                          tsgDreamSamplePosterior.hpp
+                                                                          tsgDreamSamplePosteriorGrid.hpp
+                                                                          tsgDreamLikelihoodCore.hpp
+                                                                          tsgDreamLikelyGaussian.hpp
+                                                                          tsgDreamLikelyGaussian.cpp
+                                                                          tsgDreamInternalBlas.hpp
                                                                           tsgDreamCoreRandom.hpp
                                                                           tsgDreamCorePDF.hpp
                                                                           tsgDreamEnumerates.hpp)
@@ -104,7 +110,7 @@ endif()
 ########################################################################
 # Testing
 ########################################################################
-add_test(DREAM_Analytic dreamtest -test analytic)
+add_test(DREAM_Analytic dreamtest analytic)
 #add_test(DREAM_Model    tasdream -test model)
 #if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
 #    set_tests_properties(DREAM_Analytic DREAM_Model

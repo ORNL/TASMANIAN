@@ -262,7 +262,7 @@ bool DreamExternalTester::testGaussian2D(){
            std::none_of(state.getHistory().begin(), state.getHistory().end(), [&](double x)->bool{ return ((x < 0.0) || (x>1.0)); });
 
     passAll = passAll && pass;
-    if (verbose || !pass) reportPassFail(pass, "Gaussian 2D", "with manual domain");
+    if (verbose || !pass) reportPassFail(pass, "Gaussian 2D", "with custom domain");
 
 
     // ------------------------------------------------------------ //
@@ -304,7 +304,7 @@ bool DreamExternalTester::testGaussian2D(){
            std::none_of(state.getHistory().begin(), state.getHistory().end(), [&](double x)->bool{ return ((x < 0.0) || (x>1.0)); });
 
     passAll = passAll && pass;
-    if (verbose || !pass) reportPassFail(pass, "Gaussian 2D", "with subdomain and manual prior");
+    if (verbose || !pass) reportPassFail(pass, "Gaussian 2D", "with custom prior");
 
     reportPassFail(passAll, "Gaussian 2D", "DREAM-Grid vs Box-Muller");
 
@@ -320,6 +320,171 @@ bool DreamExternalTester::testKnownDistributions(){
     return pass1 && pass2;
 }
 
+bool DreamExternalTester::testCustomModel(){
+    bool passAll = true;
+    int num_dimensions = 3;
+    int rseed = 42, num_samples = 1000, num_chains = 40;
+    int num_iterations = num_samples / num_chains + 2;
+    int num_burnup = 20 * num_iterations;
+    if (usetimeseed) rseed = getRandomRandomSeed();
+
+    std::minstd_rand park_miller;
+    park_miller.seed(rseed);
+    std::uniform_real_distribution<double> unif(0.0, 1.0);
+
+    // compute reference samples, means 1.5, 2.0 and 2.5, variance 4.0, 9.0, 4.0
+    std::vector<double> tresult(num_dimensions * num_samples, 0.0);
+    applyGaussianUpdate(tresult, 1.0, [&]()->double{ return unif(park_miller); }); // generate unit Gaussian samples
+
+    auto itr = tresult.begin();
+    while(itr != tresult.end()){
+        *itr *= 2.0;  *itr++ += 1.5; // std 2.0, mean 1.5
+        *itr *= 3.0;  *itr++ += 2.0; // std 3.0, mean 2.0
+        *itr *= 2.0;  *itr++ += 2.5; // std 2.0, mean 2.5
+    }
+
+    // Use DREAM with custom model of identity (all information comes form the prior and likelihood)
+    TasmanianDREAM state(num_chains, num_dimensions);
+    std::vector<double> initial_set(num_chains * num_dimensions, 2.0); // initialize with random samples
+    applyGaussianUpdate(initial_set, 3.0, [&]()->double{ return unif(park_miller); });
+    state.setState(initial_set);
+
+    LikelihoodGaussIsotropic likely(4.0, {1.5, 2.5});
+    SampleDREAMPost(num_burnup, num_iterations, likely,
+                    [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ // model
+                        auto ic = candidates.begin();
+                        auto iv = values.begin();
+                        while(iv != values.end()){ // takes the first and last parameters
+                            *iv++ = *ic++;
+                            ic++;
+                            *iv++ = *ic++;
+                        }
+                    },
+                    [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ // prior
+                        auto ic = candidates.begin() + 1; // uses the second input entries only
+                        for(auto &v : values){
+                            v = getDensity<dist_gaussian>(*ic, 2.0, 9.0);
+                            std::advance(ic, num_dimensions);
+                        }
+                    },
+                    [&](const std::vector<double>&)->bool{ return true; }, // unbounded domain
+                    [&](std::vector<double> &x){
+                        applyGaussianUpdate(x, 0.5, [&]()->double{ return unif(park_miller); });
+                    },
+                    state,
+                    const_percent<65>,
+                    [&]()->double{ return unif(park_miller); }
+                );
+
+    std::vector<double> upper(num_dimensions, 11.0), lower(num_dimensions, -7.0); // compute over a box of more than 3 standard deviations
+
+    bool pass = compareSamples(lower, upper, 5, tresult, state.getHistory());
+    passAll = passAll && pass;
+    if (verbose || !pass) reportPassFail(pass, "Inference 3D", "with custom model");
+    
+    state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
+    initial_set = std::vector<double>(num_chains * num_dimensions, 0.5);
+    applyUniformUpdate(initial_set, 0.5, [&]()->double{ return unif(park_miller); }); // uniform initial sample
+    state.setState(initial_set);
+
+    lower = std::vector<double>(num_dimensions, 0.0);
+    upper = std::vector<double>(num_dimensions, 1.0);
+
+    likely = LikelihoodGaussIsotropic(0.01, {0.0, 0.0});
+
+    SampleDREAMPost<logform>(num_burnup, num_iterations, likely,
+                             [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ // model
+                                 auto ic = candidates.begin();
+                                 auto iv = values.begin();
+                                 while(iv != values.end()){ // takes the first and last parameters
+                                     *iv++ = 1.0 - sin(M_PI * *ic++);
+                                     ic++;
+                                     *iv++ = 1.0 - sin(M_PI * *ic++);
+                                 }
+                             },
+                             uniform_prior,
+                             lower, upper,
+                             dist_gaussian, 0.01,
+                             state,
+                             const_percent<50>,
+                             [&]()->double{ return unif(park_miller); }
+                        );
+
+    std::vector<double> mode;
+    state.getApproximateMode(mode);
+    //cout << mode[0] << "  " << mode[1] << "  " << mode[2] << endl;
+    pass = ((mode[0] > 0.4) && (mode[0] < 0.6) && (mode[2] > 0.4) && (mode[2] < 0.6));
+    passAll = passAll && pass;
+    if (verbose || !pass) reportPassFail(pass, "Inference 3D", "optimization objective");
+    
+    reportPassFail(pass, "Inference 3D", "DREAM Bayesian inference");
+
+    return passAll;
+}
+
+bool DreamExternalTester::testGridModel(){
+    bool passAll = true;
+    int num_dimensions = 2, num_outputs = 64;
+    int rseed = 42, num_samples = 1000, num_chains = 40;
+    int num_iterations = num_samples / num_chains + 2;
+    int num_burnup = 20 * num_iterations;
+    if (usetimeseed) rseed = getRandomRandomSeed();
+
+    std::minstd_rand park_miller;
+    park_miller.seed(rseed);
+    std::uniform_real_distribution<double> unif(0.0, 1.0);
+    
+    // Construct sparse grid approximation to the SinSin model
+    std::vector<double> lower = {0.0, 2.0}, upper = {4.0, 6.0};
+    TasGrid::TasmanianSparseGrid grid;
+    grid.makeLocalPolynomialGrid(num_dimensions, num_outputs, 8, 2); // using quadratic basis of level 4
+    grid.setDomainTransform(lower, upper); // magnitude is in range (0, 4), frequency in range (2.0, 6.0)
+    std::vector<double> points, values(num_outputs * grid.getNumPoints());
+    grid.getNeededPoints(points);
+    
+    auto ip = points.begin(), iv = values.begin();
+    while(ip != points.end()){
+        getSinSinModel(*ip, *(ip+1), 1.0 / ((double) num_outputs), num_outputs, &*iv);
+        std::advance(ip, num_dimensions);
+        std::advance(iv, num_outputs);
+    }
+    grid.loadNeededPoints(values); // surrogate constructed
+    
+    // initialize the state
+    TasmanianDREAM state(num_chains, grid);
+    std::vector<double> initial_state;
+    genUniformSamples(lower, upper, num_chains, initial_state, [&]()->double{ return unif(park_miller); });
+    state.setState(initial_state);
+    
+    // initialize the likelihood
+    std::vector<double> data(num_outputs);
+    getSinSinModel(2.0, 5.0, 1.0 / ((double) num_outputs), num_outputs, data.data()); // true magnitude 2.0, frequency 5.0
+    LikelihoodGaussIsotropic likely(0.01, data);
+    
+    // sample using uniform prior
+    SampleDREAMPost<logform>(num_burnup, num_chains, likely, grid, uniform_prior, dist_gaussian, 0.1, state, const_percent<50>, [&]()->double{ return unif(park_miller); });
+    
+    //printMode(state, "mode");
+    std::vector<double> mode;
+    state.getApproximateMode(mode);
+    bool pass = ((mode[0] > 1.0) && (mode[0] < 3.0) && (mode[1] > 4.5) && (mode[1] < 5.5));
+    passAll = passAll && pass;
+    if (verbose || !pass) reportPassFail(pass, "Inference 2D", "grid frequency model");
+    
+    reportPassFail(pass, "Inference 2D", "DREAM Bayesian grid model");
+    
+    return passAll;
+}
+
+bool DreamExternalTester::testPosteriorDistributions(){
+    // Tests using posteriors constructed from model and prior distributions
+
+    bool pass1 = testCustomModel();
+    bool pass2 = testGridModel();
+
+    return pass1 && pass2;
+}
+
 bool DreamExternalTester::performTests(TypeDREAMTest test){
     cout << endl << endl;
     cout << "---------------------------------------------------------------------" << endl;
@@ -330,7 +495,8 @@ bool DreamExternalTester::performTests(TypeDREAMTest test){
 
     std::vector<int> results(10, 1); // results for all possible tests
 
-    if ((test == test_all) || (test == test_analytic)) results[0] = (testKnownDistributions()) ? 1 : 0;
+    if ((test == test_all) || (test == test_analytic))  results[0] = (testKnownDistributions()) ? 1 : 0;
+    if ((test == test_all) || (test == test_posterior)) results[1] = (testPosteriorDistributions()) ? 1 : 0;
 
     pass = std::all_of(results.begin(), results.end(), [&](int i)->bool{ return (i == 1); });
 

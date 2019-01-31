@@ -125,6 +125,12 @@ void TasmanianDREAM::getHistoryMeanVariance(std::vector<double> &mean, std::vect
     }
 }
 
+void TasmanianDREAM::getApproximateMode(std::vector<double> &mode) const{
+    auto imax = std::max_element(pdf_history.begin(), pdf_history.end());
+    mode.resize(num_dimensions);
+    std::copy_n(history.begin() + std::distance(pdf_history.begin(), imax) * num_dimensions, num_dimensions, mode.data());
+}
+
 }
 
 #endif

@@ -28,105 +28,43 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_DREAM_SAMPLE_GRID_HPP
-#define __TASMANIAN_DREAM_SAMPLE_GRID_HPP
+#ifndef __TASMANIAN_DREAM_SAMPLE_POSTERIOR_GRID_HPP
+#define __TASMANIAN_DREAM_SAMPLE_POSTERIOR_GRID_HPP
 
 #include <vector>
 
-#include "TasmanianSparseGrid.hpp"
-
 #include "tsgDreamEnumerates.hpp"
 #include "tsgDreamState.hpp"
+#include "tsgDreamState.hpp"
+#include "tsgDreamCoreRandom.hpp"
+#include "tsgDreamCorePDF.hpp"
+#include "tsgDreamLikelyGaussian.hpp"
+#include "tsgDreamSamplePosterior.hpp"
 
-//! \file tsgDreamSampleGrid.hpp
-//! \brief DREAM methods using likelihood approximated by a sparse grid.
+//! \file tsgDreamSamplePosteriorGrid.hpp
+//! \brief Templates to sample from Bayesian posterior with sparse grid model.
 //! \author Miroslav Stoyanov
 //! \ingroup TasmanianDREAM
 //!
-//! Defines the templates and overloads for sampling a posterior distribution using a likelihood defined by a sparse grid approximation.
+//! Defines the DREAM template for sampling from a posterior distribution with sparse grid model.
 
 namespace TasDREAM{
 
 //! \internal
-//! \brief Macro creating a \b lambda for the probability distribution combining a sparse grid and a prior.
+//! \brief Macro to create a model lambda from sparse grid.
 //! \ingroup TasmanianDREAM
 
-//! The same \b lambda function is used for multiple overloads, so long as the variable names match, this will work.
-//! The variable names must match, in order to have consistency anyway. Specifically,
-//! - \b grid is the TasmanianSparseGrid variable
-//! - \b prior is the \b lambda for the prior
-//! - \b form is the template parameter that chooses between regular and logarithmic form
-#define __TASDREAM_PDF_GRID_PRIOR [&](const std::vector<double> &candidates, std::vector<double> &values) -> void{ \
-    grid.evaluateBatch(candidates, values); \
-    \
-    std::vector<double> priors(values.size()); \
-    prior(candidates, priors); \
-    \
-    auto iv = values.begin(); \
-    if (form == regform){ \
-        for(auto p : priors) *iv++ *= p; \
-    }else{ \
-        for(auto p : priors) *iv++ += p; \
-    } \
-}
+//! The same \b lambda function is used for multiple overloads, so long as the spaes grid is called \b grid.
+#define __TASDREAM_LIKELIHOOD_GRID_LIKE [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ grid.evaluateBatch(candidates, values); }
 
-//! \internal
-//! \brief Macro that checks if \b grid and \b state have the same number of dimensions.
+
+//! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model.
 //! \ingroup TasmanianDREAM
 
-//! Throws runtime_error if \b grid and \b state have different number of dimensions.
-#define __TASDREAM_CHECK_GRID_STATE_DIMS \
-    if (grid.getNumDimensions() != state.getNumDimensions()) throw std::runtime_error("ERROR: mismatch between the dimensions of the grid and the DREAM state.");
-
-//! \internal
-//! \brief Extract the \b grid rule and domain.
-//! \ingroup TasmanianDREAM
-    
-//! Extract the \b grid rule and domain.
-#define __TASDREAM_GRID_EXTRACT_RULE \
-    TasGrid::TypeOneDRule rule = grid.getRule(); \
-    std::vector<double> transform_a, transform_b; \
-    if (grid.isSetDomainTransfrom()) grid.getDomainTransform(transform_a, transform_b); \
-
-//! \internal
-//! \brief Get the Gauss-Hermite lambda.
-//! \ingroup TasmanianDREAM
-    
-//! Get the Gauss-Hermite lambda.
-#define __TASDREAM_GRID_DOMAIN_GHLAMBDA [&](const std::vector<double> &)->bool{ return true; }
-
-//! \internal
-//! \brief Get the Gauss-Laguerre lambda.
-//! \ingroup TasmanianDREAM
-    
-//! Get the Gauss-Laguerre lambda.
-#define __TASDREAM_GRID_DOMAIN_GLLAMBDA [&](const std::vector<double> &x)->bool{ \
-    auto ix = x.begin(); \
-    for(auto bound : transform_a) if (*ix++ < bound) return false; \
-    return true; }
-
-//! \internal
-//! \brief Get the default transform weights.
-//! \ingroup TasmanianDREAM
-    
-//! Get the default transform weights.
-#define __TASDREAM_GRID_DOMAIN_DEFAULTS \
-    if (!grid.isSetDomainTransfrom()){\
-        transform_a.resize(grid.getNumDimensions(), ((rule == TasGrid::rule_fourier) ? 0.0 : -1.0));\
-        transform_b.resize(grid.getNumDimensions(), 1.0);\
-    }
-
-
-//! \brief Variation of \b SampleDREAM() which assumes a Bayesian inference problem with likelihood approximated by a sparse grid.
-//! \ingroup TasmanianDREAM
-
-//! The inputs are identical to the ones defined in \b SampleDREAM(), with \b probability_distribution() replaced by the combination of sparse grid and \b prior.
-//! The values obtained from the grid are multiplied (or incremented in \b logform) with the values from the prior.
-//!
-//! Note that \b SampleDREAMGrid() with \b uniform_prior() can also be used to generate samples from a probability distribution that has been
-//! approximated using a sparse grid.
+//! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
-void SampleDREAMGrid(int num_burnup, int num_collect,
+void SampleDREAMPost(int num_burnup, int num_collect,
+                     const TasmanianLikelihood &likelihood,
                      const TasGrid::TasmanianSparseGrid &grid,
                      std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> prior,
                      std::function<bool(const std::vector<double> &x)> inside,
@@ -135,16 +73,17 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     __TASDREAM_CHECK_GRID_STATE_DIMS
-    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, inside, independent_update, state, differential_update, get_random01);
+    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, inside, independent_update, state, differential_update, get_random01);
 }
 
 
-//! \brief Overload of \b SampleDREAMGrid() assuming the domain is a hyperbube with min/max values given by \b lower and \b upper.
+//! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model, domain is a hypercube.
 //! \ingroup TasmanianDREAM
 
-//! See the overloads of \b SampleDREAM() regarding the vectors \b lower and \b upper.
+//! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
-void SampleDREAMGrid(int num_burnup, int num_collect,
+void SampleDREAMPost(int num_burnup, int num_collect,
+                     const TasmanianLikelihood &likelihood,
                      const TasGrid::TasmanianSparseGrid &grid,
                      std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> prior,
                      const std::vector<double> &lower, const std::vector<double> &upper,
@@ -153,20 +92,17 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     __TASDREAM_CHECK_GRID_STATE_DIMS
-    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, lower, upper, independent_update, state, differential_update, get_random01);
+    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, lower, upper, independent_update, state, differential_update, get_random01);
 }
 
 
-//! \brief Overload of \b SampleDREAMGrid() assuming the domain matches the sparse grid domain.
+//! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model with domain matching the grid.
 //! \ingroup TasmanianDREAM
 
-//! Grid constructed using a Gauss-Hermite rule will use the entire real plane as domain, the \b inside() function is always true.
-//! The Gauss-Laguerre rule is bounded from below, but not above.
-//! The canonical (no domain transform) Fourier grids are supported on hypercube [0,1]
-//! In all other cases, the domain is set to the canonical hypercube [-1, 1] or the hypercube specified by the domain transform loaded in the grid.
-//! See \b TasGrid::TypeOneDRule for details regarding the rules and their support.
+//! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
-void SampleDREAMGrid(int num_burnup, int num_collect,
+void SampleDREAMPost(int num_burnup, int num_collect,
+                     const TasmanianLikelihood &likelihood,
                      const TasGrid::TasmanianSparseGrid &grid,
                      std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> prior,
                      std::function<void(std::vector<double> &x)> independent_update,
@@ -175,22 +111,25 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     __TASDREAM_GRID_EXTRACT_RULE
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
-        SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, __TASDREAM_GRID_DOMAIN_GHLAMBDA, independent_update, state, differential_update, get_random01);
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, __TASDREAM_GRID_DOMAIN_GHLAMBDA, independent_update, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
-        SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, __TASDREAM_GRID_DOMAIN_GHLAMBDA, independent_update, state, differential_update, get_random01);
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, 
+                              __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, __TASDREAM_GRID_DOMAIN_GHLAMBDA, independent_update, state, differential_update, get_random01);
     }else{
         __TASDREAM_GRID_DOMAIN_DEFAULTS
-        SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, transform_a, transform_b, independent_update, state, differential_update, get_random01);
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
+                              __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, transform_a, transform_b, independent_update, state, differential_update, get_random01);
     }
 }
 
 
-//! \brief Overload of \b SampleDREAMGrid() assuming independent update from a list of internals.
+//! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model with independent update from known distribution.
 //! \ingroup TasmanianDREAM
 
-//! See the overloads of \b SampleDREAM() regarding the known updates.
+//! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
-void SampleDREAMGrid(int num_burnup, int num_collect,
+void SampleDREAMPost(int num_burnup, int num_collect,
+                     const TasmanianLikelihood &likelihood,
                      const TasGrid::TasmanianSparseGrid &grid,
                      std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> prior,
                      std::function<bool(const std::vector<double> &x)> inside,
@@ -198,16 +137,18 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, inside, independent_dist, independent_magnitude, state, differential_update, get_random01);
+    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, 
+                          __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, inside, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 
-//! \brief Overload of \b SampleDREAMGrid() assuming hypercube domain and independent update from a list of internals.
+//! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model with independent update from known distribution and a hypercube.
 //! \ingroup TasmanianDREAM
 
-//! See the overloads of \b SampleDREAM() regarding the known updates and the \b lower and \b upper vectors.
+//! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
-void SampleDREAMGrid(int num_burnup, int num_collect,
+void SampleDREAMPost(int num_burnup, int num_collect,
+                     const TasmanianLikelihood &likelihood,
                      const TasGrid::TasmanianSparseGrid &grid,
                      std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> prior,
                      const std::vector<double> &lower, const std::vector<double> &upper,
@@ -215,7 +156,8 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
+    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, 
+                          __TASDREAM_LIKELIHOOD_GRID_LIKE, lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 
@@ -224,7 +166,8 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
 
 //! See other overloads for details.
 template<TypeSamplingForm form = regform>
-void SampleDREAMGrid(int num_burnup, int num_collect,
+void SampleDREAMPost(int num_burnup, int num_collect,
+                     const TasmanianLikelihood &likelihood,
                      const TasGrid::TasmanianSparseGrid &grid,
                      std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> prior,
                      TypeDistribution independent_dist, double independent_magnitude,
@@ -233,14 +176,15 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     __TASDREAM_GRID_EXTRACT_RULE
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
-        SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, __TASDREAM_GRID_DOMAIN_GHLAMBDA,
-                          independent_dist, independent_magnitude, state, differential_update, get_random01);
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, __TASDREAM_GRID_DOMAIN_GHLAMBDA,
+                              independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
-        SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, __TASDREAM_GRID_DOMAIN_GHLAMBDA,
-                          independent_dist, independent_magnitude, state, differential_update, get_random01);
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, __TASDREAM_GRID_DOMAIN_GHLAMBDA,
+                              independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else{
         __TASDREAM_GRID_DOMAIN_DEFAULTS
-        SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_GRID_PRIOR, transform_a, transform_b, independent_dist, independent_magnitude, state, differential_update, get_random01);
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, transform_a, transform_b,
+                              independent_dist, independent_magnitude, state, differential_update, get_random01);
     }
 }
 

@@ -65,6 +65,7 @@ int main(int argc, const char ** argv){
             tester.useRandomRandomSeed();
         }else if ((strcmp(argv[k],"debug") == 0)) debug = true;
         else if ((strcmp(argv[k],"analytic") == 0)) test = test_analytic;
+        else if ((strcmp(argv[k],"posterior") == 0)) test = test_posterior;
         else{
             cerr << "ERROR: Unknown option '" << argv[k] << "'" << endl;
             cerr << "   to see list of available options use: ./gridtest --help" << endl;

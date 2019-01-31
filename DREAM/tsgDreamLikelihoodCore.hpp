@@ -28,46 +28,52 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_DREAM_HPP
-#define __TASMANIAN_DREAM_HPP
-
-#include "TasmanianSparseGrid.hpp"
+#ifndef __TASMANIAN_DREAM_LIKELY_CORE_HPP
+#define __TASMANIAN_DREAM_LIKELY_CORE_HPP
 
 #include "tsgDreamEnumerates.hpp"
-#include "tsgDreamState.hpp"
-#include "tsgDreamCoreRandom.hpp"
-#include "tsgDreamSample.hpp"
-#include "tsgDreamSampleGrid.hpp"
-#include "tsgDreamSamplePosterior.hpp"
-#include "tsgDreamSamplePosteriorGrid.hpp"
 
-//! \file TasmanianDREAM.hpp
-//! \brief DiffeRential Evolution Adaptive Metropolis methods.
+//! \file tsgDreamLikelihoodCore.hpp
+//! \brief The interface mother-class for the likelihood classes.
 //! \author Miroslav Stoyanov
 //! \ingroup TasmanianDREAM
 //!
-//! The main header required to gain access to the DREAM capabilities of Tasmanian.
-//! The header will include all files needed by the DREAM module including
-//! the TasmanianSparseGrid.hpp header.
+//! Defines the TasmanianLikelihood class which implements the relation between model outputs and measurement data.
 
-//! \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis.
-//!
-//! \par DREAM
-//! DiffeRential Evolution Adaptive Metropolis ...
+namespace TasDREAM{
 
-//! \brief Encapsulates the Tasmanian DREAM module.
+//! \brief Interface for the likelihood classes.
 //! \ingroup TasmanianDREAM
-namespace TasDREAM{}
 
-// cleanup maros used by the headers above, no need to contaminate other codes
-#undef __TASDREAM_CHECK_GRID_STATE_DIMS
-#undef __TASDREAM_PDF_GRID_PRIOR
-#undef __TASDREAM_PDF_POSTERIOR
-#undef __TASDREAM_GRID_EXTRACT_RULE
-#undef __TASDREAM_GRID_DOMAIN_GLLAMBDA
-#undef __TASDREAM_GRID_DOMAIN_GHLAMBDA
-#undef __TASDREAM_GRID_DOMAIN_DEFAULTS
-#undef __TASDREAM_LIKELIHOOD_GRID_LIKE
+//! \par Likelihood
+//! In the framework of Bayesian inference the likelihood is a measure of how likely is a specific outcome (i.e., model output), given some observed data.
+//! The likelihood class (usually) contains the data and implements a specific formula that measure the discrepancy.
+//! The \b TasmanianLikelihood class is virtual, but an inherited class is required for the \b SampleDREAMPosterior() methods.
+//!
+//! \par Included Likelihood Formulas
+//! The chose of likelihood is very problem dependent and Tasmanian implements only a few commonly used cases,
+//! mostly relying on the assumption that the data is contaminated with white noise.
+//! However, the user can implement any other likelihood by simply inheriting from this class.
+class TasmanianLikelihood{
+public:
+    //! \brief Empty default constructor.
+    TasmanianLikelihood(){}
+    //! \brief Empty virtual destructor.
+    virtual ~TasmanianLikelihood(){}
 
+    //! \brief Purely virtual method used by \b SampleDREAMPosterior(), computes the likelihood of multiple model values.
+
+    //! The \b model vector is the same as the output of the model lambda in \b SampleDREAMPosterior() or the \b TasGrid::TasmanianSparseGrid::evaluateBatch(),
+    //! the model realizations are stored contiguously in strides of length equal to the number of model outputs.
+    //! The \b likely vector is pre-allocated with size matching the number of model realizations under considerations (no resize is needed),
+    //! this function must populate the \b likely entries with the corresponding values of the likelihood.
+    //! Note that model.size() / likely.size() will divide evenly and will equal the number of model realizations.
+    virtual void getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const = 0;
+
+    //! \brief Return the number of expected model outputs.
+    virtual int getNumOuputs() const = 0;
+};
+
+}
 
 #endif

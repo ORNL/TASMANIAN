@@ -49,18 +49,28 @@ namespace TasDREAM{
 
 //! \internal
 //! \brief Checks if vectors with names \b lower and \b upper have the same size as the dimensions in TasmanianDREAM \b state.
+//! \ingroup TasmanianDREAM
+
+//! Throws \b runtime_error if the size of vectors \b lower and \b upper does not match \b state.getNumDimensions().
+//! Does not compile if the variables do not exit.
 #define __TASDREAM_CHECK_LOWERUPPER \
     if (lower.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state."); \
     if (upper.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state.");
 
 //! \internal
 //! \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
+//! \ingroup TasmanianDREAM
+    
+//! Assumes two vectors \b lower and \b upper are defined and creates a lambda using \b inHypercube().
 #define __TASDREAM_HYPERCUBE_DOMAIN \
     [&](const std::vector<double> &x)->bool{ return inHypercube(lower, upper, x); }
 
 //! \internal
 //! \brief Returns \b true if the entries in \b x obey the \b lower and \b upper values (sizes must match, does not check).
 //! \ingroup TasmanianDREAM
+
+//! The three vectors \b lower, \b upper and \b x must have the same size,
+//! returns \b true if every entry of \b x lies between the \b lower and \b upper boundaries.
 inline bool inHypercube(const std::vector<double> &lower, const std::vector<double> &upper, const std::vector<double> &x){
     auto il = lower.begin(), iu = upper.begin();
     for(auto v : x) if ((v < *il++) || (v > *iu++)) return false;
@@ -70,6 +80,8 @@ inline bool inHypercube(const std::vector<double> &lower, const std::vector<doub
 //! \internal
 //! \brief Dummy function that returns 1.0, used as default for the \b differential_update() in \b SampleDREAM().
 //! \ingroup TasmanianDREAM
+
+//! Just an inline function that returns 1.0.
 inline double const_one(){ return 1.0; }
 
 //! \brief Template that returns a constant based on the percentage, i.e., \b weight_percent / 100.0

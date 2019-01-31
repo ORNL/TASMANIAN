@@ -72,6 +72,15 @@ public:
     //! \brief Default destructor, release all used memory.
     ~TasmanianDREAM();
 
+    //! \brief Return human readable string with the version.
+    static const char* getVersion(){ return TASMANIAN_VERSION_STRING; }
+    //! \brief Return human readable sting with the license, refer to the LICENSE file for details.
+    static const char* getLicense(){ return TASMANIAN_LICENSE; }
+    //! \brief Return the major version of the library.
+    static int getVersionMajor(){ return TASMANIAN_VERSION_MAJOR; }
+    //! \brief Return the minor version of the library.
+    static int getVersionMinor(){ return TASMANIAN_VERSION_MINOR; }
+
     //! \brief Return the number of dimensions.
     int getNumDimensions() const{ return (int) num_dimensions; }
     //! \brief Return the number of chains.
@@ -155,6 +164,9 @@ public:
 
     //! \brief Compute the means and variance of the saved history.
     void getHistoryMeanVariance(std::vector<double> &mean, std::vector<double> &var) const;
+
+    //! \brief Return the sample with highest probability, searchers within the history.
+    void getApproximateMode(std::vector<double> &mode) const;
 
     // clear history
     // file I/O

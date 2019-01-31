@@ -42,7 +42,12 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamState.hpp
                  DREAM/tsgDreamSample.hpp
                  DREAM/tsgDreamSampleGrid.hpp
+                 DREAM/tsgDreamSamplePosterior.hpp
+                 DREAM/tsgDreamSamplePosteriorGrid.hpp
                  DREAM/tsgDreamCoreRandom.hpp
                  DREAM/tsgDreamCorePDF.hpp
+                 DREAM/tsgDreamLikelihoodCore.hpp
+                 DREAM/tsgDreamLikelyGaussian.hpp
+                 DREAM/tsgDreamInternalBlas.hpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../
                  COMMENT "Tasmanian Doxygen documentation")

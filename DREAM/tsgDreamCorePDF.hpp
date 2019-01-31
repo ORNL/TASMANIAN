@@ -74,8 +74,7 @@ namespace TasDREAM{
 //!
 template<TypeDistribution distribution, TypeSamplingForm form = regform, typename... Params>
 double getDensity(double x, Params... params){
-    double ParameterArray[sizeof...(params)] = {params...};
-    // if (sizeof...(Params) == 3) <code>
+    std::vector<typename std::tuple_element<0, std::tuple<Params...>>::type> ParameterArray = {params...};
     if (form == regform){
         if (distribution == dist_gaussian){
             return exp(-0.5 * (x - ParameterArray[0]) * (x - ParameterArray[0]) / ParameterArray[1]);

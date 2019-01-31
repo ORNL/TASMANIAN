@@ -28,46 +28,45 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_DREAM_HPP
-#define __TASMANIAN_DREAM_HPP
+#ifndef __TASMANIAN_DREAM_INTERNAL_BLAS_HPP
+#define __TASMANIAN_DREAM_INTERNAL_BLAS_HPP
 
-#include "TasmanianSparseGrid.hpp"
+#ifndef __TASMANIAN_DOXYGEN_SKIP
+// avoiding including BLAS headers, use the standard to define the functions, only the BLAS library is needed without include directories
+#ifdef Tasmanian_ENABLE_BLAS
+//extern "C" void dtrsv_(const char *uplo, const char *trans, const char *diag, const int *N, const double *A, const int *lda, const double *x, const int *incx);
+//extern "C" void dtrsm_(const char *side, const char *uplo, const char* transa, const char* diag, const int *m, const int *n, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb);
+extern "C" double dnrm2_(const int *N, const double *x, const int *incx);
+extern "C" void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda, const double *x, const int *incx, const double *beta, const double *y, const int *incy);
+#endif
+#endif
 
-#include "tsgDreamEnumerates.hpp"
-#include "tsgDreamState.hpp"
-#include "tsgDreamCoreRandom.hpp"
-#include "tsgDreamSample.hpp"
-#include "tsgDreamSampleGrid.hpp"
-#include "tsgDreamSamplePosterior.hpp"
-#include "tsgDreamSamplePosteriorGrid.hpp"
+#include "TasmanianConfig.hpp"
 
-//! \file TasmanianDREAM.hpp
-//! \brief DiffeRential Evolution Adaptive Metropolis methods.
-//! \author Miroslav Stoyanov
+namespace TasDREAM{
+
+namespace TasBLAS{
+#ifdef Tasmanian_ENABLE_BLAS
+//! \internal
+//! \brief Wrapper to BLAS 2-norm
 //! \ingroup TasmanianDREAM
-//!
-//! The main header required to gain access to the DREAM capabilities of Tasmanian.
-//! The header will include all files needed by the DREAM module including
-//! the TasmanianSparseGrid.hpp header.
+inline double dnrm2squared(int N, const double x[]){
+    int ione = 1;
+    double nrm = dnrm2_(&N, x, &ione);
+    return nrm * nrm;
+}
 
-//! \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis.
-//!
-//! \par DREAM
-//! DiffeRential Evolution Adaptive Metropolis ...
-
-//! \brief Encapsulates the Tasmanian DREAM module.
+//! \internal
+//! \brief Wrapper to BLAS matrix-vector product, \b y = \b alpha * \b A-transpose * \b x + \b beta * \b y
 //! \ingroup TasmanianDREAM
-namespace TasDREAM{}
+inline void dgemtv(int M, int N, const double A[], const double x[], double y[], double alpha = 1.0, double beta = 0.0){ // y = A*x, A is M by N
+    char charT = 'T'; int blas_one = 1;
+    dgemv_(&charT, &M, &N, &alpha, A, &M, x, &blas_one, &beta, y, &blas_one);
+}
+#endif
 
-// cleanup maros used by the headers above, no need to contaminate other codes
-#undef __TASDREAM_CHECK_GRID_STATE_DIMS
-#undef __TASDREAM_PDF_GRID_PRIOR
-#undef __TASDREAM_PDF_POSTERIOR
-#undef __TASDREAM_GRID_EXTRACT_RULE
-#undef __TASDREAM_GRID_DOMAIN_GLLAMBDA
-#undef __TASDREAM_GRID_DOMAIN_GHLAMBDA
-#undef __TASDREAM_GRID_DOMAIN_DEFAULTS
-#undef __TASDREAM_LIKELIHOOD_GRID_LIKE
+}
 
+}
 
 #endif

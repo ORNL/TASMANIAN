@@ -65,7 +65,9 @@ enum TypeDREAMTest{
     //! \brief Execute all tests.
     test_all,
     //! \brief Tests for sampling from known probability density.
-    test_analytic
+    test_analytic,
+    //! \brief Tests for sampling from posterior distributions.
+    test_posterior
 };
 
 //! \internal
@@ -74,6 +76,7 @@ enum TypeDREAMTest{
 inline void reportPassFail(bool pass, const char *name){
     cout << setw(45) << name << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;
 }
+
 //! \internal
 //! \brief Report Pass/FAIL bases on pass, format is "name variant Pass/FAIL"
 //! \ingroup TasDREAMTesting
@@ -112,9 +115,37 @@ inline void printStats(const TasmanianDREAM &state, const char *message = nullpt
     for(auto m : mean) cout << m << "  ";
     cout << endl;
     for(auto v : variance) cout << sqrt(v) << "  ";
+    cout << endl;
 }
 
+//! \internal
+//! \brief Print the approximate mode from the history.
+//! \ingroup TasDREAMTesting
+inline void printMode(const TasmanianDREAM &state, const char *message = nullptr){
+    std::vector<double> mode;
+    state.getApproximateMode(mode);
+    if (message != nullptr) cout << message << endl;
+    cout << std::scientific; cout.precision(6);
+    for(auto m : mode) cout << m << "  ";
+    cout << endl;
+}
 
+//! \internal
+//! \brief Simple model of a signal with two overlapping frequencies.
+//! \ingroup TasDREAMTesting
+
+//! The model is \f$ f(t) = \sin(\pi t) + M \sin( F \pi t) \f$ where M is the \b magnitude and F is the \b frequency.
+//! The result is sampled for t in (\b time_step, \b num_steps * \b time_step) resulting in a vector of length \b num_steps.
+//! The entries are written to the array \b y.
+inline void getSinSinModel(double magnitude, double frequency, double time_step, int num_steps, double *y){
+    double t = time_step;
+    for(int i=0; i<num_steps; i++){
+        y[i] = sin(M_PI * t) + magnitude * sin(frequency * M_PI * t);
+        t += time_step;
+    }
+}
+
+//! \internal
 //! \brief Tester class, manages general test parameters (e.g., verbose mode) and runs the individual tests.
 //! \ingroup TasDREAMTesting
 
@@ -145,6 +176,15 @@ protected:
 
     //! \brief Generate 2D Gaussian samples using DREAM and Sparse Grids.
     bool testGaussian2D();
+
+    //! \brief Perform test for sampling from inferred posterior distributions.
+    bool testPosteriorDistributions();
+
+    //! \brief Generate samples from custom models.
+    bool testCustomModel();
+    
+    //! \brief Generate samples from sparse grid model.
+    bool testGridModel();
 
     //! \brief Hardcoded table with chi-squared values.
     double getChiValue(size_t num_degrees);
@@ -183,64 +223,6 @@ private:
 //! \code ./DREAM/dreamtest -debug \endcode
 //! The function is implemented at the very bottom of \b tasdreamExternalTests.cpp.
 void testDebug();
-
-// #include "TasmanianSparseGrid.hpp"
-//
-// #include "tasdreamTestPDFs.hpp"
-//
-// enum TestList{
-//     test_all, test_analytic, test_model
-// };
-//
-// class TestRNG : public TasDREAM::BaseUniform{
-// public:
-//     TestRNG(int seed);
-//     ~TestRNG();
-//
-//     double getSample01() const;
-// private:
-//     mutable int s;
-// };
-//
-// class ExternalTester{
-// public:
-//     ExternalTester(int num_monte_carlo = 1);
-//     ~ExternalTester();
-//     void resetRandomSeed();
-//
-//     void setVerbose(bool new_verbose);
-//
-//     bool Test(TestList test = test_all);
-//
-// protected:
-//     bool testChi(int num_cells, const int count_a[], const int count_b[]);
-//     double getChiValue(int num_degrees);
-//
-//     bool testKS(int num_cells, const int count_a[], const int count_b[]);
-//
-//     bool testUniform1D();
-//     bool testBeta1D();
-//     bool testGamma1D();
-//
-//     bool testGaussian2D();
-//
-//     bool testModelLikelihoodAlpha();
-//
-// private:
-//     int num_mc;
-//     int wfirst, wsecond, wthird;
-//     bool verbose;
-//     int rngseed;
-//
-//     TasDREAM::CppUniformSampler u;
-//
-//     UnscaledUniform1D uu1D;
-//     Beta1D distBeta1D;
-//     Gamma1D distGamma1D;
-//
-//     Gaussian2D distGauss2D;
-// };
-
 
 
 #endif
