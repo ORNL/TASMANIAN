@@ -104,6 +104,29 @@ inline void genUniformSamples(const std::vector<double> &lower, const std::vecto
     }
 }
 
+//! \brief Generate standard normal samples with given \b means and standard \b deviations.
+//! \ingroup TasmanianDREAM
+
+//! Generate Gaussian (normal) vectors with given means and standard deviations.
+//! The \b means and \b deviations must have the same size.
+//! The function \b get_random01() returns random numbers distributed over (0, 1).
+inline void genGaussianSamples(const std::vector<double> &means, const std::vector<double> &deviations, int num_samples, std::vector<double> &x, std::function<double(void)> get_random01 = tsgCoreUniform01){
+    if (means.size() != deviations.size()) throw std::runtime_error("ERROR: genGaussianSamples() means and deviations vectors must have the same size.");
+    if (x.size() != means.size() * num_samples) x.resize(means.size() * num_samples);
+    
+    std::fill_n(x.data(), x.size(), 0.0);
+    applyGaussianUpdate(x, 1.0, get_random01);
+    
+    auto ix = x.begin();
+    while(ix != x.end()){
+        auto im = means.begin();
+        for(auto s : deviations){
+            *ix *= s;
+            *ix++ += *im++;
+        }
+    }
+}
+
 }
 
 #endif

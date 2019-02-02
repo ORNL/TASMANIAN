@@ -120,16 +120,17 @@ bool DreamExternalTester::testGaussian3D(){
     std::minstd_rand park_miller;
     park_miller.seed(rseed);
     std::uniform_real_distribution<double> unif(0.0, 1.0);
-
+    
     // compute reference samples, mean 2.0, std 3.0
-    std::vector<double> tresult(num_dimensions * num_samples, 2.0);
-    applyGaussianUpdate(tresult, 3.0, [&]()->double{ return unif(park_miller); });
+    std::vector<double> means(num_dimensions, 2.0), deviations(num_dimensions, 3.0);
+    std::vector<double> tresult;
+    genGaussianSamples(means, deviations, num_samples, tresult, [&]()->double{ return unif(park_miller); });
 
     // Use DREAM with zero-weight (i.e., standard Metropolis-Hastings)
     TasmanianDREAM state(num_chains, num_dimensions);
-    std::vector<double> initial_set(num_chains * num_dimensions, 2.0); // initialize with correct mean 2.0, std 3.0
-    applyGaussianUpdate(initial_set, 3.0, [&]()->double{ return unif(park_miller); });
-    state.setState(initial_set);
+    std::vector<double> initial_state;
+    genGaussianSamples(means, deviations, num_chains, initial_state, [&]()->double{ return unif(park_miller); }); // initialize with correct mean 2.0, std 3.0
+    state.setState(initial_state);
 
     SampleDREAM(num_burnup, num_iterations,
         [&](const std::vector<double> &candidates, std::vector<double> &values){
@@ -154,7 +155,7 @@ bool DreamExternalTester::testGaussian3D(){
     if (verbose || !pass) reportPassFail(pass, "Gaussian 3D", "with independent chains");
 
     state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
-    state.setState(initial_set);
+    state.setState(initial_state);
 
     SampleDREAM(num_burnup, 2*num_iterations,
         [&](const std::vector<double> &candidates, std::vector<double> &values){
@@ -333,21 +334,14 @@ bool DreamExternalTester::testCustomModel(){
     std::uniform_real_distribution<double> unif(0.0, 1.0);
 
     // compute reference samples, means 1.5, 2.0 and 2.5, variance 4.0, 9.0, 4.0
-    std::vector<double> tresult(num_dimensions * num_samples, 0.0);
-    applyGaussianUpdate(tresult, 1.0, [&]()->double{ return unif(park_miller); }); // generate unit Gaussian samples
-
-    auto itr = tresult.begin();
-    while(itr != tresult.end()){
-        *itr *= 2.0;  *itr++ += 1.5; // std 2.0, mean 1.5
-        *itr *= 3.0;  *itr++ += 2.0; // std 3.0, mean 2.0
-        *itr *= 2.0;  *itr++ += 2.5; // std 2.0, mean 2.5
-    }
+    std::vector<double> tresult;
+    genGaussianSamples({1.5, 2.0, 2.5}, {2.0, 3.0, 2.0}, num_samples, tresult, [&]()->double{ return unif(park_miller); });
 
     // Use DREAM with custom model of identity (all information comes form the prior and likelihood)
     TasmanianDREAM state(num_chains, num_dimensions);
-    std::vector<double> initial_set(num_chains * num_dimensions, 2.0); // initialize with random samples
-    applyGaussianUpdate(initial_set, 3.0, [&]()->double{ return unif(park_miller); });
-    state.setState(initial_set);
+    std::vector<double> initial_state(num_chains * num_dimensions, 2.0); // initialize with random samples
+    applyGaussianUpdate(initial_state, 3.0, [&]()->double{ return unif(park_miller); });
+    state.setState(initial_state);
 
     LikelihoodGaussIsotropic likely(4.0, {1.5, 2.5});
     SampleDREAMPost(num_burnup, num_iterations, likely,
@@ -383,9 +377,8 @@ bool DreamExternalTester::testCustomModel(){
     if (verbose || !pass) reportPassFail(pass, "Inference 3D", "with custom model");
     
     state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
-    initial_set = std::vector<double>(num_chains * num_dimensions, 0.5);
-    applyUniformUpdate(initial_set, 0.5, [&]()->double{ return unif(park_miller); }); // uniform initial sample
-    state.setState(initial_set);
+    genUniformSamples({0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, num_chains, initial_state, [&]()->double{ return unif(park_miller); });
+    state.setState(initial_state);
 
     lower = std::vector<double>(num_dimensions, 0.0);
     upper = std::vector<double>(num_dimensions, 1.0);
