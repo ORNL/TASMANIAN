@@ -30,6 +30,7 @@ endif()
 doxygen_add_docs(Tasmanian_doxygen
                  README.md
                  Doxygen/Installation.md
+                 DREAM/TasmanianDREAM.hpp
                  SparseGrids/tsgEnumerates.hpp
                  SparseGrids/tsgIndexManipulator.hpp
                  SparseGrids/tsgIndexSets.hpp
@@ -37,5 +38,16 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/tsgOneDimensionalWrapper.hpp
                  SparseGrids/tsgLinearSolvers.hpp
                  SparseGrids/tsgDConstructGridGlobal.hpp
+                 DREAM/tsgDreamEnumerates.hpp
+                 DREAM/tsgDreamState.hpp
+                 DREAM/tsgDreamSample.hpp
+                 DREAM/tsgDreamSampleGrid.hpp
+                 DREAM/tsgDreamSamplePosterior.hpp
+                 DREAM/tsgDreamSamplePosteriorGrid.hpp
+                 DREAM/tsgDreamCoreRandom.hpp
+                 DREAM/tsgDreamCorePDF.hpp
+                 DREAM/tsgDreamLikelihoodCore.hpp
+                 DREAM/tsgDreamLikelyGaussian.hpp
+                 DREAM/tsgDreamInternalBlas.hpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../
                  COMMENT "Tasmanian Doxygen documentation")

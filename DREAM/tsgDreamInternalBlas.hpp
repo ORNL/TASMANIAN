@@ -28,36 +28,45 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_TASDREAM_BENCHMARKS_HPP
-#define __TASMANIAN_TASDREAM_BENCHMARKS_HPP
+#ifndef __TASMANIAN_DREAM_INTERNAL_BLAS_HPP
+#define __TASMANIAN_DREAM_INTERNAL_BLAS_HPP
 
-#include <fstream>
-#include <iomanip>
+#ifndef __TASMANIAN_DOXYGEN_SKIP
+// avoiding including BLAS headers, use the standard to define the functions, only the BLAS library is needed without include directories
+#ifdef Tasmanian_ENABLE_BLAS
+//extern "C" void dtrsv_(const char *uplo, const char *trans, const char *diag, const int *N, const double *A, const int *lda, const double *x, const int *incx);
+//extern "C" void dtrsm_(const char *side, const char *uplo, const char* transa, const char* diag, const int *m, const int *n, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb);
+extern "C" double dnrm2_(const int *N, const double *x, const int *incx);
+extern "C" void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda, const double *x, const int *incx, const double *beta, const double *y, const int *incy);
+#endif
+#endif
 
-#include "TasmanianDREAM.hpp"
+#include "TasmanianConfig.hpp"
 
-#include "TasmanianSparseGrid.hpp"
+namespace TasDREAM{
 
-using namespace TasDREAM;
-using namespace TasGrid;
+namespace TasBLAS{
+#ifdef Tasmanian_ENABLE_BLAS
+//! \internal
+//! \brief Wrapper to BLAS 2-norm
+//! \ingroup TasmanianDREAM
+inline double dnrm2squared(int N, const double x[]){
+    int ione = 1;
+    double nrm = dnrm2_(&N, x, &ione);
+    return nrm * nrm;
+}
 
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::setw;
+//! \internal
+//! \brief Wrapper to BLAS matrix-vector product, \b y = \b alpha * \b A-transpose * \b x + \b beta * \b y
+//! \ingroup TasmanianDREAM
+inline void dgemtv(int M, int N, const double A[], const double x[], double y[], double alpha = 1.0, double beta = 0.0){ // y = A*x, A is M by N
+    char charT = 'T'; int blas_one = 1;
+    dgemv_(&charT, &M, &N, &alpha, A, &M, x, &blas_one, &beta, y, &blas_one);
+}
+#endif
 
-TasmanianSparseGrid* prepareGrid(int num_outputs, int depth, int mpi_me = 0, int mpi_all = 1);
-double* getData(int num_outputs, int mpi_me = 0, int mpi_all = 1);
-void writeMatrix(const char *filename, int rows, int cols, const double mat[]);
+}
 
+}
 
-void sharedBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int num_burnup, int num_mcmc, int gpuID, const char* outfilename);
-
-
-#ifdef MPI_VERSION
-
-void mpiBenchmarkBasicAlpha(int num_outputs, int depth, int num_chains, int num_burnup, int num_mcmc, const char* outfilename);
-
-#endif // MPI_VERSION
-
-#endif // __TASMANIAN_TASDREAM_BENCHMARKS_HPP
+#endif

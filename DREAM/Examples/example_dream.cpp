@@ -8,7 +8,9 @@
 
 using namespace std;
 
-int main(int argc, const char**){
+void dream_example_01();
+
+int main(int, const char**){
 /*
  * The purpose of this file is to demonstrate the proper way to call
  * functions from the TASMANIAN DREAM Library.
@@ -17,124 +19,18 @@ int main(int argc, const char**){
  *
  */
 
-    srand((int) time(0));
+    /*srand((int) time(0));
 
     bool limit_examples = false;
     if (argc > 1){
         // some of the exmaples take long time, for post-install testing purposes
         // optionally limit examples to the first 2 (covers dream and sparse grids)
         limit_examples = true;
-    }
+    }*/
 
-{
-// EXAMPLE 1: make your own probability distribution
-//            sample from Gaussian distribution: f(x) = C*exp(-x^2/2) over (-inf, +inf)
-    TasGrid::TasmanianSparseGrid grid;
+    dream_example_01();
 
-    cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
-    cout << std::scientific; cout.precision(5);
-    cout << "EXAMPLE 1: sample from Gaussian distribution: f(x) = exp(-x^2/2)" << endl;
-    cout << "           ingnoring scaling constants, using 3000 smaples" << endl << endl;
-
-    // decalre a class that describes the PDF
-    class UnscaledPDF : public TasDREAM::ProbabilityWeightFunction{
-    public:
-        UnscaledPDF(){}
-        ~UnscaledPDF(){}
-        int getNumDimensions() const{ return 1; }
-        void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm){
-            size_t num_points = x.size();
-            if (y.size() < num_points) y.resize(num_points);
-            for(size_t i=0; i<num_points; i++){ // set the pdf values
-                y[i] = -0.5 * x[i] * x[i];
-            }
-            if (!useLogForm){
-                for(size_t i=0; i<num_points; i++){ // take exponential (if not working with logForm)
-                    y[i] = exp(y[i]);
-                }
-            }
-        }
-        void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper){
-            if (lower.size() < 1) lower.resize(1);
-            if (upper.size() < 1) upper.resize(1);
-            lower[0] = false; // Gaussian is unbounded
-            upper[0] = false;
-        }
-        void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper){
-            if (lower.size() < 1) lower.resize(1);
-            if (upper.size() < 1) upper.resize(1);
-            lower[0] = 0.0; // since bounds above give false,
-            upper[0] = 0.0;
-        }
-        void getInitialSample(double x[]){
-            // initialize with samples unifromly in [-1,1]
-            x[0] = -1.0 + 2.0 * u.getSample01();
-        }
-    private:
-        TasDREAM::CppUniformSampler u;
-    };
-
-    UnscaledPDF *exmaple_pdf = new UnscaledPDF();
-
-    int num_chains = 30;
-    int num_burnup_iterations = 1000;
-    int num_sample_iterations = 100;
-    // the total number of samples is num_chains * num_iterations
-    int num_samples = num_chains * num_sample_iterations;
-
-    TasDREAM::TasmanianDREAM *dream = new TasDREAM::TasmanianDREAM();
-    dream->setProbabilityWeightFunction(exmaple_pdf);
-    dream->setNumChains(num_chains);
-    TasDREAM::GaussianPDF gauss(0.0, 0.0001);
-    dream->setCorrectionAll(&gauss);
-
-    double *samples = dream->collectSamples(num_burnup_iterations, num_sample_iterations, false);
-
-    double mean, variance;
-    // compute the mean and variance
-    mean = 0.0;
-    variance = 0.0;
-    for(int i=0; i<num_samples; i++){
-        mean += samples[i];
-        variance += samples[i] * samples[i];
-    }
-    mean /= (double) num_samples;
-    variance /= (double) num_samples;
-    variance -= mean * mean;
-
-    cout << "Using regular form:" << endl;
-    cout << "       mean:" << setw(13) << mean     << "   error:" << setw(12) << fabs(mean) << endl;
-    cout << "   variance:" << setw(13) << variance << "   error:" << setw(12) << fabs(variance - 1.0) << endl;
-
-    delete[] samples;
-
-    // reset the dream samples
-    dream->setProbabilityWeightFunction(exmaple_pdf);
-    dream->setNumChains(num_chains);
-    dream->setCorrectionAll(&gauss);
-
-    samples = dream->collectSamples(num_burnup_iterations, num_sample_iterations, true);
-
-    // compute the mean and variance
-    mean = 0.0;
-    variance = 0.0;
-    for(int i=0; i<num_samples; i++){
-        mean += samples[i];
-        variance += samples[i] * samples[i];
-    }
-    mean /= (double) num_samples;
-    variance /= (double) num_samples;
-    variance -= mean * mean;
-
-    cout << "Using log form:" << endl;
-    cout << "       mean:" << setw(13) << mean     << "   error:" << setw(12) << fabs(mean) << endl;
-    cout << "   variance:" << setw(13) << variance << "   error:" << setw(12) << fabs(variance - 1.0) << endl << endl;
-
-    delete[] samples;
-    delete dream;
-    delete exmaple_pdf; // must delete the example_pdf, dream will not delete that pointer
-}
-
+/*
 {
 // EXAMPLE 2: use sparse grids to interpolate a likelihood function
 //            set inference problem, identify x_0 and x_1 model parameters from data (noise free example)
@@ -945,6 +841,7 @@ int main(int argc, const char**){
     delete[] data;
     delete[] snap;
 }
+*/
 
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl << endl;
 

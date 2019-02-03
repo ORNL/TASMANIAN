@@ -28,75 +28,48 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_TASDREAM_TEST_PDFS_HPP
-#define __TASMANIAN_TASDREAM_TEST_PDFS_HPP
+#ifndef __TASMANIAN_DREAM_ENUMERATES_HPP
+#define __TASMANIAN_DREAM_ENUMERATES_HPP
 
-#include <fstream>
-#include <iomanip>
-#include <iostream>
+#include "TasmanianConfig.hpp"
 
-using namespace std;
+namespace TasDREAM{
 
-#include "TasmanianDREAM.hpp"
+//! \brief Describes whether sampling should be done with the regular or logarithm form of the probability density.
+//! \ingroup TasmanianDREAM
 
-#include "TasmanianSparseGrid.hpp"
+//! Probability distributions with very localized support will have values close to zero over most of the sampling domain.
+//! Sampling using the logarithm of the probability density can be more stable, when operations with very small numbers cause problems.
+//! In most cases, it is up to the user to provide the appropriate values, but the sampling algorithm needs to know which form is being used.
+enum TypeSamplingForm{
+    //! \brief Use the standard form for the probability density.
+    regform,
 
-class UnscaledUniform1D : public TasDREAM::ProbabilityWeightFunction{
-public:
-    UnscaledUniform1D();
-    ~UnscaledUniform1D();
-    int getNumDimensions() const;
-    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
-    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
-    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
-    void getInitialSample(double x[]);
-private:
-    TasDREAM::CppUniformSampler u;
+    //! \brief Use the logarithm form for the probability density.
+    logform
 };
 
-class Beta1D : public TasDREAM::ProbabilityWeightFunction{
-public:
-    Beta1D();
-    ~Beta1D();
-    int getAPIversion() const;
+//! \brief Indicates a specific probability distribution for the associated function.
+//! \ingroup TasmanianDREAM
 
-    int getNumDimensions() const;
+//! Used to instantiate the \b getDensity() variadric template. See the template documentation for the specific formulas.
+enum TypeDistribution{
+    //! \brief Uniform distribution.
+    dist_uniform,
 
-    void evaluate(int num_points, const double x[], double y[], bool useLogForm);
-    void getDomainBounds(bool* lower_bound, bool* upper_bound);
-    void getDomainBounds(double* lower_bound, double* upper_bound);
-    void getInitialSample(double x[]);
-private:
-    TasDREAM::BetaPDF *b;
-    TasDREAM::CppUniformSampler u;
+    //! \brief Gaussian or Normal distribution defined by mean and variance.
+    dist_gaussian,
+
+    //! \brief Exponential distribution (i.e., special case of the Gamma distribution).
+    dist_exponential,
+
+    //! \brief Beta distribution, corresponds to Gauss-Jacobi sparse grid rule \b TasGrid::rule_gaussjacobi.
+    dist_beta,
+
+    //! \brief Gamma distribution, corresponds to Gauss-Laguerre sparse grid rule \b TasGrid::rule_gausslaguerre.
+    dist_gamma
 };
 
-class Gamma1D : public TasDREAM::ProbabilityWeightFunction{
-public:
-    Gamma1D();
-    ~Gamma1D();
-    int getNumDimensions() const;
-    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
-    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
-    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
-    void getInitialSample(double x[]);
-private:
-    TasDREAM::GammaPDF *g;
-    TasDREAM::CppUniformSampler u;
-};
-
-class Gaussian2D : public TasDREAM::ProbabilityWeightFunction{
-public:
-    Gaussian2D();
-    ~Gaussian2D();
-    int getNumDimensions() const;
-    void evaluate(const std::vector<double> &x, std::vector<double> &y, bool useLogForm);
-    void getDomainBounds(std::vector<bool> &lower, std::vector<bool> &upper);
-    void getDomainBounds(std::vector<double> &lower, std::vector<double> &upper);
-    void getInitialSample(double x[]);
-private:
-    TasDREAM::TruncatedGaussianPDF *g1, *g2;
-    TasDREAM::CppUniformSampler u;
-};
+}
 
 #endif

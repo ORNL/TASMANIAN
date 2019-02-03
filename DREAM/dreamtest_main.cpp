@@ -28,46 +28,50 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_DREAM_HPP
-#define __TASMANIAN_DREAM_HPP
+#include <iostream>
 
-#include "TasmanianSparseGrid.hpp"
+#include "tasdreamExternalTests.hpp"
 
-#include "tsgDreamEnumerates.hpp"
-#include "tsgDreamState.hpp"
-#include "tsgDreamCoreRandom.hpp"
-#include "tsgDreamSample.hpp"
-#include "tsgDreamSampleGrid.hpp"
-#include "tsgDreamSamplePosterior.hpp"
-#include "tsgDreamSamplePosteriorGrid.hpp"
+using namespace std;
 
-//! \file TasmanianDREAM.hpp
-//! \brief DiffeRential Evolution Adaptive Metropolis methods.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianDREAM
-//!
-//! The main header required to gain access to the DREAM capabilities of Tasmanian.
-//! The header will include all files needed by the DREAM module including
-//! the TasmanianSparseGrid.hpp header.
+//enum TypeHelp{
+//    help_generic,
+//    help_benchmark
+//};
 
-//! \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis.
-//!
-//! \par DREAM
-//! DiffeRential Evolution Adaptive Metropolis ...
+//void printHelp(TypeHelp ht = help_generic);
 
-//! \brief Encapsulates the Tasmanian DREAM module.
-//! \ingroup TasmanianDREAM
-namespace TasDREAM{}
+int main(int argc, const char ** argv){
+    //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
 
-// cleanup maros used by the headers above, no need to contaminate other codes
-#undef __TASDREAM_CHECK_GRID_STATE_DIMS
-#undef __TASDREAM_PDF_GRID_PRIOR
-#undef __TASDREAM_PDF_POSTERIOR
-#undef __TASDREAM_GRID_EXTRACT_RULE
-#undef __TASDREAM_GRID_DOMAIN_GLLAMBDA
-#undef __TASDREAM_GRID_DOMAIN_GHLAMBDA
-#undef __TASDREAM_GRID_DOMAIN_DEFAULTS
-#undef __TASDREAM_LIKELIHOOD_GRID_LIKE
+    bool debug = false;
+    TypeDREAMTest test = test_all;
 
+    DreamExternalTester tester;
+    int k = 1;
+    while(k < argc){
+        if ((strcmp(argv[k],"verbose") == 0) || (strcmp(argv[k],"-verbose") == 0)){
+            tester.showVerbose();
+            tester.showStatsValues();
+        }else if ((strcmp(argv[k],"v") == 0) || (strcmp(argv[k],"-v") == 0)){
+            tester.showVerbose();
+        }else if ((strcmp(argv[k],"random") == 0) || (strcmp(argv[k],"-random") == 0)){
+            tester.useRandomRandomSeed();
+        }else if ((strcmp(argv[k],"debug") == 0)) debug = true;
+        else if ((strcmp(argv[k],"analytic") == 0)) test = test_analytic;
+        else if ((strcmp(argv[k],"posterior") == 0)) test = test_posterior;
+        else{
+            cerr << "ERROR: Unknown option '" << argv[k] << "'" << endl;
+            cerr << "   to see list of available options use: ./gridtest --help" << endl;
+            return 1;
+        }
+        k++;
+    }
 
-#endif
+    if (debug){
+        testDebug();
+        return 0;
+    }
+
+    return (tester.performTests(test)) ? 0 : 1;
+}

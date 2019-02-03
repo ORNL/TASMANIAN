@@ -28,46 +28,44 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_DREAM_HPP
-#define __TASMANIAN_DREAM_HPP
+#ifndef __TASMANIAN_DREAM_LIKELY_GAUSS_CPP
+#define __TASMANIAN_DREAM_LIKELY_GAUSS_CPP
 
-#include "TasmanianSparseGrid.hpp"
+#include "tsgDreamLikelyGaussian.hpp"
+#include "tsgDreamInternalBlas.hpp"
 
-#include "tsgDreamEnumerates.hpp"
-#include "tsgDreamState.hpp"
-#include "tsgDreamCoreRandom.hpp"
-#include "tsgDreamSample.hpp"
-#include "tsgDreamSampleGrid.hpp"
-#include "tsgDreamSamplePosterior.hpp"
-#include "tsgDreamSamplePosteriorGrid.hpp"
+namespace TasDREAM{
 
-//! \file TasmanianDREAM.hpp
-//! \brief DiffeRential Evolution Adaptive Metropolis methods.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianDREAM
-//!
-//! The main header required to gain access to the DREAM capabilities of Tasmanian.
-//! The header will include all files needed by the DREAM module including
-//! the TasmanianSparseGrid.hpp header.
+void LikelihoodGaussIsotropic::setData(double variance, const std::vector<double> &data_mean, double num_observe){
+    if (variance <= 0.0) throw std::runtime_error("ERROR: LikelihoodGaussIsotropic, should have positive varience.");
+    if (num_observe <= 0.0) throw std::runtime_error("ERROR: LikelihoodGaussIsotropic, should have positive number of observations.");
+    if (data_mean.empty()) throw std::runtime_error("ERROR: LikelihoodGaussIsotropic, emptry data vector.");
 
-//! \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis.
-//!
-//! \par DREAM
-//! DiffeRential Evolution Adaptive Metropolis ...
+    data = data_mean;
+    scale = -0.5 * num_observe / variance;
+}
 
-//! \brief Encapsulates the Tasmanian DREAM module.
-//! \ingroup TasmanianDREAM
-namespace TasDREAM{}
+void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const{
+    auto im = model.begin();
+    #ifdef Tasmanian_ENABLE_BLAS
+    int num_outputs = (int) data.size();
+    int num_points = (int) (model.size() / data.size());
 
-// cleanup maros used by the headers above, no need to contaminate other codes
-#undef __TASDREAM_CHECK_GRID_STATE_DIMS
-#undef __TASDREAM_PDF_GRID_PRIOR
-#undef __TASDREAM_PDF_POSTERIOR
-#undef __TASDREAM_GRID_EXTRACT_RULE
-#undef __TASDREAM_GRID_DOMAIN_GLLAMBDA
-#undef __TASDREAM_GRID_DOMAIN_GHLAMBDA
-#undef __TASDREAM_GRID_DOMAIN_DEFAULTS
-#undef __TASDREAM_LIKELIHOOD_GRID_LIKE
+    for(auto &l : likely){
+        l = scale * TasBLAS::dnrm2squared(num_outputs, &*im);
+        std::advance(im, num_outputs);
+    }
+    TasBLAS::dgemtv(num_outputs, num_points, model.data(), data.data(), likely.data(), -2.0 * scale, 1.0);
+    #else
+    size_t num_outputs = data.size();
+    for(auto &l : likely){
+        l = scale * (std::inner_product(im, im + num_outputs, im, 0.0) - 2.0 * std::inner_product(im, im + num_outputs, data.data(), 0.0));
+        std::advance(im, num_outputs);
+    }
+    #endif
+    if (form == regform) for(auto &l : likely) l = exp(l);
+}
 
+}
 
 #endif

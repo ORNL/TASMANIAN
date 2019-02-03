@@ -11,11 +11,19 @@ else()
 endif()
 
 add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} TasmanianDREAM.hpp
-                                                                          TasmanianDREAM.cpp
-                                                                          tdrEnumerates.hpp
-                                                                          tdrCorePDF.hpp
-                                                                          tdrCorePDF.cpp
-                                                                          tdrDreamDenseLinearAlgebra.hpp)
+                                                                          tsgDreamState.hpp
+                                                                          tsgDreamState.cpp
+                                                                          tsgDreamSample.hpp
+                                                                          tsgDreamSampleGrid.hpp
+                                                                          tsgDreamSamplePosterior.hpp
+                                                                          tsgDreamSamplePosteriorGrid.hpp
+                                                                          tsgDreamLikelihoodCore.hpp
+                                                                          tsgDreamLikelyGaussian.hpp
+                                                                          tsgDreamLikelyGaussian.cpp
+                                                                          tsgDreamInternalBlas.hpp
+                                                                          tsgDreamCoreRandom.hpp
+                                                                          tsgDreamCorePDF.hpp
+                                                                          tsgDreamEnumerates.hpp)
 
 target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
@@ -63,19 +71,17 @@ endmacro()
 ########################################################################
 # add tasdream and examples executables
 ########################################################################
-add_executable(Tasmanian_tasdream tasdream_main.cpp
+add_executable(Tasmanian_tasdream dreamtest_main.cpp
                                   tasdreamExternalTests.hpp
-                                  tasdreamExternalTests.cpp
-                                  tasdreamTestPDFs.hpp
-                                  tasdreamTestPDFs.cpp
-                                  tasdreamBenchmark.hpp
-                                  tasdreamBenchmark.cpp)
-add_executable(Tasmanian_example_dream Examples/example_dream.cpp)
+                                  tasdreamExternalTests.cpp)
+
+add_executable(Tasmanian_example_dream Examples/example_dream.cpp
+                                       Examples/example_dream_01.cpp)
 
 set_property(TARGET Tasmanian_tasdream      PROPERTY CXX_STANDARD 11)
 set_property(TARGET Tasmanian_example_dream PROPERTY CXX_STANDARD 11)
 
-set_target_properties(Tasmanian_tasdream      PROPERTIES OUTPUT_NAME "tasdream")
+set_target_properties(Tasmanian_tasdream      PROPERTIES OUTPUT_NAME "dreamtest")
 set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
 
 ########################################################################
@@ -102,8 +108,8 @@ endif()
 ########################################################################
 # Testing
 ########################################################################
-add_test(DREAM_Analytic tasdream -test analytic)
-add_test(DREAM_Model    tasdream -test model)
+add_test(DREAM_Analytic dreamtest analytic)
+add_test(DREAM_Model dreamtest posterior)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
     set_tests_properties(DREAM_Analytic DREAM_Model
         PROPERTIES
@@ -158,8 +164,8 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
         FILES_MATCHING PATTERN "*.cpp"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
-install(TARGETS Tasmanian_tasdream
-        EXPORT "${CMAKE_PROJECT_NAME}-exports"
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib")
+#install(TARGETS Tasmanian_tasdream
+#        EXPORT "${CMAKE_PROJECT_NAME}-exports"
+#        RUNTIME DESTINATION "bin"
+#        LIBRARY DESTINATION "lib"
+#        ARCHIVE DESTINATION "lib")

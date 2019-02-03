@@ -5,16 +5,19 @@ LADD = -L../ $(CommonLADD)
 LIBS = ../libtasmaniansparsegrid.a $(CommonLIBS)
 
 
-LHEADERS = tdrCorePDF.hpp tdrEnumerates.hpp tasdreamExternalTests.hpp tasdreamTestPDFs.hpp
+LHEADERS = TasmanianDREAM.hpp tsgDreamState.hpp tsgDreamSample.hpp tsgDreamSampleGrid.hpp \
+           tsgDreamSamplePosterior.hpp tsgDreamSamplePosteriorGrid.hpp tsgDreamLikelihoodCore.hpp \
+           tsgDreamLikelyGaussian.hpp tsgDreamInternalBlas.hpp tsgDreamCoreRandom.hpp \
+           tsgDreamCorePDF.hpp tsgDreamEnumerates.hpp
 
-LIBOBJ = TasmanianDREAM.o tdrCorePDF.o tasdreamExternalTests.o tasdreamTestPDFs.o
+LIBOBJ = tsgDreamState.o tsgDreamLikelyGaussian.o
 
-WROBJ = tasdream_main.o tasdreamBenchmark.o
+WROBJ = dreamtest_main.o tasdreamExternalTests.o
 
 LIBNAME = libtasmaniandream.a
 SHAREDNAME = libtasmaniandream.so
 
-EXECNAME = tasdream
+EXECNAME = dreamtest
 
 
 %.o: %.cpp $(LHEADERS)

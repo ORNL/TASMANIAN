@@ -31,70 +31,198 @@
 #ifndef __TASMANIAN_TASDREAM_EXTERNAL_TESTS_HPP
 #define __TASMANIAN_TASDREAM_EXTERNAL_TESTS_HPP
 
+#include <iostream>
 #include <fstream>
 #include <iomanip>
 
 #include <math.h>
+#include <vector>
+#include <numeric>
+#include <random>
 
 #include "TasmanianDREAM.hpp"
 
-#include "TasmanianSparseGrid.hpp"
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::setw;
 
-#include "tasdreamTestPDFs.hpp"
+using namespace TasDREAM;
 
-enum TestList{
-    test_all, test_analytic, test_model
+//! \internal
+//! \defgroup TasDREAMTesting: Testing for the Tasmanian DREAM module.
+//!
+//! \par Testing
+//! A series of tests covering sampling under different circumstances,
+//! sample from arbitrary distribution, perform Bayesian inference on
+//! a model (custom or defined by a sparse grid), or solve an optimization
+//! problem.
+
+//! \internal
+//! \brief Allows to select a specific category for testing.
+//! \ingroup TasDREAMTesting
+enum TypeDREAMTest{
+    //! \brief Execute all tests.
+    test_all,
+    //! \brief Tests for sampling from known probability density.
+    test_analytic,
+    //! \brief Tests for sampling from posterior distributions.
+    test_posterior
 };
 
-class TestRNG : public TasDREAM::BaseUniform{
+//! \internal
+//! \brief Report Pass/FAIL bases on pass, format is "name Pass/FAIL".
+//! \ingroup TasDREAMTesting
+inline void reportPassFail(bool pass, const char *name){
+    cout << setw(45) << name << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;
+}
+
+//! \internal
+//! \brief Report Pass/FAIL bases on pass, format is "name variant Pass/FAIL"
+//! \ingroup TasDREAMTesting
+inline void reportPassFail(bool pass, const char *name, const char *variant){
+    cout << setw(15) << name << setw(30) << variant << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;
+}
+
+//! \internal
+//! \brief Get a random number to be used for a random seed, uses \b srand() with \b time(\b nullptr).
+//! \ingroup TasDREAMTesting
+inline int getRandomRandomSeed(){ srand((int) time(nullptr)); return rand(); }
+
+//! \internal
+//! \brief Dump the history of the state to \b cout using one point per line (debug use only).
+//! \ingroup TasDREAMTesting
+inline void printHistory(const TasmanianDREAM &state){
+    const std::vector<double> &hist = state.getHistory();
+    const std::vector<double> &vals = state.getHistoryPDF();
+    int num_dimensions = state.getNumDimensions();
+    auto ih = hist.begin();
+    cout << std::scientific; cout.precision(6);
+    for(auto v : vals){
+        for(int i=0; i<num_dimensions; i++) cout << *ih++ << "  ";
+        cout << v << endl;
+    }
+}
+
+//! \internal
+//! \brief Print the mean and standard deviation of the history (debug use only).
+//! \ingroup TasDREAMTesting
+inline void printStats(const TasmanianDREAM &state, const char *message = nullptr){
+    std::vector<double> mean, variance;
+    state.getHistoryMeanVariance(mean, variance);
+    if (message != nullptr) cout << message << endl;
+    cout << std::scientific; cout.precision(6);
+    for(auto m : mean) cout << m << "  ";
+    cout << endl;
+    for(auto v : variance) cout << sqrt(v) << "  ";
+    cout << endl;
+}
+
+//! \internal
+//! \brief Print the approximate mode from the history.
+//! \ingroup TasDREAMTesting
+inline void printMode(const TasmanianDREAM &state, const char *message = nullptr){
+    std::vector<double> mode;
+    state.getApproximateMode(mode);
+    if (message != nullptr) cout << message << endl;
+    cout << std::scientific; cout.precision(6);
+    for(auto m : mode) cout << m << "  ";
+    cout << endl;
+}
+
+//! \internal
+//! \brief Simple model of a signal with two overlapping frequencies.
+//! \ingroup TasDREAMTesting
+
+//! The model is \f$ f(t) = \sin(\pi t) + M \sin( F \pi t) \f$ where M is the \b magnitude and F is the \b frequency.
+//! The result is sampled for t in (\b time_step, \b num_steps * \b time_step) resulting in a vector of length \b num_steps.
+//! The entries are written to the array \b y.
+inline void getSinSinModel(double magnitude, double frequency, double time_step, int num_steps, double *y){
+    double t = time_step;
+    for(int i=0; i<num_steps; i++){
+        y[i] = sin(M_PI * t) + magnitude * sin(frequency * M_PI * t);
+        t += time_step;
+    }
+}
+
+//! \internal
+//! \brief Tester class, manages general test parameters (e.g., verbose mode) and runs the individual tests.
+//! \ingroup TasDREAMTesting
+
+//! The tester class that calls individual tests and manages common testing parameters.
+class DreamExternalTester{
 public:
-    TestRNG(int seed);
-    ~TestRNG();
+    //! \brief Default constructor.
+    DreamExternalTester() : verbose(false), showvalues(false), usetimeseed(false){}
+    //! \brief Default destructor.
+    ~DreamExternalTester(){}
 
-    double getSample01() const;
-private:
-    mutable int s;
-};
+    //! \brief Enable verbose mode, show information for each individual test.
+    void showVerbose(){ verbose = true; }
+    //! \brief Show the statistics and critical values for each test (more verbose).
+    void showStatsValues(){ showvalues = true; }
+    //! \brief Use \b srand() with \b time(\b nullptr) and a random number for the random seed (as opposed to the hardcoded random value).
+    void useRandomRandomSeed(){ usetimeseed = true; }
 
-class ExternalTester{
-public:
-    ExternalTester(int num_monte_carlo = 1);
-    ~ExternalTester();
-    void resetRandomSeed();
-
-    void setVerbose(bool new_verbose);
-
-    bool Test(TestList test = test_all);
+    //! \brief Main test driver, selects the test to run and writes begin and end information, returns \b false if any test fails.
+    bool performTests(TypeDREAMTest test);
 
 protected:
-    bool testChi(int num_cells, const int count_a[], const int count_b[]);
-    double getChiValue(int num_degrees);
+    //! \brief Perform test for sampling from known distributions.
+    bool testKnownDistributions();
 
-    bool testKS(int num_cells, const int count_a[], const int count_b[]);
+    //! \brief Generate 3D Gaussian samples using DREAM.
+    bool testGaussian3D();
 
-    bool testUniform1D();
-    bool testBeta1D();
-    bool testGamma1D();
-
+    //! \brief Generate 2D Gaussian samples using DREAM and Sparse Grids.
     bool testGaussian2D();
 
-    bool testModelLikelihoodAlpha();
+    //! \brief Perform test for sampling from inferred posterior distributions.
+    bool testPosteriorDistributions();
+
+    //! \brief Generate samples from custom models.
+    bool testCustomModel();
+    
+    //! \brief Generate samples from sparse grid model.
+    bool testGridModel();
+
+    //! \brief Hardcoded table with chi-squared values.
+    double getChiValue(size_t num_degrees);
+
+    //! \brief Performs Pearson's chi-squared test whether the two cell counts describe the same distribution (returns \b false if they differ above the 99-th percentile).
+
+    //! Note: theoretically, the test will fail in 1 of 100 cases due to sheer randomness, it happens more often if weak pseudo-random generator is used.
+    //! Performing multiple tests across different compilers will sooner or later lead to a false-positive.
+    //! Hardcoding the random seeds and pseudo-random distributions is not enough due to round-off error generated by compiler optimizations.
+    //!
+    //! The actual test statistics is: \f$ X = \sum_{i} \frac{A_i \sqrt{B/A} - B_i \sqrt{A/B}}{A_i + B_i} \f$, where \f$ A = \sum_{i} A_i \f$ and \f$ B = \sum_{i} B_i \f$.
+    //! The test statistics has chi-squared distribution with degrees of freedom one less than the total number of cells.
+    bool testFit(const std::vector<int> &cell_count_a, const std::vector<int> &cell_count_b);
+
+    //! \brief Bin hypercube data.
+
+    //! Takes \b data that represents vectors of dimensions \b lower.size() that lay in hypercube defined by \b lower and \b upper limits,
+    //! the data is binned into uniform cell grid with 1-D size \b num_bins1D.
+    void binHypercubeSamples(const std::vector<double> &lower, const std::vector<double> &upper, int num_bins1D, const std::vector<double> &data, std::vector<int> &bin_count);
+
+    //! \brief Test if sample follow the same distribution, calls \b binHypercubeSamples() and \b testFit().
+    bool compareSamples(const std::vector<double> &lower, const std::vector<double> &upper, int num_bins1D, const std::vector<double> &data1, const std::vector<double> &data2);
 
 private:
-    int num_mc;
-    int wfirst, wsecond, wthird;
-    bool verbose;
-    int rngseed;
-
-    TasDREAM::CppUniformSampler u;
-
-    UnscaledUniform1D uu1D;
-    Beta1D distBeta1D;
-    Gamma1D distGamma1D;
-
-    Gaussian2D distGauss2D;
+    bool verbose, showvalues, usetimeseed;
 };
 
+
+//! \internal
+//! \brief Normally an empty function, but the user can put code inside for quick testing.
+
+//! Performance, debug, and other tests of a library require that client code is written and linked to the library,
+//! which require a separate project with source files, build system, etc.
+//! This function offers an easy way to compile additional code using the default Tasmanian build engine,
+//! the code can be invoked from the root of the build folder using:
+//! \code ./DREAM/dreamtest -debug \endcode
+//! The function is implemented at the very bottom of \b tasdreamExternalTests.cpp.
+void testDebug();
 
 
 #endif
