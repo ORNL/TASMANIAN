@@ -2,7 +2,7 @@ include Config/AltBuildSystems/Makefile.in
 
 IADD = -I./include $(CommonIADD)
 LADD = -L./ $(CommonLADD)
-LIBS = ./libtasmaniansparsegrid.a ./libtasmaniandream.a $(CommonLIBS)
+LIBS = ./libtasmaniandream.a ./libtasmaniansparsegrid.a $(CommonLIBS)
 FFLIBS90 = ./libtasmanianfortran90.a ./libtasmaniansparsegrid.a ./libtasmaniandream.a $(CommonLIBS)
 
 TSG_SOURCE = $(wildcard ./SparseGrids/*.cpp) $(wildcard ./SparseGrids/*.hpp) $(wildcard ./SparseGrids/*.h)
@@ -21,8 +21,9 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
           ./include/TasmanianConfig.hpp
 
 ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py \
-              sandbox.py example_sparse_grids.cpp example_dream.cpp \
-              libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid tasdream gridtest $(HEADERS)
+              sandbox.py example_sparse_grids.cpp \
+              example_dream.cpp example_dream_01.cpp \
+              libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid dreamtest gridtest $(HEADERS)
 
 CONFIGURED_HEADERS = ./SparseGrids/TasmanianConfig.hpp
 
@@ -88,10 +89,10 @@ libtasmaniandream.a: libtasmaniandream.so ./DREAM/libtasmaniandream.a
 DREAM/libtasmaniandream.a: ./DREAM/libtasmaniandream.so $(TDR_SOURCE) libtasmaniansparsegrid.a $(CONFIGURED_HEADERS)
 	cd DREAM; make
 
-tasdream: libtasmaniandream.a libtasmaniandream.so ./DREAM/tasdream
-	cp ./DREAM/tasdream .
+dreamtest: libtasmaniandream.a libtasmaniandream.so ./DREAM/dreamtest
+	cp ./DREAM/dreamtest .
 
-DREAM/tasdream: ./DREAM/libtasmaniandream.so libtasmaniansparsegrid.a $(TDR_SOURCE) $(CONFIGURED_HEADERS)
+DREAM/dreamtest: ./DREAM/libtasmaniandream.so libtasmaniansparsegrid.a $(TDR_SOURCE) $(CONFIGURED_HEADERS)
 	cd DREAM; make
 
 # Headers
@@ -104,7 +105,7 @@ include/tasdream%.hpp: ./DREAM/tasdream%.hpp
 	mkdir -p ./include
 	cp ./$< ./$@
 
-include/tdr%.hpp: ./DREAM/tdr%.hpp
+include/tsg%.hpp: ./DREAM/tsg%.hpp
 	mkdir -p ./include
 	cp ./$< ./$@
 
@@ -146,8 +147,8 @@ sandbox.py: ./InterfacePython/sandbox.py
 example_sparse_grids.cpp: ./SparseGrids/Examples/example_sparse_grids.cpp
 	cp ./SparseGrids/Examples/example_sparse_grids.cpp .
 
-example_dream.cpp: ./DREAM/Examples/example_dream.cpp
-	cp ./DREAM/Examples/example_dream.cpp .
+example_dre%.cpp: ./DREAM/Examples/example_dre%.cpp
+	cp ./$< ./$@
 
 # Matlab
 .PHONY: matlab
@@ -207,7 +208,7 @@ InterfaceFortran/libtasmanianfortran90.a:
 .PHONY: test
 test: $(ALL_TARGETS)
 	./gridtest
-	./tasdream -test
+	./dreamtest
 	PYTHONPATH=$(PYTHONPATH):./InterfacePython ./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
 
 .PHONY: examples
@@ -215,7 +216,8 @@ examples: $(ALL_TARGETS)
 	$(CC) $(OPTC) $(IADD) -c example_sparse_grids.cpp -o example_sparse_grids.o
 	$(CC) $(OPTL) $(LADD) example_sparse_grids.o -o example_sparse_grids $(LIBS)
 	$(CC) $(OPTC) $(IADD) -c example_dream.cpp -o example_dream.o
-	$(CC) $(OPTL) $(LADD) example_dream.o -o example_dream $(LIBS)
+	$(CC) $(OPTC) $(IADD) -c example_dream_01.cpp -o example_dream_01.o
+	$(CC) $(OPTL) $(LADD) example_dream*.o -o example_dream $(LIBS)
 
 # Clean
 .PHONY: clean
@@ -241,9 +243,7 @@ clean:
 	rm -fr example_sparse_grids
 	rm -fr example_sparse_grids.o
 	rm -fr example_sparse_grids.cpp
-	rm -fr example_dream
-	rm -fr example_dream.o
-	rm -fr example_dream.cpp
+	rm -fr example_dream*
 	rm -fr example_sparse_grids.f90
 	rm -fr example_sparse_grids_fortran.o
 	rm -fr example_sparse_grids_fortran
