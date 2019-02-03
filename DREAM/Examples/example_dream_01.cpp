@@ -1,0 +1,86 @@
+#include <iostream>
+#include <iomanip>
+#include <ctime>
+#include "math.h"
+
+#include "TasmanianDREAM.hpp"
+
+using namespace std;
+
+void dream_example_01(){
+    // using the default random engine, but must reset the random number generator
+    srand((int) time(nullptr));
+
+// EXAMPLE 1: make your own probability distribution
+//            sample from distribution: f(x) = C*exp(-x^2) over (-inf, +inf)
+//            the constant does not affect the DREAM algorithm
+//            or comparison purposes just using something equivalent to gaussian distribution with variance 0.5
+
+    cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
+    cout << std::scientific; cout.precision(5);
+    cout << "EXAMPLE 1: sample from Gaussian distribution: f(x) = exp(-x^2)" << endl;
+    cout << "           ingnoring scaling constants, using 3000 smaples" << endl;
+    cout << "    See the comments in example_dream_01.cpp" << endl << endl;
+
+    int num_dimensions = 1, num_chains = 30;
+    int num_burnup_iterations = 200;
+    int num_collect_iterations = 1000; // 1000 iterations with 30 chains gives 3000 samples
+
+    TasDREAM::TasmanianDREAM state(num_chains, num_dimensions);
+
+    // need to initialize the chains
+    std::vector<double> initial_chains;
+    TasDREAM::genUniformSamples({-2.0}, {2.0}, num_chains, initial_chains); // create uniform samples in (-2, 2)
+    state.setState(initial_chains);
+
+    // Main call to Tasmanian DREAM Sampling algorithm
+    TasDREAM::SampleDREAM(num_burnup_iterations, num_collect_iterations,
+                          [&](const std::vector<double> &candidates, std::vector<double> &values){ // use lambda to implement the formula
+                              std::transform(candidates.begin(), candidates.end(), values.begin(),
+                                             [&](double x)->double{ return exp(-x*x); }); // implement the formula
+                          },
+                          [&](const std::vector<double>&)->bool{ return true; }, // unbound domain
+                          TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
+                          state,
+                          TasDREAM::const_percent<90> // use 90% of differential update
+                         );
+
+    // compute the mean and variance of the samples
+    std::vector<double> mean, variance;
+    state.getHistoryMeanVariance(mean, variance);
+
+    cout << "Using regular form:" << endl;
+    cout << "       mean:" << setw(13) << std::fixed << mean[0]
+         << "   error:" << setw(12) << std::scientific << fabs(mean[0]) << endl;
+    cout << "   variance:" << setw(13) << std::fixed << variance[0]
+         << "   error:" << setw(12) << std::scientific << fabs(variance[0] - 0.5) << endl;
+
+
+    // Repeat the same experiment, but using log-form
+    state = TasDREAM::TasmanianDREAM(num_chains, num_dimensions); // reset the state
+    state.setState(initial_chains); // set the initial state
+
+    // sample again, but use the logarithm form of the formula
+    TasDREAM::SampleDREAM<TasDREAM::logform>
+                         (num_burnup_iterations, num_collect_iterations,
+                          [&](const std::vector<double> &candidates, std::vector<double> &values){
+                              std::transform(candidates.begin(), candidates.end(), values.begin(),
+                                             [&](double x)->double{ return -x*x; }); // implement the logarithm of the formula
+                          },
+                          [&](const std::vector<double>&)->bool{ return true; }, // unbound domain
+                          TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
+                          state,
+                          TasDREAM::const_percent<90> // use 90% of differential update
+                         );
+
+    // get the mean and variance for the logform samples
+    state.getHistoryMeanVariance(mean, variance);
+
+    cout << "Using regular form:" << endl;
+    cout << "       mean:" << setw(13) << std::fixed << mean[0]
+         << "   error:" << setw(12) << std::scientific << fabs(mean[0]) << endl;
+    cout << "   variance:" << setw(13) << std::fixed << variance[0]
+         << "   error:" << setw(12) << std::scientific << fabs(variance[0] - 0.5) << endl;
+
+    cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
+}
