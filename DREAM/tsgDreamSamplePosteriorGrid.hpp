@@ -157,7 +157,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     SampleDREAMPost<form>(num_burnup, num_collect, likelihood, 
-                          __TASDREAM_LIKELIHOOD_GRID_LIKE, lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
+                          __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 
