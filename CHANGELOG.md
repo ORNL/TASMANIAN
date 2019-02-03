@@ -1,6 +1,12 @@
 Changelog for version 6.1 (may rename this to 7.0 later)
 --------------
 
+* updated the DREAM interface:
+    * excessive polymorphism is replaced y lambdas
+    * sampling is done by a template
+    * can specify arbitrary domain (using lambdas)
+    * Note: the old API is completely obsolete and incompatible
+
 * added Doxygen documentation (CMake option, extra pages, etc.)
 
 * added support for CUDA 10
