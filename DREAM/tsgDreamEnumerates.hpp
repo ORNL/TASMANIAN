@@ -70,13 +70,6 @@ enum TypeDistribution{
     dist_gamma
 };
 
-
-// enum TypeLikelihood{
-//     likely_gauss_scale, // scale, diagonal and dense refer to the type of covariance
-//     likely_gauss_diagonal,
-//     likely_gauss_dense
-// };
-
 }
 
 #endif
