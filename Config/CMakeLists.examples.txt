@@ -25,8 +25,9 @@ find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasm
 # without having to explicitly check for _static or _shared targets
 
 add_executable(example_sparse_grids  example_sparse_grids.cpp)
-add_executable(example_dream         example_dream.cpp
-                                     example_dream_01.cpp)
+add_executable(example_dream         example_dream_01.cpp
+                                     example_dream_02.cpp
+                                     example_dream.cpp)
 
 set_property(TARGET example_sparse_grids PROPERTY CXX_STANDARD 11)
 set_property(TARGET example_dream        PROPERTY CXX_STANDARD 11)
