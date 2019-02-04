@@ -252,6 +252,7 @@ clean:
 	rm -fr sandbox.py
 	rm -fr include
 	rm -fr ./SparseGrids/TasmanianConfig.hpp
+	rm -fr ./InterfacePython/testConfigureData.py
 	cd SparseGrids; make clean
 	cd DREAM; make clean
 	cd InterfaceFortran; make clean
