@@ -20,6 +20,8 @@ set(DOXYGEN_PROJECT_NUMBER "") # if project number if given, the rendered font i
 
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
 
+set(DOXYGEN_EXAMPLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../") # finding the examples for all modules requires to use the root dir
+
 if (NOT DOXYGEN_INTERNAL_DOCS)
 # the \internal command works for functions and namespaces, but not classes
 # have to exclude the classes manually
@@ -49,6 +51,8 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamLikelihoodCore.hpp
                  DREAM/tsgDreamLikelyGaussian.hpp
                  DREAM/tsgDreamInternalBlas.hpp
+                 DREAM/Examples/example_dream.cpp
+                 DREAM/Examples/example_dream_01.cpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../
                  COMMENT "Tasmanian Doxygen documentation")
 

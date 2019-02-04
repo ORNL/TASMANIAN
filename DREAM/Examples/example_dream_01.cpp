@@ -7,18 +7,32 @@
 
 using namespace std;
 
+//! \file example_dream_01.cpp
+//! \brief Examples for the Tasmanian DREAM module.
+//! \author Miroslav Stoyanov
+//! \ingroup TasmanianDREAMExamples
+//!
+//! Tasmanian DREAM Example 1
+
+
+//! \brief DREAM Example 1: sample from a custom defined probability distribution.
+//! \ingroup TasmanianDREAMExamples
+
+//! Demonstrates how to make a custom probability disribution and use Tasmanian DREAM
+//! to generate random samples.
+//! \snippet DREAM/Examples/example_dream_01.cpp DREAM_Example_01 example
 void dream_example_01(){
+#ifndef __TASMANIAN_DOXYGEN_SKIP
+//! [DREAM_Example_01 example]
+#endif
     // using the default random engine, but must reset the random number generator
     srand((int) time(nullptr));
 
-// EXAMPLE 1: make your own probability distribution
-//            sample from distribution: f(x) = C*exp(-x^2) over (-inf, +inf)
-//            the constant does not affect the DREAM algorithm
-//            or comparison purposes just using something equivalent to gaussian distribution with variance 0.5
-
+    // Example 1:
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
     cout << std::scientific; cout.precision(5);
-    cout << "EXAMPLE 1: sample from Gaussian distribution: f(x) = exp(-x^2)" << endl;
+    cout << "EXAMPLE 1: make your own probability distribution" << endl;
+    cout << "           sample from Gaussian distribution: f(x) = exp(-x^2)" << endl;
     cout << "           ingnoring scaling constants, using 3000 smaples" << endl;
     cout << "    See the comments in example_dream_01.cpp" << endl << endl;
 
@@ -83,4 +97,7 @@ void dream_example_01(){
          << "   error:" << setw(12) << std::scientific << fabs(variance[0] - 0.5) << endl;
 
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
+#ifndef __TASMANIAN_DOXYGEN_SKIP
+//! [DREAM_Example_01 example]
+#endif
 }
