@@ -20,6 +20,8 @@ set(DOXYGEN_PROJECT_NUMBER "") # if project number if given, the rendered font i
 
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
 
+set(DOXYGEN_EXAMPLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../") # finding the examples for all modules requires to use the root dir
+
 if (NOT DOXYGEN_INTERNAL_DOCS)
 # the \internal command works for functions and namespaces, but not classes
 # have to exclude the classes manually
@@ -49,5 +51,21 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamLikelihoodCore.hpp
                  DREAM/tsgDreamLikelyGaussian.hpp
                  DREAM/tsgDreamInternalBlas.hpp
+                 DREAM/Examples/example_dream.cpp
+                 DREAM/Examples/example_dream_01.cpp
+                 DREAM/Examples/example_dream_02.cpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../
                  COMMENT "Tasmanian Doxygen documentation")
+
+# doxygen_add_docs() doesn't add the target to "all"
+# need to manually add dependence to ensure the docs are build before "install"
+# adding Tasmanian_doxygen to both sparse grids libraries forces the docs to be build first
+# even if parallel build is used (e.g., make -j) this will keep the c++ and doxygen outputs separate
+if (TARGET Tasmanian_libsparsegrid_shared)
+    add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_doxygen)
+endif()
+if (TARGET Tasmanian_libsparsegrid_shared)
+    add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_doxygen)
+endif()
+
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION "share/Tasmanian/docs")

@@ -69,19 +69,20 @@ install(TARGETS "${Tasmanian_libtdr_target_name}"
 endmacro()
 
 ########################################################################
-# add tasdream and examples executables
+# add dreamtest and examples executables
 ########################################################################
-add_executable(Tasmanian_tasdream dreamtest_main.cpp
-                                  tasdreamExternalTests.hpp
-                                  tasdreamExternalTests.cpp)
+add_executable(Tasmanian_dreamtest dreamtest_main.cpp
+                                   tasdreamExternalTests.hpp
+                                   tasdreamExternalTests.cpp)
 
-add_executable(Tasmanian_example_dream Examples/example_dream.cpp
-                                       Examples/example_dream_01.cpp)
+add_executable(Tasmanian_example_dream Examples/example_dream_01.cpp
+                                       Examples/example_dream_02.cpp
+                                       Examples/example_dream.cpp)
 
-set_property(TARGET Tasmanian_tasdream      PROPERTY CXX_STANDARD 11)
+set_property(TARGET Tasmanian_dreamtest     PROPERTY CXX_STANDARD 11)
 set_property(TARGET Tasmanian_example_dream PROPERTY CXX_STANDARD 11)
 
-set_target_properties(Tasmanian_tasdream      PROPERTIES OUTPUT_NAME "dreamtest")
+set_target_properties(Tasmanian_dreamtest     PROPERTIES OUTPUT_NAME "dreamtest")
 set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
 
 ########################################################################
@@ -98,10 +99,10 @@ if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
 
     # if static libraries are available, executables link statically
     target_link_libraries(Tasmanian_libdream_static  Tasmanian_libsparsegrid_static)
-    target_link_libraries(Tasmanian_tasdream         Tasmanian_libdream_static)
+    target_link_libraries(Tasmanian_dreamtest        Tasmanian_libdream_static)
     target_link_libraries(Tasmanian_example_dream    Tasmanian_libdream_static)
 else() # if there are not static libs, use shared libs for the executables
-    target_link_libraries(Tasmanian_tasdream       Tasmanian_libdream_shared)
+    target_link_libraries(Tasmanian_dreamtest      Tasmanian_libdream_shared)
     target_link_libraries(Tasmanian_example_dream  Tasmanian_libdream_shared)
 endif()
 
@@ -147,7 +148,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         set_tests_properties(DREAM_Analytic DREAM_Model PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
     endif()
 
-    Tasmanian_macro_dream_windows_defines(Tasmanian_tasdream)
+    Tasmanian_macro_dream_windows_defines(Tasmanian_dreamtest)
 endif()
 
 ########################################################################
