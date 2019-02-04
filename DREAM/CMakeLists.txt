@@ -75,8 +75,9 @@ add_executable(Tasmanian_dreamtest dreamtest_main.cpp
                                    tasdreamExternalTests.hpp
                                    tasdreamExternalTests.cpp)
 
-add_executable(Tasmanian_example_dream Examples/example_dream.cpp
-                                       Examples/example_dream_01.cpp)
+add_executable(Tasmanian_example_dream Examples/example_dream_01.cpp
+                                       Examples/example_dream_02.cpp
+                                       Examples/example_dream.cpp)
 
 set_property(TARGET Tasmanian_dreamtest     PROPERTY CXX_STANDARD 11)
 set_property(TARGET Tasmanian_example_dream PROPERTY CXX_STANDARD 11)

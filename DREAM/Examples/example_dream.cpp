@@ -26,6 +26,7 @@ using namespace std;
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 void dream_example_01();
+void dream_example_02();
 
 int main(int, const char**){
 /*
@@ -46,6 +47,7 @@ int main(int, const char**){
     }*/
 
     dream_example_01();
+    dream_example_02();
 
 /*
 {
