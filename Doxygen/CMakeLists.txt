@@ -51,3 +51,16 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamInternalBlas.hpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../
                  COMMENT "Tasmanian Doxygen documentation")
+
+# doxygen_add_docs() doesn't add the target to "all"
+# need to manually add dependence to ensure the docs are build before "install"
+# adding Tasmanian_doxygen to both sparse grids libraries forces the docs to be build first
+# even if parallel build is used (e.g., make -j) this will keep the c++ and doxygen outputs separate
+if (TARGET Tasmanian_libsparsegrid_shared)
+    add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_doxygen)
+endif()
+if (TARGET Tasmanian_libsparsegrid_shared)
+    add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_doxygen)
+endif()
+
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION "share/Tasmanian/docs")
