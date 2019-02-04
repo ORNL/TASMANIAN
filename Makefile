@@ -22,8 +22,10 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
 
 ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py \
               sandbox.py example_sparse_grids.cpp \
-              example_dream.cpp example_dream_01.cpp \
+              $(wildcard ./DREAM/Examples/example_dream*.cpp) \
               libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid dreamtest gridtest $(HEADERS)
+
+DREAM_EXAMPLES_OBJ = $(patsubst ./DREAM/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./DREAM/Examples/example_dream*.cpp)))
 
 CONFIGURED_HEADERS = ./SparseGrids/TasmanianConfig.hpp
 
@@ -212,12 +214,15 @@ test: $(ALL_TARGETS)
 	PYTHONPATH=$(PYTHONPATH):./InterfacePython ./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
 
 .PHONY: examples
-examples: $(ALL_TARGETS)
+examples: $(ALL_TARGETS) example_dream
 	$(CC) $(OPTC) $(IADD) -c example_sparse_grids.cpp -o example_sparse_grids.o
 	$(CC) $(OPTL) $(LADD) example_sparse_grids.o -o example_sparse_grids $(LIBS)
-	$(CC) $(OPTC) $(IADD) -c example_dream.cpp -o example_dream.o
-	$(CC) $(OPTC) $(IADD) -c example_dream_01.cpp -o example_dream_01.o
-	$(CC) $(OPTL) $(LADD) example_dream*.o -o example_dream $(LIBS)
+
+example_dream: $(ALL_TARGETS) $(DREAM_EXAMPLES_OBJ)
+	$(CC) $(OPTL) $(LADD) $(DREAM_EXAMPLES_OBJ) -o example_dream $(LIBS)
+
+%.o: %.cpp
+	$(CC) $(OPTC) $(IADD) -c $<
 
 # Clean
 .PHONY: clean
