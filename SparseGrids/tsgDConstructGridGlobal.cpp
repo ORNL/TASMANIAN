@@ -240,16 +240,7 @@ bool DynamicConstructorDataGlobal::ejectCompleteTensor(const MultiIndexSet &curr
     auto t = tensors.begin();
     while(t != tensors.end()){
         if (t->loaded.empty()){ // empty loaded means all have been loaded
-            std::vector<int> test = t->tensor;
-            bool parents_exist = true;
-            for(auto &pt : test){
-                if (pt > 0){
-                    pt--;
-                    if (current_tensors.empty() || current_tensors.missing(test)) parents_exist = false;
-                    pt++;
-                }
-            }
-            if (parents_exist){
+            if (MultiIndexManipulations::isLowerComplete(t->tensor, current_tensors)){
                 tensor = t->tensor;
                 points = t->points;
                 vals.resize(points.getNumIndexes() *  num_outputs);

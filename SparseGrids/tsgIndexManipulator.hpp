@@ -456,6 +456,21 @@ void createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weig
 void createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness, MultiIndexSet &space);
 
 //! \internal
+//! \brief Assuming that \b mset is lower complete, return \b true if adding the \b point will preserve completeness.
+//! \ingroup TasmanianMultiIndexManipulations
+template<typename I> bool isLowerComplete(const std::vector<I> &point, const MultiIndexSet &mset){
+    std::vector<I> dad = point;
+    for(auto &d : dad){
+        if (d > 0){
+            d--;
+            if (mset.missing(dad)) return false;
+            d++;
+        }
+    }
+    return true;
+}
+
+//! \internal
 //! \brief For a set of \b tensors create an \b mset that contain the children of indexes in \b tensors that are missing from \b exclude and obey the \b level_limits.
 //! \ingroup TasmanianMultiIndexManipulations
 template<bool limited>
@@ -470,16 +485,7 @@ void addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exc
         for(auto &k : kid){
             k++;
             if (exclude.missing(kid) && tensors.missing(kid)){ // if the kid is not to be excluded and if not included in the current set
-                std::vector<int> dad = kid;
-                bool orphan = false; // make sure that all parents of kid are included in the tensor set (i.e., preserve lower structure)
-                for(auto &d : dad){
-                    if (d > 0){
-                        d--;
-                        if (tensors.missing(dad)) orphan = true;
-                        d++;
-                    }
-                }
-                if (!orphan){
+                if (isLowerComplete(kid, tensors)){
                     if (limited){
                         if ((*ilimit == -1) || (k <= *ilimit))
                             tens.appendStrip(kid);
