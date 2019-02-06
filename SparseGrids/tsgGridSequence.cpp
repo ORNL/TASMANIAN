@@ -343,7 +343,13 @@ void GridSequence::mergeRefinement(){
     std::fill(surpluses.begin(), surpluses.end(), 0.0);
 }
 
-void GridSequence::beginConstruction(){}
+void GridSequence::beginConstruction(){
+    dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
+    if (points.empty()){
+        dynamic_values->initial_points = std::move(needed);
+        needed = MultiIndexSet();
+    }
+}
 void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{}
 void GridSequence::writeConstructionData(std::ofstream &ofs) const{}
 void GridSequence::readConstructionDataBinary(std::ifstream &ifs){}
@@ -352,7 +358,9 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vec
 void GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){}
 void GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){}
 void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){}
-void GridSequence::finishConstruction(){}
+void GridSequence::finishConstruction(){
+    dynamic_values = std::unique_ptr<SequenceConstructData>();
+}
 
 void GridSequence::evaluate(const double x[], double y[]) const{
     std::vector<std::vector<double>> cache;
