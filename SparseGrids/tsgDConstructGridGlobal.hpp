@@ -69,6 +69,9 @@ namespace TasGrid{
 //! which requires model outputs data from multiple nodes.
 //! However, the user provides the model data only a single node at a time.
 //! Thus, node data has to be stored separately until it can be included in the grid.
+//!
+//! The same data-structure is used by the sequence grids
+//! to store the initial set of samples until a lower set of point can be constructed.
 struct NodeData{
     //! \brief The multi-index of the point.
     std::vector<int> point;
