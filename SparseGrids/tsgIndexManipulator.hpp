@@ -272,6 +272,74 @@ void getProperWeights(size_t num_dimensions, I offset, TypeDepth type, const std
 }
 
 //! \internal
+//! \brief Split a single \b weights vector into two vectors and computes some meta data.
+//! \ingroup TasmanianMultiIndexManipulations
+template<typename I>
+void splitWeights(size_t num_dimensions, TypeDepth type, const std::vector<I> &weights,
+                  std::vector<I> &proper_weights, std::vector<double> &curved_weights, double &hyper_denom, TypeDepth &contour_type){
+//! Interpretation of the weight goes in two stages, first we decide between total-degree, curved, or hyperbolic types,
+//! then the weights are split into linear and logarithmic (curved), and finally scaling factors are computed (hyperbolic only).
+//! - \b num_dimensions is the number of dimensions of the problem
+//! - \b type defines the contour described by the weights
+//! - \b weights has size \b num_dimensions for linear and hyperbolic contours, and 2 times \b num_dimensions for curved contours;
+//!   \b weights can be empty, in which case isotropic weights will be used in the outputs
+//! - \b proper_weights returns the linear profile (linear and curved) or the unscaled hyperbolic profile
+//! - \b curved_weights returns the logarithmic or curved profile, or the hyperbolic weights converged to double-precision numbers
+//! - \b hyper_denom is the scaling factor for the hyperbolic weights
+//! - \b contour_type reduces \b type to either \b type_level, \b type_curved, or \b type_hyperbolic
+//! This function is used when constructing Global and Sequence grids with user specified weights.
+    proper_weights = weights;
+    if ((type == type_hyperbolic) || (type == type_iphyperbolic) || (type == type_qphyperbolic)){
+        contour_type = type_hyperbolic;
+        if (proper_weights.empty()){
+            curved_weights = std::vector<double>(num_dimensions, 1.0);
+            hyper_denom = 1.0;
+        }else{
+            curved_weights.resize(num_dimensions);
+            std::transform(weights.begin(), weights.end(), curved_weights.begin(), [&](int i)->double{ return (double) i; });
+            hyper_denom = (double) std::accumulate(weights.begin(), weights.end(), 1);
+        }
+    }else if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+        contour_type = type_curved;
+        if (proper_weights.empty()){
+            proper_weights = std::vector<int>(num_dimensions, 1);
+            contour_type = type_level; // canonical curved weights have no curve, switch to linear profile
+        }else{
+            proper_weights.resize(num_dimensions); // saves the first num_dimensions entries
+            curved_weights.resize(num_dimensions);
+            std::transform(weights.begin() + num_dimensions, weights.end(), curved_weights.begin(), [&](int i)->double{ return (double) i; });
+        }
+    }else{
+        contour_type = type_level;
+        if (proper_weights.empty()) proper_weights = std::vector<int>(num_dimensions, 1);
+    }
+}
+
+//! \internal
+//! \brief Compute the weight of a multi-index based on the split weights and the contour.
+//! \ingroup TasmanianMultiIndexManipulations
+
+//! Here \b exactness is the vector with the exactness values based on the rule and the space type, i.e., level vs curved.
+inline double computeMultiIndexWeight(const std::vector<int> &exactness, const std::vector<int> &proper_weights,
+                                      const std::vector<double> &curved_weights, double hyper_denom, TypeDepth contour_type){
+    if (contour_type == type_level){
+        return (double) std::inner_product(exactness.begin(), exactness.end(), proper_weights.data(), 0);
+    }else if (contour_type == type_hyperbolic){
+        double result = 1.0;
+        auto itr = curved_weights.begin();
+        for(auto e : exactness)
+            result *= pow((double) (1.0 + e), *itr++ / hyper_denom);
+        return result;
+    }else{
+        double result = (double) std::inner_product(exactness.begin(), exactness.end(), proper_weights.data(), 0);
+        auto itr = curved_weights.begin();
+        for(auto e : exactness)
+            result += *itr++ * log1p((double) e);
+        return result;
+    }
+}
+
+//! \internal
 //! \brief Generates a multi-index set based on the combination of weights, rule_exactness, offset and type
 //! \ingroup TasmanianMultiIndexManipulations
 template<typename I, typename CacheType, TypeDepth TotalCurvedHyper>
