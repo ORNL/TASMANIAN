@@ -355,7 +355,15 @@ void GridSequence::writeConstructionData(std::ofstream &ofs) const{}
 void GridSequence::readConstructionDataBinary(std::ifstream &ifs){}
 void GridSequence::readConstructionData(std::ifstream &ifs){}
 void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){}
-void GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){}
+void GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+    std::vector<int> weights;
+    if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
+        int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
+        if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
+            estimateAnisotropicCoefficients(type, output, weights);
+    }
+    getCandidateConstructionPoints(type, weights, x, level_limits);
+}
 void GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){}
 void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){}
 void GridSequence::finishConstruction(){
