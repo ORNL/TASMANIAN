@@ -343,6 +343,17 @@ void GridSequence::mergeRefinement(){
     std::fill(surpluses.begin(), surpluses.end(), 0.0);
 }
 
+void GridSequence::beginConstruction(){}
+void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{}
+void GridSequence::writeConstructionData(std::ofstream &ofs) const{}
+void GridSequence::readConstructionDataBinary(std::ifstream &ifs){}
+void GridSequence::readConstructionData(std::ifstream &ifs){}
+void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){}
+void GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){}
+void GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){}
+void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){}
+void GridSequence::finishConstruction(){}
+
 void GridSequence::evaluate(const double x[], double y[]) const{
     std::vector<std::vector<double>> cache;
     cacheBasisValues<double>(x, cache);
