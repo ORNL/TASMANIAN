@@ -32,6 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_NESTED_HPP
 
 #include <cstdlib>
+#include <memory>
 
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
@@ -41,10 +42,23 @@
 #include "tsgCacheLagrange.hpp"
 #include "tsgOneDimensionalWrapper.hpp"
 #include "tsgGridCore.hpp"
+#include "tsgDConstructGridGlobal.hpp"
 
 #include "tsgAcceleratedDataStructures.hpp"
 
 namespace TasGrid{
+
+//! \internal
+//! \brief Holds the pair of point index and model value, the struct is used in a \b std::forward_list.
+//! \ingroup TasmanianRefinement
+
+//! Sequence grids can only ever be constructed from points and basis functions that form a lower multi-index set.
+//! However, in order to facilitate parallelism, significantly large number of candidate points should be considered at any time.
+//! A large initial grid will allow that, but the nodes may be added to the grid in an order that does not preserve lower completeness.
+struct SequenceConstructData{
+    std::forward_list<NodeData> data;
+    MultiIndexSet initial_points;
+};
 
 class GridSequence : public BaseCanonicalGrid{
 public:
@@ -209,6 +223,8 @@ private:
     StorageSet values;
 
     std::vector<int> max_levels;
+
+    std::unique_ptr<SequenceConstructData> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable LinearAlgebraEngineGPU cuda_engine;
