@@ -422,7 +422,70 @@ void GridSequence::getCandidateConstructionPoints(std::function<double(const int
         t++;
     }
 }
-void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){}
+void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){
+    std::vector<int> p(num_dimensions);
+    for(int j=0; j<num_dimensions; j++){
+        size_t i = 0;
+        while((i < nodes.size()) && (fabs(nodes[i] - x[j]) > TSG_NUM_TOL)) i++; // convert canonical node to index
+        if (i < nodes.size()){
+            p[j] = (int) i;
+        }else{
+            throw std::runtime_error("ERROR: GridSequence::loadConstructedPoint() x is not a vector returned by getCandidateConstructionPoints()");
+        }
+    }
+
+    if (MultiIndexManipulations::isLowerComplete(p, points)){
+        std::vector<double> approx_value(num_outputs), surplus(num_outputs);;
+        if (!points.empty()){
+            evaluate(x, approx_value.data());
+            std::transform(approx_value.begin(), approx_value.end(), y.begin(), surplus.begin(), [&](double e, double v)->double{ return v - e; });
+        }
+        expandGrid(p, y, surplus);
+        dynamic_values->initial_points.removeIndex(p);
+
+        auto d = dynamic_values->data.before_begin();
+        auto t = dynamic_values->data.begin();
+        while(t != dynamic_values->data.end()){
+            if (MultiIndexManipulations::isLowerComplete(t->point, points)){ // remove another point
+                std::vector<double> xnode(num_dimensions);
+                std::transform(t->point.begin(), t->point.end(), xnode.begin(), [&](int i)->double{ return nodes[i]; });
+                evaluate(xnode.data(), approx_value.data());
+                std::transform(approx_value.begin(), approx_value.end(), t->value.begin(), surplus.begin(), [&](double e, double v)->double{ return v - e; });
+                expandGrid(t->point, t->value, surplus);
+                dynamic_values->data.erase_after(d);
+                d = dynamic_values->data.before_begin(); // restart the search
+                t = dynamic_values->data.begin();
+            }else{
+                d++; t++;
+            }
+        }
+    }else{
+        dynamic_values->data.push_front({p, y});
+        dynamic_values->initial_points.removeIndex(p);
+    }
+}
+void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
+    if (points.empty()){ // only one point
+        points.setNumDimensions(num_dimensions);
+        auto p = point; // create new so it can be moved
+        points.setIndexes(p);
+        values.resize(num_outputs, 1);
+        auto v = value; // create new to allow copy move
+        values.setValues(v);
+        surpluses = value;
+    }else{ // merge with existing points
+        auto p = point;
+        MultiIndexSet temp(num_dimensions);
+        temp.setIndexes(p);
+        values.addValues(points, temp, value.data());
+
+        points.addSortedInsexes(point);
+        size_t ioffset = ((size_t) points.getSlot(point)) * ((size_t) num_outputs);
+
+        surpluses.insert(surpluses.begin() + ioffset, surplus.begin(), surplus.end());
+    }
+    prepareSequence(0); // update the directional max_levels, will not shrink the number of nodes
+}
 void GridSequence::finishConstruction(){
     dynamic_values = std::unique_ptr<SequenceConstructData>();
 }
