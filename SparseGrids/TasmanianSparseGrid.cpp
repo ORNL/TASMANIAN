@@ -1078,11 +1078,11 @@ void TasmanianSparseGrid::mergeRefinement(){
 }
 
 void TasmanianSparseGrid::beginConstruction(){
-    if (!isGlobal()) throw std::runtime_error("ERROR: beginConstruction() called for grid that is not Global");
+    if (!isGlobal() && !isSequence()) throw std::runtime_error("ERROR: beginConstruction() called for grid that is not Global or Sequence");
     if (!usingDynamicConstruction){
         if (getNumLoaded() > 0) clearRefinement();
         usingDynamicConstruction = true;
-        getGridGlobal()->beginConstruction();
+        base->beginConstruction();
     }
 }
 void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, std::vector<double> &x, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
@@ -1098,7 +1098,11 @@ void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, std::ve
     }
 
     if (!level_limits.empty()) llimits = level_limits;
-    getGridGlobal()->getCandidateConstructionPoints(type, anisotropic_weights, x, llimits);
+    if (isGlobal()){
+        getGridGlobal()->getCandidateConstructionPoints(type, anisotropic_weights, x, llimits);
+    }else{
+        getGridSequence()->getCandidateConstructionPoints(type, anisotropic_weights, x, llimits);
+    }
 }
 void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
@@ -1109,7 +1113,11 @@ void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int out
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling getCandidateConstructionPoints() with invalid output");
 
     if (!level_limits.empty()) llimits = level_limits;
-    getGridGlobal()->getCandidateConstructionPoints(type, output, x, llimits);
+    if (isGlobal()){
+        getGridGlobal()->getCandidateConstructionPoints(type, output, x, llimits);
+    }else{
+        getGridSequence()->getCandidateConstructionPoints(type, output, x, llimits);
+    }
 }
 void TasmanianSparseGrid::loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
@@ -1117,7 +1125,7 @@ void TasmanianSparseGrid::loadConstructedPoint(const std::vector<double> &x, con
     if (y.size() != (size_t) getNumOutputs()) throw std::runtime_error("ERROR: loadConstructedPoint() called with incorrect size for y");
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x.data(), x_tmp, 1);
-    getGridGlobal()->loadConstructedPoint(x_canonical, y);
+    base->loadConstructedPoint(x_canonical, y);
 }
 void TasmanianSparseGrid::loadConstructedPoint(const double x[], const double y[]){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
@@ -1125,7 +1133,7 @@ void TasmanianSparseGrid::loadConstructedPoint(const double x[], const double y[
     loadConstructedPoint(vecx, vecy);
 }
 void TasmanianSparseGrid::finishConstruction(){
-    if (usingDynamicConstruction) getGridGlobal()->finishConstruction();
+    if (usingDynamicConstruction) base->finishConstruction();
     usingDynamicConstruction = false;
 }
 
@@ -1465,7 +1473,7 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     }
     if (usingDynamicConstruction){
         ofs << "constructing" << endl;
-        if (isGlobal()) getGridGlobal()->writeConstructionData(ofs);
+        base->writeConstructionData(ofs);
     }else{
         ofs << "static" << endl;
     }
@@ -1517,7 +1525,7 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     }
     if (usingDynamicConstruction){
         flag = 'c'; ofs.write(&flag, sizeof(char));
-        if (isGlobal()) getGridGlobal()->writeConstructionDataBinary(ofs);
+        base->writeConstructionDataBinary(ofs);
     }else{
         flag = 's'; ofs.write(&flag, sizeof(char));
     }
@@ -1615,7 +1623,7 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         getline(ifs, T);
         if (T.compare("constructing") == 0){
             usingDynamicConstruction = true;
-            if (isGlobal()) getGridGlobal()->readConstructionData(ifs);
+            base->readConstructionData(ifs);
             getline(ifs, T); // clear the final std::endl after reading the block
         }else if (T.compare("TASMANIAN SG end") == 0){
             reached_eof = true;
@@ -1688,7 +1696,7 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     ifs.read(TSG.data(), sizeof(char));
     if (TSG[0] == 'c'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
         usingDynamicConstruction = true;
-        if (isGlobal()) getGridGlobal()->readConstructionDataBinary(ifs);
+        base->readConstructionDataBinary(ifs);
     }else if (TSG[0] == 'e'){
         reached_eof = true;
     }else if (TSG[0] != 's'){
