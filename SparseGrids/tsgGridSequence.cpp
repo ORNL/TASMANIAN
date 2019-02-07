@@ -392,7 +392,36 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, st
     }
     getCandidateConstructionPoints(type, weights, x, level_limits);
 }
-void GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){}
+void GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){
+    MultiIndexSet new_points;
+    if (level_limits.empty()){ // get the new candidate points that will ensure lower completeness and are not included in the initial set
+        MultiIndexManipulations::addExclusiveChildren<false>(points, dynamic_values->initial_points, level_limits, new_points);
+    }else{
+        MultiIndexManipulations::addExclusiveChildren<true>(points, dynamic_values->initial_points, level_limits, new_points);
+    }
+    prepareSequence(new_points.getMaxIndex());
+
+    std::forward_list<NodeData> weighted_points; // use the values as the weight
+    for(int i=0; i<dynamic_values->initial_points.getNumIndexes(); i++){
+        std::vector<int> p(dynamic_values->initial_points.getIndex(i), dynamic_values->initial_points.getIndex(i) + num_dimensions); // write the point to vector
+        weighted_points.push_front({p, {-1.0 / ((double) std::accumulate(p.begin(), p.end(), 0))}});
+    }
+    for(int i=0; i<new_points.getNumIndexes(); i++){
+        std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // write the point to vector
+        weighted_points.push_front({p, {getTensorWeight(p.data())}});
+    }
+
+    weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
+
+    x.resize(dynamic_values->initial_points.getVector()->size() + new_points.getVector()->size());
+    auto t = weighted_points.begin();
+    auto ix = x.begin();
+    while(t != weighted_points.end()){
+        std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return nodes[i]; });
+        std::advance(ix, num_dimensions);
+        t++;
+    }
+}
 void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){}
 void GridSequence::finishConstruction(){
     dynamic_values = std::unique_ptr<SequenceConstructData>();

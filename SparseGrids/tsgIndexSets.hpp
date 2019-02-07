@@ -280,6 +280,12 @@ public:
     //! i.e., does not use **missing()** which would add a logarithmic factor.
     void diffSets(const MultiIndexSet &substract, MultiIndexSet &result);
 
+    //! \brief Removes \b p from the set (if exists).
+    void removeIndex(const std::vector<int> &p);
+
+    //! \brief Returns the maximum single index in the set.
+    int getMaxIndex() const{ return (empty()) ? 0 : *std::max_element(indexes.begin(), indexes.end()); }
+
 private:
     size_t num_dimensions;
     int cache_num_indexes;
