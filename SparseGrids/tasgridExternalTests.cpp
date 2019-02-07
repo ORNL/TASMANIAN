@@ -875,7 +875,7 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
             cout << "ERROR: dynamic construction failed at iteration: " << itr << endl;
             cout << "function: " << f->getDescription() << "  expected = " << np[itr] << "  " << errs[itr]
                  << "   observed points = " << R.num_points << "  error = " << R.error << std::endl;
-            return false;
+            if (np[itr] != -1) return false;
         }
 
         if (itr % 3 == 2){
@@ -1347,6 +1347,14 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 20, type_iphyperbolic, rule_rlejadouble4);
         if (!testDynamicRefinement(f, &grid, type_iphyperbolic, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using iphyperbolic and rule_rlejadouble4 nodes for " << f->getDescription() << endl;
+        }
+    }{
+        const BaseFunction *f = &f21aniso;
+        std::vector<int> np     = {   18,    27,    31,    35,    39,    43,    47,    51,    55,    59,    63,    67,    71,    75,    79,    83,    87};
+        std::vector<double> err = {5.E-1, 5.E-1, 3.E-1, 3.E-1, 1.E-1, 8.E-2, 8.E-2, 4.E-2, 4.E-2, 2.E-2, 2.E-2, 2.E-2, 2.E-2, 4.E-3, 4.E-3, 4.E-3, 4.E-3};
+        grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 7, type_level, rule_leja);
+        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, np, err)){
+            cout << "ERROR: failed dynamic anisotropic refinement using iptotal and leja nodes for " << f->getDescription() << endl;  pass3 = false;
         }
     }
 
