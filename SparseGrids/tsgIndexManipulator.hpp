@@ -289,8 +289,8 @@ void splitWeights(size_t num_dimensions, TypeDepth type, const std::vector<I> &w
 //! - \b contour_type reduces \b type to either \b type_level, \b type_curved, or \b type_hyperbolic
 //! This function is used when constructing Global and Sequence grids with user specified weights.
     proper_weights = weights;
-    if ((type == type_hyperbolic) || (type == type_iphyperbolic) || (type == type_qphyperbolic)){
-        contour_type = type_hyperbolic;
+    contour_type = OneDimensionalMeta::getControurType(type);
+    if (contour_type == type_hyperbolic){
         if (proper_weights.empty()){
             curved_weights = std::vector<double>(num_dimensions, 1.0);
             hyper_denom = 1.0;
@@ -299,8 +299,7 @@ void splitWeights(size_t num_dimensions, TypeDepth type, const std::vector<I> &w
             std::transform(weights.begin(), weights.end(), curved_weights.begin(), [&](int i)->double{ return (double) i; });
             hyper_denom = (double) std::accumulate(weights.begin(), weights.end(), 1);
         }
-    }else if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
-        contour_type = type_curved;
+    }else if (contour_type == type_curved){
         if (proper_weights.empty()){
             proper_weights = std::vector<int>(num_dimensions, 1);
             contour_type = type_level; // canonical curved weights have no curve, switch to linear profile
@@ -310,7 +309,6 @@ void splitWeights(size_t num_dimensions, TypeDepth type, const std::vector<I> &w
             std::transform(weights.begin() + num_dimensions, weights.end(), curved_weights.begin(), [&](int i)->double{ return (double) i; });
         }
     }else{
-        contour_type = type_level;
         if (proper_weights.empty()) proper_weights = std::vector<int>(num_dimensions, 1);
     }
 }

@@ -585,6 +585,7 @@ void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vecto
     std::vector<double> curved_weights;
     double hyper_denom;
     TypeDepth contour_type = type;
+    TypeDepth selection_type = OneDimensionalMeta::getSelectionType(type);
     MultiIndexManipulations::splitWeights(num_dimensions, type, weights, proper_weights, curved_weights, hyper_denom, contour_type);
 
     std::vector<int> cached_exactness;
@@ -595,14 +596,14 @@ void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vecto
         // the caching will be performed once
         if (cached_exactness.size() < (size_t) wrapper.getNumLevels()){
             cached_exactness.resize(wrapper.getNumLevels());
-            if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_iphyperbolic)){
+            if (selection_type == type_iptotal){
                 cached_exactness[0] = 0;
                 if (rule == rule_customtabulated){
                     for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = custom.getIExact((int) i - 1) + 1;
                 }else{
                     for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = OneDimensionalMeta::getIExact((int) i - 1, rule) + 1;
                 }
-            }else if ((type == type_qptotal) || (type == type_qpcurved) || (type == type_qphyperbolic)){
+            }else if (selection_type == type_qptotal){
                 cached_exactness[0] = 0;
                 if (rule == rule_customtabulated){
                     for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = custom.getQExact((int) i - 1) + 1;
