@@ -354,7 +354,35 @@ void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{}
 void GridSequence::writeConstructionData(std::ofstream &ofs) const{}
 void GridSequence::readConstructionDataBinary(std::ifstream &ifs){}
 void GridSequence::readConstructionData(std::ifstream &ifs){}
-void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){}
+void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){
+    std::vector<int> proper_weights;
+    std::vector<double> curved_weights;
+    double hyper_denom;
+    TypeDepth contour_type = type;
+    TypeDepth selection_type = OneDimensionalMeta::getSelectionType(type);
+    MultiIndexManipulations::splitWeights(num_dimensions, type, weights, proper_weights, curved_weights, hyper_denom, contour_type);
+
+    std::vector<int> cached_exactness;
+
+    getCandidateConstructionPoints([&](const int *t) -> double{
+        // see the same named function in GridGlobal
+        if (cached_exactness.size() < nodes.size()){
+            cached_exactness.resize(nodes.size());
+            if (selection_type == type_qptotal){
+                cached_exactness[0] = 0;
+                for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = OneDimensionalMeta::getQExact((int) i - 1, rule) + 1;
+            }else{ // level and interpolation polynomial exactness is the same for all sequences
+                for(size_t i=0; i<cached_exactness.size(); i++) cached_exactness[i] = (int) i;
+            }
+        }
+
+        // replace the tensor with the cached_exactness which correspond to interpolation/quadrature exactness or simple level
+        std::vector<int> wt(num_dimensions);
+        std::transform(t, t + num_dimensions, wt.begin(), [&](const int &i)->int{ return cached_exactness[i]; });
+
+        return MultiIndexManipulations::computeMultiIndexWeight(wt, proper_weights, curved_weights, hyper_denom, contour_type);
+    }, x, level_limits);
+}
 void GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
     std::vector<int> weights;
     if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
