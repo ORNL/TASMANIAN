@@ -119,7 +119,7 @@ void GridSequence::read(std::ifstream &ifs){
         }
         if (num_outputs > 0) values.read(ifs);
 
-        prepareSequence();
+        prepareSequence(0);
     }
 }
 void GridSequence::readBinary(std::ifstream &ifs){
@@ -144,7 +144,7 @@ void GridSequence::readBinary(std::ifstream &ifs){
 
         if (num_outputs > 0) values.readBinary(ifs);
 
-        prepareSequence();
+        prepareSequence(0);
     }
 }
 
@@ -189,7 +189,7 @@ void GridSequence::copyGrid(const GridSequence *seq){
 
     if ((!seq->points.empty()) && (!seq->needed.empty())){ // there is a refinement
         needed = seq->needed;
-        prepareSequence();
+        prepareSequence(0);
     }
     surpluses = seq->surpluses;
 }
@@ -206,7 +206,7 @@ void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule
         needed = std::move(pset);
         values.resize(num_outputs, needed.getNumIndexes());
     }
-    prepareSequence();
+    prepareSequence(0);
 }
 
 void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
@@ -231,7 +231,7 @@ void GridSequence::updateGrid(MultiIndexSet &update){
         update.addSortedInsexes(*points.getVector());
         update.diffSets(points, needed);
 
-        if (!needed.empty()) prepareSequence();
+        if (!needed.empty()) prepareSequence(0);
     }
 }
 
@@ -320,7 +320,7 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
         values.addValues(points, needed, vals);
         points.addSortedInsexes(*needed.getVector());
         needed = MultiIndexSet();
-        prepareSequence();
+        prepareSequence(0);
     }
     recomputeSurpluses();
 }
@@ -336,7 +336,7 @@ void GridSequence::mergeRefinement(){
     }else{
         points.addMultiIndexSet(needed);
         needed = MultiIndexSet();
-        prepareSequence();
+        prepareSequence(0);
     }
     surpluses.resize(num_vals);
     surpluses.shrink_to_fit();
@@ -732,7 +732,7 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
 
     }while(needed.empty() || (needed.getNumIndexes() < min_growth));
 
-    prepareSequence();
+    prepareSequence(0);
 }
 void GridSequence::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();
@@ -775,7 +775,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         MultiIndexManipulations::completeSetToLower<int>(kids);
 
         kids.diffSets(points, needed);
-        if (!needed.empty()) prepareSequence();
+        if (!needed.empty()) prepareSequence(0);
     }
 }
 
@@ -798,7 +798,7 @@ const int* GridSequence::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
 }
 
-void GridSequence::prepareSequence(){
+void GridSequence::prepareSequence(int num_external){
     int mp = 0, mn = 0, max_level;
     if (needed.empty()){ // points must be non-empty
         MultiIndexManipulations::getMaxIndex(points, max_levels, mp);
@@ -809,6 +809,7 @@ void GridSequence::prepareSequence(){
         mn = *std::max_element(needed.getVector()->begin(), needed.getVector()->end());
     }
     max_level = (mp > mn) ? mp : mn;
+    if (max_level < num_external) max_level = num_external;
     max_level++;
 
     if ((size_t) max_level > nodes.size()){

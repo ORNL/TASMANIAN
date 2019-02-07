@@ -155,7 +155,8 @@ protected:
 
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 
-    void prepareSequence();
+    //! \brief Cache the nodes and polynomial coefficients, cache is determined by the largest index in \b points and \b needed, or \b num_external (pass zero if not using dy-construction).
+    void prepareSequence(int num_external);
     void cacheBasisIntegrals(std::vector<double> &integ) const;
 
     template<typename T>
