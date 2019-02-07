@@ -104,6 +104,54 @@ struct TensorData{
 };
 
 //! \internal
+//! \brief Takes a list and creates a vector of references in reversed order, needed for I/O so that read can be followed by push_front.
+//! \ingroup TasmanianRefinement
+template <class T>
+void makeReverseReferenceVector(const std::forward_list<T> &list, std::vector<const T*> &refs){
+    size_t num_entries = (size_t) std::distance(list.begin(), list.end());
+    refs.resize(num_entries);
+    auto p = list.begin();
+    auto r = refs.rbegin();
+    while(p != list.end()) *r++ = &*p++;
+}
+
+//! \internal
+//! \brief Writes a NodeData forward_list to a file using the lambdas to write ints and doubles.
+//! \ingroup TasmanianRefinement
+template<class STREAMCONCEPT>
+void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &ofs, std::function<void(int, STREAMCONCEPT &)> write_an_int,
+                       std::function<void(const NodeData *, STREAMCONCEPT &)> write_node){
+    std::vector<const NodeData*> data_refs;
+    makeReverseReferenceVector<NodeData>(data, data_refs);
+
+    write_an_int((int) data_refs.size(), ofs);
+    for(auto d : data_refs) write_node(d, ofs);
+}
+
+//! \internal
+//! \brief Writes a NodeData forward_list to a file using either binary or ascii format.
+//! \ingroup TasmanianRefinement
+template<class STREAMCONCEPT, bool useAscii>
+void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &ofs){
+    if (useAscii){
+        writeNodeDataList<STREAMCONCEPT>(data, ofs, [&](int i, STREAMCONCEPT &f)->void{ f << i << std::endl; },
+                    [&](const NodeData *n, STREAMCONCEPT &f)->void{
+                        for(auto i : n->point) f << i << " ";
+                        f << n->value[0]; // do now allow extra blank spaces
+                        for(size_t i = 1; i < n->value.size(); i++) f << " " << n->value[i];
+                        f << std::endl;
+                    });
+    }else{
+        writeNodeDataList<STREAMCONCEPT>(data, ofs, [&](int i, STREAMCONCEPT &f)->void{ f.write((char*) &i, sizeof(int)); },
+                [&](const NodeData *n, STREAMCONCEPT &f)->void{
+                    f.write((char*) n->point.data(), n->point.size() * sizeof(int));
+                    f.write((char*) n->value.data(), n->value.size() * sizeof(double));
+                });
+    }
+}
+
+
+//! \internal
 //! \brief Helper class that stores data from dynamic construction of a Global grid.
 //! \ingroup TasmanianRefinement
 
@@ -148,16 +196,6 @@ public:
 
     //! \brief Return a completed tensor with parent-tensors included in tensors, returns \b true if such tensor has been found.
     bool ejectCompleteTensor(const MultiIndexSet &current_tensors, std::vector<int> &tensor, MultiIndexSet &points, std::vector<double> &vals);
-
-protected:
-    //! \brief Takes a list and creates a vector of references in reversed order, needed for I/O so that read can be followed by push_front.
-    template <class T> void makeReverseReferenceVector(const std::forward_list<T> &list, std::vector<const T*> &refs) const{
-        size_t num_entries = (size_t) std::distance(list.begin(), list.end());
-        refs.resize(num_entries);
-        auto p = list.begin();
-        auto r = refs.rbegin();
-        while(p != list.end()) *r++ = &*p++;
-    }
 
 private:
     int num_dimensions, num_outputs;

@@ -52,16 +52,7 @@ void DynamicConstructorDataGlobal::write(std::ofstream &ofs) const{
         ofs << std::endl;
     }
 
-    std::vector<const NodeData*> data_refs;
-    makeReverseReferenceVector<NodeData>(data, data_refs);
-
-    ofs << data_refs.size() << std::endl;
-    for(auto d : data_refs){
-        for(auto i : d->point) ofs << i << " ";
-        ofs << d->value[0]; // do now allow extra blank spaces
-        for(size_t i = 1; i < d->value.size(); i++) ofs << " " << d->value[i];
-        ofs << std::endl;
-    }
+    writeNodeDataList<std::ofstream, true>(data, ofs);
 }
 void DynamicConstructorDataGlobal::writeBinary(std::ofstream &ofs) const{
     std::vector<const TensorData*> tensor_refs;
@@ -74,15 +65,7 @@ void DynamicConstructorDataGlobal::writeBinary(std::ofstream &ofs) const{
         ofs.write((char*) d->tensor.data(), num_dimensions * sizeof(int));
     }
 
-    std::vector<const NodeData*> data_refs;
-    makeReverseReferenceVector<NodeData>(data, data_refs);
-
-    num = (int) data_refs.size();
-    ofs.write((char*) &num, sizeof(int));
-    for(auto d : data_refs){
-        ofs.write((char*) d->point.data(), num_dimensions * sizeof(int));
-        ofs.write((char*) d->value.data(), num_outputs * sizeof(double));
-    }
+    writeNodeDataList<std::ofstream, false>(data, ofs);
 }
 int DynamicConstructorDataGlobal::read(std::ifstream &ifs){
     int num, max_tensor = 0;
