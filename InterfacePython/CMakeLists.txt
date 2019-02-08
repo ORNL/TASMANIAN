@@ -11,7 +11,7 @@
 if (NOT DEFINED Tasmanian_python_install_path)
     # calling "make install" invalidates PYTHON_VERSION_MAJOR and PYTHON_VERSION_MINOR
     # thus, we cache the string on first call of cmake and the user could edit this variable
-    set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages" CACHE PATH "install path for the Python module")
+    set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages" CACHE PATH "install path for the Python module (version specific)")
 endif()
 
 
@@ -93,6 +93,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_
 set(Tasmanian_python_example_import "sys.path.append(\"${Tasmanian_python_install_path}\")\n")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 
+set(Tasmanian_PYTHONPATH "${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python/" CACHE PATH "install path for the Python module (version independent)")
 
 ########################################################################
 # Testing
@@ -120,7 +121,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
 
 # Create symlink for backward compatibility
-install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${Tasmanian_python_install_path} ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python )" )
+install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${Tasmanian_python_install_path} ${Tasmanian_PYTHONPATH} )" )
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py"
         DESTINATION "share/Tasmanian/examples/"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
