@@ -98,9 +98,11 @@ set(Tasmanian_TESTS_OMP_NUM_THREADS "-1" CACHE STRING "(integer) specify OMP_NUM
 # allow an external project to specify the export variable name
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     set(Tasmanian_export_name "Tasmanian-export")
+    enable_testing() # Tasmanian is the main project, enable testing
 else()
     set(Tasmanian_export_name "Tasmanian-export" CACHE STRING "Specify the export variable name when merging Tasmanian into an external project")
 endif()
+
 
 ########################################################################
 # Sanity check, xSDK compatibility, and find_package() calls are all
@@ -114,8 +116,6 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/sanity_check_and_xsdk.
 ########################################################################
 # Core project configuration
 ########################################################################
-enable_testing() # call in one place, each subfolder gives additional tests
-
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianConfig.in.hpp"
                "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp")
 
