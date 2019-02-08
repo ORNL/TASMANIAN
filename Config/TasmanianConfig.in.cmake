@@ -29,3 +29,8 @@ if (@Tasmanian_ENABLE_FORTRAN@)
         target_link_libraries(Tasmanian_libfortran90 INTERFACE Tasmanian_libfortran90_shared)
     endif()
 endif()
+
+# export the python path so other projects can configure python scripts
+if (@Tasmanian_ENABLE_PYTHON@)
+    set(Tasmanian_PYTHONPATH "@Tasmanian_PYTHONPATH@")
+endif()

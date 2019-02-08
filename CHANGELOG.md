@@ -1,6 +1,18 @@
 Changelog for version 6.1 (may rename this to 7.0 later)
 --------------
 
+* improved the `add_subdirectory()` capability
+    * can specify the export name used by the Tasmanian install commands
+        * `set(Tasmanian_export_name <name> CACHE INTERNAL "")`
+        * `add_subdirectory(<path-to-Tasmanian-source> <work-folder>)`
+        * `install(EXPORT ${Tasmanian_export_name} ...)`
+    * the export name functionality is required to import the transitive dependencies
+    * in addition, when using `add_subdirectory()`:
+        * will not enable testing, tests are still set if enabled by the master project
+        * will not install package-config, that's master's job now
+        * will not install example CMakeLists.txt or post-install tests
+        * (`make test_install` and examples require Tasmanian package-config)
+
 * updated the DREAM interface:
     * excessive polymorphism is replaced y lambdas
     * sampling is done by a template

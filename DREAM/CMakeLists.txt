@@ -61,7 +61,7 @@ if (Tasmanian_ENABLE_MPI)
 endif()
 
 install(TARGETS "${Tasmanian_libtdr_target_name}"
-        EXPORT  "${CMAKE_PROJECT_NAME}-exports"
+        EXPORT  "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")

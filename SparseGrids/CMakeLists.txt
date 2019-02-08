@@ -63,7 +63,7 @@ if (Tasmanian_ENABLE_OPENMP)
 endif()
 
 install(TARGETS "${Tasmanian_libtsg_target_name}"
-        EXPORT  "${CMAKE_PROJECT_NAME}-exports"
+        EXPORT  "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
@@ -267,7 +267,7 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 install(TARGETS Tasmanian_tasgrid
-        EXPORT "${CMAKE_PROJECT_NAME}-exports"
+        EXPORT "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")

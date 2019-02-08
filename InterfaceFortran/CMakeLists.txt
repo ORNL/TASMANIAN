@@ -31,7 +31,7 @@ if ((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${Tasmanian_shared_or_static}
 endif()
 
 install(TARGETS ${Tasmanian_libfor_target_name}
-        EXPORT "${CMAKE_PROJECT_NAME}-exports"
+        EXPORT "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
