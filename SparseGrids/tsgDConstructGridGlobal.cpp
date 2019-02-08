@@ -78,15 +78,9 @@ int DynamicConstructorDataGlobal::read(std::ifstream &ifs){
         max_tensor = std::max(max_tensor, *std::max_element(td.tensor.begin(), td.tensor.end()));
         tensors.push_front(std::move(td));
     }
-    ifs >> num; // get the number of data points
-    for(int i=0; i<num; i++){
-        NodeData nd;
-        nd.point.resize(num_dimensions);
-        for(auto &t : nd.point) ifs >> t;
-        nd.value.resize(num_outputs);
-        for(auto &t : nd.value) ifs >> t;
-        data.push_front(std::move(nd));
-    }
+
+    readNodeDataList<std::ifstream, true>(num_dimensions, num_outputs, ifs, data);
+
     return max_tensor;
 }
 int DynamicConstructorDataGlobal::readBinary(std::ifstream &ifs){
@@ -100,15 +94,9 @@ int DynamicConstructorDataGlobal::readBinary(std::ifstream &ifs){
         max_tensor = std::max(max_tensor, *std::max_element(td.tensor.begin(), td.tensor.end()));
         tensors.push_front(std::move(td));
     }
-    ifs.read((char*) &num, sizeof(int)); // get the number of data points
-    for(int i=0; i<num; i++){
-        NodeData nd;
-        nd.point.resize(num_dimensions);
-        ifs.read((char*) nd.point.data(), num_dimensions * sizeof(int));
-        nd.value.resize(num_outputs);
-        ifs.read((char*) nd.value.data(), num_outputs * sizeof(double));
-        data.push_front(std::move(nd));
-    }
+
+    readNodeDataList<std::ifstream, false>(num_dimensions, num_outputs, ifs, data);
+
     return max_tensor;
 }
 

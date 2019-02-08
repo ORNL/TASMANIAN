@@ -150,6 +150,35 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &o
     }
 }
 
+//! \internal
+//! \brief Reads a NodeData forward_list from a file using either binary or ascii format.
+//! \ingroup TasmanianRefinement
+template<class STREAMCONCEPT, bool useAscii>
+void readNodeDataList(int num_dimensions, int num_outputs, STREAMCONCEPT &ifs, std::forward_list<NodeData> &data){
+    int num_nodes;
+    if (useAscii){
+        ifs >> num_nodes; // get the number of data points
+        for(int i=0; i<num_nodes; i++){
+            NodeData nd;
+            nd.point.resize(num_dimensions);
+            for(auto &t : nd.point) ifs >> t;
+            nd.value.resize(num_outputs);
+            for(auto &t : nd.value) ifs >> t;
+            data.push_front(std::move(nd));
+        }
+    }else{
+        ifs.read((char*) &num_nodes, sizeof(int)); // get the number of data points
+        for(int i=0; i<num_nodes; i++){
+            NodeData nd;
+            nd.point.resize(num_dimensions);
+            ifs.read((char*) nd.point.data(), num_dimensions * sizeof(int));
+            nd.value.resize(num_outputs);
+            ifs.read((char*) nd.value.data(), num_outputs * sizeof(double));
+            data.push_front(std::move(nd));
+        }
+    }
+}
+
 
 //! \internal
 //! \brief Helper class that stores data from dynamic construction of a Global grid.
