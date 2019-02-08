@@ -114,10 +114,13 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/sanity_check_and_xsdk.
 
 
 ########################################################################
-# Core project configuration
+# Core project configuration, passes all options to CXX
 ########################################################################
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianConfig.in.hpp"
                "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
+        DESTINATION include
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 
 ########################################################################
@@ -191,10 +194,6 @@ if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
             PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 endif()
 
-# configured header to be included with the headers from the sub-dirs
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
-        DESTINATION include
-        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 # configure environment shell script that can be sourced to set path and lib path
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianENVsetup.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianENVsetup.sh" @ONLY)
