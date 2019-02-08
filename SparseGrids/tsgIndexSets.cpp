@@ -243,6 +243,14 @@ void MultiIndexSet::diffSets(const MultiIndexSet &substract, MultiIndexSet &resu
     }
 }
 
+void MultiIndexSet::removeIndex(const std::vector<int> &p){
+    int slot = getSlot(p);
+    if (slot > -1){
+        indexes.erase(indexes.begin() + ((size_t) slot) * num_dimensions, indexes.begin() + ((size_t) slot) * num_dimensions + num_dimensions);
+        cache_num_indexes--;
+    }
+}
+
 StorageSet::StorageSet() : num_outputs(0), num_values(0){}
 StorageSet::~StorageSet(){}
 

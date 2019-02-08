@@ -140,8 +140,37 @@ namespace OneDimensionalMeta{
     //! \brief Map the enumerate to an integer, used in binary I/O and Fortran (compiler and version independent).
     int getIORuleInt(TypeOneDRule rule);
 
+    //! \brief Identifies the general contour, linear \b type_level, log-corrected \b type_curved, or hyperbolic \b type_hyperbolic.
+
+    //! The types of index selection are divided into contour type and selection type.
+    //! All types are combination between the two, i.e., type_iptotal uses interpolation polynomial selection and linear contour.
+    //! This function reduces the type to one of the three level contours, which simplifies the if-statements in many places.
+    //! Note: the tensor rules are a special case and are not considered in this function.
+    inline TypeDepth getControurType(TypeDepth type){
+        if ((type == type_level) || (type == type_iptotal)){
+            return type_level;
+        }else if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+            return type_curved;
+        }else{
+            return type_hyperbolic;
+        }
+    }
+
+    //! \brief Identifies the selection type, level \b type_level, interpolation \b type_iptotal, or quadrature \b type_qptotal.
+
+    //! Similar to \b getControurType(), return what selection is considered, simple levels or interpolation/quadrature polynomial space.
+    inline TypeDepth getSelectionType(TypeDepth type){
+        if ((type == type_level) || (type == type_curved) || (type == type_hyperbolic)){
+            return type_level;
+        }else if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_iphyperbolic)){
+            return type_iptotal;
+        }else{
+            return type_qptotal;
+        }
+    }
+
     //! \brief Return \b True if the multi-index selection type has log-correction term (need to use floating point indexing).
-    bool isTypeCurved(TypeDepth type);
+    inline bool isTypeCurved(TypeDepth type){ return (getControurType(type) == type_curved); }
 
     //! \brief Map the string to the enumerate multi-index selection strategy, used in command line and Python.
     TypeDepth getIOTypeString(const char *name);

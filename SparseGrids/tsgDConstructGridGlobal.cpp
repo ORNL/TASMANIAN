@@ -52,16 +52,7 @@ void DynamicConstructorDataGlobal::write(std::ofstream &ofs) const{
         ofs << std::endl;
     }
 
-    std::vector<const NodeData*> data_refs;
-    makeReverseReferenceVector<NodeData>(data, data_refs);
-
-    ofs << data_refs.size() << std::endl;
-    for(auto d : data_refs){
-        for(auto i : d->point) ofs << i << " ";
-        ofs << d->value[0]; // do now allow extra blank spaces
-        for(size_t i = 1; i < d->value.size(); i++) ofs << " " << d->value[i];
-        ofs << std::endl;
-    }
+    writeNodeDataList<std::ofstream, true>(data, ofs);
 }
 void DynamicConstructorDataGlobal::writeBinary(std::ofstream &ofs) const{
     std::vector<const TensorData*> tensor_refs;
@@ -74,15 +65,7 @@ void DynamicConstructorDataGlobal::writeBinary(std::ofstream &ofs) const{
         ofs.write((char*) d->tensor.data(), num_dimensions * sizeof(int));
     }
 
-    std::vector<const NodeData*> data_refs;
-    makeReverseReferenceVector<NodeData>(data, data_refs);
-
-    num = (int) data_refs.size();
-    ofs.write((char*) &num, sizeof(int));
-    for(auto d : data_refs){
-        ofs.write((char*) d->point.data(), num_dimensions * sizeof(int));
-        ofs.write((char*) d->value.data(), num_outputs * sizeof(double));
-    }
+    writeNodeDataList<std::ofstream, false>(data, ofs);
 }
 int DynamicConstructorDataGlobal::read(std::ifstream &ifs){
     int num, max_tensor = 0;
@@ -95,15 +78,9 @@ int DynamicConstructorDataGlobal::read(std::ifstream &ifs){
         max_tensor = std::max(max_tensor, *std::max_element(td.tensor.begin(), td.tensor.end()));
         tensors.push_front(std::move(td));
     }
-    ifs >> num; // get the number of data points
-    for(int i=0; i<num; i++){
-        NodeData nd;
-        nd.point.resize(num_dimensions);
-        for(auto &t : nd.point) ifs >> t;
-        nd.value.resize(num_outputs);
-        for(auto &t : nd.value) ifs >> t;
-        data.push_front(std::move(nd));
-    }
+
+    readNodeDataList<std::ifstream, true>(num_dimensions, num_outputs, ifs, data);
+
     return max_tensor;
 }
 int DynamicConstructorDataGlobal::readBinary(std::ifstream &ifs){
@@ -117,15 +94,9 @@ int DynamicConstructorDataGlobal::readBinary(std::ifstream &ifs){
         max_tensor = std::max(max_tensor, *std::max_element(td.tensor.begin(), td.tensor.end()));
         tensors.push_front(std::move(td));
     }
-    ifs.read((char*) &num, sizeof(int)); // get the number of data points
-    for(int i=0; i<num; i++){
-        NodeData nd;
-        nd.point.resize(num_dimensions);
-        ifs.read((char*) nd.point.data(), num_dimensions * sizeof(int));
-        nd.value.resize(num_outputs);
-        ifs.read((char*) nd.value.data(), num_outputs * sizeof(double));
-        data.push_front(std::move(nd));
-    }
+
+    readNodeDataList<std::ifstream, false>(num_dimensions, num_outputs, ifs, data);
+
     return max_tensor;
 }
 
@@ -240,16 +211,7 @@ bool DynamicConstructorDataGlobal::ejectCompleteTensor(const MultiIndexSet &curr
     auto t = tensors.begin();
     while(t != tensors.end()){
         if (t->loaded.empty()){ // empty loaded means all have been loaded
-            std::vector<int> test = t->tensor;
-            bool parents_exist = true;
-            for(auto &pt : test){
-                if (pt > 0){
-                    pt--;
-                    if (current_tensors.empty() || current_tensors.missing(test)) parents_exist = false;
-                    pt++;
-                }
-            }
-            if (parents_exist){
+            if (MultiIndexManipulations::isLowerComplete(t->tensor, current_tensors)){
                 tensor = t->tensor;
                 points = t->points;
                 vals.resize(points.getNumIndexes() *  num_outputs);

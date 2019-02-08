@@ -89,6 +89,14 @@ public:
     virtual void clearRefinement() = 0;
     virtual void mergeRefinement() = 0;
 
+    virtual void beginConstruction(){}
+    virtual void writeConstructionDataBinary(std::ofstream&) const{}
+    virtual void writeConstructionData(std::ofstream&) const{}
+    virtual void readConstructionDataBinary(std::ifstream&){}
+    virtual void readConstructionData(std::ifstream&){}
+    virtual void loadConstructedPoint(const double[], const std::vector<double> &){}
+    virtual void finishConstruction(){}
+
     virtual void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const = 0; // add acceleration here
     virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) = 0;
 

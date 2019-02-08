@@ -32,6 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_NESTED_HPP
 
 #include <cstdlib>
+#include <memory>
 
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
@@ -41,10 +42,23 @@
 #include "tsgCacheLagrange.hpp"
 #include "tsgOneDimensionalWrapper.hpp"
 #include "tsgGridCore.hpp"
+#include "tsgDConstructGridGlobal.hpp"
 
 #include "tsgAcceleratedDataStructures.hpp"
 
 namespace TasGrid{
+
+//! \internal
+//! \brief Holds the pair of point index and model value, the struct is used in a \b std::forward_list.
+//! \ingroup TasmanianRefinement
+
+//! Sequence grids can only ever be constructed from points and basis functions that form a lower multi-index set.
+//! However, in order to facilitate parallelism, significantly large number of candidate points should be considered at any time.
+//! A large initial grid will allow that, but the nodes may be added to the grid in an order that does not preserve lower completeness.
+struct SequenceConstructData{
+    std::forward_list<NodeData> data;
+    MultiIndexSet initial_points;
+};
 
 class GridSequence : public BaseCanonicalGrid{
 public:
@@ -116,6 +130,17 @@ public:
     void clearRefinement();
     void mergeRefinement();
 
+    void beginConstruction();
+    void writeConstructionDataBinary(std::ofstream &ofs) const;
+    void writeConstructionData(std::ofstream &ofs) const;
+    void readConstructionDataBinary(std::ifstream &ifs);
+    void readConstructionData(std::ifstream &ifs);
+    void getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits);
+    void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits);
+    void getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits);
+    void loadConstructedPoint(const double x[], const std::vector<double> &y);
+    void finishConstruction();
+
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
     void getPolynomialSpace(bool interpolation, int &n, int* &poly) const;
@@ -130,7 +155,8 @@ protected:
 
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 
-    void prepareSequence();
+    //! \brief Cache the nodes and polynomial coefficients, cache is determined by the largest index in \b points and \b needed, or \b num_external (pass zero if not using dy-construction).
+    void prepareSequence(int num_external);
     void cacheBasisIntegrals(std::vector<double> &integ) const;
 
     template<typename T>
@@ -151,6 +177,7 @@ protected:
         }
     }
 
+    void expandGrid(const std::vector<int> &point, const std::vector<double> &values, const std::vector<double> &surplus);
     void recomputeSurpluses();
     void applyTransformationTransposed(double weights[]) const;
 
@@ -198,6 +225,8 @@ private:
     StorageSet values;
 
     std::vector<int> max_levels;
+
+    std::unique_ptr<SequenceConstructData> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable LinearAlgebraEngineGPU cuda_engine;

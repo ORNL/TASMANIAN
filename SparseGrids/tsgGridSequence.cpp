@@ -119,7 +119,7 @@ void GridSequence::read(std::ifstream &ifs){
         }
         if (num_outputs > 0) values.read(ifs);
 
-        prepareSequence();
+        prepareSequence(0);
     }
 }
 void GridSequence::readBinary(std::ifstream &ifs){
@@ -144,7 +144,7 @@ void GridSequence::readBinary(std::ifstream &ifs){
 
         if (num_outputs > 0) values.readBinary(ifs);
 
-        prepareSequence();
+        prepareSequence(0);
     }
 }
 
@@ -189,7 +189,7 @@ void GridSequence::copyGrid(const GridSequence *seq){
 
     if ((!seq->points.empty()) && (!seq->needed.empty())){ // there is a refinement
         needed = seq->needed;
-        prepareSequence();
+        prepareSequence(0);
     }
     surpluses = seq->surpluses;
 }
@@ -206,7 +206,7 @@ void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule
         needed = std::move(pset);
         values.resize(num_outputs, needed.getNumIndexes());
     }
-    prepareSequence();
+    prepareSequence(0);
 }
 
 void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
@@ -231,7 +231,7 @@ void GridSequence::updateGrid(MultiIndexSet &update){
         update.addSortedInsexes(*points.getVector());
         update.diffSets(points, needed);
 
-        if (!needed.empty()) prepareSequence();
+        if (!needed.empty()) prepareSequence(0);
     }
 }
 
@@ -320,7 +320,7 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
         values.addValues(points, needed, vals);
         points.addSortedInsexes(*needed.getVector());
         needed = MultiIndexSet();
-        prepareSequence();
+        prepareSequence(0);
     }
     recomputeSurpluses();
 }
@@ -336,11 +336,172 @@ void GridSequence::mergeRefinement(){
     }else{
         points.addMultiIndexSet(needed);
         needed = MultiIndexSet();
-        prepareSequence();
+        prepareSequence(0);
     }
     surpluses.resize(num_vals);
     surpluses.shrink_to_fit();
     std::fill(surpluses.begin(), surpluses.end(), 0.0);
+}
+
+void GridSequence::beginConstruction(){
+    dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
+    if (points.empty()){
+        dynamic_values->initial_points = std::move(needed);
+        needed = MultiIndexSet();
+    }
+}
+void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{
+    dynamic_values->initial_points.writeBinary(ofs);
+    writeNodeDataList<std::ofstream, false>(dynamic_values->data, ofs);
+}
+void GridSequence::writeConstructionData(std::ofstream &ofs) const{
+    dynamic_values->initial_points.write(ofs);
+    writeNodeDataList<std::ofstream, true>(dynamic_values->data, ofs);
+}
+void GridSequence::readConstructionDataBinary(std::ifstream &ifs){
+    dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
+    dynamic_values->initial_points.readBinary(ifs);
+    readNodeDataList<std::ifstream, false>(num_dimensions, num_outputs, ifs, dynamic_values->data);
+}
+void GridSequence::readConstructionData(std::ifstream &ifs){
+    dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
+    dynamic_values->initial_points.read(ifs);
+    readNodeDataList<std::ifstream, true>(num_dimensions, num_outputs, ifs, dynamic_values->data);
+}
+void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){
+    std::vector<int> proper_weights;
+    std::vector<double> curved_weights;
+    double hyper_denom;
+    TypeDepth contour_type = type;
+    TypeDepth selection_type = OneDimensionalMeta::getSelectionType(type);
+    MultiIndexManipulations::splitWeights(num_dimensions, type, weights, proper_weights, curved_weights, hyper_denom, contour_type);
+
+    std::vector<int> cached_exactness;
+
+    getCandidateConstructionPoints([&](const int *t) -> double{
+        // see the same named function in GridGlobal
+        if (cached_exactness.size() < nodes.size()){
+            cached_exactness.resize(nodes.size());
+            if (selection_type == type_qptotal){
+                cached_exactness[0] = 0;
+                for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = OneDimensionalMeta::getQExact((int) i - 1, rule) + 1;
+            }else{ // level and interpolation polynomial exactness is the same for all sequences
+                for(size_t i=0; i<cached_exactness.size(); i++) cached_exactness[i] = (int) i;
+            }
+        }
+
+        // replace the tensor with the cached_exactness which correspond to interpolation/quadrature exactness or simple level
+        std::vector<int> wt(num_dimensions);
+        std::transform(t, t + num_dimensions, wt.begin(), [&](const int &i)->int{ return cached_exactness[i]; });
+
+        return MultiIndexManipulations::computeMultiIndexWeight(wt, proper_weights, curved_weights, hyper_denom, contour_type);
+    }, x, level_limits);
+}
+void GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+    std::vector<int> weights;
+    if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
+        int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
+        if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
+            estimateAnisotropicCoefficients(type, output, weights);
+    }
+    getCandidateConstructionPoints(type, weights, x, level_limits);
+}
+void GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){
+    MultiIndexSet new_points;
+    if (level_limits.empty()){ // get the new candidate points that will ensure lower completeness and are not included in the initial set
+        MultiIndexManipulations::addExclusiveChildren<false>(points, dynamic_values->initial_points, level_limits, new_points);
+    }else{
+        MultiIndexManipulations::addExclusiveChildren<true>(points, dynamic_values->initial_points, level_limits, new_points);
+    }
+    prepareSequence(std::max(new_points.getMaxIndex(), dynamic_values->initial_points.getMaxIndex()));
+
+    std::forward_list<NodeData> weighted_points; // use the values as the weight
+    for(int i=0; i<dynamic_values->initial_points.getNumIndexes(); i++){
+        std::vector<int> p(dynamic_values->initial_points.getIndex(i), dynamic_values->initial_points.getIndex(i) + num_dimensions); // write the point to vector
+        weighted_points.push_front({p, {-1.0 / ((double) std::accumulate(p.begin(), p.end(), 0))}});
+    }
+    for(int i=0; i<new_points.getNumIndexes(); i++){
+        std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // write the point to vector
+        weighted_points.push_front({p, {getTensorWeight(p.data())}});
+    }
+
+    weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
+
+    x.resize(dynamic_values->initial_points.getVector()->size() + new_points.getVector()->size());
+    auto t = weighted_points.begin();
+    auto ix = x.begin();
+    while(t != weighted_points.end()){
+        std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return nodes[i]; });
+        std::advance(ix, num_dimensions);
+        t++;
+    }
+}
+void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){
+    std::vector<int> p(num_dimensions);
+    for(int j=0; j<num_dimensions; j++){
+        size_t i = 0;
+        while((i < nodes.size()) && (fabs(nodes[i] - x[j]) > TSG_NUM_TOL)) i++; // convert canonical node to index
+        if (i < nodes.size()){
+            p[j] = (int) i;
+        }else{
+            throw std::runtime_error("ERROR: GridSequence::loadConstructedPoint() x is not a vector returned by getCandidateConstructionPoints()");
+        }
+    }
+
+    if (MultiIndexManipulations::isLowerComplete(p, points)){
+        std::vector<double> approx_value(num_outputs), surplus(num_outputs);;
+        if (!points.empty()){
+            evaluate(x, approx_value.data());
+            std::transform(approx_value.begin(), approx_value.end(), y.begin(), surplus.begin(), [&](double e, double v)->double{ return v - e; });
+        }
+        expandGrid(p, y, surplus);
+        dynamic_values->initial_points.removeIndex(p);
+
+        auto d = dynamic_values->data.before_begin();
+        auto t = dynamic_values->data.begin();
+        while(t != dynamic_values->data.end()){
+            if (MultiIndexManipulations::isLowerComplete(t->point, points)){ // remove another point
+                std::vector<double> xnode(num_dimensions);
+                std::transform(t->point.begin(), t->point.end(), xnode.begin(), [&](int i)->double{ return nodes[i]; });
+                evaluate(xnode.data(), approx_value.data());
+                std::transform(approx_value.begin(), approx_value.end(), t->value.begin(), surplus.begin(), [&](double e, double v)->double{ return v - e; });
+                expandGrid(t->point, t->value, surplus);
+                dynamic_values->data.erase_after(d);
+                d = dynamic_values->data.before_begin(); // restart the search
+                t = dynamic_values->data.begin();
+            }else{
+                d++; t++;
+            }
+        }
+    }else{
+        dynamic_values->data.push_front({p, y});
+        dynamic_values->initial_points.removeIndex(p);
+    }
+}
+void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
+    if (points.empty()){ // only one point
+        points.setNumDimensions(num_dimensions);
+        auto p = point; // create new so it can be moved
+        points.setIndexes(p);
+        values.resize(num_outputs, 1);
+        auto v = value; // create new to allow copy move
+        values.setValues(v);
+        surpluses = value;
+    }else{ // merge with existing points
+        auto p = point;
+        MultiIndexSet temp(num_dimensions);
+        temp.setIndexes(p);
+        values.addValues(points, temp, value.data());
+
+        points.addSortedInsexes(point);
+        size_t ioffset = ((size_t) points.getSlot(point)) * ((size_t) num_outputs);
+
+        surpluses.insert(surpluses.begin() + ioffset, surplus.begin(), surplus.end());
+    }
+    prepareSequence(0); // update the directional max_levels, will not shrink the number of nodes
+}
+void GridSequence::finishConstruction(){
+    dynamic_values = std::unique_ptr<SequenceConstructData>();
 }
 
 void GridSequence::evaluate(const double x[], double y[]) const{
@@ -677,7 +838,7 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
 
     }while(needed.empty() || (needed.getNumIndexes() < min_growth));
 
-    prepareSequence();
+    prepareSequence(0);
 }
 void GridSequence::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();
@@ -720,7 +881,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         MultiIndexManipulations::completeSetToLower<int>(kids);
 
         kids.diffSets(points, needed);
-        if (!needed.empty()) prepareSequence();
+        if (!needed.empty()) prepareSequence(0);
     }
 }
 
@@ -743,17 +904,22 @@ const int* GridSequence::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
 }
 
-void GridSequence::prepareSequence(){
+void GridSequence::prepareSequence(int num_external){
     int mp = 0, mn = 0, max_level;
     if (needed.empty()){ // points must be non-empty
-        MultiIndexManipulations::getMaxIndex(points, max_levels, mp);
+        if (points.empty()){
+            max_levels.resize(num_dimensions, 0);
+        }else{
+            MultiIndexManipulations::getMaxIndex(points, max_levels, mp);
+        }
     }else if (points.empty()){ // only needed, no points (right after creation)
         MultiIndexManipulations::getMaxIndex(needed, max_levels, mn);
     }else{ // both points and needed are set
         MultiIndexManipulations::getMaxIndex(points, max_levels, mp);
-        mn = *std::max_element(needed.getVector()->begin(), needed.getVector()->end());
+        mn = needed.getMaxIndex();
     }
     max_level = (mp > mn) ? mp : mn;
+    if (max_level < num_external) max_level = num_external;
     max_level++;
 
     if ((size_t) max_level > nodes.size()){
