@@ -350,10 +350,24 @@ void GridSequence::beginConstruction(){
         needed = MultiIndexSet();
     }
 }
-void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{}
-void GridSequence::writeConstructionData(std::ofstream &ofs) const{}
-void GridSequence::readConstructionDataBinary(std::ifstream &ifs){}
-void GridSequence::readConstructionData(std::ifstream &ifs){}
+void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{
+    dynamic_values->initial_points.writeBinary(ofs);
+    writeNodeDataList<std::ofstream, false>(dynamic_values->data, ofs);
+}
+void GridSequence::writeConstructionData(std::ofstream &ofs) const{
+    dynamic_values->initial_points.write(ofs);
+    writeNodeDataList<std::ofstream, true>(dynamic_values->data, ofs);
+}
+void GridSequence::readConstructionDataBinary(std::ifstream &ifs){
+    dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
+    dynamic_values->initial_points.readBinary(ifs);
+    readNodeDataList<std::ifstream, false>(num_dimensions, num_outputs, ifs, dynamic_values->data);
+}
+void GridSequence::readConstructionData(std::ifstream &ifs){
+    dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
+    dynamic_values->initial_points.read(ifs);
+    readNodeDataList<std::ifstream, true>(num_dimensions, num_outputs, ifs, dynamic_values->data);
+}
 void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){
     std::vector<int> proper_weights;
     std::vector<double> curved_weights;
@@ -399,7 +413,7 @@ void GridSequence::getCandidateConstructionPoints(std::function<double(const int
     }else{
         MultiIndexManipulations::addExclusiveChildren<true>(points, dynamic_values->initial_points, level_limits, new_points);
     }
-    prepareSequence(new_points.getMaxIndex());
+    prepareSequence(std::max(new_points.getMaxIndex(), dynamic_values->initial_points.getMaxIndex()));
 
     std::forward_list<NodeData> weighted_points; // use the values as the weight
     for(int i=0; i<dynamic_values->initial_points.getNumIndexes(); i++){
@@ -893,12 +907,16 @@ const int* GridSequence::getPointIndexes() const{
 void GridSequence::prepareSequence(int num_external){
     int mp = 0, mn = 0, max_level;
     if (needed.empty()){ // points must be non-empty
-        MultiIndexManipulations::getMaxIndex(points, max_levels, mp);
+        if (points.empty()){
+            max_levels.resize(num_dimensions, 0);
+        }else{
+            MultiIndexManipulations::getMaxIndex(points, max_levels, mp);
+        }
     }else if (points.empty()){ // only needed, no points (right after creation)
         MultiIndexManipulations::getMaxIndex(needed, max_levels, mn);
     }else{ // both points and needed are set
         MultiIndexManipulations::getMaxIndex(points, max_levels, mp);
-        mn = *std::max_element(needed.getVector()->begin(), needed.getVector()->end());
+        mn = needed.getMaxIndex();
     }
     max_level = (mp > mn) ? mp : mn;
     if (max_level < num_external) max_level = num_external;
