@@ -84,6 +84,22 @@ void writeFlag(bool flag, std::ostream &os){
 }
 
 //! \internal
+//! \brief Read a flag, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
+//! \ingroup TasmanianIO
+template<bool useAscii>
+bool readFlag(std::istream &os){
+    if (useAscii){
+        int flag;
+        os >> flag;
+        return (flag == 1);
+    }else{
+        char cflag;
+        os.read(&cflag, sizeof(char));
+        return (cflag == 'y');
+    }
+}
+
+//! \internal
 //! \brief Write the vector to the stream.
 //! \ingroup TasmanianIO
 template<bool useAscii, IOPad pad, typename VecType>
@@ -104,12 +120,38 @@ void writeVector(const std::vector<VecType> &x, std::ostream &os){
 }
 
 //! \internal
+//! \brief Read the vector from the stream.
+//! \ingroup TasmanianIO
+template<bool useAscii, typename VecType>
+void readVector(std::istream &os, std::vector<VecType> &x){
+    if (useAscii){
+        for(auto &i : x) os >> i;
+    }else{
+        os.read((char*) x.data(), x.size() * sizeof(VecType));
+    }
+}
+
+//! \internal
 //! \brief Write a bunch of numbers with the same type.
 //! \ingroup TasmanianIO
 template<bool useAscii, IOPad pad, typename... Vals>
 void writeNumbers(std::ostream &os, Vals... vals){
     std::vector<typename std::tuple_element<0, std::tuple<Vals...>>::type> values = {vals...};
     writeVector<useAscii, pad>(values, os);
+}
+
+//! \internal
+//! \brief Read a single number, used to read ints (and potentially cast to size_t) or read a double.
+//! \ingroup TasmanianIO
+template<bool useAscii, typename Val>
+Val readNumber(std::istream &os){
+    Val v;
+    if (useAscii){
+        os >> v;
+    }else{
+        os.read((char*) &v, sizeof(Val));
+    }
+    return v;
 }
 
 }
