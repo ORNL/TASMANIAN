@@ -31,6 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 #define __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 
+#include "tsgIOHelpers.hpp"
 #include "tsgEnumerates.hpp"
 #include <vector>
 #include <functional>
@@ -216,6 +217,17 @@ public:
     //! \brief Default destructor
     ~MultiIndexSet();
 
+    //! \brief Write the set to ASCII or binary stream, use with std::ofstream and std::ifstream.
+
+    //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
+    //! followed by all the entries of the array on a single line separated by a space, or dump of a single write command.
+    template<bool useAscii> void write(std::ostream &os) const;
+
+    //! \brief Read the from the stream, must know whether to use ASCII or binary format.
+
+    //! Uses the same format as \b write<bool>
+    template<bool useAscii> void read(std::istream &os);
+
     //! \brief Write to file **ofs** in ASCII format
     //!
     //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
@@ -306,6 +318,17 @@ public:
     StorageSet();
     //! \brief Default destructor
     ~StorageSet();
+
+    //! \brief Write the set to ASCII or binary stream, use with std::ofstream and std::ifstream.
+
+    //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
+    //! followed by all the entries of the array on a single line separated by a space, or dump of a single write command.
+    template<bool useAscii> void write(std::ostream &os) const;
+
+    //! \brief Read the from the stream, must know whether to use ASCII or binary format.
+
+    //! Uses the same format as \b write<bool>
+    template<bool useAscii> void read(std::istream &os);
 
     //! \brief Write to file **ofs** in ASCII format
     //!
