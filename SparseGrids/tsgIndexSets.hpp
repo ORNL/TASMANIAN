@@ -228,28 +228,6 @@ public:
     //! Uses the same format as \b write<bool>
     template<bool useAscii> void read(std::istream &os);
 
-    //! \brief Write to file **ofs** in ASCII format
-    //!
-    //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
-    //! followed by all the entries of the array on a single line separated by a space.
-    void write(std::ofstream &ofs) const;
-
-    //! \brief Read from file **ofs** in ASCII format
-    //!
-    //! See **write()** for the ASCII file format.
-    void read(std::ifstream &ifs);
-
-    //! \brief Write to file **ofs** in binary format
-    //!
-    //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
-    //! followed by all the entries of the array written by a single `write()` command.
-    void writeBinary(std::ofstream &ofs) const;
-
-    //! \brief Write to file **ofs** in binary format
-    //!
-    //! See **writeBinary()** for the binary file format.
-    void readBinary(std::ifstream &ifs);
-
     //! \brief Returns **true** if there are no multi-indexes in the set, **false** otherwise
     inline bool empty() const{ return indexes.empty(); }
 
@@ -329,28 +307,6 @@ public:
 
     //! Uses the same format as \b write<bool>
     template<bool useAscii> void read(std::istream &os);
-
-    //! \brief Write to file **ofs** in ASCII format
-    //!
-    //! The format consists of two `int` values corresponding to the number of outputs and number of values,
-    //! followed by all the entries of the array on a single line separated by a space.
-    void write(std::ofstream &ofs) const;
-
-    //! \brief Read from file **ofs** in ASCII format
-    //!
-    //! See **write()** for the ASCII file format.
-    void read(std::ifstream &ifs);
-
-    //! \brief Write to file **ofs** in binary format
-    //!
-    //! The format consists of two `int` values corresponding to the number of outputs and number of values,
-    //! followed by all the entries of the array written in a single `write()` command.
-    void writeBinary(std::ofstream &ofs) const;
-
-    //! \brief Write to file **ofs** in binary format
-    //!
-    //! See **writeBinary()** for the binary file format.
-    void readBinary(std::ifstream &ifs);
 
     //! \brief Clear the existing values and assigns new dimensions, does not allocate memory for the new values
     void resize(int cnum_outputs, int cnum_values);
