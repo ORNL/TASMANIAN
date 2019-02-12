@@ -51,12 +51,6 @@ public:
     template<bool useAscii> void write(std::ostream &os) const;
     template<bool useAscii> void read(std::istream &is);
 
-    void write(std::ofstream &ofs) const;
-    void read(std::ifstream &ifs);
-
-    void writeBinary(std::ofstream &ofs) const;
-    void readBinary(std::ifstream &ifs);
-
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
     void copyGrid(const GridWavelet *wav);
     void setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder); // for FDS purposes
