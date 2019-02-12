@@ -285,21 +285,21 @@ void GridSequence::beginConstruction(){
     }
 }
 void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{
-    dynamic_values->initial_points.writeBinary(ofs);
+    dynamic_values->initial_points.write<false>(ofs);
     writeNodeDataList<std::ofstream, false>(dynamic_values->data, ofs);
 }
 void GridSequence::writeConstructionData(std::ofstream &ofs) const{
-    dynamic_values->initial_points.write(ofs);
+    dynamic_values->initial_points.write<true>(ofs);
     writeNodeDataList<std::ofstream, true>(dynamic_values->data, ofs);
 }
 void GridSequence::readConstructionDataBinary(std::ifstream &ifs){
     dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
-    dynamic_values->initial_points.readBinary(ifs);
+    dynamic_values->initial_points.read<false>(ifs);
     readNodeDataList<std::ifstream, false>(num_dimensions, num_outputs, ifs, dynamic_values->data);
 }
 void GridSequence::readConstructionData(std::ifstream &ifs){
     dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
-    dynamic_values->initial_points.read(ifs);
+    dynamic_values->initial_points.read<true>(ifs);
     readNodeDataList<std::ifstream, true>(num_dimensions, num_outputs, ifs, dynamic_values->data);
 }
 void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){
