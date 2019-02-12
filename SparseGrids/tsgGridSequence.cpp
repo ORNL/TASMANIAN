@@ -42,6 +42,46 @@ namespace TasGrid{
 GridSequence::GridSequence() : num_dimensions(0), num_outputs(0){}
 GridSequence::~GridSequence(){}
 
+template<bool useAscii> void GridSequence::write(std::ostream &os) const{
+    if (useAscii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<useAscii, IO::pad_rspace>(os, num_dimensions, num_outputs);
+    IO::writeRule<useAscii>(rule, os);
+
+    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<useAscii>(os);
+    IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+    if (!needed.empty()) needed.write<useAscii>(os);
+
+    IO::writeFlag<useAscii, IO::pad_auto>(!surpluses.empty(), os);
+    if (!surpluses.empty()) IO::writeVector<useAscii, IO::pad_line>(surpluses, os);
+
+    if (num_outputs > 0) values.write<useAscii>(os);
+}
+
+template<bool useAscii> void GridSequence::read(std::ifstream &is){
+    reset();
+    num_dimensions = IO::readNumber<useAscii, int>(is);
+    num_outputs = IO::readNumber<useAscii, int>(is);
+    rule = IO::readRule<useAscii>(is);
+
+    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
+    if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+
+    if (IO::readFlag<useAscii>(is)){
+        surpluses.resize(((size_t) num_outputs) * ((size_t) points.getNumIndexes()));
+        IO::readVector<useAscii>(is, surpluses);
+    }
+
+    if (num_outputs > 0) values.read<useAscii>(is);
+
+    prepareSequence(0);
+}
+
+template void GridSequence::write<true>(std::ostream &) const;
+template void GridSequence::write<false>(std::ostream &) const;
+template void GridSequence::read<true>(std::ifstream &);
+template void GridSequence::read<false>(std::ifstream &);
+
 void GridSequence::write(std::ofstream &ofs) const{
     using std::endl;
 
