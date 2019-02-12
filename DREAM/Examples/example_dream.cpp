@@ -27,8 +27,9 @@ using namespace std;
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 void dream_example_01();
 void dream_example_02();
+void dream_example_03();
 
-int main(int, const char**){
+int main(int argc, const char**){
 /*
  * The purpose of this file is to demonstrate the proper way to call
  * functions from the TASMANIAN DREAM Library.
@@ -48,6 +49,10 @@ int main(int, const char**){
 
     dream_example_01();
     dream_example_02();
+
+    if (argc > 1) return 0; // fast testing used to check if the library linked correctly
+
+    dream_example_03();
 
 /*
 {
