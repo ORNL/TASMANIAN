@@ -43,31 +43,90 @@ CustomTabulated::~CustomTabulated(){}
 
 void CustomTabulated::reset(){ num_levels = 0; }
 
-// I/O subroutines
-void CustomTabulated::write(std::ofstream &ofs) const{
-    ofs << "description: " << description.c_str() << std::endl;
-    ofs << "levels: " << num_levels << std::endl;
-    for(int i=0; i<num_levels; i++){
-        ofs << num_nodes[i] << " " << precision[i] << std::endl;
-    }
-    ofs << std::scientific; ofs.precision(17);
-    for(int l=0; l<num_levels; l++){
-        auto x = nodes[l].begin();
-        for(auto w : weights[l]) ofs << w << " " << *x++ << std::endl;
+template<bool useAscii> void CustomTabulated::write(std::ostream &ofs) const{
+    if (useAscii){ // format is messy here
+        ofs << "description: " << description.c_str() << std::endl;
+        ofs << "levels: " << num_levels << std::endl;
+        for(int i=0; i<num_levels; i++){
+            ofs << num_nodes[i] << " " << precision[i] << std::endl;
+        }
+        ofs << std::scientific; ofs.precision(17);
+        for(int l=0; l<num_levels; l++){
+            auto x = nodes[l].begin();
+            for(auto w : weights[l]) ofs << w << " " << *x++ << std::endl;
+        }
+    }else{
+        int num_description = (int) description.size();
+        ofs.write((char*) &num_description, sizeof(int));
+        ofs.write(description.c_str(), num_description * sizeof(char));
+        ofs.write((char*) &num_levels, sizeof(int));
+        ofs.write((char*) num_nodes.data(), num_levels * sizeof(int));
+        ofs.write((char*) precision.data(), num_levels * sizeof(int));
+        for(int l=0; l<num_levels; l++){
+            ofs.write((char*) weights[l].data(), weights[l].size() * sizeof(double));
+            ofs.write((char*) nodes[l].data(), nodes[l].size() * sizeof(double));
+        }
     }
 }
-void CustomTabulated::writeBinary(std::ofstream &ofs) const{
-    int num_description = (int) description.size();
-    ofs.write((char*) &num_description, sizeof(int));
-    ofs.write(description.c_str(), num_description * sizeof(char));
-    ofs.write((char*) &num_levels, sizeof(int));
-    ofs.write((char*) num_nodes.data(), num_levels * sizeof(int));
-    ofs.write((char*) precision.data(), num_levels * sizeof(int));
-    for(int l=0; l<num_levels; l++){
-        ofs.write((char*) weights[l].data(), weights[l].size() * sizeof(double));
-        ofs.write((char*) nodes[l].data(), nodes[l].size() * sizeof(double));
+
+template<bool useAscii> void CustomTabulated::read(std::istream &is){
+    reset();
+    if (useAscii){ // messy format chosen for better human readability, hard to template and generalize
+        std::string T;
+        char dummy;
+        is >> T;
+        if (!(T.compare("description:") == 0)){ throw std::invalid_argument("ERROR: wrong file format of custom tables on line 1"); }
+        is.get(dummy);
+        description = std::string();
+        getline(is, description);
+
+        is >> T;
+        if (!(T.compare("levels:") == 0)){ throw std::invalid_argument("ERROR: wrong file format of custom tables on line 2"); }
+        is >> num_levels;
+
+        num_nodes.resize(num_levels);
+        precision.resize(num_levels);
+        for(int i=0; i<num_levels; i++)
+            is >> num_nodes[i] >> precision[i];
+
+        nodes.resize(num_levels);
+        weights.resize(num_levels);
+        for(int l=0; l<num_levels; l++){
+            nodes[l].resize(num_nodes[l]);
+            weights[l].resize(num_nodes[l]);
+            auto x = nodes[l].begin();
+            for(auto &w : weights[l]) is >> w >> *x++;
+        }
+    }else{
+        int num_description = 0;
+        is.read((char*) &num_description, sizeof(int));
+        std::vector<char> desc((size_t) num_description+1);
+        is.read(desc.data(), num_description);
+        desc[num_description] = '\0';
+        description = desc.data();
+
+        is.read((char*) &num_levels, sizeof(int));
+        num_nodes.resize(num_levels);
+        precision.resize(num_levels);
+        is.read((char*) num_nodes.data(), num_levels * sizeof(int));
+        is.read((char*) precision.data(), num_levels * sizeof(int));
+
+        nodes.resize(num_levels);
+        weights.resize(num_levels);
+        for(int l=0; l<num_levels; l++){
+            nodes[l].resize(num_nodes[l]);
+            weights[l].resize(num_nodes[l]);
+            is.read((char*) weights[l].data(), num_nodes[l] * sizeof(double));
+            is.read((char*) nodes[l].data(), num_nodes[l] * sizeof(double));
+        }
     }
 }
+
+template void CustomTabulated::write<true>(std::ostream &) const;
+template void CustomTabulated::write<false>(std::ostream &) const;
+template void CustomTabulated::read<true>(std::istream &is);
+template void CustomTabulated::read<false>(std::istream &is);
+
 void CustomTabulated::read(const char* filename){
     std::ifstream ifs; ifs.open(filename);
     if (!ifs){
@@ -75,63 +134,8 @@ void CustomTabulated::read(const char* filename){
         message += filename;
         throw std::invalid_argument(message);
     }
-    read(ifs);
+    read<true>(ifs);
     ifs.close();
-}
-void CustomTabulated::read(std::ifstream &ifs){
-    reset();
-
-    std::string T;
-    char dummy;
-    ifs >> T;
-    if (!(T.compare("description:") == 0)){ ifs.close(); throw std::invalid_argument("ERROR: wrong file format of custom tables on line 1"); }
-    ifs.get(dummy);
-    description = std::string();
-    getline(ifs, description);
-
-    ifs >> T;
-    if (!(T.compare("levels:") == 0)){ ifs.close(); throw std::invalid_argument("ERROR: wrong file format of custom tables on line 2"); }
-    ifs >> num_levels;
-
-    num_nodes.resize(num_levels);
-    precision.resize(num_levels);
-    for(int i=0; i<num_levels; i++){
-        ifs >> num_nodes[i] >> precision[i];
-    }
-
-    nodes.resize(num_levels);
-    weights.resize(num_levels);
-    for(int l=0; l<num_levels; l++){
-        nodes[l].resize(num_nodes[l]);
-        weights[l].resize(num_nodes[l]);
-        auto x = nodes[l].begin();
-        for(auto &w : weights[l]) ifs >> w >> *x++;
-    }
-}
-void CustomTabulated::readBinary(std::ifstream &ifs){
-    reset();
-
-    int num_description = 0;
-    ifs.read((char*) &num_description, sizeof(int));
-    std::vector<char> desc((size_t) num_description+1);
-    ifs.read(desc.data(), num_description);
-    desc[num_description] = '\0';
-    description = desc.data();
-
-    ifs.read((char*) &num_levels, sizeof(int));
-    num_nodes.resize(num_levels);
-    precision.resize(num_levels);
-    ifs.read((char*) num_nodes.data(), num_levels * sizeof(int));
-    ifs.read((char*) precision.data(), num_levels * sizeof(int));
-
-    nodes.resize(num_levels);
-    weights.resize(num_levels);
-    for(int l=0; l<num_levels; l++){
-        nodes[l].resize(num_nodes[l]);
-        weights[l].resize(num_nodes[l]);
-        ifs.read((char*) weights[l].data(), num_nodes[l] * sizeof(double));
-        ifs.read((char*) nodes[l].data(), num_nodes[l] * sizeof(double));
-    }
 }
 
 int CustomTabulated::getNumLevels() const{ return num_levels; }

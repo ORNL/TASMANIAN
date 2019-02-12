@@ -39,33 +39,28 @@ MultiIndexSet::MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
 MultiIndexSet::MultiIndexSet(int cnum_dimensions)  : num_dimensions(cnum_dimensions), cache_num_indexes(0){}
 MultiIndexSet::~MultiIndexSet(){}
 
-void MultiIndexSet::write(std::ofstream &ofs) const{
-    ofs << num_dimensions << " " << cache_num_indexes;
-    for(auto i : indexes) ofs << " " << i;
-    ofs << std::endl;
-}
-void MultiIndexSet::read(std::ifstream &ifs){
-    indexes = std::vector<int>();
-    ifs >> num_dimensions >> cache_num_indexes;
-    indexes.resize(num_dimensions * ((size_t) cache_num_indexes));
-    for(auto &i : indexes) ifs >> i;
+template<bool useAscii>
+void MultiIndexSet::write(std::ostream &os) const{
+    if (cache_num_indexes > 0){
+        IO::writeNumbers<useAscii, IO::pad_rspace>(os, (int) num_dimensions, cache_num_indexes);
+        IO::writeVector<useAscii, IO::pad_line>(indexes, os);
+    }else{
+        IO::writeNumbers<useAscii, IO::pad_line>(os, (int) num_dimensions, cache_num_indexes);
+    }
 }
 
-void MultiIndexSet::writeBinary(std::ofstream &ofs) const{
-    int sizes[2];
-    sizes[0] = (int) num_dimensions;
-    sizes[1] = cache_num_indexes;
-    ofs.write((char*) sizes, 2*sizeof(int));
-    ofs.write((char*) indexes.data(), indexes.size() * sizeof(int));
-}
-void MultiIndexSet::readBinary(std::ifstream &ifs){
-    int sizes[2];
-    ifs.read((char*) sizes, 2*sizeof(int));
-    num_dimensions = (size_t) sizes[0];
-    cache_num_indexes = sizes[1];
+template<bool useAscii>
+void MultiIndexSet::read(std::istream &is){
+    num_dimensions = (size_t) IO::readNumber<useAscii, int>(is);
+    cache_num_indexes = IO::readNumber<useAscii, int>(is);
     indexes.resize(num_dimensions * ((size_t) cache_num_indexes));
-    ifs.read((char*) indexes.data(), indexes.size() * sizeof(int));
+    IO::readVector<useAscii>(is, indexes);
 }
+
+template void MultiIndexSet::write<true>(std::ostream &) const; // instantiate for faster build
+template void MultiIndexSet::write<false>(std::ostream &) const;
+template void MultiIndexSet::read<true>(std::istream &);
+template void MultiIndexSet::read<false>(std::istream &);
 
 void MultiIndexSet::setNumDimensions(int new_dimensions){
     indexes = std::vector<int>();
@@ -254,51 +249,27 @@ void MultiIndexSet::removeIndex(const std::vector<int> &p){
 StorageSet::StorageSet() : num_outputs(0), num_values(0){}
 StorageSet::~StorageSet(){}
 
-void StorageSet::write(std::ofstream &ofs) const{
-    ofs << num_outputs << " " << num_values;
-    if (values.size() != 0){
-        ofs << " 1";
-        ofs << std::scientific; ofs.precision(17);
-        for(auto v : values) ofs << " " << v;
-    }else{
-        ofs << " 0";
-    }
-    ofs << std::endl;
+template<bool useAscii>
+void StorageSet::write(std::ostream &os) const{
+    IO::writeNumbers<useAscii, IO::pad_rspace>(os, (int) num_outputs, (int) num_values);
+    IO::writeFlag<useAscii, IO::pad_auto>((values.size() != 0), os);
+    if (values.size() != 0)
+        IO::writeVector<useAscii, IO::pad_line>(values, os);
 }
-void StorageSet::read(std::ifstream &ifs){
-    values = std::vector<double>(); // empty values if the file doesn't contain vals
-    int has_vals;
-    ifs >> num_outputs >> num_values >> has_vals;
-    if (has_vals == 1){
+template<bool useAscii>
+void StorageSet::read(std::istream &is){
+    num_outputs = (size_t) IO::readNumber<useAscii, int>(is);
+    num_values = (size_t) IO::readNumber<useAscii, int>(is);
+    if (IO::readFlag<useAscii>(is)){
         values.resize(num_outputs * num_values);
-        for(auto &v : values) ifs >> v;
+        IO::readVector<useAscii>(is, values);
     }
 }
-void StorageSet::writeBinary(std::ofstream &ofs) const{
-    int num_out_vals[2];
-    num_out_vals[0] = (int) num_outputs;
-    num_out_vals[1] = (int) num_values;
-    ofs.write((char*) num_out_vals, 2*sizeof(int));
-    if (values.size() != 0){
-        char flag = 'y'; ofs.write((char*) &flag, sizeof(char));
-        ofs.write((char*) values.data(), values.size() * sizeof(double));
-    }else{
-        char flag = 'n'; ofs.write((char*) &flag, sizeof(char));
-    }
-}
-void StorageSet::readBinary(std::ifstream &ifs){
-    int num_out_vals[2];
-    ifs.read((char*) num_out_vals, 2*sizeof(int));
-    num_outputs = (size_t) num_out_vals[0];
-    num_values = (size_t) num_out_vals[1];
-    char flag; ifs.read((char*) &flag, sizeof(char));
-    if (flag == 'y'){
-        values.resize(num_outputs * num_values);
-        ifs.read((char*) values.data(), values.size() * sizeof(double));
-    }else{
-        values.resize(0); // empty values if the file doesn't contain vals
-    }
-}
+
+template void StorageSet::write<true>(std::ostream &) const;
+template void StorageSet::write<false>(std::ostream &) const;
+template void StorageSet::read<true>(std::istream &);
+template void StorageSet::read<false>(std::istream &);
 
 void StorageSet::resize(int cnum_outputs, int cnum_values){
     values = std::vector<double>();

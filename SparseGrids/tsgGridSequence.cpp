@@ -42,111 +42,45 @@ namespace TasGrid{
 GridSequence::GridSequence() : num_dimensions(0), num_outputs(0){}
 GridSequence::~GridSequence(){}
 
-void GridSequence::write(std::ofstream &ofs) const{
-    using std::endl;
+template<bool useAscii> void GridSequence::write(std::ostream &os) const{
+    if (useAscii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<useAscii, IO::pad_rspace>(os, num_dimensions, num_outputs);
+    IO::writeRule<useAscii>(rule, os);
 
-    ofs << std::scientific; ofs.precision(17);
-    ofs << num_dimensions << " " << num_outputs << endl;
-    if (num_dimensions > 0){
-        ofs << OneDimensionalMeta::getIORuleString(rule) << endl;
-        if (points.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            points.write(ofs);
-        }
-        if (needed.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            needed.write(ofs);
-        }
-        if (surpluses.empty()){
-            ofs << "0";
-        }else{
-            ofs << "1";
-            for(auto s : surpluses) ofs << " " << s;
-        }
-        ofs << endl;
-        if (num_outputs > 0) values.write(ofs);
-    }
-}
-void GridSequence::writeBinary(std::ofstream &ofs) const{
-    int num_dim_out[2];
-    num_dim_out[0] = num_dimensions;
-    num_dim_out[1] = num_outputs;
-    ofs.write((char*) num_dim_out, 2*sizeof(int));
-    if (num_dimensions > 0){
-        num_dim_out[0] = OneDimensionalMeta::getIORuleInt(rule);
-        ofs.write((char*) num_dim_out, sizeof(int));
+    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<useAscii>(os);
+    IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+    if (!needed.empty()) needed.write<useAscii>(os);
 
-        char flag;
-        if (points.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            points.writeBinary(ofs);
-        }
-        if (needed.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            needed.writeBinary(ofs);
-        }
-        if (surpluses.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) surpluses.data(), surpluses.size() * sizeof(double));
-        }
-        if (num_outputs > 0) values.writeBinary(ofs);
-    }
+    IO::writeFlag<useAscii, IO::pad_auto>(!surpluses.empty(), os);
+    if (!surpluses.empty()) IO::writeVector<useAscii, IO::pad_line>(surpluses, os);
+
+    if (num_outputs > 0) values.write<useAscii>(os);
 }
-void GridSequence::read(std::ifstream &ifs){
+
+template<bool useAscii> void GridSequence::read(std::ifstream &is){
     reset();
-    ifs >> num_dimensions >> num_outputs;
-    if (num_dimensions > 0){
-        int flag;
-        std::string T;
-        ifs >> T;
-        rule = OneDimensionalMeta::getIORuleString(T.c_str());
-        ifs >> flag;  if (flag == 1) points.read(ifs);
-        ifs >> flag;  if (flag == 1) needed.read(ifs);
-        ifs >> flag;
-        if (flag == 1){
-            surpluses.resize(((size_t) num_outputs) * ((size_t) points.getNumIndexes()));
-            for(auto &s : surpluses) ifs >> s;
-        }
-        if (num_outputs > 0) values.read(ifs);
+    num_dimensions = IO::readNumber<useAscii, int>(is);
+    num_outputs = IO::readNumber<useAscii, int>(is);
+    rule = IO::readRule<useAscii>(is);
 
-        prepareSequence(0);
+    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
+    if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+
+    if (IO::readFlag<useAscii>(is)){
+        surpluses.resize(((size_t) num_outputs) * ((size_t) points.getNumIndexes()));
+        IO::readVector<useAscii>(is, surpluses);
     }
+
+    if (num_outputs > 0) values.read<useAscii>(is);
+
+    prepareSequence(0);
 }
-void GridSequence::readBinary(std::ifstream &ifs){
-    reset();
-    int num_dim_out[2];
-    ifs.read((char*) num_dim_out, 2*sizeof(int));
-    num_dimensions = num_dim_out[0];
-    num_outputs = num_dim_out[1];
-    if (num_dimensions > 0){
-        ifs.read((char*) num_dim_out, sizeof(int));
-        rule = OneDimensionalMeta::getIORuleInt(num_dim_out[0]);
 
-        char flag;
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') points.readBinary(ifs);
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') needed.readBinary(ifs);
-
-        ifs.read((char*) &flag, sizeof(char));
-        if (flag == 'y'){
-            surpluses.resize(((size_t) num_outputs) * ((size_t) points.getNumIndexes()));
-            ifs.read((char*) surpluses.data(), surpluses.size() * sizeof(double));
-        }
-
-        if (num_outputs > 0) values.readBinary(ifs);
-
-        prepareSequence(0);
-    }
-}
+template void GridSequence::write<true>(std::ostream &) const;
+template void GridSequence::write<false>(std::ostream &) const;
+template void GridSequence::read<true>(std::ifstream &);
+template void GridSequence::read<false>(std::ifstream &);
 
 void GridSequence::reset(){
     clearAccelerationData();
@@ -351,21 +285,21 @@ void GridSequence::beginConstruction(){
     }
 }
 void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{
-    dynamic_values->initial_points.writeBinary(ofs);
+    dynamic_values->initial_points.write<false>(ofs);
     writeNodeDataList<std::ofstream, false>(dynamic_values->data, ofs);
 }
 void GridSequence::writeConstructionData(std::ofstream &ofs) const{
-    dynamic_values->initial_points.write(ofs);
+    dynamic_values->initial_points.write<true>(ofs);
     writeNodeDataList<std::ofstream, true>(dynamic_values->data, ofs);
 }
 void GridSequence::readConstructionDataBinary(std::ifstream &ifs){
     dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
-    dynamic_values->initial_points.readBinary(ifs);
+    dynamic_values->initial_points.read<false>(ifs);
     readNodeDataList<std::ifstream, false>(num_dimensions, num_outputs, ifs, dynamic_values->data);
 }
 void GridSequence::readConstructionData(std::ifstream &ifs){
     dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
-    dynamic_values->initial_points.read(ifs);
+    dynamic_values->initial_points.read<true>(ifs);
     readNodeDataList<std::ifstream, true>(num_dimensions, num_outputs, ifs, dynamic_values->data);
 }
 void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){

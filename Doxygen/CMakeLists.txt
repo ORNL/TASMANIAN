@@ -34,6 +34,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  Doxygen/Installation.md
                  DREAM/TasmanianDREAM.hpp
                  SparseGrids/tsgEnumerates.hpp
+                 SparseGrids/tsgIOHelpers.hpp
                  SparseGrids/tsgIndexManipulator.hpp
                  SparseGrids/tsgIndexSets.hpp
                  SparseGrids/tsgCoreOneDimensional.hpp

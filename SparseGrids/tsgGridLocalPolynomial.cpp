@@ -69,190 +69,82 @@ void GridLocalPolynomial::makeRule(TypeOneDRule crule){
     rule->setMaxOrder(order);
 }
 
-void GridLocalPolynomial::write(std::ofstream &ofs) const{
-    using std::endl;
-
-    ofs << std::scientific; ofs.precision(17);
-    ofs << num_dimensions << " " << num_outputs << " " << order << " " << top_level << endl;
-    if (num_dimensions > 0){
-        ofs << OneDimensionalMeta::getIORuleString(rule->getType()) << endl;
-        if (points.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            points.write(ofs);
-        }
-        if (surpluses.getNumStrips() == 0){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            for(auto s: *surpluses.getVector()) ofs << " " << s;
-            ofs << endl;
-        }
-        if (needed.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            needed.write(ofs);
-        }
-        if (parents.getNumStrips() == 0){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1";
-            size_t n = parents.getTotalEntries();
-            const int *p = parents.getCStrip(0);
-            for(size_t i=0; i<n; i++){ ofs << " " << p[i]; } ofs << endl;
-        }
-        int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
-        ofs << roots.size(); for(auto const &r : roots){ ofs << " " << r; } ofs << endl;
-        ofs << pntr[0]; for(int i=1; i<=num_points; i++){  ofs << " " << pntr[i];  }  ofs << endl;
-        ofs << indx[0]; for(int i=1; i<pntr[num_points]; i++){  ofs << " " << indx[i];  }  ofs << endl;
-        if (num_outputs > 0) values.write(ofs);
+template<bool useAscii> void GridLocalPolynomial::write(std::ostream &os) const{
+    if (useAscii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<useAscii, IO::pad_line>(os, num_dimensions, num_outputs, order, top_level);
+    IO::writeRule<useAscii>(rule->getType(), os);
+    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<useAscii>(os);
+    if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
+        IO::writeFlag<useAscii, IO::pad_auto>((surpluses.getNumStrips() != 0), os);
+        if (surpluses.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*surpluses.getVector(), os);
+        IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+        if (!needed.empty()) needed.write<useAscii>(os);
+    }else{
+        IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+        if (!needed.empty()) needed.write<useAscii>(os);
+        IO::writeFlag<useAscii, IO::pad_auto>((surpluses.getNumStrips() != 0), os);
+        if (surpluses.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*surpluses.getVector(), os);
     }
+    IO::writeFlag<useAscii, IO::pad_auto>((parents.getNumStrips() != 0), os);
+    if (parents.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*parents.getVector(), os);
+
+    IO::writeNumbers<useAscii, IO::pad_rspace>(os, (int) roots.size());
+    IO::writeVector<useAscii, IO::pad_line>(roots, os);
+    IO::writeVector<useAscii, IO::pad_line>(pntr, os);
+    IO::writeVector<useAscii, IO::pad_line>(indx, os);
+
+    if (num_outputs > 0) values.write<useAscii>(os);
 }
-void GridLocalPolynomial::writeBinary(std::ofstream &ofs) const{
-    int dims[4];
-    dims[0] = num_dimensions;
-    dims[1] = num_outputs;
-    dims[2] = order;
-    dims[3] = top_level;
-    ofs.write((char*) dims, 4 * sizeof(int));
-    if (num_dimensions > 0){
-        dims[0] = OneDimensionalMeta::getIORuleInt(rule->getType());
-        ofs.write((char*) dims, sizeof(int));
 
-        char flag;
-        if (points.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            points.writeBinary(ofs);
-        }
-        if (needed.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            needed.writeBinary(ofs);
-        }
-        if (surpluses.getNumStrips() == 0){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) surpluses.getCStrip(0), surpluses.getTotalEntries() * sizeof(double));
-        }
-        if (parents.getTotalEntries() == 0){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) parents.getCStrip(0), parents.getTotalEntries() * sizeof(int));
-        }
-
-        int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
-        int num_roots = (int) roots.size();
-        ofs.write((char*) &num_roots, sizeof(int));
-        ofs.write((char*) roots.data(), num_roots * sizeof(int));
-        ofs.write((char*) pntr.data(), (num_points+1) * sizeof(int));
-        ofs.write((char*) indx.data(), pntr[num_points] * sizeof(int));
-
-        if (num_outputs > 0) values.writeBinary(ofs);
-    }
-}
-void GridLocalPolynomial::read(std::ifstream &ifs){
+template<bool useAscii> void GridLocalPolynomial::read(std::istream &is){
     reset();
-    ifs >> num_dimensions >> num_outputs >> order >> top_level;
-    if (num_dimensions > 0){
-        int flag;
-        std::string T;
-        ifs >> T;
-        TypeOneDRule crule = OneDimensionalMeta::getIORuleString(T.c_str());
-        makeRule(crule);
+    num_dimensions = IO::readNumber<useAscii, int>(is);
+    num_outputs = IO::readNumber<useAscii, int>(is);
+    order = IO::readNumber<useAscii, int>(is);
+    top_level = IO::readNumber<useAscii, int>(is);
+    TypeOneDRule crule = IO::readRule<useAscii>(is);
+    makeRule(crule);
 
-        ifs >> flag;
-        if (flag == 1) points.read(ifs);
-        ifs >> flag;
-        if (flag == 1){
+    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
+    if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
+        if (IO::readFlag<useAscii>(is)){
             surpluses.resize(num_outputs, points.getNumIndexes());
-            for(auto &s: *surpluses.getVector()) ifs >> s;
+            IO::readVector<useAscii>(is, *surpluses.getVector());
         }
-        ifs >> flag;
-        if (flag == 1) needed.read(ifs);
-        ifs >> flag;
-        if (flag == 1){
-            parents.resize(rule->getMaxNumParents() * num_dimensions, points.getNumIndexes());
-            size_t n = parents.getTotalEntries();
-            int *p = parents.getStrip(0);
-            for(size_t i=0; i<n; i++){ ifs >> p[i]; }
-        }
-
-        int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
-
-        int num_roots;
-        ifs >> num_roots;
-        roots.resize(num_roots);
-        for(int i=0; i<num_roots; i++) ifs >> roots[i];
-        pntr.resize(num_points + 1);
-        for(int i=0; i<=num_points; i++) ifs >> pntr[i];
-        if (pntr[num_points] > 0){
-            indx.resize(pntr[num_points]);
-            for(int i=0; i<pntr[num_points]; i++) ifs >> indx[i];
-        }else{
-            indx.resize(1);  ifs >> indx[0]; // there is a special case when the grid has only one point without any children
-        }
-
-        if (num_outputs > 0) values.read(ifs);
-    }
-}
-void GridLocalPolynomial::readBinary(std::ifstream &ifs){
-    reset();
-    int dims[4];
-    ifs.read((char*) dims, 4 * sizeof(int));
-    num_dimensions = dims[0];
-    num_outputs = dims[1];
-    order = dims[2];
-    top_level = dims[3];
-    if (num_dimensions > 0){
-        ifs.read((char*) dims, sizeof(int));
-        TypeOneDRule crule = OneDimensionalMeta::getIORuleInt(dims[0]);
-        makeRule(crule);
-
-        char flag;
-        ifs.read((char*) &flag, sizeof(char));
-        if (flag == 'y') points.readBinary(ifs);
-        ifs.read((char*) &flag, sizeof(char));
-        if (flag == 'y') needed.readBinary(ifs);
-
-        ifs.read((char*) &flag, sizeof(char));
-        if (flag == 'y'){
+        if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+    }else{
+        if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+        if (IO::readFlag<useAscii>(is)){
             surpluses.resize(num_outputs, points.getNumIndexes());
-            ifs.read((char*) surpluses.getStrip(0), surpluses.getTotalEntries() * sizeof(double));
+            IO::readVector<useAscii>(is, *surpluses.getVector());
         }
-
-        ifs.read((char*) &flag, sizeof(char));
-        if (flag == 'y'){
-            parents.resize(rule->getMaxNumParents() * num_dimensions, points.getNumIndexes());
-            ifs.read((char*) parents.getStrip(0), parents.getTotalEntries() * sizeof(int));
-        }
-
-        int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
-        int num_roots;
-        ifs.read((char*) &num_roots, sizeof(int));
-        roots.resize(num_roots);
-        ifs.read((char*) roots.data(), num_roots * sizeof(int));
-
-        pntr.resize(num_points + 1);
-        ifs.read((char*) pntr.data(), (num_points+1) * sizeof(int));
-
-        if (pntr[num_points] > 0){
-            indx.resize(pntr[num_points]);
-            ifs.read((char*) indx.data(), pntr[num_points] * sizeof(int));
-        }else{
-            indx.resize(1);
-            ifs.read((char*) indx.data(), sizeof(int));
-        }
-
-        if (num_outputs > 0) values.readBinary(ifs);
     }
+    if (IO::readFlag<useAscii>(is)){
+        parents.resize(rule->getMaxNumParents() * num_dimensions, points.getNumIndexes());
+        IO::readVector<useAscii>(is, *parents.getVector());
+    }
+
+    size_t num_points = (size_t) ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes());
+    roots.resize((size_t) IO::readNumber<useAscii, int>(is));
+    IO::readVector<useAscii>(is, roots);
+    pntr.resize(num_points + 1);
+    IO::readVector<useAscii>(is, pntr);
+    if (pntr[num_points] > 0){
+        indx.resize((size_t) pntr[num_points]);
+        IO::readVector<useAscii>(is, indx);
+    }else{
+        indx.resize(1);
+        indx[0] = IO::readNumber<useAscii, int>(is); // there is a special case when the grid has only one point without any children
+    }
+
+    if (num_outputs > 0) values.read<useAscii>(is);
 }
+
+template void GridLocalPolynomial::write<true>(std::ostream &) const;
+template void GridLocalPolynomial::write<false>(std::ostream &) const;
+template void GridLocalPolynomial::read<true>(std::istream &);
+template void GridLocalPolynomial::read<false>(std::istream &);
 
 void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits){
     reset();

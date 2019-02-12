@@ -39,194 +39,66 @@ namespace TasGrid{
 GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), max_levels(0){}
 GridFourier::~GridFourier(){}
 
-void GridFourier::write(std::ofstream &ofs) const{
-    using std::endl;
+template<bool useAscii> void GridFourier::write(std::ostream &os) const{
+    if (useAscii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<useAscii, IO::pad_line>(os, num_dimensions, num_outputs);
 
-    ofs << std::scientific; ofs.precision(17);
-    ofs << num_dimensions << " " << num_outputs << endl;
-    if (num_dimensions > 0){
-        tensors.write(ofs);
-        active_tensors.write(ofs);
-        ofs << active_w[0];
-        for(int i=1; i<active_tensors.getNumIndexes(); i++){
-            ofs << " " << active_w[i];
-        }
-        ofs << endl;
-        if (points.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            points.write(ofs);
-        }
-        if (needed.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            needed.write(ofs);
-        }
-        ofs << max_levels[0];
-        for(int j=1; j<num_dimensions; j++){
-            ofs << " " << max_levels[j];
-        }
-        ofs << endl;
-        if (num_outputs > 0){
-            values.write(ofs);
-            if (fourier_coefs.getNumStrips() > 0){
-                ofs << "1";
-                for(auto c : *fourier_coefs.getVector()) ofs << " " << c;
-            }else{
-                ofs << "0";
-            }
-        }
-        ofs << endl;
-        ofs << "0"; // indicate no refinement, will implement in the future
+    tensors.write<useAscii>(os);
+    active_tensors.write<useAscii>(os);
+    if (!active_w.empty())
+        IO::writeVector<useAscii, IO::pad_line>(active_w, os);
 
-        /* not needed right now; will need later for refinement
-        if (updated_tensors != 0){
-            ofs << "1" << endl;
-            updated_tensors->write(ofs);
-            updated_active_tensors->write(ofs);
-            ofs << updated_active_w[0];
-            for(int i=1; i<updated_active_tensors->getNumIndexes(); i++){
-                ofs << " " << updated_active_w[i];
-            }
-        }else{
-            ofs << "0";
-        }
-        */
+    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<useAscii>(os);
+    IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+    if (!needed.empty()) needed.write<useAscii>(os);
 
-        ofs << endl;
+    IO::writeVector<useAscii, IO::pad_line>(max_levels, os);
+
+    if (num_outputs > 0){
+        values.write<useAscii>(os);
+        IO::writeFlag<useAscii, IO::pad_auto>((fourier_coefs.getNumStrips() != 0), os);
+        if (fourier_coefs.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*fourier_coefs.getVector(), os);
     }
-}
 
-void GridFourier::read(std::ifstream &ifs){
+    IO::writeFlag<useAscii, IO::pad_line>(false, os);
+}
+template<bool useAscii> void GridFourier::read(std::istream &is){
     reset();
-    ifs >> num_dimensions >> num_outputs;
-    if (num_dimensions > 0){
-        int flag;
+    num_dimensions = IO::readNumber<useAscii, int>(is);
+    num_outputs = IO::readNumber<useAscii, int>(is);
 
-        tensors.read(ifs);
-        active_tensors.read(ifs);
+    tensors.read<useAscii>(is);
+    active_tensors.read<useAscii>(is);
+    active_w.resize((size_t) active_tensors.getNumIndexes());
+    IO::readVector<useAscii>(is, active_w);
 
-        active_w.resize(active_tensors.getNumIndexes());
-        for(auto &w : active_w) ifs >> w;
+    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
+    if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
 
-        ifs >> flag; if (flag == 1) points.read(ifs);
-        ifs >> flag; if (flag == 1) needed.read(ifs);
+    max_levels.resize((size_t) num_dimensions);
+    IO::readVector<useAscii>(is, max_levels);
 
-        max_levels.resize(num_dimensions);
-        for(auto &m : max_levels) ifs >> m;
-
-        MultiIndexSet &work = (points.empty()) ? needed : points;
-
-        if (num_outputs > 0){
-            values.read(ifs);
-            ifs >> flag;
-            if (flag == 1){
-                fourier_coefs.resize(num_outputs, 2 * work.getNumIndexes());
-                for(auto &c : *fourier_coefs.getVector()) ifs >> c;
-            }
+    if (num_outputs > 0){
+        values.read<useAscii>(is);
+        if (IO::readFlag<useAscii>(is)){
+            fourier_coefs.resize(num_outputs, 2 * points.getNumIndexes());
+            IO::readVector<useAscii>(is, *fourier_coefs.getVector());
         }
-        ifs >> flag;
-
-        int oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
-
-        wrapper.load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
-
-        int dummy;
-        MultiIndexManipulations::getMaxIndex(work, max_power, dummy);
     }
+
+    if (IO::readFlag<useAscii>(is)) throw std::runtime_error("ERROR: refinement not implemented for Fourier grids.");
+
+    wrapper.load(CustomTabulated(), *std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
+
+    int dummy;
+    MultiIndexManipulations::getMaxIndex(((points.empty()) ? needed : points), max_power, dummy);
 }
 
-void GridFourier::writeBinary(std::ofstream &ofs) const{
-    int num_dim_out[2];
-    num_dim_out[0] = num_dimensions;
-    num_dim_out[1] = num_outputs;
-    ofs.write((char*) num_dim_out, 2*sizeof(int));
-    if (num_dimensions > 0){
-        tensors.writeBinary(ofs);
-        active_tensors.writeBinary(ofs);
-        ofs.write((char*) active_w.data(), active_tensors.getNumIndexes() * sizeof(int));
-        char flag;
-        if (points.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            points.writeBinary(ofs);
-        }
-        if (needed.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            needed.writeBinary(ofs);
-        }
-        ofs.write((char*) max_levels.data(), num_dimensions * sizeof(int));
-
-        if (num_outputs > 0){
-            values.writeBinary(ofs);
-            if (fourier_coefs.getNumStrips() > 0){
-                flag = 'y'; ofs.write(&flag, sizeof(char));
-                ofs.write((char*) fourier_coefs.getCStrip(0), 2 * ((size_t) getNumPoints()) * ((size_t) num_outputs) * sizeof(double));
-            }else{
-                flag = 'n'; ofs.write(&flag, sizeof(char));
-            }
-        }
-        flag = 'n'; ofs.write(&flag, sizeof(char)); // no refinement, will implement in the future
-
-        /* don't need this right now; will need later when refinement is added
-        if (updated_tensors != 0){
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            updated_tensors->writeBinary(ofs);
-            updated_active_tensors->writeBinary(ofs);
-            ofs.write((char*) updated_active_w, updated_active_tensors->getNumIndexes() * sizeof(int));
-        }else{
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }
-        */
-    }
-}
-
-void GridFourier::readBinary(std::ifstream &ifs){
-    reset();
-    int num_dim_out[2];
-    ifs.read((char*) num_dim_out, 2*sizeof(int));
-    num_dimensions = num_dim_out[0];
-    num_outputs = num_dim_out[1];
-
-    if (num_dimensions > 0){
-        tensors.readBinary(ifs);
-        active_tensors.readBinary(ifs);
-
-        active_w.resize(active_tensors.getNumIndexes());
-        ifs.read((char*) active_w.data(), active_w.size() * sizeof(int));
-
-        char flag;
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') points.readBinary(ifs);
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') needed.readBinary(ifs);
-
-        MultiIndexSet &work = (points.empty()) ? needed : points;
-
-        max_levels.resize(num_dimensions);
-        ifs.read((char*) max_levels.data(), num_dimensions * sizeof(int));
-
-        if (num_outputs > 0){
-            values.readBinary(ifs);
-            ifs.read((char*) &flag, sizeof(char));
-            if (flag == 'y'){
-                fourier_coefs.resize(num_outputs, 2 * work.getNumIndexes());
-                ifs.read((char*) fourier_coefs.getStrip(0), 2 * ((size_t) num_outputs) * ((size_t) work.getNumIndexes()) * sizeof(double));
-            }
-        }
-        ifs.read((char*) &flag, sizeof(char));
-
-        int oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
-
-        wrapper.load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
-
-        int dummy;
-        MultiIndexManipulations::getMaxIndex(work, max_power, dummy);
-    }
-}
+template void GridFourier::write<true>(std::ostream &) const;
+template void GridFourier::write<false>(std::ostream &) const;
+template void GridFourier::read<true>(std::istream &);
+template void GridFourier::read<false>(std::istream &);
 
 void GridFourier::reset(){
     clearAccelerationData();

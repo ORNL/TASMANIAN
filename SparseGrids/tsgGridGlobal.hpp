@@ -34,6 +34,7 @@
 #include <cstdlib>
 #include <memory>
 
+#include "tsgIOHelpers.hpp"
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgCoreOneDimensional.hpp"
@@ -57,11 +58,8 @@ public:
 
     bool isGlobal() const{ return true; }
 
-    void write(std::ofstream &ofs) const;
-    void read(std::ifstream &ifs);
-
-    void writeBinary(std::ofstream &ofs) const;
-    void readBinary(std::ifstream &ifs);
+    template<bool useAscii> void write(std::ostream &os) const;
+    template<bool useAscii> void read(std::ifstream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits);
     void copyGrid(const GridGlobal *global);

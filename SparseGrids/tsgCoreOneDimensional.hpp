@@ -64,16 +64,13 @@ public:
     //! \brief Destructor, clear the rule.
     ~CustomTabulated();
 
+    //! \brief Write to an already open ASCII/binary file, used in conjunction with \b GlobalGrid::write()
+    template<bool useAscii> void write(std::ostream &os) const;
+    //! \brief Read from an already open ASCII/binary file, used in conjunction with \b GlobalGrid::read()
+    template<bool useAscii> void read(std::istream &is);
+
     //! \brief Read from a custom user provided ASCII file, see the file-format section.
     void read(const char* filename);
-    //! \brief Read from an already open ASCII file, used in conjunction with \b GlobalGrid::read()
-    void read(std::ifstream &ifs);
-    //! \brief Read from an already open binary file, used in conjunction with \b GlobalGrid::readBinary()
-    void readBinary(std::ifstream &ifs);
-    //! \brief Write to an already open ASCII file, used in conjunction with \b GlobalGrid::write()
-    void write(std::ofstream &ofs) const;
-    //! \brief Write to an already open binary file, used in conjunction with \b GlobalGrid::writeBinary()
-    void writeBinary(std::ofstream &ofs) const;
 
     //! \brief Returns the number of loaded levels.
     int getNumLevels() const;

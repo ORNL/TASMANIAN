@@ -31,6 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 #define __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 
+#include "tsgIOHelpers.hpp"
 #include "tsgEnumerates.hpp"
 #include <vector>
 #include <functional>
@@ -216,27 +217,16 @@ public:
     //! \brief Default destructor
     ~MultiIndexSet();
 
-    //! \brief Write to file **ofs** in ASCII format
-    //!
+    //! \brief Write the set to ASCII or binary stream, use with std::ofstream and std::ifstream.
+
     //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
-    //! followed by all the entries of the array on a single line separated by a space.
-    void write(std::ofstream &ofs) const;
+    //! followed by all the entries of the array on a single line separated by a space, or dump of a single write command.
+    template<bool useAscii> void write(std::ostream &os) const;
 
-    //! \brief Read from file **ofs** in ASCII format
-    //!
-    //! See **write()** for the ASCII file format.
-    void read(std::ifstream &ifs);
+    //! \brief Read the from the stream, must know whether to use ASCII or binary format.
 
-    //! \brief Write to file **ofs** in binary format
-    //!
-    //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
-    //! followed by all the entries of the array written by a single `write()` command.
-    void writeBinary(std::ofstream &ofs) const;
-
-    //! \brief Write to file **ofs** in binary format
-    //!
-    //! See **writeBinary()** for the binary file format.
-    void readBinary(std::ifstream &ifs);
+    //! Uses the same format as \b write<bool>
+    template<bool useAscii> void read(std::istream &os);
 
     //! \brief Returns **true** if there are no multi-indexes in the set, **false** otherwise
     inline bool empty() const{ return indexes.empty(); }
@@ -307,27 +297,16 @@ public:
     //! \brief Default destructor
     ~StorageSet();
 
-    //! \brief Write to file **ofs** in ASCII format
-    //!
-    //! The format consists of two `int` values corresponding to the number of outputs and number of values,
-    //! followed by all the entries of the array on a single line separated by a space.
-    void write(std::ofstream &ofs) const;
+    //! \brief Write the set to ASCII or binary stream, use with std::ofstream and std::ifstream.
 
-    //! \brief Read from file **ofs** in ASCII format
-    //!
-    //! See **write()** for the ASCII file format.
-    void read(std::ifstream &ifs);
+    //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
+    //! followed by all the entries of the array on a single line separated by a space, or dump of a single write command.
+    template<bool useAscii> void write(std::ostream &os) const;
 
-    //! \brief Write to file **ofs** in binary format
-    //!
-    //! The format consists of two `int` values corresponding to the number of outputs and number of values,
-    //! followed by all the entries of the array written in a single `write()` command.
-    void writeBinary(std::ofstream &ofs) const;
+    //! \brief Read the from the stream, must know whether to use ASCII or binary format.
 
-    //! \brief Write to file **ofs** in binary format
-    //!
-    //! See **writeBinary()** for the binary file format.
-    void readBinary(std::ifstream &ifs);
+    //! Uses the same format as \b write<bool>
+    template<bool useAscii> void read(std::istream &os);
 
     //! \brief Clear the existing values and assigns new dimensions, does not allocate memory for the new values
     void resize(int cnum_outputs, int cnum_values);

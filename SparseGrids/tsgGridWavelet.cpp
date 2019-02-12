@@ -50,108 +50,55 @@ void GridWavelet::reset(){
     coefficients.clear();
 }
 
-void GridWavelet::write(std::ofstream &ofs) const{
-    using std::endl;
+template<bool useAscii> void GridWavelet::write(std::ostream &os) const{
+    if (useAscii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<useAscii, IO::pad_line>(os, num_dimensions, num_outputs, order);
+    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<useAscii>(os);
+    if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
+        IO::writeFlag<useAscii, IO::pad_auto>((coefficients.getNumStrips() != 0), os);
+        if (coefficients.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*coefficients.getVector(), os);
+        IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+        if (!needed.empty()) needed.write<useAscii>(os);
+    }else{
+        IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+        if (!needed.empty()) needed.write<useAscii>(os);
+        IO::writeFlag<useAscii, IO::pad_auto>((coefficients.getNumStrips() != 0), os);
+        if (coefficients.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*coefficients.getVector(), os);
+    }
 
-    ofs << std::scientific; ofs.precision(17);
-    ofs << num_dimensions << " " << num_outputs << " " << order << endl;
-    if (num_dimensions > 0){
-        if (points.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            points.write(ofs);
-        }
-        if (coefficients.getTotalEntries() == 0){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            for(auto c: *coefficients.getVector()) ofs << " " << c;
-            ofs << endl;
-        }
-        if (needed.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            needed.write(ofs);
-        }
-        if (num_outputs > 0) values.write(ofs);
-    }
+    if (num_outputs > 0) values.write<useAscii>(os);
 }
-void GridWavelet::writeBinary(std::ofstream &ofs) const{
-    int dims[3];
-    dims[0] = num_dimensions;
-    dims[1] = num_outputs;
-    dims[2] = order;
-    ofs.write((char*) dims, 3 * sizeof(int));
-    if (num_dimensions > 0){
-        char flag;
-        if (points.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            points.writeBinary(ofs);
-        }
-        if (needed.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            needed.writeBinary(ofs);
-        }
-        if (coefficients.getTotalEntries()  == 0){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            ofs.write((char*) coefficients.getCStrip(0), coefficients.getTotalEntries() * sizeof(double));
-        }
-        if (num_outputs > 0) values.writeBinary(ofs);
-    }
-}
-void GridWavelet::read(std::ifstream &ifs){
+template<bool useAscii> void GridWavelet::read(std::istream &is){
     reset();
-    ifs >> num_dimensions >> num_outputs >> order;
-    if (num_dimensions > 0){
-        int flag;
-        rule1D.updateOrder(order);
+    num_dimensions = IO::readNumber<useAscii, int>(is);
+    num_outputs = IO::readNumber<useAscii, int>(is);
+    order = IO::readNumber<useAscii, int>(is);
+    rule1D.updateOrder(order);
 
-        ifs >> flag;
-        if (flag == 1) points.read(ifs);
-        ifs >> flag;
-        if (flag == 1){
+    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
+    if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
+        if (IO::readFlag<useAscii>(is)){
             coefficients.resize(num_outputs, points.getNumIndexes());
-            for(auto &c : *coefficients.getVector()) ifs >> c;
+            IO::readVector<useAscii>(is, *coefficients.getVector());
         }
-        ifs >> flag;
-        if (flag == 1) needed.read(ifs);
-
-        if (num_outputs > 0) values.read(ifs);
+        if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+    }else{
+        if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+        if (IO::readFlag<useAscii>(is)){
+            coefficients.resize(num_outputs, points.getNumIndexes());
+            IO::readVector<useAscii>(is, *coefficients.getVector());
+        }
     }
+
+    if (num_outputs > 0) values.read<useAscii>(is);
     buildInterpolationMatrix();
 }
-void GridWavelet::readBinary(std::ifstream &ifs){
-    reset();
-    int dims[3];
-    ifs.read((char*) dims, 3 * sizeof(int));
-    num_dimensions = dims[0];
-    num_outputs = dims[1];
-    order = dims[2];
-    if (num_dimensions > 0){
-        char flag;
-        rule1D.updateOrder(order);
 
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') points.readBinary(ifs);
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') needed.readBinary(ifs);
-
-        ifs.read((char*) &flag, sizeof(char));
-        if (flag == 'y'){
-            coefficients.resize(num_outputs, points.getNumIndexes());
-            ifs.read((char*) coefficients.getStrip(0), coefficients.getTotalEntries() * sizeof(double));
-        }
-
-        if (num_outputs > 0) values.readBinary(ifs);
-    }
-    buildInterpolationMatrix();
-}
+template void GridWavelet::write<true>(std::ostream &) const;
+template void GridWavelet::write<false>(std::ostream &) const;
+template void GridWavelet::read<true>(std::istream &);
+template void GridWavelet::read<false>(std::istream &);
 
 void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits){
     reset();

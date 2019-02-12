@@ -47,189 +47,79 @@ namespace TasGrid{
 GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0){}
 GridGlobal::~GridGlobal(){}
 
-void GridGlobal::write(std::ofstream &ofs) const{
-    using std::endl;
+template<bool useAscii> void GridGlobal::write(std::ostream &os) const{
+    if (useAscii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<useAscii, IO::pad_rspace>(os, num_dimensions, num_outputs);
+    IO::writeNumbers<useAscii, IO::pad_line>(os, alpha, beta);
+    IO::writeRule<useAscii>(rule, os);
+    if (rule == rule_customtabulated)
+        custom.write<useAscii>(os);
 
-    ofs << std::scientific; ofs.precision(17);
-    ofs << num_dimensions << " " << num_outputs << " " << alpha << " " << beta << endl;
-    if (num_dimensions > 0){
-        ofs << OneDimensionalMeta::getIORuleString(rule) << endl;
-        if (rule == rule_customtabulated){
-            custom.write(ofs);
-        }
-        tensors.write(ofs);
-        active_tensors.write(ofs);
-        if (!active_w.empty()){
-            ofs << active_w[0];
-            for(int i=1; i<active_tensors.getNumIndexes(); i++) ofs << " " << active_w[i];
-            ofs << endl;
-        }
-        if (points.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            points.write(ofs);
-        }
-        if (needed.empty()){
-            ofs << "0" << endl;
-        }else{
-            ofs << "1 ";
-            needed.write(ofs);
-        }
-        ofs << max_levels[0];
-        for(int j=1; j<num_dimensions; j++){
-            ofs << " " << max_levels[j];
-        }
-        ofs << endl;
-        if (num_outputs > 0) values.write(ofs);
-        if (!updated_tensors.empty()){
-            ofs << "1" << endl;
-            updated_tensors.write(ofs);
-            updated_active_tensors.write(ofs);
-            ofs << updated_active_w[0];
-            for(int i=1; i<updated_active_tensors.getNumIndexes(); i++){
-                ofs << " " << updated_active_w[i];
-            }
-        }else{
-            ofs << "0";
-        }
-        ofs << endl;
+    tensors.write<useAscii>(os);
+    active_tensors.write<useAscii>(os);
+    if (!active_w.empty())
+        IO::writeVector<useAscii, IO::pad_line>(active_w, os);
+
+    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<useAscii>(os);
+    IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+    if (!needed.empty()) needed.write<useAscii>(os);
+
+    IO::writeVector<useAscii, IO::pad_line>(max_levels, os);
+
+    if (num_outputs > 0) values.write<useAscii>(os);
+
+    IO::writeFlag<useAscii, IO::pad_line>(!updated_tensors.empty(), os);
+    if (!updated_tensors.empty()){
+        updated_tensors.write<useAscii>(os);
+        updated_active_tensors.write<useAscii>(os);
+        IO::writeVector<useAscii, IO::pad_line>(updated_active_w, os);
     }
 }
-void GridGlobal::writeBinary(std::ofstream &ofs) const{
-    int num_dim_out[2];
-    num_dim_out[0] = num_dimensions;
-    num_dim_out[1] = num_outputs;
-    ofs.write((char*) num_dim_out, 2*sizeof(int));
-    double alpha_beta[2];
-    alpha_beta[0] = alpha;
-    alpha_beta[1] = beta;
-    ofs.write((char*) alpha_beta, 2*sizeof(double));
-    if (num_dimensions > 0){
-        num_dim_out[0] = OneDimensionalMeta::getIORuleInt(rule);
-        ofs.write((char*) num_dim_out, sizeof(int));
-        if (rule == rule_customtabulated){
-            custom.writeBinary(ofs);
-        }
-        tensors.writeBinary(ofs);
-        active_tensors.writeBinary(ofs);
-        if (!active_w.empty()) ofs.write((char*) (active_w.data()), active_tensors.getNumIndexes() * sizeof(int));
-        char flag;
-        if (points.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            points.writeBinary(ofs);
-        }
-        if (needed.empty()){
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }else{
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            needed.writeBinary(ofs);
-        }
-        ofs.write((char*) max_levels.data(), num_dimensions * sizeof(int));
 
-        if (num_outputs > 0) values.writeBinary(ofs);
-        if (!updated_tensors.empty()){
-            flag = 'y'; ofs.write(&flag, sizeof(char));
-            updated_tensors.writeBinary(ofs);
-            updated_active_tensors.writeBinary(ofs);
-            ofs.write((char*) (updated_active_w.data()), updated_active_tensors.getNumIndexes() * sizeof(int));
-        }else{
-            flag = 'n'; ofs.write(&flag, sizeof(char));
-        }
-    }
-}
-void GridGlobal::read(std::ifstream &ifs){
+template<bool useAscii> void GridGlobal::read(std::ifstream &is){
     reset(true); // true deletes any custom rule
-    ifs >> num_dimensions >> num_outputs >> alpha >> beta;
-    if (num_dimensions > 0){
-        int flag;
-        std::string T;
-        ifs >> T;
-        rule = OneDimensionalMeta::getIORuleString(T.c_str());
-        if (rule == rule_customtabulated) custom.read(ifs);
-        tensors.read(ifs);
-        active_tensors.read(ifs);
-        active_w.resize(active_tensors.getNumIndexes());
-        for(auto &aw : active_w) ifs >> aw;
+    num_dimensions = IO::readNumber<useAscii, int>(is);
+    num_outputs = IO::readNumber<useAscii, int>(is);
+    alpha = IO::readNumber<useAscii, double>(is);
+    beta = IO::readNumber<useAscii, double>(is);
+    rule = IO::readRule<useAscii>(is);
+    if (rule == rule_customtabulated) custom.read<useAscii>(is);
+    tensors.read<useAscii>(is);
+    active_tensors.read<useAscii>(is);
+    active_w.resize((size_t) active_tensors.getNumIndexes());
+    IO::readVector<useAscii>(is, active_w);
 
-        ifs >> flag; if (flag == 1) points.read(ifs);
-        ifs >> flag; if (flag == 1) needed.read(ifs);
+    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
+    if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
 
-        max_levels.resize(num_dimensions);
-        for(auto &m : max_levels) ifs >> m;
+    max_levels.resize((size_t) num_dimensions);
+    IO::readVector<useAscii>(is, max_levels);
 
-        if (num_outputs > 0) values.read(ifs);
-        ifs >> flag;
+    if (num_outputs > 0) values.read<useAscii>(is);
 
-        int oned_max_level;
-        if (flag == 1){
-            updated_tensors.read(ifs);
-            oned_max_level = *std::max_element(updated_tensors.getVector()->begin(), updated_tensors.getVector()->end());
+    int oned_max_level;
+    if (IO::readFlag<useAscii>(is)){
+        updated_tensors.read<useAscii>(is);
+        oned_max_level = updated_tensors.getMaxIndex();
 
-            updated_active_tensors.read(ifs);
+        updated_active_tensors.read<useAscii>(is);
 
-            updated_active_w.resize(updated_active_tensors.getNumIndexes());
-            for(auto &aw : updated_active_w) ifs >> aw;
-        }else{
-            oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
-        }
-
-        wrapper.load(custom, oned_max_level, rule, alpha, beta);
-
-        recomputeTensorRefs((points.empty()) ? needed : points);
+        updated_active_w.resize((size_t) updated_active_tensors.getNumIndexes());
+        IO::readVector<useAscii>(is, updated_active_w);
+    }else{
+        oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
     }
+
+    wrapper.load(custom, oned_max_level, rule, alpha, beta);
+
+    recomputeTensorRefs((points.empty()) ? needed : points);
 }
 
-void GridGlobal::readBinary(std::ifstream &ifs){
-    reset(true); // true deletes any custom rule
-    int num_dim_out[2];
-    ifs.read((char*) num_dim_out, 2*sizeof(int));
-    num_dimensions = num_dim_out[0];
-    num_outputs = num_dim_out[1];
-    double alpha_beta[2];
-    ifs.read((char*) alpha_beta, 2*sizeof(double));
-    alpha = alpha_beta[0];
-    beta = alpha_beta[1];
-    if (num_dimensions > 0){
-        ifs.read((char*) num_dim_out, sizeof(int));
-        rule = OneDimensionalMeta::getIORuleInt(num_dim_out[0]);
-        if (rule == rule_customtabulated) custom.readBinary(ifs);
-
-        tensors.readBinary(ifs);
-        active_tensors.readBinary(ifs);
-        active_w.resize(active_tensors.getNumIndexes());
-        if (!active_w.empty()) ifs.read((char*) (active_w.data()), active_tensors.getNumIndexes() * sizeof(int));
-
-        char flag;
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') points.readBinary(ifs);
-        ifs.read((char*) &flag, sizeof(char)); if (flag == 'y') needed.readBinary(ifs);
-
-        max_levels.resize(num_dimensions);
-        ifs.read((char*) max_levels.data(), num_dimensions * sizeof(int));
-
-        if (num_outputs > 0) values.readBinary(ifs);
-
-        ifs.read((char*) &flag, sizeof(char));
-        int oned_max_level;
-        if (flag == 'y'){
-            updated_tensors.readBinary(ifs);
-            oned_max_level = *std::max_element(updated_tensors.getVector()->begin(), updated_tensors.getVector()->end());
-
-            updated_active_tensors.readBinary(ifs);
-
-            updated_active_w.resize(updated_active_tensors.getNumIndexes());
-            ifs.read((char*) updated_active_w.data(), updated_active_w.size() * sizeof(int));
-        }else{
-            oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
-        }
-
-        wrapper.load(custom, oned_max_level, rule, alpha, beta);
-
-        recomputeTensorRefs((points.empty()) ? needed : points);
-    }
-}
+template void GridGlobal::write<true>(std::ostream &) const;
+template void GridGlobal::write<false>(std::ostream &) const;
+template void GridGlobal::read<true>(std::ifstream &);
+template void GridGlobal::read<false>(std::ifstream &);
 
 void GridGlobal::reset(bool includeCustom){
     clearAccelerationData();

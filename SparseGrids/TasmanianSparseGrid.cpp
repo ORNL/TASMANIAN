@@ -1428,19 +1428,19 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     ofs << "WARNING: do not edit this manually" << endl;
     if (isGlobal()){
         ofs << "global" << endl;
-        getGridGlobal()->write(ofs);
+        getGridGlobal()->write<true>(ofs);
     }else if (isSequence()){
         ofs << "sequence" << endl;
-        getGridSequence()->write(ofs);
+        getGridSequence()->write<true>(ofs);
     }else if (isLocalPolynomial()){
         ofs << "localpolynomial" << endl;
-        getGridLocalPolynomial()->write(ofs);
+        getGridLocalPolynomial()->write<true>(ofs);
     }else if (isWavelet()){
         ofs << "wavelet" << endl;
-        getGridWavelet()->write(ofs);
+        getGridWavelet()->write<true>(ofs);
     }else if (isFourier()){
         ofs << "fourier" << endl;
-        getGridFourier()->write(ofs);
+        getGridFourier()->write<true>(ofs);
     }else{
         ofs << "empty" << endl;
     }
@@ -1486,19 +1486,19 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     // use Integers to indicate grid types, empty 'e', global 'g', sequence 's', pwpoly 'p', wavelet 'w', Fourier 'f'
     if (isGlobal()){
         flag = 'g'; ofs.write(&flag, sizeof(char));
-        getGridGlobal()->writeBinary(ofs);
+        getGridGlobal()->write<false>(ofs);
     }else if (isSequence()){
         flag = 's'; ofs.write(&flag, sizeof(char));
-        getGridSequence()->writeBinary(ofs);
+        getGridSequence()->write<false>(ofs);
     }else if (isLocalPolynomial()){
         flag = 'p'; ofs.write(&flag, sizeof(char));
-        getGridLocalPolynomial()->writeBinary(ofs);
+        getGridLocalPolynomial()->write<false>(ofs);
     }else if (isWavelet()){
         flag = 'w'; ofs.write(&flag, sizeof(char));
-        getGridWavelet()->writeBinary(ofs);
+        getGridWavelet()->write<false>(ofs);
     }else if (isFourier()){
         flag = 'f'; ofs.write(&flag, sizeof(char));
-        getGridFourier()->writeBinary(ofs);
+        getGridFourier()->write<false>(ofs);
     }else{
         flag = 'e'; ofs.write(&flag, sizeof(char));
     }
@@ -1555,23 +1555,23 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     if (T.compare("global") == 0){
         clear();
         base = make_unique_ptr<GridGlobal>();
-        getGridGlobal()->read(ifs);
+        getGridGlobal()->read<true>(ifs);
     }else if (T.compare("sequence") == 0){
         clear();
         base = make_unique_ptr<GridSequence>();
-        getGridSequence()->read(ifs);
+        getGridSequence()->read<true>(ifs);
     }else if (T.compare("localpolynomial") == 0){
         clear();
         base = make_unique_ptr<GridLocalPolynomial>();
-        getGridLocalPolynomial()->read(ifs);
+        getGridLocalPolynomial()->read<true>(ifs);
     }else if (T.compare("wavelet") == 0){
         clear();
         base = make_unique_ptr<GridWavelet>();
-        getGridWavelet()->read(ifs);
+        getGridWavelet()->read<true>(ifs);
     }else if (T.compare("fourier") == 0){
         clear();
         base = make_unique_ptr<GridFourier>();
-        getGridFourier()->read(ifs);
+        getGridFourier()->read<true>(ifs);
     }else if (T.compare("empty") == 0){
         clear();
     }else{
@@ -1651,19 +1651,19 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     clear();
     if (TSG[0] == 'g'){
         base = make_unique_ptr<GridGlobal>();
-        getGridGlobal()->readBinary(ifs);
+        getGridGlobal()->read<false>(ifs);
     }else if (TSG[0] == 's'){
         base = make_unique_ptr<GridSequence>();
-        getGridSequence()->readBinary(ifs);
+        getGridSequence()->read<false>(ifs);
     }else if (TSG[0] == 'p'){
         base = make_unique_ptr<GridLocalPolynomial>();
-        getGridLocalPolynomial()->readBinary(ifs);
+        getGridLocalPolynomial()->read<false>(ifs);
     }else if (TSG[0] == 'w'){
         base = make_unique_ptr<GridWavelet>();
-        getGridWavelet()->readBinary(ifs);
+        getGridWavelet()->read<false>(ifs);
     }else if (TSG[0] == 'f'){
         base = make_unique_ptr<GridFourier>();
-        getGridFourier()->readBinary(ifs);
+        getGridFourier()->read<false>(ifs);
     }else if (TSG[0] == 'e'){
         clear();
     }else{

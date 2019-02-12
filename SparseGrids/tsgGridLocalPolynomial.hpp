@@ -34,6 +34,7 @@
 #include <vector>
 #include <memory>
 
+#include "tsgIOHelpers.hpp"
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgIndexManipulator.hpp"
@@ -66,11 +67,8 @@ public:
 
     bool isLocalPolynomial() const{ return true; }
 
-    void write(std::ofstream &ofs) const;
-    void read(std::ifstream &ifs);
-
-    void writeBinary(std::ofstream &ofs) const;
-    void readBinary(std::ifstream &ifs);
+    template<bool useAscii> void write(std::ostream &os) const;
+    template<bool useAscii> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     void copyGrid(const GridLocalPolynomial *pwpoly);
