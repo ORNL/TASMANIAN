@@ -37,7 +37,7 @@ void dream_example_02(){
     cout << "EXAMPLE 2: set inference problem, identify x_0 and x_1 model parameters from data (noise free example)" << endl;
     cout << "           model: f(x) = sin(x_0*M_PI*t + x_1),  data: d = sin(M_PI*t + 0.3*M_PI)" << endl;
     cout << "           t in [0,1], discretized with 32 equidistant nodes" << endl;
-    cout << "           likelihood is exp(- 32 * (f(x) - d)^2)" << endl;
+    cout << "           likelihood is exp(- 16 * (f(x) - d)^2)" << endl;
     cout << "           use sparse grid to interpolate the likelihood" << endl;
     cout << "     NOTE: 32 corresponds to discretization error in t" << endl << endl;
 
