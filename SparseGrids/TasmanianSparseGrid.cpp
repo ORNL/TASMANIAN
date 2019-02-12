@@ -1428,7 +1428,7 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     ofs << "WARNING: do not edit this manually" << endl;
     if (isGlobal()){
         ofs << "global" << endl;
-        getGridGlobal()->write(ofs);
+        getGridGlobal()->write<true>(ofs);
     }else if (isSequence()){
         ofs << "sequence" << endl;
         getGridSequence()->write(ofs);
@@ -1486,7 +1486,7 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     // use Integers to indicate grid types, empty 'e', global 'g', sequence 's', pwpoly 'p', wavelet 'w', Fourier 'f'
     if (isGlobal()){
         flag = 'g'; ofs.write(&flag, sizeof(char));
-        getGridGlobal()->writeBinary(ofs);
+        getGridGlobal()->write<false>(ofs);
     }else if (isSequence()){
         flag = 's'; ofs.write(&flag, sizeof(char));
         getGridSequence()->writeBinary(ofs);
@@ -1555,7 +1555,7 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     if (T.compare("global") == 0){
         clear();
         base = make_unique_ptr<GridGlobal>();
-        getGridGlobal()->read(ifs);
+        getGridGlobal()->read<true>(ifs);
     }else if (T.compare("sequence") == 0){
         clear();
         base = make_unique_ptr<GridSequence>();
@@ -1651,7 +1651,7 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
     clear();
     if (TSG[0] == 'g'){
         base = make_unique_ptr<GridGlobal>();
-        getGridGlobal()->readBinary(ifs);
+        getGridGlobal()->read<false>(ifs);
     }else if (TSG[0] == 's'){
         base = make_unique_ptr<GridSequence>();
         getGridSequence()->readBinary(ifs);

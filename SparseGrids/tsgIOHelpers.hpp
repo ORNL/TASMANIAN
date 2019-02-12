@@ -36,6 +36,8 @@
 #include <tuple>
 #include <vector>
 
+#include "tsgCoreOneDimensional.hpp"
+
 //! \internal
 //! \file tsgIOHelpers.hpp
 //! \brief Templates to simply file I/O.
@@ -152,6 +154,33 @@ Val readNumber(std::istream &os){
         os.read((char*) &v, sizeof(Val));
     }
     return v;
+}
+
+//! \internal
+//! \brief Write a rule.
+//! \ingroup TasmanianIO
+template<bool useAscii>
+void writeRule(TypeOneDRule rule, std::ostream &os){
+    if (useAscii){
+        os << OneDimensionalMeta::getIORuleString(rule) << std::endl;
+    }else{
+        int r = OneDimensionalMeta::getIORuleInt(rule);
+        os.write((char*) &r, sizeof(int));
+    }
+}
+
+//! \internal
+//! \brief Read a rule.
+//! \ingroup TasmanianIO
+template<bool useAscii>
+TypeOneDRule readRule(std::istream &is){
+    if (useAscii){
+        std::string T;
+        is >> T;
+        return OneDimensionalMeta::getIORuleString(T.c_str());
+    }else{
+        return OneDimensionalMeta::getIORuleInt(readNumber<false, int>(is));
+    }
 }
 
 }

@@ -47,6 +47,80 @@ namespace TasGrid{
 GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0){}
 GridGlobal::~GridGlobal(){}
 
+template<bool useAscii> void GridGlobal::write(std::ostream &os) const{
+    if (useAscii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<useAscii, IO::pad_rspace>(os, num_dimensions, num_outputs);
+    IO::writeNumbers<useAscii, IO::pad_line>(os, alpha, beta);
+    IO::writeRule<useAscii>(rule, os);
+    if (rule == rule_customtabulated)
+        custom.write<useAscii>(os);
+
+    tensors.write<useAscii>(os);
+    active_tensors.write<useAscii>(os);
+    if (!active_w.empty())
+        IO::writeVector<useAscii, IO::pad_line>(active_w, os);
+
+    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<useAscii>(os);
+    IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+    if (!needed.empty()) needed.write<useAscii>(os);
+
+    IO::writeVector<useAscii, IO::pad_line>(max_levels, os);
+
+    if (num_outputs > 0) values.write<useAscii>(os);
+
+    IO::writeFlag<useAscii, IO::pad_line>(!updated_tensors.empty(), os);
+    if (!updated_tensors.empty()){
+        updated_tensors.write<useAscii>(os);
+        updated_active_tensors.write<useAscii>(os);
+        IO::writeVector<useAscii, IO::pad_line>(updated_active_w, os);
+    }
+}
+
+template<bool useAscii> void GridGlobal::read(std::ifstream &is){
+    reset(true); // true deletes any custom rule
+    num_dimensions = IO::readNumber<useAscii, int>(is);
+    num_outputs = IO::readNumber<useAscii, int>(is);
+    alpha = IO::readNumber<useAscii, double>(is);
+    beta = IO::readNumber<useAscii, double>(is);
+    rule = IO::readRule<useAscii>(is);
+    if (rule == rule_customtabulated) custom.read<useAscii>(is);
+    tensors.read<useAscii>(is);
+    active_tensors.read<useAscii>(is);
+    active_w.resize((size_t) active_tensors.getNumIndexes());
+    IO::readVector<useAscii>(is, active_w);
+
+    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
+    if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+
+    max_levels.resize((size_t) num_dimensions);
+    IO::readVector<useAscii>(is, max_levels);
+
+    if (num_outputs > 0) values.read<useAscii>(is);
+
+    int oned_max_level;
+    if (IO::readFlag<useAscii>(is)){
+        updated_tensors.read<useAscii>(is);
+        oned_max_level = updated_tensors.getMaxIndex();
+
+        updated_active_tensors.read<useAscii>(is);
+
+        updated_active_w.resize((size_t) updated_active_tensors.getNumIndexes());
+        IO::readVector<useAscii>(is, updated_active_w);
+    }else{
+        oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
+    }
+
+    wrapper.load(custom, oned_max_level, rule, alpha, beta);
+
+    recomputeTensorRefs((points.empty()) ? needed : points);
+}
+
+template void GridGlobal::write<true>(std::ostream &) const;
+template void GridGlobal::write<false>(std::ostream &) const;
+template void GridGlobal::read<true>(std::ifstream &);
+template void GridGlobal::read<false>(std::ifstream &);
+
 void GridGlobal::write(std::ofstream &ofs) const{
     using std::endl;
 

@@ -64,6 +64,11 @@ public:
     //! \brief Destructor, clear the rule.
     ~CustomTabulated();
 
+    //! \brief Write to an already open ASCII/binary file, used in conjunction with \b GlobalGrid::write()
+    template<bool useAscii> void write(std::ostream &os) const;
+    //! \brief Read from an already open ASCII/binary file, used in conjunction with \b GlobalGrid::read()
+    template<bool useAscii> void read(std::istream &is);
+
     //! \brief Read from a custom user provided ASCII file, see the file-format section.
     void read(const char* filename);
     //! \brief Read from an already open ASCII file, used in conjunction with \b GlobalGrid::read()
