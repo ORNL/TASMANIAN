@@ -39,6 +39,67 @@ namespace TasGrid{
 GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), max_levels(0){}
 GridFourier::~GridFourier(){}
 
+template<bool useAscii> void GridFourier::write(std::ostream &os) const{
+    if (useAscii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<useAscii, IO::pad_line>(os, num_dimensions, num_outputs);
+
+    tensors.write<useAscii>(os);
+    active_tensors.write<useAscii>(os);
+    if (!active_w.empty())
+        IO::writeVector<useAscii, IO::pad_line>(active_w, os);
+
+    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<useAscii>(os);
+    IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
+    if (!needed.empty()) needed.write<useAscii>(os);
+
+    IO::writeVector<useAscii, IO::pad_line>(max_levels, os);
+
+    if (num_outputs > 0){
+        values.write<useAscii>(os);
+        IO::writeFlag<useAscii, IO::pad_auto>((fourier_coefs.getNumStrips() != 0), os);
+        if (fourier_coefs.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*fourier_coefs.getVector(), os);
+    }
+
+    IO::writeFlag<useAscii, IO::pad_line>(false, os);
+}
+template<bool useAscii> void GridFourier::read(std::istream &is){
+    reset();
+    num_dimensions = IO::readNumber<useAscii, int>(is);
+    num_outputs = IO::readNumber<useAscii, int>(is);
+
+    tensors.read<useAscii>(is);
+    active_tensors.read<useAscii>(is);
+    active_w.resize((size_t) active_tensors.getNumIndexes());
+    IO::readVector<useAscii>(is, active_w);
+
+    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
+    if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+
+    max_levels.resize((size_t) num_dimensions);
+    IO::readVector<useAscii>(is, max_levels);
+
+    if (num_outputs > 0){
+        values.read<useAscii>(is);
+        if (IO::readFlag<useAscii>(is)){
+            fourier_coefs.resize(num_outputs, 2 * points.getNumIndexes());
+            IO::readVector<useAscii>(is, *fourier_coefs.getVector());
+        }
+    }
+
+    if (IO::readFlag<useAscii>(is)) throw std::runtime_error("ERROR: refinement not implemented for Fourier grids.");
+
+    wrapper.load(CustomTabulated(), *std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
+
+    int dummy;
+    MultiIndexManipulations::getMaxIndex(((points.empty()) ? needed : points), max_power, dummy);
+}
+
+template void GridFourier::write<true>(std::ostream &) const;
+template void GridFourier::write<false>(std::ostream &) const;
+template void GridFourier::read<true>(std::istream &);
+template void GridFourier::read<false>(std::istream &);
+
 void GridFourier::write(std::ofstream &ofs) const{
     using std::endl;
 

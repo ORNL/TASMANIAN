@@ -54,6 +54,9 @@ public:
 
     bool isFourier() const{ return true; }
 
+    template<bool useAscii> void write(std::ostream &os) const;
+    template<bool useAscii> void read(std::istream &is);
+
     void write(std::ofstream &ofs) const;
     void read(std::ifstream &ifs);
 
