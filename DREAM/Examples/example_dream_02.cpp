@@ -14,14 +14,16 @@ using namespace std;
 //!
 //! Tasmanian DREAM Example 2
 
-
-//! \brief DREAM Example 2: perform parameter callibration using likelihood that is approximated with a sparse grid.
-//! \ingroup TasmanianDREAMExamples
-
-//! Demonstrates how to solve a Bayesian inference problem for parameter callibration
-//! using a sparse grid approximation to the Bayesian likelihood funciton.
-//! \snippet DREAM/Examples/example_dream_02.cpp DREAM_Example_02 example
+//! \defgroup TasmanianDREAMExamples2 Tasmanian DREAM module, example 2.
 //!
+//! Example 2:
+//! Demonstrates how to solve a Bayesian inference problem for parameter calibration
+//! using a sparse grid approximation to the Bayesian likelihood function.
+
+//! \brief DREAM Example 2: perform parameter calibration using likelihood that is approximated with a sparse grid.
+//! \ingroup TasmanianDREAMExamples2
+
+//! \snippet DREAM/Examples/example_dream_02.cpp DREAM_Example_02 example
 void dream_example_02(){
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 //! [DREAM_Example_02 example]

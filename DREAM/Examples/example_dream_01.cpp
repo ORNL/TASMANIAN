@@ -14,12 +14,15 @@ using namespace std;
 //!
 //! Tasmanian DREAM Example 1
 
+//! \defgroup TasmanianDREAMExamples1 Tasmanian DREAM module, example 1.
+//!
+//! Example 1:
+//! Demonstrates how to make a custom probability distribution and use Tasmanian DREAM
+//! to generate random samples.
 
 //! \brief DREAM Example 1: sample from a custom defined probability distribution.
-//! \ingroup TasmanianDREAMExamples
+//! \ingroup TasmanianDREAMExamples1
 
-//! Demonstrates how to make a custom probability disribution and use Tasmanian DREAM
-//! to generate random samples.
 //! \snippet DREAM/Examples/example_dream_01.cpp DREAM_Example_01 example
 void dream_example_01(){
 #ifndef __TASMANIAN_DOXYGEN_SKIP
