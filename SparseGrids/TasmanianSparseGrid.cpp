@@ -1437,7 +1437,7 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
         getGridLocalPolynomial()->write<true>(ofs);
     }else if (isWavelet()){
         ofs << "wavelet" << endl;
-        getGridWavelet()->write(ofs);
+        getGridWavelet()->write<true>(ofs);
     }else if (isFourier()){
         ofs << "fourier" << endl;
         getGridFourier()->write(ofs);
@@ -1495,7 +1495,7 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
         getGridLocalPolynomial()->write<false>(ofs);
     }else if (isWavelet()){
         flag = 'w'; ofs.write(&flag, sizeof(char));
-        getGridWavelet()->writeBinary(ofs);
+        getGridWavelet()->write<false>(ofs);
     }else if (isFourier()){
         flag = 'f'; ofs.write(&flag, sizeof(char));
         getGridFourier()->writeBinary(ofs);
@@ -1567,7 +1567,7 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
     }else if (T.compare("wavelet") == 0){
         clear();
         base = make_unique_ptr<GridWavelet>();
-        getGridWavelet()->read(ifs);
+        getGridWavelet()->read<true>(ifs);
     }else if (T.compare("fourier") == 0){
         clear();
         base = make_unique_ptr<GridFourier>();
@@ -1660,7 +1660,7 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
         getGridLocalPolynomial()->read<false>(ifs);
     }else if (TSG[0] == 'w'){
         base = make_unique_ptr<GridWavelet>();
-        getGridWavelet()->readBinary(ifs);
+        getGridWavelet()->read<false>(ifs);
     }else if (TSG[0] == 'f'){
         base = make_unique_ptr<GridFourier>();
         getGridFourier()->readBinary(ifs);

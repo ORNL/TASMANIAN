@@ -31,6 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WAVELET_HPP
 #define __TASMANIAN_SPARSE_GRID_WAVELET_HPP
 
+#include "tsgIOHelpers.hpp"
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgIndexManipulator.hpp"
@@ -46,6 +47,9 @@ public:
     ~GridWavelet();
 
     bool isWavelet() const{ return true; }
+
+    template<bool useAscii> void write(std::ostream &os) const;
+    template<bool useAscii> void read(std::istream &is);
 
     void write(std::ofstream &ofs) const;
     void read(std::ifstream &ifs);
