@@ -188,6 +188,8 @@ void SampleDREAM(int num_burnup, int num_collect,
         auto icand = candidates.begin(); // loop over all candidates and values, accept or reject
         auto ival = values.begin();
 
+        size_t accepted = 0;
+
         for(size_t i=0; i<num_chains; i++){
             bool keep_new = valid[i]; // if not valid, automatically reject
             if (valid[i]){ // apply random test
@@ -206,6 +208,7 @@ void SampleDREAM(int num_burnup, int num_collect,
             if (keep_new){
                 std::copy_n(icand, num_dimensions, new_state.begin() + i * num_dimensions);
                 new_values[i] = *ival;
+                accepted++; // accepted one more proposal
             }else{ // reject and reuse the old state
                 state.getChainState((int) i, &*(new_state.begin() + i * num_dimensions));
                 new_values[i] = state.getPDFvalue(i);
@@ -221,7 +224,7 @@ void SampleDREAM(int num_burnup, int num_collect,
         state.setPDFvalues(new_values);
 
         if (t >= num_burnup)
-            state.saveStateHistory();
+            state.saveStateHistory(accepted);
     }
 }
 

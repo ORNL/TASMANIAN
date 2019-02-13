@@ -36,12 +36,12 @@
 namespace TasDREAM{
 
 TasmanianDREAM::TasmanianDREAM(int cnum_chains, int cnum_dimensions) :
-num_chains(cnum_chains), num_dimensions(cnum_dimensions), init_state(false), init_values(false){
+num_chains(cnum_chains), num_dimensions(cnum_dimensions), init_state(false), init_values(false), accepted(0){
     if (cnum_chains < 1) throw std::invalid_argument("ERROR: num_chains must be positive");
     if (cnum_dimensions < 1) throw std::invalid_argument("ERROR: num_dimensions must be positive");
 }
 TasmanianDREAM::TasmanianDREAM(int cnum_chains, const TasGrid::TasmanianSparseGrid &grid) :
-num_chains(cnum_chains), num_dimensions(grid.getNumDimensions()), init_state(false), init_values(false){
+num_chains(cnum_chains), num_dimensions(grid.getNumDimensions()), init_state(false), init_values(false), accepted(0){
     if (cnum_chains < 1) throw std::invalid_argument("ERROR: num_chains must be positive");
     if (grid.getNumDimensions() < 1) throw std::invalid_argument("ERROR: num_dimensions must be positive");
 }
@@ -95,9 +95,10 @@ void TasmanianDREAM::expandHistory(int num_snapshots){
     pdf_history.reserve(pdf_history.size() + num_snapshots * num_chains);
 }
 
-void TasmanianDREAM::saveStateHistory(){
+void TasmanianDREAM::saveStateHistory(size_t num_accepted){
     history.insert(history.end(), state.begin(), state.end());
     pdf_history.insert(pdf_history.end(), pdf_values.begin(), pdf_values.end());
+    accepted += num_accepted;
 }
 
 void TasmanianDREAM::getHistoryMeanVariance(std::vector<double> &mean, std::vector<double> &var) const{
@@ -136,6 +137,7 @@ void TasmanianDREAM::getApproximateMode(std::vector<double> &mode) const{
 void TasmanianDREAM::clearHistory(){
     history = std::vector<double>();
     pdf_history = std::vector<double>();
+    accepted = 0;
 }
 
 }
