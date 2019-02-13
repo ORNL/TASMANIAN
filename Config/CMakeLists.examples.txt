@@ -27,6 +27,7 @@ find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasm
 add_executable(example_sparse_grids  example_sparse_grids.cpp)
 add_executable(example_dream         example_dream_01.cpp
                                      example_dream_02.cpp
+                                     example_dream_03.cpp
                                      example_dream.cpp)
 
 set_property(TARGET example_sparse_grids PROPERTY CXX_STANDARD 11)

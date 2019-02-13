@@ -14,14 +14,16 @@ using namespace std;
 //!
 //! Tasmanian DREAM Example 2
 
-
-//! \brief DREAM Example 2: perform parameter callibration using likelihood that is approximated with a sparse grid.
-//! \ingroup TasmanianDREAMExamples
-
-//! Demonstrates how to solve a Bayesian inference problem for parameter callibration
-//! using a sparse grid approximation to the Bayesian likelihood funciton.
-//! \snippet DREAM/Examples/example_dream_02.cpp DREAM_Example_02 example
+//! \defgroup TasmanianDREAMExamples2 Tasmanian DREAM module, example 2.
 //!
+//! Example 2:
+//! Demonstrates how to solve a Bayesian inference problem for parameter calibration
+//! using a sparse grid approximation to the Bayesian likelihood function.
+
+//! \brief DREAM Example 2: perform parameter calibration using likelihood that is approximated with a sparse grid.
+//! \ingroup TasmanianDREAMExamples2
+
+//! \snippet DREAM/Examples/example_dream_02.cpp DREAM_Example_02 example
 void dream_example_02(){
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 //! [DREAM_Example_02 example]
@@ -35,7 +37,7 @@ void dream_example_02(){
     cout << "EXAMPLE 2: set inference problem, identify x_0 and x_1 model parameters from data (noise free example)" << endl;
     cout << "           model: f(x) = sin(x_0*M_PI*t + x_1),  data: d = sin(M_PI*t + 0.3*M_PI)" << endl;
     cout << "           t in [0,1], discretized with 32 equidistant nodes" << endl;
-    cout << "           likelihood is exp(- 32 * (f(x) - d)^2)" << endl;
+    cout << "           likelihood is exp(- 16 * (f(x) - d)^2)" << endl;
     cout << "           use sparse grid to interpolate the likelihood" << endl;
     cout << "     NOTE: 32 corresponds to discretization error in t" << endl << endl;
 
