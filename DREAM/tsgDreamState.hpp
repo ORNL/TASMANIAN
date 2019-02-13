@@ -85,6 +85,8 @@ public:
     int getNumDimensions() const{ return (int) num_dimensions; }
     //! \brief Return the number of chains.
     int getNumChains() const{ return (int) num_chains; }
+    //! \brief Return the number of saved vectors in the history.
+    size_t getNumHistory() const{ return pdf_history.size(); }
 
     //! \brief Return \b true if the state has already been initialized with \b setState().
     bool isStateReady() const{ return init_state; }
@@ -168,7 +170,9 @@ public:
     //! \brief Return the sample with highest probability, searchers within the history.
     void getApproximateMode(std::vector<double> &mode) const;
 
-    // clear history
+    //! \brief Clear the stored history (does not touch the state).
+    void clearHistory();
+
     // file I/O
 private:
     size_t num_chains, num_dimensions;

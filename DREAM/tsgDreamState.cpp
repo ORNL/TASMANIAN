@@ -131,6 +131,11 @@ void TasmanianDREAM::getApproximateMode(std::vector<double> &mode) const{
     std::copy_n(history.begin() + std::distance(pdf_history.begin(), imax) * num_dimensions, num_dimensions, mode.data());
 }
 
+void TasmanianDREAM::clearHistory(){
+    history = std::vector<double>();
+    pdf_history = std::vector<double>();
+}
+
 }
 
 #endif
