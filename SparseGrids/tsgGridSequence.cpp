@@ -162,7 +162,7 @@ void GridSequence::updateGrid(MultiIndexSet &update){
     if ((num_outputs == 0) || (points.empty())){
         setPoints(update, num_outputs, rule);
     }else{
-        update.addSortedInsexes(*points.getVector());
+        update.addSortedInsexes(points.getVector());
         update.diffSets(points, needed);
 
         if (!needed.empty()) prepareSequence(0);
@@ -252,7 +252,7 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
         values.setValues(vals);
     }else{
         values.addValues(points, needed, vals);
-        points.addSortedInsexes(*needed.getVector());
+        points.addSortedInsexes(needed.getVector());
         needed = MultiIndexSet();
         prepareSequence(0);
     }
@@ -361,7 +361,7 @@ void GridSequence::getCandidateConstructionPoints(std::function<double(const int
 
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    x.resize(dynamic_values->initial_points.getVector()->size() + new_points.getVector()->size());
+    x.resize(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
     auto t = weighted_points.begin();
     auto ix = x.begin();
     while(t != weighted_points.end()){
@@ -501,7 +501,7 @@ void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[
     Data2D<double> hweights; hweights.resize(points.getNumIndexes(), num_x);
     evaluateHierarchicalFunctions(x, num_x, hweights.getStrip(0));
 
-    cuda_engine.cublasDGEMM(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, *(hweights.getVector()), 0.0, y);
+    cuda_engine.cublasDGEMM(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, hweights.getVector(), 0.0, y);
 }
 void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
@@ -827,8 +827,8 @@ void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) co
     const MultiIndexSet &result = (interpolation) ? work : space;
 
     n = result.getNumIndexes();
-    poly = new int[result.getVector()->size()];
-    std::copy(result.getVector()->begin(), result.getVector()->end(), poly);
+    poly = new int[result.getVector().size()];
+    std::copy(result.getVector().begin(), result.getVector().end(), poly);
 }
 const double* GridSequence::getSurpluses() const{
     return surpluses.data();

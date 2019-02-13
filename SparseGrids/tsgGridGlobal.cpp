@@ -251,7 +251,7 @@ void GridGlobal::setTensors(MultiIndexSet &tset, int cnum_outputs, TypeOneDRule 
 }
 
 void GridGlobal::proposeUpdatedTensors(){
-    int max_level = *std::max_element(updated_tensors.getVector()->begin(), updated_tensors.getVector()->end());
+    int max_level = updated_tensors.getMaxIndex();
     wrapper.load(custom, max_level, rule, alpha, beta);
 
     std::vector<int> updates_tensor_w;
@@ -304,12 +304,12 @@ int GridGlobal::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.get
 int GridGlobal::getNumNeeded() const{ return needed.getNumIndexes(); }
 int GridGlobal::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
-void GridGlobal::mapIndexesToNodes(const std::vector<int> *indexes, double *x) const{
-    int num_points = (int) (indexes->size() / (size_t) num_dimensions);
+void GridGlobal::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
+    int num_points = (int) (indexes.size() / (size_t) num_dimensions);
     Data2D<double> splitx;
     splitx.load(num_dimensions, num_points, x);
     Data2D<int> spliti;
-    spliti.cload(num_dimensions, num_points, indexes->data());
+    spliti.cload(num_dimensions, num_points, indexes.data());
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = spliti.getCStrip(i);
@@ -542,7 +542,7 @@ void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *
     std::vector<int> node_indexes;
     dynamic_values->getNodesIndexes(node_indexes);
     x.resize(node_indexes.size());
-    mapIndexesToNodes(&node_indexes, x.data());
+    mapIndexesToNodes(node_indexes, x.data());
 }
 void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double> &y){
     std::vector<int> p(num_dimensions);
@@ -650,7 +650,7 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[])
     Data2D<double> weights; weights.resize(num_points, num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, 1.0, cuda_vals, *(weights.getVector()), 0.0, y);
+    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, 1.0, cuda_vals, weights.getVector(), 0.0, y);
 }
 void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     evaluateBatchGPUcublas(x, num_x, y);
@@ -673,7 +673,7 @@ void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, d
     Data2D<double> weights; weights.resize(num_points, num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, 1.0, cuda_vals, *(weights.getVector()), 0.0, y);
+    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, 1.0, cuda_vals, weights.getVector(), 0.0, y);
 }
 #endif // Tasmanian_ENABLE_MAGMA
 
@@ -733,7 +733,7 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
                 return polynomial_set.missing(qindex);
             }, quadrature_tensors);
 
-        int getMaxQuadLevel = *std::max_element(quadrature_tensors.getVector()->begin(), quadrature_tensors.getVector()->end());
+        int getMaxQuadLevel = quadrature_tensors.getMaxIndex();
 
         GridGlobal QuadGrid;
         if (getMaxQuadLevel < TableGaussPatterson::getNumLevels()-1){
@@ -943,8 +943,8 @@ void GridGlobal::getPolynomialSpace(bool interpolation, int &n, int* &poly) cons
     getPolynomialSpace(interpolation, polynomial_set);
 
     n = polynomial_set.getNumIndexes();
-    poly = new int[polynomial_set.getVector()->size()];
-    std::copy(polynomial_set.getVector()->begin(), polynomial_set.getVector()->end(), poly);
+    poly = new int[polynomial_set.getVector().size()];
+    std::copy(polynomial_set.getVector().begin(), polynomial_set.getVector().end(), poly);
 }
 const int* GridGlobal::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));

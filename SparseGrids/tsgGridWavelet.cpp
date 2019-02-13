@@ -57,14 +57,14 @@ template<bool useAscii> void GridWavelet::write(std::ostream &os) const{
     if (!points.empty()) points.write<useAscii>(os);
     if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
         IO::writeFlag<useAscii, IO::pad_auto>((coefficients.getNumStrips() != 0), os);
-        if (coefficients.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*coefficients.getVector(), os);
+        if (coefficients.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(coefficients.getVector(), os);
         IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<useAscii>(os);
     }else{
         IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<useAscii>(os);
         IO::writeFlag<useAscii, IO::pad_auto>((coefficients.getNumStrips() != 0), os);
-        if (coefficients.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*coefficients.getVector(), os);
+        if (coefficients.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(coefficients.getVector(), os);
     }
 
     if (num_outputs > 0) values.write<useAscii>(os);
@@ -80,14 +80,14 @@ template<bool useAscii> void GridWavelet::read(std::istream &is){
     if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
         if (IO::readFlag<useAscii>(is)){
             coefficients.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, *coefficients.getVector());
+            IO::readVector<useAscii>(is, coefficients.getVector());
         }
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
     }else{
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
         if (IO::readFlag<useAscii>(is)){
             coefficients.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, *coefficients.getVector());
+            IO::readVector<useAscii>(is, coefficients.getVector());
         }
     }
 
@@ -246,7 +246,7 @@ void GridWavelet::mergeRefinement(){
     }
     needed = MultiIndexSet();
     coefficients.resize(num_outputs, num_all_points);
-    std::fill(coefficients.getVector()->begin(), coefficients.getVector()->end(), 0.0);
+    coefficients.fill(0.0);
 }
 void GridWavelet::evaluate(const double x[], double y[]) const{
     int num_points = points.getNumIndexes();
@@ -445,10 +445,10 @@ void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
     int num_points = points.getNumIndexes();
     pmap.resize(num_dimensions, num_points);
     if (tolerance == 0.0){
-        std::fill(pmap.getVector()->begin(), pmap.getVector()->end(), 1); // if tolerance is 0, refine everything
+        pmap.fill(1); // if tolerance is 0, refine everything
         return;
     }else{
-        std::fill(pmap.getVector()->begin(), pmap.getVector()->end(), 0);
+        pmap.fill(0);
     }
 
     std::vector<double> norm;
@@ -499,7 +499,7 @@ void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
                 std::copy(p, p + num_dimensions, indexes.getStrip(i));
             }
             MultiIndexSet pointset(num_dimensions);
-            pointset.setIndexes(*(indexes.getVector()));
+            pointset.setIndexes(indexes.getVector());
 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);

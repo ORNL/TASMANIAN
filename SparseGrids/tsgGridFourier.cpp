@@ -58,7 +58,7 @@ template<bool useAscii> void GridFourier::write(std::ostream &os) const{
     if (num_outputs > 0){
         values.write<useAscii>(os);
         IO::writeFlag<useAscii, IO::pad_auto>((fourier_coefs.getNumStrips() != 0), os);
-        if (fourier_coefs.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*fourier_coefs.getVector(), os);
+        if (fourier_coefs.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(fourier_coefs.getVector(), os);
     }
 
     IO::writeFlag<useAscii, IO::pad_line>(false, os);
@@ -83,7 +83,7 @@ template<bool useAscii> void GridFourier::read(std::istream &is){
         values.read<useAscii>(is);
         if (IO::readFlag<useAscii>(is)){
             fourier_coefs.resize(num_outputs, 2 * points.getNumIndexes());
-            IO::readVector<useAscii>(is, *fourier_coefs.getVector());
+            IO::readVector<useAscii>(is, fourier_coefs.getVector());
         }
     }
 
@@ -225,7 +225,7 @@ void GridFourier::generateIndexingMap(std::vector<std::vector<int>> &index_map) 
     // Create a map, where at level 0: 0 -> 0, level 1: 0 1 2 -> 0 1 2, level 2: 0 1 2 3 4 5 6 7 8 -> 0 3 4 1 5 6 2 7 8
     // The map takes a point from previous map and adds two more points ...
     // Thus, a spacial point i on level l is Tasmanian point index_map[l][i]
-    int maxl = 1 + *std::max_element(active_tensors.getVector()->begin(), active_tensors.getVector()->end());
+    int maxl = 1 + active_tensors.getMaxIndex();
     index_map.resize(maxl);
     index_map[0].resize(1, 0);
     int c = 1;
@@ -465,8 +465,8 @@ void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]
     Data2D<double> wimag;
     evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
     cudaDoubles gpuY;
-    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points,  1.0, cuda_real, *(wreal.getVector()), 0.0, gpuY);
-    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, -1.0, cuda_imag, *(wimag.getVector()), 1.0, gpuY);
+    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points,  1.0, cuda_real, wreal.getVector(), 0.0, gpuY);
+    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, -1.0, cuda_imag, wimag.getVector(), 1.0, gpuY);
     gpuY.unload(y);
 }
 void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
