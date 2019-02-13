@@ -90,7 +90,7 @@ void TasmanianDREAM::getIJKdelta(size_t i, size_t j, size_t k, double w, std::ve
 
 void TasmanianDREAM::expandHistory(int num_snapshots){
     history.reserve(history.size() + num_snapshots * num_dimensions * num_chains);
-    pdf_history.reserve(pdf_history.size() + num_snapshots * num_dimensions);
+    pdf_history.reserve(pdf_history.size() + num_snapshots * num_chains);
 }
 
 void TasmanianDREAM::saveStateHistory(){
