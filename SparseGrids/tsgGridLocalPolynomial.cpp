@@ -77,17 +77,17 @@ template<bool useAscii> void GridLocalPolynomial::write(std::ostream &os) const{
     if (!points.empty()) points.write<useAscii>(os);
     if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
         IO::writeFlag<useAscii, IO::pad_auto>((surpluses.getNumStrips() != 0), os);
-        if (surpluses.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*surpluses.getVector(), os);
+        if (surpluses.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(surpluses.getVector(), os);
         IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<useAscii>(os);
     }else{
         IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<useAscii>(os);
         IO::writeFlag<useAscii, IO::pad_auto>((surpluses.getNumStrips() != 0), os);
-        if (surpluses.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*surpluses.getVector(), os);
+        if (surpluses.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(surpluses.getVector(), os);
     }
     IO::writeFlag<useAscii, IO::pad_auto>((parents.getNumStrips() != 0), os);
-    if (parents.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(*parents.getVector(), os);
+    if (parents.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(parents.getVector(), os);
 
     IO::writeNumbers<useAscii, IO::pad_rspace>(os, (int) roots.size());
     IO::writeVector<useAscii, IO::pad_line>(roots, os);
@@ -110,19 +110,19 @@ template<bool useAscii> void GridLocalPolynomial::read(std::istream &is){
     if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
         if (IO::readFlag<useAscii>(is)){
             surpluses.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, *surpluses.getVector());
+            IO::readVector<useAscii>(is, surpluses.getVector());
         }
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
     }else{
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
         if (IO::readFlag<useAscii>(is)){
             surpluses.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, *surpluses.getVector());
+            IO::readVector<useAscii>(is, surpluses.getVector());
         }
     }
     if (IO::readFlag<useAscii>(is)){
         parents.resize(rule->getMaxNumParents() * num_dimensions, points.getNumIndexes());
-        IO::readVector<useAscii>(is, *parents.getVector());
+        IO::readVector<useAscii>(is, parents.getVector());
     }
 
     size_t num_points = (size_t) ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes());
@@ -195,7 +195,7 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
 
     if ((!points.empty()) && (num_outputs > 0)){ // points are loaded
         surpluses.resize(num_outputs, points.getNumIndexes());
-        *surpluses.getVector() = *pwpoly->surpluses.getVector(); // copy assignment
+        surpluses.getVector() = pwpoly->surpluses.getVector(); // copy assignment
     }
 }
 
@@ -343,7 +343,7 @@ void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[]) co
 // evaluation of a single x cannot be accelerated with a gpu (not parallelizable), do that on the CPU and use the GPU only for the case of many outputs
 void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[]) const{ evaluateFastGPUcublas(x, y); }
 void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-    if (cuda_surpluses.size() == 0) cuda_surpluses.load(*(surpluses.getVector()));
+    if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses.getVector());
 
     std::vector<int> sindx, spntr;
     std::vector<double> svals;
@@ -428,7 +428,7 @@ void GridLocalPolynomial::mergeRefinement(){
         buildTree();
     }
     surpluses.resize(num_outputs, num_all_points);
-    std::fill(surpluses.getVector()->begin(), surpluses.getVector()->end(), 0.0);
+    surpluses.fill(0.0);
 }
 
 void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
@@ -557,7 +557,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
     int num_points = points.getNumIndexes();
 
     surpluses.resize(num_outputs, num_points);
-    *surpluses.getVector() = *values.aliasValues(); // copy assignment
+    surpluses.getVector() = values.aliasValues(); // copy assignment
 
     Data2D<int> dagUp;
     MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
@@ -986,10 +986,10 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
     int num_points = points.getNumIndexes();
     map2.resize(num_dimensions, num_points);
     if (tolerance == 0.0){
-        std::fill(map2.getVector()->begin(), map2.getVector()->end(), 1); // if tolerance is 0, refine everything
+        map2.fill(1); // if tolerance is 0, refine everything
         return;
     }else{
-        std::fill(map2.getVector()->begin(), map2.getVector()->end(), 0);
+        map2.fill(0);
     }
 
     std::vector<double> norm;
@@ -1155,7 +1155,7 @@ void GridLocalPolynomial::addChildLimited(const int point[], int direction, cons
 
 void GridLocalPolynomial::clearRefinement(){ needed = MultiIndexSet(); }
 const double* GridLocalPolynomial::getSurpluses() const{
-    return surpluses.getVector()->data();
+    return surpluses.getVector().data();
 }
 const int* GridLocalPolynomial::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
@@ -1244,7 +1244,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 
     StorageSet values_kept;
     values_kept.resize(num_outputs, num_kept);
-    values_kept.aliasValues()->resize(((size_t) num_kept) * ((size_t) num_outputs));
+    values_kept.aliasValues().resize(((size_t) num_kept) * ((size_t) num_outputs));
 
     num_kept = 0;
     for(int i=0; i<num_points; i++){
@@ -1284,23 +1284,23 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
         clearRefinement();
     }
     surpluses.resize(num_outputs, getNumPoints());
-    std::copy(c, c + surpluses.getTotalEntries(), surpluses.getVector()->data());
+    std::copy_n(c, surpluses.getTotalEntries(), surpluses.getVector().data());
 
-    std::vector<double> *vals = values.aliasValues();
-    vals->resize(surpluses.getTotalEntries());
+    std::vector<double> &vals = values.aliasValues();
+    vals.resize(surpluses.getTotalEntries());
 
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     switch(acc){
         #ifdef Tasmanian_ENABLE_BLAS
-        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals.data()); break;
         #endif
         #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals->data()); break;
-        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals.data()); break;
+        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals.data()); break;
         #endif
         default:
-            evaluateBatch(x.data(), points.getNumIndexes(), vals->data());
+            evaluateBatch(x.data(), points.getNumIndexes(), vals.data());
     }
 }
 

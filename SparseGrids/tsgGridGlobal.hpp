@@ -154,7 +154,7 @@ protected:
     void acceptUpdatedTensors();
     void getPolynomialSpace(bool interpolation, MultiIndexSet &polynomial_set) const;
 
-    void mapIndexesToNodes(const std::vector<int> *indexes, double *x) const;
+    void mapIndexesToNodes(const std::vector<int> &indexes, double *x) const;
     void loadConstructedTensors();
 
 private:

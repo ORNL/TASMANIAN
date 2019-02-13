@@ -565,7 +565,7 @@ void addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exc
         }
     }
     mset.setNumDimensions(num_dimensions); // set of new tensors
-    if (tens.getVector()->size() > 0) mset.addData2D(tens);
+    if (tens.getVector().size() > 0) mset.addData2D(tens);
 }
 
 }

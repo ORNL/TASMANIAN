@@ -206,7 +206,7 @@ void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level
     int num_indexes = mset.getNumIndexes();
     std::vector<int> keep;
     keep.reserve((size_t) num_indexes);
-    auto imset = mset.getVector()->begin();
+    auto imset = mset.getVector().begin();
     for(int i=0; i<num_indexes; i++){
         bool obey = true;
         for(auto l : level_limits){
@@ -282,12 +282,12 @@ void MultiIndexManipulations::generateNonNestedPoints(const MultiIndexSet &tenso
         MultiIndexManipulations::generateFullTensorSet<int>(npoints, raw_points);
 
         size_t j = 0;
-        for(auto &g : *(raw_points.getVector())){
+        for(auto &g : raw_points.getVector()){
             g = wrapper.getPointIndex(p[j++], g); // remap local-order-to-global-index
             if (j == num_dimensions) j = 0;
         }
         point_tensors[i].setNumDimensions((int) num_dimensions);
-        point_tensors[i].addUnsortedInsexes(*raw_points.getVector());
+        point_tensors[i].addUnsortedInsexes(raw_points.getVector());
     }
 
     MultiIndexManipulations::unionSets<true>(point_tensors, points);
@@ -365,7 +365,7 @@ void MultiIndexManipulations::createActiveTensors(const MultiIndexSet &mset, con
     std::vector<int> indexes(nz_weights * num_dimensions);
     nz_weights = 0;
     auto iter = indexes.begin();
-    auto iset = mset.getVector()->begin();
+    auto iset = mset.getVector().begin();
     for(auto w: weights){
         if (w != 0){
             std::copy_n(iset, num_dimensions, iter);

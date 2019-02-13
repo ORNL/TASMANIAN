@@ -199,7 +199,7 @@ protected:
                 transpoints.getStrip(j)[i] = work->getIndex(i)[j];
             }
         }
-        cuda_points.load(*(transpoints.getVector()));
+        cuda_points.load(transpoints.getVector());
     }
     void clearCudaNodes(){
         cuda_nodes.clear();

@@ -352,7 +352,7 @@ protected:
         }
     }
     void loadCudaData() const{
-        cuda_surpluses.load(*(surpluses.getVector()));
+        cuda_surpluses.load(surpluses.getVector());
         std::vector<double> cpu_nodes(((size_t) getNumPoints()) * ((size_t) num_dimensions));
         getPoints(cpu_nodes.data());
         cuda_nodes.load(cpu_nodes);
@@ -380,7 +380,7 @@ protected:
                 encodeSupportForGPU<1, rule_localp0>(work, cpu_support);
             }
         }
-        cuda_support.load(*(cpu_support.getVector()));
+        cuda_support.load(cpu_support.getVector());
         cuda_pntr.load(pntr);
         cuda_indx.load(indx);
         cuda_roots.load(roots);

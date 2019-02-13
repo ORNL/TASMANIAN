@@ -173,9 +173,9 @@ public:
     //! \brief Returns **getStride()** times **getNumStrips()** but using `size_t` arithmetic avoiding a potential `int` overflow
     size_t getTotalEntries() const{ return stride * num_strips; }
     //! \brief Returns a reference to the `std::vector` that holds the internal data, can be used only after a call to **resize()**
-    std::vector<T>* getVector(){ return &vec; }
+    std::vector<T>& getVector(){ return vec; }
     //! \brief Returns a const reference to the `std::vector` that holds the internal data, can be used only after a call to **resize()**
-    const std::vector<T>* getVector() const{ return &vec; }
+    const std::vector<T>& getVector() const{ return vec; }
     //! \brief Clear all used data (redundant, remove)
     void clear(){
         stride = 0;
@@ -189,6 +189,9 @@ public:
         vec.insert(vec.end(), x.begin(), x.end());
         num_strips++;
     }
+
+    //! \brief Fill the entire vector with the specified \b value
+    void fill(T value){ std::fill(vec.begin(), vec.end(), value); }
 
 private:
     size_t stride, num_strips;
@@ -245,14 +248,14 @@ public:
     //! \brief Add more indexes to the set, **addition** is assumed unsorted (will be sorted first)
     void addUnsortedInsexes(const std::vector<int> &addition);
     //! \brief Add indexes from another **MultiIndexSet**, makes a call to **addSortedInsexes()**
-    inline void addMultiIndexSet(const MultiIndexSet &addition){ addSortedInsexes(*addition.getVector()); }
+    inline void addMultiIndexSet(const MultiIndexSet &addition){ addSortedInsexes(addition.getVector()); }
     //! \brief Add indexes from a general **Data<>** structure, makes a call to **addUnsortedInsexes()**
-    inline void addData2D(const Data2D<int> &addition){ addUnsortedInsexes(*addition.getVector()); }
+    inline void addData2D(const Data2D<int> &addition){ addUnsortedInsexes(addition.getVector()); }
 
     //! \brief Returns a const reference to the internal data
-    inline const std::vector<int>* getVector() const{ return &indexes; }
+    inline const std::vector<int>& getVector() const{ return indexes; }
     //! \brief Returns a reference to the internal data, must not modify the lexicographical order or the size of the vector
-    inline std::vector<int>* getVector(){ return &indexes; } // used for remapping during tensor generic points
+    inline std::vector<int>& getVector(){ return indexes; } // used for remapping during tensor generic points
 
     //! \brief Returns the slot containing index **p**, returns `-1` if not found
     int getSlot(const int *p) const;
@@ -316,11 +319,9 @@ public:
     //! \brief Returns reference to the **i**-th value, the **i** index matches the corresponding **MultiIndexSet**
     double* getValues(int i);
     //! \brief Returns reference to the internal data vector
-    std::vector<double>* aliasValues(); // alternative to setValues()
+    std::vector<double>& aliasValues(){ return values; }
     //! \brief Returns const reference to the internal data vector
-    const std::vector<double>* aliasValues() const; // alternative to setValues()
-    //! \brief Read the number of outputs
-    int getNumOutputs() const;
+    const std::vector<double>& aliasValues() const{ return values; }
 
     //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
     void setValues(const double vals[]);

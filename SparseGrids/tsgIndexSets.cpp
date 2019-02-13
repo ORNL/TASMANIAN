@@ -201,8 +201,8 @@ void MultiIndexSet::diffSets(const MultiIndexSet &substract, MultiIndexSet &resu
 
     auto ithis = indexes.begin();
     auto endthis = indexes.end();
-    auto iother = substract.getVector()->begin();
-    auto endother = substract.getVector()->end();
+    auto iother = substract.getVector().begin();
+    auto endother = substract.getVector().end();
 
     while(ithis != endthis){
         if (iother == endother){
@@ -277,11 +277,8 @@ void StorageSet::resize(int cnum_outputs, int cnum_values){
     num_values = cnum_values;
 }
 
-int StorageSet::getNumOutputs() const{ return (int) num_outputs; }
 const double* StorageSet::getValues(int i) const{ return &(values[i*num_outputs]); }
 double* StorageSet::getValues(int i){ return &(values[i*num_outputs]); }
-std::vector<double>* StorageSet::aliasValues(){ return &values; }
-const std::vector<double>* StorageSet::aliasValues() const{ return &values; }
 
 void StorageSet::setValues(const double vals[]){
     values.resize(num_outputs * num_values);

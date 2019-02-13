@@ -162,7 +162,7 @@ void GridSequence::updateGrid(MultiIndexSet &update){
     if ((num_outputs == 0) || (points.empty())){
         setPoints(update, num_outputs, rule);
     }else{
-        update.addSortedInsexes(*points.getVector());
+        update.addSortedInsexes(points.getVector());
         update.diffSets(points, needed);
 
         if (!needed.empty()) prepareSequence(0);
@@ -252,7 +252,7 @@ void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
         values.setValues(vals);
     }else{
         values.addValues(points, needed, vals);
-        points.addSortedInsexes(*needed.getVector());
+        points.addSortedInsexes(needed.getVector());
         needed = MultiIndexSet();
         prepareSequence(0);
     }
@@ -361,7 +361,7 @@ void GridSequence::getCandidateConstructionPoints(std::function<double(const int
 
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    x.resize(dynamic_values->initial_points.getVector()->size() + new_points.getVector()->size());
+    x.resize(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
     auto t = weighted_points.begin();
     auto ix = x.begin();
     while(t != weighted_points.end()){
@@ -501,7 +501,7 @@ void GridSequence::evaluateBatchGPUcublas(const double x[], int num_x, double y[
     Data2D<double> hweights; hweights.resize(points.getNumIndexes(), num_x);
     evaluateHierarchicalFunctions(x, num_x, hweights.getStrip(0));
 
-    cuda_engine.cublasDGEMM(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, *(hweights.getVector()), 0.0, y);
+    cuda_engine.cublasDGEMM(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, hweights.getVector(), 0.0, y);
 }
 void GridSequence::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses);
@@ -616,7 +616,6 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     cuda_surpluses.clear();
     clearCudaNodes();
     #endif
-    std::vector<double> *vals = 0;
     size_t num_ponits = (size_t) getNumPoints();
     size_t num_vals = num_ponits * ((size_t) num_outputs);
     if (!points.empty()){
@@ -625,22 +624,22 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
         points = std::move(needed);
         needed = MultiIndexSet();
     }
-    vals = values.aliasValues();
-    vals->resize(num_vals);
+    std::vector<double> &vals = values.aliasValues();
+    vals.resize(num_vals);
     surpluses.resize(num_vals);
     std::copy_n(c, num_vals, surpluses.data());
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     switch(acc){
         #ifdef Tasmanian_ENABLE_BLAS
-        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals.data()); break;
         #endif
         #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals->data()); break;
-        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals.data()); break;
+        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals.data()); break;
         #endif
         default:
-            evaluateBatch(x.data(), points.getNumIndexes(), vals->data());
+            evaluateBatch(x.data(), points.getNumIndexes(), vals.data());
     }
 }
 
@@ -828,8 +827,8 @@ void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) co
     const MultiIndexSet &result = (interpolation) ? work : space;
 
     n = result.getNumIndexes();
-    poly = new int[result.getVector()->size()];
-    std::copy(result.getVector()->begin(), result.getVector()->end(), poly);
+    poly = new int[result.getVector().size()];
+    std::copy(result.getVector().begin(), result.getVector().end(), poly);
 }
 const double* GridSequence::getSurpluses() const{
     return surpluses.data();
@@ -915,7 +914,7 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 
 void GridSequence::recomputeSurpluses(){
     int num_points = points.getNumIndexes();
-    surpluses = *(values.aliasValues());
+    surpluses = values.aliasValues();
 
     Data2D<double> surp;
     surp.load(num_outputs, num_points, surpluses.data());

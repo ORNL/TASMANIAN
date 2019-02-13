@@ -1197,7 +1197,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
         dense_vals.resize(num_points, num_x);
         getGridWavelet()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         int num_nz = 0;
-        for(auto v : *dense_vals.getVector()) if (v != 0.0) num_nz++;
+        for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;
         pntr = new int[num_x+1];
         indx = new int[num_nz];
         vals = new double[num_nz];
@@ -1267,7 +1267,7 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
         Data2D<double> dense_vals;
         dense_vals.resize(num_points, num_x);
         getGridWavelet()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
-        for(auto v : *dense_vals.getVector()) if (v != 0.0) num_nz++;
+        for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;
     }else if (empty()){
         return 0;
     }else{
@@ -1287,7 +1287,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
         dense_vals.resize(num_points, num_x);
         base->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         int num_nz = 0;
-        for(auto v : *dense_vals.getVector()) if (v != 0.0) num_nz++;
+        for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;
         num_nz = 0;
         for(int i=0; i<num_x; i++){
             pntr[i] = num_nz;
