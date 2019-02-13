@@ -171,7 +171,7 @@ bool DreamExternalTester::testGaussian3D(){
         [&]()->double{ return unif(park_miller); }
     );
 
-    pass = compareSamples(lower, upper, 5, tresult, state.getHistory());
+    pass = compareSamples(lower, upper, 5, tresult, state.getHistory()) && (state.getAcceptanceRate() > 0.5);
     passAll = passAll && pass;
 
     if (verbose || !pass) reportPassFail(pass, "Gaussian 3D", "with correlated chains");
@@ -406,8 +406,8 @@ bool DreamExternalTester::testCustomModel(){
 
     std::vector<double> mode;
     state.getApproximateMode(mode);
-    //cout << mode[0] << "  " << mode[1] << "  " << mode[2] << endl;
-    pass = ((mode[0] > 0.4) && (mode[0] < 0.6) && (mode[2] > 0.4) && (mode[2] < 0.6));
+    //cout << mode[0] << "  " << mode[1] << "  " << mode[2] << "  acceptance = " << state.getAcceptanceRate() << endl;
+    pass = ((mode[0] > 0.45) && (mode[0] < 0.55) && (mode[2] > 0.45) && (mode[2] < 0.55) && (state.getAcceptanceRate() > 0.5));
     passAll = passAll && pass;
     if (verbose || !pass) reportPassFail(pass, "Inference 3D", "optimization objective");
 
