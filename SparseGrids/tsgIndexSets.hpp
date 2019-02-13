@@ -319,8 +319,6 @@ public:
     std::vector<double>* aliasValues(); // alternative to setValues()
     //! \brief Returns const reference to the internal data vector
     const std::vector<double>* aliasValues() const; // alternative to setValues()
-    //! \brief Read the number of outputs
-    int getNumOutputs() const;
 
     //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
     void setValues(const double vals[]);
