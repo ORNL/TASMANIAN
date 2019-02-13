@@ -316,9 +316,9 @@ public:
     //! \brief Returns reference to the **i**-th value, the **i** index matches the corresponding **MultiIndexSet**
     double* getValues(int i);
     //! \brief Returns reference to the internal data vector
-    std::vector<double>* aliasValues(); // alternative to setValues()
+    std::vector<double>& aliasValues(){ return values; }
     //! \brief Returns const reference to the internal data vector
-    const std::vector<double>* aliasValues() const; // alternative to setValues()
+    const std::vector<double>& aliasValues() const{ return values; }
 
     //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
     void setValues(const double vals[]);

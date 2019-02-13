@@ -279,8 +279,6 @@ void StorageSet::resize(int cnum_outputs, int cnum_values){
 
 const double* StorageSet::getValues(int i) const{ return &(values[i*num_outputs]); }
 double* StorageSet::getValues(int i){ return &(values[i*num_outputs]); }
-std::vector<double>* StorageSet::aliasValues(){ return &values; }
-const std::vector<double>* StorageSet::aliasValues() const{ return &values; }
 
 void StorageSet::setValues(const double vals[]){
     values.resize(num_outputs * num_values);

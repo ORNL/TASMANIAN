@@ -557,7 +557,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
     int num_points = points.getNumIndexes();
 
     surpluses.resize(num_outputs, num_points);
-    *surpluses.getVector() = *values.aliasValues(); // copy assignment
+    *surpluses.getVector() = values.aliasValues(); // copy assignment
 
     Data2D<int> dagUp;
     MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
@@ -1244,7 +1244,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 
     StorageSet values_kept;
     values_kept.resize(num_outputs, num_kept);
-    values_kept.aliasValues()->resize(((size_t) num_kept) * ((size_t) num_outputs));
+    values_kept.aliasValues().resize(((size_t) num_kept) * ((size_t) num_outputs));
 
     num_kept = 0;
     for(int i=0; i<num_points; i++){
@@ -1286,21 +1286,21 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
     surpluses.resize(num_outputs, getNumPoints());
     std::copy(c, c + surpluses.getTotalEntries(), surpluses.getVector()->data());
 
-    std::vector<double> *vals = values.aliasValues();
-    vals->resize(surpluses.getTotalEntries());
+    std::vector<double> &vals = values.aliasValues();
+    vals.resize(surpluses.getTotalEntries());
 
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     switch(acc){
         #ifdef Tasmanian_ENABLE_BLAS
-        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals.data()); break;
         #endif
         #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals->data()); break;
-        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals.data()); break;
+        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals.data()); break;
         #endif
         default:
-            evaluateBatch(x.data(), points.getNumIndexes(), vals->data());
+            evaluateBatch(x.data(), points.getNumIndexes(), vals.data());
     }
 }
 

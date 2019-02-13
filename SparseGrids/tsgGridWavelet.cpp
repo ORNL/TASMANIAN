@@ -610,7 +610,7 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     std::copy_n(c, size_coeff, coefficients.getStrip(0));
 
     values.resize(num_outputs, num_points);
-    values.aliasValues()->resize(size_coeff);
+    values.aliasValues().resize(size_coeff);
 
     std::vector<double> x(((size_t) num_points) * ((size_t) num_dimensions));
     getPoints(x.data());

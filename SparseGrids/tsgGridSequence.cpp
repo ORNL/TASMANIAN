@@ -616,7 +616,6 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     cuda_surpluses.clear();
     clearCudaNodes();
     #endif
-    std::vector<double> *vals = 0;
     size_t num_ponits = (size_t) getNumPoints();
     size_t num_vals = num_ponits * ((size_t) num_outputs);
     if (!points.empty()){
@@ -625,22 +624,22 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
         points = std::move(needed);
         needed = MultiIndexSet();
     }
-    vals = values.aliasValues();
-    vals->resize(num_vals);
+    std::vector<double> &vals = values.aliasValues();
+    vals.resize(num_vals);
     surpluses.resize(num_vals);
     std::copy_n(c, num_vals, surpluses.data());
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
     switch(acc){
         #ifdef Tasmanian_ENABLE_BLAS
-        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals.data()); break;
         #endif
         #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals->data()); break;
-        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals->data()); break;
+        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals.data()); break;
+        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals.data()); break;
         #endif
         default:
-            evaluateBatch(x.data(), points.getNumIndexes(), vals->data());
+            evaluateBatch(x.data(), points.getNumIndexes(), vals.data());
     }
 }
 
@@ -915,7 +914,7 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 
 void GridSequence::recomputeSurpluses(){
     int num_points = points.getNumIndexes();
-    surpluses = *(values.aliasValues());
+    surpluses = values.aliasValues();
 
     Data2D<double> surp;
     surp.load(num_outputs, num_points, surpluses.data());

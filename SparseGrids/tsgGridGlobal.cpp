@@ -633,7 +633,7 @@ void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) c
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateFastGPUcublas(const double x[], double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
+    if (cuda_vals.size() == 0) cuda_vals.load(values.aliasValues());
 
     std::vector<double> weights(points.getNumIndexes());
     getInterpolationWeights(x, weights.data());
@@ -644,7 +644,7 @@ void GridGlobal::evaluateFastGPUcuda(const double x[], double y[]) const{
     evaluateFastGPUcublas(x, y);
 }
 void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
+    if (cuda_vals.size() == 0) cuda_vals.load(values.aliasValues());
 
     int num_points = points.getNumIndexes();
     Data2D<double> weights; weights.resize(num_points, num_x);
@@ -659,7 +659,7 @@ void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) c
 
 #ifdef Tasmanian_ENABLE_MAGMA
 void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
+    if (cuda_vals.size() == 0) cuda_vals.load(values.aliasValues());
 
     std::vector<double> weights(points.getNumIndexes());
     getInterpolationWeights(x, weights.data());
@@ -667,7 +667,7 @@ void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) c
     cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, points.getNumIndexes(), 1.0, cuda_vals, weights, 0.0, y);
 }
 void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(*(values.aliasValues()));
+    if (cuda_vals.size() == 0) cuda_vals.load(values.aliasValues());
 
     int num_points = points.getNumIndexes();
     Data2D<double> weights; weights.resize(num_points, num_x);
