@@ -55,12 +55,12 @@ namespace TasDREAM{
 //! Does not compile if the variables do not exit.
 #define __TASDREAM_CHECK_LOWERUPPER \
     if (lower.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state."); \
-    if (upper.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state.");
+    if (upper.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of upper does not match the dimension in state.");
 
 //! \internal
 //! \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
 //! \ingroup TasmanianDREAM
-    
+
 //! Assumes two vectors \b lower and \b upper are defined and creates a lambda using \b inHypercube().
 #define __TASDREAM_HYPERCUBE_DOMAIN \
     [&](const std::vector<double> &x)->bool{ return inHypercube(lower, upper, x); }
@@ -188,6 +188,8 @@ void SampleDREAM(int num_burnup, int num_collect,
         auto icand = candidates.begin(); // loop over all candidates and values, accept or reject
         auto ival = values.begin();
 
+        size_t accepted = 0;
+
         for(size_t i=0; i<num_chains; i++){
             bool keep_new = valid[i]; // if not valid, automatically reject
             if (valid[i]){ // apply random test
@@ -206,6 +208,7 @@ void SampleDREAM(int num_burnup, int num_collect,
             if (keep_new){
                 std::copy_n(icand, num_dimensions, new_state.begin() + i * num_dimensions);
                 new_values[i] = *ival;
+                accepted++; // accepted one more proposal
             }else{ // reject and reuse the old state
                 state.getChainState((int) i, &*(new_state.begin() + i * num_dimensions));
                 new_values[i] = state.getPDFvalue(i);
@@ -221,7 +224,7 @@ void SampleDREAM(int num_burnup, int num_collect,
         state.setPDFvalues(new_values);
 
         if (t >= num_burnup)
-            state.saveStateHistory();
+            state.saveStateHistory(accepted);
     }
 }
 

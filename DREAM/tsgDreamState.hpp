@@ -85,6 +85,8 @@ public:
     int getNumDimensions() const{ return (int) num_dimensions; }
     //! \brief Return the number of chains.
     int getNumChains() const{ return (int) num_chains; }
+    //! \brief Return the number of saved vectors in the history.
+    size_t getNumHistory() const{ return pdf_history.size(); }
 
     //! \brief Return \b true if the state has already been initialized with \b setState().
     bool isStateReady() const{ return init_state; }
@@ -153,8 +155,8 @@ public:
 
     //! \brief Appends the current state to the history.
 
-    //! Used by the \b DREAM sampler and probably should not be called by the user.
-    void saveStateHistory();
+    //! Used by the \b DREAM sampler and probably should not be called by the user; \b num_accepted is the number of new chains in the state.
+    void saveStateHistory(size_t num_accepted);
 
     //! \brief Return a const reference to the internal state vector.
     const std::vector<double>& getHistory() const{ return history; }
@@ -168,11 +170,18 @@ public:
     //! \brief Return the sample with highest probability, searchers within the history.
     void getApproximateMode(std::vector<double> &mode) const;
 
-    // clear history
+    //! \brief Clear the stored history (does not touch the state).
+    void clearHistory();
+
+    //! \brief Returns the acceptance rate of the current history.
+    double getAcceptanceRate() const{ return ((pdf_history.empty()) ? 0 : ((double) accepted) / ((double) pdf_history.size())); }
+
     // file I/O
 private:
     size_t num_chains, num_dimensions;
     bool init_state, init_values;
+
+    size_t accepted;
 
     std::vector<double> state, history;
     std::vector<double> pdf_values, pdf_history;

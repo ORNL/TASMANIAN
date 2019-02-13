@@ -147,7 +147,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_POSTERIOR, upper, lower, independent_dist, independent_magnitude, state, differential_update, get_random01);
+    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_POSTERIOR, lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 }

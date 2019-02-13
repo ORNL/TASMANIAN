@@ -36,12 +36,12 @@
 namespace TasDREAM{
 
 TasmanianDREAM::TasmanianDREAM(int cnum_chains, int cnum_dimensions) :
-num_chains(cnum_chains), num_dimensions(cnum_dimensions), init_state(false), init_values(false){
+num_chains(cnum_chains), num_dimensions(cnum_dimensions), init_state(false), init_values(false), accepted(0){
     if (cnum_chains < 1) throw std::invalid_argument("ERROR: num_chains must be positive");
     if (cnum_dimensions < 1) throw std::invalid_argument("ERROR: num_dimensions must be positive");
 }
 TasmanianDREAM::TasmanianDREAM(int cnum_chains, const TasGrid::TasmanianSparseGrid &grid) :
-num_chains(cnum_chains), num_dimensions(grid.getNumDimensions()), init_state(false), init_values(false){
+num_chains(cnum_chains), num_dimensions(grid.getNumDimensions()), init_state(false), init_values(false), accepted(0){
     if (cnum_chains < 1) throw std::invalid_argument("ERROR: num_chains must be positive");
     if (grid.getNumDimensions() < 1) throw std::invalid_argument("ERROR: num_dimensions must be positive");
 }
@@ -51,6 +51,7 @@ void TasmanianDREAM::setState(const std::vector<double> &new_state){
     if (new_state.size() != num_chains * num_dimensions) throw std::runtime_error("ERROR: new state has incorrect dimension, must be num_chains times num_dimensions.");
     state = new_state;
     init_state = true;
+    init_values = false;
 }
 void TasmanianDREAM::setState(std::function<void(double *)> update_state){
     state.resize(num_chains * num_dimensions);
@@ -60,6 +61,7 @@ void TasmanianDREAM::setState(std::function<void(double *)> update_state){
         std::advance(istate, num_dimensions);
     }
     init_state = true;
+    init_values = false;
 }
 
 void TasmanianDREAM::setPDFvalues(const std::vector<double> &new_values){
@@ -90,12 +92,13 @@ void TasmanianDREAM::getIJKdelta(size_t i, size_t j, size_t k, double w, std::ve
 
 void TasmanianDREAM::expandHistory(int num_snapshots){
     history.reserve(history.size() + num_snapshots * num_dimensions * num_chains);
-    pdf_history.reserve(pdf_history.size() + num_snapshots * num_dimensions);
+    pdf_history.reserve(pdf_history.size() + num_snapshots * num_chains);
 }
 
-void TasmanianDREAM::saveStateHistory(){
+void TasmanianDREAM::saveStateHistory(size_t num_accepted){
     history.insert(history.end(), state.begin(), state.end());
     pdf_history.insert(pdf_history.end(), pdf_values.begin(), pdf_values.end());
+    accepted += num_accepted;
 }
 
 void TasmanianDREAM::getHistoryMeanVariance(std::vector<double> &mean, std::vector<double> &var) const{
@@ -129,6 +132,12 @@ void TasmanianDREAM::getApproximateMode(std::vector<double> &mode) const{
     auto imax = std::max_element(pdf_history.begin(), pdf_history.end());
     mode.resize(num_dimensions);
     std::copy_n(history.begin() + std::distance(pdf_history.begin(), imax) * num_dimensions, num_dimensions, mode.data());
+}
+
+void TasmanianDREAM::clearHistory(){
+    history = std::vector<double>();
+    pdf_history = std::vector<double>();
+    accepted = 0;
 }
 
 }
