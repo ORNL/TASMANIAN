@@ -55,12 +55,12 @@ namespace TasDREAM{
 //! Does not compile if the variables do not exit.
 #define __TASDREAM_CHECK_LOWERUPPER \
     if (lower.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state."); \
-    if (upper.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state.");
+    if (upper.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of upper does not match the dimension in state.");
 
 //! \internal
 //! \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
 //! \ingroup TasmanianDREAM
-    
+
 //! Assumes two vectors \b lower and \b upper are defined and creates a lambda using \b inHypercube().
 #define __TASDREAM_HYPERCUBE_DOMAIN \
     [&](const std::vector<double> &x)->bool{ return inHypercube(lower, upper, x); }
