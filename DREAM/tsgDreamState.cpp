@@ -51,6 +51,7 @@ void TasmanianDREAM::setState(const std::vector<double> &new_state){
     if (new_state.size() != num_chains * num_dimensions) throw std::runtime_error("ERROR: new state has incorrect dimension, must be num_chains times num_dimensions.");
     state = new_state;
     init_state = true;
+    init_values = false;
 }
 void TasmanianDREAM::setState(std::function<void(double *)> update_state){
     state.resize(num_chains * num_dimensions);
@@ -60,6 +61,7 @@ void TasmanianDREAM::setState(std::function<void(double *)> update_state){
         std::advance(istate, num_dimensions);
     }
     init_state = true;
+    init_values = false;
 }
 
 void TasmanianDREAM::setPDFvalues(const std::vector<double> &new_values){
