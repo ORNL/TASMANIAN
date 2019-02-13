@@ -81,7 +81,7 @@ namespace TasDREAM{
 //! \internal
 //! \brief Extract the \b grid rule and domain.
 //! \ingroup TasmanianDREAM
-    
+
 //! Extract the \b grid rule and domain.
 #define __TASDREAM_GRID_EXTRACT_RULE \
     TasGrid::TypeOneDRule rule = grid.getRule(); \
@@ -91,14 +91,14 @@ namespace TasDREAM{
 //! \internal
 //! \brief Get the Gauss-Hermite lambda.
 //! \ingroup TasmanianDREAM
-    
+
 //! Get the Gauss-Hermite lambda.
 #define __TASDREAM_GRID_DOMAIN_GHLAMBDA [&](const std::vector<double> &)->bool{ return true; }
 
 //! \internal
 //! \brief Get the Gauss-Laguerre lambda.
 //! \ingroup TasmanianDREAM
-    
+
 //! Get the Gauss-Laguerre lambda.
 #define __TASDREAM_GRID_DOMAIN_GLLAMBDA [&](const std::vector<double> &x)->bool{ \
     auto ix = x.begin(); \
@@ -108,7 +108,7 @@ namespace TasDREAM{
 //! \internal
 //! \brief Get the default transform weights.
 //! \ingroup TasmanianDREAM
-    
+
 //! Get the default transform weights.
 #define __TASDREAM_GRID_DOMAIN_DEFAULTS \
     if (!grid.isSetDomainTransfrom()){\
