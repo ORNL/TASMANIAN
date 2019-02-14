@@ -305,18 +305,7 @@ int GridGlobal::getNumNeeded() const{ return needed.getNumIndexes(); }
 int GridGlobal::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
 void GridGlobal::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
-    int num_points = (int) (indexes.size() / (size_t) num_dimensions);
-    Data2D<double> splitx;
-    splitx.load(num_dimensions, num_points, x);
-    Data2D<int> spliti;
-    spliti.cload(num_dimensions, num_points, indexes.data());
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = spliti.getCStrip(i);
-        double *xx = splitx.getStrip(i);
-        for(int j=0; j<num_dimensions; j++)
-            xx[j] = wrapper.getNode(p[j]);
-    }
+    std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
 }
 
 void GridGlobal::getLoadedPoints(double *x) const{
