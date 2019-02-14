@@ -223,65 +223,14 @@ protected:
         // This may not be a requirement for cusparseDgemvi(), but it may be that I have not tested it sufficiently
         // Also, see AccelerationDataGPUFull::cusparseMatveci() for inaccuracies in Nvidia documentation
         if (mode == 1){
-            bool isNotSorted = false;
-            for(int i=0; i<num_nz-1; i++) if (sindx[i] > sindx[i+1]) isNotSorted = true;
-            if (isNotSorted){ // sort the vector
-                std::vector<int> idx1(num_nz);
-                std::vector<int> idx2(num_nz);
-                std::vector<double> vls1(num_nz);
-                std::vector<double> vls2(num_nz);
+            std::vector<int> map(sindx);
+            std::iota(map.begin(), map.end(), 0);
+            std::sort(map.begin(), map.end(), [&](int a, int b)->bool{ return (sindx[a] < sindx[b]); });
 
-                int loop_end = (num_nz % 2 == 1) ? num_nz - 1 : num_nz;
-                for(int i=0; i<loop_end; i+=2){
-                    if (sindx[i] < sindx[i+1]){
-                        idx1[i] = sindx[i];  idx1[i+1] = sindx[i+1];
-                        vls1[i] = svals[i];  vls1[i+1] = svals[i+1];
-                    }else{
-                        idx1[i] = sindx[i+1];  idx1[i+1] = sindx[i];
-                        vls1[i] = svals[i+1];  vls1[i+1] = svals[i];
-                    }
-                }
-                if (num_nz % 2 == 1){
-                    idx1[num_nz - 1] = sindx[num_nz - 1];
-                    vls1[num_nz - 1] = svals[num_nz - 1];
-                }
-
-                int stride = 2;
-                while(stride < num_nz){
-                    int c = 0;
-                    while(c < num_nz){
-                        int acurrent = c;
-                        int bcurrent = c + stride;
-                        int aend = (acurrent + stride < num_nz) ? acurrent + stride : num_nz;
-                        int bend = (bcurrent + stride < num_nz) ? bcurrent + stride : num_nz;
-                        while((acurrent < aend) || (bcurrent  < bend)){
-                            bool picka;
-                            if (bcurrent >= bend){
-                                picka = true;
-                            }else if (acurrent >= aend){
-                                picka = false;
-                            }else{
-                                picka = (idx1[acurrent] < idx1[bcurrent]);
-                            }
-                            if (picka){
-                                idx2[c] = idx1[acurrent];
-                                vls2[c] = vls1[acurrent];
-                                acurrent++;
-                            }else{
-                                idx2[c] = idx1[bcurrent];
-                                vls2[c] = vls1[bcurrent];
-                                bcurrent++;
-                            }
-                            c++;
-                        }
-                    }
-                    stride *= 2;
-                    std::swap(idx1, idx2);
-                    std::swap(vls1, vls2);
-                }
-                sindx = idx1;
-                svals = vls1;
-            }
+            std::vector<int> idx = sindx;
+            std::vector<double> vls = svals;
+            std::transform(map.begin(), map.end(), sindx.begin(), [&](int i)->int{ return idx[i]; });
+            std::transform(map.begin(), map.end(), svals.begin(), [&](int i)->double{ return vls[i]; });
         }
     }
 
