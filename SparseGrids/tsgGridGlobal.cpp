@@ -35,13 +35,6 @@
 
 #include "tsgHiddenExternals.hpp"
 
-#ifdef Tasmanian_ENABLE_CUDA
-#include <cuda_runtime_api.h>
-#include <cuda.h>
-#endif // Tasmanian_ENABLE_CUDA
-
-#include "tsgCudaMacros.hpp"
-
 namespace TasGrid{
 
 GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0){}

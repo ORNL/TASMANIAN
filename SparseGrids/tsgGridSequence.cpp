@@ -35,8 +35,6 @@
 
 #include "tsgHiddenExternals.hpp"
 
-#include "tsgCudaMacros.hpp"
-
 namespace TasGrid{
 
 GridSequence::GridSequence() : num_dimensions(0), num_outputs(0){}
