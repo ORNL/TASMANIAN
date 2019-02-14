@@ -349,32 +349,34 @@ protected:
         return (point % 2 == 0) ? (1.0 - x) * (1.0 + x) * (3.0 + x) / 3.0 : (1.0 - x) * (1.0 + x) * (3.0 - x) / 3.0;
     }
     double evalPWPower(int point, double x) const{
-        if (rule == rule_localp)     if (point <= 8) return evalPWCubic(point, x);
+        if (rule == rule_localp)     if (point <= 8) return evalPWCubic(point, x); // if order is cubic or less, use the hard-coded functions
         if (rule == rule_semilocalp) if (point <= 4) return evalPWCubic(point, x);
         if (rule == rule_localpb)    if (point <= 4) return evalPWCubic(point, x);
         if (rule == rule_localp0)    if (point <= 2) return evalPWCubic(point, x);
         int level = getLevel(point);
-        int mod = 1;
-        double value = (1.0 - x)*(1.0 + x), offset = 1.0;
-        int imax;
-        if (rule == rule_localp)     imax = (max_order < 0) ? level-2 : ((max_order   < level) ? max_order -2 : level-2);
-        if (rule == rule_semilocalp) imax = (max_order < 0) ? level-1 : ((max_order-1 < level) ? max_order -2 : level-1);
-        if (rule == rule_localpb)    imax = (max_order < 0) ? level-1 : ((max_order-1 < level) ? max_order -2 : level-1);
-        if (rule == rule_localp0)    imax = (max_order < 0) ? level   : ((max_order-2 < level) ? max_order -2 : level);
-        for(int j=0; j < imax; j++){
-            mod *= 2;
-            offset = 2.0 * offset + 1.0;
-            int z;
-            if ((rule == rule_localp) || (rule == rule_semilocalp)){
-                z = (point-1) % mod;
-            }else{
-                z = (point+1) % mod;
-            }
-            if (z < mod / 2){
-                value *= (x - offset + 2.0 * ((double) z)) / (- offset + 2.0 * ((double) z));
-            }else{
-                value *= (x + offset - 2.0 * ((double) (mod - 1 - z))) / (offset - 2.0 * ((double) (mod - 1 - z)));
-            }
+        int most_turns = 1;
+        double value = (1.0 - x)*(1.0 + x), phantom_distance = 1.0;
+        int max_ancestors; // maximum number of ancestors to consider, first set the possible max then constrain by max_order
+        if (rule == rule_localp)     max_ancestors = level-2; // number of ancestors to consider (two counted in the initialization of value)
+        if (rule == rule_semilocalp) max_ancestors = level-1; // semi-localp and localpb add one more ancestor due to the global support at levels 1 and 0 (respectively)
+        if (rule == rule_localpb)    max_ancestors = level-1;
+        if (rule == rule_localp0)    max_ancestors = level; // localp0 adds two ancestors, the assumed zero nodes at the boundary
+        if (max_order > 0) max_ancestors = std::min(max_ancestors, max_order - 2); // use the minimum of the available ancestors or the order restriction
+
+        for(int j=0; j < max_ancestors; j++){
+            // Lagrange polynomial needs to be constructed using normalized x (basis support (-1, 1)).
+            // The support of the basis is equal to 2, thus we use units of "half-support"
+            // The first two nodes are used in the initialization of value, those are the nearest ancestors (in spacial distance, not hierarchy level).
+            // The other nodes are "phantoms" that lay strictly outside of the support [-1, 1] (i.e., not on the edge)
+            // The walking distance more than doubles and is an odd number (due to the half-support)
+            // The walk through the ancestors can take a left or right turn at each step,
+            //   most_turns is the total number of turns possible for the current ancestor, turns (or most_turns - 1 - turns) is the actual number of turns
+            // Every time we turn, we backtrack and we lose 2 units, the phantom node is at maximum distance minus 2 time the number of turns (to the left or right)
+            most_turns *= 2;
+            phantom_distance = 2.0 * phantom_distance + 1.0;
+            int turns = (rule == rule_localp0) ? ((point+1) % most_turns) : ((point-1) % most_turns);
+            double node = (turns < most_turns / 2) ? (phantom_distance - 2.0 * ((double) turns)) : (-phantom_distance + 2.0 * ((double) (most_turns - 1 - turns)));
+            value *= ( x - node ) / ( - node);
         }
         return value;
     }
