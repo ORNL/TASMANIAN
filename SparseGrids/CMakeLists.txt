@@ -34,7 +34,7 @@ target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERF
 
 set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid")
 
-set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CXX_STANDARD 11)
+target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_11)
 
 # as MAGMA potentially depends on OpenMP, BLAS, and CuBLAS, it should be set first
 if (Tasmanian_ENABLE_MAGMA)
@@ -145,10 +145,6 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridUnitTests.cpp
                                   tasgridTestInterfaceC.cpp)
 add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
-
-set_property(TARGET Tasmanian_tasgrid              PROPERTY CXX_STANDARD 11)
-set_property(TARGET Tasmanian_gridtest             PROPERTY CXX_STANDARD 11)
-set_property(TARGET Tasmanian_example_sparse_grids PROPERTY CXX_STANDARD 11)
 
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
 set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")

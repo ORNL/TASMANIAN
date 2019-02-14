@@ -32,8 +32,6 @@ target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERF
 
 set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream")
 
-set_property(TARGET ${Tasmanian_libtdr_target_name} PROPERTY CXX_STANDARD 11)
-
 ########################################################################
 # Option setup
 ########################################################################
@@ -79,9 +77,6 @@ add_executable(Tasmanian_example_dream Examples/example_dream_01.cpp
                                        Examples/example_dream_02.cpp
                                        Examples/example_dream_03.cpp
                                        Examples/example_dream.cpp)
-
-set_property(TARGET Tasmanian_dreamtest     PROPERTY CXX_STANDARD 11)
-set_property(TARGET Tasmanian_example_dream PROPERTY CXX_STANDARD 11)
 
 set_target_properties(Tasmanian_dreamtest     PROPERTIES OUTPUT_NAME "dreamtest")
 set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
