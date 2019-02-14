@@ -107,7 +107,7 @@ public:
                 return (level == 0) ? 1 : ((1 << level) + 1);
             }else if (rule == rule_localp0){
                 return (1 << (level+1)) -1;
-            }else if (rule == rule_localpb){
+            }else{ // rule == rule_localpb
                 return ((1 << level) + 1);
             }
         }
@@ -124,7 +124,7 @@ public:
                 return ((double)(2*point - 1)) / ((double) int2log2(point - 1)) - 3.0;
             }else if (rule == rule_localp0){
                 return ((double)(2*point +3) ) / ((double) int2log2(point + 1) ) - 3.0;
-            }else if (rule == rule_localpb){
+            }else{ // rule == rule_localpb
                 if (point == 0) return -1.0;
                 if (point == 1) return  1.0;
                 if (point == 2) return  0.0;
@@ -143,7 +143,7 @@ public:
                 return (point == 0) ? 0 : (point == 1) ? 1 : (intlog2(point - 1) + 1);
             }else if (rule == rule_localp0){
                 return intlog2(point + 1);
-            }else if (rule == rule_localpb){
+            }else{ // rule == rule_localpb
                 return ((point == 0) || (point == 1)) ? 0 : (intlog2(point - 1) + 1);
             }
         }
@@ -156,7 +156,7 @@ public:
                 return (point == 0) ? 1.0 : 1.0 / ((double) int2log2(point - 1));
             }else if (rule == rule_localp0){
                 return 1.0 / ((double) int2log2(point + 1));
-            }else if (rule == rule_localpb){
+            }else{ // rule == rule_localpb
                 return ((point == 0) || (point == 1)) ? 2.0 : 1.0 / ((double) int2log2(point - 1));
             }
         }
@@ -176,7 +176,7 @@ public:
             }else if (rule == rule_localp0){
                 if (point == 0) return -1;
                 return (point - 1) / 2;
-            }else if (rule == rule_localpb){
+            }else{ // rule == rule_localpb
                 return (point < 2) ? -1 : ((point + 1) / 2);
             }
         }
