@@ -196,24 +196,10 @@ void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
 }
 
 void GridFourier::getLoadedPoints(double *x) const{
-    int num_points = points.getNumIndexes();
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = points.getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper.getNode(p[j]);
-        }
-    }
+    std::transform(points.getVector().begin(), points.getVector().end(), x, [&](int i)->double{ return wrapper.getNode(i); });
 }
 void GridFourier::getNeededPoints(double *x) const{
-    int num_points = needed.getNumIndexes();
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = needed.getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = wrapper.getNode(p[j]);
-        }
-    }
+    std::transform(needed.getVector().begin(), needed.getVector().end(), x, [&](int i)->double{ return wrapper.getNode(i); });
 }
 void GridFourier::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
