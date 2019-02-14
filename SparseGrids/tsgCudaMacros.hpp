@@ -46,6 +46,12 @@
 namespace TasGrid{
 
 #ifdef Tasmanian_ENABLE_CUDA
+namespace AccelerationMeta{
+    void cudaCheckError(void *cudaStatus, const char *info);
+    void cublasCheckError(void *cublasStatus, const char *info);
+    void cusparseCheckError(void *cusparseStatus, const char *info);
+}
+
 namespace TasCUDA{
     // general GPU/CPU I/O, new/delete vectors, send/recv data
     template <typename T>

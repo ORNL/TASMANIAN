@@ -220,10 +220,6 @@ namespace AccelerationMeta{
     bool isAccTypeGPU(TypeAcceleration accel);
 
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
-
-    void cudaCheckError(void *cudaStatus, const char *info);
-    void cublasCheckError(void *cublasStatus, const char *info);
-    void cusparseCheckError(void *cusparseStatus, const char *info);
 }
 
 }

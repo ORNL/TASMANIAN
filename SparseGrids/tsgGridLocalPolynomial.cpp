@@ -34,7 +34,6 @@
 #include "tsgGridLocalPolynomial.hpp"
 
 #include "tsgHiddenExternals.hpp"
-#include "tsgCudaMacros.hpp" // remove later
 
 namespace TasGrid{
 

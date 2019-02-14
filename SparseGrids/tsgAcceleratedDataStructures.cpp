@@ -503,10 +503,6 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
         throw std::runtime_error(message);
     }
 }
-#else
-void AccelerationMeta::cudaCheckError(void *, const char *){}
-void AccelerationMeta::cublasCheckError(void *, const char *){}
-void AccelerationMeta::cusparseCheckError(void *, const char *){}
 #endif // Tasmanian_ENABLE_CUDA
 
 

@@ -104,7 +104,7 @@ public:
             double sum = 0.0;
             for(auto l : lag_less1) sum += fabs(l - *il++);
             return sum + fabs(*il);
-        }else if (rule == rule_mindelta){
+        }else{ // rule == rule_mindelta
             // points almost overlap, will cause an explosion in the Lebesgue constant
             for(auto n : nodes) if (fabs(x - n) < 10*TSG_NUM_TOL) return -1.E+100;
             tempFunctional<rule_mindeltaodd> M(nodes, x);
@@ -137,7 +137,7 @@ public:
                 sum += (l > 0.0) ? diff : -diff;
             }
             return sum;
-        }else if (rule == rule_mindeltaodd){
+        }else{ // rule == rule_mindeltaodd
             std::vector<double> lag, lag_less1;
             evalLag(nodes, coeff, x, lag);
             evalLag(nodes_less1, coeff_less1, x, lag_less1);
@@ -152,7 +152,6 @@ public:
             sum += basisDx(nodes, coeff, (int) (nodes.size() - 1), x) * ((*il > 0.0) ? 1.0 : -1.0);
             return sum;
         }
-        return 0.0;
     }
 
     void getIntervals(std::vector<double> &intervals) const{
