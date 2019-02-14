@@ -178,30 +178,10 @@ int GridSequence::getNumNeeded() const{ return needed.getNumIndexes(); }
 int GridSequence::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
 void GridSequence::getLoadedPoints(double *x) const{
-    int num_points = points.getNumIndexes();
-    Data2D<double> split;
-    split.load(num_dimensions, num_points, x);
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = points.getIndex(i);
-        double *xx = split.getStrip(i);
-        for(int j=0; j<num_dimensions; j++){
-            xx[j] = nodes[p[j]];
-        }
-    }
+    std::transform(points.getVector().begin(), points.getVector().end(), x, [&](int i)->double{ return nodes[i]; });
 }
 void GridSequence::getNeededPoints(double *x) const{
-    int num_points = needed.getNumIndexes();
-    Data2D<double> split;
-    split.load(num_dimensions, num_points, x);
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = needed.getIndex(i);
-        double *xx = split.getStrip(i);
-        for(int j=0; j<num_dimensions; j++){
-            xx[j] = nodes[p[j]];
-        }
-    }
+    std::transform(needed.getVector().begin(), needed.getVector().end(), x, [&](int i)->double{ return nodes[i]; });
 }
 void GridSequence::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); }
