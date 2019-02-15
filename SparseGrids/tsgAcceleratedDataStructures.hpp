@@ -353,22 +353,76 @@ namespace TasCUDA{
 }
 #endif
 
-// generic error checking function and types I/O
+//! \internal
+//! \brief Common methods for manipulating acceleration options and reading CUDA environment properties.
+//! \ingroup TasmanianAcceleration
 namespace AccelerationMeta{
+    //! \internal
+    //! \brief Convert the string (coming from C or Python) into an enumerated type.
+    //! \ingroup TasmanianAcceleration
     TypeAcceleration getIOAccelerationString(const char * name);
+    //! \internal
+    //! \brief Convert the enumerated type to a string, the inverse of \b getIOAccelerationString()
+    //! \ingroup TasmanianAcceleration
     const char* getIOAccelerationString(TypeAcceleration accel);
+    //! \internal
+    //! \brief Convert the integer (coming from Fortran) into an enumerated type.
+    //! \ingroup TasmanianAcceleration
     int getIOAccelerationInt(TypeAcceleration accel);
+    //! \internal
+    //! \brief Convert the enumerated type to an integer, the inverse of \b getIOAccelerationInt()
+    //! \ingroup TasmanianAcceleration
     TypeAcceleration getIOIntAcceleration(int accel);
-    bool isAccTypeFullMemoryGPU(TypeAcceleration accel);
+    //! \internal
+    //! \brief Returns \b true if \b accele is cuda, cublas or magma.
+    //! \ingroup TasmanianAcceleration
     bool isAccTypeGPU(TypeAcceleration accel);
 
+    //! \internal
+    //! \brief Implements fallback logic, if \b accel has been enabled through CMake then this returns \b accel, otherwise it returns the "next-best-thing".
+    //! \ingroup TasmanianAcceleration
+
+    //! This function always returns a valid acceleration type.
+    //! The fallback logic is documented with the enumerated type \b TasGrid::TypeAcceleration.
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
 
+    //! \internal
+    //! \brief Return the number of visible CUDA devices, uses cudaGetDeviceCount() (see the Nvidia documentation).
+    //! \ingroup TasmanianAcceleration
     int getNumCudaDevices();
+
+    //! \internal
+    //! \brief Selects the active device for this CPU thread using cudaSetDevice() (see the Nvidia documentation).
+    //! \ingroup TasmanianAcceleration
+
+    //! The \b deviceID must be a valid ID (between 0 and getNumCudaDevices() -1).
     void setDefaultCudaDevice(int deviceID);
+
+    //! \internal
+    //! \brief Return the memory available in the device (in units of bytes), uses cudaGetDeviceProperties() (see the Nvidia documentation).
+    //! \ingroup TasmanianAcceleration
+
+    //! The \b deviceID must be a valid ID (between 0 and getNumCudaDevices() -1).
     unsigned long long getTotalGPUMemory(int deviceID);
+
+    //! \internal
+    //! \brief Return a character array that is a copy of the CUDA device name, uses cudaGetDeviceProperties() (see the Nvidia documentation).
+    //! \ingroup TasmanianAcceleration
+
+    //! The \b deviceID must be a valid ID (between 0 and getNumCudaDevices() -1).
+    //! The character array has to be manually deleted to avoid memory leaks.
+    //! This causes issues between different versions of CUDA, Nvidia uses fixed length character arrays and Tasmanian makes a copy;
+    //! sometimes different versions of CUDA use different name length which causes unexpected crashes on the CUDA side.
     char* getCudaDeviceName(int deviceID);
+
+    //! \internal
+    //! \brief Copy a device array to the main memory, used for testing only, always favor using \b CudaVector (if possible).
+    //! \ingroup TasmanianAcceleration
     template<typename T> void recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data);
+
+    //! \internal
+    //! \brief Deallocate  device array, used primarily for testing, always favor using \b CudaVector (if possible).
+    //! \ingroup TasmanianAcceleration
     template<typename T> void delCudaArray(T *x);
 }
 

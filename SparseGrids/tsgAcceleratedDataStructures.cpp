@@ -401,16 +401,6 @@ TypeAcceleration AccelerationMeta::getIOIntAcceleration(int accel){
         default: return accel_none;
     }
 }
-bool AccelerationMeta::isAccTypeFullMemoryGPU(TypeAcceleration accel){
-    switch (accel){
-        case accel_gpu_default:
-        case accel_gpu_cublas:
-        case accel_gpu_cuda:
-        case accel_gpu_magma: return true;
-        default:
-            return false;
-    }
-}
 bool AccelerationMeta::isAccTypeGPU(TypeAcceleration accel){
     switch (accel){
         case accel_gpu_default:
