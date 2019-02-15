@@ -37,9 +37,48 @@
 
 #include "tsgEnumerates.hpp"
 
+//! \internal
+//! \file tsgAcceleratedDataStructures.hpp
+//! \brief Data structures for interacting with CUDA and MAGMA environments.
+//! \author Miroslav Stoyanov
+//! \ingroup TasmanianAcceleration
+//!
+//! Classes and namespaces that wrap around basic CUDA and MAGMA functionality,
+//! the classes allow RAII style of memory management for CUDA GPU arrays,
+//! as well as handy encapsulation of the cuBlas/cuSparse/MAGMA handles and streams.
+
+//! \internal
+//! \defgroup TasmanianAcceleration Classes and functions used for acceleration methods.
+//!
+//! \par RAII Memory Management
+//! CUDA uses C-style of memory management with cudaMalloc(), cudaMemcopy(), cudaFree(),
+//! but templated C++ std::vector-style class is far more handy.
+//! The \b CudaVector template class guards against memory leaks and offers more seamless
+//! integration between CPU and GPU data structures.
+//! See the \b CudaVector documentation for details.
+//!
+//! \par Streams and Handles Encapsulation
+//! CUDA linear algebra libraries (as well as MAGAM), use streams and handles for all their calls.
+//! The handles have to be allocated, deleted, and passed around which causes unnecessary code clutter.
+//! Encapsulating the handles in a single \b CudaEngine class greatly simplifies the work-flow.
+//! Furthermore, some (sparse) linear operations require multiple calls to CUDA/MAGMA libraries,
+//! and it is easier to combine those into a single call to a \b CudaEngine method.
+//!
+//! \par Acceleration Metadata
+//! The \b AccelerationMeta namespace offers several methods used throughout the library and in the testing:
+//! - Tasmanian specific acceleration fallback logic
+//! - Reading CUDA device properties, e.g., number of devices or total memory
+//! - Error handling for common CUDA/cuBlas/cuSparse calls
+
 namespace TasGrid{
 
 #ifdef Tasmanian_ENABLE_CUDA
+//! \defgroup TasmanianCudaVector CUDA Vector class for RAII-style of memory management.
+//!
+//! A template class that allows for RAII style of memory management for CUDA arrays.
+
+#ifndef __TASMANIAN_DOXYGEN_SKIP
+// The classes below will be removed later
 class cudaInts{
 public:
     cudaInts();
@@ -87,36 +126,97 @@ private:
     size_t num;
     double *gpu_data;
 };
+#endif
 
+//! \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector
+//! \ingroup TasmanianCudaVector
+
+//! \b NOTE: This class is not intended to replace CUDA Thrust or CUDA arrays as a whole;
+//! the class is primarily used for internal Tasmanian API and can be safely ignored by the majority Tasmanian users.
+//! This documentation is provided for developers and can be useful to users that want to do simple data movement between
+//! different CUDA enabled libraries without "getting dirty" with non-RAII and (sometimes) non-intuitive CUDA API.
+//!
+//! \par Wraps Around a CUDA Array
+//! The class can be instantiated with either \b int or \b double (other types are not currently available through the external API).
+//! The class can either allocate (and deallocate with the descructor) a CUDA array of desired size,
+//! and load/unload data to a CPU std::vector with the same type.
+//!
+//! \par Deliberately Omitted Functionality
+//! The class is not intended to do any of the following:
+//! - No random memory access to ranges and elements
+//! - No algorithm operations (although \b CudaVector.data() can be passes to kernels and functions in place of an array)
+//! - No reserve/insert functionality, the size is always the size of the allocated memory
 template<typename T>
 class CudaVector{
 public:
+    //! \brief Default constructor, creates an empty (null) array.
     CudaVector() : num_entries(0), dynamic_mode(true), gpu_data(nullptr){}
+    //! \brief Construct a vector with \b count number of entries.
+
+    //! Allocates an array that will be automatically deleted
+    //! if \b clear() is called, or \b resize() or \b load() functions
+    //! are used with size that is different from \b count.
     CudaVector(size_t count) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(count); }
-    CudaVector(int a, int b) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(((size_t) a) * ((size_t) b)); }
-    CudaVector(const std::vector<T> &x) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ load(x); }
+
+    //! \brief Same as \b CudaVector(dim1 * dim2), but guards against overflow.
+
+    //! Many of the Tasmanian data-structures are inherently two-dimensional,
+    //! for example, passing number of points and number of dimensions separately makes the code more readable,
+    //! and both integers are converted to size_t before multiplication which prevents overflow.
+    //! Note: the dimensions \b will \b not be stored, the underlying data is still one dimensional.
+    CudaVector(int dim1, int dim2) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(((size_t) dim1) * ((size_t) dim2)); }
+    //! \brief Create a vector with size that matches \b cpu_data and copy the data to the CUDA device.
+    CudaVector(const std::vector<T> &cpu_data) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ load(cpu_data); }
+    //! \brief Destructor, release all allocated memory.
     ~CudaVector(){ clear(); }
 
+    //! \brief Return the current size of the CUDA array.
     size_t size() const{ return num_entries; }
+    //! \brief Get a reference to the CUDA array, which an be used as input to CUDA libraries and kernels.
     T* data(){ return gpu_data; }
+    //! \brief Get a const-reference to the CUDA array, which an be used as input to CUDA libraries and kernels.
     const T* data() const{ return gpu_data; }
 
+    //! \brief Clear all data currently stored in the vector and allocate a new array (unlike std::vector this does not copy the data).
     void resize(size_t count);
+    //! \brief Delete all allocated memory and reset the array to empty.
     void clear();
 
+    //! \brief Copy the content of \b cpu_data to the CUDA device, all pre-existing data is deleted and the vector is resized to match \b cpu_data.
+
+    //! Makes a call to the other overload with \b cpu_data.size() as \b count. See the overload.
     void load(const std::vector<T> &cpu_data){ load(cpu_data.size(), cpu_data.data()); }
+    //! \brief Copy the first \b count entries of \b cpu_data to the CUDA device, all pre-existing data is deleted and the vector is resized to match \b count.
+
+    //! If \b count does not match the current size, the current array will be deleted and new array will be allocated (even if \b size() exceeds \b count).
+    //! If the currently stored array has been assigned with \b wrap(), the alias is released.
+    //! However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
     void load(size_t count, const T* cpu_data);
+    //! \brief Copy the data from the CUDA array to \b cpu_data, the \b cpu_data will be resized and overwritten, the new size will match the \b size().
     void unload(std::vector<T> &cpu_data) const{
         cpu_data.resize(num_entries);
         unload(cpu_data.data());
     }
+    //! \brief Copy the data from the CUDA array to the \b cpu_data buffer, assumes that the buffer is sufficiently large.
     void unload(T* cpu_data) const;
 
-    void eject(T* &external){
-        external = gpu_data;
-        gpu_data = nullptr; num_entries = 0;
+    //! \brief Move the data to the \b external array, the vector is set to empty (unlike move command on std::vector).
+    T* eject(){
+        T* external = gpu_data;
+        gpu_data = nullptr;
+        num_entries = 0;
         dynamic_mode = true;
+        return external;
     }
+
+    //! \brief Create internal alias to the \b external buffer, assume the buffer has size \b count; the alias will \b not be deleted.
+
+    //! The purpose of the \b wrap() method is to assume control a user allocated CUDA array passed as an input.
+    //! That allows to have a consistent internal API using only \b CudaVector classes,
+    //! while the external API does not force the user into a Tasmanian specific data-structure (only native CUDA arrays are required).
+    //!
+    //! Using \b wrap() suppresses the deletion of the data from the destructor, \b clear(), or \b load() (from a vector/array of different size).
+    //! The wrapped array has to be deleted through \b external or with \b AccelerationMeta::delCudaArray(\b vector.eject()).
     void wrap(size_t count, T* external){
         gpu_data = external;
         num_entries = count;
@@ -124,12 +224,13 @@ public:
     }
 
 private:
-    size_t num_entries;
-    bool dynamic_mode; // was the memory allocated or wrapped aroun an exiting object
-    T *gpu_data;
+    size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
+    bool dynamic_mode; // was the memory allocated or wrapped around an exiting object
+    T *gpu_data; // the CUDA array
 };
 
-
+#ifndef __TASMANIAN_DOXYGEN_SKIP
+// The class below will be removed later
 class LinearAlgebraEngineGPU{
 public:
     LinearAlgebraEngineGPU();
@@ -179,6 +280,7 @@ private:
     void *magmaCudaQueue;
     #endif
 };
+#endif
 
 // stores domain transforms, to be used by the top class TasmanianSparseGrid
 class AccelerationDomainTransform{

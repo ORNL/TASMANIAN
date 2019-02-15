@@ -127,8 +127,8 @@ void cudaDoubles::eject(double* &destination){
 }
 
 template<typename T> void CudaVector<T>::resize(size_t count){
-    if (count != num_entries){
-        clear();
+    if (count != num_entries){ // if the current array is not big enough
+        clear(); // resets dynamic_mode
         num_entries = count;
         cudaError_t cudaStat = cudaMalloc(((void**) &gpu_data), num_entries * sizeof(T));
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::resize(), call to cudaMalloc()");
@@ -136,12 +136,12 @@ template<typename T> void CudaVector<T>::resize(size_t count){
 }
 template<typename T> void CudaVector<T>::clear(){
     num_entries = 0;
-    if (dynamic_mode && (gpu_data != nullptr)){
+    if (dynamic_mode && (gpu_data != nullptr)){ // if I own the data and the data is not null
         cudaError_t cudaStat = cudaFree(gpu_data);
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::clear(), call to cudaFree()");
     }
     gpu_data = nullptr;
-    dynamic_mode = true;
+    dynamic_mode = true; // The old data is gone and I own the current (null) data
 }
 template<typename T> void CudaVector<T>::load(size_t count, const T* cpu_data){
     resize(count);
