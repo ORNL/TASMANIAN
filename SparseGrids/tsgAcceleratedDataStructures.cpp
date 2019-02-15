@@ -129,24 +129,28 @@ void cudaDoubles::eject(double* &destination){
 template<typename T> void CudaVector<T>::resize(size_t count){
     if (count != num_entries){
         clear();
-        dynamic_mode = true;
         num_entries = count;
-        gpu_data = TasCUDA::cudaNew<T>(count);
+        cudaError_t cudaStat = cudaMalloc(((void**) &gpu_data), num_entries * sizeof(T));
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::resize(), call to cudaMalloc()");
     }
 }
 template<typename T> void CudaVector<T>::clear(){
     num_entries = 0;
-    if (dynamic_mode && (gpu_data != nullptr))
-        TasCUDA::cudaDel<T>(gpu_data);
+    if (dynamic_mode && (gpu_data != nullptr)){
+        cudaError_t cudaStat = cudaFree(gpu_data);
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::clear(), call to cudaFree()");
+    }
     gpu_data = nullptr;
     dynamic_mode = true;
 }
 template<typename T> void CudaVector<T>::load(size_t count, const T* cpu_data){
     resize(count);
-    TasCUDA::cudaSend<T>(num_entries, cpu_data, gpu_data);
+    cudaError_t cudaStat = cudaMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), cudaMemcpyHostToDevice);
+    AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::load(), call to cudaMemcpy()");
 }
 template<typename T> void CudaVector<T>::unload(T* cpu_data) const{
-    TasCUDA::cudaRecv<T>(num_entries, gpu_data, cpu_data);
+    cudaError_t cudaStat = cudaMemcpy(cpu_data, gpu_data, num_entries * sizeof(T), cudaMemcpyDeviceToHost);
+    AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::unload(), call to cudaMemcpy()");
 }
 
 template void CudaVector<double>::resize(size_t);
