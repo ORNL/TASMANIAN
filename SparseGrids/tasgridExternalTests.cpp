@@ -1767,15 +1767,15 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             bool dense_pass = true;
 
             TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
-            double *gpux = TasGrid::TasCUDA::cudaSend<double>(xt);
-            double *gpuy = TasGrid::TasCUDA::cudaNew<double>(grid.getNumPoints() * nump);
+            cudaVector<double> gpux(xt);
+            cudaVector<double> gpuy(grid.getNumPoints(), nump);
 
             grid.enableAcceleration(TasGrid::accel_gpu_cuda);
             grid.setGPUID(gpuID);
-            grid.evaluateHierarchicalFunctionsGPU(gpux, nump, gpuy);
+            grid.evaluateHierarchicalFunctionsGPU(gpux.data(), nump, gpuy.data());
 
-            std::vector<double> y(grid.getNumPoints() * nump);
-            TasGrid::TasCUDA::cudaRecv<double>(grid.getNumPoints() * nump, gpuy, y.data());
+            std::vector<double> y;
+            gpuy.unload(y);
 
             auto iy = y.begin();
             for(auto y_true : y_true_dense) if (fabs(*iy++ - y_true) > 1.E-11) dense_pass = false;
@@ -1786,15 +1786,13 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             }
             pass = pass && dense_pass;
 
-            TasGrid::TasCUDA::cudaDel<double>(gpuy);
-
             // Sparse version:
             bool sparse_pass = true;
             int *gpu_indx = 0, *gpu_pntr = 0, num_nz = 0;
             double *gpu_vals = 0;
             grid.enableAcceleration(TasGrid::accel_gpu_cuda);
             grid.setGPUID(gpuID);
-            grid.evaluateSparseHierarchicalFunctionsGPU(gpux, nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
+            grid.evaluateSparseHierarchicalFunctionsGPU(gpux.data(), nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
 
             std::vector<int> cpntr; TasGrid::TasCUDA::cudaRecv<int>(nump+1, gpu_pntr, cpntr);
             std::vector<int> cindx; TasGrid::TasCUDA::cudaRecv<int>(num_nz, gpu_indx, cindx);
@@ -1833,10 +1831,10 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
             pass = pass && sparse_pass;
 
-            TasGrid::TasCUDA::cudaDel<double>(gpux);
-            TasGrid::TasCUDA::cudaDel<int>(gpu_pntr);
-            TasGrid::TasCUDA::cudaDel<int>(gpu_indx);
-            TasGrid::TasCUDA::cudaDel<double>(gpu_vals);
+            //TasGrid::TasCUDA::cudaDel<double>(gpux);
+            AccelerationMeta::delCudaArray<int>(gpu_pntr);
+            AccelerationMeta::delCudaArray<int>(gpu_indx);
+            AccelerationMeta::delCudaArray<double>(gpu_vals);
         }
 
         delete[] pntr;
