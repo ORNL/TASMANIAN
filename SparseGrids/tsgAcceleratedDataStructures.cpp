@@ -536,8 +536,33 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
         throw std::runtime_error(message);
     }
 }
+int AccelerationMeta::getNumCudaDevices(){
+    int gpu_count = 0;
+    cudaGetDeviceCount(&gpu_count);
+    return gpu_count;
+}
 void AccelerationMeta::setDefaultCudaDevice(int deviceID){
     cudaSetDevice(deviceID);
+}
+unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, deviceID);
+    return prop.totalGlobalMem;
+}
+char* AccelerationMeta::getCudaDeviceName(int deviceID){
+    char *name = new char[1];
+    name[0] = '\0';
+    if ((deviceID < 0) || (deviceID >= getNumCudaDevices())) return name;
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, deviceID);
+
+    int c = 0; while(prop.name[c] != '\0'){ c++; }
+    delete[] name;
+    name = new char[c+1];
+    for(int i=0; i<c; i++){ name[i] = prop.name[i]; }
+    name[c] = '\0';
+
+    return name;
 }
 template<typename T> void AccelerationMeta::recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
     cpu_data.resize(num_entries);

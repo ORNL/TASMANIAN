@@ -36,10 +36,8 @@
 
 #include "TasmanianSparseGrid.hpp"
 
-#include "tsgCudaMacros.hpp"
-
 #ifdef Tasmanian_ENABLE_CUDA
-#define _TASMANIAN_SETGPU cudaSetDevice(gpuID);
+#define _TASMANIAN_SETGPU AccelerationMeta::setDefaultCudaDevice(gpuID);
 #else
 #define _TASMANIAN_SETGPU
 #endif // defined
@@ -1773,9 +1771,7 @@ int TasmanianSparseGrid::getGPUID() const{ return gpuID; }
 
 int TasmanianSparseGrid::getNumGPUs(){
     #ifdef Tasmanian_ENABLE_CUDA
-    int gpu_count = 0;
-    cudaGetDeviceCount(&gpu_count);
-    return gpu_count;
+    return AccelerationMeta::getNumCudaDevices();
     #else
     return 0;
     #endif // Tasmanian_ENABLE_CUDA
@@ -1783,32 +1779,11 @@ int TasmanianSparseGrid::getNumGPUs(){
 
 #ifdef Tasmanian_ENABLE_CUDA
 int TasmanianSparseGrid::getGPUMemory(int gpu){
-    if (gpu < 0) return 0;
-    int gpu_count = 0;
-    cudaGetDeviceCount(&gpu_count);
-    if (gpu >= gpu_count) return 0;
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, gpu);
-    unsigned long long memB = prop.totalGlobalMem;
-    return (int) (memB / 1048576);
+    if ((gpu < 0) || (gpu >= AccelerationMeta::getNumCudaDevices())) return 0;
+    return (int) (AccelerationMeta::getTotalGPUMemory(gpu) / 1048576);
 }
 char* TasmanianSparseGrid::getGPUName(int gpu){
-    char *name = new char[1];
-    name[0] = '\0';
-    if (gpu < 0) return name;
-    int gpu_count = 0;
-    cudaGetDeviceCount(&gpu_count);
-    if (gpu >= gpu_count) return name;
-    cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, gpu);
-
-    int c = 0; while(prop.name[c] != '\0'){ c++; }
-    delete[] name;
-    name = new char[c+1];
-    for(int i=0; i<c; i++){ name[i] = prop.name[i]; }
-    name[c] = '\0';
-
-    return name;
+    return AccelerationMeta::getCudaDeviceName(gpu);
 }
 #else
 int TasmanianSparseGrid::getGPUMemory(int){ return 0; }
