@@ -70,7 +70,7 @@ endif()
 if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     find_package(OpenMP)
 
-    if ((NOT OPENMP_FOUND) AND (NOT OPENMP_CXX_FOUND)) # OPENMP_FOUND is used prior to cmake 3.9
+    if (NOT OPENMP_CXX_FOUND)
         if (Tasmanian_ENABLE_RECOMMENDED)
             set(Tasmanian_ENABLE_OPENMP OFF)
             message(STATUS "Tasmanian could not find OpenMP, the library will run in single-threaded mode")
