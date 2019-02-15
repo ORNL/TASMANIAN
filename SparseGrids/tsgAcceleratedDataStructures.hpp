@@ -89,13 +89,13 @@ private:
 };
 
 template<typename T>
-class cudaVector{
+class CudaVector{
 public:
-    cudaVector() : num_entries(0), dynamic_mode(true), gpu_data(nullptr){}
-    cudaVector(size_t count) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(count); }
-    cudaVector(int a, int b) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(((size_t) a) * ((size_t) b)); }
-    cudaVector(const std::vector<T> &x) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ load(x); }
-    ~cudaVector(){ clear(); }
+    CudaVector() : num_entries(0), dynamic_mode(true), gpu_data(nullptr){}
+    CudaVector(size_t count) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(count); }
+    CudaVector(int a, int b) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(((size_t) a) * ((size_t) b)); }
+    CudaVector(const std::vector<T> &x) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ load(x); }
+    ~CudaVector(){ clear(); }
 
     size_t size() const{ return num_entries; }
     T* data(){ return gpu_data; }
