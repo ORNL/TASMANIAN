@@ -263,6 +263,7 @@ namespace AccelerationMeta{
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
 
     void setDefaultCudaDevice(int deviceID);
+    template<typename T> void recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data);
     template<typename T> void delCudaArray(T *x);
 }
 

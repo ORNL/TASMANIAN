@@ -539,9 +539,17 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
 void AccelerationMeta::setDefaultCudaDevice(int deviceID){
     cudaSetDevice(deviceID);
 }
+template<typename T> void AccelerationMeta::recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
+    cpu_data.resize(num_entries);
+    cudaError_t cudaStat = cudaMemcpy(cpu_data.data(), gpu_data, num_entries * sizeof(T), cudaMemcpyDeviceToHost);
+    AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaRecv(type, type)");
+}
 template<typename T> void AccelerationMeta::delCudaArray(T *x){
     TasCUDA::cudaDel<T>(x);
 }
+
+template void AccelerationMeta::recvCudaArray<double>(size_t num_entries, const double*, std::vector<double>&);
+template void AccelerationMeta::recvCudaArray<int>(size_t num_entries, const int*, std::vector<int>&);
 
 template void AccelerationMeta::delCudaArray<double>(double*);
 template void AccelerationMeta::delCudaArray<int>(int*);
