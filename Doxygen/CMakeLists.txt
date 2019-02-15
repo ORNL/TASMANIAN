@@ -7,6 +7,9 @@ set(DOXYGEN_SORT_GROUP_NAMES    "NO") # use the order in the source files (logic
 set(DOXYGEN_SORT_MEMBER_DOCS    "NO") # use the order in the source files (logical order)
 
 set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP") # indicate sections to skip from documentation
+if (Tasmanian_ENABLE_CUDA)
+    list(APPEND DOXYGEN_PREDEFINED "Tasmanian_ENABLE_CUDA")
+endif()
 
 set(DOXYGEN_HTML_EXTRA_STYLESHEET  ${CMAKE_CURRENT_SOURCE_DIR}/tasmanian.css)
 set(DOXYGEN_HTML_COLORSTYLE_HUE    "110") # green-ish pages
@@ -34,6 +37,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  Doxygen/Installation.md
                  DREAM/TasmanianDREAM.hpp
                  SparseGrids/tsgEnumerates.hpp
+                 SparseGrids/tsgAcceleratedDataStructures.hpp
                  SparseGrids/tsgIOHelpers.hpp
                  SparseGrids/tsgIndexManipulator.hpp
                  SparseGrids/tsgIndexSets.hpp

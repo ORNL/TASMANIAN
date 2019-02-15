@@ -126,6 +126,43 @@ void cudaDoubles::eject(double* &destination){
     num = 0;
 }
 
+template<typename T> void CudaVector<T>::resize(size_t count){
+    if (count != num_entries){ // if the current array is not big enough
+        clear(); // resets dynamic_mode
+        num_entries = count;
+        cudaError_t cudaStat = cudaMalloc(((void**) &gpu_data), num_entries * sizeof(T));
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::resize(), call to cudaMalloc()");
+    }
+}
+template<typename T> void CudaVector<T>::clear(){
+    num_entries = 0;
+    if (dynamic_mode && (gpu_data != nullptr)){ // if I own the data and the data is not null
+        cudaError_t cudaStat = cudaFree(gpu_data);
+        AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::clear(), call to cudaFree()");
+    }
+    gpu_data = nullptr;
+    dynamic_mode = true; // The old data is gone and I own the current (null) data
+}
+template<typename T> void CudaVector<T>::load(size_t count, const T* cpu_data){
+    resize(count);
+    cudaError_t cudaStat = cudaMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), cudaMemcpyHostToDevice);
+    AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::load(), call to cudaMemcpy()");
+}
+template<typename T> void CudaVector<T>::unload(T* cpu_data) const{
+    cudaError_t cudaStat = cudaMemcpy(cpu_data, gpu_data, num_entries * sizeof(T), cudaMemcpyDeviceToHost);
+    AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::unload(), call to cudaMemcpy()");
+}
+
+template void CudaVector<double>::resize(size_t);
+template void CudaVector<double>::clear();
+template void CudaVector<double>::load(size_t, const double*);
+template void CudaVector<double>::unload(double*) const;
+
+template void CudaVector<int>::resize(size_t);
+template void CudaVector<int>::clear();
+template void CudaVector<int>::load(size_t, const int*);
+template void CudaVector<int>::unload(int*) const;
+
 LinearAlgebraEngineGPU::LinearAlgebraEngineGPU() : cublasHandle(0), cusparseHandle(0)
 #ifdef Tasmanian_ENABLE_MAGMA
     , magma_initialized(false), // call init once per object (must simplify later)
@@ -364,16 +401,6 @@ TypeAcceleration AccelerationMeta::getIOIntAcceleration(int accel){
         default: return accel_none;
     }
 }
-bool AccelerationMeta::isAccTypeFullMemoryGPU(TypeAcceleration accel){
-    switch (accel){
-        case accel_gpu_default:
-        case accel_gpu_cublas:
-        case accel_gpu_cuda:
-        case accel_gpu_magma: return true;
-        default:
-            return false;
-    }
-}
 bool AccelerationMeta::isAccTypeGPU(TypeAcceleration accel){
     switch (accel){
         case accel_gpu_default:
@@ -503,6 +530,48 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
         throw std::runtime_error(message);
     }
 }
+int AccelerationMeta::getNumCudaDevices(){
+    int gpu_count = 0;
+    cudaGetDeviceCount(&gpu_count);
+    return gpu_count;
+}
+void AccelerationMeta::setDefaultCudaDevice(int deviceID){
+    cudaSetDevice(deviceID);
+}
+unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, deviceID);
+    return prop.totalGlobalMem;
+}
+char* AccelerationMeta::getCudaDeviceName(int deviceID){
+    char *name = new char[1];
+    name[0] = '\0';
+    if ((deviceID < 0) || (deviceID >= getNumCudaDevices())) return name;
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, deviceID);
+
+    int c = 0; while(prop.name[c] != '\0'){ c++; }
+    delete[] name;
+    name = new char[c+1];
+    for(int i=0; i<c; i++){ name[i] = prop.name[i]; }
+    name[c] = '\0';
+
+    return name;
+}
+template<typename T> void AccelerationMeta::recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
+    cpu_data.resize(num_entries);
+    cudaError_t cudaStat = cudaMemcpy(cpu_data.data(), gpu_data, num_entries * sizeof(T), cudaMemcpyDeviceToHost);
+    AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaRecv(type, type)");
+}
+template<typename T> void AccelerationMeta::delCudaArray(T *x){
+    TasCUDA::cudaDel<T>(x);
+}
+
+template void AccelerationMeta::recvCudaArray<double>(size_t num_entries, const double*, std::vector<double>&);
+template void AccelerationMeta::recvCudaArray<int>(size_t num_entries, const int*, std::vector<int>&);
+
+template void AccelerationMeta::delCudaArray<double>(double*);
+template void AccelerationMeta::delCudaArray<int>(int*);
 #endif // Tasmanian_ENABLE_CUDA
 
 
@@ -518,6 +587,12 @@ void AccelerationDomainTransform::clear(){
 }
 bool AccelerationDomainTransform::empty(){ return (num_dimensions == 0); }
 void AccelerationDomainTransform::load(const std::vector<double> &transform_a, const std::vector<double> &transform_b){
+    // The points are stored contiguously in a vector with stride equal to num_dimensions
+    // Using the contiguous memory in a contiguous fashion on the GPU implies that thread 0 works on dimension 0, thread 1 on dim 1 ...
+    // But the number of dimensions is often way less than the number of threads
+    // Therefore, we lump vectors together into large vectors of sufficient dimension
+    // The dimension is least 512, but less than max CUDA threads 1024
+    // The domain transforms are padded accordingly
     num_dimensions = (int) transform_a.size();
     padded_size = num_dimensions;
     while(padded_size < 512) padded_size += num_dimensions;
@@ -526,6 +601,7 @@ void AccelerationDomainTransform::load(const std::vector<double> &transform_a, c
     std::vector<double> shift(padded_size);
     int c = 0;
     for(int i=0; i<padded_size; i++){
+        // instead of storing upper/lower limits (as in TasmanianSparseGrid) use rate and shift
         double diff = transform_b[c] - transform_a[c];
         rate[i] = 2.0 / diff;
         shift[i] = (transform_b[c] + transform_a[c]) / diff;
@@ -536,7 +612,7 @@ void AccelerationDomainTransform::load(const std::vector<double> &transform_a, c
     gpu_trans_a.load(rate);
     gpu_trans_b.load(shift);
 }
-void AccelerationDomainTransform::getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, cudaDoubles &gpu_canonical_x){
+void AccelerationDomainTransform::getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, CudaVector<double> &gpu_canonical_x){
     gpu_canonical_x.resize(((size_t) num_dimensions) * ((size_t) num_x));
     TasCUDA::dtrans2can(use01, num_dimensions, num_x, padded_size, gpu_trans_a.data(), gpu_trans_b.data(), gpu_transformed_x, gpu_canonical_x.data());
 }
