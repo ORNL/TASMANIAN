@@ -539,6 +539,12 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
 void AccelerationMeta::setDefaultCudaDevice(int deviceID){
     cudaSetDevice(deviceID);
 }
+template<typename T> void AccelerationMeta::delCudaArray(T *x){
+    TasCUDA::cudaDel<T>(x);
+}
+
+template void AccelerationMeta::delCudaArray<double>(double*);
+template void AccelerationMeta::delCudaArray<int>(int*);
 #endif // Tasmanian_ENABLE_CUDA
 
 

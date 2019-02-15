@@ -263,6 +263,7 @@ namespace AccelerationMeta{
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
 
     void setDefaultCudaDevice(int deviceID);
+    template<typename T> void delCudaArray(T *x);
 }
 
 }
