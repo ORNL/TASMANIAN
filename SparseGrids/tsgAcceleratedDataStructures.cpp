@@ -587,6 +587,12 @@ void AccelerationDomainTransform::clear(){
 }
 bool AccelerationDomainTransform::empty(){ return (num_dimensions == 0); }
 void AccelerationDomainTransform::load(const std::vector<double> &transform_a, const std::vector<double> &transform_b){
+    // The points are stored contiguously in a vector with stride equal to num_dimensions
+    // Using the contiguous memory in a contiguous fashion on the GPU implies that thread 0 works on dimension 0, thread 1 on dim 1 ...
+    // But the number of dimensions is often way less than the number of threads
+    // Therefore, we lump vectors together into large vectors of sufficient dimension
+    // The dimension is least 512, but less than max CUDA threads 1024
+    // The domain transforms are padded accordingly
     num_dimensions = (int) transform_a.size();
     padded_size = num_dimensions;
     while(padded_size < 512) padded_size += num_dimensions;
@@ -595,6 +601,7 @@ void AccelerationDomainTransform::load(const std::vector<double> &transform_a, c
     std::vector<double> shift(padded_size);
     int c = 0;
     for(int i=0; i<padded_size; i++){
+        // instead of storing upper/lower limits (as in TasmanianSparseGrid) use rate and shift
         double diff = transform_b[c] - transform_a[c];
         rate[i] = 2.0 / diff;
         shift[i] = (transform_b[c] + transform_a[c]) / diff;
@@ -605,7 +612,7 @@ void AccelerationDomainTransform::load(const std::vector<double> &transform_a, c
     gpu_trans_a.load(rate);
     gpu_trans_b.load(shift);
 }
-void AccelerationDomainTransform::getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, cudaDoubles &gpu_canonical_x){
+void AccelerationDomainTransform::getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, CudaVector<double> &gpu_canonical_x){
     gpu_canonical_x.resize(((size_t) num_dimensions) * ((size_t) num_x));
     TasCUDA::dtrans2can(use01, num_dimensions, num_x, padded_size, gpu_trans_a.data(), gpu_trans_b.data(), gpu_transformed_x, gpu_canonical_x.data());
 }

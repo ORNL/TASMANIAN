@@ -282,20 +282,37 @@ private:
 };
 #endif
 
-// stores domain transforms, to be used by the top class TasmanianSparseGrid
+//! \internal
+//! \brief Implements the domain transform algorithms in case the user data is provided on the GPU.
+//! \ingroup TasmanianAcceleration
+
+//! Takes the upper and lower bounds of a hypercube and transforms the user provided points to the canonical domain (-1, 1) or (0, 1).
+//! The transformation is done on the GPU to avoid extraneous data movement.
+//!
+//! \b Note: Conformal mapping and the non-linear Gauss-Hermite and Gauss-Laguerre transforms are not supported.
 class AccelerationDomainTransform{
 public:
+    //! \brief Default constructor, the object cannot be used until \b load() is called.
     AccelerationDomainTransform();
+    //! \brief Destructor, clear all loaded data.
     ~AccelerationDomainTransform();
 
+    //! \brief Clear the transform (if loaded), used when the grid is reset of \b clearDomainTransform() is called.
     void clear();
+    //! \brief Return \b false if \b load() has already been called.
     bool empty();
+    //! \brief Load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
     void load(const std::vector<double> &transform_a, const std::vector<double> &transform_b);
-    void getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, cudaDoubles &gpu_canonical_x);
+    //! \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
+
+    //! Takes the user provided \b gpu_transformed_x points of dimension matching the grid num_dimensions and total number \b num_x.
+    //! The \b gpu_canonical_x is resized to match \b gpu_transformed_x and it loaded with the corresponding canonical points.
+    //! The \b use01 flag indicates whether to use canonical domain (0, 1) (Fourier grids), or (-1, 1) (almost everything else).
+    void getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, CudaVector<double> &gpu_canonical_x);
 
 private:
     // these actually store the rate and shift and not the hard upper/lower limits
-    cudaDoubles gpu_trans_a, gpu_trans_b;
+    CudaVector<double> gpu_trans_a, gpu_trans_b;
     int num_dimensions, padded_size;
 };
 #endif
