@@ -88,6 +88,47 @@ private:
     double *gpu_data;
 };
 
+template<typename T>
+class cudaVector{
+public:
+    cudaVector() : num_entries(0), dynamic_mode(true), gpu_data(nullptr){}
+    cudaVector(size_t count) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(count); }
+    cudaVector(int a, int b) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(((size_t) a) * ((size_t) b)); }
+    cudaVector(const std::vector<T> &x) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ load(x); }
+    ~cudaVector(){ clear(); }
+
+    size_t size() const{ return num_entries; }
+    T* data(){ return gpu_data; }
+    const T* data() const{ return gpu_data; }
+
+    void resize(size_t count);
+    void clear();
+
+    void load(const std::vector<T> &cpu_data){ load(cpu_data.size(), cpu_data.data()); }
+    void load(size_t count, const T* cpu_data);
+    void unload(std::vector<T> &cpu_data) const{
+        cpu_data.resize(num_entries);
+        unload(cpu_data.data());
+    }
+    void unload(T* cpu_data) const;
+
+    void eject(T* &external){
+        external = gpu_data;
+        gpu_data = nullptr; num_entries = 0;
+        dynamic_mode = true;
+    }
+    void wrap(size_t count, T* external){
+        gpu_data = external;
+        num_entries = count;
+        dynamic_mode = false;
+    }
+
+private:
+    size_t num_entries;
+    bool dynamic_mode; // was the memory allocated or wrapped aroun an exiting object
+    T *gpu_data;
+};
+
 
 class LinearAlgebraEngineGPU{
 public:

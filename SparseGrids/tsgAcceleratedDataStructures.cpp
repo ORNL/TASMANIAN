@@ -126,6 +126,39 @@ void cudaDoubles::eject(double* &destination){
     num = 0;
 }
 
+template<typename T> void cudaVector<T>::resize(size_t count){
+    if (count != num_entries){
+        clear();
+        dynamic_mode = true;
+        num_entries = count;
+        gpu_data = TasCUDA::cudaNew<T>(count);
+    }
+}
+template<typename T> void cudaVector<T>::clear(){
+    num_entries = 0;
+    if (dynamic_mode && (gpu_data != nullptr))
+        TasCUDA::cudaDel<T>(gpu_data);
+    gpu_data = nullptr;
+    dynamic_mode = true;
+}
+template<typename T> void cudaVector<T>::load(size_t count, const T* cpu_data){
+    resize(count);
+    TasCUDA::cudaSend<T>(num_entries, cpu_data, gpu_data);
+}
+template<typename T> void cudaVector<T>::unload(T* cpu_data) const{
+    TasCUDA::cudaRecv<T>(num_entries, gpu_data, cpu_data);
+}
+
+template void cudaVector<double>::resize(size_t);
+template void cudaVector<double>::clear();
+template void cudaVector<double>::load(size_t, const double*);
+template void cudaVector<double>::unload(double*) const;
+
+template void cudaVector<int>::resize(size_t);
+template void cudaVector<int>::clear();
+template void cudaVector<int>::load(size_t, const int*);
+template void cudaVector<int>::unload(int*) const;
+
 LinearAlgebraEngineGPU::LinearAlgebraEngineGPU() : cublasHandle(0), cusparseHandle(0)
 #ifdef Tasmanian_ENABLE_MAGMA
     , magma_initialized(false), // call init once per object (must simplify later)
