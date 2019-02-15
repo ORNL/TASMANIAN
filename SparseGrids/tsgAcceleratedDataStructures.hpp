@@ -220,6 +220,8 @@ namespace AccelerationMeta{
     bool isAccTypeGPU(TypeAcceleration accel);
 
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
+
+    void setDefaultCudaDevice(int deviceID);
 }
 
 }

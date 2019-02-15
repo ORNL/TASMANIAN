@@ -1766,7 +1766,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
             bool dense_pass = true;
 
-            cudaSetDevice(gpuID);
+            TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
             double *gpux = TasGrid::TasCUDA::cudaSend<double>(xt);
             double *gpuy = TasGrid::TasCUDA::cudaNew<double>(grid.getNumPoints() * nump);
 
@@ -1857,7 +1857,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
     for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
         grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja);
-        cudaSetDevice(gpuID);
+        TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
         grid.enableAcceleration(TasGrid::accel_gpu_cuda);
         grid.setGPUID(gpuID);
 
@@ -1902,7 +1902,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
         grid.makeFourierGrid(dims, 0, 5, type_level);
         grid.setDomainTransform(a, b);
-        cudaSetDevice(gpuID);
+        TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
         grid.enableAcceleration(TasGrid::accel_gpu_cuda);
         grid.setGPUID(gpuID);
 

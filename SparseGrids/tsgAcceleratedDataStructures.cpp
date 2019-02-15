@@ -503,6 +503,9 @@ void AccelerationMeta::cusparseCheckError(void *cusparseStatus, const char *info
         throw std::runtime_error(message);
     }
 }
+void AccelerationMeta::setDefaultCudaDevice(int deviceID){
+    cudaSetDevice(deviceID);
+}
 #endif // Tasmanian_ENABLE_CUDA
 
 
