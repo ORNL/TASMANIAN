@@ -33,6 +33,7 @@
 
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
+#include "tsgAcceleratedDataStructures.hpp"
 
 namespace TasGrid{
 
@@ -79,6 +80,8 @@ public:
     virtual void evaluateFastGPUcuda(const double x[], double y[]) const = 0;
     virtual void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const = 0;
+    virtual void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
+    virtual void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     #endif
 
     #ifdef Tasmanian_ENABLE_MAGMA

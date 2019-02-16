@@ -106,6 +106,8 @@ public:
     void evaluateFastGPUcuda(const double x[], double y[]) const;
     void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
+    void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const{}
+    void evaluateCuda(CudaEngine*, const double*, int, double[]) const{}
     #endif
 
     #ifdef Tasmanian_ENABLE_MAGMA
