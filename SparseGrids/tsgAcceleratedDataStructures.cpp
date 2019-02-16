@@ -163,6 +163,53 @@ template void CudaVector<int>::clear();
 template void CudaVector<int>::load(size_t, const int*);
 template void CudaVector<int>::unload(int*) const;
 
+CudaEngine::~CudaEngine(){
+    if (cublasHandle != nullptr){
+        cublasDestroy((cublasHandle_t) cublasHandle);
+        cublasHandle = nullptr;
+    }
+    if (cusparseHandle != nullptr){
+        cusparseDestroy((cusparseHandle_t) cusparseHandle);
+        cusparseHandle = nullptr;
+    }
+}
+void CudaEngine::cuBlasPrepare(){
+    if (cublasHandle == nullptr){
+        cublasHandle_t cbh;
+        cublasCreate(&cbh);
+        cublasHandle = (void*) cbh;
+    }
+}
+void CudaEngine::cuSparsePrepare(){
+    if (cusparseHandle == nullptr){
+        cusparseHandle_t csh;
+        cusparseCreate(&csh);
+        cusparseHandle = (void*) csh;
+    }
+}
+void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, CudaVector<double> &C){
+    cublasStatus_t stat;
+    #ifdef Tasmanian_ENABLE_MAGMA
+    if (magma){
+        return;
+    }
+    #endif
+    cuBlasPrepare();
+    if (M > 1){
+        if (N > 1){ // matrix mode
+            stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K,
+                                &alpha, A.data(), M, B.data(), K, &beta, C.data(), M);
+        }else{ // matrix vector, A * v = C
+            stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, M, K,
+                            &alpha, A.data(), M, B.data(), 1, &beta, C.data(), 1);
+        }
+    }else{ // matrix vector B^T * v = C
+        stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_T, N, K,
+                            &alpha, B.data(), K, A.data(), 1, &beta, C.data(), 1);
+    }
+    AccelerationMeta::cublasCheckError((void*) &stat, "while calling CudaEngine::denseMultiply()");
+}
+
 LinearAlgebraEngineGPU::LinearAlgebraEngineGPU() : cublasHandle(0), cusparseHandle(0)
 #ifdef Tasmanian_ENABLE_MAGMA
     , magma_initialized(false), // call init once per object (must simplify later)

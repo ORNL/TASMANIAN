@@ -128,6 +128,7 @@ private:
 };
 #endif
 
+#ifdef Tasmanian_ENABLE_CUDA
 //! \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector
 //! \ingroup TasmanianCudaVector
 
@@ -228,6 +229,49 @@ private:
     bool dynamic_mode; // was the memory allocated or wrapped around an exiting object
     T *gpu_data; // the CUDA array
 };
+
+//! \brief Wrapper class around calls to cuBlas, cuSparse, and MAGMA for CUDA based accelerated linear algebra
+//! \ingroup TasmanianAcceleration
+
+//! (wrappers that manage handles, queues, and CudaVector)
+class CudaEngine{
+public:
+    //! \brief Construct a new engine associated with the given device.
+    CudaEngine(int deviceID) : gpu(deviceID), magma(false), cublasHandle(nullptr), cusparseHandle(nullptr){}
+    //! \brief Destructor, clear all handles and queues.
+    ~CudaEngine();
+
+    //! \brief Encompassing dense matrix-matrix or matrix-vector multiplication.
+
+    //! The raw operation is \f$ C = \alpha A B + \beta C \f$ where \b A is M by K, \b B is K by N, and \b C is M by N.
+    //! The signature is almost identical to BLAS dgemm() and Nvidia cublasDgemm().
+    //! Handles special cases when some of the dimensions are 1, then matrix-vector functions will be called.
+    //! Automatically calls CUDA or MAGMA libraries at the back-end.
+    //!
+    //! Assumes that all vectors have the correct order.
+    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, CudaVector<double> &C);
+
+    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU.
+    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const std::vector<double> &B, double beta, double C[]){
+        CudaVector<double> gpuB(B), gpuC(((size_t) M) * ((size_t) N));
+        denseMultiply(M, N, K, alpha, A, gpuB, beta, gpuC);
+        gpuC.unload(C);
+    }
+
+protected:
+    //! \brief Ensure cublasHandle is valid after this call, creates a new handle or if no handle exists yet.
+    void cuBlasPrepare();
+    //! \brief Ensure cusparseHandle is valid after this call, creates a new handle or if no handle exists yet.
+    void cuSparsePrepare();
+
+private:
+    int gpu; // which GPU to use
+    bool magma; // use cuBlas/cuSparse or MAGMA
+
+    void *cublasHandle;
+    void *cusparseHandle;
+};
+#endif
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 // The class below will be removed later
