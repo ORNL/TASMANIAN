@@ -457,7 +457,7 @@ namespace TasCUDA{
 
     //! The logic is identical to \b devalseq(), except the Fourier polynomials do not require nodes or coefficients.
     //! The output is two real arrays of size \b num_x by \b num_nodes.size() / \b dims corresponding to the real and complex parts of the basis.
-    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, double *gpu_wreal, double *gpu_wimag);
+    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, double *gpu_wreal, double *gpu_wimag);
 
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas

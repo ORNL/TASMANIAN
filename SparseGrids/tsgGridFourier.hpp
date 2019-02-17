@@ -43,7 +43,7 @@
 #include "tsgOneDimensionalWrapper.hpp"
 #include "tsgGridCore.hpp"
 
-#include "tsgAcceleratedDataStructures.hpp"
+#include "tsgCudaLoadStructures.hpp"
 
 namespace TasGrid{
 
@@ -93,8 +93,8 @@ public:
     void evaluateFastGPUcuda(const double x[], double y[]) const;
     void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
-    void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const{}
-    void evaluateCuda(CudaEngine*, const double*, int, double[]) const{}
+    void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
+    void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     #endif
 
     #ifdef Tasmanian_ENABLE_MAGMA
@@ -110,7 +110,7 @@ public:
 
     #ifdef Tasmanian_ENABLE_CUDA
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const;
-    void evaluateHierarchicalFunctionsInternalGPU(const double gpu_x[], int num_x, cudaDoubles &wreal, cudaDoubles &wimag) const;
+    void evaluateHierarchicalFunctionsInternalGPU(const double gpu_x[], int num_x, CudaVector<double> &wreal, CudaVector<double> &wimag) const;
     #endif
 
     void clearAccelerationData();
@@ -164,31 +164,41 @@ protected:
     }
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void prepareCudaData() const{
-        if (cuda_real.size() > 0) return;
-        int num_points = points.getNumIndexes();
-        size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
-        cuda_real.load(num_coeff, fourier_coefs.getCStrip(0));
-        cuda_imag.load(num_coeff, fourier_coefs.getCStrip(num_points));
-    }
-    void loadCudaPoints() const{
-        if (cuda_num_nodes.size() != 0) return;
+    void loadCudaNodes() const{
+        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaFourierData<double>>(new CudaFourierData<double>);
+        if (cuda_cache->num_nodes.size() != 0) return;
+
         std::vector<int> num_nodes(num_dimensions);
-        for(int j=0; j<num_dimensions; j++){
-            int n = 1;
-            for(int i=0; i<max_levels[j]; i++) n *= 3;
-            num_nodes[j] = n;
-        }
-        cuda_num_nodes.load(num_nodes); // num powers in each direction
+        std::transform(max_levels.begin(), max_levels.end(), num_nodes.begin(), [](int l)->int{ return OneDimensionalMeta::getNumPoints(l, rule_fourier); });
+        cuda_cache->num_nodes.load(num_nodes);
+
         const MultiIndexSet &work = (points.empty()) ? needed : points;
         int num_points = work.getNumIndexes();
         Data2D<int> transpoints; transpoints.resize(work.getNumIndexes(), num_dimensions);
-        for(int i=0; i<num_points; i++){
-            for(int j=0; j<num_dimensions; j++){
+        for(int i=0; i<num_points; i++)
+            for(int j=0; j<num_dimensions; j++)
                 transpoints.getStrip(j)[i] = work.getIndex(i)[j];
-            }
+        cuda_cache->points.load(transpoints.getVector());
+    }
+    void clearCudaNodes(){
+        if (cuda_cache){
+            cuda_cache->num_nodes.clear();
+            cuda_cache->points.clear();
         }
-        cuda_points.load(transpoints.getVector());
+    }
+    void loadCudaCoefficients() const{
+        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaFourierData<double>>(new CudaFourierData<double>);
+        if (cuda_cache->real.size() != 0) return;
+        int num_points = points.getNumIndexes();
+        size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
+        cuda_cache->real.load(num_coeff, fourier_coefs.getCStrip(0));
+        cuda_cache->imag.load(num_coeff, fourier_coefs.getCStrip(num_points));
+    }
+    void clearCudaCoefficients(){
+        if (cuda_cache){
+            cuda_cache->real.clear();
+            cuda_cache->imag.clear();
+        }
     }
     #endif
 
@@ -211,9 +221,7 @@ private:
     std::vector<int> max_power;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    mutable LinearAlgebraEngineGPU cuda_engine;
-    mutable cudaDoubles cuda_real, cuda_imag;
-    mutable cudaInts cuda_num_nodes, cuda_points;
+    mutable std::unique_ptr<CudaFourierData<double>> cuda_cache;
     #endif
 };
 

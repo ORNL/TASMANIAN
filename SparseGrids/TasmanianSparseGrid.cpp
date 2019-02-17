@@ -515,7 +515,7 @@ void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
-    if (isGlobal() || isSequence()){
+    if (isGlobal() || isSequence() || isFourier()){
         #ifdef Tasmanian_ENABLE_CUDA
         if (engine){
             if (acceleration == accel_gpu_cublas){

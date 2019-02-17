@@ -36,6 +36,7 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
 
 namespace TasGrid{
 
@@ -52,6 +53,17 @@ namespace TasGrid{
 template<typename FP>
 struct CudaSequenceData{
     CudaVector<FP> surpluses, nodes, coeff;
+    CudaVector<int> num_nodes, points;
+};
+
+//! \internal
+//! \brief Wrapper structure for the vectors needed by Fourier grid CUDA methods.
+
+//! The \b real and \b imag values correspond to the real and complex part of the Fourier coefficients.
+//! The \b points is a transposed copy of the nodes in the MultiIndexSet and \b num_nodes is the number of nodes in each dimension.
+template<typename FP>
+struct CudaFourierData{
+    CudaVector<FP> real, imag;
     CudaVector<int> num_nodes, points;
 };
 
