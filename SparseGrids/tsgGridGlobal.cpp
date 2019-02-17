@@ -392,6 +392,7 @@ void GridGlobal::acceptUpdatedTensors(){
 void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_vals.clear();
+    cuda_values.clear();
     #endif
     if (points.empty() || needed.empty()){
         values.setValues(vals);
@@ -541,6 +542,7 @@ void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double
 void GridGlobal::loadConstructedTensors(){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_vals.clear();
+    cuda_values.clear();
     #endif
     std::vector<int> tensor;
     MultiIndexSet new_points;
@@ -637,6 +639,16 @@ void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[])
 void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
     evaluateBatchGPUcublas(x, num_x, y);
 }
+void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+    if (cuda_values.size() == 0) cuda_values.load(values.aliasValues());
+
+    int num_points = points.getNumIndexes();
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+
+    engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_values, weights.getVector(), 0.0, y);
+}
+void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
 #endif // Tasmanian_ENABLE_CUDA
 
 #ifdef Tasmanian_ENABLE_MAGMA
@@ -880,6 +892,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
 void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_vals.clear();
+    cuda_values.clear();
     #endif
     if (!points.empty()) clearRefinement();
     loadNeededPoints(c, acc);
@@ -901,6 +914,7 @@ void GridGlobal::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_engine.reset();
     cuda_vals.clear();
+    cuda_values.clear();
     #endif
 }
 

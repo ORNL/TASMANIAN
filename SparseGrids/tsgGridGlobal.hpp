@@ -105,8 +105,8 @@ public:
     void evaluateFastGPUcuda(const double x[], double y[]) const;
     void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
-    void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const{}
-    void evaluateCuda(CudaEngine*, const double*, int, double[]) const{}
+    void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
+    void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     #endif
 
     #ifdef Tasmanian_ENABLE_MAGMA
@@ -189,6 +189,7 @@ private:
     #ifdef Tasmanian_ENABLE_CUDA
     mutable LinearAlgebraEngineGPU cuda_engine;
     mutable cudaDoubles cuda_vals;
+    mutable CudaVector<double> cuda_values;
     #endif
 };
 
