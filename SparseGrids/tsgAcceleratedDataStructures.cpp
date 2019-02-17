@@ -209,6 +209,7 @@ void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVect
     }
     AccelerationMeta::cublasCheckError((void*) &stat, "while calling CudaEngine::denseMultiply()");
 }
+void CudaEngine::setDevice() const{ cudaSetDevice(gpu); }
 
 LinearAlgebraEngineGPU::LinearAlgebraEngineGPU() : cublasHandle(0), cusparseHandle(0)
 #ifdef Tasmanian_ENABLE_MAGMA

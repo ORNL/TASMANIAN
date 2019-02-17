@@ -915,6 +915,10 @@ const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, i
         return gpu_x;
     }
 }
+void TasmanianSparseGrid::prepareCudaEngine(){
+    if (!engine) engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpuID));
+    engine->setDevice();
+}
 #endif // Tasmanian_ENABLE_CUDA
 
 void TasmanianSparseGrid::clearLevelLimits(){
@@ -1712,6 +1716,9 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
     if (effective_acc != acceleration){
         if (!empty()) base->clearAccelerationData();
+        if ((effective_acc == accel_cpu_blas) || (effective_acc == accel_cpu_blas)){
+            if (engine) engine.reset();
+        }
         acceleration = effective_acc;
         #ifdef Tasmanian_ENABLE_CUDA
         if (!acc_domain.empty()) acc_domain.clear();

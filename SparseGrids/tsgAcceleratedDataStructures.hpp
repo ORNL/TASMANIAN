@@ -258,6 +258,9 @@ public:
         gpuC.unload(C);
     }
 
+    //! \brief Set the active CUDA device
+    void setDevice() const;
+
 protected:
     //! \brief Ensure cublasHandle is valid after this call, creates a new handle or if no handle exists yet.
     void cuBlasPrepare();
