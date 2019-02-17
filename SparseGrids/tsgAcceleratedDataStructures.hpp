@@ -448,8 +448,8 @@ namespace TasCUDA{
     //! The \b ndoes vector has the cached 1D nodes and \b coeffs holds the cached coefficients of the Newton polynomials.
     //!
     //! The output is \b gpu_result which must have dimension \b num_x by \b num_nodes.size() / \b dims.
-    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes,
-                  const cudaInts &points, const cudaDoubles &nodes, const cudaDoubles &coeffs, double *gpu_result);
+    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes,
+                  const CudaVector<int> &points, const CudaVector<double> &nodes, const CudaVector<double> &coeffs, double *gpu_result);
 
     //! \internal
     //! \brief Evaluate the basis for a Fourier grid.

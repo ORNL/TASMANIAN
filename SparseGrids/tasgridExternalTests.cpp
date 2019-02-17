@@ -1946,6 +1946,7 @@ bool ExternalTester::testAllAcceleration() const{
     }else{
         cout << "      Accelerated" << setw(wsecond) << "sequence" << setw(wthird) << "FAIL" << endl;
     }
+    return pass;
 
     // for the purpose of testing CUDA evaluations, test all three localp rules vs orders 0, 1, and 2
     // for order 0, regardless of the selected rule, thegrid should switch to localp

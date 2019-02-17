@@ -162,7 +162,8 @@ void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num
 }
 
 // Sequence Grid basis evaluations
-void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, const cudaDoubles &nodes, const cudaDoubles &coeffs, double *gpu_result){
+void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes,
+                       const CudaVector<int> &points, const CudaVector<double> &nodes, const CudaVector<double> &coeffs, double *gpu_result){
     std::vector<int> offsets(dims);
     offsets[0] = 0;
     for(int d=1; d<dims; d++) offsets[d] = offsets[d-1] + num_x * (max_levels[d-1] + 1);
@@ -170,8 +171,8 @@ void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, 
 
     int maxl = max_levels[0]; for(auto l : max_levels) if (maxl < l) maxl = l;
 
-    cudaInts gpu_offsets(offsets);
-    cudaDoubles cache1D(num_total);
+    CudaVector<int> gpu_offsets(offsets);
+    CudaVector<double> cache1D(num_total);
     int num_blocks = num_x / _MAX_CUDA_THREADS + ((num_x % _MAX_CUDA_THREADS == 0) ? 0 : 1);
 
     tasgpu_dseq_build_cache<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
