@@ -258,6 +258,26 @@ public:
         gpuC.unload(C);
     }
 
+    //! \brief Encompassing sparse matrix-matrix or matrix-vector multiplication.
+
+    //! The raw operation is \f$ C = \alpha A B + \beta C \f$ where \b A is M by K, \b B is K by N, and \b C is M by N.
+    //! The matrix \b B is stored in compressed column format, transpose version cusparseDcsrmm2().
+    //! Handles special cases when some of the dimensions are 1, then matrix-vector functions will be called.
+    //! Automatically calls CUDA or MAGMA libraries at the back-end.
+    //!
+    //! Assumes that all vectors have the correct size.
+    void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
+                        const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, CudaVector<double> &C);
+
+    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU.
+    void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
+                        const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<double> &vals, double beta, double C[]){
+        CudaVector<int> gpu_pntr(pntr), gpu_indx(indx);
+        CudaVector<double> gpu_vals(vals), gpu_c(((size_t) M) * ((size_t) N));
+        sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, beta, gpu_c);
+        gpu_c.unload(C);
+    }
+
     //! \brief Set the active CUDA device
     void setDevice() const;
 

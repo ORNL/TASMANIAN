@@ -1716,11 +1716,10 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
     if (effective_acc != acceleration){
         if (!empty()) base->clearAccelerationData();
-        if ((effective_acc == accel_cpu_blas) || (effective_acc == accel_cpu_blas)){
-            if (engine) engine.reset();
-        }
         acceleration = effective_acc;
         #ifdef Tasmanian_ENABLE_CUDA
+        if ((effective_acc == accel_cpu_blas) || (effective_acc == accel_cpu_blas))
+            if (engine) engine.reset();
         if (!acc_domain.empty()) acc_domain.clear();
         #endif
     }
