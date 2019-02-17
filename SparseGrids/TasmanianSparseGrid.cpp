@@ -481,40 +481,58 @@ void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
     Data2D<double> x_tmp;
     base->evaluate(formCanonicalPoints(x, x_tmp, 1), y);
 }
-void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
-    Data2D<double> x_tmp;
-    const double *x_canonical = formCanonicalPoints(x, x_tmp, 1);
-    switch (acceleration){
-        #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_cublas:
-            _TASMANIAN_SETGPU
-            base->evaluateFastGPUcublas(x_canonical, y);
-            break;
-        case accel_gpu_cuda:
-            _TASMANIAN_SETGPU
-            base->evaluateFastGPUcuda(x_canonical, y);
-            break;
-        #ifdef Tasmanian_ENABLE_MAGMA
-        case accel_gpu_magma:
-            _TASMANIAN_SETGPU
-            base->evaluateFastGPUmagma(gpuID, x_canonical, y);
-            break;
-        #endif
-        #endif
-        #ifdef Tasmanian_ENABLE_BLAS
-        case accel_cpu_blas:
-            base->evaluateFastCPUblas(x_canonical, y);
-            break;
-        #endif
-        default:
-            base->evaluate(x_canonical, y);
-            break;
-    }
-}
+// void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
+//     Data2D<double> x_tmp;
+//     const double *x_canonical = formCanonicalPoints(x, x_tmp, 1);
+//     switch (acceleration){
+//         #ifdef Tasmanian_ENABLE_CUDA
+//         case accel_gpu_cublas:
+//             _TASMANIAN_SETGPU
+//             base->evaluateFastGPUcublas(x_canonical, y);
+//             break;
+//         case accel_gpu_cuda:
+//             _TASMANIAN_SETGPU
+//             base->evaluateFastGPUcuda(x_canonical, y);
+//             break;
+//         #ifdef Tasmanian_ENABLE_MAGMA
+//         case accel_gpu_magma:
+//             _TASMANIAN_SETGPU
+//             base->evaluateFastGPUmagma(gpuID, x_canonical, y);
+//             break;
+//         #endif
+//         #endif
+//         #ifdef Tasmanian_ENABLE_BLAS
+//         case accel_cpu_blas:
+//             base->evaluateFastCPUblas(x_canonical, y);
+//             break;
+//         #endif
+//         default:
+//             base->evaluate(x_canonical, y);
+//             break;
+//     }
+// }
 
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
+    if (isGlobal() || isSequence()){
+        #ifdef Tasmanian_ENABLE_CUDA
+        if (engine){
+            if (acceleration == accel_gpu_cublas){
+                base->evaluateCudaMixed(engine.get(), x_canonical, num_x, y);
+            }else{
+                base->evaluateCuda(engine.get(), x_canonical, num_x, y);
+            }
+            return;
+        }
+        #endif
+        if (acceleration == accel_cpu_blas){
+            base->evaluateBatchCPUblas(x_canonical, num_x, y);
+        }else{
+            base->evaluateBatch(x_canonical, num_x, y);
+        }
+        return;
+    }
     switch (acceleration){
         #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_cublas:
@@ -561,11 +579,6 @@ void TasmanianSparseGrid::evaluate(const std::vector<double> &x, std::vector<dou
     if (x.size() != (size_t) getNumDimensions()) throw std::runtime_error("ERROR: in evaluate() x must match getNumDimensions()");
     y.resize((size_t) getNumOutputs());
     evaluate(x.data(), y.data());
-}
-void TasmanianSparseGrid::evaluateFast(const std::vector<double> &x, std::vector<double> &y) const{
-    size_t num_outputs = getNumOutputs();
-    y.resize(num_outputs);
-    evaluateFast(x.data(), y.data());
 }
 void TasmanianSparseGrid::evaluateBatch(const std::vector<double> &x, std::vector<double> &y) const{
     int num_outputs = getNumOutputs();
@@ -1715,12 +1728,15 @@ void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
     if (effective_acc != acceleration){
-        if (!empty()) base->clearAccelerationData();
         acceleration = effective_acc;
         #ifdef Tasmanian_ENABLE_CUDA
-        if ((effective_acc == accel_cpu_blas) || (effective_acc == accel_cpu_blas))
+        if (AccelerationMeta::isAccTypeGPU(acceleration)){ // using CUDA
+            if (!engine) engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpuID));
+        }else{ // using not CUDA, clear any loaded data
             if (engine) engine.reset();
-        if (!acc_domain.empty()) acc_domain.clear();
+            if (!acc_domain.empty()) acc_domain.clear();
+            if (!empty()) base->clearAccelerationData();
+        }
         #endif
     }
 }
@@ -1764,11 +1780,10 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
 
 void TasmanianSparseGrid::setGPUID(int new_gpuID){
     if (new_gpuID != gpuID){
-        if (AccelerationMeta::isAccTypeGPU(acceleration)){ // if using GPU acceleration
-            if (!empty()) base->clearAccelerationData();
-        }
-        gpuID = new_gpuID;
         #ifdef Tasmanian_ENABLE_CUDA
+        gpuID = new_gpuID;
+        if (engine) engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpuID));
+        if (!empty()) base->clearAccelerationData();
         if (!acc_domain.empty()) acc_domain.clear();
         #endif
     }

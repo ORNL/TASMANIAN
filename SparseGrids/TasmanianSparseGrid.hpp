@@ -126,13 +126,13 @@ public:
     void loadNeededPoints(const std::vector<double> &vals); // checks if vals has size num_outputs X getNumNeeded()
 
     void evaluate(const double x[], double y[]) const; // has size num_dimensions, y has size num_outputs
-    void evaluateFast(const double x[], double y[]) const; // evaluate that is potentially not thread safe!
+    void evaluateFast(const double x[], double y[]) const{ evaluateBatch(x, 1, y); }; // evaluate that is potentially not thread safe!
     void evaluateBatch(const double x[], int num_x, double y[]) const; // uses acceleration, OpenMP, BLAS, GPU, etc., x is num_dimensions X num_x, y is num_outputs X num_x
     void integrate(double q[]) const; // y has size num_outputs
 
     // same as above, but num_x = x.size() / num_dimensions, and y is resized
     void evaluate(const std::vector<double> &x, std::vector<double> &y) const;
-    void evaluateFast(const std::vector<double> &x, std::vector<double> &y) const;
+    void evaluateFast(const std::vector<double> &x, std::vector<double> &y) const{ evaluateBatch(x, y); }
     void evaluateBatch(const std::vector<double> &x, std::vector<double> &y) const;
     void integrate(std::vector<double> &q) const;
 
