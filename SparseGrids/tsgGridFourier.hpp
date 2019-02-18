@@ -84,8 +84,7 @@ public:
     void evaluateBatch(const double x[], int num_x, double y[]) const;
 
     #ifdef Tasmanian_ENABLE_BLAS
-    void evaluateFastCPUblas(const double x[], double y[]) const;
-    void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const;
+    void evaluateBlas(const double x[], int num_x, double y[]) const;
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA

@@ -278,6 +278,7 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
     }
 }
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
+    if (num_x == 1){ evaluate(x, y); return; }
     Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     Data2D<double> yy; yy.load(num_outputs, num_x, y);
     #pragma omp parallel for
@@ -286,9 +287,7 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
-// standard BLAS cannot accelerate dense matrix times a sparse vector, fallback to regular evaluate()
-void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
+void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) const{
     if ((sparse_affinity == 1) || ((sparse_affinity == 0) && (num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS))){
         evaluateBatch(x, num_x, y);
         return;
@@ -310,7 +309,7 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
             double *row = A.getStrip(i);
             for(int j=spntr[i]; j<spntr[i+1]; j++) row[sindx[j]] = svals[j];
         }
-        TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.getCStrip(0), A.getCStrip(0), 0.0, y);
+        TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.getCStrip(0), A.getCStrip(0), 0.0, y);
     }else{
         Data2D<double> yy; yy.load(num_outputs, num_x, y);
         #pragma omp parallel for

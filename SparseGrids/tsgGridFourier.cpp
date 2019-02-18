@@ -395,7 +395,7 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
 
 void GridFourier::evaluate(const double x[], double y[]) const{
     int num_points = points.getNumIndexes();
-    TasBLAS::setzero(num_outputs, y);
+    std::fill_n(y, num_outputs, 0.0);
     std::vector<double> wreal(num_points);
     std::vector<double> wimag(num_points);
     computeBasis<double, false>(points, x, wreal.data(), wimag.data());
@@ -416,22 +416,19 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void GridFourier::evaluateFastCPUblas(const double x[], double y[]) const{
-    int num_points = points.getNumIndexes();
-    TasBLAS::setzero(num_outputs, y);
-    std::vector<double> wreal(num_points);
-    std::vector<double> wimag(num_points);
-    computeBasis<double, false>(points, x, wreal.data(), wimag.data());
-    TasBLAS::dgemv(num_outputs, num_points, fourier_coefs.getCStrip(0), wreal.data(), y, 1.0, 0.0);
-    TasBLAS::dgemv(num_outputs, num_points, fourier_coefs.getCStrip(num_points), wimag.data(), y, -1.0, 1.0);
-}
-void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
+void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
     int num_points = points.getNumIndexes();
     Data2D<double> wreal;
     Data2D<double> wimag;
-    evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, fourier_coefs.getCStrip(0), wreal.getStrip(0), 0.0, y);
-    TasBLAS::dgemm(num_outputs, num_x, num_points, -1.0, fourier_coefs.getCStrip(num_points), wimag.getStrip(0), 1.0, y);
+    if (num_x > 1){
+        evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
+    }else{ // work-around small OpenMP penalty
+        wreal.resize(num_points, 1);
+        wimag.resize(num_points, 1);
+        computeBasis<double, false>(points, x, wreal.getStrip(0), wimag.getStrip(0));
+    }
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getCStrip(0), wreal.getStrip(0), 0.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getCStrip(num_points), wimag.getStrip(0), 1.0, y);
 }
 #endif
 

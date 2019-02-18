@@ -583,7 +583,7 @@ const double* GridGlobal::getLoadedValues() const{
 void GridGlobal::evaluate(const double x[], double y[]) const{
     std::vector<double> w(points.getNumIndexes());
     getInterpolationWeights(x, w.data());
-    TasBLAS::setzero(num_outputs, y);
+    std::fill_n(y, num_outputs, 0.0);
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
         double wi = w[i];
@@ -599,17 +599,16 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void GridGlobal::evaluateFastCPUblas(const double x[], double y[]) const{
-    std::vector<double> w(points.getNumIndexes());
-    getInterpolationWeights(x, w.data());
-    TasBLAS::dgemv(num_outputs, points.getNumIndexes(), values.getValues(0), w.data(), y);
-}
-void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
+void GridGlobal::evaluateBlas(const double x[], int num_x, double y[]) const{
     int num_points = points.getNumIndexes();
     Data2D<double> weights; weights.resize(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+    if (num_x > 1){
+        evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+    }else{ // skips small OpenMP overhead
+        getInterpolationWeights(x, weights.getStrip(0));
+    }
 
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
 }
 #endif // Tasmanian_ENABLE_BLAS
 

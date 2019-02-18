@@ -35,65 +35,39 @@
 
 namespace TasGrid{
 
-// interfaces to external libraries, for convenience purposes mostly
-// for now include only BLAS
 #ifdef Tasmanian_ENABLE_BLAS
-extern "C" void daxpy_(const int *N, const double *alpha, const double *x, const int *incx, double *y, const int *incy);
-extern "C" double ddot_(const int *N, const double *x, const int *incx, const double *y, const int *incy);
-extern "C" double dnrm2_(const int *N, const double *x, const int *incx);
+#ifndef __TASMANIAN_DOXYGEN_SKIP
+// Skip the definitions from Doxygen, this serves as a mock-up header for the BLAS API.
 extern "C" void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda, const double *x, const int *incx, const double *beta, const double *y, const int *incy);
-extern "C" void dtrsv_(const char *uplo, const char *trans, const char *diag, const int *N, const double *A, const int *lda, const double *x, const int *incx);
 extern "C" void dgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, const double *C, const int *ldc);
-#endif // Tasmanian_ENABLE_BLAS
+#endif
 
-
+//! \internal
+//! \brief Wrappers for BLAS methods.
+//! \ingroup TasmanianAcceleration
 namespace TasBLAS{
-#ifdef Tasmanian_ENABLE_BLAS
-    // can't find BLAS implementation that is generally reliable
-    // if dgemv_ is called within OpenMP region with large matrices, it returns wrong result!
-    // Level 1
-//     inline double ddot(int N, const double x[], const double y[]){
-//         int ione = 1;
-//         return ddot_(&N, x, &ione, y, &ione);
-//     }
-//     inline double ddot(int N, const double x[]){
-//         int ione = 1;
-//         double nrm = dnrm2_(&N, x, &ione);
-//         return nrm * nrm;
-//     }
-    // Level 2
-    inline void dgemv(int M, int N, const double A[], const double x[], double y[], double alpha = 1.0, double beta = 0.0){ // y = A*x, A is M by N
-        char charN = 'N'; int blas_one = 1;
-        dgemv_(&charN, &M, &N, &alpha, A, &M, x, &blas_one, &beta, y, &blas_one);
-    }
-    // Level 3
-    inline void dgemm(int M, int N, int K, double alpha, const double A[], const double B[], double beta, double C[]){
-        char charN = 'N';
-        dgemm_(&charN, &charN, &M, &N, &K, &alpha, A, &M, B, &K, &beta, C, &M);
-    }
-#else
-    // non optimal BLAS subroutines, in case there is no BLAS available
-//     inline double ddot(int N, const double x[], const double y[]){
-//         double sum = 0.0;
-//         for(int i=0; i<N; i++) sum += x[i] * y[i];
-//         return sum;
-//     }
-//     inline double ddot(int N, const double x[]){
-//         double sum = 0.0;
-//         for(int i=0; i<N; i++) sum += x[i] * x[i];
-//         return sum;
-//     }
-    inline void dgemv(int M, int N, const double A[], const double x[], double y[]){ // y = A*x, A is M by N
-        for(int i=0; i<M; i++){
-            y[i] = A[i] * x[0];
-            for(int j=1; j<N; j++) y[i] += A[j*M + i] * x[j];
+    //! \internal
+    //! \brief Wrapper for BLAS dense matrix-matrix and matrix-vector.
+
+    //! Common API computing \f$ C = \alpha A B + \beta C \f$ where A is M by K, B is K by N, and C is M by N.
+    //! Transposes are not considered (not needed by Tasmanian).
+    //! The method switches between \b dgemm_ and \b dgemv_ depending on the appropriate dimensions.
+    inline void denseMultiply(int M, int N, int K, double alpha, const double A[], const double B[], double beta, double C[]){
+        if (M > 1){
+            if (N > 1){ // matrix mode
+                char charN = 'N';
+                dgemm_(&charN, &charN, &M, &N, &K, &alpha, A, &M, B, &K, &beta, C, &M);
+            }else{ // matrix vector, A * v = C
+                char charN = 'N'; int blas_one = 1;
+                dgemv_(&charN, &M, &K, &alpha, A, &M, B, &blas_one, &beta, C, &blas_one);
+            }
+        }else{ // matrix vector B^T * v = C
+            char charT = 'T'; int blas_one = 1;
+            dgemv_(&charT, &K, &N, &alpha, B, &K, A, &blas_one, &beta, C, &blas_one);
         }
     }
-#endif // Tasmanian_ENABLE_BLAS
-
-    inline void setzero(int N, double *A){ std::fill(A, A + N, 0.0); } // fill A with N zeros
 }
-
+#endif
 }
 
 #endif

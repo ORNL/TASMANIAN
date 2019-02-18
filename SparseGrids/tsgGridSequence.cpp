@@ -459,17 +459,15 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void GridSequence::evaluateFastCPUblas(const double x[], double y[]) const{
-    std::vector<double> fvalues(getNumPoints());
-    evalHierarchicalFunctions(x, fvalues.data());
-    TasBLAS::dgemv(num_outputs, points.getNumIndexes(), surpluses.data(), fvalues.data(), y);
-}
-void GridSequence::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
+void GridSequence::evaluateBlas(const double x[], int num_x, double y[]) const{
     int num_points = points.getNumIndexes();
     Data2D<double> weights; weights.resize(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-
-    TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.getStrip(0), 0.0, y);
+    if (num_x > 1){
+        evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+    }else{ // workaround small OpenMP penalty
+        evalHierarchicalFunctions(x, weights.getStrip(0));
+    }
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.getStrip(0), 0.0, y);
 }
 #endif // Tasmanian_ENABLE_BLAS
 
