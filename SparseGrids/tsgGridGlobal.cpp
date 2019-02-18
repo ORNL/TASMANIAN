@@ -583,7 +583,7 @@ const double* GridGlobal::getLoadedValues() const{
 void GridGlobal::evaluate(const double x[], double y[]) const{
     std::vector<double> w(points.getNumIndexes());
     getInterpolationWeights(x, w.data());
-    TasBLAS::setzero(num_outputs, y);
+    std::fill_n(y, num_outputs, 0.0);
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
         double wi = w[i];

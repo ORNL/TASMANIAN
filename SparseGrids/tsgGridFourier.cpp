@@ -395,7 +395,7 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
 
 void GridFourier::evaluate(const double x[], double y[]) const{
     int num_points = points.getNumIndexes();
-    TasBLAS::setzero(num_outputs, y);
+    std::fill_n(y, num_outputs, 0.0);
     std::vector<double> wreal(num_points);
     std::vector<double> wimag(num_points);
     computeBasis<double, false>(points, x, wreal.data(), wimag.data());
