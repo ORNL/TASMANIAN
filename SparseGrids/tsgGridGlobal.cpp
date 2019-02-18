@@ -612,6 +612,15 @@ void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) c
     TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
 }
 void GridGlobal::evaluateBlas(const double x[], int num_x, double y[]) const{
+    int num_points = points.getNumIndexes();
+    Data2D<double> weights; weights.resize(num_points, num_x);
+    if (num_x > 1){
+        evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+    }else{ // skips small OpenMP overhead
+        getInterpolationWeights(x, weights.getStrip(0));
+    }
+
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
 }
 #endif // Tasmanian_ENABLE_BLAS
 

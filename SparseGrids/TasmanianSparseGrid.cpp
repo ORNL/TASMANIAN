@@ -491,7 +491,11 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
     #endif
     #ifdef Tasmanian_ENABLE_BLAS
     if (acceleration == accel_cpu_blas){
-        base->evaluateBatchCPUblas(x_canonical, num_x, y);
+        if (isGlobal()){
+            base->evaluateBlas(x_canonical, num_x, y);
+        }else{
+            base->evaluateBatchCPUblas(x_canonical, num_x, y);
+        }
         return;
     }
     #endif
