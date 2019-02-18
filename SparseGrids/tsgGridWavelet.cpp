@@ -282,6 +282,8 @@ void GridWavelet::evaluateFastGPUcublas(const double x[], double y[]) const{ eva
 void GridWavelet::evaluateFastGPUcuda(const double x[], double y[]) const{ evaluate(x, y); }
 void GridWavelet::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 void GridWavelet::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+void GridWavelet::evaluateCudaMixed(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+void GridWavelet::evaluateCuda(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 #endif
 
 #ifdef Tasmanian_ENABLE_MAGMA
