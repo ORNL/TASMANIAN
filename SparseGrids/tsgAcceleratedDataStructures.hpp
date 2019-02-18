@@ -212,10 +212,10 @@ public:
     //! Assumes that all vectors have the correct order.
     void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, CudaVector<double> &C);
 
-    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU.
-    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const std::vector<double> &B, double beta, double C[]){
+    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
+    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const std::vector<double> &B, double C[]){
         CudaVector<double> gpuB(B), gpuC(((size_t) M) * ((size_t) N));
-        denseMultiply(M, N, K, alpha, A, gpuB, beta, gpuC);
+        denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC);
         gpuC.unload(C);
     }
 
@@ -230,12 +230,12 @@ public:
     void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
                         const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, CudaVector<double> &C);
 
-    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU.
+    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
     void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                        const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<double> &vals, double beta, double C[]){
+                        const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<double> &vals, double C[]){
         CudaVector<int> gpu_pntr(pntr), gpu_indx(indx);
         CudaVector<double> gpu_vals(vals), gpu_c(M, N);
-        sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, beta, gpu_c);
+        sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, 0.0, gpu_c);
         gpu_c.unload(C);
     }
 

@@ -141,7 +141,7 @@ void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVect
                             alpha, A.data(), M, B.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
             }
         }else{ // matrix vector B^T * v = C
-            magma_dgemv(MagmaTrans, N, K,
+            magma_dgemv(MagmaTrans, K, N,
                         alpha, B.data(), K, A.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
         }
         return;
@@ -158,7 +158,7 @@ void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVect
                             &alpha, A.data(), M, B.data(), 1, &beta, C.data(), 1);
         }
     }else{ // matrix vector B^T * v = C
-        stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_T, N, K,
+        stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_T, K, N,
                             &alpha, B.data(), K, A.data(), 1, &beta, C.data(), 1);
     }
     AccelerationMeta::cublasCheckError((void*) &stat, "while calling CudaEngine::denseMultiply()");

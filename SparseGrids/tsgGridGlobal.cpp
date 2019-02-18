@@ -620,7 +620,7 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
     Data2D<double> weights; weights.resize(num_points, num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_values, weights.getVector(), 0.0, y);
+    engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_values, weights.getVector(), y);
 }
 void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
 #endif // Tasmanian_ENABLE_CUDA

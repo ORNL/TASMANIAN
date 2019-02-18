@@ -1926,6 +1926,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
 bool ExternalTester::testAllAcceleration() const{
     const BaseFunction *f = &f23Kexpsincos;
+    const BaseFunction *f1out = &f21expsincos;
     TasmanianSparseGrid grid;
     bool pass = true;
 
@@ -1933,6 +1934,8 @@ bool ExternalTester::testAllAcceleration() const{
 
     grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
     pass = pass && testAcceleration(f, &grid);
+    grid.makeGlobalGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+    pass = pass && testAcceleration(f1out, &grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "global" << setw(wthird) << "Pass" << endl;
     }else{
@@ -1941,6 +1944,8 @@ bool ExternalTester::testAllAcceleration() const{
 
     grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_leja);
     pass = pass && testAcceleration(f, &grid);
+    grid.makeSequenceGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_leja);
+    pass = pass && testAcceleration(f1out, &grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "sequence" << setw(wthird) << "Pass" << endl;
     }else{
@@ -1954,9 +1959,13 @@ bool ExternalTester::testAllAcceleration() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 4 == 0) ? 5 : 6), (t / 4), pwp_rule[t % 4]);
         pass = pass && testAcceleration(f, &grid);
     }
-    // test cusparse sparse mat times dense vec used in accel_type cuda
+    // test cusparse sparse mat times dense vec used in accel_type cuda, also try both sparse and dense flavors
     grid.makeLocalPolynomialGrid(f21nx2.getNumInputs(), f21nx2.getNumOutputs(), 5, 1, TasGrid::rule_localp);
+    grid.favorSparseAcceleration(true);
     pass = pass && testAcceleration(&f21nx2, &grid);
+    grid.makeLocalPolynomialGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, 2, TasGrid::rule_semilocalp);
+    grid.favorSparseAcceleration(false);
+    pass = pass && testAcceleration(f1out, &grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "local polynomial" << setw(wthird) << "Pass" << endl;
     }else{
@@ -1965,6 +1974,8 @@ bool ExternalTester::testAllAcceleration() const{
 
     grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 4, TasGrid::type_level);
     pass = pass && testAcceleration(f, &grid);
+    grid.makeFourierGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, TasGrid::type_level);
+    pass = pass && testAcceleration(f1out, &grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
     }else{

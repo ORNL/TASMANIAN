@@ -478,7 +478,7 @@ void GridSequence::evaluateCudaMixed(CudaEngine *engine, const double x[], int n
     Data2D<double> hweights; hweights.resize(points.getNumIndexes(), num_x);
     evaluateHierarchicalFunctions(x, num_x, hweights.getStrip(0));
 
-    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, hweights.getVector(), 0.0, y);
+    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, hweights.getVector(), y);
 }
 void GridSequence::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses();
