@@ -218,8 +218,8 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
     #endif
     cusparseStatus_t sparse_stat;
     cuSparsePrepare();
-    if (M > 1){
-        if (N > 1){ // matrix mode
+    if (N > 1){ // dense matrix has many columns
+        if (M > 1){ // dense matrix has many rows, use matrix-matrix algorithm
             cusparseMatDescr_t mat_desc;
             sparse_stat = cusparseCreateMatDescr(&mat_desc);
             AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseCreateMatDescr() in CudaEngine::sparseMultiply()");
@@ -241,35 +241,35 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
             dense_stat = cublasDgeam((cublasHandle_t) cublasHandle,
                                      CUBLAS_OP_T, CUBLAS_OP_T, M, N, &talpha, tempC.data(), N, &tbeta, tempC.data(), N, C.data(), M);
             AccelerationMeta::cublasCheckError((void*) &dense_stat, "cublasDgeam() in CudaEngine::sparseMultiply()");
-        }else{ // matrix vector, A * v = C
-            // quote from Nvidia CUDA cusparse manual at https://docs.nvidia.com/cuda/cusparse/index.html#cusparse-lt-t-gt-gemvi
-            // "This function requires no extra storage for the general matrices when operation CUSPARSE_OPERATION_NON_TRANSPOSE is selected."
-            // Yet, buffer is required when num_nz exceeds 32 even with CUSPARSE_OPERATION_NON_TRANSPOSE
-            int buffer_size;
-            sparse_stat = cusparseDgemvi_bufferSize((cusparseHandle_t) cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                                    M, K, (int) indx.size(), &buffer_size);
-            AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDgemvi_bufferSize() in CudaEngine::sparseMultiply()");
-            CudaVector<double> gpu_buffer((size_t) buffer_size);
+        }else{ // dense matrix has only one row, use sparse matrix times dense vector
+            cusparseMatDescr_t mat_desc;
+            sparse_stat = cusparseCreateMatDescr(&mat_desc);
+            AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseCreateMatDescr() in CudaEngine::sparseMultiply()");
+            cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
+            cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
+            cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
 
-            sparse_stat = cusparseDgemvi((cusparseHandle_t) cusparseHandle,
-                                         CUSPARSE_OPERATION_NON_TRANSPOSE, M, K, &alpha, A.data(), M, (int) indx.size(), vals.data(),
-                                         indx.data(), &beta, C.data(), CUSPARSE_INDEX_BASE_ZERO, gpu_buffer.data());
-            AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDgemvi() in CudaEngine::sparseMultiply()");
+            sparse_stat = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
+                                        CUSPARSE_OPERATION_NON_TRANSPOSE, N, K, (int) indx.size(),
+                                        &alpha, mat_desc, vals.data(), pntr.data(), indx.data(), A.data(), &beta, C.data());
+            AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDcsrmv() in CudaEngine::sparseMultiply()");
+
+            cusparseDestroyMatDescr(mat_desc);
         }
-    }else{ // matrix vector B^T * v = C
-        cusparseMatDescr_t mat_desc;
-        sparse_stat = cusparseCreateMatDescr(&mat_desc);
-        AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseCreateMatDescr() in CudaEngine::sparseMultiply()");
-        cusparseSetMatType(mat_desc, CUSPARSE_MATRIX_TYPE_GENERAL);
-        cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
-        cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
+    }else{ // sparse matrix has only one column, use dense matrix times sparse vector
+        // quote from Nvidia CUDA cusparse manual at https://docs.nvidia.com/cuda/cusparse/index.html#cusparse-lt-t-gt-gemvi
+        // "This function requires no extra storage for the general matrices when operation CUSPARSE_OPERATION_NON_TRANSPOSE is selected."
+        // Yet, buffer is required when num_nz exceeds 32 even with CUSPARSE_OPERATION_NON_TRANSPOSE
+        int buffer_size;
+        sparse_stat = cusparseDgemvi_bufferSize((cusparseHandle_t) cusparseHandle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                                M, K, (int) indx.size(), &buffer_size);
+        AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDgemvi_bufferSize() in CudaEngine::sparseMultiply()");
+        CudaVector<double> gpu_buffer((size_t) buffer_size);
 
-        sparse_stat = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
-                                     CUSPARSE_OPERATION_NON_TRANSPOSE, N, K, (int) indx.size(),
-                                     &alpha, mat_desc, vals.data(), pntr.data(), indx.data(), A.data(), &beta, C.data());
-        AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDcsrmv() in CudaEngine::sparseMultiply()");
-
-        cusparseDestroyMatDescr(mat_desc);
+        sparse_stat = cusparseDgemvi((cusparseHandle_t) cusparseHandle,
+                                        CUSPARSE_OPERATION_NON_TRANSPOSE, M, K, &alpha, A.data(), M, (int) indx.size(), vals.data(),
+                                        indx.data(), &beta, C.data(), CUSPARSE_INDEX_BASE_ZERO, gpu_buffer.data());
+        AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDgemvi() in CudaEngine::sparseMultiply()");
     }
 }
 void CudaEngine::setDevice() const{ cudaSetDevice(gpu); }
