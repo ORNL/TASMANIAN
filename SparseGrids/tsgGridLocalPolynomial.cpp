@@ -287,8 +287,6 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void GridLocalPolynomial::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
-// standard BLAS cannot accelerate dense matrix times a sparse vector, fallback to regular evaluate()
 void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) const{
     if ((sparse_affinity == 1) || ((sparse_affinity == 0) && (num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS))){
         evaluateBatch(x, num_x, y);
@@ -325,8 +323,6 @@ void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) 
             }
         }
     }
-}
-void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{
 }
 #endif
 

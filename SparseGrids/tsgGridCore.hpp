@@ -71,8 +71,6 @@ public:
     virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
 
     #ifdef Tasmanian_ENABLE_BLAS
-    virtual void evaluateFastCPUblas(const double x[], double y[]) const = 0;
-    virtual void evaluateBatchCPUblas(const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateBlas(const double x[], int num_x, double y[]) const = 0;
     #endif
 
