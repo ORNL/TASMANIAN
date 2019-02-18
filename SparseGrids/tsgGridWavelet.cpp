@@ -275,8 +275,7 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
 #ifdef Tasmanian_ENABLE_BLAS
 void GridWavelet::evaluateFastCPUblas(const double x[], double y[]) const{ evaluate(x, y); }
 void GridWavelet::evaluateBatchCPUblas(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
-void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{
-}
+void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
