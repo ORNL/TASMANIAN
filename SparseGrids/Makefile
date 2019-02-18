@@ -9,7 +9,7 @@ LIBS = $(CommonLIBS)
 LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp tsgGridGlobal.hpp tsgCacheLagrange.hpp tsgSequenceOptimizer.hpp \
            tsgEnumerates.hpp tsgOneDimensionalWrapper.hpp tsgGridSequence.hpp tsgGridCore.hpp tsgLinearSolvers.hpp \
            tsgRuleLocalPolynomial.hpp tsgHardCodedTabulatedRules.hpp tsgGridLocalPolynomial.hpp tsgGridFourier.hpp \
-           tsgRuleWavelet.hpp tsgCudaMacros.hpp tsgGridWavelet.hpp \
+           tsgRuleWavelet.hpp tsgCudaLoadStructures.hpp tsgGridWavelet.hpp \
            tsgCudaLinearAlgebra.hpp tsgCudaBasisEvaluations.hpp tsgAcceleratedDataStructures.hpp \
            tsgDConstructGridGlobal.hpp \
            tasgridTestFunctions.hpp tasgridExternalTests.hpp tasgridWrapper.hpp tasgridUnitTests.hpp \
