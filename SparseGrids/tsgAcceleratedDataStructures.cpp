@@ -441,10 +441,8 @@ template void AccelerationMeta::recvCudaArray<int>(size_t num_entries, const int
 
 template void AccelerationMeta::delCudaArray<double>(double*);
 template void AccelerationMeta::delCudaArray<int>(int*);
-#endif // Tasmanian_ENABLE_CUDA
 
 
-#ifdef Tasmanian_ENABLE_CUDA
 AccelerationDomainTransform::AccelerationDomainTransform() : num_dimensions(0), padded_size(0){}
 AccelerationDomainTransform::~AccelerationDomainTransform(){}
 

@@ -434,6 +434,7 @@ namespace AccelerationMeta{
     //! The fallback logic is documented with the enumerated type \b TasGrid::TypeAcceleration.
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
 
+    #ifdef Tasmanian_ENABLE_CUDA
     //! \internal
     //! \brief Return the number of visible CUDA devices, uses cudaGetDeviceCount() (see the Nvidia documentation).
     //! \ingroup TasmanianAcceleration
@@ -472,6 +473,7 @@ namespace AccelerationMeta{
     //! \brief Deallocate  device array, used primarily for testing, always favor using \b CudaVector (if possible).
     //! \ingroup TasmanianAcceleration
     template<typename T> void delCudaArray(T *x);
+    #endif
 }
 
 }

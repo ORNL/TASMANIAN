@@ -268,7 +268,6 @@ protected:
     const double* formCanonicalPoints(const double *x, Data2D<double> &x_temp, int num_x) const;
     #ifdef Tasmanian_ENABLE_CUDA
     const double* formCanonicalPointsGPU(const double *gpu_x, int num_x, CudaVector<double> &gpu_x_temp) const;
-    void prepareCudaEngine();
     #endif
     void formTransformedPoints(int num_points, double x[]) const; // when calling get***Points()
 
