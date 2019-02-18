@@ -1959,9 +1959,13 @@ bool ExternalTester::testAllAcceleration() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 4 == 0) ? 5 : 6), (t / 4), pwp_rule[t % 4]);
         pass = pass && testAcceleration(f, &grid);
     }
-    // test cusparse sparse mat times dense vec used in accel_type cuda
+    // test cusparse sparse mat times dense vec used in accel_type cuda, also try both sparse and dense flavors
     grid.makeLocalPolynomialGrid(f21nx2.getNumInputs(), f21nx2.getNumOutputs(), 5, 1, TasGrid::rule_localp);
+    grid.favorSparseAcceleration(true);
     pass = pass && testAcceleration(&f21nx2, &grid);
+    grid.makeLocalPolynomialGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, 2, TasGrid::rule_semilocalp);
+    grid.favorSparseAcceleration(false);
+    pass = pass && testAcceleration(f1out, &grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "local polynomial" << setw(wthird) << "Pass" << endl;
     }else{
