@@ -67,6 +67,19 @@ struct CudaFourierData{
     CudaVector<int> num_nodes, points;
 };
 
+//! \internal
+//! \brief Wrapper structure for the vecors needed by Locall Polynomial grid CUDA methods.
+
+//! The \b surpluses are the hierarchical surpluses and used in the linear algebra (stage 2) of the evaluations.
+//! The \b nodes and \b support describe the basis functions, negative support is used to distinguish
+//! between local and global support and different order of the first few basis functions.
+//! The \b hpntr, \b hindx, and \b hroots, describe the hierarchicy and are used in the sparse matrix algorithm.
+template<typename FP>
+struct CudaLocalPolynomialData{
+    CudaVector<double> surpluses, nodes, support;
+    CudaVector<int> hpntr, hindx, hroots;
+};
+
 #endif
 
 }

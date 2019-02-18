@@ -515,9 +515,10 @@ void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
-    if (isGlobal() || isSequence() || isFourier()){
+    if (isGlobal() || isSequence() || isFourier() || isLocalPolynomial()){
         #ifdef Tasmanian_ENABLE_CUDA
         if (engine){
+            _TASMANIAN_SETGPU
             if (acceleration == accel_gpu_cublas){
                 base->evaluateCudaMixed(engine.get(), x_canonical, num_x, y);
             }else{
@@ -1179,7 +1180,9 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[],
     CudaVector<double> gpu_temp_x;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
     if (isLocalPolynomial()){
-        getGridLocalPolynomial()->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y);
+        CudaVector<double> gpu_wrapper;
+        gpu_wrapper.wrap(((size_t) base->getNumPoints()) * ((size_t) cpu_num_x), gpu_y);
+        getGridLocalPolynomial()->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_wrapper);
     }else if (isFourier()){
         getGridFourier()->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
     }else{
@@ -1190,7 +1193,13 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gp
     _TASMANIAN_SETGPU
     CudaVector<double> gpu_temp_x;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
-    getGridLocalPolynomial()->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_pntr, gpu_indx, gpu_vals, num_nz);
+    CudaVector<int> vec_pntr, vec_indx;
+    CudaVector<double> vec_vals;
+    getGridLocalPolynomial()->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, vec_pntr, vec_indx, vec_vals);
+    num_nz = (int) vec_indx.size();
+    gpu_pntr = vec_pntr.eject();
+    gpu_indx = vec_indx.eject();
+    gpu_vals = vec_vals.eject();
 }
 #else
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double*, int, double*) const{

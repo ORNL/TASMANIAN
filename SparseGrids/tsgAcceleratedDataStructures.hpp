@@ -273,7 +273,7 @@ public:
     void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
                         const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<double> &vals, double beta, double C[]){
         CudaVector<int> gpu_pntr(pntr), gpu_indx(indx);
-        CudaVector<double> gpu_vals(vals), gpu_c(((size_t) M) * ((size_t) N));
+        CudaVector<double> gpu_vals(vals), gpu_c(M, N);
         sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, beta, gpu_c);
         gpu_c.unload(C);
     }
@@ -433,8 +433,10 @@ namespace TasCUDA{
     //!
     //! The output vectors \b gpu_spntr, \b gpu_sindx and \b gpu_svals form a row compressed matrix,
     //! e.g., in format that can directly interface with Nvidia cusparseDcsrmm2().
-    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const cudaDoubles &gpu_nodes, const cudaDoubles &gpu_support,
-                            const cudaInts &gpu_hpntr, const cudaInts &gpu_hindx, const  cudaInts &gpu_roots, cudaInts &gpu_spntr, cudaInts &gpu_sindx, cudaDoubles &gpu_svals);
+    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x,
+                            const CudaVector<double> &gpu_nodes, const CudaVector<double> &gpu_support,
+                            const CudaVector<int> &gpu_hpntr, const CudaVector<int> &gpu_hindx, const CudaVector<int> &gpu_hroots,
+                            CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals);
 
     //! \internal
     //! \brief Evaluate the basis for a Sequence grid.

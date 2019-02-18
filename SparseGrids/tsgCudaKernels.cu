@@ -138,12 +138,15 @@ inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule,
 }
 
 // local polynomial basis functions, SPARSE algorithm (2 passes, one pass to compue the non-zeros and one pass to evaluate)
-void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const cudaDoubles &gpu_nodes, const cudaDoubles &gpu_support,
-                            const cudaInts &gpu_hpntr, const cudaInts &gpu_hindx, const  cudaInts &gpu_roots, cudaInts &gpu_spntr, cudaInts &gpu_sindx, cudaDoubles &gpu_svals){
+void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x,
+                                 const CudaVector<double> &gpu_nodes, const CudaVector<double> &gpu_support,
+                                 const CudaVector<int> &gpu_hpntr, const CudaVector<int> &gpu_hindx, const CudaVector<int> &gpu_hroots,
+                                 CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals){
     gpu_spntr.resize(num_x + 1);
     // call with fill == false to count the non-zeros per row of the matrix
     devalpwpoly_sparse_realize_rule_order<double, 64, 46, false>
-        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(), gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_roots.size(), gpu_roots.data(), gpu_spntr.data(), 0, 0);
+        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(),
+        gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_hroots.size(), gpu_hroots.data(), gpu_spntr.data(), 0, 0);
 
     std::vector<int> cpu_spntr;
     gpu_spntr.unload(cpu_spntr);
@@ -158,7 +161,8 @@ void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num
     gpu_svals.resize(nz);
     // call with fill == true to load the non-zeros
     devalpwpoly_sparse_realize_rule_order<double, 64, 46, true>
-        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(), gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_roots.size(), gpu_roots.data(), gpu_spntr.data(), gpu_sindx.data(), gpu_svals.data());
+        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(),
+        gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_hroots.size(), gpu_hroots.data(), gpu_spntr.data(), gpu_sindx.data(), gpu_svals.data());
 }
 
 // Sequence Grid basis evaluations

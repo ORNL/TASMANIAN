@@ -265,7 +265,7 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
         cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
 
         sparse_stat = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
-                                     CUSPARSE_OPERATION_NON_TRANSPOSE, M, N, (int) indx.size(),
+                                     CUSPARSE_OPERATION_NON_TRANSPOSE, N, K, (int) indx.size(),
                                      &alpha, mat_desc, vals.data(), pntr.data(), indx.data(), A.data(), &beta, C.data());
         AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDcsrmv() in CudaEngine::sparseMultiply()");
 
