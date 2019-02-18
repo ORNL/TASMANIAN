@@ -481,84 +481,25 @@ void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
     Data2D<double> x_tmp;
     base->evaluate(formCanonicalPoints(x, x_tmp, 1), y);
 }
-// void TasmanianSparseGrid::evaluateFast(const double x[], double y[]) const{
-//     Data2D<double> x_tmp;
-//     const double *x_canonical = formCanonicalPoints(x, x_tmp, 1);
-//     switch (acceleration){
-//         #ifdef Tasmanian_ENABLE_CUDA
-//         case accel_gpu_cublas:
-//             _TASMANIAN_SETGPU
-//             base->evaluateFastGPUcublas(x_canonical, y);
-//             break;
-//         case accel_gpu_cuda:
-//             _TASMANIAN_SETGPU
-//             base->evaluateFastGPUcuda(x_canonical, y);
-//             break;
-//         #ifdef Tasmanian_ENABLE_MAGMA
-//         case accel_gpu_magma:
-//             _TASMANIAN_SETGPU
-//             base->evaluateFastGPUmagma(gpuID, x_canonical, y);
-//             break;
-//         #endif
-//         #endif
-//         #ifdef Tasmanian_ENABLE_BLAS
-//         case accel_cpu_blas:
-//             base->evaluateFastCPUblas(x_canonical, y);
-//             break;
-//         #endif
-//         default:
-//             base->evaluate(x_canonical, y);
-//             break;
-//     }
-// }
 
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
-    if (isGlobal() || isSequence() || isFourier() || isLocalPolynomial()){
-        #ifdef Tasmanian_ENABLE_CUDA
-        if (engine){
-            _TASMANIAN_SETGPU
-            if (acceleration == accel_gpu_cublas){
-                base->evaluateCudaMixed(engine.get(), x_canonical, num_x, y);
-            }else{
-                base->evaluateCuda(engine.get(), x_canonical, num_x, y);
-            }
-            return;
-        }
-        #endif
-        if (acceleration == accel_cpu_blas){
-            base->evaluateBatchCPUblas(x_canonical, num_x, y);
+    #ifdef Tasmanian_ENABLE_CUDA
+    if (engine){
+        _TASMANIAN_SETGPU
+        if (acceleration == accel_gpu_cublas){
+            base->evaluateCudaMixed(engine.get(), x_canonical, num_x, y);
         }else{
-            base->evaluateBatch(x_canonical, num_x, y);
+            base->evaluateCuda(engine.get(), x_canonical, num_x, y);
         }
         return;
     }
-    switch (acceleration){
-        #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_cublas:
-            _TASMANIAN_SETGPU
-            base->evaluateBatchGPUcublas(x_canonical, num_x, y);
-            break;
-        case accel_gpu_cuda:
-            _TASMANIAN_SETGPU
-            base->evaluateBatchGPUcuda(x_canonical, num_x, y);
-            break;
-        #ifdef Tasmanian_ENABLE_MAGMA
-        case accel_gpu_magma:
-            _TASMANIAN_SETGPU
-            base->evaluateBatchGPUmagma(gpuID, x_canonical, num_x, y);
-            break;
-        #endif
-        #endif
-        #ifdef Tasmanian_ENABLE_BLAS
-        case accel_cpu_blas:
-            base->evaluateBatchCPUblas(x_canonical, num_x, y);
-            break;
-        #endif
-        default:
-            base->evaluateBatch(x_canonical, num_x, y);
-            break;
+    #endif
+    if (acceleration == accel_cpu_blas){
+        base->evaluateBatchCPUblas(x_canonical, num_x, y);
+    }else{
+        base->evaluateBatch(x_canonical, num_x, y);
     }
 }
 void TasmanianSparseGrid::integrate(double q[]) const{
