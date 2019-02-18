@@ -489,11 +489,13 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
         return;
     }
     #endif
+    #ifdef Tasmanian_ENABLE_BLAS
     if (acceleration == accel_cpu_blas){
         base->evaluateBatchCPUblas(x_canonical, num_x, y);
-    }else{
-        base->evaluateBatch(x_canonical, num_x, y);
+        return;
     }
+    #endif
+    base->evaluateBatch(x_canonical, num_x, y);
 }
 void TasmanianSparseGrid::integrate(double q[]) const{
     if (conformal_asin_power.size() != 0){
