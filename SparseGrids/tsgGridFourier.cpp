@@ -436,35 +436,6 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridFourier::evaluateFastGPUcublas(const double x[], double y[]) const{
-//     prepareCudaData();
-//     int num_points = points.getNumIndexes();
-//     std::vector<double> wreal(num_points);
-//     std::vector<double> wimag(num_points);
-//     cudaDoubles gpuY;
-//     computeBasis<double, false>(points, x, wreal.data(), wimag.data());
-//     cuda_engine.cublasDGEMM(num_outputs, 1, num_points,  1.0, cuda_real, wreal, 0.0, gpuY);
-//     cuda_engine.cublasDGEMM(num_outputs, 1, num_points, -1.0, cuda_imag, wimag, 1.0, gpuY);
-//     gpuY.unload(y);
-}
-void GridFourier::evaluateFastGPUcuda(const double x[], double y[]) const{ evaluateFastGPUcublas(x,y); }
-void GridFourier::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-//     int num_points = points.getNumIndexes();
-//     prepareCudaData();
-//     Data2D<double> wreal;
-//     Data2D<double> wimag;
-//     evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
-//     cudaDoubles gpuY;
-//     cuda_engine.cublasDGEMM(num_outputs, num_x, num_points,  1.0, cuda_real, wreal.getVector(), 0.0, gpuY);
-//     cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, -1.0, cuda_imag, wimag.getVector(), 1.0, gpuY);
-//     gpuY.unload(y);
-}
-void GridFourier::evaluateBatchGPUcuda(const double x[], int num_x, double[]) const{
-//     prepareCudaData();
-//     //int num_points = points.getNumIndexes();
-//     cudaDoubles wreal, wimag, gpu_x(num_dimensions, num_x, x);
-//     //evaluateHierarchicalFunctionsInternalGPU(gpu_x.data(), num_x, wreal, wimag);
-}
 void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaCoefficients();
     Data2D<double> wreal;
@@ -488,30 +459,6 @@ void GridFourier::evaluateCuda(CudaEngine *engine, const double x[], int num_x, 
     engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
     engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
     gpu_y.unload(y);
-}
-#endif
-
-#ifdef Tasmanian_ENABLE_MAGMA
-void GridFourier::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
-//     prepareCudaData();
-//     int num_points = points.getNumIndexes();
-//     std::vector<double> wreal(num_points);
-//     std::vector<double> wimag(num_points);
-//     cudaDoubles gpuY;
-//     computeBasis<double, false>(points, x, wreal.data(), wimag.data());
-//     cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, num_points,  1.0, cuda_real, wreal, 0.0, gpuY);
-//     cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, num_points, -1.0, cuda_imag, wimag, 1.0, gpuY);
-//     gpuY.unload(y);
-}
-void GridFourier::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
-//     prepareCudaData();
-//     int num_points = points.getNumIndexes();
-//     cudaDoubles wreal, wimag, gpu_x(num_dimensions, num_x, x);
-//     evaluateHierarchicalFunctionsInternalGPU(gpu_x.data(), num_x, wreal, wimag);
-//     cudaDoubles gpuY;
-//     cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points,  1.0, cuda_real, wreal, 0.0, gpuY);
-//     cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, -1.0, cuda_imag, wimag, 1.0, gpuY);
-//     gpuY.unload(y);
 }
 #endif
 

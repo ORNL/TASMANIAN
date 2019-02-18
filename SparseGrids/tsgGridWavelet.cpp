@@ -278,17 +278,8 @@ void GridWavelet::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridWavelet::evaluateFastGPUcublas(const double x[], double y[]) const{ evaluate(x, y); }
-void GridWavelet::evaluateFastGPUcuda(const double x[], double y[]) const{ evaluate(x, y); }
-void GridWavelet::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
-void GridWavelet::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 void GridWavelet::evaluateCudaMixed(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 void GridWavelet::evaluateCuda(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
-#endif
-
-#ifdef Tasmanian_ENABLE_MAGMA
-void GridWavelet::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
-void GridWavelet::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 #endif
 
 void GridWavelet::integrate(double q[], double *conformal_correction) const{
@@ -599,7 +590,7 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
     }
 }
 
-void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
+void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration){
     int num_points = getNumPoints();
     size_t size_coeff = ((size_t) num_points) * ((size_t) num_outputs);
     if (!points.empty()){
@@ -616,17 +607,7 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
 
     std::vector<double> x(((size_t) num_points) * ((size_t) num_dimensions));
     getPoints(x.data());
-    switch(acc){
-        #ifdef Tasmanian_ENABLE_BLAS
-        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), values.getValues(0)); break;
-        #endif
-        #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), values.getValues(0)); break;
-        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), values.getValues(0)); break;
-        #endif
-        default:
-            evaluateBatch(x.data(), points.getNumIndexes(), values.getValues(0));
-    }
+    evaluateBatch(x.data(), points.getNumIndexes(), values.getValues(0));
 }
 
 const int* GridWavelet::getPointIndexes() const{

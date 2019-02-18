@@ -84,17 +84,8 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void evaluateFastGPUcublas(const double x[], double y[]) const;
-    void evaluateFastGPUcuda(const double x[], double y[]) const;
-    void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
-    void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
     void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const;
     void evaluateCuda(CudaEngine*, const double*, int, double[]) const;
-    #endif
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
-    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits);

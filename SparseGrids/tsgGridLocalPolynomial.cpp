@@ -328,62 +328,6 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridLocalPolynomial::evaluateFastGPUcublas(const double x[], double y[]) const{
-//     int num_points = points.getNumIndexes();
-//     if (cuda_surpluses.size() == 0) loadCudaData();
-//
-//     std::vector<int> sindx;
-//     std::vector<double> svals;
-//     int num_nz;
-//     buildSparseVector<0>(points, x, num_nz, sindx, svals);
-//     buildSparseVector<1>(points, x, num_nz, sindx, svals);
-//     cuda_engine.cusparseMatveci(num_outputs, num_points, 1.0, cuda_surpluses, sindx, svals, 0.0, y);
-}
-// evaluation of a single x cannot be accelerated with a gpu (not parallelizable), do that on the CPU and use the GPU only for the case of many outputs
-void GridLocalPolynomial::evaluateFastGPUcuda(const double x[], double y[]) const{ evaluateFastGPUcublas(x, y); }
-void GridLocalPolynomial::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-//     if (cuda_surpluses.size() == 0) cuda_surpluses.load(surpluses.getVector());
-//
-//     std::vector<int> sindx, spntr;
-//     std::vector<double> svals;
-//     buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals);
-//
-//     cuda_engine.cusparseMatmul(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_surpluses, spntr, sindx, svals, 0.0, y);
-}
-void GridLocalPolynomial::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
-//     if ((order == -1) || (order > 2)){ // GPU evaluations are availabe only for order 0, 1, and 2. Cubic will come later, but higher order will not be supported
-//         evaluateBatchGPUcublas(x, num_x, y);
-//         return;
-//     }
-//     int num_points = points.getNumIndexes();
-//     if (cuda_nodes.size() == 0) loadCudaData();
-//
-//     bool useDense = (sparse_affinity == -1) || ((sparse_affinity == 0) && (num_dimensions > 6)); // dimension is the real criteria here
-//
-//     if (useDense){
-//         cudaDoubles gpu_x(num_dimensions, num_x, x);
-//         cudaDoubles gpu_basis(num_x, num_points);
-//         cudaDoubles gpu_result(num_x, num_outputs);
-//
-//         buildDenseBasisMatrixGPU(gpu_x.data(), num_x, gpu_basis);
-//         cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, 1.0, cuda_surpluses, gpu_basis, 0.0, gpu_result);
-//         gpu_result.unload(y);
-//     }else{
-//         cudaDoubles gpu_x(num_dimensions, num_x, x);
-//         cudaDoubles gpu_result(num_x, num_outputs);
-//
-//         cudaInts gpu_spntr, gpu_sindx;
-//         cudaDoubles gpu_svals;
-//         buildSparseBasisMatrixGPU(gpu_x.data(), num_x, gpu_spntr, gpu_sindx, gpu_svals);
-//
-//         if (num_outputs > 1){
-//             cuda_engine.cusparseMatmul(num_outputs, num_x, num_points, 1.0, cuda_surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_result);
-//         }else{
-//             cuda_engine.cusparseMatvec(num_x, num_points, 1.0, gpu_spntr, gpu_sindx, gpu_svals, cuda_surpluses, 0.0, gpu_result.data());
-//         }
-//         gpu_result.unload(y);
-//     }
-}
 void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses();
 
@@ -429,11 +373,6 @@ void GridLocalPolynomial::evaluateCuda(CudaEngine *engine, const double x[], int
     }
     gpu_result.unload(y);
 }
-#endif
-
-#ifdef Tasmanian_ENABLE_MAGMA
-void GridLocalPolynomial::evaluateFastGPUmagma(int, const double x[], double y[]) const{ evaluate(x, y); }
-void GridLocalPolynomial::evaluateBatchGPUmagma(int, const double x[], int num_x, double y[]) const{ evaluateBatchGPUcublas(x, num_x, y); }
 #endif
 
 void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration){
@@ -1304,7 +1243,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     return points.getNumIndexes();
 }
 
-void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
+void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaSurpluses();
     #endif
@@ -1322,17 +1261,7 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
 
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
     getPoints(x.data());
-    switch(acc){
-        #ifdef Tasmanian_ENABLE_BLAS
-        case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals.data()); break;
-        #endif
-        #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals.data()); break;
-        case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals.data()); break;
-        #endif
-        default:
-            evaluateBatch(x.data(), points.getNumIndexes(), vals.data());
-    }
+    evaluateBatch(x.data(), points.getNumIndexes(), vals.data());
 }
 
 void GridLocalPolynomial::clearAccelerationData(){

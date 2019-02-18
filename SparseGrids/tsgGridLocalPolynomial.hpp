@@ -102,17 +102,8 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void evaluateFastGPUcublas(const double x[], double y[]) const;
-    void evaluateFastGPUcuda(const double x[], double y[]) const;
-    void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
-    void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
-    #endif
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
-    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction);
@@ -356,9 +347,6 @@ private:
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaLocalPolynomialData<double>> cuda_cache;
-//     mutable LinearAlgebraEngineGPU cuda_engine;
-//     mutable cudaDoubles cuda_surpluses, cuda_nodes, cuda_support;
-//     mutable cudaInts cuda_pntr, cuda_indx, cuda_roots;
     #endif
 };
 

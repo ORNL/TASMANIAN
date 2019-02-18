@@ -78,58 +78,7 @@ namespace TasGrid{
 //!
 //! A template class that allows for RAII style of memory management for CUDA arrays.
 
-#ifndef __TASMANIAN_DOXYGEN_SKIP
-// The classes below will be removed later
-class cudaInts{
-public:
-    cudaInts();
-    cudaInts(const std::vector<int> &cpu_data);
-    ~cudaInts();
 
-    size_t size() const;
-    int* data();
-    const int* data() const;
-    void resize(size_t cnum);
-    void clear();
-
-    void load(const std::vector<int> &cpu_data);
-    void unload(std::vector<int> &cpu_data) const;
-
-    void eject(int* &destination); // moves the data to the external pointer
-
-private:
-    size_t num;
-    int *gpu_data;
-};
-
-class cudaDoubles{
-public:
-    cudaDoubles();
-    cudaDoubles(size_t cnum);
-    cudaDoubles(int a, int b);
-    cudaDoubles(int a, int b, const double *cpu_data);
-    cudaDoubles(const std::vector<double> &cpu_data);
-    ~cudaDoubles();
-
-    size_t size() const;
-    double* data();
-    const double* data() const;
-    void resize(size_t cnum);
-    void clear();
-
-    void load(size_t cnum, const double *cpu_data);
-    void load(const std::vector<double> &cpu_data);
-    void unload(double *cpu_data) const;
-
-    void eject(double* &destination); // moves the data to the external pointer
-
-private:
-    size_t num;
-    double *gpu_data;
-};
-#endif
-
-#ifdef Tasmanian_ENABLE_CUDA
 //! \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector
 //! \ingroup TasmanianCudaVector
 
@@ -313,60 +262,6 @@ private:
     void *magmaCudaQueue;
     #endif
 };
-#endif
-
-#ifndef __TASMANIAN_DOXYGEN_SKIP
-// The class below will be removed later
-class LinearAlgebraEngineGPU{
-public:
-    LinearAlgebraEngineGPU();
-    ~LinearAlgebraEngineGPU();
-
-    void reset();
-
-    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C);
-    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, cudaDoubles &C);
-    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);
-    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for N == 1) product using Nvidai cuBlas
-
-    void cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<int> &spntr, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]);
-    void cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, double beta, cudaDoubles &C);
-    // sparse matrix times dense matrix using Nvidia cuSparse (C = alpha * A * (spntr, sindx, svals) + beta *C), the sparse matrix is in column compressed form
-
-    void cusparseMatvec(int M, int N, double alpha, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, const cudaDoubles &x, double beta, double y[]);
-    // sparse matrix times a dense vector, makes sense only if the matrix already sits on the gpu (y = alpha * A * x + beta * y)
-
-    void cusparseMatveci(int M, int K, double alpha, const cudaDoubles &A, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]);
-    // dense matrix times a sparse vector defined by sindx and svals (C = beta * C + alpha * A * b), currently the sparse vector can only be computed on the cpu
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C);
-    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, cudaDoubles &C);
-    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);
-    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for N == 1) product using UTK MAGMA
-    #endif
-
-protected:
-    void makeCuBlasHandle();
-    void makeCuSparseHandle();
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    void initializeMagma(int gpuID);
-    #endif
-
-private:
-    #ifdef Tasmanian_ENABLE_CUDA
-    void *cublasHandle;
-    void *cusparseHandle;
-    #endif
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    bool magma_initialized; // call init once per object (must simplify later)
-    void *magmaCudaStream;
-    void *magmaCudaQueue;
-    #endif
-};
-#endif
 
 //! \internal
 //! \brief Implements the domain transform algorithms in case the user data is provided on the GPU.
@@ -401,10 +296,7 @@ private:
     CudaVector<double> gpu_trans_a, gpu_trans_b;
     int num_dimensions, padded_size;
 };
-#endif
 
-
-#ifdef Tasmanian_ENABLE_CUDA
 //! \internal
 //! \brief Wrappers around custom CUDA kernels to handle domain transforms and basis evaluations, the kernels are instantiated in tsgCudaKernels.cu
 //! \ingroup TasmanianAcceleration

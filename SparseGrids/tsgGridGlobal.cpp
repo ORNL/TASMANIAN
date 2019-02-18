@@ -391,7 +391,6 @@ void GridGlobal::acceptUpdatedTensors(){
 
 void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA
-    cuda_vals.clear();
     cuda_values.clear();
     #endif
     if (points.empty() || needed.empty()){
@@ -541,7 +540,6 @@ void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double
 }
 void GridGlobal::loadConstructedTensors(){
     #ifdef Tasmanian_ENABLE_CUDA
-    cuda_vals.clear();
     cuda_values.clear();
     #endif
     std::vector<int> tensor;
@@ -616,29 +614,6 @@ void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) c
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridGlobal::evaluateFastGPUcublas(const double x[], double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(values.aliasValues());
-
-    std::vector<double> weights(points.getNumIndexes());
-    getInterpolationWeights(x, weights.data());
-
-    cuda_engine.cublasDGEMM(num_outputs, 1, points.getNumIndexes(), 1.0, cuda_vals, weights, 0.0, y);
-}
-void GridGlobal::evaluateFastGPUcuda(const double x[], double y[]) const{
-    evaluateFastGPUcublas(x, y);
-}
-void GridGlobal::evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(values.aliasValues());
-
-    int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-
-    cuda_engine.cublasDGEMM(num_outputs, num_x, num_points, 1.0, cuda_vals, weights.getVector(), 0.0, y);
-}
-void GridGlobal::evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const{
-    evaluateBatchGPUcublas(x, num_x, y);
-}
 void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     if (cuda_values.size() == 0) cuda_values.load(values.aliasValues());
 
@@ -650,26 +625,6 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
 }
 void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
 #endif // Tasmanian_ENABLE_CUDA
-
-#ifdef Tasmanian_ENABLE_MAGMA
-void GridGlobal::evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(values.aliasValues());
-
-    std::vector<double> weights(points.getNumIndexes());
-    getInterpolationWeights(x, weights.data());
-
-    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, 1, points.getNumIndexes(), 1.0, cuda_vals, weights, 0.0, y);
-}
-void GridGlobal::evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const{
-    if (cuda_vals.size() == 0) cuda_vals.load(values.aliasValues());
-
-    int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-
-    cuda_engine.magmaCudaDGEMM(gpuID, num_outputs, num_x, num_points, 1.0, cuda_vals, weights.getVector(), 0.0, y);
-}
-#endif // Tasmanian_ENABLE_MAGMA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
     std::vector<double> w(getNumPoints());
@@ -891,7 +846,6 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
 }
 void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
     #ifdef Tasmanian_ENABLE_CUDA
-    cuda_vals.clear();
     cuda_values.clear();
     #endif
     if (!points.empty()) clearRefinement();
@@ -912,8 +866,6 @@ double GridGlobal::legendre(int n, double x){
 
 void GridGlobal::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
-    cuda_engine.reset();
-    cuda_vals.clear();
     cuda_values.clear();
     #endif
 }

@@ -76,17 +76,8 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
-    virtual void evaluateFastGPUcublas(const double x[], double y[]) const = 0;
-    virtual void evaluateFastGPUcuda(const double x[], double y[]) const = 0;
-    virtual void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const = 0;
-    virtual void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
-    #endif
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    virtual void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const = 0;
-    virtual void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const = 0;
     #endif
 
     virtual void clearRefinement() = 0;
