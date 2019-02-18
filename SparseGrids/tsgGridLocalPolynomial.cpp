@@ -389,12 +389,20 @@ void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[]
 
     std::vector<int> sindx, spntr;
     std::vector<double> svals;
-    buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals);
 
+    if (num_x > 1){
+        buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals);
+    }else{
+       int num_nz;
+       buildSparseVector<0>(points, x, num_nz, sindx, svals);
+       buildSparseVector<1>(points, x, num_nz, sindx, svals);
+    }
     engine->sparseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, spntr, sindx, svals, 0.0, y);
 }
 void GridLocalPolynomial::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    if ((order == -1) || (order > 2)){ // GPU evaluations are availabe only for order 0, 1, and 2. Cubic will come later, but higher order will not be supported
+    if ((order == -1) || (order > 2) || (num_x == 1)){
+        // GPU evaluations are available only for order 0, 1, and 2. Cubic will come later, but higher order will not be supported.
+        // cannot use GPU to accelerate the evaluation of a single vector
         evaluateCudaMixed(engine, x, num_x, y);
         return;
     }
