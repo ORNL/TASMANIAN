@@ -32,11 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_CUDA_KERNELS_CU
 
 #include "tsgAcceleratedDataStructures.hpp"
-
-#include "tsgCudaMacros.hpp"
-
 #include "tsgCudaLinearAlgebra.hpp"
-
 #include "tsgCudaBasisEvaluations.hpp"
 
 // several kernels assume a linear distribution of the threads and can be executed with "practically unlimited" number of threads

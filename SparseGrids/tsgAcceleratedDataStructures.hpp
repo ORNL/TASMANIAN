@@ -473,6 +473,19 @@ namespace AccelerationMeta{
     //! \brief Deallocate  device array, used primarily for testing, always favor using \b CudaVector (if possible).
     //! \ingroup TasmanianAcceleration
     template<typename T> void delCudaArray(T *x);
+
+    //! \internal
+    //! \brief Takes \b cudaStatus which is of type \b cudaError_t (see Nvidia documentation), throws with message \b info if the status is not success.
+    //! \ingroup TasmanianAcceleration
+    void cudaCheckError(void *cudaStatus, const char *info);
+    //! \internal
+    //! \brief Takes \b cublasStatus which is of type \b cublasStatus_t (see Nvidia documentation), throws with message \b info if the status is not success.
+    //! \ingroup TasmanianAcceleration
+    void cublasCheckError(void *cublasStatus, const char *info);
+    //! \internal
+    //! \brief Takes \b cusparseStatus which is of type \b cusparseStatus_t (see Nvidia documentation), throws with message \b info if the status is not success.
+    //! \ingroup TasmanianAcceleration
+    void cusparseCheckError(void *cusparseStatus, const char *info);
     #endif
 }
 

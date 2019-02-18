@@ -33,7 +33,12 @@
 
 #include "tsgAcceleratedDataStructures.hpp"
 
-#include "tsgCudaMacros.hpp"
+#ifdef Tasmanian_ENABLE_CUDA
+#include <cuda_runtime_api.h>
+#include <cuda.h>
+#include <cublas_v2.h>
+#include <cusparse.h>
+#endif
 
 #ifdef Tasmanian_ENABLE_MAGMA
 #include "magma_v2.h"
@@ -433,7 +438,8 @@ template<typename T> void AccelerationMeta::recvCudaArray(size_t num_entries, co
     AccelerationMeta::cudaCheckError((void*) &cudaStat, "cudaRecv(type, type)");
 }
 template<typename T> void AccelerationMeta::delCudaArray(T *x){
-    TasCUDA::cudaDel<T>(x);
+    cudaError_t cudaStat = cudaFree(x);
+    AccelerationMeta::cudaCheckError((void*) &cudaStat, "AccelerationMeta::delCudaArray(), call to cudaFree()");
 }
 
 template void AccelerationMeta::recvCudaArray<double>(size_t num_entries, const double*, std::vector<double>&);
