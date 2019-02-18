@@ -32,11 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_CUDA_KERNELS_CU
 
 #include "tsgAcceleratedDataStructures.hpp"
-
-#include "tsgCudaMacros.hpp"
-
 #include "tsgCudaLinearAlgebra.hpp"
-
 #include "tsgCudaBasisEvaluations.hpp"
 
 // several kernels assume a linear distribution of the threads and can be executed with "practically unlimited" number of threads
@@ -138,12 +134,15 @@ inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule,
 }
 
 // local polynomial basis functions, SPARSE algorithm (2 passes, one pass to compue the non-zeros and one pass to evaluate)
-void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const cudaDoubles &gpu_nodes, const cudaDoubles &gpu_support,
-                            const cudaInts &gpu_hpntr, const cudaInts &gpu_hindx, const  cudaInts &gpu_roots, cudaInts &gpu_spntr, cudaInts &gpu_sindx, cudaDoubles &gpu_svals){
+void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x,
+                                 const CudaVector<double> &gpu_nodes, const CudaVector<double> &gpu_support,
+                                 const CudaVector<int> &gpu_hpntr, const CudaVector<int> &gpu_hindx, const CudaVector<int> &gpu_hroots,
+                                 CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals){
     gpu_spntr.resize(num_x + 1);
     // call with fill == false to count the non-zeros per row of the matrix
     devalpwpoly_sparse_realize_rule_order<double, 64, 46, false>
-        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(), gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_roots.size(), gpu_roots.data(), gpu_spntr.data(), 0, 0);
+        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(),
+        gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_hroots.size(), gpu_hroots.data(), gpu_spntr.data(), 0, 0);
 
     std::vector<int> cpu_spntr;
     gpu_spntr.unload(cpu_spntr);
@@ -158,11 +157,13 @@ void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num
     gpu_svals.resize(nz);
     // call with fill == true to load the non-zeros
     devalpwpoly_sparse_realize_rule_order<double, 64, 46, true>
-        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(), gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_roots.size(), gpu_roots.data(), gpu_spntr.data(), gpu_sindx.data(), gpu_svals.data());
+        (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(),
+        gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_hroots.size(), gpu_hroots.data(), gpu_spntr.data(), gpu_sindx.data(), gpu_svals.data());
 }
 
 // Sequence Grid basis evaluations
-void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, const cudaDoubles &nodes, const cudaDoubles &coeffs, double *gpu_result){
+void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes,
+                       const CudaVector<int> &points, const CudaVector<double> &nodes, const CudaVector<double> &coeffs, double *gpu_result){
     std::vector<int> offsets(dims);
     offsets[0] = 0;
     for(int d=1; d<dims; d++) offsets[d] = offsets[d-1] + num_x * (max_levels[d-1] + 1);
@@ -170,8 +171,8 @@ void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, 
 
     int maxl = max_levels[0]; for(auto l : max_levels) if (maxl < l) maxl = l;
 
-    cudaInts gpu_offsets(offsets);
-    cudaDoubles cache1D(num_total);
+    CudaVector<int> gpu_offsets(offsets);
+    CudaVector<double> cache1D(num_total);
     int num_blocks = num_x / _MAX_CUDA_THREADS + ((num_x % _MAX_CUDA_THREADS == 0) ? 0 : 1);
 
     tasgpu_dseq_build_cache<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
@@ -183,7 +184,7 @@ void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, 
 }
 
 // Fourier Grid basis evaluations
-void TasCUDA::devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, double *gpu_wreal, double *gpu_wimag){
+void TasCUDA::devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, double *gpu_wreal, double *gpu_wimag){
     std::vector<int> max_nodes(dims);
     for(int j=0; j<dims; j++){
         int n = 1;
@@ -196,8 +197,8 @@ void TasCUDA::devalfor(int dims, int num_x, const std::vector<int> &max_levels, 
     for(int d=1; d<dims; d++) offsets[d] = offsets[d-1] + 2 * num_x * (max_nodes[d-1] + 1);
     size_t num_total = offsets[dims-1] + 2 * num_x * (max_nodes[dims-1] + 1);
 
-    cudaInts gpu_offsets(offsets);
-    cudaDoubles cache1D(num_total);
+    CudaVector<int> gpu_offsets(offsets);
+    CudaVector<double> cache1D(num_total);
     int num_blocks = num_x / _MAX_CUDA_THREADS + ((num_x % _MAX_CUDA_THREADS == 0) ? 0 : 1);
 
     tasgpu_dfor_build_cache<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>

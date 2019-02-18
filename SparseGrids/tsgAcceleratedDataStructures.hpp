@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 
+#include "TasmanianConfig.hpp"
 #include "tsgEnumerates.hpp"
 
 //! \internal
@@ -77,56 +78,6 @@ namespace TasGrid{
 //!
 //! A template class that allows for RAII style of memory management for CUDA arrays.
 
-#ifndef __TASMANIAN_DOXYGEN_SKIP
-// The classes below will be removed later
-class cudaInts{
-public:
-    cudaInts();
-    cudaInts(const std::vector<int> &cpu_data);
-    ~cudaInts();
-
-    size_t size() const;
-    int* data();
-    const int* data() const;
-    void resize(size_t cnum);
-    void clear();
-
-    void load(const std::vector<int> &cpu_data);
-    void unload(std::vector<int> &cpu_data) const;
-
-    void eject(int* &destination); // moves the data to the external pointer
-
-private:
-    size_t num;
-    int *gpu_data;
-};
-
-class cudaDoubles{
-public:
-    cudaDoubles();
-    cudaDoubles(size_t cnum);
-    cudaDoubles(int a, int b);
-    cudaDoubles(int a, int b, const double *cpu_data);
-    cudaDoubles(const std::vector<double> &cpu_data);
-    ~cudaDoubles();
-
-    size_t size() const;
-    double* data();
-    const double* data() const;
-    void resize(size_t cnum);
-    void clear();
-
-    void load(size_t cnum, const double *cpu_data);
-    void load(const std::vector<double> &cpu_data);
-    void unload(double *cpu_data) const;
-
-    void eject(double* &destination); // moves the data to the external pointer
-
-private:
-    size_t num;
-    double *gpu_data;
-};
-#endif
 
 //! \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector
 //! \ingroup TasmanianCudaVector
@@ -229,58 +180,88 @@ private:
     T *gpu_data; // the CUDA array
 };
 
-#ifndef __TASMANIAN_DOXYGEN_SKIP
-// The class below will be removed later
-class LinearAlgebraEngineGPU{
+//! \brief Wrapper class around calls to cuBlas, cuSparse, and MAGMA for CUDA based accelerated linear algebra
+//! \ingroup TasmanianAcceleration
+
+//! (wrappers that manage handles, queues, and CudaVector)
+class CudaEngine{
 public:
-    LinearAlgebraEngineGPU();
-    ~LinearAlgebraEngineGPU();
+    //! \brief Construct a new engine associated with the given device, default to cuBlas/cuSparse backend, see \b backendMAGMA().
+    CudaEngine(int deviceID) : gpu(deviceID), magma(false), cublasHandle(nullptr), cusparseHandle(nullptr){
+        #ifdef Tasmanian_ENABLE_MAGMA
+        magmaCudaQueue = nullptr;
+        magmaCudaStream = nullptr;
+        #endif
+    }
+    //! \brief Destructor, clear all handles and queues.
+    ~CudaEngine();
 
-    void reset();
+    //! \brief Encompassing dense matrix-matrix or matrix-vector multiplication.
 
-    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C);
-    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, cudaDoubles &C);
-    void cublasDGEMM(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);
-    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for N == 1) product using Nvidai cuBlas
+    //! The raw operation is \f$ C = \alpha A B + \beta C \f$ where \b A is M by K, \b B is K by N, and \b C is M by N.
+    //! The signature is almost identical to BLAS dgemm() and Nvidia cublasDgemm().
+    //! Handles special cases when some of the dimensions are 1, then matrix-vector functions will be called.
+    //! Automatically calls CUDA or MAGMA libraries at the back-end.
+    //!
+    //! Assumes that all vectors have the correct order.
+    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, CudaVector<double> &C);
 
-    void cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<int> &spntr, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]);
-    void cusparseMatmul(int M, int N, int K, double alpha, const cudaDoubles &A, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, double beta, cudaDoubles &C);
-    // sparse matrix times dense matrix using Nvidia cuSparse (C = alpha * A * (spntr, sindx, svals) + beta *C), the sparse matrix is in column compressed form
+    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU.
+    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const std::vector<double> &B, double beta, double C[]){
+        CudaVector<double> gpuB(B), gpuC(((size_t) M) * ((size_t) N));
+        denseMultiply(M, N, K, alpha, A, gpuB, beta, gpuC);
+        gpuC.unload(C);
+    }
 
-    void cusparseMatvec(int M, int N, double alpha, const cudaInts &spntr, const cudaInts &sindx, const cudaDoubles &svals, const cudaDoubles &x, double beta, double y[]);
-    // sparse matrix times a dense vector, makes sense only if the matrix already sits on the gpu (y = alpha * A * x + beta * y)
+    //! \brief Encompassing sparse matrix-matrix or matrix-vector multiplication.
 
-    void cusparseMatveci(int M, int K, double alpha, const cudaDoubles &A, const std::vector<int> &sindx, const std::vector<double> &svals, double beta, double C[]);
-    // dense matrix times a sparse vector defined by sindx and svals (C = beta * C + alpha * A * b), currently the sparse vector can only be computed on the cpu
+    //! The raw operation is \f$ C = \alpha A B + \beta C \f$ where \b A is M by K, \b B is K by N, and \b C is M by N.
+    //! The matrix \b B is stored in compressed column format, transpose version cusparseDcsrmm2().
+    //! Handles special cases when some of the dimensions are 1, then matrix-vector functions will be called.
+    //! Automatically calls CUDA or MAGMA libraries at the back-end.
+    //!
+    //! Assumes that all vectors have the correct size.
+    void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
+                        const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, CudaVector<double> &C);
 
-    #ifdef Tasmanian_ENABLE_MAGMA
-    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const cudaDoubles &B, double beta, cudaDoubles &C);
-    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, cudaDoubles &C);
-    void magmaCudaDGEMM(int gpuID, int M, int N, int K, double alpha, const cudaDoubles &A, const std::vector<double> &B, double beta, double C[]);
-    // dense matrix-matrix (dgemm) or matrix-vector (dgemv for N == 1) product using UTK MAGMA
-    #endif
+    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU.
+    void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
+                        const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<double> &vals, double beta, double C[]){
+        CudaVector<int> gpu_pntr(pntr), gpu_indx(indx);
+        CudaVector<double> gpu_vals(vals), gpu_c(M, N);
+        sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, beta, gpu_c);
+        gpu_c.unload(C);
+    }
+
+    //! \brief Set the active CUDA device
+    void setDevice() const;
+
+    //! \brief Returns \b true if the backend is set to MAGMA, \b false if set to cuBlas/cuSparse.
+    bool backendMAGMA() const{ return magma; }
+
+    //! \brief Set the backend to MAGMA (if \b use_magma is true), or cuBlas/cuSparse (if \b use_magma is false).
+    void setBackendMAGMA(bool use_magma){ magma = use_magma; }
 
 protected:
-    void makeCuBlasHandle();
-    void makeCuSparseHandle();
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    void initializeMagma(int gpuID);
-    #endif
+    //! \brief Ensure cublasHandle is valid after this call, creates a new handle or if no handle exists yet.
+    void cuBlasPrepare();
+    //! \brief Ensure cusparseHandle is valid after this call, creates a new handle or if no handle exists yet.
+    void cuSparsePrepare();
+    //! \brief Ensure \b magmaCudaQueue is valid after this call, creates new handles and/or streams if those don't exist yet.
+    void magmaPrepare();
 
 private:
-    #ifdef Tasmanian_ENABLE_CUDA
+    int gpu; // which GPU to use
+    bool magma; // use cuBlas/cuSparse or MAGMA
+
     void *cublasHandle;
     void *cusparseHandle;
-    #endif
 
     #ifdef Tasmanian_ENABLE_MAGMA
-    bool magma_initialized; // call init once per object (must simplify later)
     void *magmaCudaStream;
     void *magmaCudaQueue;
     #endif
 };
-#endif
 
 //! \internal
 //! \brief Implements the domain transform algorithms in case the user data is provided on the GPU.
@@ -315,10 +296,7 @@ private:
     CudaVector<double> gpu_trans_a, gpu_trans_b;
     int num_dimensions, padded_size;
 };
-#endif
 
-
-#ifdef Tasmanian_ENABLE_CUDA
 //! \internal
 //! \brief Wrappers around custom CUDA kernels to handle domain transforms and basis evaluations, the kernels are instantiated in tsgCudaKernels.cu
 //! \ingroup TasmanianAcceleration
@@ -366,8 +344,10 @@ namespace TasCUDA{
     //!
     //! The output vectors \b gpu_spntr, \b gpu_sindx and \b gpu_svals form a row compressed matrix,
     //! e.g., in format that can directly interface with Nvidia cusparseDcsrmm2().
-    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const cudaDoubles &gpu_nodes, const cudaDoubles &gpu_support,
-                            const cudaInts &gpu_hpntr, const cudaInts &gpu_hindx, const  cudaInts &gpu_roots, cudaInts &gpu_spntr, cudaInts &gpu_sindx, cudaDoubles &gpu_svals);
+    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x,
+                            const CudaVector<double> &gpu_nodes, const CudaVector<double> &gpu_support,
+                            const CudaVector<int> &gpu_hpntr, const CudaVector<int> &gpu_hindx, const CudaVector<int> &gpu_hroots,
+                            CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals);
 
     //! \internal
     //! \brief Evaluate the basis for a Sequence grid.
@@ -381,8 +361,8 @@ namespace TasCUDA{
     //! The \b ndoes vector has the cached 1D nodes and \b coeffs holds the cached coefficients of the Newton polynomials.
     //!
     //! The output is \b gpu_result which must have dimension \b num_x by \b num_nodes.size() / \b dims.
-    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes,
-                  const cudaInts &points, const cudaDoubles &nodes, const cudaDoubles &coeffs, double *gpu_result);
+    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes,
+                  const CudaVector<int> &points, const CudaVector<double> &nodes, const CudaVector<double> &coeffs, double *gpu_result);
 
     //! \internal
     //! \brief Evaluate the basis for a Fourier grid.
@@ -390,7 +370,7 @@ namespace TasCUDA{
 
     //! The logic is identical to \b devalseq(), except the Fourier polynomials do not require nodes or coefficients.
     //! The output is two real arrays of size \b num_x by \b num_nodes.size() / \b dims corresponding to the real and complex parts of the basis.
-    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const cudaInts &num_nodes, const cudaInts &points, double *gpu_wreal, double *gpu_wimag);
+    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, double *gpu_wreal, double *gpu_wimag);
 
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
@@ -454,6 +434,7 @@ namespace AccelerationMeta{
     //! The fallback logic is documented with the enumerated type \b TasGrid::TypeAcceleration.
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
 
+    #ifdef Tasmanian_ENABLE_CUDA
     //! \internal
     //! \brief Return the number of visible CUDA devices, uses cudaGetDeviceCount() (see the Nvidia documentation).
     //! \ingroup TasmanianAcceleration
@@ -492,6 +473,20 @@ namespace AccelerationMeta{
     //! \brief Deallocate  device array, used primarily for testing, always favor using \b CudaVector (if possible).
     //! \ingroup TasmanianAcceleration
     template<typename T> void delCudaArray(T *x);
+
+    //! \internal
+    //! \brief Takes \b cudaStatus which is of type \b cudaError_t (see Nvidia documentation), throws with message \b info if the status is not success.
+    //! \ingroup TasmanianAcceleration
+    void cudaCheckError(void *cudaStatus, const char *info);
+    //! \internal
+    //! \brief Takes \b cublasStatus which is of type \b cublasStatus_t (see Nvidia documentation), throws with message \b info if the status is not success.
+    //! \ingroup TasmanianAcceleration
+    void cublasCheckError(void *cublasStatus, const char *info);
+    //! \internal
+    //! \brief Takes \b cusparseStatus which is of type \b cusparseStatus_t (see Nvidia documentation), throws with message \b info if the status is not success.
+    //! \ingroup TasmanianAcceleration
+    void cusparseCheckError(void *cusparseStatus, const char *info);
+    #endif
 }
 
 }

@@ -45,7 +45,7 @@
 #include "tsgGridCore.hpp"
 #include "tsgDConstructGridGlobal.hpp"
 
-#include "tsgAcceleratedDataStructures.hpp"
+#include "tsgCudaLoadStructures.hpp"
 
 namespace TasGrid{
 
@@ -106,15 +106,8 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void evaluateFastGPUcublas(const double x[], double y[]) const;
-    void evaluateFastGPUcuda(const double x[], double y[]) const;
-    void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
-    void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
-    #endif
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
-    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
+    void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const;
+    void evaluateCuda(CudaEngine*, const double*, int, double[]) const;
     #endif
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
@@ -183,14 +176,15 @@ protected:
 
     #ifdef Tasmanian_ENABLE_CUDA
     void loadCudaNodes() const{
-        if (cuda_num_nodes.size() != 0) return;
-        int maxl = max_levels[0];
-        for(auto l : max_levels) if (maxl < l) maxl = l;
-        cuda_nodes.load(nodes);
-        cuda_coeffs.load(coeff);
-        std::vector<int> num_nodes = max_levels;
-        for(auto &n : num_nodes) n++;
-        cuda_num_nodes.load(num_nodes);
+        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaSequenceData<double>>(new CudaSequenceData<double>);
+        if (cuda_cache->num_nodes.size() != 0) return;
+        cuda_cache->nodes.load(nodes);
+        cuda_cache->coeff.load(coeff);
+
+        std::vector<int> num_nodes(num_dimensions);
+        std::transform(max_levels.begin(), max_levels.end(), num_nodes.begin(), [](int i)->int{ return i+1; });
+        cuda_cache->num_nodes.load(num_nodes);
+
         const MultiIndexSet *work = (points.empty()) ? &needed : &points;
         int num_points = work->getNumIndexes();
         Data2D<int> transpoints; transpoints.resize(work->getNumIndexes(), num_dimensions);
@@ -199,14 +193,21 @@ protected:
                 transpoints.getStrip(j)[i] = work->getIndex(i)[j];
             }
         }
-        cuda_points.load(transpoints.getVector());
+        cuda_cache->points.load(transpoints.getVector());
     }
     void clearCudaNodes(){
-        cuda_nodes.clear();
-        cuda_coeffs.clear();
-        cuda_num_nodes.clear();
-        cuda_points.clear();
+        if (cuda_cache){
+            cuda_cache->nodes.clear();
+            cuda_cache->coeff.clear();
+            cuda_cache->num_nodes.clear();
+            cuda_cache->points.clear();
+        }
     }
+    void loadCudaSurpluses() const{
+        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaSequenceData<double>>(new CudaSequenceData<double>);
+        cuda_cache->surpluses.load(surpluses);
+    }
+    void clearCudaSurpluses(){ if (cuda_cache) cuda_cache->surpluses.clear(); }
     #endif
 
 private:
@@ -227,10 +228,7 @@ private:
     std::unique_ptr<SequenceConstructData> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    mutable LinearAlgebraEngineGPU cuda_engine;
-    mutable cudaDoubles cuda_surpluses;
-    mutable cudaInts cuda_num_nodes, cuda_points;
-    mutable cudaDoubles cuda_nodes, cuda_coeffs;
+    mutable std::unique_ptr<CudaSequenceData<double>> cuda_cache;
     #endif
 };
 

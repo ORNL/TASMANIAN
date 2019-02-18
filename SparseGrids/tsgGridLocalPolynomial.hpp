@@ -41,7 +41,7 @@
 #include "tsgGridCore.hpp"
 #include "tsgRuleLocalPolynomial.hpp"
 
-#include "tsgAcceleratedDataStructures.hpp"
+#include "tsgCudaLoadStructures.hpp"
 
 //! \internal
 //! \file tsgGridLocalPolynomial.hpp
@@ -102,15 +102,8 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void evaluateFastGPUcublas(const double x[], double y[]) const;
-    void evaluateFastGPUcuda(const double x[], double y[]) const;
-    void evaluateBatchGPUcublas(const double x[], int num_x, double y[]) const;
-    void evaluateBatchGPUcuda(const double x[], int num_x, double y[]) const;
-    #endif
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    void evaluateFastGPUmagma(int gpuID, const double x[], double y[]) const;
-    void evaluateBatchGPUmagma(int gpuID, const double x[], int num_x, double y[]) const;
+    void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
+    void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction);
@@ -133,12 +126,9 @@ public:
     void buildSpareBasisMatrixStatic(const double x[], int num_x, int num_chunk, int *spntr, int *sindx, double *svals) const;
     int getSpareBasisMatrixNZ(const double x[], int num_x) const;
 
-    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
-    void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, int* &gpu_spntr, int* &gpu_sindx, double* &gpu_svals, int &num_nz) const;
-
     #ifdef Tasmanian_ENABLE_CUDA
-    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, cudaDoubles &gpu_y) const;
-    void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, cudaInts &gpu_spntr, cudaInts &gpu_sindx, cudaDoubles &gpu_svals) const;
+    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<double> &gpu_y) const;
+    void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const;
     #endif
 
 protected:
@@ -250,31 +240,6 @@ protected:
     #ifdef Tasmanian_ENABLE_CUDA
     // synchronize with tasgpu_devalpwpoly_feval
     template<int order, TypeOneDRule crule>
-    void encodeSupportForGPU(const MultiIndexSet &work, double *cpu_support) const{
-        for(int i=0; i<work.getNumIndexes(); i++){
-            const int* p = work.getIndex(i);
-            for(int j=0; j<num_dimensions; j++){
-                cpu_support[i*num_dimensions + j] = rule->getSupport(p[j]);
-                if (order != 0){
-                    if (order == 2) cpu_support[i*num_dimensions + j] *= cpu_support[i*num_dimensions + j];
-                    if ((crule == rule_localp) || (crule == rule_semilocalp)) if (p[j] == 0) cpu_support[i*num_dimensions + j] = -1.0; // constant function
-                    if ((crule == rule_localp) && (order == 2)){
-                        if (p[j] == 1) cpu_support[i*num_dimensions + j] = -2.0;
-                        else if (p[j] == 2) cpu_support[i*num_dimensions + j] = -3.0;
-                    }
-                    if ((crule == rule_semilocalp) && (order == 2)){
-                        if (p[j] == 1) cpu_support[i*num_dimensions + j] = -4.0;
-                        else if (p[j] == 2) cpu_support[i*num_dimensions + j] = -5.0;
-                    }
-                    if ((crule == rule_localpb) && (order == 2)){
-                        if (p[j] < 2) cpu_support[i*num_dimensions + j] = -2.0; // linear functions on level 0
-                    }
-                }
-            }
-        }
-    }
-    // synchronize with tasgpu_devalpwpoly_feval
-    template<int order, TypeOneDRule crule>
     void encodeSupportForGPU(const MultiIndexSet &work, Data2D<double> &cpu_support) const{
         cpu_support.resize(num_dimensions, work.getNumIndexes());
         for(int i=0; i<work.getNumIndexes(); i++){
@@ -300,11 +265,15 @@ protected:
             }
         }
     }
-    void loadCudaData() const{
-        cuda_surpluses.load(surpluses.getVector());
-        std::vector<double> cpu_nodes(((size_t) getNumPoints()) * ((size_t) num_dimensions));
-        getPoints(cpu_nodes.data());
-        cuda_nodes.load(cpu_nodes);
+    void loadCudaBasis() const{
+        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaLocalPolynomialData<double>>(new CudaLocalPolynomialData<double>);
+        if (cuda_cache->nodes.size() != 0) return;
+
+        Data2D<double> cpu_nodes;
+        cpu_nodes.resize(num_dimensions, getNumPoints());
+        getPoints(cpu_nodes.getStrip(0));
+        cuda_cache->nodes.load(cpu_nodes.getVector());
+
         Data2D<double> cpu_support;
         const MultiIndexSet &work = (points.empty()) ? needed : points;
         if (rule->getType() == rule_localp){
@@ -329,19 +298,31 @@ protected:
                 encodeSupportForGPU<1, rule_localp0>(work, cpu_support);
             }
         }
-        cuda_support.load(cpu_support.getVector());
-        cuda_pntr.load(pntr);
-        cuda_indx.load(indx);
-        cuda_roots.load(roots);
+        cuda_cache->support.load(cpu_support.getVector());
     }
-    void clearCudaLoadedData(){
-        cuda_surpluses.clear();
-        cuda_nodes.clear();
-        cuda_support.clear();
-        cuda_pntr.clear();
-        cuda_indx.clear();
-        cuda_roots.clear();
+    void loadCudaHierarchy() const{
+        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaLocalPolynomialData<double>>(new CudaLocalPolynomialData<double>);
+        if (cuda_cache->hpntr.size() != 0) return;
+
+        cuda_cache->hpntr.load(pntr);
+        cuda_cache->hindx.load(indx);
+        cuda_cache->hroots.load(roots);
     }
+    void clearCudaBasisHierarchy(){
+        if (cuda_cache){
+            cuda_cache->nodes.clear();
+            cuda_cache->support.clear();
+            cuda_cache->hpntr.clear();
+            cuda_cache->hindx.clear();
+            cuda_cache->hroots.clear();
+        }
+    }
+    void loadCudaSurpluses() const{
+        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaLocalPolynomialData<double>>(new CudaLocalPolynomialData<double>);
+        if (cuda_cache->surpluses.size() != 0) return;
+        cuda_cache->surpluses.load(surpluses.getVector());
+    }
+    void clearCudaSurpluses(){ if (cuda_cache) cuda_cache->surpluses.clear(); }
     #endif
 
 private:
@@ -365,9 +346,7 @@ private:
     int sparse_affinity;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    mutable LinearAlgebraEngineGPU cuda_engine;
-    mutable cudaDoubles cuda_surpluses, cuda_nodes, cuda_support;
-    mutable cudaInts cuda_pntr, cuda_indx, cuda_roots;
+    mutable std::unique_ptr<CudaLocalPolynomialData<double>> cuda_cache;
     #endif
 };
 
