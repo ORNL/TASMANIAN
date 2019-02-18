@@ -434,6 +434,18 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
     TasBLAS::dgemm(num_outputs, num_x, num_points, -1.0, fourier_coefs.getCStrip(num_points), wimag.getStrip(0), 1.0, y);
 }
 void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
+    int num_points = points.getNumIndexes();
+    Data2D<double> wreal;
+    Data2D<double> wimag;
+    if (num_x > 1){
+        evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
+    }else{ // work-around small OpenMP penalty
+        wreal.resize(num_points, 1);
+        wimag.resize(num_points, 1);
+        computeBasis<double, false>(points, x, wreal.getStrip(0), wimag.getStrip(0));
+    }
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getCStrip(0), wreal.getStrip(0), 0.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getCStrip(num_points), wimag.getStrip(0), 1.0, y);
 }
 #endif
 
