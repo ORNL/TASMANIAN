@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 
+#include "TasmanianConfig.hpp"
 #include "tsgEnumerates.hpp"
 
 //! \internal
@@ -236,8 +237,13 @@ private:
 //! (wrappers that manage handles, queues, and CudaVector)
 class CudaEngine{
 public:
-    //! \brief Construct a new engine associated with the given device.
-    CudaEngine(int deviceID) : gpu(deviceID), magma(false), cublasHandle(nullptr), cusparseHandle(nullptr){}
+    //! \brief Construct a new engine associated with the given device, default to cuBlas/cuSparse backend, see \b backendMAGMA().
+    CudaEngine(int deviceID) : gpu(deviceID), magma(false), cublasHandle(nullptr), cusparseHandle(nullptr){
+        #ifdef Tasmanian_ENABLE_MAGMA
+        magmaCudaQueue = nullptr;
+        magmaCudaStream = nullptr;
+        #endif
+    }
     //! \brief Destructor, clear all handles and queues.
     ~CudaEngine();
 
@@ -281,11 +287,19 @@ public:
     //! \brief Set the active CUDA device
     void setDevice() const;
 
+    //! \brief Returns \b true if the backend is set to MAGMA, \b false if set to cuBlas/cuSparse.
+    bool backendMAGMA() const{ return magma; }
+
+    //! \brief Set the backend to MAGMA (if \b use_magma is true), or cuBlas/cuSparse (if \b use_magma is false).
+    void setBackendMAGMA(bool use_magma){ magma = use_magma; }
+
 protected:
     //! \brief Ensure cublasHandle is valid after this call, creates a new handle or if no handle exists yet.
     void cuBlasPrepare();
     //! \brief Ensure cusparseHandle is valid after this call, creates a new handle or if no handle exists yet.
     void cuSparsePrepare();
+    //! \brief Ensure \b magmaCudaQueue is valid after this call, creates new handles and/or streams if those don't exist yet.
+    void magmaPrepare();
 
 private:
     int gpu; // which GPU to use
@@ -293,6 +307,11 @@ private:
 
     void *cublasHandle;
     void *cusparseHandle;
+
+    #ifdef Tasmanian_ENABLE_MAGMA
+    void *magmaCudaStream;
+    void *magmaCudaQueue;
+    #endif
 };
 #endif
 

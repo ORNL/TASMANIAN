@@ -172,6 +172,15 @@ CudaEngine::~CudaEngine(){
         cusparseDestroy((cusparseHandle_t) cusparseHandle);
         cusparseHandle = nullptr;
     }
+    #ifdef Tasmanian_ENABLE_MAGMA
+    if (magmaCudaQueue != nullptr){
+        magma_queue_destroy((magma_queue*) magmaCudaQueue);
+        magmaCudaQueue = nullptr;
+        magma_finalize();
+    }
+    if (magmaCudaStream != nullptr) cudaStreamDestroy((cudaStream_t) magmaCudaStream);
+    magmaCudaStream = nullptr;
+    #endif
 }
 void CudaEngine::cuBlasPrepare(){
     if (cublasHandle == nullptr){
@@ -187,13 +196,36 @@ void CudaEngine::cuSparsePrepare(){
         cusparseHandle = (void*) csh;
     }
 }
+void CudaEngine::magmaPrepare(){
+    #ifdef Tasmanian_ENABLE_MAGMA
+    if (magmaCudaQueue == nullptr){
+        magma_init();
+        cuBlasPrepare();
+        cuSparsePrepare();
+        magma_queue_create_from_cuda(gpu, (cudaStream_t) magmaCudaStream, (cublasHandle_t) cublasHandle, (cusparseHandle_t) cusparseHandle, ((magma_queue**) &magmaCudaQueue));
+    }
+    #endif
+}
 void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, CudaVector<double> &C){
-    cublasStatus_t stat;
     #ifdef Tasmanian_ENABLE_MAGMA
     if (magma){
+        magmaPrepare();
+        if (M > 1){
+            if (N > 1){ // matrix mode
+                magma_dgemm(MagmaNoTrans, MagmaNoTrans, M, N, K,
+                            alpha, A.data(), M, B.data(), K, beta, C.data(), M, (magma_queue_t) magmaCudaQueue);
+            }else{ // matrix vector, A * v = C
+                magma_dgemv(MagmaNoTrans, M, K,
+                            alpha, A.data(), M, B.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
+            }
+        }else{ // matrix vector B^T * v = C
+            magma_dgemv(MagmaTrans, N, K,
+                        alpha, B.data(), K, A.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
+        }
         return;
     }
     #endif
+    cublasStatus_t stat;
     cuBlasPrepare();
     if (M > 1){
         if (N > 1){ // matrix mode
@@ -212,9 +244,9 @@ void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVect
 void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
                                 const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, CudaVector<double> &C){
     #ifdef Tasmanian_ENABLE_MAGMA
-    if (magma){
-        return;
-    }
+    //if (magma){ // TODO: Enable more MAGMA sparse capabilities
+    //    return;
+    //}
     #endif
     cusparseStatus_t sparse_stat;
     cuSparsePrepare();
