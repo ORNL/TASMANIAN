@@ -70,6 +70,12 @@
 //! - Tasmanian specific acceleration fallback logic
 //! - Reading CUDA device properties, e.g., number of devices or total memory
 //! - Error handling for common CUDA/cuBlas/cuSparse calls
+//!
+//! \par C++ Wrappers to Fortran BLAS API
+//! The standard BLAS API follows Fortran calling conventions,
+//! e.g., call by value and underscore at the end of function names.
+//! A C++ wrapper is provided that handles Tasmanian specific cases of
+//! dense matrix-matrix and matrix-vector multiplication using C++ compatible API.
 
 namespace TasGrid{
 
