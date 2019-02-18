@@ -340,7 +340,7 @@ void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[]
        buildSparseVector<0>(points, x, num_nz, sindx, svals);
        buildSparseVector<1>(points, x, num_nz, sindx, svals);
     }
-    engine->sparseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, spntr, sindx, svals, 0.0, y);
+    engine->sparseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, spntr, sindx, svals, y);
 }
 void GridLocalPolynomial::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     if ((order == -1) || (order > 2) || (num_x == 1)){
