@@ -433,6 +433,8 @@ void GridFourier::evaluateBatchCPUblas(const double x[], int num_x, double y[]) 
     TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, fourier_coefs.getCStrip(0), wreal.getStrip(0), 0.0, y);
     TasBLAS::dgemm(num_outputs, num_x, num_points, -1.0, fourier_coefs.getCStrip(num_points), wimag.getStrip(0), 1.0, y);
 }
+void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
+}
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA

@@ -611,6 +611,8 @@ void GridGlobal::evaluateBatchCPUblas(const double x[], int num_x, double y[]) c
 
     TasBLAS::dgemm(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
 }
+void GridGlobal::evaluateBlas(const double x[], int num_x, double y[]) const{
+}
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA

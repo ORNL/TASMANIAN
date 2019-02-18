@@ -325,6 +325,8 @@ void GridLocalPolynomial::evaluateBatchCPUblas(const double x[], int num_x, doub
         }
     }
 }
+void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) const{
+}
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
