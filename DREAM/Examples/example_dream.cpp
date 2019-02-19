@@ -28,6 +28,7 @@ using namespace std;
 void dream_example_01();
 void dream_example_02();
 void dream_example_03();
+void dream_example_04();
 
 int main(int argc, const char**){
 /*
@@ -53,6 +54,7 @@ int main(int argc, const char**){
     if (argc > 1) return 0; // fast testing used to check if the library linked correctly
 
     dream_example_03();
+    dream_example_04();
 
 /*
 {
