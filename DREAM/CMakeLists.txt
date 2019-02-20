@@ -161,9 +161,3 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
         DESTINATION "share/Tasmanian/examples/"
         FILES_MATCHING PATTERN "*.cpp"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
-
-#install(TARGETS Tasmanian_tasdream
-#        EXPORT "${CMAKE_PROJECT_NAME}-exports"
-#        RUNTIME DESTINATION "bin"
-#        LIBRARY DESTINATION "lib"
-#        ARCHIVE DESTINATION "lib")
