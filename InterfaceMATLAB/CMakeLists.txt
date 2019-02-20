@@ -2,9 +2,6 @@
 # MATLAB interface, examples and tests
 ########################################################################
 
-# copy the source files to the build folder to be used pre-install (stage 1)
-# if file is used here "make" will not update the scripts in the build tree
-# even if the source files are modified, hence using configure_file
 set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgCleanTempFiles.m
                                   tsgCopyGrid.m
@@ -44,6 +41,8 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgWriteCustomRuleFile.m
                                   tsgWriteMatrix.m)
 
+# configure_file() command causes update to the entire CMake environment, if the file changes
+# using copy will copy the files on change but will not reconfigure the environment
 foreach(Tasmanian_matlab_source_file ${Tasmanian_matlab_source_files})
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/matlab/${Tasmanian_matlab_source_file}"
                        COMMAND "${CMAKE_COMMAND}"
@@ -55,7 +54,7 @@ endforeach()
 add_custom_target(Tasmanian_matlab_interface ALL DEPENDS "${Tasmanian_matlab_pre_install_files}")
 
 # set MATLAB (tasgrid and temp folder) for the build folder (stage 1)
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/") # put temp files if running matlab from the build location
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/") # place for temp files if running matlab from the build location
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.build.m" "${CMAKE_CURRENT_BINARY_DIR}/matlab/tsgGetPaths.m" @ONLY)
 
 # set MATLAB (tasgrid and temp folder) for the install folder (stage 2)

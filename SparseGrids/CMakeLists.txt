@@ -150,12 +150,9 @@ set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
 set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")
 set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
 
-if (Tasmanian_ENABLE_OPENMP AND OpenMP_CXX_LIBRARIES)
-    # see the remark in the macro above regarding the use of the OpenMP target
-    # also the libs are redundant here, as those will be added by libsparsegrid
-    target_link_libraries(Tasmanian_tasgrid ${OpenMP_CXX_LIBRARIES})
+if (Tasmanian_ENABLE_OPENMP)
+    # the OpenMP libraries are carried transitively from sparse grids library
     target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
-    target_link_libraries(Tasmanian_gridtest ${OpenMP_CXX_LIBRARIES})
     target_compile_options(Tasmanian_gridtest PRIVATE ${OpenMP_CXX_FLAGS})
 endif()
 

@@ -106,6 +106,8 @@ struct TensorData{
 //! \internal
 //! \brief Takes a list and creates a vector of references in reversed order, needed for I/O so that read can be followed by push_front.
 //! \ingroup TasmanianRefinement
+
+//! Used to preserve the order of a list upon write and read.
 template <class T>
 void makeReverseReferenceVector(const std::forward_list<T> &list, std::vector<const T*> &refs){
     size_t num_entries = (size_t) std::distance(list.begin(), list.end());
@@ -118,6 +120,9 @@ void makeReverseReferenceVector(const std::forward_list<T> &list, std::vector<co
 //! \internal
 //! \brief Writes a NodeData forward_list to a file using the lambdas to write ints and doubles.
 //! \ingroup TasmanianRefinement
+
+//! (Probably over-engineered) uses a template with lambdas to traverse a list and write the
+//! integer and floating point data to a STREAMCONCEPT.
 template<class STREAMCONCEPT>
 void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &ofs, std::function<void(int, STREAMCONCEPT &)> write_an_int,
                        std::function<void(const NodeData *, STREAMCONCEPT &)> write_node){
@@ -131,6 +136,8 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &o
 //! \internal
 //! \brief Writes a NodeData forward_list to a file using either binary or ascii format.
 //! \ingroup TasmanianRefinement
+
+//! Wrapper around \b writeNodeDataList() that uses << and write() when dealing with ASCII and binary format.
 template<class STREAMCONCEPT, bool useAscii>
 void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &ofs){
     if (useAscii){
@@ -153,6 +160,8 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &o
 //! \internal
 //! \brief Reads a NodeData forward_list from a file using either binary or ascii format.
 //! \ingroup TasmanianRefinement
+
+//! The reverse of \b writeNodeDataList(), simply reads the data and preserves the order.
 template<class STREAMCONCEPT, bool useAscii>
 void readNodeDataList(int num_dimensions, int num_outputs, STREAMCONCEPT &ifs, std::forward_list<NodeData> &data){
     int num_nodes;

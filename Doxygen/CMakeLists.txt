@@ -6,7 +6,7 @@ set(DOXYGEN_GENERATE_TREEVIEW  "YES") # left-hand index
 set(DOXYGEN_SORT_GROUP_NAMES    "NO") # use the order in the source files (logical order)
 set(DOXYGEN_SORT_MEMBER_DOCS    "NO") # use the order in the source files (logical order)
 
-set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP") # indicate sections to skip from documentation
+set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP") # indicate sections to skip from the documentation
 if (Tasmanian_ENABLE_BLAS)
     list(APPEND DOXYGEN_PREDEFINED "Tasmanian_ENABLE_BLAS")
 endif()
@@ -22,17 +22,18 @@ set(DOXYGEN_HTML_COLORSTYLE_GAMMA  "240")
 set(DOXYGEN_FORMULA_FONTSIZE "16")
 
 set(DOXYGEN_PROJECT_NAME   "Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN: ${PROJECT_NAME} v${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
-set(DOXYGEN_PROJECT_NUMBER "") # if project number if given, the rendered font is too small
+set(DOXYGEN_PROJECT_NUMBER "") # if project number is given, the rendered font is too small
 
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
 
-set(DOXYGEN_EXAMPLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../") # finding the examples for all modules requires to use the root dir
+set(DOXYGEN_EXAMPLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../") # finding the examples for all modules requires the use of the root dir
 
 if (NOT DOXYGEN_INTERNAL_DOCS)
 # the \internal command works for functions and namespaces, but not classes
 # have to exclude the classes manually
     set(DOXYGEN_EXCLUDE_SYMBOLS TasGrid::Data2D TasGrid::MultiIndexSet TasGrid::StorageSet TasGrid::CustomTabulated TasGrid::OneDimensionalWrapper
-        TasGrid::TasSparse::SparseMatrix)
+        TasGrid::TasSparse::SparseMatrix TasGrid::CudaEngine TasGrid::AccelerationDomainTransform TasGrid::DynamicConstructorDataGlobal
+        TasGrid::NodeData TasGrid::TensorData)
 endif()
 
 doxygen_add_docs(Tasmanian_doxygen

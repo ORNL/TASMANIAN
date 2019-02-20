@@ -14,8 +14,6 @@ add_library(${Tasmanian_libfor_target_name} ${Tasmanian_shared_or_static} Tasman
                                                                           tsgC2FortranBridge.f90
                                                                           tsgC2Fortran.cpp)
 
-set_property(TARGET ${Tasmanian_libfor_target_name} PROPERTY CXX_STANDARD 11)
-
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
 set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran90")

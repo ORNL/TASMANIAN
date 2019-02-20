@@ -53,7 +53,7 @@
 //!
 //! \par RAII Memory Management
 //! CUDA uses C-style of memory management with cudaMalloc(), cudaMemcopy(), cudaFree(),
-//! but templated C++ std::vector-style class is far more handy.
+//! but templated C++ std::vector-style class is more handy and more fail-safe.
 //! The \b CudaVector template class guards against memory leaks and offers more seamless
 //! integration between CPU and GPU data structures.
 //! See the \b CudaVector documentation for details.
@@ -63,7 +63,7 @@
 //! The handles have to be allocated, deleted, and passed around which causes unnecessary code clutter.
 //! Encapsulating the handles in a single \b CudaEngine class greatly simplifies the work-flow.
 //! Furthermore, some (sparse) linear operations require multiple calls to CUDA/MAGMA libraries,
-//! and it is easier to combine those into a single call to a \b CudaEngine method.
+//! and it is cleaner to wrap those into a single call to a \b CudaEngine method.
 //!
 //! \par Acceleration Metadata
 //! The \b AccelerationMeta namespace offers several methods used throughout the library and in the testing:

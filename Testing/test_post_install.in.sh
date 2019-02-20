@@ -11,7 +11,7 @@ fi
 if [ ! -d "FinalTest" ]; then
     mkdir FinalTest
 fi
-cd FinalTest || { echo "ERROR: Could not cd into FinalTest, aborting"; exit 1; }
+cd FinalTest || { echo "ERROR: Could not cd into FinalTest, terminating"; exit 1; }
 
 sPWD=`pwd`
 if [ $sPWD != "@CMAKE_CURRENT_BINARY_DIR@/FinalTest" ]; then
@@ -23,7 +23,7 @@ rm -fr *
 
 echo ""
 echo "--------------------------------------------------------------------------------"
-echo " Test 1: source the PATH and LD_LIBRARY_PATH and run the executable"
+echo " Test 1: source the PATH and the LD_LIBRARY_PATH and run the executable"
 echo "--------------------------------------------------------------------------------"
 
 source @CMAKE_INSTALL_PREFIX@/share/Tasmanian/TasmanianENVsetup.sh || { echo "ERROR: Could not source <install_prefix>/share/Tasmanian/TasmanianENVsetup.sh"; exit 1; }
@@ -34,9 +34,9 @@ echo "--------------------------------------------------------------------------
 echo " Test 2: compile and run the C++ examples"
 echo "--------------------------------------------------------------------------------"
 echo 'Building  "cmake @CMAKE_INSTALL_PREFIX@/share/Tasmanian/examples"'
-cmake $1 @CMAKE_INSTALL_PREFIX@/share/Tasmanian/examples > /dev/null || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
+cmake $1 @CMAKE_INSTALL_PREFIX@/share/Tasmanian/examples || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
 echo 'Compiling "make"'
-make > /dev/null || { echo "ERROR: Could not compile the C++ examples"; exit 1; }
+make || { echo "ERROR: Could not compile the C++ examples"; exit 1; }
 echo 'Executing "./example_sparse_grids"'
 ./example_sparse_grids -fast >/dev/null || { echo "ERROR: Could not run the C++ Sparse Grid example"; exit 1; }
 if [ -f @CMAKE_INSTALL_PREFIX@/share/Tasmanian/examples/example_sparse_grids.f90 ]; then
