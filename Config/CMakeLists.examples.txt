@@ -28,6 +28,7 @@ add_executable(example_sparse_grids  example_sparse_grids.cpp)
 add_executable(example_dream         example_dream_01.cpp
                                      example_dream_02.cpp
                                      example_dream_03.cpp
+                                     example_dream_04.cpp
                                      example_dream.cpp)
 
 target_link_libraries(example_sparse_grids  Tasmanian_libsparsegrid)

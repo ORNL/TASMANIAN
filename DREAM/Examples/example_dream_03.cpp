@@ -94,7 +94,6 @@ void dream_example_03(){
     // define the likelihood function and load the data
     // even though the example is noise free, we assume that the "noise" is due to discretization error
     // using piece-wise constant approximation the discretization error is 1.0 / num_discrete_nodes
-    //TasDREAM::LikelihoodGaussIsotropic likely(1.0 / ((double) num_discrete_nodes), data);
     TasDREAM::LikelihoodGaussIsotropic likely(1.0 / ((double) num_discrete_nodes), data);
 
     TasDREAM::TasmanianDREAM state(num_chains, grid); // assume the dimensions from the sparse grid

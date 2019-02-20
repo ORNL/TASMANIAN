@@ -64,6 +64,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/Examples/example_dream_01.cpp
                  DREAM/Examples/example_dream_02.cpp
                  DREAM/Examples/example_dream_03.cpp
+                 DREAM/Examples/example_dream_04.cpp
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../
                  COMMENT "Tasmanian Doxygen documentation")
 
