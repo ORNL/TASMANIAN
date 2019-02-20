@@ -17,8 +17,8 @@ using namespace std;
 //! \defgroup TasmanianDREAMExamples4 Tasmanian DREAM module, example 4.
 //!
 //! Example 4:
-//! Given data that is the superposition of two sin-waves,
-//! use Sparse Grid and Bayesian inference to identify the frequencies and shifts of each wave.
+//! Given data that is the superposition of two exponential curves,
+//! use Sparse Grid and Bayesian inference to identify the rate and scale of each wave.
 //! Higher dimensions and bi-modal posterior will decrease the acceptance rate,
 //! thus we need more samples than the previous example.
 
@@ -142,7 +142,12 @@ void dream_example_04(){
     rate_high  /= num_samples;
     scale_high /= num_samples;
 
-    cout << "Acceptance rate: " << std::fixed << state.getAcceptanceRate() << ", very low rate indicates problems with the inference setup.\n\n";
+    // High dimensions and multiple modes reduce the acceptance rate,
+    // and tuning sampling parameters such as the differential update magnitude could have both positive and negative effects.
+    // Low acceptance rate is undesirable (called poor mixing in literature)
+    // and extremely low rate indicates ill-posed or incorrectly implemented problem.
+    cout << "Acceptance rate: " << std::fixed << state.getAcceptanceRate() << "\n\n";
+    cout << "High dimensions and multiple modes reduce the acceptance rate, and sampling parameters (e.g., differential update magnitude), aff.\n\n";
     cout << "Inferred values (noise free case):" << endl;
     cout << " low   rate:" << setw(12) << std::fixed << rate_low   << "   error:" << setw(12) << std::scientific << fabs(rate_low - 1.0)   << endl;
     cout << " low  scale:" << setw(12) << std::fixed << scale_low  << "   error:" << setw(12) << std::scientific << fabs(scale_low - 1.0)  << "\n" << endl;
