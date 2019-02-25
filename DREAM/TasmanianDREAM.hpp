@@ -50,7 +50,7 @@
 //! The header will include all files needed by the DREAM module including
 //! the TasmanianSparseGrid.hpp header.
 
-//! \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis.
+//! \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis
 //!
 //! \par DREAM
 //! DiffeRential Evolution Adaptive Metropolis ...

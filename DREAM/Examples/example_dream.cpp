@@ -15,7 +15,7 @@
 //! The header will include all files needed by the DREAM module including
 //! the TasmanianSparseGrid.hpp header.
 
-//! \defgroup TasmanianDREAMExamples Examples for the Tasmanian DREAM module.
+//! \defgroup TasmanianDREAMExamples Examples for the Tasmanian DREAM module
 //!
 //! Several examples are included that demonstrate the proper usage of the DREAM interface.
 //! The examples include random sampling from an arbitrary probability distribution,

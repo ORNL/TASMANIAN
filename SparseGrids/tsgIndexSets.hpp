@@ -48,17 +48,27 @@
 //! can be represented as two-dimensional data (or array/list of tuples), the three
 //! classes here correspond to sorted or unsorted, integer or floating point data.
 
-//! \internal
-//! \defgroup TasmanianSets Set data structures.
-//!
-//! \par Fundamental data structures
-//! Three classes for storage and easy access to multi-indexes and floating point values.
-//! The majority of internal data-structures associated with the five types of grids
-//! can be represented as two-dimensional data (or array/list of tuples), the three
-//! classes here correspond to sorted or unsorted, integer or floating point data.
+/*!
+ * \internal
+ * \ingroup TasmanianSG
+ * \addtogroup TasmanianSets Multi-Index set data structures
+ *
+ * \par Fundamental data structures
+ * Three classes for storage and easy access to multi-indexes and floating point values.
+ * The majority of internal data-structures associated with the five types of grids
+ * can be represented as two-dimensional data (or array/list of tuples), the three
+ * classes here correspond to sorted or unsorted, integer or floating point data.
+ * \endinternal
+ */
 
 namespace TasGrid{
 
+/*!
+ * \internal
+ * \ingroup TasmanianSets
+ * \brief Merge for multi-index sets.
+ * \endinternal
+ */
 namespace SetManipulations{
 
 //! \internal

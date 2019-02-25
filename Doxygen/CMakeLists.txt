@@ -3,8 +3,9 @@ find_package(Doxygen REQUIRED OPTIONAL_COMPONENTS dot)
 set(DOXYGEN_GENERATE_HTML      "YES")
 set(DOXYGEN_DISABLE_INDEX       "NO")
 set(DOXYGEN_GENERATE_TREEVIEW  "YES") # left-hand index
-set(DOXYGEN_SORT_GROUP_NAMES    "NO") # use the order in the source files (logical order)
+set(DOXYGEN_SORT_GROUP_NAMES    "NO") # disable automatic sorting
 set(DOXYGEN_SORT_MEMBER_DOCS    "NO") # use the order in the source files (logical order)
+set(DOXYGEN_SORT_BRIEF_DOCS     "NO") # which is more logical than the alphabetical one
 
 set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP") # indicate sections to skip from the documentation
 if (Tasmanian_ENABLE_BLAS)
@@ -33,19 +34,21 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
 # have to exclude the classes manually
     set(DOXYGEN_EXCLUDE_SYMBOLS TasGrid::Data2D TasGrid::MultiIndexSet TasGrid::StorageSet TasGrid::CustomTabulated TasGrid::OneDimensionalWrapper
         TasGrid::TasSparse::SparseMatrix TasGrid::CudaEngine TasGrid::AccelerationDomainTransform TasGrid::DynamicConstructorDataGlobal
-        TasGrid::NodeData TasGrid::TensorData)
+        TasGrid::NodeData TasGrid::TensorData TasGrid::CacheLagrange)
 endif()
 
 doxygen_add_docs(Tasmanian_doxygen
                  README.md
                  Doxygen/Installation.md
+                 SparseGrids/TasmanianSparseGrid.hpp
                  DREAM/TasmanianDREAM.hpp
                  SparseGrids/tsgEnumerates.hpp
-                 SparseGrids/tsgAcceleratedDataStructures.hpp
-                 SparseGrids/tsgHiddenExternals.hpp
-                 SparseGrids/tsgIOHelpers.hpp
-                 SparseGrids/tsgIndexManipulator.hpp
                  SparseGrids/tsgIndexSets.hpp
+                 SparseGrids/tsgIndexManipulator.hpp
+                 SparseGrids/tsgIOHelpers.hpp
+                 SparseGrids/tsgHiddenExternals.hpp
+                 SparseGrids/tsgAcceleratedDataStructures.hpp
+                 SparseGrids/tsgCacheLagrange.hpp
                  SparseGrids/tsgCoreOneDimensional.hpp
                  SparseGrids/tsgOneDimensionalWrapper.hpp
                  SparseGrids/tsgLinearSolvers.hpp

@@ -40,10 +40,17 @@
 //!
 //! Defines the TasmanianLikelihood class which implements the relation between model outputs and measurement data.
 
+/*!
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMLikelihood Likelihood definitions
+ *
+ * Classes that define the likelihood relation between an observed data and a model output.
+ */
+
 namespace TasDREAM{
 
 //! \brief Interface for the likelihood classes.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMLikelihood
 
 //! \par Likelihood
 //! In the framework of Bayesian inference the likelihood is a measure of how likely is a specific outcome (i.e., model output), given some observed data.

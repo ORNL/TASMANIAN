@@ -39,19 +39,27 @@
 //!
 //! Implements several methods for random sampling and defines specific probability density functions.
 
+/*!
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMPDF Probability distributions, analytic formulas and sampling algorithms
+ *
+ * Contains the analytic definitions of several probability distributions
+ * and algorithms to draw samples from several known distributions.
+ */
+
 #include <math.h>
 
 namespace TasDREAM{
 
 //! \internal
 //! \brief Default random sampler, using \b rand() divided by \b RAND_MAX
-//! \ingroup TasmanianDREAM
-    
+//! \ingroup DREAMPDF
+
 //! Generates random numbers uniformly distributed in (0, 1), uses the \b rand() command.
 inline double tsgCoreUniform01(){ return ((double) rand()) / ((double) RAND_MAX); }
 
 //! \brief Add a correction to every entry in \b x, use uniform samples over (-\b magnitude, \b magnitude).
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMPDF
 
 //! The function \b get_random01() returns random numbers distributed over (0, 1).
 inline void applyUniformUpdate(std::vector<double> &x, double magnitude, std::function<double(void)> get_random01 = tsgCoreUniform01){
@@ -60,7 +68,7 @@ inline void applyUniformUpdate(std::vector<double> &x, double magnitude, std::fu
 }
 
 //! \brief  Add a correction to every entry in \b x, sue Gaussian distribution with zero mean and standard deviation equal to \b magnitude.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMPDF
 
 //! The function \b get_random01() returns random numbers distributed over (0, 1).
 //! Gaussian numbers are generated using the Box-Muller algorithm.
@@ -81,7 +89,7 @@ inline void applyGaussianUpdate(std::vector<double> &x, double magnitude, std::f
 }
 
 //! \brief Generate uniform random samples in the hypercube defined by \b lower and \b upper limits.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMPDF
 
 //! The size of the \b lower and \b upper must match.
 //! The output vector \b x will be resized to match \b num_samples times \b upper.size(), and the values will be overwritten.
@@ -90,10 +98,10 @@ inline void genUniformSamples(const std::vector<double> &lower, const std::vecto
     if (lower.size() != upper.size()) throw std::runtime_error("ERROR: genUniformSamples() requires lower and upper vectors with matching size.");
     if (x.size() != lower.size() * num_samples) x.resize(lower.size() * num_samples);
     for(auto &v : x) v = get_random01();
-    
+
     std::vector<double> length(lower.size());
     std::transform(lower.begin(), lower.end(), upper.begin(), length.begin(), [&](double l, double u)->double{ return (u - l); });
-    
+
     auto ix = x.begin();
     while(ix != x.end()){
         auto ilow = lower.begin();
@@ -105,7 +113,7 @@ inline void genUniformSamples(const std::vector<double> &lower, const std::vecto
 }
 
 //! \brief Generate standard normal samples with given \b means and standard \b deviations.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMPDF
 
 //! Generate Gaussian (normal) vectors with given means and standard deviations.
 //! The \b means and \b deviations must have the same size.
@@ -113,10 +121,10 @@ inline void genUniformSamples(const std::vector<double> &lower, const std::vecto
 inline void genGaussianSamples(const std::vector<double> &means, const std::vector<double> &deviations, int num_samples, std::vector<double> &x, std::function<double(void)> get_random01 = tsgCoreUniform01){
     if (means.size() != deviations.size()) throw std::runtime_error("ERROR: genGaussianSamples() means and deviations vectors must have the same size.");
     if (x.size() != means.size() * num_samples) x.resize(means.size() * num_samples);
-    
+
     std::fill_n(x.data(), x.size(), 0.0);
     applyGaussianUpdate(x, 1.0, get_random01);
-    
+
     auto ix = x.begin();
     while(ix != x.end()){
         auto im = means.begin();

@@ -33,10 +33,27 @@
 
 #include "TasmanianConfig.hpp"
 
+/*!
+ * \file tsgDreamEnumerates.hpp
+ * \brief The enumerated types used in the DREAM module.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianDREAM
+ *
+ * Defines the enumerated types used throughout the DREAM module.
+ * The file is included in every other DREAM header.
+ */
+
+/*!
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMEnumerates Enumerated types
+ *
+ * The Enumerate types used in the external and internal API of the DREAM module.
+ */
+
 namespace TasDREAM{
 
 //! \brief Describes whether sampling should be done with the regular or logarithm form of the probability density.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMEnumerates
 
 //! Probability distributions with very localized support will have values close to zero over most of the sampling domain.
 //! Sampling using the logarithm of the probability density can be more stable, when operations with very small numbers cause problems.
@@ -50,7 +67,7 @@ enum TypeSamplingForm{
 };
 
 //! \brief Indicates a specific probability distribution for the associated function.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMEnumerates
 
 //! Used to instantiate the \b getDensity() variadric template. See the template documentation for the specific formulas.
 enum TypeDistribution{

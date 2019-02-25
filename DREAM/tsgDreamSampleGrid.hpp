@@ -45,11 +45,21 @@
 //!
 //! Defines the templates and overloads for sampling a posterior distribution using a likelihood defined by a sparse grid approximation.
 
+/*!
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMSampleGrid Level 2 DREAM templates, sampling using a sparse grids likelihood
+ *
+ * Level 2 templates assume sampling from a posterior distribution (i.e., Bayesian inference),
+ * where the likelihood is approximated using a Sparse Grid.
+ * Note that using \b uniform_prior() effectively samples from a sparse grids approximated
+ * probability distribution, and hence the templates have a whider potential usage.
+ */
+
 namespace TasDREAM{
 
 //! \internal
 //! \brief Macro creating a \b lambda for the probability distribution combining a sparse grid and a prior.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! The same \b lambda function is used for multiple overloads, so long as the variable names match, this will work.
 //! The variable names must match, in order to have consistency anyway. Specifically,
@@ -72,7 +82,7 @@ namespace TasDREAM{
 
 //! \internal
 //! \brief Macro that checks if \b grid and \b state have the same number of dimensions.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! Throws runtime_error if \b grid and \b state have different number of dimensions.
 #define __TASDREAM_CHECK_GRID_STATE_DIMS \
@@ -80,7 +90,7 @@ namespace TasDREAM{
 
 //! \internal
 //! \brief Extract the \b grid rule and domain.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! Extract the \b grid rule and domain.
 #define __TASDREAM_GRID_EXTRACT_RULE \
@@ -90,14 +100,14 @@ namespace TasDREAM{
 
 //! \internal
 //! \brief Get the Gauss-Hermite lambda.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! Get the Gauss-Hermite lambda.
 #define __TASDREAM_GRID_DOMAIN_GHLAMBDA [&](const std::vector<double> &)->bool{ return true; }
 
 //! \internal
 //! \brief Get the Gauss-Laguerre lambda.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! Get the Gauss-Laguerre lambda.
 #define __TASDREAM_GRID_DOMAIN_GLLAMBDA [&](const std::vector<double> &x)->bool{ \
@@ -107,7 +117,7 @@ namespace TasDREAM{
 
 //! \internal
 //! \brief Get the default transform weights.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! Get the default transform weights.
 #define __TASDREAM_GRID_DOMAIN_DEFAULTS \
@@ -118,7 +128,7 @@ namespace TasDREAM{
 
 
 //! \brief Variation of \b SampleDREAM() which assumes a Bayesian inference problem with likelihood approximated by a sparse grid.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleGrid
 
 //! The inputs are identical to the ones defined in \b SampleDREAM(), with \b probability_distribution() replaced by the combination of sparse grid and \b prior.
 //! The values obtained from the grid are multiplied (or incremented in \b logform) with the values from the prior.
@@ -140,7 +150,7 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAMGrid() assuming the domain is a hyperbube with min/max values given by \b lower and \b upper.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleGrid
 
 //! See the overloads of \b SampleDREAM() regarding the vectors \b lower and \b upper.
 template<TypeSamplingForm form = regform>
@@ -158,7 +168,7 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAMGrid() assuming the domain matches the sparse grid domain.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleGrid
 
 //! Grid constructed using a Gauss-Hermite rule will use the entire real plane as domain, the \b inside() function is always true.
 //! The Gauss-Laguerre rule is bounded from below, but not above.
@@ -186,7 +196,7 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAMGrid() assuming independent update from a list of internals.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleGrid
 
 //! See the overloads of \b SampleDREAM() regarding the known updates.
 template<TypeSamplingForm form = regform>
@@ -203,7 +213,7 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAMGrid() assuming hypercube domain and independent update from a list of internals.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleGrid
 
 //! See the overloads of \b SampleDREAM() regarding the known updates and the \b lower and \b upper vectors.
 template<TypeSamplingForm form = regform>
@@ -220,7 +230,7 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAMGrid() assuming independent update from a list of internals and domain matching the grid.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleGrid
 
 //! See other overloads for details.
 template<TypeSamplingForm form = regform>

@@ -48,18 +48,28 @@
 //!
 //! Defines the DREAM template for sampling from a posterior distribution with sparse grid model.
 
+/*!
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMGridModel Level 4 DREAM templates, sampling a posterior from a sparse grids model
+ *
+ * Level 4 templates assume sampling from a posterior distribution composed of
+ * a \b TasDREAM::TasmanianLikelihood, a \b TasGrid::TasmanianSparseGrid approximation to the model,
+ * and a \b prior distribution. The likelihood is either one of the Gaussian variations
+ * provided by the user, or a use defined class that inherits from the \b TasDREAM::TasmanianLikelihood.
+ */
+
 namespace TasDREAM{
 
 //! \internal
 //! \brief Macro to create a model lambda from sparse grid.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! The same \b lambda function is used for multiple overloads, so long as the spaes grid is called \b grid.
 #define __TASDREAM_LIKELIHOOD_GRID_LIKE [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ grid.evaluateBatch(candidates, values); }
 
 
 //! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMGridModel
 
 //! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
@@ -78,7 +88,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
 
 
 //! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model, domain is a hypercube.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMGridModel
 
 //! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
@@ -97,7 +107,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
 
 
 //! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model with domain matching the grid.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMGridModel
 
 //! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
@@ -113,7 +123,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
         SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, __TASDREAM_GRID_DOMAIN_GHLAMBDA, independent_update, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
-        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, 
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
                               __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, __TASDREAM_GRID_DOMAIN_GHLAMBDA, independent_update, state, differential_update, get_random01);
     }else{
         __TASDREAM_GRID_DOMAIN_DEFAULTS
@@ -124,7 +134,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
 
 
 //! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model with independent update from known distribution.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMGridModel
 
 //! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
@@ -137,13 +147,13 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, 
+    SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
                           __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, inside, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 
 //! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model with independent update from known distribution and a hypercube.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMGridModel
 
 //! The \b model variable is replaced by the \b grid, see the other overloads for the rest of the variables.
 template<TypeSamplingForm form = regform>
@@ -156,13 +166,13 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, 
+    SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
                           __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 
 //! \brief Overload of \b SampleDREAMGrid() assuming independent update from a list of internals and domain matching the grid.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMGridModel
 
 //! See other overloads for details.
 template<TypeSamplingForm form = regform>

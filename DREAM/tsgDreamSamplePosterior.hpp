@@ -46,11 +46,21 @@
 //!
 //! Defines the DREAM template for sampling from a posterior distribution.
 
+/*!
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMSampleModel Level 3 DREAM templates, sampling a posterior from a user provided model
+ *
+ * Level 3 templates assume sampling from a posterior distribution composed of
+ * a \b TasDREAM::TasmanianLikelihood, a \b model defined by a user provided \b lambda,
+ * and a \b prior distribution. The likelihood is either one of the Gaussian variations
+ * provided by the user, or a use defined class that inherits from the \b TasDREAM::TasmanianLikelihood.
+ */
+
 namespace TasDREAM{
 
 //! \internal
 //! \brief Macro to create a probability distribution lambda from the model, likelihood and prior.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! The same \b lambda function is used for multiple overloads, so long as the variable names match, this will work.
 //! The variable names must match, in order to have consistency anyway. Specifically,
@@ -77,7 +87,7 @@ namespace TasDREAM{
 
 
 //! \brief Variation of \b SampleDREAM() which assumes a Bayesian inference problem with likelihood, model and prior.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleModel
 
 //! The inputs are identical to the ones defined in \b SampleDREAM(), with \b probability_distribution() replaced by the combination of
 //! \b TasmanianLikelihood, a \b model lambda and \b prior.
@@ -104,7 +114,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAMPost() that works on a hypercube domain, see the overloads of \b SampleDREAM() for the \b lower and \b upper definition.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleModel
 template<TypeSamplingForm form = regform>
 void SampleDREAMPost(int num_burnup, int num_collect,
                      const TasmanianLikelihood &likelihood,
@@ -120,7 +130,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAMPost() that uses independent update from a list of known ones, see the overloads of \b SampleDREAM() for details.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleModel
 template<TypeSamplingForm form = regform>
 void SampleDREAMPost(int num_burnup, int num_collect,
                      const TasmanianLikelihood &likelihood,
@@ -136,7 +146,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAMPost() that uses independent update from a list of known ones and operates on a hypercube domain, see the other overloads for details.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleModel
 template<TypeSamplingForm form = regform>
 void SampleDREAMPost(int num_burnup, int num_collect,
                      const TasmanianLikelihood &likelihood,

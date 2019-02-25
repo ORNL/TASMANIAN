@@ -31,6 +31,16 @@
 #ifndef __TASMANIAN_SPARSE_GRID_HIDDEN_INTERNALS_HPP
 #define __TASMANIAN_SPARSE_GRID_HIDDEN_INTERNALS_HPP
 
+/*!
+ * \file tsgHiddenExternals.hpp
+ * \brief Wrappers to BLAS functionality.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianAcceleration
+ *
+ * The header contains a inline wrappers that give C++ style of
+ * interface to BLAS operations.
+ */
+
 #include "TasmanianConfig.hpp"
 
 namespace TasGrid{

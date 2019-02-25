@@ -47,7 +47,7 @@
 namespace TasDREAM{
 
 //! \brief Implements likelihood under the assumption of isotropic white noise.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMLikelihood
 
 //! \par Gaussian Likelihood
 //! The general formula for Gaussian likelihood is \f$ L(y | d_1 \cdots d_n) = \exp\left( 0.5 sum_{i=1}^n (y - d_i)^T \Sigma^{-1} (y - d_i) \right)\f$

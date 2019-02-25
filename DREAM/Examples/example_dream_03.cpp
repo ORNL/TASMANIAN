@@ -14,13 +14,16 @@ using namespace std;
 //!
 //! Tasmanian DREAM Example 3
 
-//! \defgroup TasmanianDREAMExamples3 Tasmanian DREAM module, example 3.
-//!
-//! Example 3:
-//! Given data that is the superposition of two sin-waves,
-//! use Sparse Grid and Bayesian inference to identify the frequencies and shifts of each wave.
-//! Higher dimensions and bi-modal posterior will decrease the acceptance rate,
-//! thus we need more samples than the previous example.
+/*!
+ * \ingroup TasmanianDREAMExamples
+ * \addtogroup TasmanianDREAMExamples3 Tasmanian DREAM module, example 3
+ *
+ * Example 3:
+ * Given data that is the superposition of two sin-waves,
+ * use Sparse Grid and Bayesian inference to identify the frequencies and shifts of each wave.
+ * Higher dimensions and bi-modal posterior will decrease the acceptance rate,
+ * thus we need more samples than the previous example.
+ */
 
 //! \brief DREAM Example 3: signal decomposition, using bi-modal posterior distribution.
 //! \ingroup TasmanianDREAMExamples3

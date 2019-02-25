@@ -45,10 +45,18 @@
 //!
 //! Defines the TasmanianDREAM class which stores the history of the MCMC samples.
 
+/*!
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMState TasmanianDREAM State
+ *
+ * Keeps the current state of the DREAM chains and stores the history
+ * of a MCMC sampling.
+ */
+
 namespace TasDREAM{
 
 //! \brief Contains the current state and the history of the DREAM chains.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMState
 
 //! \par DREAM State
 //! The DREAM state consists of \b num_chains vectors of size \b num_dimensions,

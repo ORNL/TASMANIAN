@@ -31,15 +31,46 @@
 #ifndef __TSG_CACHE_LAGRANGE_HPP
 #define __TSG_CACHE_LAGRANGE_HPP
 
+/*!
+ * \file tsgCacheLagrange.hpp
+ * \brief Cache data structure for evaluate with Global grids.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianAcceleration
+ */
+
 #include "tsgEnumerates.hpp"
 #include "tsgCoreOneDimensional.hpp"
 #include "tsgOneDimensionalWrapper.hpp"
 
 namespace TasGrid{
 
+/*!
+ * \internal
+ * \ingroup TasmanianAcceleration
+ * \brief Cache that holds the values of 1D Lagrange polynomials.
+ *
+ * Global grids have the most complex evaluation procedure,
+ * Lagrange polynomials have to be evaluated for each direction and \em each \em level,
+ * before the weighted sum can be accumulated to compute the values of the basis functions.
+ * The CacheLagrange class computes the values of the Lagrange polynomials
+ * and caches them for easy access.
+ * \endinternal
+ */
 template <typename T>
 class CacheLagrange{
 public:
+    /*!
+     * \brief Constructor that takes into account a single canonical point \b x.
+     *
+     * The cache is constructed for each dimension and each level up to \b max_levels,
+     * the values of the Lagrange polynomials are computed in two passes resulting in O(n) operations.
+     * - \b num_dimensions is the number of dimensions to consider
+     * - \b max_levels indicates how many levels to consider in each direction,
+     *   heavily anisotropic grids require only a few levels for the "less important" directions
+     * - \b rule is the wrapper of the Global grid that contains information about number of points per level
+     *   and the actual nodes with the pre-computed Lagrange coefficients
+     * - \b holds the coordinates of the canonical point to cache
+     */
     CacheLagrange(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper *rule, const double x[]){
         cache.resize(num_dimensions);
         offsets = *(rule->getPointsCount());
@@ -65,8 +96,10 @@ public:
             }
         }
     }
+    //! \brief Destructor, clear all used data.
     ~CacheLagrange(){}
 
+    //! \brief Return the Lagrange cache for given \b dimension, \b level and offset local to the level
     T getLagrange(int dimension, int level, int local) const{
         return cache[dimension][offsets[level] + local];
     }

@@ -37,27 +37,35 @@
 #include "tsgIndexSets.hpp"
 #include "tsgIndexManipulator.hpp"
 
-//! \file tsgDConstructGridGlobal.hpp
-//! \brief Class and data types used for dynamic construction of Global grids.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianRefinement
-//!
-//! Defines the storage class and struct types used for
-//! construction of Global grids. The class is more complex than other
-//! examples because rules with growth of more than one point need
-//! to collect several samples before the grid can be extended with another
-//! tensor.
+/*!
+ * \internal
+ * \file tsgDConstructGridGlobal.hpp
+ * \brief Class and data types used for dynamic construction of Global grids.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianRefinement
+ *
+ * Defines the storage class and struct types used for
+ * construction of Global grids. The class is more complex than other
+ * examples because rules with growth of more than one point need
+ * to collect several samples before the grid can be extended with another
+ * tensor.
+ * \endinternal
+ */
 
-//! \internal
-//! \defgroup TasmanianRefinement Refinement related classes, structures, and methods.
-//!
-//! \par Adaptive Refinement
-//! The most efficient sparse grids approximation strategies are adaptive,
-//! i.e., the grid is constructed to best capture the behavior of the specific
-//! target model. Adapting a grid requires analysis of the existing loaded
-//! model values followed by a decision on how to best expand the grid.
-//! Sometimes the complexity of the refinement algorithms requires additional
-//! data storage and methods implemented outside of the main grid classes.
+/*!
+ * \internal
+ * \ingroup TasmanianSG
+ * \addtogroup TasmanianRefinement Refinement related classes, structures, and methods
+ *
+ * \par Adaptive Refinement
+ * The most efficient sparse grids approximation strategies are adaptive,
+ * i.e., the grid is constructed to best capture the behavior of the specific
+ * target model. Adapting a grid requires analysis of the existing loaded
+ * model values followed by a decision on how to best expand the grid.
+ * Sometimes the complexity of the refinement algorithms requires additional
+ * data storage and methods implemented outside of the main grid classes.
+ * \endinternal
+ */
 
 namespace TasGrid{
 
@@ -103,11 +111,12 @@ struct TensorData{
     double weight;
 };
 
-//! \internal
-//! \brief Takes a list and creates a vector of references in reversed order, needed for I/O so that read can be followed by push_front.
-//! \ingroup TasmanianRefinement
-
-//! Used to preserve the order of a list upon write and read.
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Takes a list and creates a vector of references in reversed order, needed for I/O so that read can be followed by push_front.
+ * \endinternal
+ */
 template <class T>
 void makeReverseReferenceVector(const std::forward_list<T> &list, std::vector<const T*> &refs){
     size_t num_entries = (size_t) std::distance(list.begin(), list.end());
@@ -117,12 +126,12 @@ void makeReverseReferenceVector(const std::forward_list<T> &list, std::vector<co
     while(p != list.end()) *r++ = &*p++;
 }
 
-//! \internal
-//! \brief Writes a NodeData forward_list to a file using the lambdas to write ints and doubles.
-//! \ingroup TasmanianRefinement
-
-//! (Probably over-engineered) uses a template with lambdas to traverse a list and write the
-//! integer and floating point data to a STREAMCONCEPT.
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Writes a NodeData std::forward_list to a file using the lambdas to write ints and doubles.
+ * \endinternal
+ */
 template<class STREAMCONCEPT>
 void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &ofs, std::function<void(int, STREAMCONCEPT &)> write_an_int,
                        std::function<void(const NodeData *, STREAMCONCEPT &)> write_node){
@@ -133,11 +142,12 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &o
     for(auto d : data_refs) write_node(d, ofs);
 }
 
-//! \internal
-//! \brief Writes a NodeData forward_list to a file using either binary or ascii format.
-//! \ingroup TasmanianRefinement
-
-//! Wrapper around \b writeNodeDataList() that uses << and write() when dealing with ASCII and binary format.
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Writes a NodeData std::forward_list to a file using either binary or ascii format.
+ * \endinternal
+ */
 template<class STREAMCONCEPT, bool useAscii>
 void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &ofs){
     if (useAscii){
@@ -157,11 +167,12 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &o
     }
 }
 
-//! \internal
-//! \brief Reads a NodeData forward_list from a file using either binary or ascii format.
-//! \ingroup TasmanianRefinement
-
-//! The reverse of \b writeNodeDataList(), simply reads the data and preserves the order.
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Reads a NodeData std::forward_list from a file using either binary or ascii format.
+ * \endinternal
+ */
 template<class STREAMCONCEPT, bool useAscii>
 void readNodeDataList(int num_dimensions, int num_outputs, STREAMCONCEPT &ifs, std::forward_list<NodeData> &data){
     int num_nodes;

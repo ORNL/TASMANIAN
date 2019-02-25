@@ -50,14 +50,17 @@
 //! problems and can perform as good (or even better) than general third-party methods.
 //! In addition, this reduces the external dependencies.
 
-//! \internal
-//! \defgroup TasmanianLinearSolvers Linear solvers.
-//!
-//! \par Linear Solvers
-//! Many sparse grids methods rely on various linear solvers, sparse iterative, eigenvalue,
-//! fast-fourier-transform, and least-squares. The solvers are tuned for the specific
-//! problems and can perform as good (or even better) than general third-party methods.
-//! In addition, this reduces the external dependencies.
+/*!
+ * \internal
+ * \ingroup TasmanianSG
+ * \addtogroup TasmanianLinearSolvers Linear solvers
+ *
+ * \par Linear Solvers
+ * Many sparse grids methods rely on various linear solvers, sparse iterative, eigenvalue,
+ * fast-fourier-transform, and least-squares. The solvers are tuned for the specific
+ * problems and can perform as good (or even better) than general third-party methods.
+ * In addition, this reduces the external dependencies.
+ */
 
 namespace TasGrid{
 

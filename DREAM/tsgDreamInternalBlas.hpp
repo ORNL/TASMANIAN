@@ -31,6 +31,27 @@
 #ifndef __TASMANIAN_DREAM_INTERNAL_BLAS_HPP
 #define __TASMANIAN_DREAM_INTERNAL_BLAS_HPP
 
+/*!
+ * \internal
+ * \file tsgDreamInternalBlas.hpp
+ * \brief C++ inline functions that make calls to BLAS.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianDREAM
+ *
+ * Wrappers that provide C++ API to BLAS-Fortran calls.
+ */
+
+/*!
+ * \internal
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMBLAS C++ to BLAS wrappers
+ *
+ * Defined several inline functions that provde C++ wrappers for BLAS,
+ * specifically translation is provided for the vector vs raw pointer
+ * and the pass-by-value vs pass-by-reference API.
+ * \endinternal
+ */
+
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 // avoiding including BLAS headers, use the standard to define the functions, only the BLAS library is needed without include directories
 #ifdef Tasmanian_ENABLE_BLAS
@@ -49,7 +70,7 @@ namespace TasBLAS{
 #ifdef Tasmanian_ENABLE_BLAS
 //! \internal
 //! \brief Wrapper to BLAS 2-norm
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMBLAS
 inline double dnrm2squared(int N, const double x[]){
     int ione = 1;
     double nrm = dnrm2_(&N, x, &ione);
@@ -58,7 +79,7 @@ inline double dnrm2squared(int N, const double x[]){
 
 //! \internal
 //! \brief Wrapper to BLAS matrix-vector product, \b y = \b alpha * \b A-transpose * \b x + \b beta * \b y
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMBLAS
 inline void dgemtv(int M, int N, const double A[], const double x[], double y[], double alpha = 1.0, double beta = 0.0){ // y = A*x, A is M by N
     char charT = 'T'; int blas_one = 1;
     dgemv_(&charT, &M, &N, &alpha, A, &M, x, &blas_one, &beta, y, &blas_one);

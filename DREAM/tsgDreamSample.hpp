@@ -45,11 +45,29 @@
 //!
 //! Defines the core MCMC template for sampling from an arbitrarily defined unscaled probability density.
 
+/*!
+ * \internal
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMAux Macros and Simall Auxilary functions
+ *
+ * Several mactos and one-two line function to simplify the work-flow.
+ * \endinternal
+ */
+
+/*!
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMSampleCore Level 1 DREAM templates, sampling from a user defined distribution
+ *
+ * Level 1 templates use a custom propability distribution defined wither with a \b lambda.
+ * There is no assumption whether the distribution is associated with a Bayesian
+ * inference problem or a completely different context.
+ */
+
 namespace TasDREAM{
 
 //! \internal
 //! \brief Checks if vectors with names \b lower and \b upper have the same size as the dimensions in TasmanianDREAM \b state.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! Throws \b runtime_error if the size of vectors \b lower and \b upper does not match \b state.getNumDimensions().
 //! Does not compile if the variables do not exit.
@@ -59,7 +77,7 @@ namespace TasDREAM{
 
 //! \internal
 //! \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! Assumes two vectors \b lower and \b upper are defined and creates a lambda using \b inHypercube().
 #define __TASDREAM_HYPERCUBE_DOMAIN \
@@ -67,7 +85,7 @@ namespace TasDREAM{
 
 //! \internal
 //! \brief Returns \b true if the entries in \b x obey the \b lower and \b upper values (sizes must match, does not check).
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! The three vectors \b lower, \b upper and \b x must have the same size,
 //! returns \b true if every entry of \b x lies between the \b lower and \b upper boundaries.
@@ -79,13 +97,13 @@ inline bool inHypercube(const std::vector<double> &lower, const std::vector<doub
 
 //! \internal
 //! \brief Dummy function that returns 1.0, used as default for the \b differential_update() in \b SampleDREAM().
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMAux
 
 //! Just an inline function that returns 1.0.
 inline double const_one(){ return 1.0; }
 
 //! \brief Template that returns a constant based on the percentage, i.e., \b weight_percent / 100.0
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleCore
 
 //! The template simplifies the syntax when calling \b SampleDREAM() with a constant differential update.
 //! For example, setting the update to 0.5 can be done with
@@ -97,14 +115,14 @@ template<int weight_percent>
 double const_percent(){ return ((double) weight_percent) / 100.0; }
 
 //! \brief Uniform prior distribution for both regular and log form.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleCore
 
 //! Applies uniform (non-informative) prior, can be used with any of the Bayesian inference methods.
 //! In practice, this is no-op, since adding zero (in \b logform) or mulitplying by 1 (in \b regform) amounts to nothing.
 inline void uniform_prior(const std::vector<double> &, std::vector<double> &values){ values.clear(); }
 
 //! \brief Core template for the sampling algorithm, usually called through any of the overloads.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleCore
 
 //! Evolves the chains of the \b state using the Metropolis algorithm where the updates are comprised of two components, independent and differential.
 //! The independent component relies on independently sampled (pesudo)-random numbers with zero mean and could also be constant zero.
@@ -230,7 +248,7 @@ void SampleDREAM(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAM() assuming independent update from a list of internals.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleCore
 
 //! Uses independent update is applied uniformly to all dimensions and comes from a list of internal functions, e.g., uniform or Gaussian.
 //! This overload wraps around functions such as \b applyUniformCorrection() and \b applyGaussianCorrection().
@@ -253,7 +271,7 @@ void SampleDREAM(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAM() assuming the domain is a hyperbube with min/max values given by \b lower and \b upper.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleCore
 
 //! The two vectors \b lower and \b upper must have the same size as the dimensions of the state
 //! and the lower/upper limits of the internals are stores in the corresponding entries.
@@ -271,7 +289,7 @@ void SampleDREAM(int num_burnup, int num_collect,
 
 
 //! \brief Overload of \b SampleDREAM() assuming the domain is a hyperbube and independent update is from a known list.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMSampleCore
 
 //! The two vectors \b lower and \b upper must have the same size as the dimensions of the state
 //! and the lower/upper limits of the internals are stores in the corresponding entries.

@@ -48,35 +48,39 @@
 //! This header is included directly or transitively in every other
 //! file of the project including \b TasmanianSparseGrids.hpp
 
-//! \defgroup TasmanianEnumerates Enumerate types.
-//!
-//! \par Enumerated types
-//! Enumerations are used as input to many Tasmanian functions
-//! in both internal and external API.
-//!
-//! \internal
-//! \par Hardcoded constants
-//! Hardcoding constants is a bad coding practice and should be avoided,
-//! but numerical algorithms depend on many small tweaking parameters that require
-//! meaningful default values.
-//! For example, Tasmanian computes the nodes and abscissas of the Gauss-Legendre rule on the fly,
-//! which is done with an iterative eigenvalue decomposition method that needs a stopping criteria.
-//! Extra input parameters can be added to \b makeGlobalGrid() which will allow the user to
-//! choose the numeric tolerance and maximum number of iterations, but this will also
-//! add extra variables that the user has to understand and specify.
-//! The goal of Tasmanian is to provide a seamless experience where the user
-//! focuses on the desired properties of a quadrature/interpolation rule, and not
-//! worry about convergence of a hidden iterative schemes.
-//! Therefore, we hardcoded such variables with \a reasonable value,
-//! i.e., values that will work well for most use cases.
-//! In fringe cases, the values can be adjusted here and Tasmanian can be recompiled
-//! with new constants.
+/*!
+ * \ingroup TasmanianSG
+ * \addtogroup SGEnumerates Enumerated types
+ *
+ * \par Enumerated types
+ * Enumerations are used as input to many Tasmanian functions
+ * in both internal and external API.
+ *
+ * \internal
+ * \par Hardcoded constants
+ * Hardcoding constants is a bad coding practice and should be avoided,
+ * but numerical algorithms depend on many small tweaking parameters that require
+ * meaningful default values.
+ * For example, Tasmanian computes the nodes and abscissas of the Gauss-Legendre rule on the fly,
+ * which is done with an iterative eigenvalue decomposition method that needs a stopping criteria.
+ * Extra input parameters can be added to \b makeGlobalGrid() which will allow the user to
+ * choose the numeric tolerance and maximum number of iterations, but this will also
+ * add extra variables that the user has to understand and specify.
+ * The goal of Tasmanian is to provide a seamless experience where the user
+ * focuses on the desired properties of a quadrature/interpolation rule, and not
+ * worry about convergence of a hidden iterative schemes.
+ * Therefore, we hardcoded such variables with \a reasonable value,
+ * i.e., values that will work well for most use cases.
+ * In fringe cases, the values can be adjusted here and Tasmanian can be recompiled
+ * with new constants.
+ * \endinternal
+ */
 
 namespace TasGrid{
 
 //! \internal
 //! \brief Describes the relation between two multi-indexes when compared during sorting.
-//! \ingroup TasmanianEnumerates
+//! \ingroup SGEnumerates
 
 //! The standard C++11 algorithms std::merge and std::binary_search use bools as return
 //! types when comparing entries, thus in the case of many repeated entries, two
@@ -97,7 +101,7 @@ enum TypeIndexRelation{ // internal for IndexSets, unambiguous set comparison
 };
 
 //! \brief Used by Global Sequence and Fourier grids, indicates the selection criteria.
-//! \ingroup TasmanianEnumerates
+//! \ingroup SGEnumerates
 
 //! \par Approximation Error
 //! The approximation error when interpolating or integrating a target model with
@@ -219,7 +223,7 @@ enum TypeDepth{
 };
 
 //! \brief Used to specify the one dimensional family of rules that induces the sparse grid.
-//! \ingroup TasmanianEnumerates
+//! \ingroup SGEnumerates
 
 //! \par One Dimensional Rules
 //! A sparse grid is a superposition of tensors of one dimensional rules with varying precision
@@ -342,7 +346,7 @@ enum TypeOneDRule{
 };
 
 //! \brief Refinement strategy for local polynomial and wavelet grids.
-//! \ingroup TasmanianEnumerates
+//! \ingroup SGEnumerates
 
 //! \par Local Hierarchical Approximation
 //! The nodes and basis functions used in local polynomial and wavelet sparse grid form a complex multidimensional hierarchy,
@@ -403,7 +407,7 @@ enum TypeRefinement{
 };
 
 //! \brief Types of acceleration for \b TasmanianSparseGrid::evaluateFast() and \b TasmanianSparseGrid::evaluateBatch().
-//! \ingroup TasmanianEnumerates
+//! \ingroup SGEnumerates
 
 //! \par Evaluation Stages
 //! Computing the value of the interpolant at one or more nodes is done in two stages, first a matrix of basis function
@@ -531,7 +535,7 @@ enum TypeAcceleration{
 
 //! \internal
 //! \brief Numerical tolerance for various algorithms.
-//! \ingroup TasmanianEnumerates
+//! \ingroup SGEnumerates
 
 //! NUM_TOL is used in many places:
 //! - as a stopping criteria for various iterative schemes (e.g., finding leja points)
@@ -543,14 +547,14 @@ enum TypeAcceleration{
 
 //! \internal
 //! \brief Defines the maximum number of secant method iterations to be used for finding Leja, Lebesgue, and Delta points.
-//! \ingroup TasmanianEnumerates
+//! \ingroup SGEnumerates
 
 //! This is a simple safeguard criteria to prevent "hanging" in a loop.
 #define TSG_MAX_SECANT_ITERATIONS 1000
 
 //! \internal
 //! \brief Tuning parameter for dense vs sparse evaluations of Local Polynomial Grids when using CPU BLAS.
-//! \ingroup TasmanianEnumerates
+//! \ingroup SGEnumerates
 
 //! Defines the threshold for switching between sparse and dense version of batch evaluate for Local Polynomial Grids.
 //! Generally, because of caching and reuse of data, dense operations have 10x more flops per second than sparse ops;
