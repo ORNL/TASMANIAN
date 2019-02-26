@@ -47,8 +47,6 @@
  * and algorithms to draw samples from several known distributions.
  */
 
-#include <math.h>
-
 namespace TasDREAM{
 
 //! \internal

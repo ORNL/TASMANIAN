@@ -31,12 +31,7 @@
 #ifndef __TASMANIAN_DREAM_SAMPLE_POSTERIOR_HPP
 #define __TASMANIAN_DREAM_SAMPLE_POSTERIOR_HPP
 
-#include <vector>
-
-#include "tsgDreamEnumerates.hpp"
-#include "tsgDreamState.hpp"
-#include "tsgDreamCoreRandom.hpp"
-#include "tsgDreamCorePDF.hpp"
+#include "tsgDreamSample.hpp"
 #include "tsgDreamLikelyGaussian.hpp"
 
 //! \file tsgDreamSamplePosterior.hpp

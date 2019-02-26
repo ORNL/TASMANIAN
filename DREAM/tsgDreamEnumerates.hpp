@@ -31,7 +31,7 @@
 #ifndef __TASMANIAN_DREAM_ENUMERATES_HPP
 #define __TASMANIAN_DREAM_ENUMERATES_HPP
 
-#include "TasmanianConfig.hpp"
+#include "TasmanianSparseGrid.hpp"
 
 /*!
  * \file tsgDreamEnumerates.hpp

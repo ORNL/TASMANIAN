@@ -31,10 +31,6 @@
 #ifndef __TASMANIAN_DREAM_STATE_HPP
 #define __TASMANIAN_DREAM_STATE_HPP
 
-#include <vector>
-
-#include "TasmanianSparseGrid.hpp"
-
 #include "tsgDreamEnumerates.hpp"
 
 //! \internal

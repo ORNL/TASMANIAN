@@ -31,12 +31,7 @@
 #ifndef __TASMANIAN_DREAM_SAMPLE_GRID_HPP
 #define __TASMANIAN_DREAM_SAMPLE_GRID_HPP
 
-#include <vector>
-
-#include "TasmanianSparseGrid.hpp"
-
-#include "tsgDreamEnumerates.hpp"
-#include "tsgDreamState.hpp"
+#include "tsgDreamSample.hpp"
 
 //! \file tsgDreamSampleGrid.hpp
 //! \brief DREAM methods using likelihood approximated by a sparse grid.
