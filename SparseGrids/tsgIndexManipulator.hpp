@@ -52,15 +52,19 @@
 //! normalization of anisotropic weights, map parents and children within a set (which
 //! generates a DAG structure), complete a set to satisfy the lower-property, etc.
 
-//! \internal
-//! \defgroup TasmanianMultiIndexManipulations Multi-Index manipulation algorithms.
-//!
-//! \par Multi-Index manipulation algorithms
-//! A series of templates, lambda, and regular functions that allow the manipulation of
-//! multi-indexes and sets of multi-indexes. The algorithms include the selection of
-//! multi-indexes according to a criteria, union of a vector of multi-index sets,
-//! normalization of anisotropic weights, map parents and children within a set (which
-//! generates a DAG structure), complete a set to satisfy the lower-property, etc.
+/*!
+ * \internal
+ * \ingroup TasmanianSG
+ * \addtogroup TasmanianMultiIndexManipulations Multi-Index manipulation algorithms
+ *
+ * \par Multi-Index manipulation algorithms
+ * A series of templates, lambda, and regular functions that allow the manipulation of
+ * multi-indexes and sets of multi-indexes. The algorithms include the selection of
+ * multi-indexes according to a criteria, union of a vector of multi-index sets,
+ * normalization of anisotropic weights, map parents and children within a set (which
+ * generates a DAG structure), complete a set to satisfy the lower-property, etc.
+ * \endinternal
+ */
 
 namespace TasGrid{
 

@@ -46,12 +46,16 @@
 //! Contains core information about one dimensional rules, custom tabulated,
 //! Chebyshev and Gaussian rules. Also, generic I/O data.
 
-//! \internal
-//! \defgroup TasmanianCoreOneDimensional Core data for Gauuss, Chebyshev and custom rules.
-//!
-//! \par Core One Dimensional Rules
-//! Contains core information about one dimensional rules, custom tabulated,
-//! Chebyshev and Gaussian rules. Also, generic I/O data.
+/*!
+ * \internal
+ * \ingroup TasmanianSG
+ * \addtogroup TasmanianCoreOneDimensional Core meta-data for Gauuss, Chebyshev and custom rules
+ *
+ * \par Core One Dimensional Rules
+ * Contains information about all one dimensional rules, number of nodes, exactness, IO meta-data.
+ * The CustomTabulated class for managing a user provided rule is also included,
+ * as well as methods for generating Gaussian and Chebyshev nodes and weights.
+ */
 
 namespace TasGrid{
 

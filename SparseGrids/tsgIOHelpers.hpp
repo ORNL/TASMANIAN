@@ -47,8 +47,12 @@
 //! Several templates that simplify the I/O of Tasmanian.
 //! Commonly used operations are lumped into templates with simple binary/ascii switch.
 
-//! \internal
-//! \defgroup TasmanianIO Templates for common I/O methods, simple binary/ascii switch provided for all templates.
+/*!
+ * \internal
+ * \ingroup TasmanianSG
+ * \addtogroup TasmanianIO Templates for common I/O methods, simple binary/ascii switch provided for all templates
+ * \endinternal
+ */
 
 namespace TasGrid{
 

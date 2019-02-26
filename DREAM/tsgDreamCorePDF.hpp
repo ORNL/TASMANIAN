@@ -36,7 +36,7 @@
 namespace TasDREAM{
 
 //! \brief Returns the unscaled probability density of \b distribution (defined by \b params) at the point \b x.
-//! \ingroup TasmanianDREAM
+//! \ingroup DREAMPDF
 
 //! Variadric template that defines different one dimensional probability density function.
 //! Each function is defined by the \b distribution type and a set of parameters \b params,

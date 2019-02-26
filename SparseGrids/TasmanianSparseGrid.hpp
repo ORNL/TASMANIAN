@@ -28,6 +28,16 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
+/*!
+ * \file TasmanianSparseGrid.hpp
+ * \brief Main header for the Sparse Grid module.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianDREAM
+ *
+ * The header needed to access the Tasmanian sparse grids module,
+ * the TasGrid::TasmanianSparseGrids class is defined here.
+ */
+
 #ifndef __TASMANIAN_SPARSE_GRID_HPP
 #define __TASMANIAN_SPARSE_GRID_HPP
 
@@ -43,8 +53,20 @@
 
 #include <iomanip> // only needed for printStats()
 
+/*!
+ * \defgroup TasmanianSG Sparse Grids
+ *
+ * \par Sparse Grids
+ * A family of algorithms for multidimensional integration and interpolation ...
+ */
+
+/*!
+ * \ingroup TasmanianSG
+ * \brief Encapsulates the Tasmanian Sparse Grid module.
+ */
 namespace TasGrid{
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP // suppress Doxygen warnings ... for now
 class TasmanianSparseGrid{
 public:
     TasmanianSparseGrid();
@@ -294,6 +316,7 @@ private:
     mutable AccelerationDomainTransform acc_domain;
     #endif
 };
+#endif // Doxygen skip
 
 }
 

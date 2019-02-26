@@ -12,7 +12,7 @@ Recommended additional features:
 
 Optional features:
 * Acceleration using Nvidia [linear algebra libraries](https://developer.nvidia.com/cublas) and custom [CUDA kernels](https://developer.nvidia.com/cuda-zone)
-* GPU accelerated linear algebra [using UTK MAGMA library](http://icl.cs.utk.edu/magma/)
+* GPU accelerated linear algebra using [UTK MAGMA library](http://icl.cs.utk.edu/magma/)
 * Basic [Python matplotlib](https://matplotlib.org/) support
 * Fully featured [MATLAB/Octave](https://www.gnu.org/software/octave/) interface via wrappers around the command-line tool
 * Fortran 90/95 interface using [gfortran](https://gcc.gnu.org/wiki/GFortran) or [ifort](https://software.intel.com/en-us/intel-compilers)

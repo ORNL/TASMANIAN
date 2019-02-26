@@ -48,34 +48,38 @@
 //! the classes allow RAII style of memory management for CUDA GPU arrays,
 //! as well as handy encapsulation of the cuBlas/cuSparse/MAGMA handles and streams.
 
-//! \internal
-//! \defgroup TasmanianAcceleration Classes and functions used for acceleration methods.
-//!
-//! \par RAII Memory Management
-//! CUDA uses C-style of memory management with cudaMalloc(), cudaMemcopy(), cudaFree(),
-//! but templated C++ std::vector-style class is more handy and more fail-safe.
-//! The \b CudaVector template class guards against memory leaks and offers more seamless
-//! integration between CPU and GPU data structures.
-//! See the \b CudaVector documentation for details.
-//!
-//! \par Streams and Handles Encapsulation
-//! CUDA linear algebra libraries (as well as MAGAM), use streams and handles for all their calls.
-//! The handles have to be allocated, deleted, and passed around which causes unnecessary code clutter.
-//! Encapsulating the handles in a single \b CudaEngine class greatly simplifies the work-flow.
-//! Furthermore, some (sparse) linear operations require multiple calls to CUDA/MAGMA libraries,
-//! and it is cleaner to wrap those into a single call to a \b CudaEngine method.
-//!
-//! \par Acceleration Metadata
-//! The \b AccelerationMeta namespace offers several methods used throughout the library and in the testing:
-//! - Tasmanian specific acceleration fallback logic
-//! - Reading CUDA device properties, e.g., number of devices or total memory
-//! - Error handling for common CUDA/cuBlas/cuSparse calls
-//!
-//! \par C++ Wrappers to Fortran BLAS API
-//! The standard BLAS API follows Fortran calling conventions,
-//! e.g., call by value and underscore at the end of function names.
-//! A C++ wrapper is provided that handles Tasmanian specific cases of
-//! dense matrix-matrix and matrix-vector multiplication using C++ compatible API.
+/*!
+ * \internal
+ * \ingroup TasmanianSG
+ * \addtogroup TasmanianAcceleration Classes and functions used for acceleration methods
+ *
+ * \par RAII Memory Management
+ * CUDA uses C-style of memory management with cudaMalloc(), cudaMemcopy(), cudaFree(),
+ * but templated C++ std::vector-style class is far more handy and more fail-safe.
+ * The \b CudaVector template class guards against memory leaks and offers more seamless
+ * integration between CPU and GPU data structures.
+ * See the \b CudaVector documentation for details.
+ *
+ * \par Streams and Handles Encapsulation
+ * CUDA linear algebra libraries (as well as MAGAM), use streams and handles for all their calls.
+ * The handles have to be allocated, deleted, and passed around which causes unnecessary code clutter.
+ * Encapsulating the handles in a single \b CudaEngine class greatly simplifies the work-flow.
+ * Furthermore, some (sparse) linear operations require multiple calls to CUDA/MAGMA libraries,
+ * and it is easier to combine those into a single call to a \b CudaEngine method.
+ *
+ * \par Acceleration Metadata
+ * The \b AccelerationMeta namespace offers several methods used throughout the library and in the testing:
+ * - Tasmanian specific acceleration fallback logic
+ * - Reading CUDA device properties, e.g., number of devices or total memory
+ * - Error handling for common CUDA/cuBlas/cuSparse calls
+ *
+ * \par C++ Wrappers to Fortran BLAS API
+ * The standard BLAS API follows Fortran calling conventions,
+ * e.g., call by value and underscore at the end of function names.
+ * A C++ wrapper is provided that handles Tasmanian specific cases of
+ * dense matrix-matrix and matrix-vector multiplication using C++ compatible API.
+ * \endinternal
+ */
 
 namespace TasGrid{
 
