@@ -31,11 +31,7 @@
 #ifndef __TSG_CORE_ONE_DIMENSIONAL_HPP
 #define __TSG_CORE_ONE_DIMENSIONAL_HPP
 
-#include "tsgEnumerates.hpp"
 #include "tsgLinearSolvers.hpp"
-
-#include <string>
-#include <math.h>
 
 //! \internal
 //! \file tsgCoreOneDimensional.hpp

@@ -38,8 +38,6 @@
  * \ingroup TasmanianAcceleration
  */
 
-#include "tsgEnumerates.hpp"
-#include "tsgCoreOneDimensional.hpp"
 #include "tsgOneDimensionalWrapper.hpp"
 
 namespace TasGrid{

@@ -31,11 +31,14 @@
 #ifndef __TASMANIAN_SPARSE_GRID_ENUMERATES_HPP
 #define __TASMANIAN_SPARSE_GRID_ENUMERATES_HPP
 
-#include <iostream>
+// system headers used in many/many places
+#include <iomanip>
 #include <stdlib.h>
+#include <ostream>
 #include <fstream>
-#include <math.h>
 #include <string.h>
+#include <string>
+#include <vector>
 
 #include "TasmanianConfig.hpp"
 
