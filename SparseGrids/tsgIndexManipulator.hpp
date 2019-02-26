@@ -31,12 +31,9 @@
 #ifndef __TSG_INDEX_MANIPULATOR_HPP
 #define __TSG_INDEX_MANIPULATOR_HPP
 
-#include <functional>
 #include <numeric>
 
-#include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
-#include "tsgCoreOneDimensional.hpp"
 #include "tsgOneDimensionalWrapper.hpp"
 #include "tsgRuleLocalPolynomial.hpp"
 

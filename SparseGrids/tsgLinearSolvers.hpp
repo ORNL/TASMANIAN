@@ -32,8 +32,6 @@
 #define __TASMANIAN_LINEAR_SOLVERS_HPP
 
 #include <list>
-#include <vector>
-#include <fstream>
 #include <math.h>
 #include <complex>
 

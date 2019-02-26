@@ -33,8 +33,6 @@
 
 #include <forward_list>
 
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
 #include "tsgIndexManipulator.hpp"
 
 /*!

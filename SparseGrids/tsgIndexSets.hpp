@@ -31,11 +31,10 @@
 #ifndef __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 #define __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 
-#include "tsgIOHelpers.hpp"
-#include "tsgEnumerates.hpp"
-#include <vector>
 #include <functional>
 #include <algorithm>
+
+#include "tsgIOHelpers.hpp"
 
 //! \internal
 //! \file tsgIndexSets.hpp

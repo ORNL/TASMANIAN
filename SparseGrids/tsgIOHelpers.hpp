@@ -31,10 +31,7 @@
 #ifndef __TASMANIAN_IOHELPERS_HPP
 #define __TASMANIAN_IOHELPERS_HPP
 
-#include <ostream>
-#include <iostream> // for debugging
 #include <tuple>
-#include <vector>
 
 #include "tsgCoreOneDimensional.hpp"
 

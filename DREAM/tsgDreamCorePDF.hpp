@@ -31,6 +31,13 @@
 #ifndef __TASMANIAN_DREAM_CORE_PDF_HPP
 #define __TASMANIAN_DREAM_CORE_PDF_HPP
 
+/*!
+ * \file tsgDreamCorePDF.hpp
+ * \brief Gives the unscaled formulas for several probability distributions.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianDREAM
+ */
+
 #include "tsgDreamEnumerates.hpp"
 
 namespace TasDREAM{

@@ -31,9 +31,6 @@
 #ifndef __TASMANIAN_DREAM_SAMPLE_HPP
 #define __TASMANIAN_DREAM_SAMPLE_HPP
 
-#include <vector>
-
-#include "tsgDreamEnumerates.hpp"
 #include "tsgDreamState.hpp"
 #include "tsgDreamCoreRandom.hpp"
 #include "tsgDreamCorePDF.hpp"

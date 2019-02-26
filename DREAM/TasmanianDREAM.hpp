@@ -31,14 +31,6 @@
 #ifndef __TASMANIAN_DREAM_HPP
 #define __TASMANIAN_DREAM_HPP
 
-#include "TasmanianSparseGrid.hpp"
-
-#include "tsgDreamEnumerates.hpp"
-#include "tsgDreamState.hpp"
-#include "tsgDreamCoreRandom.hpp"
-#include "tsgDreamSample.hpp"
-#include "tsgDreamSampleGrid.hpp"
-#include "tsgDreamSamplePosterior.hpp"
 #include "tsgDreamSamplePosteriorGrid.hpp"
 
 //! \file TasmanianDREAM.hpp

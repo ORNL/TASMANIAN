@@ -31,7 +31,6 @@
 #ifndef __TSG_ONE_DIMENSIONAL_WRAPPER_HPP
 #define __TSG_ONE_DIMENSIONAL_WRAPPER_HPP
 
-#include "tsgEnumerates.hpp"
 #include "tsgCoreOneDimensional.hpp"
 #include "tsgSequenceOptimizer.hpp"
 #include "tsgHardCodedTabulatedRules.hpp"

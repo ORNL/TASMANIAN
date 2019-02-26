@@ -32,10 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_HPP
 
 #include <stdexcept>
-#include <string>
-#include <vector>
 
-#include "TasmanianConfig.hpp"
 #include "tsgEnumerates.hpp"
 
 //! \internal

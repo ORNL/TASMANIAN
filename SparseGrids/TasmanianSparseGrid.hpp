@@ -41,17 +41,11 @@
 #ifndef __TASMANIAN_SPARSE_GRID_HPP
 #define __TASMANIAN_SPARSE_GRID_HPP
 
-#include "TasmanianConfig.hpp"
-
-#include "tsgEnumerates.hpp"
-
 #include "tsgGridGlobal.hpp"
 #include "tsgGridSequence.hpp"
 #include "tsgGridLocalPolynomial.hpp"
 #include "tsgGridWavelet.hpp"
 #include "tsgGridFourier.hpp"
-
-#include <iomanip> // only needed for printStats()
 
 /*!
  * \defgroup TasmanianSG Sparse Grids
