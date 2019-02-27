@@ -176,7 +176,7 @@ protected:
     #ifdef Tasmanian_ENABLE_CUDA
     void loadCudaNodes() const{
         if (!cuda_cache) cuda_cache = std::unique_ptr<CudaSequenceData<double>>(new CudaSequenceData<double>);
-        if (cuda_cache->num_nodes.size() != 0) return;
+        if (!cuda_cache->num_nodes.empty()) return;
         cuda_cache->nodes.load(nodes);
         cuda_cache->coeff.load(coeff);
 
@@ -204,7 +204,7 @@ protected:
     }
     void loadCudaSurpluses() const{
         if (!cuda_cache) cuda_cache = std::unique_ptr<CudaSequenceData<double>>(new CudaSequenceData<double>);
-        cuda_cache->surpluses.load(surpluses);
+        if (cuda_cache->surpluses.empty()) cuda_cache->surpluses.load(surpluses);
     }
     void clearCudaSurpluses(){ if (cuda_cache) cuda_cache->surpluses.clear(); }
     #endif

@@ -139,6 +139,8 @@ public:
     void resize(size_t count);
     //! \brief Delete all allocated memory and reset the array to empty.
     void clear();
+    //! \brief Return \b true if the \b size() is zero.
+    bool empty(){ return (num_entries == 0); }
 
     //! \brief Copy the content of \b cpu_data to the CUDA device, all pre-existing data is deleted and the vector is resized to match \b cpu_data.
 
