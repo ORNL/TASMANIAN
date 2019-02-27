@@ -71,7 +71,7 @@ public:
      */
     CacheLagrange(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper *rule, const double x[]){
         cache.resize(num_dimensions);
-        offsets = *(rule->getPointsCount());
+        offsets = rule->getPointsCount();
 
         for(int dim=0; dim<num_dimensions; dim++){
             cache[dim].resize(offsets[max_levels[dim] + 1]);
