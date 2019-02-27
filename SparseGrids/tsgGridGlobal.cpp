@@ -341,7 +341,7 @@ void GridGlobal::getQuadratureWeights(double weights[]) const{
 void GridGlobal::getInterpolationWeights(const double x[], double weights[]) const{
     std::fill_n(weights, (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes(), 0.0);
 
-    CacheLagrange<double> lcache(num_dimensions, max_levels, &wrapper, x);
+    CacheLagrange<double> lcache(num_dimensions, max_levels, wrapper, x);
 
     std::vector<int> num_oned_points(num_dimensions);
     for(int n=0; n<active_tensors.getNumIndexes(); n++){
