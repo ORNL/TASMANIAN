@@ -78,7 +78,7 @@ public:
     const double* getCoefficients(int level) const;
 
     //! \brief Get a reference to the offsets of all point counts used by the \b CacheLagrange class.
-    const std::vector<int>* getPointsCount() const;
+    const std::vector<int>& getPointsCount() const{ return pntr; }
 
     //! \brief Get the loaded rule.
     TypeOneDRule getType() const;

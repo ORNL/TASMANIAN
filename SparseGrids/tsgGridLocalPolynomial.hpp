@@ -266,7 +266,7 @@ protected:
     }
     void loadCudaBasis() const{
         if (!cuda_cache) cuda_cache = std::unique_ptr<CudaLocalPolynomialData<double>>(new CudaLocalPolynomialData<double>);
-        if (cuda_cache->nodes.size() != 0) return;
+        if (!cuda_cache->nodes.empty()) return;
 
         Data2D<double> cpu_nodes;
         cpu_nodes.resize(num_dimensions, getNumPoints());
@@ -301,7 +301,7 @@ protected:
     }
     void loadCudaHierarchy() const{
         if (!cuda_cache) cuda_cache = std::unique_ptr<CudaLocalPolynomialData<double>>(new CudaLocalPolynomialData<double>);
-        if (cuda_cache->hpntr.size() != 0) return;
+        if (!cuda_cache->hpntr.empty()) return;
 
         cuda_cache->hpntr.load(pntr);
         cuda_cache->hindx.load(indx);

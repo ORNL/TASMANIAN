@@ -156,7 +156,7 @@ protected:
     #ifdef Tasmanian_ENABLE_CUDA
     void loadCudaNodes() const{
         if (!cuda_cache) cuda_cache = std::unique_ptr<CudaFourierData<double>>(new CudaFourierData<double>);
-        if (cuda_cache->num_nodes.size() != 0) return;
+        if (!cuda_cache->num_nodes.empty()) return;
 
         std::vector<int> num_nodes(num_dimensions);
         std::transform(max_levels.begin(), max_levels.end(), num_nodes.begin(), [](int l)->int{ return OneDimensionalMeta::getNumPoints(l, rule_fourier); });
@@ -178,7 +178,7 @@ protected:
     }
     void loadCudaCoefficients() const{
         if (!cuda_cache) cuda_cache = std::unique_ptr<CudaFourierData<double>>(new CudaFourierData<double>);
-        if (cuda_cache->real.size() != 0) return;
+        if (!cuda_cache->real.empty()) return;
         int num_points = points.getNumIndexes();
         size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
         cuda_cache->real.load(num_coeff, fourier_coefs.getCStrip(0));
