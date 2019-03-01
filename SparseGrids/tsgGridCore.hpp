@@ -31,6 +31,8 @@
 #ifndef __TSG_BASE_CLASS_HPP
 #define __TSG_BASE_CLASS_HPP
 
+#include <numeric>
+
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgAcceleratedDataStructures.hpp"
@@ -111,7 +113,7 @@ protected:
 
 private:
     int num_dimensions;
-    std::vector<int> job_directions, num_job_pnts;
+    std::vector<int> job_directions;
     std::vector<std::vector<int>> job_pnts;
 };
 

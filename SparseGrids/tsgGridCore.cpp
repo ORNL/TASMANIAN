@@ -39,32 +39,40 @@ BaseCanonicalGrid::BaseCanonicalGrid(){}
 BaseCanonicalGrid::~BaseCanonicalGrid(){}
 
 SplitDirections::SplitDirections(const MultiIndexSet &points){
-    // here we split the points into jobs, where each job is a batch of point that belong to the same line
-    // each job will later be used to construct a 1-D interpolant and compute directional surpluses
+    // split the points into "jobs", where each job represents a batch of
+    // points that lay on a line in some direction
+    // int    job_directions[i] gives the direction of the i-th job
+    // vector job_pnts[i] gives a list of the points (using indexes within the set)
     int num_points = points.getNumIndexes();
     num_dimensions = points.getNumDimensions();
 
-    // This section is taking too long! Find a way to parallelize it!
     for(int d=0; d<num_dimensions; d++){
-        std::vector<bool> unused(num_points, true); // start with all points unused in this direction
-        for(int s=0; s<num_points; s++){ // search for unused points
-            if (unused[s]){
-                // if found unused point in this direction, start a new job
-                const int *p = points.getIndex(s); // reference point
-
-                job_directions.push_back(d); // set the direction for the job
-
-                std::vector<int> pnts; // append here the points that will be found
-
-                for(int i=0; i<num_points; i++){ // look for all points, if unused and belong to the same line
-                    if (unused[i] && doesBelongSameLine(p, points.getIndex(i), d)){
-                        // adding a new point
-                        pnts.push_back(i);
-                        unused[i] = false;
-                    }
+        // working with direction d
+        // sort all points but ignore index d
+        std::vector<int> map(num_points);
+        std::iota(map.begin(), map.end(), 0);
+        std::sort(map.begin(), map.end(), [&](int a, int b)->bool{
+            const int * idxa = points.getIndex(a);
+            const int * idxb = points.getIndex(b);
+            // lexigographical order ignoring dimension d
+            for(int j=0; j<num_dimensions; j++)
+                if (j != d){
+                    if (idxa[j] < idxb[j]) return true;
+                    if (idxa[j] > idxb[j]) return false;
                 }
-                job_pnts.push_back(pnts); // hope the compiler does "move assignment"
-            }
+            return false;
+        });
+
+        auto imap = map.begin();
+        while(imap != map.end()){
+            // new job, get reference index
+            const int *p = points.getIndex(*imap);
+            job_directions.push_back(d);
+            std::vector<int> pnts = {*imap++};
+            // while the points are in the same direction as the reference, add to the same job
+            while((imap != map.end()) && doesBelongSameLine(p, points.getIndex(*imap), d))
+                pnts.push_back(*imap++);
+            job_pnts.push_back(std::move(pnts));
         }
     }
 }
