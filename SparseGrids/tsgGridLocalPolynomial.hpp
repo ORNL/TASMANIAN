@@ -145,37 +145,33 @@ protected:
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz,
                                     std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const;
 
+    /*!
+     * \brief Walk through all the nodes of the tree and touches only the nodes supported at \b x.
+     *
+     * The template is instantiated in different modes:
+     * - \b mode \b 0, ignore \b sindx and \b svals, find the non-zero basis functions multiply them by the surpluses and add to \b y
+     * - \b mode \b 1, ignore \b y, form a sparse vector by std::vector::push_back() to the \b sindx and \b svals
+     * - \b mode \b 2, same as \b mode \b 1 but it also sorts the entries within the vector (requirement of Nvidia cusparseDgemvi)
+     *
+     * In all cases, \b work is the \b points or \b needed set that has been used to construct the tree.
+     */
     template<int mode>
-    void buildSparseVector(const MultiIndexSet &work, const double x[], int &num_nz, std::vector<int> &sindx, std::vector<double> &svals) const{
-        // This operates under several modes, no need to make separate enumerates for internal API, just use integer codes
-        // mode 0, count the non-zeros, sindx and svals will never be accessed can pass dummy empty vectors
-        // mode 1, num_nz is input (already pre-computed), sindx and svals are resized and filled
-        // mode 2, num_nz is output (counted and filled), sindx and svals are NOT resized, std::vector::push_back() is used
-        std::vector<int> monkey_count(top_level+1);
-        std::vector<int> monkey_tail(top_level+1);
-
-        if (mode == 1){
-            sindx.resize(num_nz);
-            svals.resize(num_nz);
-        }
-
-        bool isSupported;
-        int p;
-
-        num_nz = 0;
+    void walkTree(const MultiIndexSet &work, const double x[], std::vector<int> &sindx, std::vector<double> &svals, double *y) const{
+        std::vector<int> monkey_count(top_level+1); // traverse the tree, counts the branches of the current node
+        std::vector<int> monkey_tail(top_level+1); // traverse the tree, keeps track of the previous node (history)
 
         for(const auto &r : roots){
+            bool isSupported;
             double basis_value = evalBasisSupported(work.getIndex(r), x, isSupported);
 
             if (isSupported){
-                if (mode == 1){
-                    sindx[num_nz] = r;
-                    svals[num_nz] = basis_value;
-                }else if (mode == 2){
+                if (mode == 0){
+                    double const *s = surpluses.getCStrip(r);
+                    for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
+                }else{
                     sindx.push_back(r);
                     svals.push_back(basis_value);
                 }
-                num_nz++;
 
                 int current = 0;
                 monkey_tail[0] = r;
@@ -183,17 +179,16 @@ protected:
 
                 while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                        p = indx[monkey_count[current]];
+                        int p = indx[monkey_count[current]];
                         basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
                         if (isSupported){
-                            if (mode == 1){
-                                sindx[num_nz] = p;
-                                svals[num_nz] = basis_value;
-                            }else if (mode == 2){
+                            if (mode == 0){
+                                double const *s = surpluses.getCStrip(p);
+                                for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
+                            }else{
                                 sindx.push_back(p);
                                 svals.push_back(basis_value);
                             }
-                            num_nz++;
 
                             monkey_tail[++current] = p;
                             monkey_count[current] = pntr[p];
@@ -211,7 +206,7 @@ protected:
         // "... it is assumed that the indices are provided in increasing order and that each index appears only once."
         // This may not be a requirement for cusparseDgemvi(), but it may be that I have not tested it sufficiently
         // Also, see AccelerationDataGPUFull::cusparseMatveci() for inaccuracies in Nvidia documentation
-        if (mode == 1){
+        if (mode == 2){
             std::vector<int> map(sindx);
             std::iota(map.begin(), map.end(), 0);
             std::sort(map.begin(), map.end(), [&](int a, int b)->bool{ return (sindx[a] < sindx[b]); });

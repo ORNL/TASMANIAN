@@ -238,44 +238,10 @@ void GridLocalPolynomial::getPoints(double *x) const{
 }
 
 void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
-    std::vector<int> monkey_count(top_level+1);
-    std::vector<int> monkey_tail(top_level+1);
-
-    bool isSupported;
-    int offset;
-
-    std::fill(y, y + num_outputs, 0.0);
-
-    for(auto const &r : roots){
-        double basis_value = evalBasisSupported(points.getIndex(r), x, isSupported);
-
-        if (isSupported){
-            const double *s = surpluses.getCStrip(r);
-            for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
-
-            int current = 0;
-            monkey_tail[0] = r;
-            monkey_count[0] = pntr[r];
-
-            while(monkey_count[0] < pntr[monkey_tail[0]+1]){
-                if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                    offset = indx[monkey_count[current]];
-                    basis_value = evalBasisSupported(points.getIndex(offset), x, isSupported);
-                    if (isSupported){
-                        s = surpluses.getCStrip(offset);
-                        for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
-
-                        monkey_tail[++current] = offset;
-                        monkey_count[current] = pntr[offset];
-                    }else{
-                        monkey_count[current]++;
-                    }
-                }else{
-                    monkey_count[--current]++;
-                }
-            }
-        }
-    }
+    std::fill_n(y, num_outputs, 0.0);
+    std::vector<int> sindx; // dummy variables, never references in mode 0 below
+    std::vector<double> svals;
+    walkTree<0>(points, x, sindx, svals, y);
 }
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
     if (num_x == 1){ evaluate(x, y); return; }
@@ -336,9 +302,7 @@ void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[]
     if (num_x > 1){
         buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals);
     }else{
-       int num_nz;
-       buildSparseVector<0>(points, x, num_nz, sindx, svals);
-       buildSparseVector<1>(points, x, num_nz, sindx, svals);
+        walkTree<2>(points, x, sindx, svals, nullptr);
     }
     engine->sparseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, spntr, sindx, svals, y);
 }
@@ -687,21 +651,18 @@ void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_
 int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
-    std::vector<int> sindx; // dummy vectors, never referenced
-    std::vector<double> svals;
-
     Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     std::vector<int> num_nz(num_x);
 
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        buildSparseVector<0>(work, xx.getCStrip(i), num_nz[i], sindx, svals);
+        std::vector<int> sindx;
+        std::vector<double> svals;
+        walkTree<1>(work, xx.getCStrip(i), sindx, svals, nullptr);
+        num_nz[i] = (int) sindx.size();
     }
 
-    int total_nz = 0;
-    for(auto n: num_nz) total_nz += n;
-
-    return total_nz;
+    return std::accumulate(num_nz.begin(), num_nz.end(), 0);
 }
 
 void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz, std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const{
@@ -721,7 +682,9 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
         tvals[b].resize(0);
         int chunk_size = (b < num_blocks - 1) ? num_chunk : (num_x - (num_blocks - 1) * num_chunk);
         for(int i = b * num_chunk; i < b * num_chunk + chunk_size; i++){
-            buildSparseVector<2>(work, xx.getCStrip(i), numnz[i], tindx[b], tvals[b]);
+            numnz[i] = (int) tindx[b].size();
+            walkTree<1>(work, xx.getCStrip(i), tindx[b], tvals[b], nullptr);
+            numnz[i] = (int) tindx[b].size() - numnz[i];
         }
     }
     numnz[num_x] = 0;
