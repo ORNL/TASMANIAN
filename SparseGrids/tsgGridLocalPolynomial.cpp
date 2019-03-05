@@ -385,49 +385,14 @@ void GridLocalPolynomial::mergeRefinement(){
 void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
-    std::vector<int> active_points(0);
+    std::vector<int> active_points;
+    std::vector<double> hbasis_values;
     std::fill_n(weights, work.getNumIndexes(), 0.0);
 
-    std::vector<int> monkey_count(top_level+1);
-    std::vector<int> monkey_tail(top_level+1);
-
-    double basis_value;
-    bool isSupported;
-    int offset;
-
-    for(unsigned r=0; r<roots.size(); r++){
-
-        basis_value = evalBasisSupported(work.getIndex(roots[r]), x, isSupported);
-
-        if (isSupported){
-            active_points.push_back(roots[r]);
-            weights[roots[r]] = basis_value;
-
-            int current = 0;
-            monkey_tail[0] = roots[r];
-            monkey_count[0] = pntr[roots[r]];
-
-            while(monkey_count[0] < pntr[monkey_tail[0]+1]){
-                if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                    offset = indx[monkey_count[current]];
-
-                    basis_value = evalBasisSupported(work.getIndex(offset), x, isSupported);
-
-                    if (isSupported){
-                        active_points.push_back(offset);
-                        weights[offset] = basis_value;
-
-                        monkey_tail[++current] = offset;
-                        monkey_count[current] = pntr[offset];
-                    }else{
-                        monkey_count[current]++;
-                    }
-                }else{
-                    monkey_count[--current]++;
-                }
-            }
-        }
-    }
+    // construct a sparse vector and apply transpose surplus transformation
+    walkTree<1>(work, x, active_points, hbasis_values, nullptr);
+    auto ibasis = hbasis_values.begin();
+    for(auto i : active_points) weights[i] = *ibasis++;
 
     // apply the transpose of the surplus transformation
     Data2D<int> lparents;
@@ -448,6 +413,8 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
         level[i] = current_level;
     }
 
+    std::vector<int> monkey_count(top_level+1);
+    std::vector<int> monkey_tail(top_level+1);
     std::vector<bool> used(work.getNumIndexes());
     std::vector<double> node(num_dimensions);
     int max_parents = rule->getMaxNumParents() * num_dimensions;
@@ -471,7 +438,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
                             monkey_count[current]++;
                         }else{
                             const int *func = work.getIndex(branch);
-                            basis_value = rule->evalRaw(func[0], node[0]);
+                            double basis_value = rule->evalRaw(func[0], node[0]);
                             for(int j=1; j<num_dimensions; j++) basis_value *= rule->evalRaw(func[j], node[j]);
                             weights[branch] -= weights[active_points[i]] * basis_value;
                             used[branch] = true;
