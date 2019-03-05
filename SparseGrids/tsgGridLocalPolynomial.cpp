@@ -480,32 +480,26 @@ void GridLocalPolynomial::recomputeSurpluses(){
     Data2D<int> dagUp;
     MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
 
-    int max_parents = rule->getMaxNumParents() * num_dimensions;
+    std::vector<int> level = MultiIndexManipulations::computeLevels(points, rule.get());
 
-    std::vector<int> level(num_points);
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = points.getIndex(i);
-        int current_level = rule->getLevel(p[0]);
-        for(int j=1; j<num_dimensions; j++){
-            current_level += rule->getLevel(p[j]);
-        }
-        level[i] = current_level;
-    }
+    updateSurpluses(points, top_level, level, dagUp);
+}
 
-    for(int l=1; l<=top_level; l++){
+void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp){
+    int num_points = work.getNumIndexes();
+    int max_parents = num_dimensions * rule->getMaxNumParents();
+    for(int l=1; l<=max_level; l++){
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<num_points; i++){
             if (level[i] == l){
-                const int* p = points.getIndex(i);
+                int const *p = work.getIndex(i);
                 std::vector<double> x(num_dimensions);
+                std::transform(p, p + num_dimensions, x.begin(), [&](int k)->double{ return rule->getNode(k); });
                 double *surpi = surpluses.getStrip(i);
-                for(int j=0; j<num_dimensions; j++) x[j] = rule->getNode(p[j]);
 
-                std::vector<int> monkey_count(top_level + 1);
-                std::vector<int> monkey_tail(top_level + 1);
-                std::vector<bool> used(num_points);
-                std::fill(used.begin(), used.end(), false);
+                std::vector<int> monkey_count(max_level + 1);
+                std::vector<int> monkey_tail(max_level + 1);
+                std::vector<bool> used(num_points, false);
 
                 int current = 0;
 
@@ -514,15 +508,14 @@ void GridLocalPolynomial::recomputeSurpluses(){
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp.getCStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
                             const double *branch_surp = surpluses.getCStrip(branch);
-                            double basis_value = evalBasisRaw(points.getIndex(branch), x.data());
-                            for(int k=0; k<num_outputs; k++){
+                            double basis_value = evalBasisRaw(work.getIndex(branch), x.data());
+                            for(int k=0; k<num_outputs; k++)
                                 surpi[k] -= basis_value * branch_surp[k];
-                            }
                             used[branch] = true;
 
                             monkey_count[++current] = 0;

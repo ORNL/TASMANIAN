@@ -142,6 +142,20 @@ protected:
 
     void recomputeSurpluses();
 
+    /*!
+     * \brief Update the surpluses for a portion of the graph.
+     *
+     * Updates the surpluses (i.e., hierarchical coefficients) for a portion of the DAG graph.
+     * - \b work is the point set to consider
+     * - \b max_level is the largest element in \b level
+     * - \b level is the hierarchical level of the points in \b work (i.e., not the sum of multi-index entries);
+     *   points where \b level is zero will not be computed
+     * - \b dagUp must have been computed using \b MultiIndexManipulations::computeDAGup(\b work, \b rule, \b dagUp)
+     *
+     * Note: adjusting the \b level vector allows to update the surpluses for only a portion of the graph.
+     */
+    void updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp);
+
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz,
                                     std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const;
 
