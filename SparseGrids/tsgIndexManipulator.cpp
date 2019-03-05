@@ -161,6 +161,22 @@ void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, const Base
     }
 }
 
+std::vector<int> MultiIndexManipulations::computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    int num_points = mset.getNumIndexes();
+    std::vector<int> level((size_t) num_points);
+    #pragma omp parallel for schedule(static)
+    for(int i=0; i<num_points; i++){
+        const int *p = mset.getIndex(i);
+        int current_level = rule->getLevel(p[0]);
+        for(size_t j=1; j<num_dimensions; j++){
+            current_level += rule->getLevel(p[j]);
+        }
+        level[i] = current_level;
+    }
+    return level;
+}
+
 void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set){
     new_set = MultiIndexSet(mset.getNumDimensions());
     size_t num_dimensions = (size_t) mset.getNumDimensions();

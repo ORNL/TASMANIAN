@@ -238,44 +238,10 @@ void GridLocalPolynomial::getPoints(double *x) const{
 }
 
 void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
-    std::vector<int> monkey_count(top_level+1);
-    std::vector<int> monkey_tail(top_level+1);
-
-    bool isSupported;
-    int offset;
-
-    std::fill(y, y + num_outputs, 0.0);
-
-    for(auto const &r : roots){
-        double basis_value = evalBasisSupported(points.getIndex(r), x, isSupported);
-
-        if (isSupported){
-            const double *s = surpluses.getCStrip(r);
-            for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
-
-            int current = 0;
-            monkey_tail[0] = r;
-            monkey_count[0] = pntr[r];
-
-            while(monkey_count[0] < pntr[monkey_tail[0]+1]){
-                if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                    offset = indx[monkey_count[current]];
-                    basis_value = evalBasisSupported(points.getIndex(offset), x, isSupported);
-                    if (isSupported){
-                        s = surpluses.getCStrip(offset);
-                        for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
-
-                        monkey_tail[++current] = offset;
-                        monkey_count[current] = pntr[offset];
-                    }else{
-                        monkey_count[current]++;
-                    }
-                }else{
-                    monkey_count[--current]++;
-                }
-            }
-        }
-    }
+    std::fill_n(y, num_outputs, 0.0);
+    std::vector<int> sindx; // dummy variables, never references in mode 0 below
+    std::vector<double> svals;
+    walkTree<0>(points, x, sindx, svals, y);
 }
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
     if (num_x == 1){ evaluate(x, y); return; }
@@ -336,9 +302,7 @@ void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[]
     if (num_x > 1){
         buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals);
     }else{
-       int num_nz;
-       buildSparseVector<0>(points, x, num_nz, sindx, svals);
-       buildSparseVector<1>(points, x, num_nz, sindx, svals);
+        walkTree<2>(points, x, sindx, svals, nullptr);
     }
     engine->sparseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, spntr, sindx, svals, y);
 }
@@ -421,49 +385,14 @@ void GridLocalPolynomial::mergeRefinement(){
 void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
-    std::vector<int> active_points(0);
+    std::vector<int> active_points;
+    std::vector<double> hbasis_values;
     std::fill_n(weights, work.getNumIndexes(), 0.0);
 
-    std::vector<int> monkey_count(top_level+1);
-    std::vector<int> monkey_tail(top_level+1);
-
-    double basis_value;
-    bool isSupported;
-    int offset;
-
-    for(unsigned r=0; r<roots.size(); r++){
-
-        basis_value = evalBasisSupported(work.getIndex(roots[r]), x, isSupported);
-
-        if (isSupported){
-            active_points.push_back(roots[r]);
-            weights[roots[r]] = basis_value;
-
-            int current = 0;
-            monkey_tail[0] = roots[r];
-            monkey_count[0] = pntr[roots[r]];
-
-            while(monkey_count[0] < pntr[monkey_tail[0]+1]){
-                if (monkey_count[current] < pntr[monkey_tail[current]+1]){
-                    offset = indx[monkey_count[current]];
-
-                    basis_value = evalBasisSupported(work.getIndex(offset), x, isSupported);
-
-                    if (isSupported){
-                        active_points.push_back(offset);
-                        weights[offset] = basis_value;
-
-                        monkey_tail[++current] = offset;
-                        monkey_count[current] = pntr[offset];
-                    }else{
-                        monkey_count[current]++;
-                    }
-                }else{
-                    monkey_count[--current]++;
-                }
-            }
-        }
-    }
+    // construct a sparse vector and apply transpose surplus transformation
+    walkTree<1>(work, x, active_points, hbasis_values, nullptr);
+    auto ibasis = hbasis_values.begin();
+    for(auto i : active_points) weights[i] = *ibasis++;
 
     // apply the transpose of the surplus transformation
     Data2D<int> lparents;
@@ -484,6 +413,8 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
         level[i] = current_level;
     }
 
+    std::vector<int> monkey_count(top_level+1);
+    std::vector<int> monkey_tail(top_level+1);
     std::vector<bool> used(work.getNumIndexes());
     std::vector<double> node(num_dimensions);
     int max_parents = rule->getMaxNumParents() * num_dimensions;
@@ -507,7 +438,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
                             monkey_count[current]++;
                         }else{
                             const int *func = work.getIndex(branch);
-                            basis_value = rule->evalRaw(func[0], node[0]);
+                            double basis_value = rule->evalRaw(func[0], node[0]);
                             for(int j=1; j<num_dimensions; j++) basis_value *= rule->evalRaw(func[j], node[j]);
                             weights[branch] -= weights[active_points[i]] * basis_value;
                             used[branch] = true;
@@ -549,32 +480,26 @@ void GridLocalPolynomial::recomputeSurpluses(){
     Data2D<int> dagUp;
     MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
 
-    int max_parents = rule->getMaxNumParents() * num_dimensions;
+    std::vector<int> level = MultiIndexManipulations::computeLevels(points, rule.get());
 
-    std::vector<int> level(num_points);
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = points.getIndex(i);
-        int current_level = rule->getLevel(p[0]);
-        for(int j=1; j<num_dimensions; j++){
-            current_level += rule->getLevel(p[j]);
-        }
-        level[i] = current_level;
-    }
+    updateSurpluses(points, top_level, level, dagUp);
+}
 
-    for(int l=1; l<=top_level; l++){
+void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp){
+    int num_points = work.getNumIndexes();
+    int max_parents = num_dimensions * rule->getMaxNumParents();
+    for(int l=1; l<=max_level; l++){
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<num_points; i++){
             if (level[i] == l){
-                const int* p = points.getIndex(i);
+                int const *p = work.getIndex(i);
                 std::vector<double> x(num_dimensions);
+                std::transform(p, p + num_dimensions, x.begin(), [&](int k)->double{ return rule->getNode(k); });
                 double *surpi = surpluses.getStrip(i);
-                for(int j=0; j<num_dimensions; j++) x[j] = rule->getNode(p[j]);
 
-                std::vector<int> monkey_count(top_level + 1);
-                std::vector<int> monkey_tail(top_level + 1);
-                std::vector<bool> used(num_points);
-                std::fill(used.begin(), used.end(), false);
+                std::vector<int> monkey_count(max_level + 1);
+                std::vector<int> monkey_tail(max_level + 1);
+                std::vector<bool> used(num_points, false);
 
                 int current = 0;
 
@@ -583,15 +508,14 @@ void GridLocalPolynomial::recomputeSurpluses(){
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp.getCStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
                             const double *branch_surp = surpluses.getCStrip(branch);
-                            double basis_value = evalBasisRaw(points.getIndex(branch), x.data());
-                            for(int k=0; k<num_outputs; k++){
+                            double basis_value = evalBasisRaw(work.getIndex(branch), x.data());
+                            for(int k=0; k<num_outputs; k++)
                                 surpi[k] -= basis_value * branch_surp[k];
-                            }
                             used[branch] = true;
 
                             monkey_count[++current] = 0;
@@ -687,21 +611,18 @@ void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_
 int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
-    std::vector<int> sindx; // dummy vectors, never referenced
-    std::vector<double> svals;
-
     Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
     std::vector<int> num_nz(num_x);
 
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        buildSparseVector<0>(work, xx.getCStrip(i), num_nz[i], sindx, svals);
+        std::vector<int> sindx;
+        std::vector<double> svals;
+        walkTree<1>(work, xx.getCStrip(i), sindx, svals, nullptr);
+        num_nz[i] = (int) sindx.size();
     }
 
-    int total_nz = 0;
-    for(auto n: num_nz) total_nz += n;
-
-    return total_nz;
+    return std::accumulate(num_nz.begin(), num_nz.end(), 0);
 }
 
 void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz, std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const{
@@ -721,7 +642,9 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
         tvals[b].resize(0);
         int chunk_size = (b < num_blocks - 1) ? num_chunk : (num_x - (num_blocks - 1) * num_chunk);
         for(int i = b * num_chunk; i < b * num_chunk + chunk_size; i++){
-            buildSparseVector<2>(work, xx.getCStrip(i), numnz[i], tindx[b], tvals[b]);
+            numnz[i] = (int) tindx[b].size();
+            walkTree<1>(work, xx.getCStrip(i), tindx[b], tvals[b], nullptr);
+            numnz[i] = (int) tindx[b].size() - numnz[i];
         }
     }
     numnz[num_x] = 0;
@@ -746,16 +669,7 @@ void GridLocalPolynomial::buildTree(){
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
 
-    std::vector<int> level(num_points);
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = work.getIndex(i);
-        int current_level =rule->getLevel(p[0]);
-        for(int j=1; j<num_dimensions; j++){
-            current_level += rule->getLevel(p[j]);
-        }
-        level[i] = current_level;
-    }
+    std::vector<int> level = MultiIndexManipulations::computeLevels(work, rule.get());
 
     top_level = *std::max_element(level.begin(), level.end());
 
@@ -869,14 +783,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
     int num_points = work.getNumIndexes();
-    std::vector<int> level(num_points);
-    for(int i=0; i<num_points; i++){
-        const int *p = work.getIndex(i);
-        level[i] = rule->getLevel(p[0]);
-        for(int j=1; j<num_dimensions; j++){
-            level[i] += rule->getLevel(p[j]);
-        }
-    }
+    std::vector<int> level = MultiIndexManipulations::computeLevels(work, rule.get());
 
     std::vector<double> node(num_dimensions);
     int max_parents = rule->getMaxNumParents() * num_dimensions;

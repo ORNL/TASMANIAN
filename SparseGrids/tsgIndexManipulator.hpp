@@ -449,6 +449,14 @@ void computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents);
 //! (or -1 if the parent is missing from \b mset).
 void computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents);
 
+/*!
+ * \internal
+ * \brief Returns a vector that is the sum of the one dimensional levels of each multi-index in the set.
+ * \ingroup TasmanianMultiIndexManipulations
+ * \endinternal
+ */
+std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule);
+
 //! \internal
 //! \brief Using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
 //! \ingroup TasmanianMultiIndexManipulations
