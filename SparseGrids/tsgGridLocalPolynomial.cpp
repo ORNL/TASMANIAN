@@ -669,16 +669,7 @@ void GridLocalPolynomial::buildTree(){
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
 
-    std::vector<int> level(num_points);
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = work.getIndex(i);
-        int current_level =rule->getLevel(p[0]);
-        for(int j=1; j<num_dimensions; j++){
-            current_level += rule->getLevel(p[j]);
-        }
-        level[i] = current_level;
-    }
+    std::vector<int> level = MultiIndexManipulations::computeLevels(work, rule.get());
 
     top_level = *std::max_element(level.begin(), level.end());
 
@@ -792,14 +783,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
     int num_points = work.getNumIndexes();
-    std::vector<int> level(num_points);
-    for(int i=0; i<num_points; i++){
-        const int *p = work.getIndex(i);
-        level[i] = rule->getLevel(p[0]);
-        for(int j=1; j<num_dimensions; j++){
-            level[i] += rule->getLevel(p[j]);
-        }
-    }
+    std::vector<int> level = MultiIndexManipulations::computeLevels(work, rule.get());
 
     std::vector<double> node(num_dimensions);
     int max_parents = rule->getMaxNumParents() * num_dimensions;
