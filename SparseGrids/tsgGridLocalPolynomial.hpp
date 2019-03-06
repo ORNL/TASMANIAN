@@ -249,6 +249,7 @@ protected:
     void getNormalization(std::vector<double> &norms) const;
 
     void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const;
+    MultiIndexSet getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const;
 
     bool addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;
     void addChild(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;

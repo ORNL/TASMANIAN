@@ -997,6 +997,49 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
         }
     }
 }
+MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const{
+    Data2D<int> pmap;
+    buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
+
+    bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
+
+    Data2D<int> refined;
+    refined.resize(num_dimensions, 0);
+
+    int num_points = points.getNumIndexes();
+
+    if (level_limits.empty()){
+        for(int i=0; i<num_points; i++){
+            const int *map = pmap.getCStrip(i);
+            for(int j=0; j<num_dimensions; j++){
+                if (map[j] == 1){ // if this dimension needs to be refined
+                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
+                        addChild(points.getIndex(i), j, points, refined);
+                    }
+                }
+            }
+        }
+    }else{
+        for(int i=0; i<num_points; i++){
+            const int *map = pmap.getCStrip(i);
+            for(int j=0; j<num_dimensions; j++){
+                if (map[j] == 1){ // if this dimension needs to be refined
+                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
+                        addChildLimited(points.getIndex(i), j, points, level_limits, refined);
+                    }
+                }
+            }
+        }
+    }
+
+    MultiIndexSet candidates;
+    if (refined.getNumStrips() > 0){
+        candidates.setNumDimensions(num_dimensions);
+        candidates.addData2D(refined);
+    }
+
+    return candidates;
+}
 
 bool GridLocalPolynomial::addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const{
     std::vector<int> dad(num_dimensions);
@@ -1052,44 +1095,7 @@ const int* GridLocalPolynomial::getNeededIndexes() const{
 void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction){
     clearRefinement();
 
-    Data2D<int> pmap;
-    buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
-
-    bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
-
-    Data2D<int> refined;
-    refined.resize(num_dimensions, 0);
-
-    int num_points = points.getNumIndexes();
-
-    if (level_limits.empty()){
-        for(int i=0; i<num_points; i++){
-            const int *map = pmap.getCStrip(i);
-            for(int j=0; j<num_dimensions; j++){
-                if (map[j] == 1){ // if this dimension needs to be refined
-                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
-                        addChild(points.getIndex(i), j, points, refined);
-                    }
-                }
-            }
-        }
-    }else{
-        for(int i=0; i<num_points; i++){
-            const int *map = pmap.getCStrip(i);
-            for(int j=0; j<num_dimensions; j++){
-                if (map[j] == 1){ // if this dimension needs to be refined
-                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
-                        addChildLimited(points.getIndex(i), j, points, level_limits, refined);
-                    }
-                }
-            }
-        }
-    }
-
-    if (refined.getNumStrips() > 0){
-        needed.setNumDimensions(num_dimensions);
-        needed.addData2D(refined);
-    }
+    needed = getRefinementCanidates(tolerance, criteria, output, level_limits, scale_correction);
 }
 int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     clearRefinement();
