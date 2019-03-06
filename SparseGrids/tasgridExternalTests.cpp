@@ -805,7 +805,11 @@ bool ExternalTester::testSurplusRefinement(const BaseFunction *f, TasmanianSpars
         }else if (grid->isSequence()){
             grid->setSurplusRefinement(tol, -1);
         }else{
-            grid->setSurplusRefinement(tol, rtype);
+            if (itr == 1){ // tests the array and vector overloads
+                grid->setSurplusRefinement(tol, rtype, -1, std::vector<int>());
+            }else{
+                grid->setSurplusRefinement(tol, rtype);
+            }
         }
     }
     return true;
