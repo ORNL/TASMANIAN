@@ -161,7 +161,7 @@ void GridSequence::updateGrid(MultiIndexSet &update){
         setPoints(update, num_outputs, rule);
     }else{
         update.addSortedInsexes(points.getVector());
-        update.diffSets(points, needed);
+        needed = update.diffSets(points);
 
         if (!needed.empty()) prepareSequence(0);
     }
@@ -710,7 +710,7 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
             MultiIndexManipulations::selectTensors(++level, type, [&](int i) -> long long{ return i; }, weights, total);
         }
 
-        total.diffSets(points, needed);
+        needed = total.diffSets(points);
 
         if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, needed);
 
@@ -758,7 +758,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         kids.addMultiIndexSet(points);
         MultiIndexManipulations::completeSetToLower<int>(kids);
 
-        kids.diffSets(points, needed);
+        needed = kids.diffSets(points);
         if (!needed.empty()) prepareSequence(0);
     }
 }
