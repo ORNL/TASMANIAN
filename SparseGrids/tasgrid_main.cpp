@@ -523,6 +523,8 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide valid -gpuid  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
+        }else{
+            cout << "WARNING: ignoring unknown option: " << argv[k] << "\n";
         }
         k++;
     }
