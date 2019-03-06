@@ -150,6 +150,12 @@ protected:
 
     void buildTree();
 
+    //! \brief Returns a list of indexes of the nodes in \b points that are descendants of the \b point.
+    std::vector<int> getSubGraph(std::vector<int> const &point) const;
+
+    //! \brief Add the \b point to the grid using the \b values.
+    void expandGrid(std::vector<int> const &point, std::vector<double> const &value);
+
     void recomputeSurpluses();
 
     /*!

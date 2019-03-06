@@ -467,8 +467,117 @@ void GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeR
         t++;
     }
 }
-void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){}
+void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){
+    std::vector<int> p(num_dimensions); // convert x to p, maybe expensive
+    for(int j=0; j<num_dimensions; j++){
+        p[j] = 0;
+        while(std::abs(rule->getNode(p[j]) - x[j]) > TSG_NUM_TOL) p[j]++;
+    }
+
+    dynamic_values->data.push_front({p, y});
+    dynamic_values->initial_points.removeIndex(p);
+
+    auto d = dynamic_values->data.before_begin();
+    auto t = dynamic_values->data.begin();
+    while(t != dynamic_values->data.end()){
+        bool isConnected = false;
+        MultiIndexManipulations::touchAllImmediateRelatives(t->point, points, rule.get(),
+                                                            [&](int)->void{ isConnected = true; });
+        int lvl = rule->getLevel(t->point[0]);
+        for(int j=1; j<num_dimensions; j++) lvl += rule->getLevel(t->point[j]);
+
+        if (isConnected || (lvl == 0)){ // found a point that needs to add to the grid
+            expandGrid(t->point, t->value);
+            dynamic_values->data.erase_after(d);
+            d = dynamic_values->data.before_begin(); // restart the search
+            t = dynamic_values->data.begin();
+        }else{
+            d++; t++;
+        }
+    }
+}
+void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::vector<double> &value){
+    if (points.empty()){ // only one point
+        points.setNumDimensions(num_dimensions);
+        auto p = point; // create new so it can be moved
+        points.setIndexes(p);
+        values.resize(num_outputs, 1);
+        auto v = value; // create new to allow move
+        values.setValues(v);
+        surpluses.resize(num_outputs, 1);
+        surpluses.getVector() = value; // the surplus of one point is the value itself
+    }else{ // merge with existing points
+        // compute the surplus for the point
+        std::vector<double> xnode(num_dimensions), approximation(num_outputs), surp(num_outputs);
+        std::transform(point.begin(), point.end(), xnode.begin(), [&](int i)->double{ return rule->getNode(i); });
+        evaluate(xnode.data(), approximation.data());
+        std::transform(approximation.begin(), approximation.end(), value.begin(), surp.begin(), [&](double e, double v)->double{ return v - e; });
+
+        std::vector<int> graph = getSubGraph(point); // get the descendant nodes that must be updated later
+
+        auto p = point;
+        MultiIndexSet temp(num_dimensions);
+        temp.setIndexes(p);
+        values.addValues(points, temp, value.data()); // added the value
+
+        points.addSortedInsexes(point); // add the point
+        int newindex = points.getSlot(point);
+        surpluses.appendStrip(newindex, surp); // find the index of the new point
+
+        for(auto &g : graph) if (g >= newindex) g++; // all points belowe the newindex have been shifted down by one spot
+
+        std::vector<int> levels(points.getNumIndexes(), 0); // compute the levels, but only for the new indexes
+        for(auto &g : graph){
+            int const *pnt = points.getIndex(g);
+            int l = rule->getLevel(pnt[0]);
+            for(int j=1; j<num_dimensions; j++) l += rule->getLevel(pnt[j]);
+            levels[g] = l;
+
+            std::copy_n(values.getValues(g), num_outputs, surpluses.getStrip(g)); // reset the surpluses to the values (will be updated)
+        }
+
+        Data2D<int> dagUp;
+        MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
+        updateSurpluses(points, top_level + 1, levels, dagUp); // compute the current DAG and update the surplused for the descendants
+    }
+    buildTree(); // the tree is needed for evaluate(), must be rebuild every time the points set is updated
+}
 void GridLocalPolynomial::finishConstruction(){ dynamic_values.reset(); }
+
+std::vector<int> GridLocalPolynomial::getSubGraph(std::vector<int> const &point) const{
+    std::vector<int> graph, p = point;
+    std::vector<bool> used(points.getNumIndexes(), false);
+    int max_1d_kids = rule->getMaxNumKids();
+    int max_kids = max_1d_kids * num_dimensions;
+
+    std::vector<int> monkey_count(1, 0), monkey_tail;
+
+    while(monkey_count[0] < max_kids){
+        if (monkey_count.back() < max_kids){
+            int dim = monkey_count.back() / max_1d_kids;
+            monkey_tail.push_back(p[dim]);
+            p[dim] = rule->getKid(monkey_tail.back(), monkey_count.back() % max_1d_kids);
+            int slot = points.getSlot(p);
+            if ((slot == -1) || used[slot]){ // this kid is missing
+                p[dim] = monkey_tail.back();
+                monkey_tail.pop_back();
+                monkey_count.back()++;
+            }else{ // found kid, go deeper in the graph
+                graph.push_back(slot);
+                used[slot] = true;
+                monkey_count.push_back(0);
+            }
+        }else{
+            monkey_count.pop_back();
+            int dim = monkey_count.back() / max_1d_kids;
+            p[dim] = monkey_tail.back();
+            monkey_tail.pop_back();
+            monkey_count.back()++;
+        }
+    }
+
+    return graph;
+}
 
 void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;

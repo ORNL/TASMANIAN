@@ -199,6 +199,12 @@ public:
         num_strips++;
     }
 
+    //! \brief Uses std::vector::insert to append a strip \b x to the existing data at position \b pos.
+    void appendStrip(int pos, const std::vector<T> &x){
+        vec.insert(vec.begin() + (((size_t) pos) * stride), x.begin(), x.end());
+        num_strips++;
+    }
+
     //! \brief Fill the entire vector with the specified \b value
     void fill(T value){ std::fill(vec.begin(), vec.end(), value); }
 
