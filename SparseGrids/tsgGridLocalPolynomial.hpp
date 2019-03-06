@@ -40,6 +40,7 @@
 #include "tsgIndexManipulator.hpp"
 #include "tsgGridCore.hpp"
 #include "tsgRuleLocalPolynomial.hpp"
+#include "tsgDConstructGridGlobal.hpp"
 
 #include "tsgCudaLoadStructures.hpp"
 
@@ -362,6 +363,8 @@ private:
     std::unique_ptr<BaseRuleLocalPolynomial> rule;
 
     int sparse_affinity;
+
+    std::unique_ptr<SimpleConstructData> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaLocalPolynomialData<double>> cuda_cache;

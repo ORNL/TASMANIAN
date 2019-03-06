@@ -382,15 +382,29 @@ void GridLocalPolynomial::mergeRefinement(){
     surpluses.fill(0.0);
 }
 
-void GridLocalPolynomial::beginConstruction(){}
-void GridLocalPolynomial::writeConstructionDataBinary(std::ofstream &ofs) const{}
-void GridLocalPolynomial::writeConstructionData(std::ofstream &ofs) const{}
-void GridLocalPolynomial::readConstructionDataBinary(std::ifstream &ifs){}
-void GridLocalPolynomial::readConstructionData(std::ifstream &ifs){}
+void GridLocalPolynomial::beginConstruction(){
+    dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
+    if (points.empty()){
+        dynamic_values->initial_points = std::move(needed);
+        needed = MultiIndexSet();
+    }
+}
+void GridLocalPolynomial::writeConstructionDataBinary(std::ofstream &ofs) const{
+    writeSimpleConstructionData<false>(dynamic_values.get(), ofs);
+}
+void GridLocalPolynomial::writeConstructionData(std::ofstream &ofs) const{
+    writeSimpleConstructionData<true>(dynamic_values.get(), ofs);
+}
+void GridLocalPolynomial::readConstructionDataBinary(std::ifstream &ifs){
+    dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, ifs);
+}
+void GridLocalPolynomial::readConstructionData(std::ifstream &ifs){
+    dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, ifs);
+}
 void GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
                                                          std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x){}
 void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){}
-void GridLocalPolynomial::finishConstruction(){}
+void GridLocalPolynomial::finishConstruction(){ dynamic_values.reset(); }
 
 void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
