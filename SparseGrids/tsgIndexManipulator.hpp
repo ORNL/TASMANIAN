@@ -457,6 +457,45 @@ void computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule
  */
 std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule);
 
+/*!
+ * \internal
+ * \brief Will call \b apply() with the slot index in \b mset of each parent/child of \b point.
+ * \ingroup TasmanianMultiIndexManipulations
+ * \endinternal
+ */
+inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule, std::function<void(int i)> apply){
+    int max_kids = rule->getMaxNumKids();
+    for(auto &v : point){
+        int save = v; // replace one by one each index of p with either parent or kid
+
+        // check the parents
+        v = rule->getParent(save);
+        if (v > -1){
+            int parent_index = mset.getSlot(point);
+            if (parent_index > -1)
+                apply(parent_index);
+        }
+
+        v = rule->getStepParent(save);
+        if (v > -1){
+            int parent_index = mset.getSlot(point);
+            if (parent_index > -1)
+                apply(parent_index);
+        }
+
+        for(int k=0; k<max_kids; k++){
+            v = rule->getKid(save, k);
+            if (v > -1){
+                int kid_index = mset.getSlot(point);
+                if (kid_index > -1)
+                    apply(kid_index);
+            }
+        }
+
+        v = save; // restore the original index for the next iteration
+    }
+}
+
 //! \internal
 //! \brief Using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
 //! \ingroup TasmanianMultiIndexManipulations

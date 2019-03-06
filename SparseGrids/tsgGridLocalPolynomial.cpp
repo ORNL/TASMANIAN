@@ -402,7 +402,71 @@ void GridLocalPolynomial::readConstructionData(std::ifstream &ifs){
     dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, ifs);
 }
 void GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
-                                                         std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x){}
+                                                         std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x){
+    // combine the initial points with negative weights and the refinement candidates with surplus weights (no need to normalize, the sort uses relative values)
+    MultiIndexSet refine_candidates = getRefinementCanidates(tolerance, criteria, output, level_limits, scale_correction);
+    MultiIndexSet new_points = (dynamic_values->initial_points.empty()) ? std::move(refine_candidates) : refine_candidates.diffSets(dynamic_values->initial_points);
+
+    // compute the weights for the new_points points
+    std::vector<double> norm = getNormalization();
+
+    int active_outputs = (output == -1) ? num_outputs : 1;
+    Data2D<double> scale;
+    if (scale_correction == 0){
+        scale.resize(active_outputs, points.getNumIndexes(), 1.0);
+    }else{
+        scale.cload(active_outputs, points.getNumIndexes(), scale_correction);
+    }
+
+    auto getDominantSurplus = [&](int i)-> double{
+        double dominant = 0.0;
+        const double *s = surpluses.getCStrip(i);
+        const double *c = scale.getCStrip(i);
+        if (output == -1){
+            for(int k=0; k<num_outputs; k++) dominant = std::max(dominant, c[k] * fabs(s[k]) / norm[k]);
+        }else{
+            dominant = c[0] * fabs(s[output]) / norm[output];
+        }
+        return dominant;
+    };
+
+    std::vector<double> refine_weights(new_points.getNumIndexes());
+
+    #pragma omp parallel for
+    for(int i=0; i<new_points.getNumIndexes(); i++){
+        double weight = 0.0;
+        std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // get the point
+
+        MultiIndexManipulations::touchAllImmediateRelatives(p, points, rule.get(),
+                                                            [&](int relative)->void{ weight = std::max(weight, getDominantSurplus(relative)); });
+        refine_weights[i] = weight; // those will be inverted
+    }
+
+    // compute the weights for the initial points
+    std::vector<int> initial_levels =  MultiIndexManipulations::computeLevels(dynamic_values->initial_points, rule.get());
+
+    std::forward_list<NodeData> weighted_points;
+    for(int i=0; i<dynamic_values->initial_points.getNumIndexes(); i++){
+        std::vector<int> p(dynamic_values->initial_points.getIndex(i), dynamic_values->initial_points.getIndex(i) + num_dimensions); // write the point to vector
+        weighted_points.push_front({p, {-1.0 / ((double) initial_levels[i])}});
+    }
+    for(int i=0; i<new_points.getNumIndexes(); i++){
+        std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // write the point to vector
+        weighted_points.push_front({p, {1.0 / refine_weights[i]}});
+    }
+
+    // sort and return the sorted list
+    weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
+
+    x.resize(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    auto t = weighted_points.begin();
+    auto ix = x.begin();
+    while(t != weighted_points.end()){
+        std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule->getNode(i); });
+        std::advance(ix, num_dimensions);
+        t++;
+    }
+}
 void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){}
 void GridLocalPolynomial::finishConstruction(){ dynamic_values.reset(); }
 
