@@ -247,7 +247,7 @@ protected:
 
     void getBasisIntegrals(double *integrals) const;
 
-    void getNormalization(std::vector<double> &norms) const;
+    std::vector<double> getNormalization() const;
 
     void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const;
     MultiIndexSet getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const;

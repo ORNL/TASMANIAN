@@ -871,8 +871,8 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
     }
 }
 
-void GridLocalPolynomial::getNormalization(std::vector<double> &norms) const{
-    norms.resize(num_outputs);
+std::vector<double> GridLocalPolynomial::getNormalization() const{
+    std::vector<double> norms(num_outputs);
     std::fill(norms.begin(), norms.end(), 0.0);
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
@@ -880,6 +880,7 @@ void GridLocalPolynomial::getNormalization(std::vector<double> &norms) const{
             if (norms[j] < fabs(v[j])) norms[j] = fabs(v[j]);
         }
     }
+    return norms;
 }
 
 void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const{
@@ -892,8 +893,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
         map2.fill(0);
     }
 
-    std::vector<double> norm;
-    getNormalization(norm);
+    std::vector<double> norm = getNormalization();
 
     int active_outputs = (output == -1) ? num_outputs : 1;
     Data2D<double> scale;
@@ -1116,8 +1116,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     int num_points = points.getNumIndexes();
     std::vector<bool> pmap(num_points); // point map, set to true if the point is to be kept, false otherwise
 
-    std::vector<double> norm;
-    getNormalization(norm);
+    std::vector<double> norm = getNormalization();
 
     Data2D<double> scale;
     int active_outputs = (output == -1) ? num_outputs : 1;
