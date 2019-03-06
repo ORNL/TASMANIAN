@@ -2091,7 +2091,7 @@ class TasmanianSparseGrid:
             fYmax = fYmax + 0.1
 
         x = np.linspace(fXmin, fXmax, iNumDim0)
-        y = np.linspace(fYmin, fYmax, iNumDim1)
+        y = np.linspace(fYmax, fYmin, iNumDim1) # flip the order of y to match the top-to-bottom pixel indexing
 
         XX, YY = np.meshgrid(x, y)
         ZZ = self.evaluateBatch(np.vstack((XX.reshape((iNumDim0*iNumDim1,)), YY.reshape((iNumDim0*iNumDim1,)))).T)

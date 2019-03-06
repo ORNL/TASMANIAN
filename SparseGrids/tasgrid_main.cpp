@@ -304,7 +304,7 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide values file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-of") == 0)||(strcmp(argv[k],"-outfile") == 0)){
+        }else if ((strcmp(argv[k],"-of") == 0)||(strcmp(argv[k],"-outputfile") == 0)){
             if (k+1 < argc){
                 wrap.setOutFilename(argv[++k]);
             }else{
@@ -523,6 +523,8 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide valid -gpuid  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
+        }else{
+            cout << "WARNING: ignoring unknown option: " << argv[k] << "\n";
         }
         k++;
     }

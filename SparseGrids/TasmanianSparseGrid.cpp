@@ -1037,12 +1037,10 @@ void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, std::ve
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
     size_t dims = (size_t) base->getNumDimensions();
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
-    if (!anisotropic_weights.empty()){
-        if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
-            if (anisotropic_weights.size() != 2 * dims) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() called with curved type and incorrect size for anisotropic_weights (must be twice the number of dimensions)");
-        }else{
-            if (anisotropic_weights.size() != dims) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() called with incorrect size for anisotropic_weights (must match number of dimensions)");
-        }
+    if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
+        if (anisotropic_weights.size() != 2 * dims) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() called with curved type and incorrect size for anisotropic_weights (must be twice the number of dimensions)");
+    }else{
+        if (anisotropic_weights.size() != dims) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() called with incorrect size for anisotropic_weights (must match number of dimensions)");
     }
 
     if (!level_limits.empty()) llimits = level_limits;

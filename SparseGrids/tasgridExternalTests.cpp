@@ -805,7 +805,11 @@ bool ExternalTester::testSurplusRefinement(const BaseFunction *f, TasmanianSpars
         }else if (grid->isSequence()){
             grid->setSurplusRefinement(tol, -1);
         }else{
-            grid->setSurplusRefinement(tol, rtype);
+            if (itr == 1){ // tests the array and vector overloads
+                grid->setSurplusRefinement(tol, rtype, -1, std::vector<int>());
+            }else{
+                grid->setSurplusRefinement(tol, rtype);
+            }
         }
     }
     return true;
@@ -835,7 +839,13 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
     size_t outs = (size_t) grid->getNumOutputs();
     for(size_t itr = 0; itr < np.size(); itr++){
         std::vector<double> points;
-        grid->getCandidateConstructionPoints(type, 0, points);
+        if (itr == 1){
+            std::vector<int> weights;
+            grid->estimateAnisotropicCoefficients(type, 0, weights);
+            grid->getCandidateConstructionPoints(type, points, weights);
+        }else{
+            grid->getCandidateConstructionPoints(type, 0, points);
+        }
         size_t num_points = points.size() / dims;
 
         // only compute half of the points but no more than 32
