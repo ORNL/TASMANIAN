@@ -110,6 +110,15 @@ public:
     void mergeRefinement();
     int removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction); // returns the number of points kept
 
+    void beginConstruction();
+    void writeConstructionDataBinary(std::ofstream &ofs) const;
+    void writeConstructionData(std::ofstream &ofs) const;
+    void readConstructionDataBinary(std::ifstream &ifs);
+    void readConstructionData(std::ifstream &ifs);
+    void getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x);
+    void loadConstructedPoint(const double x[], const std::vector<double> &y);
+    void finishConstruction();
+
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 

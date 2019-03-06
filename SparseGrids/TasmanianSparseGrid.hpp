@@ -206,6 +206,14 @@ public:
     //! Unlike \b estimateAnisotropicCoefficients(), this function will not throw if the grid is empty; instead, isotropic coefficient will be used
     //! until enough points are loaded so that coefficients can be estimated.
     void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits = std::vector<int>());
+
+    /*!
+     * \brief Returns a sorted list of points weighted by descending importance using the hierarchical surpluses.
+     *
+     * Used by the local polynomial grids, performs a refinement similar to \b setSurplusRefinement(\b double, \b TypeRefinement),
+     * but in a construction context and the returned points are sorted by magnitude of the hierarchical surplus.
+     */
+    void getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, std::vector<double> &x, int output = -1, const std::vector<int> &level_limits = std::vector<int>(), const std::vector<double> &scale_correction = std::vector<double>());
     //! \brief Add the value of a single point (if the tensor of the point is not complete, the grid will not be updated but the value will be stored)
     void loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y);
     //! \brief Same as \b loadConstructedPoint() but using arrays in place of vectors (array size is not checked)

@@ -382,6 +382,16 @@ void GridLocalPolynomial::mergeRefinement(){
     surpluses.fill(0.0);
 }
 
+void GridLocalPolynomial::beginConstruction(){}
+void GridLocalPolynomial::writeConstructionDataBinary(std::ofstream &ofs) const{}
+void GridLocalPolynomial::writeConstructionData(std::ofstream &ofs) const{}
+void GridLocalPolynomial::readConstructionDataBinary(std::ifstream &ifs){}
+void GridLocalPolynomial::readConstructionData(std::ifstream &ifs){}
+void GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
+                                                         std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x){}
+void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){}
+void GridLocalPolynomial::finishConstruction(){}
+
 void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
