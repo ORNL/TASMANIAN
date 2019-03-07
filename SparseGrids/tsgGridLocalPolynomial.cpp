@@ -89,9 +89,11 @@ template<bool useAscii> void GridLocalPolynomial::write(std::ostream &os) const{
     if (parents.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(parents.getVector(), os);
 
     IO::writeNumbers<useAscii, IO::pad_rspace>(os, (int) roots.size());
-    IO::writeVector<useAscii, IO::pad_line>(roots, os);
-    IO::writeVector<useAscii, IO::pad_line>(pntr, os);
-    IO::writeVector<useAscii, IO::pad_line>(indx, os);
+    if (roots.size() > 0){ // the tree is empty, can happend when using dynamic construction
+        IO::writeVector<useAscii, IO::pad_line>(roots, os);
+        IO::writeVector<useAscii, IO::pad_line>(pntr, os);
+        IO::writeVector<useAscii, IO::pad_line>(indx, os);
+    }
 
     if (num_outputs > 0) values.write<useAscii>(os);
 }
@@ -126,15 +128,17 @@ template<bool useAscii> void GridLocalPolynomial::read(std::istream &is){
 
     size_t num_points = (size_t) ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes());
     roots.resize((size_t) IO::readNumber<useAscii, int>(is));
-    IO::readVector<useAscii>(is, roots);
-    pntr.resize(num_points + 1);
-    IO::readVector<useAscii>(is, pntr);
-    if (pntr[num_points] > 0){
-        indx.resize((size_t) pntr[num_points]);
-        IO::readVector<useAscii>(is, indx);
-    }else{
-        indx.resize(1);
-        indx[0] = IO::readNumber<useAscii, int>(is); // there is a special case when the grid has only one point without any children
+    if (roots.size() > 0){
+        IO::readVector<useAscii>(is, roots);
+        pntr.resize(num_points + 1);
+        IO::readVector<useAscii>(is, pntr);
+        if (pntr[num_points] > 0){
+            indx.resize((size_t) pntr[num_points]);
+            IO::readVector<useAscii>(is, indx);
+        }else{
+            indx.resize(1);
+            indx[0] = IO::readNumber<useAscii, int>(is); // there is a special case when the grid has only one point without any children
+        }
     }
 
     if (num_outputs > 0) values.read<useAscii>(is);
@@ -387,6 +391,9 @@ void GridLocalPolynomial::beginConstruction(){
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
         needed = MultiIndexSet();
+        roots.clear();
+        pntr.clear();
+        indx.clear();
     }
 }
 void GridLocalPolynomial::writeConstructionDataBinary(std::ofstream &ofs) const{
