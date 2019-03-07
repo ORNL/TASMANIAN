@@ -831,7 +831,7 @@ bool ExternalTester::testAnisotropicRefinement(const BaseFunction *f, TasmanianS
     return true;
 }
 
-bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, const std::vector<int> &np, const std::vector<double> &errs) const{
+bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, double tolerance, TypeRefinement reftype, const std::vector<int> &np, const std::vector<double> &errs) const{
     if (grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction initialized for no reason." << endl; return false; }
     grid->beginConstruction();
     if (!grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to initialize." << endl; return false; }
@@ -839,18 +839,26 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
     size_t outs = (size_t) grid->getNumOutputs();
     for(size_t itr = 0; itr < np.size(); itr++){
         std::vector<double> points;
-        if (itr == 1){
-            std::vector<int> weights;
-            grid->estimateAnisotropicCoefficients(type, 0, weights);
-            grid->getCandidateConstructionPoints(type, points, weights);
+        if (grid->isGlobal() || grid->isSequence()){
+            if (itr == 1){
+                std::vector<int> weights;
+                grid->estimateAnisotropicCoefficients(type, 0, weights);
+                grid->getCandidateConstructionPoints(type, points, weights);
+            }else{
+                grid->getCandidateConstructionPoints(type, 0, points);
+            }
         }else{
-            grid->getCandidateConstructionPoints(type, 0, points);
+            grid->getCandidateConstructionPoints(tolerance, reftype, points);
         }
         size_t num_points = points.size() / dims;
+        size_t max_points = (grid->isLocalPolynomial()) ? 123 : 32;
 
-        // only compute half of the points but no more than 32
-        num_points /= 2;
-        num_points = (num_points <= 32) ? num_points : 32;
+        // do not compute all points from a batch, i.e., we don't want the less important points
+        // compute only half the batch, but no more than max_points
+        // local grids require more points, hence large max_points to reduce the total iterations
+        // local grids do not include completely unimportant points, hence we can compute all points for small batches
+        num_points = ((!grid->isLocalPolynomial()) || (num_points > 10)) ? num_points / 2 : num_points;
+        num_points = (num_points <= max_points) ? num_points : max_points;
 
         std::vector<size_t> pindex(num_points);
         for(size_t i=0; i<num_points; i++) pindex[i] = i;
@@ -1337,7 +1345,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = {  29,   45,    65,    97,   129,    145,    161,    193,   241,   257,   289,    321,  353,    353,  417};
         std::vector<double> err = {0.06, 0.02, 0.008, 0.002, 0.002, 0.0015, 0.0015, 0.0015, 0.0009, 4.E-4, 3.E-4, 5.E-5, 3.E-6, 3.E-6, 3.E-6};
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_level, rule_clenshawcurtis);
-        if (!testDynamicRefinement(f, &grid, type_iptotal, np, err)){
+        if (!testDynamicRefinement(f, &grid, type_iptotal, -1.0, refine_none, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using iptotal and clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
         }
     }{
@@ -1345,7 +1353,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = {  29,   45,   65,   97,   129,   145,   177,   209,   241,   273,   289,   321,  321,    385,   417,   449};
         std::vector<double> err = {0.06, 0.02, 0.01, 0.01, 0.001, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-4, 3.E-5, 3.E-6};
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_level, rule_clenshawcurtis);
-        if (!testDynamicRefinement(f, &grid, type_ipcurved, np, err)){
+        if (!testDynamicRefinement(f, &grid, type_ipcurved, -1.0, refine_none, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using ipcurved and clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
         }
     }{
@@ -1353,7 +1361,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = { 32,    55,    71,    77,    85,    95,   105,   115,   125,   137,   149,   168,   182,   204,   226,   247,   269,   291,   322,   354};
         std::vector<double> err = {0.5, 2.E-2, 2.E-2, 1.E-2, 1.E-2, 1.E-2, 1.E-2, 9.E-3, 5.E-3, 5.E-3, 5.E-3, 5.E-3, 2.E-3, 2.E-3, 2.E-3, 8.E-4, 8.E-4, 8.E-4, 3.E-4, 3.E-4};
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 20, type_iphyperbolic, rule_rlejadouble4);
-        if (!testDynamicRefinement(f, &grid, type_iphyperbolic, np, err)){
+        if (!testDynamicRefinement(f, &grid, type_iphyperbolic, -1.0, refine_none, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using iphyperbolic and rule_rlejadouble4 nodes for " << f->getDescription() << endl;
         }
     }{
@@ -1361,14 +1369,33 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = {   18,    27,    31,    35,    39,    43,    47,    51,    55,    59,    63,    67,    71,    75,    79,    83,    87};
         std::vector<double> err = {5.E-1, 5.E-1, 3.E-1, 3.E-1, 1.E-1, 8.E-2, 8.E-2, 4.E-2, 4.E-2, 2.E-2, 2.E-2, 2.E-2, 2.E-2, 4.E-3, 4.E-3, 4.E-3, 4.E-3};
         grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 7, type_level, rule_leja);
-        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, np, err)){
+        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, -1.0, refine_none, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using iptotal and leja nodes for " << f->getDescription() << endl;  pass3 = false;
         }
     }
-
     cout << "      Construction             dynamic/global" << setw(15) << ((pass3) ? "Pass" : "FAIL") << endl;
 
-    return (pass && pass2 && pass3);
+    bool pass4 = true;
+    {
+        const BaseFunction *f = &f21aniso;
+        std::vector<int> np     = {   14,    23,    38,    62,   104,   171,   280,   403,   526,   605,   645,   665,   675,   685,   685};
+        std::vector<double> err = {5.E-1, 5.E-1, 3.E-1, 2.E-1, 8.E-2, 4.E-2, 8.E-3, 3.E-3, 1.E-3, 1.E-3, 1.E-3, 7.E-4, 7.E-4, 7.E-4, 7.E-4};
+        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localp);
+        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, 1.E-3, refine_classic, np, err)){
+            cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f->getDescription() << endl;  pass4 = false;
+        }
+    }{
+        const BaseFunction *f = &f21aniso;
+        std::vector<int> np     = {   14,    23,    38,    62,   104,   171,   280,   403,   526,   599,   636,   654,   663,   673,   673};
+        std::vector<double> err = {5.E-1, 5.E-1, 3.E-1, 2.E-1, 8.E-2, 4.E-2, 8.E-3, 3.E-3, 1.E-3, 1.E-3, 1.E-3, 7.E-4, 7.E-4, 7.E-4, 7.E-4};
+        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_semilocalp);
+        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, 1.E-3, refine_fds, np, err)){
+            cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f->getDescription() << endl;  pass4 = false;
+        }
+    }
+    cout << "      Construction              dynamic/local" << setw(15) << ((pass4) ? "Pass" : "FAIL") << endl;
+
+    return (pass && pass2 && pass3 && pass4);
 }
 
 bool ExternalTester::testAllDomain() const{
