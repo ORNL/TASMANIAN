@@ -2044,9 +2044,37 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
     }
     return (void*) vecx;
 }
+void* tsgGetCandidateConstructionPointsSurplusVoidPntr(void *grid, double tolerance, const char *sRefType, int output,
+                                                       const int *limit_levels, const double *scale_correction){ // internal use only
+    TypeRefinement ref_type = OneDimensionalMeta::getIOTypeRefinementString(sRefType);
+    #ifndef NDEBUG
+    if (ref_type == refine_none){ cerr << "WARNING: incorrect depth type: " << sRefType << ", defaulting to refine_classic." << endl; }
+    #endif // NDEBUG
+    if (ref_type == refine_none){ ref_type = refine_classic; }
+    size_t dims = (size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    std::vector<double>* vecx = (std::vector<double>*) new std::vector<double>();
+    std::vector<int> veclimits;
+    if (limit_levels != nullptr) veclimits = std::vector<int>(limit_levels, limit_levels + dims);
+    std::vector<double> vecscale;
+    if (scale_correction != nullptr){
+        size_t active_outputs = (size_t) (output == -1) ? ((TasmanianSparseGrid*) grid)->getNumOutputs() : 1;
+        vecscale = std::vector<double>(scale_correction, scale_correction + ((size_t) ((TasmanianSparseGrid*) grid)->getNumLoaded() * active_outputs));
+    }
+    ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(tolerance, ref_type, *vecx, output, veclimits, vecscale);
+    return (void*) vecx;
+}
 void tsgGetCandidateConstructionPoints(void *grid, const char *sType, int output, const int *anisotropic_weights, const int *limit_levels, int *num_points, double **x){
     size_t dims = (size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions();
     std::vector<double>* vecx = (std::vector<double>*) tsgGetCandidateConstructionPointsVoidPntr(grid, sType, output, anisotropic_weights, limit_levels);
+    *num_points = (int)(vecx->size() / dims);
+    *x = (double*) malloc(vecx->size() * sizeof(double));
+    std::copy_n(vecx->data(), vecx->size(), *x);
+    delete vecx;
+}
+void tsgGetCandidateConstructionSurplusPoints(void *grid, double tolerance, const char *sRefType, int output, const int *limit_levels, const double *scale_correction,
+                                              int *num_points, double **x){
+    size_t dims = (size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    std::vector<double>* vecx = (std::vector<double>*) tsgGetCandidateConstructionPointsSurplusVoidPntr(grid, tolerance, sRefType, output, limit_levels, scale_correction);
     *num_points = (int)(vecx->size() / dims);
     *x = (double*) malloc(vecx->size() * sizeof(double));
     std::copy_n(vecx->data(), vecx->size(), *x);
