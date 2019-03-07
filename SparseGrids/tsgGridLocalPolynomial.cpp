@@ -686,7 +686,7 @@ void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_lev
     int num_points = work.getNumIndexes();
     int max_parents = num_dimensions * rule->getMaxNumParents();
     for(int l=1; l<=max_level; l++){
-        #pragma omp parallel for schedule(dynamic)
+        #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             if (level[i] == l){
                 int const *p = work.getIndex(i);

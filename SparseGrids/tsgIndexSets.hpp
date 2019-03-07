@@ -197,12 +197,16 @@ public:
     void appendStrip(const std::vector<T> &x){
         vec.insert(vec.end(), x.begin(), x.end());
         num_strips++;
+        cdata = vec.data(); // needed in case there is relocation of data
+        data = vec.data();
     }
 
     //! \brief Uses std::vector::insert to append a strip \b x to the existing data at position \b pos.
     void appendStrip(int pos, const std::vector<T> &x){
         vec.insert(vec.begin() + (((size_t) pos) * stride), x.begin(), x.end());
         num_strips++;
+        cdata = vec.data(); // needed in case there is relocation of data
+        data = vec.data();
     }
 
     //! \brief Fill the entire vector with the specified \b value

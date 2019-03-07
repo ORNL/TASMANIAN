@@ -75,6 +75,7 @@ void TasmanianSparseGrid::clear(){
     domain_transform_a.resize(0);
     domain_transform_b.resize(0);
     conformal_asin_power.clear();
+    usingDynamicConstruction = false;
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #else
