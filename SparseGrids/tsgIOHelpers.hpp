@@ -103,7 +103,7 @@ bool readFlag(std::istream &os){
 }
 
 //! \internal
-//! \brief Write the vector to the stream.
+//! \brief Write the vector to the stream, the vector cannot be empty.
 //! \ingroup TasmanianIO
 template<bool useAscii, IOPad pad, typename VecType>
 void writeVector(const std::vector<VecType> &x, std::ostream &os){

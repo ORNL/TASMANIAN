@@ -40,6 +40,7 @@
 #include "tsgIndexManipulator.hpp"
 #include "tsgGridCore.hpp"
 #include "tsgRuleLocalPolynomial.hpp"
+#include "tsgDConstructGridGlobal.hpp"
 
 #include "tsgCudaLoadStructures.hpp"
 
@@ -110,6 +111,15 @@ public:
     void mergeRefinement();
     int removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction); // returns the number of points kept
 
+    void beginConstruction();
+    void writeConstructionDataBinary(std::ofstream &ofs) const;
+    void writeConstructionData(std::ofstream &ofs) const;
+    void readConstructionDataBinary(std::ifstream &ifs);
+    void readConstructionData(std::ifstream &ifs);
+    void getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x);
+    void loadConstructedPoint(const double x[], const std::vector<double> &y);
+    void finishConstruction();
+
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
@@ -139,6 +149,12 @@ protected:
     void makeRule(TypeOneDRule trule);
 
     void buildTree();
+
+    //! \brief Returns a list of indexes of the nodes in \b points that are descendants of the \b point.
+    std::vector<int> getSubGraph(std::vector<int> const &point) const;
+
+    //! \brief Add the \b point to the grid using the \b values.
+    void expandGrid(std::vector<int> const &point, std::vector<double> const &value);
 
     void recomputeSurpluses();
 
@@ -237,9 +253,10 @@ protected:
 
     void getBasisIntegrals(double *integrals) const;
 
-    void getNormalization(std::vector<double> &norms) const;
+    std::vector<double> getNormalization() const;
 
     void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const;
+    MultiIndexSet getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const;
 
     bool addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;
     void addChild(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;
@@ -352,6 +369,8 @@ private:
     std::unique_ptr<BaseRuleLocalPolynomial> rule;
 
     int sparse_affinity;
+
+    std::unique_ptr<SimpleConstructData> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaLocalPolynomialData<double>> cuda_cache;

@@ -159,6 +159,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.restype = c_int
         self.pLibTSG.tsgIsUsingConstruction.restype = c_int
         self.pLibTSG.tsgGetCandidateConstructionPointsVoidPntr.restype = c_void_p
+        self.pLibTSG.tsgGetCandidateConstructionPointsSurplusVoidPntr.restype = c_void_p
         self.pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP.restype = c_int
         self.pLibTSG.tsgGetAccelerationType.restype = c_char_p
         self.pLibTSG.tsgIsAccelerationAvailable.restype = c_int
@@ -236,6 +237,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgBeginConstruction.argtypes = [c_void_p]
         self.pLibTSG.tsgIsUsingConstruction.argtypes = [c_void_p]
         self.pLibTSG.tsgGetCandidateConstructionPointsVoidPntr.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int), POINTER(c_int)]
+        self.pLibTSG.tsgGetCandidateConstructionPointsSurplusVoidPntr.argtypes = [c_void_p, c_double, c_char_p, c_int, POINTER(c_int), POINTER(c_double)]
         self.pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP.argtypes = [c_void_p, c_void_p]
         self.pLibTSG.tsgGetCandidateConstructionPointsPythonStatic.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgGetCandidateConstructionPointsPythonDeleteVect.argtypes = [c_void_p]
@@ -1581,6 +1583,7 @@ class TasmanianSparseGrid:
 
         iNumPoints = self.pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP(self.pGrid, pVector)
         if (iNumPoints == 0):
+            self.pLibTSG.tsgGetCandidateConstructionPointsPythonDeleteVect(pVector)
             return np.empty([0, 0], np.float64)
         aPoints = np.empty([iNumPoints * iNumDims], np.float64)
 
@@ -1588,6 +1591,43 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetCandidateConstructionPointsPythonDeleteVect(pVector)
 
         return aPoints.reshape([iNumPoints, iNumDims])
+
+    def getCandidateConstructionPointsSurplus(self, fTolerance, sRefinementType, iOutput = -1, liLevelLimits = [], aScaleCorrection = []):
+        '''
+        returns the sorted points for the construction
+        '''
+        if (not self.isUsingConstruction()):
+            raise TasmanianInputError("getCandidateConstructionPoints", "ERROR: calling getCandidateConstructionPoints() before beginConstruction()")
+        iNumDims = self.getNumDimensions()
+
+        if (sys.version_info.major == 3):
+            sRefinementType = bytes(sRefinementType, encoding='utf8')
+
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iNumDims):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to the grid dimension")
+            pLevelLimits = (c_int*iNumDims)()
+            for iI in range(iNumDims):
+                pLevelLimits[iI] = liLevelLimits[iI]
+
+        pScale = None
+        if (len(aScaleCorrection) > 0):
+            pScale = np.ctypeslib.as_ctypes(aScaleCorrection)
+
+        pVector = self.pLibTSG.tsgGetCandidateConstructionPointsSurplusVoidPntr(self.pGrid, c_double(fTolerance), c_char_p(sRefinementType), iOutput, pLevelLimits, pScale)
+
+        iNumPoints = self.pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP(self.pGrid, pVector)
+        if (iNumPoints == 0):
+            self.pLibTSG.tsgGetCandidateConstructionPointsPythonDeleteVect(pVector)
+            return np.empty([0, 0], np.float64)
+        aPoints = np.empty([iNumPoints * iNumDims], np.float64)
+
+        self.pLibTSG.tsgGetCandidateConstructionPointsPythonStatic(pVector, np.ctypeslib.as_ctypes(aPoints))
+        self.pLibTSG.tsgGetCandidateConstructionPointsPythonDeleteVect(pVector)
+
+        return aPoints.reshape([iNumPoints, iNumDims])
+
 
     def loadConstructedPoint(self, lfX, lfY):
         '''

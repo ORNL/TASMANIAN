@@ -75,6 +75,7 @@ void TasmanianSparseGrid::clear(){
     domain_transform_a.resize(0);
     domain_transform_b.resize(0);
     conformal_asin_power.clear();
+    usingDynamicConstruction = false;
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #else
@@ -1026,7 +1027,7 @@ void TasmanianSparseGrid::mergeRefinement(){
 }
 
 void TasmanianSparseGrid::beginConstruction(){
-    if (!isGlobal() && !isSequence()) throw std::runtime_error("ERROR: beginConstruction() called for grid that is not Global or Sequence");
+    if (isWavelet() || isFourier()) throw std::runtime_error("ERROR: beginConstruction() is not implemented for Wavelet and Fourier grids");
     if (!usingDynamicConstruction){
         if (getNumLoaded() > 0) clearRefinement();
         usingDynamicConstruction = true;
@@ -1035,6 +1036,7 @@ void TasmanianSparseGrid::beginConstruction(){
 }
 void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, std::vector<double> &x, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
+    if (isLocalPolynomial()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
     size_t dims = (size_t) base->getNumDimensions();
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
@@ -1052,6 +1054,7 @@ void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, std::ve
 }
 void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
+    if (isLocalPolynomial()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
     size_t dims = (size_t) base->getNumDimensions();
     if ((!level_limits.empty()) && (level_limits.size() != dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
     int outs = base->getNumOutputs();
@@ -1064,6 +1067,19 @@ void TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int out
     }else{
         getGridSequence()->getCandidateConstructionPoints(type, output, x, llimits);
     }
+}
+void TasmanianSparseGrid::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, std::vector<double> &x,
+                                                         int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
+    if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
+    if (!isLocalPolynomial()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
+    size_t dims = (size_t) base->getNumDimensions();
+    if ((!level_limits.empty()) && (level_limits.size() != dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
+    int outs = base->getNumOutputs();
+    if (outs == 0) throw std::runtime_error("ERROR: calling getCandidateConstructionPoints() for a grid that has no outputs");
+    if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling getCandidateConstructionPoints() with invalid output");
+
+    if (!level_limits.empty()) llimits = level_limits;
+    getGridLocalPolynomial()->getCandidateConstructionPoints(tolerance, criteria, output, llimits, ((scale_correction.empty()) ? nullptr : scale_correction.data()), x);
 }
 void TasmanianSparseGrid::loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
@@ -2028,9 +2044,37 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
     }
     return (void*) vecx;
 }
+void* tsgGetCandidateConstructionPointsSurplusVoidPntr(void *grid, double tolerance, const char *sRefType, int output,
+                                                       const int *limit_levels, const double *scale_correction){ // internal use only
+    TypeRefinement ref_type = OneDimensionalMeta::getIOTypeRefinementString(sRefType);
+    #ifndef NDEBUG
+    if (ref_type == refine_none){ cerr << "WARNING: incorrect depth type: " << sRefType << ", defaulting to refine_classic." << endl; }
+    #endif // NDEBUG
+    if (ref_type == refine_none){ ref_type = refine_classic; }
+    size_t dims = (size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    std::vector<double>* vecx = (std::vector<double>*) new std::vector<double>();
+    std::vector<int> veclimits;
+    if (limit_levels != nullptr) veclimits = std::vector<int>(limit_levels, limit_levels + dims);
+    std::vector<double> vecscale;
+    if (scale_correction != nullptr){
+        size_t active_outputs = (size_t) (output == -1) ? ((TasmanianSparseGrid*) grid)->getNumOutputs() : 1;
+        vecscale = std::vector<double>(scale_correction, scale_correction + ((size_t) ((TasmanianSparseGrid*) grid)->getNumLoaded() * active_outputs));
+    }
+    ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(tolerance, ref_type, *vecx, output, veclimits, vecscale);
+    return (void*) vecx;
+}
 void tsgGetCandidateConstructionPoints(void *grid, const char *sType, int output, const int *anisotropic_weights, const int *limit_levels, int *num_points, double **x){
     size_t dims = (size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions();
     std::vector<double>* vecx = (std::vector<double>*) tsgGetCandidateConstructionPointsVoidPntr(grid, sType, output, anisotropic_weights, limit_levels);
+    *num_points = (int)(vecx->size() / dims);
+    *x = (double*) malloc(vecx->size() * sizeof(double));
+    std::copy_n(vecx->data(), vecx->size(), *x);
+    delete vecx;
+}
+void tsgGetCandidateConstructionSurplusPoints(void *grid, double tolerance, const char *sRefType, int output, const int *limit_levels, const double *scale_correction,
+                                              int *num_points, double **x){
+    size_t dims = (size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    std::vector<double>* vecx = (std::vector<double>*) tsgGetCandidateConstructionPointsSurplusVoidPntr(grid, tolerance, sRefType, output, limit_levels, scale_correction);
     *num_points = (int)(vecx->size() / dims);
     *x = (double*) malloc(vecx->size() * sizeof(double));
     std::copy_n(vecx->data(), vecx->size(), *x);

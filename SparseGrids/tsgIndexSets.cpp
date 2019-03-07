@@ -194,8 +194,8 @@ int MultiIndexSet::getSlot(const int *p) const{
     return -1;
 }
 
-void MultiIndexSet::diffSets(const MultiIndexSet &substract, MultiIndexSet &result){
-    result = MultiIndexSet((int) num_dimensions);
+MultiIndexSet MultiIndexSet::diffSets(const MultiIndexSet &substract){
+    MultiIndexSet result((int) num_dimensions);
 
     std::vector<std::vector<int>::iterator> kept_indexes;
 
@@ -236,6 +236,8 @@ void MultiIndexSet::diffSets(const MultiIndexSet &substract, MultiIndexSet &resu
         }
         result.setIndexes(new_indexes);
     }
+
+    return result;
 }
 
 void MultiIndexSet::removeIndex(const std::vector<int> &p){

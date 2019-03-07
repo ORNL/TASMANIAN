@@ -86,7 +86,8 @@ class TestTasClass(unittest.TestCase):
         Test read/write when using construction.
         '''
         llTest = ["gridA.makeGlobalGrid(3, 2, 2, 'level', 'clenshaw-curtis'); gridB.makeGlobalGrid(3, 2, 2, 'level', 'clenshaw-curtis')",
-                  "gridA.makeSequenceGrid(3, 2, 4, 'level', 'leja'); gridB.makeSequenceGrid(3, 2, 4, 'level', 'leja')"]
+                  "gridA.makeSequenceGrid(3, 2, 4, 'level', 'leja'); gridB.makeSequenceGrid(3, 2, 4, 'level', 'leja')",
+                  "gridA.makeLocalPolynomialGrid(3, 2, 2); gridB.makeLocalPolynomialGrid(3, 2, 2)"]
 
         for sMakeGrids in llTest:
             for sFormat in [False, True]: # test binary and ascii format
@@ -104,8 +105,12 @@ class TestTasClass(unittest.TestCase):
                 ttc.compareGrids(gridA, gridB)
 
                 for t in range(5): # use 5 iterations
-                    aPointsA = gridA.getCandidateConstructionPoints("level", 0)
-                    aPointsB = gridB.getCandidateConstructionPoints("level", 0)
+                    if (gridA.isLocalPolynomial()):
+                        aPointsA = gridA.getCandidateConstructionPointsSurplus(1.E-4, "fds")
+                        aPointsB = gridB.getCandidateConstructionPointsSurplus(1.E-4, "fds")
+                    else:
+                        aPointsA = gridA.getCandidateConstructionPoints("level", 0)
+                        aPointsB = gridB.getCandidateConstructionPoints("level", 0)
                     np.testing.assert_almost_equal(aPointsA, aPointsB, decimal=11)
 
                     iNumPoints = int(aPointsA.shape[0] / 2)

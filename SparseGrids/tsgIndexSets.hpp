@@ -197,6 +197,16 @@ public:
     void appendStrip(const std::vector<T> &x){
         vec.insert(vec.end(), x.begin(), x.end());
         num_strips++;
+        cdata = vec.data(); // needed in case there is relocation of data
+        data = vec.data();
+    }
+
+    //! \brief Uses std::vector::insert to append a strip \b x to the existing data at position \b pos.
+    void appendStrip(int pos, const std::vector<T> &x){
+        vec.insert(vec.begin() + (((size_t) pos) * stride), x.begin(), x.end());
+        num_strips++;
+        cdata = vec.data(); // needed in case there is relocation of data
+        data = vec.data();
     }
 
     //! \brief Fill the entire vector with the specified \b value
@@ -276,11 +286,13 @@ public:
     //! \brief Returns the **i**-th index of the set, useful to loop over all indexes or to cross reference with values
     inline const int *getIndex(int i) const{ return &(indexes[((size_t) i) * num_dimensions]); }
 
-    //! \brief A new ordered set is created in **result**, which holds the indexes from this set that are not present in **substract**
-    //!
-    //! The implementation uses an algorithm similar to merge with complexity linear in the number of multi-indexes of the two sets,
-    //! i.e., does not use **missing()** which would add a logarithmic factor.
-    void diffSets(const MultiIndexSet &substract, MultiIndexSet &result);
+    /*! \brief Return a new multi-index set that holds the indexed present in this set, but missing in \b substract.
+     *
+     * Assumes that \b substract has the same dimension as this set.
+     * The implementation uses an algorithm similar to merge with complexity linear in the number of multi-indexes of the two sets,
+     * i.e., does not use \b missing() which would add a logarithmic factor.
+     */
+    MultiIndexSet diffSets(const MultiIndexSet &substract);
 
     //! \brief Removes \b p from the set (if exists).
     void removeIndex(const std::vector<int> &p);

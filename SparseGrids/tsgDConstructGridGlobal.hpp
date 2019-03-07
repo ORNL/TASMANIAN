@@ -250,6 +250,34 @@ private:
     std::forward_list<TensorData> tensors;
 };
 
+/*!
+ * \internal
+ * \brief Holds a std::forward_list of pairs of points indexes and values, and a MultiIndexSet of initial nodes.
+ * \ingroup TasmanianRefinement
+ *
+ * Used for Sequence and Local Polynomial grids, where points can be added to the grid only when they form
+ * a lower complete set (sequence) or a connected graph (local polynomial).
+ * However, in order to facilitate parallelism, significantly large number of candidate points should be considered at any time.
+ * A large initial grid will allow parallelism, but nodes may be computed in any arbitrary order
+ * hence data has to be stored temporarily and wait until it can be incorporated into the grid.
+ * \endinternal
+ */
+struct SimpleConstructData{
+    std::forward_list<NodeData> data;
+    MultiIndexSet initial_points;
+};
+
+template<bool useAscii> void writeSimpleConstructionData(SimpleConstructData const *dynamic_values, std::ofstream &ofs){
+    dynamic_values->initial_points.write<useAscii>(ofs);
+    writeNodeDataList<std::ofstream, useAscii>(dynamic_values->data, ofs);
+}
+template<bool useAscii> std::unique_ptr<SimpleConstructData> readSimpleConstructionData(int num_dimensions, int num_outputs, std::ifstream &ifs){
+    std::unique_ptr<SimpleConstructData> dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
+    dynamic_values->initial_points.read<useAscii>(ifs);
+    readNodeDataList<std::ifstream, useAscii>(num_dimensions, num_outputs, ifs, dynamic_values->data);
+    return dynamic_values;
+}
+
 }
 
 #endif

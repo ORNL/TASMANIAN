@@ -161,7 +161,7 @@ void GridSequence::updateGrid(MultiIndexSet &update){
         setPoints(update, num_outputs, rule);
     }else{
         update.addSortedInsexes(points.getVector());
-        update.diffSets(points, needed);
+        needed = update.diffSets(points);
 
         if (!needed.empty()) prepareSequence(0);
     }
@@ -266,29 +266,23 @@ void GridSequence::mergeRefinement(){
 }
 
 void GridSequence::beginConstruction(){
-    dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
+    dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
         needed = MultiIndexSet();
     }
 }
 void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{
-    dynamic_values->initial_points.write<false>(ofs);
-    writeNodeDataList<std::ofstream, false>(dynamic_values->data, ofs);
+    writeSimpleConstructionData<false>(dynamic_values.get(), ofs);
 }
 void GridSequence::writeConstructionData(std::ofstream &ofs) const{
-    dynamic_values->initial_points.write<true>(ofs);
-    writeNodeDataList<std::ofstream, true>(dynamic_values->data, ofs);
+    writeSimpleConstructionData<true>(dynamic_values.get(), ofs);
 }
 void GridSequence::readConstructionDataBinary(std::ifstream &ifs){
-    dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
-    dynamic_values->initial_points.read<false>(ifs);
-    readNodeDataList<std::ifstream, false>(num_dimensions, num_outputs, ifs, dynamic_values->data);
+    dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, ifs);
 }
 void GridSequence::readConstructionData(std::ifstream &ifs){
-    dynamic_values = std::unique_ptr<SequenceConstructData>(new SequenceConstructData);
-    dynamic_values->initial_points.read<true>(ifs);
-    readNodeDataList<std::ifstream, true>(num_dimensions, num_outputs, ifs, dynamic_values->data);
+    dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, ifs);
 }
 void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){
     std::vector<int> proper_weights;
@@ -423,7 +417,7 @@ void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<d
     prepareSequence(0); // update the directional max_levels, will not shrink the number of nodes
 }
 void GridSequence::finishConstruction(){
-    dynamic_values = std::unique_ptr<SequenceConstructData>();
+    dynamic_values.reset();
 }
 
 void GridSequence::evaluate(const double x[], double y[]) const{
@@ -716,7 +710,7 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
             MultiIndexManipulations::selectTensors(++level, type, [&](int i) -> long long{ return i; }, weights, total);
         }
 
-        total.diffSets(points, needed);
+        needed = total.diffSets(points);
 
         if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, needed);
 
@@ -764,7 +758,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         kids.addMultiIndexSet(points);
         MultiIndexManipulations::completeSetToLower<int>(kids);
 
-        kids.diffSets(points, needed);
+        needed = kids.diffSets(points);
         if (!needed.empty()) prepareSequence(0);
     }
 }
