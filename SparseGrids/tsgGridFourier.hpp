@@ -164,7 +164,7 @@ protected:
 
         const MultiIndexSet &work = (points.empty()) ? needed : points;
         int num_points = work.getNumIndexes();
-        Data2D<int> transpoints; transpoints.resize(work.getNumIndexes(), num_dimensions);
+        Data2D<int> transpoints(work.getNumIndexes(), num_dimensions);
         for(int i=0; i<num_points; i++)
             for(int j=0; j<num_dimensions; j++)
                 transpoints.getStrip(j)[i] = work.getIndex(i)[j];
@@ -181,8 +181,8 @@ protected:
         if (!cuda_cache->real.empty()) return;
         int num_points = points.getNumIndexes();
         size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
-        cuda_cache->real.load(num_coeff, fourier_coefs.getCStrip(0));
-        cuda_cache->imag.load(num_coeff, fourier_coefs.getCStrip(num_points));
+        cuda_cache->real.load(num_coeff, fourier_coefs.getStrip(0));
+        cuda_cache->imag.load(num_coeff, fourier_coefs.getStrip(num_points));
     }
     void clearCudaCoefficients(){
         if (cuda_cache){

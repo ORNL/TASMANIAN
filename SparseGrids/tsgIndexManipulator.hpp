@@ -187,8 +187,7 @@ template<typename I>
 void completeSetToLower(MultiIndexSet &set){
     size_t num_dimensions = set.getNumDimensions();
     int num = set.getNumIndexes();
-    Data2D<I> completion;
-    completion.resize((size_t) set.getNumDimensions(), 0);
+    Data2D<I> completion(set.getNumDimensions(), 0);
     for(int i=0; i<num; i++){
         std::vector<I> point(num_dimensions);
         std::copy_n(set.getIndex(i), num_dimensions, point.data());
@@ -437,7 +436,7 @@ void getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &t
 //! \internal
 //! \brief Returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using one-point-growth hierarchy
 //! \ingroup TasmanianMultiIndexManipulations
-void computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents);
+Data2D<int> computeDAGup(MultiIndexSet const &mset);
 
 //! \internal
 //! \brief Cache the single-indexes of the parents of the multi-indexes (points) in \b mset.
@@ -447,7 +446,7 @@ void computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents);
 //! where the parent-offspring relation is defined by the \b rule. For each index in \b mset, the
 //! Data2D structure \b parents will hold a strip with the location of each parent in \b mset
 //! (or -1 if the parent is missing from \b mset).
-void computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents);
+Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule);
 
 /*!
  * \internal
@@ -590,8 +589,7 @@ template<typename I> bool isLowerComplete(const std::vector<I> &point, const Mul
 template<bool limited>
 void addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exclude, const std::vector<int> level_limits, MultiIndexSet &mset){
     int num_dimensions = tensors.getNumDimensions();
-    Data2D<int> tens;
-    tens.resize(num_dimensions, 0);
+    Data2D<int> tens(num_dimensions, 0);
     for(int i=0; i<tensors.getNumIndexes(); i++){ // add the new tensors (so long as they are not included in the initial grid)
         const int *t = tensors.getIndex(i);
         std::vector<int> kid(t, t + num_dimensions);

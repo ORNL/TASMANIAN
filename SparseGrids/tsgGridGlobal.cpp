@@ -34,6 +34,7 @@
 #include "tsgGridGlobal.hpp"
 
 #include "tsgHiddenExternals.hpp"
+#include "tsgUtils.hpp"
 
 namespace TasGrid{
 
@@ -590,17 +591,17 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
     }
 }
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    Utils::Wrapper2D<const double> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_outputs, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++)
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
+        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateBlas(const double x[], int num_x, double y[]) const{
     int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
+    Data2D<double> weights(num_points, num_x);
     if (num_x > 1){
         evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
     }else{ // skips small OpenMP overhead
@@ -616,7 +617,7 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
     if (cuda_values.size() == 0) cuda_values.load(values.aliasValues());
 
     int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
+    Data2D<double> weights(num_points, num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
     engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_values, weights.getVector(), y);
@@ -640,12 +641,11 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
 
 void GridGlobal::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
-    Data2D<double> yy; yy.load(num_points, num_x, y);
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Utils::Wrapper2D<const double> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_points, y);
     #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        getInterpolationWeights(xx.getCStrip(i), yy.getStrip(i));
-    }
+    for(int i=0; i<num_x; i++)
+        getInterpolationWeights(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double> &surp) const{

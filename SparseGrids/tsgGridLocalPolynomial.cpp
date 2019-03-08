@@ -34,6 +34,7 @@
 #include "tsgGridLocalPolynomial.hpp"
 
 #include "tsgHiddenExternals.hpp"
+#include "tsgUtils.hpp"
 
 namespace TasGrid{
 
@@ -47,7 +48,7 @@ void GridLocalPolynomial::reset(bool clear_rule){
     needed = MultiIndexSet();
     values = StorageSet();
     if (clear_rule){ rule = std::unique_ptr<BaseRuleLocalPolynomial>(); order = 1; }
-    parents.load(0, 0, 0);
+    parents = Data2D<int>();
     sparse_affinity = 0;
     surpluses.clear();
 }
@@ -174,7 +175,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     if (num_outputs == 0){
         points = std::move(needed);
         needed = MultiIndexSet();
-        MultiIndexManipulations::computeDAGup(points, rule.get(), parents);
+        parents = MultiIndexManipulations::computeDAGup(points, rule.get());
     }else{
         values.resize(num_outputs, needed.getNumIndexes());
     }
@@ -213,8 +214,7 @@ int GridLocalPolynomial::getNumPoints() const{ return ((points.empty()) ? needed
 
 void GridLocalPolynomial::getLoadedPoints(double *x) const{
     int num_points = points.getNumIndexes();
-    Data2D<double> split;
-    split.load(num_dimensions, num_points, x);
+    Utils::Wrapper2D<double> split(num_dimensions, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = points.getIndex(i);
@@ -226,8 +226,7 @@ void GridLocalPolynomial::getLoadedPoints(double *x) const{
 }
 void GridLocalPolynomial::getNeededPoints(double *x) const{
     int num_points = needed.getNumIndexes();
-    Data2D<double> split;
-    split.load(num_dimensions, num_points, x);
+    Utils::Wrapper2D<double> split(num_dimensions, x);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = needed.getIndex(i);
@@ -249,11 +248,11 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
 }
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
     if (num_x == 1){ evaluate(x, y); return; }
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_outputs, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++)
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
+        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
@@ -273,22 +272,21 @@ void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) 
 
     if ((sparse_affinity == -1) || ((sparse_affinity == 0) && (nnz / total_size > 0.1))){
         // potentially wastes a lot of memory
-        Data2D<double> A;
-        A.resize(num_points, num_x, 0.0);
+        Data2D<double> A(num_points, num_x, 0.0);
         for(int i=0; i<num_x; i++){
             double *row = A.getStrip(i);
             for(int j=spntr[i]; j<spntr[i+1]; j++) row[sindx[j]] = svals[j];
         }
-        TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.getCStrip(0), A.getCStrip(0), 0.0, y);
+        TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.getStrip(0), A.getStrip(0), 0.0, y);
     }else{
-        Data2D<double> yy; yy.load(num_outputs, num_x, y);
+        Utils::Wrapper2D<double> ywrap(num_outputs, y);
         #pragma omp parallel for
         for(int i=0; i<num_x; i++){
-            double *this_y = yy.getStrip(i);
+            double *this_y = ywrap.getStrip(i);
             std::fill(this_y, this_y + num_outputs, 0.0);
             for(int j=spntr[i]; j<spntr[i+1]; j++){
                 double v = svals[j];
-                const double *s = surpluses.getCStrip(sindx[j]);
+                const double *s = surpluses.getStrip(sindx[j]);
                 for(int k=0; k<num_outputs; k++) this_y[k] += v * s[k];
             }
         }
@@ -418,17 +416,17 @@ void GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeR
     std::vector<double> norm = getNormalization();
 
     int active_outputs = (output == -1) ? num_outputs : 1;
-    Data2D<double> scale;
-    if (scale_correction == 0){
-        scale.resize(active_outputs, points.getNumIndexes(), 1.0);
-    }else{
-        scale.cload(active_outputs, points.getNumIndexes(), scale_correction);
+    Utils::Wrapper2D<double const> scale(active_outputs, scale_correction);
+    std::vector<double> default_scale;
+    if (scale_correction == nullptr){ // if no scale provided, assume default 1.0
+        default_scale = std::vector<double>(Utils::size_mult(active_outputs, points.getNumIndexes()), 1.0);
+        scale = Utils::Wrapper2D<double const>(active_outputs, default_scale.data());
     }
 
     auto getDominantSurplus = [&](int i)-> double{
         double dominant = 0.0;
-        const double *s = surpluses.getCStrip(i);
-        const double *c = scale.getCStrip(i);
+        const double *s = surpluses.getStrip(i);
+        const double *c = scale.getStrip(i);
         if (output == -1){
             for(int k=0; k<num_outputs; k++) dominant = std::max(dominant, c[k] * fabs(s[k]) / norm[k]);
         }else{
@@ -543,8 +541,7 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
             std::copy_n(values.getValues(g), num_outputs, surpluses.getStrip(g)); // reset the surpluses to the values (will be updated)
         }
 
-        Data2D<int> dagUp;
-        MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
+        Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
         updateSurpluses(points, top_level + 1, levels, dagUp); // compute the current DAG and update the surplused for the descendants
     }
     buildTree(); // the tree is needed for evaluate(), must be rebuild every time the points set is updated
@@ -601,7 +598,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     // apply the transpose of the surplus transformation
     Data2D<int> lparents;
     if (parents.getNumStrips() != work.getNumIndexes()) // if the current dag loaded in parents does not reflect the indexes in work
-        MultiIndexManipulations::computeDAGup(work, rule.get(), lparents);
+        lparents = MultiIndexManipulations::computeDAGup(work, rule.get());
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -637,7 +634,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getCStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
@@ -662,16 +659,15 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
 void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
-    Data2D<double> yy; yy.load(num_points, num_x, y);
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_points, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        const double *this_x = xx.getCStrip(i);
-        double *this_y = yy.getStrip(i);
+        double const *this_x = xwrap.getStrip(i);
+        double *this_y = ywrap.getStrip(i);
         bool dummy;
-        for(int j=0; j<num_points; j++){
+        for(int j=0; j<num_points; j++)
             this_y[j] = evalBasisSupported(work.getIndex(j), this_x, dummy);
-        }
     }
 }
 
@@ -681,8 +677,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
     surpluses.resize(num_outputs, num_points);
     surpluses.getVector() = values.aliasValues(); // copy assignment
 
-    Data2D<int> dagUp;
-    MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
+    Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
 
     std::vector<int> level = MultiIndexManipulations::computeLevels(points, rule.get());
 
@@ -712,11 +707,11 @@ void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_lev
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getCStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
-                            const double *branch_surp = surpluses.getCStrip(branch);
+                            const double *branch_surp = surpluses.getStrip(branch);
                             double basis_value = evalBasisRaw(work.getIndex(branch), x.data());
                             for(int k=0; k<num_outputs; k++)
                                 surpi[k] -= basis_value * branch_surp[k];
@@ -815,14 +810,14 @@ void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_
 int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
     std::vector<int> num_nz(num_x);
 
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
         std::vector<int> sindx;
         std::vector<double> svals;
-        walkTree<1>(work, xx.getCStrip(i), sindx, svals, nullptr);
+        walkTree<1>(work, xwrap.getStrip(i), sindx, svals, nullptr);
         num_nz[i] = (int) sindx.size();
     }
 
@@ -838,7 +833,7 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
     tvals.resize(num_blocks);
 
     const MultiIndexSet &work = (points.empty()) ? needed : points;
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
 
     #pragma omp parallel for
     for(int b=0; b<num_blocks; b++){
@@ -847,7 +842,7 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
         int chunk_size = (b < num_blocks - 1) ? num_chunk : (num_x - (num_blocks - 1) * num_chunk);
         for(int i = b * num_chunk; i < b * num_chunk + chunk_size; i++){
             numnz[i] = (int) tindx[b].size();
-            walkTree<1>(work, xx.getCStrip(i), tindx[b], tvals[b], nullptr);
+            walkTree<1>(work, xwrap.getStrip(i), tindx[b], tvals[b], nullptr);
             numnz[i] = (int) tindx[b].size() - numnz[i];
         }
     }
@@ -982,7 +977,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
     Data2D<int> lparents;
     if (parents.getNumStrips() != work.getNumIndexes())
-        MultiIndexManipulations::computeDAGup(work, rule.get(), lparents);
+        lparents = MultiIndexManipulations::computeDAGup(work, rule.get());
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -1006,7 +1001,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getCStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
@@ -1036,7 +1031,7 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
         std::vector<double> integrals(num_points);
         getBasisIntegrals(integrals.data());
         for(int i=0; i<num_points; i++){
-            const double *s = surpluses.getCStrip(i);
+            const double *s = surpluses.getStrip(i);
             double wi = integrals[i];
             for(int k=0; k<num_outputs; k++) q[k] += wi * s[k];
         }
@@ -1063,12 +1058,12 @@ std::vector<double> GridLocalPolynomial::getNormalization() const{
     return norms;
 }
 
-void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const{
+Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const{
     int num_points = points.getNumIndexes();
-    map2.resize(num_dimensions, num_points);
+    Data2D<int> map2(num_dimensions, num_points);
     if (tolerance == 0.0){
         map2.fill(1); // if tolerance is 0, refine everything
-        return;
+        return map2;
     }else{
         map2.fill(0);
     }
@@ -1076,19 +1071,19 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
     std::vector<double> norm = getNormalization();
 
     int active_outputs = (output == -1) ? num_outputs : 1;
-    Data2D<double> scale;
-    if (scale_correction == 0){
-        scale.resize(active_outputs, num_points, 1.0);
-    }else{
-        scale.cload(active_outputs, num_points, scale_correction);
+    Utils::Wrapper2D<double const> scale(active_outputs, scale_correction);
+    std::vector<double> default_scale;
+    if (scale_correction == nullptr){
+        default_scale = std::vector<double>(Utils::size_mult(active_outputs, num_points), 1.0);
+        scale = Utils::Wrapper2D<double const>(active_outputs, default_scale.data());
     }
 
     if ((criteria == refine_classic) || (criteria == refine_parents_first)){
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             bool small = true;
-            const double *s = surpluses.getCStrip(i);
-            const double *c = scale.getCStrip(i);
+            const double *s = surpluses.getStrip(i);
+            const double *c = scale.getStrip(i);
             if (output == -1){
                 for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);
             }else{
@@ -1101,8 +1096,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
         }
     }else{
         // construct a series of 1D interpolants and use a refinement criteria that is a combination of the two hierarchical coefficients
-        Data2D<int> dagUp;
-        MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
+        Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
 
         int max_1D_parents = rule->getMaxNumParents();
 
@@ -1158,7 +1152,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
                                 }else{
                                     const int *branch_point = points.getIndex(branch);
                                     double basis_value = rule->evalRaw(branch_point[d], x);
-                                    const double *branch_vals = vals.getCStrip(global_to_pnts[branch]);
+                                    const double *branch_vals = vals.getStrip(global_to_pnts[branch]);
                                     for(int k=0; k<active_outputs; k++) valsi[k] -= basis_value * branch_vals[k];
 
                                     used[global_to_pnts[branch]] = true;
@@ -1175,9 +1169,9 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
 
             // at this point, vals contains the one directional surpluses
             for(int i=0; i<nump; i++){
-                const double *s = surpluses.getCStrip(pnts[i]);
-                const double *c = scale.getCStrip(pnts[i]);
-                const double *v = vals.getCStrip(i);
+                const double *s = surpluses.getStrip(pnts[i]);
+                const double *c = scale.getStrip(pnts[i]);
+                const double *v = vals.getStrip(i);
                 bool small = true;
                 if (output == -1){
                     for(int k=0; k<num_outputs; k++){
@@ -1190,21 +1184,20 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
             }
         }
     }
+    return map2;
 }
 MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const{
-    Data2D<int> pmap;
-    buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
+    Data2D<int> pmap = buildUpdateMap(tolerance, criteria, output, scale_correction);
 
     bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
 
-    Data2D<int> refined;
-    refined.resize(num_dimensions, 0);
+    Data2D<int> refined(num_dimensions, 0);
 
     int num_points = points.getNumIndexes();
 
     if (level_limits.empty()){
         for(int i=0; i<num_points; i++){
-            const int *map = pmap.getCStrip(i);
+            const int *map = pmap.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (map[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
@@ -1215,7 +1208,7 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
         }
     }else{
         for(int i=0; i<num_points; i++){
-            const int *map = pmap.getCStrip(i);
+            const int *map = pmap.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (map[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
@@ -1298,18 +1291,18 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 
     std::vector<double> norm = getNormalization();
 
-    Data2D<double> scale;
     int active_outputs = (output == -1) ? num_outputs : 1;
-    if (scale_correction == 0){
-        scale.resize(active_outputs, num_points, 1.0);
-    }else{
-        scale.cload(active_outputs, num_points, scale_correction);
+    Utils::Wrapper2D<double const> scale(active_outputs, scale_correction);
+    std::vector<double> default_scale;
+    if (scale_correction == nullptr){
+        default_scale = std::vector<double>(Utils::size_mult(active_outputs, num_points), 1.0);
+        scale = Utils::Wrapper2D<double const>(active_outputs, default_scale.data());
     }
 
     for(int i=0; i<num_points; i++){
         bool small = true;
-        const double *s = surpluses.getCStrip(i);
-        const double *c = scale.getCStrip(i);
+        const double *s = surpluses.getStrip(i);
+        const double *c = scale.getStrip(i);
         if (output == -1){
             for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);
         }else{
@@ -1323,9 +1316,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     if (num_kept == num_points) return num_points; // trivial case, remove nothing
 
     // save a copy of the points and the values
-    std::vector<int> point_kept(((size_t) num_kept) * ((size_t) num_dimensions));
-    Data2D<int> pp;
-    pp.load(num_dimensions, num_kept, point_kept.data()); // to handle double indexing
+    Data2D<int> point_kept(num_dimensions, num_kept);
 
     StorageSet values_kept;
     values_kept.resize(num_outputs, num_kept);
@@ -1334,7 +1325,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     num_kept = 0;
     for(int i=0; i<num_points; i++){
         if (pmap[i]){
-            std::copy(points.getIndex(i), points.getIndex(i) + num_dimensions, pp.getStrip(num_kept));
+            std::copy_n(points.getIndex(i), num_dimensions, point_kept.getStrip(num_kept));
             std::copy_n(values.getValues(i), num_outputs, values_kept.getValues(num_kept));
             num_kept++;
         }
@@ -1348,7 +1339,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 
     points = MultiIndexSet();
     points.setNumDimensions(num_dimensions);
-    points.addSortedInsexes(point_kept);
+    points.addData2D(point_kept);
 
     values = std::move(values_kept);
 

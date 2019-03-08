@@ -119,68 +119,47 @@ void push_merge_map(const std::vector<T> &a, const std::vector<B> &b,
 }
 }
 
-//! \brief Generic 2D data structure divided into contiguous strips of fixed length (similar to a matrix)
-//! \ingroup TasmanianSets
-
-//! Many of the internal data-structures relevant to sparse grids can be represented as two dimensional arrays.
-//! The data is divided into **strips** of equal **stride**, e.g., number of multi-indexes and number of dimensions.
-//! Internally the class uses either `std::vector` or const/non-const array pointers; the template parameter **T** could be anything
-//! that can fit in a vector, but in practice the class is used primarily with `double` and `int`.
-//! This panacea template handles multiple situations:
-//! * allocate memory for the 2D data structure and access that memory with simple indexing avoiding the direct use of `[i * stride +j]`
-//! * dynamically generate a data structure by appending strips to the back of the existing ones
-//! * wrap around an existing data structure that can be either const or non-const array, this class preserves const correctness
+/*!
+ * \brief Generic 2D data structure divided into contiguous strips of fixed length (similar to a matrix)
+ * \ingroup TasmanianSets
+ *
+ * Many of the internal data-structures relevant to sparse grids can be represented as two dimensional arrays.
+ * The data is divided into \b strips of equal \b stride, e.g., number of multi-indexes and number of dimensions.
+ * Internally the class uses \b std::vector with type \b T,
+ * the when used, \b T is almost always \b double or \b int.
+ */
 template<typename T>
 class Data2D{
 public:
-    //! \brief Default constructor makes an empty data-structure
-    Data2D() : stride(0), num_strips(0), data(0){}
-    //! \brief Default destructor
+    //! \brief Default constructor makes an empty data-structure.
+    Data2D() : stride(0), num_strips(0){}
+    //! \brief Create data-structure with given \b stride and number of \b strips.
+    Data2D(int new_stride, int new_num_strips) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips){}
+    //! \brief Create data-structure with given \b stride and number of \b strips and initializes with \b val.
+    Data2D(int new_stride, int new_num_strips, T val) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips, val){}
+    //! \brief Default destructor.
     ~Data2D(){}
 
-    //! \brief Clear any existing data and allocate a new data-structure with given **stride** and number of **strips**
+    //! \brief Returns \b true if the number of strips is zero.
+    bool empty() const{ return (num_strips == 0); }
+
+    //! \brief Clear any existing data and allocate a new data-structure with given \b stride and number of \b strips.
     void resize(int new_stride, int new_num_strips){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
         vec.resize(stride * num_strips);
-        data = vec.data();
-        cdata = vec.data();
-    }
-    //! \brief Clear any existing data, allocate a new data-structure with given **stride** and number of **strips** and initializes the data to **val** (using `std::vector::resize()`)
-    void resize(int new_stride, int new_num_strips, T val){
-        stride = (size_t) new_stride;
-        num_strips = (size_t) new_num_strips;
-        vec.resize(stride * num_strips, val);
-        data = vec.data();
-        cdata = vec.data();
-    }
-    //! \brief Wrap around an existing array, the size of the array must be at least **new_stride** times **new_num_strips**
-    void load(int new_stride, int new_num_strips, T* new_data){
-        stride = (size_t) new_stride;
-        num_strips = (size_t) new_num_strips;
-        data = new_data;
-        cdata = data;
-        vec.resize(0);
-    }
-    //! \brief Wrap around an existing const array, the size of the array must be at least **new_stride** times **new_num_strips**
-    void cload(int new_stride, int new_num_strips, const T* new_data){
-        stride = (size_t) new_stride;
-        num_strips = (size_t) new_num_strips;
-        cdata = new_data;
-        data = 0;
-        vec.resize(0);
     }
 
     //! \brief Returns a reference to the **i**-th strip, cannot be called after **cload()** since the reference is non-const
-    T* getStrip(int i){ return &(data[i*stride]); }
-    //! \brief Returns a const reference to the **i**-th strip, can be called even after **cload()**
-    const T* getCStrip(int i) const{ return &(cdata[i*stride]); }
+    T* getStrip(int i){ return &(vec[i*stride]); }
+    //! \brief Returns a const reference to the \b i-th strip.
+    T const* getStrip(int i) const{ return &(vec[i*stride]); }
     //! \brief Returns the stride
     int getStride() const{ return (int) stride; }
     //! \brief Returns the number of strips
     int getNumStrips() const{ return (int) num_strips; }
     //! \brief Returns **getStride()** times **getNumStrips()** but using `size_t` arithmetic avoiding a potential `int` overflow
-    size_t getTotalEntries() const{ return stride * num_strips; }
+    size_t getTotalEntries() const{ return vec.size(); }
     //! \brief Returns a reference to the `std::vector` that holds the internal data, can be used only after a call to **resize()**
     std::vector<T>& getVector(){ return vec; }
     //! \brief Returns a const reference to the `std::vector` that holds the internal data, can be used only after a call to **resize()**
@@ -189,24 +168,19 @@ public:
     void clear(){
         stride = 0;
         num_strips = 0;
-        vec.clear();
-        vec.shrink_to_fit();
+        vec = std::vector<double>();
     }
 
     //! \brief Uses `std::vector::insert` to append a strip **x** to the existing data
     void appendStrip(const std::vector<T> &x){
         vec.insert(vec.end(), x.begin(), x.end());
         num_strips++;
-        cdata = vec.data(); // needed in case there is relocation of data
-        data = vec.data();
     }
 
     //! \brief Uses std::vector::insert to append a strip \b x to the existing data at position \b pos.
     void appendStrip(int pos, const std::vector<T> &x){
         vec.insert(vec.begin() + (((size_t) pos) * stride), x.begin(), x.end());
         num_strips++;
-        cdata = vec.data(); // needed in case there is relocation of data
-        data = vec.data();
     }
 
     //! \brief Fill the entire vector with the specified \b value
@@ -214,8 +188,6 @@ public:
 
 private:
     size_t stride, num_strips;
-    T* data;
-    const T* cdata;
     std::vector<T> vec;
 };
 

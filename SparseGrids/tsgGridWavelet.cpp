@@ -33,6 +33,8 @@
 
 #include "tsgGridWavelet.hpp"
 
+#include "tsgUtils.hpp"
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -259,17 +261,17 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
         double sum = 0.0;
         #pragma omp parallel for reduction(+ : sum)
         for(int i=0; i<num_points; i++){
-            sum += basis_values[i] * coefficients.getCStrip(i)[j];
+            sum += basis_values[i] * coefficients.getStrip(i)[j];
         }
         y[j] = sum;
 	}
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_outputs, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++)
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
+        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
@@ -294,7 +296,7 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
             double sum = 0.0;
             #pragma omp parallel for reduction(+ : sum)
             for(int i=0; i<num_points; i++){
-                sum += basis_integrals[i] * coefficients.getCStrip(i)[j];
+                sum += basis_integrals[i] * coefficients.getStrip(i)[j];
             }
             q[j] = sum;
         }
@@ -433,12 +435,12 @@ void GridWavelet::getNormalization(std::vector<double> &norm) const{
         }
     }
 }
-void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, Data2D<int> &pmap) const{
+Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const{
     int num_points = points.getNumIndexes();
-    pmap.resize(num_dimensions, num_points);
+    Data2D<int> pmap(num_dimensions, num_points);
     if (tolerance == 0.0){
         pmap.fill(1); // if tolerance is 0, refine everything
-        return;
+        return pmap;
     }else{
         pmap.fill(0);
     }
@@ -451,7 +453,7 @@ void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             bool small = true;
-            const double *s = coefficients.getCStrip(i);
+            const double *s = coefficients.getStrip(i);
             if (output == -1){
                 for(size_t k=0; k<((size_t) num_outputs); k++){
                     if (small && ((fabs(s[k]) / norm[k]) > tolerance)) small = false;
@@ -499,8 +501,8 @@ void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
 
             for(int i=0; i<nump; i++){
                 bool small = true;
-                const double *coeff = direction_grid.coefficients.getCStrip(i);
-                const double *soeff = coefficients.getCStrip(pnts[i]);
+                const double *coeff = direction_grid.coefficients.getStrip(i);
+                const double *soeff = coefficients.getStrip(pnts[i]);
                 if (output == -1){
                     for(int k=0; k<num_outputs; k++){
                         if (small && ((fabs(soeff[k]) / norm[k]) > tolerance) && ((fabs(coeff[k]) / norm[k]) > tolerance)) small = false;
@@ -512,6 +514,7 @@ void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
             }
         }
     }
+    return pmap;
 }
 
 bool GridWavelet::addParent(const int point[], int direction, Data2D<int> &destination) const{
@@ -568,15 +571,17 @@ void GridWavelet::addChildLimited(const int point[], int direction, const std::v
 
 void GridWavelet::clearRefinement(){ needed = MultiIndexSet(); }
 const double* GridWavelet::getSurpluses() const{
-    return coefficients.getCStrip(0);
+    return coefficients.getStrip(0);
 }
 
 void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_points, y);
     for(int i=0; i<num_x; i++){
-        double *this_y = &(y[i*num_points]);
-        const double *this_x = &(x[i*num_dimensions]);
+        double const *this_x = xwrap.getStrip(i);
+        double *this_y = ywrap.getStrip(i);
         for(int j=0; j<num_points; j++){
             const int* p = work.getIndex(j);
             double v = 1.0;
@@ -615,13 +620,11 @@ const int* GridWavelet::getPointIndexes() const{
 void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits){
     clearRefinement();
 
-    Data2D<int> pmap;
-    buildUpdateMap(tolerance, criteria, output, pmap);
+    Data2D<int> pmap = buildUpdateMap(tolerance, criteria, output);
 
     bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
 
-    Data2D<int> refined;
-    refined.resize(num_dimensions, 0);
+    Data2D<int> refined(num_dimensions, 0);
 
     int num_points = points.getNumIndexes();
 

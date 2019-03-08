@@ -115,7 +115,8 @@ set(Tasmanian_source_libsparsegrid
         tsgRuleWavelet.hpp
         tsgRuleWavelet.cpp
         tsgSequenceOptimizer.hpp
-        tsgSequenceOptimizer.cpp)
+        tsgSequenceOptimizer.cpp
+        tsgUtils.hpp)
 
 # source files specific to cuda, used for both static and shared libs
 set(Tasmanian_source_libsparsegrid_cuda

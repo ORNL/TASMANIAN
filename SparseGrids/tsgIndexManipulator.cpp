@@ -87,10 +87,10 @@ void MultiIndexManipulations::getMaxIndex(const MultiIndexSet &mset, std::vector
     total_max = *std::max_element(max_levels.begin(), max_levels.end());
 }
 
-void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, Data2D<int> &parents){
+Data2D<int> MultiIndexManipulations::computeDAGup(MultiIndexSet const &mset){
     size_t num_dimensions = (size_t) mset.getNumDimensions();
     int n = mset.getNumIndexes();
-    parents.resize(mset.getNumDimensions(), n);
+    Data2D<int> parents(mset.getNumDimensions(), n);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<n; i++){
         std::vector<int> dad(num_dimensions);
@@ -103,14 +103,15 @@ void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, Data2D<int
             v++;
         }
     }
+    return parents;
 }
 
-void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, const BaseRuleLocalPolynomial *rule, Data2D<int> &parents){
+Data2D<int> MultiIndexManipulations::computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
     size_t num_dimensions = (size_t) mset.getNumDimensions();
     int num_points = mset.getNumIndexes();
     if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
         int max_parents = rule->getMaxNumParents() * (int) num_dimensions;
-        parents.resize(max_parents, num_points, -1);
+        Data2D<int> parents(max_parents, num_points, -1);
         int level0_offset = rule->getNumPoints(0);
         #pragma omp parallel for schedule(static)
         for(int i=0; i<num_points; i++){
@@ -136,8 +137,9 @@ void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, const Base
                 }
             }
         }
+        return parents;
     }else{ // this assumes that level zero has only one node
-        parents.resize((int) num_dimensions, num_points);
+        Data2D<int> parents((int) num_dimensions, num_points);
         #pragma omp parallel for schedule(static)
         for(int i=0; i<num_points; i++){
             const int *p = mset.getIndex(i);
@@ -158,6 +160,7 @@ void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, const Base
                 }
             }
         }
+        return parents;
     }
 }
 
@@ -181,8 +184,7 @@ void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, c
     new_set = MultiIndexSet(mset.getNumDimensions());
     size_t num_dimensions = (size_t) mset.getNumDimensions();
 
-    Data2D<int> children_unsorted;
-    children_unsorted.resize(mset.getNumDimensions(), 0);
+    Data2D<int> children_unsorted(mset.getNumDimensions(), 0);
 
     std::vector<int> kid(num_dimensions);
 
@@ -246,8 +248,7 @@ void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level
 
 void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points){
     size_t num_dimensions = (size_t) tensors.getNumDimensions();
-    Data2D<int> raw_points;
-    raw_points.resize((int) num_dimensions, 0);
+    Data2D<int> raw_points((int) num_dimensions, 0);
 
     std::vector<int> num_points_delta(num_dimensions);
     std::vector<int> offsets(num_dimensions);

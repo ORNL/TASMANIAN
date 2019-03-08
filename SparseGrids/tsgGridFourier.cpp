@@ -33,6 +33,7 @@
 
 #include "tsgGridFourier.hpp"
 #include "tsgHiddenExternals.hpp"
+#include "tsgUtils.hpp"
 
 namespace TasGrid{
 
@@ -253,7 +254,8 @@ void GridFourier::calculateFourierCoefficients(){
     std::vector<std::vector<int>> index_map;
     generateIndexingMap(index_map);
 
-    fourier_coefs.resize(num_outputs, 2 * num_points, 0.0);
+    fourier_coefs.resize(num_outputs, 2 * num_points);
+    fourier_coefs.fill(0.0);
 
     for(int n=0; n<active_tensors.getNumIndexes(); n++){
         const int* levels = active_tensors.getIndex(n);
@@ -400,19 +402,19 @@ void GridFourier::evaluate(const double x[], double y[]) const{
     std::vector<double> wimag(num_points);
     computeBasis<double, false>(points, x, wreal.data(), wimag.data());
     for(int i=0; i<num_points; i++){
-        const double *fcreal = fourier_coefs.getCStrip(i);
-        const double *fcimag = fourier_coefs.getCStrip(i + num_points);
+        const double *fcreal = fourier_coefs.getStrip(i);
+        const double *fcimag = fourier_coefs.getStrip(i + num_points);
         double wr = wreal[i];
         double wi = wimag[i];
         for(int k=0; k<num_outputs; k++) y[k] += wr * fcreal[k] - wi * fcimag[k];
     }
 }
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_outputs, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++)
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
+        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
@@ -427,8 +429,8 @@ void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
         wimag.resize(num_points, 1);
         computeBasis<double, false>(points, x, wreal.getStrip(0), wimag.getStrip(0));
     }
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getCStrip(0), wreal.getStrip(0), 0.0, y);
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getCStrip(num_points), wimag.getStrip(0), 1.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getStrip(0), wreal.getStrip(0), 0.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getStrip(num_points), wimag.getStrip(0), 1.0, y);
 }
 #endif
 
@@ -463,7 +465,7 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
     std::fill(q, q+num_outputs, 0.0);
     if (conformal_correction == 0){
         // everything vanishes except the Fourier coeff of e^0
-        std::copy(fourier_coefs.getCStrip(0), fourier_coefs.getCStrip(0) + num_outputs, q);
+        std::copy(fourier_coefs.getStrip(0), fourier_coefs.getStrip(0) + num_outputs, q);
     }else{
         // Do the expensive computation if we have a conformal map
         std::vector<double> w(getNumPoints());
@@ -481,23 +483,23 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
 void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     // y must be of size 2*num_x*num_points
     int num_points = getNumPoints();
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(2 * num_points, num_x, y);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(2*num_points, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        computeBasis<double, true>(((points.empty()) ? needed : points), xx.getCStrip(i), yy.getStrip(i), 0);
+        computeBasis<double, true>(((points.empty()) ? needed : points), xwrap.getStrip(i), ywrap.getStrip(i), 0);
     }
 }
 void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const{
     // when performing internal evaluations, split the matrix into real and complex components
     // thus only two real gemm() operations can be used (as opposed to one complex gemm)
     int num_points = getNumPoints();
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
     wreal.resize(num_points, num_x);
     wimag.resize(num_points, num_x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        computeBasis<double, false>(((points.empty()) ? needed : points), xx.getCStrip(i), wreal.getStrip(i), wimag.getStrip(i));
+        computeBasis<double, false>(((points.empty()) ? needed : points), xwrap.getStrip(i), wreal.getStrip(i), wimag.getStrip(i));
     }
 }
 
@@ -540,7 +542,7 @@ const int* GridFourier::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
 }
 const double* GridFourier::getFourierCoefs() const{
-    return fourier_coefs.getCStrip(0);
+    return fourier_coefs.getStrip(0);
 }
 
 } // end TasGrid
