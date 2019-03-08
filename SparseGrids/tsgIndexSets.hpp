@@ -119,39 +119,35 @@ void push_merge_map(const std::vector<T> &a, const std::vector<B> &b,
 }
 }
 
-//! \brief Generic 2D data structure divided into contiguous strips of fixed length (similar to a matrix)
-//! \ingroup TasmanianSets
-
-//! Many of the internal data-structures relevant to sparse grids can be represented as two dimensional arrays.
-//! The data is divided into **strips** of equal **stride**, e.g., number of multi-indexes and number of dimensions.
-//! Internally the class uses either `std::vector` or const/non-const array pointers; the template parameter **T** could be anything
-//! that can fit in a vector, but in practice the class is used primarily with `double` and `int`.
-//! This panacea template handles multiple situations:
-//! * allocate memory for the 2D data structure and access that memory with simple indexing avoiding the direct use of `[i * stride +j]`
-//! * dynamically generate a data structure by appending strips to the back of the existing ones
-//! * wrap around an existing data structure that can be either const or non-const array, this class preserves const correctness
+/*!
+ * \brief Generic 2D data structure divided into contiguous strips of fixed length (similar to a matrix)
+ * \ingroup TasmanianSets
+ *
+ * Many of the internal data-structures relevant to sparse grids can be represented as two dimensional arrays.
+ * The data is divided into \b strips of equal \b stride, e.g., number of multi-indexes and number of dimensions.
+ * Internally the class uses \b std::vector with type \b T,
+ * the when used, \b T is almost always \b double or \b int.
+ */
 template<typename T>
 class Data2D{
 public:
-    //! \brief Default constructor makes an empty data-structure
+    //! \brief Default constructor makes an empty data-structure.
     Data2D() : stride(0), num_strips(0){}
-    //! \brief Default destructor
+    //! \brief Create data-structure with given \b stride and number of \b strips.
+    Data2D(int new_stride, int new_num_strips) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips){}
+    //! \brief Create data-structure with given \b stride and number of \b strips and initializes with \b val.
+    Data2D(int new_stride, int new_num_strips, T val) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips, val){}
+    //! \brief Default destructor.
     ~Data2D(){}
 
     //! \brief Returns \b true if the number of strips is zero.
     bool empty() const{ return (num_strips == 0); }
 
-    //! \brief Clear any existing data and allocate a new data-structure with given **stride** and number of **strips**
+    //! \brief Clear any existing data and allocate a new data-structure with given \b stride and number of \b strips.
     void resize(int new_stride, int new_num_strips){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
         vec.resize(stride * num_strips);
-    }
-    //! \brief Clear any existing data, allocate a new data-structure with given **stride** and number of **strips** and initializes the data to **val** (using `std::vector::resize()`)
-    void resize(int new_stride, int new_num_strips, T val){
-        stride = (size_t) new_stride;
-        num_strips = (size_t) new_num_strips;
-        vec.resize(stride * num_strips, val);
     }
 
     //! \brief Returns a reference to the **i**-th strip, cannot be called after **cload()** since the reference is non-const

@@ -272,8 +272,7 @@ void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) 
 
     if ((sparse_affinity == -1) || ((sparse_affinity == 0) && (nnz / total_size > 0.1))){
         // potentially wastes a lot of memory
-        Data2D<double> A;
-        A.resize(num_points, num_x, 0.0);
+        Data2D<double> A(num_points, num_x, 0.0);
         for(int i=0; i<num_x; i++){
             double *row = A.getStrip(i);
             for(int j=spntr[i]; j<spntr[i+1]; j++) row[sindx[j]] = svals[j];

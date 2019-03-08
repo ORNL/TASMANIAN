@@ -254,7 +254,8 @@ void GridFourier::calculateFourierCoefficients(){
     std::vector<std::vector<int>> index_map;
     generateIndexingMap(index_map);
 
-    fourier_coefs.resize(num_outputs, 2 * num_points, 0.0);
+    fourier_coefs.resize(num_outputs, 2 * num_points);
+    fourier_coefs.fill(0.0);
 
     for(int n=0; n<active_tensors.getNumIndexes(); n++){
         const int* levels = active_tensors.getIndex(n);

@@ -110,7 +110,7 @@ void MultiIndexManipulations::computeDAGup(const MultiIndexSet &mset, const Base
     int num_points = mset.getNumIndexes();
     if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
         int max_parents = rule->getMaxNumParents() * (int) num_dimensions;
-        parents.resize(max_parents, num_points, -1);
+        parents = Data2D<int>(max_parents, num_points, -1);
         int level0_offset = rule->getNumPoints(0);
         #pragma omp parallel for schedule(static)
         for(int i=0; i<num_points; i++){
