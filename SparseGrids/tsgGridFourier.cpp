@@ -401,8 +401,8 @@ void GridFourier::evaluate(const double x[], double y[]) const{
     std::vector<double> wimag(num_points);
     computeBasis<double, false>(points, x, wreal.data(), wimag.data());
     for(int i=0; i<num_points; i++){
-        const double *fcreal = fourier_coefs.getCStrip(i);
-        const double *fcimag = fourier_coefs.getCStrip(i + num_points);
+        const double *fcreal = fourier_coefs.getStrip(i);
+        const double *fcimag = fourier_coefs.getStrip(i + num_points);
         double wr = wreal[i];
         double wi = wimag[i];
         for(int k=0; k<num_outputs; k++) y[k] += wr * fcreal[k] - wi * fcimag[k];
@@ -428,8 +428,8 @@ void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
         wimag.resize(num_points, 1);
         computeBasis<double, false>(points, x, wreal.getStrip(0), wimag.getStrip(0));
     }
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getCStrip(0), wreal.getStrip(0), 0.0, y);
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getCStrip(num_points), wimag.getStrip(0), 1.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getStrip(0), wreal.getStrip(0), 0.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getStrip(num_points), wimag.getStrip(0), 1.0, y);
 }
 #endif
 
@@ -464,7 +464,7 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
     std::fill(q, q+num_outputs, 0.0);
     if (conformal_correction == 0){
         // everything vanishes except the Fourier coeff of e^0
-        std::copy(fourier_coefs.getCStrip(0), fourier_coefs.getCStrip(0) + num_outputs, q);
+        std::copy(fourier_coefs.getStrip(0), fourier_coefs.getStrip(0) + num_outputs, q);
     }else{
         // Do the expensive computation if we have a conformal map
         std::vector<double> w(getNumPoints());
@@ -541,7 +541,7 @@ const int* GridFourier::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
 }
 const double* GridFourier::getFourierCoefs() const{
-    return fourier_coefs.getCStrip(0);
+    return fourier_coefs.getStrip(0);
 }
 
 } // end TasGrid

@@ -196,7 +196,7 @@ protected:
 
             if (isSupported){
                 if (mode == 0){
-                    double const *s = surpluses.getCStrip(r);
+                    double const *s = surpluses.getStrip(r);
                     for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
                 }else{
                     sindx.push_back(r);
@@ -213,7 +213,7 @@ protected:
                         basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
                         if (isSupported){
                             if (mode == 0){
-                                double const *s = surpluses.getCStrip(p);
+                                double const *s = surpluses.getStrip(p);
                                 for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
                             }else{
                                 sindx.push_back(p);

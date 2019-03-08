@@ -48,7 +48,7 @@ void GridLocalPolynomial::reset(bool clear_rule){
     needed = MultiIndexSet();
     values = StorageSet();
     if (clear_rule){ rule = std::unique_ptr<BaseRuleLocalPolynomial>(); order = 1; }
-    parents.load(0, 0, 0);
+    parents = Data2D<int>();
     sparse_affinity = 0;
     surpluses.clear();
 }
@@ -278,7 +278,7 @@ void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) 
             double *row = A.getStrip(i);
             for(int j=spntr[i]; j<spntr[i+1]; j++) row[sindx[j]] = svals[j];
         }
-        TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.getCStrip(0), A.getCStrip(0), 0.0, y);
+        TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.getStrip(0), A.getStrip(0), 0.0, y);
     }else{
         Utils::Wrapper2D<double> ywrap(num_outputs, y);
         #pragma omp parallel for
@@ -287,7 +287,7 @@ void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) 
             std::fill(this_y, this_y + num_outputs, 0.0);
             for(int j=spntr[i]; j<spntr[i+1]; j++){
                 double v = svals[j];
-                const double *s = surpluses.getCStrip(sindx[j]);
+                const double *s = surpluses.getStrip(sindx[j]);
                 for(int k=0; k<num_outputs; k++) this_y[k] += v * s[k];
             }
         }
@@ -426,7 +426,7 @@ void GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeR
 
     auto getDominantSurplus = [&](int i)-> double{
         double dominant = 0.0;
-        const double *s = surpluses.getCStrip(i);
+        const double *s = surpluses.getStrip(i);
         const double *c = scale.getStrip(i);
         if (output == -1){
             for(int k=0; k<num_outputs; k++) dominant = std::max(dominant, c[k] * fabs(s[k]) / norm[k]);
@@ -636,7 +636,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getCStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
@@ -710,11 +710,11 @@ void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_lev
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getCStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
-                            const double *branch_surp = surpluses.getCStrip(branch);
+                            const double *branch_surp = surpluses.getStrip(branch);
                             double basis_value = evalBasisRaw(work.getIndex(branch), x.data());
                             for(int k=0; k<num_outputs; k++)
                                 surpi[k] -= basis_value * branch_surp[k];
@@ -1004,7 +1004,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
                 while(monkey_count[0] < max_parents){
                     if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getCStrip(monkey_tail[current])[monkey_count[current]];
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
@@ -1034,7 +1034,7 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
         std::vector<double> integrals(num_points);
         getBasisIntegrals(integrals.data());
         for(int i=0; i<num_points; i++){
-            const double *s = surpluses.getCStrip(i);
+            const double *s = surpluses.getStrip(i);
             double wi = integrals[i];
             for(int k=0; k<num_outputs; k++) q[k] += wi * s[k];
         }
@@ -1085,7 +1085,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             bool small = true;
-            const double *s = surpluses.getCStrip(i);
+            const double *s = surpluses.getStrip(i);
             const double *c = scale.getStrip(i);
             if (output == -1){
                 for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);
@@ -1156,7 +1156,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
                                 }else{
                                     const int *branch_point = points.getIndex(branch);
                                     double basis_value = rule->evalRaw(branch_point[d], x);
-                                    const double *branch_vals = vals.getCStrip(global_to_pnts[branch]);
+                                    const double *branch_vals = vals.getStrip(global_to_pnts[branch]);
                                     for(int k=0; k<active_outputs; k++) valsi[k] -= basis_value * branch_vals[k];
 
                                     used[global_to_pnts[branch]] = true;
@@ -1173,9 +1173,9 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
 
             // at this point, vals contains the one directional surpluses
             for(int i=0; i<nump; i++){
-                const double *s = surpluses.getCStrip(pnts[i]);
+                const double *s = surpluses.getStrip(pnts[i]);
                 const double *c = scale.getStrip(pnts[i]);
-                const double *v = vals.getCStrip(i);
+                const double *v = vals.getStrip(i);
                 bool small = true;
                 if (output == -1){
                     for(int k=0; k<num_outputs; k++){
@@ -1202,7 +1202,7 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
 
     if (level_limits.empty()){
         for(int i=0; i<num_points; i++){
-            const int *map = pmap.getCStrip(i);
+            const int *map = pmap.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (map[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
@@ -1213,7 +1213,7 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
         }
     }else{
         for(int i=0; i<num_points; i++){
-            const int *map = pmap.getCStrip(i);
+            const int *map = pmap.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (map[j] == 1){ // if this dimension needs to be refined
                     if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
@@ -1306,7 +1306,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 
     for(int i=0; i<num_points; i++){
         bool small = true;
-        const double *s = surpluses.getCStrip(i);
+        const double *s = surpluses.getStrip(i);
         const double *c = scale.getStrip(i);
         if (output == -1){
             for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);

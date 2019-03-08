@@ -261,7 +261,7 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
         double sum = 0.0;
         #pragma omp parallel for reduction(+ : sum)
         for(int i=0; i<num_points; i++){
-            sum += basis_values[i] * coefficients.getCStrip(i)[j];
+            sum += basis_values[i] * coefficients.getStrip(i)[j];
         }
         y[j] = sum;
 	}
@@ -296,7 +296,7 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
             double sum = 0.0;
             #pragma omp parallel for reduction(+ : sum)
             for(int i=0; i<num_points; i++){
-                sum += basis_integrals[i] * coefficients.getCStrip(i)[j];
+                sum += basis_integrals[i] * coefficients.getStrip(i)[j];
             }
             q[j] = sum;
         }
@@ -453,7 +453,7 @@ void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
             bool small = true;
-            const double *s = coefficients.getCStrip(i);
+            const double *s = coefficients.getStrip(i);
             if (output == -1){
                 for(size_t k=0; k<((size_t) num_outputs); k++){
                     if (small && ((fabs(s[k]) / norm[k]) > tolerance)) small = false;
@@ -501,8 +501,8 @@ void GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int 
 
             for(int i=0; i<nump; i++){
                 bool small = true;
-                const double *coeff = direction_grid.coefficients.getCStrip(i);
-                const double *soeff = coefficients.getCStrip(pnts[i]);
+                const double *coeff = direction_grid.coefficients.getStrip(i);
+                const double *soeff = coefficients.getStrip(pnts[i]);
                 if (output == -1){
                     for(int k=0; k<num_outputs; k++){
                         if (small && ((fabs(soeff[k]) / norm[k]) > tolerance) && ((fabs(coeff[k]) / norm[k]) > tolerance)) small = false;
@@ -570,7 +570,7 @@ void GridWavelet::addChildLimited(const int point[], int direction, const std::v
 
 void GridWavelet::clearRefinement(){ needed = MultiIndexSet(); }
 const double* GridWavelet::getSurpluses() const{
-    return coefficients.getCStrip(0);
+    return coefficients.getStrip(0);
 }
 
 void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{

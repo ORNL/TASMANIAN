@@ -36,6 +36,8 @@
 
 #include "TasmanianSparseGrid.hpp"
 
+#include "tsgUtils.hpp"
+
 template<class T> std::unique_ptr<T> make_unique_ptr(){ return std::unique_ptr<T>(new T()); }
 
 namespace TasGrid{
@@ -721,10 +723,9 @@ void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions,
                 factorial += log((double)(k+1));
             }
         }
-        Data2D<double> xdata;
-        xdata.load(num_dimensions, num_points, x);
+        Utils::Wrapper2D<double> xwrap(num_dimensions, x);
         for(int i=0; i<num_points; i++){
-            double *this_x = xdata.getStrip(i);
+            double *this_x = xwrap.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (this_x[j] != 0.0){ // zero maps to zero and makes the log unstable
                     double sign = (this_x[j] > 0.0) ? 1.0 : -1.0;

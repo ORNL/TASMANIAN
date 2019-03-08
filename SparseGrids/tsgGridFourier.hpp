@@ -181,8 +181,8 @@ protected:
         if (!cuda_cache->real.empty()) return;
         int num_points = points.getNumIndexes();
         size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
-        cuda_cache->real.load(num_coeff, fourier_coefs.getCStrip(0));
-        cuda_cache->imag.load(num_coeff, fourier_coefs.getCStrip(num_points));
+        cuda_cache->real.load(num_coeff, fourier_coefs.getStrip(0));
+        cuda_cache->imag.load(num_coeff, fourier_coefs.getStrip(num_points));
     }
     void clearCudaCoefficients(){
         if (cuda_cache){

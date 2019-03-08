@@ -52,7 +52,7 @@ template<bool useAscii> void GridSequence::write(std::ostream &os) const{
     if (!needed.empty()) needed.write<useAscii>(os);
 
     IO::writeFlag<useAscii, IO::pad_auto>(!surpluses.empty(), os);
-    if (!surpluses.empty()) IO::writeVector<useAscii, IO::pad_line>(surpluses, os);
+    if (!surpluses.empty()) IO::writeVector<useAscii, IO::pad_line>(surpluses.getVector(), os);
 
     if (num_outputs > 0) values.write<useAscii>(os);
 }
@@ -67,8 +67,8 @@ template<bool useAscii> void GridSequence::read(std::ifstream &is){
     if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
 
     if (IO::readFlag<useAscii>(is)){
-        surpluses.resize(((size_t) num_outputs) * ((size_t) points.getNumIndexes()));
-        IO::readVector<useAscii>(is, surpluses);
+        surpluses.resize(num_outputs, points.getNumIndexes());
+        IO::readVector<useAscii>(is, surpluses.getVector());
     }
 
     if (num_outputs > 0) values.read<useAscii>(is);
@@ -88,8 +88,7 @@ void GridSequence::reset(){
     values = StorageSet();
     nodes.clear();
     coeff.clear();
-    surpluses.resize(0);
-    surpluses.shrink_to_fit();
+    surpluses = Data2D<double>();
 }
 void GridSequence::clearRefinement(){ needed = MultiIndexSet(); }
 
@@ -261,9 +260,8 @@ void GridSequence::mergeRefinement(){
         needed = MultiIndexSet();
         prepareSequence(0);
     }
-    surpluses.resize(num_vals);
-    surpluses.shrink_to_fit();
-    std::fill(surpluses.begin(), surpluses.end(), 0.0);
+    surpluses.resize(num_outputs, num_all_points);
+    surpluses.fill(0.0);
 }
 
 void GridSequence::beginConstruction(){
@@ -403,7 +401,8 @@ void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<d
         values.resize(num_outputs, 1);
         auto v = value; // create new to allow copy move
         values.setValues(v);
-        surpluses = value;
+        surpluses.resize(num_outputs, 1);
+        surpluses.getVector() = value; // the surplus of one point is the value itself
     }else{ // merge with existing points
         auto p = point;
         MultiIndexSet temp(num_dimensions);
@@ -411,9 +410,7 @@ void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<d
         values.addValues(points, temp, value.data());
 
         points.addSortedInsexes(point);
-        size_t ioffset = ((size_t) points.getSlot(point)) * ((size_t) num_outputs);
-
-        surpluses.insert(surpluses.begin() + ioffset, surplus.begin(), surplus.end());
+        surpluses.appendStrip(points.getSlot(point), surplus);
     }
     prepareSequence(0); // update the directional max_levels, will not shrink the number of nodes
 }
@@ -429,12 +426,9 @@ void GridSequence::evaluate(const double x[], double y[]) const{
 
     int num_points = points.getNumIndexes();
 
-    Data2D<double> surps;
-    surps.cload(num_outputs, num_points, surpluses.data());
-
     for(int i=0; i<num_points; i++){
         const int* p = points.getIndex(i);
-        const double *s = surps.getCStrip(i);
+        const double *s = surpluses.getStrip(i);
         double basis_value = cache[0][p[0]];
         for(int j=1; j<num_dimensions; j++){
             basis_value *= cache[j][p[j]];
@@ -462,7 +456,7 @@ void GridSequence::evaluateBlas(const double x[], int num_x, double y[]) const{
     }else{ // workaround small OpenMP penalty
         evalHierarchicalFunctions(x, weights.getStrip(0));
     }
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.getStrip(0), 0.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.getStrip(0), weights.getStrip(0), 0.0, y);
 }
 #endif // Tasmanian_ENABLE_BLAS
 
@@ -494,9 +488,6 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();
     std::fill(q, q + num_outputs, 0.0);
 
-    Data2D<double> surp;
-    surp.cload(num_outputs, num_points, surpluses.data());
-
     // for sequence grids, quadrature weights are expensive,
     // if using simple integration use the basis integral + surpluses, which is fast
     // if using conformal map, then we have to compute the expensive weights
@@ -506,7 +497,7 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
         for(int i=0; i<num_points; i++){
             const int* p = points.getIndex(i);
             double w = integ[p[0]];
-            const double *s = surp.getCStrip(i);
+            const double *s = surpluses.getStrip(i);
             for(int j=1; j<num_dimensions; j++){
                 w *= integ[p[j]];
             }
@@ -560,8 +551,8 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaSurpluses(); // points have not changed, just clear surpluses
     #endif
-    size_t num_ponits = (size_t) getNumPoints();
-    size_t num_vals = num_ponits * ((size_t) num_outputs);
+    int num_ponits = getNumPoints();
+    size_t num_vals = ((size_t) num_ponits) * ((size_t) num_outputs);
     if (!points.empty()){
         clearRefinement();
     }else{
@@ -570,9 +561,9 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     }
     std::vector<double> &vals = values.aliasValues();
     vals.resize(num_vals);
-    surpluses.resize(num_vals);
-    std::copy_n(c, num_vals, surpluses.data());
-    std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));
+    surpluses.resize(num_outputs, num_ponits);
+    std::copy_n(c, num_vals, surpluses.getVector().data());
+    std::vector<double> x(((size_t) num_ponits) * ((size_t) num_dimensions));
     getPoints(x.data());
     evaluateBatch(x.data(), points.getNumIndexes(), vals.data()); // speed this up later
 //     switch(acc){
@@ -603,11 +594,9 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
                 if (n < v) n = v;
             }
         }
-        Data2D<double> surp;
-        surp.cload(num_outputs, num_points, surpluses.data());
         #pragma omp parallel for
         for(int i=0; i<num_points; i++){
-            const double *s = surp.getCStrip(i);
+            const double *s = surpluses.getStrip(i);
             double smax = 0.0;
             for(int k=0; k<num_outputs; k++){
                 double v = fabs(s[k]) / nrm[k];
@@ -616,10 +605,8 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
             max_surp[i] = smax;
         }
     }else{
-        Data2D<double> surp;
-        surp.cload(num_outputs, num_points, surpluses.data());
         int i = 0;
-        for(auto &m : max_surp) m = surp.getCStrip(i++)[output];
+        for(auto &m : max_surp) m = surpluses.getStrip(i++)[output];
     }
 
     int n = 0, m;
@@ -733,12 +720,9 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         }
     }
 
-    Data2D<double> surp;
-    surp.cload(num_outputs, num_points, surpluses.data());
-
     if (output == -1){
         for(int i=0; i<num_points; i++){
-            const double *s = surp.getCStrip(i);
+            const double *s = surpluses.getStrip(i);
             double smax = fabs(s[0]) / norm[0];
             for(int k=1; k<num_outputs; k++){
                 double v = fabs(s[k]) / norm[k];
@@ -748,7 +732,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         }
     }else{
         for(int i=0; i<num_points; i++){
-            flagged[i] = ((fabs(surp.getCStrip(i)[output]) / norm[output]) > tolerance);
+            flagged[i] = ((fabs(surpluses.getStrip(i)[output]) / norm[output]) > tolerance);
         }
     }
 
@@ -776,7 +760,7 @@ void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) co
     std::copy(result.getVector().begin(), result.getVector().end(), poly);
 }
 const double* GridSequence::getSurpluses() const{
-    return surpluses.data();
+    return surpluses.getVector().data();
 }
 const int* GridSequence::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
@@ -859,10 +843,8 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 
 void GridSequence::recomputeSurpluses(){
     int num_points = points.getNumIndexes();
-    surpluses = values.aliasValues();
-
-    Data2D<double> surp;
-    surp.load(num_outputs, num_points, surpluses.data());
+    surpluses.resize(num_outputs, num_points);
+    surpluses.getVector() = values.aliasValues();
 
     std::vector<int> level;
     MultiIndexManipulations::computeLevels(points, level);
@@ -876,7 +858,7 @@ void GridSequence::recomputeSurpluses(){
         for(int i=0; i<num_points; i++){
             if (level[i] == l){
                 const int* p = points.getIndex(i);
-                double *surpi = surp.getStrip(i);
+                double *surpi = surpluses.getStrip(i);
 
                 std::vector<int> monkey_count(top_level + 1);
                 std::vector<int> monkey_tail(top_level + 1);
@@ -893,7 +875,7 @@ void GridSequence::recomputeSurpluses(){
                         if ((branch == -1) || (used[branch])){
                             monkey_count[current]++;
                         }else{
-                            const double *branch_surp = surp.getCStrip(branch);;
+                            const double *branch_surp = surpluses.getStrip(branch);;
                             double basis_value = evalBasis(points.getIndex(branch), p);
                             for(int k=0; k<num_outputs; k++){
                                  surpi[k] -= basis_value * branch_surp[k];

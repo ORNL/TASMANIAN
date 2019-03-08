@@ -192,7 +192,7 @@ protected:
     }
     void loadCudaSurpluses() const{
         if (!cuda_cache) cuda_cache = std::unique_ptr<CudaSequenceData<double>>(new CudaSequenceData<double>);
-        if (cuda_cache->surpluses.empty()) cuda_cache->surpluses.load(surpluses);
+        if (cuda_cache->surpluses.empty()) cuda_cache->surpluses.load(surpluses.getVector());
     }
     void clearCudaSurpluses(){ if (cuda_cache) cuda_cache->surpluses.clear(); }
     #endif
@@ -204,7 +204,7 @@ private:
     MultiIndexSet points;
     MultiIndexSet needed;
 
-    std::vector<double> surpluses;
+    Data2D<double> surpluses;
     std::vector<double> nodes;
     std::vector<double> coeff;
 
