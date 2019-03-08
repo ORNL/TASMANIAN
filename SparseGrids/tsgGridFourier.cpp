@@ -33,6 +33,7 @@
 
 #include "tsgGridFourier.hpp"
 #include "tsgHiddenExternals.hpp"
+#include "tsgUtils.hpp"
 
 namespace TasGrid{
 
@@ -408,11 +409,11 @@ void GridFourier::evaluate(const double x[], double y[]) const{
     }
 }
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_outputs, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++)
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
+        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
@@ -481,23 +482,23 @@ void GridFourier::integrate(double q[], double *conformal_correction) const{
 void GridFourier::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     // y must be of size 2*num_x*num_points
     int num_points = getNumPoints();
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(2 * num_points, num_x, y);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(2*num_points, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        computeBasis<double, true>(((points.empty()) ? needed : points), xx.getCStrip(i), yy.getStrip(i), 0);
+        computeBasis<double, true>(((points.empty()) ? needed : points), xwrap.getStrip(i), ywrap.getStrip(i), 0);
     }
 }
 void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const{
     // when performing internal evaluations, split the matrix into real and complex components
     // thus only two real gemm() operations can be used (as opposed to one complex gemm)
     int num_points = getNumPoints();
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
     wreal.resize(num_points, num_x);
     wimag.resize(num_points, num_x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
-        computeBasis<double, false>(((points.empty()) ? needed : points), xx.getCStrip(i), wreal.getStrip(i), wimag.getStrip(i));
+        computeBasis<double, false>(((points.empty()) ? needed : points), xwrap.getStrip(i), wreal.getStrip(i), wimag.getStrip(i));
     }
 }
 
