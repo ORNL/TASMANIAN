@@ -33,6 +33,8 @@
 
 #include "tsgGridWavelet.hpp"
 
+#include "tsgUtils.hpp"
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -265,11 +267,11 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
 	}
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_outputs, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++)
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
+        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
@@ -574,9 +576,11 @@ const double* GridWavelet::getSurpluses() const{
 void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_points, y);
     for(int i=0; i<num_x; i++){
-        double *this_y = &(y[i*num_points]);
-        const double *this_x = &(x[i*num_dimensions]);
+        double const *this_x = xwrap.getStrip(i);
+        double *this_y = ywrap.getStrip(i);
         for(int j=0; j<num_points; j++){
             const int* p = work.getIndex(j);
             double v = 1.0;
