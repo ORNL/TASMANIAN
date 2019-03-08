@@ -174,7 +174,7 @@ protected:
 
         const MultiIndexSet *work = (points.empty()) ? &needed : &points;
         int num_points = work->getNumIndexes();
-        Data2D<int> transpoints; transpoints.resize(work->getNumIndexes(), num_dimensions);
+        Data2D<int> transpoints(work->getNumIndexes(), num_dimensions);
         for(int i=0; i<num_points; i++){
             for(int j=0; j<num_dimensions; j++){
                 transpoints.getStrip(j)[i] = work->getIndex(i)[j];

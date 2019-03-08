@@ -850,8 +850,7 @@ void GridSequence::recomputeSurpluses(){
     MultiIndexManipulations::computeLevels(points, level);
     int top_level = *std::max_element(level.begin(), level.end());
 
-    Data2D<int> parents;
-    MultiIndexManipulations::computeDAGup(points, parents);
+    Data2D<int> parents = MultiIndexManipulations::computeDAGup(points);
 
     for(int l=1; l<=top_level; l++){
         #pragma omp parallel for schedule(dynamic)
@@ -902,8 +901,7 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
     MultiIndexManipulations::computeLevels(work, level);
     int top_level = *std::max_element(level.begin(), level.end());
 
-    Data2D<int> parents;
-    MultiIndexManipulations::computeDAGup(work, parents);
+    Data2D<int> parents = MultiIndexManipulations::computeDAGup(work);
 
     std::vector<int> monkey_count(top_level + 1);
     std::vector<int> monkey_tail(top_level + 1);

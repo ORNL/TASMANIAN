@@ -175,7 +175,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     if (num_outputs == 0){
         points = std::move(needed);
         needed = MultiIndexSet();
-        MultiIndexManipulations::computeDAGup(points, rule.get(), parents);
+        parents = MultiIndexManipulations::computeDAGup(points, rule.get());
     }else{
         values.resize(num_outputs, needed.getNumIndexes());
     }
@@ -541,8 +541,7 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
             std::copy_n(values.getValues(g), num_outputs, surpluses.getStrip(g)); // reset the surpluses to the values (will be updated)
         }
 
-        Data2D<int> dagUp;
-        MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
+        Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
         updateSurpluses(points, top_level + 1, levels, dagUp); // compute the current DAG and update the surplused for the descendants
     }
     buildTree(); // the tree is needed for evaluate(), must be rebuild every time the points set is updated
@@ -599,7 +598,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     // apply the transpose of the surplus transformation
     Data2D<int> lparents;
     if (parents.getNumStrips() != work.getNumIndexes()) // if the current dag loaded in parents does not reflect the indexes in work
-        MultiIndexManipulations::computeDAGup(work, rule.get(), lparents);
+        lparents = MultiIndexManipulations::computeDAGup(work, rule.get());
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -678,8 +677,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
     surpluses.resize(num_outputs, num_points);
     surpluses.getVector() = values.aliasValues(); // copy assignment
 
-    Data2D<int> dagUp;
-    MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
+    Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
 
     std::vector<int> level = MultiIndexManipulations::computeLevels(points, rule.get());
 
@@ -979,7 +977,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
     Data2D<int> lparents;
     if (parents.getNumStrips() != work.getNumIndexes())
-        MultiIndexManipulations::computeDAGup(work, rule.get(), lparents);
+        lparents = MultiIndexManipulations::computeDAGup(work, rule.get());
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -1060,12 +1058,12 @@ std::vector<double> GridLocalPolynomial::getNormalization() const{
     return norms;
 }
 
-void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const{
+Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const{
     int num_points = points.getNumIndexes();
-    map2.resize(num_dimensions, num_points);
+    Data2D<int> map2(num_dimensions, num_points);
     if (tolerance == 0.0){
         map2.fill(1); // if tolerance is 0, refine everything
-        return;
+        return map2;
     }else{
         map2.fill(0);
     }
@@ -1098,8 +1096,7 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
         }
     }else{
         // construct a series of 1D interpolants and use a refinement criteria that is a combination of the two hierarchical coefficients
-        Data2D<int> dagUp;
-        MultiIndexManipulations::computeDAGup(points, rule.get(), dagUp);
+        Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
 
         int max_1D_parents = rule->getMaxNumParents();
 
@@ -1187,15 +1184,14 @@ void GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criter
             }
         }
     }
+    return map2;
 }
 MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const{
-    Data2D<int> pmap;
-    buildUpdateMap(tolerance, criteria, output, scale_correction, pmap);
+    Data2D<int> pmap = buildUpdateMap(tolerance, criteria, output, scale_correction);
 
     bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
 
-    Data2D<int> refined;
-    refined.resize(num_dimensions, 0);
+    Data2D<int> refined(num_dimensions, 0);
 
     int num_points = points.getNumIndexes();
 
@@ -1320,8 +1316,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     if (num_kept == num_points) return num_points; // trivial case, remove nothing
 
     // save a copy of the points and the values
-    Data2D<int> point_kept;
-    point_kept.resize(num_dimensions, num_kept);
+    Data2D<int> point_kept(num_dimensions, num_kept);
 
     StorageSet values_kept;
     values_kept.resize(num_outputs, num_kept);

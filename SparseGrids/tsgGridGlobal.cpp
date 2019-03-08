@@ -601,7 +601,7 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
 #ifdef Tasmanian_ENABLE_BLAS
 void GridGlobal::evaluateBlas(const double x[], int num_x, double y[]) const{
     int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
+    Data2D<double> weights(num_points, num_x);
     if (num_x > 1){
         evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
     }else{ // skips small OpenMP overhead
@@ -617,7 +617,7 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
     if (cuda_values.size() == 0) cuda_values.load(values.aliasValues());
 
     int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
+    Data2D<double> weights(num_points, num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
     engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_values, weights.getVector(), y);

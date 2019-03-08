@@ -111,7 +111,7 @@ protected:
 
     void getNormalization(std::vector<double> &norm) const;
 
-    void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, Data2D<int> &pmap) const;
+    Data2D<int> buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const;
 
     bool addParent(const int point[], int direction, Data2D<int> &destination) const;
     void addChild(const int point[], int direction, Data2D<int> &destination) const;

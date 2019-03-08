@@ -801,8 +801,7 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
 void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points, double weights[]) const{
     if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
-        Data2D<double> x;
-        x.resize(num_dimensions, num_points);
+        Data2D<double> x(num_dimensions, num_points);
         base->getPoints(x.getStrip(0));
         std::vector<std::vector<double>> c(num_dimensions), p(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
@@ -1168,8 +1167,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], 
         getGridLocalPolynomial()->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
     }else if (isWavelet()){
         int num_points = base->getNumPoints();
-        Data2D<double> dense_vals;
-        dense_vals.resize(num_points, num_x);
+        Data2D<double> dense_vals(num_points, num_x);
         getGridWavelet()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         int num_nz = 0;
         for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;
@@ -1239,8 +1237,7 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
         num_nz = getGridLocalPolynomial()->getSpareBasisMatrixNZ(x_canonical, num_x);
     }else if (isWavelet()){
         int num_points = base->getNumPoints();
-        Data2D<double> dense_vals;
-        dense_vals.resize(num_points, num_x);
+        Data2D<double> dense_vals(num_points, num_x);
         getGridWavelet()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;
     }else if (empty()){
@@ -1258,8 +1255,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
         getGridLocalPolynomial()->buildSpareBasisMatrixStatic(x_canonical, num_x, 32, pntr, indx, vals);
     }else if (isWavelet()){
         int num_points = base->getNumPoints();
-        Data2D<double> dense_vals;
-        dense_vals.resize(num_points, num_x);
+        Data2D<double> dense_vals(num_points, num_x);
         base->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         int num_nz = 0;
         for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;

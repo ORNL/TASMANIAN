@@ -255,7 +255,7 @@ protected:
 
     std::vector<double> getNormalization() const;
 
-    void buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction, Data2D<int> &map2) const;
+    Data2D<int> buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const;
     MultiIndexSet getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const;
 
     bool addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;
@@ -294,8 +294,7 @@ protected:
         if (!cuda_cache) cuda_cache = std::unique_ptr<CudaLocalPolynomialData<double>>(new CudaLocalPolynomialData<double>);
         if (!cuda_cache->nodes.empty()) return;
 
-        Data2D<double> cpu_nodes;
-        cpu_nodes.resize(num_dimensions, getNumPoints());
+        Data2D<double> cpu_nodes(num_dimensions, getNumPoints());
         getPoints(cpu_nodes.getStrip(0));
         cuda_cache->nodes.load(cpu_nodes.getVector());
 
