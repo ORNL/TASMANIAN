@@ -34,6 +34,7 @@
 #include "tsgGridGlobal.hpp"
 
 #include "tsgHiddenExternals.hpp"
+#include "tsgUtils.hpp"
 
 namespace TasGrid{
 
@@ -590,11 +591,11 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
     }
 }
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    Utils::Wrapper2D<const double> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_outputs, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++)
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
+        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
@@ -640,12 +641,11 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
 
 void GridGlobal::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
-    Data2D<double> yy; yy.load(num_points, num_x, y);
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Utils::Wrapper2D<const double> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_points, y);
     #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        getInterpolationWeights(xx.getCStrip(i), yy.getStrip(i));
-    }
+    for(int i=0; i<num_x; i++)
+        getInterpolationWeights(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double> &surp) const{
