@@ -34,6 +34,7 @@
 #include "tsgGridSequence.hpp"
 
 #include "tsgHiddenExternals.hpp"
+#include "tsgUtils.hpp"
 
 namespace TasGrid{
 
@@ -445,11 +446,11 @@ void GridSequence::evaluate(const double x[], double y[]) const{
     }
 }
 void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
-    Data2D<double> yy; yy.load(num_outputs, num_x, y);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_outputs, y);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++)
-        evaluate(xx.getCStrip(i), yy.getStrip(i));
+        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
@@ -528,12 +529,11 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
 
 void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
-    Data2D<double> yy; yy.load(num_points, num_x, y);
-    Data2D<double> xx; xx.cload(num_dimensions, num_x, x);
+    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+    Utils::Wrapper2D<double> ywrap(num_points, y);
     #pragma omp parallel for
-    for(int i=0; i<num_x; i++){
-        evalHierarchicalFunctions(xx.getCStrip(i), yy.getStrip(i));
-    }
+    for(int i=0; i<num_x; i++)
+        evalHierarchicalFunctions(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[]) const{
     const MultiIndexSet& work = (points.empty()) ? needed : points;
