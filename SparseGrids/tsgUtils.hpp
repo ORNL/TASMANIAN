@@ -63,6 +63,15 @@ namespace Utils{
 
 /*!
  * \internal
+ * \brief Converts two integer-like variables to \b size_t and returns the product.
+ * \ingroup TasmanianUtils
+ * \endinternal
+ */
+template<typename IntA, typename IntB>
+inline size_t size_mult(IntA a, IntB b){ return static_cast<size_t>(a) * static_cast<size_t>(b); }
+
+/*!
+ * \internal
  * \brief Wraps around a C-style of an array and mimics 2D data-structure.
  * \ingroup TasmanianUtils
  *
@@ -82,7 +91,7 @@ public:
     ~Wrapper2D(){}
 
     //! \brief Return a pointer to the i-th strip.
-    T* getStrip(int i){ return &(data[((size_t) i) * stride]); }
+    T* getStrip(int i){ return &(data[size_mult(i, stride)]); }
 
 private:
     size_t stride;
