@@ -81,13 +81,15 @@ makePDFGridPrior(TasGrid::TasmanianSparseGrid const &grid, std::function<void(st
     };
 }
 
-//! \internal
-//! \brief Macro that checks if \b grid and \b state have the same number of dimensions.
-//! \ingroup DREAMAux
-
-//! Throws runtime_error if \b grid and \b state have different number of dimensions.
-#define __TASDREAM_CHECK_GRID_STATE_DIMS \
+/*!
+ * \internal
+ * \brief Macro that checks if \b grid and \b state have the same number of dimensions, throws runtime_error otherwise.
+ * \ingroup DREAMAux
+ * \endinternal
+ */
+inline void checkGridSTate(TasGrid::TasmanianSparseGrid const &grid, TasmanianDREAM const &state){
     if (grid.getNumDimensions() != state.getNumDimensions()) throw std::runtime_error("ERROR: mismatch between the dimensions of the grid and the DREAM state.");
+}
 
 //! \internal
 //! \brief Extract the \b grid rule and domain.
@@ -145,7 +147,7 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_CHECK_GRID_STATE_DIMS
+    checkGridSTate(grid, state);
     SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), inside, independent_update, state, differential_update, get_random01);
 }
 
@@ -163,7 +165,7 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_CHECK_GRID_STATE_DIMS
+    checkGridSTate(grid, state);
     SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), lower, upper, independent_update, state, differential_update, get_random01);
 }
 

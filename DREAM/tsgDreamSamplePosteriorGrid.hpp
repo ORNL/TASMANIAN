@@ -75,7 +75,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_CHECK_GRID_STATE_DIMS
+    checkGridSTate(grid, state);
     SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, inside, independent_update, state, differential_update, get_random01);
 }
 
@@ -94,7 +94,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_CHECK_GRID_STATE_DIMS
+    checkGridSTate(grid, state);
     SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, lower, upper, independent_update, state, differential_update, get_random01);
 }
 
