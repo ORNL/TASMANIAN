@@ -76,14 +76,6 @@ inline void checkLowerUpper(std::vector<double> const &lower, std::vector<double
 }
 
 //! \internal
-//! \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
-//! \ingroup DREAMAux
-
-//! Assumes two vectors \b lower and \b upper are defined and creates a lambda using \b inHypercube().
-#define __TASDREAM_HYPERCUBE_DOMAIN \
-    [&](const std::vector<double> &x)->bool{ return inHypercube(lower, upper, x); }
-
-//! \internal
 //! \brief Returns \b true if the entries in \b x obey the \b lower and \b upper values (sizes must match, does not check).
 //! \ingroup DREAMAux
 
@@ -93,6 +85,16 @@ inline bool inHypercube(const std::vector<double> &lower, const std::vector<doub
     auto il = lower.begin(), iu = upper.begin();
     for(auto v : x) if ((v < *il++) || (v > *iu++)) return false;
     return true;
+}
+
+/*!
+ * \internal
+ * \ingroup DREAMAux
+ * \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
+ * \endinternal
+ */
+inline std::function<bool(std::vector<double> const &x)> makeHypercudabeLambda(std::vector<double> const &lower, std::vector<double> const &upper){
+    return [&](const std::vector<double> &x)->bool{ return inHypercube(lower, upper, x); };
 }
 
 //! \internal
@@ -284,7 +286,7 @@ void SampleDREAM(int num_burnup, int num_collect,
                  std::function<double(void)> differential_update = const_one,
                  std::function<double(void)> get_random01 = tsgCoreUniform01){
     checkLowerUpper(lower, upper, state);
-    SampleDREAM<form>(num_burnup, num_collect, probability_distribution, __TASDREAM_HYPERCUBE_DOMAIN, independent_update, state, differential_update, get_random01);
+    SampleDREAM<form>(num_burnup, num_collect, probability_distribution, makeHypercudabeLambda(lower, upper), independent_update, state, differential_update, get_random01);
 }
 
 
@@ -304,7 +306,7 @@ void SampleDREAM(int num_burnup, int num_collect,
                  std::function<double(void)> differential_update = const_one,
                  std::function<double(void)> get_random01 = tsgCoreUniform01){
     checkLowerUpper(lower, upper, state);
-    SampleDREAM<form>(num_burnup, num_collect, probability_distribution, __TASDREAM_HYPERCUBE_DOMAIN, independent_dist, independent_magnitude, state, differential_update, get_random01);
+    SampleDREAM<form>(num_burnup, num_collect, probability_distribution, makeHypercudabeLambda(lower, upper), independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 }
