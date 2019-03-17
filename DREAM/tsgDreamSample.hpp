@@ -62,15 +62,18 @@
 
 namespace TasDREAM{
 
-//! \internal
-//! \brief Checks if vectors with names \b lower and \b upper have the same size as the dimensions in TasmanianDREAM \b state.
-//! \ingroup DREAMAux
-
-//! Throws \b runtime_error if the size of vectors \b lower and \b upper does not match \b state.getNumDimensions().
-//! Does not compile if the variables do not exit.
-#define __TASDREAM_CHECK_LOWERUPPER \
-    if (lower.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state."); \
+/*!
+ * \internal
+ * \brief Checks if vectors with names \b lower and \b upper have the same size as the dimensions in TasmanianDREAM \b state.
+ * \ingroup DREAMAux
+ *
+ * Throws \b runtime_error if the size of vectors \b lower and \b upper does not match \b state.getNumDimensions().
+ * \endinternal
+ */
+inline void checkLowerUpper(std::vector<double> const &lower, std::vector<double> const &upper, TasmanianDREAM const &state){
+    if (lower.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state.");
     if (upper.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of upper does not match the dimension in state.");
+}
 
 //! \internal
 //! \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
@@ -280,7 +283,7 @@ void SampleDREAM(int num_burnup, int num_collect,
                  TasmanianDREAM &state,
                  std::function<double(void)> differential_update = const_one,
                  std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_CHECK_LOWERUPPER
+    checkLowerUpper(lower, upper, state);
     SampleDREAM<form>(num_burnup, num_collect, probability_distribution, __TASDREAM_HYPERCUBE_DOMAIN, independent_update, state, differential_update, get_random01);
 }
 
@@ -300,7 +303,7 @@ void SampleDREAM(int num_burnup, int num_collect,
                  TasmanianDREAM &state,
                  std::function<double(void)> differential_update = const_one,
                  std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_CHECK_LOWERUPPER
+    checkLowerUpper(lower, upper, state);
     SampleDREAM<form>(num_burnup, num_collect, probability_distribution, __TASDREAM_HYPERCUBE_DOMAIN, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
