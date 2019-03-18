@@ -101,12 +101,13 @@ inline void checkGridSTate(TasGrid::TasmanianSparseGrid const &grid, TasmanianDR
     std::vector<double> transform_a, transform_b; \
     if (grid.isSetDomainTransfrom()) grid.getDomainTransform(transform_a, transform_b); \
 
-//! \internal
-//! \brief Get the Gauss-Hermite lambda.
-//! \ingroup DREAMAux
-
-//! Get the Gauss-Hermite lambda.
-#define __TASDREAM_GRID_DOMAIN_GHLAMBDA [&](const std::vector<double> &)->bool{ return true; }
+/*!
+ * \internal
+ * \brief Get the Gauss-Hermite lambda.
+ * \ingroup DREAMAux
+ * \endinternal
+ */
+inline bool domainGaussHermite(std::vector<double> const &){ return true; }
 
 //! \internal
 //! \brief Get the Gauss-Laguerre lambda.
@@ -188,9 +189,9 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     __TASDREAM_GRID_EXTRACT_RULE
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
-        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), __TASDREAM_GRID_DOMAIN_GHLAMBDA, independent_update, state, differential_update, get_random01);
+        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), domainGaussHermite, independent_update, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
-        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), __TASDREAM_GRID_DOMAIN_GHLAMBDA, independent_update, state, differential_update, get_random01);
+        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), __TASDREAM_GRID_DOMAIN_GLLAMBDA, independent_update, state, differential_update, get_random01);
     }else{
         __TASDREAM_GRID_DOMAIN_DEFAULTS
         SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), transform_a, transform_b, independent_update, state, differential_update, get_random01);
@@ -246,14 +247,15 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     __TASDREAM_GRID_EXTRACT_RULE
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
-        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), __TASDREAM_GRID_DOMAIN_GHLAMBDA,
+        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), domainGaussHermite,
                           independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
-        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), __TASDREAM_GRID_DOMAIN_GHLAMBDA,
+        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), __TASDREAM_GRID_DOMAIN_GLLAMBDA,
                           independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else{
         __TASDREAM_GRID_DOMAIN_DEFAULTS
-        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), transform_a, transform_b, independent_dist, independent_magnitude, state, differential_update, get_random01);
+        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), transform_a, transform_b,
+                          independent_dist, independent_magnitude, state, differential_update, get_random01);
     }
 }
 
