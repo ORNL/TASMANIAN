@@ -53,33 +53,38 @@
 
 namespace TasDREAM{
 
-//! \internal
-//! \brief Macro to create a probability distribution lambda from the model, likelihood and prior.
-//! \ingroup DREAMAux
+/*!
+ * \internal
+ * \brief Create a probability distribution lambda from the model, likelihood and prior.
+ * \ingroup DREAMAux
+ *
+ * The same \b lambda function is used for multiple overloads.
+ * - \b likelihood is the TasmanianLikelihood
+ * - \b model is the \b lambda for the model
+ * - \b prior is the \b lambda for the prior
+ * - \b form is the template parameter that chooses between regular and logarithmic form
+ * \endinternal
+ */
+template<TypeSamplingForm form> std::function<void(const std::vector<double> &candidates, std::vector<double> &values)>
+makePDFPosterior(TasmanianLikelihood const &likelihood,
+                 std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> model,
+                 std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> prior){
+    return [&](const std::vector<double> &candidates, std::vector<double> &values)->void{
+        std::vector<double> model_outs(likelihood.getNumOuputs() * values.size());
+        model(candidates, model_outs);
+        likelihood.getLikelihood(form, model_outs, values);
 
-//! The same \b lambda function is used for multiple overloads, so long as the variable names match, this will work.
-//! The variable names must match, in order to have consistency anyway. Specifically,
-//! - \b likelihood is the TasmanianLikelihood
-//! - \b model is the \b lambda for the model
-//! - \b prior is the \b lambda for the prior
-//! - \b form is the template parameter that chooses between regular and logarithmic form
-#define __TASDREAM_PDF_POSTERIOR \
-    [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ \
-        std::vector<double> model_outs(likelihood.getNumOuputs() * values.size()); \
-        model(candidates, model_outs); \
-        likelihood.getLikelihood(form, model_outs, values); \
-        \
-        std::vector<double> prior_vals(values.size()); \
-        prior(candidates, prior_vals); \
-        \
-        auto iv = values.begin(); \
-        if (form == regform){ \
-            for(auto p : prior_vals) *iv++ *= p; \
-        }else{ \
-            for(auto p : prior_vals) *iv++ += p; \
-        } \
-    }
+        std::vector<double> prior_vals(values.size());
+        prior(candidates, prior_vals);
 
+        auto iv = values.begin();
+        if (form == regform){
+            for(auto p : prior_vals) *iv++ *= p;
+        }else{
+            for(auto p : prior_vals) *iv++ += p;
+        }
+    };
+}
 
 //! \brief Variation of \b SampleDREAM() which assumes a Bayesian inference problem with likelihood, model and prior.
 //! \ingroup DREAMSampleModel
@@ -104,7 +109,8 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_POSTERIOR, inside, independent_update, state, differential_update, get_random01);
+    SampleDREAM<form>(num_burnup, num_collect, makePDFPosterior<form>(likelihood, model, prior),
+                      inside, independent_update, state, differential_update, get_random01);
 }
 
 
@@ -120,7 +126,8 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_POSTERIOR, lower, upper, independent_update, state, differential_update, get_random01);
+    SampleDREAM<form>(num_burnup, num_collect, makePDFPosterior<form>(likelihood, model, prior),
+                      lower, upper, independent_update, state, differential_update, get_random01);
 }
 
 
@@ -136,7 +143,8 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_POSTERIOR, inside, independent_dist, independent_magnitude, state, differential_update, get_random01);
+    SampleDREAM<form>(num_burnup, num_collect, makePDFPosterior<form>(likelihood, model, prior),
+                      inside, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 
@@ -152,7 +160,8 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    SampleDREAM<form>(num_burnup, num_collect, __TASDREAM_PDF_POSTERIOR, lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
+    SampleDREAM<form>(num_burnup, num_collect, makePDFPosterior<form>(likelihood, model, prior),
+                      lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 }

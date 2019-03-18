@@ -52,7 +52,6 @@
 namespace TasDREAM{}
 
 // cleanup maros used by the headers above, no need to contaminate other codes
-#undef __TASDREAM_PDF_POSTERIOR
 #undef __TASDREAM_GRID_EXTRACT_RULE
 #undef __TASDREAM_GRID_DOMAIN_GLLAMBDA
 #undef __TASDREAM_GRID_DOMAIN_GHLAMBDA
