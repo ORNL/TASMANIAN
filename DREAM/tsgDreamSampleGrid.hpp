@@ -103,7 +103,7 @@ inline void checkGridSTate(TasGrid::TasmanianSparseGrid const &grid, TasmanianDR
 
 /*!
  * \internal
- * \brief Get the Gauss-Hermite lambda.
+ * \brief Makes the Gauss-Hermite lambda.
  * \ingroup DREAMAux
  * \endinternal
  */

@@ -53,13 +53,15 @@
 
 namespace TasDREAM{
 
-//! \internal
-//! \brief Macro to create a model lambda from sparse grid.
-//! \ingroup DREAMAux
-
-//! The same \b lambda function is used for multiple overloads, so long as the spaes grid is called \b grid.
-#define __TASDREAM_LIKELIHOOD_GRID_LIKE [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ grid.evaluateBatch(candidates, values); }
-
+/*!
+ * \internal
+ * \brief Macro to create a model lambda from sparse grid.
+ * \ingroup DREAMAux
+ * \endinternal
+ */
+inline std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> makeGridModel(TasGrid::TasmanianSparseGrid const &grid){
+    return [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ grid.evaluateBatch(candidates, values); };
+}
 
 //! \brief Overloads of \b SampleDREAMPost() which uses a sparse grid as model.
 //! \ingroup DREAMGridModel
@@ -76,7 +78,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     checkGridSTate(grid, state);
-    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, inside, independent_update, state, differential_update, get_random01);
+    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, inside, independent_update, state, differential_update, get_random01);
 }
 
 
@@ -95,7 +97,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     checkGridSTate(grid, state);
-    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, lower, upper, independent_update, state, differential_update, get_random01);
+    SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, lower, upper, independent_update, state, differential_update, get_random01);
 }
 
 
@@ -114,14 +116,14 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     __TASDREAM_GRID_EXTRACT_RULE
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
-        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, domainGaussHermite, independent_update, state, differential_update, get_random01);
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, domainGaussHermite, independent_update, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
         SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
-                              __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, __TASDREAM_GRID_DOMAIN_GLLAMBDA, independent_update, state, differential_update, get_random01);
+                              makeGridModel(grid), prior, __TASDREAM_GRID_DOMAIN_GLLAMBDA, independent_update, state, differential_update, get_random01);
     }else{
         __TASDREAM_GRID_DOMAIN_DEFAULTS
         SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
-                              __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, transform_a, transform_b, independent_update, state, differential_update, get_random01);
+                              makeGridModel(grid), prior, transform_a, transform_b, independent_update, state, differential_update, get_random01);
     }
 }
 
@@ -141,7 +143,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
-                          __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, inside, independent_dist, independent_magnitude, state, differential_update, get_random01);
+                          makeGridModel(grid), prior, inside, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 
@@ -160,7 +162,7 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
-                          __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
+                          makeGridModel(grid), prior, lower, upper, independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 
@@ -179,14 +181,14 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
     __TASDREAM_GRID_EXTRACT_RULE
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
-        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, domainGaussHermite,
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, domainGaussHermite,
                               independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
-        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, __TASDREAM_GRID_DOMAIN_GLLAMBDA,
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, __TASDREAM_GRID_DOMAIN_GLLAMBDA,
                               independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else{
         __TASDREAM_GRID_DOMAIN_DEFAULTS
-        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, __TASDREAM_LIKELIHOOD_GRID_LIKE, prior, transform_a, transform_b,
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, transform_a, transform_b,
                               independent_dist, independent_magnitude, state, differential_update, get_random01);
     }
 }
