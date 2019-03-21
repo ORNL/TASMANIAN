@@ -139,21 +139,26 @@ void GridGlobal::clearRefinement(){
     updated_active_w = std::vector<int>();
 }
 
-void GridGlobal::selectTensors(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, TypeOneDRule crule, MultiIndexSet &tset) const{
+MultiIndexSet GridGlobal::selectTensors(size_t dims, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, TypeOneDRule crule) const{
     if ((type == type_level) || (type == type_tensor) || (type == type_hyperbolic)){ // no need to know exactness
-        MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return l; }, anisotropic_weights, tset);
+        return MultiIndexManipulations::selectTensors(dims, depth, type,
+                                                      [&](int l) -> int{ return l; }, anisotropic_weights);
     }else{ // work with exactness specific to the rule
         if (crule == rule_customtabulated){
             if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-                MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return custom.getQExact(l); }, anisotropic_weights, tset);
+                return MultiIndexManipulations::selectTensors(dims, depth, type,
+                                                              [&](int l) -> int{ return custom.getQExact(l); }, anisotropic_weights);
             }else{
-                MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return custom.getIExact(l); }, anisotropic_weights, tset);
+                return MultiIndexManipulations::selectTensors(dims, depth, type,
+                                                              [&](int l) -> int{ return custom.getIExact(l); }, anisotropic_weights);
             }
         }else{ // using regular OneDimensionalMeta
             if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-                MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return OneDimensionalMeta::getQExact(l, crule); }, anisotropic_weights, tset);
+                return MultiIndexManipulations::selectTensors(dims, depth, type,
+                                                              [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, crule); }, anisotropic_weights);
             }else{
-                MultiIndexManipulations::selectTensors(depth, type, [&](int l) -> long long{ return OneDimensionalMeta::getIExact(l, crule); }, anisotropic_weights, tset);
+                return MultiIndexManipulations::selectTensors(dims, depth, type,
+                                                              [&](int l) -> int{ return OneDimensionalMeta::getIExact(l, crule); }, anisotropic_weights);
             }
         }
     }
@@ -177,8 +182,7 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
         custom.read(custom_filename);
     }
 
-    MultiIndexSet tset(cnum_dimensions);
-    selectTensors(depth, type, anisotropic_weights, crule, tset);
+    MultiIndexSet tset = selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule);
 
     if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, tset);
 
@@ -209,7 +213,7 @@ void GridGlobal::copyGrid(const GridGlobal *global){
 
 void GridGlobal::setTensors(MultiIndexSet &tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){
     reset(false);
-    num_dimensions = tset.getNumDimensions();
+    num_dimensions = (int) tset.getNumDimensions();
     num_outputs = cnum_outputs;
     rule = crule;
     alpha = calpha;  beta = cbeta;
@@ -271,8 +275,7 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
     }else{
         clearRefinement();
 
-        updated_tensors.setNumDimensions(num_dimensions);
-        selectTensors(depth, type, anisotropic_weights, rule, updated_tensors);
+        updated_tensors = selectTensors((size_t) num_dimensions, depth, type, anisotropic_weights, rule);
 
         if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, updated_tensors);
 
@@ -669,8 +672,7 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
 
         if (normalize) for(auto &s : surp) s /= max_surp;
     }else{
-        MultiIndexSet polynomial_set(num_dimensions);
-        getPolynomialSpace(true, polynomial_set);
+        MultiIndexSet polynomial_set = getPolynomialSpace(true);
 
         MultiIndexSet quadrature_tensors =
             MultiIndexManipulations::generateLowerMultiIndexSet((size_t) num_dimensions, [&](const std::vector<int> &index) ->
@@ -837,7 +839,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
 
     if (kids.getNumIndexes() > 0){
         kids.addMultiIndexSet(points);
-        MultiIndexManipulations::completeSetToLower<int>(kids);
+        MultiIndexManipulations::completeSetToLower(kids);
 
         updated_tensors = std::move(kids);
         proposeUpdatedTensors();
@@ -869,25 +871,24 @@ void GridGlobal::clearAccelerationData(){
     #endif
 }
 
-void GridGlobal::getPolynomialSpace(bool interpolation, MultiIndexSet &polynomial_set) const{
+MultiIndexSet GridGlobal::getPolynomialSpace(bool interpolation) const{
     if (interpolation){
         if (rule == rule_customtabulated){
-            MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return custom.getIExact(l); }, polynomial_set);
+            return MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return custom.getIExact(l); });
         }else{
-            MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return OneDimensionalMeta::getIExact(l, rule); }, polynomial_set);
+            return MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return OneDimensionalMeta::getIExact(l, rule); });
         }
     }else{
         if (rule == rule_customtabulated){
-            MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return custom.getQExact(l); }, polynomial_set);
+            return MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return custom.getQExact(l); });
         }else{
-            MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return OneDimensionalMeta::getQExact(l, rule); }, polynomial_set);
+            return MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return OneDimensionalMeta::getQExact(l, rule); });
         }
     }
 }
 
 void GridGlobal::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
-    MultiIndexSet polynomial_set(num_dimensions);
-    getPolynomialSpace(interpolation, polynomial_set);
+    MultiIndexSet polynomial_set = getPolynomialSpace(interpolation);
 
     n = polynomial_set.getNumIndexes();
     poly = new int[polynomial_set.getVector().size()];

@@ -128,7 +128,7 @@ void GridSequence::copyGrid(const GridSequence *seq){
 
 void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule crule){
     reset();
-    num_dimensions = pset.getNumDimensions();
+    num_dimensions = (int) pset.getNumDimensions();
     num_outputs = cnum_outputs;
     rule = crule;
 
@@ -740,7 +740,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits, kids);
     if (kids.getNumIndexes() > 0){
         kids.addMultiIndexSet(points);
-        MultiIndexManipulations::completeSetToLower<int>(kids);
+        MultiIndexManipulations::completeSetToLower(kids);
 
         needed = kids.diffSets(points);
         if (!needed.empty()) prepareSequence(0);
@@ -751,7 +751,7 @@ void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) co
     MultiIndexSet space; // used only when interpolation is false
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     if (!interpolation){ // when using interpolation, the polynomial space coincides with points/needed
-        MultiIndexManipulations::createPolynomialSpace(work, [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); }, space);
+        space = MultiIndexManipulations::createPolynomialSpace(work, [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); });
     }
     const MultiIndexSet &result = (interpolation) ? work : space;
 

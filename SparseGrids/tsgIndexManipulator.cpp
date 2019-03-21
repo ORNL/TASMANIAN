@@ -35,6 +35,32 @@
 
 namespace TasGrid{
 
+MultiIndexSet MultiIndexManipulations::selectTensors(size_t num_dimensions, int offset, TypeDepth type,
+                                                     std::function<int(int i)> rule_exactness, std::vector<int> const &anisotropic_weights){
+    // special case of a full tensor selection
+    if ((type == type_tensor) || (type == type_iptensor) || (type == type_qptensor)){ // special case, full tensor
+        std::vector<int> max_exactness = (anisotropic_weights.empty()) ? std::vector<int>(num_dimensions, 1) : anisotropic_weights;
+        for(auto &e : max_exactness) e *= offset;
+        std::vector<int> num_points(num_dimensions, 0); // how many points to have in each direction
+        std::transform(max_exactness.begin(), max_exactness.end(), num_points.begin(),
+                        [&](int e)-> int{
+                            int l = 0; // level
+                            while(rule_exactness(l) < e) l++; // get the first level that covers the weight
+                            return l+1; // adding extra one to change interpretation from 0-index "level" to 1-index "number of points"
+                        });
+        return generateFullTensorSet(num_points);
+    }
+
+    ProperWeights weights(num_dimensions, type, anisotropic_weights);
+
+    int normalized_offset = offset * weights.minLinear();
+    if (weights.provenLower()){ // if the set is guaranteed to be lower
+        return selectLowerSet(weights, rule_exactness, normalized_offset);
+    }else{
+        return selectGeneralSet(weights, rule_exactness, normalized_offset);
+    }
+}
+
 void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::function<long long(int i)> rule_exactness, const std::vector<int> &anisotropic_weights, MultiIndexSet &mset){
     size_t num_dimensions = (size_t) mset.getNumDimensions();
     std::vector<int> weights;
@@ -306,7 +332,7 @@ void MultiIndexManipulations::generateNonNestedPoints(const MultiIndexSet &tenso
         point_tensors[i].addUnsortedInsexes(raw_points.getVector());
     }
 
-    MultiIndexManipulations::unionSets<true>(point_tensors, points);
+    points = MultiIndexManipulations::unionSets(point_tensors);
 }
 
 void MultiIndexManipulations::computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights){
@@ -394,7 +420,7 @@ void MultiIndexManipulations::createActiveTensors(const MultiIndexSet &mset, con
     active.setIndexes(indexes);
 }
 
-void MultiIndexManipulations::createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness, MultiIndexSet &space){
+MultiIndexSet MultiIndexManipulations::createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness){
     size_t num_dimensions = (size_t) tensors.getNumDimensions();
     int num_tensors = tensors.getNumIndexes();
     std::vector<MultiIndexSet> polynomial_tensors((size_t) num_tensors);
@@ -408,7 +434,7 @@ void MultiIndexManipulations::createPolynomialSpace(const MultiIndexSet &tensors
         polynomial_tensors[i] = MultiIndexManipulations::generateFullTensorSet(npoints);
     }
 
-    MultiIndexManipulations::unionSets<true>(polynomial_tensors, space);
+    return MultiIndexManipulations::unionSets(polynomial_tensors);
 }
 
 }

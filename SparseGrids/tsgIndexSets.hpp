@@ -211,9 +211,13 @@ public:
     MultiIndexSet(int cnum_dimensions) : num_dimensions((size_t) cnum_dimensions), cache_num_indexes(0){}
     //! \brief Constructor, makes an empty set and assigns the dimension of the future indexes.
     MultiIndexSet(size_t cnum_dimensions) : num_dimensions(cnum_dimensions), cache_num_indexes(0){}
-    //! \brief Constructor, makes an empty set and assigns the dimension of the future indexes.
+    //! \brief Constructor, makes a set by moving out of the vector.
     MultiIndexSet(size_t cnum_dimensions, std::vector<int> &new_indexes) :
         num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)), indexes(std::move(new_indexes)){}
+    //! \brief Convert a set of unsorted indexes into a sorted multi-index set.
+    MultiIndexSet(Data2D<int> &data) : num_dimensions((size_t) data.getStride()), cache_num_indexes(0){
+        addData2D(data);
+    }
     //! \brief Default destructor
     ~MultiIndexSet(){}
 
@@ -234,7 +238,7 @@ public:
     //! \brief Clears any currently loaded multi-indexes and set the dimensions to **new_dimensions**
     void setNumDimensions(int new_dimensions);
     //! \brief Returns the number of dimensions
-    inline int getNumDimensions() const{ return (int) num_dimensions; }
+    inline size_t getNumDimensions() const{ return num_dimensions; }
     //! \brief Returns the number of indexes
     inline int getNumIndexes() const{ return cache_num_indexes; }
 

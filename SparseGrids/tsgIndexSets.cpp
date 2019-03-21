@@ -127,6 +127,7 @@ void MultiIndexSet::addUnsortedInsexes(const std::vector<int> &addition){
                                         return true;
                                 });
     index_refs.resize(std::distance(index_refs.begin(), unique_end));
+    //std::cout << "refs " <<index_refs.size() << std::endl;
     if (indexes.empty()){
         indexes.resize(index_refs.size() * num_dimensions);
         auto iindexes = indexes.begin();

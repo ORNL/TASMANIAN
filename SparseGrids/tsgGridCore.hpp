@@ -108,11 +108,7 @@ public:
     int getJobNumPoints(int job) const;
     const int* getJobPoints(int job) const;
 
-protected:
-    bool doesBelongSameLine(const int a[], const int b[], int direction) const;
-
 private:
-    int num_dimensions;
     std::vector<int> job_directions;
     std::vector<std::vector<int>> job_pnts;
 };
