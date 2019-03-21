@@ -672,13 +672,13 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
         MultiIndexSet polynomial_set(num_dimensions);
         getPolynomialSpace(true, polynomial_set);
 
-        MultiIndexSet quadrature_tensors(num_dimensions);
-        MultiIndexManipulations::generateLowerMultiIndexSet<int>([&](const std::vector<int> &index) ->
-            bool{
-                std::vector<int> qindex = index;
-                for(auto &i : qindex) i = (i > 0) ? 1 + OneDimensionalMeta::getQExact(i - 1, rule_gausspatterson) : 0;
-                return polynomial_set.missing(qindex);
-            }, quadrature_tensors);
+        MultiIndexSet quadrature_tensors =
+            MultiIndexManipulations::generateLowerMultiIndexSet((size_t) num_dimensions, [&](const std::vector<int> &index) ->
+                bool{
+                    std::vector<int> qindex = index;
+                    for(auto &i : qindex) i = (i > 0) ? 1 + OneDimensionalMeta::getQExact(i - 1, rule_gausspatterson) : 0;
+                    return !polynomial_set.missing(qindex);
+                });
 
         int getMaxQuadLevel = quadrature_tensors.getMaxIndex();
 
@@ -686,12 +686,13 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
         if (getMaxQuadLevel < TableGaussPatterson::getNumLevels()-1){
             QuadGrid.setTensors(quadrature_tensors, 0, rule_gausspatterson, 0.0, 0.0);
         }else{
-            MultiIndexManipulations::generateLowerMultiIndexSet<int>([&](const std::vector<int> &index) ->
-                bool{
-                    std::vector<int> qindex = index;
-                    for(auto &i : qindex) i = (i > 0) ? 1 + OneDimensionalMeta::getQExact(i - 1, rule_clenshawcurtis) : 0;
-                    return polynomial_set.missing(qindex);
-                }, quadrature_tensors);
+            quadrature_tensors =
+                MultiIndexManipulations::generateLowerMultiIndexSet((size_t) num_dimensions, [&](const std::vector<int> &index) ->
+                    bool{
+                        std::vector<int> qindex = index;
+                        for(auto &i : qindex) i = (i > 0) ? 1 + OneDimensionalMeta::getQExact(i - 1, rule_clenshawcurtis) : 0;
+                        return polynomial_set.missing(qindex);
+                    });
             QuadGrid.setTensors(quadrature_tensors, 0, rule_clenshawcurtis, 0.0, 0.0);
         }
 

@@ -91,29 +91,29 @@ inline MultiIndexSet generateFullTensorSet(std::vector<int> const &num_entries){
     return MultiIndexSet(num_dimensions, indexes);
 }
 
-//! \internal
-//! \brief Generate the multi-index with entries satisfying the **!outside()**, assumes that the **!outside()** defines a lower set
-//! \ingroup TasmanianMultiIndexManipulations
-template<typename I>
-void generateLowerMultiIndexSet(std::function<bool(const std::vector<I> &index)> outside, MultiIndexSet &set){
-    size_t num_dimensions = set.getNumDimensions();
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Generate the multi-index with entries satisfying the \b inside(), assumes that \b inside() defines a lower-complete set.
+ * \endinternal
+ */
+inline MultiIndexSet generateLowerMultiIndexSet(size_t num_dimensions, std::function<bool(const std::vector<int> &index)> inside){
     size_t c = num_dimensions -1;
-    bool out = false;
-    std::vector<I> root(num_dimensions, 0);
-    std::vector<I> indexes;
-    while( !(out && (c == 0)) ){
-        if (out){
-            for(size_t k=c; k<num_dimensions; k++) root[k] = 0;
-            c--;
-            root[c]++;
-        }else{
+    bool is_in = true;
+    std::vector<int> root(num_dimensions, 0);
+    std::vector<int> indexes;
+    while(is_in || (c > 0)){
+        if (is_in){
             indexes.insert(indexes.end(), root.begin(), root.end());
             c = num_dimensions-1;
             root[c]++;
+        }else{
+            std::fill(root.begin() + c, root.end(), 0);
+            root[--c]++;
         }
-        out = outside(root);
+        is_in = inside(root);
     }
-    set.setIndexes(indexes);
+    return MultiIndexSet(num_dimensions, indexes);
 }
 
 //! \internal
@@ -349,13 +349,13 @@ void generateWeightedTensorsCached(const std::vector<I> &weights, CacheType norm
 //! * **TotalCurvedHyper** should be either `type_level`, `type_curved` or `type_hyperbolic`, indicating the selection strategy
 //! * **rule_exactness()** handles the cases of quadrature, interpolation or level based selection
 //! * **mset** is the resulting multi-index set
-    size_t num_dimension = (size_t) mset.getNumDimensions();
-    std::vector<std::vector<CacheType>> cache(num_dimension);
-    for(size_t j=0; j<num_dimension; j++){
+    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    std::vector<std::vector<CacheType>> cache(num_dimensions);
+    for(size_t j=0; j<num_dimensions; j++){
         CacheType xi = (CacheType) weights[j]; // anisotropic weight for this direction
         CacheType eta;
         if (TotalCurvedHyper == type_curved){
-            eta = (CacheType) weights[j + num_dimension]; //curved correction
+            eta = (CacheType) weights[j + num_dimensions]; //curved correction
         }else if (TotalCurvedHyper == type_hyperbolic){
             eta = 1;
             if (std::any_of(weights.begin(), weights.end(), [](I w)->bool{ return (w != 1); })) // if not using canonical weights
@@ -377,17 +377,18 @@ void generateWeightedTensorsCached(const std::vector<I> &weights, CacheType norm
             cache[j].push_back(weight1d);
         }while(ceil(weight1d) <= normalized_offset);
     }
-    generateLowerMultiIndexSet<I>([&](const std::vector<I> &index) -> bool{
-                                        CacheType w = 0;
-                                        auto i = index.begin();
-                                        if (TotalCurvedHyper == type_hyperbolic){
-                                            w = 1;
-                                            for(const auto &v : cache) w *= v[*i++];
-                                        }else{
-                                            for(const auto &v : cache) w += v[*i++];
-                                        }
-                                        return (ceil(w) > normalized_offset);
-                                    }, mset);
+    mset = generateLowerMultiIndexSet(num_dimensions,
+                                      [&](const std::vector<int> &index) -> bool{
+                                          CacheType w = 0;
+                                          auto i = index.begin();
+                                          if (TotalCurvedHyper == type_hyperbolic){
+                                              w = 1;
+                                              for(const auto &v : cache) w *= v[*i++];
+                                          }else{
+                                              for(const auto &v : cache) w += v[*i++];
+                                          }
+                                          return (ceil(w) <= normalized_offset);
+                                      });
 }
 
 //! \internal
