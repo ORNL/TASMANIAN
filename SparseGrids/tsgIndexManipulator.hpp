@@ -37,17 +37,17 @@
 #include "tsgOneDimensionalWrapper.hpp"
 #include "tsgRuleLocalPolynomial.hpp"
 
-//! \internal
-//! \file tsgIndexManipulator.hpp
-//! \brief Algorithms for manipulating sets of multi-indexes.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianMultiIndexManipulations
-//!
-//! A series of templates, lambda, and regular functions that allow the manipulation of
-//! multi-indexes and sets of multi-indexes. The algorithms include the selection of
-//! multi-indexes according to a criteria, union of a vector of multi-index sets,
-//! normalization of anisotropic weights, map parents and children within a set (which
-//! generates a DAG structure), complete a set to satisfy the lower-property, etc.
+/*!
+ * \internal
+ * \file tsgIndexManipulator.hpp
+ * \brief Algorithms for manipulating sets of multi-indexes.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianMultiIndexManipulations
+ *
+ * A series of templates, lambda, and regular functions that allow the manipulation of
+ * multi-indexes and sets of multi-indexes.
+ * \endinternal
+ */
 
 /*!
  * \internal
@@ -67,27 +67,28 @@ namespace TasGrid{
 
 namespace MultiIndexManipulations{
 
-//! \internal
-//! \brief Generate a full tensor multi-index set with **num_entries**  in each direction
-//! \ingroup TasmanianMultiIndexManipulations
-template<typename I>
-void generateFullTensorSet(const std::vector<I> &num_entries, MultiIndexSet &set){
-    I num_total = 1;
-    for(auto &l : num_entries) num_total *= l;
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Create a full-tensor multi-index set with \b num_entries in each direction.
+ * \endinternal
+ */
+inline MultiIndexSet generateFullTensorSet(std::vector<int> const &num_entries){
     size_t num_dimensions = num_entries.size();
-    std::vector<I> indexes(((size_t) num_total) * num_dimensions);
+    int num_total = 1;
+    for(auto &l : num_entries) num_total *= l;
+    std::vector<int> indexes(Utils::size_mult(num_dimensions, num_total));
     auto iter = indexes.rbegin();
-    for(I i=num_total-1; i>=0; i--){
-        I t = i;
+    for(int i=num_total-1; i>=0; i--){
+        int t = i;
         auto l = num_entries.rbegin();
         // in order to generate indexes in the correct order, the for loop must go backwards
         for(size_t j = 0; j<num_dimensions; j++){
-            *iter++ = (I) (t % *l);
+            *iter++ = (t % *l);
             t /= *l++;
         }
     }
-    set.setNumDimensions((int) num_dimensions);
-    set.setIndexes(indexes);
+    return MultiIndexSet(num_dimensions, indexes);
 }
 
 //! \internal

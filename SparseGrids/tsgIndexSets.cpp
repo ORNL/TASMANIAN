@@ -35,10 +35,6 @@
 
 namespace TasGrid{
 
-MultiIndexSet::MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
-MultiIndexSet::MultiIndexSet(int cnum_dimensions)  : num_dimensions(cnum_dimensions), cache_num_indexes(0){}
-MultiIndexSet::~MultiIndexSet(){}
-
 template<bool useAscii>
 void MultiIndexSet::write(std::ostream &os) const{
     if (cache_num_indexes > 0){

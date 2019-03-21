@@ -51,7 +51,7 @@ void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::fun
                             while(rule_exactness(l) < w) l++; // get the first level that covers the weight
                             return l+1;
                         });
-        generateFullTensorSet<int>(levels, mset);
+        mset = generateFullTensorSet(levels);
     }else if (known_lower){ // using lower-set logic (cache can be pre-computed)
         if ((type == type_level) || (type == type_iptotal) || (type == type_qptotal)){
             generateWeightedTensorsCached<int, int, type_level>(weights, normalized_offset, rule_exactness, mset);
@@ -295,8 +295,7 @@ void MultiIndexManipulations::generateNonNestedPoints(const MultiIndexSet &tenso
         const int *p = tensors.getIndex(i);
         for(size_t j=0; j<num_dimensions; j++)
             npoints[j] = wrapper.getNumPoints(p[j]);
-        MultiIndexSet raw_points;
-        MultiIndexManipulations::generateFullTensorSet<int>(npoints, raw_points);
+        MultiIndexSet raw_points = MultiIndexManipulations::generateFullTensorSet(npoints);
 
         size_t j = 0;
         for(auto &g : raw_points.getVector()){
@@ -406,7 +405,7 @@ void MultiIndexManipulations::createPolynomialSpace(const MultiIndexSet &tensors
         const int *p = tensors.getIndex(i);
         for(size_t j=0; j<num_dimensions; j++)
             npoints[j] = exactness(p[j]) + 1;
-        MultiIndexManipulations::generateFullTensorSet<int>(npoints, polynomial_tensors[i]);
+        polynomial_tensors[i] = MultiIndexManipulations::generateFullTensorSet(npoints);
     }
 
     MultiIndexManipulations::unionSets<true>(polynomial_tensors, space);

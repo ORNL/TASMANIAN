@@ -35,6 +35,7 @@
 #include <algorithm>
 
 #include "tsgIOHelpers.hpp"
+#include "tsgUtils.hpp"
 
 //! \internal
 //! \file tsgIndexSets.hpp
@@ -205,11 +206,16 @@ private:
 class MultiIndexSet{
 public:
     //! \brief Default constructor, makes an empty set
-    MultiIndexSet();
+    MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
     //! \brief Constructor, makes an empty set and assigns the dimension of the future indexes
-    MultiIndexSet(int cnum_dimensions);
+    MultiIndexSet(int cnum_dimensions) : num_dimensions((size_t) cnum_dimensions), cache_num_indexes(0){}
+    //! \brief Constructor, makes an empty set and assigns the dimension of the future indexes.
+    MultiIndexSet(size_t cnum_dimensions) : num_dimensions(cnum_dimensions), cache_num_indexes(0){}
+    //! \brief Constructor, makes an empty set and assigns the dimension of the future indexes.
+    MultiIndexSet(size_t cnum_dimensions, std::vector<int> &new_indexes) :
+        num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)), indexes(std::move(new_indexes)){}
     //! \brief Default destructor
-    ~MultiIndexSet();
+    ~MultiIndexSet(){}
 
     //! \brief Write the set to ASCII or binary stream, use with std::ofstream and std::ifstream.
 
