@@ -92,17 +92,15 @@ void GridSequence::reset(){
 }
 void GridSequence::clearRefinement(){ needed = MultiIndexSet(); }
 
-void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule,
+                            const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
 
-    MultiIndexSet pset(cnum_dimensions);
-    if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return OneDimensionalMeta::getQExact(i, crule); },
-                                               anisotropic_weights, pset);
-    }else{
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, pset);
-    }
-
-    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, pset);
+    MultiIndexSet pset = (OneDimensionalMeta::isExactQuadrature(type)) ?
+        MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
+                                               [&](int i) -> int{ return OneDimensionalMeta::getQExact(i, crule); },
+                                               anisotropic_weights, level_limits) :
+        MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
+                                               [&](int i) -> int{ return i; }, anisotropic_weights, level_limits);
 
     setPoints(pset, cnum_outputs, crule);
 }
@@ -142,15 +140,12 @@ void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule
 }
 
 void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-    MultiIndexSet pset(num_dimensions);
-    if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return OneDimensionalMeta::getQExact(i, rule); },
-                                               anisotropic_weights, pset);
-    }else{
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, pset);
-    }
-
-    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, pset);
+    MultiIndexSet pset = (OneDimensionalMeta::isExactQuadrature(type)) ?
+        MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type,
+                                               [&](int i) -> int{ return OneDimensionalMeta::getQExact(i, rule); },
+                                               anisotropic_weights, level_limits) :
+        MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type,
+                                               [&](int i) -> int{ return i; }, anisotropic_weights, level_limits);
 
     updateGrid(pset);
 }
@@ -685,25 +680,10 @@ void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int 
     std::vector<int> weights;
     estimateAnisotropicCoefficients(type, output, weights);
 
-    int level = 0; // find a better way to guess the offset, will tie to new refinement procedures
-
+    int level = 0;
     do{
-        MultiIndexSet total(num_dimensions);
-
-        if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-            MultiIndexManipulations::selectTensors(++level, type, [&](int i) -> long long{ return OneDimensionalMeta::getQExact(i, rule); },
-                                                   weights, total);
-        }else{
-            MultiIndexManipulations::selectTensors(++level, type, [&](int i) -> long long{ return i; }, weights, total);
-        }
-
-        needed = total.diffSets(points);
-
-        if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, needed);
-
-    }while(needed.empty() || (needed.getNumIndexes() < min_growth));
-
-    prepareSequence(0);
+        updateGrid(++level, type, weights, level_limits);
+    }while(getNumNeeded() < min_growth);
 }
 void GridSequence::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();

@@ -117,14 +117,11 @@ void GridFourier::reset(){
 
 void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
 
-    MultiIndexSet tset(cnum_dimensions);
-    if ((type == type_level) || (type == type_tensor) || (type == type_hyperbolic)){
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, tset);
-    }else{
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, tset);
-    }
-
-    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, tset);
+    MultiIndexSet tset = (OneDimensionalMeta::isExactLevel(type)) ?
+        MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
+                                               [&](int i) -> int{ return i; }, anisotropic_weights, level_limits) :
+        MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
+                                               [&](int i) -> int{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, level_limits);
 
     setTensors(tset, cnum_outputs);
 }

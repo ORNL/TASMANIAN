@@ -139,26 +139,27 @@ void GridGlobal::clearRefinement(){
     updated_active_w = std::vector<int>();
 }
 
-MultiIndexSet GridGlobal::selectTensors(size_t dims, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, TypeOneDRule crule) const{
-    if ((type == type_level) || (type == type_tensor) || (type == type_hyperbolic)){ // no need to know exactness
-        return MultiIndexManipulations::selectTensors(dims, depth, type,
-                                                      [&](int l) -> int{ return l; }, anisotropic_weights);
+MultiIndexSet GridGlobal::selectTensors(size_t dims, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights,
+                                        TypeOneDRule crule, std::vector<int> const &level_limits) const{
+    if (OneDimensionalMeta::isExactLevel(type)){ // no need to know exactness
+        return MultiIndexManipulations::selectTensors(dims, depth, type, [&](int l) -> int{ return l; },
+                                                      anisotropic_weights, level_limits);
     }else{ // work with exactness specific to the rule
         if (crule == rule_customtabulated){
-            if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-                return MultiIndexManipulations::selectTensors(dims, depth, type,
-                                                              [&](int l) -> int{ return custom.getQExact(l); }, anisotropic_weights);
+            if (OneDimensionalMeta::isExactQuadrature(type)){
+                return MultiIndexManipulations::selectTensors(dims, depth, type, [&](int l) -> int{ return custom.getQExact(l); },
+                                                              anisotropic_weights, level_limits);
             }else{
-                return MultiIndexManipulations::selectTensors(dims, depth, type,
-                                                              [&](int l) -> int{ return custom.getIExact(l); }, anisotropic_weights);
+                return MultiIndexManipulations::selectTensors(dims, depth, type, [&](int l) -> int{ return custom.getIExact(l); },
+                                                              anisotropic_weights, level_limits);
             }
         }else{ // using regular OneDimensionalMeta
-            if ((type == type_qptotal) || (type == type_qptensor) || (type == type_qpcurved) || (type == type_qphyperbolic)){
-                return MultiIndexManipulations::selectTensors(dims, depth, type,
-                                                              [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, crule); }, anisotropic_weights);
+            if (OneDimensionalMeta::isExactQuadrature(type)){
+                return MultiIndexManipulations::selectTensors(dims, depth, type, [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, crule); },
+                                                              anisotropic_weights, level_limits);
             }else{
-                return MultiIndexManipulations::selectTensors(dims, depth, type,
-                                                              [&](int l) -> int{ return OneDimensionalMeta::getIExact(l, crule); }, anisotropic_weights);
+                return MultiIndexManipulations::selectTensors(dims, depth, type, [&](int l) -> int{ return OneDimensionalMeta::getIExact(l, crule); },
+                                                              anisotropic_weights, level_limits);
             }
         }
     }
@@ -182,9 +183,7 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
         custom.read(custom_filename);
     }
 
-    MultiIndexSet tset = selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule);
-
-    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, tset);
+    MultiIndexSet tset = selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits);
 
     setTensors(tset, cnum_outputs, crule, calpha, cbeta);
 }
@@ -275,9 +274,7 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
     }else{
         clearRefinement();
 
-        updated_tensors = selectTensors((size_t) num_dimensions, depth, type, anisotropic_weights, rule);
-
-        if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, updated_tensors);
+        updated_tensors = selectTensors((size_t) num_dimensions, depth, type, anisotropic_weights, rule, level_limits);
 
         MultiIndexSet new_tensors = updated_tensors.diffSets(tensors);
 

@@ -110,10 +110,7 @@ void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int
 
     rule1D.updateOrder(order);
 
-    MultiIndexSet tensors(num_dimensions);
-    MultiIndexManipulations::selectTensors(depth, type_level, [&](int i) -> long long{ return i; }, std::vector<int>(), tensors);
-
-    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, tensors);
+    MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [&](int i) -> long long{ return i; }, std::vector<int>(), level_limits);
 
     if (order == 1){
         MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return (1 << (l + 1)) + 1; }, needed);

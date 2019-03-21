@@ -138,8 +138,9 @@ protected:
 
     static double legendre(int n, double x);
 
-    // assumes that if rule == rule_customtabulated, then custom is already loaded; NOTE: tset.getNumDimensions() must be set already
-    MultiIndexSet selectTensors(size_t dims, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, TypeOneDRule rule) const;
+    // assumes that if rule == rule_customtabulated, then custom is already loaded
+    MultiIndexSet selectTensors(size_t dims, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights,
+                                TypeOneDRule rule, std::vector<int> const &level_limits) const;
 
     void recomputeTensorRefs(const MultiIndexSet &work);
     void proposeUpdatedTensors();
