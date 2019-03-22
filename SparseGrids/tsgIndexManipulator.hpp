@@ -161,6 +161,65 @@ struct ProperWeights{
 
 /*!
  * \internal
+ * \brief Generate weights cache for the given parameters.
+ *
+ * Complexity chosen here in favor of performance and re-usability.
+ * - \b isotropic indicates whether to treat the \b offset as a maximum cache size in each direction (\b true)
+ *   of as a cut-off for the weights, i.e., cache until the 1-D weight exceeds the offset.
+ * - \b weights.contour must match \b contour
+ * - if \b contour is \b type_level, then \b CacheType must be \b int
+ * - if \b contour is \b type_curved or \b type_hyperbolic, then \b CacheType must be \b double
+ * \endinternal
+ */
+template<typename CacheType, TypeDepth contour, bool isotropic>
+std::vector<std::vector<CacheType>> generateLevelWeightsCache(ProperWeights const &weights, std::function<int(int i)> rule_exactness, int offset){
+    size_t num_dimensions = weights.getNumDimensions();
+    std::vector<std::vector<CacheType>> cache(num_dimensions);
+    std::vector<int> exactness_cache;
+
+    // if we know the sized here, then assign, otherwise dynamically build later
+    if (isotropic){
+        for(auto &vec : cache) vec.reserve((size_t) offset);
+        exactness_cache.resize((size_t) offset);
+        exactness_cache[0] = 0;
+        for(int i=1; i<offset; i++)
+            exactness_cache[i] = 1 + rule_exactness(i - 1);
+    }else{
+        exactness_cache.push_back(0); // exactness always starts from 0
+    }
+
+    for(size_t j=0; j<num_dimensions; j++){
+        int wl = weights.linear[j]; // linear weights
+        double wc = (contour == type_level) ? 0.0 : weights.curved[j]; // curved weights
+
+        size_t i = 0; // keep track of the index
+        CacheType w = (CacheType) (contour == type_hyperbolic) ? 1 : 0;
+        cache[j].push_back(w); // initial entry
+        do{ // accumulate the cache
+            i++;
+            if (!isotropic && (i >= exactness_cache.size()))
+                exactness_cache.push_back(1 + rule_exactness((int)(i - 1)));
+
+            int e = exactness_cache[i];
+
+            if (contour == type_level){
+                w = wl * e;
+            }else if (contour == type_curved){
+                w = (CacheType)(wl * e) + wc * log1p((CacheType) e);
+            }else{ // must be hyperbolic
+                w = pow((CacheType) (1 + e), wc);
+            }
+
+            cache[j].push_back(w);
+        // isotropic mode works until offset, anisotropic mode works until weight reaches the offset
+        }while( (!isotropic && (std::ceil(w) <= (CacheType) offset)) || (isotropic && (i + 1 < (size_t) offset)) );
+    }
+
+    return cache;
+}
+
+/*!
+ * \internal
  * \brief Generate a lower complete multi-index set that satisfies the given properties.
  *
  * Using the \b num_dimensions select all multi-indexes with weight less than the \b offset.
@@ -171,81 +230,23 @@ struct ProperWeights{
 MultiIndexSet selectTensors(size_t num_dimensions, int offset, TypeDepth type, std::function<int(int i)> rule_exactness,
                             std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits);
 
-//! \internal
-//! \brief Split a single \b weights vector into two vectors and computes some meta data.
-//! \ingroup TasmanianMultiIndexManipulations
-template<typename I>
-void splitWeights(size_t num_dimensions, TypeDepth type, const std::vector<I> &weights,
-                  std::vector<I> &proper_weights, std::vector<double> &curved_weights, double &hyper_denom, TypeDepth &contour_type){
-//! Interpretation of the weight goes in two stages, first we decide between total-degree, curved, or hyperbolic types,
-//! then the weights are split into linear and logarithmic (curved), and finally scaling factors are computed (hyperbolic only).
-//! - \b num_dimensions is the number of dimensions of the problem
-//! - \b type defines the contour described by the weights
-//! - \b weights has size \b num_dimensions for linear and hyperbolic contours, and 2 times \b num_dimensions for curved contours;
-//!   \b weights can be empty, in which case isotropic weights will be used in the outputs
-//! - \b proper_weights returns the linear profile (linear and curved) or the unscaled hyperbolic profile
-//! - \b curved_weights returns the logarithmic or curved profile, or the hyperbolic weights converged to double-precision numbers
-//! - \b hyper_denom is the scaling factor for the hyperbolic weights
-//! - \b contour_type reduces \b type to either \b type_level, \b type_curved, or \b type_hyperbolic
-//! This function is used when constructing Global and Sequence grids with user specified weights.
-    proper_weights = weights;
-    contour_type = OneDimensionalMeta::getControurType(type);
-    if (contour_type == type_hyperbolic){
-        if (proper_weights.empty()){
-            curved_weights = std::vector<double>(num_dimensions, 1.0);
-            hyper_denom = 1.0;
-        }else{
-            curved_weights.resize(num_dimensions);
-            std::transform(weights.begin(), weights.end(), curved_weights.begin(), [&](int i)->double{ return (double) i; });
-            hyper_denom = (double) std::accumulate(weights.begin(), weights.end(), 1);
-        }
-    }else if (contour_type == type_curved){
-        if (proper_weights.empty()){
-            proper_weights = std::vector<int>(num_dimensions, 1);
-            contour_type = type_level; // canonical curved weights have no curve, switch to linear profile
-        }else{
-            proper_weights.resize(num_dimensions); // saves the first num_dimensions entries
-            curved_weights.resize(num_dimensions);
-            std::transform(weights.begin() + num_dimensions, weights.end(), curved_weights.begin(), [&](int i)->double{ return (double) i; });
-        }
-    }else{
-        if (proper_weights.empty()) proper_weights = std::vector<int>(num_dimensions, 1);
-    }
-}
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Returns a vector that is the sum of entries of each multi-index in the set.
+ *
+ * \endinternal
+ */
+std::vector<int> computeLevels(MultiIndexSet const &mset);
 
-//! \internal
-//! \brief Compute the weight of a multi-index based on the split weights and the contour.
-//! \ingroup TasmanianMultiIndexManipulations
-
-//! Here \b exactness is the vector with the exactness values based on the rule and the space type, i.e., level vs curved.
-inline double computeMultiIndexWeight(const std::vector<int> &exactness, const std::vector<int> &proper_weights,
-                                      const std::vector<double> &curved_weights, double hyper_denom, TypeDepth contour_type){
-    if (contour_type == type_level){
-        return (double) std::inner_product(exactness.begin(), exactness.end(), proper_weights.data(), 0);
-    }else if (contour_type == type_hyperbolic){
-        double result = 1.0;
-        auto itr = curved_weights.begin();
-        for(auto e : exactness)
-            result *= pow((double) (1.0 + e), *itr++ / hyper_denom);
-        return result;
-    }else{
-        double result = (double) std::inner_product(exactness.begin(), exactness.end(), proper_weights.data(), 0);
-        auto itr = curved_weights.begin();
-        for(auto e : exactness)
-            result += *itr++ * log1p((double) e);
-        return result;
-    }
-}
-
-//! \internal
-//! \brief Returns a vector that is the sum of entries of each multi-index in the set
-//! \ingroup TasmanianMultiIndexManipulations
-void computeLevels(const MultiIndexSet &mset, std::vector<int> &level);
-
-//! \internal
-//! \brief Returns a vector that is the maximum index in each direction and a total maximum index, **max_levels** must be empty
-//! \ingroup TasmanianMultiIndexManipulations
-void getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &total_max);
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Returns a vector with the maximum index in each dimension.
+ *
+ * \endinternal
+ */
+std::vector<int> getMaxIndexes(const MultiIndexSet &mset);
 
 //! \internal
 //! \brief Returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using one-point-growth hierarchy
@@ -309,15 +310,13 @@ inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet co
     }
 }
 
-//! \internal
-//! \brief Using the **flagged** map, create **new_set** with the flagged children of **mset** but only if they obey the **level_limits**
-//! \ingroup TasmanianMultiIndexManipulations
-void selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set);
-
-//! \internal
-//! \brief Replace \b mset with the subset of \b mset that obeys the \b level_limits
-//! \ingroup TasmanianMultiIndexManipulations
-void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset);
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Using the \b flagged map, create a set with the flagged children of \b mset but only if they obey the \b level_limits.
+ * \endinternal
+ */
+MultiIndexSet selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits);
 
 //! \internal
 //! \brief Assuming that **tensors** describe a set of nested tensor operators, and each 1-D operators has **getNumPoints()**, then generate the actual points
@@ -329,7 +328,7 @@ void removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &m
 //! * \b tensors is a lower set of multi-indexes describing tensor rules
 //! * \b getNumPoints() described the number of points for each 1-D rule
 //! * On exit, \b points is the union of the points of all tensors
-void generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points);
+MultiIndexSet generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints);
 
 //! \internal
 //! \brief Assuming that **tensors** describe a set of non-nested tensor operators described by the **wrapper**, then generate the actual **points**
@@ -340,7 +339,7 @@ void generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> 
 //! * **tensors** is a set of tensor rules, non-necessarily lower
 //! * **wrapper** described the one dimensional rules (most notably the level-order-to-global-index mapping)
 //! * **points** is the union of the points of all tensors
-void generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper, MultiIndexSet &points);
+MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper);
 
 //! \internal
 //! \brief Given a tensor defined by **levels** find the references to all tensor points in the **points** set (assuming the standard order of the tensor entries)
@@ -372,10 +371,31 @@ void referencePoints(const int levels[], const OneDimensionalWrapper &wrapper, c
 //! \ingroup TasmanianMultiIndexManipulations
 void computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights);
 
-//! \internal
-//! \brief On exit, **active** is the set containing the multi-indexes of **mset** corresponding to non-zero **weights**
-//! \ingroup TasmanianMultiIndexManipulations
-void createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights, MultiIndexSet &active);
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Creates a set of only the entries of \b mset that have non-zero \b weights.
+ * \endinternal
+ */
+inline MultiIndexSet createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights){
+    size_t num_dimensions = mset.getNumDimensions();
+    size_t nz_weights = 0;
+    for(auto w: weights) if (w != 0) nz_weights++;
+
+    std::vector<int> indexes(nz_weights * num_dimensions);
+    nz_weights = 0;
+    auto iter = indexes.begin();
+    auto iset = mset.getVector().begin();
+    for(auto w: weights){
+        if (w != 0){
+            std::copy_n(iset, num_dimensions, iter);
+            std::advance(iter, num_dimensions);
+        }
+        std::advance(iset, num_dimensions);
+    }
+
+    return MultiIndexSet(num_dimensions, indexes);
+}
 
 /*!
  * \internal
@@ -404,7 +424,7 @@ template<typename I> bool isLowerComplete(const std::vector<I> &point, const Mul
 //! \brief For a set of \b tensors create an \b mset that contain the children of indexes in \b tensors that are missing from \b exclude and obey the \b level_limits.
 //! \ingroup TasmanianMultiIndexManipulations
 template<bool limited>
-void addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exclude, const std::vector<int> level_limits, MultiIndexSet &mset){
+MultiIndexSet addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exclude, const std::vector<int> level_limits){
     int num_dimensions = (int) tensors.getNumDimensions();
     Data2D<int> tens(num_dimensions, 0);
     for(int i=0; i<tensors.getNumIndexes(); i++){ // add the new tensors (so long as they are not included in the initial grid)
@@ -427,8 +447,8 @@ void addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exc
             k--;
         }
     }
-    mset.setNumDimensions(num_dimensions); // set of new tensors
-    if (tens.getVector().size() > 0) mset.addData2D(tens);
+
+    return MultiIndexSet(tens);
 }
 
 }

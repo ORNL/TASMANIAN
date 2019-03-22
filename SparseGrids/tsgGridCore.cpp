@@ -62,7 +62,7 @@ SplitDirections::SplitDirections(const MultiIndexSet &points){
             const int * idxa = points.getIndex(a);
             const int * idxb = points.getIndex(b);
             // lexigographical order ignoring dimension d
-            for(int j=0; j<num_dimensions; j++)
+            for(size_t j=0; j<num_dimensions; j++)
                 if (j != d){
                     if (idxa[j] < idxb[j]) return true;
                     if (idxa[j] > idxb[j]) return false;
@@ -74,7 +74,7 @@ SplitDirections::SplitDirections(const MultiIndexSet &points){
         while(imap != map.end()){
             // new job, get reference index
             const int *p = points.getIndex(*imap);
-            job_directions.push_back(d);
+            job_directions.push_back((int) d);
             std::vector<int> pnts = {*imap++};
             // while the points are in the same direction as the reference, add to the same job
             while((imap != map.end()) && doesBelongSameLine(p, points.getIndex(*imap), d))

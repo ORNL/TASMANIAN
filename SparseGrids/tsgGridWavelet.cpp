@@ -113,9 +113,9 @@ void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int
     MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [&](int i) -> long long{ return i; }, std::vector<int>(), level_limits);
 
     if (order == 1){
-        MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return (1 << (l + 1)) + 1; }, needed);
+        needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return (1 << (l + 1)) + 1; });
     }else{
-        MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return (1 << (l + 2)) + 1; }, needed);
+        needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return (1 << (l + 2)) + 1; });
     }
 
     if (num_outputs == 0){
@@ -149,7 +149,7 @@ void GridWavelet::copyGrid(const GridWavelet *wav){
 
 void GridWavelet::setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder){
     reset();
-    num_dimensions = nodes.getNumDimensions();
+    num_dimensions = (int) nodes.getNumDimensions();
     num_outputs = cnum_outputs;
     order = corder;
 
@@ -489,8 +489,8 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 const int *p = points.getIndex(pnts[i]);
                 std::copy(p, p + num_dimensions, indexes.getStrip(i));
             }
-            MultiIndexSet pointset(num_dimensions);
-            pointset.setIndexes(indexes.getVector());
+
+            MultiIndexSet pointset(num_dimensions, indexes.getVector());
 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);
@@ -604,7 +604,7 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     std::copy_n(c, size_coeff, coefficients.getStrip(0));
 
     values.resize(num_outputs, num_points);
-    values.aliasValues().resize(size_coeff);
+    values.getVector().resize(size_coeff);
 
     std::vector<double> x(((size_t) num_points) * ((size_t) num_dimensions));
     getPoints(x.data());
@@ -649,10 +649,8 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
         }
     }
 
-    if (refined.getNumStrips() > 0){
-        needed.setNumDimensions(num_dimensions);
-        needed.addData2D(refined);
-    }
+    if (refined.getNumStrips() > 0)
+        needed = MultiIndexSet(refined);
 }
 
 void GridWavelet::clearAccelerationData(){}

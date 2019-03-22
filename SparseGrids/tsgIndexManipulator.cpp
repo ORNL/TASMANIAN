@@ -41,6 +41,7 @@ namespace MultiIndexManipulations{
  * \internal
  * \ingroup TasmanianMultiIndexManipulations
  * \brief Create a full-tensor multi-index set with \b num_entries in each direction.
+ *
  * \endinternal
  */
 inline MultiIndexSet generateFullTensorSet(std::vector<int> const &num_entries){
@@ -99,6 +100,7 @@ void repeatAddIndexes(std::function<bool(const std::vector<int> &index)> inside,
  * \internal
  * \ingroup TasmanianMultiIndexManipulations
  * \brief Retuns the union of all \b level_sets, all sets are destroyed in the process.
+ *
  * \endinternal
  */
 inline MultiIndexSet unionSets(std::vector<MultiIndexSet> &level_sets){
@@ -154,65 +156,6 @@ inline MultiIndexSet generateGeneralMultiIndexSet(size_t num_dimensions, std::fu
 
     completeSetToLower(set);
     return set;
-}
-
-/*!
- * \internal
- * \brief Generate weights cache for the given parameters.
- *
- * Complexity chosen here in favor of performance and re-usability.
- * - \b isotropic indicates whether to treat the \b offset as a maximum cache size in each direction (\b true)
- *   of as a cut-off for the weights, i.e., cache until the 1-D weight exceeds the offset.
- * - \b weights.contour must match \b contour
- * - if \b contour is \b type_level, then \b CacheType must be \b int
- * - if \b contour is \b type_curved or \b type_hyperbolic, then \b CacheType must be \b double
- * \endinternal
- */
-template<typename CacheType, TypeDepth contour, bool isotropic>
-std::vector<std::vector<CacheType>> generateLevelWeightsCache(ProperWeights const &weights, std::function<int(int i)> rule_exactness, int offset){
-    size_t num_dimensions = weights.getNumDimensions();
-    std::vector<std::vector<CacheType>> cache(num_dimensions);
-    std::vector<int> exactness_cache;
-
-    // if we know the sized here, then assign, otherwise dynamically build later
-    if (isotropic){
-        for(auto &vec : cache) vec.reserve((size_t) offset);
-        exactness_cache.resize((size_t) offset);
-        exactness_cache[0] = 0;
-        for(int i=1; i<offset; i++)
-            exactness_cache[i] = 1 + rule_exactness(i - 1);
-    }else{
-        exactness_cache.push_back(0); // exactness always starts from 0
-    }
-
-    for(size_t j=0; j<num_dimensions; j++){
-        int wl = weights.linear[j]; // linear weights
-        double wc = (contour == type_level) ? 0.0 : weights.curved[j]; // curved weights
-
-        size_t i = 0; // keep track of the index
-        CacheType w = (CacheType) (contour == type_hyperbolic) ? 1 : 0;
-        cache[j].push_back(w); // initial entry
-        do{ // accumulate the cache
-            i++;
-            if (!isotropic && (i >= exactness_cache.size()))
-                exactness_cache.push_back(1 + rule_exactness((int)(i - 1)));
-
-            int e = exactness_cache[i];
-
-            if (contour == type_level){
-                w = wl * e;
-            }else if (contour == type_curved){
-                w = (CacheType)(wl * e) + wc * log1p((CacheType) e);
-            }else{ // must be hyperbolic
-                w = pow((CacheType) (1 + e), wc);
-            }
-
-            cache[j].push_back(w);
-        // isotropic mode works until offset, anisotropic mode works until weight reaches the offset
-        }while( (!isotropic && (std::ceil(w) <= (CacheType) offset)) || (isotropic && (i < (size_t) offset)) );
-    }
-
-    return cache;
 }
 
 /*!
@@ -338,26 +281,28 @@ MultiIndexSet selectTensors(size_t num_dimensions, int offset, TypeDepth type,
 
 }
 
-void MultiIndexManipulations::computeLevels(const MultiIndexSet &mset, std::vector<int> &level){
+std::vector<int> MultiIndexManipulations::computeLevels(MultiIndexSet const &mset){
+    // cannot add as inline to the public header due to the pragma and possible "unknown pragma" message
     int num_indexes = mset.getNumIndexes();
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
-    level.resize((size_t) num_indexes);
+    size_t num_dimensions = mset.getNumDimensions();
+    std::vector<int> levels((size_t) num_indexes);
     #pragma omp parallel for
     for(int i=0; i<num_indexes; i++){
         const int* p = mset.getIndex(i);
-        level[i] = std::accumulate(p, p + num_dimensions, 0);
+        levels[i] = std::accumulate(p, p + num_dimensions, 0);
     }
+    return levels;
 }
 
-void MultiIndexManipulations::getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &total_max){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
-    max_levels.resize(num_dimensions, 0);
+std::vector<int> MultiIndexManipulations::getMaxIndexes(const MultiIndexSet &mset){
+    size_t num_dimensions = mset.getNumDimensions();
+    std::vector<int> max_index(num_dimensions, 0);
     int n = mset.getNumIndexes();
     for(int i=0; i<n; i++){
-        const int* t = mset.getIndex(i);
-        for(size_t j=0; j<num_dimensions; j++) if (max_levels[j] < t[j]) max_levels[j] = t[j];
+        const int* p = mset.getIndex(i);
+        for(size_t j=0; j<num_dimensions; j++) if (max_index[j] < p[j]) max_index[j] = p[j];
     }
-    total_max = *std::max_element(max_levels.begin(), max_levels.end());
+    return max_index;
 }
 
 Data2D<int> MultiIndexManipulations::computeDAGup(MultiIndexSet const &mset){
@@ -438,7 +383,7 @@ Data2D<int> MultiIndexManipulations::computeDAGup(MultiIndexSet const &mset, con
 }
 
 std::vector<int> MultiIndexManipulations::computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    size_t num_dimensions = mset.getNumDimensions();
     int num_points = mset.getNumIndexes();
     std::vector<int> level((size_t) num_points);
     #pragma omp parallel for schedule(static)
@@ -452,10 +397,8 @@ std::vector<int> MultiIndexManipulations::computeLevels(MultiIndexSet const &mse
     }
     return level;
 }
-
-void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set){
-    new_set = MultiIndexSet(mset.getNumDimensions());
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
+MultiIndexSet MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits){
+    size_t num_dimensions = mset.getNumDimensions();
 
     Data2D<int> children_unsorted(mset.getNumDimensions(), 0);
 
@@ -488,38 +431,11 @@ void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, c
             }
         }
     }
-    if (children_unsorted.getNumStrips() > 0)
-        new_set.addData2D(children_unsorted);
+
+    return MultiIndexSet(children_unsorted);
 }
 
-void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
-    int num_indexes = mset.getNumIndexes();
-    std::vector<int> keep;
-    keep.reserve((size_t) num_indexes);
-    auto imset = mset.getVector().begin();
-    for(int i=0; i<num_indexes; i++){
-        bool obey = true;
-        for(auto l : level_limits){
-            if ((l > -1) && (*imset > l)) obey = false;
-            imset++;
-        }
-        if (obey) keep.push_back(i);
-    }
-    if (keep.size() == 0){
-        mset = MultiIndexSet((int) num_dimensions);
-    }else if (keep.size() < (size_t) num_indexes){
-        std::vector<int> new_indexes(num_dimensions * keep.size());
-        auto inew = new_indexes.begin();
-        for(auto i : keep){
-            std::copy_n(mset.getIndex(i), num_dimensions, inew);
-            std::advance(inew, num_dimensions);
-        }
-        mset.setIndexes(new_indexes);
-    }
-}
-
-void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points){
+MultiIndexSet MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints){
     size_t num_dimensions = (size_t) tensors.getNumDimensions();
     Data2D<int> raw_points((int) num_dimensions, 0);
 
@@ -552,42 +468,46 @@ void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors,
         }
     }
 
-    points = MultiIndexSet();
-    points.setNumDimensions((int) num_dimensions);
-    points.addData2D(raw_points);
+    return MultiIndexSet(raw_points);
 }
 
-void MultiIndexManipulations::generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper, MultiIndexSet &points){
-    size_t num_dimensions = (size_t) tensors.getNumDimensions();
+MultiIndexSet MultiIndexManipulations::generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper){
+    size_t num_dimensions = tensors.getNumDimensions();
     int num_tensors = tensors.getNumIndexes();
     std::vector<MultiIndexSet> point_tensors((size_t) num_tensors);
 
     #pragma omp parallel for
-    for(int i=0; i<num_tensors; i++){
-        std::vector<int> npoints(num_dimensions);
-        const int *p = tensors.getIndex(i);
-        for(size_t j=0; j<num_dimensions; j++)
-            npoints[j] = wrapper.getNumPoints(p[j]);
-        MultiIndexSet raw_points = MultiIndexManipulations::generateFullTensorSet(npoints);
+    for(int t=0; t<num_tensors; t++){
+        std::vector<int> num_entries(num_dimensions);
+        const int *p = tensors.getIndex(t);
+        std::transform(p, p + num_dimensions, num_entries.begin(), [&](int l)->int{ return wrapper.getNumPoints(l); });
 
-        size_t j = 0;
-        for(auto &g : raw_points.getVector()){
-            g = wrapper.getPointIndex(p[j++], g); // remap local-order-to-global-index
-            if (j == num_dimensions) j = 0;
+        int num_total = 1;
+        for(auto &l : num_entries) num_total *= l;
+
+        Data2D<int> raw_points(num_dimensions, num_total);
+        auto iter = raw_points.getVector().rbegin();
+        for(int i=num_total-1; i>=0; i--){
+            int d = i;
+            auto l = num_entries.rbegin();
+            // in order to generate indexes in the correct order, the for loop must go backwards
+            for(size_t j = 0; j<num_dimensions; j++){
+                *iter++ = wrapper.getPointIndex(p[num_dimensions - j - 1], (d % *l));
+                d /= *l++;
+            }
         }
-        point_tensors[i].setNumDimensions((int) num_dimensions);
-        point_tensors[i].addUnsortedInsexes(raw_points.getVector());
+
+        point_tensors[t] = MultiIndexSet(raw_points);
     }
 
-    points = MultiIndexManipulations::unionSets(point_tensors);
+    return MultiIndexManipulations::unionSets(point_tensors);
 }
 
 void MultiIndexManipulations::computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights){
     size_t num_dimensions = (size_t) mset.getNumDimensions();
     int num_tensors = mset.getNumIndexes();
 
-    std::vector<int> level;
-    computeLevels(mset, level);
+    std::vector<int> level = computeLevels(mset);
     int max_level = *std::max_element(level.begin(), level.end());
 
     Data2D<int> dag_down;
@@ -644,27 +564,6 @@ void MultiIndexManipulations::computeTensorWeights(const MultiIndexSet &mset, st
             }
         }
     }
-}
-
-void MultiIndexManipulations::createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights, MultiIndexSet &active){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
-    size_t nz_weights = 0;
-    for(auto w: weights) if (w != 0) nz_weights++;
-
-    std::vector<int> indexes(nz_weights * num_dimensions);
-    nz_weights = 0;
-    auto iter = indexes.begin();
-    auto iset = mset.getVector().begin();
-    for(auto w: weights){
-        if (w != 0){
-            std::copy_n(iset, num_dimensions, iter);
-            std::advance(iter, num_dimensions);
-        }
-        std::advance(iset, num_dimensions);
-    }
-
-    active.setNumDimensions((int) num_dimensions);
-    active.setIndexes(indexes);
 }
 
 MultiIndexSet MultiIndexManipulations::createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness){

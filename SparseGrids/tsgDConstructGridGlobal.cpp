@@ -104,10 +104,9 @@ void DynamicConstructorDataGlobal::reloadPoints(std::function<int(int)> getNumPo
     auto t = tensors.begin();
     while(t != tensors.end()){
         std::vector<int> v = t->tensor;
-        MultiIndexSet dummy_set(num_dimensions);
-        dummy_set.setIndexes(v);
+        MultiIndexSet dummy_set(num_dimensions, v);
         t->points.setNumDimensions(num_dimensions);
-        MultiIndexManipulations::generateNestedPoints(dummy_set, getNumPoints, t->points);
+        t->points = MultiIndexManipulations::generateNestedPoints(dummy_set, getNumPoints);
         t->loaded = std::vector<bool>(t->points.getNumIndexes(), false);
         t++;
     }
@@ -138,9 +137,8 @@ void DynamicConstructorDataGlobal::clearTesnors(){
     }
 }
 
-void DynamicConstructorDataGlobal::getInitialTensors(MultiIndexSet &set) const{
-    Data2D<int> tens;
-    tens.resize(num_dimensions, 0);
+MultiIndexSet DynamicConstructorDataGlobal::getInitialTensors() const{
+    Data2D<int> tens(num_dimensions, 0);
     auto t = tensors.begin();
     while(t != tensors.end()){
         if (t->weight < 0.0){
@@ -148,19 +146,15 @@ void DynamicConstructorDataGlobal::getInitialTensors(MultiIndexSet &set) const{
         }
         t++;
     }
-    set = MultiIndexSet(num_dimensions);
-    if (tens.getNumStrips() > 0)
-        set.addData2D(tens);
+    return MultiIndexSet(tens);
 }
 
 void DynamicConstructorDataGlobal::addTensor(const int *tensor, std::function<int(int)> getNumPoints, double weight){
     TensorData t;
     std::vector<int> v(tensor, tensor + num_dimensions);
     t.tensor = v;
-    MultiIndexSet dummy_set(num_dimensions);
-    dummy_set.setIndexes(v);
-    t.points.setNumDimensions(num_dimensions);
-    MultiIndexManipulations::generateNestedPoints(dummy_set, getNumPoints, t.points);
+    MultiIndexSet dummy_set(num_dimensions, v);
+    t.points = MultiIndexManipulations::generateNestedPoints(dummy_set, getNumPoints);
     t.loaded = std::vector<bool>(t.points.getNumIndexes(), false);
     auto d = data.begin();
     while(d != data.end()){

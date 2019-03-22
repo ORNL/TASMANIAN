@@ -92,8 +92,7 @@ template<bool useAscii> void GridFourier::read(std::istream &is){
 
     wrapper.load(CustomTabulated(), *std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
 
-    int dummy;
-    MultiIndexManipulations::getMaxIndex(((points.empty()) ? needed : points), max_power, dummy);
+    max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
 
 template void GridFourier::write<true>(std::ostream &) const;
@@ -136,26 +135,25 @@ void GridFourier::copyGrid(const GridFourier *fourier){
 
 void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
     reset();
-    num_dimensions = tset.getNumDimensions();
+    num_dimensions = (int) tset.getNumDimensions();
     num_outputs = cnum_outputs;
 
     tensors = std::move(tset);
 
-    int max_level;
-    MultiIndexManipulations::getMaxIndex(tensors, max_levels, max_level);
+    max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
-    wrapper.load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
+    wrapper.load(CustomTabulated(), *std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
 
     std::vector<int> tensors_w;
     MultiIndexManipulations::computeTensorWeights(tensors, tensors_w);
-    MultiIndexManipulations::createActiveTensors(tensors, tensors_w, active_tensors);
+    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
 
     int nz_weights = active_tensors.getNumIndexes();
 
     active_w.reserve(nz_weights);
     for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
 
-    MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); }, needed);
+    needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
     if (num_outputs == 0){
         points = std::move(needed);
@@ -164,8 +162,7 @@ void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
         values.resize(num_outputs, needed.getNumIndexes());
     }
 
-    int dummy;
-    MultiIndexManipulations::getMaxIndex(((points.empty()) ? needed : points), max_power, dummy);
+    max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
 
 int GridFourier::getNumDimensions() const{ return num_dimensions; }
@@ -191,8 +188,7 @@ void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
         needed = MultiIndexSet();
         // other options for the refinement
     }
-    int dummy;
-    MultiIndexManipulations::getMaxIndex(points, max_power, dummy);
+    max_power = MultiIndexManipulations::getMaxIndexes(points);
 
     calculateFourierCoefficients();
 }

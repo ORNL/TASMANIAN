@@ -46,6 +46,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/tsgUtils.hpp
                  SparseGrids/tsgIndexSets.hpp
                  SparseGrids/tsgIndexManipulator.hpp
+                 SparseGrids/tsgIndexManipulator.cpp
                  SparseGrids/tsgIOHelpers.hpp
                  SparseGrids/tsgHiddenExternals.hpp
                  SparseGrids/tsgAcceleratedDataStructures.hpp

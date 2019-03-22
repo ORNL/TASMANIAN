@@ -219,22 +219,21 @@ void GridGlobal::setTensors(MultiIndexSet &tset, int cnum_outputs, TypeOneDRule 
 
     tensors = std::move(tset);
 
-    int max_level;
-    MultiIndexManipulations::getMaxIndex(tensors, max_levels, max_level);
+    max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
-    wrapper.load(custom, max_level, rule, alpha, beta);
+    wrapper.load(custom, *std::max_element(max_levels.begin(), max_levels.end()), rule, alpha, beta);
 
     std::vector<int> tensors_w;
     MultiIndexManipulations::computeTensorWeights(tensors, tensors_w);
-    MultiIndexManipulations::createActiveTensors(tensors, tensors_w, active_tensors);
+    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
 
     active_w.reserve(active_tensors.getNumIndexes());
     for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
 
     if (OneDimensionalMeta::isNonNested(rule)){
-        MultiIndexManipulations::generateNonNestedPoints(active_tensors, wrapper, needed);
+        needed = MultiIndexManipulations::generateNonNestedPoints(active_tensors, wrapper);
     }else{
-        MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); }, needed);
+        needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
     }
 
     recomputeTensorRefs(needed);
@@ -253,17 +252,14 @@ void GridGlobal::proposeUpdatedTensors(){
 
     std::vector<int> updates_tensor_w;
     MultiIndexManipulations::computeTensorWeights(updated_tensors, updates_tensor_w);
-    MultiIndexManipulations::createActiveTensors(updated_tensors, updates_tensor_w, updated_active_tensors);
+    updated_active_tensors = MultiIndexManipulations::createActiveTensors(updated_tensors, updates_tensor_w);
 
     updated_active_w.reserve(updated_active_tensors.getNumIndexes());
     for(auto w : updates_tensor_w) if (w != 0) updated_active_w.push_back(w);
 
-    MultiIndexSet new_points;
-    if (OneDimensionalMeta::isNonNested(rule)){
-        MultiIndexManipulations::generateNonNestedPoints(updated_active_tensors, wrapper, new_points);
-    }else{
-        MultiIndexManipulations::generateNestedPoints(updated_tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); }, new_points);
-    }
+    MultiIndexSet new_points = (OneDimensionalMeta::isNonNested(rule)) ?
+            MultiIndexManipulations::generateNonNestedPoints(updated_active_tensors, wrapper) :
+            MultiIndexManipulations::generateNestedPoints(updated_tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
     needed = new_points.diffSets(points);
 }
@@ -382,8 +378,7 @@ void GridGlobal::acceptUpdatedTensors(){
         active_w = std::move(updated_active_w);
         updated_active_w = std::vector<int>();
 
-        int m;
-        MultiIndexManipulations::getMaxIndex(tensors, max_levels, m);
+        max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
         recomputeTensorRefs(points);
     }
@@ -416,7 +411,7 @@ void GridGlobal::beginConstruction(){
             double weight = -1.0 / (1.0 + (double) std::accumulate(t, t + num_dimensions, 0));
             dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, weight);
         }
-        tensors = MultiIndexSet(num_dimensions);
+        tensors = MultiIndexSet();
         active_tensors = MultiIndexSet();
         active_w = std::vector<int>();
         needed = MultiIndexSet();
@@ -452,63 +447,94 @@ void GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, std:
     }
     getCandidateConstructionPoints(type, weights, x, level_limits);
 }
-void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits){
-    std::vector<int> proper_weights;
-    std::vector<double> curved_weights;
-    double hyper_denom;
-    TypeDepth contour_type = type;
-    TypeDepth selection_type = OneDimensionalMeta::getSelectionType(type);
-    MultiIndexManipulations::splitWeights(num_dimensions, type, weights, proper_weights, curved_weights, hyper_denom, contour_type);
+void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, std::vector<double> &x, const std::vector<int> &level_limits){
+    MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);
 
-    std::vector<int> cached_exactness;
+    auto level_exact   = [&](int l) -> int{ return l; };
+    auto inter_exact   = [&](int l) -> int{ return OneDimensionalMeta::getIExact(l, rule); };
+    auto inter_exact_c = [&](int l) -> int{ return custom.getIExact(l); };
+    auto quad_exact    = [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); };
+    auto quad_exact_c  = [&](int l) -> int{ return custom.getQExact(l); };
 
-    getCandidateConstructionPoints([&](const int *t) -> double{
-        // cache the exactness (interpolation/quadrature) or the level for the tensors
-        // the lambda defined here is called after wrapper is updated, thus can use wrapper.getNumLevels()
-        // the caching will be performed once
-        if (cached_exactness.size() < (size_t) wrapper.getNumLevels()){
-            cached_exactness.resize(wrapper.getNumLevels());
-            if (selection_type == type_iptotal){
-                cached_exactness[0] = 0;
-                if (rule == rule_customtabulated){
-                    for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = custom.getIExact((int) i - 1) + 1;
+    if (weights.contour == type_level){
+        std::vector<std::vector<int>> cache;
+        getCandidateConstructionPoints([&](int const *t) -> double{
+            // see the same named function in GridGlobal
+            if (cache.empty()){
+                if (OneDimensionalMeta::isExactQuadrature(type)){
+                    cache = (rule == rule_customtabulated) ?
+                        MultiIndexManipulations::generateLevelWeightsCache<int, type_level, true>(weights, quad_exact_c, (int) wrapper.getNumLevels()) :
+                        MultiIndexManipulations::generateLevelWeightsCache<int, type_level, true>(weights, quad_exact, (int) wrapper.getNumLevels());
+                }else if(OneDimensionalMeta::isExactLevel(type)){
+                    cache = MultiIndexManipulations::generateLevelWeightsCache<int, type_level, true>(weights, level_exact, (int) wrapper.getNumLevels());
                 }else{
-                    for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = OneDimensionalMeta::getIExact((int) i - 1, rule) + 1;
+                    cache = (rule == rule_customtabulated) ?
+                        MultiIndexManipulations::generateLevelWeightsCache<int, type_level, true>(weights, inter_exact_c, (int) wrapper.getNumLevels()) :
+                        MultiIndexManipulations::generateLevelWeightsCache<int, type_level, true>(weights, inter_exact, (int) wrapper.getNumLevels());
                 }
-            }else if (selection_type == type_qptotal){
-                cached_exactness[0] = 0;
-                if (rule == rule_customtabulated){
-                    for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = custom.getQExact((int) i - 1) + 1;
-                }else{
-                    for(size_t i=1; i<cached_exactness.size(); i++) cached_exactness[i] = OneDimensionalMeta::getQExact((int) i - 1, rule) + 1;
-                }
-            }else{
-                for(size_t i=0; i<cached_exactness.size(); i++) cached_exactness[i] = (int) i;
             }
-        }
 
-        // replace the tensor with the cached_exactness which correspond to interpolation/quadrature exactness or simple level
-        std::vector<int> wt(num_dimensions);
-        std::transform(t, t + num_dimensions, wt.begin(), [&](const int &i)->int{ return cached_exactness[i]; });
+            int w = 0;
+            for(int j=0; j<num_dimensions; j++) w += cache[j][t[j]];
+            return (double) w;
+        }, x, level_limits);
+    }else if (weights.contour == type_curved){
+        std::vector<std::vector<double>> cache;
+        getCandidateConstructionPoints([&](int const *t) -> double{
+            // see the same named function in GridGlobal
+            if (cache.empty()){
+                if (OneDimensionalMeta::isExactQuadrature(type)){
+                    cache = (rule == rule_customtabulated) ?
+                        MultiIndexManipulations::generateLevelWeightsCache<double, type_curved, true>(weights, quad_exact_c, (int) wrapper.getNumLevels()) :
+                        MultiIndexManipulations::generateLevelWeightsCache<double, type_curved, true>(weights, quad_exact, (int) wrapper.getNumLevels());
+                }else if(OneDimensionalMeta::isExactLevel(type)){
+                    cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_curved, true>(weights, level_exact, (int) wrapper.getNumLevels());
+                }else{
+                    cache = (rule == rule_customtabulated) ?
+                        MultiIndexManipulations::generateLevelWeightsCache<double, type_curved, true>(weights, inter_exact_c, (int) wrapper.getNumLevels()) :
+                        MultiIndexManipulations::generateLevelWeightsCache<double, type_curved, true>(weights, inter_exact, (int) wrapper.getNumLevels());
+                }
+            }
 
-        return MultiIndexManipulations::computeMultiIndexWeight(wt, proper_weights, curved_weights, hyper_denom, contour_type);
-    }, x, level_limits);
+            double w = 0.0;
+            for(int j=0; j<num_dimensions; j++) w += cache[j][t[j]];
+            return w;
+        }, x, level_limits);
+    }else{
+        std::vector<std::vector<double>> cache;
+        getCandidateConstructionPoints([&](int const *t) -> double{
+            // see the same named function in GridGlobal
+            if (cache.empty()){
+                if (OneDimensionalMeta::isExactQuadrature(type)){
+                    cache = (rule == rule_customtabulated) ?
+                        MultiIndexManipulations::generateLevelWeightsCache<double, type_hyperbolic, true>(weights, quad_exact_c, (int) wrapper.getNumLevels()) :
+                        MultiIndexManipulations::generateLevelWeightsCache<double, type_hyperbolic, true>(weights, quad_exact, (int) wrapper.getNumLevels());
+                }else if(OneDimensionalMeta::isExactLevel(type)){
+                    cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_hyperbolic, true>(weights, level_exact, (int) wrapper.getNumLevels());
+                }else{
+                    cache = (rule == rule_customtabulated) ?
+                        MultiIndexManipulations::generateLevelWeightsCache<double, type_hyperbolic, true>(weights, inter_exact_c, (int) wrapper.getNumLevels()) :
+                        MultiIndexManipulations::generateLevelWeightsCache<double, type_hyperbolic, true>(weights, inter_exact, (int) wrapper.getNumLevels());
+                }
+            }
+
+            double w = 1.0;
+            for(int j=0; j<num_dimensions; j++) w *= cache[j][t[j]];
+            return w;
+        }, x, level_limits);
+    }
 }
 void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){
     dynamic_values->clearTesnors(); // clear old tensors
-    MultiIndexSet init_tensors;
-    dynamic_values->getInitialTensors(init_tensors); // get the initial tensors (created with make grid)
+    MultiIndexSet init_tensors = dynamic_values->getInitialTensors(); // get the initial tensors (created with make grid)
 
-    MultiIndexSet new_tensors;
-    if (level_limits.empty()){
-        MultiIndexManipulations::addExclusiveChildren<false>(tensors, init_tensors, level_limits, new_tensors);
-    }else{
-        MultiIndexManipulations::addExclusiveChildren<true>(tensors, init_tensors, level_limits, new_tensors);
-    }
+    MultiIndexSet new_tensors = (level_limits.empty()) ?
+        MultiIndexManipulations::addExclusiveChildren<false>(tensors, init_tensors, level_limits) :
+        new_tensors = MultiIndexManipulations::addExclusiveChildren<true>(tensors, init_tensors, level_limits);
 
     if (!new_tensors.empty()){
-        int max_level;
-        MultiIndexManipulations::getMaxIndex(new_tensors, max_levels, max_level);
+        auto max_indexes = MultiIndexManipulations::getMaxIndexes(new_tensors);
+        int max_level = *std::max_element(max_indexes.begin(), max_indexes.end());
         if (max_level+1 > wrapper.getNumLevels())
             wrapper.load(custom, max_level, rule, alpha, beta);
     }
@@ -555,18 +581,24 @@ void GridGlobal::loadConstructedTensors(){
             points.addMultiIndexSet(new_points);
         }
 
-        tensors.addSortedInsexes(tensor);
+        if (tensors.empty()){
+            tensors = MultiIndexSet((size_t) num_dimensions, tensor);
+        }else{
+            tensors.addSortedIndexes(tensor);
+        }
         added_any = true;
     }
 
     if (added_any){
         std::vector<int> tensors_w;
         MultiIndexManipulations::computeTensorWeights(tensors, tensors_w);
-        MultiIndexManipulations::createActiveTensors(tensors, tensors_w, active_tensors);
+        active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
 
         active_w = std::vector<int>();
         active_w.reserve(active_tensors.getNumIndexes());
         for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
+
+        max_levels = MultiIndexManipulations::getMaxIndexes(active_tensors);
 
         recomputeTensorRefs(points);
     }
@@ -831,8 +863,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
     for(int i=0; i<n; i++)
         flagged[i] = (fabs(surp[i]) > tolerance);
 
-    MultiIndexSet kids;
-    MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits, kids);
+    MultiIndexSet kids = MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits);
 
     if (kids.getNumIndexes() > 0){
         kids.addMultiIndexSet(points);

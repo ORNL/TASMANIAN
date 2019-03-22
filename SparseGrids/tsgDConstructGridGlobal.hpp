@@ -230,7 +230,7 @@ public:
     void clearTesnors();
 
     //! \brief Get a set of all tensors with negative weight, i.e., the tensors selected for the initial run.
-    void getInitialTensors(MultiIndexSet &set) const;
+    MultiIndexSet getInitialTensors() const;
 
     //! \brief Add a new tensor to the candidates, with the given \b weight and using \b getNumPoints() to define the associated nodes.
     void addTensor(const int *tensor, std::function<int(int)> getNumPoints, double weight);
