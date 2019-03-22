@@ -220,6 +220,23 @@ std::vector<std::vector<CacheType>> generateLevelWeightsCache(ProperWeights cons
 
 /*!
  * \internal
+ * \brief Returns the weight for the multi-index using the cache, assuming level contour.
+ *
+ * \endinternal
+ */
+template<typename CacheType, TypeDepth contour>
+inline CacheType getIndexWeight(int const index[], std::vector<std::vector<CacheType>> const &cache){
+    CacheType w = (contour == type_hyperbolic) ? 1 : 0;
+    for(size_t j=0; j<cache.size(); j++)
+        if (contour == type_hyperbolic)
+            w *= cache[j][index[j]];
+        else
+            w += cache[j][index[j]];
+    return w;
+}
+
+/*!
+ * \internal
  * \brief Generate a lower complete multi-index set that satisfies the given properties.
  *
  * Using the \b num_dimensions select all multi-indexes with weight less than the \b offset.
@@ -248,19 +265,27 @@ std::vector<int> computeLevels(MultiIndexSet const &mset);
  */
 std::vector<int> getMaxIndexes(const MultiIndexSet &mset);
 
-//! \internal
-//! \brief Returns a Data2D structure where each strip holds the indexes of the parents of indexes of mset (for each direction), using one-point-growth hierarchy
-//! \ingroup TasmanianMultiIndexManipulations
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Returns a Data2D structure where each strip holds the slot-index of the parents of indexes in \b mset (for each direction), using one-point-growth hierarchy.
+ *
+ * Adds -1 in places where the parents are missing.
+ * \endinternal
+ */
 Data2D<int> computeDAGup(MultiIndexSet const &mset);
 
-//! \internal
-//! \brief Cache the single-indexes of the parents of the multi-indexes (points) in \b mset.
-//! \ingroup TasmanianMultiIndexManipulations
-
-//! Each node defined by a multi-index in \b mset can have one or more parents in each direction,
-//! where the parent-offspring relation is defined by the \b rule. For each index in \b mset, the
-//! Data2D structure \b parents will hold a strip with the location of each parent in \b mset
-//! (or -1 if the parent is missing from \b mset).
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Cache the indexes slot numbers of the parents of the multi-indexes in \b mset.
+ *
+ * Each node defined by a multi-index in \b mset can have one or more parents in each direction,
+ * where the parent-offspring relation is defined by the \b rule. For each index in \b mset, the
+ * Data2D structure \b parents will hold a strip with the location of each parent in \b mset
+ * (or -1 if the parent is missing from \b mset).
+ * \endinternal
+ */
 Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule);
 
 /*!
@@ -314,36 +339,41 @@ inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet co
  * \internal
  * \ingroup TasmanianMultiIndexManipulations
  * \brief Using the \b flagged map, create a set with the flagged children of \b mset but only if they obey the \b level_limits.
+ *
  * \endinternal
  */
 MultiIndexSet selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits);
 
-//! \internal
-//! \brief Assuming that **tensors** describe a set of nested tensor operators, and each 1-D operators has **getNumPoints()**, then generate the actual points
-//! \ingroup TasmanianMultiIndexManipulations
-
-//! Assuming that we are working with a nested rule, then instead of generating the points for all tensor rules and taking the union,
-//! it is much faster to generate just the surplus points and union those, i.e., the points associated with the surplus tensor operator.
-//! Working with surplus points ensures that there is no repetition of points when merging the sets.
-//! * \b tensors is a lower set of multi-indexes describing tensor rules
-//! * \b getNumPoints() described the number of points for each 1-D rule
-//! * On exit, \b points is the union of the points of all tensors
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Converts a set of nested \b tensors to the actual points, where each level has \b getNumPoints() in each direction.
+ *
+ * Working with nested points, it is more efficient to interpret the tensors as a surplus operators and generate only the surplus points;
+ * then take the union without repeated indexes.
+ * This can work if and only if \b tensors is a lower-complete set, i.e., the \b tensors in \b GridGlobal and not the active_tensors.
+ * \endinternal
+ */
 MultiIndexSet generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints);
 
-//! \internal
-//! \brief Assuming that **tensors** describe a set of non-nested tensor operators described by the **wrapper**, then generate the actual **points**
-//! \ingroup TasmanianMultiIndexManipulations
-
-//! Assuming that we are working with a non-nested rule, then for each tensor we must generate the points and map them to the global indexing,
-//! then take the union of all the tensors
-//! * **tensors** is a set of tensor rules, non-necessarily lower
-//! * **wrapper** described the one dimensional rules (most notably the level-order-to-global-index mapping)
-//! * **points** is the union of the points of all tensors
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Converts a set of non-nested active \b tensors to the actual points, the \b wrapper gives mapping between level and point indexes.
+ *
+ *  For each index in \b tensor, generate a local set of points and then remap them to the global index using the \b wrapper.getPointIndex().
+ * \endinternal
+ */
 MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper);
 
-//! \internal
-//! \brief Given a tensor defined by **levels** find the references to all tensor points in the **points** set (assuming the standard order of the tensor entries)
-//! \ingroup TasmanianMultiIndexManipulations
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Find the indexes of all points associated with the tensor with \b levels within the global \b points set.
+ *
+ * The order in which the tensors are formed here must match the order in which they will be used,
+ * e.g., when computing interpolation and quadrature weights.
+ */
 template<bool nested>
 void referencePoints(const int levels[], const OneDimensionalWrapper &wrapper, const MultiIndexSet &points, std::vector<int> &refs){
     size_t num_dimensions = (size_t) points.getNumDimensions();
@@ -366,15 +396,20 @@ void referencePoints(const int levels[], const OneDimensionalWrapper &wrapper, c
     }
 }
 
-//! \internal
-//! \brief Computes the weights for the tensor linear combination, **mset** is a lower multi-index set and **weight** is resized
-//! \ingroup TasmanianMultiIndexManipulations
-void computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights);
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Computes the weights for the tensor linear combination, \b mset must be a lower complete set.
+ *
+ * \endinternal
+ */
+std::vector<int> computeTensorWeights(MultiIndexSet const &mset);
 
 /*!
  * \internal
  * \ingroup TasmanianMultiIndexManipulations
- * \brief Creates a set of only the entries of \b mset that have non-zero \b weights.
+ * \brief Creates a set containing only the entries of \b mset that have non-zero \b weights.
+ *
  * \endinternal
  */
 inline MultiIndexSet createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights){
@@ -401,15 +436,20 @@ inline MultiIndexSet createActiveTensors(const MultiIndexSet &mset, const std::v
  * \internal
  * \ingroup TasmanianMultiIndexManipulations
  * \brief For a set of \b tensors compute the corresponding polynomial space assuming the 1D rules have given \b exactness().
+ *
  * \endinternal
  */
 MultiIndexSet createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness);
 
-//! \internal
-//! \brief Assuming that \b mset is lower complete, return \b true if adding the \b point will preserve completeness.
-//! \ingroup TasmanianMultiIndexManipulations
-template<typename I> bool isLowerComplete(const std::vector<I> &point, const MultiIndexSet &mset){
-    std::vector<I> dad = point;
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Assuming that \b mset is lower complete, return \b true if adding the \b point will preserve completeness.
+ *
+ * \endinternal
+ */
+inline bool isLowerComplete(std::vector<int> const &point, MultiIndexSet const &mset){
+    auto dad = point;
     for(auto &d : dad){
         if (d > 0){
             d--;
@@ -420,9 +460,14 @@ template<typename I> bool isLowerComplete(const std::vector<I> &point, const Mul
     return true;
 }
 
-//! \internal
-//! \brief For a set of \b tensors create an \b mset that contain the children of indexes in \b tensors that are missing from \b exclude and obey the \b level_limits.
-//! \ingroup TasmanianMultiIndexManipulations
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief For a set of \b tensors create an \b mset that contain the children of indexes in \b tensors that are missing from \b exclude and obey the \b level_limits.
+ *
+ * If \b limited is \b false, then the \b level_limits are ignored.
+ * \endinternal
+ */
 template<bool limited>
 MultiIndexSet addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exclude, const std::vector<int> level_limits){
     int num_dimensions = (int) tensors.getNumDimensions();

@@ -177,8 +177,6 @@ public:
     //! \brief Returns **true** if there are no multi-indexes in the set, **false** otherwise
     inline bool empty() const{ return indexes.empty(); }
 
-    //! \brief Clears any currently loaded multi-indexes and set the dimensions to **new_dimensions**
-    void setNumDimensions(int new_dimensions);
     //! \brief Returns the number of dimensions
     inline size_t getNumDimensions() const{ return num_dimensions; }
     //! \brief Returns the number of indexes

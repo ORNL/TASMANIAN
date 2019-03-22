@@ -34,7 +34,6 @@
 #include <cstdlib>
 #include <memory>
 
-#include "tsgIOHelpers.hpp"
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgCoreOneDimensional.hpp"

@@ -391,10 +391,10 @@ void GridLocalPolynomial::beginConstruction(){
     }
 }
 void GridLocalPolynomial::writeConstructionDataBinary(std::ofstream &ofs) const{
-    writeSimpleConstructionData<false>(dynamic_values.get(), ofs);
+    dynamic_values->write<false>(ofs);
 }
 void GridLocalPolynomial::writeConstructionData(std::ofstream &ofs) const{
-    writeSimpleConstructionData<true>(dynamic_values.get(), ofs);
+    dynamic_values->write<true>(ofs);
 }
 void GridLocalPolynomial::readConstructionDataBinary(std::ifstream &ifs){
     dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, ifs);
@@ -499,7 +499,6 @@ void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vect
 }
 void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::vector<double> &value){
     if (points.empty()){ // only one point
-        points.setNumDimensions(num_dimensions);
         auto p = point; // create new so it can be moved
         points = MultiIndexSet((size_t) num_dimensions, p);
         values.resize(num_outputs, 1);

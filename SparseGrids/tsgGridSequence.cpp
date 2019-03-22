@@ -267,10 +267,10 @@ void GridSequence::beginConstruction(){
     }
 }
 void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{
-    writeSimpleConstructionData<false>(dynamic_values.get(), ofs);
+    dynamic_values->write<false>(ofs);
 }
 void GridSequence::writeConstructionData(std::ofstream &ofs) const{
-    writeSimpleConstructionData<true>(dynamic_values.get(), ofs);
+    dynamic_values->write<true>(ofs);
 }
 void GridSequence::readConstructionDataBinary(std::ifstream &ifs){
     dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, ifs);
@@ -416,7 +416,6 @@ void GridSequence::loadConstructedPoint(const double x[], const std::vector<doub
 }
 void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
     if (points.empty()){ // only one point
-        points.setNumDimensions(num_dimensions);
         auto p = point; // create new so it can be moved
         points = MultiIndexSet((size_t) num_dimensions, p);
         values.resize(num_outputs, 1);

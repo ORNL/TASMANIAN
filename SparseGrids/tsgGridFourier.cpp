@@ -144,8 +144,7 @@ void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
 
     wrapper.load(CustomTabulated(), *std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
 
-    std::vector<int> tensors_w;
-    MultiIndexManipulations::computeTensorWeights(tensors, tensors_w);
+    std::vector<int> tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
     active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
 
     int nz_weights = active_tensors.getNumIndexes();

@@ -58,12 +58,6 @@ template void MultiIndexSet::write<false>(std::ostream &) const;
 template void MultiIndexSet::read<true>(std::istream &);
 template void MultiIndexSet::read<false>(std::istream &);
 
-void MultiIndexSet::setNumDimensions(int new_dimensions){
-    indexes = std::vector<int>();
-    cache_num_indexes = 0;
-    num_dimensions = (size_t) new_dimensions;
-}
-
 void MultiIndexSet::addSortedIndexes(const std::vector<int> &addition){
     if (indexes.empty()){
         indexes = addition;
