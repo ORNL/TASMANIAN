@@ -182,8 +182,7 @@ void GridSequence::getPoints(double *x) const{
 
 void GridSequence::getQuadratureWeights(double *weights) const{
     const MultiIndexSet& work = (points.empty()) ? needed : points;
-    std::vector<double> integ;
-    cacheBasisIntegrals(integ);
+    std::vector<double> integ = cacheBasisIntegrals();
     int n = work.getNumIndexes();
     for(int i=0; i<n; i++){
         const int* p = work.getIndex(i);
@@ -197,8 +196,7 @@ void GridSequence::getQuadratureWeights(double *weights) const{
 }
 
 void GridSequence::getInterpolationWeights(const double x[], double *weights) const{
-    std::vector<std::vector<double>> cache;
-    cacheBasisValues<double>(x, cache);
+    std::vector<std::vector<double>> cache = cacheBasisValues<double>(x);
     const MultiIndexSet& work = (points.empty()) ? needed : points;
     int n = work.getNumIndexes();
     weights[0] = 1.0;
@@ -438,8 +436,7 @@ void GridSequence::finishConstruction(){
 }
 
 void GridSequence::evaluate(const double x[], double y[]) const{
-    std::vector<std::vector<double>> cache;
-    cacheBasisValues<double>(x, cache);
+    std::vector<std::vector<double>> cache = cacheBasisValues<double>(x);
 
     std::fill(y, y + num_outputs, 0.0);
 
@@ -511,8 +508,7 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     // if using simple integration use the basis integral + surpluses, which is fast
     // if using conformal map, then we have to compute the expensive weights
     if (conformal_correction == 0){
-        std::vector<double> integ;
-        cacheBasisIntegrals(integ);
+        std::vector<double> integ = cacheBasisIntegrals();
         for(int i=0; i<num_points; i++){
             const int* p = points.getIndex(i);
             double w = integ[p[0]];
@@ -549,8 +545,7 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
     const MultiIndexSet& work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
 
-    std::vector<std::vector<double>> cache;
-    cacheBasisValues<double>(x, cache);
+    std::vector<std::vector<double>> cache = cacheBasisValues<double>(x);
 
     for(int i=0; i<num_points; i++){
         const int* p = work.getIndex(i);
@@ -813,12 +808,12 @@ void GridSequence::prepareSequence(int num_external){
     }
 }
 
-void GridSequence::cacheBasisIntegrals(std::vector<double> &integ) const{
+std::vector<double> GridSequence::cacheBasisIntegrals() const{
     int max_level = max_levels[0];
 
     for(auto l: max_levels) if (max_level < l) max_level = l;
 
-    integ.resize(++max_level, 0.0); // integrals of basis functions
+    std::vector<double> integ(++max_level, 0.0); // integrals of basis functions
 
     int n = 1 + max_level / 2; // number of Gauss-Legendre points needed to integrate the basis functions
     std::vector<double> lag_x, lag_w;
@@ -832,6 +827,7 @@ void GridSequence::cacheBasisIntegrals(std::vector<double> &integ) const{
         }
     }
     integ[0] = 2.0;
+    return integ;
 }
 
 double GridSequence::evalBasis(const int f[], const int p[]) const{

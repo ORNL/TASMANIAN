@@ -109,7 +109,7 @@ protected:
     void solveTransposed(double w[]) const;
     double evalIntegral(const int p[]) const;
 
-    void getNormalization(std::vector<double> &norm) const;
+    std::vector<double> getNormalization() const;
 
     Data2D<int> buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const;
 

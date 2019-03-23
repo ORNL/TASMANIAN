@@ -66,6 +66,11 @@
 
 namespace TasGrid{
 
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Collection of algorithm to manipulate multi-indexes.
+ */
 namespace MultiIndexManipulations{
 
 /*!

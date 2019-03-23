@@ -165,15 +165,14 @@ std::forward_list<NodeData> readNodeDataList(size_t num_dimensions, size_t num_o
 
 /*!
  * \internal
- * \brief Helper class that stores data from dynamic construction of a Global grid.
  * \ingroup TasmanianRefinement
+ * \brief Helper class that stores data from dynamic construction of a Global grid.
  *
  * The class stores candidate tensors with corresponding weights
  * as well as the model data provided by the user.
  * When enough data has been computed to complete a tensor,
  * the tensor can be ejected with the points and model data returned in a format
  * that is easy to incorporate within the data structures of the \b GridGlobal class.
- * \endinternal
  */
 class DynamicConstructorDataGlobal{
 public:

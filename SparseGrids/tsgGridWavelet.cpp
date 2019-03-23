@@ -422,8 +422,8 @@ void GridWavelet::solveTransposed(double w[]) const{
     inter_matrix.solve(y.data(), w, true);
 }
 
-void GridWavelet::getNormalization(std::vector<double> &norm) const{
-    norm.resize(num_outputs);
+std::vector<double> GridWavelet::getNormalization() const{
+    std::vector<double> norm(num_outputs);
     std::fill(norm.begin(), norm.end(), 0.0);
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
@@ -431,6 +431,7 @@ void GridWavelet::getNormalization(std::vector<double> &norm) const{
             if (norm[j] < fabs(v[j])) norm[j] = fabs(v[j]);
         }
     }
+    return norm;
 }
 Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const{
     int num_points = points.getNumIndexes();
@@ -442,8 +443,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
         pmap.fill(0);
     }
 
-    std::vector<double> norm;
-    getNormalization(norm);
+    std::vector<double> norm = getNormalization();
 
     if ((criteria == refine_classic) || (criteria == refine_parents_first)){
         // classic refinement

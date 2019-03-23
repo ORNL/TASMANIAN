@@ -57,7 +57,6 @@ namespace TasGrid{
  * \internal
  * \ingroup TasmanianUtils
  * \brief Miscellaneous utility templates.
- * \endinternal
  */
 namespace Utils{
 

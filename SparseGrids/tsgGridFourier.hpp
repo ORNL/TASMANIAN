@@ -114,7 +114,7 @@ protected:
     void reset();
     void calculateFourierCoefficients();
 
-    void generateIndexingMap(std::vector<std::vector<int>> &index_map) const;
+    std::vector<std::vector<int>> generateIndexingMap() const;
 
     template<typename T, bool interwoven>
     void computeBasis(const MultiIndexSet &work, const T x[], T wreal[], T wimag[]) const{

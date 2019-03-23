@@ -202,14 +202,14 @@ void GridFourier::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
 }
 
-void GridFourier::generateIndexingMap(std::vector<std::vector<int>> &index_map) const{
+std::vector<std::vector<int>> GridFourier::generateIndexingMap() const{
     // The internal point-indexing of Tasmanian goes 0, 1/3, 2/3, 1/9, 2/9, 4/9 ....
     // Fourier transform (and coefficients) need spacial order 0, 1/9, 2/9, 3/9=1/3, ...
     // Create a map, where at level 0: 0 -> 0, level 1: 0 1 2 -> 0 1 2, level 2: 0 1 2 3 4 5 6 7 8 -> 0 3 4 1 5 6 2 7 8
     // The map takes a point from previous map and adds two more points ...
     // Thus, a spacial point i on level l is Tasmanian point index_map[l][i]
     int maxl = 1 + active_tensors.getMaxIndex();
-    index_map.resize(maxl);
+    std::vector<std::vector<int>> index_map(maxl);
     index_map[0].resize(1, 0);
     int c = 1;
     for(int l=1; l<maxl; l++){
@@ -221,6 +221,7 @@ void GridFourier::generateIndexingMap(std::vector<std::vector<int>> &index_map) 
             *im++ = c++;
         }
     }
+    return index_map;
 }
 
 void GridFourier::calculateFourierCoefficients(){
@@ -243,8 +244,7 @@ void GridFourier::calculateFourierCoefficients(){
     int num_points = getNumPoints();
 
     MultiIndexSet &work = (points.empty()) ? needed : points;
-    std::vector<std::vector<int>> index_map;
-    generateIndexingMap(index_map);
+    std::vector<std::vector<int>> index_map = generateIndexingMap();
 
     fourier_coefs.resize(num_outputs, 2 * num_points);
     fourier_coefs.fill(0.0);
@@ -312,8 +312,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     // Take the basis functions, reindex and reorder to a data strucutre, take FFT, reindex and reorder into the weights
 
     const MultiIndexSet &work = (points.empty()) ? needed : points;
-    std::vector<std::vector<int>> index_map;
-    generateIndexingMap(index_map);
+    std::vector<std::vector<int>> index_map = generateIndexingMap();
 
     std::fill(weights, weights + getNumPoints(), 0.0);
 

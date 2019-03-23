@@ -48,6 +48,7 @@
  * The majority of internal data-structures associated with the five types of grids
  * can be represented as two-dimensional data (or array/list of tuples), the three
  * classes here correspond to sorted or unsorted, integer or floating point data.
+ * \endinternal
  */
 
 /*!
@@ -66,6 +67,7 @@
 namespace TasGrid{
 
 /*!
+ * \internal
  * \ingroup TasmanianSets
  * \brief Generic 2D data structure divided into contiguous strips of fixed length (similar to a matrix).
  *
@@ -73,6 +75,7 @@ namespace TasGrid{
  * The data is divided into \b strips of equal \b stride, e.g., number of multi-indexes and number of dimensions.
  * Internally the class uses \b std::vector with type \b T,
  * when used, \b T is almost always \b double or \b int.
+ * \endinternal
  */
 template<typename T>
 class Data2D{
@@ -140,6 +143,7 @@ private:
 };
 
 /*!
+ * \internal
  * \ingroup TasmanianSets
  * \brief Class that stores multi-indexes in sorted (lexicographical) order.
  *
@@ -150,6 +154,7 @@ private:
  * - synchronization between multi-indexes and values (i.e., model outputs)
  * - adding or removing indexes while preserving the order
  * - basic file I/O
+ * \endinternal
  */
 class MultiIndexSet{
 public:
@@ -230,8 +235,9 @@ private:
 };
 
 /*!
+ * \internal
  * \ingroup TasmanianSets
- * \brief Class that stores values, i.e., model outputs, the order of the values is in sync with the order of some **MultiIndexSet**
+ * \brief Class that stores values, i.e., model outputs, the order of the values is in sync with the order of some \b MultiIndexSet
  *
  * The StorageSet stores the floating-point values (model outputs) in a contiguous order, suitable for interfacing with BLAS/cuBlas.
  * The values associated with one model simulation are adjacent to each other in a stride of size \b num_outputs.
@@ -239,6 +245,7 @@ private:
  * with the \b points multi-index set.
  * Synchronization is achieved by merging values before merging multi-indexes, when
  * the \b addValues() is called with the old and new multi-index sets and the new values.
+ * \endinternal
  */
 class StorageSet{
 public:

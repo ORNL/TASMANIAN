@@ -515,7 +515,7 @@ void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *
 
     MultiIndexSet new_tensors = (level_limits.empty()) ?
         MultiIndexManipulations::addExclusiveChildren<false>(tensors, init_tensors, level_limits) :
-        new_tensors = MultiIndexManipulations::addExclusiveChildren<true>(tensors, init_tensors, level_limits);
+        MultiIndexManipulations::addExclusiveChildren<true>(tensors, init_tensors, level_limits);
 
     if (!new_tensors.empty()){
         auto max_indexes = MultiIndexManipulations::getMaxIndexes(new_tensors);
@@ -630,7 +630,7 @@ void GridGlobal::evaluateBlas(const double x[], int num_x, double y[]) const{
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    if (cuda_values.size() == 0) cuda_values.load(values.aliasValues());
+    if (cuda_values.size() == 0) cuda_values.load(values.getVector());
 
     int num_points = points.getNumIndexes();
     Data2D<double> weights(num_points, num_x);
@@ -664,9 +664,9 @@ void GridGlobal::evaluateHierarchicalFunctions(const double x[], int num_x, doub
         getInterpolationWeights(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 
-void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double> &surp) const{
+std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) const{
     int num_points = points.getNumIndexes();
-    surp.resize(num_points);
+    std::vector<double> surp((size_t) num_points);
 
     if (OneDimensionalMeta::isSequence(rule)){
         double max_surp = 0.0;
@@ -745,12 +745,12 @@ void GridGlobal::computeSurpluses(int output, bool normalize, std::vector<double
             surp[i] = c * nrm;
         }
     }
+    return surp;
 }
 
 void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000.0 * TSG_NUM_TOL;
-    std::vector<double> surp;
-    computeSurpluses(output, false, surp);
+    std::vector<double> surp = computeSurpluses(output, false);
 
     int num_points = points.getNumIndexes();
 
@@ -838,8 +838,7 @@ void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int ou
 
 void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     clearRefinement();
-    std::vector<double> surp;
-    computeSurpluses(output, true, surp);
+    std::vector<double> surp = computeSurpluses(output, true);
 
     int n = points.getNumIndexes();
     std::vector<bool> flagged(n);
