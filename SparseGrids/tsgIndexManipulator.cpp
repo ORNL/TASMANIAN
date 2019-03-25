@@ -35,59 +35,270 @@
 
 namespace TasGrid{
 
-void MultiIndexManipulations::selectTensors(int offset, TypeDepth type, std::function<long long(int i)> rule_exactness, const std::vector<int> &anisotropic_weights, MultiIndexSet &mset){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
-    std::vector<int> weights;
-    int normalized_offset;
-    bool known_lower;
+namespace MultiIndexManipulations{
 
-    MultiIndexManipulations::getProperWeights<int>(num_dimensions, offset, type, anisotropic_weights, weights, normalized_offset, known_lower);
-
-    if ((type == type_tensor) || (type == type_iptensor) || (type == type_qptensor)){ // special case, full tensor
-        std::vector<int> levels(num_dimensions, 0); // how many levels to keep in each direction
-        std::transform(weights.begin(), weights.end(), levels.begin(),
-                        [&](int w)-> int{
-                            int l = 0;
-                            while(rule_exactness(l) < w) l++; // get the first level that covers the weight
-                            return l+1;
-                        });
-        generateFullTensorSet<int>(levels, mset);
-    }else if (known_lower){ // using lower-set logic (cache can be pre-computed)
-        if ((type == type_level) || (type == type_iptotal) || (type == type_qptotal)){
-            generateWeightedTensorsCached<int, int, type_level>(weights, normalized_offset, rule_exactness, mset);
-        }else if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
-            generateWeightedTensorsCached<int, double, type_curved>(weights, (double) normalized_offset, rule_exactness, mset);
-        }else{ // some type_hyperbolic type
-            generateWeightedTensorsCached<int, double, type_hyperbolic>(weights, (double) normalized_offset, rule_exactness, mset);
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Create a full-tensor multi-index set with \b num_entries in each direction.
+ *
+ * \endinternal
+ */
+inline MultiIndexSet generateFullTensorSet(std::vector<int> const &num_entries){
+    size_t num_dimensions = num_entries.size();
+    int num_total = 1;
+    for(auto &l : num_entries) num_total *= l;
+    std::vector<int> indexes(Utils::size_mult(num_dimensions, num_total));
+    auto iter = indexes.rbegin();
+    for(int i=num_total-1; i>=0; i--){
+        int t = i;
+        auto l = num_entries.rbegin();
+        // in order to generate indexes in the correct order, the for loop must go backwards
+        for(size_t j = 0; j<num_dimensions; j++){
+            *iter++ = (t % *l);
+            t /= *l++;
         }
-    }else{
-        generateWeightedTensorsDynamicCached<int, double>(weights, (double) normalized_offset, rule_exactness, mset);
+    }
+    return MultiIndexSet(num_dimensions, indexes);
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Generate a series of \b level_sets where each set has the parents/children of the previous one that satisfy the \b inside() criteria.
+ *
+ * On entry, \b level_sets must constain at least one set.
+ * The function takes the last set in \b level_sets and adds a new set of
+ * eithe the parents or children that also satisfy the \b inside() condition.
+ * The process is repeated until the new set is empty.
+ * \endinternal
+ */
+template<bool use_parents>
+void repeatAddIndexes(std::function<bool(const std::vector<int> &index)> inside, std::vector<MultiIndexSet> &level_sets){
+    size_t num_dimensions = level_sets.back().getNumDimensions();
+    bool adding = true;
+    while(adding){
+        Data2D<int> level((int) num_dimensions, 0);
+        int num_indexes = level_sets.back().getNumIndexes();
+        for(int i=0; i<num_indexes; i++){
+            std::vector<int> point(num_dimensions);
+            std::copy_n(level_sets.back().getIndex(i), num_dimensions, point.data());
+            for(auto &p : point){
+                p += (use_parents) ? -1 : 1; // parents have lower index, children have higher indexes
+                if ( (!use_parents || (p >= 0)) && inside(point) ) level.appendStrip(point);
+                p -= (use_parents) ? -1 : 1; // restore p
+            }
+        }
+
+        adding = (level.getNumStrips() > 0);
+        if (adding)
+            level_sets.push_back(MultiIndexSet(level));
     }
 }
 
-void MultiIndexManipulations::computeLevels(const MultiIndexSet &mset, std::vector<int> &level){
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Retuns the union of all \b level_sets, all sets are destroyed in the process.
+ *
+ * \endinternal
+ */
+inline MultiIndexSet unionSets(std::vector<MultiIndexSet> &level_sets){
+    size_t num_levels = level_sets.size();
+    while(num_levels > 1){
+        size_t stride = num_levels / 2 + (((num_levels % 2) > 0) ? 1 : 0);
+        for(size_t i=0; i<stride; i++)
+            if (i + stride < num_levels)
+                level_sets[i].addMultiIndexSet(level_sets[i + stride]);
+        num_levels = stride;
+    }
+    return std::move(level_sets[0]);
+}
+
+inline void completeSetToLower(MultiIndexSet &set){
+    size_t num_dimensions = set.getNumDimensions();
+    int num = set.getNumIndexes();
+    Data2D<int> completion((int) num_dimensions, 0);
+    for(int i=0; i<num; i++){
+        std::vector<int> point(num_dimensions);
+        std::copy_n(set.getIndex(i), num_dimensions, point.data());
+        for(auto &p : point){
+            if (p != 0){
+                p--;
+                if (set.missing(point)) completion.appendStrip(point);
+                p++;
+            }
+        }
+    }
+
+    if (completion.getNumStrips() > 0){
+        std::vector<MultiIndexSet> level_sets = { MultiIndexSet(completion) };
+
+        repeatAddIndexes<true>([&](std::vector<int> const &p) -> bool{ return set.missing(p); }, level_sets);
+
+        set.addMultiIndexSet(unionSets(level_sets));
+    }
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Generate the minimum lower complete multi-index set that includes the indexes satisfying \b criteria(), assumes \b criteria() defines a connected set.
+ *
+ * \endinternal
+ */
+inline MultiIndexSet generateGeneralMultiIndexSet(size_t num_dimensions, std::function<bool(const std::vector<int> &index)> criteria){
+    std::vector<int> root(num_dimensions, 0);
+    std::vector<MultiIndexSet> level_sets = { MultiIndexSet(num_dimensions, root) };
+
+    repeatAddIndexes<false>(criteria, level_sets);
+
+    MultiIndexSet set = unionSets(level_sets);
+
+    completeSetToLower(set);
+    return set;
+}
+
+/*!
+ * \internal
+ * \brief Generate the multi-index of indexes with weighs less than the \b normalized_offset.
+ *
+ * The weight of an index uses the \b weights combined with the \b rule_exactness().
+ * Called only when the set is guaranteed to be lower complete,
+ * then the one dimensional weights can be cached prior to running the selection algorithm.
+ *
+ * If \b check_limits is \b false, then \b level_limits are ignored for speedup.
+ * \endinternal
+ */
+template<bool check_limits>
+MultiIndexSet selectLowerSet(ProperWeights const &weights, std::function<int(int i)> rule_exactness,
+                             int normalized_offset, std::vector<int> const &level_limits){
+    size_t num_dimensions = weights.getNumDimensions();
+    if (weights.contour == type_level){
+        auto cache = generateLevelWeightsCache<int, type_level, false>(weights, rule_exactness, normalized_offset);
+        return generateLowerMultiIndexSet(num_dimensions,
+                [&](std::vector<int> const &index)->bool{
+                    if (check_limits) for(size_t j=0; j<num_dimensions; j++) if (index[j] > level_limits[j]) return false;
+                    return (getIndexWeight<int, type_level>(index.data(), cache) <= normalized_offset);
+                });
+    }else if (weights.contour == type_curved){
+        auto cache = generateLevelWeightsCache<double, type_curved, false>(weights, rule_exactness, normalized_offset);
+        double noff = (double) normalized_offset;
+        return generateLowerMultiIndexSet(num_dimensions,
+                [&](std::vector<int> const &index)->bool{
+                    if (check_limits) for(size_t j=0; j<num_dimensions; j++) if (index[j] > level_limits[j]) return false;
+                    return (std::ceil(getIndexWeight<double, type_curved>(index.data(), cache)) <= noff);
+                });
+    }else{ // type_hyperbolic
+        auto cache = generateLevelWeightsCache<double, type_hyperbolic, false>(weights, rule_exactness, normalized_offset);
+        double noff = (double) normalized_offset;
+        return generateLowerMultiIndexSet(num_dimensions,
+                [&](std::vector<int> const &index)->bool{
+                    if (check_limits) for(size_t j=0; j<num_dimensions; j++) if (index[j] > level_limits[j]) return false;
+                    return (std::ceil(getIndexWeight<double, type_hyperbolic>(index.data(), cache)) <= noff);
+                });
+    }
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Generates the minimum lower complete set that contains all indexes with weights less than \b normalized_offset.
+ *
+ * The weight of an index uses the \b weights combined with the \b rule_exactness().
+ * Called only for contour \b type_curved and caches values on-the-fly.
+ *
+ * If \b check_limits is \b false, then \b level_limits are ignored for speedup.
+ * \endinternal
+ */
+template<bool check_limits>
+MultiIndexSet selectGeneralSet(ProperWeights const &weights, std::function<int(int i)> rule_exactness,
+                                      int normalized_offset, std::vector<int> const &level_limits){
+    size_t num_dimensions = weights.getNumDimensions();
+    std::vector<std::vector<double>> cache(num_dimensions);
+    for(size_t j=0; j<num_dimensions; j++) cache[j].push_back(0.0);
+    double noff = (double) normalized_offset;
+    return generateGeneralMultiIndexSet(num_dimensions,
+                                        [&](std::vector<int> const &index) -> bool{
+                                            if (check_limits) for(size_t j=0; j<num_dimensions; j++) if (index[j] > level_limits[j]) return false;
+                                            double w = 0;
+                                            for(size_t j=0; j<num_dimensions; j++){
+                                                while(index[j] >= (int) cache[j].size()){
+                                                    int exactness = 1 + rule_exactness((int)(cache[j].size() - 1));
+                                                    cache[j].push_back( (double) weights.linear[j] * exactness +
+                                                                         weights.curved[j] * log1p((double) exactness) );
+                                                }
+                                                w += cache[j][index[j]];
+                                            }
+                                            return (std::ceil(w) <= noff);
+                                        });
+}
+
+
+MultiIndexSet selectTensors(size_t num_dimensions, int offset, TypeDepth type,
+                                                     std::function<int(int i)> rule_exactness, std::vector<int> const &anisotropic_weights,
+                                                     std::vector<int> const &level_limits){
+    // special case of a full tensor selection
+    if ((type == type_tensor) || (type == type_iptensor) || (type == type_qptensor)){ // special case, full tensor
+        std::vector<int> max_exactness = (anisotropic_weights.empty()) ? std::vector<int>(num_dimensions, 1) : anisotropic_weights;
+        for(auto &e : max_exactness) e *= offset;
+        std::vector<int> num_points(num_dimensions, 0); // how many points to have in each direction
+        std::transform(max_exactness.begin(), max_exactness.end(), num_points.begin(),
+                        [&](int e)-> int{
+                            int l = 0; // level
+                            while(rule_exactness(l) < e) l++; // get the first level that covers the weight
+                            return l+1; // adding extra one to change interpretation from 0-index "level" to 1-index "number of points"
+                        });
+        if (!level_limits.empty()){
+            for(size_t j=0; j<num_dimensions; j++)
+                num_points[j] = std::min(num_points[j], level_limits[j]);
+        }
+        return generateFullTensorSet(num_points);
+    }
+
+    ProperWeights weights(num_dimensions, type, anisotropic_weights);
+
+    int normalized_offset = offset * weights.minLinear();
+    if (weights.provenLower()){ // if the set is guaranteed to be lower
+        if (level_limits.empty()){
+            return selectLowerSet<false>(weights, rule_exactness, normalized_offset, level_limits);
+        }else{
+            return selectLowerSet<true>(weights, rule_exactness, normalized_offset, level_limits);
+        }
+    }else{
+        if (level_limits.empty()){
+            return selectGeneralSet<false>(weights, rule_exactness, normalized_offset, level_limits);
+        }else{
+            return selectGeneralSet<true>(weights, rule_exactness, normalized_offset, level_limits);
+        }
+    }
+}
+
+std::vector<int> computeLevels(MultiIndexSet const &mset){
+    // cannot add as inline to the public header due to the pragma and possible "unknown pragma" message
     int num_indexes = mset.getNumIndexes();
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
-    level.resize((size_t) num_indexes);
+    size_t num_dimensions = mset.getNumDimensions();
+    std::vector<int> levels((size_t) num_indexes);
     #pragma omp parallel for
     for(int i=0; i<num_indexes; i++){
         const int* p = mset.getIndex(i);
-        level[i] = std::accumulate(p, p + num_dimensions, 0);
+        levels[i] = std::accumulate(p, p + num_dimensions, 0);
     }
+    return levels;
 }
 
-void MultiIndexManipulations::getMaxIndex(const MultiIndexSet &mset, std::vector<int> &max_levels, int &total_max){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
-    max_levels.resize(num_dimensions, 0);
+std::vector<int> getMaxIndexes(const MultiIndexSet &mset){
+    size_t num_dimensions = mset.getNumDimensions();
+    std::vector<int> max_index(num_dimensions, 0);
     int n = mset.getNumIndexes();
     for(int i=0; i<n; i++){
-        const int* t = mset.getIndex(i);
-        for(size_t j=0; j<num_dimensions; j++) if (max_levels[j] < t[j]) max_levels[j] = t[j];
+        const int* p = mset.getIndex(i);
+        for(size_t j=0; j<num_dimensions; j++) if (max_index[j] < p[j]) max_index[j] = p[j];
     }
-    total_max = *std::max_element(max_levels.begin(), max_levels.end());
+    return max_index;
 }
 
-Data2D<int> MultiIndexManipulations::computeDAGup(MultiIndexSet const &mset){
+Data2D<int> computeDAGup(MultiIndexSet const &mset){
     size_t num_dimensions = (size_t) mset.getNumDimensions();
     int n = mset.getNumIndexes();
     Data2D<int> parents(mset.getNumDimensions(), n);
@@ -106,7 +317,7 @@ Data2D<int> MultiIndexManipulations::computeDAGup(MultiIndexSet const &mset){
     return parents;
 }
 
-Data2D<int> MultiIndexManipulations::computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
+Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
     size_t num_dimensions = (size_t) mset.getNumDimensions();
     int num_points = mset.getNumIndexes();
     if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
@@ -164,8 +375,8 @@ Data2D<int> MultiIndexManipulations::computeDAGup(MultiIndexSet const &mset, con
     }
 }
 
-std::vector<int> MultiIndexManipulations::computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
+std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule){
+    size_t num_dimensions = mset.getNumDimensions();
     int num_points = mset.getNumIndexes();
     std::vector<int> level((size_t) num_points);
     #pragma omp parallel for schedule(static)
@@ -180,9 +391,8 @@ std::vector<int> MultiIndexManipulations::computeLevels(MultiIndexSet const &mse
     return level;
 }
 
-void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits, MultiIndexSet &new_set){
-    new_set = MultiIndexSet(mset.getNumDimensions());
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
+MultiIndexSet selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits){
+    size_t num_dimensions = mset.getNumDimensions();
 
     Data2D<int> children_unsorted(mset.getNumDimensions(), 0);
 
@@ -215,38 +425,11 @@ void MultiIndexManipulations::selectFlaggedChildren(const MultiIndexSet &mset, c
             }
         }
     }
-    if (children_unsorted.getNumStrips() > 0)
-        new_set.addData2D(children_unsorted);
+
+    return MultiIndexSet(children_unsorted);
 }
 
-void MultiIndexManipulations::removeIndexesByLimit(const std::vector<int> &level_limits, MultiIndexSet &mset){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
-    int num_indexes = mset.getNumIndexes();
-    std::vector<int> keep;
-    keep.reserve((size_t) num_indexes);
-    auto imset = mset.getVector().begin();
-    for(int i=0; i<num_indexes; i++){
-        bool obey = true;
-        for(auto l : level_limits){
-            if ((l > -1) && (*imset > l)) obey = false;
-            imset++;
-        }
-        if (obey) keep.push_back(i);
-    }
-    if (keep.size() == 0){
-        mset = MultiIndexSet((int) num_dimensions);
-    }else if (keep.size() < (size_t) num_indexes){
-        std::vector<int> new_indexes(num_dimensions * keep.size());
-        auto inew = new_indexes.begin();
-        for(auto i : keep){
-            std::copy_n(mset.getIndex(i), num_dimensions, inew);
-            std::advance(inew, num_dimensions);
-        }
-        mset.setIndexes(new_indexes);
-    }
-}
-
-void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints, MultiIndexSet &points){
+MultiIndexSet generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints){
     size_t num_dimensions = (size_t) tensors.getNumDimensions();
     Data2D<int> raw_points((int) num_dimensions, 0);
 
@@ -279,49 +462,51 @@ void MultiIndexManipulations::generateNestedPoints(const MultiIndexSet &tensors,
         }
     }
 
-    points = MultiIndexSet();
-    points.setNumDimensions((int) num_dimensions);
-    points.addData2D(raw_points);
+    return MultiIndexSet(raw_points);
 }
 
-void MultiIndexManipulations::generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper, MultiIndexSet &points){
-    size_t num_dimensions = (size_t) tensors.getNumDimensions();
+MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper){
+    size_t num_dimensions = tensors.getNumDimensions();
     int num_tensors = tensors.getNumIndexes();
     std::vector<MultiIndexSet> point_tensors((size_t) num_tensors);
 
     #pragma omp parallel for
-    for(int i=0; i<num_tensors; i++){
-        std::vector<int> npoints(num_dimensions);
-        const int *p = tensors.getIndex(i);
-        for(size_t j=0; j<num_dimensions; j++)
-            npoints[j] = wrapper.getNumPoints(p[j]);
-        MultiIndexSet raw_points;
-        MultiIndexManipulations::generateFullTensorSet<int>(npoints, raw_points);
+    for(int t=0; t<num_tensors; t++){
+        std::vector<int> num_entries(num_dimensions);
+        const int *p = tensors.getIndex(t);
+        std::transform(p, p + num_dimensions, num_entries.begin(), [&](int l)->int{ return wrapper.getNumPoints(l); });
 
-        size_t j = 0;
-        for(auto &g : raw_points.getVector()){
-            g = wrapper.getPointIndex(p[j++], g); // remap local-order-to-global-index
-            if (j == num_dimensions) j = 0;
+        int num_total = 1;
+        for(auto &l : num_entries) num_total *= l;
+
+        Data2D<int> raw_points(num_dimensions, num_total);
+        auto iter = raw_points.getVector().rbegin();
+        for(int i=num_total-1; i>=0; i--){
+            int d = i;
+            auto l = num_entries.rbegin();
+            // in order to generate indexes in the correct order, the for loop must go backwards
+            for(size_t j = 0; j<num_dimensions; j++){
+                *iter++ = wrapper.getPointIndex(p[num_dimensions - j - 1], (d % *l));
+                d /= *l++;
+            }
         }
-        point_tensors[i].setNumDimensions((int) num_dimensions);
-        point_tensors[i].addUnsortedInsexes(raw_points.getVector());
+
+        point_tensors[t] = MultiIndexSet(raw_points);
     }
 
-    MultiIndexManipulations::unionSets<true>(point_tensors, points);
+    return unionSets(point_tensors);
 }
 
-void MultiIndexManipulations::computeTensorWeights(const MultiIndexSet &mset, std::vector<int> &weights){
+std::vector<int> computeTensorWeights(MultiIndexSet const &mset){
     size_t num_dimensions = (size_t) mset.getNumDimensions();
     int num_tensors = mset.getNumIndexes();
 
-    std::vector<int> level;
-    computeLevels(mset, level);
+    std::vector<int> level = computeLevels(mset);
     int max_level = *std::max_element(level.begin(), level.end());
 
-    Data2D<int> dag_down;
-    dag_down.resize((int) num_dimensions, num_tensors);
+    Data2D<int> dag_down(num_dimensions, num_tensors);
 
-    weights.resize(num_tensors);
+    std::vector<int> weights((size_t) num_tensors);
 
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_tensors; i++){
@@ -372,30 +557,11 @@ void MultiIndexManipulations::computeTensorWeights(const MultiIndexSet &mset, st
             }
         }
     }
+
+    return weights;
 }
 
-void MultiIndexManipulations::createActiveTensors(const MultiIndexSet &mset, const std::vector<int> &weights, MultiIndexSet &active){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
-    size_t nz_weights = 0;
-    for(auto w: weights) if (w != 0) nz_weights++;
-
-    std::vector<int> indexes(nz_weights * num_dimensions);
-    nz_weights = 0;
-    auto iter = indexes.begin();
-    auto iset = mset.getVector().begin();
-    for(auto w: weights){
-        if (w != 0){
-            std::copy_n(iset, num_dimensions, iter);
-            std::advance(iter, num_dimensions);
-        }
-        std::advance(iset, num_dimensions);
-    }
-
-    active.setNumDimensions((int) num_dimensions);
-    active.setIndexes(indexes);
-}
-
-void MultiIndexManipulations::createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness, MultiIndexSet &space){
+MultiIndexSet createPolynomialSpace(const MultiIndexSet &tensors, std::function<int(int)> exactness){
     size_t num_dimensions = (size_t) tensors.getNumDimensions();
     int num_tensors = tensors.getNumIndexes();
     std::vector<MultiIndexSet> polynomial_tensors((size_t) num_tensors);
@@ -406,12 +572,14 @@ void MultiIndexManipulations::createPolynomialSpace(const MultiIndexSet &tensors
         const int *p = tensors.getIndex(i);
         for(size_t j=0; j<num_dimensions; j++)
             npoints[j] = exactness(p[j]) + 1;
-        MultiIndexManipulations::generateFullTensorSet<int>(npoints, polynomial_tensors[i]);
+        polynomial_tensors[i] = generateFullTensorSet(npoints);
     }
 
-    MultiIndexManipulations::unionSets<true>(polynomial_tensors, space);
+    return unionSets(polynomial_tensors);
 }
 
-}
+} // MultiIndexManipulations
+
+} // TasGrid
 
 #endif

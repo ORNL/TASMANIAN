@@ -35,68 +35,45 @@
 
 namespace TasGrid{
 
-DynamicConstructorDataGlobal::DynamicConstructorDataGlobal(int cnum_dimensions, int cnum_outputs)
+DynamicConstructorDataGlobal::DynamicConstructorDataGlobal(size_t cnum_dimensions, size_t cnum_outputs)
     : num_dimensions(cnum_dimensions), num_outputs(cnum_outputs){}
 DynamicConstructorDataGlobal::~DynamicConstructorDataGlobal(){}
 
-void DynamicConstructorDataGlobal::write(std::ofstream &ofs) const{
-    std::vector<const TensorData*> tensor_refs;
-    makeReverseReferenceVector<TensorData>(tensors, tensor_refs);
+template<bool useAscii> void DynamicConstructorDataGlobal::write(std::ostream &os) const{
+    if (useAscii){ os << std::scientific; os.precision(17); }
+    auto tensor_refs =  makeReverseReferenceVector(tensors);
 
-    ofs << tensor_refs.size() << std::endl;
-    ofs << std::scientific;
-    ofs.precision(16);
+    IO::writeNumbers<useAscii, IO::pad_line, int>(os, (int) tensor_refs.size());
     for(auto d : tensor_refs){
-        ofs << d->weight;
-        for(auto i : d->tensor) ofs << " " << i;
-        ofs << std::endl;
+        IO::writeNumbers<useAscii, IO::pad_rspace, double>(os, d->weight);
+        IO::writeVector<useAscii, IO::pad_line>(d->tensor, os);
     }
-
-    writeNodeDataList<std::ofstream, true>(data, ofs);
+    writeNodeDataList<useAscii>(data, os);
 }
-void DynamicConstructorDataGlobal::writeBinary(std::ofstream &ofs) const{
-    std::vector<const TensorData*> tensor_refs;
-    makeReverseReferenceVector<TensorData>(tensors, tensor_refs);
 
-    int num = (int) tensor_refs.size();
-    ofs.write((char*) &num, sizeof(int));
-    for(auto d : tensor_refs){
-        ofs.write((char*) &(d->weight), sizeof(double));
-        ofs.write((char*) d->tensor.data(), num_dimensions * sizeof(int));
-    }
+template<bool useAscii> void DynamicConstructorDataGlobal::read(std::istream &is){
+    int num_entries = IO::readNumber<useAscii, int>(is);
 
-    writeNodeDataList<std::ofstream, false>(data, ofs);
-}
-int DynamicConstructorDataGlobal::read(std::ifstream &ifs){
-    int num, max_tensor = 0;
-    ifs >> num; // get the number of tensors
-    for(int i=0; i<num; i++){
+    for(int i=0; i<num_entries; i++){
         TensorData td;
         td.tensor.resize(num_dimensions);
-        ifs >> td.weight;
-        for(auto &t : td.tensor) ifs >> t;
-        max_tensor = std::max(max_tensor, *std::max_element(td.tensor.begin(), td.tensor.end()));
+        td.weight = IO::readNumber<useAscii, double>(is);
+        IO::readVector<useAscii>(is, td.tensor);
         tensors.push_front(std::move(td));
     }
 
-    readNodeDataList<std::ifstream, true>(num_dimensions, num_outputs, ifs, data);
-
-    return max_tensor;
+    data = readNodeDataList<useAscii>(num_dimensions, num_outputs, is);
 }
-int DynamicConstructorDataGlobal::readBinary(std::ifstream &ifs){
-    int num, max_tensor = 0;
-    ifs.read((char*) &num, sizeof(int)); // get the number of tensors
-    for(int i=0; i<num; i++){
-        TensorData td;
-        ifs.read((char*) &td.weight, sizeof(double));
-        td.tensor.resize(num_dimensions);
-        ifs.read((char*) td.tensor.data(), num_dimensions * sizeof(int));
-        max_tensor = std::max(max_tensor, *std::max_element(td.tensor.begin(), td.tensor.end()));
-        tensors.push_front(std::move(td));
-    }
 
-    readNodeDataList<std::ifstream, false>(num_dimensions, num_outputs, ifs, data);
+template void DynamicConstructorDataGlobal::write<true>(std::ostream &) const; // instantiate for faster build
+template void DynamicConstructorDataGlobal::write<false>(std::ostream &) const;
+template void DynamicConstructorDataGlobal::read<true>(std::istream &);
+template void DynamicConstructorDataGlobal::read<false>(std::istream &);
 
+int DynamicConstructorDataGlobal::getMaxTensor() const{
+    int max_tensor = 0;
+    for(auto t = tensors.begin(); t != tensors.end(); t++)
+        max_tensor = std::max(max_tensor, *std::max_element(t->tensor.begin(), t->tensor.end()));
     return max_tensor;
 }
 
@@ -104,10 +81,8 @@ void DynamicConstructorDataGlobal::reloadPoints(std::function<int(int)> getNumPo
     auto t = tensors.begin();
     while(t != tensors.end()){
         std::vector<int> v = t->tensor;
-        MultiIndexSet dummy_set(num_dimensions);
-        dummy_set.setIndexes(v);
-        t->points.setNumDimensions(num_dimensions);
-        MultiIndexManipulations::generateNestedPoints(dummy_set, getNumPoints, t->points);
+        MultiIndexSet dummy_set(num_dimensions, v);
+        t->points = MultiIndexManipulations::generateNestedPoints(dummy_set, getNumPoints);
         t->loaded = std::vector<bool>(t->points.getNumIndexes(), false);
         t++;
     }
@@ -138,9 +113,8 @@ void DynamicConstructorDataGlobal::clearTesnors(){
     }
 }
 
-void DynamicConstructorDataGlobal::getInitialTensors(MultiIndexSet &set) const{
-    Data2D<int> tens;
-    tens.resize(num_dimensions, 0);
+MultiIndexSet DynamicConstructorDataGlobal::getInitialTensors() const{
+    Data2D<int> tens(num_dimensions, 0);
     auto t = tensors.begin();
     while(t != tensors.end()){
         if (t->weight < 0.0){
@@ -148,19 +122,15 @@ void DynamicConstructorDataGlobal::getInitialTensors(MultiIndexSet &set) const{
         }
         t++;
     }
-    set = MultiIndexSet(num_dimensions);
-    if (tens.getNumStrips() > 0)
-        set.addData2D(tens);
+    return MultiIndexSet(tens);
 }
 
 void DynamicConstructorDataGlobal::addTensor(const int *tensor, std::function<int(int)> getNumPoints, double weight){
     TensorData t;
     std::vector<int> v(tensor, tensor + num_dimensions);
     t.tensor = v;
-    MultiIndexSet dummy_set(num_dimensions);
-    dummy_set.setIndexes(v);
-    t.points.setNumDimensions(num_dimensions);
-    MultiIndexManipulations::generateNestedPoints(dummy_set, getNumPoints, t.points);
+    MultiIndexSet dummy_set(num_dimensions, v);
+    t.points = MultiIndexManipulations::generateNestedPoints(dummy_set, getNumPoints);
     t.loaded = std::vector<bool>(t.points.getNumIndexes(), false);
     auto d = data.begin();
     while(d != data.end()){

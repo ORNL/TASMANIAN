@@ -34,7 +34,6 @@
 #include <cstdlib>
 #include <memory>
 
-#include "tsgIOHelpers.hpp"
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgCoreOneDimensional.hpp"
@@ -134,17 +133,18 @@ public:
 protected:
     void reset(bool includeCustom);
 
-    void computeSurpluses(int output, bool normalize, std::vector<double> &surp) const; // only for sequence rules, select the output to compute the surpluses
+    std::vector<double> computeSurpluses(int output, bool normalize) const; // only for sequence rules, select the output to compute the surpluses
 
     static double legendre(int n, double x);
 
-    // assumes that if rule == rule_customtabulated, then custom is already loaded; NOTE: tset.getNumDimensions() must be set already
-    void selectTensors(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, TypeOneDRule rule, MultiIndexSet &tset) const;
+    // assumes that if rule == rule_customtabulated, then custom is already loaded
+    MultiIndexSet selectTensors(size_t dims, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights,
+                                TypeOneDRule rule, std::vector<int> const &level_limits) const;
 
     void recomputeTensorRefs(const MultiIndexSet &work);
     void proposeUpdatedTensors();
     void acceptUpdatedTensors();
-    void getPolynomialSpace(bool interpolation, MultiIndexSet &polynomial_set) const;
+    MultiIndexSet getPolynomialSpace(bool interpolation) const;
 
     void mapIndexesToNodes(const std::vector<int> &indexes, double *x) const;
     void loadConstructedTensors();

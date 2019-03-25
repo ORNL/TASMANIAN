@@ -35,10 +35,6 @@
 
 namespace TasGrid{
 
-MultiIndexSet::MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
-MultiIndexSet::MultiIndexSet(int cnum_dimensions)  : num_dimensions(cnum_dimensions), cache_num_indexes(0){}
-MultiIndexSet::~MultiIndexSet(){}
-
 template<bool useAscii>
 void MultiIndexSet::write(std::ostream &os) const{
     if (cache_num_indexes > 0){
@@ -62,41 +58,50 @@ template void MultiIndexSet::write<false>(std::ostream &) const;
 template void MultiIndexSet::read<true>(std::istream &);
 template void MultiIndexSet::read<false>(std::istream &);
 
-void MultiIndexSet::setNumDimensions(int new_dimensions){
-    indexes = std::vector<int>();
-    cache_num_indexes = 0;
-    num_dimensions = (size_t) new_dimensions;
-}
-
-void MultiIndexSet::setIndexes(std::vector<int> &new_indexes){
-    indexes = std::move(new_indexes);
-    cache_num_indexes = (int) (indexes.size() / num_dimensions);
-}
-
-void MultiIndexSet::addSortedInsexes(const std::vector<int> &addition){
+void MultiIndexSet::addSortedIndexes(const std::vector<int> &addition){
     if (indexes.empty()){
-        indexes.resize(addition.size());
-        std::copy(addition.begin(), addition.end(), indexes.data());
+        indexes = addition;
     }else{
-        std::vector<int> old_indexes;
-        std::swap(old_indexes, indexes);
+        std::vector<int> old_indexes = std::move(indexes);
+        indexes = std::vector<int>(); // reset the indexes
+
         std::vector<std::vector<int>::const_iterator> merge_map;
         merge_map.reserve(addition.size() + old_indexes.size());
+        auto next = std::back_inserter(merge_map);
 
-        SetManipulations::push_merge_map<int, int>(old_indexes, addition,
-                                                   [&](std::vector<int>::const_iterator &ia) -> void{ std::advance(ia, num_dimensions); },
-                                                   [&](std::vector<int>::const_iterator &ib) -> void{ std::advance(ib, num_dimensions); },
-                                                   [&](std::vector<int>::const_iterator ia, std::vector<int>::const_iterator ib) ->
-                                                   TypeIndexRelation{
-                                                       for(size_t j=0; j<num_dimensions; j++){
-                                                           if (*ia   < *ib)   return type_abeforeb;
-                                                           if (*ia++ > *ib++) return type_bbeforea;
-                                                       }
-                                                       return type_asameb;
-                                                   },
-                                                   [&](std::vector<int>::const_iterator ib, std::vector<std::vector<int>::const_iterator> &mmap) ->
-                                                   void { mmap.push_back(ib); },
-                                                   merge_map);
+        auto compare = [&](std::vector<int>::const_iterator ia, std::vector<int>::const_iterator ib) ->
+                            TypeIndexRelation{
+                                for(size_t j=0; j<num_dimensions; j++){
+                                    if (*ia   < *ib)   return type_abeforeb;
+                                    if (*ia++ > *ib++) return type_bbeforea;
+                                }
+                                return type_asameb;
+                            };
+
+        // merge with three way compare
+        auto ia = old_indexes.begin();
+        auto ib = addition.begin();
+        auto aend = old_indexes.end();
+        auto bend = addition.end();
+        while((ia != aend) || (ib != bend)){
+            TypeIndexRelation relation;
+            if (ib == bend){
+                relation = type_abeforeb;
+            }else if (ia == aend){
+                relation = type_bbeforea;
+            }else{
+                relation = compare(ia, ib);
+            }
+
+            if (relation == type_bbeforea){
+                next = ib;
+                std::advance(ib, num_dimensions);
+            }else{
+                next = ia;
+                std::advance(ia, num_dimensions);
+                if (relation == type_asameb) std::advance(ib, num_dimensions);
+            }
+        }
 
         indexes.resize(merge_map.size() * num_dimensions); // merge map will reference only indexes in both sets
         auto iindexes = indexes.begin();
@@ -107,10 +112,13 @@ void MultiIndexSet::addSortedInsexes(const std::vector<int> &addition){
     }
     cache_num_indexes = (int) (indexes.size() / num_dimensions);
 }
-void MultiIndexSet::addUnsortedInsexes(const std::vector<int> &addition){
-    size_t num = addition.size() / num_dimensions;
+
+void MultiIndexSet::setData2D(Data2D<int> const &data){
+    size_t num = (size_t) data.getNumStrips();
+    if (num == 0) return; // nothing to do
+
     std::vector<std::vector<int>::const_iterator> index_refs(num);
-    auto iadd = addition.begin();
+    auto iadd = data.getVector().begin();
     for(auto &i : index_refs){
         i = iadd;
         std::advance(iadd, num_dimensions);
@@ -131,42 +139,14 @@ void MultiIndexSet::addUnsortedInsexes(const std::vector<int> &addition){
                                         return true;
                                 });
     index_refs.resize(std::distance(index_refs.begin(), unique_end));
-    if (indexes.empty()){
-        indexes.resize(index_refs.size() * num_dimensions);
-        auto iindexes = indexes.begin();
-        for(auto &i : index_refs){
-            std::copy_n(i, num_dimensions, iindexes);
-            std::advance(iindexes, num_dimensions);
-        }
-    }else{
-        std::vector<int> old_indexes;
-        std::swap(old_indexes, indexes);
-        std::vector<std::vector<int>::const_iterator> merge_map;
-        merge_map.reserve(addition.size() + old_indexes.size());
 
-        SetManipulations::push_merge_map<int, std::vector<int>::const_iterator>(old_indexes, index_refs,
-                [&](std::vector<int>::const_iterator &ia) -> void{ std::advance(ia, num_dimensions); },
-                [&](std::vector<std::vector<int>::const_iterator>::const_iterator &ib) -> void{ ib++; },
-                [&](std::vector<int>::const_iterator ia, std::vector<std::vector<int>::const_iterator>::const_iterator bin) ->
-                TypeIndexRelation{
-                    std::vector<int>::const_iterator ib = *bin;
-                    for(size_t j=0; j<num_dimensions; j++){
-                        if (*ia   < *ib)   return type_abeforeb;
-                        if (*ia++ > *ib++) return type_bbeforea;
-                    }
-                    return type_asameb;
-                },
-                [&](std::vector<std::vector<int>::const_iterator>::const_iterator ib, std::vector<std::vector<int>::const_iterator> &mmap) ->
-                void { mmap.push_back(*ib); },
-                merge_map);
-
-        indexes.resize(merge_map.size() * num_dimensions); // merge map will reference only indexes in both sets
-        auto iindexes = indexes.begin();
-        for(auto &i : merge_map){
-            std::copy_n(i, num_dimensions, iindexes);
-            std::advance(iindexes, num_dimensions);
-        }
+    indexes.resize(index_refs.size() * num_dimensions);
+    auto iindexes = indexes.begin();
+    for(auto &i : index_refs){
+        std::copy_n(i, num_dimensions, iindexes);
+        std::advance(iindexes, num_dimensions);
     }
+
     cache_num_indexes = (int) (indexes.size() / num_dimensions);
 }
 
@@ -195,8 +175,6 @@ int MultiIndexSet::getSlot(const int *p) const{
 }
 
 MultiIndexSet MultiIndexSet::diffSets(const MultiIndexSet &substract){
-    MultiIndexSet result((int) num_dimensions);
-
     std::vector<std::vector<int>::iterator> kept_indexes;
 
     auto ithis = indexes.begin();
@@ -234,10 +212,10 @@ MultiIndexSet MultiIndexSet::diffSets(const MultiIndexSet &substract){
             std::copy_n(i, num_dimensions, inew);
             std::advance(inew, num_dimensions);
         }
-        result.setIndexes(new_indexes);
+        return MultiIndexSet(num_dimensions, new_indexes);
     }
 
-    return result;
+    return MultiIndexSet();
 }
 
 void MultiIndexSet::removeIndex(const std::vector<int> &p){
@@ -294,7 +272,7 @@ void StorageSet::setValues(std::vector<double> &vals){
 void StorageSet::addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]){
     int num_old = old_set.getNumIndexes();
     int num_new = new_set.getNumIndexes();
-    int num_dimensions = old_set.getNumDimensions();
+    size_t num_dimensions = old_set.getNumDimensions();
 
     num_values += (size_t) num_new;
     std::vector<double> combined_values(num_values * num_outputs);
@@ -304,6 +282,15 @@ void StorageSet::addValues(const MultiIndexSet &old_set, const MultiIndexSet &ne
     auto ivals = values.begin();
     auto icombined = combined_values.begin();
 
+    auto compareIndexes = [&](int const a[], int const b[])->
+            TypeIndexRelation{
+                for(size_t j=0; j<num_dimensions; j++){
+                    if (a[j] < b[j]) return type_abeforeb;
+                    if (a[j] > b[j]) return type_bbeforea;
+                }
+                return type_asameb;
+            };
+
     for(size_t i=0; i<num_values; i++){
         TypeIndexRelation relation;
         if (iold >= num_old){
@@ -311,7 +298,7 @@ void StorageSet::addValues(const MultiIndexSet &old_set, const MultiIndexSet &ne
         }else if (inew >= num_new){
             relation = type_bbeforea;
         }else{
-            relation = compareIndexes(num_dimensions, new_set.getIndex(inew), old_set.getIndex(iold));
+            relation = compareIndexes(new_set.getIndex(inew), old_set.getIndex(iold));
         }
         if (relation == type_abeforeb){
             std::copy_n(&(new_vals[off_vals]), num_outputs, icombined);
@@ -325,14 +312,6 @@ void StorageSet::addValues(const MultiIndexSet &old_set, const MultiIndexSet &ne
         std::advance(icombined, num_outputs);
     }
     std::swap(values, combined_values);
-}
-
-TypeIndexRelation StorageSet::compareIndexes(int num_dimensions, const int a[], const int b[]) const{
-    for(int i=0; i<num_dimensions; i++){
-        if (a[i] < b[i]) return type_abeforeb;
-        if (a[i] > b[i]) return type_bbeforea;
-    }
-    return type_asameb;
 }
 
 }

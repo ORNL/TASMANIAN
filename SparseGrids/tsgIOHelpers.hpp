@@ -35,14 +35,17 @@
 
 #include "tsgCoreOneDimensional.hpp"
 
-//! \internal
-//! \file tsgIOHelpers.hpp
-//! \brief Templates to simply file I/O.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianIO
-//!
-//! Several templates that simplify the I/O of Tasmanian.
-//! Commonly used operations are lumped into templates with simple binary/ascii switch.
+/*!
+ * \internal
+ * \file tsgIOHelpers.hpp
+ * \brief Templates to simply file I/O.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianIO
+ *
+ * Several templates that simplify the I/O of Tasmanian.
+ * Commonly used operations are lumped into templates with simple binary/ascii switch.
+ * \endinternal
+ */
 
 /*!
  * \internal
@@ -53,11 +56,22 @@
 
 namespace TasGrid{
 
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Collection of I/O handling templates.
+ */
 namespace IO{
 
-//! \internal
-//! \brief Indicate the type of padding to use, none, space, new-line, etc.
-//! \ingroup TasmanianIO
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Indicate the type of padding to use, none, space, new-line, etc.
+ *
+ * Ascii formats are human readable (for small data), but to achieve that
+ * new lines and spaces must be added in the right place using the IOPad enumerate.
+ * \endinternal
+ */
 enum IOPad{
     //! \brief Do not add padding.
     pad_none,
@@ -71,9 +85,12 @@ enum IOPad{
     pad_auto
 };
 
-//! \internal
-//! \brief Write the flag to file, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
-//! \ingroup TasmanianIO
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Write the flag to file, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
+ * \endinternal
+ */
 template<bool useAscii, IOPad pad>
 void writeFlag(bool flag, std::ostream &os){
     if (useAscii){
@@ -86,9 +103,12 @@ void writeFlag(bool flag, std::ostream &os){
     }
 }
 
-//! \internal
-//! \brief Read a flag, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
-//! \ingroup TasmanianIO
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Read a flag, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
+ * \endinternal
+ */
 template<bool useAscii>
 bool readFlag(std::istream &os){
     if (useAscii){
@@ -102,9 +122,12 @@ bool readFlag(std::istream &os){
     }
 }
 
-//! \internal
-//! \brief Write the vector to the stream, the vector cannot be empty.
-//! \ingroup TasmanianIO
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Write the vector to the stream, the vector cannot be empty.
+ * \endinternal
+ */
 template<bool useAscii, IOPad pad, typename VecType>
 void writeVector(const std::vector<VecType> &x, std::ostream &os){
     if (useAscii){
@@ -122,9 +145,12 @@ void writeVector(const std::vector<VecType> &x, std::ostream &os){
     }
 }
 
-//! \internal
-//! \brief Read the vector from the stream.
-//! \ingroup TasmanianIO
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Read the vector from the stream.
+ * \endinternal
+ */
 template<bool useAscii, typename VecType>
 void readVector(std::istream &os, std::vector<VecType> &x){
     if (useAscii){
@@ -134,18 +160,24 @@ void readVector(std::istream &os, std::vector<VecType> &x){
     }
 }
 
-//! \internal
-//! \brief Write a bunch of numbers with the same type.
-//! \ingroup TasmanianIO
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Write a bunch of numbers with the same type.
+ * \endinternal
+ */
 template<bool useAscii, IOPad pad, typename... Vals>
 void writeNumbers(std::ostream &os, Vals... vals){
     std::vector<typename std::tuple_element<0, std::tuple<Vals...>>::type> values = {vals...};
     writeVector<useAscii, pad>(values, os);
 }
 
-//! \internal
-//! \brief Read a single number, used to read ints (and potentially cast to size_t) or read a double.
-//! \ingroup TasmanianIO
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Read a single number, used to read ints (and potentially cast to size_t) or read a double.
+ * \endinternal
+ */
 template<bool useAscii, typename Val>
 Val readNumber(std::istream &os){
     Val v;
@@ -157,9 +189,12 @@ Val readNumber(std::istream &os){
     return v;
 }
 
-//! \internal
-//! \brief Write a rule.
-//! \ingroup TasmanianIO
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Write a rule.
+ * \endinternal
+ */
 template<bool useAscii>
 void writeRule(TypeOneDRule rule, std::ostream &os){
     if (useAscii){
@@ -170,9 +205,12 @@ void writeRule(TypeOneDRule rule, std::ostream &os){
     }
 }
 
-//! \internal
-//! \brief Read a rule.
-//! \ingroup TasmanianIO
+/*!
+ * \internal
+ * \ingroup TasmanianIO
+ * \brief Read a rule.
+ * \endinternal
+ */
 template<bool useAscii>
 TypeOneDRule readRule(std::istream &is){
     if (useAscii){

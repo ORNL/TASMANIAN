@@ -162,13 +162,9 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
 
     makeRule(effective_rule);
 
-    MultiIndexSet tensors;
-    tensors.setNumDimensions(num_dimensions);
-    MultiIndexManipulations::selectTensors(depth, type_level, [&](int i) -> long long{ return i; }, std::vector<int>(), tensors);
+    MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [&](int i) -> int{ return i; }, std::vector<int>(), level_limits);
 
-    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, tensors);
-
-    MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return rule->getNumPoints(l); }, needed);
+    needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return rule->getNumPoints(l); });
 
     buildTree();
 
@@ -356,7 +352,7 @@ void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration)
             needed = MultiIndexSet();
         }else{ // merge needed and points
             values.addValues(points, needed, vals);
-            points.addSortedInsexes(needed.getVector());
+            points.addSortedIndexes(needed.getVector());
             needed = MultiIndexSet();
             buildTree();
         }
@@ -395,10 +391,10 @@ void GridLocalPolynomial::beginConstruction(){
     }
 }
 void GridLocalPolynomial::writeConstructionDataBinary(std::ofstream &ofs) const{
-    writeSimpleConstructionData<false>(dynamic_values.get(), ofs);
+    dynamic_values->write<false>(ofs);
 }
 void GridLocalPolynomial::writeConstructionData(std::ofstream &ofs) const{
-    writeSimpleConstructionData<true>(dynamic_values.get(), ofs);
+    dynamic_values->write<true>(ofs);
 }
 void GridLocalPolynomial::readConstructionDataBinary(std::ifstream &ifs){
     dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, ifs);
@@ -503,9 +499,8 @@ void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vect
 }
 void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::vector<double> &value){
     if (points.empty()){ // only one point
-        points.setNumDimensions(num_dimensions);
         auto p = point; // create new so it can be moved
-        points.setIndexes(p);
+        points = MultiIndexSet((size_t) num_dimensions, p);
         values.resize(num_outputs, 1);
         auto v = value; // create new to allow move
         values.setValues(v);
@@ -521,11 +516,10 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
         std::vector<int> graph = getSubGraph(point); // get the descendant nodes that must be updated later
 
         auto p = point;
-        MultiIndexSet temp(num_dimensions);
-        temp.setIndexes(p);
+        MultiIndexSet temp(num_dimensions, p);
         values.addValues(points, temp, value.data()); // added the value
 
-        points.addSortedInsexes(point); // add the point
+        points.addSortedIndexes(point); // add the point
         int newindex = points.getSlot(point);
         surpluses.appendStrip(newindex, surp); // find the index of the new point
 
@@ -675,7 +669,7 @@ void GridLocalPolynomial::recomputeSurpluses(){
     int num_points = points.getNumIndexes();
 
     surpluses.resize(num_outputs, num_points);
-    surpluses.getVector() = values.aliasValues(); // copy assignment
+    surpluses.getVector() = values.getVector(); // copy assignment
 
     Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
 
@@ -1219,13 +1213,7 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
         }
     }
 
-    MultiIndexSet candidates;
-    if (refined.getNumStrips() > 0){
-        candidates.setNumDimensions(num_dimensions);
-        candidates.addData2D(refined);
-    }
-
-    return candidates;
+    return MultiIndexSet(refined);
 }
 
 bool GridLocalPolynomial::addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const{
@@ -1320,7 +1308,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 
     StorageSet values_kept;
     values_kept.resize(num_outputs, num_kept);
-    values_kept.aliasValues().resize(((size_t) num_kept) * ((size_t) num_outputs));
+    values_kept.getVector().resize(Utils::size_mult(num_kept, num_outputs));
 
     num_kept = 0;
     for(int i=0; i<num_points; i++){
@@ -1334,12 +1322,11 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     int dims = num_dimensions, outs = num_outputs;
 
     reset(false);
-    num_dimensions = dims; num_outputs = outs;
+    num_dimensions = dims;
+    num_outputs = outs;
     if (num_kept == 0) return 0; // trivial case, remove all
 
-    points = MultiIndexSet();
-    points.setNumDimensions(num_dimensions);
-    points.addData2D(point_kept);
+    points = MultiIndexSet(point_kept);
 
     values = std::move(values_kept);
 
@@ -1362,7 +1349,7 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
     surpluses.resize(num_outputs, getNumPoints());
     std::copy_n(c, surpluses.getTotalEntries(), surpluses.getVector().data());
 
-    std::vector<double> &vals = values.aliasValues();
+    std::vector<double> &vals = values.getVector();
     vals.resize(surpluses.getTotalEntries());
 
     std::vector<double> x(((size_t) getNumPoints()) * ((size_t) num_dimensions));

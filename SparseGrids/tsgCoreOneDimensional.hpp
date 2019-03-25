@@ -153,6 +153,21 @@ namespace OneDimensionalMeta{
         }
     }
 
+    //! \brief Returns true if the \b type indicates exactness with respect to raw levels.
+    inline bool isExactLevel(TypeDepth type){
+        return (type == type_level) || (type == type_curved) || (type == type_hyperbolic) || (type == type_tensor);
+    }
+
+    //! \brief Returns true if the \b type indicates exactness with respect to interpolation.
+    inline bool isExactInterpolation(TypeDepth type){
+        return (type == type_iptotal) || (type == type_ipcurved) || (type == type_iphyperbolic) || (type == type_iptensor);
+    }
+
+    //! \brief Returns true if the \b type indicates exactness with respect to integration.
+    inline bool isExactQuadrature(TypeDepth type){
+        return (type == type_qptotal) || (type == type_qpcurved) || (type == type_qphyperbolic) || (type == type_qptensor);
+    }
+
     //! \brief Identifies the selection type, level \b type_level, interpolation \b type_iptotal, or quadrature \b type_qptotal.
 
     //! Similar to \b getControurType(), return what selection is considered, simple levels or interpolation/quadrature polynomial space.

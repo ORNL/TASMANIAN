@@ -92,8 +92,7 @@ template<bool useAscii> void GridFourier::read(std::istream &is){
 
     wrapper.load(CustomTabulated(), *std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
 
-    int dummy;
-    MultiIndexManipulations::getMaxIndex(((points.empty()) ? needed : points), max_power, dummy);
+    max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
 
 template void GridFourier::write<true>(std::ostream &) const;
@@ -117,14 +116,11 @@ void GridFourier::reset(){
 
 void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
 
-    MultiIndexSet tset(cnum_dimensions);
-    if ((type == type_level) || (type == type_tensor) || (type == type_hyperbolic)){
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return i; }, anisotropic_weights, tset);
-    }else{
-        MultiIndexManipulations::selectTensors(depth, type, [&](int i) -> long long{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, tset);
-    }
-
-    if (!level_limits.empty()) MultiIndexManipulations::removeIndexesByLimit(level_limits, tset);
+    MultiIndexSet tset = (OneDimensionalMeta::isExactLevel(type)) ?
+        MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
+                                               [&](int i) -> int{ return i; }, anisotropic_weights, level_limits) :
+        MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
+                                               [&](int i) -> int{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, level_limits);
 
     setTensors(tset, cnum_outputs);
 }
@@ -139,26 +135,24 @@ void GridFourier::copyGrid(const GridFourier *fourier){
 
 void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
     reset();
-    num_dimensions = tset.getNumDimensions();
+    num_dimensions = (int) tset.getNumDimensions();
     num_outputs = cnum_outputs;
 
     tensors = std::move(tset);
 
-    int max_level;
-    MultiIndexManipulations::getMaxIndex(tensors, max_levels, max_level);
+    max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
-    wrapper.load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
+    wrapper.load(CustomTabulated(), *std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
 
-    std::vector<int> tensors_w;
-    MultiIndexManipulations::computeTensorWeights(tensors, tensors_w);
-    MultiIndexManipulations::createActiveTensors(tensors, tensors_w, active_tensors);
+    std::vector<int> tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
+    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
 
     int nz_weights = active_tensors.getNumIndexes();
 
     active_w.reserve(nz_weights);
     for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
 
-    MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); }, needed);
+    needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
     if (num_outputs == 0){
         points = std::move(needed);
@@ -167,8 +161,7 @@ void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
         values.resize(num_outputs, needed.getNumIndexes());
     }
 
-    int dummy;
-    MultiIndexManipulations::getMaxIndex(((points.empty()) ? needed : points), max_power, dummy);
+    max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
 
 int GridFourier::getNumDimensions() const{ return num_dimensions; }
@@ -194,8 +187,7 @@ void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
         needed = MultiIndexSet();
         // other options for the refinement
     }
-    int dummy;
-    MultiIndexManipulations::getMaxIndex(points, max_power, dummy);
+    max_power = MultiIndexManipulations::getMaxIndexes(points);
 
     calculateFourierCoefficients();
 }
@@ -210,14 +202,14 @@ void GridFourier::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
 }
 
-void GridFourier::generateIndexingMap(std::vector<std::vector<int>> &index_map) const{
+std::vector<std::vector<int>> GridFourier::generateIndexingMap() const{
     // The internal point-indexing of Tasmanian goes 0, 1/3, 2/3, 1/9, 2/9, 4/9 ....
     // Fourier transform (and coefficients) need spacial order 0, 1/9, 2/9, 3/9=1/3, ...
     // Create a map, where at level 0: 0 -> 0, level 1: 0 1 2 -> 0 1 2, level 2: 0 1 2 3 4 5 6 7 8 -> 0 3 4 1 5 6 2 7 8
     // The map takes a point from previous map and adds two more points ...
     // Thus, a spacial point i on level l is Tasmanian point index_map[l][i]
     int maxl = 1 + active_tensors.getMaxIndex();
-    index_map.resize(maxl);
+    std::vector<std::vector<int>> index_map(maxl);
     index_map[0].resize(1, 0);
     int c = 1;
     for(int l=1; l<maxl; l++){
@@ -229,6 +221,7 @@ void GridFourier::generateIndexingMap(std::vector<std::vector<int>> &index_map) 
             *im++ = c++;
         }
     }
+    return index_map;
 }
 
 void GridFourier::calculateFourierCoefficients(){
@@ -251,8 +244,7 @@ void GridFourier::calculateFourierCoefficients(){
     int num_points = getNumPoints();
 
     MultiIndexSet &work = (points.empty()) ? needed : points;
-    std::vector<std::vector<int>> index_map;
-    generateIndexingMap(index_map);
+    std::vector<std::vector<int>> index_map = generateIndexingMap();
 
     fourier_coefs.resize(num_outputs, 2 * num_points);
     fourier_coefs.fill(0.0);
@@ -320,8 +312,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     // Take the basis functions, reindex and reorder to a data strucutre, take FFT, reindex and reorder into the weights
 
     const MultiIndexSet &work = (points.empty()) ? needed : points;
-    std::vector<std::vector<int>> index_map;
-    generateIndexingMap(index_map);
+    std::vector<std::vector<int>> index_map = generateIndexingMap();
 
     std::fill(weights, weights + getNumPoints(), 0.0);
 

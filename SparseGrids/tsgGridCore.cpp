@@ -44,9 +44,16 @@ SplitDirections::SplitDirections(const MultiIndexSet &points){
     // int    job_directions[i] gives the direction of the i-th job
     // vector job_pnts[i] gives a list of the points (using indexes within the set)
     int num_points = points.getNumIndexes();
-    num_dimensions = points.getNumDimensions();
+    size_t num_dimensions = points.getNumDimensions();
 
-    for(int d=0; d<num_dimensions; d++){
+    auto doesBelongSameLine = [&](const int a[], const int b[], size_t direction)->
+                                    bool{
+                                        for(size_t i=0; i<num_dimensions; i++)
+                                            if ((i != direction) && (a[i] != b[i])) return false;
+                                        return true;
+                                    };
+
+    for(size_t d=0; d<num_dimensions; d++){
         // working with direction d
         // sort all points but ignore index d
         std::vector<int> map(num_points);
@@ -55,7 +62,7 @@ SplitDirections::SplitDirections(const MultiIndexSet &points){
             const int * idxa = points.getIndex(a);
             const int * idxb = points.getIndex(b);
             // lexigographical order ignoring dimension d
-            for(int j=0; j<num_dimensions; j++)
+            for(size_t j=0; j<num_dimensions; j++)
                 if (j != d){
                     if (idxa[j] < idxb[j]) return true;
                     if (idxa[j] > idxb[j]) return false;
@@ -67,7 +74,7 @@ SplitDirections::SplitDirections(const MultiIndexSet &points){
         while(imap != map.end()){
             // new job, get reference index
             const int *p = points.getIndex(*imap);
-            job_directions.push_back(d);
+            job_directions.push_back((int) d);
             std::vector<int> pnts = {*imap++};
             // while the points are in the same direction as the reference, add to the same job
             while((imap != map.end()) && doesBelongSameLine(p, points.getIndex(*imap), d))
@@ -82,13 +89,6 @@ int SplitDirections::getNumJobs() const{ return (int) job_pnts.size(); }
 int SplitDirections::getJobDirection(int job) const{ return job_directions[job]; }
 int SplitDirections::getJobNumPoints(int job) const{ return (int) job_pnts[job].size(); }
 const int* SplitDirections::getJobPoints(int job) const{ return job_pnts[job].data(); }
-
-bool SplitDirections::doesBelongSameLine(const int a[], const int b[], int direction) const{
-    for(int i=0; i<num_dimensions; i++){
-        if ((i != direction) && (a[i] != b[i])) return false;
-    }
-    return true;
-}
 
 }
 

@@ -67,17 +67,18 @@
 
 namespace TasGrid{
 
-//! \internal
-//! \brief Holds the pair of point index and model value, the struct is used in a \b std::forward_list.
-//! \ingroup TasmanianRefinement
-
-//! Global grids can be expanded by a full tensor index at a time,
-//! which requires model outputs data from multiple nodes.
-//! However, the user provides the model data only a single node at a time.
-//! Thus, node data has to be stored separately until it can be included in the grid.
-//!
-//! The same data-structure is used by the sequence grids
-//! to store the initial set of samples until a lower set of point can be constructed.
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Holds the pair of point index and model value, the struct is used in a \b std::forward_list.
+ *
+ * Dynamic construction allows the data for the points to be given as input in any arbitrary order.
+ * However, points cannot be added to any grid unless some conditions are satisfied,
+ * e.g., the resulting set must be connected or lower complete.
+ * The nodes that cannot be included yet are stored into a \b std::forward_list of \b NodeData structs,
+ * the point is kept in a multi-index integer format and the value into a single vector.
+ * \endinternal
+ */
 struct NodeData{
     //! \brief The multi-index of the point.
     std::vector<int> point;
@@ -85,23 +86,20 @@ struct NodeData{
     std::vector<double> value;
 };
 
-//! \internal
-//! \brief Holds the description of a single tensor, points associated with the delta and whether model data has been loaded.
-//! \ingroup TasmanianRefinement
-
-//! Each candidate tensor is described by the tensor multi-index and the points associated with the corresponding delta.
-//! Using the delta definition guarantees that each point appears in only one tensor.
-//! A vector of booleans indicates which of the points have been \b loaded,
-//! i.e., whether the user has already provided model data for the corresponding points.
-//! If the \b loaded vector is empty, then all the needed data has been loaded,
-//! i.e., equivalent to all entries being \b true but faster than traversing a vector.
-//! The tensor \b weight is also stored here, where negative weights are used to indicate the initial sparse grid
-//! which ensures that the initial set of nodes will always come first in order.
-//! The tensor data is stored in a \b std::forward_list for easy random insertions and deletions.
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Holds the description of a single tensor candidate for inclusion into the grid.
+ *
+ * Some grid, e.g., Global Grids, cannot include a single point at a time, but only enough data to form a tensor.
+ * The candidate tensors are stored in a \b \b std::forward_list of \b TensorData until all the points
+ * associated with the tensor are provided.
+ * \endinternal
+ */
 struct TensorData{
     //! \brief Multi-index of the tensor.
     std::vector<int> tensor;
-    //! \brief The points associated with the delta multi-index.
+    //! \brief The points associated with the surplus operator, the tensor can be included only when all points are available.
     MultiIndexSet points;
     //! \brief For each point \b false if the model data is not yet available for the point, true otherwise.
     std::vector<bool> loaded;
@@ -116,28 +114,13 @@ struct TensorData{
  * \endinternal
  */
 template <class T>
-void makeReverseReferenceVector(const std::forward_list<T> &list, std::vector<const T*> &refs){
+std::vector<const T*> makeReverseReferenceVector(const std::forward_list<T> &list){
     size_t num_entries = (size_t) std::distance(list.begin(), list.end());
-    refs.resize(num_entries);
+    std::vector<const T*> refs(num_entries);
     auto p = list.begin();
     auto r = refs.rbegin();
     while(p != list.end()) *r++ = &*p++;
-}
-
-/*!
- * \internal
- * \ingroup TasmanianRefinement
- * \brief Writes a NodeData std::forward_list to a file using the lambdas to write ints and doubles.
- * \endinternal
- */
-template<class STREAMCONCEPT>
-void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &ofs, std::function<void(int, STREAMCONCEPT &)> write_an_int,
-                       std::function<void(const NodeData *, STREAMCONCEPT &)> write_node){
-    std::vector<const NodeData*> data_refs;
-    makeReverseReferenceVector<NodeData>(data, data_refs);
-
-    write_an_int((int) data_refs.size(), ofs);
-    for(auto d : data_refs) write_node(d, ofs);
+    return refs;
 }
 
 /*!
@@ -146,22 +129,16 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &o
  * \brief Writes a NodeData std::forward_list to a file using either binary or ascii format.
  * \endinternal
  */
-template<class STREAMCONCEPT, bool useAscii>
-void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &ofs){
-    if (useAscii){
-        writeNodeDataList<STREAMCONCEPT>(data, ofs, [&](int i, STREAMCONCEPT &f)->void{ f << i << std::endl; },
-                    [&](const NodeData *n, STREAMCONCEPT &f)->void{
-                        for(auto i : n->point) f << i << " ";
-                        f << n->value[0]; // do now allow extra blank spaces
-                        for(size_t i = 1; i < n->value.size(); i++) f << " " << n->value[i];
-                        f << std::endl;
-                    });
-    }else{
-        writeNodeDataList<STREAMCONCEPT>(data, ofs, [&](int i, STREAMCONCEPT &f)->void{ f.write((char*) &i, sizeof(int)); },
-                [&](const NodeData *n, STREAMCONCEPT &f)->void{
-                    f.write((char*) n->point.data(), n->point.size() * sizeof(int));
-                    f.write((char*) n->value.data(), n->value.size() * sizeof(double));
-                });
+template<bool useAscii>
+void writeNodeDataList(const std::forward_list<NodeData> &data, std::ostream &os){
+    if (useAscii){ os << std::scientific; os.precision(17); }
+
+    auto data_refs = makeReverseReferenceVector(data);
+
+    IO::writeNumbers<useAscii, IO::pad_line>(os, (int) data_refs.size());
+    for(auto d : data_refs){
+        IO::writeVector<useAscii, IO::pad_rspace>(d->point, os);
+        IO::writeVector<useAscii, IO::pad_line>(d->value, os);
     }
 }
 
@@ -171,57 +148,46 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, STREAMCONCEPT &o
  * \brief Reads a NodeData std::forward_list from a file using either binary or ascii format.
  * \endinternal
  */
-template<class STREAMCONCEPT, bool useAscii>
-void readNodeDataList(int num_dimensions, int num_outputs, STREAMCONCEPT &ifs, std::forward_list<NodeData> &data){
-    int num_nodes;
-    if (useAscii){
-        ifs >> num_nodes; // get the number of data points
-        for(int i=0; i<num_nodes; i++){
-            NodeData nd;
-            nd.point.resize(num_dimensions);
-            for(auto &t : nd.point) ifs >> t;
-            nd.value.resize(num_outputs);
-            for(auto &t : nd.value) ifs >> t;
-            data.push_front(std::move(nd));
-        }
-    }else{
-        ifs.read((char*) &num_nodes, sizeof(int)); // get the number of data points
-        for(int i=0; i<num_nodes; i++){
-            NodeData nd;
-            nd.point.resize(num_dimensions);
-            ifs.read((char*) nd.point.data(), num_dimensions * sizeof(int));
-            nd.value.resize(num_outputs);
-            ifs.read((char*) nd.value.data(), num_outputs * sizeof(double));
-            data.push_front(std::move(nd));
-        }
+template<bool useAscii>
+std::forward_list<NodeData> readNodeDataList(size_t num_dimensions, size_t num_outputs, std::istream &is){
+    std::forward_list<NodeData> data;
+    int num_nodes = IO::readNumber<useAscii, int>(is);
+    for(int i=0; i<num_nodes; i++){
+        NodeData nd;
+        nd.point.resize(num_dimensions);
+        IO::readVector<useAscii>(is, nd.point);
+        nd.value.resize(num_outputs);
+        IO::readVector<useAscii>(is, nd.value);
+        data.push_front(std::move(nd));
     }
+    return data;
 }
 
-
-//! \internal
-//! \brief Helper class that stores data from dynamic construction of a Global grid.
-//! \ingroup TasmanianRefinement
-
-//! The class stores candidate tensors with corresponding weights
-//! as well as the model data provided by the user.
-//! When enough data has been computed to complete a tensor,
-//! the tensor can be ejected with the points and model data returned in a format
-//! that is easy to incorporate within the data structures of the \b GridGlobal class.
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Helper class that stores data from dynamic construction of a Global grid.
+ *
+ * The class stores candidate tensors with corresponding weights
+ * as well as the model data provided by the user.
+ * When enough data has been computed to complete a tensor,
+ * the tensor can be ejected with the points and model data returned in a format
+ * that is easy to incorporate within the data structures of the \b GridGlobal class.
+ */
 class DynamicConstructorDataGlobal{
 public:
     //! \brief The only constructor, requires that the dimension and the number of model outputs is specified.
-    DynamicConstructorDataGlobal(int cnum_dimensions, int cnum_outputs);
+    DynamicConstructorDataGlobal(size_t cnum_dimensions, size_t cnum_outputs);
     //! \brief Default destructor, release all used memory and erase all stored data.
     ~DynamicConstructorDataGlobal();
 
-    //! \brief Write the data to a file in ascii format.
-    void write(std::ofstream &ofs) const;
-    //! \brief Write the data to a file in binary format.
-    void writeBinary(std::ofstream &ofs) const;
-    //! \brief Read the data from a file in ascii format, returns the maximum tensor index so the 1D wrapper cache structure can be updated.
-    int read(std::ifstream &ifs);
-    //! \brief Read the data from a file in binary format, returns the maximum tensor index so the 1D wrapper cache structure can be updated.
-    int readBinary(std::ifstream &ifs);
+    //! \brief Write the data to a stream using ascii or binary format.
+    template<bool useAscii> void write(std::ostream &os) const;
+    //! \brief Read the data from a stream using ascii or binary format.
+    template<bool useAscii> void read(std::istream &is);
+
+    //! \brief Returns the maximum index of any of the stored tensors.
+    int getMaxTensor() const;
 
     //! \brief Called after read, reinitializes the points and loaded structures for the tensors.
     void reloadPoints(std::function<int(int)> getNumPoints);
@@ -230,7 +196,7 @@ public:
     void clearTesnors();
 
     //! \brief Get a set of all tensors with negative weight, i.e., the tensors selected for the initial run.
-    void getInitialTensors(MultiIndexSet &set) const;
+    MultiIndexSet getInitialTensors() const;
 
     //! \brief Add a new tensor to the candidates, with the given \b weight and using \b getNumPoints() to define the associated nodes.
     void addTensor(const int *tensor, std::function<int(int)> getNumPoints, double weight);
@@ -245,7 +211,7 @@ public:
     bool ejectCompleteTensor(const MultiIndexSet &current_tensors, std::vector<int> &tensor, MultiIndexSet &points, std::vector<double> &vals);
 
 private:
-    int num_dimensions, num_outputs;
+    size_t num_dimensions, num_outputs;
     std::forward_list<NodeData> data;
     std::forward_list<TensorData> tensors;
 };
@@ -263,18 +229,30 @@ private:
  * \endinternal
  */
 struct SimpleConstructData{
+    //! \brief A list of pair indicating point and model output values.
     std::forward_list<NodeData> data;
+    //! \brief Keeps track of the initial point set, so those can be computed first.
     MultiIndexSet initial_points;
+    //! \brief Save to a file in either ascii or binary format.
+    template<bool useAscii>
+    void write(std::ostream &os) const{
+        initial_points.write<useAscii>(os);
+        writeNodeDataList<useAscii>(data, os);
+    }
 };
 
-template<bool useAscii> void writeSimpleConstructionData(SimpleConstructData const *dynamic_values, std::ofstream &ofs){
-    dynamic_values->initial_points.write<useAscii>(ofs);
-    writeNodeDataList<std::ofstream, useAscii>(dynamic_values->data, ofs);
-}
-template<bool useAscii> std::unique_ptr<SimpleConstructData> readSimpleConstructionData(int num_dimensions, int num_outputs, std::ifstream &ifs){
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Creates a unique_ptr holding a \b SimpleConstructData that has be read form the stream.
+ *
+ * \endinternal
+ */
+template<bool useAscii>
+std::unique_ptr<SimpleConstructData> readSimpleConstructionData(size_t num_dimensions, size_t num_outputs, std::ifstream &ifs){
     std::unique_ptr<SimpleConstructData> dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
     dynamic_values->initial_points.read<useAscii>(ifs);
-    readNodeDataList<std::ifstream, useAscii>(num_dimensions, num_outputs, ifs, dynamic_values->data);
+    dynamic_values->data = readNodeDataList<useAscii>(num_dimensions, num_outputs, ifs);
     return dynamic_values;
 }
 

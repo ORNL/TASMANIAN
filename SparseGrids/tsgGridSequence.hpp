@@ -34,7 +34,6 @@
 #include <cstdlib>
 #include <memory>
 
-#include "tsgIOHelpers.hpp"
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgCoreOneDimensional.hpp"
@@ -135,11 +134,11 @@ protected:
 
     //! \brief Cache the nodes and polynomial coefficients, cache is determined by the largest index in \b points and \b needed, or \b num_external (pass zero if not using dy-construction).
     void prepareSequence(int num_external);
-    void cacheBasisIntegrals(std::vector<double> &integ) const;
+    std::vector<double> cacheBasisIntegrals() const;
 
     template<typename T>
-    void cacheBasisValues(const T x[], std::vector<std::vector<T>> &cache) const{
-        cache.resize(num_dimensions);
+    std::vector<std::vector<T>> cacheBasisValues(const T x[]) const{
+        std::vector<std::vector<T>> cache(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
             cache[j].resize(max_levels[j] + 1);
             T b = 1.0;
@@ -153,6 +152,7 @@ protected:
                 cache[j][i] /= coeff[i];
             }
         }
+        return cache;
     }
 
     void expandGrid(const std::vector<int> &point, const std::vector<double> &values, const std::vector<double> &surplus);

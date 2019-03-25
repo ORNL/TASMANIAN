@@ -34,7 +34,6 @@
 #include <vector>
 #include <memory>
 
-#include "tsgIOHelpers.hpp"
 #include "tsgEnumerates.hpp"
 #include "tsgIndexSets.hpp"
 #include "tsgIndexManipulator.hpp"
