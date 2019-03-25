@@ -115,7 +115,7 @@ inline MultiIndexSet unionSets(std::vector<MultiIndexSet> &level_sets){
     return std::move(level_sets[0]);
 }
 
-inline void completeSetToLower(MultiIndexSet &set){
+void completeSetToLower(MultiIndexSet &set){
     size_t num_dimensions = set.getNumDimensions();
     int num = set.getNumIndexes();
     Data2D<int> completion((int) num_dimensions, 0);
