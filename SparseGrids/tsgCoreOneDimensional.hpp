@@ -144,7 +144,7 @@ namespace OneDimensionalMeta{
     //! This function reduces the type to one of the three level contours, which simplifies the if-statements in many places.
     //! Note: the tensor rules are a special case and are not considered in this function.
     inline TypeDepth getControurType(TypeDepth type){
-        if ((type == type_level) || (type == type_iptotal)){
+        if ((type == type_level) || (type == type_iptotal) || (type == type_qptotal)){
             return type_level;
         }else if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
             return type_curved;

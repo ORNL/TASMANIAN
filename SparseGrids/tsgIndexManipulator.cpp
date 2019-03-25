@@ -178,7 +178,7 @@ MultiIndexSet selectLowerSet(ProperWeights const &weights, std::function<int(int
         auto cache = generateLevelWeightsCache<int, type_level, false>(weights, rule_exactness, normalized_offset);
         return generateLowerMultiIndexSet(num_dimensions,
                 [&](std::vector<int> const &index)->bool{
-                    if (check_limits) for(size_t j=0; j<num_dimensions; j++) if (index[j] > level_limits[j]) return false;
+                    if (check_limits) for(size_t j=0; j<num_dimensions; j++) if ((level_limits[j] > -1) && (index[j] > level_limits[j])) return false;
                     return (getIndexWeight<int, type_level>(index.data(), cache) <= normalized_offset);
                 });
     }else if (weights.contour == type_curved){
@@ -186,7 +186,7 @@ MultiIndexSet selectLowerSet(ProperWeights const &weights, std::function<int(int
         double noff = (double) normalized_offset;
         return generateLowerMultiIndexSet(num_dimensions,
                 [&](std::vector<int> const &index)->bool{
-                    if (check_limits) for(size_t j=0; j<num_dimensions; j++) if (index[j] > level_limits[j]) return false;
+                    if (check_limits) for(size_t j=0; j<num_dimensions; j++) if ((level_limits[j] > -1) && (index[j] > level_limits[j])) return false;
                     return (std::ceil(getIndexWeight<double, type_curved>(index.data(), cache)) <= noff);
                 });
     }else{ // type_hyperbolic
@@ -194,7 +194,7 @@ MultiIndexSet selectLowerSet(ProperWeights const &weights, std::function<int(int
         double noff = (double) normalized_offset;
         return generateLowerMultiIndexSet(num_dimensions,
                 [&](std::vector<int> const &index)->bool{
-                    if (check_limits) for(size_t j=0; j<num_dimensions; j++) if (index[j] > level_limits[j]) return false;
+                    if (check_limits) for(size_t j=0; j<num_dimensions; j++) if ((level_limits[j] > -1) && (index[j] > level_limits[j])) return false;
                     return (std::ceil(getIndexWeight<double, type_hyperbolic>(index.data(), cache)) <= noff);
                 });
     }
@@ -251,7 +251,8 @@ MultiIndexSet selectTensors(size_t num_dimensions, int offset, TypeDepth type,
                         });
         if (!level_limits.empty()){
             for(size_t j=0; j<num_dimensions; j++)
-                num_points[j] = std::min(num_points[j], level_limits[j]);
+                if (level_limits[j] >= 0)
+                    num_points[j] = std::min(num_points[j], level_limits[j]+1); // the +1 indicates switch from max-level to number-of-points
         }
         return generateFullTensorSet(num_points);
     }
