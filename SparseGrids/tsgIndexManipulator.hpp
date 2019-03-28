@@ -501,6 +501,27 @@ MultiIndexSet addExclusiveChildren(const MultiIndexSet &tensors, const MultiInde
     return MultiIndexSet(tens);
 }
 
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Split the \b data into strips with given \b stride and return into \b Data2D structures grouped by \b levels, preserves the order.
+ *
+ * \endinternal
+ */
+template<typename T>
+std::vector<Data2D<T>> splitByLevels(size_t stride, std::vector<T> const &data, std::vector<int> const &levels){
+    size_t top_level = (size_t) *std::max_element(levels.begin(), levels.end());
+
+    std::vector<Data2D<T>> split(top_level + 1, Data2D<T>(stride, 0));
+
+    for( struct {int i; typename std::vector<T>::const_iterator idata;} v = {0, data.begin()};
+         v.idata != data.end();
+         v.i++, std::advance(v.idata, stride))
+        split[levels[v.i]].appendStrip(v.idata);
+
+    return split;
+}
+
 }
 
 }
