@@ -305,7 +305,8 @@ void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) 
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *, const double *vals){
-    loadNeededPoints(vals);
+    updateValues(vals);
+    recomputeSurpluses();
 }
 void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses();
@@ -352,7 +353,7 @@ void GridLocalPolynomial::evaluateCuda(CudaEngine *engine, const double x[], int
 }
 #endif
 
-void GridLocalPolynomial::loadNeededPoints(const double *vals){
+void GridLocalPolynomial::updateValues(double const *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaSurpluses();
     #endif
@@ -373,6 +374,9 @@ void GridLocalPolynomial::loadNeededPoints(const double *vals){
             buildTree();
         }
     }
+}
+void GridLocalPolynomial::loadNeededPoints(const double *vals){
+    updateValues(vals);
     recomputeSurpluses();
 }
 void GridLocalPolynomial::mergeRefinement(){
