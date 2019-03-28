@@ -745,42 +745,48 @@ void GridLocalPolynomial::recomputeSurpluses(){
 void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp){
     int num_points = work.getNumIndexes();
     int max_parents = num_dimensions * rule->getMaxNumParents();
+
+    std::vector<std::vector<int>> indexses_for_levels((size_t) max_level+1);
+    for(int i=0; i<num_points; i++)
+        if (level[i] > 0) indexses_for_levels[level[i]].push_back(i);
+
     for(int l=1; l<=max_level; l++){
-        #pragma omp parallel for
-        for(int i=0; i<num_points; i++){
-            if (level[i] == l){
-                int const *p = work.getIndex(i);
-                std::vector<double> x(num_dimensions);
-                std::transform(p, p + num_dimensions, x.begin(), [&](int k)->double{ return rule->getNode(k); });
-                double *surpi = surpluses.getStrip(i);
+        int level_size = (int) indexses_for_levels[l].size();
+        #pragma omp parallel for schedule(dynamic)
+        for(int s=0; s<level_size; s++){
+            int i = indexses_for_levels[l][s];
 
-                std::vector<int> monkey_count(max_level + 1);
-                std::vector<int> monkey_tail(max_level + 1);
-                std::vector<bool> used(num_points, false);
+            int const *p = work.getIndex(i);
+            std::vector<double> x(num_dimensions);
+            std::transform(p, p + num_dimensions, x.begin(), [&](int k)->double{ return rule->getNode(k); });
+            double *surpi = surpluses.getStrip(i);
 
-                int current = 0;
+            std::vector<int> monkey_count(max_level + 1);
+            std::vector<int> monkey_tail(max_level + 1);
+            std::vector<bool> used(num_points, false);
 
-                monkey_count[0] = 0;
-                monkey_tail[0] = i;
+            int current = 0;
 
-                while(monkey_count[0] < max_parents){
-                    if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
-                        if ((branch == -1) || (used[branch])){
-                            monkey_count[current]++;
-                        }else{
-                            const double *branch_surp = surpluses.getStrip(branch);
-                            double basis_value = evalBasisRaw(work.getIndex(branch), x.data());
-                            for(int k=0; k<num_outputs; k++)
-                                surpi[k] -= basis_value * branch_surp[k];
-                            used[branch] = true;
+            monkey_count[0] = 0;
+            monkey_tail[0] = i;
 
-                            monkey_count[++current] = 0;
-                            monkey_tail[current] = branch;
-                        }
+            while(monkey_count[0] < max_parents){
+                if (monkey_count[current] < max_parents){
+                    int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
+                    if ((branch == -1) || (used[branch])){
+                        monkey_count[current]++;
                     }else{
-                        monkey_count[--current]++;
+                        const double *branch_surp = surpluses.getStrip(branch);
+                        double basis_value = evalBasisRaw(work.getIndex(branch), x.data());
+                        for(int k=0; k<num_outputs; k++)
+                            surpi[k] -= basis_value * branch_surp[k];
+                        used[branch] = true;
+
+                        monkey_count[++current] = 0;
+                        monkey_tail[current] = branch;
                     }
+                }else{
+                    monkey_count[--current]++;
                 }
             }
         }
