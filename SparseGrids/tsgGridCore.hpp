@@ -77,6 +77,7 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
+    virtual void loadNeededPointsCuda(CudaEngine *engine, const double *vals) = 0;
     virtual void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     #endif

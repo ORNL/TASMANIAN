@@ -426,6 +426,9 @@ void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
+void GridFourier::loadNeededPointsCuda(CudaEngine *, const double *vals){
+    loadNeededPoints(vals);
+}
 void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaCoefficients();
     Data2D<double> wreal;

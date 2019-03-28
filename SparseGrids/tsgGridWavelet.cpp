@@ -276,6 +276,7 @@ void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{ e
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
+void GridWavelet::loadNeededPointsCuda(CudaEngine *, const double *vals){ loadNeededPoints(vals); }
 void GridWavelet::evaluateCudaMixed(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 void GridWavelet::evaluateCuda(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 #endif
