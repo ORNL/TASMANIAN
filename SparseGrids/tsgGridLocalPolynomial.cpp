@@ -336,6 +336,11 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
 
         Data2D<double> upper_evaluate(num_outputs, level_points.getNumIndexes());
         int batch_size = 20000; // needs tuning
+        if (useDense()){ // dense uses lots of memory, try to keep it contained to about 4GB
+            batch_size = 536870912 / upper_grid.getNumPoints() - 2 * (num_outputs + num_dimensions);
+            if (batch_size < 100) batch_size = 100; // use at least 100 points
+        }
+
         for(int i=0; i<level_points.getNumIndexes(); i += batch_size)
             upper_grid.evaluateCuda(engine, lx[l].getStrip(i), std::min(batch_size, level_points.getNumIndexes() - i), upper_evaluate.getStrip(i));
 
@@ -372,13 +377,11 @@ void GridLocalPolynomial::evaluateCuda(CudaEngine *engine, const double x[], int
     loadCudaSurpluses();
     int num_points = points.getNumIndexes();
 
-    bool useDense = (sparse_affinity == -1) || ((sparse_affinity == 0) && (num_dimensions > 6)); // dimension is the real criteria here
-
     CudaVector<double> gpu_x;
-    gpu_x.load(((size_t) num_dimensions) * ((size_t) num_x), x);
+    gpu_x.load(Utils::size_mult(num_dimensions, num_x), x);
 
     CudaVector<double> gpu_result(num_x, num_outputs);
-    if (useDense){
+    if (useDense()){
         CudaVector<double> gpu_basis(num_x, num_points);
         buildDenseBasisMatrixGPU(gpu_x.data(), num_x, gpu_basis);
 

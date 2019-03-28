@@ -154,6 +154,9 @@ protected:
     //! \ingroup TasmanianLocalPolynomialGrids
     void makeRule(TypeOneDRule trule);
 
+    //! \brief Tuning decision whether to use sparse or dense.
+    bool useDense() const{ return (sparse_affinity == -1) || ((sparse_affinity == 0) && (num_dimensions > 6)); }
+
     void buildTree();
 
     //! \brief Returns a list of indexes of the nodes in \b points that are descendants of the \b point.
