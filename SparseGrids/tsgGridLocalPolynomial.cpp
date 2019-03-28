@@ -304,9 +304,50 @@ void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) 
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *, const double *vals){
+void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double *vals){
     updateValues(vals);
-    recomputeSurpluses();
+
+    std::vector<int> levels = MultiIndexManipulations::computeLevels(points, rule.get());
+
+    std::vector<Data2D<int>> lpnts = MultiIndexManipulations::splitByLevels((size_t) num_dimensions, points.getVector(), levels);
+    std::vector<Data2D<double>> lvals = MultiIndexManipulations::splitByLevels((size_t) num_outputs, values.getVector(), levels);
+
+    Data2D<double> allx(num_dimensions, points.getNumIndexes());
+    getPoints(allx.getVector().data());
+
+    std::vector<Data2D<double>> lx = MultiIndexManipulations::splitByLevels((size_t) num_dimensions, allx.getVector(), levels);
+
+    MultiIndexSet cumulative_poitns((size_t) num_dimensions, lpnts[0].getVector());
+
+    StorageSet cumulative_surpluses;
+    cumulative_surpluses.resize(num_outputs, cumulative_poitns.getNumIndexes());
+    cumulative_surpluses.setValues(lvals[0].getVector());
+
+    for(size_t l = 1; l < lpnts.size(); l++){ // loop over the levels
+        // note that level_points.getNumIndexes() == lx[l].getNumStrips() == lvals[l].getNumStrips()
+        MultiIndexSet level_points(num_dimensions, lpnts[l].getVector());
+
+        std::vector<int>    copypnts = cumulative_poitns.getVector();
+        std::vector<double> copysurp = cumulative_surpluses.getVector();
+        Data2D<double> dummy_values(num_outputs, cumulative_poitns.getNumIndexes()); // will not be referenced anyway
+
+        GridLocalPolynomial upper_grid(num_dimensions, num_outputs, order, getRule(), copypnts, dummy_values.getVector(), copysurp);
+        upper_grid.sparse_affinity = sparse_affinity;
+
+        Data2D<double> upper_evaluate(num_outputs, level_points.getNumIndexes());
+        int batch_size = 20000; // needs tuning
+        for(int i=0; i<level_points.getNumIndexes(); i += batch_size)
+            upper_grid.evaluateCuda(engine, lx[l].getStrip(i), std::min(batch_size, level_points.getNumIndexes() - i), upper_evaluate.getStrip(i));
+
+        double *level_surps = lvals[l].getStrip(0); // maybe use BLAS here
+        const double *uv = upper_evaluate.getStrip(0);
+        for(size_t i=0, s = upper_evaluate.getVector().size(); i < s; i++) level_surps[i] -= uv[i];
+
+        cumulative_surpluses.addValues(cumulative_poitns, level_points, level_surps);
+        cumulative_poitns.addMultiIndexSet(level_points);
+    }
+
+    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), cumulative_surpluses.getVector());
 }
 void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses();
