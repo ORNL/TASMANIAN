@@ -172,7 +172,7 @@ int GridFourier::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.ge
 int GridFourier::getNumNeeded() const{ return needed.getNumIndexes(); }
 int GridFourier::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
-void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridFourier::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaCoefficients(); // changing values and Fourier coefficients, clear the cache
     #endif

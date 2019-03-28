@@ -336,7 +336,7 @@ void GridLocalPolynomial::evaluateCuda(CudaEngine *engine, const double x[], int
 }
 #endif
 
-void GridLocalPolynomial::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridLocalPolynomial::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaSurpluses();
     #endif

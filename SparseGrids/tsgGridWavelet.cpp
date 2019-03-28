@@ -216,7 +216,7 @@ void GridWavelet::getInterpolationWeights(const double x[], double *weights) con
 	}
 	solveTransposed(weights);
 }
-void GridWavelet::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridWavelet::loadNeededPoints(const double *vals){
     if (points.empty()){
         values.setValues(vals);
         points = std::move(needed);
@@ -494,7 +494,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);
-            direction_grid.loadNeededPoints(vals.getStrip(0), accel_none);
+            direction_grid.loadNeededPoints(vals.getStrip(0));
 
             for(int i=0; i<nump; i++){
                 bool small = true;

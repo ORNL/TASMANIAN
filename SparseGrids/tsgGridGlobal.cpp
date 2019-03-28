@@ -382,7 +382,7 @@ void GridGlobal::acceptUpdatedTensors(){
     }
 }
 
-void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridGlobal::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_values.clear();
     #endif
@@ -856,12 +856,12 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
         proposeUpdatedTensors();
     }
 }
-void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
+void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_values.clear();
     #endif
     if (!points.empty()) clearRefinement();
-    loadNeededPoints(c, acc);
+    loadNeededPoints(c);
 }
 
 double GridGlobal::legendre(int n, double x){

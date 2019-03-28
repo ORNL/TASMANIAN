@@ -70,7 +70,7 @@ public:
     int getNumNeeded() const;
     int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
 
-    void loadNeededPoints(const double *vals, TypeAcceleration acc = accel_none);
+    void loadNeededPoints(const double *vals);
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;

@@ -86,7 +86,7 @@ public:
     void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
 
-    void loadNeededPoints(const double *vals, TypeAcceleration acc = accel_none);
+    void loadNeededPoints(const double *vals);
     const double* getLoadedValues() const;
 
     void evaluate(const double x[], double y[]) const;
