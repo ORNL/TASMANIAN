@@ -124,10 +124,15 @@ public:
         vec = std::vector<double>();
     }
 
+    //! \brief Uses std::vector::insert to append the data.
+    void appendStrip(typename std::vector<T>::const_iterator const &x){
+        vec.insert(vec.end(), x, x + stride);
+        num_strips++;
+    }
+
     //! \brief Uses std::vector::insert to append \b x, assumes \b x.size() is one stride.
     void appendStrip(const std::vector<T> &x){
-        vec.insert(vec.end(), x.begin(), x.end());
-        num_strips++;
+        appendStrip(x.begin());
     }
 
     //! \brief Uses std::vector::insert to append a strip \b x to the existing data at position \b pos, assumes \b x.size() is one stride.
