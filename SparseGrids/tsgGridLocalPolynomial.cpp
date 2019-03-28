@@ -199,6 +199,19 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
     }
 }
 
+GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule,
+                                         std::vector<int> &pnts, std::vector<double> &vals, std::vector<double> &surps) :
+        num_dimensions(cnum_dimensions), num_outputs(cnum_outputs), order(corder), sparse_affinity(0){
+    makeRule(crule);
+
+    points = MultiIndexSet(num_dimensions, pnts);
+    values.resize(num_outputs, points.getNumIndexes());
+    values.setValues(vals);
+    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), surps);
+
+    buildTree();
+}
+
 int GridLocalPolynomial::getNumDimensions() const{ return num_dimensions; }
 int GridLocalPolynomial::getNumOutputs() const{ return num_outputs; }
 TypeOneDRule GridLocalPolynomial::getRule() const{ return rule->getType(); }

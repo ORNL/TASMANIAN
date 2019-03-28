@@ -88,6 +88,8 @@ public:
     Data2D(size_t new_stride, int new_num_strips) : stride(new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips){}
     //! \brief Create data-structure with given \b stride and number of \b strips and initializes with \b val.
     Data2D(int new_stride, int new_num_strips, T val) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips, val){}
+    //! \brief Create data-structure with given \b stride and number of \b strips and \b std::move \b data into the internal vector.
+    Data2D(int new_stride, int new_num_strips, std::vector<T> &data) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(std::move(data)){}
     //! \brief Default destructor.
     ~Data2D(){}
 
