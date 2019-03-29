@@ -87,6 +87,7 @@ public:
                                const std::vector<int> &np, const std::vector<double> &errs) const;
     bool testAcceleration(const BaseFunction *f, TasmanianSparseGrid *grid) const;
     bool testGPU2GPUevaluations() const;
+    bool testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const;
 
     TestResults getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid *grid, TestType type, const double *x = 0) const;
 
