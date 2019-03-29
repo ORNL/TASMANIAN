@@ -210,7 +210,7 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
     applyTransformationTransposed(weights);
 }
 
-void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridSequence::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaSurpluses(); // changing values and surpluses, clear the cache
     #endif
@@ -477,6 +477,9 @@ void GridSequence::evaluateBlas(const double x[], int num_x, double y[]) const{
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
+void GridSequence::loadNeededPointsCuda(CudaEngine *, const double *vals){
+    loadNeededPoints(vals);
+}
 void GridSequence::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses();
 

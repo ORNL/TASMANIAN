@@ -461,9 +461,13 @@ void TasmanianSparseGrid::getInterpolationWeights(const std::vector<double> &x, 
 
 void TasmanianSparseGrid::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
-    // Using GPU to recompute coefficients, maybe useful later ...
+    if (engine){
+        engine->setDevice();
+        base->loadNeededPointsCuda(engine.get(), vals);
+        return;
+    }
     #endif
-    base->loadNeededPoints(vals, acceleration);
+    base->loadNeededPoints(vals);
 }
 void TasmanianSparseGrid::loadNeededPoints(const std::vector<double> &vals){
     size_t nump = (size_t) base->getNumNeeded();

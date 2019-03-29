@@ -70,7 +70,7 @@ public:
     int getNumNeeded() const;
     int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
 
-    void loadNeededPoints(const double *vals, TypeAcceleration acc = accel_none);
+    void loadNeededPoints(const double *vals);
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
@@ -88,6 +88,7 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
+    void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     #endif

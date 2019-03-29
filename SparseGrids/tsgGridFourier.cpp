@@ -172,7 +172,7 @@ int GridFourier::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.ge
 int GridFourier::getNumNeeded() const{ return needed.getNumIndexes(); }
 int GridFourier::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
-void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridFourier::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaCoefficients(); // changing values and Fourier coefficients, clear the cache
     #endif
@@ -426,6 +426,9 @@ void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
+void GridFourier::loadNeededPointsCuda(CudaEngine *, const double *vals){
+    loadNeededPoints(vals);
+}
 void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaCoefficients();
     Data2D<double> wreal;

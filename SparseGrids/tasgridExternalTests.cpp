@@ -1961,6 +1961,65 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     #endif // Tasmanian_ENABLE_CUDA
 }
 
+void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
+    int num_dimensions = grid.getNumDimensions();
+    int num_outputs    = grid.getNumOutputs();
+    int num_needed     = grid.getNumNeeded();
+    if (num_needed > 0){
+        std::vector<double> points;
+        grid.getNeededPoints(points);
+        std::vector<double> values(num_outputs * num_needed);
+        for(int i=0; i<num_needed; i++)
+            f->eval(&points[i*num_dimensions], &values[i*num_outputs]);
+        grid.loadNeededPoints(values);
+    }
+}
+
+bool ExternalTester::testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const{
+    const BaseFunction *f = &f21expsincos;
+    TasmanianSparseGrid grid_acc, grid_ref;
+    bool pass = true;
+    int gstart = (gpuid == -1) ? 0 : gpuid;
+    int gend   = (gpuid == -1) ? TasmanianSparseGrid::getNumGPUs() : gpuid + 1;
+    for(int g = gstart; g < gend; g++){
+        if (rule == rule_wavelet){
+            grid_acc.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
+            grid_ref.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
+        }else if (rule == rule_fourier){
+            grid_acc.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_iptotal, {2, 1});
+            grid_ref.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_iptotal, {2, 1});
+        }else if (OneDimensionalMeta::isLocalPolynomial(rule)){
+            grid_acc.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 4, 1, rule);
+            grid_ref.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 4, 1, rule);
+        }else if (OneDimensionalMeta::isSequence(rule)){
+            grid_acc.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 6, type_iptotal, rule, {2, 1});
+            grid_ref.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 6, type_iptotal, rule, {2, 1});
+        }else{
+            grid_acc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 6, type_iptotal, rule, {2, 1});
+            grid_ref.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 6, type_iptotal, rule, {2, 1});
+        }
+        grid_acc.enableAcceleration(accel_gpu_cublas);
+        grid_acc.setGPUID(g);
+        loadValues(f, grid_acc);
+        loadValues(f, grid_ref);
+        int num_coeffs = grid_acc.getNumOutputs() * grid_acc.getNumPoints();
+        if (rule == rule_fourier) num_coeffs *= 2;
+        if (grid_acc.getNumLoaded() != grid_ref.getNumLoaded()){
+            cout << "ERROR: accelerated loadNeededPoints() loaded wrong number of points." << endl;
+            return false;
+        }
+        double const *coeff_acc = grid_acc.getHierarchicalCoefficients();
+        double const *coeff_ref = grid_ref.getHierarchicalCoefficients();
+        double err = 0.0;
+        for(int i=0; i<num_coeffs; i++) err = std::max(err, std::abs(coeff_acc[i] - coeff_ref[i]));
+        if (err >= TSG_NUM_TOL){
+            cout << "ERROR: accelerated loadNeededPoints() failed for rule: " << OneDimensionalMeta::getHumanString(rule) << " at gpu: " << g << " with error: " << err << endl;
+            pass = false;
+        }
+    }
+    return pass;
+}
+
 bool ExternalTester::testAllAcceleration() const{
     const BaseFunction *f = &f23Kexpsincos;
     const BaseFunction *f1out = &f21expsincos;
@@ -2029,6 +2088,18 @@ bool ExternalTester::testAllAcceleration() const{
     #else
     if (verbose) cout << "      Accelerated" << setw(wsecond) << "gpu-to-gpu" << setw(wthird) << "Skipped (needs Tasmanian_ENABLE_CUDA=ON)" << endl;
     #endif // Tasmanian_ENABLE_CUDA
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    pass = pass && testAcceleratedLoadValues(rule_clenshawcurtis) && testAcceleratedLoadValues(rule_rleja) &&
+                   testAcceleratedLoadValues(rule_localp) && testAcceleratedLoadValues(rule_fourier) && testAcceleratedLoadValues(rule_wavelet);
+    if (pass){
+        if (verbose) cout << "      Accelerated" << setw(wsecond) << "load-values" << setw(wthird) << "Pass" << endl;
+    }else{
+        cout << "      Accelerated" << setw(wsecond) << "load-values" << setw(wthird) << "FAIL" << endl;
+    }
+    #else
+    if (verbose) cout << "      Accelerated" << setw(wsecond) << "load-values" << setw(wthird) << "Skipped (needs Tasmanian_ENABLE_CUDA=ON)" << endl;
+    #endif
 
     cout << "      Acceleration                        all" << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;
 

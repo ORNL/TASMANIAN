@@ -382,7 +382,7 @@ void GridGlobal::acceptUpdatedTensors(){
     }
 }
 
-void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridGlobal::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_values.clear();
     #endif
@@ -629,6 +629,9 @@ void GridGlobal::evaluateBlas(const double x[], int num_x, double y[]) const{
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
+void GridGlobal::loadNeededPointsCuda(CudaEngine *, const double *vals){
+    loadNeededPoints(vals);
+}
 void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     if (cuda_values.size() == 0) cuda_values.load(values.getVector());
 
@@ -856,12 +859,12 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
         proposeUpdatedTensors();
     }
 }
-void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
+void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_values.clear();
     #endif
     if (!points.empty()) clearRefinement();
-    loadNeededPoints(c, acc);
+    loadNeededPoints(c);
 }
 
 double GridGlobal::legendre(int n, double x){

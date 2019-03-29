@@ -65,7 +65,7 @@ public:
     virtual void getQuadratureWeights(double weights[]) const = 0;
     virtual void getInterpolationWeights(const double x[], double weights[]) const = 0;
 
-    virtual void loadNeededPoints(const double *vals, TypeAcceleration acc) = 0;
+    virtual void loadNeededPoints(const double *vals) = 0;
 
     virtual void evaluate(const double x[], double y[]) const = 0;
     virtual void integrate(double q[], double *conformal_correction) const = 0;
@@ -77,6 +77,7 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
+    virtual void loadNeededPointsCuda(CudaEngine *engine, const double *vals) = 0;
     virtual void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     #endif

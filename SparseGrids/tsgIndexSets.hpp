@@ -88,6 +88,8 @@ public:
     Data2D(size_t new_stride, int new_num_strips) : stride(new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips){}
     //! \brief Create data-structure with given \b stride and number of \b strips and initializes with \b val.
     Data2D(int new_stride, int new_num_strips, T val) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips, val){}
+    //! \brief Create data-structure with given \b stride and number of \b strips and \b std::move \b data into the internal vector.
+    Data2D(int new_stride, int new_num_strips, std::vector<T> &data) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(std::move(data)){}
     //! \brief Default destructor.
     ~Data2D(){}
 
@@ -122,10 +124,15 @@ public:
         vec = std::vector<double>();
     }
 
+    //! \brief Uses std::vector::insert to append the data.
+    void appendStrip(typename std::vector<T>::const_iterator const &x){
+        vec.insert(vec.end(), x, x + stride);
+        num_strips++;
+    }
+
     //! \brief Uses std::vector::insert to append \b x, assumes \b x.size() is one stride.
     void appendStrip(const std::vector<T> &x){
-        vec.insert(vec.end(), x.begin(), x.end());
-        num_strips++;
+        appendStrip(x.begin());
     }
 
     //! \brief Uses std::vector::insert to append a strip \b x to the existing data at position \b pos, assumes \b x.size() is one stride.
