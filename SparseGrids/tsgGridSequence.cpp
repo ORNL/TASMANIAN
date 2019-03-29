@@ -856,41 +856,46 @@ void GridSequence::recomputeSurpluses(){
 
     Data2D<int> parents = MultiIndexManipulations::computeDAGup(points);
 
+    std::vector<std::vector<int>> indexses_for_levels((size_t) top_level+1);
+    for(int i=0; i<num_points; i++)
+        if (level[i] > 0) indexses_for_levels[level[i]].push_back(i);
+
     for(int l=1; l<=top_level; l++){
+        int level_size = (int) indexses_for_levels[l].size();
         #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<num_points; i++){
-            if (level[i] == l){
-                const int* p = points.getIndex(i);
-                double *surpi = surpluses.getStrip(i);
+        for(int s=0; s<level_size; s++){
+            int i = indexses_for_levels[l][s];
 
-                std::vector<int> monkey_count(top_level + 1);
-                std::vector<int> monkey_tail(top_level + 1);
-                std::vector<bool> used(num_points, false);
+            const int* p = points.getIndex(i);
+            double *surpi = surpluses.getStrip(i);
 
-                int current = 0;
+            std::vector<int> monkey_count(top_level + 1);
+            std::vector<int> monkey_tail(top_level + 1);
+            std::vector<bool> used(num_points, false);
 
-                monkey_count[0] = 0;
-                monkey_tail[0] = i;
+            int current = 0;
 
-                while(monkey_count[0] < num_dimensions){
-                    if (monkey_count[current] < num_dimensions){
-                        int branch = parents.getStrip(monkey_tail[current])[monkey_count[current]];
-                        if ((branch == -1) || (used[branch])){
-                            monkey_count[current]++;
-                        }else{
-                            const double *branch_surp = surpluses.getStrip(branch);;
-                            double basis_value = evalBasis(points.getIndex(branch), p);
-                            for(int k=0; k<num_outputs; k++){
-                                 surpi[k] -= basis_value * branch_surp[k];
-                            }
-                            used[branch] = true;
+            monkey_count[0] = 0;
+            monkey_tail[0] = i;
 
-                            monkey_count[++current] = 0;
-                            monkey_tail[current] = branch;
-                        }
+            while(monkey_count[0] < num_dimensions){
+                if (monkey_count[current] < num_dimensions){
+                    int branch = parents.getStrip(monkey_tail[current])[monkey_count[current]];
+                    if ((branch == -1) || (used[branch])){
+                        monkey_count[current]++;
                     }else{
-                        monkey_count[--current]++;
+                        const double *branch_surp = surpluses.getStrip(branch);;
+                        double basis_value = evalBasis(points.getIndex(branch), p);
+                        for(int k=0; k<num_outputs; k++){
+                                surpi[k] -= basis_value * branch_surp[k];
+                        }
+                        used[branch] = true;
+
+                        monkey_count[++current] = 0;
+                        monkey_tail[current] = branch;
                     }
+                }else{
+                    monkey_count[--current]++;
                 }
             }
         }
