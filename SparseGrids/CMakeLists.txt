@@ -11,8 +11,13 @@ else()
 endif()
 
 if (Tasmanian_ENABLE_CUDA)
-    cuda_add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
+    # CMake does not automatically add the CUDA include path, any source file that adds <cuda.h> directly or transitively
+    # must be labeled as "CUDA" source files and compiled with the nvcc compiler.
+    # Beware that the nvcc compiler seems to struggle with some STL algorithms, transitive inclusion of <cuda.h> must be minimized.
+    set_source_files_properties(${Tasmanian_source_lisparsegrid_cuda} tsgAcceleratedDataStructures.cpp PROPERTIES LANGUAGE CUDA)
+    add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
     set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CUDA_STANDARD 11)
+    target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_cudamathlibs}) # add the math libraries
 else()
     add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid})
 endif()
@@ -51,15 +56,10 @@ if (Tasmanian_ENABLE_BLAS)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${BLAS_LIBRARIES})
 endif()
 
-if (Tasmanian_ENABLE_CUDA) # this must come after MAGMA, since MAGMA doesn't come with package config
-    target_link_libraries(${Tasmanian_libtsg_target_name} ${CUDA_cusparse_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_LIBRARIES})
-
-    target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC ${CUDA_INCLUDE_DIRS})
-endif()
-
 if (Tasmanian_ENABLE_OPENMP)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${OpenMP_CXX_LIBRARIES})
-    target_compile_options(${Tasmanian_libtsg_target_name} PRIVATE ${OpenMP_CXX_FLAGS})
+    # the nvcc compiler does nor recognize OpenMP, add the flag only to non-CUDA source files
+    target_compile_options(${Tasmanian_libtsg_target_name} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
 endif()
 
 install(TARGETS "${Tasmanian_libtsg_target_name}"

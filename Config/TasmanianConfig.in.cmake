@@ -16,6 +16,24 @@ add_library(Tasmanian_libdream INTERFACE)
 if (TARGET Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_libsparsegrid INTERFACE Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_libdream INTERFACE Tasmanian_libdream_static)
+
+    if (@Tasmanian_ENABLE_CUDA@)
+    # Since Tasmanian does not transitively include <cuda.h> and since all CUDA calls are wrapped in CXX API,
+    # projects do not require cuda language to link to Tasmanian; however, CMake adds the extraneous dependence.
+    # If Tasmanian was build with CUDA and if the user has not explicitly enabled the CUDA language,
+    # then overwrite the CMake generated extraneous CUDA requirements and link with the CXX compiler only.
+    # This hack is not necessary when building shared libraries.
+        if (NOT CMAKE_CUDA_COMPILER)
+            set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG "CXX")
+            set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "CXX")
+            get_target_property(TasLibs Tasmanian_libsparsegrid_static INTERFACE_LINK_LIBRARIES)
+            if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+                set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES INTERFACE_LINK_LIBRARIES "${TasLibs};@Tasmanian_cudaruntime@")
+            else()
+                set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES INTERFACE_LINK_LIBRARIES "${TasLibs};@Tasmanian_cudaruntime@;dl")
+            endif()
+        endif()
+    endif()
 else()
     target_link_libraries(Tasmanian_libsparsegrid INTERFACE Tasmanian_libsparsegrid_shared)
     target_link_libraries(Tasmanian_libdream INTERFACE Tasmanian_libdream_shared)

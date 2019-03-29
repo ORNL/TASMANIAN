@@ -134,14 +134,10 @@ endif()
 
 # Tasmanian_ENABLE_CUDA support for the add_library vs cuda_add_library
 if (Tasmanian_ENABLE_CUDA)
-    find_package(CUDA REQUIRED)
+    enable_language(CUDA)
 
-    # "CUDA_STANDARD" per-target is used only by enable_language(CUDA), set the flag manually
-    list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
-
-    # CUDA 10 no longer uses cuBlas device library, but "older" cmake (e.g., cmake 3.11) look for that
-    # if CUDA is found but some library is missing, try to build anyway
-    list(FILTER CUDA_CUBLAS_LIBRARIES EXCLUDE REGEX "-NOTFOUND$")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/")
+    find_package(TasmanianCudaMathLibs REQUIRED)
 endif()
 
 # check for MAGMA
@@ -150,7 +146,6 @@ if (Tasmanian_ENABLE_MAGMA)
         message(FATAL_ERROR "Currently Tasmanian can use only CUDA related capability from MAGMA, hence Tasmanian_ENABLE_CUDA must be set ON")
     endif()
 
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/")
     find_package(TasmanianMAGMA)
 
     if (Tasmanian_MAGMA_FOUND)
