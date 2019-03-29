@@ -2,6 +2,10 @@
 
 #TasmanianPostInstallTest
 
+if (( @Tasmanian_TESTS_OMP_NUM_THREADS@ != -1 )); then
+    export OMP_NUM_THREADS=@Tasmanian_TESTS_OMP_NUM_THREADS@
+fi
+
 sPWD=`pwd`
 if [ $sPWD != @CMAKE_CURRENT_BINARY_DIR@ ]; then
     echo "NOPE: you must run this inside @CMAKE_CURRENT_BINARY_DIR@"
