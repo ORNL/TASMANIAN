@@ -72,6 +72,11 @@ TasmanianSparseGrid::~TasmanianSparseGrid(){
     clear();
 }
 
+TasmanianSparseGrid& TasmanianSparseGrid::operator=(TasmanianSparseGrid const &source){
+    copyGrid(&source);
+    return *this;
+}
+
 void TasmanianSparseGrid::clear(){
     base = std::unique_ptr<BaseCanonicalGrid>();
     domain_transform_a.resize(0);
@@ -85,7 +90,7 @@ void TasmanianSparseGrid::clear(){
 #endif // Tasmanian_ENABLE_BLAS
 #ifdef Tasmanian_ENABLE_CUDA
     gpuID = 0;
-    if (!acc_domain.empty()) acc_domain.clear();
+    acc_domain.reset();
     engine.reset();
 #endif // Tasmanian_ENABLE_CUDA
 }
@@ -550,7 +555,7 @@ void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[])
     domain_transform_a.resize(num_dimensions); std::copy(a, a + num_dimensions, domain_transform_a.data());
     domain_transform_b.resize(num_dimensions); std::copy(b, b + num_dimensions, domain_transform_b.data());
     #ifdef Tasmanian_ENABLE_CUDA
-    acc_domain.clear();
+    acc_domain.reset();
     #endif
 }
 bool TasmanianSparseGrid::isSetDomainTransfrom() const{
@@ -560,7 +565,7 @@ void TasmanianSparseGrid::clearDomainTransform(){
     domain_transform_a.resize(0);
     domain_transform_b.resize(0);
     #ifdef Tasmanian_ENABLE_CUDA
-    acc_domain.clear();
+    acc_domain.reset();
     #endif
 }
 void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
@@ -582,7 +587,7 @@ void TasmanianSparseGrid::setDomainTransform(const std::vector<double> &a, const
     domain_transform_a = a; // copy assignment
     domain_transform_b = b;
     #ifdef Tasmanian_ENABLE_CUDA
-    acc_domain.clear();
+    acc_domain.reset();
     #endif
 }
 void TasmanianSparseGrid::getDomainTransform(std::vector<double> &a, std::vector<double> &b) const{
@@ -862,9 +867,10 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
 
 #ifdef Tasmanian_ENABLE_CUDA
 const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, int num_x, CudaVector<double> &gpu_x_temp) const{
-    if (domain_transform_a.size() != 0){
-        if (acc_domain.empty()) acc_domain.load(domain_transform_a, domain_transform_b);
-        acc_domain.getCanonicalPoints(isFourier(), gpu_x, num_x, gpu_x_temp);
+    if (!domain_transform_a.empty()){
+        if (!acc_domain)
+            acc_domain = std::unique_ptr<AccelerationDomainTransform>(new AccelerationDomainTransform(domain_transform_a, domain_transform_b));
+        acc_domain->getCanonicalPoints(isFourier(), gpu_x, num_x, gpu_x_temp);
         return gpu_x_temp.data();
     }else{
         return gpu_x;
@@ -1695,7 +1701,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
             engine->setBackendMAGMA((acceleration == accel_gpu_magma));
         }else{ // using not CUDA, clear any loaded data
             if (engine) engine.reset();
-            if (!acc_domain.empty()) acc_domain.clear();
+            acc_domain.reset();
             if (!empty()) base->clearAccelerationData();
         }
         #endif
@@ -1743,7 +1749,7 @@ void TasmanianSparseGrid::setGPUID(int new_gpuID){
     if (new_gpuID != gpuID){
         #ifdef Tasmanian_ENABLE_CUDA
         if (!empty()) base->clearAccelerationData();
-        if (!acc_domain.empty()) acc_domain.clear();
+        acc_domain.reset();
         gpuID = new_gpuID;
         if (engine){
             bool use_magma = engine->backendMAGMA();

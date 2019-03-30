@@ -65,7 +65,11 @@ class TasmanianSparseGrid{
 public:
     TasmanianSparseGrid();
     TasmanianSparseGrid(const TasmanianSparseGrid &source);
+    TasmanianSparseGrid(TasmanianSparseGrid &&source) = default;
     ~TasmanianSparseGrid();
+
+    TasmanianSparseGrid& operator=(TasmanianSparseGrid const &source);
+    TasmanianSparseGrid& operator=(TasmanianSparseGrid &&source) = default;
 
     static const char* getVersion(); // human readable
     static int getVersionMajor();
@@ -315,7 +319,7 @@ private:
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaEngine> engine;
-    mutable AccelerationDomainTransform acc_domain;
+    mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
     #endif
 };
 #endif // Doxygen skip
