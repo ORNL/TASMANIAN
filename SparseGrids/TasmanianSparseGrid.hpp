@@ -65,6 +65,7 @@ class TasmanianSparseGrid{
 public:
     TasmanianSparseGrid();
     TasmanianSparseGrid(const TasmanianSparseGrid &source);
+    TasmanianSparseGrid(TasmanianSparseGrid &&source) = default;
     ~TasmanianSparseGrid();
 
     static const char* getVersion(); // human readable
