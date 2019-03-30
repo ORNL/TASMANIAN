@@ -449,17 +449,7 @@ template void AccelerationMeta::delCudaArray<double>(double*);
 template void AccelerationMeta::delCudaArray<int>(int*);
 
 
-AccelerationDomainTransform::AccelerationDomainTransform() : num_dimensions(0), padded_size(0){}
-AccelerationDomainTransform::~AccelerationDomainTransform(){}
-
-void AccelerationDomainTransform::clear(){
-    num_dimensions = 0;
-    padded_size = 0;
-    gpu_trans_a.clear();
-    gpu_trans_b.clear();
-}
-bool AccelerationDomainTransform::empty(){ return (num_dimensions == 0); }
-void AccelerationDomainTransform::load(const std::vector<double> &transform_a, const std::vector<double> &transform_b){
+AccelerationDomainTransform::AccelerationDomainTransform(std::vector<double> const &transform_a, std::vector<double> const &transform_b){
     // The points are stored contiguously in a vector with stride equal to num_dimensions
     // Using the contiguous memory in a contiguous fashion on the GPU implies that thread 0 works on dimension 0, thread 1 on dim 1 ...
     // But the number of dimensions is often way less than the number of threads
@@ -485,6 +475,8 @@ void AccelerationDomainTransform::load(const std::vector<double> &transform_a, c
     gpu_trans_a.load(rate);
     gpu_trans_b.load(shift);
 }
+AccelerationDomainTransform::~AccelerationDomainTransform(){}
+
 void AccelerationDomainTransform::getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, CudaVector<double> &gpu_canonical_x){
     gpu_canonical_x.resize(((size_t) num_dimensions) * ((size_t) num_x));
     TasCUDA::dtrans2can(use01, num_dimensions, num_x, padded_size, gpu_trans_a.data(), gpu_trans_b.data(), gpu_transformed_x, gpu_canonical_x.data());

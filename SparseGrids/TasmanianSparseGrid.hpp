@@ -315,7 +315,7 @@ private:
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaEngine> engine;
-    mutable AccelerationDomainTransform acc_domain;
+    mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
     #endif
 };
 #endif // Doxygen skip

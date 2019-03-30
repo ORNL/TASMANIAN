@@ -282,17 +282,11 @@ private:
 //! \b Note: Conformal mapping and the non-linear Gauss-Hermite and Gauss-Laguerre transforms are not supported.
 class AccelerationDomainTransform{
 public:
-    //! \brief Default constructor, the object cannot be used until \b load() is called.
-    AccelerationDomainTransform();
+    //! \brief Constructor, load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
+    AccelerationDomainTransform(std::vector<double> const &transform_a, std::vector<double> const &transform_b);
     //! \brief Destructor, clear all loaded data.
     ~AccelerationDomainTransform();
 
-    //! \brief Clear the transform (if loaded), used when the grid is reset of \b clearDomainTransform() is called.
-    void clear();
-    //! \brief Return \b false if \b load() has already been called.
-    bool empty();
-    //! \brief Load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
-    void load(const std::vector<double> &transform_a, const std::vector<double> &transform_b);
     //! \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
 
     //! Takes the user provided \b gpu_transformed_x points of dimension matching the grid num_dimensions and total number \b num_x.
