@@ -72,6 +72,11 @@ TasmanianSparseGrid::~TasmanianSparseGrid(){
     clear();
 }
 
+TasmanianSparseGrid& TasmanianSparseGrid::operator=(TasmanianSparseGrid const &source){
+    copyGrid(&source);
+    return *this;
+}
+
 void TasmanianSparseGrid::clear(){
     base = std::unique_ptr<BaseCanonicalGrid>();
     domain_transform_a.resize(0);

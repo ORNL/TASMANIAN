@@ -68,6 +68,9 @@ public:
     TasmanianSparseGrid(TasmanianSparseGrid &&source) = default;
     ~TasmanianSparseGrid();
 
+    TasmanianSparseGrid& operator=(TasmanianSparseGrid const &source);
+    TasmanianSparseGrid& operator=(TasmanianSparseGrid &&source) = default;
+
     static const char* getVersion(); // human readable
     static int getVersionMajor();
     static int getVersionMinor();
