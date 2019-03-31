@@ -33,6 +33,7 @@
 
 #include <stdexcept>
 
+#include "tsgUtils.hpp"
 #include "tsgEnumerates.hpp"
 
 //! \internal
@@ -122,7 +123,7 @@ public:
     //! for example, passing number of points and number of dimensions separately makes the code more readable,
     //! and both integers are converted to size_t before multiplication which prevents overflow.
     //! Note: the dimensions \b will \b not be stored, the underlying data is still one dimensional.
-    CudaVector(int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(((size_t) dim1) * ((size_t) dim2)); }
+    CudaVector(int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(Utils::size_mult(dim1, dim2)); }
     //! \brief Create a vector with size that matches \b cpu_data and copy the data to the CUDA device.
     CudaVector(const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(cpu_data); }
     //! \brief Destructor, release all allocated memory.
@@ -197,12 +198,12 @@ public:
     //! Automatically calls CUDA or MAGMA libraries at the back-end.
     //!
     //! Assumes that all vectors have the correct order.
-    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, CudaVector<double> &C);
+    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, double C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
     void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const std::vector<double> &B, double C[]){
-        CudaVector<double> gpuB(B), gpuC(((size_t) M) * ((size_t) N));
-        denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC);
+        CudaVector<double> gpuB(B), gpuC(M, N);
+        denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC.data());
         gpuC.unload(C);
     }
 
@@ -215,14 +216,14 @@ public:
     //!
     //! Assumes that all vectors have the correct size.
     void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                        const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, CudaVector<double> &C);
+                        const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, double C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
     void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
                         const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<double> &vals, double C[]){
         CudaVector<int> gpu_pntr(pntr), gpu_indx(indx);
         CudaVector<double> gpu_vals(vals), gpu_c(M, N);
-        sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, 0.0, gpu_c);
+        sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, 0.0, gpu_c.data());
         gpu_c.unload(C);
     }
 

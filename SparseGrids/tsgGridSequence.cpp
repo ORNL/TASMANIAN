@@ -498,7 +498,7 @@ void GridSequence::evaluateCuda(CudaEngine *engine, const double x[], int num_x,
     CudaVector<double> gpu_result(num_x, num_outputs);
 
     evaluateHierarchicalFunctionsGPU(gpu_x.data(), num_x, gpu_basis.data());
-    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_result);
+    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_result.data());
     gpu_result.unload(y);
 }
 #endif // Tasmanian_ENABLE_CUDA

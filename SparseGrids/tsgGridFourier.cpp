@@ -437,8 +437,8 @@ void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int nu
 
     int num_points = points.getNumIndexes();
     CudaVector<double> gpu_real(wreal.getVector()), gpu_imag(wimag.getVector()), gpu_y(num_outputs, num_x);
-    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
-    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
+    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y.data());
+    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y.data());
     gpu_y.unload(y);
 }
 void GridFourier::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
@@ -449,8 +449,8 @@ void GridFourier::evaluateCuda(CudaEngine *engine, const double x[], int num_x, 
     evaluateHierarchicalFunctionsInternalGPU(gpu_x.data(), num_x, gpu_real, gpu_imag);
 
     int num_points = points.getNumIndexes();
-    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
-    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
+    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y.data());
+    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y.data());
     gpu_y.unload(y);
 }
 #endif

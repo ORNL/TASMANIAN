@@ -385,13 +385,13 @@ void GridLocalPolynomial::evaluateCuda(CudaEngine *engine, const double x[], int
         CudaVector<double> gpu_basis(num_x, num_points);
         buildDenseBasisMatrixGPU(gpu_x.data(), num_x, gpu_basis.data());
 
-        engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_result);
+        engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_result.data());
     }else{
         CudaVector<int> gpu_spntr, gpu_sindx;
         CudaVector<double> gpu_svals;
         buildSparseBasisMatrixGPU(gpu_x.data(), num_x, gpu_spntr, gpu_sindx, gpu_svals);
 
-        engine->sparseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_result);
+        engine->sparseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_result.data());
     }
     gpu_result.unload(y);
 }

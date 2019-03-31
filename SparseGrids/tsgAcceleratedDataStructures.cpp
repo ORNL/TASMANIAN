@@ -127,7 +127,7 @@ void CudaEngine::magmaPrepare(){
     }
     #endif
 }
-void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, CudaVector<double> &C){
+void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, double C[]){
     #ifdef Tasmanian_ENABLE_MAGMA
     if (magma){
         magmaPrepare();
@@ -151,19 +151,19 @@ void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVect
     if (M > 1){
         if (N > 1){ // matrix mode
             stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K,
-                                &alpha, A.data(), M, B.data(), K, &beta, C.data(), M);
+                                &alpha, A.data(), M, B.data(), K, &beta, C, M);
         }else{ // matrix vector, A * v = C
             stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, M, K,
-                            &alpha, A.data(), M, B.data(), 1, &beta, C.data(), 1);
+                            &alpha, A.data(), M, B.data(), 1, &beta, C, 1);
         }
     }else{ // matrix vector B^T * v = C
         stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_T, K, N,
-                            &alpha, B.data(), K, A.data(), 1, &beta, C.data(), 1);
+                            &alpha, B.data(), K, A.data(), 1, &beta, C, 1);
     }
     AccelerationMeta::cublasCheckError((void*) &stat, "while calling CudaEngine::denseMultiply()");
 }
 void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                                const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, CudaVector<double> &C){
+                                const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, double C[]){
     #ifdef Tasmanian_ENABLE_MAGMA
     //if (magma){ // TODO: Enable more MAGMA sparse capabilities
     //    return;
@@ -180,7 +180,7 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
             cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
             cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
 
-            CudaVector<double> tempC(C.size());
+            CudaVector<double> tempC(M, N);
             sparse_stat = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
                                           CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, N, M, K, (int) indx.size(),
                                           &alpha, mat_desc, vals.data(), pntr.data(), indx.data(), A.data(), M, &beta, tempC.data(), N);
@@ -192,7 +192,7 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
             double talpha = 1.0, tbeta = 0.0;
             cublasStatus_t dense_stat;
             dense_stat = cublasDgeam((cublasHandle_t) cublasHandle,
-                                     CUBLAS_OP_T, CUBLAS_OP_T, M, N, &talpha, tempC.data(), N, &tbeta, tempC.data(), N, C.data(), M);
+                                     CUBLAS_OP_T, CUBLAS_OP_T, M, N, &talpha, tempC.data(), N, &tbeta, tempC.data(), N, C, M);
             AccelerationMeta::cublasCheckError((void*) &dense_stat, "cublasDgeam() in CudaEngine::sparseMultiply()");
         }else{ // dense matrix has only one row, use sparse matrix times dense vector
             cusparseMatDescr_t mat_desc;
@@ -204,7 +204,7 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
 
             sparse_stat = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
                                         CUSPARSE_OPERATION_NON_TRANSPOSE, N, K, (int) indx.size(),
-                                        &alpha, mat_desc, vals.data(), pntr.data(), indx.data(), A.data(), &beta, C.data());
+                                        &alpha, mat_desc, vals.data(), pntr.data(), indx.data(), A.data(), &beta, C);
             AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDcsrmv() in CudaEngine::sparseMultiply()");
 
             cusparseDestroyMatDescr(mat_desc);
@@ -221,7 +221,7 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
 
         sparse_stat = cusparseDgemvi((cusparseHandle_t) cusparseHandle,
                                         CUSPARSE_OPERATION_NON_TRANSPOSE, M, K, &alpha, A.data(), M, (int) indx.size(), vals.data(),
-                                        indx.data(), &beta, C.data(), CUSPARSE_INDEX_BASE_ZERO, gpu_buffer.data());
+                                        indx.data(), &beta, C, CUSPARSE_INDEX_BASE_ZERO, gpu_buffer.data());
         AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDgemvi() in CudaEngine::sparseMultiply()");
     }
 }
