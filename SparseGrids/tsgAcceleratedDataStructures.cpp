@@ -58,12 +58,11 @@ template<typename T> void CudaVector<T>::resize(size_t count){
 }
 template<typename T> void CudaVector<T>::clear(){
     num_entries = 0;
-    if (dynamic_mode && (gpu_data != nullptr)){ // if I own the data and the data is not null
+    if (gpu_data != nullptr){ // if I own the data and the data is not null
         cudaError_t cudaStat = cudaFree(gpu_data);
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::clear(), call to cudaFree()");
     }
     gpu_data = nullptr;
-    dynamic_mode = true; // The old data is gone and I own the current (null) data
 }
 template<typename T> void CudaVector<T>::load(size_t count, const T* cpu_data){
     resize(count);

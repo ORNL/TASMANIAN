@@ -108,13 +108,13 @@ template<typename T>
 class CudaVector{
 public:
     //! \brief Default constructor, creates an empty (null) array.
-    CudaVector() : num_entries(0), dynamic_mode(true), gpu_data(nullptr){}
+    CudaVector() : num_entries(0), gpu_data(nullptr){}
     //! \brief Construct a vector with \b count number of entries.
 
     //! Allocates an array that will be automatically deleted
     //! if \b clear() is called, or \b resize() or \b load() functions
     //! are used with size that is different from \b count.
-    CudaVector(size_t count) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(count); }
+    CudaVector(size_t count) : num_entries(0), gpu_data(nullptr){ resize(count); }
 
     //! \brief Same as \b CudaVector(dim1 * dim2), but guards against overflow.
 
@@ -122,9 +122,9 @@ public:
     //! for example, passing number of points and number of dimensions separately makes the code more readable,
     //! and both integers are converted to size_t before multiplication which prevents overflow.
     //! Note: the dimensions \b will \b not be stored, the underlying data is still one dimensional.
-    CudaVector(int dim1, int dim2) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(((size_t) dim1) * ((size_t) dim2)); }
+    CudaVector(int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(((size_t) dim1) * ((size_t) dim2)); }
     //! \brief Create a vector with size that matches \b cpu_data and copy the data to the CUDA device.
-    CudaVector(const std::vector<T> &cpu_data) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ load(cpu_data); }
+    CudaVector(const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(cpu_data); }
     //! \brief Destructor, release all allocated memory.
     ~CudaVector(){ clear(); }
 
@@ -165,27 +165,11 @@ public:
         T* external = gpu_data;
         gpu_data = nullptr;
         num_entries = 0;
-        dynamic_mode = true;
         return external;
-    }
-
-    //! \brief Create internal alias to the \b external buffer, assume the buffer has size \b count; the alias will \b not be deleted.
-
-    //! The purpose of the \b wrap() method is to assume control a user allocated CUDA array passed as an input.
-    //! That allows to have a consistent internal API using only \b CudaVector classes,
-    //! while the external API does not force the user into a Tasmanian specific data-structure (only native CUDA arrays are required).
-    //!
-    //! Using \b wrap() suppresses the deletion of the data from the destructor, \b clear(), or \b load() (from a vector/array of different size).
-    //! The wrapped array has to be deleted through \b external or with \b AccelerationMeta::delCudaArray(\b vector.eject()).
-    void wrap(size_t count, T* external){
-        gpu_data = external;
-        num_entries = count;
-        dynamic_mode = false;
     }
 
 private:
     size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
-    bool dynamic_mode; // was the memory allocated or wrapped around an exiting object
     T *gpu_data; // the CUDA array
 };
 
