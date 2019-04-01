@@ -34,8 +34,8 @@ if (( $bShowHelp == 1 )); then
     echo "                       e.g., -python=/usr/bin/python3"
     echo "                -cuda: enable Nvidia CUDA support"
     echo "                       automatically seach for CUDA installation"
-    echo "         -cuda=<path>: enable Nvidia CUDA support and specify path for CUDA"
-    echo "                       e.g., -cuda=/usr/local/cuda-9.1/"
+    echo "         -cuda=<path>: enable Nvidia CUDA support and specify the path to nvcc"
+    echo "                       e.g., -cuda=/usr/local/cuda-9.1/bin/nvcc"
     echo "               -magma: enable UTK MAGMA support"
     echo "                       automatically seach for MAGMA installation"
     echo "        -magma=<path>: enable UTK MAGMA support and specify path for MAGMA"
@@ -114,7 +114,7 @@ for sOption in "$@"; do
         sEnableCUDA="ON"
     elif [[ $sOption == "-cuda="* ]]; then
         sEnableCUDA="ON"
-        sCudaRootDir="-D CUDA_TOOLKIT_ROOT_DIR=${sOption:6}"
+        sCudaCompiler="-D CMAKE_CUDA_COMPILER=${sOption:6}"
     elif [[ $sOption == "-magma" ]]; then
         sEnableCUDA="ON"
         sEnableMAGMA="ON"
@@ -242,8 +242,8 @@ fi
 if [[ $sEnableCUDA == "ON" ]]; then
     echo "     -cuda: enable Nvidia CUDA support"
 fi
-if [[ ! -z $sCudaRootDir ]]; then
-    echo "  $sCudaRootDir"
+if [[ ! -z $sCudaCompiler ]]; then
+    echo "  $sCudaCompiler"
 fi
 if [[ $sEnableFortran == "ON" ]]; then
     echo "  -fortran: enable Fortran"
@@ -310,7 +310,7 @@ $sCmake \
   -D Tasmanian_ENABLE_RECOMMENDED:BOOL=ON \
   $sManualPythonInterp \
   -D Tasmanian_ENABLE_CUDA:BOOL=$sEnableCUDA \
-  $sCudaRootDir \
+  $sCudaCompiler \
   -D Tasmanian_ENABLE_MAGMA:BOOL=$sEnableMAGMA \
   $sMagmaRootDir \
   -D Tasmanian_ENABLE_FORTRAN:BOOL=$sEnableFortran \
