@@ -39,7 +39,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #
 # Selecting specific packages for find_package()
 #     -D PYTHON_EXECUTABLE:PATH
-#     -D CUDA_TOOLKIT_ROOT_DIR:PATH
+#     -D CMAKE_CUDA_COMPILER:PATH
 #     -D Tasmanian_MAGMA_ROOT_DIR:PATH (or just MAGMA_ROOT_DIR)
 #
 # Directly specifying libraries and bypassing find_package()
