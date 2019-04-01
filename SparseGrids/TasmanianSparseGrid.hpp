@@ -148,6 +148,7 @@ public:
     void evaluate(const double x[], double y[]) const; // has size num_dimensions, y has size num_outputs
     void evaluateFast(const double x[], double y[]) const{ evaluateBatch(x, 1, y); }; // evaluate that is potentially not thread safe!
     void evaluateBatch(const double x[], int num_x, double y[]) const; // uses acceleration, OpenMP, BLAS, GPU, etc., x is num_dimensions X num_x, y is num_outputs X num_x
+    void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // both arrays sit on the cuda device
     void integrate(double q[]) const; // y has size num_outputs
 
     // same as above, but num_x = x.size() / num_dimensions, and y is resized

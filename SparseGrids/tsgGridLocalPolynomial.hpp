@@ -104,6 +104,7 @@ public:
     void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction);
@@ -136,7 +137,7 @@ public:
     int getSpareBasisMatrixNZ(const double x[], int num_x) const;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<double> &gpu_y) const;
+    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const;
     void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const;
     #endif
 

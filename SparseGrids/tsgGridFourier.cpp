@@ -437,21 +437,24 @@ void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int nu
 
     int num_points = points.getNumIndexes();
     CudaVector<double> gpu_real(wreal.getVector()), gpu_imag(wimag.getVector()), gpu_y(num_outputs, num_x);
-    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
-    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
+    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y.data());
+    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y.data());
     gpu_y.unload(y);
 }
 void GridFourier::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_y(num_outputs, num_x);
+    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_y.data());
+    gpu_y.unload(y);
+}
+void GridFourier::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
     loadCudaCoefficients();
 
-    CudaVector<double> gpu_real, gpu_imag, gpu_x, gpu_y(num_outputs, num_x);
-    gpu_x.load(((size_t) num_dimensions) * ((size_t) num_x), x);
-    evaluateHierarchicalFunctionsInternalGPU(gpu_x.data(), num_x, gpu_real, gpu_imag);
+    CudaVector<double> gpu_real, gpu_imag;
+    evaluateHierarchicalFunctionsInternalGPU(gpu_x, cpu_num_x, gpu_real, gpu_imag);
 
     int num_points = points.getNumIndexes();
-    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
-    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
-    gpu_y.unload(y);
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
 }
 #endif
 

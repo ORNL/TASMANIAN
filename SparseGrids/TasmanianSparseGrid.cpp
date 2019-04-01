@@ -509,6 +509,22 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
     #endif
     base->evaluateBatch(x_canonical, num_x, y);
 }
+#ifdef Tasmanian_ENABLE_CUDA
+void TasmanianSparseGrid::evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+    if (!engine) throw std::runtime_error("ERROR: evaluateBatchGPU() requires that a cuda gpu acceleration is enabled.");
+    CudaVector<double> gpu_temp_x;
+    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
+    if (engine){
+        engine->setDevice();
+        base->evaluateBatchGPU(engine.get(), gpu_canonical_x, cpu_num_x, gpu_y);
+    }
+}
+#else
+void TasmanianSparseGrid::evaluateBatchGPU(const double[], int, double[]) const{
+    throw std::runtime_error("ERROR: batch evaluations GPU to GPU require Tasmanian_ENABLE_CUDA");
+}
+#endif
+
 void TasmanianSparseGrid::integrate(double q[]) const{
     if (conformal_asin_power.size() != 0){
         int num_points = base->getNumPoints();
@@ -1138,9 +1154,7 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[],
     CudaVector<double> gpu_temp_x;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
     if (isLocalPolynomial()){
-        CudaVector<double> gpu_wrapper;
-        gpu_wrapper.wrap(((size_t) base->getNumPoints()) * ((size_t) cpu_num_x), gpu_y);
-        getGridLocalPolynomial()->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_wrapper);
+        getGridLocalPolynomial()->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y);
     }else if (isFourier()){
         getGridFourier()->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
     }else{

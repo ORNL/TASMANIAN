@@ -80,6 +80,7 @@ public:
     virtual void loadNeededPointsCuda(CudaEngine *engine, const double *vals) = 0;
     virtual void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
+    virtual void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const = 0;
     #endif
 
     virtual void clearRefinement() = 0;

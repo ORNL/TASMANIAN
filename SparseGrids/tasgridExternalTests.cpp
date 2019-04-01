@@ -1721,6 +1721,20 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             exit(1);
         }
 
+        #ifdef Tasmanian_ENABLE_CUDA
+        if ((grid->getAccelerationType() == accel_gpu_cuda) && (!grid->isGlobal()) && (!grid->isWavelet())){
+            CudaVector<double> gpu_x(x), gpu_y(outs, num_x);
+            grid->evaluateBatchGPU(gpu_x.data(), num_x, gpu_y.data());
+            gpu_y.unload(test_y);
+            err = 0.0;
+            for(int i=0; i<outs*num_x; i++) if (fabs(test_y[i] - baseline_y[i]) > err) err = fabs(test_y[i] - baseline_y[i]);
+            if (err > 1.E-11){
+                cout << "Failed GPU to GPU evaluation." << endl;
+                grid->printStats();
+            }
+        }
+        #endif
+
         //cout << "Testing Fast evaluations" << endl;
         grid->evaluateFast(x, test_y);
         for(int i= 1; i<num_fast; i++){

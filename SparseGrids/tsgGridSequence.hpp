@@ -95,6 +95,7 @@ public:
     void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
     void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const;
     void evaluateCuda(CudaEngine*, const double*, int, double[]) const;
+    void evaluateBatchGPU(CudaEngine* engine, const double gpu_x[], int cpu_num_x, double gpy_y[]) const;
     #endif
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;

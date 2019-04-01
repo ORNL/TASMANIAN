@@ -374,26 +374,27 @@ void GridLocalPolynomial::evaluateCuda(CudaEngine *engine, const double x[], int
         evaluateCudaMixed(engine, x, num_x, y);
         return;
     }
+    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_result.data());
+    gpu_result.unload(y);
+}
+void GridLocalPolynomial::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+    if ((order == -1) || (order > 2)) throw std::runtime_error("ERROR: GPU evaluations are availabe only for local polynomial grid with order 0, 1, and 2");
     loadCudaSurpluses();
     int num_points = points.getNumIndexes();
 
-    CudaVector<double> gpu_x;
-    gpu_x.load(Utils::size_mult(num_dimensions, num_x), x);
-
-    CudaVector<double> gpu_result(num_x, num_outputs);
     if (useDense()){
-        CudaVector<double> gpu_basis(num_x, num_points);
-        buildDenseBasisMatrixGPU(gpu_x.data(), num_x, gpu_basis);
+        CudaVector<double> gpu_basis(cpu_num_x, num_points);
+        buildDenseBasisMatrixGPU(gpu_x, cpu_num_x, gpu_basis.data());
 
-        engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_result);
+        engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_y);
     }else{
         CudaVector<int> gpu_spntr, gpu_sindx;
         CudaVector<double> gpu_svals;
-        buildSparseBasisMatrixGPU(gpu_x.data(), num_x, gpu_spntr, gpu_sindx, gpu_svals);
+        buildSparseBasisMatrixGPU(gpu_x, cpu_num_x, gpu_spntr, gpu_sindx, gpu_svals);
 
-        engine->sparseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_result);
+        engine->sparseMultiply(num_outputs, cpu_num_x, num_points, 1.0, cuda_cache->surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_y);
     }
-    gpu_result.unload(y);
 }
 #endif
 
@@ -914,11 +915,10 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridLocalPolynomial::buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<double> &gpu_y) const{
+void GridLocalPolynomial::buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
     loadCudaBasis();
     int num_points = getNumPoints();
-    gpu_y.resize(((size_t) cpu_num_x) * ((size_t) num_points));
-    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, cuda_cache->nodes.data(), cuda_cache->support.data(), gpu_y.data());
+    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, cuda_cache->nodes.data(), cuda_cache->support.data(), gpu_y);
 }
 void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const{
     loadCudaBasis();
