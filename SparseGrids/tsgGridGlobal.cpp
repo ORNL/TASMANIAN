@@ -642,6 +642,9 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
     engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_values, weights.getVector(), y);
 }
 void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
+void GridGlobal::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
+    throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for global grids.");
+}
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{

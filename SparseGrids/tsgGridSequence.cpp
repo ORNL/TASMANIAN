@@ -489,17 +489,16 @@ void GridSequence::evaluateCudaMixed(CudaEngine *engine, const double x[], int n
     engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, hweights.getVector(), y);
 }
 void GridSequence::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_outputs, num_x);
+    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_result.data());
+    gpu_result.unload(y);
+}
+void GridSequence::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
     loadCudaSurpluses();
 
-    int num_points = points.getNumIndexes();
-    CudaVector<double> gpu_x;
-    gpu_x.load(((size_t) num_dimensions) * ((size_t) num_x), x);
-    CudaVector<double> gpu_basis(num_x, num_points);
-    CudaVector<double> gpu_result(num_x, num_outputs);
-
-    evaluateHierarchicalFunctionsGPU(gpu_x.data(), num_x, gpu_basis.data());
-    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_result.data());
-    gpu_result.unload(y);
+    CudaVector<double> gpu_basis(points.getNumIndexes(), cpu_num_x);
+    evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
+    engine->denseMultiply(num_outputs, cpu_num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_y);
 }
 #endif // Tasmanian_ENABLE_CUDA
 

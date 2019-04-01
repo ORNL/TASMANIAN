@@ -104,6 +104,7 @@ public:
     void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction);

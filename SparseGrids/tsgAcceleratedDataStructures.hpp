@@ -126,6 +126,8 @@ public:
     CudaVector(int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(Utils::size_mult(dim1, dim2)); }
     //! \brief Create a vector with size that matches \b cpu_data and copy the data to the CUDA device.
     CudaVector(const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(cpu_data); }
+    //! \brief Construct a vector and load with date provided on to the cpu.
+    CudaVector(int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(Utils::size_mult(dim1, dim2), cpu_data); }
     //! \brief Destructor, release all allocated memory.
     ~CudaVector(){ clear(); }
 

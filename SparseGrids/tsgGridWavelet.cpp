@@ -279,6 +279,9 @@ void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{ e
 void GridWavelet::loadNeededPointsCuda(CudaEngine *, const double *vals){ loadNeededPoints(vals); }
 void GridWavelet::evaluateCudaMixed(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
 void GridWavelet::evaluateCuda(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+void GridWavelet::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
+    throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for wavelet grids.");
+}
 #endif
 
 void GridWavelet::integrate(double q[], double *conformal_correction) const{
