@@ -166,7 +166,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetGPUID.restype = c_int
         self.pLibTSG.tsgGetNumGPUs.restype = c_int
         self.pLibTSG.tsgGetGPUMemory.restype = c_int
-        self.pLibTSG.tsgGetGPUName.restype = c_char_p
 
         self.pLibTSG.tsgDestructTasmanianSparseGrid.argtypes = [c_void_p]
         self.pLibTSG.tsgCopyGrid.argtypes = [c_void_p, c_void_p]
