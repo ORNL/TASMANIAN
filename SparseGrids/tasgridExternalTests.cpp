@@ -865,7 +865,7 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
 
         std::vector<size_t> pindex(num_points);
         for(size_t i=0; i<num_points; i++) pindex[i] = i;
-        std::shuffle(pindex.begin(), pindex.end(), std::default_random_engine(random()));
+        std::shuffle(pindex.begin(), pindex.end(), park_miller);
 
         for(auto i : pindex){
             std::vector<double> x(&(points[i * dims]), &(points[i * dims]) + dims);
