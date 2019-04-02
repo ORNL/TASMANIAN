@@ -38,6 +38,7 @@
 #include <string>
 #include <iomanip>
 #include <random>
+#include <ctime>
 #include <string.h>
 #include <math.h>
 
