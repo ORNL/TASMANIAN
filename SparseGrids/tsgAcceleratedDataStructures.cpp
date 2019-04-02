@@ -134,14 +134,14 @@ void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVect
         if (M > 1){
             if (N > 1){ // matrix mode
                 magma_dgemm(MagmaNoTrans, MagmaNoTrans, M, N, K,
-                            alpha, A.data(), M, B.data(), K, beta, C.data(), M, (magma_queue_t) magmaCudaQueue);
+                            alpha, A.data(), M, B.data(), K, beta, C, M, (magma_queue_t) magmaCudaQueue);
             }else{ // matrix vector, A * v = C
                 magma_dgemv(MagmaNoTrans, M, K,
-                            alpha, A.data(), M, B.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
+                            alpha, A.data(), M, B.data(), 1, beta, C, 1, (magma_queue_t) magmaCudaQueue);
             }
         }else{ // matrix vector B^T * v = C
             magma_dgemv(MagmaTrans, K, N,
-                        alpha, B.data(), K, A.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
+                        alpha, B.data(), K, A.data(), 1, beta, C, 1, (magma_queue_t) magmaCudaQueue);
         }
         return;
     }
