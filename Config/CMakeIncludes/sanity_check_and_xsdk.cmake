@@ -189,9 +189,6 @@ if (Tasmanian_ENABLE_RECOMMENDED)
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         set(CMAKE_CXX_FLAGS_RELEASE "/MD /Ox /DNDEBUG ${OpenMP_CXX_FLAGS}") # cmake overwrites flags a lot, careful how you set those
         set(CMAKE_CXX_FLAGS_DEBUG "/MD /Ox ${OpenMP_CXX_FLAGS}")
-        if (Tasmanian_ENABLE_CUDA)
-            list(REMOVE_ITEM CUDA_NVCC_FLAGS "-std=c++11") # c++11 is default under windows, the flag only generates warnings
-        endif()
     endif()
 endif()
 

@@ -33,6 +33,10 @@ endmacro()
 get_filename_component(Tasmanian_nvccroot ${CMAKE_CUDA_COMPILER} DIRECTORY) # convert <path>/bin/nvcc to <path>/bin
 get_filename_component(Tasmanian_nvccroot ${Tasmanian_nvccroot} DIRECTORY)  # convert <path>/bin to <path>
 
+if (NOT CMAKE_LIBRARY_ARCHITECTURE)
+    set(CMAKE_LIBRARY_ARCHITECTURE "x64") # sometimes missing under Windows
+endif()
+
 Tasmanian_find_cuda_libraries(NAMES cublas_static cublas_device cublasLt cublasLt_static cublas
                                     cusparse_static cusparse culibos
                               PREFIX ${Tasmanian_nvccroot}
