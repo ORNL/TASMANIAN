@@ -85,9 +85,9 @@ inline void reportPassFail(bool pass, const char *name, const char *variant){
 }
 
 //! \internal
-//! \brief Get a random number to be used for a random seed, uses \b srand() with \b time(\b nullptr).
+//! \brief Get a random number to be used for a random seed, uses \b std::time(\b nullptr).
 //! \ingroup TasDREAMTesting
-inline int getRandomRandomSeed(){ srand((int) time(nullptr)); return rand(); }
+inline long unsigned getRandomRandomSeed(){ return static_cast<long unsigned>(std::time(nullptr)); }
 
 //! \internal
 //! \brief Dump the history of the state to \b cout using one point per line (debug use only).
@@ -182,7 +182,7 @@ protected:
 
     //! \brief Generate samples from custom models.
     bool testCustomModel();
-    
+
     //! \brief Generate samples from sparse grid model.
     bool testGridModel();
 
