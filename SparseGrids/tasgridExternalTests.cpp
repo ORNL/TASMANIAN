@@ -37,7 +37,7 @@ std::minstd_rand park_miller(10);
 
 ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1) {}
 ExternalTester::~ExternalTester(){}
-void ExternalTester::resetRandomSeed(){ park_miller.seed((int) time(nullptr)); }
+void ExternalTester::resetRandomSeed(){ park_miller.seed(static_cast<long unsigned>(std::time(nullptr))); }
 
 void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 void ExternalTester::setGPUID(int gpu_id){ gpuid = gpu_id; }
