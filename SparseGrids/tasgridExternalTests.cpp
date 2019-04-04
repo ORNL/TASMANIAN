@@ -2183,12 +2183,14 @@ void ExternalTester::benchmark(int argc, const char **argv){
             grid->makeSequenceGrid(dims, outs, depth, d, r);
         }else if (r == rule_fourier){
             grid->makeFourierGrid(dims, outs, depth, d);
+        }else if (r == rule_wavelet){
+            grid->makeWaveletGrid(dims, outs, depth, 3);
         }else{
             grid->makeGlobalGrid(dims, outs, depth, d, r);
         }
 
         int np = grid->getNumPoints();
-        cout << " with " << np << " points." << endl;
+        cout << " grid has " << np << " points." << endl;
         int width = 15;
         cout << setw(24) << "CPU";
         if (gpu > -1){
@@ -2227,6 +2229,8 @@ void ExternalTester::benchmark(int argc, const char **argv){
                     grid->makeSequenceGrid(dims, outs, depth, d, r);
                 }else if (OneDimensionalMeta::isFourier(r)){
                     grid->makeFourierGrid(dims, outs, depth, d);
+                }else if (r == rule_wavelet){
+                    grid->makeWaveletGrid(dims, outs, depth, 3);
                 }else{
                     grid->makeGlobalGrid(dims, outs, depth, d, r);
                 }
