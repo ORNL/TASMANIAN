@@ -39,6 +39,8 @@
 #include "tsgLinearSolvers.hpp"
 #include "tsgGridCore.hpp"
 
+#include "tsgCudaLoadStructures.hpp"
+
 namespace TasGrid{
 
 class GridWavelet : public BaseCanonicalGrid{
@@ -119,6 +121,14 @@ protected:
     void addChild(const int point[], int direction, Data2D<int> &destination) const;
     void addChildLimited(const int point[], int direction, const std::vector<int> &level_limits, Data2D<int> &destination) const;
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    void loadCudaCoefficients() const{
+        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaWaveletData<double>>(new CudaWaveletData<double>);
+        if (cuda_cache->coefficients.empty()) cuda_cache->coefficients.load(coefficients.getVector());
+    }
+    void clearCudaCoefficients(){ if (cuda_cache) cuda_cache->coefficients.clear(); }
+    #endif
+
 private:
     RuleWavelet rule1D;
 
@@ -132,6 +142,10 @@ private:
     StorageSet values;
 
     TasSparse::SparseMatrix inter_matrix;
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    mutable std::unique_ptr<CudaWaveletData<double>> cuda_cache;
+    #endif
 };
 
 }

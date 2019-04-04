@@ -2095,6 +2095,16 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl;
     }
 
+    grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 3);
+    pass = pass && testAcceleration(f, &grid);
+    grid.makeWaveletGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, 1);
+    pass = pass && testAcceleration(f1out, &grid);
+    if (pass){
+        if (verbose) cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
+    }else{
+        cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "FAIL" << endl;
+    }
+
     #ifdef Tasmanian_ENABLE_CUDA
     pass = pass && testGPU2GPUevaluations();
     if (pass){
@@ -2270,6 +2280,23 @@ void ExternalTester::benchmark(int argc, const char **argv){
 void ExternalTester::debugTest(){
     cout << "Debug Test" << endl;
     cout << "Put here testing code and call this with ./tasgrid -test debug" << endl;
+
+    const BaseFunction *f = &f23Kexpsincos;
+    const BaseFunction *f1out = &f21expsincos;
+    TasmanianSparseGrid grid;
+    bool pass = true;
+
+    int wsecond = 28, wthird = 15;
+
+    grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 3);
+    pass = pass && testAcceleration(f, &grid);
+    grid.makeWaveletGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, 1);
+    pass = pass && testAcceleration(f1out, &grid);
+    if (pass){
+        if (verbose) cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
+    }else{
+        cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "FAIL" << endl;
+    }
 }
 
 void ExternalTester::debugTestII(){
