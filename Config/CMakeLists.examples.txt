@@ -8,18 +8,13 @@ find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasm
 # this can be done from the command line with option -D CMAKE_PREFIX_PATH="@CMAKE_INSTALL_PREFIX@/lib/" then
 # find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasmanian_VERSION_PATCH@)
 
-# Alternatively, a project can directly include the exported targets with the following command
-# include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
-# Note: find_package() calls the above include command,
-#       but also checks the version and defines _shared/_static independent targets
-
 # Tasmanian library targets always end on either _shared or _static to denote the type of library
 # which can be helpful to select a specific type of library (if desired)
 # Either shared or static libraries are always available, in some cases both may be present
+
 # The find_package(Tasmanian) command will also generate interface targets without _shared/_static appendix
 # Tasmanian_libsparsegrid, Tasmanian_libdream, and Tasmanian_libfortran90 TARGETs will always point to a valid library
 # if both _shared and _static libraries are present, the targets above will point to the _static ones
-
 # Tasmanian_libsparsegrid, Tasmanian_libdream, and Tasmanian_libfortran90
 # are just a convinient way to tell cmake to link to whatever is available
 # without having to explicitly check for _static or _shared targets
