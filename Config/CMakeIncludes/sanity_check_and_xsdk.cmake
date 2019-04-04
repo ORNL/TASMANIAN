@@ -68,38 +68,22 @@ endif()
 
 # OpenMP setup
 if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
-    find_package(OpenMP)
-
-    if (NOT OPENMP_CXX_FOUND)
-        if (Tasmanian_ENABLE_RECOMMENDED)
-            set(Tasmanian_ENABLE_OPENMP OFF)
-            message(STATUS "Tasmanian could not find OpenMP, the library will run in single-threaded mode")
-        else()
-            message(FATAL_ERROR "Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed")
-        endif()
+    if (Tasmanian_ENABLE_OPENMP)
+        find_package(OpenMP REQUIRED) # OpenMP requested explicitly, require regardless of ENABLE_RECOMMENDED
     else()
-        set(Tasmanian_ENABLE_OPENMP ON) # if using RECOMMENDED, make sure OPENMP is ON
+        find_package(OpenMP)
+        set(Tasmanian_ENABLE_OPENMP ${OPENMP_CXX_FOUND}) # set ENABLE_OPENMP if OpenMP_CXX_FOUND
     endif()
 endif()
 
 # check for BLAS
 if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
     if (NOT DEFINED BLAS_LIBRARIES) # user defined BLAS libraries are an XSDK requirement
-        find_package(BLAS)
-
-        if (BLAS_FOUND)
-            set(Tasmanian_ENABLE_BLAS ON) # set ON if using Tasmanian_ENABLE_RECOMMENDED
+        if (Tasmanian_ENABLE_BLAS)
+            find_package(BLAS REQUIRED) # if BLAS enabled explicitly, require
         else()
-            if (Tasmanian_ENABLE_RECOMMENDED)
-                set(Tasmanian_ENABLE_BLAS OFF)
-                message(STATUS "Tasmanian could not find BLAS, which gives significant boost when working with grid with many outputs")
-            else()
-                message(FATAL_ERROR "Tasmanian_ENABLE_BLAS is ON, but find_package(BLAS) failed")
-            endif()
-        endif()
-    else()
-        if (Tasmanian_ENABLE_RECOMMENDED)
-            set(Tasmanian_ENABLE_BLAS ON) # set ON if using Tasmanian_ENABLE_RECOMMENDED
+            find_package(BLAS)
+            set(Tasmanian_ENABLE_BLAS ${BLAS_FOUND})
         endif()
     endif()
 endif()
