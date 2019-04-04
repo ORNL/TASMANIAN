@@ -456,7 +456,7 @@ inline double RuleWavelet::interpolate(const double *y, double x) const{
     std::vector<double> ps(y + start, y + send);
     std::vector<double> xs(data[0].begin() + start, data[0].begin() + send);
 
-    for(int i = 0; i <= interpolation_order; i++){
+    for(int i = 0; i < interpolation_order; i++){
         for(int j = 0; j < interpolation_order - i; j++){
             ps[j] = ((x - xs[j+i+1]) * ps[j] + (xs[j] - x) * ps[j+1]) /(xs[j] - xs[j+i+1]);
         }
