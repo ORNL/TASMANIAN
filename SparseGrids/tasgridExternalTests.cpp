@@ -988,7 +988,7 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
             bPass = false;
             cout << setw(18) << "ERROR: FAILED";
             cout << setw(6) << TasGrid::OneDimensionalMeta::getIORuleString(rule_wavelet);
-            cout << " order: " << orders[i%3];
+            cout << " order: " << orders[i/3];
 
             if (tests[i%3] == type_integration){
                 cout << setw(25) << "integration test";
