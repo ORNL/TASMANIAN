@@ -313,7 +313,7 @@ double RuleWavelet::eval(int point, double x) const{
     return 0.;
 }
 
-double RuleWavelet::eval_cubic(int point, double x) const{
+inline double RuleWavelet::eval_cubic(int point, double x) const{
     // Evaluates a third order wavelet at a given point x.
     if (point < 5){ // Scaling functions
         if (point == 2){ // Reflect across y-axis
@@ -361,10 +361,9 @@ double RuleWavelet::eval_cubic(int point, double x) const{
     // Center
     double shift = 0.125 * (double (subindex - 5));
     return interpolate(&data[4][5*num_data_points], scale * (x + 1.) -1. - shift);
-
 }
 
-double RuleWavelet::eval_linear(int point, double x) const{
+inline double RuleWavelet::eval_linear(int point, double x) const{
     // Given a wavelet designated by point and a value x, evaluates the wavelet at x.
 
     // Standard Lifted Wavelets
@@ -384,7 +383,7 @@ double RuleWavelet::eval_linear(int point, double x) const{
     return linear_central_wavelet(scale * (x + 1) - 1. - shift);
 }
 
-double RuleWavelet::linear_boundary_wavelet(double x) const{
+inline double RuleWavelet::linear_boundary_wavelet(double x) const{
     // Evaluates the first order boundary wavelet with support on [-1, 0].
     if (fabs(x + 0.5) > 0.5) return 0.0;
 
@@ -397,7 +396,7 @@ double RuleWavelet::linear_boundary_wavelet(double x) const{
     }
 }
 
-double RuleWavelet::linear_central_wavelet(double x) const {
+inline double RuleWavelet::linear_central_wavelet(double x) const {
     // Evaluates the first order central wavelet with support on [-1, .5].
     if (fabs(x + 0.25) > 0.75) return 0.0;
 
@@ -412,7 +411,7 @@ double RuleWavelet::linear_central_wavelet(double x) const {
     }
 }
 
-int RuleWavelet::find_index(double x) const{
+inline int RuleWavelet::find_index(double x) const{
     // Finds an interval such that x_i <= x < x_i+1 using bisection search and returns i.
     if (x > 1. || x < -1.){
         return -1;
@@ -433,7 +432,7 @@ int RuleWavelet::find_index(double x) const{
     return low;
 }
 
-double RuleWavelet::interpolate(const double *y, double x, int interpolation_order) const{
+inline double RuleWavelet::interpolate(const double *y, double x, int interpolation_order) const{
     // For a given x value and dataset y, calculates the value of the interpolating
     // polynomial of given order going through the nearby points.
     int idx = find_index(x);
