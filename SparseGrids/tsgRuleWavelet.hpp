@@ -68,6 +68,7 @@ protected:
     double linear_central_wavelet(double x) const;
     int order;
     int iteration_depth;
+    int num_data_points;
     static void cubic_cascade(double *y, int starting_level, int iteration_depth);
 
     int find_index(double x) const;

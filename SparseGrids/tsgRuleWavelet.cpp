@@ -39,6 +39,7 @@ RuleWavelet::RuleWavelet(int ord, int iter_depth){
     // Initializes the wavelet rule of the specified order.
     // Note: Only orders 1 & 3 wavelets are currently implemented.
     iteration_depth = iter_depth;
+    num_data_points = (1 << iteration_depth) + 1;
     order = 0;
     updateOrder(ord);
 }
@@ -54,8 +55,6 @@ void RuleWavelet::updateOrder(int ord){
     order = ord;
 
     if(order == 3){
-
-        int num_data_points = (1 << iteration_depth) + 1;
 
         data.resize(5); // (xs, level1 (scaling), level2, level3, level4)
         data[0].resize(num_data_points);
@@ -316,7 +315,6 @@ double RuleWavelet::eval(int point, double x) const{
 
 double RuleWavelet::eval_cubic(int point, double x) const{
     // Evaluates a third order wavelet at a given point x.
-    int num_data_points = (1 << iteration_depth) + 1;
     if (point < 5){ // Scaling functions
         if (point == 2){ // Reflect across y-axis
             point = 1;
@@ -420,10 +418,9 @@ int RuleWavelet::find_index(double x) const{
         return -1;
     }
     // Bisection search
-    int num_points = (1 << iteration_depth) + 1;
     const double *xs = data[0].data();
     int low = 0;
-    int high = num_points-1;
+    int high = num_data_points-1;
     while(high - low > 1){
         int test = (high + low)/2;
         if (x < xs[test]){
@@ -439,8 +436,7 @@ int RuleWavelet::find_index(double x) const{
 double RuleWavelet::interpolate(const double *y, double x, int interpolation_order) const{
     // For a given x value and dataset y, calculates the value of the interpolating
     // polynomial of given order going through the nearby points.
-    int idx = find_index(x),
-        num_points = (1 << iteration_depth) + 1;
+    int idx = find_index(x);
 
     if (idx == -1){
         // Outside of table
@@ -454,8 +450,8 @@ double RuleWavelet::interpolate(const double *y, double x, int interpolation_ord
 
     if (idx < interpolation_order/2){
         idx = interpolation_order/2;
-    }else if(num_points - idx - 1 < (interpolation_order+1)/2){
-        idx = num_points - 1 - (interpolation_order+1)/2;
+    }else if(num_data_points - idx - 1 < (interpolation_order+1)/2){
+        idx = num_data_points - 1 - (interpolation_order+1)/2;
     }
 
     int start = idx - interpolation_order / 2;
