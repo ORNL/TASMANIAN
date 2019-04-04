@@ -33,16 +33,19 @@
 
 #include "tasgridExternalTests.hpp"
 
-ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1){ srand(10); }
+std::minstd_rand park_miller(10);
+
+ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1) {}
 ExternalTester::~ExternalTester(){}
-void ExternalTester::resetRandomSeed(){ srand((int) time(0)); }
+void ExternalTester::resetRandomSeed(){ park_miller.seed(static_cast<long unsigned>(std::time(nullptr))); }
 
 void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 void ExternalTester::setGPUID(int gpu_id){ gpuid = gpu_id; }
 
 void ExternalTester::setRandomX(int n, double x[]) const{
+    std::uniform_real_distribution<double> unif(-1.0, 1.0);
     for(int i=0; i<n; i++)
-        x[i] = 2.0 * ((double) rand()) / ((double) RAND_MAX) -1.0;
+        x[i] = unif(park_miller);
 }
 
 const char* ExternalTester::findGaussPattersonTable(){
@@ -862,7 +865,7 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
 
         std::vector<size_t> pindex(num_points);
         for(size_t i=0; i<num_points; i++) pindex[i] = i;
-        std::shuffle(pindex.begin(), pindex.end(), std::default_random_engine(random()));
+        std::shuffle(pindex.begin(), pindex.end(), park_miller);
 
         for(auto i : pindex){
             std::vector<double> x(&(points[i * dims]), &(points[i * dims]) + dims);
