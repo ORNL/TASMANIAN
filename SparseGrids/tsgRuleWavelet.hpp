@@ -75,6 +75,7 @@ protected:
     inline double interpolate(const double *y, double x) const;
 
     std::vector<std::vector<double>> data;
+    std::vector<double> cachexs;
 };
 
 } // namespace TasGrid

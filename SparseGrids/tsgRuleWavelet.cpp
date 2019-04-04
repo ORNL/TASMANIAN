@@ -51,7 +51,8 @@ void RuleWavelet::updateOrder(int ord){
     if(order == ord) return;
 
     // clear is practically free, call it every time
-    data.clear();
+    data = std::vector<std::vector<double>>();
+    cachexs = std::vector<double>();
 
     order = ord;
 
@@ -63,6 +64,18 @@ void RuleWavelet::updateOrder(int ord){
 
         for(int i = 0; i < num_data_points; i++){
             xs[i] = -1. + 2*(double (i)) / (double (num_data_points - 1));
+        }
+
+        cachexs = std::vector<double>((size_t) 4 * (num_data_points - 3));
+        for(int i = 0; i < num_data_points - 3; i++){
+            double const *s = &(xs[i]);
+            double *c = &(cachexs[4*i]);
+            double alpha = 1.0 / ((s[0] - s[3]) * (s[0] - s[2]));
+            double beta  = 1.0 / ((s[0] - s[3]) * (s[1] - s[3]));
+            c[0] =   alpha / (s[0] - s[1]);
+            c[1] = - alpha / (s[0] - s[1]) - alpha / (s[1] - s[2]) - beta / (s[1] - s[2]);
+            c[2] =   alpha / (s[1] - s[2]) + beta  / (s[1] - s[2]) + beta / (s[2] - s[3]);
+            c[3] = - beta  / (s[2] - s[3]);
         }
 
         // Coefficients derived by solving linear system involving scaling function
@@ -451,18 +464,21 @@ inline double RuleWavelet::interpolate(const double *y, double x) const{
         idx = num_data_points - 1 - (interpolation_order+1)/2;
     }
 
-    size_t start = (size_t)( idx - interpolation_order / 2 ),
-           send  = start + (size_t)( interpolation_order + 1 );
-    std::vector<double> ps(y + start, y + send);
-    std::vector<double> xs(data[0].begin() + start, data[0].begin() + send);
+    size_t start = (size_t)( idx - interpolation_order / 2 );
+    double const *xs = &(data[0][start]);
+    double const *ps = &(y[start]);
 
-    for(int i = 0; i < interpolation_order; i++){
-        for(int j = 0; j < interpolation_order - i; j++){
-            ps[j] = ((x - xs[j+i+1]) * ps[j] + (xs[j] - x) * ps[j+1]) /(xs[j] - xs[j+i+1]);
-        }
-    }
+    double const dx0 = x - xs[0];
+    double const dx1 = x - xs[1];
+    double const dx2 = x - xs[2];
+    double const dx3 = x - xs[3];
 
-    return ps[0];
+    double const *c = &(cachexs[4*start]);
+
+    return   c[0] * ps[0] * dx1 * dx2 * dx3
+           + c[1] * ps[1] * dx0 * dx2 * dx3
+           + c[2] * ps[2] * dx0 * dx1 * dx3
+           + c[3] * ps[3] * dx0 * dx1 * dx2;
 }
 
 } // namespace TasGrid
