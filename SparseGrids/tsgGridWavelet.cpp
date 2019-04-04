@@ -31,6 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WAVELET_CPP
 #define __TASMANIAN_SPARSE_GRID_WAVELET_CPP
 
+#include "tsgHiddenExternals.hpp"
 #include "tsgGridWavelet.hpp"
 
 #include "tsgUtils.hpp"
@@ -268,7 +269,12 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{
+    int num_points = points.getNumIndexes();
+    Data2D<double> weights(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, coefficients.getStrip(0), weights.getStrip(0), 0.0, y);
+}
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
@@ -576,6 +582,7 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
     int num_points = work.getNumIndexes();
     Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
     Utils::Wrapper2D<double> ywrap(num_points, y);
+    #pragma omp parallel for
     for(int i=0; i<num_x; i++){
         double const *this_x = xwrap.getStrip(i);
         double *this_y = ywrap.getStrip(i);

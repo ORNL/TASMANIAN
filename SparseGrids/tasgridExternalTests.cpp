@@ -2184,7 +2184,7 @@ void ExternalTester::benchmark(int argc, const char **argv){
         }else if (r == rule_fourier){
             grid->makeFourierGrid(dims, outs, depth, d);
         }else if (r == rule_wavelet){
-            grid->makeWaveletGrid(dims, outs, depth, 3);
+            grid->makeWaveletGrid(dims, outs, depth, 1);
         }else{
             grid->makeGlobalGrid(dims, outs, depth, d, r);
         }
@@ -2230,7 +2230,7 @@ void ExternalTester::benchmark(int argc, const char **argv){
                 }else if (OneDimensionalMeta::isFourier(r)){
                     grid->makeFourierGrid(dims, outs, depth, d);
                 }else if (r == rule_wavelet){
-                    grid->makeWaveletGrid(dims, outs, depth, 3);
+                    grid->makeWaveletGrid(dims, outs, depth, 1);
                 }else{
                     grid->makeGlobalGrid(dims, outs, depth, d, r);
                 }
