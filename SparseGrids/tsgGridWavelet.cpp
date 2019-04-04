@@ -248,20 +248,16 @@ void GridWavelet::mergeRefinement(){
     coefficients.fill(0.0);
 }
 void GridWavelet::evaluate(const double x[], double y[]) const{
+    std::fill(y, y + num_outputs, 0.0);
+
     int num_points = points.getNumIndexes();
-	std::vector<double> basis_values(num_points);
-	#pragma omp parallel for
-	for(int i=0; i<num_points; i++){
-        basis_values[i] = evalBasis(points.getIndex(i), x);
-	}
-	for(int j=0; j<num_outputs; j++){
-        double sum = 0.0;
-        #pragma omp parallel for reduction(+ : sum)
-        for(int i=0; i<num_points; i++){
-            sum += basis_values[i] * coefficients.getStrip(i)[j];
-        }
-        y[j] = sum;
-	}
+
+    for(int i=0; i<num_points; i++){
+        double basis_value = evalBasis(points.getIndex(i), x);
+        const double *s = coefficients.getStrip(i);
+        for(int k=0; k<num_outputs; k++)
+            y[k] += basis_value * s[k];
+    }
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
     Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
