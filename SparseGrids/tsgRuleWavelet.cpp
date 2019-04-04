@@ -28,6 +28,7 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
+#include <iostream>
 #include "tsgRuleWavelet.hpp"
 
 #define ACCESS_FINE(I, LEVEL, DEPTH) ((1 << ((DEPTH)-(LEVEL)-1)) * (2 * (I) + 1))
@@ -432,9 +433,10 @@ inline int RuleWavelet::find_index(double x) const{
     return low;
 }
 
-inline double RuleWavelet::interpolate(const double *y, double x, int interpolation_order) const{
+inline double RuleWavelet::interpolate(const double *y, double x) const{
     // For a given x value and dataset y, calculates the value of the interpolating
     // polynomial of given order going through the nearby points.
+    constexpr int interpolation_order = 3;
     int idx = find_index(x);
 
     if (idx == -1){
@@ -443,21 +445,16 @@ inline double RuleWavelet::interpolate(const double *y, double x, int interpolat
     }
 
     // Neville's Algorithm
-    std::vector<double> ps(interpolation_order + 1);
-    std::vector<double> xs(interpolation_order + 1);
-    const double *xx = data[0].data();
-
     if (idx < interpolation_order/2){
         idx = interpolation_order/2;
     }else if(num_data_points - idx - 1 < (interpolation_order+1)/2){
         idx = num_data_points - 1 - (interpolation_order+1)/2;
     }
 
-    int start = idx - interpolation_order / 2;
-    for(int i = 0; i < interpolation_order + 1; i++){
-        ps[i] = y[start + i];
-        xs[i] = xx[start + i];
-    }
+    size_t start = (size_t)( idx - interpolation_order / 2 ),
+           send  = start + (size_t)( interpolation_order + 1 );
+    std::vector<double> ps(y + start, y + send);
+    std::vector<double> xs(data[0].begin() + start, data[0].begin() + send);
 
     for(int i = 0; i <= interpolation_order; i++){
         for(int j = 0; j < interpolation_order - i; j++){

@@ -72,7 +72,7 @@ protected:
     static void cubic_cascade(double *y, int starting_level, int iteration_depth);
 
     inline int find_index(double x) const;
-    inline double interpolate(const double *y, double x, int interpolation_order = 3) const;
+    inline double interpolate(const double *y, double x) const;
 
     std::vector<std::vector<double>> data;
 };
