@@ -28,6 +28,7 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
+#include <iostream>
 #include "tsgRuleWavelet.hpp"
 
 #define ACCESS_FINE(I, LEVEL, DEPTH) ((1 << ((DEPTH)-(LEVEL)-1)) * (2 * (I) + 1))
@@ -39,6 +40,7 @@ RuleWavelet::RuleWavelet(int ord, int iter_depth){
     // Initializes the wavelet rule of the specified order.
     // Note: Only orders 1 & 3 wavelets are currently implemented.
     iteration_depth = iter_depth;
+    num_data_points = (1 << iteration_depth) + 1;
     order = 0;
     updateOrder(ord);
 }
@@ -49,13 +51,12 @@ void RuleWavelet::updateOrder(int ord){
     if(order == ord) return;
 
     // clear is practically free, call it every time
-    data.clear();
+    data = std::vector<std::vector<double>>();
+    cachexs = std::vector<double>();
 
     order = ord;
 
     if(order == 3){
-
-        int num_data_points = (1 << iteration_depth) + 1;
 
         data.resize(5); // (xs, level1 (scaling), level2, level3, level4)
         data[0].resize(num_data_points);
@@ -63,6 +64,18 @@ void RuleWavelet::updateOrder(int ord){
 
         for(int i = 0; i < num_data_points; i++){
             xs[i] = -1. + 2*(double (i)) / (double (num_data_points - 1));
+        }
+
+        cachexs = std::vector<double>((size_t) 4 * (num_data_points - 3));
+        for(int i = 0; i < num_data_points - 3; i++){
+            double const *s = &(xs[i]);
+            double *c = &(cachexs[4*i]);
+            double alpha = 1.0 / ((s[0] - s[3]) * (s[0] - s[2]));
+            double beta  = 1.0 / ((s[0] - s[3]) * (s[1] - s[3]));
+            c[0] =   alpha / (s[0] - s[1]);
+            c[1] = - alpha / (s[0] - s[1]) - alpha / (s[1] - s[2]) - beta / (s[1] - s[2]);
+            c[2] =   alpha / (s[1] - s[2]) + beta  / (s[1] - s[2]) + beta / (s[2] - s[3]);
+            c[3] = - beta  / (s[2] - s[3]);
         }
 
         // Coefficients derived by solving linear system involving scaling function
@@ -314,9 +327,8 @@ double RuleWavelet::eval(int point, double x) const{
     return 0.;
 }
 
-double RuleWavelet::eval_cubic(int point, double x) const{
+inline double RuleWavelet::eval_cubic(int point, double x) const{
     // Evaluates a third order wavelet at a given point x.
-    int num_data_points = (1 << iteration_depth) + 1;
     if (point < 5){ // Scaling functions
         if (point == 2){ // Reflect across y-axis
             point = 1;
@@ -363,10 +375,9 @@ double RuleWavelet::eval_cubic(int point, double x) const{
     // Center
     double shift = 0.125 * (double (subindex - 5));
     return interpolate(&data[4][5*num_data_points], scale * (x + 1.) -1. - shift);
-
 }
 
-double RuleWavelet::eval_linear(int point, double x) const{
+inline double RuleWavelet::eval_linear(int point, double x) const{
     // Given a wavelet designated by point and a value x, evaluates the wavelet at x.
 
     // Standard Lifted Wavelets
@@ -386,7 +397,7 @@ double RuleWavelet::eval_linear(int point, double x) const{
     return linear_central_wavelet(scale * (x + 1) - 1. - shift);
 }
 
-double RuleWavelet::linear_boundary_wavelet(double x) const{
+inline double RuleWavelet::linear_boundary_wavelet(double x) const{
     // Evaluates the first order boundary wavelet with support on [-1, 0].
     if (fabs(x + 0.5) > 0.5) return 0.0;
 
@@ -399,7 +410,7 @@ double RuleWavelet::linear_boundary_wavelet(double x) const{
     }
 }
 
-double RuleWavelet::linear_central_wavelet(double x) const {
+inline double RuleWavelet::linear_central_wavelet(double x) const {
     // Evaluates the first order central wavelet with support on [-1, .5].
     if (fabs(x + 0.25) > 0.75) return 0.0;
 
@@ -414,16 +425,15 @@ double RuleWavelet::linear_central_wavelet(double x) const {
     }
 }
 
-int RuleWavelet::find_index(double x) const{
+inline int RuleWavelet::find_index(double x) const{
     // Finds an interval such that x_i <= x < x_i+1 using bisection search and returns i.
     if (x > 1. || x < -1.){
         return -1;
     }
     // Bisection search
-    int num_points = (1 << iteration_depth) + 1;
     const double *xs = data[0].data();
     int low = 0;
-    int high = num_points-1;
+    int high = num_data_points-1;
     while(high - low > 1){
         int test = (high + low)/2;
         if (x < xs[test]){
@@ -436,11 +446,11 @@ int RuleWavelet::find_index(double x) const{
     return low;
 }
 
-double RuleWavelet::interpolate(const double *y, double x, int interpolation_order) const{
+inline double RuleWavelet::interpolate(const double *y, double x) const{
     // For a given x value and dataset y, calculates the value of the interpolating
     // polynomial of given order going through the nearby points.
-    int idx = find_index(x),
-        num_points = (1 << iteration_depth) + 1;
+    constexpr int interpolation_order = 3;
+    int idx = find_index(x);
 
     if (idx == -1){
         // Outside of table
@@ -448,29 +458,27 @@ double RuleWavelet::interpolate(const double *y, double x, int interpolation_ord
     }
 
     // Neville's Algorithm
-    std::vector<double> ps(interpolation_order + 1);
-    std::vector<double> xs(interpolation_order + 1);
-    const double *xx = data[0].data();
-
     if (idx < interpolation_order/2){
         idx = interpolation_order/2;
-    }else if(num_points - idx - 1 < (interpolation_order+1)/2){
-        idx = num_points - 1 - (interpolation_order+1)/2;
+    }else if(num_data_points - idx - 1 < (interpolation_order+1)/2){
+        idx = num_data_points - 1 - (interpolation_order+1)/2;
     }
 
-    int start = idx - interpolation_order / 2;
-    for(int i = 0; i < interpolation_order + 1; i++){
-        ps[i] = y[start + i];
-        xs[i] = xx[start + i];
-    }
+    size_t start = (size_t)( idx - interpolation_order / 2 );
+    double const *xs = &(data[0][start]);
+    double const *ps = &(y[start]);
 
-    for(int i = 0; i <= interpolation_order; i++){
-        for(int j = 0; j < interpolation_order - i; j++){
-            ps[j] = ((x - xs[j+i+1]) * ps[j] + (xs[j] - x) * ps[j+1]) /(xs[j] - xs[j+i+1]);
-        }
-    }
+    double const dx0 = x - xs[0];
+    double const dx1 = x - xs[1];
+    double const dx2 = x - xs[2];
+    double const dx3 = x - xs[3];
 
-    return ps[0];
+    double const *c = &(cachexs[4*start]);
+
+    return   c[0] * ps[0] * dx1 * dx2 * dx3
+           + c[1] * ps[1] * dx0 * dx2 * dx3
+           + c[2] * ps[2] * dx0 * dx1 * dx3
+           + c[3] * ps[3] * dx0 * dx1 * dx2;
 }
 
 } // namespace TasGrid

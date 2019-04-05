@@ -988,7 +988,7 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
             bPass = false;
             cout << setw(18) << "ERROR: FAILED";
             cout << setw(6) << TasGrid::OneDimensionalMeta::getIORuleString(rule_wavelet);
-            cout << " order: " << orders[i%3];
+            cout << " order: " << orders[i/3];
 
             if (tests[i%3] == type_integration){
                 cout << setw(25) << "integration test";
@@ -2095,6 +2095,16 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl;
     }
 
+    grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 3);
+    pass = pass && testAcceleration(f, &grid);
+    grid.makeWaveletGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, 1);
+    pass = pass && testAcceleration(f1out, &grid);
+    if (pass){
+        if (verbose) cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
+    }else{
+        cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "FAIL" << endl;
+    }
+
     #ifdef Tasmanian_ENABLE_CUDA
     pass = pass && testGPU2GPUevaluations();
     if (pass){
@@ -2183,12 +2193,14 @@ void ExternalTester::benchmark(int argc, const char **argv){
             grid->makeSequenceGrid(dims, outs, depth, d, r);
         }else if (r == rule_fourier){
             grid->makeFourierGrid(dims, outs, depth, d);
+        }else if (r == rule_wavelet){
+            grid->makeWaveletGrid(dims, outs, depth, 1);
         }else{
             grid->makeGlobalGrid(dims, outs, depth, d, r);
         }
 
         int np = grid->getNumPoints();
-        cout << " with " << np << " points." << endl;
+        cout << " grid has " << np << " points." << endl;
         int width = 15;
         cout << setw(24) << "CPU";
         if (gpu > -1){
@@ -2227,6 +2239,8 @@ void ExternalTester::benchmark(int argc, const char **argv){
                     grid->makeSequenceGrid(dims, outs, depth, d, r);
                 }else if (OneDimensionalMeta::isFourier(r)){
                     grid->makeFourierGrid(dims, outs, depth, d);
+                }else if (r == rule_wavelet){
+                    grid->makeWaveletGrid(dims, outs, depth, 1);
                 }else{
                     grid->makeGlobalGrid(dims, outs, depth, d, r);
                 }

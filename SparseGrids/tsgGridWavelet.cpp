@@ -31,6 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WAVELET_CPP
 #define __TASMANIAN_SPARSE_GRID_WAVELET_CPP
 
+#include "tsgHiddenExternals.hpp"
 #include "tsgGridWavelet.hpp"
 
 #include "tsgUtils.hpp"
@@ -217,6 +218,9 @@ void GridWavelet::getInterpolationWeights(const double x[], double *weights) con
 	solveTransposed(weights);
 }
 void GridWavelet::loadNeededPoints(const double *vals){
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaCoefficients();
+    #endif
     if (points.empty()){
         values.setValues(vals);
         points = std::move(needed);
@@ -233,6 +237,9 @@ void GridWavelet::loadNeededPoints(const double *vals){
 }
 void GridWavelet::mergeRefinement(){
     if (needed.empty()) return; // nothing to do
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaCoefficients();
+    #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t size_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
     std::vector<double> vals(size_vals, 0.0);
@@ -248,20 +255,16 @@ void GridWavelet::mergeRefinement(){
     coefficients.fill(0.0);
 }
 void GridWavelet::evaluate(const double x[], double y[]) const{
+    std::fill(y, y + num_outputs, 0.0);
+
     int num_points = points.getNumIndexes();
-	std::vector<double> basis_values(num_points);
-	#pragma omp parallel for
-	for(int i=0; i<num_points; i++){
-        basis_values[i] = evalBasis(points.getIndex(i), x);
-	}
-	for(int j=0; j<num_outputs; j++){
-        double sum = 0.0;
-        #pragma omp parallel for reduction(+ : sum)
-        for(int i=0; i<num_points; i++){
-            sum += basis_values[i] * coefficients.getStrip(i)[j];
-        }
-        y[j] = sum;
-	}
+
+    for(int i=0; i<num_points; i++){
+        double basis_value = evalBasis(points.getIndex(i), x);
+        const double *s = coefficients.getStrip(i);
+        for(int k=0; k<num_outputs; k++)
+            y[k] += basis_value * s[k];
+    }
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
     Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
@@ -272,13 +275,25 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{
+    int num_points = points.getNumIndexes();
+    Data2D<double> weights(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, coefficients.getStrip(0), weights.getStrip(0), 0.0, y);
+}
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridWavelet::loadNeededPointsCuda(CudaEngine *, const double *vals){ loadNeededPoints(vals); }
-void GridWavelet::evaluateCudaMixed(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
-void GridWavelet::evaluateCuda(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+void GridWavelet::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+    loadCudaCoefficients();
+
+    Data2D<double> weights(points.getNumIndexes(), num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+
+    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.getVector(), y);
+}
+void GridWavelet::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
 void GridWavelet::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
     throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for wavelet grids.");
 }
@@ -580,6 +595,7 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
     int num_points = work.getNumIndexes();
     Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
     Utils::Wrapper2D<double> ywrap(num_points, y);
+    #pragma omp parallel for
     for(int i=0; i<num_x; i++){
         double const *this_x = xwrap.getStrip(i);
         double *this_y = ywrap.getStrip(i);
@@ -596,6 +612,9 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
 }
 
 void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration){
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaCoefficients();
+    #endif
     int num_points = getNumPoints();
     size_t size_coeff = ((size_t) num_points) * ((size_t) num_outputs);
     if (!points.empty()){
@@ -657,7 +676,11 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
         needed = MultiIndexSet(refined);
 }
 
-void GridWavelet::clearAccelerationData(){}
+void GridWavelet::clearAccelerationData(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    if (cuda_cache) cuda_cache.reset();
+    #endif
+}
 
 }
 
