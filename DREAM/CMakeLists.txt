@@ -87,29 +87,29 @@ set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dr
 ########################################################################
 if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
     Tasmanian_macro_add_libdream(SHARED)
-
     target_link_libraries(Tasmanian_libdream_shared Tasmanian_libsparsegrid_shared)
 endif()
 
 if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
     Tasmanian_macro_add_libdream(STATIC)
-
-    # if static libraries are available, executables link statically
     target_link_libraries(Tasmanian_libdream_static  Tasmanian_libsparsegrid_static)
-    target_link_libraries(Tasmanian_dreamtest        Tasmanian_libdream_static)
-    target_link_libraries(Tasmanian_example_dream    Tasmanian_libdream_static)
+
+    add_library(Tasmanian_libdream ALIAS Tasmanian_libdream_static)
 else() # if there are not static libs, use shared libs for the executables
-    target_link_libraries(Tasmanian_dreamtest      Tasmanian_libdream_shared)
-    target_link_libraries(Tasmanian_example_dream  Tasmanian_libdream_shared)
+    add_library(Tasmanian_libdream ALIAS Tasmanian_libdream_shared)
 endif()
+
+target_link_libraries(Tasmanian_dreamtest      Tasmanian_libdream)
+target_link_libraries(Tasmanian_example_dream  Tasmanian_libdream)
+
 
 ########################################################################
 # Testing
 ########################################################################
-add_test(DREAM_Analytic dreamtest analytic)
-add_test(DREAM_Model dreamtest posterior)
+add_test(DreamAnalytic dreamtest analytic)
+add_test(DreamModel dreamtest posterior)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(DREAM_Analytic DREAM_Model
+    set_tests_properties(DreamAnalytic DreamModel
         PROPERTIES
         PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
         ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")

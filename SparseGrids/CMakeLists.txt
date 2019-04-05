@@ -167,23 +167,15 @@ endif()
 
 if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
     Tasmanian_macro_add_libsparsegrid(STATIC)
-
-    # if static libraries are available, executables link statically
-    target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_static)
-    target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid_static)
-    target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_static)
+    add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_static)
 else() # if there are not static libs, use shared libs for the executables
-    target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_shared)
-    target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid_shared)
-    target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_shared)
+    add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_shared)
 endif()
 
-# hack a dependency problem in parallel make
-# without this, if both static and shared libs are enabled, make -j tries to compile shared cuda kernels twice
-# which creates a race condition and the build randomly fails
-if ("${Tasmanian_libs_type}" STREQUAL "BOTH")
-    add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_libsparsegrid_static)
-endif()
+target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid)
+target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid)
+target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid)
+
 
 # data file, needed for testing and reference about custom rule definitions
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
