@@ -78,6 +78,7 @@ endmacro()
 set(Tasmanian_source_libsparsegrid
         TasmanianSparseGrid.hpp
         TasmanianSparseGrid.cpp
+        TasmanianSparseGridWrapC.cpp
         tsgAcceleratedDataStructures.hpp
         tsgAcceleratedDataStructures.cpp
         tsgCacheLagrange.hpp

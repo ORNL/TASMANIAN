@@ -38,7 +38,7 @@
 
 namespace TasGrid{
 
-GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0){}
+GridGlobal::GridGlobal() : alpha(0.0), beta(0.0){}
 GridGlobal::~GridGlobal(){}
 
 template<bool useAscii> void GridGlobal::write(std::ostream &os) const{
@@ -278,18 +278,6 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
         }
     }
 }
-
-int GridGlobal::getNumDimensions() const{ return num_dimensions; }
-int GridGlobal::getNumOutputs() const{ return num_outputs; }
-TypeOneDRule GridGlobal::getRule() const{ return rule; }
-const char* GridGlobal::getCustomRuleDescription() const{ return (custom.getNumLevels() > 0) ? custom.getDescription() : "";  }
-
-double GridGlobal::getAlpha() const{ return alpha; }
-double GridGlobal::getBeta() const{ return beta; }
-
-int GridGlobal::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
-int GridGlobal::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridGlobal::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
 void GridGlobal::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
     std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });

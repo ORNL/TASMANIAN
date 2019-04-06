@@ -38,7 +38,7 @@
 
 namespace TasGrid{
 
-GridSequence::GridSequence() : num_dimensions(0), num_outputs(0){}
+GridSequence::GridSequence(){}
 GridSequence::~GridSequence(){}
 
 template<bool useAscii> void GridSequence::write(std::ostream &os) const{
@@ -161,14 +161,6 @@ void GridSequence::updateGrid(MultiIndexSet &update){
         if (!needed.empty()) prepareSequence(0);
     }
 }
-
-int GridSequence::getNumDimensions() const{ return num_dimensions; }
-int GridSequence::getNumOutputs() const{ return num_outputs; }
-TypeOneDRule GridSequence::getRule() const{ return rule; }
-
-int GridSequence::getNumLoaded() const{ return (((points.empty()) || (num_outputs == 0)) ? 0 : points.getNumIndexes()); }
-int GridSequence::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridSequence::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
 void GridSequence::getLoadedPoints(double *x) const{
     std::transform(points.getVector().begin(), points.getVector().end(), x, [&](int i)->double{ return nodes[i]; });

@@ -50,13 +50,13 @@ public:
     virtual bool isWavelet() const{ return false; }
     virtual bool isFourier() const{ return false; }
 
-    virtual int getNumDimensions() const = 0;
-    virtual int getNumOutputs() const = 0;
+    int getNumDimensions() const{ return num_dimensions; }
+    int getNumOutputs() const{ return num_outputs; }
     virtual TypeOneDRule getRule() const = 0;
 
-    virtual int getNumLoaded() const = 0;
-    virtual int getNumNeeded() const = 0;
-    virtual int getNumPoints() const = 0;
+    int getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
+    int getNumNeeded() const{ return needed.getNumIndexes(); }
+    int getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
     virtual void getLoadedPoints(double *x) const = 0;
     virtual void getNeededPoints(double *x) const = 0;
@@ -98,6 +98,11 @@ public:
     virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) = 0;
 
     virtual void clearAccelerationData() = 0;
+
+protected:
+    int num_dimensions, num_outputs;
+    MultiIndexSet points;
+    MultiIndexSet needed;
 };
 
 class SplitDirections{

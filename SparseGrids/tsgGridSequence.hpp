@@ -65,13 +65,7 @@ public:
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void updateGrid(MultiIndexSet &update);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
-    TypeOneDRule getRule() const;
-
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
+    TypeOneDRule getRule() const{ return rule; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
@@ -200,11 +194,7 @@ protected:
     #endif
 
 private:
-    int num_dimensions, num_outputs;
     TypeOneDRule rule;
-
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     Data2D<double> surpluses;
     std::vector<double> nodes;

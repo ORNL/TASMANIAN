@@ -57,14 +57,8 @@ public:
     void copyGrid(const GridWavelet *wav);
     void setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder); // for FDS purposes
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
-    TypeOneDRule getRule() const;
-    int getOrder() const;
-
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const;
+    TypeOneDRule getRule() const{ return rule_wavelet; }
+    int getOrder() const{ return order; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
@@ -132,12 +126,9 @@ protected:
 private:
     RuleWavelet rule1D;
 
-    int num_dimensions, num_outputs, order;
+    int order;
 
     Data2D<double> coefficients; // a.k.a., surpluses
-
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     StorageSet values;
 

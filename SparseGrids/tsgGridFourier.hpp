@@ -62,13 +62,7 @@ public:
 
     void setTensors(MultiIndexSet &tset, int cnum_outputs);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
-    TypeOneDRule getRule() const;
-
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
+    TypeOneDRule getRule() const{ return rule_fourier; }
 
     void loadNeededPoints(const double *vals);
 
@@ -195,16 +189,12 @@ protected:
     #endif
 
 private:
-    int num_dimensions, num_outputs;
-
     OneDimensionalWrapper wrapper;
 
     MultiIndexSet tensors;
     MultiIndexSet active_tensors;
     std::vector<int> active_w;
     std::vector<int> max_levels;
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     Data2D<double> fourier_coefs;
 

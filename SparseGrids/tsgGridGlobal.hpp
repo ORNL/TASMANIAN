@@ -67,17 +67,11 @@ public:
 
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
-    TypeOneDRule getRule() const;
-    const char* getCustomRuleDescription() const; // returns the description of the custom rule (only if rule_customtabulated is used)
+    TypeOneDRule getRule() const{ return rule; }
+    const char* getCustomRuleDescription() const{ return (custom.getNumLevels() > 0) ? custom.getDescription() : "";  }
 
-    double getAlpha() const;
-    double getBeta() const;
-
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
+    double getAlpha() const{ return alpha; }
+    double getBeta() const{ return beta; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
@@ -152,7 +146,6 @@ protected:
     void loadConstructedTensors();
 
 private:
-    int num_dimensions, num_outputs;
     TypeOneDRule rule;
     double alpha, beta;
 
@@ -161,8 +154,6 @@ private:
     MultiIndexSet tensors;
     MultiIndexSet active_tensors;
     std::vector<int> active_w;
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     std::vector<std::vector<int>> tensor_refs;
 

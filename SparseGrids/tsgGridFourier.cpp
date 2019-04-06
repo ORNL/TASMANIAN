@@ -37,7 +37,7 @@
 
 namespace TasGrid{
 
-GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), max_levels(0){}
+GridFourier::GridFourier() : max_levels(0){}
 GridFourier::~GridFourier(){}
 
 template<bool useAscii> void GridFourier::write(std::ostream &os) const{
@@ -163,14 +163,6 @@ void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
 
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
-
-int GridFourier::getNumDimensions() const{ return num_dimensions; }
-int GridFourier::getNumOutputs() const{ return num_outputs; }
-TypeOneDRule GridFourier::getRule() const{ return rule_fourier; }
-
-int GridFourier::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
-int GridFourier::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridFourier::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
 void GridFourier::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA

@@ -73,14 +73,8 @@ public:
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     void copyGrid(const GridLocalPolynomial *pwpoly);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
-    TypeOneDRule getRule() const;
-    int getOrder() const;
-
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const;
+    TypeOneDRule getRule() const{ return rule->getType(); }
+    int getOrder() const{ return order; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
@@ -360,12 +354,9 @@ protected:
     #endif
 
 private:
-    int num_dimensions, num_outputs, order, top_level;
+    int order, top_level;
 
     Data2D<double> surpluses;
-
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     StorageSet values;
     Data2D<int> parents;
