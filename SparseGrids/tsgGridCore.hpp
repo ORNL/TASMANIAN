@@ -98,6 +98,11 @@ public:
     virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) = 0;
 
     virtual void clearAccelerationData() = 0;
+
+protected:
+    int num_dimensions, num_outputs;
+    MultiIndexSet points;
+    MultiIndexSet needed;
 };
 
 class SplitDirections{

@@ -37,7 +37,7 @@
 
 namespace TasGrid{
 
-GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), max_levels(0){}
+GridFourier::GridFourier() : max_levels(0){}
 GridFourier::~GridFourier(){}
 
 template<bool useAscii> void GridFourier::write(std::ostream &os) const{

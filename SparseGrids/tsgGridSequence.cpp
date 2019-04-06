@@ -38,7 +38,7 @@
 
 namespace TasGrid{
 
-GridSequence::GridSequence() : num_dimensions(0), num_outputs(0){}
+GridSequence::GridSequence(){}
 GridSequence::~GridSequence(){}
 
 template<bool useAscii> void GridSequence::write(std::ostream &os) const{

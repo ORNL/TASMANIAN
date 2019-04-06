@@ -360,12 +360,9 @@ protected:
     #endif
 
 private:
-    int num_dimensions, num_outputs, order, top_level;
+    int order, top_level;
 
     Data2D<double> surpluses;
-
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     StorageSet values;
     Data2D<int> parents;

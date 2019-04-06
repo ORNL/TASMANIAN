@@ -132,12 +132,9 @@ protected:
 private:
     RuleWavelet rule1D;
 
-    int num_dimensions, num_outputs, order;
+    int order;
 
     Data2D<double> coefficients; // a.k.a., surpluses
-
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     StorageSet values;
 

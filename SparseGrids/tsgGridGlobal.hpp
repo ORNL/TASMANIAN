@@ -152,7 +152,6 @@ protected:
     void loadConstructedTensors();
 
 private:
-    int num_dimensions, num_outputs;
     TypeOneDRule rule;
     double alpha, beta;
 
@@ -161,8 +160,6 @@ private:
     MultiIndexSet tensors;
     MultiIndexSet active_tensors;
     std::vector<int> active_w;
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     std::vector<std::vector<int>> tensor_refs;
 

@@ -38,7 +38,7 @@
 
 namespace TasGrid{
 
-GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0){}
+GridGlobal::GridGlobal() : alpha(0.0), beta(0.0){}
 GridGlobal::~GridGlobal(){}
 
 template<bool useAscii> void GridGlobal::write(std::ostream &os) const{

@@ -200,11 +200,7 @@ protected:
     #endif
 
 private:
-    int num_dimensions, num_outputs;
     TypeOneDRule rule;
-
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     Data2D<double> surpluses;
     std::vector<double> nodes;

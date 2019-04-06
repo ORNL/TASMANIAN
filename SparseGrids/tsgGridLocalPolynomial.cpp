@@ -38,7 +38,7 @@
 
 namespace TasGrid{
 
-GridLocalPolynomial::GridLocalPolynomial() : num_dimensions(0), num_outputs(0), order(1), top_level(0), sparse_affinity(0)  {}
+GridLocalPolynomial::GridLocalPolynomial() : order(1), top_level(0), sparse_affinity(0)  {}
 GridLocalPolynomial::~GridLocalPolynomial(){}
 
 void GridLocalPolynomial::reset(bool clear_rule){
@@ -201,7 +201,11 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
 
 GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule,
                                          std::vector<int> &pnts, std::vector<double> &vals, std::vector<double> &surps) :
-        num_dimensions(cnum_dimensions), num_outputs(cnum_outputs), order(corder), sparse_affinity(0){
+                                         order(corder), sparse_affinity(0){
+
+    num_dimensions = cnum_dimensions;
+    num_outputs = cnum_outputs;
+
     makeRule(crule);
 
     points = MultiIndexSet(num_dimensions, pnts);
