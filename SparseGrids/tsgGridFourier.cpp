@@ -164,8 +164,6 @@ void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
 
-int GridFourier::getNumDimensions() const{ return num_dimensions; }
-int GridFourier::getNumOutputs() const{ return num_outputs; }
 TypeOneDRule GridFourier::getRule() const{ return rule_fourier; }
 
 int GridFourier::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }

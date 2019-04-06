@@ -67,8 +67,6 @@ public:
 
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
     TypeOneDRule getRule() const;
     const char* getCustomRuleDescription() const; // returns the description of the custom rule (only if rule_customtabulated is used)
 

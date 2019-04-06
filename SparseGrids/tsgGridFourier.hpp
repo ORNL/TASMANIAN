@@ -62,8 +62,6 @@ public:
 
     void setTensors(MultiIndexSet &tset, int cnum_outputs);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
     TypeOneDRule getRule() const;
 
     int getNumLoaded() const;

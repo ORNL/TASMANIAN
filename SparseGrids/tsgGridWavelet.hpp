@@ -57,8 +57,6 @@ public:
     void copyGrid(const GridWavelet *wav);
     void setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder); // for FDS purposes
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
     TypeOneDRule getRule() const;
     int getOrder() const;
 

@@ -73,8 +73,6 @@ public:
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     void copyGrid(const GridLocalPolynomial *pwpoly);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
     TypeOneDRule getRule() const;
     int getOrder() const;
 

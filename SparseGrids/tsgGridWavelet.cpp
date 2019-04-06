@@ -166,8 +166,6 @@ void GridWavelet::setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder){
     buildInterpolationMatrix();
 }
 
-int GridWavelet::getNumDimensions() const{ return num_dimensions;  }
-int GridWavelet::getNumOutputs() const{ return num_outputs;  }
 TypeOneDRule GridWavelet::getRule() const{ return rule_wavelet;  }
 int GridWavelet::getOrder() const{ return order;  }
 

@@ -50,8 +50,8 @@ public:
     virtual bool isWavelet() const{ return false; }
     virtual bool isFourier() const{ return false; }
 
-    virtual int getNumDimensions() const = 0;
-    virtual int getNumOutputs() const = 0;
+    int getNumDimensions() const{ return num_dimensions; }
+    int getNumOutputs() const{ return num_outputs; }
     virtual TypeOneDRule getRule() const = 0;
 
     virtual int getNumLoaded() const = 0;

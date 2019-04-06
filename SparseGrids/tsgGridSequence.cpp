@@ -162,8 +162,6 @@ void GridSequence::updateGrid(MultiIndexSet &update){
     }
 }
 
-int GridSequence::getNumDimensions() const{ return num_dimensions; }
-int GridSequence::getNumOutputs() const{ return num_outputs; }
 TypeOneDRule GridSequence::getRule() const{ return rule; }
 
 int GridSequence::getNumLoaded() const{ return (((points.empty()) || (num_outputs == 0)) ? 0 : points.getNumIndexes()); }

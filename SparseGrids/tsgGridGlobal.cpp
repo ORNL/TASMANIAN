@@ -279,8 +279,6 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
     }
 }
 
-int GridGlobal::getNumDimensions() const{ return num_dimensions; }
-int GridGlobal::getNumOutputs() const{ return num_outputs; }
 TypeOneDRule GridGlobal::getRule() const{ return rule; }
 const char* GridGlobal::getCustomRuleDescription() const{ return (custom.getNumLevels() > 0) ? custom.getDescription() : "";  }
 

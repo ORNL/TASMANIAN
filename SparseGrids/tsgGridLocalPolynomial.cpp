@@ -216,8 +216,6 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
     buildTree();
 }
 
-int GridLocalPolynomial::getNumDimensions() const{ return num_dimensions; }
-int GridLocalPolynomial::getNumOutputs() const{ return num_outputs; }
 TypeOneDRule GridLocalPolynomial::getRule() const{ return rule->getType(); }
 int GridLocalPolynomial::getOrder() const{ return order; }
 

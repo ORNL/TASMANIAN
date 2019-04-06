@@ -65,8 +65,6 @@ public:
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void updateGrid(MultiIndexSet &update);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
     TypeOneDRule getRule() const;
 
     int getNumLoaded() const;
