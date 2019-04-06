@@ -219,10 +219,6 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
 TypeOneDRule GridLocalPolynomial::getRule() const{ return rule->getType(); }
 int GridLocalPolynomial::getOrder() const{ return order; }
 
-int GridLocalPolynomial::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
-int GridLocalPolynomial::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridLocalPolynomial::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
-
 void GridLocalPolynomial::getLoadedPoints(double *x) const{
     int num_points = points.getNumIndexes();
     Utils::Wrapper2D<double> split(num_dimensions, x);

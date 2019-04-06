@@ -169,10 +169,6 @@ void GridWavelet::setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder){
 TypeOneDRule GridWavelet::getRule() const{ return rule_wavelet;  }
 int GridWavelet::getOrder() const{ return order;  }
 
-int GridWavelet::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
-int GridWavelet::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridWavelet::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
-
 void GridWavelet::getLoadedPoints(double *x) const{
     int num_points = points.getNumIndexes();
     #pragma omp parallel for schedule(static)

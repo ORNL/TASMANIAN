@@ -285,10 +285,6 @@ const char* GridGlobal::getCustomRuleDescription() const{ return (custom.getNumL
 double GridGlobal::getAlpha() const{ return alpha; }
 double GridGlobal::getBeta() const{ return beta; }
 
-int GridGlobal::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
-int GridGlobal::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridGlobal::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
-
 void GridGlobal::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
     std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
 }

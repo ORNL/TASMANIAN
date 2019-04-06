@@ -54,9 +54,9 @@ public:
     int getNumOutputs() const{ return num_outputs; }
     virtual TypeOneDRule getRule() const = 0;
 
-    virtual int getNumLoaded() const = 0;
-    virtual int getNumNeeded() const = 0;
-    virtual int getNumPoints() const = 0;
+    int getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
+    int getNumNeeded() const{ return needed.getNumIndexes(); }
+    int getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
     virtual void getLoadedPoints(double *x) const = 0;
     virtual void getNeededPoints(double *x) const = 0;

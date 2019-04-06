@@ -164,10 +164,6 @@ void GridSequence::updateGrid(MultiIndexSet &update){
 
 TypeOneDRule GridSequence::getRule() const{ return rule; }
 
-int GridSequence::getNumLoaded() const{ return (((points.empty()) || (num_outputs == 0)) ? 0 : points.getNumIndexes()); }
-int GridSequence::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridSequence::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
-
 void GridSequence::getLoadedPoints(double *x) const{
     std::transform(points.getVector().begin(), points.getVector().end(), x, [&](int i)->double{ return nodes[i]; });
 }

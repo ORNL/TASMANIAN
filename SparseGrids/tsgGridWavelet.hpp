@@ -60,10 +60,6 @@ public:
     TypeOneDRule getRule() const;
     int getOrder() const;
 
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const;
-
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
