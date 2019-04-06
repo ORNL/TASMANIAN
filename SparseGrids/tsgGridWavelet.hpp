@@ -57,8 +57,8 @@ public:
     void copyGrid(const GridWavelet *wav);
     void setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder); // for FDS purposes
 
-    TypeOneDRule getRule() const;
-    int getOrder() const;
+    TypeOneDRule getRule() const{ return rule_wavelet; }
+    int getOrder() const{ return order; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;

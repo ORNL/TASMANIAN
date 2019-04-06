@@ -164,8 +164,6 @@ void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
 
-TypeOneDRule GridFourier::getRule() const{ return rule_fourier; }
-
 void GridFourier::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaCoefficients(); // changing values and Fourier coefficients, clear the cache

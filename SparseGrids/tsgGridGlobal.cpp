@@ -279,12 +279,6 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
     }
 }
 
-TypeOneDRule GridGlobal::getRule() const{ return rule; }
-const char* GridGlobal::getCustomRuleDescription() const{ return (custom.getNumLevels() > 0) ? custom.getDescription() : "";  }
-
-double GridGlobal::getAlpha() const{ return alpha; }
-double GridGlobal::getBeta() const{ return beta; }
-
 void GridGlobal::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
     std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
 }

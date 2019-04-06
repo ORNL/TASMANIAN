@@ -216,9 +216,6 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
     buildTree();
 }
 
-TypeOneDRule GridLocalPolynomial::getRule() const{ return rule->getType(); }
-int GridLocalPolynomial::getOrder() const{ return order; }
-
 void GridLocalPolynomial::getLoadedPoints(double *x) const{
     int num_points = points.getNumIndexes();
     Utils::Wrapper2D<double> split(num_dimensions, x);

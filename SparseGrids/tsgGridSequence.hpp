@@ -65,7 +65,7 @@ public:
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void updateGrid(MultiIndexSet &update);
 
-    TypeOneDRule getRule() const;
+    TypeOneDRule getRule() const{ return rule; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;

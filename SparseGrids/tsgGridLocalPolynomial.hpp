@@ -73,8 +73,8 @@ public:
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     void copyGrid(const GridLocalPolynomial *pwpoly);
 
-    TypeOneDRule getRule() const;
-    int getOrder() const;
+    TypeOneDRule getRule() const{ return rule->getType(); }
+    int getOrder() const{ return order; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;

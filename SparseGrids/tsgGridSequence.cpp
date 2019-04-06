@@ -162,8 +162,6 @@ void GridSequence::updateGrid(MultiIndexSet &update){
     }
 }
 
-TypeOneDRule GridSequence::getRule() const{ return rule; }
-
 void GridSequence::getLoadedPoints(double *x) const{
     std::transform(points.getVector().begin(), points.getVector().end(), x, [&](int i)->double{ return nodes[i]; });
 }

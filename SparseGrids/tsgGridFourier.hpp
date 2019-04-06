@@ -62,7 +62,7 @@ public:
 
     void setTensors(MultiIndexSet &tset, int cnum_outputs);
 
-    TypeOneDRule getRule() const;
+    TypeOneDRule getRule() const{ return rule_fourier; }
 
     void loadNeededPoints(const double *vals);
 

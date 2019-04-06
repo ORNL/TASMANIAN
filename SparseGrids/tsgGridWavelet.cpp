@@ -166,9 +166,6 @@ void GridWavelet::setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder){
     buildInterpolationMatrix();
 }
 
-TypeOneDRule GridWavelet::getRule() const{ return rule_wavelet;  }
-int GridWavelet::getOrder() const{ return order;  }
-
 void GridWavelet::getLoadedPoints(double *x) const{
     int num_points = points.getNumIndexes();
     #pragma omp parallel for schedule(static)
