@@ -30,6 +30,8 @@ macro(Tasmanian_find_cuda_libraries)
     endforeach()
 endmacro()
 
+include(FindPackageHandleStandardArgs)
+
 get_filename_component(Tasmanian_nvccroot ${CMAKE_CUDA_COMPILER} DIRECTORY) # convert <path>/bin/nvcc to <path>/bin
 get_filename_component(Tasmanian_nvccroot ${Tasmanian_nvccroot} DIRECTORY)  # convert <path>/bin to <path>
 
