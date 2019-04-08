@@ -146,11 +146,11 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridUnitTests.hpp
                                   tasgridUnitTests.cpp
                                   tasgridTestInterfaceC.cpp)
-add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
+#add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
 
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
 set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")
-set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
+#set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
 
 if (Tasmanian_ENABLE_OPENMP)
     # the OpenMP libraries are carried transitively from sparse grids library
@@ -175,7 +175,7 @@ endif()
 
 target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid)
 target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid)
-target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid)
+#target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid)
 
 
 # data file, needed for testing and reference about custom rule definitions
