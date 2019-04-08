@@ -14,6 +14,19 @@ if (NOT DEFINED Tasmanian_python_install_path)
     set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages" CACHE INTERNAL "install path for the Python module (version specific)")
 endif()
 
+# CMake has permissive implementation of boolean true, which includes
+# "On", "True" and "Yes" with different cases;
+# Here we convert boolen true to "ON" so it can
+# be safely passed to Python as a string and interpreted via
+# python_boolean = ("@cmake_boolean@" == "ON")
+if (Tasmanian_ENABLE_BLAS)
+    set(Tasmanian_ENABLE_BLAS "ON")
+endif()
+
+if (Tasmanian_ENABLE_CUDA)
+    set(Tasmanian_ENABLE_CUDA "ON")
+endif()
+
 
 ########################################################################
 # Stage 0: for support of simple GNU-Make
