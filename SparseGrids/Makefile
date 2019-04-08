@@ -20,7 +20,7 @@ LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlo
          tsgGridLocalPolynomial.o tsgRuleWavelet.o tsgGridWavelet.o tsgGridFourier.o \
          tsgDConstructGridGlobal.o \
          tsgAcceleratedDataStructures.o $(TASMANIAN_CUDA_KERNELS) \
-         TasmanianSparseGrid.o
+         TasmanianSparseGridWrapC.o TasmanianSparseGrid.o
 
 WROBJ = tasgrid_main.o tasgridTestFunctions.o tasgridExternalTests.o tasgridWrapper.o
 
