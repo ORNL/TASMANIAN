@@ -400,20 +400,19 @@ void TasmanianSparseGrid::getQuadratureWeights(double *weights) const{
         for(int i=0; i<getNumPoints(); i++) weights[i] *= scale;
     }
 }
-void TasmanianSparseGrid::getInterpolationWeights(const double x[], double *weights) const{
-    Data2D<double> x_tmp;
-    base->getInterpolationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
+std::vector<double> TasmanianSparseGrid::getInterpolationWeights(std::vector<double> const &x) const{
+    std::vector<double> w;
+    getInterpolationWeights(x, w);
+    return w;
 }
 void TasmanianSparseGrid::getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const{
     if (x.size() != (size_t) base->getNumDimensions()) throw std::runtime_error("ERROR: getInterpolationWeights() incorrect size of x, must be same as getNumDimensions()");
-    weights.resize(base->getNumPoints());
+    weights.resize((size_t) getNumPoints());
     getInterpolationWeights(x.data(), weights.data());
 }
-double* TasmanianSparseGrid::getInterpolationWeights(const double x[]) const{
-    if (getNumPoints() == 0) return 0;
-    double *w = new double[getNumPoints()];
-    getInterpolationWeights(x, w);
-    return w;
+void TasmanianSparseGrid::getInterpolationWeights(const double x[], double weights[]) const{
+    Data2D<double> x_tmp;
+    base->getInterpolationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
 }
 
 void TasmanianSparseGrid::loadNeededPoints(const double *vals){

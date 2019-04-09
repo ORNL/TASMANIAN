@@ -525,9 +525,8 @@ bool TasgridWrapper::getInterWeights(){
     res = new double[((size_t) num_p) * rows];
     #pragma omp parallel for
     for(int i=0; i<(int) rows; i++){ // in windows OpenMP loop counters must be signed ??
-        double *r = grid.getInterpolationWeights(&(x[i*cols]));
-        std::copy(r, r + num_p, &(res[i * ((size_t) num_p)]));
-        delete[] r;
+        auto r = grid.getInterpolationWeights(&(x[i*cols]));
+        std::copy_n(r.begin(), num_p, &(res[i * ((size_t) num_p)]));
     }
     if (outfilename != 0){
         writeMatrix(outfilename, (int) rows, (int) num_p, res, useASCII);

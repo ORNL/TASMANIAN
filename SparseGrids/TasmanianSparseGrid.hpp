@@ -137,9 +137,10 @@ public:
     void getQuadratureWeights(std::vector<double> &weights) const{ weights.resize((size_t) getNumPoints()); getQuadratureWeights(weights.data()); }
     void getQuadratureWeights(double weights[]) const; // static memory, assumes that weights has size getNumPoints()
 
-    double* getInterpolationWeights(double const x[]) const;
-    void getInterpolationWeights(const double x[], double weights[]) const; // static memory, assumes that weights has size getNumPoints()
-    void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const; // dynamic memory, resizes weights
+    std::vector<double> getInterpolationWeights(std::vector<double> const &x) const;
+    std::vector<double> getInterpolationWeights(double const x[]) const{ std::vector<double> w((size_t) getNumPoints()); getInterpolationWeights(x, w.data()); return w; }
+    void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const;
+    void getInterpolationWeights(const double x[], double weights[]) const;
 
     void loadNeededPoints(const double *vals); // no error checking
     void loadNeededPoints(const std::vector<double> &vals); // checks if vals has size num_outputs X getNumNeeded()
