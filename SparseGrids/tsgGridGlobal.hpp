@@ -111,9 +111,9 @@ public:
     void writeConstructionData(std::ofstream &ofs) const;
     void readConstructionDataBinary(std::ifstream &ifs);
     void readConstructionData(std::ifstream &ifs);
-    void getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits);
-    void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits);
-    void getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void finishConstruction();
 

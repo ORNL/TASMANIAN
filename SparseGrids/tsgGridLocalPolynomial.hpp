@@ -111,7 +111,7 @@ public:
     void writeConstructionData(std::ofstream &ofs) const;
     void readConstructionDataBinary(std::ifstream &ifs);
     void readConstructionData(std::ifstream &ifs);
-    void getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x);
+    std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void finishConstruction();
 

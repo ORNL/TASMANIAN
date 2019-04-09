@@ -206,12 +206,12 @@ public:
     //! \brief Generate a sorted list of points weighted by descending importance using the \b type and provided anisotropic_weights (expensive call, roughly equivalent to set-refinement)
 
     //! If no weights are provided, isotropic weights will be imposed. Tensor types fall-back to \b type_level (not recommended to use here).
-    void getCandidateConstructionPoints(TypeDepth type, std::vector<double> &x, const std::vector<int> &anisotropic_weights = std::vector<int>(), const std::vector<int> &level_limits = std::vector<int>());
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights = std::vector<int>(), const std::vector<int> &level_limits = std::vector<int>());
     //! \brief Same as \b getCandidateConstructionPoints() but the weights are obtained from a call to \b estimateAnisotropicCoefficients().
 
     //! Unlike \b estimateAnisotropicCoefficients(), this function will not throw if the grid is empty; instead, isotropic coefficient will be used
     //! until enough points are loaded so that coefficients can be estimated.
-    void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits = std::vector<int>());
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits = std::vector<int>());
 
     /*!
      * \brief Returns a sorted list of points weighted by descending importance using the hierarchical surpluses.
@@ -219,7 +219,7 @@ public:
      * Used by the local polynomial grids, performs a refinement similar to \b setSurplusRefinement(\b double, \b TypeRefinement),
      * but in a construction context and the returned points are sorted by magnitude of the hierarchical surplus.
      */
-    void getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, std::vector<double> &x, int output = -1, const std::vector<int> &level_limits = std::vector<int>(), const std::vector<double> &scale_correction = std::vector<double>());
+    std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output = -1, const std::vector<int> &level_limits = std::vector<int>(), const std::vector<double> &scale_correction = std::vector<double>());
     //! \brief Add the value of a single point (if the tensor of the point is not complete, the grid will not be updated but the value will be stored)
     void loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y);
     //! \brief Same as \b loadConstructedPoint() but using arrays in place of vectors (array size is not checked)

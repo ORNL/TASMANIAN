@@ -426,16 +426,16 @@ void GridGlobal::readConstructionData(std::ifstream &ifs){
         wrapper.load(custom, max_level, rule, alpha, beta);
     dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
-void GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
     std::vector<int> weights;
     if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
         int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
         if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
             estimateAnisotropicCoefficients(type, output, weights);
     }
-    getCandidateConstructionPoints(type, weights, x, level_limits);
+    return getCandidateConstructionPoints(type, weights, level_limits);
 }
-void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);
 
     // computing the weight for each index requires the cache for the one dimensional indexes
@@ -467,37 +467,37 @@ void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vecto
 
     if (weights.contour == type_level){
         std::vector<std::vector<int>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             if (cache.empty()){
                 build_exactness((size_t) wrapper.getNumLevels());
                 cache = MultiIndexManipulations::generateLevelWeightsCache<int, type_level, true>(weights, get_exact, wrapper.getNumLevels());
             }
 
             return (double) MultiIndexManipulations::getIndexWeight<int, type_level>(t, cache);
-        }, x, level_limits);
+        }, level_limits);
     }else if (weights.contour == type_curved){
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             if (cache.empty()){
                 build_exactness((size_t) wrapper.getNumLevels());
                 cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_curved, true>(weights, get_exact, wrapper.getNumLevels());
             }
 
             return MultiIndexManipulations::getIndexWeight<double, type_curved>(t, cache);
-        }, x, level_limits);
+        }, level_limits);
     }else{
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             if (cache.empty()){
                 build_exactness((size_t) wrapper.getNumLevels());
                 cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_hyperbolic, true>(weights, get_exact, wrapper.getNumLevels());
             }
 
             return MultiIndexManipulations::getIndexWeight<double, type_hyperbolic>(t, cache);
-        }, x, level_limits);
+        }, level_limits);
     }
 }
-void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits){
     dynamic_values->clearTesnors(); // clear old tensors
     MultiIndexSet init_tensors = dynamic_values->getInitialTensors(); // get the initial tensors (created with make grid)
 
@@ -522,8 +522,9 @@ void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *
     }
     std::vector<int> node_indexes;
     dynamic_values->getNodesIndexes(node_indexes);
-    x.resize(node_indexes.size());
+    std::vector<double> x(node_indexes.size());
     mapIndexesToNodes(node_indexes, x.data());
+    return x;
 }
 void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double> &y){
     std::vector<int> p(num_dimensions);

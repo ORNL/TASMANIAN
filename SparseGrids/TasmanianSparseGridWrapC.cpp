@@ -286,7 +286,7 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
     std::vector<int> veclimits;
     if (limit_levels != nullptr) veclimits = std::vector<int>(limit_levels, limit_levels + dims);
     if (anisotropic_weights == nullptr){
-        ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, output, *vecx, veclimits);
+        *vecx = ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, output, veclimits);
     }else{
         int num_weights = ((TasmanianSparseGrid*) grid)->getNumDimensions();
         if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
@@ -294,7 +294,7 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
         }
         std::vector<int> vecweights(anisotropic_weights, anisotropic_weights +
                                     (((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)) ? 2*dims : dims));
-        ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, *vecx, vecweights, veclimits);
+        *vecx = ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, vecweights, veclimits);
     }
     return (void*) vecx;
 }
@@ -314,7 +314,7 @@ void* tsgGetCandidateConstructionPointsSurplusVoidPntr(void *grid, double tolera
         size_t active_outputs = (size_t) (output == -1) ? ((TasmanianSparseGrid*) grid)->getNumOutputs() : 1;
         vecscale = std::vector<double>(scale_correction, scale_correction + ((size_t) ((TasmanianSparseGrid*) grid)->getNumLoaded() * active_outputs));
     }
-    ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(tolerance, ref_type, *vecx, output, veclimits, vecscale);
+    *vecx = ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(tolerance, ref_type, output, veclimits, vecscale);
     return (void*) vecx;
 }
 void tsgGetCandidateConstructionPoints(void *grid, const char *sType, int output, const int *anisotropic_weights, const int *limit_levels, int *num_points, double **x){

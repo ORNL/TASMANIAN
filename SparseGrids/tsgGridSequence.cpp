@@ -268,7 +268,7 @@ void GridSequence::readConstructionDataBinary(std::ifstream &ifs){
 void GridSequence::readConstructionData(std::ifstream &ifs){
     dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, ifs);
 }
-void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);
 
     auto level_exact = [&](int l) -> int{ return l; };
@@ -276,7 +276,7 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vec
 
     if (weights.contour == type_level){
         std::vector<std::vector<int>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             // see the same named function in GridGlobal
             if (cache.empty()){
                 if (OneDimensionalMeta::isExactQuadrature(type)){
@@ -289,10 +289,10 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vec
             int w = 0;
             for(int j=0; j<num_dimensions; j++) w += cache[j][t[j]];
             return (double) w;
-        }, x, level_limits);
+        }, level_limits);
     }else if (weights.contour == type_curved){
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             // see the same named function in GridGlobal
             if (cache.empty()){
                 if (OneDimensionalMeta::isExactQuadrature(type)){
@@ -305,10 +305,10 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vec
             double w = 0.0;
             for(int j=0; j<num_dimensions; j++) w += cache[j][t[j]];
             return w;
-        }, x, level_limits);
+        }, level_limits);
     }else{
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             // see the same named function in GridGlobal
             if (cache.empty()){
                 if (OneDimensionalMeta::isExactQuadrature(type)){
@@ -321,19 +321,19 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vec
             double w = 1.0;
             for(int j=0; j<num_dimensions; j++) w *= cache[j][t[j]];
             return w;
-        }, x, level_limits);
+        }, level_limits);
     }
 }
-void GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
     std::vector<int> weights;
     if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
         int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
         if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
             estimateAnisotropicCoefficients(type, output, weights);
     }
-    getCandidateConstructionPoints(type, weights, x, level_limits);
+    return getCandidateConstructionPoints(type, weights, level_limits);
 }
-void GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits){
     // get the new candidate points that will ensure lower completeness and are not included in the initial set
     MultiIndexSet new_points = (level_limits.empty()) ?
         MultiIndexManipulations::addExclusiveChildren<false>(points, dynamic_values->initial_points, level_limits) :
@@ -353,7 +353,7 @@ void GridSequence::getCandidateConstructionPoints(std::function<double(const int
 
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    x.resize(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
     auto t = weighted_points.begin();
     auto ix = x.begin();
     while(t != weighted_points.end()){
@@ -361,6 +361,7 @@ void GridSequence::getCandidateConstructionPoints(std::function<double(const int
         std::advance(ix, num_dimensions);
         t++;
     }
+    return x;
 }
 void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){
     std::vector<int> p(num_dimensions);

@@ -462,8 +462,8 @@ void GridLocalPolynomial::readConstructionDataBinary(std::ifstream &ifs){
 void GridLocalPolynomial::readConstructionData(std::ifstream &ifs){
     dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, ifs);
 }
-void GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
-                                                         std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x){
+std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
+                                                                        std::vector<int> const &level_limits, double const *scale_correction){
     // combine the initial points with negative weights and the refinement candidates with surplus weights (no need to normalize, the sort uses relative values)
     MultiIndexSet refine_candidates = getRefinementCanidates(tolerance, criteria, output, level_limits, scale_correction);
     MultiIndexSet new_points = (dynamic_values->initial_points.empty()) ? std::move(refine_candidates) : refine_candidates.diffSets(dynamic_values->initial_points);
@@ -519,7 +519,7 @@ void GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeR
     // sort and return the sorted list
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    x.resize(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
     auto t = weighted_points.begin();
     auto ix = x.begin();
     while(t != weighted_points.end()){
@@ -527,6 +527,7 @@ void GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeR
         std::advance(ix, num_dimensions);
         t++;
     }
+    return x;
 }
 void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){
     std::vector<int> p(num_dimensions); // convert x to p, maybe expensive

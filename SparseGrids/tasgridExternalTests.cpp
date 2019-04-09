@@ -833,12 +833,12 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
             if (itr == 1){
                 std::vector<int> weights;
                 grid->estimateAnisotropicCoefficients(type, 0, weights);
-                grid->getCandidateConstructionPoints(type, points, weights);
+                points = grid->getCandidateConstructionPoints(type, weights);
             }else{
-                grid->getCandidateConstructionPoints(type, 0, points);
+                points = grid->getCandidateConstructionPoints(type, 0);
             }
         }else{
-            grid->getCandidateConstructionPoints(tolerance, reftype, points);
+            points = grid->getCandidateConstructionPoints(tolerance, reftype);
         }
         size_t num_points = points.size() / dims;
         size_t max_points = (grid->isLocalPolynomial()) ? 123 : 32;
