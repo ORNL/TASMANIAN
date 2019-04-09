@@ -539,7 +539,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
         double *w = grid.getQuadratureWeights();
-        double *p = grid.getNeededPoints();
+        auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
         if (fabs(sum - M_PI) > TSG_NUM_TOL){
@@ -554,7 +554,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         delete[] w;
-        delete[] p;
     }else if ((oned == TasGrid::rule_gausschebyshev2) || (oned == TasGrid::rule_gausschebyshev2odd)){
         // Gauss-Chebyshev-2 translated to [4, 7], area = 9.0 * M_PI / 2.0, integral of f(x) = (7 - x)^0.5 (x - 4)^0.5 is 9.0 / 2.0
         TasGrid::TasmanianSparseGrid grid;
@@ -563,8 +562,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         grid.setDomainTransform(&transa, &transb);
         std::vector<double> w;
         grid.getQuadratureWeights(w);
-        std::vector<double> p;
-        grid.getNeededPoints(p);
+        std::vector<double> p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
         if (fabs(sum - 9.0 * M_PI / 8.0) > TSG_NUM_TOL){
@@ -585,7 +583,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
         double *w = grid.getQuadratureWeights();
-        double *p = grid.getNeededPoints();
+        auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
         if (fabs(sum - 8.1) > TSG_NUM_TOL){
@@ -599,7 +597,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         delete[] w;
-        delete[] p;
     }else if ((oned == TasGrid::rule_gaussjacobi) || (oned == TasGrid::rule_gaussjacobiodd)){
         // Gauss-Jacobi translated to [4, 7], area = 12.15, integral of f(x) = x^3 is 389367.0 / 280.0
         TasGrid::TasmanianSparseGrid grid;
@@ -607,7 +604,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
         double *w = grid.getQuadratureWeights();
-        double *p = grid.getNeededPoints();
+        auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
         if (fabs(sum - 12.15) > TSG_NUM_TOL){
@@ -621,7 +618,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         delete[] w;
-        delete[] p;
     }else if ((oned == TasGrid::rule_gausslaguerre) || (oned == TasGrid::rule_gausslaguerreodd)){
         // Gauss-Laguerre, unbounded domain
         TasGrid::TasmanianSparseGrid grid;
@@ -629,7 +625,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         double transa[2] = {4.0, 3.0}, transb[2] = {0.5, 0.75};
         grid.setDomainTransform(transa, transb);
         double *w = grid.getQuadratureWeights();
-        double *p = grid.getNeededPoints();
+        auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
         if (fabs(sum - 96.0 * 512.0 / 27.0) > TSG_NUM_TOL){
@@ -649,7 +645,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: nodal interpolation using gauss-laguerre: " << fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        delete[] p;
         delete[] w;
         delete[] iw;
     }else if ((oned == TasGrid::rule_gausshermite) || (oned == TasGrid::rule_gausshermiteodd)){
@@ -659,7 +654,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         double transa[2] = {4.0, 3.0}, transb[2] = {0.5, 0.75};
         grid.setDomainTransform(transa, transb);
         double *w = grid.getQuadratureWeights();
-        double *p = grid.getNeededPoints();
+        auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
         if (fabs(sum - (8.0 * M_PI / 3.0) * sqrt(6.0)) > TSG_NUM_TOL){
@@ -679,7 +674,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: nodal interpolation using gauss-hermite: " << fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        delete[] p;
         delete[] w;
         delete[] iw;
     }
@@ -1467,7 +1461,7 @@ bool ExternalTester::testAllDomain() const{
         for(int i=0; i<5; i++){
             grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), i+5, TasGrid::type_level, TasGrid::rule_leja);
             grid.setDomainTransform(transform_a, transform_b);
-            double *needed_points = grid.getNeededPoints();
+            auto needed_points = grid.getNeededPoints();
             int num_needed = grid.getNumNeeded();
             TestResults R = getError(f, &grid, type_integration);
             if (R.error > errs[i]){
@@ -1488,15 +1482,13 @@ bool ExternalTester::testAllDomain() const{
                 cout << "Failed domain transform test interpolation for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
-            double *loaded_points = grid.getLoadedPoints();
+            auto loaded_points = grid.getLoadedPoints();
             for(int j=0; j<num_needed * f->getNumInputs(); j++){
                 if (fabs(needed_points[j] - loaded_points[j]) > TSG_NUM_TOL){
                     cout << "Mismatch between needed and loaded points" << endl;
                     pass2 = false;
                 }
             }
-            delete[] loaded_points;
-            delete[] needed_points;
         }
     }{
         const BaseFunction *f = &f21expDomain;
@@ -1572,7 +1564,7 @@ bool ExternalTester::testAllDomain() const{
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
             gridc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
             gridc.setConformalTransformASIN(asin_conformal);
-            double *needed_points = grid.getNeededPoints();
+            auto needed_points = grid.getNeededPoints();
             int num_needed = grid.getNumNeeded();
             TestResults R1 = getError(f, &grid, type_internal_interpolation);
             TestResults R2 = getError(f, &gridc, type_internal_interpolation);
@@ -1596,15 +1588,13 @@ bool ExternalTester::testAllDomain() const{
                 cout << " conformal error = " << fabs(y2 - y_true) << endl;
                 pass3 = false;
             }
-            double *loaded_points = grid.getLoadedPoints();
+            auto loaded_points = grid.getLoadedPoints();
             for(int j=0; j<num_needed * f->getNumInputs(); j++){
                 if (fabs(needed_points[j] - loaded_points[j]) > TSG_NUM_TOL){
                     cout << "Mismatch between needed and loaded points" << endl;
                     pass2 = false;
                 }
             }
-            delete[] loaded_points;
-            delete[] needed_points;
         }
     }{
         TasmanianSparseGrid gridc;
@@ -2147,7 +2137,7 @@ void loadGridValues(TasmanianSparseGrid *grid){ // for benchmark
     int dims = grid->getNumDimensions(), num_outputs = grid->getNumOutputs();
     int num_points = grid->getNumNeeded();
     if (num_points == 0) return;
-    double *x = grid->getNeededPoints();
+    auto x = grid->getNeededPoints();
     double *v = new double[num_outputs * num_points];
     double s = 1.0 / ((double) (dims*dims));
     for(int i=0; i<num_points; i++){

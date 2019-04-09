@@ -402,7 +402,7 @@ bool TasgridWrapper::readGrid(){
 }
 void TasgridWrapper::outputPoints(bool useNeeded) const{
     int num_p, num_d = grid.getNumDimensions();
-    double *points;
+    std::vector<double> points;
     if ((outfilename == 0) && (!printCout)) return;
     if (useNeeded){
         num_p = grid.getNumNeeded();
@@ -411,17 +411,16 @@ void TasgridWrapper::outputPoints(bool useNeeded) const{
         num_p = grid.getNumPoints();
         points = grid.getPoints();
     }
-    if (outfilename != 0) writeMatrix(outfilename, num_p, num_d, points, useASCII);
-    if (printCout) printMatrix(num_p, num_d, points);
-    delete[] points;
+    if (outfilename != 0) writeMatrix(outfilename, num_p, num_d, points.data(), useASCII);
+    if (printCout) printMatrix(num_p, num_d, points.data());
 }
 void TasgridWrapper::outputQuadrature() const{
-    double *points, *weights, *combined;
+    double *weights, *combined;
     if ((outfilename == 0) && (!printCout)) return;
     int num_p = grid.getNumPoints();
     int num_d = grid.getNumDimensions();
     int offset = num_d + 1;
-    points  = grid.getPoints();
+    auto points  = grid.getPoints();
     weights = grid.getQuadratureWeights();
     combined = new double[num_p * offset];
     for(int i=0; i<num_p; i++){
@@ -436,7 +435,6 @@ void TasgridWrapper::outputQuadrature() const{
     }
     delete[] combined;
     delete[] weights;
-    delete[] points;
 }
 void TasgridWrapper::outputHierarchicalCoefficients() const{
     const double *coeff = grid.getHierarchicalCoefficients();

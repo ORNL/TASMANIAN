@@ -121,9 +121,9 @@ public:
     int getNumNeeded() const;
     int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
 
-    double* getLoadedPoints() const;
-    double* getNeededPoints() const;
-    double* getPoints() const; // returns the loaded points unless no points are loaded, then returns the needed points
+    std::vector<double> getLoadedPoints() const{ std::vector<double> x; getLoadedPoints(x); return x; }
+    std::vector<double> getNeededPoints() const{ std::vector<double> x; getNeededPoints(x); return x; }
+    std::vector<double> getPoints() const{ std::vector<double> x; getPoints(x); return x; }
 
     void getLoadedPoints(double *x) const; // using static memory, assuming x has size num_dimensions X get***Points()
     void getNeededPoints(double *x) const;
