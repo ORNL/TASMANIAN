@@ -117,9 +117,9 @@ public:
     TypeOneDRule getRule() const;
     const char* getCustomRuleDescription() const; // used only for Global Grids with rule_customtabulated
 
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
+    int getNumLoaded() const{ return (base) ? base->getNumLoaded() : 0; }
+    int getNumNeeded() const{ return (base) ? base->getNumNeeded() : 0; }
+    int getNumPoints() const{ return (base) ? base->getNumPoints() : 0; }
 
     std::vector<double> getLoadedPoints() const{ std::vector<double> x; getLoadedPoints(x); return x; }
     std::vector<double> getNeededPoints() const{ std::vector<double> x; getNeededPoints(x); return x; }
@@ -157,12 +157,12 @@ public:
     void evaluateBatch(const std::vector<double> &x, std::vector<double> &y) const;
     void integrate(std::vector<double> &q) const;
 
-    bool isGlobal() const;
-    bool isSequence() const;
-    bool isLocalPolynomial() const;
-    bool isWavelet() const;
-    bool isFourier() const;
-    inline bool empty() const{ return (base.get() == nullptr); }
+    bool isGlobal() const{ return base && base->isGlobal(); }
+    bool isSequence() const{ return base && base->isSequence(); }
+    bool isLocalPolynomial() const{ return base && base->isLocalPolynomial(); }
+    bool isWavelet() const{ return base && base->isWavelet(); }
+    bool isFourier() const{ return base && base->isFourier(); }
+    bool empty() const{ return !base; }
 
     void setDomainTransform(const double a[], const double b[]); // set the ranges of the box, a[] and b[] must have size num_dimensions
     bool isSetDomainTransfrom() const;

@@ -374,10 +374,6 @@ int TasmanianSparseGrid::getOrder() const{
 TypeOneDRule TasmanianSparseGrid::getRule() const{ return (base) ? base->getRule() : rule_none; }
 const char* TasmanianSparseGrid::getCustomRuleDescription() const{ return (isGlobal()) ? getGridGlobal()->getCustomRuleDescription() : ""; }
 
-int TasmanianSparseGrid::getNumLoaded() const{ return (empty()) ? 0 : base->getNumLoaded(); }
-int TasmanianSparseGrid::getNumNeeded() const{ return (empty()) ? 0 : base->getNumNeeded(); }
-int TasmanianSparseGrid::getNumPoints() const{ return (empty()) ? 0 : base->getNumPoints(); }
-
 void TasmanianSparseGrid::getLoadedPoints(double *x) const{
     base->getLoadedPoints(x);
     formTransformedPoints(base->getNumLoaded(), x);
@@ -507,12 +503,6 @@ void TasmanianSparseGrid::integrate(std::vector<double> &q) const{
     q.resize(num_outputs);
     integrate(q.data());
 }
-
-bool TasmanianSparseGrid::isGlobal() const{          return (empty()) ? false : base->isGlobal(); }
-bool TasmanianSparseGrid::isSequence() const{        return (empty()) ? false : base->isSequence(); }
-bool TasmanianSparseGrid::isLocalPolynomial() const{ return (empty()) ? false : base->isLocalPolynomial(); }
-bool TasmanianSparseGrid::isWavelet() const{         return (empty()) ? false : base->isWavelet(); }
-bool TasmanianSparseGrid::isFourier() const{         return (empty()) ? false : base->isFourier(); }
 
 void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[]){
     if (empty() || (base->getNumDimensions() == 0)){
