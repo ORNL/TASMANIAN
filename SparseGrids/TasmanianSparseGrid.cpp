@@ -1245,13 +1245,12 @@ void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
 }
 void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> &c){ setHierarchicalCoefficients(c.data()); }
 
-void TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const{
+std::vector<int> TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation) const{
     if (isGlobal()){
-        getGridGlobal()->getPolynomialSpace(interpolation, num_indexes, poly);
+        return getGridGlobal()->getPolynomialSpace(interpolation);
     }else if (isSequence()){
-        getGridSequence()->getPolynomialSpace(interpolation, num_indexes, poly);
+        return getGridSequence()->getPolynomialSpace(interpolation);
     }else{
-        num_indexes = 0;
         throw std::runtime_error("ERROR: getGlobalPolynomialSpace() called for a grid that is neither Global nor Sequence");
     }
 }

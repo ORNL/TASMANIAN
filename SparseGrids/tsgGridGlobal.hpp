@@ -122,7 +122,7 @@ public:
 
     void clearAccelerationData();
 
-    void getPolynomialSpace(bool interpolation, int &n, int* &poly) const;
+    std::vector<int> getPolynomialSpace(bool interpolation) const;
 
     const int* getPointIndexes() const;
 
@@ -140,7 +140,7 @@ protected:
     void recomputeTensorRefs(const MultiIndexSet &work);
     void proposeUpdatedTensors();
     void acceptUpdatedTensors();
-    MultiIndexSet getPolynomialSpace(bool interpolation) const;
+    MultiIndexSet getPolynomialSpaceSet(bool interpolation) const;
 
     void mapIndexesToNodes(const std::vector<int> &indexes, double *x) const;
     void loadConstructedTensors();

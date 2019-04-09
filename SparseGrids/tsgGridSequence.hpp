@@ -116,7 +116,7 @@ public:
 
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
-    void getPolynomialSpace(bool interpolation, int &n, int* &poly) const;
+    std::vector<int> getPolynomialSpace(bool interpolation) const;
 
     const double* getSurpluses() const;
     const int* getPointIndexes() const;

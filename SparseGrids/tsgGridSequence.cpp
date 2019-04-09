@@ -740,17 +740,16 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     }
 }
 
-void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
-    MultiIndexSet space; // used only when interpolation is false
-    const MultiIndexSet &work = (points.empty()) ? needed : points;
-    if (!interpolation){ // when using interpolation, the polynomial space coincides with points/needed
-        space = MultiIndexManipulations::createPolynomialSpace(work, [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); });
+std::vector<int> GridSequence::getPolynomialSpace(bool interpolation) const{
+    if (interpolation){
+        return (points.empty()) ? needed.getVector() : points.getVector(); // copy
+    }else{
+        MultiIndexSet polynomial_set = MultiIndexManipulations::createPolynomialSpace(
+            (points.empty()) ? needed : points,
+            [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); });
+        std::vector<int> poly_space = std::move(polynomial_set.getVector());
+        return poly_space;
     }
-    const MultiIndexSet &result = (interpolation) ? work : space;
-
-    n = result.getNumIndexes();
-    poly = new int[result.getVector().size()];
-    std::copy(result.getVector().begin(), result.getVector().end(), poly);
 }
 const double* GridSequence::getSurpluses() const{
     return surpluses.getVector().data();

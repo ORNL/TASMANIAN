@@ -755,18 +755,15 @@ bool TasgridWrapper::getPoly(){
     if ((grid.isGlobal()) || (grid.isSequence())){
         int num_d = grid.getNumDimensions();
         bool integrate = ((depth_type == type_iptotal) || (depth_type == type_ipcurved) || (depth_type == type_iptensor) || (depth_type == type_iphyperbolic));
-        int n, *poly = 0;
-        grid.getGlobalPolynomialSpace(integrate, n, poly);
-        double *double_poly = new double[n * num_d];
-        for(int i=0; i<num_d * n; i++) double_poly[i] = (double) poly[i];
+        std::vector<int> poly = grid.getGlobalPolynomialSpace(integrate);
+        std::vector<double> double_poly(poly.size());
+        std::transform(poly.begin(), poly.end(), double_poly.begin(), [](int x)->double{ return static_cast<double>(x); });
         if (outfilename != 0){
-            writeMatrix(outfilename, n, num_d, double_poly, useASCII);
+            writeMatrix(outfilename, (int) double_poly.size() / num_d, num_d, double_poly.data(), useASCII);
         }
         if (printCout){
-            printMatrix(n, num_d, double_poly);
+            printMatrix((int) double_poly.size() / num_d, num_d, double_poly.data());
         }
-        delete[] poly;
-        delete[] double_poly;
     }else{
         cerr << "ERROR: cannot call -getpoly for a grid that is neither Global nor Sequence" << endl;
         return false;

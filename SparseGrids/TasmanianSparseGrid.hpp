@@ -236,7 +236,7 @@ public:
     void evaluateHierarchicalFunctions(const std::vector<double> &x, std::vector<double> &y) const;
     void setHierarchicalCoefficients(const std::vector<double> &c);
 
-    void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
+    std::vector<int> getGlobalPolynomialSpace(bool interpolation) const;
 
     void printStats(std::ostream &os = std::cout) const;
 

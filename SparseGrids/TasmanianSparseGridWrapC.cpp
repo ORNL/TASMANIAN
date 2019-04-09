@@ -382,19 +382,19 @@ void tsgSetHierarchicalCoefficients(void *grid, const double *c){
 
 // to be called from Python only, must later call delete[] on the pointer
 int* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes){
-    int *indx = 0;;
-    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), *num_indexes, indx);
+    std::vector<int> space = ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0));
+    int *indx = new int[space.size()];
+    std::copy(space.begin(), space.end(), indx);
+    *num_indexes = (int) space.size() / ((TasmanianSparseGrid*) grid)->getNumDimensions();
     return indx;
 }
 // to be used in C, creates a C pointer (requires internal copy of data)
 void tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes, int **indexes){
-    int *indx = 0, num_ind, num_dims = ((TasmanianSparseGrid*) grid)->getNumDimensions();
-    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), num_ind, indx);
-    *num_indexes = num_ind;
-    if (indx != 0){
-        *indexes = (int*) malloc(((*num_indexes) * num_dims) * sizeof(int));
-        for(int i=0; i<((*num_indexes) * num_dims); i++) (*indexes)[i] = indx[i];
-        delete[] indx;
+    std::vector<int> space = ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0));
+    *num_indexes = (int) space.size() / ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    if (!space.empty()){
+        *indexes = (int*) malloc(space.size() * sizeof(int));
+        std::copy(space.begin(), space.end(), *indexes);
     }
 }
 

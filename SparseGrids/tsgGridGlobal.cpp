@@ -680,7 +680,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
 
         if (normalize) for(auto &s : surp) s /= max_surp;
     }else{
-        MultiIndexSet polynomial_set = getPolynomialSpace(true);
+        MultiIndexSet polynomial_set = getPolynomialSpaceSet(true);
 
         MultiIndexSet quadrature_tensors =
             MultiIndexManipulations::generateLowerMultiIndexSet((size_t) num_dimensions, [&](const std::vector<int> &index) ->
@@ -877,7 +877,7 @@ void GridGlobal::clearAccelerationData(){
     #endif
 }
 
-MultiIndexSet GridGlobal::getPolynomialSpace(bool interpolation) const{
+MultiIndexSet GridGlobal::getPolynomialSpaceSet(bool interpolation) const{
     if (interpolation){
         if (rule == rule_customtabulated){
             return MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return custom.getIExact(l); });
@@ -893,12 +893,8 @@ MultiIndexSet GridGlobal::getPolynomialSpace(bool interpolation) const{
     }
 }
 
-void GridGlobal::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
-    MultiIndexSet polynomial_set = getPolynomialSpace(interpolation);
-
-    n = polynomial_set.getNumIndexes();
-    poly = new int[polynomial_set.getVector().size()];
-    std::copy(polynomial_set.getVector().begin(), polynomial_set.getVector().end(), poly);
+std::vector<int> GridGlobal::getPolynomialSpace(bool interpolation) const{
+    return std::move(getPolynomialSpaceSet(interpolation).getVector());
 }
 const int* GridGlobal::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
