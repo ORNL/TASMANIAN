@@ -179,12 +179,13 @@ public:
     void clearLevelLimits(); // level limits will be set anew if non-null vector is given to refine command
     void getLevelLimits(int *limits) const; // static, assume limits is already allocated with length num_dimensions
     void getLevelLimits(std::vector<int> &limits) const; // allocates the vector
+    std::vector<int> getLevelLimits() const{ std::vector<int> ll; getLevelLimits(ll); return ll; }
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = 0);
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
 
-    int* estimateAnisotropicCoefficients(TypeDepth type, int output);
-    void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights);
+    void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
+    std::vector<int> estimateAnisotropicCoefficients(TypeDepth type, int output) const{ std::vector<int> w; estimateAnisotropicCoefficients(type, output, w); return w; }
 
     void setSurplusRefinement(double tolerance, int output, const int *level_limits = 0);
     void setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits);

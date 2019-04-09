@@ -886,14 +886,7 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
     }
 }
 
-int* TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output){
-    std::vector<int> weights;
-    estimateAnisotropicCoefficients(type, output, weights);
-    int *w = new int[weights.size()];
-    std::copy(weights.begin(), weights.end(), w);
-    return w;
-}
-void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights){
+void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     if (empty()) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid that has not been initialized");
     int outs = base->getNumOutputs();
     if (outs == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid that has no outputs");

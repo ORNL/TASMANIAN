@@ -612,7 +612,7 @@ bool TasgridWrapper::getAnisoCoeff(){
         cerr << "ERROR: cannot estimate coefficients for a grid with no loaded values!" << endl;
         return false;
     }
-    int *ab;
+    std::vector<int> ab;
     if (grid.isSequence()){
         ab = grid.estimateAnisotropicCoefficients(depth_type, ref_output);
     }else{
@@ -643,7 +643,6 @@ bool TasgridWrapper::getAnisoCoeff(){
         printMatrix(num_coeff, 1, coeff);
     }
     delete[] coeff;
-    delete[] ab;
 
     return true;
 }

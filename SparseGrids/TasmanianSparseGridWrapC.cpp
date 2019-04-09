@@ -234,10 +234,9 @@ int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int outp
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
         *num_coefficients *= 2;
     }
-    int *coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
+    auto coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
     int *result = (int*) malloc((*num_coefficients) * sizeof(int));
     for(int i=0; i<*num_coefficients; i++) result[i] = coeff[i];
-    delete[] coeff;
     return result;
 }
 void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, int output, int *coefficients){
@@ -250,9 +249,8 @@ void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, in
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
         num_coefficients *= 2;
     }
-    int *coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
+    auto coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
     for(int i=0; i<num_coefficients; i++) coefficients[i] = coeff[i];
-    delete[] coeff;
 }
 void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output, const int *level_limits){
     ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, output, level_limits);
