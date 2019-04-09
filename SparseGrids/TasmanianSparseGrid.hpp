@@ -82,8 +82,8 @@ public:
     void write(const char *filename, bool binary = false) const;
     void read(const char *filename); // auto-check if format is binary or ascii
 
-    void write(std::ofstream &ofs, bool binary = false) const;
-    void read(std::ifstream &ifs, bool binary = false);
+    void write(std::ostream &ofs, bool binary = false) const;
+    void read(std::istream &ifs, bool binary = false);
 
     void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const int *level_limits = 0);
     void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const std::vector<int> &level_limits = std::vector<int>());
@@ -301,11 +301,11 @@ protected:
     #endif
     void formTransformedPoints(int num_points, double x[]) const; // when calling get***Points()
 
-    void writeAscii(std::ofstream &ofs) const;
-    void readAscii(std::ifstream &ifs);
+    void writeAscii(std::ostream &ofs) const;
+    void readAscii(std::istream &ifs);
 
-    void writeBinary(std::ofstream &ofs) const;
-    void readBinary(std::ifstream &ifs);
+    void writeBinary(std::ostream &ofs) const;
+    void readBinary(std::istream &ifs);
 
 private:
     std::unique_ptr<BaseCanonicalGrid> base;

@@ -450,17 +450,17 @@ void GridLocalPolynomial::beginConstruction(){
         indx.clear();
     }
 }
-void GridLocalPolynomial::writeConstructionDataBinary(std::ofstream &ofs) const{
-    dynamic_values->write<false>(ofs);
+void GridLocalPolynomial::writeConstructionDataBinary(std::ostream &os) const{
+    dynamic_values->write<false>(os);
 }
-void GridLocalPolynomial::writeConstructionData(std::ofstream &ofs) const{
-    dynamic_values->write<true>(ofs);
+void GridLocalPolynomial::writeConstructionData(std::ostream &os) const{
+    dynamic_values->write<true>(os);
 }
-void GridLocalPolynomial::readConstructionDataBinary(std::ifstream &ifs){
-    dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, ifs);
+void GridLocalPolynomial::readConstructionDataBinary(std::istream &is){
+    dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, is);
 }
-void GridLocalPolynomial::readConstructionData(std::ifstream &ifs){
-    dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, ifs);
+void GridLocalPolynomial::readConstructionData(std::istream &is){
+    dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, is);
 }
 std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
                                                                         std::vector<int> const &level_limits, double const *scale_correction){

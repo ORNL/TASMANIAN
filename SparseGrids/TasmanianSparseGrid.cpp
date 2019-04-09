@@ -124,14 +124,14 @@ void TasmanianSparseGrid::read(const char *filename){
     ifs.close();
 }
 
-void TasmanianSparseGrid::write(std::ofstream &ofs, bool binary) const{
+void TasmanianSparseGrid::write(std::ostream &ofs, bool binary) const{
     if (binary){
         writeBinary(ofs);
     }else{
         writeAscii(ofs);
     }
 }
-void TasmanianSparseGrid::read(std::ifstream &ifs, bool binary){
+void TasmanianSparseGrid::read(std::istream &ifs, bool binary){
     if (binary){
         readBinary(ifs);
     }else{
@@ -1349,7 +1349,7 @@ void TasmanianSparseGrid::printStats(std::ostream &os) const{
     os << endl;
 }
 
-void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
+void TasmanianSparseGrid::writeAscii(std::ostream &ofs) const{
     using std::endl;
 
     ofs << "TASMANIAN SG " << getVersion() << endl;
@@ -1407,7 +1407,7 @@ void TasmanianSparseGrid::writeAscii(std::ofstream &ofs) const{
     }
     ofs << "TASMANIAN SG end" << endl;
 }
-void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
+void TasmanianSparseGrid::writeBinary(std::ostream &ofs) const{
     const char *TSG = "TSG5"; // last char indicates version (update only if necessary, no need to sync with getVersionMajor())
     ofs.write(TSG, 4 * sizeof(char)); // mark Tasmanian files
     char flag;
@@ -1459,7 +1459,7 @@ void TasmanianSparseGrid::writeBinary(std::ofstream &ofs) const{
     }
     flag = 'e'; ofs.write(&flag, sizeof(char)); // E stands for END
 }
-void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
+void TasmanianSparseGrid::readAscii(std::istream &ifs){
     std::string T;
     std::string message = ""; // used in case there is an exception
     ifs >> T;  if (!(T.compare("TASMANIAN") == 0)){ throw std::runtime_error("ERROR: wrong file format, first word in not 'TASMANIAN'"); }
@@ -1566,7 +1566,7 @@ void TasmanianSparseGrid::readAscii(std::ifstream &ifs){
         }
     }
 }
-void TasmanianSparseGrid::readBinary(std::ifstream &ifs){
+void TasmanianSparseGrid::readBinary(std::istream &ifs){
     std::vector<char>  TSG(4);
     ifs.read(TSG.data(), 4*sizeof(char));
     if ((TSG[0] != 'T') || (TSG[1] != 'S') || (TSG[2] != 'G')){

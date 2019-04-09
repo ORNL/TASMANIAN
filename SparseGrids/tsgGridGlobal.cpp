@@ -71,7 +71,7 @@ template<bool useAscii> void GridGlobal::write(std::ostream &os) const{
     }
 }
 
-template<bool useAscii> void GridGlobal::read(std::ifstream &is){
+template<bool useAscii> void GridGlobal::read(std::istream &is){
     reset(true); // true deletes any custom rule
     num_dimensions = IO::readNumber<useAscii, int>(is);
     num_outputs = IO::readNumber<useAscii, int>(is);
@@ -112,8 +112,8 @@ template<bool useAscii> void GridGlobal::read(std::ifstream &is){
 
 template void GridGlobal::write<true>(std::ostream &) const;
 template void GridGlobal::write<false>(std::ostream &) const;
-template void GridGlobal::read<true>(std::ifstream &);
-template void GridGlobal::read<false>(std::ifstream &);
+template void GridGlobal::read<true>(std::istream &);
+template void GridGlobal::read<false>(std::istream &);
 
 void GridGlobal::reset(bool includeCustom){
     clearAccelerationData();
@@ -404,23 +404,23 @@ void GridGlobal::beginConstruction(){
         values.resize(num_outputs, 0);
     }
 }
-void GridGlobal::writeConstructionDataBinary(std::ofstream &ofs) const{
-    dynamic_values->write<false>(ofs);
+void GridGlobal::writeConstructionDataBinary(std::ostream &os) const{
+    dynamic_values->write<false>(os);
 }
-void GridGlobal::writeConstructionData(std::ofstream &ofs) const{
-    dynamic_values->write<true>(ofs);
+void GridGlobal::writeConstructionData(std::ostream &os) const{
+    dynamic_values->write<true>(os);
 }
-void GridGlobal::readConstructionDataBinary(std::ifstream &ifs){
+void GridGlobal::readConstructionDataBinary(std::istream &is){
     dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal((size_t) num_dimensions, (size_t) num_outputs));
-    dynamic_values->read<false>(ifs);
+    dynamic_values->read<false>(is);
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
         wrapper.load(custom, max_level, rule, alpha, beta);
     dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
-void GridGlobal::readConstructionData(std::ifstream &ifs){
+void GridGlobal::readConstructionData(std::istream &is){
     dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal((size_t) num_dimensions, (size_t) num_outputs));
-    dynamic_values->read<true>(ifs);
+    dynamic_values->read<true>(is);
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
         wrapper.load(custom, max_level, rule, alpha, beta);

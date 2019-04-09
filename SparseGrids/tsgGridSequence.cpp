@@ -57,7 +57,7 @@ template<bool useAscii> void GridSequence::write(std::ostream &os) const{
     if (num_outputs > 0) values.write<useAscii>(os);
 }
 
-template<bool useAscii> void GridSequence::read(std::ifstream &is){
+template<bool useAscii> void GridSequence::read(std::istream &is){
     reset();
     num_dimensions = IO::readNumber<useAscii, int>(is);
     num_outputs = IO::readNumber<useAscii, int>(is);
@@ -78,8 +78,8 @@ template<bool useAscii> void GridSequence::read(std::ifstream &is){
 
 template void GridSequence::write<true>(std::ostream &) const;
 template void GridSequence::write<false>(std::ostream &) const;
-template void GridSequence::read<true>(std::ifstream &);
-template void GridSequence::read<false>(std::ifstream &);
+template void GridSequence::read<true>(std::istream &);
+template void GridSequence::read<false>(std::istream &);
 
 void GridSequence::reset(){
     clearAccelerationData();
@@ -256,17 +256,17 @@ void GridSequence::beginConstruction(){
         needed = MultiIndexSet();
     }
 }
-void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{
-    dynamic_values->write<false>(ofs);
+void GridSequence::writeConstructionDataBinary(std::ostream &os) const{
+    dynamic_values->write<false>(os);
 }
-void GridSequence::writeConstructionData(std::ofstream &ofs) const{
-    dynamic_values->write<true>(ofs);
+void GridSequence::writeConstructionData(std::ostream &os) const{
+    dynamic_values->write<true>(os);
 }
-void GridSequence::readConstructionDataBinary(std::ifstream &ifs){
-    dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, ifs);
+void GridSequence::readConstructionDataBinary(std::istream &is){
+    dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, is);
 }
-void GridSequence::readConstructionData(std::ifstream &ifs){
-    dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, ifs);
+void GridSequence::readConstructionData(std::istream &is){
+    dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, is);
 }
 std::vector<double> GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);
