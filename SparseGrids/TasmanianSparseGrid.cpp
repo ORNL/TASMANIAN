@@ -393,19 +393,6 @@ void TasmanianSparseGrid::getPoints(double *x) const{
     formTransformedPoints(base->getNumPoints(), x);
 }
 
-void TasmanianSparseGrid::getLoadedPoints(std::vector<double> &x) const{
-    x.resize(((size_t) base->getNumLoaded()) * ((size_t) base->getNumDimensions()));
-    getLoadedPoints(x.data());
-}
-void TasmanianSparseGrid::getNeededPoints(std::vector<double> &x) const{
-    x.resize(((size_t) base->getNumNeeded()) * ((size_t) base->getNumDimensions()));
-    getNeededPoints(x.data());
-}
-void TasmanianSparseGrid::getPoints(std::vector<double> &x) const{
-    x.resize(((size_t) base->getNumPoints()) * ((size_t) base->getNumDimensions()));
-    getPoints(x.data());
-}
-
 double* TasmanianSparseGrid::getQuadratureWeights() const{
     if (getNumPoints() == 0) return 0;
     double *w = new double[getNumPoints()];

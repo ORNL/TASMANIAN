@@ -125,13 +125,13 @@ public:
     std::vector<double> getNeededPoints() const{ std::vector<double> x; getNeededPoints(x); return x; }
     std::vector<double> getPoints() const{ std::vector<double> x; getPoints(x); return x; }
 
+    void getLoadedPoints(std::vector<double> &x) const{ x.resize((size_t) getNumDimensions() * (size_t) getNumLoaded()); getLoadedPoints(x.data()); }
+    void getNeededPoints(std::vector<double> &x) const{ x.resize((size_t) getNumDimensions() * (size_t) getNumNeeded()); getNeededPoints(x.data()); }
+    void getPoints(std::vector<double> &x) const{ x.resize((size_t) getNumDimensions() * (size_t) getNumPoints()); getPoints(x.data()); }
+
     void getLoadedPoints(double *x) const; // using static memory, assuming x has size num_dimensions X get***Points()
     void getNeededPoints(double *x) const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
-
-    void getLoadedPoints(std::vector<double> &x) const; // dynamic memory, resizes x
-    void getNeededPoints(std::vector<double> &x) const;
-    void getPoints(std::vector<double> &x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
     double* getQuadratureWeights() const;
     double* getInterpolationWeights(const double x[]) const;
