@@ -538,7 +538,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         grid.makeGlobalGrid(1, 1, 6, type_level, oned);
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
-        double *w = grid.getQuadratureWeights();
+        auto w = grid.getQuadratureWeights();
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
@@ -553,7 +553,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: disrepancy in transformed gauss-chebyshev-1 rule is: " << fabs(sum - M_PI * sqrt(7.0) / 14.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        delete[] w;
     }else if ((oned == TasGrid::rule_gausschebyshev2) || (oned == TasGrid::rule_gausschebyshev2odd)){
         // Gauss-Chebyshev-2 translated to [4, 7], area = 9.0 * M_PI / 2.0, integral of f(x) = (7 - x)^0.5 (x - 4)^0.5 is 9.0 / 2.0
         TasGrid::TasmanianSparseGrid grid;
@@ -582,7 +581,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         grid.makeGlobalGrid(1, 1, 10, type_level, oned, 0, 2.0);
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
-        double *w = grid.getQuadratureWeights();
+        auto w = grid.getQuadratureWeights();
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
@@ -596,14 +595,13 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: disrepancy in transformed gauss-gegenbauer rule is: " << fabs(sum - 389367.0 / 280.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        delete[] w;
     }else if ((oned == TasGrid::rule_gaussjacobi) || (oned == TasGrid::rule_gaussjacobiodd)){
         // Gauss-Jacobi translated to [4, 7], area = 12.15, integral of f(x) = x^3 is 389367.0 / 280.0
         TasGrid::TasmanianSparseGrid grid;
         grid.makeGlobalGrid(1, 1, 10, type_level, oned, 0, 3.0, 2.0);
         double transa = 4.0, transb = 7.0;
         grid.setDomainTransform(&transa, &transb);
-        double *w = grid.getQuadratureWeights();
+        auto w = grid.getQuadratureWeights();
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
@@ -617,14 +615,13 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: disrepancy in transformed gauss-jacobi rule is: " << fabs(sum + 18.0 * (3.0 * M_PI * M_PI - 4.0) / pow(M_PI, 5.0)) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        delete[] w;
     }else if ((oned == TasGrid::rule_gausslaguerre) || (oned == TasGrid::rule_gausslaguerreodd)){
         // Gauss-Laguerre, unbounded domain
         TasGrid::TasmanianSparseGrid grid;
         grid.makeGlobalGrid(2, 1, 6, type_level, oned, 0, 3.0);
         double transa[2] = {4.0, 3.0}, transb[2] = {0.5, 0.75};
         grid.setDomainTransform(transa, transb);
-        double *w = grid.getQuadratureWeights();
+        auto w = grid.getQuadratureWeights();
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
@@ -645,7 +642,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: nodal interpolation using gauss-laguerre: " << fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        delete[] w;
         delete[] iw;
     }else if ((oned == TasGrid::rule_gausshermite) || (oned == TasGrid::rule_gausshermiteodd)){
         // Gauss-Hermite, unbounded domain
@@ -653,7 +649,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         grid.makeGlobalGrid(2, 1, 6, type_level, oned, 0, 4.0);
         double transa[2] = {4.0, 3.0}, transb[2] = {0.5, 0.75};
         grid.setDomainTransform(transa, transb);
-        double *w = grid.getQuadratureWeights();
+        auto w = grid.getQuadratureWeights();
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
@@ -674,7 +670,6 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: nodal interpolation using gauss-hermite: " << fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        delete[] w;
         delete[] iw;
     }
     return pass;

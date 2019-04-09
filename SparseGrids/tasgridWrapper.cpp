@@ -415,13 +415,13 @@ void TasgridWrapper::outputPoints(bool useNeeded) const{
     if (printCout) printMatrix(num_p, num_d, points.data());
 }
 void TasgridWrapper::outputQuadrature() const{
-    double *weights, *combined;
+    double *combined;
     if ((outfilename == 0) && (!printCout)) return;
     int num_p = grid.getNumPoints();
     int num_d = grid.getNumDimensions();
     int offset = num_d + 1;
     auto points  = grid.getPoints();
-    weights = grid.getQuadratureWeights();
+    auto weights = grid.getQuadratureWeights();
     combined = new double[num_p * offset];
     for(int i=0; i<num_p; i++){
         combined[i * offset] = weights[i];
@@ -434,7 +434,6 @@ void TasgridWrapper::outputQuadrature() const{
         printMatrix(num_p, offset, combined);
     }
     delete[] combined;
-    delete[] weights;
 }
 void TasgridWrapper::outputHierarchicalCoefficients() const{
     const double *coeff = grid.getHierarchicalCoefficients();
