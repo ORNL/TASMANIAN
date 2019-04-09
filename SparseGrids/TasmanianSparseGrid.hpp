@@ -112,8 +112,8 @@ public:
     double getBeta() const;
     int getOrder() const;
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
+    int getNumDimensions() const{ return (base) ? base->getNumDimensions() : 0; }
+    int getNumOutputs() const{ return (base) ? base->getNumOutputs() : 0; }
     TypeOneDRule getRule() const;
     const char* getCustomRuleDescription() const; // used only for Global Grids with rule_customtabulated
 

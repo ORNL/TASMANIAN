@@ -371,9 +371,7 @@ int TasmanianSparseGrid::getOrder() const{
     return (isLocalPolynomial()) ? getGridLocalPolynomial()->getOrder() : ((isWavelet()) ? getGridWavelet()->getOrder() : -1);
 }
 
-int TasmanianSparseGrid::getNumDimensions() const{ return (empty()) ? 0 : base->getNumDimensions(); }
-int TasmanianSparseGrid::getNumOutputs() const{ return (empty()) ? 0 : base->getNumOutputs(); }
-TypeOneDRule TasmanianSparseGrid::getRule() const{ return (empty()) ? rule_none :base->getRule(); }
+TypeOneDRule TasmanianSparseGrid::getRule() const{ return (base) ? base->getRule() : rule_none; }
 const char* TasmanianSparseGrid::getCustomRuleDescription() const{ return (isGlobal()) ? getGridGlobal()->getCustomRuleDescription() : ""; }
 
 int TasmanianSparseGrid::getNumLoaded() const{ return (empty()) ? 0 : base->getNumLoaded(); }
