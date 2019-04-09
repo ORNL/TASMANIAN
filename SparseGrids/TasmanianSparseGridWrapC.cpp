@@ -411,15 +411,14 @@ int tsgGetGPUMemory(int gpu){ return TasmanianSparseGrid::getGPUMemory(gpu); }
 int tsgIsAccelerationAvailable(const char *accel){ return (TasmanianSparseGrid::isAccelerationAvailable(AccelerationMeta::getIOAccelerationString(accel))) ? 1 : 0; }
 void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual){
     // gpu is the gpuID, num_buffer is the size of *buffer, num_actual returns the actual number of chars
-    char* name = TasmanianSparseGrid::getGPUName(gpu);
-    int c = 0;
-    while ((name[c] != '\0') && (c < num_buffer-1)){
-        buffer[c] = name[c];
-        c++;
-    }
-    buffer[c] = '\0';
-    num_actual[0] = c;
-    delete[] name;
+    if (num_buffer == 0) return;
+    std::string name = TasmanianSparseGrid::getGPUName(gpu);
+
+    size_t chars = std::min((size_t) (num_buffer - 1), name.size());
+    std::copy(name.begin(), name.begin() + chars, buffer);
+    buffer[chars] = '\0';
+
+    *num_actual = (int) chars;
 }
 
 void tsgDeleteInts(int *p){ delete[] p; }

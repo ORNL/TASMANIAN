@@ -1721,16 +1721,12 @@ int TasmanianSparseGrid::getGPUMemory(int gpu){
     if ((gpu < 0) || (gpu >= AccelerationMeta::getNumCudaDevices())) return 0;
     return (int) (AccelerationMeta::getTotalGPUMemory(gpu) / 1048576);
 }
-char* TasmanianSparseGrid::getGPUName(int gpu){
+std::string TasmanianSparseGrid::getGPUName(int gpu){
     return AccelerationMeta::getCudaDeviceName(gpu);
 }
 #else
 int TasmanianSparseGrid::getGPUMemory(int){ return 0; }
-char* TasmanianSparseGrid::getGPUName(int){
-    char *name = new char[1];
-    name[0] = '\0';
-    return name;
-}
+std::string TasmanianSparseGrid::getGPUName(int){ return std::string(); }
 #endif // Tasmanian_ENABLE_CUDA
 
 }

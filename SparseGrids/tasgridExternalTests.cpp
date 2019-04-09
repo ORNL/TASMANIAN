@@ -2187,9 +2187,7 @@ void ExternalTester::benchmark(int argc, const char **argv){
         int width = 15;
         cout << setw(24) << "CPU";
         if (gpu > -1){
-            char *name = grid->getGPUName(gpu);
-            cout << setw(2*width + width/2) << name;
-            delete[] name;
+            cout << setw(2*width + width/2) << grid->getGPUName(gpu);
         }else{
             cout << setw(width + width/2) << "CPU";
         }

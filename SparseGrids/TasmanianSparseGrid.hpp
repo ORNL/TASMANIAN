@@ -250,7 +250,7 @@ public:
     int getGPUID() const;
     static int getNumGPUs();
     static int getGPUMemory(int gpu); // returns the MB of a given GPU
-    static char* getGPUName(int gpu); // returns a null-terminated char array
+    static std::string getGPUName(int gpu); // returns a null-terminated char array
 
     // functions assuming vectors are pre-allocated on the GPU (stable for the implemented cases)
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // does not work for Global or LocalPolynomial with order > 2

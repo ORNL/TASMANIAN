@@ -452,7 +452,7 @@ namespace AccelerationMeta{
     //! The character array has to be manually deleted to avoid memory leaks.
     //! This causes issues between different versions of CUDA, Nvidia uses fixed length character arrays and Tasmanian makes a copy;
     //! sometimes different versions of CUDA use different name length which causes unexpected crashes on the CUDA side.
-    char* getCudaDeviceName(int deviceID);
+    std::string getCudaDeviceName(int deviceID);
 
     //! \internal
     //! \brief Copy a device array to the main memory, used for testing only, always favor using \b CudaVector (if possible).
