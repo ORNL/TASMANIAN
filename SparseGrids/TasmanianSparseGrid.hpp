@@ -108,9 +108,9 @@ public:
     void updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
     void updateSequenceGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
 
-    double getAlpha() const;
-    double getBeta() const;
-    int getOrder() const;
+    double getAlpha() const{ return (isGlobal()) ? getGridGlobal()->getAlpha() : 0.0; }
+    double getBeta() const{ return (isGlobal()) ? getGridGlobal()->getBeta() : 0.0; }
+    int getOrder() const{ return (isLocalPolynomial()) ? getGridLocalPolynomial()->getOrder() : ((isWavelet()) ? getGridWavelet()->getOrder() : -1); }
 
     int getNumDimensions() const{ return (base) ? base->getNumDimensions() : 0; }
     int getNumOutputs() const{ return (base) ? base->getNumOutputs() : 0; }

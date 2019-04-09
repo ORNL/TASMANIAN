@@ -361,16 +361,6 @@ void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const st
     }
 }
 
-double TasmanianSparseGrid::getAlpha() const{
-    return (isGlobal()) ? getGridGlobal()->getAlpha() : 0.0;
-}
-double TasmanianSparseGrid::getBeta() const{
-    return (isGlobal()) ? getGridGlobal()->getBeta() : 0.0;
-}
-int TasmanianSparseGrid::getOrder() const{
-    return (isLocalPolynomial()) ? getGridLocalPolynomial()->getOrder() : ((isWavelet()) ? getGridWavelet()->getOrder() : -1);
-}
-
 TypeOneDRule TasmanianSparseGrid::getRule() const{ return (base) ? base->getRule() : rule_none; }
 const char* TasmanianSparseGrid::getCustomRuleDescription() const{ return (isGlobal()) ? getGridGlobal()->getCustomRuleDescription() : ""; }
 
