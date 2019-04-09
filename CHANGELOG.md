@@ -11,6 +11,9 @@ Changelog for version 6.1 (may rename this to 7.0 later)
 * modernized C++ compatibility
     * see the updated DREAM api notes
     * TasmanianSparseGrid has move and copy constructors and `operator=` overloads
+    * Tasmanian C++ API no-longer returns raw-pointers, only STL containers
+    * **broke backward api** affects mostly get points and weights
+    * externally allocated raw-pointers are still accepted and used by C/Python/Fortran APIs
 
 * improved the `add_subdirectory()` capability
     * can specify the export name used by the Tasmanian install commands
