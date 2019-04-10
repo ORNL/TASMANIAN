@@ -87,10 +87,10 @@ public:
     virtual void mergeRefinement() = 0;
 
     virtual void beginConstruction(){}
-    virtual void writeConstructionDataBinary(std::ofstream&) const{}
-    virtual void writeConstructionData(std::ofstream&) const{}
-    virtual void readConstructionDataBinary(std::ifstream&){}
-    virtual void readConstructionData(std::ifstream&){}
+    virtual void writeConstructionDataBinary(std::ostream&) const{}
+    virtual void writeConstructionData(std::ostream&) const{}
+    virtual void readConstructionDataBinary(std::istream&){}
+    virtual void readConstructionData(std::istream&){}
     virtual void loadConstructedPoint(const double[], const std::vector<double> &){}
     virtual void finishConstruction(){}
 

@@ -234,10 +234,9 @@ int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int outp
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
         *num_coefficients *= 2;
     }
-    int *coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
+    auto coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
     int *result = (int*) malloc((*num_coefficients) * sizeof(int));
     for(int i=0; i<*num_coefficients; i++) result[i] = coeff[i];
-    delete[] coeff;
     return result;
 }
 void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, int output, int *coefficients){
@@ -250,9 +249,8 @@ void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, in
     if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
         num_coefficients *= 2;
     }
-    int *coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
+    auto coeff = ((TasmanianSparseGrid*) grid)->estimateAnisotropicCoefficients(depth_type, output);
     for(int i=0; i<num_coefficients; i++) coefficients[i] = coeff[i];
-    delete[] coeff;
 }
 void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output, const int *level_limits){
     ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, output, level_limits);
@@ -288,7 +286,7 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
     std::vector<int> veclimits;
     if (limit_levels != nullptr) veclimits = std::vector<int>(limit_levels, limit_levels + dims);
     if (anisotropic_weights == nullptr){
-        ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, output, *vecx, veclimits);
+        *vecx = ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, output, veclimits);
     }else{
         int num_weights = ((TasmanianSparseGrid*) grid)->getNumDimensions();
         if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
@@ -296,7 +294,7 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
         }
         std::vector<int> vecweights(anisotropic_weights, anisotropic_weights +
                                     (((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)) ? 2*dims : dims));
-        ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, *vecx, vecweights, veclimits);
+        *vecx = ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, vecweights, veclimits);
     }
     return (void*) vecx;
 }
@@ -316,7 +314,7 @@ void* tsgGetCandidateConstructionPointsSurplusVoidPntr(void *grid, double tolera
         size_t active_outputs = (size_t) (output == -1) ? ((TasmanianSparseGrid*) grid)->getNumOutputs() : 1;
         vecscale = std::vector<double>(scale_correction, scale_correction + ((size_t) ((TasmanianSparseGrid*) grid)->getNumLoaded() * active_outputs));
     }
-    ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(tolerance, ref_type, *vecx, output, veclimits, vecscale);
+    *vecx = ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(tolerance, ref_type, output, veclimits, vecscale);
     return (void*) vecx;
 }
 void tsgGetCandidateConstructionPoints(void *grid, const char *sType, int output, const int *anisotropic_weights, const int *limit_levels, int *num_points, double **x){
@@ -384,19 +382,19 @@ void tsgSetHierarchicalCoefficients(void *grid, const double *c){
 
 // to be called from Python only, must later call delete[] on the pointer
 int* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes){
-    int *indx = 0;;
-    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), *num_indexes, indx);
+    std::vector<int> space = ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0));
+    int *indx = new int[space.size()];
+    std::copy(space.begin(), space.end(), indx);
+    *num_indexes = (int) space.size() / ((TasmanianSparseGrid*) grid)->getNumDimensions();
     return indx;
 }
 // to be used in C, creates a C pointer (requires internal copy of data)
 void tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes, int **indexes){
-    int *indx = 0, num_ind, num_dims = ((TasmanianSparseGrid*) grid)->getNumDimensions();
-    ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0), num_ind, indx);
-    *num_indexes = num_ind;
-    if (indx != 0){
-        *indexes = (int*) malloc(((*num_indexes) * num_dims) * sizeof(int));
-        for(int i=0; i<((*num_indexes) * num_dims); i++) (*indexes)[i] = indx[i];
-        delete[] indx;
+    std::vector<int> space = ((TasmanianSparseGrid*) grid)->getGlobalPolynomialSpace((interpolation != 0));
+    *num_indexes = (int) space.size() / ((TasmanianSparseGrid*) grid)->getNumDimensions();
+    if (!space.empty()){
+        *indexes = (int*) malloc(space.size() * sizeof(int));
+        std::copy(space.begin(), space.end(), *indexes);
     }
 }
 
@@ -413,15 +411,14 @@ int tsgGetGPUMemory(int gpu){ return TasmanianSparseGrid::getGPUMemory(gpu); }
 int tsgIsAccelerationAvailable(const char *accel){ return (TasmanianSparseGrid::isAccelerationAvailable(AccelerationMeta::getIOAccelerationString(accel))) ? 1 : 0; }
 void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual){
     // gpu is the gpuID, num_buffer is the size of *buffer, num_actual returns the actual number of chars
-    char* name = TasmanianSparseGrid::getGPUName(gpu);
-    int c = 0;
-    while ((name[c] != '\0') && (c < num_buffer-1)){
-        buffer[c] = name[c];
-        c++;
-    }
-    buffer[c] = '\0';
-    num_actual[0] = c;
-    delete[] name;
+    if (num_buffer == 0) return;
+    std::string name = TasmanianSparseGrid::getGPUName(gpu);
+
+    size_t chars = std::min((size_t) (num_buffer - 1), name.size());
+    std::copy(name.begin(), name.begin() + chars, buffer);
+    buffer[chars] = '\0';
+
+    *num_actual = (int) chars;
 }
 
 void tsgDeleteInts(int *p){ delete[] p; }

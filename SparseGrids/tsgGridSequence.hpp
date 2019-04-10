@@ -56,7 +56,7 @@ public:
     bool isSequence() const{ return true; }
 
     template<bool useAscii> void write(std::ostream &os) const;
-    template<bool useAscii> void read(std::ifstream &is);
+    template<bool useAscii> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void copyGrid(const GridSequence *seq);
@@ -104,19 +104,19 @@ public:
     void mergeRefinement();
 
     void beginConstruction();
-    void writeConstructionDataBinary(std::ofstream &ofs) const;
-    void writeConstructionData(std::ofstream &ofs) const;
-    void readConstructionDataBinary(std::ifstream &ifs);
-    void readConstructionData(std::ifstream &ifs);
-    void getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits);
-    void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits);
-    void getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits);
+    void writeConstructionDataBinary(std::ostream &ofs) const;
+    void writeConstructionData(std::ostream &ofs) const;
+    void readConstructionDataBinary(std::istream &ifs);
+    void readConstructionData(std::istream &ifs);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void finishConstruction();
 
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
-    void getPolynomialSpace(bool interpolation, int &n, int* &poly) const;
+    std::vector<int> getPolynomialSpace(bool interpolation) const;
 
     const double* getSurpluses() const;
     const int* getPointIndexes() const;

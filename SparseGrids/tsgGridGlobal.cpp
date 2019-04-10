@@ -71,7 +71,7 @@ template<bool useAscii> void GridGlobal::write(std::ostream &os) const{
     }
 }
 
-template<bool useAscii> void GridGlobal::read(std::ifstream &is){
+template<bool useAscii> void GridGlobal::read(std::istream &is){
     reset(true); // true deletes any custom rule
     num_dimensions = IO::readNumber<useAscii, int>(is);
     num_outputs = IO::readNumber<useAscii, int>(is);
@@ -112,8 +112,8 @@ template<bool useAscii> void GridGlobal::read(std::ifstream &is){
 
 template void GridGlobal::write<true>(std::ostream &) const;
 template void GridGlobal::write<false>(std::ostream &) const;
-template void GridGlobal::read<true>(std::ifstream &);
-template void GridGlobal::read<false>(std::ifstream &);
+template void GridGlobal::read<true>(std::istream &);
+template void GridGlobal::read<false>(std::istream &);
 
 void GridGlobal::reset(bool includeCustom){
     clearAccelerationData();
@@ -404,38 +404,38 @@ void GridGlobal::beginConstruction(){
         values.resize(num_outputs, 0);
     }
 }
-void GridGlobal::writeConstructionDataBinary(std::ofstream &ofs) const{
-    dynamic_values->write<false>(ofs);
+void GridGlobal::writeConstructionDataBinary(std::ostream &os) const{
+    dynamic_values->write<false>(os);
 }
-void GridGlobal::writeConstructionData(std::ofstream &ofs) const{
-    dynamic_values->write<true>(ofs);
+void GridGlobal::writeConstructionData(std::ostream &os) const{
+    dynamic_values->write<true>(os);
 }
-void GridGlobal::readConstructionDataBinary(std::ifstream &ifs){
+void GridGlobal::readConstructionDataBinary(std::istream &is){
     dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal((size_t) num_dimensions, (size_t) num_outputs));
-    dynamic_values->read<false>(ifs);
+    dynamic_values->read<false>(is);
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
         wrapper.load(custom, max_level, rule, alpha, beta);
     dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
-void GridGlobal::readConstructionData(std::ifstream &ifs){
+void GridGlobal::readConstructionData(std::istream &is){
     dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal((size_t) num_dimensions, (size_t) num_outputs));
-    dynamic_values->read<true>(ifs);
+    dynamic_values->read<true>(is);
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
         wrapper.load(custom, max_level, rule, alpha, beta);
     dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
-void GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
     std::vector<int> weights;
     if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
         int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
         if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
             estimateAnisotropicCoefficients(type, output, weights);
     }
-    getCandidateConstructionPoints(type, weights, x, level_limits);
+    return getCandidateConstructionPoints(type, weights, level_limits);
 }
-void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);
 
     // computing the weight for each index requires the cache for the one dimensional indexes
@@ -467,37 +467,37 @@ void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vecto
 
     if (weights.contour == type_level){
         std::vector<std::vector<int>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             if (cache.empty()){
                 build_exactness((size_t) wrapper.getNumLevels());
                 cache = MultiIndexManipulations::generateLevelWeightsCache<int, type_level, true>(weights, get_exact, wrapper.getNumLevels());
             }
 
             return (double) MultiIndexManipulations::getIndexWeight<int, type_level>(t, cache);
-        }, x, level_limits);
+        }, level_limits);
     }else if (weights.contour == type_curved){
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             if (cache.empty()){
                 build_exactness((size_t) wrapper.getNumLevels());
                 cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_curved, true>(weights, get_exact, wrapper.getNumLevels());
             }
 
             return MultiIndexManipulations::getIndexWeight<double, type_curved>(t, cache);
-        }, x, level_limits);
+        }, level_limits);
     }else{
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             if (cache.empty()){
                 build_exactness((size_t) wrapper.getNumLevels());
                 cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_hyperbolic, true>(weights, get_exact, wrapper.getNumLevels());
             }
 
             return MultiIndexManipulations::getIndexWeight<double, type_hyperbolic>(t, cache);
-        }, x, level_limits);
+        }, level_limits);
     }
 }
-void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits){
     dynamic_values->clearTesnors(); // clear old tensors
     MultiIndexSet init_tensors = dynamic_values->getInitialTensors(); // get the initial tensors (created with make grid)
 
@@ -522,8 +522,9 @@ void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *
     }
     std::vector<int> node_indexes;
     dynamic_values->getNodesIndexes(node_indexes);
-    x.resize(node_indexes.size());
+    std::vector<double> x(node_indexes.size());
     mapIndexesToNodes(node_indexes, x.data());
+    return x;
 }
 void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double> &y){
     std::vector<int> p(num_dimensions);
@@ -679,7 +680,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
 
         if (normalize) for(auto &s : surp) s /= max_surp;
     }else{
-        MultiIndexSet polynomial_set = getPolynomialSpace(true);
+        MultiIndexSet polynomial_set = getPolynomialSpaceSet(true);
 
         MultiIndexSet quadrature_tensors =
             MultiIndexManipulations::generateLowerMultiIndexSet((size_t) num_dimensions, [&](const std::vector<int> &index) ->
@@ -876,7 +877,7 @@ void GridGlobal::clearAccelerationData(){
     #endif
 }
 
-MultiIndexSet GridGlobal::getPolynomialSpace(bool interpolation) const{
+MultiIndexSet GridGlobal::getPolynomialSpaceSet(bool interpolation) const{
     if (interpolation){
         if (rule == rule_customtabulated){
             return MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return custom.getIExact(l); });
@@ -892,12 +893,8 @@ MultiIndexSet GridGlobal::getPolynomialSpace(bool interpolation) const{
     }
 }
 
-void GridGlobal::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
-    MultiIndexSet polynomial_set = getPolynomialSpace(interpolation);
-
-    n = polynomial_set.getNumIndexes();
-    poly = new int[polynomial_set.getVector().size()];
-    std::copy(polynomial_set.getVector().begin(), polynomial_set.getVector().end(), poly);
+std::vector<int> GridGlobal::getPolynomialSpace(bool interpolation) const{
+    return std::move(getPolynomialSpaceSet(interpolation).getVector());
 }
 const int* GridGlobal::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));

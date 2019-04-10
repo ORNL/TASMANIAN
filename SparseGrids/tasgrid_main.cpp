@@ -111,10 +111,9 @@ int main(int argc, const char ** argv){
             if (numGPUs > 0){
                 cout << "                 Available GPUs:" << endl;
                 for(int i=0; i<numGPUs; i++){
-                    char *name = TasmanianSparseGrid::getGPUName(i);
+                    std::string name = TasmanianSparseGrid::getGPUName(i);
                     int memory = TasmanianSparseGrid::getGPUMemory(i);
                     cout << setw(11) << i << ":" << setw(20) << name << " with" << setw(7) << memory << "MB of RAM" << endl;
-                    delete[] name;
                 }
             }else{
                 cout << "        Available GPUs: none" << endl;

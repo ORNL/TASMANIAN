@@ -249,10 +249,10 @@ struct SimpleConstructData{
  * \endinternal
  */
 template<bool useAscii>
-std::unique_ptr<SimpleConstructData> readSimpleConstructionData(size_t num_dimensions, size_t num_outputs, std::ifstream &ifs){
+std::unique_ptr<SimpleConstructData> readSimpleConstructionData(size_t num_dimensions, size_t num_outputs, std::istream &is){
     std::unique_ptr<SimpleConstructData> dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
-    dynamic_values->initial_points.read<useAscii>(ifs);
-    dynamic_values->data = readNodeDataList<useAscii>(num_dimensions, num_outputs, ifs);
+    dynamic_values->initial_points.read<useAscii>(is);
+    dynamic_values->data = readNodeDataList<useAscii>(num_dimensions, num_outputs, is);
     return dynamic_values;
 }
 

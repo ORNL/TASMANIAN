@@ -248,11 +248,10 @@ void tsgsar_(int *id, int *type, int *min_growth, int *output, int *opt_flags, c
     _tsg_grid_list[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output, ll);
 }
 void tsgeac_(int *id, int *type, int *output, int *result){
-    int *coeff = _tsg_grid_list[*id]->estimateAnisotropicCoefficients(OneDimensionalMeta::getIOTypeInt(*type), *output);
+    auto coeff = _tsg_grid_list[*id]->estimateAnisotropicCoefficients(OneDimensionalMeta::getIOTypeInt(*type), *output);
     int num_coeff = _tsg_grid_list[*id]->getNumDimensions();
     if ((*type == 2) || (*type == 4) || (*type == 6)) num_coeff *= 2;
     for(int i=0; i<num_coeff; i++) result[i] = coeff[i];
-    delete[] coeff;
 }
 void tsgssr_(int *id, double *tol, int *output, int *opt_flags, const int *llimits){
     const int *ll;

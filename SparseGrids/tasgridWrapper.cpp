@@ -402,7 +402,7 @@ bool TasgridWrapper::readGrid(){
 }
 void TasgridWrapper::outputPoints(bool useNeeded) const{
     int num_p, num_d = grid.getNumDimensions();
-    double *points;
+    std::vector<double> points;
     if ((outfilename == 0) && (!printCout)) return;
     if (useNeeded){
         num_p = grid.getNumNeeded();
@@ -411,18 +411,17 @@ void TasgridWrapper::outputPoints(bool useNeeded) const{
         num_p = grid.getNumPoints();
         points = grid.getPoints();
     }
-    if (outfilename != 0) writeMatrix(outfilename, num_p, num_d, points, useASCII);
-    if (printCout) printMatrix(num_p, num_d, points);
-    delete[] points;
+    if (outfilename != 0) writeMatrix(outfilename, num_p, num_d, points.data(), useASCII);
+    if (printCout) printMatrix(num_p, num_d, points.data());
 }
 void TasgridWrapper::outputQuadrature() const{
-    double *points, *weights, *combined;
+    double *combined;
     if ((outfilename == 0) && (!printCout)) return;
     int num_p = grid.getNumPoints();
     int num_d = grid.getNumDimensions();
     int offset = num_d + 1;
-    points  = grid.getPoints();
-    weights = grid.getQuadratureWeights();
+    auto points  = grid.getPoints();
+    auto weights = grid.getQuadratureWeights();
     combined = new double[num_p * offset];
     for(int i=0; i<num_p; i++){
         combined[i * offset] = weights[i];
@@ -435,8 +434,6 @@ void TasgridWrapper::outputQuadrature() const{
         printMatrix(num_p, offset, combined);
     }
     delete[] combined;
-    delete[] weights;
-    delete[] points;
 }
 void TasgridWrapper::outputHierarchicalCoefficients() const{
     const double *coeff = grid.getHierarchicalCoefficients();
@@ -528,9 +525,8 @@ bool TasgridWrapper::getInterWeights(){
     res = new double[((size_t) num_p) * rows];
     #pragma omp parallel for
     for(int i=0; i<(int) rows; i++){ // in windows OpenMP loop counters must be signed ??
-        double *r = grid.getInterpolationWeights(&(x[i*cols]));
-        std::copy(r, r + num_p, &(res[i * ((size_t) num_p)]));
-        delete[] r;
+        auto r = grid.getInterpolationWeights(&(x[i*cols]));
+        std::copy_n(r.begin(), num_p, &(res[i * ((size_t) num_p)]));
     }
     if (outfilename != 0){
         writeMatrix(outfilename, (int) rows, (int) num_p, res, useASCII);
@@ -616,7 +612,7 @@ bool TasgridWrapper::getAnisoCoeff(){
         cerr << "ERROR: cannot estimate coefficients for a grid with no loaded values!" << endl;
         return false;
     }
-    int *ab;
+    std::vector<int> ab;
     if (grid.isSequence()){
         ab = grid.estimateAnisotropicCoefficients(depth_type, ref_output);
     }else{
@@ -647,7 +643,6 @@ bool TasgridWrapper::getAnisoCoeff(){
         printMatrix(num_coeff, 1, coeff);
     }
     delete[] coeff;
-    delete[] ab;
 
     return true;
 }
@@ -760,18 +755,15 @@ bool TasgridWrapper::getPoly(){
     if ((grid.isGlobal()) || (grid.isSequence())){
         int num_d = grid.getNumDimensions();
         bool integrate = ((depth_type == type_iptotal) || (depth_type == type_ipcurved) || (depth_type == type_iptensor) || (depth_type == type_iphyperbolic));
-        int n, *poly = 0;
-        grid.getGlobalPolynomialSpace(integrate, n, poly);
-        double *double_poly = new double[n * num_d];
-        for(int i=0; i<num_d * n; i++) double_poly[i] = (double) poly[i];
+        std::vector<int> poly = grid.getGlobalPolynomialSpace(integrate);
+        std::vector<double> double_poly(poly.size());
+        std::transform(poly.begin(), poly.end(), double_poly.begin(), [](int x)->double{ return static_cast<double>(x); });
         if (outfilename != 0){
-            writeMatrix(outfilename, n, num_d, double_poly, useASCII);
+            writeMatrix(outfilename, (int) double_poly.size() / num_d, num_d, double_poly.data(), useASCII);
         }
         if (printCout){
-            printMatrix(n, num_d, double_poly);
+            printMatrix((int) double_poly.size() / num_d, num_d, double_poly.data());
         }
-        delete[] poly;
-        delete[] double_poly;
     }else{
         cerr << "ERROR: cannot call -getpoly for a grid that is neither Global nor Sequence" << endl;
         return false;

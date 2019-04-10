@@ -58,7 +58,7 @@ public:
     bool isGlobal() const{ return true; }
 
     template<bool useAscii> void write(std::ostream &os) const;
-    template<bool useAscii> void read(std::ifstream &is);
+    template<bool useAscii> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits);
     void copyGrid(const GridGlobal *global);
@@ -107,13 +107,13 @@ public:
     void mergeRefinement();
 
     void beginConstruction();
-    void writeConstructionDataBinary(std::ofstream &ofs) const;
-    void writeConstructionData(std::ofstream &ofs) const;
-    void readConstructionDataBinary(std::ifstream &ifs);
-    void readConstructionData(std::ifstream &ifs);
-    void getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits);
-    void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits);
-    void getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits);
+    void writeConstructionDataBinary(std::ostream &os) const;
+    void writeConstructionData(std::ostream &os) const;
+    void readConstructionDataBinary(std::istream &is);
+    void readConstructionData(std::istream &is);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void finishConstruction();
 
@@ -122,7 +122,7 @@ public:
 
     void clearAccelerationData();
 
-    void getPolynomialSpace(bool interpolation, int &n, int* &poly) const;
+    std::vector<int> getPolynomialSpace(bool interpolation) const;
 
     const int* getPointIndexes() const;
 
@@ -140,7 +140,7 @@ protected:
     void recomputeTensorRefs(const MultiIndexSet &work);
     void proposeUpdatedTensors();
     void acceptUpdatedTensors();
-    MultiIndexSet getPolynomialSpace(bool interpolation) const;
+    MultiIndexSet getPolynomialSpaceSet(bool interpolation) const;
 
     void mapIndexesToNodes(const std::vector<int> &indexes, double *x) const;
     void loadConstructedTensors();

@@ -107,11 +107,11 @@ public:
     int removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction); // returns the number of points kept
 
     void beginConstruction();
-    void writeConstructionDataBinary(std::ofstream &ofs) const;
-    void writeConstructionData(std::ofstream &ofs) const;
-    void readConstructionDataBinary(std::ifstream &ifs);
-    void readConstructionData(std::ifstream &ifs);
-    void getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x);
+    void writeConstructionDataBinary(std::ostream &os) const;
+    void writeConstructionData(std::ostream &os) const;
+    void readConstructionDataBinary(std::istream &is);
+    void readConstructionData(std::istream &is);
+    std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void finishConstruction();
 

@@ -309,31 +309,12 @@ bool GridUnitTester::testAPIconsistency(){
 
     // test array and vector consistency between the two versions of the API
     bool pass = true;
-    double *apoints;
     std::vector<double> vpoints;
 
     TasmanianSparseGrid grid;
     grid.makeGlobalGrid(2, 1, 4, type_iptotal, rule_clenshawcurtis);
     gridLoadEN2(&grid);
     grid.setAnisotropicRefinement(type_iptotal, 10, 0);
-
-    apoints = grid.getPoints();
-    grid.getPoints(vpoints);
-    pass = pass && doesMatch(vpoints, apoints);
-    delete[] apoints;
-    vpoints.clear();
-
-    apoints = grid.getLoadedPoints();
-    grid.getLoadedPoints(vpoints);
-    pass = pass && doesMatch(vpoints, apoints);
-    delete[] apoints;
-    vpoints.clear();
-
-    apoints = grid.getNeededPoints();
-    grid.getNeededPoints(vpoints);
-    pass = pass && doesMatch(vpoints, apoints);
-    delete[] apoints;
-    vpoints.clear();
 
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "getPoints()" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
