@@ -3,4 +3,7 @@
 
 #include "benchCommon.hpp"
 
+void bench_evaluate(std::vector<std::string> &args){
+}
+
 #endif
