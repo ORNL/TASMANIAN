@@ -14,5 +14,7 @@ int main(int argc, char** argv){
 }
 
 void printHelp(){
-    cout << "help\n";
+    cout << "\nusage: ./benchmark <function> <parameters>\n\n";
+    cout << "functions: evaluate\n";
+    cout << "\n see: ./benchmark <function> help\n\n";
 }
