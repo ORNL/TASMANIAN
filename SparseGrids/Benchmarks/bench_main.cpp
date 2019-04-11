@@ -8,7 +8,19 @@ int main(int argc, char** argv){
 
     std::vector<std::string> args = stringArgs(argc, argv);
 
-    if (args.empty() || hasHelp(args.front())) printHelp();
+    if (args.empty() || hasHelp(args.back())){
+        printHelp();
+        return 0;
+    }
+
+    auto test = getTest(args.back());
+    if (test == test_none){
+        printHelp();
+        return 1;
+    }
+
+
+    cout << "Testing eval: " << endl;
 
     return 0;
 }
