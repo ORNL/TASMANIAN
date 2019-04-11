@@ -1685,6 +1685,8 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
 void TasmanianSparseGrid::setGPUID(int new_gpuID){
     if (new_gpuID != gpuID){
         #ifdef Tasmanian_ENABLE_CUDA
+        if ((new_gpuID < 0) || (new_gpuID >= AccelerationMeta::getNumCudaDevices()))
+            throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
         if (!empty()) base->clearAccelerationData();
         acc_domain.reset();
         gpuID = new_gpuID;
