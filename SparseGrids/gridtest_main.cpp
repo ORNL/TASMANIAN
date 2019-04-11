@@ -48,14 +48,6 @@ int main(int argc, const char ** argv){
 
     //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
 
-    // tests for speed
-    if ((argc > 1) && ((strcmp(argv[1],"-benchmark") == 0) || (strcmp(argv[1],"-bench") == 0))){
-        ExternalTester tester(1);
-        tester.resetRandomSeed();
-        tester.benchmark(argc, argv);
-        return 0;
-    }
-
     // testing
     bool debug = false;
     bool debugII = false;
