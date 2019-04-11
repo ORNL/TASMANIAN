@@ -124,15 +124,6 @@ int main(int argc, const char ** argv){
         return 0;
     }
 
-    // tests for speed
-    if ((strcmp(argv[1],"-benchmark") == 0) || (strcmp(argv[1],"-bench") == 0)){
-        ExternalTester tester(1);
-        tester.resetRandomSeed();
-        tester.benchmark(argc, argv);
-        return 0;
-    }
-
-
     // help with interface commands
     if (strcmp(argv[1],"-listtypes") == 0){
         printHelp(help_listtypes);
