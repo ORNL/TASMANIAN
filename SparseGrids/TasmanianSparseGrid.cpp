@@ -56,12 +56,12 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     #endif // _OPENMP
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(accel_none), gpuID(0), usingDynamicConstruction(false){
+TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(accel_none), gpu_id(0), usingDynamicConstruction(false){
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
 }
-TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : acceleration(accel_none), gpuID(0), usingDynamicConstruction(false)
+TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : acceleration(accel_none), gpu_id(0), usingDynamicConstruction(false)
 {
     copyGrid(&source);
 #ifdef Tasmanian_ENABLE_BLAS
@@ -89,7 +89,7 @@ void TasmanianSparseGrid::clear(){
     acceleration = accel_none;
 #endif // Tasmanian_ENABLE_BLAS
 #ifdef Tasmanian_ENABLE_CUDA
-    gpuID = 0;
+    gpu_id = 0;
     acc_domain.reset();
     engine.reset();
 #endif // Tasmanian_ENABLE_CUDA
@@ -1634,7 +1634,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
         acceleration = effective_acc;
         #ifdef Tasmanian_ENABLE_CUDA
         if (AccelerationMeta::isAccTypeGPU(acceleration)){ // using CUDA
-            if (!engine) engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpuID));
+            if (!engine) engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpu_id));
             engine->setBackendMAGMA((acceleration == accel_gpu_magma));
         }else{ // using not CUDA, clear any loaded data
             if (engine) engine.reset();
@@ -1682,23 +1682,23 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
     }
 }
 
-void TasmanianSparseGrid::setGPUID(int new_gpuID){
-    if (new_gpuID != gpuID){
+void TasmanianSparseGrid::setGPUID(int new_gpu_id){
+    if (new_gpu_id != gpu_id){
         #ifdef Tasmanian_ENABLE_CUDA
-        if ((new_gpuID < 0) || (new_gpuID >= AccelerationMeta::getNumCudaDevices()))
+        if ((new_gpu_id < 0) || (new_gpu_id >= AccelerationMeta::getNumCudaDevices()))
             throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
         if (!empty()) base->clearAccelerationData();
         acc_domain.reset();
-        gpuID = new_gpuID;
+        gpu_id = new_gpu_id;
         if (engine){
             bool use_magma = engine->backendMAGMA();
-            engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpuID));
+            engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpu_id));
             engine->setBackendMAGMA(use_magma);
         }
         #endif
     }
 }
-int TasmanianSparseGrid::getGPUID() const{ return gpuID; }
+int TasmanianSparseGrid::getGPUID() const{ return gpu_id; }
 
 int TasmanianSparseGrid::getNumGPUs(){
     #ifdef Tasmanian_ENABLE_CUDA

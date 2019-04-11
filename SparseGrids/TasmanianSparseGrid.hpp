@@ -315,7 +315,7 @@ private:
     std::vector<int> llimits;
 
     TypeAcceleration acceleration;
-    int gpuID;
+    int gpu_id;
 
     bool usingDynamicConstruction;
 
