@@ -20,11 +20,15 @@ int main(int argc, char** argv){
         return (test == test_none) ? 1 : 0;
     }
 
+    bool pass = true; // check if the rest of the inputs are OK
     if (test == test_evaluate){
-        bench_evaluate(args);
+        pass = bench_evaluate(args);
     }
 
-    return 0;
+    if (!pass) // if problem with inputs
+        printHelp(test);
+
+    return (pass) ? 0 : 1;
 }
 
 void printHelp(TestFuction test){
@@ -33,7 +37,7 @@ void printHelp(TestFuction test){
         cout << "functions: evaluate\n";
         cout << "\n see: ./benchmark <function> help\n";
     }else if (test == test_evaluate){
-        cout << "\nusage: ./benchmark evaluate <grid> <dims> <outs> <type> <depth> <rule> <order> <batch> <iters> <jumps> <gpu>\n\n";
+        cout << "\nusage: ./benchmark evaluate <grid> <dims> <outs> <depth> <type> <rule> <order> <batch> <iters> <jumps> <acc> <gpu>\n\n";
         cout << "grid  : global, sequence, localp, wavelet, fourier\n";
         cout << "dims  : number of dimensions\n";
         cout << "outs  : number of outputs\n";
@@ -44,7 +48,8 @@ void printHelp(TestFuction test){
         cout << "batch : number of points to use for the evaluate command\n";
         cout << "iters : number of times to repeat the function call\n";
         cout << "jumps : how many times to double <outs>\n";
-        cout << "gpu   : cuda device ID, set to -1 to use accel_cpu_blas or -2 for accel_none\n";
+        cout << "acc   : acceleration type, e.g., gpu-cuda, cpu-blas, none, etc.\n";
+        cout << "gpu   : cuda device ID; ignored for cpu acceleration\n";
     }
     cout << endl;
 }
