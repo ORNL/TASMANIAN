@@ -110,15 +110,15 @@ public:
     void setMinGrowth(int mg);
     void setTypeRefinement(TypeRefinement rt);
 
-    void setGridFilename(const char *filename);
-    void setOutFilename(const char *filename);
-    void setValsFilename(const char *filename);
-    void setXFilename(const char *filename);
-    void setAnisoFilename(const char *filename);
-    void setTransformFilename(const char *filename);
-    void setConformalFilename(const char *filename);
-    void setCustomFilename(const char *filename);
-    void setLevelLimitsFilename(const char *filename);
+    void setGridFilename(std::string const &filename){ gridfilename = filename; }
+    void setOutFilename(std::string const &filename){ outfilename = filename; }
+    void setValsFilename(std::string const &filename){ valsfilename = filename; }
+    void setXFilename(std::string const &filename){ xfilename = filename; }
+    void setAnisoFilename(std::string const &filename){ anisofilename = filename; }
+    void setTransformFilename(std::string const &filename){ transformfilename = filename; }
+    void setConformalFilename(std::string const &filename){ conformalfilename = filename; }
+    void setCustomFilename(std::string const &filename){ customfilename = filename; }
+    void setLevelLimitsFilename(std::string const &filename){ levellimitfilename = filename; }
 
     void setPrintPoints(bool pp);
     void setUseASCII(bool ascii);
@@ -173,9 +173,9 @@ protected:
     double* readTransform() const;
     int* readLevelLimits(int num_weights) const;
 
-    static void readMatrix(const char *filename, size_t &rows, size_t &cols, double* &mat);
-    static void writeMatrix(const char *filename, int rows, int cols, const double mat[], bool ascii);
-    static void printMatrix(int rows, int cols, const double mat[], bool isComplex = false);
+    static void readMatrix(std::string const &filename, size_t &rows, size_t &cols, double* &mat);
+    static void writeMatrix(std::string const &filename, int rows, int cols, const double mat[], bool ascii);
+    void printMatrix(int rows, int cols, const double mat[], bool isComplex = false) const;
 
 private:
     TasmanianSparseGrid grid;
@@ -197,15 +197,15 @@ private:
     TypeRefinement tref;
     bool set_tref;
 
-    const char *gridfilename;
-    const char *outfilename;
-    const char *valsfilename;
-    const char *xfilename;
-    const char *anisofilename;
-    const char *transformfilename;
-    const char *conformalfilename;
-    const char *customfilename;
-    const char *levellimitfilename;
+    std::string gridfilename;
+    std::string outfilename;
+    std::string valsfilename;
+    std::string xfilename;
+    std::string anisofilename;
+    std::string transformfilename;
+    std::string conformalfilename;
+    std::string customfilename;
+    std::string levellimitfilename;
 
     bool printCout;
     bool useASCII;

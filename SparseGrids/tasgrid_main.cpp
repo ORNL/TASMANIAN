@@ -183,270 +183,200 @@ int main(int argc, const char ** argv){
     wrap.setCommand(command);
 
     // parse the parameters
-    int k = 2;
-    bool commandHelp = false;
-    while(k < argc){
-        if ((strcmp(argv[k],"--help") == 0)||(strcmp(argv[k],"-help") == 0)||(strcmp(argv[k],"-h") == 0)||(strcmp(argv[k],"help") == 0)){
-            commandHelp = true;
-            break;
-        }else if ((strcmp(argv[k],"-if") == 0)||(strcmp(argv[k],"-inputfile") == 0)){
-            if (k+1 < argc){
-                if ((wrap.getCommand() == command_evaluate) || (wrap.getCommand() == command_getinterweights)){
-                    wrap.setXFilename(argv[++k]);
-                    cerr << "WARNING: -inputfile is a deprecated parameter, in future use -xfile" << endl;
-                }else if (wrap.getCommand() == command_loadvalues){
-                    wrap.setValsFilename(argv[++k]);
-                    cerr << "WARNING: -inputfile is a deprecated parameter, in future use -valsfile" << endl;
-                }else{
-                    cerr << "WARNING: ignoring deprecated parameter -inputfile" << endl;
-                }
-            }else{
-                cerr << "WARNING: -inputfile is a deprecated, see ./tasgrid -help for correct use in the future" << endl;
-                cerr << "ERROR: must provide input filename!!!  For help see: ./tasgrid -help" << endl << endl;
-                return 1;
-            }
-        }else if ((strcmp(argv[k],"-xf") == 0)||(strcmp(argv[k],"-xfile") == 0)){
-            if (k+1 < argc){
-                wrap.setXFilename(argv[++k]);
-            }else{
+    args.pop_front();
+    while(!args.empty()){
+        if (hasHelp(args.front())){
+            printHelp(help_command, command);
+            return 0;
+        }else if (args.front() == "-xf" || args.front() == "-xfile"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide file name with x values!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-vf") == 0)||(strcmp(argv[k],"-valsfile") == 0)){
-            if (k+1 < argc){
-                wrap.setValsFilename(argv[++k]);
-            }else{
+            wrap.setXFilename(args.front());
+        }else if (args.front() == "-vf" || args.front() == "-valsfile"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide values file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-of") == 0)||(strcmp(argv[k],"-outputfile") == 0)){
-            if (k+1 < argc){
-                wrap.setOutFilename(argv[++k]);
-            }else{
+            wrap.setValsFilename(args.front());
+        }else if (args.front() == "-of" || args.front() == "-outputfile"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide output file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-gf") == 0)||(strcmp(argv[k],"-gridfile") == 0)){
-            if (k+1 < argc){
-                wrap.setGridFilename(argv[++k]);
-            }else{
+            wrap.setOutFilename(args.front());
+        }else if (args.front() == "-gf" || args.front() == "-gridfile"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide grid file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if (strcmp(argv[k],"-ascii") == 0){
+            wrap.setGridFilename(args.front());
+        }else if (args.front() =="-ascii"){
             wrap.setUseASCII(true);
-        }else if ((strcmp(argv[k],"-af") == 0)||(strcmp(argv[k],"-anisotropyfile") == 0)){
-            if (k+1 < argc){
-                wrap.setAnisoFilename(argv[++k]);
-            }else{
+        }else if (args.front() == "-af" || args.front() == "-anisotropyfile"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide anisotropy file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-tf") == 0)||(strcmp(argv[k],"-transformfile") == 0)){
-            if (k+1 < argc){
-                wrap.setTransformFilename(argv[++k]);
-            }else{
+            wrap.setAnisoFilename(args.front());
+        }else if (args.front() == "-tf" || args.front() == "-transformfile"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide transform file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if (strcmp(argv[k],"-conformalfile") == 0){
-            if (k+1 < argc){
-                wrap.setConformalFilename(argv[++k]);
-            }else{
+            wrap.setTransformFilename(args.front());
+        }else if (args.front() == "-conformalfile"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide conformal transform file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-levellimitsfile") == 0) || (strcmp(argv[k],"-lf") == 0)){
-            if (k+1 < argc){
-                wrap.setLevelLimitsFilename(argv[++k]);
-            }else{
-                cerr << "ERROR: must provide conformal transform file name!!!  For help see: ./tasgrid -help" << endl << endl;
+            wrap.setConformalFilename(args.front());
+        }else if (args.front() == "-lf" || args.front() == "-levellimitsfile"){
+            args.pop_front();
+            if (args.empty()){
+                cerr << "ERROR: must provide level limits file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-cf") == 0)||(strcmp(argv[k],"-customfile") == 0)){
-            if (k+1 < argc){
-                wrap.setCustomFilename(argv[++k]);
-            }else{
+            wrap.setLevelLimitsFilename(args.front());
+        }else if (args.front() == "-cf" || args.front() == "-customfile"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide custom file name!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-p") == 0)||(strcmp(argv[k],"-print") == 0)){
+            wrap.setCustomFilename(args.front());
+        }else if (args.front() == "-print" || args.front() == "-p"){
             wrap.setPrintPoints(true);
-        }else if ((strcmp(argv[k],"-dim") == 0)||(strcmp(argv[k],"-dimensions") == 0)){
-            if (k+1 < argc){
-                int n = atoi(argv[++k]);
-                if (n < 1){
-                    cerr << "ERROR: -dimensions takes a positive integer" << endl << endl;
-                    return 1;
-                }
-                wrap.setNumDimensions(n);
-            }else{
+        }else if (args.front() == "-dim" || args.front() == "-dimensions"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide number of dimensions!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-out") == 0)||(strcmp(argv[k],"-outputs") == 0)){
-            if (k+1 < argc){
-                int n = atoi(argv[++k]);
-                if (n < 0){
-                    cerr << "ERROR: -outputs takes a non-negative integer" << endl << endl;
-                    return 1;
-                }
-                wrap.setNumOutputs(n);
-            }else{
+            wrap.setNumDimensions(std::stoi(args.front()));
+        }else if (args.front() == "-out" || args.front() == "-outputs"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide number of outputs!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-dt") == 0)||(strcmp(argv[k],"-depth") == 0)){
-            if (k+1 < argc){
-                int n = atoi(argv[++k]);
-                if (n < 0){
-                    cerr << "ERROR: -depth takes a non-negative integer" << endl << endl;
-                    return 1;
-                }
-                wrap.setNumDepth(n);
-            }else{
+            wrap.setNumOutputs(std::stoi(args.front()));
+        }else if (args.front() == "-dt" || args.front() == "-depth"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide valid depth!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-tt") == 0)||(strcmp(argv[k],"-type") == 0)){
-            if (k+1 < argc){
-                k++;
-                TypeDepth d = OneDimensionalMeta::getIOTypeString(argv[k]);
-                if (d == type_none){
-                    cerr << "ERROR: " << argv[k] << " is not a valid type!!!  For help see: ./tasgrid -help" << endl << endl;
-                    return 1;
-                }
-                wrap.setDepthType(d);
-            }else{
-                cerr << "ERROR: must provide valid -type!!!  For help see: ./tasgrid -help" << endl << endl;
+            wrap.setNumDepth(std::stoi(args.front()));
+        }else if (args.front() == "-or" || args.front() == "-order"){
+            args.pop_front();
+            if (args.empty()){
+                cerr << "ERROR: must provide valid order!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-ct") == 0)||(strcmp(argv[k],"-conformaltype") == 0)){
-            if (k+1 < argc){
-                k++;
-                TypeConformalMap c = TasgridWrapper::getConfromalType(argv[k]);
-                if (c == conformal_none){
-                    cerr << "ERROR: " << argv[k] << " is not a valid type!!!  For help see: ./tasgrid -help" << endl << endl;
-                    return 1;
-                }
-                wrap.setConformalType(c);
-            }else{
-                cerr << "ERROR: must provide valid -conformaltype!!!  For help see: ./tasgrid -help" << endl << endl;
+            wrap.setOrder(std::stoi(args.front()));
+        }else if (args.front() == "-tt" || args.front() == "-type"){
+            args.pop_front();
+            if (args.empty()){
+                cerr << "ERROR: must provide valid depth type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-onedim") == 0)||(strcmp(argv[k],"-1d") == 0)){
-            if (k+1 < argc){
-                k++;
-                TypeOneDRule r = OneDimensionalMeta::getIORuleString(argv[k]);
-                if (r == rule_none){
-                    cerr << "ERROR: unrecognized rule: " << argv[k] << endl << endl;
-                    return 1;
-                }
-                wrap.setRule(r);
-            }else{
+            TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(args.front().c_str());
+            if (depth_type == type_none){
+                cerr << "ERROR: " << args.front() << " is not a valid type!!!  For help see: ./tasgrid -help" << endl << endl;
+                return 1;
+            }
+            wrap.setDepthType(depth_type);
+        }else if (args.front() == "-1d" || args.front() == "-onedim"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide valid -onedim!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-order") == 0)||(strcmp(argv[k],"-or") == 0)){
-            if (k+1 < argc){
-                k++;
-                int n = atoi(argv[k]);
-                if (n < -1){
-                    cerr << "ERROR: invalid order: " << n << "  order should be at least -1" << endl << endl;
-                    return 1;
-                }
-                wrap.setOrder(n);
-            }else{
-                cerr << "ERROR: must provide valid -order!!!  For help see: ./tasgrid -help" << endl << endl;
+            TypeOneDRule rule = OneDimensionalMeta::getIORuleString(args.front().c_str());
+            if (rule == rule_none){
+                cerr << "ERROR: " << args.front() << " is not a valid rule!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if (strcmp(argv[k],"-alpha") == 0){
-            if (k+1 < argc){
-                k++;
-                double alpha = atof(argv[k]);
-                wrap.setAlpha(alpha);
-            }else{
+            wrap.setRule(rule);
+        }else if (args.front() == "-ct" || args.front() == "-conformaltype"){
+            args.pop_front();
+            if (args.empty()){
+                cerr << "ERROR: must provide valid -conformaltype!!!  For help see: ./tasgrid -help" << endl << endl;
+                return 1;
+            }
+            TypeConformalMap conformal_type = TasgridWrapper::getConfromalType(args.front().c_str());
+            if (conformal_type == conformal_none){
+                cerr << "ERROR: " << args.front() << " is not a valid conformal type!!!  For help see: ./tasgrid -help" << endl << endl;
+                return 1;
+            }
+            wrap.setConformalType(conformal_type);
+        }else if (args.front() == "-alpha"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide valid -alpha!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if (strcmp(argv[k],"-beta") == 0){
-            if (k+1 < argc){
-                k++;
-                double beta = atof(argv[k]);
-                wrap.setBeta(beta);
-            }else{
+            wrap.setAlpha(std::stof(args.front()));
+        }else if (args.front() == "-beta"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide valid -beta!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-tolerance") == 0)||(strcmp(argv[k],"-tol") == 0)){
-            if (k+1 < argc){
-                k++;
-                double tol = atof(argv[k]);
-                if (tol < 0.0){
-                    cerr << "WARNING: tolerance set to: " << tol << "  which is a negative number, are you sure about this?" << endl;
-                }
-                wrap.setTolerance(tol);
-            }else{
+            wrap.setBeta(std::stof(args.front()));
+        }else if (args.front() == "-tol" || args.front() == "-tolerance"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide valid -tolerance!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-refout") == 0)||(strcmp(argv[k],"-rout") == 0)){
-            if (k+1 < argc){
-                k++;
-                int rout = atoi(argv[k]);
-                if (rout < 0){
-                    cerr << "ERROR: the refinement output -refout/-rout must be non-negative!!!  For help see: ./tasgrid -help" << endl << endl;
-                    return 1;
-                }
-                wrap.setRefOutput(rout);
-            }else{
+            wrap.setTolerance(std::stof(args.front()));
+        }else if (args.front() == "-rout" || args.front() == "-refout"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide valid -refout!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-mingrowth") == 0)||(strcmp(argv[k],"-ming") == 0)){
-            if (k+1 < argc){
-                k++;
-                int mg = atoi(argv[k]);
-                if (mg < 1){
-                    cerr << "ERROR: the minimum growth must be positive!!!  For help see: ./tasgrid -help" << endl << endl;
-                    return 1;
-                }
-                wrap.setMinGrowth(mg);
-            }else{
+            wrap.setRefOutput(std::stoi(args.front()));
+        }else if (args.front() == "-ming" || args.front() == "-mingrowth"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide valid -mingrowth!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if ((strcmp(argv[k],"-reftype") == 0)||(strcmp(argv[k],"-rt") == 0)){
-            if (k+1 < argc){
-                k++;
-                TypeRefinement r = OneDimensionalMeta::getIOTypeRefinementString(argv[k]);
-                if (r == refine_none){
-                    cerr << "ERROR: " << argv[k] << " is not a valid refinement type!!!  For help see: ./tasgrid -help" << endl << endl;
-                    return 1;
-                }
-                wrap.setTypeRefinement(r);
-            }else{
-                cerr << "ERROR: must provide valid -reftype!!!  For help see: ./tasgrid -help" << endl << endl;
+            wrap.setMinGrowth(std::stoi(args.front()));
+        }else if (args.front() == "-rt" || args.front() == "-reftype"){
+            args.pop_front();
+            if (args.empty()){
+                cerr << "ERROR: must provide valid depth type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-        }else if (strcmp(argv[k],"-gpuid") == 0){
-            if (k+1 < argc){
-                k++;
-                int g = atoi(argv[k]);
-                wrap.setGPID(g);
-            }else{
+            TypeRefinement ref  = OneDimensionalMeta::getIOTypeRefinementString(args.front().c_str());
+            if (ref == refine_none){
+                cerr << "ERROR: " << args.front() << " is not a valid refinement type!!!  For help see: ./tasgrid -help" << endl << endl;
+                return 1;
+            }
+            wrap.setTypeRefinement(ref);
+        }else if (args.front() == "-gpu" || args.front() == "-gpuid"){
+            args.pop_front();
+            if (args.empty()){
                 cerr << "ERROR: must provide valid -gpuid  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
+            wrap.setGPID(std::stoi(args.front()));
         }else{
-            cout << "WARNING: ignoring unknown option: " << argv[k] << "\n";
+            cout << "WARNING: ignoring unknown option: " << args.front() << "\n";
         }
-        k++;
-    }
-
-    if (commandHelp){
-        printHelp(help_command, wrap.getCommand());
-        return 0;
+        args.pop_front();
     }
 
     if (!wrap.executeCommand()){
