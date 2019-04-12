@@ -1067,7 +1067,7 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double
     int num_points = getNumPoints();
     size_t num_x = x.size() / getNumDimensions();
     size_t expected_size = num_points * num_x * (isFourier() ? 2 : 1);
-    if (y.size() < expected_size) y.resize(expected_size);
+    y.resize(expected_size);
     evaluateHierarchicalFunctions(x.data(), (int) num_x, y.data());
 }
 #ifdef Tasmanian_ENABLE_CUDA
@@ -1152,7 +1152,7 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
     }else if (empty()){
         return 0;
     }else{
-        return num_x * base->getNumPoints();
+        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGetNZ() called for a grid that is neither local polynomial not wavelet");
     }
     return num_nz;
 }
@@ -1181,20 +1181,18 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
         }
         pntr[num_x] = num_nz;
     }else{
-        int num_points = base->getNumPoints();
-        base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);
-        pntr[0] = 0;
-        for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + num_points;
-        for(int i=0; i<num_x; i++){
-            for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
-        }
+        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsStatic() called for a grid that is neither local polynomial not wavelet");
     }
 }
 
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
     base->setHierarchicalCoefficients(c, acceleration);
 }
-void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> &c){ setHierarchicalCoefficients(c.data()); }
+void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> &c){
+    size_t num_coeffs = Utils::size_mult(getNumOutputs(), getNumLoaded()) * ((isFourier()) ? 2 : 1);
+    if (c.size() != num_coeffs) throw std::runtime_error("ERROR: setHierarchicalCoefficients() called with wrong size of the coefficients.");
+    setHierarchicalCoefficients(c.data());
+}
 
 std::vector<int> TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation) const{
     if (isGlobal()){

@@ -228,12 +228,18 @@ public:
     void finishConstruction();
 
     const double* getHierarchicalCoefficients() const; // formerly getSurpluses();  returns an alias to internal data structure
-    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
-    void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
+    void setHierarchicalCoefficients(const std::vector<double> &c);
     void setHierarchicalCoefficients(const double c[]);
 
+    std::vector<double> evaluateHierarchicalFunctions(const std::vector<double> &x) const{
+        std::vector<double> y;
+        evaluateHierarchicalFunctions(x, y);
+        return y;
+    }
     void evaluateHierarchicalFunctions(const std::vector<double> &x, std::vector<double> &y) const;
-    void setHierarchicalCoefficients(const std::vector<double> &c);
+    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
+
+    void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
 
     std::vector<int> getGlobalPolynomialSpace(bool interpolation) const;
 
