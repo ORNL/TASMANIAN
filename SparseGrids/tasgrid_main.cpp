@@ -53,7 +53,7 @@ int main(int argc, const char ** argv){
     }
 
     // basic help
-    if ((strcmp(argv[1],"--help") == 0)||(strcmp(argv[1],"-help") == 0)||(strcmp(argv[1],"help") == 0)||(strcmp(argv[1],"-h") == 0)){
+    if (hasHelp(argv[1])){
         printHelp();
         return 0;
     }

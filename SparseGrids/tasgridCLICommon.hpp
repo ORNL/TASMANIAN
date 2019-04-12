@@ -47,6 +47,7 @@
 #include <map>
 #include <cmath>
 #include <random>
+#include <deque>
 
 #include "TasmanianSparseGrid.hpp"
 
@@ -55,5 +56,39 @@ using std::cerr;
 using std::endl;
 using std::setw;
 using namespace TasGrid;
+
+/*!
+ * \internal
+ * \brief Creates a std::deque of strings from the CLI arguments, skips the first argument.
+ *
+ * Converts the CLI arguments to strings, the first argument is the name of the executable and it is omitted.
+ * \endinternal
+ */
+inline std::deque<std::string> stringArgs(int argc, char** argv){
+    std::deque<std::string> args;
+    for(int i = 1; i < argc; i++)
+        args.push_back(std::string(argv[i]));
+    return args;
+}
+
+/*!
+ * \internal
+ * \brief Returns \b true if the string contains a sub-string with the word "help" (case insensitive).
+ *
+ * \endinternal
+ */
+inline bool hasHelp(std::string const &arg){
+    std::string lower(arg.size(), ' ');
+    std::transform(arg.begin(), arg.end(), lower.begin(),
+        [](char c)->char{
+            return static_cast<char>(std::tolower(static_cast<int>(c)));
+        });
+
+    auto pos = lower.find("help");
+    if ((pos < lower.size()) && (pos  + 4 <= lower.size()))
+        return (lower.substr(pos, pos + 4).compare("help") == 0);
+
+    return false;
+}
 
 #endif

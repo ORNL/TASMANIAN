@@ -3,18 +3,18 @@
 
 #include "benchCommon.hpp"
 
-bool bench_evaluate(std::vector<std::string> &args){
+bool bench_evaluate(std::deque<std::string> &args){
     if (args.size() != 12) return false;
 
     // report the test parameters to reference later
     cout << "evaluate";
-    for(auto s = args.crbegin(); s != args.crend(); s++) cout << " " << *s;
+    for(auto &s : args) cout << " " << s;
 
-    TypeOneDRule grid_family = getGridFamily(args.back());
+    TypeOneDRule grid_family = getGridFamily(args.front());
     if (grid_family == rule_none) return false;
-    args.pop_back();
+    args.pop_front();
 
-    auto riter = args.rbegin();
+    auto riter = args.begin();
     int num_dimensions   = std::stoi(*riter++);
     int num_outputs      = std::stoi(*riter++);
     int num_depth        = std::stoi(*riter++);

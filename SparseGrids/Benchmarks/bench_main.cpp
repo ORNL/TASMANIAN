@@ -6,16 +6,16 @@ int main(int argc, char** argv){
 
     //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
 
-    std::vector<std::string> args = stringArgs(argc, argv);
+    std::deque<std::string> args = stringArgs(argc, argv);
 
-    if (args.empty() || hasHelp(args.back())){
+    if (args.empty() || hasHelp(args.front())){
         printHelp(test_none);
         return 0;
     }
 
-    auto test = getTest(args.back());
-    args.pop_back();
-    if ((test == test_none) || args.empty() || hasHelp(args.back())){
+    auto test = getTest(args.front());
+    args.pop_front();
+    if ((test == test_none) || args.empty() || hasHelp(args.front())){
         printHelp(test);
         return (test == test_none) ? 1 : 0;
     }
