@@ -88,6 +88,7 @@ public:
     TasgridWrapper();
     ~TasgridWrapper();
 
+    static TypeCommand hasCommand(std::string const &s);
     static TypeConformalMap getConfromalType(const char* name);
 
     void setCommand(TypeCommand com);

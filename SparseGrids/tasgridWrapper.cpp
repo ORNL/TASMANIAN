@@ -43,6 +43,46 @@ TasgridWrapper::TasgridWrapper() : command(command_none), num_dimensions(0), num
 {}
 TasgridWrapper::~TasgridWrapper(){}
 
+TypeCommand TasgridWrapper::hasCommand(std::string const &s){
+    std::map<std::string, TypeCommand> commands = {
+            {"-makeglobal",     command_makeglobal},     {"-mg", command_makeglobal},
+            {"-makesequence",   command_makesequence},   {"-ms", command_makesequence},
+            {"-makelocalpoly",  command_makelocalp},     {"-mp", command_makelocalp},
+            {"-makewavelet",    command_makewavelet},    {"-mw", command_makewavelet},
+            {"-makefourier",    command_makefourier},    {"-mf", command_makefourier},
+            {"-makequadrature", command_makequadrature}, {"-mq", command_makequadrature},
+            {"-makeupdate",      command_update},          {"-mu",   command_update},
+            {"-setconformal",    command_setconformal},    {"-sc",   command_setconformal},
+            {"-getquadrature",   command_getquadrature},   {"-gq",   command_getquadrature},
+            {"-getinterweights", command_getinterweights}, {"-gi",   command_getinterweights},
+            {"-getpoints",  command_getpoints},  {"-gp", command_getpoints},
+            {"-getneeded",  command_getneeded},  {"-gn", command_getneeded},
+            {"-loadvalues", command_loadvalues}, {"-l",  command_loadvalues},
+            {"-evaluate",   command_evaluate},   {"-e",  command_evaluate},
+            {"-integrate",  command_integrate},  {"-i",  command_integrate},
+            {"-evalhierarchyd", command_evalhierarchical_dense},  {"-ehd", command_evalhierarchical_dense},
+            {"-evalhierarchys", command_evalhierarchical_sparse}, {"-ehs", command_evalhierarchical_sparse},
+            {"-getanisotropy", command_getanisocoeff}, {"-ga", command_getanisocoeff},
+            {"-refinesurp",    command_refine_surp},   {"-rs", command_refine_surp},
+            {"-refineaniso",   command_refine_aniso},  {"-ra", command_refine_aniso},
+            {"-refine",        command_refine},        {"-r",  command_refine},
+            {"-cancelrefine",  command_refine_clear},  {"-cr",   command_refine_clear},
+            {"-mergerefine",   command_refine_merge},  {"-mr",   command_refine_merge},
+            {"-summary", command_summary}, {"-s",   command_summary},
+            {"-getcoefficients", command_getcoefficients}, {"-gc", command_getcoefficients},
+            {"-setcoefficients", command_setcoefficients}, {"-sc", command_setcoefficients},
+            {"-getpoly",          command_getpoly},
+            {"-getpointsindexes", command_getpointsindex},
+            {"-getneededindexes", command_getneededindex}
+        };
+
+    try{
+        return commands.at(s);
+    }catch(std::out_of_range &){
+        return command_none;
+    }
+}
+
 TypeConformalMap TasgridWrapper::getConfromalType(const char* name){
     if (strcmp(name, "asin") == 0){
         return conformal_asin;

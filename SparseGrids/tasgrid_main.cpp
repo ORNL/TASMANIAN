@@ -117,13 +117,13 @@ int main(int argc, const char ** argv){
     }
 
     // help with interface commands
-    if (args.front().compare("-listtypes") == 0){
+    if (args.front() == "-listtypes"){
         printHelp(help_listtypes);
         return 0;
     }
 
     // testing
-    if (args.front().compare("-test") == 0){
+    if (args.front() == "-test"){
         bool debug = false;
         bool debugII = false;
         bool verbose = false;
@@ -174,72 +174,13 @@ int main(int argc, const char ** argv){
     // doing actual work with a grid
     // get the command
     TasgridWrapper wrap;
-    if ((strcmp(argv[1],"-makeglobal") == 0) || (strcmp(argv[1],"-mg") == 0)){
-        wrap.setCommand(command_makeglobal);
-    }else if ((strcmp(argv[1],"-makesequence") == 0) || (strcmp(argv[1],"-ms") == 0)){
-        wrap.setCommand(command_makesequence);
-    }else if ((strcmp(argv[1],"-makelocalpoly") == 0) || (strcmp(argv[1],"-mp") == 0)){
-        wrap.setCommand(command_makelocalp);
-    }else if ((strcmp(argv[1],"-makewavelet") == 0) || (strcmp(argv[1],"-mw") == 0)){
-        wrap.setCommand(command_makewavelet);
-    }else if ((strcmp(argv[1],"-makefourier") == 0) || (strcmp(argv[1],"-mf") == 0)){
-        wrap.setCommand(command_makefourier);
-    }else if ((strcmp(argv[1],"-makequadrature") == 0) || (strcmp(argv[1],"-mq") == 0)){
-        wrap.setCommand(command_makequadrature);
-    }else if ((strcmp(argv[1],"-makeupdate") == 0) || (strcmp(argv[1],"-mu") == 0)){
-        wrap.setCommand(command_update);
-    }else if ((strcmp(argv[1],"-setconformal") == 0) || (strcmp(argv[1],"-sc") == 0)){
-        wrap.setCommand(command_setconformal);
-    }else if ((strcmp(argv[1],"-getquadrature") == 0) || (strcmp(argv[1],"-gq") == 0)){
-        wrap.setCommand(command_getquadrature);
-    }else if ((strcmp(argv[1],"-getinterweights") == 0) || (strcmp(argv[1],"-gi") == 0)){
-        wrap.setCommand(command_getinterweights);
-    }else if ((strcmp(argv[1],"-getpoints") == 0) || (strcmp(argv[1],"-gp") == 0)){
-        wrap.setCommand(command_getpoints);
-    }else if ((strcmp(argv[1],"-getneededpoints") == 0) || (strcmp(argv[1],"-gn") == 0) || (strcmp(argv[1],"-getneeded") == 0)){
-        if (strcmp(argv[1],"-getneededpoints") == 0){
-            cerr << "WARNING: -getneededpoints is a deprecated command, use -getneeded instead" << endl;
-        }
-        wrap.setCommand(command_getneeded);
-    }else if ((strcmp(argv[1],"-loadvalues") == 0) || (strcmp(argv[1],"-l") == 0)){
-        wrap.setCommand(command_loadvalues);
-    }else if ((strcmp(argv[1],"-evaluate") == 0) || (strcmp(argv[1],"-e") == 0)){
-        wrap.setCommand(command_evaluate);
-    }else if ((strcmp(argv[1],"-evalhierarchyd") == 0) || (strcmp(argv[1],"-ehd") == 0)){
-        wrap.setCommand(command_evalhierarchical_dense);
-    }else if ((strcmp(argv[1],"-evalhierarchys") == 0) || (strcmp(argv[1],"-ehs") == 0)){
-        wrap.setCommand(command_evalhierarchical_sparse);
-    }else if ((strcmp(argv[1],"-integrate") == 0) || (strcmp(argv[1],"-i") == 0)){
-        wrap.setCommand(command_integrate);
-    }else if ((strcmp(argv[1],"-getanisotropy") == 0) || (strcmp(argv[1],"-ga") == 0)){
-        wrap.setCommand(command_getanisocoeff);
-    }else if ((strcmp(argv[1],"-refinesurp") == 0) || (strcmp(argv[1],"-rs") == 0)){
-        wrap.setCommand(command_refine_surp);
-    }else if ((strcmp(argv[1],"-refineaniso") == 0) || (strcmp(argv[1],"-ra") == 0)){
-        wrap.setCommand(command_refine_aniso);
-    }else if ((strcmp(argv[1],"-refine") == 0) || (strcmp(argv[1],"-r") == 0)){
-        wrap.setCommand(command_refine);
-    }else if ((strcmp(argv[1],"-cancelrefine") == 0) || (strcmp(argv[1],"-cr") == 0)){
-        wrap.setCommand(command_refine_clear);
-    }else if ((strcmp(argv[1],"-mergerefine") == 0) || (strcmp(argv[1],"-mr") == 0)){
-        wrap.setCommand(command_refine_merge);
-    }else if (strcmp(argv[1],"-getpoly") == 0){
-        wrap.setCommand(command_getpoly);
-    }else if ((strcmp(argv[1],"-summary") == 0) || (strcmp(argv[1],"-s") == 0)){
-        wrap.setCommand(command_summary);
-    }else if ((strcmp(argv[1],"-getcoefficients") == 0) || (strcmp(argv[1],"-gc") == 0)){
-        wrap.setCommand(command_getcoefficients);
-    }else if ((strcmp(argv[1],"-setcoefficients") == 0) || (strcmp(argv[1],"-sc") == 0)){
-        wrap.setCommand(command_setcoefficients);
-    }else if (strcmp(argv[1],"-getpointsindexes") == 0){
-        wrap.setCommand(command_getpointsindex);
-    }else if (strcmp(argv[1],"-getneededindexes") == 0){
-        wrap.setCommand(command_getneededindex);
-    }else{
-        cout << "ERROR: unknown command " << argv[1] << endl;
+    auto command = TasgridWrapper::hasCommand(args.front());
+    if (command == command_none){
+        cout << "ERROR: unknown command " << args.front() << endl;
         printHelp();
         return 1;
     }
+    wrap.setCommand(command);
 
     // parse the parameters
     int k = 2;
