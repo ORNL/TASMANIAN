@@ -229,7 +229,6 @@ public:
 
     const double* getHierarchicalCoefficients() const; // formerly getSurpluses();  returns an alias to internal data structure
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
-    void evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const;
     void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
     void setHierarchicalCoefficients(const double c[]);
 

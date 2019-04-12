@@ -370,42 +370,6 @@ bool GridUnitTester::testAPIconsistency(){
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "level limits" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
 
-    pass = true;
-    grid.makeLocalPolynomialGrid(3, 2, 4, rule_localp);
-    int *apntr, *aindx;
-    double *avals;
-    std::vector<int> vpntr, vindx;
-    std::vector<double> vvals;
-    x = {0.33, 0.33, 0.33, 0.0, 0.44, 0.66, 0.1, -0.33, -0.66};
-    grid.evaluateSparseHierarchicalFunctions(x.data(), 3, apntr, aindx, avals);
-    grid.evaluateSparseHierarchicalFunctions(x, vpntr, vindx, vvals);
-    pass = doesMatch(vpntr, apntr) && doesMatch(vindx, aindx) && doesMatch(vvals, avals);
-    delete[] apntr;
-    delete[] aindx;
-    delete[] avals;
-    vpntr.clear();
-    vindx.clear();
-    vvals.clear();
-
-    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "localp sparse basis" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
-    passAll = pass && passAll;
-
-    pass = true;
-    grid.makeWaveletGrid(3, 3, 2, 3);
-    x = {0.33, 0.33, 0.33, 0.0, 0.44, 0.66, 0.1, -0.33, -0.66};
-    grid.evaluateSparseHierarchicalFunctions(x.data(), 3, apntr, aindx, avals);
-    grid.evaluateSparseHierarchicalFunctions(x, vpntr, vindx, vvals);
-    pass = doesMatch(vpntr, apntr) && doesMatch(vindx, aindx) && doesMatch(vvals, avals);
-    delete[] apntr;
-    delete[] aindx;
-    delete[] avals;
-    vpntr.clear();
-    vindx.clear();
-    vvals.clear();
-
-    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "wavelet sparse basis" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
-    passAll = pass && passAll;
-
     // test integer-to-enumerate and string-to-enumerate conversion
     pass = true;
     std::vector<TypeAcceleration> allacc = {accel_none, accel_cpu_blas, accel_gpu_default, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma};

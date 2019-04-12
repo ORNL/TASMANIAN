@@ -719,28 +719,6 @@ bool ExternalTester::testAllGlobal() const{
             pass = false;
         }
     }
-    { TasGrid::TasmanianSparseGrid grid; grid.makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_fejer2);
-        int *indx = 0, *pntr = 0;
-        double *vals = 0;
-        double *pnts = new double[20]; setRandomX(20, pnts);
-        grid.evaluateSparseHierarchicalFunctions(pnts, 10, pntr, indx, vals);
-        getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
-        const double *coeff = grid.getHierarchicalCoefficients();
-        double *y = new double[10];
-        grid.evaluateBatch(pnts, 10, y);
-        for(int i=0; i<10; i++){
-            for(int j=pntr[i]; j<pntr[i+1]; j++){
-                y[i] -= coeff[indx[j]] * vals[j];
-            }
-        }
-        for(int i=0; i<10; i++){
-            if (fabs(y[i]) > TSG_NUM_TOL){
-                cout << "Error in evaluateSparseHierarchicalFunctions() (global)" << endl;
-                pass = false;
-            }
-        }
-        delete[] indx; delete[] pntr; delete[] vals; delete[] pnts; delete[] y;
-    }
     int wfirst = 11, wsecond = 34, wthird = 15;
     if (pass){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "global/sequence" << setw(wthird) << "Pass" << endl;
@@ -931,14 +909,14 @@ bool ExternalTester::testAllPWLocal() const{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
     }}
     { TasGrid::TasmanianSparseGrid grid; grid.makeLocalPolynomialGrid(2, 1, 4, 1);
-        int *indx = 0, *pntr = 0;
-        double *vals = 0;
-        double *pnts = new double[20]; setRandomX(20, pnts);
-        grid.evaluateSparseHierarchicalFunctions(pnts, 10, pntr, indx, vals);
+        std::vector<int> indx, pntr;
+        std::vector<double> vals;
+        std::vector<double> pnts(20); setRandomX((int) pnts.size(), pnts.data());
+        grid.evaluateSparseHierarchicalFunctions(pnts, pntr, indx, vals);
         getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
         const double *coeff = grid.getHierarchicalCoefficients();
-        double *y = new double[10];
-        grid.evaluateBatch(pnts, 10, y);
+        std::vector<double> y(10);
+        grid.evaluateBatch(pnts.data(), 10, y.data());
         for(int i=0; i<10; i++){
             for(int j=pntr[i]; j<pntr[i+1]; j++){
                 y[i] -= coeff[indx[j]] * vals[j];
@@ -950,7 +928,6 @@ bool ExternalTester::testAllPWLocal() const{
                 pass = false;
             }
         }
-        delete[] indx; delete[] pntr; delete[] vals; delete[] pnts; delete[] y;
     }
     wfirst = 11; wsecond = 34;
     if (pass){
@@ -1004,14 +981,13 @@ bool ExternalTester::testAllWavelet() const{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(rule_wavelet) << setw(wthird) << "FAIL" << endl; pass = false;
     }{ TasGrid::TasmanianSparseGrid grid;
         grid.makeWaveletGrid(2, 1, 2, 1);
-        int *indx = 0, *pntr = 0;
-        double *vals = 0;
-        double *pnts = new double[20]; setRandomX(20, pnts);
-        grid.evaluateSparseHierarchicalFunctions(pnts, 10, pntr, indx, vals);
+        std::vector<int> indx, pntr;
+        std::vector<double> vals, pnts(20); setRandomX((int) pnts.size(), pnts.data());
+        grid.evaluateSparseHierarchicalFunctions(pnts, pntr, indx, vals);
         getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
         const double *coeff = grid.getHierarchicalCoefficients();
-        double *y = new double[10];
-        grid.evaluateBatch(pnts, 10, y);
+        std::vector<double> y(10);
+        grid.evaluateBatch(pnts.data(), 10, y.data());
         for(int i=0; i<10; i++){
             for(int j=pntr[i]; j<pntr[i+1]; j++){
                 y[i] -= coeff[indx[j]] * vals[j];
@@ -1024,11 +1000,11 @@ bool ExternalTester::testAllWavelet() const{
                 pass = false;
             }
         }
-        double *v = new double[10 * grid.getNumPoints()];
+        std::vector<double> v(10 * grid.getNumPoints());
         getError(&f21nx2, &grid, type_internal_interpolation);
-        grid.evaluateHierarchicalFunctions(pnts, 10, v);
+        grid.evaluateHierarchicalFunctions(pnts, v);
         coeff = grid.getHierarchicalCoefficients();
-        grid.evaluateBatch(pnts, 10, y);
+        grid.evaluateBatch(pnts.data(), 10, y.data());
         for(int i=0; i<10; i++){
             for(int j=0; j<grid.getNumPoints(); j++){
                 y[i] -= coeff[j] * v[i*grid.getNumPoints() + j];
@@ -1041,12 +1017,6 @@ bool ExternalTester::testAllWavelet() const{
                 pass = false;
             }
         }
-        delete[] indx;
-        delete[] pntr;
-        delete[] vals;
-        delete[] pnts;
-        delete[] y;
-        delete[] v;
     }
     return pass;
 }
@@ -1065,33 +1035,14 @@ bool ExternalTester::testAllFourier() const{
     }{ TasGrid::TasmanianSparseGrid grid;
         grid.makeFourierGrid(2, 1, 4, TasGrid::type_level);
         int num_eval = 10;
-        int *indx = 0, *pntr = 0;
-        double *vals = 0;
         double *pnts = new double[2*num_eval]; setRandomX(2*num_eval, pnts);
         for(int i=0; i<2*num_eval; i++) pnts[i] = 0.5*(pnts[i]+1.0);    // map to [0,1]^d canonical Fourier domain
-        grid.evaluateSparseHierarchicalFunctions(pnts, num_eval, pntr, indx, vals);
-        getError(&f21expsincos, &grid, type_internal_interpolation); // this is done to load the values
-        const double *coeff = grid.getHierarchicalCoefficients();    // coeff = [fourier_coeff_1.real(), fourier_coeff_1.imag(), fourier_coeff_2.real(), ...]
-        double *y = new double[num_eval];
-        grid.evaluateBatch(pnts, num_eval, y);
 
         int num_points = grid.getNumPoints();
-        int num_outputs = grid.getNumOutputs();
-        for(int i=0; i<num_eval; i++){
-            for(int j=pntr[i]; j<pntr[i+1]; j++){
-                y[i] -= (coeff[indx[j]] * vals[2*j] - coeff[indx[j] + num_points*num_outputs]*vals[2*j+1]);
-            }
-        }
-        for(int i=0; i<num_eval; i++){
-            if (fabs(y[i]) > TSG_NUM_TOL){
-                cout << "Error in evaluateSparseHierarchicalFunctions() (fourier)" << endl;
-                cout << "y["<<i<<"] = "<<y[i] << endl;
-                pass = false;
-            }
-        }
-
+        double *y = new double[num_eval];
         double *v = new double[2 * num_eval * num_points];
         getError(&f21expsincos, &grid, type_internal_interpolation);
+        const double *coeff = grid.getHierarchicalCoefficients();    // coeff = [fourier_coeff_1.real(), fourier_coeff_1.imag(), fourier_coeff_2.real(), ...]
         grid.evaluateHierarchicalFunctions(pnts, num_eval, v);
         grid.evaluateBatch(pnts, num_eval, y);
         for(int i=0; i<num_eval; i++){
@@ -1106,9 +1057,6 @@ bool ExternalTester::testAllFourier() const{
                 pass = false;
             }
         }
-        delete[] indx;
-        delete[] pntr;
-        delete[] vals;
         delete[] pnts;
         delete[] y;
         delete[] v;
@@ -1794,9 +1742,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         // grid.printStats();
         // cout << "Memory requirements = " << (grid.getNumPoints() * nump * 8) / (1024 * 1024) << "MB" << endl;
 
-        int *pntr = 0, *indx = 0;
-        double *vals = 0;
-        grid.evaluateSparseHierarchicalFunctions(xt.data(), nump, pntr, indx, vals);
+        std::vector<int> pntr, indx;
+        std::vector<double> vals;
+        grid.evaluateSparseHierarchicalFunctions(xt, pntr, indx, vals);
 
         for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
             bool dense_pass = true;
@@ -1870,10 +1818,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             AccelerationMeta::delCudaArray<int>(gpu_indx);
             AccelerationMeta::delCudaArray<double>(gpu_vals);
         }
-
-        delete[] pntr;
-        delete[] indx;
-        delete[] vals;
     }
 
     // Sequence Grid evaluations of the basis functions

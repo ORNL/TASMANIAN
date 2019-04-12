@@ -840,9 +840,11 @@ bool TasgridWrapper::getEvalHierarchySparse(){
         cerr << "ERROR: no points specified in " << xfilename << endl;
         return false;
     }
-    int *pntr = 0, *indx = 0;
-    double *vals = 0;
-    grid.evaluateSparseHierarchicalFunctions(x, (int) rows, pntr, indx, vals);
+    std::vector<double> vecx(Utils::size_mult(rows, cols));
+    std::copy_n(x, vecx.size(), vecx.begin());
+    std::vector<int> pntr , indx;
+    std::vector<double> vals;
+    grid.evaluateSparseHierarchicalFunctions(vecx, pntr, indx, vals);
     int num_p = grid.getNumPoints();
     int num_nz = pntr[rows];
     if (outfilename != 0){
@@ -874,9 +876,9 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             matrix_dims[1] = num_p;
             matrix_dims[2] = num_nz;
             ofs.write((char*) matrix_dims, 3 * sizeof(int));
-            ofs.write((char*) pntr, (rows+1) * sizeof(int));
-            ofs.write((char*) indx, num_nz * sizeof(int));
-            ofs.write((char*) vals, (grid.isFourier() ? 2 : 1) * num_nz * sizeof(double));
+            ofs.write((char*) pntr.data(), (rows+1) * sizeof(int));
+            ofs.write((char*) indx.data(), num_nz * sizeof(int));
+            ofs.write((char*) vals.data(), (grid.isFourier() ? 2 : 1) * num_nz * sizeof(double));
             ofs.close();
         }
     }
@@ -896,9 +898,6 @@ bool TasgridWrapper::getEvalHierarchySparse(){
         }
         cout << endl;
     }
-    delete[] pntr;
-    delete[] indx;
-    delete[] vals;
     delete[] x;
     return true;
 }
