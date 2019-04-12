@@ -171,6 +171,7 @@ public:
     void setDomainTransform(const std::vector<double> &a, const std::vector<double> &b);
     void getDomainTransform(std::vector<double> &a, std::vector<double> &b) const;
 
+    void setConformalTransformASIN(std::vector<int> const &truncation){ setConformalTransformASIN(truncation.data()); }
     void setConformalTransformASIN(const int truncation[]);
     bool isSetConformalTransformASIN() const;
     void clearConformalTransform();

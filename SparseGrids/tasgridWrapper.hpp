@@ -169,11 +169,11 @@ protected:
     bool getPointsIndexes();
     bool getNeededIndexes();
 
-    int* readAnisotropicFile(int num_weights) const;
-    double* readTransform() const;
-    int* readLevelLimits(int num_weights) const;
+    std::vector<int> readAnisotropicFile(int num_weights) const;
+    std::pair<std::vector<double>, std::vector<double>> readTransform() const;
+    std::vector<int> readLevelLimits(int num_weights) const;
 
-    static void readMatrix(std::string const &filename, size_t &rows, size_t &cols, double* &mat);
+    static Data2D<double> readMatrix(std::string const &filename);
     static void writeMatrix(std::string const &filename, int rows, int cols, const double mat[], bool ascii);
     void printMatrix(int rows, int cols, const double mat[], bool isComplex = false) const;
 

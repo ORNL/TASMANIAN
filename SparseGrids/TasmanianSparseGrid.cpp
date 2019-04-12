@@ -1189,7 +1189,7 @@ void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
     base->setHierarchicalCoefficients(c, acceleration);
 }
 void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> &c){
-    size_t num_coeffs = Utils::size_mult(getNumOutputs(), getNumLoaded()) * ((isFourier()) ? 2 : 1);
+    size_t num_coeffs = Utils::size_mult(getNumOutputs(), getNumPoints()) * ((isFourier()) ? 2 : 1);
     if (c.size() != num_coeffs) throw std::runtime_error("ERROR: setHierarchicalCoefficients() called with wrong size of the coefficients.");
     setHierarchicalCoefficients(c.data());
 }
