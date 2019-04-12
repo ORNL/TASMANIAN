@@ -520,13 +520,9 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
     std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
-    auto t = weighted_points.begin();
     auto ix = x.begin();
-    while(t != weighted_points.end()){
-        std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule->getNode(i); });
-        std::advance(ix, num_dimensions);
-        t++;
-    }
+    for(auto t = weighted_points.begin(); t != weighted_points.end(); t++)
+        ix = std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule->getNode(i); });
     return x;
 }
 void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){
@@ -805,51 +801,25 @@ double GridLocalPolynomial::evalBasisSupported(const int point[], const double x
     return f;
 }
 
-void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, int* &spntr, int* &sindx, double* &svals) const{
-    std::vector<std::vector<int>> tindx;
-    std::vector<std::vector<double>> tvals;
-    std::vector<int> numnz;
-    buildSparseMatrixBlockForm(x, num_x, num_chunk, numnz, tindx, tvals);
-
-    spntr = new int[num_x + 1];
-
-    int nz = 0;
-    for(int i=0; i<num_x; i++){
-        spntr[i] = nz;
-        nz += numnz[i];
-    }
-    spntr[num_x] = nz;
-
-    sindx = new int[nz];
-    svals = new double[nz];
-
-    int c = 0;
-    for(auto &idx : tindx) for(auto i: idx) sindx[c++] = i;
-    c = 0;
-    for(auto &vls : tvals) for(auto v: vls) svals[c++] = v;
-}
 void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const{
     std::vector<std::vector<int>> tindx;
     std::vector<std::vector<double>> tvals;
     std::vector<int> numnz;
     buildSparseMatrixBlockForm(x, num_x, num_chunk, numnz, tindx, tvals);
 
-    spntr.resize(num_x + 1);
+    spntr = std::vector<int>((size_t) num_x + 1);
 
-    int nz = 0;
-    auto inz = numnz.begin();
-    for(auto &s: spntr){
-        s = nz;
-        nz += *inz++;
-    }
+    spntr[0] = 0;
+    for(size_t i=1; i<spntr.size(); i++)
+        spntr[i] += numnz[i-1] + spntr[i-1];
 
-    sindx.resize(nz);
-    svals.resize(nz);
+    sindx = std::vector<int>((size_t) spntr.back());
+    svals = std::vector<double>((size_t) spntr.back());
 
     auto ii = sindx.begin();
-    for(auto &idx : tindx) for(auto i: idx) *ii++ = i;
+    for(auto &idx : tindx) ii = std::copy(idx.begin(), idx.end(), ii);
     auto iv = svals.begin();
-    for(auto &vls : tvals) for(auto v: vls) *iv++ = v;
+    for(auto &vls : tvals) iv = std::copy(vls.begin(), vls.end(), iv);
 }
 void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_x, int num_chunk, int *spntr, int *sindx, double *svals) const{
     std::vector<std::vector<int>> tindx;
@@ -863,10 +833,16 @@ void GridLocalPolynomial::buildSpareBasisMatrixStatic(const double x[], int num_
         nz += numnz[i];
     }
     spntr[num_x] = nz;
-    int c = 0;
-    for(auto &idx : tindx) for(auto i: idx) sindx[c++] = i;
+    size_t c = 0;
+    for(auto &idx : tindx){
+        std::copy(idx.begin(), idx.end(), &(sindx[c]));
+        c += idx.size();
+    }
     c = 0;
-    for(auto &vls : tvals) for(auto v: vls) svals[c++] = v;
+    for(auto &vls : tvals){
+        std::copy(vls.begin(), vls.end(), &(svals[c]));
+        c += vls.size();
+    }
 }
 int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
@@ -887,7 +863,7 @@ int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) cons
 
 void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz, std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const{
     // numnz will be resized to (num_x + 1) with the last entry set to a dummy zero
-    numnz.resize(num_x + 1);
+    numnz.resize((size_t) num_x);
     int num_blocks = num_x / num_chunk + ((num_x % num_chunk != 0) ? 1 : 0);
 
     tindx.resize(num_blocks);
@@ -907,7 +883,6 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
             numnz[i] = (int) tindx[b].size() - numnz[i];
         }
     }
-    numnz[num_x] = 0;
 }
 
 #ifdef Tasmanian_ENABLE_CUDA

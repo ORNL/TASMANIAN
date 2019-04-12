@@ -56,12 +56,12 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     #endif // _OPENMP
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(accel_none), gpuID(0), usingDynamicConstruction(false){
+TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(accel_none), gpu_id(0), usingDynamicConstruction(false){
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
 }
-TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : acceleration(accel_none), gpuID(0), usingDynamicConstruction(false)
+TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : acceleration(accel_none), gpu_id(0), usingDynamicConstruction(false)
 {
     copyGrid(&source);
 #ifdef Tasmanian_ENABLE_BLAS
@@ -79,9 +79,9 @@ TasmanianSparseGrid& TasmanianSparseGrid::operator=(TasmanianSparseGrid const &s
 
 void TasmanianSparseGrid::clear(){
     base = std::unique_ptr<BaseCanonicalGrid>();
-    domain_transform_a.resize(0);
-    domain_transform_b.resize(0);
-    conformal_asin_power.clear();
+    domain_transform_a = std::vector<double>();
+    domain_transform_b = std::vector<double>();
+    conformal_asin_power = std::vector<int>();
     usingDynamicConstruction = false;
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
@@ -89,7 +89,7 @@ void TasmanianSparseGrid::clear(){
     acceleration = accel_none;
 #endif // Tasmanian_ENABLE_BLAS
 #ifdef Tasmanian_ENABLE_CUDA
-    gpuID = 0;
+    gpu_id = 0;
     acc_domain.reset();
     engine.reset();
 #endif // Tasmanian_ENABLE_CUDA
@@ -1067,7 +1067,7 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double
     int num_points = getNumPoints();
     size_t num_x = x.size() / getNumDimensions();
     size_t expected_size = num_points * num_x * (isFourier() ? 2 : 1);
-    if (y.size() < expected_size) y.resize(expected_size);
+    y.resize(expected_size);
     evaluateHierarchicalFunctions(x.data(), (int) num_x, y.data());
 }
 #ifdef Tasmanian_ENABLE_CUDA
@@ -1108,45 +1108,6 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double*, 
 }
 #endif
 
-void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const{
-    Data2D<double> x_tmp;
-    const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
-    if (isLocalPolynomial()){
-        getGridLocalPolynomial()->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
-    }else if (isWavelet()){
-        int num_points = base->getNumPoints();
-        Data2D<double> dense_vals(num_points, num_x);
-        getGridWavelet()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
-        int num_nz = 0;
-        for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;
-        pntr = new int[num_x+1];
-        indx = new int[num_nz];
-        vals = new double[num_nz];
-        num_nz = 0;
-        for(int i=0; i<num_x; i++){
-            pntr[i] = num_nz;
-            const double *v = dense_vals.getStrip(i);
-            for(int j=0; j<num_points; j++){
-                if (v[j] != 0.0){
-                    indx[num_nz] = j;
-                    vals[num_nz++] = v[j];
-                }
-            }
-        }
-        pntr[num_x] = num_nz;
-    }else{
-        int num_points = base->getNumPoints();
-        vals = new double[(isFourier() ? 2 * num_x * num_points : num_x * num_points)];
-        base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);
-        pntr = new int[num_x + 1];
-        pntr[0] = 0;
-        for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + num_points;
-        indx  = new int[num_x * num_points];
-        for(int i=0; i<num_x; i++){
-            for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
-        }
-    }
-}
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const{
     int num_x = ((int) x.size()) / getNumDimensions();
     Data2D<double> x_tmp;
@@ -1191,7 +1152,7 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
     }else if (empty()){
         return 0;
     }else{
-        return num_x * base->getNumPoints();
+        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGetNZ() called for a grid that is neither local polynomial not wavelet");
     }
     return num_nz;
 }
@@ -1220,20 +1181,18 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
         }
         pntr[num_x] = num_nz;
     }else{
-        int num_points = base->getNumPoints();
-        base->evaluateHierarchicalFunctions(x_canonical, num_x, vals);
-        pntr[0] = 0;
-        for(int i=0; i<num_x; i++) pntr[i+1] = pntr[i] + num_points;
-        for(int i=0; i<num_x; i++){
-            for(int j=0; j<num_points; j++) indx[i*num_points + j] = j;
-        }
+        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsStatic() called for a grid that is neither local polynomial not wavelet");
     }
 }
 
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
     base->setHierarchicalCoefficients(c, acceleration);
 }
-void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> &c){ setHierarchicalCoefficients(c.data()); }
+void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> &c){
+    size_t num_coeffs = Utils::size_mult(getNumOutputs(), getNumLoaded()) * ((isFourier()) ? 2 : 1);
+    if (c.size() != num_coeffs) throw std::runtime_error("ERROR: setHierarchicalCoefficients() called with wrong size of the coefficients.");
+    setHierarchicalCoefficients(c.data());
+}
 
 std::vector<int> TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation) const{
     if (isGlobal()){
@@ -1634,7 +1593,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
         acceleration = effective_acc;
         #ifdef Tasmanian_ENABLE_CUDA
         if (AccelerationMeta::isAccTypeGPU(acceleration)){ // using CUDA
-            if (!engine) engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpuID));
+            if (!engine) engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpu_id));
             engine->setBackendMAGMA((acceleration == accel_gpu_magma));
         }else{ // using not CUDA, clear any loaded data
             if (engine) engine.reset();
@@ -1682,21 +1641,23 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
     }
 }
 
-void TasmanianSparseGrid::setGPUID(int new_gpuID){
-    if (new_gpuID != gpuID){
+void TasmanianSparseGrid::setGPUID(int new_gpu_id){
+    if (new_gpu_id != gpu_id){
         #ifdef Tasmanian_ENABLE_CUDA
+        if ((new_gpu_id < 0) || (new_gpu_id >= AccelerationMeta::getNumCudaDevices()))
+            throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
         if (!empty()) base->clearAccelerationData();
         acc_domain.reset();
-        gpuID = new_gpuID;
+        gpu_id = new_gpu_id;
         if (engine){
             bool use_magma = engine->backendMAGMA();
-            engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpuID));
+            engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpu_id));
             engine->setBackendMAGMA(use_magma);
         }
         #endif
     }
 }
-int TasmanianSparseGrid::getGPUID() const{ return gpuID; }
+int TasmanianSparseGrid::getGPUID() const{ return gpu_id; }
 
 int TasmanianSparseGrid::getNumGPUs(){
     #ifdef Tasmanian_ENABLE_CUDA
