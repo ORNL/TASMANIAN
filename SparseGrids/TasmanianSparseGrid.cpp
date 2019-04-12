@@ -79,9 +79,9 @@ TasmanianSparseGrid& TasmanianSparseGrid::operator=(TasmanianSparseGrid const &s
 
 void TasmanianSparseGrid::clear(){
     base = std::unique_ptr<BaseCanonicalGrid>();
-    domain_transform_a.resize(0);
-    domain_transform_b.resize(0);
-    conformal_asin_power.clear();
+    domain_transform_a = std::vector<double>();
+    domain_transform_b = std::vector<double>();
+    conformal_asin_power = std::vector<int>();
     usingDynamicConstruction = false;
 #ifdef Tasmanian_ENABLE_BLAS
     acceleration = accel_cpu_blas;
