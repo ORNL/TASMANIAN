@@ -805,29 +805,6 @@ double GridLocalPolynomial::evalBasisSupported(const int point[], const double x
     return f;
 }
 
-void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, int* &spntr, int* &sindx, double* &svals) const{
-    std::vector<std::vector<int>> tindx;
-    std::vector<std::vector<double>> tvals;
-    std::vector<int> numnz;
-    buildSparseMatrixBlockForm(x, num_x, num_chunk, numnz, tindx, tvals);
-
-    spntr = new int[num_x + 1];
-
-    int nz = 0;
-    for(int i=0; i<num_x; i++){
-        spntr[i] = nz;
-        nz += numnz[i];
-    }
-    spntr[num_x] = nz;
-
-    sindx = new int[nz];
-    svals = new double[nz];
-
-    int c = 0;
-    for(auto &idx : tindx) for(auto i: idx) sindx[c++] = i;
-    c = 0;
-    for(auto &vls : tvals) for(auto v: vls) svals[c++] = v;
-}
 void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const{
     std::vector<std::vector<int>> tindx;
     std::vector<std::vector<double>> tvals;
