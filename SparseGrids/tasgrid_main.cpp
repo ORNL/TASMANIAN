@@ -28,16 +28,6 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include <cstdlib>
-#include <cstdio>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip>
-#include <string.h>
-#include <math.h>
-
-#include "TasmanianSparseGrid.hpp"
 #include "tasgridExternalTests.hpp"
 #include "tasgridWrapper.hpp"
 

@@ -33,15 +33,10 @@
 
 #include <cstdlib>
 #include <cstdio>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip>
-#include <random>
 #include <string.h>
 #include <math.h>
 
-#include "TasmanianSparseGrid.hpp"
+#include "tasgridCLICommon.hpp"
 
 #include "tasgridTestFunctions.hpp"
 

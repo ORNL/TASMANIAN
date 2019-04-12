@@ -31,23 +31,9 @@
 #ifndef __TASGRID_WRAPPER_HPP
 #define __TASGRID_WRAPPER_HPP
 
-#include <cstdlib>
-#include <cstdio>
-#include <iostream>
 #include <fstream>
-#include <string>
-#include <iomanip>
-#include <string.h>
-#include <math.h>
 
-#include "TasmanianSparseGrid.hpp"
-
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::setw;
-
-using namespace TasGrid;
+#include "tasgridCLICommon.hpp"
 
 enum TypeCommand{
     command_none,

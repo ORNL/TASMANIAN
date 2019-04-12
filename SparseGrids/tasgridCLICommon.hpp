@@ -28,46 +28,32 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASGRID_UNIT_TESTS_HPP
-#define __TASGRID_UNIT_TESTS_HPP
+#ifndef __TASGRID_COMMON_HPP
+#define __TASGRID_COMMON_HPP
 
-#include <string.h>
+/*!
+ * \internal
+ * \file tasgridCLICommon.hpp
+ * \brief Common executable includes and templates.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianCLI
+ *
+ * Defines common includes for the various executables and templates for managing command line arguments.
+ * \endinternal
+ */
 
-#include "tasgridCLICommon.hpp"
+#include <iomanip>
+#include <string>
+#include <map>
+#include <cmath>
+#include <random>
 
-enum UnitTests{
-    unit_none, unit_all, unit_cover, unit_except, unit_api, unit_c
-};
+#include "TasmanianSparseGrid.hpp"
 
-class GridUnitTester{
-public:
-    GridUnitTester();
-    ~GridUnitTester();
-
-    void setVerbose(bool new_verbose);
-
-    bool Test(UnitTests test);
-
-    bool testAllException();
-    bool testAPIconsistency();
-    bool testCInterface();
-    bool testCoverUnimportant();
-
-protected:
-    void invalidArgumentCall(int i);
-    void runtimeErrorCall(int i);
-
-    void gridLoadEN2(TasmanianSparseGrid *grid) const; // load points using exp( - \| x \|^2 )
-
-    bool doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec = 1.E-12) const;
-    bool doesMatch(const std::vector<double> &a, const double b[], double prec = 1.E-12) const;
-    bool doesMatch(const std::vector<int> &a, const int b[]) const;
-    bool doesMatch(size_t n, double a[], const double b[], double prec = 1.E-12) const;
-
-private:
-    bool verbose;
-};
-
-extern "C" int testInterfaceC();
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::setw;
+using namespace TasGrid;
 
 #endif
