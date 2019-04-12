@@ -64,7 +64,7 @@ using namespace TasGrid;
  * Converts the CLI arguments to strings, the first argument is the name of the executable and it is omitted.
  * \endinternal
  */
-inline std::deque<std::string> stringArgs(int argc, char** argv){
+inline std::deque<std::string> stringArgs(int argc, const char** argv){
     std::deque<std::string> args;
     for(int i = 1; i < argc; i++)
         args.push_back(std::string(argv[i]));
@@ -89,6 +89,31 @@ inline bool hasHelp(std::string const &arg){
         return (lower.substr(pos, pos + 4).compare("help") == 0);
 
     return false;
+}
+
+/*!
+ * \internal
+ * \brief Returns \b true if the string contains a request for version information.
+ *
+ * Accepted strings are "-v", "version", and "info" with "-" or "--".
+ * \endinternal
+ */
+inline bool hasVersion(std::string const &s){
+    std::map<std::string, bool> accpetable = {
+        {"-v",   true},
+        {"version", true},
+        {"-version", true},
+        {"--version",   true},
+        {"info",  true},
+        {"-info",  true},
+        {"--info",  true},
+    };
+
+    try{
+        return accpetable.at(s);
+    }catch(std::out_of_range &){
+        return false;
+    }
 }
 
 #endif

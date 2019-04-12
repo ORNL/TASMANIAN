@@ -46,22 +46,24 @@ int main(int argc, const char ** argv){
 
     //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
 
-    if (argc < 2){
-        cerr << "ERROR: no command specified" << endl << endl;
+    std::deque<std::string> args = stringArgs(argc, argv);
+
+    if (args.empty()){
+        cerr << "ERROR: no command specified\n\n";
         printHelp();
         return 1;
     }
 
     // basic help
-    if (hasHelp(argv[1])){
+    if (hasHelp(args.front())){
         printHelp();
         return 0;
     }
 
     // basic info, i.e., version, license, parallel support
-    if ((strcmp(argv[1],"-version") == 0) || (strcmp(argv[1],"-v") == 0) || (strcmp(argv[1],"-info") == 0)){
+    if (hasVersion(args.front())){
         cout << "Tasmanian Sparse Grids  version: " << TasmanianSparseGrid::getVersion() << endl;
-        if (strcmp(TasmanianSparseGrid::getGitCommitHash(), "Tasmanian git hash is not available here") != 0){
+        if (std::string(TasmanianSparseGrid::getGitCommitHash()).compare("Tasmanian git hash is not available here") != 0){
             cout << "                git commit hash: " << TasmanianSparseGrid::getGitCommitHash() << endl;
             cout << "                cmake cxx flags: " << TasmanianSparseGrid::getCmakeCxxFlags() << endl;
         }
