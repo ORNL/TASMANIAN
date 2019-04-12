@@ -520,13 +520,9 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
     std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
-    auto t = weighted_points.begin();
     auto ix = x.begin();
-    while(t != weighted_points.end()){
-        std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule->getNode(i); });
-        std::advance(ix, num_dimensions);
-        t++;
-    }
+    for(auto t = weighted_points.begin(); t != weighted_points.end(); t++)
+        ix = std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule->getNode(i); });
     return x;
 }
 void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){
