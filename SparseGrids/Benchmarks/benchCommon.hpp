@@ -5,24 +5,22 @@
 
 #include "tasgridCLICommon.hpp"
 
-enum TestFuction{
-    test_none,
-    test_evaluate
+enum BenchFuction{
+    bench_none,
+    bench_evaluate
 };
 
-TestFuction getTest(std::string const &s){
-    std::map<std::string, TestFuction> str_to_test = {
-        {"evaluate", test_evaluate},
+BenchFuction getTest(std::string const &s){
+    std::map<std::string, BenchFuction> str_to_test = {
+        {"evaluate", bench_evaluate},
     };
 
-    TestFuction test = test_none;
     try{
-        test = str_to_test.at(s);
+        return str_to_test.at(s);
     }catch(std::out_of_range &){
         cout << "ERROR: Unknown test: " << s << endl;
-
+        return bench_none;
     }
-    return test;
 }
 
 TypeOneDRule getGridFamily(std::string const &s){

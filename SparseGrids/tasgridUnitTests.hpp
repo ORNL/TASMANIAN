@@ -44,6 +44,8 @@ public:
     GridUnitTester();
     ~GridUnitTester();
 
+    static UnitTests hasTest(std::string const &s);
+
     void setVerbose(bool new_verbose);
 
     bool Test(UnitTests test);

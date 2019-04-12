@@ -95,15 +95,18 @@ inline bool hasHelp(std::string const &arg){
  * \internal
  * \brief Returns \b true if the string contains a request for version information.
  *
- * Accepted strings are "-v", "version", and "info" with "-" or "--".
+ * Accepted strings are "-v", "version", "verbose", and "info" with "-" or "--".
  * \endinternal
  */
-inline bool hasVersion(std::string const &s){
+inline bool hasInfo(std::string const &s){
     std::map<std::string, bool> accpetable = {
         {"-v",   true},
         {"version", true},
         {"-version", true},
         {"--version",   true},
+        {"verbose",   true},
+        {"-verbose",   true},
+        {"--verbose",   true},
         {"info",  true},
         {"-info",  true},
         {"--info",  true},
@@ -115,5 +118,16 @@ inline bool hasVersion(std::string const &s){
         return false;
     }
 }
+
+/*!
+ * \internal
+ * \brief Returns \b true if the string contains "random", "-random", "rand", or "-rand"
+ *
+ * \endinternal
+ */
+inline bool hasRandom(std::string const &s){
+    return ((s == "random") || (s == "-random") || (s == "rand") || (s == "-rand"));
+}
+
 
 #endif

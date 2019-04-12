@@ -3,7 +3,7 @@
 
 #include "benchCommon.hpp"
 
-bool bench_evaluate(std::deque<std::string> &args){
+bool benchmark_evaluate(std::deque<std::string> &args){
     if (args.size() != 12) return false;
 
     // report the test parameters to reference later

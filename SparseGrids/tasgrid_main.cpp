@@ -61,7 +61,7 @@ int main(int argc, const char ** argv){
     }
 
     // basic info, i.e., version, license, parallel support
-    if (hasVersion(args.front())){
+    if (hasInfo(args.front())){
         cout << "Tasmanian Sparse Grids  version: " << TasmanianSparseGrid::getVersion() << endl;
         if (std::string(TasmanianSparseGrid::getGitCommitHash()).compare("Tasmanian git hash is not available here") != 0){
             cout << "                git commit hash: " << TasmanianSparseGrid::getGitCommitHash() << endl;
@@ -117,13 +117,13 @@ int main(int argc, const char ** argv){
     }
 
     // help with interface commands
-    if (strcmp(argv[1],"-listtypes") == 0){
+    if (args.front().compare("-listtypes") == 0){
         printHelp(help_listtypes);
         return 0;
     }
 
     // testing
-    if (strcmp(argv[1],"-test") == 0){
+    if (args.front().compare("-test") == 0){
         bool debug = false;
         bool debugII = false;
         bool verbose = false;
@@ -132,36 +132,28 @@ int main(int argc, const char ** argv){
         TestList test = test_all;
 
         int gpuid = -1;
-        int k = 2;
-        while (k < argc){
-            if ((strcmp(argv[k],"debug") == 0)) debug = true;
-            if ((strcmp(argv[k],"db") == 0)) debugII = true;
-            if ((strcmp(argv[k],"verbose") == 0)) verbose = true;
-            if ((strcmp(argv[k],"v") == 0)) verbose = true;
-            if ((strcmp(argv[k],"-v") == 0)) verbose = true;
-            if ((strcmp(argv[k],"-random") == 0)) seed_reset = true;
-            if ((strcmp(argv[k],"random") == 0)) seed_reset = true;
-            if ((strcmp(argv[k],"acceleration") == 0)) test = test_acceleration;
-            if ((strcmp(argv[k],"domain") == 0)) test = test_domain;
-            if ((strcmp(argv[k],"refinement") == 0)) test = test_refinement;
-            if ((strcmp(argv[k],"global") == 0)) test = test_global;
-            if ((strcmp(argv[k],"local") == 0)) test = test_local;
-            if ((strcmp(argv[k],"wavelet") == 0)) test = test_wavelet;
-            if ((strcmp(argv[k],"fourier") == 0)) test = test_fourier;
-            if ((strcmp(argv[k],"-gpuid") == 0)){
-                if (k+1 >= argc){
+        args.pop_front();
+        while (!args.empty()){
+            if (args.front() == "debug") debug = true;
+            if (args.front() == "db") debugII = true;
+            if (hasInfo(args.front())) verbose = true;
+            if (hasRandom(args.front())) seed_reset = true;
+            TestList test_maybe = ExternalTester::hasTest(args.front());
+            if (test_maybe != test_none) test = test_maybe;
+            if ((args.front() == "-gpuid") || (args.front() == "-gpu")){
+                args.pop_front();
+                if (args.empty()){
                     cerr << "ERROR: -gpuid required a valid number!" << endl;
                     return 1;
                 }
-                gpuid = atoi(argv[k+1]);
-                k++;
+                gpuid = std::stoi(args.front());
                 if ((gpuid < -1) || (gpuid >= TasmanianSparseGrid::getNumGPUs())){
                     cerr << "ERROR: -gpuid " << gpuid << " is not a valid gpuid!" << endl;
                     cerr << "      see ./tasgrid -v for a list of detected GPUs." << endl;
                     return 1;
                 }
             }
-            k++;
+            args.pop_front();
         }
 
         ExternalTester tester(1000);

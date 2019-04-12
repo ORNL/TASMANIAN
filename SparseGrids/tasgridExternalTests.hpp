@@ -40,12 +40,6 @@
 
 #include "tasgridTestFunctions.hpp"
 
-using std::cout;
-using std::endl;
-using std::setw;
-
-using namespace TasGrid;
-
 struct TestResults{
     double error;
     int num_points;
@@ -55,8 +49,31 @@ enum TestType{
     type_integration, type_nodal_interpolation, type_internal_interpolation
 };
 
+/*!
+ * \internal
+ * \brief Enumerated list of all individual sparse grid ctests.
+ *
+ * \endinternal
+ */
 enum TestList{
-    test_all, test_acceleration, test_domain, test_refinement, test_global, test_local, test_wavelet, test_fourier
+    //! \brief Perform all tests.
+    test_all,
+    //! \brief Test consistency in the results of all acceleration types.
+    test_acceleration,
+    //! \brief Test correctness of domain transforms and quadrature weight scaling.
+    test_domain,
+    //! \brief Test various refinement strategies.
+    test_refinement,
+    //! \brief Test correctness of global grid algorithms.
+    test_global,
+    //! \brief Test correctness of local polynomial grid algorithms.
+    test_local,
+    //! \brief Test correctness of wavelet grids.
+    test_wavelet,
+    //! \brief Test correctness of Fourier grids.
+    test_fourier,
+    //! \brief This is not a test, indicates an error in parsing CLI arguments.
+    test_none
 };
 
 class ExternalTester{
@@ -67,6 +84,9 @@ public:
 
     void setVerbose(bool new_verbose);
     void setGPUID(int gpu_id);
+
+    //! \brief Converts the string to a TestList, returns \b test_none if not compatible.
+    static TestList hasTest(std::string const &s);
 
     bool Test(TestList test) const;
 

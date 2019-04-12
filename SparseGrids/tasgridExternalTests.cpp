@@ -62,6 +62,25 @@ const char* ExternalTester::findGaussPattersonTable(){
     }
 }
 
+TestList ExternalTester::hasTest(std::string const &s){
+    std::map<std::string, TestList> string_to_test = {
+        {"all",          test_all},
+        {"acceleration", test_acceleration},
+        {"domain",       test_domain},
+        {"refinement",   test_refinement},
+        {"global",       test_global},
+        {"local",        test_local},
+        {"wavelet",      test_wavelet},
+        {"fourier",      test_fourier},
+    };
+
+    try{
+        return string_to_test.at(s);
+    }catch(std::out_of_range &){
+        return test_none;
+    }
+}
+
 bool ExternalTester::Test(TestList test) const{
     cout << endl << endl;
     cout << "---------------------------------------------------------------------" << endl;
