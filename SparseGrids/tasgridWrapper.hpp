@@ -174,7 +174,7 @@ protected:
     std::vector<int> readLevelLimits(int num_weights) const;
 
     static Data2D<double> readMatrix(std::string const &filename);
-    static void writeMatrix(std::string const &filename, int rows, int cols, const double mat[], bool ascii);
+    void writeMatrix(std::string const &filename, int rows, int cols, const double mat[]) const;
     void printMatrix(int rows, int cols, const double mat[], bool isComplex = false) const;
 
 private:

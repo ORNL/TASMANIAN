@@ -415,7 +415,7 @@ void TasgridWrapper::outputPoints(bool useNeeded) const{
         num_p = grid.getNumPoints();
         points = grid.getPoints();
     }
-    writeMatrix(outfilename, num_p, num_d, points.data(), useASCII);
+    writeMatrix(outfilename, num_p, num_d, points.data());
     printMatrix(num_p, num_d, points.data());
 }
 void TasgridWrapper::outputQuadrature() const{
@@ -431,7 +431,7 @@ void TasgridWrapper::outputQuadrature() const{
         combined[i * offset] = weights[i];
         for(int j=0; j<num_d; j++) combined[i * offset + j + 1] = points[i*num_d + j];
     }
-    writeMatrix(outfilename, num_p, offset, combined, useASCII);
+    writeMatrix(outfilename, num_p, offset, combined);
     printMatrix(num_p, offset, combined);
     delete[] combined;
 }
@@ -446,11 +446,11 @@ void TasgridWrapper::outputHierarchicalCoefficients() const{
             coeff_fourier[2*i] = coeff[i];
             coeff_fourier[2*i+1] = coeff[i + num_d*num_p];
         }
-        writeMatrix(outfilename, num_p, 2*num_d, coeff_fourier, useASCII);
+        writeMatrix(outfilename, num_p, 2*num_d, coeff_fourier);
         printMatrix(num_p, num_d, coeff_fourier, true);
         delete[] coeff_fourier;
     }else{
-        writeMatrix(outfilename, num_p, num_d, coeff, useASCII);
+        writeMatrix(outfilename, num_p, num_d, coeff);
         printMatrix(num_p, num_d, coeff);
     }
 }
@@ -513,7 +513,7 @@ bool TasgridWrapper::getInterWeights(){
     for(int i=0; i<numx; i++) // in windows OpenMP loop counters must be signed ??
         grid.getInterpolationWeights(x.getStrip(i), result.getStrip(i));
 
-    writeMatrix(outfilename, numx, (int) num_p, result.getStrip(0), useASCII);
+    writeMatrix(outfilename, numx, (int) num_p, result.getStrip(0));
     printMatrix(numx, (int) num_p, result.getStrip(0));
 
     return true;
@@ -550,7 +550,7 @@ bool TasgridWrapper::getEvaluate(){
     std::vector<double> result;
     grid.evaluateBatch(x.getVector(), result);
 
-    writeMatrix(outfilename, x.getNumStrips(), (int) num_out, result.data(), useASCII);
+    writeMatrix(outfilename, x.getNumStrips(), (int) num_out, result.data());
     printMatrix(x.getNumStrips(), (int) num_out, result.data());
 
     return true;
@@ -568,7 +568,7 @@ bool TasgridWrapper::getIntegrate(){
     double *q = new double[num_out];
     grid.integrate(q);
 
-    writeMatrix(outfilename, 1, num_out, q, useASCII);
+    writeMatrix(outfilename, 1, num_out, q);
     printMatrix(1, num_out, q);
 
     delete[] q;
@@ -607,7 +607,7 @@ bool TasgridWrapper::getAnisoCoeff(){
     for(int i=0; i<num_coeff; i++){
         coeff[i] = (double) ab[i];
     }
-    writeMatrix(outfilename, num_coeff, 1, coeff, useASCII);
+    writeMatrix(outfilename, num_coeff, 1, coeff);
     printMatrix(num_coeff, 1, coeff);
     delete[] coeff;
 
@@ -723,7 +723,7 @@ bool TasgridWrapper::getPoly(){
         std::vector<int> poly = grid.getGlobalPolynomialSpace(integrate);
         std::vector<double> double_poly(poly.size());
         std::transform(poly.begin(), poly.end(), double_poly.begin(), [](int x)->double{ return static_cast<double>(x); });
-        writeMatrix(outfilename, (int) double_poly.size() / num_d, num_d, double_poly.data(), useASCII);
+        writeMatrix(outfilename, (int) double_poly.size() / num_d, num_d, double_poly.data());
         printMatrix((int) double_poly.size() / num_d, num_d, double_poly.data());
     }else{
         cerr << "ERROR: cannot call -getpoly for a grid that is neither Global nor Sequence" << endl;
@@ -747,12 +747,12 @@ bool TasgridWrapper::getSurpluses(){
             surp_fourier[2*i+1] = surp[i + num_p*num_o];
         }
 
-        writeMatrix(outfilename, num_p, 2*num_o, surp_fourier, useASCII);
+        writeMatrix(outfilename, num_p, 2*num_o, surp_fourier);
         printMatrix(num_p, num_o, surp_fourier, true);
 
         delete[] surp_fourier;
     }else{
-        writeMatrix(outfilename, num_p, num_o, surp, useASCII);
+        writeMatrix(outfilename, num_p, num_o, surp);
         printMatrix(num_p, num_o, surp);
     }
     return true;
@@ -771,7 +771,7 @@ bool TasgridWrapper::getEvalHierarchyDense(){
     int num_p = grid.getNumPoints();
     auto result = grid.evaluateHierarchicalFunctions(x.getVector());
 
-    writeMatrix(outfilename, x.getNumStrips(), ((grid.isFourier()) ? 2 * num_p : num_p), result.data(), useASCII);
+    writeMatrix(outfilename, x.getNumStrips(), ((grid.isFourier()) ? 2 * num_p : num_p), result.data());
     printMatrix(x.getNumStrips(), (int) num_p, result.data(), grid.isFourier());
 
     return true;
@@ -799,7 +799,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
             ofs << std::scientific; ofs.precision(17);
             ofs << rows << " " << num_p << " " << num_nz;
             ofs << endl << pntr[0];
-            for(size_t i=1; i<rows+1; i++) ofs << " " << pntr[i];
+            for(size_t i=1; i< rows+1; i++) ofs << " " << pntr[i];
             ofs << endl << indx[0];
             for(int i=1; i<num_nz; i++) ofs << " " << indx[i];
             if (grid.isFourier()){
@@ -870,7 +870,7 @@ bool TasgridWrapper::getPointsIndexes(){
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
 
-    writeMatrix(outfilename, num_p, num_d, pv, useASCII);
+    writeMatrix(outfilename, num_p, num_d, pv);
     printMatrix(num_p, num_d, pv);
 
     delete[] pv;
@@ -883,7 +883,7 @@ bool TasgridWrapper::getNeededIndexes(){
     double *pv = new double[num_p * num_d];
     for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
 
-    writeMatrix(outfilename, num_p, num_d, pv, useASCII);
+    writeMatrix(outfilename, num_p, num_d, pv);
     printMatrix(num_p, num_d, pv);
 
     delete[] pv;
@@ -974,21 +974,23 @@ Data2D<double> TasgridWrapper::readMatrix(std::string const &filename){
     ifs.close();
     return matrix;
 }
-void TasgridWrapper::writeMatrix(std::string const &filename, int rows, int cols, const double mat[], bool ascii){
+void TasgridWrapper::writeMatrix(std::string const &filename, int rows, int cols, const double mat[]) const{
     if (filename.empty()) return;
-    size_t rows_t = (size_t) rows;
     size_t cols_t = (size_t) cols;
     std::ofstream ofs;
-    if (ascii){
+    if (useASCII){
+        Utils::Wrapper2D<const double> matrix(cols, mat);
         ofs.open(filename);
         ofs << rows << " " << cols << endl;
         ofs.precision(17);
         ofs << std::scientific;
-        for(size_t i=0; i<rows_t; i++){
-            for(size_t j=0; j<cols_t; j++){
-                ofs << setw(25) << mat[i*cols_t + j] << " ";
+        for(int i=0; i<rows; i++){
+            double const * r = matrix.getStrip(i);
+            ofs << setw(25) << r[0];
+            for(size_t j=1; j<cols_t; j++){
+                ofs << " " << setw(25) << r[j];
             }
-            ofs << endl;
+            ofs << "\n";
         }
     }else{
         ofs.open(filename, std::ios::out | std::ios::binary);
@@ -996,7 +998,7 @@ void TasgridWrapper::writeMatrix(std::string const &filename, int rows, int cols
         ofs.write(tsg, 3*sizeof(char));
         ofs.write((char*) &rows, sizeof(int));
         ofs.write((char*) &cols, sizeof(int));
-        ofs.write((char*) mat, rows_t * cols_t * sizeof(double));
+        ofs.write((char*) mat, Utils::size_mult(rows, cols) * sizeof(double));
     }
     ofs.close();
 }
@@ -1005,20 +1007,22 @@ void TasgridWrapper::printMatrix(int rows, int cols, const double mat[], bool is
     cout << rows << " " << cols << endl;
     cout.precision(17);
     cout << std::scientific;
-    for(size_t i=0; i<((size_t) rows); i++){
+    size_t cols_t = (size_t) cols;
+    Utils::Wrapper2D<const double> matrix(cols, mat);
+    for(int i=0; i<rows; i++){
+        double const * r = matrix.getStrip(i);
         if (isComplex){
-            for(size_t j=0; j<((size_t) cols); j++){
-                cout << setw(25) << mat[((size_t) 2*(i*cols + j))];   // real part
-                cout << (mat[((size_t) 2*(i*cols + j) + 1)] < 0.0 ? " -" : " +");
-                cout << setw(24) << fabs(mat[((size_t) 2*(i*cols + j) + 1)]) << "i  ";     // imag part
-            }
+            cout << setw(50) << std::complex<double>(r[0], r[1]);
+            for(size_t j=1; j<cols_t; j++)
+                cout << setw(50) << std::complex<double>(r[2*j], r[2*j + 1]);
         }else{
-            for(size_t j=0; j<((size_t) cols); j++){
-                cout << setw(25) << mat[i* ((size_t) cols) + j] << " ";
-            }
+            cout << setw(25) << r[0];
+            for(size_t j=1; j<cols_t; j++)
+                cout << " " << setw(25) << r[j];
         }
-        cout << endl;
+        cout << '\n';
     }
+    cout << endl;
 }
 
 bool TasgridWrapper::executeCommand(){
