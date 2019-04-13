@@ -165,7 +165,6 @@ protected:
 
     bool getSummary();
 
-    bool getSurpluses();
     bool getPointsIndexes();
     bool getNeededIndexes();
 

@@ -419,39 +419,48 @@ void TasgridWrapper::outputPoints(bool useNeeded) const{
     printMatrix(num_p, num_d, points.data());
 }
 void TasgridWrapper::outputQuadrature() const{
-    double *combined;
     if (outfilename.empty() && (printCout == false)) return;
     int num_p = grid.getNumPoints();
     int num_d = grid.getNumDimensions();
     int offset = num_d + 1;
     auto points  = grid.getPoints();
     auto weights = grid.getQuadratureWeights();
-    combined = new double[num_p * offset];
+    Data2D<double> combined(num_d + 1, num_p);
+    auto ip = points.begin();
+    auto iw = weights.begin();
     for(int i=0; i<num_p; i++){
-        combined[i * offset] = weights[i];
-        for(int j=0; j<num_d; j++) combined[i * offset + j + 1] = points[i*num_d + j];
+        double *c = combined.getStrip(i);
+        c[0] = *iw++;
+        std::copy_n(ip, size_t(num_d), &(c[1]));
+        std::advance(ip, num_d);
     }
-    writeMatrix(outfilename, num_p, offset, combined);
-    printMatrix(num_p, offset, combined);
-    delete[] combined;
+    writeMatrix(outfilename, num_p, offset, combined.getStrip(0));
+    printMatrix(num_p, offset, combined.getStrip(0));
 }
 void TasgridWrapper::outputHierarchicalCoefficients() const{
     const double *coeff = grid.getHierarchicalCoefficients();
-    int num_p = grid.getNumPoints();
-    int num_d = grid.getNumOutputs();
+    int num_pnts = grid.getNumPoints();
+    int num_outs = grid.getNumOutputs();
     if (grid.isFourier()){
         // use interwoven format for complex coefficients
-        double *coeff_fourier = new double[2 * num_p * num_d];
-        for(int i=0; i<num_p*num_d; i++){
-            coeff_fourier[2*i] = coeff[i];
-            coeff_fourier[2*i+1] = coeff[i + num_d*num_p];
+        Data2D<double> coeff_fourier(2 * num_outs, num_pnts);
+        Utils::Wrapper2D<const double> real(num_outs, coeff);
+        Utils::Wrapper2D<const double> imag(num_outs, real.getStrip(num_pnts));
+        for(int p=0; p<num_pnts; p++){
+            double *c = coeff_fourier.getStrip(p);
+            double const *r = real.getStrip(p);
+            double const *i = imag.getStrip(p);
+
+            for(size_t j=0; j<size_t(num_outs); j++){
+                c[2*j    ] = r[j];
+                c[2*j + 1] = i[j];
+            }
         }
-        writeMatrix(outfilename, num_p, 2*num_d, coeff_fourier);
-        printMatrix(num_p, num_d, coeff_fourier, true);
-        delete[] coeff_fourier;
+        writeMatrix(outfilename, num_pnts, 2 * num_outs, coeff_fourier.getStrip(0));
+        printMatrix(num_pnts, num_outs, coeff_fourier.getStrip(0), true);
     }else{
-        writeMatrix(outfilename, num_p, num_d, coeff);
-        printMatrix(num_p, num_d, coeff);
+        writeMatrix(outfilename, num_pnts, num_outs, coeff);
+        printMatrix(num_pnts, num_outs, coeff);
     }
 }
 bool TasgridWrapper::setConformalTransformation(){
@@ -565,13 +574,12 @@ bool TasgridWrapper::getIntegrate(){
         return false;
     }
     int num_out = grid.getNumOutputs();
-    double *q = new double[num_out];
+    std::vector<double> q;
     grid.integrate(q);
 
-    writeMatrix(outfilename, 1, num_out, q);
-    printMatrix(1, num_out, q);
+    writeMatrix(outfilename, 1, num_out, q.data());
+    printMatrix(1, num_out, q.data());
 
-    delete[] q;
     return true;
 }
 bool TasgridWrapper::getAnisoCoeff(){
@@ -598,18 +606,15 @@ bool TasgridWrapper::getAnisoCoeff(){
         }else if (ref_output == -1) ref_output = 0;
         ab = grid.estimateAnisotropicCoefficients(depth_type, ref_output);
     }
-    double *coeff;
-    int num_coeff = grid.getNumDimensions();
-    if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
+    size_t num_coeff = (size_t) grid.getNumDimensions();
+    if (OneDimensionalMeta::getControurType(depth_type) == type_curved)
         num_coeff *= 2;
-    }
-    coeff = new double[num_coeff];
-    for(int i=0; i<num_coeff; i++){
-        coeff[i] = (double) ab[i];
-    }
-    writeMatrix(outfilename, num_coeff, 1, coeff);
-    printMatrix(num_coeff, 1, coeff);
-    delete[] coeff;
+
+    std::vector<double> coeff(num_coeff);
+    std::transform(ab.begin(), ab.end(), coeff.begin(), [](int i)->double{ return double(i); });
+
+    writeMatrix(outfilename, (int) num_coeff, 1, coeff.data());
+    printMatrix((int) num_coeff, 1, coeff.data());
 
     return true;
 }
@@ -735,28 +740,6 @@ bool TasgridWrapper::getSummary(){
     grid.printStats();
     return true;
 }
-bool TasgridWrapper::getSurpluses(){
-    const double *surp = grid.getHierarchicalCoefficients();
-    int num_p = grid.getNumLoaded();
-    int num_o = grid.getNumOutputs();
-    if (grid.isFourier()){
-        // use interwoven format for complex coefficients
-        double *surp_fourier = new double[2 * num_p * num_o];
-        for(int i=0; i<num_p*num_o; i++){
-            surp_fourier[2*i] = surp[i];
-            surp_fourier[2*i+1] = surp[i + num_p*num_o];
-        }
-
-        writeMatrix(outfilename, num_p, 2*num_o, surp_fourier);
-        printMatrix(num_p, num_o, surp_fourier, true);
-
-        delete[] surp_fourier;
-    }else{
-        writeMatrix(outfilename, num_p, num_o, surp);
-        printMatrix(num_p, num_o, surp);
-    }
-    return true;
-}
 
 bool TasgridWrapper::getEvalHierarchyDense(){
     auto x = readMatrix(xfilename);
@@ -776,6 +759,15 @@ bool TasgridWrapper::getEvalHierarchyDense(){
 
     return true;
 }
+template<bool useAscii>
+void writeSparseMatrix(int cols, std::vector<int> const &pntr, std::vector<int> const &indx, std::vector<double> const &vals, std::ostream &os){
+    int nnz = (int) indx.size();
+    int rows = (int) (pntr.size() - 1);
+    IO::writeNumbers<useAscii, IO::pad_line>(os, rows, cols, nnz);
+    IO::writeVector<useAscii, IO::pad_line>(pntr, os);
+    IO::writeVector<useAscii, IO::pad_line>(indx, os);
+    IO::writeVector<useAscii, IO::pad_line>(vals, os);
+}
 bool TasgridWrapper::getEvalHierarchySparse(){
     auto x = readMatrix(xfilename);
     if (x.getStride() != (size_t) grid.getNumDimensions()){
@@ -790,58 +782,23 @@ bool TasgridWrapper::getEvalHierarchySparse(){
     std::vector<double> vals;
     grid.evaluateSparseHierarchicalFunctions(x.getVector(), pntr, indx, vals);
     int num_p = grid.getNumPoints();
-    int rows = x.getNumStrips();
-    int num_nz = pntr[rows];
     if (!outfilename.empty()){
         if (useASCII){
-            std::ofstream ofs;
-            ofs.open(outfilename);
+            std::ofstream ofs(outfilename);
             ofs << std::scientific; ofs.precision(17);
-            ofs << rows << " " << num_p << " " << num_nz;
-            ofs << endl << pntr[0];
-            for(size_t i=1; i< rows+1; i++) ofs << " " << pntr[i];
-            ofs << endl << indx[0];
-            for(int i=1; i<num_nz; i++) ofs << " " << indx[i];
-            if (grid.isFourier()){
-                ofs << endl << vals[0] << " " << vals[1];
-                for(int i=1; i<num_nz; i++) ofs << " " << vals[2*i] << " " << vals[2*i+1];
-            }else{
-                ofs << endl << vals[0];
-                for(int i=1; i<num_nz; i++) ofs << " " << vals[i];
-            }
-            ofs << endl;
+            writeSparseMatrix<true>(num_p, pntr, indx, vals, ofs);
             ofs.close();
         }else{
-            std::ofstream ofs;
-            ofs.open(outfilename, std::ios::out | std::ios::binary);
+            std::ofstream ofs(outfilename, std::ios::out | std::ios::binary);
             char charTSG[3] = {'T', 'S', 'G'};
             ofs.write(charTSG, 3 * sizeof(char));
-            int matrix_dims[3];
-            matrix_dims[0] = (int) rows;
-            matrix_dims[1] = num_p;
-            matrix_dims[2] = num_nz;
-            ofs.write((char*) matrix_dims, 3 * sizeof(int));
-            ofs.write((char*) pntr.data(), (rows+1) * sizeof(int));
-            ofs.write((char*) indx.data(), num_nz * sizeof(int));
-            ofs.write((char*) vals.data(), (grid.isFourier() ? 2 : 1) * num_nz * sizeof(double));
+            writeSparseMatrix<false>(num_p, pntr, indx, vals, ofs);
             ofs.close();
         }
     }
     if (printCout){
         cout << std::scientific; cout.precision(17);
-        cout << rows << " " << num_p << " " << num_nz;
-        cout << endl << pntr[0];
-        for(size_t i=1; i<rows+1; i++) cout << " " << pntr[i];
-        cout << endl << indx[0];
-        for(int i=1; i<num_nz; i++) cout << " " << indx[i];
-        if (grid.isFourier()){
-            cout << endl << vals[0] << " " << vals[1];
-            for(int i=1; i<num_nz; i++) cout << " " << vals[2*i] << " " << vals[2*i+1];
-        }else{
-            cout << endl << vals[0];
-            for(int i=1; i<num_nz; i++) cout << " " << vals[i];
-        }
-        cout << endl;
+        writeSparseMatrix<true>(num_p, pntr, indx, vals, cout);
     }
     return true;
 }
@@ -867,26 +824,24 @@ bool TasgridWrapper::getPointsIndexes(){
     const int *p = grid.getPointsIndexes();
     int num_p = grid.getNumPoints();
     int num_d = grid.getNumDimensions();
-    double *pv = new double[num_p * num_d];
-    for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
+    Data2D<double> pv(num_d, num_p);
+    std::transform(p, p + Utils::size_mult(num_p, num_d), pv.getStrip(0), [](int i)->double{ return double(i); });
 
-    writeMatrix(outfilename, num_p, num_d, pv);
-    printMatrix(num_p, num_d, pv);
+    writeMatrix(outfilename, num_p, num_d, pv.getStrip(0));
+    printMatrix(num_p, num_d, pv.getStrip(0));
 
-    delete[] pv;
     return true;
 }
 bool TasgridWrapper::getNeededIndexes(){
     const int *p = grid.getNeededIndexes();
     int num_p = grid.getNumNeeded();
     int num_d = grid.getNumDimensions();
-    double *pv = new double[num_p * num_d];
-    for(int i=0; i<num_p*num_d; i++) pv[i] = (double) (p[i]);
+    Data2D<double> pv(num_d, num_p);
+    std::transform(p, p + Utils::size_mult(num_p, num_d), pv.getStrip(0), [](int i)->double{ return double(i); });
 
-    writeMatrix(outfilename, num_p, num_d, pv);
-    printMatrix(num_p, num_d, pv);
+    writeMatrix(outfilename, num_p, num_d, pv.getStrip(0));
+    printMatrix(num_p, num_d, pv.getStrip(0));
 
-    delete[] pv;
     return true;
 }
 
