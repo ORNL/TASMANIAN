@@ -93,26 +93,6 @@ bool TasgridWrapper::isCreateCommand(TypeCommand com){
     return ( (com == command_makeglobal) || (com == command_makesequence) || (com == command_makelocalp) || (com == command_makewavelet) || (com == command_makefourier) || (com == command_makequadrature) );
 }
 
-void TasgridWrapper::setCommand(TypeCommand com){ command = com; }
-TypeCommand TasgridWrapper::getCommand() const{ return command; }
-void TasgridWrapper::setNumDimensions(int dim){ num_dimensions = dim; }
-void TasgridWrapper::setNumOutputs(int out){ num_outputs = out; }
-void TasgridWrapper::setNumDepth(int d){ depth = d; }
-void TasgridWrapper::setOrder(int o){ order = o; }
-void TasgridWrapper::setDepthType(TypeDepth dt){ depth_type = dt; }
-void TasgridWrapper::setConformalType(TypeConformalMap con){ conformal = con; }
-void TasgridWrapper::setRule(TypeOneDRule r){ rule = r;}
-TypeOneDRule TasgridWrapper::getRule() const{ return rule; }
-void TasgridWrapper::setAlpha(double a){ alpha = a;  set_alpha = true; }
-void TasgridWrapper::setBeta(double b){ beta = b; set_beta = true; }
-void TasgridWrapper::setTolerance(double tol){ tolerance = tol;  set_tolerance = true; }
-void TasgridWrapper::setRefOutput(int out){ ref_output = out; }
-void TasgridWrapper::setMinGrowth(int mg){ min_growth = mg; }
-void TasgridWrapper::setTypeRefinement(TypeRefinement rt){ tref = rt; set_tref = true; }
-void TasgridWrapper::setPrintPoints(bool pp){ printCout = pp; }
-void TasgridWrapper::setUseASCII(bool ascii){ useASCII = ascii; }
-void TasgridWrapper::setGPID(int gpuid){ set_gpuid = gpuid; }
-
 bool TasgridWrapper::checkSane() const{
     bool pass = true;
     if (command == command_none){

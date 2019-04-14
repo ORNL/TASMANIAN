@@ -91,24 +91,25 @@ public:
     static TypeCommand hasCommand(std::string const &s);
     static TypeConformalMap getConfromalType(const char* name);
 
-    void setCommand(TypeCommand com);
-    TypeCommand getCommand() const;
-
-    void setNumDimensions(int dim);
-    void setNumOutputs(int out);
-    void setNumDepth(int d);
-    void setOrder(int o);
-    void setDepthType(TypeDepth dt);
-    void setConformalType(TypeConformalMap con);
-    void setRule(TypeOneDRule r);
-    TypeOneDRule getRule() const;
-    void setAlpha(double a);
-    void setBeta(double b);
-
-    void setTolerance(double tol);
-    void setRefOutput(int out);
-    void setMinGrowth(int mg);
-    void setTypeRefinement(TypeRefinement rt);
+    void setCommand(TypeCommand com){ command = com; }
+    TypeCommand getCommand() const{ return command; }
+    void setNumDimensions(int dim){ num_dimensions = dim; }
+    void setNumOutputs(int out){ num_outputs = out; }
+    void setNumDepth(int d){ depth = d; }
+    void setOrder(int o){ order = o; }
+    void setDepthType(TypeDepth dt){ depth_type = dt; }
+    void setConformalType(TypeConformalMap con){ conformal = con; }
+    void setRule(TypeOneDRule r){ rule = r;}
+    TypeOneDRule getRule() const{ return rule; }
+    void setAlpha(double a){ alpha = a;  set_alpha = true; }
+    void setBeta(double b){ beta = b; set_beta = true; }
+    void setTolerance(double tol){ tolerance = tol;  set_tolerance = true; }
+    void setRefOutput(int out){ ref_output = out; }
+    void setMinGrowth(int mg){ min_growth = mg; }
+    void setTypeRefinement(TypeRefinement rt){ tref = rt; set_tref = true; }
+    void setPrintPoints(bool pp){ printCout = pp; }
+    void setUseASCII(bool ascii){ useASCII = ascii; }
+    void setGPID(int gpuid){ set_gpuid = gpuid; }
 
     void setGridFilename(std::string const &filename){ gridfilename = filename; }
     void setOutFilename(std::string const &filename){ outfilename = filename; }
@@ -119,10 +120,6 @@ public:
     void setConformalFilename(std::string const &filename){ conformalfilename = filename; }
     void setCustomFilename(std::string const &filename){ customfilename = filename; }
     void setLevelLimitsFilename(std::string const &filename){ levellimitfilename = filename; }
-
-    void setPrintPoints(bool pp);
-    void setUseASCII(bool ascii);
-    void setGPID(int gpuid);
 
     bool executeCommand();
 
