@@ -31,24 +31,9 @@
 #ifndef __TASGRID_UNIT_TESTS_HPP
 #define __TASGRID_UNIT_TESTS_HPP
 
-#include <cstdlib>
-#include <cstdio>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip>
 #include <string.h>
-#include <math.h>
 
-#include "TasmanianSparseGrid.hpp"
-
-#include "tasgridTestFunctions.hpp"
-
-using std::cout;
-using std::endl;
-using std::setw;
-
-using namespace TasGrid;
+#include "tasgridCLICommon.hpp"
 
 enum UnitTests{
     unit_none, unit_all, unit_cover, unit_except, unit_api, unit_c
@@ -58,6 +43,8 @@ class GridUnitTester{
 public:
     GridUnitTester();
     ~GridUnitTester();
+
+    static UnitTests hasTest(std::string const &s);
 
     void setVerbose(bool new_verbose);
 

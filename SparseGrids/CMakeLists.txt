@@ -131,6 +131,7 @@ set(Tasmanian_source_libsparsegrid_cuda
 ########################################################################
 add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  TasmanianSparseGrid.hpp
+                                 tasgridCLICommon.hpp
                                  tasgridExternalTests.hpp
                                  tasgridExternalTests.cpp
                                  tasgridTestFunctions.hpp
@@ -139,6 +140,7 @@ add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  tasgridWrapper.cpp)
 add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   TasmanianSparseGrid.hpp
+                                  tasgridCLICommon.hpp
                                   tasgridExternalTests.hpp
                                   tasgridExternalTests.cpp
                                   tasgridTestFunctions.hpp
@@ -148,6 +150,7 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridTestInterfaceC.cpp)
 #add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
 add_executable(Tasmanian_benchmarks  Benchmarks/benchCommon.hpp
+                                     tasgridCLICommon.hpp
                                      Benchmarks/benchEvaluate.hpp
                                      Benchmarks/bench_main.cpp)
 

@@ -1,28 +1,28 @@
 #include "benchEvaluate.hpp"
 
-void printHelp(TestFuction test);
+void printHelp(BenchFuction test);
 
-int main(int argc, char** argv){
+int main(int argc, const char** argv){
 
     //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
 
-    std::vector<std::string> args = stringArgs(argc, argv);
+    std::deque<std::string> args = stringArgs(argc, argv);
 
-    if (args.empty() || hasHelp(args.back())){
-        printHelp(test_none);
+    if (args.empty() || hasHelp(args.front())){
+        printHelp(bench_none);
         return 0;
     }
 
-    auto test = getTest(args.back());
-    args.pop_back();
-    if ((test == test_none) || args.empty() || hasHelp(args.back())){
+    auto test = getTest(args.front());
+    args.pop_front();
+    if ((test == bench_none) || args.empty() || hasHelp(args.front())){
         printHelp(test);
-        return (test == test_none) ? 1 : 0;
+        return (test == bench_none) ? 1 : 0;
     }
 
     bool pass = true; // check if the rest of the inputs are OK
-    if (test == test_evaluate){
-        pass = bench_evaluate(args);
+    if (test == bench_evaluate){
+        pass = benchmark_evaluate(args);
     }
 
     if (!pass) // if problem with inputs
@@ -31,12 +31,12 @@ int main(int argc, char** argv){
     return (pass) ? 0 : 1;
 }
 
-void printHelp(TestFuction test){
-    if (test == test_none){
+void printHelp(BenchFuction test){
+    if (test == bench_none){
         cout << "\nusage: ./benchmark <function> <parameters>\n\n";
         cout << "functions: evaluate\n";
         cout << "\n see: ./benchmark <function> help\n";
-    }else if (test == test_evaluate){
+    }else if (test == bench_evaluate){
         cout << "\nusage: ./benchmark evaluate <grid> <dims> <outs> <depth> <type> <rule> <order> <batch> <iters> <jumps> <acc> <gpu>\n\n";
         cout << "grid  : global, sequence, localp, wavelet, fourier\n";
         cout << "dims  : number of dimensions\n";

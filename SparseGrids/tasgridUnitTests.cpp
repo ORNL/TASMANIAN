@@ -39,6 +39,22 @@ GridUnitTester::~GridUnitTester(){}
 
 void GridUnitTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 
+UnitTests GridUnitTester::hasTest(std::string const &s){
+    std::map<std::string, UnitTests> string_to_test = {
+        {"all",    unit_all},
+        {"cover",  unit_cover},
+        {"errors", unit_except},
+        {"api",    unit_api},
+        {"c",      unit_c},
+    };
+
+    try{
+        return string_to_test.at(s);
+    }catch(std::out_of_range &){
+        return unit_none;
+    }
+}
+
 bool GridUnitTester::Test(UnitTests test){
     cout << endl << endl;
     cout << "---------------------------------------------------------------------" << endl;
