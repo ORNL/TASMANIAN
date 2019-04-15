@@ -824,7 +824,7 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
     if (!grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to initialize." << endl; return false; }
     size_t dims = (size_t) grid->getNumDimensions();
     size_t outs = (size_t) grid->getNumOutputs();
-    for(size_t itr = 0; itr < np.size(); itr++){
+    for(size_t itr = 0; grid->getNumLoaded() < np.back(); itr++){
         std::vector<double> points;
         if (grid->isGlobal() || grid->isSequence()){
             if (itr == 1){
@@ -874,11 +874,13 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
         TestResults R = getError(f, grid, type_internal_interpolation);
 
         //cout << "points = " << R.num_points << "  err = " << R.error << std::endl;
-        if ((R.num_points != np[itr]) || (R.error > errs[itr])){
-            cout << "ERROR: dynamic construction failed at iteration: " << itr << endl;
-            cout << "function: " << f->getDescription() << "  expected = " << np[itr] << "  " << errs[itr]
-                 << "   observed points = " << R.num_points << "  error = " << R.error << std::endl;
-            if (np[itr] != -1) return false;
+        for(size_t i = 0; i < np.size(); i++){
+            if ((R.num_points >= np[i]) && (R.error > errs[i])){
+                cout << "ERROR: dynamic construction failed at iteration: " << itr << endl;
+                cout << "function: " << f->getDescription() << "  expected = " << np[i] << "  " << errs[i]
+                    << "   observed points = " << R.num_points << "  error = " << R.error << std::endl;
+                return false;
+            }
         }
 
         if (itr % 3 == 2){
