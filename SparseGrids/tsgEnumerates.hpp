@@ -546,14 +546,14 @@ enum TypeAcceleration{
 //! - comparison between nodes to detect repeated points in non-nested rules (e.g., all odd Chebyshev rules include zero)
 //! - determining sparse matrix pattern, entries smaller than NUM_TOL will be ignored (for wavelet grids)
 //! - drop criteria in estimating anisotropic coefficients (refinement or just the coefficients) surpluses or Legendre coefficients below 10^3 times NUM_TOL will be ignored
-#define TSG_NUM_TOL 1.E-12
+constexpr double TSG_NUM_TOL = 1.E-12;
 
 //! \internal
 //! \brief Defines the maximum number of secant method iterations to be used for finding Leja, Lebesgue, and Delta points.
 //! \ingroup SGEnumerates
 
 //! This is a simple safeguard criteria to prevent "hanging" in a loop.
-#define TSG_MAX_SECANT_ITERATIONS 1000
+constexpr int TSG_MAX_SECANT_ITERATIONS = 1000;
 
 //! \internal
 //! \brief Tuning parameter for dense vs sparse evaluations of Local Polynomial Grids when using CPU BLAS.
@@ -565,7 +565,16 @@ enum TypeAcceleration{
 //! is faster to convert the sparse matrix into a dense one and use dense linear algebra.
 //! The difference is noticeable if the number of outputs is sufficiently large;
 //! if the outputs are few there is very little caching anyway and hence use the sparse version to save memory.
-#define TSG_LOCALP_BLAS_NUM_OUTPUTS 2048
+constexpr size_t TSG_LOCALP_BLAS_NUM_OUTPUTS = 2048;
+
+/*!
+ * \internal
+ * \ingroup SGEnumerates
+ * \brief Half-period of the \b std::sin() and \b std::cos() functions.
+ *
+ * Borrowed from "math.h", let's hope they don't change the value in a future standard.
+ */
+constexpr double tsg_pi = 3.14159265358979323846;
 
 }
 

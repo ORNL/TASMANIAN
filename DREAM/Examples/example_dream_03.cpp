@@ -47,6 +47,8 @@ void dream_example_03(){
     cout << "           use sparse grid to interpolate the model" << endl;
     cout << "     NOTE: 16 corresponds to discretization error in t (divided by 2)" << endl << endl;
 
+    constexpr double pi = 3.14159265358979323846;
+
     // multi-modal distributions require a lot more chains and samples
     int num_chains = 500;
     int num_burnup_iterations = 1000;
@@ -60,15 +62,15 @@ void dream_example_03(){
             double dt = 1.0 / ((double) data.size());
             double t = 0.5 * dt;
             for(auto &d : data){
-                d = sin(x0 * M_PI * t + x1);
+                d = sin(x0 * pi * t + x1);
                 t += dt;
             }
         };
 
     // create data which is a superposition of two signals
     std::vector<double> signal1(num_discrete_nodes), signal2(num_discrete_nodes), data(num_discrete_nodes);
-    model( 5.0, 0.3 * M_PI, signal1);
-    model(10.0, 0.1 * M_PI, signal2);
+    model( 5.0, 0.3 * pi, signal1);
+    model(10.0, 0.1 * pi, signal2);
     std::transform(signal1.begin(), signal1.end(), signal2.begin(), data.begin(), std::plus<double>());
 
     TasGrid::TasmanianSparseGrid grid;
@@ -147,11 +149,11 @@ void dream_example_03(){
     cout << " low   frequency:" << setw(12) << std::fixed << frequency_low
          << "   error:" << setw(12) << std::scientific << fabs(frequency_low - 5.0) << endl;
     cout << " low  correction:" << setw(12) << std::fixed << correction_low
-         << "   error:" << setw(12) << std::scientific << fabs(correction_low - 0.3 * M_PI) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << fabs(correction_low - 0.3 * pi) << endl << endl;
     cout << " high  frequency:" << setw(12) << std::fixed << frequency_high
          << "   error:" << setw(12) << std::scientific << fabs(frequency_high - 10.0) << endl;
     cout << " high correction:" << setw(12) << std::fixed << correction_high
-         << "   error:" << setw(12) << std::scientific << fabs(correction_high - 0.1 * M_PI) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << fabs(correction_high - 0.1 * pi) << endl << endl;
 
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
 #ifndef __TASMANIAN_DOXYGEN_SKIP

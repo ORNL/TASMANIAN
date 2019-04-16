@@ -261,7 +261,7 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) const{
-    if ((sparse_affinity == 1) || ((sparse_affinity == 0) && (num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS))){
+    if ((sparse_affinity == 1) || ((sparse_affinity == 0) && ((size_t) num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS))){
         evaluateBatch(x, num_x, y);
         return;
     }
