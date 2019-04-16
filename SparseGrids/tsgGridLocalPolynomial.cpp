@@ -211,7 +211,7 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
     points = MultiIndexSet(num_dimensions, pnts);
     values.resize(num_outputs, points.getNumIndexes());
     values.setValues(vals);
-    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), surps);
+    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::move(surps));
 
     buildTree();
 }
@@ -347,7 +347,7 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
         cumulative_poitns.addMultiIndexSet(level_points);
     }
 
-    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), cumulative_surpluses.getVector());
+    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::move(cumulative_surpluses.getVector()));
 }
 void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses();
