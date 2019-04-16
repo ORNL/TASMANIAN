@@ -168,8 +168,8 @@ public:
     //! \brief Default constructor, makes an empty set.
     MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
     //! \brief Constructor, makes a set by \b moving out of the vector, the vector must be already sorted.
-    MultiIndexSet(size_t cnum_dimensions, std::vector<int> &new_indexes) :
-        num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)), indexes(std::move(new_indexes)){}
+    MultiIndexSet(size_t cnum_dimensions, std::vector<int> &&new_indexes) :
+        num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)), indexes(new_indexes){}
     //! \brief Copy a collection of unsorted indexes into a sorted multi-index set, sorts during the copy.
     MultiIndexSet(Data2D<int> &data) : num_dimensions((size_t) data.getStride()), cache_num_indexes(0){ setData2D(data); }
     //! \brief Default destructor.

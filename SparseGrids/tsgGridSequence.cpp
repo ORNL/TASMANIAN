@@ -407,16 +407,14 @@ void GridSequence::loadConstructedPoint(const double x[], const std::vector<doub
 }
 void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
     if (points.empty()){ // only one point
-        auto p = point; // create new so it can be moved
-        points = MultiIndexSet((size_t) num_dimensions, p);
+        points = MultiIndexSet((size_t) num_dimensions, std::vector<int>(point));
         values.resize(num_outputs, 1);
         auto v = value; // create new to allow copy move
         values.setValues(v);
         surpluses.resize(num_outputs, 1);
         surpluses.getVector() = value; // the surplus of one point is the value itself
     }else{ // merge with existing points
-        auto p = point;
-        MultiIndexSet temp(num_dimensions, p);
+        MultiIndexSet temp(num_dimensions, std::vector<int>(point));
         values.addValues(points, temp, value.data());
 
         points.addSortedIndexes(point);

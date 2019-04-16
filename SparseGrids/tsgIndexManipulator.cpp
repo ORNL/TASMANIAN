@@ -59,7 +59,7 @@ inline MultiIndexSet generateFullTensorSet(std::vector<int> const &num_entries){
             t /= *l++;
         }
     }
-    return MultiIndexSet(num_dimensions, indexes);
+    return MultiIndexSet(num_dimensions, std::move(indexes));
 }
 
 /*!
@@ -148,8 +148,7 @@ void completeSetToLower(MultiIndexSet &set){
  * \endinternal
  */
 inline MultiIndexSet generateGeneralMultiIndexSet(size_t num_dimensions, std::function<bool(const std::vector<int> &index)> criteria){
-    std::vector<int> root(num_dimensions, 0);
-    std::vector<MultiIndexSet> level_sets = { MultiIndexSet(num_dimensions, root) };
+    std::vector<MultiIndexSet> level_sets = { MultiIndexSet(num_dimensions, std::vector<int>(num_dimensions, 0)) };
 
     repeatAddIndexes<false>(criteria, level_sets);
 

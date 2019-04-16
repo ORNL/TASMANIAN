@@ -95,7 +95,7 @@ inline MultiIndexSet generateLowerMultiIndexSet(size_t num_dimensions, std::func
         }
         is_in = inside(root);
     }
-    return MultiIndexSet(num_dimensions, indexes);
+    return MultiIndexSet(num_dimensions, std::move(indexes));
 }
 
 /*!
@@ -434,7 +434,7 @@ inline MultiIndexSet createActiveTensors(const MultiIndexSet &mset, const std::v
         std::advance(iset, num_dimensions);
     }
 
-    return MultiIndexSet(num_dimensions, indexes);
+    return MultiIndexSet(num_dimensions, std::move(indexes));
 }
 
 /*!

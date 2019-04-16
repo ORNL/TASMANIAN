@@ -212,7 +212,7 @@ MultiIndexSet MultiIndexSet::diffSets(const MultiIndexSet &substract){
             std::copy_n(i, num_dimensions, inew);
             std::advance(inew, num_dimensions);
         }
-        return MultiIndexSet(num_dimensions, new_indexes);
+        return MultiIndexSet(num_dimensions, std::move(new_indexes));
     }
 
     return MultiIndexSet();

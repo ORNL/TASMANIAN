@@ -208,7 +208,7 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
 
     makeRule(crule);
 
-    points = MultiIndexSet(num_dimensions, pnts);
+    points = MultiIndexSet(num_dimensions, std::move(pnts));
     values.resize(num_outputs, points.getNumIndexes());
     values.setValues(vals);
     surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::move(surps));
@@ -312,7 +312,7 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
 
     std::vector<Data2D<double>> lx = MultiIndexManipulations::splitByLevels((size_t) num_dimensions, allx.getVector(), levels);
 
-    MultiIndexSet cumulative_poitns((size_t) num_dimensions, lpnts[0].getVector());
+    MultiIndexSet cumulative_poitns((size_t) num_dimensions, std::move(lpnts[0].getVector()));
 
     StorageSet cumulative_surpluses;
     cumulative_surpluses.resize(num_outputs, cumulative_poitns.getNumIndexes());
@@ -320,7 +320,7 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
 
     for(size_t l = 1; l < lpnts.size(); l++){ // loop over the levels
         // note that level_points.getNumIndexes() == lx[l].getNumStrips() == lvals[l].getNumStrips()
-        MultiIndexSet level_points(num_dimensions, lpnts[l].getVector());
+        MultiIndexSet level_points(num_dimensions, std::move(lpnts[l].getVector()));
 
         std::vector<int>    copypnts = cumulative_poitns.getVector();
         std::vector<double> copysurp = cumulative_surpluses.getVector();
@@ -556,8 +556,7 @@ void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vect
 }
 void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::vector<double> &value){
     if (points.empty()){ // only one point
-        auto p = point; // create new so it can be moved
-        points = MultiIndexSet((size_t) num_dimensions, p);
+        points = MultiIndexSet((size_t) num_dimensions, std::vector<int>(point));
         values.resize(num_outputs, 1);
         auto v = value; // create new to allow move
         values.setValues(v);
@@ -572,8 +571,7 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
 
         std::vector<int> graph = getSubGraph(point); // get the descendant nodes that must be updated later
 
-        auto p = point;
-        MultiIndexSet temp(num_dimensions, p);
+        MultiIndexSet temp(num_dimensions, std::vector<int>(point));
         values.addValues(points, temp, value.data()); // added the value
 
         points.addSortedIndexes(point); // add the point

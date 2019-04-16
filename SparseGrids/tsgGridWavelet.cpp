@@ -500,7 +500,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 std::copy(p, p + num_dimensions, indexes.getStrip(i));
             }
 
-            MultiIndexSet pointset(num_dimensions, indexes.getVector());
+            MultiIndexSet pointset(num_dimensions, std::move(indexes.getVector()));
 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);

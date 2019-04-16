@@ -556,7 +556,7 @@ void GridGlobal::loadConstructedTensors(){
         }
 
         if (tensors.empty()){
-            tensors = MultiIndexSet((size_t) num_dimensions, tensor);
+            tensors = MultiIndexSet((size_t) num_dimensions, std::move(tensor));
         }else{
             tensors.addSortedIndexes(tensor);
         }
