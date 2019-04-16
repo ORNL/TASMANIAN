@@ -115,30 +115,27 @@ void GridFourier::reset(){
 }
 
 void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-
-    MultiIndexSet tset = (OneDimensionalMeta::isExactLevel(type)) ?
+    setTensors( (OneDimensionalMeta::isExactLevel(type)) ?
         MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
                                                [&](int i) -> int{ return i; }, anisotropic_weights, level_limits) :
         MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
-                                               [&](int i) -> int{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, level_limits);
-
-    setTensors(tset, cnum_outputs);
+                                               [&](int i) -> int{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, level_limits),
+    cnum_outputs);
 }
 
 void GridFourier::copyGrid(const GridFourier *fourier){
-    MultiIndexSet tset = fourier->tensors;
-    setTensors(tset, fourier->num_outputs);
+    setTensors(MultiIndexSet(fourier->tensors), fourier->num_outputs);
     if ((num_outputs > 0) && (!fourier->points.empty())){ // if there are values inside the source object
         loadNeededPoints(fourier->values.getValues(0));
     }
 }
 
-void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
+void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
     reset();
-    num_dimensions = (int) tset.getNumDimensions();
-    num_outputs = cnum_outputs;
-
     tensors = std::move(tset);
+
+    num_dimensions = (int) tensors.getNumDimensions();
+    num_outputs = cnum_outputs;
 
     max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 

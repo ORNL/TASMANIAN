@@ -212,7 +212,7 @@ MultiIndexSet MultiIndexSet::diffSets(const MultiIndexSet &substract){
             std::copy_n(i, num_dimensions, inew);
             std::advance(inew, num_dimensions);
         }
-        return MultiIndexSet(num_dimensions, new_indexes);
+        return MultiIndexSet(num_dimensions, std::move(new_indexes));
     }
 
     return MultiIndexSet();
@@ -264,9 +264,9 @@ void StorageSet::setValues(const double vals[]){
     values.resize(num_outputs * num_values);
     std::copy_n(vals, num_values * num_outputs, values.data());
 }
-void StorageSet::setValues(std::vector<double> &vals){
+void StorageSet::setValues(std::vector<double> &&vals){
     num_values = vals.size() / num_outputs;
-    values = std::move(vals); // move assignment
+    values = std::vector<double>(vals); // move assignment
 }
 
 void StorageSet::addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]){

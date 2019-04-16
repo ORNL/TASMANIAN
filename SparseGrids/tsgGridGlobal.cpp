@@ -183,16 +183,14 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
         custom.read(custom_filename);
     }
 
-    MultiIndexSet tset = selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits);
-
-    setTensors(tset, cnum_outputs, crule, calpha, cbeta);
+    setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits),
+               cnum_outputs, crule, calpha, cbeta);
 }
 void GridGlobal::copyGrid(const GridGlobal *global){
     custom = CustomTabulated();
     if (global->rule == rule_customtabulated) custom = global->custom;
 
-    MultiIndexSet tset = global->tensors;
-    setTensors(tset, global->num_outputs, global->rule, global->alpha, global->beta);
+    setTensors(MultiIndexSet(global->tensors), global->num_outputs, global->rule, global->alpha, global->beta);
 
     if ((num_outputs > 0) && (!(global->points.empty()))){ // if there are values inside the source object
         loadNeededPoints(global->values.getValues(0));
@@ -210,14 +208,14 @@ void GridGlobal::copyGrid(const GridGlobal *global){
     }
 }
 
-void GridGlobal::setTensors(MultiIndexSet &tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){
+void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){
     reset(false);
-    num_dimensions = (int) tset.getNumDimensions();
+    tensors = std::move(tset);
+
+    num_dimensions = (int) tensors.getNumDimensions();
     num_outputs = cnum_outputs;
     rule = crule;
     alpha = calpha;  beta = cbeta;
-
-    tensors = std::move(tset);
 
     max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
@@ -384,8 +382,7 @@ void GridGlobal::loadNeededPoints(const double *vals){
 void GridGlobal::mergeRefinement(){
     if (needed.empty()) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
-    std::vector<double> vals(((size_t) num_all_points) * ((size_t) num_outputs), 0.0);
-    values.setValues(vals);
+    values.setValues(std::vector<double>(Utils::size_mult(num_outputs, num_all_points), 0.0));
     acceptUpdatedTensors();
 }
 
@@ -548,7 +545,7 @@ void GridGlobal::loadConstructedTensors(){
     bool added_any = false;
     while(dynamic_values->ejectCompleteTensor(tensors, tensor, new_points, new_values)){
         if (points.empty()){
-            values.setValues(new_values);
+            values.setValues(std::move(new_values));
             points = std::move(new_points);
         }else{
             values.addValues(points, new_points, new_values.data());
@@ -556,7 +553,7 @@ void GridGlobal::loadConstructedTensors(){
         }
 
         if (tensors.empty()){
-            tensors = MultiIndexSet((size_t) num_dimensions, tensor);
+            tensors = MultiIndexSet((size_t) num_dimensions, std::move(tensor));
         }else{
             tensors.addSortedIndexes(tensor);
         }
@@ -694,7 +691,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
 
         GridGlobal QuadGrid;
         if (getMaxQuadLevel < TableGaussPatterson::getNumLevels()-1){
-            QuadGrid.setTensors(quadrature_tensors, 0, rule_gausspatterson, 0.0, 0.0);
+            QuadGrid.setTensors(std::move(quadrature_tensors), 0, rule_gausspatterson, 0.0, 0.0);
         }else{
             quadrature_tensors =
                 MultiIndexManipulations::generateLowerMultiIndexSet((size_t) num_dimensions, [&](const std::vector<int> &index) ->
@@ -703,7 +700,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
                         for(auto &i : qindex) i = (i > 0) ? 1 + OneDimensionalMeta::getQExact(i - 1, rule_clenshawcurtis) : 0;
                         return polynomial_set.missing(qindex);
                     });
-            QuadGrid.setTensors(quadrature_tensors, 0, rule_clenshawcurtis, 0.0, 0.0);
+            QuadGrid.setTensors(std::move(quadrature_tensors), 0, rule_clenshawcurtis, 0.0, 0.0);
         }
 
         size_t qn = (size_t) QuadGrid.getNumPoints();

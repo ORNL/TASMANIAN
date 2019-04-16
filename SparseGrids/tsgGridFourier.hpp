@@ -60,7 +60,7 @@ public:
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void copyGrid(const GridFourier *fourier);
 
-    void setTensors(MultiIndexSet &tset, int cnum_outputs);
+    void setTensors(MultiIndexSet &&tset, int cnum_outputs);
 
     TypeOneDRule getRule() const{ return rule_fourier; }
 

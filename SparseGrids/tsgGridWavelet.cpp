@@ -233,8 +233,7 @@ void GridWavelet::mergeRefinement(){
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t size_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    std::vector<double> vals(size_vals, 0.0);
-    values.setValues(vals);
+    values.setValues(std::vector<double>(size_vals, 0.0));
     if (points.empty()){
         points = std::move(needed);
     }else{
@@ -500,7 +499,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 std::copy(p, p + num_dimensions, indexes.getStrip(i));
             }
 
-            MultiIndexSet pointset(num_dimensions, indexes.getVector());
+            MultiIndexSet pointset(num_dimensions, std::move(indexes.getVector()));
 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);

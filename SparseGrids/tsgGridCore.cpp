@@ -75,11 +75,10 @@ SplitDirections::SplitDirections(const MultiIndexSet &points){
             // new job, get reference index
             const int *p = points.getIndex(*imap);
             job_directions.push_back((int) d);
-            std::vector<int> pnts = {*imap++};
+            job_pnts.emplace_back(std::vector<int>(1, *imap++));
             // while the points are in the same direction as the reference, add to the same job
             while((imap != map.end()) && doesBelongSameLine(p, points.getIndex(*imap), d))
-                pnts.push_back(*imap++);
-            job_pnts.push_back(std::move(pnts));
+                job_pnts.back().push_back(*imap++);
         }
     }
 }

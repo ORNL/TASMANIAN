@@ -232,8 +232,7 @@ void GridSequence::mergeRefinement(){
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    std::vector<double> vals(num_vals, 0.0);
-    values.setValues(vals);
+    values.setValues(std::vector<double>(num_vals, 0.0));
     if (points.empty()){ // relabel needed as points (loaded)
         points = std::move(needed);
         needed = MultiIndexSet();
@@ -407,16 +406,13 @@ void GridSequence::loadConstructedPoint(const double x[], const std::vector<doub
 }
 void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
     if (points.empty()){ // only one point
-        auto p = point; // create new so it can be moved
-        points = MultiIndexSet((size_t) num_dimensions, p);
+        points = MultiIndexSet((size_t) num_dimensions, std::vector<int>(point));
         values.resize(num_outputs, 1);
-        auto v = value; // create new to allow copy move
-        values.setValues(v);
+        values.setValues(std::vector<double>(value));
         surpluses.resize(num_outputs, 1);
         surpluses.getVector() = value; // the surplus of one point is the value itself
     }else{ // merge with existing points
-        auto p = point;
-        MultiIndexSet temp(num_dimensions, p);
+        MultiIndexSet temp(num_dimensions, std::vector<int>(point));
         values.addValues(points, temp, value.data());
 
         points.addSortedIndexes(point);
@@ -747,8 +743,7 @@ std::vector<int> GridSequence::getPolynomialSpace(bool interpolation) const{
         MultiIndexSet polynomial_set = MultiIndexManipulations::createPolynomialSpace(
             (points.empty()) ? needed : points,
             [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); });
-        std::vector<int> poly_space = std::move(polynomial_set.getVector());
-        return poly_space;
+        return std::move(polynomial_set.getVector());
     }
 }
 const double* GridSequence::getSurpluses() const{
