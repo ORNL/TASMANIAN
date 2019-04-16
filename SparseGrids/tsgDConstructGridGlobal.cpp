@@ -55,11 +55,13 @@ template<bool useAscii> void DynamicConstructorDataGlobal::read(std::istream &is
     int num_entries = IO::readNumber<useAscii, int>(is);
 
     for(int i=0; i<num_entries; i++){
-        TensorData td;
-        td.tensor.resize(num_dimensions);
-        td.weight = IO::readNumber<useAscii, double>(is);
-        IO::readVector<useAscii>(is, td.tensor);
-        tensors.push_front(std::move(td));
+        tensors.emplace_front(TensorData{
+                              std::vector<int>(num_dimensions), // tensor
+                              MultiIndexSet(), // points, will be set later
+                              std::vector<bool>(), // loaded, will be set later
+                              IO::readNumber<useAscii, double>(is) // weight
+                              });
+        IO::readVector<useAscii>(is, tensors.front().tensor);
     }
 
     data = readNodeDataList<useAscii>(num_dimensions, num_outputs, is);
@@ -113,17 +115,18 @@ MultiIndexSet DynamicConstructorDataGlobal::getInitialTensors() const{
 }
 
 void DynamicConstructorDataGlobal::addTensor(const int *tensor, std::function<int(int)> getNumPoints, double weight){
-    TensorData t;
-    t.tensor = std::vector<int>(tensor, tensor + num_dimensions);
-    MultiIndexSet dummy_set(num_dimensions, std::vector<int>(tensor, tensor + num_dimensions));
-    t.points = MultiIndexManipulations::generateNestedPoints(dummy_set, getNumPoints);
-    t.loaded = std::vector<bool>((size_t) t.points.getNumIndexes(), false);
+    tensors.emplace_front(TensorData{
+                          std::vector<int>(tensor, tensor + num_dimensions),
+                          MultiIndexManipulations::generateNestedPoints(MultiIndexSet(num_dimensions, std::vector<int>(tensor, tensor + num_dimensions)), getNumPoints),
+                          std::vector<bool>(),
+                          weight
+                          });
+
+    tensors.front().loaded = std::vector<bool>((size_t) tensors.front().points.getNumIndexes(), false);
     for(auto const &p : data){
-        int slot = t.points.getSlot(p.point);
-        if (slot != -1) t.loaded[slot] = true;
+        int slot = tensors.front().points.getSlot(p.point);
+        if (slot != -1) tensors.front().loaded[slot] = true;
     }
-    t.weight = weight;
-    tensors.push_front(std::move(t));
 }
 
 void DynamicConstructorDataGlobal::getNodesIndexes(std::vector<int> &inodes){
@@ -140,7 +143,7 @@ void DynamicConstructorDataGlobal::getNodesIndexes(std::vector<int> &inodes){
 }
 
 bool DynamicConstructorDataGlobal::addNewNode(const std::vector<int> &point, const std::vector<double> &value){
-    data.push_front({point, value});
+    data.emplace_front(NodeData{point, value});
     for(auto &t : tensors){
         int slot = t.points.getSlot(point);
         if (slot != -1){

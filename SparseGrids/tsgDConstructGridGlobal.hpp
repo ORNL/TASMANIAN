@@ -152,14 +152,16 @@ template<bool useAscii>
 std::forward_list<NodeData> readNodeDataList(size_t num_dimensions, size_t num_outputs, std::istream &is){
     std::forward_list<NodeData> data;
     int num_nodes = IO::readNumber<useAscii, int>(is);
+
     for(int i=0; i<num_nodes; i++){
-        NodeData nd;
-        nd.point.resize(num_dimensions);
-        IO::readVector<useAscii>(is, nd.point);
-        nd.value.resize(num_outputs);
-        IO::readVector<useAscii>(is, nd.value);
-        data.push_front(std::move(nd));
+        data.emplace_front(NodeData{
+                            std::vector<int>(num_dimensions), // point
+                            std::vector<double>(num_outputs)  // value
+                           });
+        IO::readVector<useAscii>(is, data.front().point);
+        IO::readVector<useAscii>(is, data.front().value);
     }
+
     return data;
 }
 
