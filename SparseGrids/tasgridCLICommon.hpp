@@ -48,6 +48,7 @@
 #include <cmath>
 #include <random>
 #include <deque>
+#include <cctype>
 
 #include "TasmanianSparseGrid.hpp"
 
