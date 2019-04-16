@@ -35,7 +35,6 @@
 #include <fstream>
 #include <iomanip>
 
-#include <math.h>
 #include <vector>
 #include <numeric>
 #include <random>

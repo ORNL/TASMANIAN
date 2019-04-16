@@ -31,8 +31,6 @@
 #ifndef __TASMANIAN_TASGRID_FUNCTIONS_HPP
 #define __TASMANIAN_TASGRID_FUNCTIONS_HPP
 
-#include "math.h"
-
 class BaseFunction{
 public:
     BaseFunction();

@@ -31,9 +31,6 @@
 #ifndef __TASMANIAN_SPARSE_GRID_SEQUENCE_OPTIMIZER_HPP
 #define __TASMANIAN_SPARSE_GRID_SEQUENCE_OPTIMIZER_HPP
 
-#include <vector>
-
-#include <math.h>
 #include "tsgEnumerates.hpp"
 
 namespace TasGrid{

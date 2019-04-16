@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
-#include "math.h"
 
 #include "TasmanianDREAM.hpp"
 

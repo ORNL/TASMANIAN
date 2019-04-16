@@ -32,7 +32,6 @@
 #define __TASMANIAN_SPARSE_GRID_FOURIER_HPP
 
 #include <cstdlib>
-#include <math.h>
 #include <complex>
 
 #include "tsgEnumerates.hpp"
