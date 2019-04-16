@@ -567,6 +567,15 @@ constexpr int TSG_MAX_SECANT_ITERATIONS = 1000;
 //! if the outputs are few there is very little caching anyway and hence use the sparse version to save memory.
 constexpr size_t TSG_LOCALP_BLAS_NUM_OUTPUTS = 2048;
 
+/*!
+ * \internal
+ * \ingroup SGEnumerates
+ * \brief Half-period of the \b std::sin() and \b std::cos() functions.
+ *
+ * Borrowed from "math.h", let's hope they don't change the value in a future standard.
+ */
+constexpr double tsg_pi = 3.14159265358979323846;
+
 }
 
 #endif

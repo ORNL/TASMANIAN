@@ -591,7 +591,7 @@ int main(int argc, const char**){
     for(int i=0; i<1000; i++){
         double x = pnts[i*2];
         double y = pnts[i*2+1];
-        tres[i] = cos(0.5 * M_PI * x) * cos(0.5 * M_PI * y);
+        tres[i] = cos(0.5 * tsg_pi * x) * cos(0.5 * tsg_pi * y);
     }
 
 {
@@ -619,7 +619,7 @@ int main(int argc, const char**){
     for(int i=0; i<num_points; i++){
         double x = points[i*dim];
         double y = points[i*dim+1];
-        vals[i] = cos(0.5 * M_PI * x) * cos(0.5 * M_PI * y);
+        vals[i] = cos(0.5 * tsg_pi * x) * cos(0.5 * tsg_pi * y);
     }
 
     grid.loadNeededPoints(vals);
@@ -642,7 +642,7 @@ int main(int argc, const char**){
     for(int i=0; i<num_points; i++){
         double x = points[i*dim];
         double y = points[i*dim+1];
-        vals[i] = cos(0.5 * M_PI * x) * cos(0.5 * M_PI * y);
+        vals[i] = cos(0.5 * tsg_pi * x) * cos(0.5 * tsg_pi * y);
     }
 
     grid.loadNeededPoints(vals);

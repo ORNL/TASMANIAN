@@ -253,7 +253,7 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
         int biglength = 3 * length; // big sequence, i.e., F_k has this total length
         int bigstride = stride / 3;
 
-        double theta = -2.0 * M_PI  / ((double) biglength);
+        double theta = -2.0 * tsg_pi / ((double) biglength);
         std::complex<double> expstep(cos(theta), sin(theta)); // initialize the twiddle factors common for this level of sub-sequences
         std::complex<double> expstep2 = expstep * expstep;
 
