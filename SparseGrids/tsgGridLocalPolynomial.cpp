@@ -200,7 +200,7 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
 }
 
 GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule,
-                                         std::vector<int> &pnts, std::vector<double> &vals, std::vector<double> &surps) :
+                                         std::vector<int> &&pnts, std::vector<double> &&vals, std::vector<double> &&surps) :
                                          order(corder), sparse_affinity(0){
 
     num_dimensions = cnum_dimensions;
@@ -208,10 +208,10 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
 
     makeRule(crule);
 
-    points = MultiIndexSet(num_dimensions, std::move(pnts));
+    points = MultiIndexSet(num_dimensions, std::vector<int>(pnts));
     values.resize(num_outputs, points.getNumIndexes());
-    values.setValues(std::move(vals));
-    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::move(surps));
+    values.setValues(std::vector<double>(vals));
+    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::vector<double>(surps));
 
     buildTree();
 }
@@ -322,11 +322,10 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
         // note that level_points.getNumIndexes() == lx[l].getNumStrips() == lvals[l].getNumStrips()
         MultiIndexSet level_points(num_dimensions, std::move(lpnts[l].getVector()));
 
-        std::vector<int>    copypnts = cumulative_poitns.getVector();
-        std::vector<double> copysurp = cumulative_surpluses.getVector();
-        Data2D<double> dummy_values(num_outputs, cumulative_poitns.getNumIndexes()); // will not be referenced anyway
-
-        GridLocalPolynomial upper_grid(num_dimensions, num_outputs, order, getRule(), copypnts, dummy_values.getVector(), copysurp);
+        GridLocalPolynomial upper_grid(num_dimensions, num_outputs, order, getRule(),
+                                       std::vector<int>(cumulative_poitns.getVector()), // copy cumulative_poitns
+                                       std::vector<double>(Utils::size_mult(num_outputs, cumulative_poitns.getNumIndexes())),  // dummy values, will not be read or used
+                                       std::vector<double>(cumulative_surpluses.getVector())); // copy the cumulative_surpluses
         upper_grid.sparse_affinity = sparse_affinity;
 
         Data2D<double> upper_evaluate(num_outputs, level_points.getNumIndexes());
