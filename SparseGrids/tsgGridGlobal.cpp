@@ -384,8 +384,7 @@ void GridGlobal::loadNeededPoints(const double *vals){
 void GridGlobal::mergeRefinement(){
     if (needed.empty()) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
-    std::vector<double> vals(((size_t) num_all_points) * ((size_t) num_outputs), 0.0);
-    values.setValues(vals);
+    values.setValues(std::vector<double>(Utils::size_mult(num_outputs, num_all_points), 0.0));
     acceptUpdatedTensors();
 }
 
@@ -548,7 +547,7 @@ void GridGlobal::loadConstructedTensors(){
     bool added_any = false;
     while(dynamic_values->ejectCompleteTensor(tensors, tensor, new_points, new_values)){
         if (points.empty()){
-            values.setValues(new_values);
+            values.setValues(std::move(new_values));
             points = std::move(new_points);
         }else{
             values.addValues(points, new_points, new_values.data());

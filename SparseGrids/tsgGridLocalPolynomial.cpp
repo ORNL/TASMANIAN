@@ -210,7 +210,7 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
 
     points = MultiIndexSet(num_dimensions, std::move(pnts));
     values.resize(num_outputs, points.getNumIndexes());
-    values.setValues(vals);
+    values.setValues(std::move(vals));
     surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::move(surps));
 
     buildTree();
@@ -316,7 +316,7 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
 
     StorageSet cumulative_surpluses;
     cumulative_surpluses.resize(num_outputs, cumulative_poitns.getNumIndexes());
-    cumulative_surpluses.setValues(lvals[0].getVector());
+    cumulative_surpluses.setValues(std::move(lvals[0].getVector()));
 
     for(size_t l = 1; l < lpnts.size(); l++){ // loop over the levels
         // note that level_points.getNumIndexes() == lx[l].getNumStrips() == lvals[l].getNumStrips()
@@ -426,8 +426,7 @@ void GridLocalPolynomial::mergeRefinement(){
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    std::vector<double> vals(num_vals, 0.0);
-    values.setValues(vals);
+    values.setValues(std::vector<double>(num_vals, 0.0));
     if (points.empty()){
         points = std::move(needed);
         needed = MultiIndexSet();
@@ -558,8 +557,7 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
     if (points.empty()){ // only one point
         points = MultiIndexSet((size_t) num_dimensions, std::vector<int>(point));
         values.resize(num_outputs, 1);
-        auto v = value; // create new to allow move
-        values.setValues(v);
+        values.setValues(std::vector<double>(value));
         surpluses.resize(num_outputs, 1);
         surpluses.getVector() = value; // the surplus of one point is the value itself
     }else{ // merge with existing points

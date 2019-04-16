@@ -233,8 +233,7 @@ void GridWavelet::mergeRefinement(){
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t size_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    std::vector<double> vals(size_vals, 0.0);
-    values.setValues(vals);
+    values.setValues(std::vector<double>(size_vals, 0.0));
     if (points.empty()){
         points = std::move(needed);
     }else{

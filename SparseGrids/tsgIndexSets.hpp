@@ -286,8 +286,8 @@ public:
 
     //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
     void setValues(const double vals[]);
-    //! \brief Replace the existing values with **vals** using `std::move()`, the size of **vals** must be **num_outputs** times **num_values**
-    void setValues(std::vector<double> &vals);
+    //! \brief Replace the existing values with \b vals using move semantics, the size of \b vals must be \b num_outputs times \b num_values
+    void setValues(std::vector<double> &&vals);
 
     /*!
      * \brief Add more values to the set, the \b old_set and \b new_set are the associated multi-index sets required to maintain order.
