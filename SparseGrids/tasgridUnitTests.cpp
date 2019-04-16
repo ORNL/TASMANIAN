@@ -292,7 +292,7 @@ void GridUnitTester::gridLoadEN2(TasmanianSparseGrid *grid) const{
             nrm += *iter_x * *iter_x;
             iter_x++;
         }
-        nrm = exp(-nrm);
+        nrm = std::exp(-nrm);
         for(int i=0; i<outs; i++) *iter_y++ = nrm;
     }
     grid->loadNeededPoints(vals);

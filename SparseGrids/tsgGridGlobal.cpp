@@ -730,9 +730,9 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
                 for(int j=0; j<num_dimensions; j++) v *= legendre(p[j], *iter_x++);
                 c += v * ii;
             }
-            double nrm = sqrt((double) p[0] + 0.5);
+            double nrm = std::sqrt((double) p[0] + 0.5);
             for(int j=1; j<num_dimensions; j++){
-                nrm *= sqrt((double) p[j] + 0.5);
+                nrm *= std::sqrt((double) p[j] + 0.5);
             }
             surp[i] = c * nrm;
         }

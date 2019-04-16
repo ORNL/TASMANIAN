@@ -14,6 +14,7 @@
  * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse
  *    or promote products derived from this software without specific prior written permission.
  *
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
  * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
  * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
@@ -568,8 +569,8 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] / p[i];
         //cout << "error in integral of 1/x is = " << fabs(sum - tsg_pi * sqrt(7.0) / 14.0) << endl;
-        if (fabs(sum - tsg_pi * sqrt(7.0) / 14.0) > 1.E-11){
-            cout << "ERROR: disrepancy in transformed gauss-chebyshev-1 rule is: " << fabs(sum - tsg_pi * sqrt(7.0) / 14.0) << endl;
+        if (fabs(sum - tsg_pi * std::sqrt(7.0) / 14.0) > 1.E-11){
+            cout << "ERROR: disrepancy in transformed gauss-chebyshev-1 rule is: " << fabs(sum - tsg_pi * std::sqrt(7.0) / 14.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
     }else if ((oned == TasGrid::rule_gausschebyshev2) || (oned == TasGrid::rule_gausschebyshev2odd)){
@@ -588,7 +589,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: sum of weight in transformed gauss-chebyshev-2 rule is off by: " << fabs(sum - 9.0 * tsg_pi / 8.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * sqrt(7.0 - p[i]) * sqrt(p[i] - 4.0);
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * std::sqrt(7.0 - p[i]) * std::sqrt(p[i] - 4.0);
         //cout << "error in integral of (7 - x)^0.5 (x - 4)^0.5 is = " << fabs(sum - 4.5) << endl;
         if (fabs(sum - 4.5) > 1.E-3){
             cout << "ERROR: disrepancy in transformed gauss-chebyshev-2 rule is: " << fabs(sum - 4.5) << endl;
@@ -629,7 +630,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: sum of weight in transformed gauss-jacobi rule is off by: " << fabs(sum - 12.15) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * sin(tsg_pi * p[i]);
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * std::sin(tsg_pi * p[i]);
         if (fabs(sum + 18.0 * (3.0 * tsg_pi * tsg_pi - 4.0) / pow(tsg_pi, 5.0)) > 1.E-11){
             cout << "ERROR: disrepancy in transformed gauss-jacobi rule is: " << fabs(sum + 18.0 * (3.0 * tsg_pi * tsg_pi - 4.0) / pow(tsg_pi, 5.0)) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -654,7 +655,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: disrepancy in transformed gauss-laguerre rule is: " << fabs(sum - 15360.0 * 3573248.0 / 243.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        double test_x[2] = {3.0 + sqrt(2.0), 2.0 + sqrt(2.0)};
+        double test_x[2] = {3.0 + std::sqrt(2.0), 2.0 + std::sqrt(2.0)};
         auto iw = grid.getInterpolationWeights(test_x);
         sum = 0.0; for(int i=0; i<num_p; i++) sum += iw[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]);
         if (fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1]) > 2.E-9){
@@ -671,17 +672,17 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (fabs(sum - (8.0 * tsg_pi / 3.0) * sqrt(6.0)) > TSG_NUM_TOL){
+        if (fabs(sum - (8.0 * tsg_pi / 3.0) * std::sqrt(6.0)) > TSG_NUM_TOL){
             cout << sum << "     " << 96.0 * 512.0 / 27.0 << endl;
-            cout << "ERROR: sum of weight in transformed gauss-hermite rule is off by: " << fabs(sum - (8.0 * tsg_pi / 3.0) * sqrt(6.0)) << endl;
+            cout << "ERROR: sum of weight in transformed gauss-hermite rule is off by: " << fabs(sum - (8.0 * tsg_pi / 3.0) * std::sqrt(6.0)) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]*p[2*i+1]);
-        if (fabs(sum - (63.0 * 19912.0 * tsg_pi / 81.0) * sqrt(6.0)) > 4.E-8){
+        if (fabs(sum - (63.0 * 19912.0 * tsg_pi / 81.0) * std::sqrt(6.0)) > 4.E-8){
             cout << "ERROR: disrepancy in transformed gauss-hermite rule is: " << fabs(sum - 15360.0 * 3573248.0 / 243.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        double test_x[2] = {3.0 + sqrt(2.0), 2.0 + sqrt(2.0)};
+        double test_x[2] = {3.0 + std::sqrt(2.0), 2.0 + std::sqrt(2.0)};
         auto iw = grid.getInterpolationWeights(test_x);
         sum = 0.0; for(int i=0; i<num_p; i++) sum += iw[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]*p[2*i+1]);
         if (fabs(sum - test_x[0] * test_x[0] * test_x[1] * test_x[1] * test_x[1] * test_x[1]) > 1.E-9){

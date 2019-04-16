@@ -58,7 +58,7 @@ void dream_example_02(){
             double dt = 1.0 / ((double) data.size());
             double t = 0.5 * dt;
             for(auto &d : data){
-                d = sin(x0 * pi * t + x1);
+                d = std::sin(x0 * pi * t + x1);
                 t += dt;
             }
         };

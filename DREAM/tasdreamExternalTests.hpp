@@ -114,7 +114,7 @@ inline void printStats(const TasmanianDREAM &state, const char *message = nullpt
     cout << std::scientific; cout.precision(6);
     for(auto m : mean) cout << m << "  ";
     cout << endl;
-    for(auto v : variance) cout << sqrt(v) << "  ";
+    for(auto v : variance) cout << std::sqrt(v) << "  ";
     cout << endl;
 }
 
@@ -140,7 +140,7 @@ inline void printMode(const TasmanianDREAM &state, const char *message = nullptr
 inline void getSinSinModel(double magnitude, double frequency, double time_step, int num_steps, double *y){
     double t = time_step;
     for(int i=0; i<num_steps; i++){
-        y[i] = sin(tsg_pi * t) + magnitude * sin(frequency * tsg_pi * t);
+        y[i] = std::sin(tsg_pi * t) + magnitude * std::sin(frequency * tsg_pi * t);
         t += time_step;
     }
 }

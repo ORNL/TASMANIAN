@@ -56,7 +56,7 @@ void dream_example_01(){
     TasDREAM::SampleDREAM(num_burnup_iterations, num_collect_iterations,
                           [&](const std::vector<double> &candidates, std::vector<double> &values){ // use lambda to implement the formula
                               std::transform(candidates.begin(), candidates.end(), values.begin(),
-                                             [&](double x)->double{ return exp(-x*x); }); // implement the formula
+                                             [&](double x)->double{ return std::exp(-x*x); }); // implement the formula
                           },
                           [&](const std::vector<double>&)->bool{ return true; }, // unbound domain
                           TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
