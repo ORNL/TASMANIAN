@@ -743,8 +743,7 @@ std::vector<int> GridSequence::getPolynomialSpace(bool interpolation) const{
         MultiIndexSet polynomial_set = MultiIndexManipulations::createPolynomialSpace(
             (points.empty()) ? needed : points,
             [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); });
-        std::vector<int> poly_space = std::move(polynomial_set.getVector());
-        return poly_space;
+        return std::move(polynomial_set.getVector());
     }
 }
 const double* GridSequence::getSurpluses() const{
