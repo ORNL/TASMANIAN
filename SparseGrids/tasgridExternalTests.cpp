@@ -216,9 +216,17 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     const char *custom_filename = (rule == rule_customtabulated) ? findGaussPattersonTable() : 0;
     for(int i=0; i<num_global_tests; i++){
         if (rule == rule_fourier){
-            grid.makeFourierGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, anisotropic);
+            if (anisotropic == nullptr){
+                grid = makeFourierGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type);
+            }else{
+                grid.makeFourierGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, anisotropic);
+            }
         }else{
-            grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            if (anisotropic == nullptr){
+                grid = makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, std::vector<int>(), alpha, beta, custom_filename);
+            }else{
+                grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            }
         }
         R = getError(f, &grid, ((interpolation) ? tests[i] : type_integration), x.data());
         if (R.error > tols[i]){
@@ -240,11 +248,11 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         }
     }
     if (rule == rule_customtabulated){
-        TasGrid::TasmanianSparseGrid *grid_copy;
+        TasGrid::TasmanianSparseGrid grid_copy;
         for(int i=0; i<num_global_tests; i++){
             grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
-            grid_copy = new TasGrid::TasmanianSparseGrid(grid);
-            R = getError(f, grid_copy, ((interpolation) ? tests[i] : type_integration), x.data());
+            grid_copy = grid;
+            R = getError(f, &grid_copy, ((interpolation) ? tests[i] : type_integration), x.data());
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << TasGrid::OneDimensionalMeta::getIORuleString(rule);
@@ -262,14 +270,14 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
                 cout << "   failed function: " << f->getDescription();
                 cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
             }
-            delete grid_copy;
         }
     }
 
     if (TasGrid::OneDimensionalMeta::isSequence(rule)){
         for(int i=0; i<num_global_tests; i++){
             if (interpolation){
-                grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule, anisotropic);
+                grid = makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule,
+                                        (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f->getNumInputs()) : std::vector<int>());
                 R = getError(f, &grid, tests[i], x.data());
             }else{
                 grid.makeSequenceGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic);
@@ -756,7 +764,7 @@ bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::Typ
     double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
     bool bPass = true;
     for(int i=0; i<18; i++){
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3], rule);
+        grid = makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3], rule);
         R = getError(f, &grid, tests[i%3], x);
         if (R.error > tols[i]){
             bPass = false;
@@ -961,14 +969,13 @@ bool ExternalTester::testAllPWLocal() const{
 }
 
 bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[]) const{
-    TasGrid::TasmanianSparseGrid grid;
     TestResults R;
     TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
     int orders[2] = { 1, 3 };
     double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
     bool bPass = true;
     for(int i=0; i<6; i++){
-        grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3]);
+        auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3]);
         R = getError(f, &grid, tests[i%3], x);
         if (R.error > tols[i]){
             bPass = false;
