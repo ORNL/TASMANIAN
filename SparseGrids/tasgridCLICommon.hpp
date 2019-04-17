@@ -42,7 +42,6 @@
  * \endinternal
  */
 
-#include <map>
 #include <random>
 #include <deque>
 #include <cctype>

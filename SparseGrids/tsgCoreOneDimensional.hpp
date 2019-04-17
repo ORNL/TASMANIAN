@@ -128,6 +128,8 @@ namespace OneDimensionalMeta{
 
     //! \brief Map the string rule name to the enumerate, used in ASCII I/O, command line and Python.
     TypeOneDRule getIORuleString(const char *name);
+    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeOneDRule enums.
+    std::map<std::string, TypeOneDRule> getStringToRuleMap();
     //! \brief Map the enumerate to a string, used in ASCII I/O, command line and Python.
     const char* getIORuleString(TypeOneDRule rule);
     //! \brief Map the enumerate to a human readable string, used in \b printStats().
@@ -186,11 +188,15 @@ namespace OneDimensionalMeta{
 
     //! \brief Map the string to the enumerate multi-index selection strategy, used in command line and Python.
     TypeDepth getIOTypeString(const char *name);
+    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeDepth enums.
+    std::map<std::string, TypeDepth> getStringToDepthMap();
     //! \brief Map the integer to the enumerate multi-index selection strategy, used in Fortran.
     TypeDepth getIOTypeInt(int type);
 
     //! \brief Map the string to the enumerate hierarchical refinement strategy, used in command line and Python.
     TypeRefinement getIOTypeRefinementString(const char *name);
+    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeRefinement enums.
+    std::map<std::string, TypeRefinement> getStringToRefinementMap();
     //! \brief Map the integer to the enumerate hierarchical refinement strategy, used in Fortran.
     TypeRefinement getIOTypeRefinementInt(int ref);
 }

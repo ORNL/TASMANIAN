@@ -443,92 +443,55 @@ const char* OneDimensionalMeta::getIORuleString(TypeOneDRule rule){
             return "unknown";
     }
 }
+std::map<std::string, TypeOneDRule> OneDimensionalMeta::getStringToRuleMap(){
+    return {
+        {"clenshaw-curtis",      rule_clenshawcurtis},
+        {"clenshaw-curtis-zero", rule_clenshawcurtis0},
+        {"chebyshev",            rule_chebyshev},
+        {"chebyshev-odd",        rule_chebyshevodd},
+        {"gauss-legendre",       rule_gausslegendre},
+        {"gauss-legendre-odd",   rule_gausslegendreodd},
+        {"gauss-patterson",      rule_gausspatterson},
+        {"leja",                 rule_leja},
+        {"leja-odd",             rule_lejaodd},
+        {"rleja",                rule_rleja},
+        {"rleja-double2",        rule_rlejadouble2},
+        {"rleja-double4",        rule_rlejadouble4},
+        {"rleja-odd",            rule_rlejaodd},
+        {"rleja-shifted",        rule_rlejashifted},
+        {"rleja-shifted-even",   rule_rlejashiftedeven},
+        {"rleja-shifted-double", rule_rlejashifteddouble},
+        {"max-lebesgue",         rule_maxlebesgue},
+        {"max-lebesgue-odd",     rule_maxlebesgueodd},
+        {"min-lebesgue",         rule_minlebesgue},
+        {"min-lebesgue-odd",     rule_minlebesgueodd},
+        {"min-delta",            rule_mindelta},
+        {"min-delta-odd",        rule_mindeltaodd},
+        {"gauss-chebyshev1",     rule_gausschebyshev1},
+        {"gauss-chebyshev1-odd", rule_gausschebyshev1odd},
+        {"gauss-chebyshev2",     rule_gausschebyshev2},
+        {"gauss-chebyshev2-odd", rule_gausschebyshev2odd},
+        {"fejer2",               rule_fejer2},
+        {"gauss-gegenbauer",     rule_gaussgegenbauer},
+        {"gauss-gegenbauer-odd", rule_gaussgegenbauerodd},
+        {"gauss-jacobi",         rule_gaussjacobi},
+        {"gauss-jacobi-odd",     rule_gaussjacobiodd},
+        {"gauss-laguerre",       rule_gausslaguerre},
+        {"gauss-laguerre-odd",   rule_gausslaguerreodd},
+        {"gauss-hermite",        rule_gausshermite},
+        {"gauss-hermite-odd",    rule_gausshermiteodd},
+        {"custom-tabulated",     rule_customtabulated},
+        {"localp",               rule_localp},
+        {"localp-zero",          rule_localp0},
+        {"localp-boundary",      rule_localpb},
+        {"semi-localp",          rule_semilocalp},
+        {"wavelet",              rule_wavelet},
+        {"fourier",              rule_fourier}};
+}
 TypeOneDRule OneDimensionalMeta::getIORuleString(const char *name){
-    if (strcmp(name, "clenshaw-curtis") == 0){
-        return rule_clenshawcurtis;
-    }else if (strcmp(name, "clenshaw-curtis-zero") == 0){
-        return rule_clenshawcurtis0;
-    }else if (strcmp(name, "chebyshev") == 0){
-        return rule_chebyshev;
-    }else if (strcmp(name, "chebyshev-odd") == 0){
-        return rule_chebyshevodd;
-    }else if (strcmp(name, "gauss-legendre") == 0){
-        return rule_gausslegendre;
-    }else if (strcmp(name, "gauss-legendre-odd") == 0){
-        return rule_gausslegendreodd;
-    }else if (strcmp(name, "gauss-patterson") == 0){
-        return rule_gausspatterson;
-    }else if (strcmp(name, "leja") == 0){
-        return rule_leja;
-    }else if (strcmp(name, "leja-odd") == 0){
-        return rule_lejaodd;
-    }else if (strcmp(name, "rleja") == 0){
-        return rule_rleja;
-    }else if (strcmp(name, "rleja-double2") == 0){
-        return rule_rlejadouble2;
-    }else if (strcmp(name, "rleja-double4") == 0){
-        return rule_rlejadouble4;
-    }else if (strcmp(name, "rleja-odd") == 0){
-        return rule_rlejaodd;
-    }else if (strcmp(name, "rleja-shifted") == 0){
-        return rule_rlejashifted;
-    }else if (strcmp(name, "rleja-shifted-even") == 0){
-        return rule_rlejashiftedeven;
-    }else if (strcmp(name, "rleja-shifted-double") == 0){
-        return rule_rlejashifteddouble;
-    }else if (strcmp(name, "max-lebesgue") == 0){
-        return rule_maxlebesgue;
-    }else if (strcmp(name, "max-lebesgue-odd") == 0){
-        return rule_maxlebesgueodd;
-    }else if (strcmp(name, "min-lebesgue") == 0){
-        return rule_minlebesgue;
-    }else if (strcmp(name, "min-lebesgue-odd") == 0){
-        return rule_minlebesgueodd;
-    }else if (strcmp(name, "min-delta") == 0){
-        return rule_mindelta;
-    }else if (strcmp(name, "min-delta-odd") == 0){
-        return rule_mindeltaodd;
-    }else if (strcmp(name, "gauss-chebyshev1") == 0){
-        return rule_gausschebyshev1;
-    }else if (strcmp(name, "gauss-chebyshev1-odd") == 0){
-        return rule_gausschebyshev1odd;
-    }else if (strcmp(name, "gauss-chebyshev2") == 0){
-        return rule_gausschebyshev2;
-    }else if (strcmp(name, "gauss-chebyshev2-odd") == 0){
-        return rule_gausschebyshev2odd;
-    }else if (strcmp(name, "fejer2") == 0){
-        return rule_fejer2;
-    }else if (strcmp(name, "gauss-gegenbauer") == 0){
-        return rule_gaussgegenbauer;
-    }else if (strcmp(name, "gauss-gegenbauer-odd") == 0){
-        return rule_gaussgegenbauerodd;
-    }else if (strcmp(name, "gauss-jacobi") == 0){
-        return rule_gaussjacobi;
-    }else if (strcmp(name, "gauss-jacobi-odd") == 0){
-        return rule_gaussjacobiodd;
-    }else if (strcmp(name, "gauss-laguerre") == 0){
-        return rule_gausslaguerre;
-    }else if (strcmp(name, "gauss-laguerre-odd") == 0){
-        return rule_gausslaguerreodd;
-    }else if (strcmp(name, "gauss-hermite") == 0){
-        return rule_gausshermite;
-    }else if (strcmp(name, "gauss-hermite-odd") == 0){
-        return rule_gausshermiteodd;
-    }else if (strcmp(name, "custom-tabulated") == 0){
-        return rule_customtabulated;
-    }else if (strcmp(name, "localp") == 0){
-        return rule_localp;
-    }else if (strcmp(name, "localp-zero") == 0){
-        return rule_localp0;
-    }else if (strcmp(name, "localp-boundary") == 0){
-        return rule_localpb;
-    }else if (strcmp(name, "semi-localp") == 0){
-        return rule_semilocalp;
-    }else if (strcmp(name, "wavelet") == 0){
-        return rule_wavelet;
-    }else if (strcmp(name, "fourier") == 0){
-        return rule_fourier;
-    }else{
+    try{
+        return getStringToRuleMap().at(name);
+    }catch(std::out_of_range &){
         return rule_none;
     }
 }
@@ -629,33 +592,25 @@ int OneDimensionalMeta::getIORuleInt(TypeOneDRule rule){
     }
 }
 
+std::map<std::string, TypeDepth> OneDimensionalMeta::getStringToDepthMap(){
+    return {
+        {"level",        type_level},
+        {"curved",       type_curved},
+        {"iptotal",      type_iptotal},
+        {"ipcurved",     type_ipcurved},
+        {"qptotal",      type_qptotal},
+        {"qpcurved",     type_qpcurved},
+        {"hyperbolic",   type_hyperbolic},
+        {"iphyperbolic", type_iphyperbolic},
+        {"qphyperbolic", type_qphyperbolic},
+        {"tensor",       type_tensor},
+        {"iptensor",     type_iptensor},
+        {"qptensor",     type_qptensor}};
+}
 TypeDepth OneDimensionalMeta::getIOTypeString(const char *name){
-    if (strcmp(name, "level") == 0){
-        return type_level;
-    }else if (strcmp(name, "curved") == 0){
-        return type_curved;
-    }else if (strcmp(name, "iptotal") == 0){
-        return type_iptotal;
-    }else if (strcmp(name, "ipcurved") == 0){
-        return type_ipcurved;
-    }else if (strcmp(name, "qptotal") == 0){
-        return type_qptotal;
-    }else if (strcmp(name, "qpcurved") == 0){
-        return type_qpcurved;
-    }else if (strcmp(name, "hyperbolic") == 0){
-        return type_hyperbolic;
-    }else if (strcmp(name, "iphyperbolic") == 0){
-        return type_iphyperbolic;
-    }else if (strcmp(name, "qphyperbolic") == 0){
-        return type_qphyperbolic;
-    }else if (strcmp(name, "tensor") == 0){
-        return type_tensor;
-    }else if (strcmp(name, "iptensor") == 0){
-        return type_iptensor;
-    }else if (strcmp(name, "qptensor") == 0){
-        return type_qptensor;
-    }else{
-        //cerr << "ERROR: " << argv[k] << " is not a valid type!!!  For help see: ./tasgrid -help" << endl << endl;
+    try{
+        return getStringToDepthMap().at(name);
+    }catch(std::out_of_range &){
         return type_none;
     }
 }
@@ -678,16 +633,17 @@ TypeDepth OneDimensionalMeta::getIOTypeInt(int type){
     }
 }
 
+std::map<std::string, TypeRefinement> OneDimensionalMeta::getStringToRefinementMap(){
+    return {
+        {"classic",   refine_classic},
+        {"parents",   refine_parents_first},
+        {"direction", refine_direction_selective},
+        {"fds",       refine_fds}};
+}
 TypeRefinement OneDimensionalMeta::getIOTypeRefinementString(const char *name){
-    if (strcmp(name, "classic") == 0){
-        return refine_classic;
-    }else if (strcmp(name, "parents") == 0){
-        return refine_parents_first;
-    }else if (strcmp(name, "direction") == 0){
-        return refine_direction_selective;
-    }else if (strcmp(name, "fds") == 0){
-        return refine_fds;
-    }else{
+    try{
+        return getStringToRefinementMap().at(name);
+    }catch(std::out_of_range &){
         return refine_none;
     }
 }
