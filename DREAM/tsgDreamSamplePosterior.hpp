@@ -67,8 +67,8 @@ namespace TasDREAM{
  */
 template<TypeSamplingForm form> std::function<void(const std::vector<double> &candidates, std::vector<double> &values)>
 makePDFPosterior(TasmanianLikelihood const &likelihood,
-                 std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> model,
-                 std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> prior){
+                 std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> &model,
+                 std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> &prior){
     return [&](const std::vector<double> &candidates, std::vector<double> &values)->void{
         std::vector<double> model_outs(likelihood.getNumOuputs() * values.size());
         model(candidates, model_outs);

@@ -142,7 +142,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     if ("${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
         set(Tasmanian_MSVC_PATH_STRING "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release;${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug;$ENV{PATH}")
         string(REPLACE ";" "\\;" Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING}")
-        set_tests_properties(DREAM_Analytic DREAM_Model PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
+        set_tests_properties(DreamAnalytic DreamModel PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
     endif()
 
     Tasmanian_macro_dream_windows_defines(Tasmanian_dreamtest)
