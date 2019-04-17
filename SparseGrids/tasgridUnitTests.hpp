@@ -31,8 +31,6 @@
 #ifndef __TASGRID_UNIT_TESTS_HPP
 #define __TASGRID_UNIT_TESTS_HPP
 
-#include <string.h>
-
 #include "tasgridCLICommon.hpp"
 
 enum UnitTests{

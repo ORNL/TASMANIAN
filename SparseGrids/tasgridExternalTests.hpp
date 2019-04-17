@@ -31,10 +31,6 @@
 #ifndef __TASGRID_TESTER_HPP
 #define __TASGRID_TESTER_HPP
 
-#include <cstdlib>
-#include <cstdio>
-#include <string.h>
-
 #include "tasgridCLICommon.hpp"
 
 #include "tasgridTestFunctions.hpp"
