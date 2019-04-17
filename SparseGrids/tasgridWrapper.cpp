@@ -82,7 +82,7 @@ TypeCommand TasgridWrapper::hasCommand(std::string const &s){
 }
 
 TypeConformalMap TasgridWrapper::getConfromalType(const char* name){
-    if (strcmp(name, "asin") == 0){
+    if (std::string(name) == "asin"){
         return conformal_asin;
     }else{
         return conformal_none;
