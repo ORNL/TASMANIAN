@@ -32,9 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_LPOLY_CPP
 
 #include "tsgGridLocalPolynomial.hpp"
-
 #include "tsgHiddenExternals.hpp"
-#include "tsgUtils.hpp"
 
 namespace TasGrid{
 

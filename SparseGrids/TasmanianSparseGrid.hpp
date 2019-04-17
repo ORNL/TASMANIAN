@@ -42,7 +42,6 @@
 #define __TASMANIAN_SPARSE_GRID_HPP
 
 #include "tsgGridGlobal.hpp"
-#include "tsgGridSequence.hpp"
 #include "tsgGridLocalPolynomial.hpp"
 #include "tsgGridWavelet.hpp"
 #include "tsgGridFourier.hpp"

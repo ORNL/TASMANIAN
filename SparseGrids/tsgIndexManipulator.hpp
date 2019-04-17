@@ -31,8 +31,7 @@
 #ifndef __TSG_INDEX_MANIPULATOR_HPP
 #define __TSG_INDEX_MANIPULATOR_HPP
 
-#include <numeric>
-#include <iostream>
+#include <functional>
 
 #include "tsgIndexSets.hpp"
 #include "tsgOneDimensionalWrapper.hpp"

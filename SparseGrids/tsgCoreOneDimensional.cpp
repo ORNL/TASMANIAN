@@ -31,9 +31,6 @@
 #ifndef __TSG_CORE_ONE_DIMENSIONAL_CPP
 #define __TSG_CORE_ONE_DIMENSIONAL_CPP
 
-#include <stdexcept>
-#include <string>
-
 #include "tsgCoreOneDimensional.hpp"
 
 namespace TasGrid{

@@ -31,12 +31,6 @@
 #ifndef __TASMANIAN_TASDREAM_EXTERNAL_TESTS_HPP
 #define __TASMANIAN_TASDREAM_EXTERNAL_TESTS_HPP
 
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-
-#include <vector>
-#include <numeric>
 #include <random>
 
 #include "TasmanianDREAM.hpp"

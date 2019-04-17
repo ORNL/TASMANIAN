@@ -31,12 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_CUDA_LOAD_STRUCTS_HPP
 #define __TASMANIAN_SPARSE_CUDA_LOAD_STRUCTS_HPP
 
-#include "TasmanianConfig.hpp"
 #include "tsgAcceleratedDataStructures.hpp"
-
-#include <iostream>
-#include <vector>
-#include <memory>
 
 namespace TasGrid{
 

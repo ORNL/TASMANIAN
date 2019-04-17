@@ -31,8 +31,6 @@
 #ifndef __TASGRID_WRAPPER_HPP
 #define __TASGRID_WRAPPER_HPP
 
-#include <fstream>
-
 #include "tasgridCLICommon.hpp"
 
 enum TypeCommand{

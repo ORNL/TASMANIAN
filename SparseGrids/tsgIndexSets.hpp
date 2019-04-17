@@ -31,11 +31,9 @@
 #ifndef __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 #define __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 
-#include <functional>
 #include <algorithm>
 
 #include "tsgIOHelpers.hpp"
-#include "tsgUtils.hpp"
 
 /*!
  * \internal

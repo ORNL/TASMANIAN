@@ -31,18 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_FOURIER_HPP
 #define __TASMANIAN_SPARSE_GRID_FOURIER_HPP
 
-#include <cstdlib>
-#include <complex>
-
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
-#include "tsgCoreOneDimensional.hpp"
-#include "tsgIndexManipulator.hpp"
-#include "tsgLinearSolvers.hpp"
-#include "tsgOneDimensionalWrapper.hpp"
 #include "tsgGridCore.hpp"
-
-#include "tsgCudaLoadStructures.hpp"
 
 namespace TasGrid{
 

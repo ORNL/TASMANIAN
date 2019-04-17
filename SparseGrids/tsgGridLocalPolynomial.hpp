@@ -31,17 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_LPOLY_HPP
 #define __TASMANIAN_SPARSE_GRID_LPOLY_HPP
 
-#include <vector>
-#include <memory>
-
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
-#include "tsgIndexManipulator.hpp"
 #include "tsgGridCore.hpp"
-#include "tsgRuleLocalPolynomial.hpp"
-#include "tsgDConstructGridGlobal.hpp"
-
-#include "tsgCudaLoadStructures.hpp"
 
 //! \internal
 //! \file tsgGridLocalPolynomial.hpp

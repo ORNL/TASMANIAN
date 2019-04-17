@@ -42,10 +42,7 @@
  * \endinternal
  */
 
-#include <iomanip>
-#include <string>
 #include <map>
-#include <cmath>
 #include <random>
 #include <deque>
 #include <cctype>

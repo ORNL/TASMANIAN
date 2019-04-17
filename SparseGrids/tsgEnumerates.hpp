@@ -32,16 +32,18 @@
 #define __TASMANIAN_SPARSE_GRID_ENUMERATES_HPP
 
 // system headers used in many/many places
+#include <iostream>
 #include <iomanip>
-#include <stdlib.h>
-#include <ostream>
 #include <fstream>
 #include <string.h>
 #include <string>
 #include <vector>
 #include <cmath>
+#include <numeric>
+#include <stdexcept>
 
-#include "TasmanianConfig.hpp"
+#include "TasmanianConfig.hpp" // contains build options passed down from CMake
+#include "tsgUtils.hpp" // contains array wrapper and size_mult for int-to-size_t
 
 //! \file tsgEnumerates.hpp
 //! \brief Omnipresent enumerate types.
