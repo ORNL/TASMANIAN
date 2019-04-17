@@ -396,6 +396,8 @@ namespace AccelerationMeta{
     //! \brief Convert the string (coming from C or Python) into an enumerated type.
     //! \ingroup TasmanianAcceleration
     TypeAcceleration getIOAccelerationString(const char * name);
+    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeAcceleration enums.
+    std::map<std::string, TypeAcceleration> getStringToAccelerationMap();
     //! \internal
     //! \brief Convert the enumerated type to a string, the inverse of \b getIOAccelerationString()
     //! \ingroup TasmanianAcceleration

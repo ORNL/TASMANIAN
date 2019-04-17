@@ -228,19 +228,20 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
 void CudaEngine::setDevice() const{ cudaSetDevice(gpu); }
 #endif
 
+std::map<std::string, TypeAcceleration> AccelerationMeta::getStringToAccelerationMap(){
+    return {
+        {"none",        accel_none},
+        {"cpu-blas",    accel_cpu_blas},
+        {"gpu-default", accel_gpu_default},
+        {"gpu-cublas",  accel_gpu_cublas},
+        {"gpu-cuda",    accel_gpu_cuda},
+        {"gpu-magma",   accel_gpu_magma}};
+}
 
 TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
-    if (strcmp(name, "cpu-blas") == 0){
-        return accel_cpu_blas;
-    }else if (strcmp(name, "gpu-default") == 0){
-        return accel_gpu_default;
-    }else if (strcmp(name, "gpu-cublas") == 0){
-        return accel_gpu_cublas;
-    }else if (strcmp(name, "gpu-cuda") == 0){
-        return accel_gpu_cuda;
-    }else if (strcmp(name, "gpu-magma") == 0){
-        return accel_gpu_magma;
-    }else{
+    try{
+        return getStringToAccelerationMap().at(name);
+    }catch(std::out_of_range &){
         return accel_none;
     }
 }
