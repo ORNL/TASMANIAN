@@ -633,16 +633,17 @@ TypeDepth OneDimensionalMeta::getIOTypeInt(int type){
     }
 }
 
+std::map<std::string, TypeRefinement> OneDimensionalMeta::getStringToRefinementMap(){
+    return {
+        {"classic",   refine_classic},
+        {"parents",   refine_parents_first},
+        {"direction", refine_direction_selective},
+        {"fds",       refine_fds}};
+}
 TypeRefinement OneDimensionalMeta::getIOTypeRefinementString(const char *name){
-    if (strcmp(name, "classic") == 0){
-        return refine_classic;
-    }else if (strcmp(name, "parents") == 0){
-        return refine_parents_first;
-    }else if (strcmp(name, "direction") == 0){
-        return refine_direction_selective;
-    }else if (strcmp(name, "fds") == 0){
-        return refine_fds;
-    }else{
+    try{
+        return getStringToRefinementMap().at(name);
+    }catch(std::out_of_range &){
         return refine_none;
     }
 }

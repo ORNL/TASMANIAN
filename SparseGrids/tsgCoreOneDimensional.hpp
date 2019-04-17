@@ -195,6 +195,8 @@ namespace OneDimensionalMeta{
 
     //! \brief Map the string to the enumerate hierarchical refinement strategy, used in command line and Python.
     TypeRefinement getIOTypeRefinementString(const char *name);
+    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeRefinement enums.
+    std::map<std::string, TypeRefinement> getStringToRefinementMap();
     //! \brief Map the integer to the enumerate hierarchical refinement strategy, used in Fortran.
     TypeRefinement getIOTypeRefinementInt(int ref);
 }
