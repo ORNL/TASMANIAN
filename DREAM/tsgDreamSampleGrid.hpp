@@ -65,7 +65,7 @@ namespace TasDREAM{
  * \endinternal
  */
 template<TypeSamplingForm form> std::function<void(const std::vector<double> &candidates, std::vector<double> &values)>
-makePDFGridPrior(TasGrid::TasmanianSparseGrid const &grid, std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> prior){
+makePDFGridPrior(TasGrid::TasmanianSparseGrid const &grid, std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> &prior){
     return [&](std::vector<double> const &candidates, std::vector<double> &values) -> void{
         grid.evaluateBatch(candidates, values);
 
