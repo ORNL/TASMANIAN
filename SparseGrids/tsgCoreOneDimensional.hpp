@@ -188,6 +188,8 @@ namespace OneDimensionalMeta{
 
     //! \brief Map the string to the enumerate multi-index selection strategy, used in command line and Python.
     TypeDepth getIOTypeString(const char *name);
+    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeDepth enums.
+    std::map<std::string, TypeDepth> getStringToDepthMap();
     //! \brief Map the integer to the enumerate multi-index selection strategy, used in Fortran.
     TypeDepth getIOTypeInt(int type);
 

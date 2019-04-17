@@ -592,33 +592,25 @@ int OneDimensionalMeta::getIORuleInt(TypeOneDRule rule){
     }
 }
 
+std::map<std::string, TypeDepth> OneDimensionalMeta::getStringToDepthMap(){
+    return {
+        {"level",        type_level},
+        {"curved",       type_curved},
+        {"iptotal",      type_iptotal},
+        {"ipcurved",     type_ipcurved},
+        {"qptotal",      type_qptotal},
+        {"qpcurved",     type_qpcurved},
+        {"hyperbolic",   type_hyperbolic},
+        {"iphyperbolic", type_iphyperbolic},
+        {"qphyperbolic", type_qphyperbolic},
+        {"tensor",       type_tensor},
+        {"iptensor",     type_iptensor},
+        {"qptensor",     type_qptensor}};
+}
 TypeDepth OneDimensionalMeta::getIOTypeString(const char *name){
-    if (strcmp(name, "level") == 0){
-        return type_level;
-    }else if (strcmp(name, "curved") == 0){
-        return type_curved;
-    }else if (strcmp(name, "iptotal") == 0){
-        return type_iptotal;
-    }else if (strcmp(name, "ipcurved") == 0){
-        return type_ipcurved;
-    }else if (strcmp(name, "qptotal") == 0){
-        return type_qptotal;
-    }else if (strcmp(name, "qpcurved") == 0){
-        return type_qpcurved;
-    }else if (strcmp(name, "hyperbolic") == 0){
-        return type_hyperbolic;
-    }else if (strcmp(name, "iphyperbolic") == 0){
-        return type_iphyperbolic;
-    }else if (strcmp(name, "qphyperbolic") == 0){
-        return type_qphyperbolic;
-    }else if (strcmp(name, "tensor") == 0){
-        return type_tensor;
-    }else if (strcmp(name, "iptensor") == 0){
-        return type_iptensor;
-    }else if (strcmp(name, "qptensor") == 0){
-        return type_qptensor;
-    }else{
-        //cerr << "ERROR: " << argv[k] << " is not a valid type!!!  For help see: ./tasgrid -help" << endl << endl;
+    try{
+        return getStringToDepthMap().at(name);
+    }catch(std::out_of_range &){
         return type_none;
     }
 }
