@@ -81,10 +81,8 @@ template<bool useAscii> void GridFourier::read(std::istream &is){
 
     if (num_outputs > 0){
         values.read<useAscii>(is);
-        if (IO::readFlag<useAscii>(is)){
-            fourier_coefs.resize(num_outputs, 2 * points.getNumIndexes());
-            IO::readVector<useAscii>(is, fourier_coefs.getVector());
-        }
+        if (IO::readFlag<useAscii>(is))
+            fourier_coefs = IO::readData2D<useAscii, double>(is, num_outputs, 2 * points.getNumIndexes());
     }
 
     if (IO::readFlag<useAscii>(is)) throw std::runtime_error("ERROR: refinement not implemented for Fourier grids.");
