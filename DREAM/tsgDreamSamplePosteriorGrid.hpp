@@ -114,16 +114,16 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_GRID_EXTRACT_RULE
+    TasGrid::TypeOneDRule rule = grid.getRule();
+    auto domain = extractDomain(grid);
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
         SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, domainGaussHermite, independent_update, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
         SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
-                              makeGridModel(grid), prior, __TASDREAM_GRID_DOMAIN_GLLAMBDA, independent_update, state, differential_update, get_random01);
+                              makeGridModel(grid), prior, makeDomainGaussLaguerre(domain.first), independent_update, state, differential_update, get_random01);
     }else{
-        __TASDREAM_GRID_DOMAIN_DEFAULTS
         SampleDREAMPost<form>(num_burnup, num_collect, likelihood,
-                              makeGridModel(grid), prior, transform_a, transform_b, independent_update, state, differential_update, get_random01);
+                              makeGridModel(grid), prior, domain.first, domain.second, independent_update, state, differential_update, get_random01);
     }
 }
 
@@ -179,16 +179,16 @@ void SampleDREAMPost(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_GRID_EXTRACT_RULE
+    TasGrid::TypeOneDRule rule = grid.getRule();
+    auto domain = extractDomain(grid);
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
         SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, domainGaussHermite,
                               independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
-        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, __TASDREAM_GRID_DOMAIN_GLLAMBDA,
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, makeDomainGaussLaguerre(domain.first),
                               independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else{
-        __TASDREAM_GRID_DOMAIN_DEFAULTS
-        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, transform_a, transform_b,
+        SampleDREAMPost<form>(num_burnup, num_collect, likelihood, makeGridModel(grid), prior, domain.first, domain.second,
                               independent_dist, independent_magnitude, state, differential_update, get_random01);
     }
 }

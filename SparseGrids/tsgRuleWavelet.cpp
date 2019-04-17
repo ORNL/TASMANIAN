@@ -30,10 +30,10 @@
 
 #include "tsgRuleWavelet.hpp"
 
-#define ACCESS_FINE(I, LEVEL, DEPTH) ((1 << ((DEPTH)-(LEVEL)-1)) * (2 * (I) + 1))
-#define ACCESS_COARSE(I, LEVEL, DEPTH) (I) * (1 << ((DEPTH) - (LEVEL)))
-
 namespace TasGrid{
+
+inline int ACCESS_FINE(int i, int level, int depth){ return ((1 << (depth - level - 1)) * (2 * i + 1)); }
+inline int ACCESS_COARSE(int i, int level, int depth){ return i * (1 << (depth - level)); }
 
 RuleWavelet::RuleWavelet(int ord, int iter_depth){
     // Initializes the wavelet rule of the specified order.
@@ -177,8 +177,8 @@ void RuleWavelet::cubic_cascade(double *y, int starting_level, int in_iteration_
         int num_pts = (1 << (level));
         int prev_pts = (1 << (level)) + 1;
 
-#define AC(I,LEVEL) ACCESS_COARSE(I,LEVEL,in_iteration_depth)
-#define AF(I,LEVEL) ACCESS_FINE(I,LEVEL, in_iteration_depth)
+        auto AC = [&](int i, int l)->int{ return ACCESS_COARSE(i, l, in_iteration_depth); };
+        auto AF = [&](int i, int l)->int{ return ACCESS_FINE(i, l, in_iteration_depth); };
 
         // Boundary predictions
         y[AF(0,level)] += (
@@ -199,9 +199,6 @@ void RuleWavelet::cubic_cascade(double *y, int starting_level, int in_iteration_
                   - (y[AC(i-1,level)] + y[AC(i+2,level)])
                 ) / 16.;
         }
-
-#undef AC
-#undef AF
     }
 }
 

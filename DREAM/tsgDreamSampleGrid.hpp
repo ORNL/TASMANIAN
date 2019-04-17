@@ -96,10 +96,17 @@ inline void checkGridSTate(TasGrid::TasmanianSparseGrid const &grid, TasmanianDR
 //! \ingroup DREAMAux
 
 //! Extract the \b grid rule and domain.
-#define __TASDREAM_GRID_EXTRACT_RULE \
-    TasGrid::TypeOneDRule rule = grid.getRule(); \
-    std::vector<double> transform_a, transform_b; \
-    if (grid.isSetDomainTransfrom()) grid.getDomainTransform(transform_a, transform_b); \
+inline std::pair<std::vector<double>, std::vector<double>>
+extractDomain(TasGrid::TasmanianSparseGrid const &grid){
+    std::vector<double> transform_a, transform_b;
+    if (grid.isSetDomainTransfrom()){
+        grid.getDomainTransform(transform_a, transform_b);
+    }else{ // set default domain
+        transform_a.resize(grid.getNumDimensions(), ((grid.isFourier()) ? 0.0 : -1.0));
+        transform_b.resize(grid.getNumDimensions(), 1.0);
+    }
+    return make_pair(transform_a, transform_b);
+}
 
 /*!
  * \internal
@@ -114,22 +121,14 @@ inline bool domainGaussHermite(std::vector<double> const &){ return true; }
 //! \ingroup DREAMAux
 
 //! Get the Gauss-Laguerre lambda.
-#define __TASDREAM_GRID_DOMAIN_GLLAMBDA [&](const std::vector<double> &x)->bool{ \
-    auto ix = x.begin(); \
-    for(auto bound : transform_a) if (*ix++ < bound) return false; \
-    return true; }
-
-//! \internal
-//! \brief Get the default transform weights.
-//! \ingroup DREAMAux
-
-//! Get the default transform weights.
-#define __TASDREAM_GRID_DOMAIN_DEFAULTS \
-    if (!grid.isSetDomainTransfrom()){\
-        transform_a.resize(grid.getNumDimensions(), ((rule == TasGrid::rule_fourier) ? 0.0 : -1.0));\
-        transform_b.resize(grid.getNumDimensions(), 1.0);\
-    }
-
+inline std::function<bool(std::vector<double> const &)>
+makeDomainGaussLaguerre(std::vector<double> const &transform_a){
+    return [&](std::vector<double> const &x)->bool{
+        auto ix = x.begin();
+        for(auto bound : transform_a) if (*ix++ < bound) return false;
+        return true;
+    };
+}
 
 //! \brief Variation of \b SampleDREAM() which assumes a Bayesian inference problem with likelihood approximated by a sparse grid.
 //! \ingroup DREAMSampleGrid
@@ -187,14 +186,14 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_GRID_EXTRACT_RULE
+    TasGrid::TypeOneDRule rule = grid.getRule();
+    auto domain = extractDomain(grid);
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
         SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), domainGaussHermite, independent_update, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
-        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), __TASDREAM_GRID_DOMAIN_GLLAMBDA, independent_update, state, differential_update, get_random01);
+        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), makeDomainGaussLaguerre(domain.first), independent_update, state, differential_update, get_random01);
     }else{
-        __TASDREAM_GRID_DOMAIN_DEFAULTS
-        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), transform_a, transform_b, independent_update, state, differential_update, get_random01);
+        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), domain.first, domain.second, independent_update, state, differential_update, get_random01);
     }
 }
 
@@ -245,16 +244,16 @@ void SampleDREAMGrid(int num_burnup, int num_collect,
                      TasmanianDREAM &state,
                      std::function<double(void)> differential_update = const_one,
                      std::function<double(void)> get_random01 = tsgCoreUniform01){
-    __TASDREAM_GRID_EXTRACT_RULE
+    TasGrid::TypeOneDRule rule = grid.getRule();
+    auto domain = extractDomain(grid);
     if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
         SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), domainGaussHermite,
                           independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
-        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), __TASDREAM_GRID_DOMAIN_GLLAMBDA,
+        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), makeDomainGaussLaguerre(domain.first),
                           independent_dist, independent_magnitude, state, differential_update, get_random01);
     }else{
-        __TASDREAM_GRID_DOMAIN_DEFAULTS
-        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), transform_a, transform_b,
+        SampleDREAM<form>(num_burnup, num_collect, makePDFGridPrior<form>(grid, prior), domain.first, domain.second,
                           independent_dist, independent_magnitude, state, differential_update, get_random01);
     }
 }

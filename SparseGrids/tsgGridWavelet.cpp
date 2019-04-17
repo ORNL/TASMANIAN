@@ -34,10 +34,6 @@
 #include "tsgGridWavelet.hpp"
 #include "tsgHiddenExternals.hpp"
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 namespace TasGrid{
 
 GridWavelet::GridWavelet() : rule1D(1, 10), order(1){}
