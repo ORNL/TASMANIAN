@@ -105,7 +105,7 @@ void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, T
             for(auto x : nodes[l]){
                 int point = -1;
                 for(int j=0; j<(int) unique.size(); j++){
-                    if (fabs(x - unique[j]) < TSG_NUM_TOL){
+                    if (std::abs(x - unique[j]) < TSG_NUM_TOL){
                         point = j;
                         break;
                     }

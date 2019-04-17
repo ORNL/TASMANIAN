@@ -225,7 +225,7 @@ MultiIndexSet selectGeneralSet(ProperWeights const &weights, std::function<int(i
                                                 while(index[j] >= (int) cache[j].size()){
                                                     int exactness = 1 + rule_exactness((int)(cache[j].size() - 1));
                                                     cache[j].push_back( (double) weights.linear[j] * exactness +
-                                                                         weights.curved[j] * log1p((double) exactness) );
+                                                                         weights.curved[j] * std::log1p((double) exactness) );
                                                 }
                                                 w += cache[j][index[j]];
                                             }

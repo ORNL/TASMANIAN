@@ -714,9 +714,9 @@ void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::v
     for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
     for(int i=0; i<m; i++){
-        s[i] = sqrt((double) ((i+1)*(i+1)) / ((double) (4*(i+1)*(i+1) - 1)));
+        s[i] = std::sqrt((double) ((i+1)*(i+1)) / ((double) (4*(i+1)*(i+1) - 1)));
     }
-    w[0] = sqrt(2.0);
+    w[0] = std::sqrt(2.0);
 
     TasmanianTridiagonalSolver::decompose(m, x, s, w);
 }
@@ -734,7 +734,7 @@ void OneDimensionalNodes::getChebyshev(int m, std::vector<double> &w, std::vecto
     };
 
     for(i=0; i<m; i++){
-        x[i] = cos(((double) (m-i-1)) * tsg_pi / ((double) (m-1)));
+        x[i] = std::cos(((double) (m-i-1)) * tsg_pi / ((double) (m-1)));
     };
 
     // may also have to set the mid-point to 0.0
@@ -749,7 +749,7 @@ void OneDimensionalNodes::getChebyshev(int m, std::vector<double> &w, std::vecto
             }else{
                 b = 2.0;
             };
-            w[i] = w[i] - b * cos(2.0 * j * theta) / ((double) (4*j*j - 1));
+            w[i] = w[i] - b * std::cos(2.0 * j * theta) / ((double) (4*j*j - 1));
         };
     };
 
@@ -766,7 +766,7 @@ void OneDimensionalNodes::getGaussChebyshev1(int m, std::vector<double> &w, std:
     x.resize(m);
 
     for(int i=0; i<m; i++){
-        x[m-i-1] = cos(tsg_pi*(2*i+1) / (2*((double)m)));
+        x[m-i-1] = std::cos(tsg_pi*(2*i+1) / (2*((double)m)));
         w[i] = tsg_pi / m;
     }
 }
@@ -777,8 +777,8 @@ void OneDimensionalNodes::getGaussChebyshev2(int m, std::vector<double> &w, std:
 
     for(int i=0; i<m; i++){
         double theta = tsg_pi*((double)(i+1))/((double)(m+1));
-        x[m-i-1] = cos(theta);
-        w[i] = (tsg_pi / ((double)(m+1))) * sin(theta)* sin(theta);
+        x[m-i-1] = std::cos(theta);
+        w[i] = (tsg_pi / ((double)(m+1))) * std::sin(theta)* std::sin(theta);
     }
 }
 // get Gauss-Jacobi quadrature points
@@ -792,14 +792,14 @@ void OneDimensionalNodes::getGaussJacobi(int m, std::vector<double> &w, std::vec
 
     double ab = alpha + beta;
 
-    w[0] = sqrt(pow(2.0, 1.0 + ab) * tgamma(alpha + 1.0) * tgamma(beta + 1.0) / tgamma(2.0 + ab));
+    w[0] = std::sqrt(pow(2.0, 1.0 + ab) * tgamma(alpha + 1.0) * tgamma(beta + 1.0) / tgamma(2.0 + ab));
 
     x[0] = (beta - alpha) / (2.0 + ab);
-    s[0] = sqrt(4.0 * (1.0 + alpha) * (1.0 + beta) / ((3.0 + ab) * (2.0 + ab) * (2.0 + ab)));
+    s[0] = std::sqrt(4.0 * (1.0 + alpha) * (1.0 + beta) / ((3.0 + ab) * (2.0 + ab) * (2.0 + ab)));
     for(int i=1; i<m; i++){
         double di = (double) (i+1);
         x[i] = (beta*beta - alpha*alpha) / ((2.0*di + ab -2.0)*(2.0*di + ab));
-        s[i] = sqrt(4.0 * di * (di + alpha) * (di + beta) * (di + ab)/ (((2.0*di + ab)*(2.0*di + ab) - 1.0) * (2.0*di + ab) * (2.0*di + ab)));
+        s[i] = std::sqrt(4.0 * di * (di + alpha) * (di + beta) * (di + ab)/ (((2.0*di + ab)*(2.0*di + ab) - 1.0) * (2.0*di + ab) * (2.0*di + ab)));
     }
     s[m-1] = 0.0;
 
@@ -814,11 +814,11 @@ void OneDimensionalNodes::getGaussHermite(int m, std::vector<double> &w, std::ve
 
     for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
-    w[0] = sqrt(tgamma(0.5 * (alpha + 1.0)));
+    w[0] = std::sqrt(tgamma(0.5 * (alpha + 1.0)));
 
     for(int i=0; i<m; i++){
         double di = (double) (i+1);
-        s[i] = sqrt(0.5 * (di + alpha * ((double) ((i+1)%2))));
+        s[i] = std::sqrt(0.5 * (di + alpha * ((double) ((i+1)%2))));
     }
     s[m-1] = 0.0;
 
@@ -833,12 +833,12 @@ void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::v
 
     for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
-    w[0] = sqrt(tgamma(alpha + 1.0));
+    w[0] = std::sqrt(tgamma(alpha + 1.0));
 
     for(int i=0; i<m; i++){
         double di = (double) (i+1);
         x[i] = 2.0 * di - 1.0 + alpha;
-        s[i] = sqrt(di * (di + alpha));
+        s[i] = std::sqrt(di * (di + alpha));
     }
     s[m-1] = 0.0;
 
@@ -856,7 +856,7 @@ void OneDimensionalNodes::getClenshawCurtisNodes(int level, std::vector<double> 
         for(int l=2; l<=level; l++){
             n = OneDimensionalMeta::getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                  nodes[count++] = cos(tsg_pi * ((double) (n-i-1)) / ((double) (n - 1)));
+                  nodes[count++] = std::cos(tsg_pi * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
@@ -879,9 +879,9 @@ double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     double weight = 1.0;
     double theta = ((double) ieffective) * tsg_pi / ((double) (n-1));
     for(int j=1; j<(n-1)/2; j++){
-        weight -= 2.0 * cos(2.0 * j * theta) / ((double) (4*j*j - 1));
+        weight -= 2.0 * std::cos(2.0 * j * theta) / ((double) (4*j*j - 1));
     }
-    weight -= cos(2.0 * (n-1) * theta / 2.0) / ((double) (n*n - 2*n));
+    weight -= std::cos(2.0 * (n-1) * theta / 2.0) / ((double) (n*n - 2*n));
     weight /= (double) (n-1);
 
     if ((point != 1) && (point != 2)){ weight *= 2.0; }
@@ -898,7 +898,7 @@ void OneDimensionalNodes::getClenshawCurtisNodesZero(int level, std::vector<doub
         for(int l=2; l<=level+1; l++){
             n = OneDimensionalMeta::getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                nodes[count++] = cos(tsg_pi * ((double) (n-i-1)) / ((double) (n - 1)));
+                nodes[count++] = std::cos(tsg_pi * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
@@ -918,9 +918,9 @@ double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     double weight = 1.0;
     double theta = ((double) ieffective) * tsg_pi / ((double) (n-1));
     for(int j=1; j<(n-1)/2; j++){
-        weight -= 2.0 * cos(2.0 * j * theta) / ((double) (4*j*j - 1));
+        weight -= 2.0 * std::cos(2.0 * j * theta) / ((double) (4*j*j - 1));
     }
-    weight -= cos(2.0 * (n-1) * theta / 2.0) / ((double) (n*n - 2*n));
+    weight -= std::cos(2.0 * (n-1) * theta / 2.0) / ((double) (n*n - 2*n));
     weight /= (double) (n-1);
     weight *= 2.0;
 
@@ -936,7 +936,7 @@ void OneDimensionalNodes::getFejer2Nodes(int level, std::vector<double> &nodes){
         for(int l=2; l<=level+1; l++){
             n = OneDimensionalMeta::getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                nodes[count++] = cos(tsg_pi * ((double) (n-i-1)) / ((double) (n - 1)));
+                nodes[count++] = std::cos(tsg_pi * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
@@ -956,9 +956,9 @@ double OneDimensionalNodes::getFejer2Weight(int level, int point){
     double weight = 1.0;
     double theta = ((double) (n-ieffective)) * tsg_pi / ((double) (n+1));
     for(int j=1; j<=(n-1)/2; j++){
-        weight -= 2.0 * cos(2.0 * j * theta) / ((double) (4*j*j - 1));
+        weight -= 2.0 * std::cos(2.0 * j * theta) / ((double) (4*j*j - 1));
     }
-    weight -= cos(((double) (n+1)) * theta) / ((double) (n));
+    weight -= std::cos(((double) (n+1)) * theta) / ((double) (n));
     weight *= 2.0 / ((double) (n+1));
 
     return weight;
@@ -976,7 +976,7 @@ void OneDimensionalNodes::getRLeja(int n, std::vector<double> &nodes){
             nodes[i] = 0.5 * nodes[(i+1)/2];
         }
     }
-    for(int i=0; i<n; i++){  nodes[i] = cos(nodes[i]);  }
+    for(int i=0; i<n; i++){  nodes[i] = std::cos(nodes[i]);  }
     if (n > 2){ nodes[2] = 0.0; } // not sure which version is better, starting at 0 or starting at 1
 }
 void OneDimensionalNodes::getRLejaCentered(int n, std::vector<double> &nodes){
@@ -991,7 +991,7 @@ void OneDimensionalNodes::getRLejaShifted(int n, std::vector<double> &nodes){
     if (n > 1){ nodes[1] = 0.5; }
     for(int i=2; i<n; i++){
         if (i % 2 == 0){
-            nodes[i] = sqrt(0.5 * (nodes[i/2] + 1));
+            nodes[i] = std::sqrt(0.5 * (nodes[i/2] + 1));
         }else{
             nodes[i] = -nodes[i-1];
         }

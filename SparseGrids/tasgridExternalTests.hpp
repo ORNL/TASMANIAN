@@ -34,7 +34,6 @@
 #include <cstdlib>
 #include <cstdio>
 #include <string.h>
-#include <math.h>
 
 #include "tasgridCLICommon.hpp"
 

@@ -52,7 +52,7 @@ bool DreamExternalTester::testFit(const std::vector<int> &cell_count_a, const st
     double suma = (double) std::accumulate(cell_count_a.begin(), cell_count_a.end(), 0);
     double sumb = (double) std::accumulate(cell_count_b.begin(), cell_count_b.end(), 0);
 
-    double scale = sqrt(sumb / suma);
+    double scale = std::sqrt(sumb / suma);
 
     double test_value = 0.0;
 
@@ -388,9 +388,9 @@ bool DreamExternalTester::testCustomModel(){
                                  auto ic = candidates.begin();
                                  auto iv = values.begin();
                                  while(iv != values.end()){ // takes the first and last parameters
-                                     *iv++ = 1.0 - sin(tsg_pi * *ic++);
+                                     *iv++ = 1.0 - std::sin(tsg_pi * *ic++);
                                      ic++;
-                                     *iv++ = 1.0 - sin(tsg_pi * *ic++);
+                                     *iv++ = 1.0 - std::sin(tsg_pi * *ic++);
                                  }
                              },
                              uniform_prior,

@@ -551,7 +551,7 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
         }
     }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){ // (-infty, +infty)
         std::vector<double> sqrt_b(num_dimensions);
-        for(int j=0; j<num_dimensions; j++) sqrt_b[j] = sqrt(domain_transform_b[j]);
+        for(int j=0; j<num_dimensions; j++) sqrt_b[j] = std::sqrt(domain_transform_b[j]);
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
             x[i] /= sqrt_b[j];
@@ -586,7 +586,7 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
         }
     }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){ // (-infty, +infty)
         std::vector<double> sqrt_b(num_dimensions);
-        for(int j=0; j<num_dimensions; j++) sqrt_b[j] = sqrt(domain_transform_b[j]);
+        for(int j=0; j<num_dimensions; j++) sqrt_b[j] = std::sqrt(domain_transform_b[j]);
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
             x[i] -= domain_transform_a[j];
@@ -668,15 +668,15 @@ void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions,
             c[j].resize(conformal_asin_power[j] + 1);
             p[j].resize(conformal_asin_power[j] + 1);
         }
-        double lgamma_half = lgamma(0.5);
+        double lgamma_half = std::lgamma(0.5);
         std::vector<double> cm(num_dimensions, 0.0);
         for(int j=0; j<num_dimensions; j++){
             double factorial = 0.0;
             for(int k=0; k<=conformal_asin_power[j]; k++){
                 p[j][k] = (double)(2*k+1);
-                c[j][k] = lgamma(0.5 + ((double) k)) - lgamma_half - log(p[j][k]) - factorial;
-                cm[j] += exp(c[j][k]);
-                factorial += log((double)(k+1));
+                c[j][k] = std::lgamma(0.5 + ((double) k)) - lgamma_half - std::log(p[j][k]) - factorial;
+                cm[j] += std::exp(c[j][k]);
+                factorial += std::log((double)(k+1));
             }
         }
         Utils::Wrapper2D<double> xwrap(num_dimensions, x);
@@ -685,10 +685,10 @@ void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions,
             for(int j=0; j<num_dimensions; j++){
                 if (this_x[j] != 0.0){ // zero maps to zero and makes the log unstable
                     double sign = (this_x[j] > 0.0) ? 1.0 : -1.0;
-                    double logx = log(fabs(this_x[j]));
+                    double logx = std::log(std::abs(this_x[j]));
                     this_x[j] = 0.0;
                     for(int k=0; k<=conformal_asin_power[j]; k++){
-                        this_x[j] += exp(c[j][k] + p[j][k] * logx);
+                        this_x[j] += std::exp(c[j][k] + p[j][k] * logx);
                     }
                     this_x[j] *= sign / cm[j];
                 }
@@ -706,17 +706,17 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
             dc[j].resize(conformal_asin_power[j] + 1);
             dp[j].resize(conformal_asin_power[j] + 1);
         }
-        double lgamma_half = lgamma(0.5);
+        double lgamma_half = std::lgamma(0.5);
         std::vector<double> cm(num_dimensions, 0.0);
         for(int j=0; j<num_dimensions; j++){
             double factorial = 0.0;
             for(int k=0; k<=conformal_asin_power[j]; k++){
                 p[j][k] = (double)(2*k+1);
-                c[j][k] = lgamma(0.5 + ((double) k)) - lgamma_half - log(p[j][k]) - factorial;
-                cm[j] += exp(c[j][k]);
+                c[j][k] = std::lgamma(0.5 + ((double) k)) - lgamma_half - std::log(p[j][k]) - factorial;
+                cm[j] += std::exp(c[j][k]);
                 dp[j][k] = (double)(2*k);
-                dc[j][k] = lgamma(0.5 + ((double) k)) - lgamma_half - factorial;
-                factorial += log((double)(k+1));
+                dc[j][k] = std::lgamma(0.5 + ((double) k)) - lgamma_half - factorial;
+                factorial += std::log((double)(k+1));
             }
         }
         for(int i=0; i<num_points; i++){
@@ -724,26 +724,26 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
             for(int j=0; j<num_dimensions; j++){
                 if (this_x[j] != 0.0){ // zero maps to zero and makes the log unstable
                     double sign = (this_x[j] > 0.0) ? 1.0 : -1.0;
-                    this_x[j] = fabs(this_x[j]);
+                    this_x[j] = std::abs(this_x[j]);
                     double b = this_x[j];
                     double logx = log(this_x[j]);
                     double r = this_x[j];
                     double dr = 1.0;
                     for(int k=1; k<=conformal_asin_power[j]; k++){
-                        r  += exp( c[j][k] +  p[j][k] * logx);
-                        dr += exp(dc[j][k] + dp[j][k] * logx);
+                        r  += std::exp( c[j][k] +  p[j][k] * logx);
+                        dr += std::exp(dc[j][k] + dp[j][k] * logx);
                    }
                     r /= cm[j];
                     r -= b; // transformed_x -b = 0
-                    while(fabs(r) > TSG_NUM_TOL){
+                    while(std::abs(r) > TSG_NUM_TOL){
                         this_x[j] -= r * cm[j] / dr;
 
-                        logx = log(fabs(this_x[j]));
+                        logx = std::log(std::abs(this_x[j]));
                         r = this_x[j];
                         dr = 1.0;
                         for(int k=1; k<=conformal_asin_power[j]; k++){
-                            r  += exp( c[j][k] +  p[j][k] * logx);
-                            dr += exp(dc[j][k] + dp[j][k] * logx);
+                            r  += std::exp( c[j][k] +  p[j][k] * logx);
+                            dr += std::exp(dc[j][k] + dp[j][k] * logx);
                        }
                         r /= cm[j];
                         r -= b;
@@ -764,26 +764,26 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
             c[j].resize(conformal_asin_power[j] + 1);
             p[j].resize(conformal_asin_power[j] + 1);
         }
-        double lgamma_half = lgamma(0.5);
+        double lgamma_half = std::lgamma(0.5);
         std::vector<double> cm(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
             double factorial = 0.0;
             cm[j] = 0.0;
             for(int k=0; k<=conformal_asin_power[j]; k++){
                 p[j][k] = (double)(2*k);
-                c[j][k] = lgamma(0.5 + ((double) k)) - lgamma_half - factorial;
-                factorial += log((double)(k+1));
-                cm[j] += exp(c[j][k] - log((double)(2*k+1)));
+                c[j][k] = std::lgamma(0.5 + ((double) k)) - lgamma_half - factorial;
+                factorial += std::log((double)(k+1));
+                cm[j] += std::exp(c[j][k] - std::log((double)(2*k+1)));
             }
         }
         for(int i=0; i<num_points; i++){
             const double *this_x = x.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (this_x[j] != 0.0){ // derivative at zero is 1/cm[j] and zero makes the log unstable
-                    double logx = log(fabs(this_x[j]));
+                    double logx = std::log(std::abs(this_x[j]));
                     double trans = 1.0;
                     for(int k=1; k<=conformal_asin_power[j]; k++){
-                        trans += exp(c[j][k] + p[j][k] * logx);
+                        trans += std::exp(c[j][k] + p[j][k] * logx);
                    }
                     weights[i] *= trans / cm[j];
                }else{

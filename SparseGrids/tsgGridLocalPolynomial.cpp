@@ -482,9 +482,9 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
         const double *s = surpluses.getStrip(i);
         const double *c = scale.getStrip(i);
         if (output == -1){
-            for(int k=0; k<num_outputs; k++) dominant = std::max(dominant, c[k] * fabs(s[k]) / norm[k]);
+            for(int k=0; k<num_outputs; k++) dominant = std::max(dominant, c[k] * std::abs(s[k]) / norm[k]);
         }else{
-            dominant = c[0] * fabs(s[output]) / norm[output];
+            dominant = c[0] * std::abs(s[output]) / norm[output];
         }
         return dominant;
     };
@@ -1082,7 +1082,7 @@ std::vector<double> GridLocalPolynomial::getNormalization() const{
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
         for(int j=0; j<num_outputs; j++){
-            if (norms[j] < fabs(v[j])) norms[j] = fabs(v[j]);
+            if (norms[j] < std::abs(v[j])) norms[j] = std::abs(v[j]);
         }
     }
     return norms;
@@ -1115,9 +1115,9 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
             const double *s = surpluses.getStrip(i);
             const double *c = scale.getStrip(i);
             if (output == -1){
-                for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);
+                for(int k=0; k<num_outputs; k++) small = small && ((c[k] * std::abs(s[k]) / norm[k]) <= tolerance);
             }else{
-                small = ((c[0] * fabs(s[output]) / norm[output]) <= tolerance);
+                small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance);
             }
             if (!small){
                 int *m = map2.getStrip(i);
@@ -1205,10 +1205,10 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
                 bool small = true;
                 if (output == -1){
                     for(int k=0; k<num_outputs; k++){
-                        small = small && (((c[k] * fabs(s[k]) / norm[k]) <= tolerance) || ((c[k] * fabs(v[k]) / norm[k]) <= tolerance));
+                        small = small && (((c[k] * std::abs(s[k]) / norm[k]) <= tolerance) || ((c[k] * std::abs(v[k]) / norm[k]) <= tolerance));
                     }
                 }else{
-                    small = ((c[0] * fabs(s[output]) / norm[output]) <= tolerance) || ((c[0] * fabs(v[0]) / norm[output]) <= tolerance);
+                    small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance) || ((c[0] * std::abs(v[0]) / norm[output]) <= tolerance);
                 }
                 map2.getStrip(pnts[i])[d] = (small) ? 0 : 1;;
             }
@@ -1328,9 +1328,9 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
         const double *s = surpluses.getStrip(i);
         const double *c = scale.getStrip(i);
         if (output == -1){
-            for(int k=0; k<num_outputs; k++) small = small && ((c[k] * fabs(s[k]) / norm[k]) <= tolerance);
+            for(int k=0; k<num_outputs; k++) small = small && ((c[k] * std::abs(s[k]) / norm[k]) <= tolerance);
         }else{
-            small = ((c[0] * fabs(s[output]) / norm[output]) <= tolerance);
+            small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance);
         }
         pmap[i] = !small;
     }

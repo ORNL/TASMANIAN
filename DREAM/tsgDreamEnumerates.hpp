@@ -52,6 +52,8 @@
 
 namespace TasDREAM{
 
+    using TasGrid::tsg_pi;
+
 //! \brief Describes whether sampling should be done with the regular or logarithm form of the probability density.
 //! \ingroup DREAMEnumerates
 

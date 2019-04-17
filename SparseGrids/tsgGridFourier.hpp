@@ -32,7 +32,6 @@
 #define __TASMANIAN_SPARSE_GRID_FOURIER_HPP
 
 #include <cstdlib>
-#include <math.h>
 #include <complex>
 
 #include "tsgEnumerates.hpp"
@@ -122,7 +121,7 @@ protected:
             cache[j][0] = std::complex<T>(1.0, 0.0);
 
             T theta = -2.0 * tsg_pi * x[j];
-            std::complex<T> step(cos(theta), sin(theta));
+            std::complex<T> step(std::cos(theta), std::sin(theta));
             std::complex<T> pw(1.0, 0.0);
             for(int i=1; i<max_power[j]; i += 2){
                 pw *= step;

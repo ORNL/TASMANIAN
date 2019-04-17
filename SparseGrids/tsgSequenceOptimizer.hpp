@@ -31,9 +31,6 @@
 #ifndef __TASMANIAN_SPARSE_GRID_SEQUENCE_OPTIMIZER_HPP
 #define __TASMANIAN_SPARSE_GRID_SEQUENCE_OPTIMIZER_HPP
 
-#include <vector>
-
-#include <math.h>
 #include "tsgEnumerates.hpp"
 
 namespace TasGrid{
@@ -84,16 +81,16 @@ public:
         if (rule == rule_leja){
             double p = 1.0;
             for(auto n : nodes) p *= (x - n);
-            return fabs(p);
+            return std::abs(p);
         }else if (rule == rule_maxlebesgue){
             std::vector<double> lag;
             evalLag(nodes, coeff, x, lag);
             double sum = 0.0;
-            for(auto l : lag) sum += fabs(l);
+            for(auto l : lag) sum += std::abs(l);
             return sum;
         }else if (rule == rule_minlebesgue){
             // points almost overlap, will cause an explosion in the Lebesgue constant
-            for(auto n : nodes) if (fabs(x - n) < 10*TSG_NUM_TOL) return -1.E+100;
+            for(auto n : nodes) if (std::abs(x - n) < 10*TSG_NUM_TOL) return -1.E+100;
             tempFunctional<rule_maxlebesgue> M(nodes, x);
             OptimizerResult R = Optimizer::argMaxGlobal(M);
             return -R.fmax;
@@ -103,11 +100,11 @@ public:
             evalLag(nodes_less1, coeff_less1, x, lag_less1);
             auto il = lag.begin();
             double sum = 0.0;
-            for(auto l : lag_less1) sum += fabs(l - *il++);
-            return sum + fabs(*il);
+            for(auto l : lag_less1) sum += std::abs(l - *il++);
+            return sum + std::abs(*il);
         }else{ // rule == rule_mindelta
             // points almost overlap, will cause an explosion in the Lebesgue constant
-            for(auto n : nodes) if (fabs(x - n) < 10*TSG_NUM_TOL) return -1.E+100;
+            for(auto n : nodes) if (std::abs(x - n) < 10*TSG_NUM_TOL) return -1.E+100;
             tempFunctional<rule_mindeltaodd> M(nodes, x);
             OptimizerResult R = Optimizer::argMaxGlobal(M);
             return -R.fmax;
@@ -285,7 +282,7 @@ void getGreedyNodes(int n, std::vector<double> &nodes){
     // load the first few precomputed nodes
     std::vector<double> precomputed;
     if (rule == rule_leja){
-        precomputed = {0.0, 1.0, -1.0, sqrt(1.0/3.0)};
+        precomputed = {0.0, 1.0, -1.0, std::sqrt(1.0/3.0)};
     }else if (rule == rule_maxlebesgue){
         precomputed = {0.0, 1.0, -1.0, 0.5};
     }else if (rule == rule_minlebesgue){

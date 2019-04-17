@@ -210,7 +210,7 @@ std::vector<std::vector<CacheType>> generateLevelWeightsCache(ProperWeights cons
             if (contour == type_level){
                 w = wl * e;
             }else if (contour == type_curved){
-                w = (CacheType)(wl * e) + wc * log1p((CacheType) e);
+                w = (CacheType)(wl * e) + wc * std::log1p((CacheType) e);
             }else{ // must be hyperbolic
                 w = pow((CacheType) (1 + e), wc);
             }

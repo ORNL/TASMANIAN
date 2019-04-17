@@ -84,13 +84,13 @@ double getDensity(double x, Params... params){
     std::vector<typename std::tuple_element<0, std::tuple<Params...>>::type> ParameterArray = {params...};
     if (form == regform){
         if (distribution == dist_gaussian){
-            return exp(-0.5 * (x - ParameterArray[0]) * (x - ParameterArray[0]) / ParameterArray[1]);
+            return std::exp(-0.5 * (x - ParameterArray[0]) * (x - ParameterArray[0]) / ParameterArray[1]);
         }else if (distribution == dist_exponential){
-            return exp(-ParameterArray[1] * (x - ParameterArray[0]));
+            return std::exp(-ParameterArray[1] * (x - ParameterArray[0]));
         }else if (distribution == dist_beta){
-            return pow(x - ParameterArray[0], ParameterArray[2] - 1.0) * pow(ParameterArray[1] - x, ParameterArray[3] - 1.0);
+            return std::pow(x - ParameterArray[0], ParameterArray[2] - 1.0) * std::pow(ParameterArray[1] - x, ParameterArray[3] - 1.0);
         }else if (distribution == dist_gamma){
-            return pow(x - ParameterArray[0], ParameterArray[1] - 1.0) * exp(- ParameterArray[2] * (x - ParameterArray[0]));
+            return std::pow(x - ParameterArray[0], ParameterArray[1] - 1.0) * std::exp(- ParameterArray[2] * (x - ParameterArray[0]));
         }else{ // uniform
             return 1.0;
         }
@@ -100,9 +100,9 @@ double getDensity(double x, Params... params){
         }else if (distribution == dist_exponential){
             return -ParameterArray[1] * (x - ParameterArray[0]);
         }else if (distribution == dist_beta){
-            return log(x - ParameterArray[0]) * (ParameterArray[2] - 1.0) + log(ParameterArray[1] - x) * (ParameterArray[3] - 1.0);
+            return std::log(x - ParameterArray[0]) * (ParameterArray[2] - 1.0) + std::log(ParameterArray[1] - x) * (ParameterArray[3] - 1.0);
         }else if (distribution == dist_gamma){
-            return log(x - ParameterArray[0]) * (ParameterArray[1] - 1.0) - ParameterArray[2] * (x - ParameterArray[0]);
+            return std::log(x - ParameterArray[0]) * (ParameterArray[1] - 1.0) - ParameterArray[2] * (x - ParameterArray[0]);
         }else{ // uniform
             return 0.0;
         }

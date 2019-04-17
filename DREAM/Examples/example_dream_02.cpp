@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
-#include "math.h"
 
 #include "TasmanianDREAM.hpp"
 
@@ -59,7 +58,7 @@ void dream_example_02(){
             double dt = 1.0 / ((double) data.size());
             double t = 0.5 * dt;
             for(auto &d : data){
-                d = sin(x0 * pi * t + x1);
+                d = std::sin(x0 * pi * t + x1);
                 t += dt;
             }
         };
@@ -122,9 +121,9 @@ void dream_example_02(){
 
     cout << "Inferred values (using 10th order polynomial sparse grid):" << endl;
     cout << "   frequency:" << setw(12) << std::fixed << expectation[0]
-         << "   error:" << setw(12) << std::scientific << fabs(expectation[0] - 1.0) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(expectation[0] - 1.0) << endl;
     cout << "  correction:" << setw(12) << std::fixed << expectation[1]
-         << "   error:" << setw(12) << std::scientific << fabs(expectation[1] - 0.3 * pi) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(expectation[1] - 0.3 * pi) << endl << endl;
 
     // Solve the same example, but switch to 30-th order polynomial with Sequence grid
 
@@ -159,9 +158,9 @@ void dream_example_02(){
 
     cout << "Inferred values (using 30th order polynomial sparse grid):" << endl;
     cout << "   frequency:" << setw(12) << std::fixed << expectation[0]
-         << "   error:" << setw(12) << std::scientific << fabs(expectation[0] - 1.0) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(expectation[0] - 1.0) << endl;
     cout << "  correction:" << setw(12) << std::fixed << expectation[1]
-         << "   error:" << setw(12) << std::scientific << fabs(expectation[1] - 0.3 * pi) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(expectation[1] - 0.3 * pi) << endl << endl;
 
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
 #ifndef __TASMANIAN_DOXYGEN_SKIP

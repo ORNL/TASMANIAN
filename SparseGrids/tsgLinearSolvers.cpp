@@ -63,7 +63,7 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
 
     // factorize Ar
     for(int i=0; i<m; i++){
-        Ar[i*m + i] = sqrt(Ar[i*m + i]);
+        Ar[i*m + i] = std::sqrt(Ar[i*m + i]);
 
         for(int j=i+1; j<m; j++){
             Ar[i*m + j] /= Ar[i*m + i];
@@ -99,12 +99,12 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
 
     for(int l=0; l<n-1; l++){
         int m = l;
-        while((m < n-1) && (fabs(e[m]) > tol)) m++;
+        while((m < n-1) && (std::abs(e[m]) > tol)) m++;
 
         while (m != l){
             double p = d[l];
             double g = (d[l+1] - p) / (2.0 * e[l]);
-            double r = sqrt(g*g + 1.0);
+            double r = std::sqrt(g*g + 1.0);
 
             g = d[m] - p + e[l] / (g + ((g>=0) ? 1.0 : -1.0) * r); // sign function here may be unstable
 
@@ -116,15 +116,15 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
                 double f = s * e[i];
                 double b = c * e[i];
 
-                if (fabs(f) >= fabs(g)){
+                if (std::abs(f) >= std::abs(g)){
                     c = g / f;
-                    r = sqrt(c*c + 1.0);
+                    r = std::sqrt(c*c + 1.0);
                     e[i+1] = f*r;
                     s = 1.0 / r;
                     c *= s;
                 }else{
                     s = f / g;
-                    r =  sqrt(s*s + 1.0);
+                    r =  std::sqrt(s*s + 1.0);
                     e[i+1] = g * r;
                     c = 1.0 / r;
                     s *= c;
@@ -145,7 +145,7 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
             e[m] = 0.0;
 
             m = l;
-            while((m < n-1) && (fabs(e[m]) > tol)) m++;
+            while((m < n-1) && (std::abs(e[m]) > tol)) m++;
         }
     }
 
@@ -223,8 +223,8 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
     for(auto &w : W) w.resize(num_outputs); // allocate storage for the second data set
 
     // the radix-3 FFT algorithm uses two common twiddle factors from known angles +/- 2 pi/3
-    std::complex<double> twidlep(-0.5, -sqrt(3.0) / 2.0); // angle of -2 pi/3
-    std::complex<double> twidlem(-0.5,  sqrt(3.0) / 2.0); // angle of  2 pi/3 = -4 pi/3
+    std::complex<double> twidlep(-0.5, -std::sqrt(3.0) / 2.0); // angle of -2 pi/3
+    std::complex<double> twidlem(-0.5,  std::sqrt(3.0) / 2.0); // angle of  2 pi/3 = -4 pi/3
 
     int stride = num_entries / 3; // the jump between entries, e.g., in one level of split stride is 3, split again and stride is 9 ... up to N / 3
     int length = 3;               // the number of entries in the sub-sequences, i.e., how large k can be (see above), smallest sub-sequence uses length 3
@@ -254,7 +254,7 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
         int bigstride = stride / 3;
 
         double theta = -2.0 * tsg_pi / ((double) biglength);
-        std::complex<double> expstep(cos(theta), sin(theta)); // initialize the twiddle factors common for this level of sub-sequences
+        std::complex<double> expstep(std::cos(theta), std::sin(theta)); // initialize the twiddle factors common for this level of sub-sequences
         std::complex<double> expstep2 = expstep * expstep;
 
         // merge sets of 3 sub-sequences (coefficients of x_{i,m}) into 3 pieces of one sequence F_{k + j N / 3}
@@ -369,13 +369,13 @@ void SparseMatrix::computeILU(){
     }
 }
 
-void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ // using GMRES
+void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ // ustd::sing GMRES
     int max_inner = 30;
     int max_outer = 80;
     std::vector<double> W((max_inner+1) * num_rows); // Krylov basis
 
     std::vector<double> H(max_inner * (max_inner+1)); // holds the transformation for the normalized basis
-    std::vector<double> S(max_inner); // sin and cos of the Givens rotations
+    std::vector<double> S(max_inner); // std::sin and std::cos of the Givens rotations
     std::vector<double> C(max_inner+1);
     std::vector<double> Z(max_inner); // holds the coefficients of the solution
 
@@ -450,7 +450,7 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
             }
         }
 
-        Z[0] = 0.0;  for(int i=0; i<num_rows; i++){  Z[0] += W[i]*W[i];  };  Z[0] = sqrt(Z[0]);
+        Z[0] = 0.0;  for(int i=0; i<num_rows; i++){  Z[0] += W[i]*W[i];  };  Z[0] = std::sqrt(Z[0]);
         for(int i=0; i<num_rows; i++){  W[i] /= Z[0]; };
 
         double inner_res = Z[0]; // first residual
@@ -510,7 +510,7 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
                 }
             };
 
-            h_k = 0.0;  for(int i=0; i<num_rows; i++){  h_k += W[inner_itr*num_rows+i]*W[inner_itr*num_rows+i];  }; h_k = sqrt(h_k); //std::cout << "h_k = " << h_k << "  itr = " << inner_itr << std::endl;
+            h_k = 0.0;  for(int i=0; i<num_rows; i++){  h_k += W[inner_itr*num_rows+i]*W[inner_itr*num_rows+i];  }; h_k = std::sqrt(h_k); //std::cout << "h_k = " << h_k << "  itr = " << inner_itr << std::endl;
             if (h_k > 0.0) for(int i=0; i<num_rows; i++){ W[inner_itr*num_rows+i] /= h_k; };
 
             for (int i=0; i<inner_itr-1; i++){ // form the next row of the transformation
@@ -519,7 +519,7 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
                 H[(i+1)*max_inner + inner_itr-1] = S[i] * alpha - C[i] * H[(i+1)*max_inner + inner_itr-1];
             };
 
-            alpha = sqrt(h_k * h_k  +  H[(inner_itr-1)*max_inner + inner_itr-1] * H[(inner_itr-1)*max_inner + inner_itr-1]);
+            alpha = std::sqrt(h_k * h_k  +  H[(inner_itr-1)*max_inner + inner_itr-1] * H[(inner_itr-1)*max_inner + inner_itr-1]);
 
             // set the next set of Givens rotations
             S[inner_itr-1] = h_k / alpha;
@@ -531,7 +531,7 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
             Z[inner_itr] = S[inner_itr-1]*Z[inner_itr-1];
             Z[inner_itr-1] = C[inner_itr-1]*Z[inner_itr-1]; // apply it on z
 
-            inner_res = fabs(Z[inner_itr]);
+            inner_res = std::abs(Z[inner_itr]);
         }
 
         inner_itr--;

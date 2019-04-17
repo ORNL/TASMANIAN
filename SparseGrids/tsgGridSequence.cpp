@@ -366,7 +366,7 @@ void GridSequence::loadConstructedPoint(const double x[], const std::vector<doub
     std::vector<int> p(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         size_t i = 0;
-        while((i < nodes.size()) && (fabs(nodes[i] - x[j]) > TSG_NUM_TOL)) i++; // convert canonical node to index
+        while((i < nodes.size()) && (std::abs(nodes[i] - x[j]) > TSG_NUM_TOL)) i++; // convert canonical node to index
         if (i < nodes.size()){
             p[j] = (int) i;
         }else{
@@ -595,7 +595,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
             const double *val = values.getValues(i);
             int k=0;
             for(auto &n : nrm){
-                double v = fabs(val[k++]);
+                double v = std::abs(val[k++]);
                 if (n < v) n = v;
             }
         }
@@ -604,7 +604,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
             const double *s = surpluses.getStrip(i);
             double smax = 0.0;
             for(int k=0; k<num_outputs; k++){
-                double v = fabs(s[k]) / nrm[k];
+                double v = std::abs(s[k]) / nrm[k];
                 if (smax < v) smax = v;
             }
             max_surp[i] = smax;
@@ -705,7 +705,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     for(int i=0; i<num_points; i++){
         const double *val = values.getValues(i);
         for(int k=0; k<num_outputs; k++){
-            double v = fabs(val[k]);
+            double v = std::abs(val[k]);
             if (norm[k] < v) norm[k] = v;
         }
     }
@@ -713,16 +713,16 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     if (output == -1){
         for(int i=0; i<num_points; i++){
             const double *s = surpluses.getStrip(i);
-            double smax = fabs(s[0]) / norm[0];
+            double smax = std::abs(s[0]) / norm[0];
             for(int k=1; k<num_outputs; k++){
-                double v = fabs(s[k]) / norm[k];
+                double v = std::abs(s[k]) / norm[k];
                 if (smax < v) smax = v;
             }
             flagged[i] = (smax > tolerance);
         }
     }else{
         for(int i=0; i<num_points; i++){
-            flagged[i] = ((fabs(surpluses.getStrip(i)[output]) / norm[output]) > tolerance);
+            flagged[i] = ((std::abs(surpluses.getStrip(i)[output]) / norm[output]) > tolerance);
         }
     }
 

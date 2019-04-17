@@ -39,6 +39,7 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include "TasmanianConfig.hpp"
 

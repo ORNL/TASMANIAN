@@ -437,7 +437,7 @@ std::vector<double> GridWavelet::getNormalization() const{
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
         for(int j=0; j<num_outputs; j++){
-            if (norm[j] < fabs(v[j])) norm[j] = fabs(v[j]);
+            if (norm[j] < std::abs(v[j])) norm[j] = std::abs(v[j]);
         }
     }
     return norm;
@@ -462,10 +462,10 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
             const double *s = coefficients.getStrip(i);
             if (output == -1){
                 for(size_t k=0; k<((size_t) num_outputs); k++){
-                    if (small && ((fabs(s[k]) / norm[k]) > tolerance)) small = false;
+                    if (small && ((std::abs(s[k]) / norm[k]) > tolerance)) small = false;
                 }
             }else{
-                small = !((fabs(s[output]) / norm[output]) > tolerance);
+                small = !((std::abs(s[output]) / norm[output]) > tolerance);
             }
             if (!small){
                 int *p = pmap.getStrip(i);
@@ -511,10 +511,10 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 const double *soeff = coefficients.getStrip(pnts[i]);
                 if (output == -1){
                     for(int k=0; k<num_outputs; k++){
-                        if (small && ((fabs(soeff[k]) / norm[k]) > tolerance) && ((fabs(coeff[k]) / norm[k]) > tolerance)) small = false;
+                        if (small && ((std::abs(soeff[k]) / norm[k]) > tolerance) && ((std::abs(coeff[k]) / norm[k]) > tolerance)) small = false;
                     }
                 }else{
-                    if (((fabs(soeff[output]) / norm[output]) > tolerance) && ((fabs(coeff[0]) / norm[output]) > tolerance)) small = false;
+                    if (((std::abs(soeff[output]) / norm[output]) > tolerance) && ((std::abs(coeff[0]) / norm[output]) > tolerance)) small = false;
                 }
                 pmap.getStrip(pnts[i])[d] = (small) ? 0 : 1;
             }

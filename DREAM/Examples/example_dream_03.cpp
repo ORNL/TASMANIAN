@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
-#include "math.h"
 
 #include "TasmanianDREAM.hpp"
 
@@ -62,7 +61,7 @@ void dream_example_03(){
             double dt = 1.0 / ((double) data.size());
             double t = 0.5 * dt;
             for(auto &d : data){
-                d = sin(x0 * pi * t + x1);
+                d = std::sin(x0 * pi * t + x1);
                 t += dt;
             }
         };
@@ -147,13 +146,13 @@ void dream_example_03(){
     cout.precision(5);
     cout << "Inferred values:" << endl;
     cout << " low   frequency:" << setw(12) << std::fixed << frequency_low
-         << "   error:" << setw(12) << std::scientific << fabs(frequency_low - 5.0) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(frequency_low - 5.0) << endl;
     cout << " low  correction:" << setw(12) << std::fixed << correction_low
-         << "   error:" << setw(12) << std::scientific << fabs(correction_low - 0.3 * pi) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(correction_low - 0.3 * pi) << endl << endl;
     cout << " high  frequency:" << setw(12) << std::fixed << frequency_high
-         << "   error:" << setw(12) << std::scientific << fabs(frequency_high - 10.0) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(frequency_high - 10.0) << endl;
     cout << " high correction:" << setw(12) << std::fixed << correction_high
-         << "   error:" << setw(12) << std::scientific << fabs(correction_high - 0.1 * pi) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(correction_high - 0.1 * pi) << endl << endl;
 
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
 #ifndef __TASMANIAN_DOXYGEN_SKIP
