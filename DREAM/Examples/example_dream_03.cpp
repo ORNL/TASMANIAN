@@ -146,13 +146,13 @@ void dream_example_03(){
     cout.precision(5);
     cout << "Inferred values:" << endl;
     cout << " low   frequency:" << setw(12) << std::fixed << frequency_low
-         << "   error:" << setw(12) << std::scientific << fabs(frequency_low - 5.0) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(frequency_low - 5.0) << endl;
     cout << " low  correction:" << setw(12) << std::fixed << correction_low
-         << "   error:" << setw(12) << std::scientific << fabs(correction_low - 0.3 * pi) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(correction_low - 0.3 * pi) << endl << endl;
     cout << " high  frequency:" << setw(12) << std::fixed << frequency_high
-         << "   error:" << setw(12) << std::scientific << fabs(frequency_high - 10.0) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(frequency_high - 10.0) << endl;
     cout << " high correction:" << setw(12) << std::fixed << correction_high
-         << "   error:" << setw(12) << std::scientific << fabs(correction_high - 0.1 * pi) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(correction_high - 0.1 * pi) << endl << endl;
 
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
 #ifndef __TASMANIAN_DOXYGEN_SKIP

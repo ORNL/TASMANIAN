@@ -149,12 +149,12 @@ double argMaxLocalSecant(const VectorFunctional &F, double left, double right){
     double x = right;
     double d = F.getDiff(x);
 
-    if (fabs(d) > fabs(dm)){
+    if (std::abs(d) > std::abs(dm)){
         double t = x; x = xm; xm = t;
         t = d; d = dm; dm = t;
     }
     int itr = 0;
-    while((fabs(d) > 3*TSG_NUM_TOL) && (itr < TSG_MAX_SECANT_ITERATIONS)){
+    while((std::abs(d) > 3*TSG_NUM_TOL) && (itr < TSG_MAX_SECANT_ITERATIONS)){
         double xp = x - d * (x - xm) / (d - dm);
         xm = x; dm = d; x = xp;
 
@@ -162,7 +162,7 @@ double argMaxLocalSecant(const VectorFunctional &F, double left, double right){
 
         itr++;
     }
-    return (fabs(d) < fabs(dm)) ? x : xm;
+    return (std::abs(d) < std::abs(dm)) ? x : xm;
 }
 
 void getPrecomputedMinLebesgueNodes(std::vector<double> &precomputed){

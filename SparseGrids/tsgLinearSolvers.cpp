@@ -99,7 +99,7 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
 
     for(int l=0; l<n-1; l++){
         int m = l;
-        while((m < n-1) && (fabs(e[m]) > tol)) m++;
+        while((m < n-1) && (std::abs(e[m]) > tol)) m++;
 
         while (m != l){
             double p = d[l];
@@ -116,7 +116,7 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
                 double f = s * e[i];
                 double b = c * e[i];
 
-                if (fabs(f) >= fabs(g)){
+                if (std::abs(f) >= std::abs(g)){
                     c = g / f;
                     r = std::sqrt(c*c + 1.0);
                     e[i+1] = f*r;
@@ -145,7 +145,7 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
             e[m] = 0.0;
 
             m = l;
-            while((m < n-1) && (fabs(e[m]) > tol)) m++;
+            while((m < n-1) && (std::abs(e[m]) > tol)) m++;
         }
     }
 
@@ -531,7 +531,7 @@ void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ /
             Z[inner_itr] = S[inner_itr-1]*Z[inner_itr-1];
             Z[inner_itr-1] = C[inner_itr-1]*Z[inner_itr-1]; // apply it on z
 
-            inner_res = fabs(Z[inner_itr]);
+            inner_res = std::abs(Z[inner_itr]);
         }
 
         inner_itr--;

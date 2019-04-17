@@ -70,9 +70,9 @@ void dream_example_01(){
 
     cout << "Using regular form:" << endl;
     cout << "       mean:" << setw(13) << std::fixed << mean[0]
-         << "   error:" << setw(12) << std::scientific << fabs(mean[0]) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(mean[0]) << endl;
     cout << "   variance:" << setw(13) << std::fixed << variance[0]
-         << "   error:" << setw(12) << std::scientific << fabs(variance[0] - 0.5) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(variance[0] - 0.5) << endl;
 
 
     // Repeat the same experiment, but using log-form
@@ -97,9 +97,9 @@ void dream_example_01(){
 
     cout << "Using regular form:" << endl;
     cout << "       mean:" << setw(13) << std::fixed << mean[0]
-         << "   error:" << setw(12) << std::scientific << fabs(mean[0]) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(mean[0]) << endl;
     cout << "   variance:" << setw(13) << std::fixed << variance[0]
-         << "   error:" << setw(12) << std::scientific << fabs(variance[0] - 0.5) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(variance[0] - 0.5) << endl;
 
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
 #ifndef __TASMANIAN_DOXYGEN_SKIP

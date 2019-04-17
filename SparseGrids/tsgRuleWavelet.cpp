@@ -315,7 +315,7 @@ double RuleWavelet::eval(int point, double x) const{
     if(order == 1){
         // Level 0
         if (point < 3){
-            double w = 1.0 - fabs(x - getNode(point));
+            double w = 1.0 - std::abs(x - getNode(point));
             return (w < 0.0) ? 0.0 : w;
         }
         // Level 1+
@@ -399,7 +399,7 @@ inline double RuleWavelet::eval_linear(int point, double x) const{
 
 inline double RuleWavelet::linear_boundary_wavelet(double x) const{
     // Evaluates the first order boundary wavelet with support on [-1, 0].
-    if (fabs(x + 0.5) > 0.5) return 0.0;
+    if (std::abs(x + 0.5) > 0.5) return 0.0;
 
     if ((x <= -0.75)){
         return 0.75 * (7.0 * x + 6.0);
@@ -412,7 +412,7 @@ inline double RuleWavelet::linear_boundary_wavelet(double x) const{
 
 inline double RuleWavelet::linear_central_wavelet(double x) const {
     // Evaluates the first order central wavelet with support on [-1, .5].
-    if (fabs(x + 0.25) > 0.75) return 0.0;
+    if (std::abs(x + 0.25) > 0.75) return 0.0;
 
     if ((x <= -0.5)){
         return -0.5 * x - 0.5;

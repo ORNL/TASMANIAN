@@ -232,7 +232,7 @@ public:
 
     double evalRaw(int point, double x) const{
         if (isZeroOrder){
-            if (fabs(x - getNode(point)) > getSupport(point)) return 0.0; // maybe can speed this up
+            if (std::abs(x - getNode(point)) > getSupport(point)) return 0.0; // maybe can speed this up
             return 1.0;
         }else{
             if ((rule == rule_localp) || (rule == rule_semilocalp)){
@@ -243,7 +243,7 @@ public:
                 }
             }
             double xn = scaleX(point, x);
-            if (rule != rule_semilocalp) if (max_order == 1) return 1.0 - fabs(xn);
+            if (rule != rule_semilocalp) if (max_order == 1) return 1.0 - std::abs(xn);
             if (max_order == 2) return evalPWQuadratic(point, xn);
             if (max_order == 3) return evalPWCubic(point, xn);
             return evalPWPower(point, xn);
@@ -252,7 +252,7 @@ public:
 
     double evalSupport(int point, double x, bool &isSupported) const{
         if (isZeroOrder){
-            double distance = fabs(x - getNode(point)), support = getSupport(point); // can speed this up, see above
+            double distance = std::abs(x - getNode(point)), support = getSupport(point); // can speed this up, see above
             isSupported = (distance <= (2.0) * support);
             return (distance > support) ? 0.0 : 1.0;
         }else{
@@ -265,8 +265,8 @@ public:
                 }
             }
             double xn = scaleX(point, x);
-            if (fabs(xn) <= 1.0){
-                if (rule != rule_semilocalp) if (max_order == 1) return 1.0 - fabs(xn);
+            if (std::abs(xn) <= 1.0){
+                if (rule != rule_semilocalp) if (max_order == 1) return 1.0 - std::abs(xn);
                 if (max_order == 2) return evalPWQuadratic(point, xn);
                 if (max_order == 3) return evalPWCubic(point, xn);
                 return evalPWPower(point, xn);

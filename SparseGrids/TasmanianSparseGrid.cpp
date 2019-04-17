@@ -724,7 +724,7 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
             for(int j=0; j<num_dimensions; j++){
                 if (this_x[j] != 0.0){ // zero maps to zero and makes the log unstable
                     double sign = (this_x[j] > 0.0) ? 1.0 : -1.0;
-                    this_x[j] = fabs(this_x[j]);
+                    this_x[j] = std::abs(this_x[j]);
                     double b = this_x[j];
                     double logx = log(this_x[j]);
                     double r = this_x[j];
@@ -735,7 +735,7 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
                    }
                     r /= cm[j];
                     r -= b; // transformed_x -b = 0
-                    while(fabs(r) > TSG_NUM_TOL){
+                    while(std::abs(r) > TSG_NUM_TOL){
                         this_x[j] -= r * cm[j] / dr;
 
                         logx = std::log(std::abs(this_x[j]));
@@ -780,7 +780,7 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
             const double *this_x = x.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (this_x[j] != 0.0){ // derivative at zero is 1/cm[j] and zero makes the log unstable
-                    double logx = log(fabs(this_x[j]));
+                    double logx = std::log(std::abs(this_x[j]));
                     double trans = 1.0;
                     for(int k=1; k<=conformal_asin_power[j]; k++){
                         trans += std::exp(c[j][k] + p[j][k] * logx);

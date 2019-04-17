@@ -527,7 +527,7 @@ void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double
     std::vector<int> p(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         int i = 0;
-        while(fabs(wrapper.getNode(i) - x[j]) > TSG_NUM_TOL) i++; // convert canonical node to index
+        while(std::abs(wrapper.getNode(i) - x[j]) > TSG_NUM_TOL) i++; // convert canonical node to index
         p[j] = i;
     }
 
@@ -664,7 +664,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
         double max_surp = 0.0;
         for(int i=0; i<num_points; i++){
             surp[i] = values.getValues(i)[output];
-            if (fabs(surp[i]) > max_surp) max_surp = fabs(surp[i]);
+            if (std::abs(surp[i]) > max_surp) max_surp = std::abs(surp[i]);
         }
 
         GridSequence seq; // there is an extra copy here, but the sequence grid does the surplus computation automatically
@@ -748,7 +748,7 @@ void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std
 
     int n = 0, m;
     for(int j=0; j<num_points; j++){
-        surp[j] = fabs(surp[j]);
+        surp[j] = std::abs(surp[j]);
         if (surp[j] > tol) n++;
     }
 
@@ -836,7 +836,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
     std::vector<bool> flagged(n);
 
     for(int i=0; i<n; i++)
-        flagged[i] = (fabs(surp[i]) > tolerance);
+        flagged[i] = (std::abs(surp[i]) > tolerance);
 
     MultiIndexSet kids = MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits);
 

@@ -151,10 +151,10 @@ void dream_example_04(){
     cout << "Acceptance rate: " << std::fixed << state.getAcceptanceRate() << "\n\n";
     cout << "High dimensions and multiple modes reduce the acceptance rate, and sampling parameters (e.g., differential update magnitude), aff.\n\n";
     cout << "Inferred values (noise free case):" << endl;
-    cout << " low   rate:" << setw(12) << std::fixed << rate_low   << "   error:" << setw(12) << std::scientific << fabs(rate_low - 1.0)   << endl;
-    cout << " low  scale:" << setw(12) << std::fixed << scale_low  << "   error:" << setw(12) << std::scientific << fabs(scale_low - 1.0)  << "\n" << endl;
-    cout << " high  rate:" << setw(12) << std::fixed << rate_high  << "   error:" << setw(12) << std::scientific << fabs(rate_high - 3.0)  << endl;
-    cout << " high scale:" << setw(12) << std::fixed << scale_high << "   error:" << setw(12) << std::scientific << fabs(scale_high - 0.4) << "\n" << endl;
+    cout << " low   rate:" << setw(12) << std::fixed << rate_low   << "   error:" << setw(12) << std::scientific << std::abs(rate_low - 1.0)   << endl;
+    cout << " low  scale:" << setw(12) << std::fixed << scale_low  << "   error:" << setw(12) << std::scientific << std::abs(scale_low - 1.0)  << "\n" << endl;
+    cout << " high  rate:" << setw(12) << std::fixed << rate_high  << "   error:" << setw(12) << std::scientific << std::abs(rate_high - 3.0)  << endl;
+    cout << " high scale:" << setw(12) << std::fixed << scale_high << "   error:" << setw(12) << std::scientific << std::abs(scale_high - 0.4) << "\n" << endl;
 
     cout << "\n" << "-------------------------------------------------------------------------------------------------" << endl;
 

@@ -424,8 +424,8 @@ __global__ void tasgpu_dfor_build_cache(int dims, int num_x, const T *gpuX, cons
             int offset = soffsets[d] + i;
             T x = gpuX[i * dims + d]; // non-strided read
 
-            T step_real = cos(-2.0 * M_PI * x);
-            T step_imag = sin(-2.0 * M_PI * x); // start with exp(-i x)
+            T step_real = cos(-2.0 * 3.14159265358979323846 * x);
+            T step_imag = sin(-2.0 * 3.14159265358979323846 * x); // start with exp(-i x)
 
             T vreal = 1.0; // start with 1.0 (holds the current power)
             T vimag = 0.0;
