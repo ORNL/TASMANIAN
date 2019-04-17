@@ -32,6 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_ENUMERATES_HPP
 
 // system headers used in many/many places
+#include <map>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
