@@ -75,17 +75,13 @@ template<bool useAscii> void GridWavelet::read(std::istream &is){
 
     if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
     if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
-        if (IO::readFlag<useAscii>(is)){
-            coefficients.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, coefficients.getVector());
-        }
+        if (IO::readFlag<useAscii>(is))
+            coefficients = IO::readData2D<useAscii, double>(is, num_outputs, points.getNumIndexes());
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
     }else{
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
-        if (IO::readFlag<useAscii>(is)){
-            coefficients.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, coefficients.getVector());
-        }
+        if (IO::readFlag<useAscii>(is))
+            coefficients = IO::readData2D<useAscii, double>(is, num_outputs, points.getNumIndexes());
     }
 
     if (num_outputs > 0) values.read<useAscii>(is);

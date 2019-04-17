@@ -64,10 +64,8 @@ template<bool useAscii> void GridSequence::read(std::istream &is){
     if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
     if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
 
-    if (IO::readFlag<useAscii>(is)){
-        surpluses.resize(num_outputs, points.getNumIndexes());
-        IO::readVector<useAscii>(is, surpluses.getVector());
-    }
+    if (IO::readFlag<useAscii>(is))
+        surpluses = IO::readData2D<useAscii, double>(is, num_outputs, points.getNumIndexes());
 
     if (num_outputs > 0) values.read<useAscii>(is);
 

@@ -147,6 +147,21 @@ private:
     std::vector<T> vec;
 };
 
+namespace IO{
+    /*!
+    * \internal
+    * \ingroup TasmanianIO
+    * \brief Read the Data2D structure from the stream, assumes the given number of strips and stride.
+    * \endinternal
+    */
+    template<bool useAscii, typename DataType, typename IndexStride, typename IndexNumStrips>
+    Data2D<DataType> readData2D(std::istream &is, IndexStride stride, IndexNumStrips num_strips){
+        Data2D<DataType> data(stride, num_strips);
+        readVector<useAscii>(is, data.getVector());
+        return data;
+    }
+}
+
 /*!
  * \internal
  * \ingroup TasmanianSets

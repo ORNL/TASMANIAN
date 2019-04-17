@@ -108,22 +108,16 @@ template<bool useAscii> void GridLocalPolynomial::read(std::istream &is){
 
     if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
     if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
-        if (IO::readFlag<useAscii>(is)){
-            surpluses.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, surpluses.getVector());
-        }
+        if (IO::readFlag<useAscii>(is))
+            surpluses = IO::readData2D<useAscii, double>(is, num_outputs, points.getNumIndexes());
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
     }else{
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
-        if (IO::readFlag<useAscii>(is)){
-            surpluses.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, surpluses.getVector());
-        }
+        if (IO::readFlag<useAscii>(is))
+            surpluses = IO::readData2D<useAscii, double>(is, num_outputs, points.getNumIndexes());
     }
-    if (IO::readFlag<useAscii>(is)){
-        parents.resize(rule->getMaxNumParents() * num_dimensions, points.getNumIndexes());
-        IO::readVector<useAscii>(is, parents.getVector());
-    }
+    if (IO::readFlag<useAscii>(is))
+        parents = IO::readData2D<useAscii, int>(is, rule->getMaxNumParents() * num_dimensions, points.getNumIndexes());
 
     size_t num_points = (size_t) ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes());
     roots.resize((size_t) IO::readNumber<useAscii, int>(is));
