@@ -329,6 +329,53 @@ private:
     mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
     #endif
 };
+
+inline TasmanianSparseGrid
+makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
+               std::vector<int> const &anisotropic_weights = std::vector<int>(), double alpha = 0.0, double beta = 0.0,
+               const char* custom_filename = nullptr, std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeGlobalGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid
+makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
+                 std::vector<int> const &anisotropic_weights = std::vector<int>(), std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeSequenceGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid
+makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp, std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeLocalPolynomialGrid(dimensions, outputs, depth, order, rule, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid
+makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeWaveletGrid(dimensions, outputs, depth, order, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid
+makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type,
+                std::vector<int> const &anisotropic_weights = std::vector<int>(), std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeFourierGrid(dimensions, outputs, depth, type, anisotropic_weights, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid readGrid(const char *filename){
+    TasmanianSparseGrid grid;
+    grid.read(filename);
+    return grid;
+}
+
+inline TasmanianSparseGrid readGrid(std::string const &filename){ return readGrid(filename.c_str()); }
 #endif // Doxygen skip
 
 }
