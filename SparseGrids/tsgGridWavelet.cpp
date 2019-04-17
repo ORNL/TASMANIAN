@@ -31,10 +31,8 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WAVELET_CPP
 #define __TASMANIAN_SPARSE_GRID_WAVELET_CPP
 
-#include "tsgHiddenExternals.hpp"
 #include "tsgGridWavelet.hpp"
-
-#include "tsgUtils.hpp"
+#include "tsgHiddenExternals.hpp"
 
 #ifdef _OPENMP
 #include <omp.h>

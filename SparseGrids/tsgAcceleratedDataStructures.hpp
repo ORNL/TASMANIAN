@@ -31,9 +31,6 @@
 #ifndef __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_HPP
 #define __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_HPP
 
-#include <stdexcept>
-
-#include "tsgUtils.hpp"
 #include "tsgEnumerates.hpp"
 
 //! \internal

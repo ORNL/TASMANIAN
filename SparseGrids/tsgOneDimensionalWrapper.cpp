@@ -31,9 +31,6 @@
 #ifndef __TSG_ONE_DIMENSIONAL_WRAPPER_CPP
 #define __TSG_ONE_DIMENSIONAL_WRAPPER_CPP
 
-#include <stdexcept>
-#include <string>
-
 #include "tsgOneDimensionalWrapper.hpp"
 
 namespace TasGrid{

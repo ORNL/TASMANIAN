@@ -31,11 +31,8 @@
 #ifndef __TSG_BASE_CLASS_HPP
 #define __TSG_BASE_CLASS_HPP
 
-#include <numeric>
-
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
-#include "tsgAcceleratedDataStructures.hpp"
+#include "tsgDConstructGridGlobal.hpp"
+#include "tsgCudaLoadStructures.hpp"
 
 namespace TasGrid{
 

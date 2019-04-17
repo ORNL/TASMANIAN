@@ -31,20 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_GLOBAL_NESTED_HPP
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_NESTED_HPP
 
-#include <cstdlib>
-#include <memory>
-
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
-#include "tsgCoreOneDimensional.hpp"
-#include "tsgIndexManipulator.hpp"
-#include "tsgLinearSolvers.hpp"
-#include "tsgCacheLagrange.hpp"
-#include "tsgOneDimensionalWrapper.hpp"
 #include "tsgGridCore.hpp"
-#include "tsgDConstructGridGlobal.hpp"
-
-#include "tsgCudaLoadStructures.hpp"
 
 namespace TasGrid{
 

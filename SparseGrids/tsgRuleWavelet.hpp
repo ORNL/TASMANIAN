@@ -31,9 +31,6 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP
 #define __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP
 
-#include <vector>
-
-#include "tsgEnumerates.hpp"
 #include "tsgRuleLocalPolynomial.hpp"
 
 namespace TasGrid{

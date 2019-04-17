@@ -33,10 +33,6 @@
 
 #include "tsgLinearSolvers.hpp"
 
-#ifdef TASMANIAN_CHOLMOD
-#include <cholmod.h>
-#endif // TASMANIAN_CHOLMOD
-
 namespace TasGrid{
 
 void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x){

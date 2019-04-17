@@ -33,7 +33,6 @@
 
 #include "tsgGridFourier.hpp"
 #include "tsgHiddenExternals.hpp"
-#include "tsgUtils.hpp"
 
 namespace TasGrid{
 

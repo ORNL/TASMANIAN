@@ -31,9 +31,6 @@
 #ifndef __TASMANIAN_SPARSE_GRID_CPP
 #define __TASMANIAN_SPARSE_GRID_CPP
 
-#include <stdexcept>
-#include <string>
-
 #include "TasmanianSparseGrid.hpp"
 
 #include "tsgUtils.hpp"
