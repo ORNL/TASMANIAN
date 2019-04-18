@@ -42,57 +42,31 @@ extern "C" void tsgc2fstr_(int *length, const char *str);
 extern "C" void tsgc2fvec_(int *length, double *vect);
 extern "C" void tsgc2fmat_(int *rows, int *cols, double *mat);
 
-TasmanianSparseGrid **_tsg_grid_list;
-int _tsg_num_grids;
+std::vector<std::unique_ptr<TasmanianSparseGrid>> _tsg_grids;
+inline bool tsg_valid(std::unique_ptr<TasmanianSparseGrid> const &grid_ptr){ return bool(grid_ptr); }
+inline bool tsg_invalid(std::unique_ptr<TasmanianSparseGrid> const &grid_ptr){ return !tsg_valid(grid_ptr); }
 
 extern "C"{
 
 void tsggag_(int *num_active){
-    *num_active = 0;
-    for (int i = 0; i < _tsg_num_grids; i++ )
-        if ( _tsg_grid_list[i] != 0 ) (*num_active)++;
+    *num_active = (int) std::count_if(_tsg_grids.begin(), _tsg_grids.end(), tsg_valid);
 }
-void tsgend_(){
-    if (_tsg_grid_list != 0){
-        for(int i=0; i<_tsg_num_grids; i++){
-            if (_tsg_grid_list[i] != 0) delete _tsg_grid_list[i];
-        }
-        delete[] _tsg_grid_list;
-        _tsg_grid_list = 0;
-        _tsg_num_grids = 0;
-    }
-}
+void tsgend_(){ _tsg_grids.clear(); }
+
 void tsgnew_(int *returnID){
-    if ( _tsg_grid_list == 0 ){
-        _tsg_num_grids = 4; // assume we are working with 4 grids
-        _tsg_grid_list = new TasmanianSparseGrid*[_tsg_num_grids];
-        for(int i=0; i<_tsg_num_grids; i++) _tsg_grid_list[i] = 0;
+    auto found = std::find_if(_tsg_grids.begin(), _tsg_grids.end(), tsg_invalid);
+    if (found != _tsg_grids.end()){
+        *found = std::unique_ptr<TasmanianSparseGrid>(new TasmanianSparseGrid());
+        *returnID = (int) std::distance(_tsg_grids.begin(), found);
+    }else{
+        _tsg_grids.emplace_back(std::unique_ptr<TasmanianSparseGrid>(new TasmanianSparseGrid()));
+        *returnID = (int) _tsg_grids.size() - 1;
     }
-    int id = 0;
-    while((id < _tsg_num_grids) && (_tsg_grid_list[id] != 0)) id++;
-    // double the number of grids if the assumed number was too small
-    if (id == _tsg_num_grids){
-        TasmanianSparseGrid **_tsg_grid_list_old = _tsg_grid_list;
-        _tsg_num_grids *= 2;
-        _tsg_grid_list = new TasmanianSparseGrid*[_tsg_num_grids];
-        for(int i=0; i<_tsg_num_grids/2; i++) _tsg_grid_list[i] = _tsg_grid_list_old[i];
-        for(int i=_tsg_num_grids/2; i<_tsg_num_grids; i++) _tsg_grid_list[i] = 0;
-        delete[] _tsg_grid_list_old;
-        _tsg_grid_list_old = 0;
-    }
-    _tsg_grid_list[id] = new TasmanianSparseGrid();
-    *returnID = id;
 }
 void tsgfre_(int *id){
-    if (*id < _tsg_num_grids){
-        if (_tsg_grid_list[*id] != 0){
-            delete _tsg_grid_list[*id];
-            _tsg_grid_list[*id] = 0;
-        }
-    }
-    for (int i = 0; i < _tsg_num_grids; i++ )
-        if ( _tsg_grid_list[i] != 0 ) return;
-    tsgend_();
+    _tsg_grids.at(*id).reset();
+    if (std::none_of(_tsg_grids.begin(), _tsg_grids.end(), tsg_valid))
+        _tsg_grids.clear();
 }
 ////////////////////////////////////////////////////////////////////////
 //   MAIN INTERFACE
@@ -109,10 +83,10 @@ void tsggli_(){
 }
 
 // read/write
-void tsgwri_(int *id, const char *filename, int *binary){ _tsg_grid_list[*id]->write(filename, (*binary != 0)); }
+void tsgwri_(int *id, const char *filename, int *binary){ _tsg_grids[*id]->write(filename, (*binary != 0)); }
 void tsgrea_(int *id, const char *filename, int *status){
     try{
-        _tsg_grid_list[*id]->read(filename);
+        _tsg_grids[*id]->read(filename);
         *status = 1;
     }catch(std::runtime_error &e){
         cerr << e.what() << endl;
@@ -133,7 +107,7 @@ void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *
     cfn = (opt_flags[3] != 0 ) ? customRuleFilename : 0;
     ll  = (opt_flags[4] != 0 ) ? llimits            : 0;
 
-    _tsg_grid_list[*id]->makeGlobalGrid(*dimensions, *outputs, *depth,
+    _tsg_grids[*id]->makeGlobalGrid(*dimensions, *outputs, *depth,
         OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule),
         aw, al, be, cfn, ll);
 }
@@ -144,7 +118,7 @@ void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *
     aw  = (opt_flags[0] != 0 ) ? aniso_weights      : 0;
     ll  = (opt_flags[1] != 0 ) ? llimits            : 0;
 
-    _tsg_grid_list[*id]->makeSequenceGrid(*dimensions, *outputs, *depth,
+    _tsg_grids[*id]->makeSequenceGrid(*dimensions, *outputs, *depth,
         OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule), aw, ll);
 }
 void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags,
@@ -156,7 +130,7 @@ void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags,
     ord = (opt_flags[1] != 0) ? *order  : 1;
     ll  = (opt_flags[2] != 0) ? llimits : 0;
 
-    _tsg_grid_list[*id]->makeLocalPolynomialGrid(*dimensions, *outputs, *depth, ord, OneDimensionalMeta::getIORuleInt(ru), ll);
+    _tsg_grids[*id]->makeLocalPolynomialGrid(*dimensions, *outputs, *depth, ord, OneDimensionalMeta::getIORuleInt(ru), ll);
 }
 void tsgmw_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags, int *order, const int *llimits){
     int ord;
@@ -165,7 +139,7 @@ void tsgmw_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags, 
     ord = (opt_flags[0] != 0) ? *order  : 1;
     ll  = (opt_flags[1] != 0) ? llimits : 0;
 
-    _tsg_grid_list[*id]->makeWaveletGrid(*dimensions, *outputs, *depth, ord, ll);
+    _tsg_grids[*id]->makeWaveletGrid(*dimensions, *outputs, *depth, ord, ll);
 }
 void tsgmf_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *opt_flags, const int *aniso_weights, const int *llimits){
     const int *ll, *aw;
@@ -173,90 +147,90 @@ void tsgmf_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *
     aw = (opt_flags[0] != 0 ) ? aniso_weights : 0;
     ll = (opt_flags[1] != 0 ) ? llimits       : 0;
 
-    _tsg_grid_list[*id]->makeFourierGrid(*dimensions, *outputs, *depth, OneDimensionalMeta::getIOTypeInt(*type), aw, ll);
+    _tsg_grids[*id]->makeFourierGrid(*dimensions, *outputs, *depth, OneDimensionalMeta::getIOTypeInt(*type), aw, ll);
 }
 
 // copy/updare
-void tsgcp_(int *id, int *source){ _tsg_grid_list[*id]->copyGrid(_tsg_grid_list[*source]); }
+void tsgcp_(int *id, int *source){ _tsg_grids[*id]->copyGrid(_tsg_grids[*source].get()); }
 
 void tsgug_(int *id, int *depth, int *type, int *opt_flags, const int *anisotropic_weights){
     const int *aw;
     aw = (opt_flags[0] != 0) ? anisotropic_weights : 0;
-    _tsg_grid_list[*id]->updateGlobalGrid(*depth, OneDimensionalMeta::getIOTypeInt(*type), aw);
+    _tsg_grids[*id]->updateGlobalGrid(*depth, OneDimensionalMeta::getIOTypeInt(*type), aw);
 }
 void tsgus_(int *id, int *depth, int *type, int *opt_flags, const int *anisotropic_weights){
     const int *aw;
     aw = (opt_flags[0] != 0) ? anisotropic_weights : 0;
-    _tsg_grid_list[*id]->updateSequenceGrid(*depth, OneDimensionalMeta::getIOTypeInt(*type), aw);
+    _tsg_grids[*id]->updateSequenceGrid(*depth, OneDimensionalMeta::getIOTypeInt(*type), aw);
 }
 
 // getAlpha/Beta/Order/Dims/Outs/Rule //
-void tsggal_(int *id, double *alpha){ *alpha = _tsg_grid_list[*id]->getAlpha(); }
-void tsggbe_(int *id, double *beta){ *beta = _tsg_grid_list[*id]->getBeta(); }
-void tsggor_(int *id, int *order){ *order = _tsg_grid_list[*id]->getOrder(); }
-void tsggnd_(int *id, int *dims){ *dims = _tsg_grid_list[*id]->getNumDimensions(); }
-void tsggno_(int *id, int *outs){ *outs = _tsg_grid_list[*id]->getNumOutputs(); }
-void tsggru_(int *id, int *rule){ *rule = OneDimensionalMeta::getIORuleInt(_tsg_grid_list[*id]->getRule()); }
+void tsggal_(int *id, double *alpha){ *alpha = _tsg_grids[*id]->getAlpha(); }
+void tsggbe_(int *id, double *beta){ *beta = _tsg_grids[*id]->getBeta(); }
+void tsggor_(int *id, int *order){ *order = _tsg_grids[*id]->getOrder(); }
+void tsggnd_(int *id, int *dims){ *dims = _tsg_grids[*id]->getNumDimensions(); }
+void tsggno_(int *id, int *outs){ *outs = _tsg_grids[*id]->getNumOutputs(); }
+void tsggru_(int *id, int *rule){ *rule = OneDimensionalMeta::getIORuleInt(_tsg_grids[*id]->getRule()); }
 
 // getNumNeeded/Loaded/Points
-void tsggnn_(int *id, int *num_points){ *num_points = _tsg_grid_list[*id]->getNumNeeded(); }
-void tsggnl_(int *id, int *num_points){ *num_points = _tsg_grid_list[*id]->getNumLoaded(); }
-void tsggnp_(int *id, int *num_points){ *num_points = _tsg_grid_list[*id]->getNumPoints(); }
+void tsggnn_(int *id, int *num_points){ *num_points = _tsg_grids[*id]->getNumNeeded(); }
+void tsggnl_(int *id, int *num_points){ *num_points = _tsg_grids[*id]->getNumLoaded(); }
+void tsggnp_(int *id, int *num_points){ *num_points = _tsg_grids[*id]->getNumPoints(); }
 
 // getLoaded/Needed/Points
-void tsgglp_(int *id, double *points){ _tsg_grid_list[*id]->getLoadedPoints(points); }
-void tsggdp_(int *id, double *points){ _tsg_grid_list[*id]->getNeededPoints(points); }
-void tsggpp_(int *id, double *points){ _tsg_grid_list[*id]->getPoints(points); }
+void tsgglp_(int *id, double *points){ _tsg_grids[*id]->getLoadedPoints(points); }
+void tsggdp_(int *id, double *points){ _tsg_grids[*id]->getNeededPoints(points); }
+void tsggpp_(int *id, double *points){ _tsg_grids[*id]->getPoints(points); }
 
 // getQuadrature/InterpolationWeights
-void tsggqw_(int *id, double *weights){ _tsg_grid_list[*id]->getQuadratureWeights(weights); }
-void tsggiw_(int *id, const double *x, double *weights){ _tsg_grid_list[*id]->getInterpolationWeights(x,weights); }
+void tsggqw_(int *id, double *weights){ _tsg_grids[*id]->getQuadratureWeights(weights); }
+void tsggiw_(int *id, const double *x, double *weights){ _tsg_grids[*id]->getInterpolationWeights(x,weights); }
 
 // set/is/clear/getDomainTransform
-void tsgsdt_(int *id, const double *transform_a, const double *transform_b){ _tsg_grid_list[*id]->setDomainTransform(transform_a, transform_b); }
-void tsgidt_(int *id, int *result){ *result = (_tsg_grid_list[*id]->isSetDomainTransfrom()) ? 1 : 0; }
-void tsgcdt_(int *id){ _tsg_grid_list[*id]->clearDomainTransform(); }
-void tsggdt_(int *id, double *transform_a, double *transform_b){ _tsg_grid_list[*id]->getDomainTransform(transform_a, transform_b); }
+void tsgsdt_(int *id, const double *transform_a, const double *transform_b){ _tsg_grids[*id]->setDomainTransform(transform_a, transform_b); }
+void tsgidt_(int *id, int *result){ *result = (_tsg_grids[*id]->isSetDomainTransfrom()) ? 1 : 0; }
+void tsgcdt_(int *id){ _tsg_grids[*id]->clearDomainTransform(); }
+void tsggdt_(int *id, double *transform_a, double *transform_b){ _tsg_grids[*id]->getDomainTransform(transform_a, transform_b); }
 
 // loadNeededPoints
-void tsglnp_(int *id, const double *vals){ _tsg_grid_list[*id]->loadNeededPoints(vals); }
+void tsglnp_(int *id, const double *vals){ _tsg_grids[*id]->loadNeededPoints(vals); }
 
 // evaluate/Fast/Batch/integrate
-void tsgeva_(int *id, const double *x, double *y){ _tsg_grid_list[*id]->evaluate(x, y); }
-void tsgevf_(int *id, const double *x, double *y){ _tsg_grid_list[*id]->evaluateFast(x, y); }
-void tsgevb_(int *id, const double *x, int *num_x, double *y){ _tsg_grid_list[*id]->evaluateBatch(x, (*num_x), y); }
-void tsgint_(int *id, double *q){ _tsg_grid_list[*id]->integrate(q); }
+void tsgeva_(int *id, const double *x, double *y){ _tsg_grids[*id]->evaluate(x, y); }
+void tsgevf_(int *id, const double *x, double *y){ _tsg_grids[*id]->evaluateFast(x, y); }
+void tsgevb_(int *id, const double *x, int *num_x, double *y){ _tsg_grids[*id]->evaluateBatch(x, (*num_x), y); }
+void tsgint_(int *id, double *q){ _tsg_grids[*id]->integrate(q); }
 
 // hierarchical functions/coefficients
 void tsgehf_(int *id, const double *x, int *num_x, double *y){
-    _tsg_grid_list[*id]->evaluateHierarchicalFunctions(x, (*num_x), y);}
+    _tsg_grids[*id]->evaluateHierarchicalFunctions(x, (*num_x), y);}
 void tsgehs_(int *id, const double *x, int *num_x, int *pntr, int *indx, double *vals){
-    _tsg_grid_list[*id]->evaluateSparseHierarchicalFunctionsStatic(x, *num_x, pntr, indx, vals);}
+    _tsg_grids[*id]->evaluateSparseHierarchicalFunctionsStatic(x, *num_x, pntr, indx, vals);}
 void tsgehz_(int *id, const double *x, int *num_x, int *num_nz){
-    *num_nz = _tsg_grid_list[*id]->evaluateSparseHierarchicalFunctionsGetNZ(x, *num_x);}
+    *num_nz = _tsg_grids[*id]->evaluateSparseHierarchicalFunctionsGetNZ(x, *num_x);}
 void tsgghc_(int *id, double *c){
-    const double *cc = _tsg_grid_list[*id]->getHierarchicalCoefficients();
-    _tsg_grid_list[*id]->isFourier() ? std::copy(cc, cc + 2 * _tsg_grid_list[*id]->getNumPoints() * _tsg_grid_list[*id]->getNumOutputs(), c)
-                                     : std::copy(cc, cc + _tsg_grid_list[*id]->getNumPoints() * _tsg_grid_list[*id]->getNumOutputs(), c);
+    const double *cc = _tsg_grids[*id]->getHierarchicalCoefficients();
+    _tsg_grids[*id]->isFourier() ? std::copy(cc, cc + 2 * _tsg_grids[*id]->getNumPoints() * _tsg_grids[*id]->getNumOutputs(), c)
+                                     : std::copy(cc, cc + _tsg_grids[*id]->getNumPoints() * _tsg_grids[*id]->getNumOutputs(), c);
 }
-void tsgshc_(int *id, double *c){_tsg_grid_list[*id]->setHierarchicalCoefficients(c);}
+void tsgshc_(int *id, double *c){_tsg_grids[*id]->setHierarchicalCoefficients(c);}
 
 // setAnisotropic/Surplus/Refinement
 void tsgsar_(int *id, int *type, int *min_growth, int *output, int *opt_flags, const int *llimits){
     const int *ll;
     ll = (opt_flags[0] != 0) ? llimits : 0;
-    _tsg_grid_list[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output, ll);
+    _tsg_grids[*id]->setAnisotropicRefinement(OneDimensionalMeta::getIOTypeInt(*type), *min_growth, *output, ll);
 }
 void tsgeac_(int *id, int *type, int *output, int *result){
-    auto coeff = _tsg_grid_list[*id]->estimateAnisotropicCoefficients(OneDimensionalMeta::getIOTypeInt(*type), *output);
-    int num_coeff = _tsg_grid_list[*id]->getNumDimensions();
+    auto coeff = _tsg_grids[*id]->estimateAnisotropicCoefficients(OneDimensionalMeta::getIOTypeInt(*type), *output);
+    int num_coeff = _tsg_grids[*id]->getNumDimensions();
     if ((*type == 2) || (*type == 4) || (*type == 6)) num_coeff *= 2;
     for(int i=0; i<num_coeff; i++) result[i] = coeff[i];
 }
 void tsgssr_(int *id, double *tol, int *output, int *opt_flags, const int *llimits){
     const int *ll;
     ll = (opt_flags[0] != 0) ? llimits : 0;
-    _tsg_grid_list[*id]->setSurplusRefinement(*tol, *output, ll); }
+    _tsg_grids[*id]->setSurplusRefinement(*tol, *output, ll); }
 void tsgshr_(int *id, double *tol, int *type, int *opt_flags, int *output, const int *llimits){
     int theout;
     const int *ll;
@@ -264,37 +238,37 @@ void tsgshr_(int *id, double *tol, int *type, int *opt_flags, int *output, const
     theout = (opt_flags[0] != 0) ? *output : -1;
     ll     = (opt_flags[1] != 0) ? llimits : 0;
 
-    _tsg_grid_list[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), theout, ll);
+    _tsg_grids[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), theout, ll);
 }
-void tsgcre_(int *id){ _tsg_grid_list[*id]->clearRefinement(); }
-void tsgmre_(int *id){ _tsg_grid_list[*id]->mergeRefinement(); }
+void tsgcre_(int *id){ _tsg_grids[*id]->clearRefinement(); }
+void tsgmre_(int *id){ _tsg_grids[*id]->mergeRefinement(); }
 
 // set/is/clear/getConformalTransform
-void tsgsca_(int *id, int *trunc){ _tsg_grid_list[*id]->setConformalTransformASIN(trunc); }
-void tsgica_(int *id, int *result){ *result = (_tsg_grid_list[*id]->isSetConformalTransformASIN()) ? 1 : 0; }
-void tsgcct_(int *id){ _tsg_grid_list[*id]->clearConformalTransform(); }
-void tsggca_(int *id, int *trunc){ _tsg_grid_list[*id]->getConformalTransformASIN(trunc); }
+void tsgsca_(int *id, int *trunc){ _tsg_grids[*id]->setConformalTransformASIN(trunc); }
+void tsgica_(int *id, int *result){ *result = (_tsg_grids[*id]->isSetConformalTransformASIN()) ? 1 : 0; }
+void tsgcct_(int *id){ _tsg_grids[*id]->clearConformalTransform(); }
+void tsggca_(int *id, int *trunc){ _tsg_grids[*id]->getConformalTransformASIN(trunc); }
 
 // isGlobal/Sequence/LocalPolynomial/Wavelet/Fourier
-void tsgisg_(int *id, int *status){*status = (_tsg_grid_list[*id]->isGlobal()) ? 1 : 0;}
-void tsgiss_(int *id, int *status){*status = (_tsg_grid_list[*id]->isSequence()) ? 1 : 0;}
-void tsgisl_(int *id, int *status){*status = (_tsg_grid_list[*id]->isLocalPolynomial()) ? 1 : 0;}
-void tsgisw_(int *id, int *status){*status = (_tsg_grid_list[*id]->isWavelet()) ? 1 : 0;}
-void tsgisf_(int *id, int *status){*status = (_tsg_grid_list[*id]->isFourier()) ? 1 : 0;}
+void tsgisg_(int *id, int *status){*status = (_tsg_grids[*id]->isGlobal()) ? 1 : 0;}
+void tsgiss_(int *id, int *status){*status = (_tsg_grids[*id]->isSequence()) ? 1 : 0;}
+void tsgisl_(int *id, int *status){*status = (_tsg_grids[*id]->isLocalPolynomial()) ? 1 : 0;}
+void tsgisw_(int *id, int *status){*status = (_tsg_grids[*id]->isWavelet()) ? 1 : 0;}
+void tsgisf_(int *id, int *status){*status = (_tsg_grids[*id]->isFourier()) ? 1 : 0;}
 
 // print stats
-void tsgpri_(int *id){ _tsg_grid_list[*id]->printStats(); }
+void tsgpri_(int *id){ _tsg_grids[*id]->printStats(); }
 
 // get/enableAcceleration
 void tsgacc_(int *id, int *acc){
-    _tsg_grid_list[*id]->enableAcceleration(AccelerationMeta::getIOIntAcceleration(*acc));
+    _tsg_grids[*id]->enableAcceleration(AccelerationMeta::getIOIntAcceleration(*acc));
 }
 void tsggac_(int *id, int *acc){
-    TypeAcceleration accel = _tsg_grid_list[*id]->getAccelerationType();
+    TypeAcceleration accel = _tsg_grids[*id]->getAccelerationType();
     *acc = AccelerationMeta::getIOAccelerationInt(accel);
 }
-void tsgsgi_(int *id, int *gpuID){ _tsg_grid_list[*id]->setGPUID(*gpuID); }
-void tsgggi_(int *id, int *gpuID){ *gpuID = _tsg_grid_list[*id]->getGPUID(); }
+void tsgsgi_(int *id, int *gpuID){ _tsg_grids[*id]->setGPUID(*gpuID); }
+void tsgggi_(int *id, int *gpuID){ *gpuID = _tsg_grids[*id]->getGPUID(); }
 void tsggng_(int *gpus){ *gpus = TasmanianSparseGrid::getNumGPUs(); }
 void tsgggm_(int *gpuID, int *mem){ *mem = TasmanianSparseGrid::getGPUMemory(*gpuID); }
 
