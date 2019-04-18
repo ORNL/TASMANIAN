@@ -124,9 +124,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     # thus on Windows, we specifically add _static to the name of the lib
     # also, Windows requires export/import directives (double-check those with cmake defaults)
     macro(Tasmanian_macro_dream_windows_defines Tasmanian_dream_target)
-        target_compile_definitions(${Tasmanian_dream_target} PRIVATE -D_TASMANIAN_WINDOWS_) # overwrittes gettime()
         target_compile_definitions(${Tasmanian_dream_target} PRIVATE -D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
-        target_compile_definitions(${Tasmanian_dream_target} PUBLIC  -D_USE_MATH_DEFINES) # needed to include M_PI constant
     endmacro()
 
     if (TARGET Tasmanian_libdream_shared)
