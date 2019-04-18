@@ -105,6 +105,10 @@ public:
     T* getStrip(int i){ return &(vec[i*stride]); }
     //! \brief Returns a const reference to the \b i-th strip.
     T const* getStrip(int i) const{ return &(vec[i*stride]); }
+    //! \brief Return iterator set at the \b i-th strip.
+    typename std::vector<T>::iterator getIStrip(int i){ return vec.begin() + Utils::size_mult(stride, i); }
+    //! \brief Return const_iterator set at the \b i-th strip.
+    typename std::vector<T>::const_iterator getIStrip(int i) const{ return vec.cbegin() + Utils::size_mult(stride, i); }
     //! \brief Returns the stride.
     size_t getStride() const{ return stride; }
     //! \brief Returns the number of strips.
