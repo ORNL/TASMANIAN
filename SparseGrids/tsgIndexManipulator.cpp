@@ -431,13 +431,16 @@ MultiIndexSet selectFlaggedChildren(const MultiIndexSet &mset, const std::vector
 
 MultiIndexSet generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints){
     size_t num_dimensions = (size_t) tensors.getNumDimensions();
-    Data2D<int> raw_points((int) num_dimensions, 0);
+    std::vector<MultiIndexSet> delta_sets((size_t) tensors.getNumIndexes());
 
-    std::vector<int> num_points_delta(num_dimensions);
-    std::vector<int> offsets(num_dimensions);
-    std::vector<int> index(num_dimensions);
-
+    #pragma omp parallel for
     for(int i=0; i<tensors.getNumIndexes(); i++){
+        Data2D<int> raw_points(num_dimensions, 0);
+
+        std::vector<int> num_points_delta(num_dimensions);
+        std::vector<int> offsets(num_dimensions);
+        std::vector<int> index(num_dimensions);
+
         const int *p = tensors.getIndex(i);
         size_t num_total = 1;
         for(size_t j=0; j<num_dimensions; j++){
@@ -460,9 +463,11 @@ MultiIndexSet generateNestedPoints(const MultiIndexSet &tensors, std::function<i
             }
             raw_points.appendStrip(index);
         }
+
+        delta_sets[i] = MultiIndexSet(raw_points);
     }
 
-    return MultiIndexSet(raw_points);
+    return unionSets(delta_sets);
 }
 
 MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper){
