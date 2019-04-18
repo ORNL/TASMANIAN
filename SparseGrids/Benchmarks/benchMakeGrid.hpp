@@ -11,17 +11,14 @@ bool benchmark_makegrid(std::deque<std::string> &args){
     for(auto &s : args) cout << " " << s;
     cout << endl;
 
-    TypeOneDRule grid_family = getGridFamily(args.front());
-    if (grid_family == rule_none) return false;
-    args.pop_front();
+    auto grid_family = getGridFamily(args);
+    if (grid_family == GridFamily::none) return false;
 
-    auto riter = args.begin();
-    int num_dimensions   = std::stoi(*riter++);
-    int num_depth        = std::stoi(*riter++);
-    TypeDepth dtype      = OneDimensionalMeta::getIOTypeString((*riter++).c_str());
-    TypeOneDRule rule    = OneDimensionalMeta::getIORuleString((*riter++).c_str());
-    int iteratons        = std::stoi(*riter++);
-    int num_jumps        = std::stoi(*riter++);
+    int num_dimensions, num_depth, iteratons, num_jumps;
+    TypeDepth dtype;
+    TypeOneDRule rule;
+
+    auto riter = readEntries(args.begin(), num_dimensions, num_depth, dtype, rule, iteratons, num_jumps);
 
     auto extra = extractWeightsLimits(grid_family, num_dimensions, dtype, riter, args.end());
 

@@ -7,24 +7,18 @@ bool benchmark_loadneeded(std::deque<std::string> &args){
     if (args.size() < 11) return false;
 
     // report the test parameters to reference later
-    cout << "load";
+    cout << "loadneeded";
     for(auto &s : args) cout << " " << s;
 
-    TypeOneDRule grid_family = getGridFamily(args.front());
-    if (grid_family == rule_none) return false;
-    args.pop_front();
+    auto grid_family = getGridFamily(args);
+    if (grid_family == GridFamily::none) return false;
 
-    auto riter = args.begin();
-    int num_dimensions   = std::stoi(*riter++);
-    int num_outputs      = std::stoi(*riter++);
-    int num_depth        = std::stoi(*riter++);
-    TypeDepth dtype      = OneDimensionalMeta::getIOTypeString((*riter++).c_str());
-    TypeOneDRule rule    = OneDimensionalMeta::getIORuleString((*riter++).c_str());
-    int order            = std::stoi(*riter++);
-    int iteratons        = std::stoi(*riter++);
-    int num_jumps        = std::stoi(*riter++);
-    TypeAcceleration acc = AccelerationMeta::getIOAccelerationString((*riter++).c_str());
-    int device           = std::stoi(*riter++);
+    int num_dimensions, num_outputs, num_depth, order, iteratons, num_jumps, device;
+    TypeDepth dtype;
+    TypeOneDRule rule;
+    TypeAcceleration acc;
+
+    auto riter = readEntries(args.begin(), num_dimensions, num_outputs, num_depth, dtype, rule, order, iteratons, num_jumps, acc, device);
 
     auto extra = extractWeightsLimits(grid_family, num_dimensions, dtype, riter, args.end());
 
@@ -40,6 +34,7 @@ bool benchmark_loadneeded(std::deque<std::string> &args){
                                       (size_t) grid.getNumOutputs(),
                                       grid.getNeededPoints());
         grid.loadNeededPoints(values); // dry-run
+        //grid.printStats(); // uncomment to make sure the right grid is constructed
 
         auto time_start = std::chrono::system_clock::now();
         for(size_t i=0; i < (size_t) iteratons; i++)
