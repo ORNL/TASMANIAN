@@ -197,7 +197,7 @@ std::vector<std::vector<CacheType>> generateLevelWeightsCache(ProperWeights cons
         double wc = (contour == type_level) ? 0.0 : weights.curved[j]; // curved weights
 
         size_t i = 0; // keep track of the index
-        CacheType w = (CacheType) (contour == type_hyperbolic) ? 1 : 0;
+        CacheType w = static_cast<CacheType>((contour == type_hyperbolic) ? 1 : 0);
         cache[j].push_back(w); // initial entry
         do{ // accumulate the cache
             i++;
@@ -207,11 +207,11 @@ std::vector<std::vector<CacheType>> generateLevelWeightsCache(ProperWeights cons
             int e = exactness_cache[i];
 
             if (contour == type_level){
-                w = wl * e;
+                w = static_cast<CacheType>(wl * e);
             }else if (contour == type_curved){
-                w = (CacheType)(wl * e) + wc * std::log1p((CacheType) e);
+                w = static_cast<CacheType>(wl * e) + static_cast<CacheType>(wc * std::log1p(static_cast<CacheType>(e)));
             }else{ // must be hyperbolic
-                w = pow((CacheType) (1 + e), wc);
+                w = static_cast<CacheType>(pow((CacheType) (1 + e), wc));
             }
 
             cache[j].push_back(w);
