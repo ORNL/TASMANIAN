@@ -1,3 +1,4 @@
+#include "benchMakeGrid.hpp"
 #include "benchEvaluate.hpp"
 
 void printHelp(BenchFuction test);
@@ -21,9 +22,10 @@ int main(int argc, const char** argv){
     }
 
     bool pass = true; // check if the rest of the inputs are OK
-    if (test == bench_evaluate){
+    if (test == bench_make)
+        pass = benchmark_makegrid(args);
+    if (test == bench_evaluate)
         pass = benchmark_evaluate(args);
-    }
 
     if (!pass) // if problem with inputs
         printHelp(test);
@@ -36,6 +38,15 @@ void printHelp(BenchFuction test){
         cout << "\nusage: ./benchmark <function> <parameters>\n\n";
         cout << "functions: evaluate\n";
         cout << "\n see: ./benchmark <function> help\n";
+    }else if (test == bench_make){
+        cout << "\nusage: ./benchmark makegrid <grid> <dims> <depth> <type> <rule> <iters> <jumps>\n\n";
+        cout << "grid  : global, sequence, localp, wavelet, fourier\n";
+        cout << "dims  : number of dimensions\n";
+        cout << "depth : grid density\n";
+        cout << "type  : level, iptotal, etc.; ignored if not used by the grid\n";
+        cout << "rule  : rleja, clenshaw-curtis, etc.; ignored for wavelet and fourier grids\n";
+        cout << "iters : number of times to repeat the function call\n";
+        cout << "jumps : how many times to increment <depth> by 1\n";
     }else if (test == bench_evaluate){
         cout << "\nusage: ./benchmark evaluate <grid> <dims> <outs> <depth> <type> <rule> <order> <batch> <iters> <jumps> <acc> <gpu>\n\n";
         cout << "grid  : global, sequence, localp, wavelet, fourier\n";

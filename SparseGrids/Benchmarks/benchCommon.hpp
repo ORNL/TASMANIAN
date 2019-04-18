@@ -7,12 +7,14 @@
 
 enum BenchFuction{
     bench_none,
+    bench_make,
     bench_evaluate
 };
 
 BenchFuction getTest(std::string const &s){
     std::map<std::string, BenchFuction> str_to_test = {
         {"evaluate", bench_evaluate},
+        {"makegrid", bench_make},
     };
 
     try{
