@@ -152,6 +152,7 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
 add_executable(Tasmanian_benchmarks  Benchmarks/benchCommon.hpp
                                      tasgridCLICommon.hpp
                                      Benchmarks/benchMakeGrid.hpp
+                                     Benchmarks/benchLoadNeeded.hpp
                                      Benchmarks/benchEvaluate.hpp
                                      Benchmarks/bench_main.cpp)
 

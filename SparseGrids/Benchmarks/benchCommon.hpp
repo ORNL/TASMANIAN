@@ -8,12 +8,14 @@
 enum BenchFuction{
     bench_none,
     bench_make,
+    bench_loadneeded,
     bench_evaluate
 };
 
 BenchFuction getTest(std::string const &s){
     std::map<std::string, BenchFuction> str_to_test = {
         {"evaluate", bench_evaluate},
+        {"loadneeded", bench_loadneeded},
         {"makegrid", bench_make},
     };
 
@@ -58,6 +60,33 @@ extractWeightsLimits(TypeOneDRule grid_family, int num_dimensions, TypeDepth dty
     for(int i=0; i<num_dimensions && arg != argend; i++)
         level_limits.push_back(std::stoi(*arg++));
     return std::make_pair(anisotropic_weights, level_limits);
+}
+
+inline std::function<TasmanianSparseGrid()>
+getLambdaMakeGrid(TypeOneDRule const grid_family, int const &num_dimensions, const int &num_outputs,
+                  int const &num_depth, TypeDepth const &dtype, TypeOneDRule const &rule, int const &order,
+                  std::pair<std::vector<int>, std::vector<int>> const &extra){
+    if (grid_family == rule_clenshawcurtis){
+        return [&]()->TasmanianSparseGrid{
+            return makeGlobalGrid(num_dimensions, num_outputs, num_depth, dtype, rule, extra.first, 0.0, 0.0, nullptr, extra.second);
+        };
+    }else if (grid_family == rule_rleja){
+        return [&]()->TasmanianSparseGrid{
+            return makeSequenceGrid(num_dimensions, num_outputs, num_depth, dtype, rule, extra.first, extra.second);
+        };
+    }else if (grid_family == rule_localp){
+        return [&]()->TasmanianSparseGrid{
+            return makeLocalPolynomialGrid(num_dimensions, num_outputs, num_depth, order, rule, extra.second);
+        };
+    }else if (grid_family == rule_fourier){
+        return [&]()->TasmanianSparseGrid{
+            return makeFourierGrid(num_dimensions, num_outputs, num_depth, dtype, extra.first, extra.second);
+        };
+    }else{ // default - wavelet
+        return [&]()->TasmanianSparseGrid{
+            return makeWaveletGrid(num_dimensions, num_outputs, num_depth, order, extra.second);
+        };
+    }
 }
 
 std::vector<double> getRandomVector(int dim1, int dim2, long int seed){

@@ -25,21 +25,8 @@ bool benchmark_makegrid(std::deque<std::string> &args){
 
     auto extra = extractWeightsLimits(grid_family, num_dimensions, dtype, riter, args.end());
 
-    auto make_grid = [&]()->TasmanianSparseGrid{
-        TasmanianSparseGrid grid;
-        if (grid_family == rule_clenshawcurtis){
-            grid.makeGlobalGrid(num_dimensions, 1, num_depth, dtype, rule, extra.first, 0.0, 0.0, nullptr, extra.second);
-        }else if (grid_family == rule_rleja){
-            grid.makeSequenceGrid(num_dimensions, 1, num_depth, dtype, rule, extra.first, extra.second);
-        }else if (grid_family == rule_localp){
-            grid.makeLocalPolynomialGrid(num_dimensions, 1, num_depth, 1, rule, extra.second);
-        }else if (grid_family == rule_fourier){
-            grid.makeFourierGrid(num_dimensions, 1, num_depth, dtype, extra.first, extra.second);
-        }else if (grid_family == rule_wavelet){
-            grid.makeWaveletGrid(num_dimensions, 1, num_depth, 1, extra.second);
-        }
-        return grid;
-    };
+    int num_outputs = 1, order = 1;
+    auto make_grid = getLambdaMakeGrid(grid_family, num_dimensions, num_outputs, num_depth, dtype, rule, order, extra);
 
     num_jumps = std::max(num_jumps, 1); // make at least one test
 
