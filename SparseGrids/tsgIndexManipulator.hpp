@@ -294,6 +294,19 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
 
 /*!
  * \internal
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Cache the indexes slot numbers of the children of the multi-indexes in \b mset.
+ *
+ * Each node defined by a multi-index in \b mset can have one or more children in each direction,
+ * where the parent-offspring relation is defined by the \b rule. For each index in \b mset, the
+ * returned Data2D structure will hold a strip with the location of each child in \b mset
+ * (or -1 if the kid is missing from \b mset).
+ * \endinternal
+ */
+Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule);
+
+/*!
+ * \internal
  * \brief Returns a vector that is the sum of the one dimensional levels of each multi-index in the set.
  * \ingroup TasmanianMultiIndexManipulations
  * \endinternal
