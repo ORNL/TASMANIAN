@@ -891,20 +891,20 @@ void GridLocalPolynomial::buildTree(){
     int num_points = work.getNumIndexes();
 
     std::vector<int> level = MultiIndexManipulations::computeLevels(work, rule.get());
-
     top_level = *std::max_element(level.begin(), level.end());
 
-    int max_1d_kids = rule->getMaxNumKids();
-    int max_kids = max_1d_kids*num_dimensions;
-    std::vector<int> monkey_count(top_level + 1);
-    std::vector<int> monkey_tail(top_level + 1);
+    Data2D<int> kids = MultiIndexManipulations::computeDAGDown(work, rule.get());
 
-    std::vector<int>  tree(max_kids * num_points, -1);
+    int max_kids = (int) kids.getStride();
+
+    Data2D<int> tree(max_kids, num_points, -1);
     std::vector<bool> free(num_points, true);
-    std::vector<int>  kid(num_dimensions);
 
-    int next_root = 0;
-    roots.resize(0);
+    std::vector<int> monkey_count((size_t) (top_level + 1));
+    std::vector<int> monkey_tail(monkey_count.size());
+
+    roots = std::vector<int>();
+    int next_root = 0; // zero is always a root and is included at index 0
 
     while(next_root != -1){
         roots.push_back(next_root);
@@ -912,32 +912,21 @@ void GridLocalPolynomial::buildTree(){
 
         monkey_tail[0] = next_root;
         monkey_count[0] = 0;
-        int current = 0;
+        size_t current = 0;
 
         while(monkey_count[0] < max_kids){
             if (monkey_count[current] < max_kids){
-                const int *p = work.getIndex(monkey_tail[current]);
-
-                int dir = monkey_count[current] / max_1d_kids;
-                int ikid = rule->getKid(p[dir], monkey_count[current] % max_1d_kids);
-
-                if (ikid == -1){
-                    monkey_count[current]++;
+                int kid = kids.getStrip(monkey_tail[current])[monkey_count[current]];
+                if ((kid == -1) || (!free[kid])){
+                    monkey_count[current]++; // no kid, keep counting
                 }else{
-                    std::copy(p, p + num_dimensions, kid.data());
-                    kid[dir] = ikid;
-                    int t = work.getSlot(kid.data());
-                    if ((t == -1) || (!free[t])){
-                        monkey_count[current]++;
-                    }else{
-                        tree[monkey_tail[current] * max_kids + monkey_count[current]] =  t;
-                        monkey_count[++current] = 0;
-                        monkey_tail[current] = t;
-                        free[t] = false;
-                    }
+                    tree.getStrip(monkey_tail[current])[monkey_count[current]] = kid;
+                    monkey_count[++current] = 0;
+                    monkey_tail[current] = kid;
+                    free[kid] = false;
                 }
             }else{
-                monkey_count[--current]++;
+                monkey_count[--current]++; // done with all kids here
             }
         }
 
@@ -951,22 +940,12 @@ void GridLocalPolynomial::buildTree(){
         }
     }
 
-    pntr.resize(num_points + 1);
-    pntr[0] = 0;
-    for(int i=0; i<num_points; i++){
-        pntr[i+1] = pntr[i];
-        for(int j=0; j<max_kids; j++) if (tree[i * max_kids + j] > -1) pntr[i+1]++;
-    }
+    pntr = std::vector<int>((size_t) (num_points + 1), 0);
+    for(int i=0; i<num_points; i++)
+        pntr[i+1] = pntr[i] + (int) std::count_if(tree.getIStrip(i), tree.getIStrip(i) + max_kids, [](int k)->bool{ return (k > -1); });
 
-    indx.resize((pntr[num_points] > 0) ? pntr[num_points] : 1);
-    indx[0] = 0;
-    int count = 0;
-    for(int i=0; i<num_points; i++){
-        for(int j=0; j<max_kids; j++){
-            int t = tree[i * max_kids + j];
-            if (t > -1) indx[count++] = t;
-        }
-    }
+    indx = std::vector<int>((size_t) ((pntr[num_points] > 0) ? pntr[num_points] : 1));
+    std::copy_if(tree.getVector().begin(), tree.getVector().end(), indx.begin(), [](int t)->bool{ return (t > -1); });
 }
 
 void GridLocalPolynomial::getBasisIntegrals(double *integrals) const{

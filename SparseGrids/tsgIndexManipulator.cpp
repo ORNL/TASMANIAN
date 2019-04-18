@@ -318,7 +318,7 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset){
 }
 
 Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    size_t num_dimensions = mset.getNumDimensions();
     int num_points = mset.getNumIndexes();
     if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
         int max_parents = rule->getMaxNumParents() * (int) num_dimensions;
@@ -373,6 +373,31 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
         }
         return parents;
     }
+}
+
+Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
+    size_t num_dimensions = mset.getNumDimensions();
+    int max_1d_kids = rule->getMaxNumKids();
+    int num_points = mset.getNumIndexes();
+    Data2D<int> kids(Utils::size_mult(max_1d_kids, num_dimensions), num_points);
+
+    #pragma omp parallel for
+    for(int i=0; i<num_points; i++){
+        std::vector<int> kid(num_dimensions);
+        std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+        auto family = kids.getIStrip(i);
+
+        for(size_t j=0; j<num_dimensions; j++){
+            int current = kid[j];
+            for(int k=0; k<max_1d_kids; k++){
+                kid[j] = rule->getKid(current, k);
+                *family++ = (kid[j] == -1) ? -1 : mset.getSlot(kid);
+            }
+            kid[j] = current;
+        }
+    }
+
+    return kids;
 }
 
 std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule){
@@ -431,13 +456,16 @@ MultiIndexSet selectFlaggedChildren(const MultiIndexSet &mset, const std::vector
 
 MultiIndexSet generateNestedPoints(const MultiIndexSet &tensors, std::function<int(int)> getNumPoints){
     size_t num_dimensions = (size_t) tensors.getNumDimensions();
-    Data2D<int> raw_points((int) num_dimensions, 0);
+    std::vector<MultiIndexSet> delta_sets((size_t) tensors.getNumIndexes());
 
-    std::vector<int> num_points_delta(num_dimensions);
-    std::vector<int> offsets(num_dimensions);
-    std::vector<int> index(num_dimensions);
-
+    #pragma omp parallel for
     for(int i=0; i<tensors.getNumIndexes(); i++){
+        Data2D<int> raw_points(num_dimensions, 0);
+
+        std::vector<int> num_points_delta(num_dimensions);
+        std::vector<int> offsets(num_dimensions);
+        std::vector<int> index(num_dimensions);
+
         const int *p = tensors.getIndex(i);
         size_t num_total = 1;
         for(size_t j=0; j<num_dimensions; j++){
@@ -460,9 +488,11 @@ MultiIndexSet generateNestedPoints(const MultiIndexSet &tensors, std::function<i
             }
             raw_points.appendStrip(index);
         }
+
+        delta_sets[i] = MultiIndexSet(raw_points);
     }
 
-    return MultiIndexSet(raw_points);
+    return unionSets(delta_sets);
 }
 
 MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDimensionalWrapper &wrapper){
