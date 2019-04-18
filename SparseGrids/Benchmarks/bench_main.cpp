@@ -39,7 +39,7 @@ void printHelp(BenchFuction test){
         cout << "functions: evaluate\n";
         cout << "\n see: ./benchmark <function> help\n";
     }else if (test == bench_make){
-        cout << "\nusage: ./benchmark makegrid <grid> <dims> <depth> <type> <rule> <iters> <jumps>\n\n";
+        cout << "\nusage: ./benchmark makegrid <grid> <dims> <depth> <type> <rule> <iters> <jumps> <aniso>\n\n";
         cout << "grid  : global, sequence, localp, wavelet, fourier\n";
         cout << "dims  : number of dimensions\n";
         cout << "depth : grid density\n";
@@ -47,8 +47,10 @@ void printHelp(BenchFuction test){
         cout << "rule  : rleja, clenshaw-curtis, etc.; ignored for wavelet and fourier grids\n";
         cout << "iters : number of times to repeat the function call\n";
         cout << "jumps : how many times to increment <depth> by 1\n";
+        cout << "aniso : (optional) list of anisotropic weights and level limits\n";
+        cout << "      : anisotropic weights come first (if used by the grid), then level limits\n";
     }else if (test == bench_evaluate){
-        cout << "\nusage: ./benchmark evaluate <grid> <dims> <outs> <depth> <type> <rule> <order> <batch> <iters> <jumps> <acc> <gpu>\n\n";
+        cout << "\nusage: ./benchmark evaluate <grid> <dims> <outs> <depth> <type> <rule> <order> <batch> <iters> <jumps> <acc> <gpu> <aniso>\n\n";
         cout << "grid  : global, sequence, localp, wavelet, fourier\n";
         cout << "dims  : number of dimensions\n";
         cout << "outs  : number of outputs\n";
@@ -61,6 +63,8 @@ void printHelp(BenchFuction test){
         cout << "jumps : how many times to double <outs>\n";
         cout << "acc   : acceleration type, e.g., gpu-cuda, cpu-blas, none, etc.\n";
         cout << "gpu   : cuda device ID; ignored for cpu acceleration\n";
+        cout << "aniso : (optional) list of anisotropic weights and level limits\n";
+        cout << "      : anisotropic weights come first (if used by the grid), then level limits\n";
     }
     cout << endl;
 }

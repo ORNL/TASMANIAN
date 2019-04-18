@@ -4,7 +4,7 @@
 #include "benchCommon.hpp"
 
 bool benchmark_evaluate(std::deque<std::string> &args){
-    if (args.size() != 12) return false;
+    if (args.size() < 12) return false;
 
     // report the test parameters to reference later
     cout << "evaluate";
@@ -27,18 +27,20 @@ bool benchmark_evaluate(std::deque<std::string> &args){
     TypeAcceleration acc = AccelerationMeta::getIOAccelerationString((*riter++).c_str());
     int device           = std::stoi(*riter++);
 
+    auto extra = extractWeightsLimits(grid_family, num_dimensions, dtype, riter, args.end());
+
     auto make_grid = [&]()->TasmanianSparseGrid{
         TasmanianSparseGrid grid;
         if (grid_family == rule_clenshawcurtis){
-            grid.makeGlobalGrid(num_dimensions, num_outputs, num_depth, dtype, rule);
+            grid.makeGlobalGrid(num_dimensions, num_outputs, num_depth, dtype, rule, extra.first, 0.0, 0.0, nullptr, extra.second);
         }else if (grid_family == rule_rleja){
-            grid.makeSequenceGrid(num_dimensions, num_outputs, num_depth, dtype, rule);
+            grid.makeSequenceGrid(num_dimensions, num_outputs, num_depth, dtype, rule, extra.first, extra.second);
         }else if (grid_family == rule_localp){
-            grid.makeLocalPolynomialGrid(num_dimensions, num_outputs, num_depth, order, rule);
+            grid.makeLocalPolynomialGrid(num_dimensions, num_outputs, num_depth, order, rule, extra.second);
         }else if (grid_family == rule_fourier){
-            grid.makeFourierGrid(num_dimensions, num_outputs, num_depth, dtype);
+            grid.makeFourierGrid(num_dimensions, num_outputs, num_depth, dtype, extra.first, extra.second);
         }else if (grid_family == rule_wavelet){
-            grid.makeWaveletGrid(num_dimensions, num_outputs, num_depth, order);
+            grid.makeWaveletGrid(num_dimensions, num_outputs, num_depth, order, extra.second);
         }
         return grid;
     };

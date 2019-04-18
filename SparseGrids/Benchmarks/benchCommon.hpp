@@ -44,6 +44,22 @@ TypeOneDRule getGridFamily(std::string const &s){
     return rule;
 }
 
+template<typename IteratorToList>
+std::pair<std::vector<int>, std::vector<int>>
+extractWeightsLimits(TypeOneDRule grid_family, int num_dimensions, TypeDepth dtype,
+                     IteratorToList &arg, IteratorToList const &argend){
+    std::vector<int> anisotropic_weights;
+    if (grid_family != rule_localp && grid_family != rule_wavelet){
+        int num_weights = (OneDimensionalMeta::getControurType(dtype) == type_curved) ? 2 * num_dimensions : num_dimensions;
+        for(int i=0; i<num_weights && arg != argend; i++)
+            anisotropic_weights.push_back(std::stoi(*arg++));
+    }
+    std::vector<int> level_limits;
+    for(int i=0; i<num_dimensions && arg != argend; i++)
+        level_limits.push_back(std::stoi(*arg++));
+    return std::make_pair(anisotropic_weights, level_limits);
+}
+
 std::vector<double> getRandomVector(int dim1, int dim2, long int seed){
     std::vector<double> x(Utils::size_mult(dim1, dim2));
     std::minstd_rand park_miller(seed);
