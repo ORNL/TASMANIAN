@@ -41,6 +41,7 @@
 #include <cmath>
 #include <numeric>
 #include <stdexcept>
+#include <functional>
 
 #include "TasmanianConfig.hpp" // contains build options passed down from CMake
 #include "tsgUtils.hpp" // contains array wrapper and size_mult for int-to-size_t

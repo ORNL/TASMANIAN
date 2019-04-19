@@ -105,6 +105,8 @@ set(Tasmanian_source_libsparsegrid
         tsgGridFourier.cpp
         tsgIndexManipulator.hpp
         tsgIndexManipulator.cpp
+        tsgHierarchyManipulator.hpp
+        tsgHierarchyManipulator.cpp
         tsgIOHelpers.hpp
         tsgIndexSets.hpp
         tsgIndexSets.cpp
