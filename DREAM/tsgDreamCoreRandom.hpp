@@ -77,7 +77,7 @@ inline void applyGaussianUpdate(std::vector<double> &x, double magnitude, std::f
     for(auto &v : x){
         tictoc = !tictoc;
         if (tictoc){
-            double r = magnitude * std::sqrt(-2.0 * std::log(get_random01())), t = 2.0 * tsg_pi * get_random01(); // radius and angle
+            double r = magnitude * std::sqrt(-2.0 * std::log(get_random01())), t = 2.0 * DreamMaths::pi * get_random01(); // radius and angle
             v += r * std::cos(t);
             g = r * std::sin(t);
         }else{

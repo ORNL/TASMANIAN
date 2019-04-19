@@ -561,7 +561,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
     bool pass = true;
     int wfirst = 10, wsecond = 35, wthird = 15;
     if ((oned == TasGrid::rule_gausschebyshev1) || (oned == TasGrid::rule_gausschebyshev1odd)){
-        // Gauss-Chebyshev-1 translated to [4, 7], area = tsg_pi, integral of f(x) = 1 / x is tsg_pi * sqrt(7.0) / 14.0
+        // Gauss-Chebyshev-1 translated to [4, 7], area = Maths::pi, integral of f(x) = 1 / x is Maths::pi * sqrt(7.0) / 14.0
         TasGrid::TasmanianSparseGrid grid;
         grid.makeGlobalGrid(1, 1, 6, type_level, oned);
         double transa = 4.0, transb = 7.0;
@@ -570,19 +570,19 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (std::abs(sum - tsg_pi) > TSG_NUM_TOL){
-            cout << sum << "     " << tsg_pi << endl;
-            cout << "ERROR: sum of weight in transformed gauss-chebyshev-1 rule is off by: " << std::abs(sum - tsg_pi) << endl;
+        if (std::abs(sum - Maths::pi) > TSG_NUM_TOL){
+            cout << sum << "     " << Maths::pi << endl;
+            cout << "ERROR: sum of weight in transformed gauss-chebyshev-1 rule is off by: " << std::abs(sum - Maths::pi) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] / p[i];
-        //cout << "error in integral of 1/x is = " << std::abs(sum - tsg_pi * sqrt(7.0) / 14.0) << endl;
-        if (std::abs(sum - tsg_pi * std::sqrt(7.0) / 14.0) > 1.E-11){
-            cout << "ERROR: disrepancy in transformed gauss-chebyshev-1 rule is: " << std::abs(sum - tsg_pi * std::sqrt(7.0) / 14.0) << endl;
+        //cout << "error in integral of 1/x is = " << std::abs(sum - Maths::pi * sqrt(7.0) / 14.0) << endl;
+        if (std::abs(sum - Maths::pi * std::sqrt(7.0) / 14.0) > 1.E-11){
+            cout << "ERROR: disrepancy in transformed gauss-chebyshev-1 rule is: " << std::abs(sum - Maths::pi * std::sqrt(7.0) / 14.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
     }else if ((oned == TasGrid::rule_gausschebyshev2) || (oned == TasGrid::rule_gausschebyshev2odd)){
-        // Gauss-Chebyshev-2 translated to [4, 7], area = 9.0 * tsg_pi / 2.0, integral of f(x) = (7 - x)^0.5 (x - 4)^0.5 is 9.0 / 2.0
+        // Gauss-Chebyshev-2 translated to [4, 7], area = 9.0 * Maths::pi / 2.0, integral of f(x) = (7 - x)^0.5 (x - 4)^0.5 is 9.0 / 2.0
         TasGrid::TasmanianSparseGrid grid;
         grid.makeGlobalGrid(1, 1, 10, type_level, oned);
         double transa = 4.0, transb = 7.0;
@@ -592,9 +592,9 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         std::vector<double> p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (std::abs(sum - 9.0 * tsg_pi / 8.0) > TSG_NUM_TOL){
-            cout << sum << "     " << 9.0 * tsg_pi / 8.0 << endl;
-            cout << "ERROR: sum of weight in transformed gauss-chebyshev-2 rule is off by: " << std::abs(sum - 9.0 * tsg_pi / 8.0) << endl;
+        if (std::abs(sum - 9.0 * Maths::pi / 8.0) > TSG_NUM_TOL){
+            cout << sum << "     " << 9.0 * Maths::pi / 8.0 << endl;
+            cout << "ERROR: sum of weight in transformed gauss-chebyshev-2 rule is off by: " << std::abs(sum - 9.0 * Maths::pi / 8.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * std::sqrt(7.0 - p[i]) * std::sqrt(p[i] - 4.0);
@@ -638,9 +638,9 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
             cout << "ERROR: sum of weight in transformed gauss-jacobi rule is off by: " << std::abs(sum - 12.15) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
-        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * std::sin(tsg_pi * p[i]);
-        if (std::abs(sum + 18.0 * (3.0 * tsg_pi * tsg_pi - 4.0) / pow(tsg_pi, 5.0)) > 1.E-11){
-            cout << "ERROR: disrepancy in transformed gauss-jacobi rule is: " << std::abs(sum + 18.0 * (3.0 * tsg_pi * tsg_pi - 4.0) / pow(tsg_pi, 5.0)) << endl;
+        sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * std::sin(Maths::pi * p[i]);
+        if (std::abs(sum + 18.0 * (3.0 * Maths::pi * Maths::pi - 4.0) / pow(Maths::pi, 5.0)) > 1.E-11){
+            cout << "ERROR: disrepancy in transformed gauss-jacobi rule is: " << std::abs(sum + 18.0 * (3.0 * Maths::pi * Maths::pi - 4.0) / pow(Maths::pi, 5.0)) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
     }else if ((oned == TasGrid::rule_gausslaguerre) || (oned == TasGrid::rule_gausslaguerreodd)){
@@ -680,13 +680,13 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (std::abs(sum - (8.0 * tsg_pi / 3.0) * std::sqrt(6.0)) > TSG_NUM_TOL){
+        if (std::abs(sum - (8.0 * Maths::pi / 3.0) * std::sqrt(6.0)) > TSG_NUM_TOL){
             cout << sum << "     " << 96.0 * 512.0 / 27.0 << endl;
-            cout << "ERROR: sum of weight in transformed gauss-hermite rule is off by: " << std::abs(sum - (8.0 * tsg_pi / 3.0) * std::sqrt(6.0)) << endl;
+            cout << "ERROR: sum of weight in transformed gauss-hermite rule is off by: " << std::abs(sum - (8.0 * Maths::pi / 3.0) * std::sqrt(6.0)) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }
         sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i] * (p[2*i]*p[2*i] * p[2*i+1]*p[2*i+1]*p[2*i+1]*p[2*i+1]);
-        if (std::abs(sum - (63.0 * 19912.0 * tsg_pi / 81.0) * std::sqrt(6.0)) > 4.E-8){
+        if (std::abs(sum - (63.0 * 19912.0 * Maths::pi / 81.0) * std::sqrt(6.0)) > 4.E-8){
             cout << "ERROR: disrepancy in transformed gauss-hermite rule is: " << std::abs(sum - 15360.0 * 3573248.0 / 243.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }

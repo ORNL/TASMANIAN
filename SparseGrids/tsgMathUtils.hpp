@@ -86,6 +86,16 @@ inline int int3log3(int i){
     return result;
 }
 
+/*!
+ * \internal
+ * \ingroup TasmanianMaths
+ * \brief Half-period of the \b std::sin() and \b std::cos() functions.
+ *
+ * Borrowed from "math.h", let's hope they don't change the value in a future standard.
+ * \endinternal
+ */
+constexpr double pi = 3.14159265358979323846;
+
 } // namespace Maths
 
 } // namespace TasGrid

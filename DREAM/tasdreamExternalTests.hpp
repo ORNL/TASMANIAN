@@ -41,7 +41,6 @@ using std::endl;
 using std::setw;
 
 using namespace TasDREAM;
-using TasGrid::tsg_pi;
 
 //! \internal
 //! \defgroup TasDREAMTesting: Testing for the Tasmanian DREAM module.
@@ -134,7 +133,7 @@ inline void printMode(const TasmanianDREAM &state, const char *message = nullptr
 inline void getSinSinModel(double magnitude, double frequency, double time_step, int num_steps, double *y){
     double t = time_step;
     for(int i=0; i<num_steps; i++){
-        y[i] = std::sin(tsg_pi * t) + magnitude * std::sin(frequency * tsg_pi * t);
+        y[i] = std::sin(DreamMaths::pi * t) + magnitude * std::sin(frequency * DreamMaths::pi * t);
         t += time_step;
     }
 }
