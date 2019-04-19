@@ -154,7 +154,7 @@ double argMaxLocalSecant(const VectorFunctional &F, double left, double right){
         t = d; d = dm; dm = t;
     }
     int itr = 0;
-    while((std::abs(d) > 3 * Maths::num_tol) && (itr < TSG_MAX_SECANT_ITERATIONS)){
+    while((std::abs(d) > 3 * Maths::num_tol) && (itr < 1000)){ // 1000 guards against stagnation
         double xp = x - d * (x - xm) / (d - dm);
         xm = x; dm = d; x = xp;
 

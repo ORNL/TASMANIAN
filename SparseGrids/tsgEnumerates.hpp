@@ -540,13 +540,6 @@ enum TypeAcceleration{
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 //! \internal
-//! \brief Defines the maximum number of secant method iterations to be used for finding Leja, Lebesgue, and Delta points.
-//! \ingroup SGEnumerates
-
-//! This is a simple safeguard criteria to prevent "hanging" in a loop.
-constexpr int TSG_MAX_SECANT_ITERATIONS = 1000;
-
-//! \internal
 //! \brief Tuning parameter for dense vs sparse evaluations of Local Polynomial Grids when using CPU BLAS.
 //! \ingroup SGEnumerates
 
