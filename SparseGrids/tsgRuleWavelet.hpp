@@ -31,7 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP
 #define __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP
 
-#include "tsgRuleLocalPolynomial.hpp"
+#include "tsgEnumerates.hpp"
 
 namespace TasGrid{
 // These macros are used in accessing coarse and fine level coefficients for the cascade algorithm.
