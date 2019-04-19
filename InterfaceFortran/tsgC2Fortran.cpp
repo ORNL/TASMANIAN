@@ -235,7 +235,7 @@ void tsgshr_(int *id, double *tol, int *type, int *opt_flags, int *output, const
     theout = (opt_flags[0] != 0) ? *output : -1;
     ll     = (opt_flags[1] != 0) ? llimits : 0;
 
-    _tsg_grids[*id]->setSurplusRefinement(*tol, OneDimensionalMeta::getIOTypeRefinementInt(*type), theout, ll);
+    _tsg_grids[*id]->setSurplusRefinement(*tol, IO::getTypeRefinementInt(*type), theout, ll);
 }
 void tsgcre_(int *id){ _tsg_grids[*id]->clearRefinement(); }
 void tsgmre_(int *id){ _tsg_grids[*id]->mergeRefinement(); }

@@ -360,7 +360,7 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide valid depth type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-            TypeRefinement ref  = OneDimensionalMeta::getIOTypeRefinementString(args.front().c_str());
+            TypeRefinement ref  = IO::getTypeRefinementString(args.front());
             if (ref == refine_none){
                 cerr << "ERROR: " << args.front() << " is not a valid refinement type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;

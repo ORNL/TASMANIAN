@@ -396,31 +396,6 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
     }
 }
 
-std::map<std::string, TypeRefinement> OneDimensionalMeta::getStringToRefinementMap(){
-    return {
-        {"classic",   refine_classic},
-        {"parents",   refine_parents_first},
-        {"direction", refine_direction_selective},
-        {"fds",       refine_fds}};
-}
-TypeRefinement OneDimensionalMeta::getIOTypeRefinementString(const char *name){
-    try{
-        return getStringToRefinementMap().at(name);
-    }catch(std::out_of_range &){
-        return refine_none;
-    }
-}
-TypeRefinement OneDimensionalMeta::getIOTypeRefinementInt(int ref){
-    switch (ref){
-        case  1: return refine_classic;
-        case  2: return refine_parents_first;
-        case  3: return refine_direction_selective;
-        case  4: return refine_fds;
-        default:
-            return refine_none;
-    }
-}
-
 // Gauss-Legendre
 void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x){
     w.resize(m);

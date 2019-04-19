@@ -239,6 +239,37 @@ inline TypeDepth getDepthTypeInt(int t){
 
 /*!
  * \ingroup TasmanianIO
+ * \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeRefinement enums.
+ */
+inline std::map<std::string, TypeRefinement> getStringToRefinementMap(){
+    return std::initializer_list<std::pair<std::string const, TypeRefinement>>{
+        {"classic",   refine_classic},
+        {"parents",   refine_parents_first},
+        {"direction", refine_direction_selective},
+        {"fds",       refine_fds}};
+}
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the string to the enumerate hierarchical refinement strategy, used in command line and Python.
+ */
+inline TypeRefinement getTypeRefinementString(std::string const &name){
+    try{
+        return getStringToRefinementMap().at(name);
+    }catch(std::out_of_range &){
+        return refine_none;
+    }
+}
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the integer to the enumerate hierarchical refinement strategy, used by Fortran.
+ */
+inline TypeRefinement getTypeRefinementInt(int refinement){
+    std::vector<TypeRefinement> imap = {refine_none, refine_classic, refine_parents_first, refine_direction_selective, refine_fds};
+    return ((size_t) refinement < imap.size()) ? imap[(size_t) refinement] : refine_none;
+}
+
+/*!
+ * \ingroup TasmanianIO
  * \brief Write the flag to file, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
  */
 template<bool useAscii, IOPad pad>

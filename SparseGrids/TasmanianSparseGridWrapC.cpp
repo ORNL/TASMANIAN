@@ -269,7 +269,7 @@ void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output, con
     ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, output, level_limits);
 }
 void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output, const int *level_limits){
-    TypeRefinement ref_type = OneDimensionalMeta::getIOTypeRefinementString(sRefinementType);
+    TypeRefinement ref_type = IO::getTypeRefinementString(sRefinementType);
     #ifndef NDEBUG
     if (ref_type == refine_none){ cerr << "WARNING: incorrect refinement type: " << sRefinementType << ", defaulting to type_classic." << endl; }
     #endif // NDEBUG
@@ -313,7 +313,7 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
 }
 void* tsgGetCandidateConstructionPointsSurplusVoidPntr(void *grid, double tolerance, const char *sRefType, int output,
                                                        const int *limit_levels, const double *scale_correction){ // internal use only
-    TypeRefinement ref_type = OneDimensionalMeta::getIOTypeRefinementString(sRefType);
+    TypeRefinement ref_type = IO::getTypeRefinementString(sRefType);
     #ifndef NDEBUG
     if (ref_type == refine_none){ cerr << "WARNING: incorrect depth type: " << sRefType << ", defaulting to refine_classic." << endl; }
     #endif // NDEBUG
