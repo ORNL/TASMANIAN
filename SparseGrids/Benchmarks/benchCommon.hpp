@@ -70,7 +70,7 @@ void readEntry(StringListIterator &iter, TypeDepth &val){
 //! \brief Convert a string to TypeOneDRule and advance the iterator.
 template<typename StringListIterator>
 void readEntry(StringListIterator &iter, TypeOneDRule &val){
-    val = OneDimensionalMeta::getIORuleString((*iter++).c_str());
+    val = IO::getRuleString(*iter++);
 }
 //! \brief Convert a string to TypeAcceleration and advance the iterator.
 template<typename StringListIterator>

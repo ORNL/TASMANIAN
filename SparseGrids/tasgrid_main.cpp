@@ -301,7 +301,7 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide valid -onedim!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-            TypeOneDRule rule = OneDimensionalMeta::getIORuleString(args.front().c_str());
+            TypeOneDRule rule = IO::getRuleString(args.front());
             if (rule == rule_none){
                 cerr << "ERROR: " << args.front() << " is not a valid rule!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;

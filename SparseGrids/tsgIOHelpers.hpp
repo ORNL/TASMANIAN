@@ -84,10 +84,81 @@ enum IOPad{
 };
 
 /*!
- * \internal
+ * \ingroup TasmanianIO
+ * \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeOneDRule enums.
+ */
+inline std::map<std::string, TypeOneDRule> getStringRuleMap(){
+    return std::initializer_list<std::pair<std::string const, TypeOneDRule>>{
+        {"none",                 rule_none},
+        {"clenshaw-curtis",      rule_clenshawcurtis},
+        {"clenshaw-curtis-zero", rule_clenshawcurtis0},
+        {"chebyshev",            rule_chebyshev},
+        {"chebyshev-odd",        rule_chebyshevodd},
+        {"gauss-legendre",       rule_gausslegendre},
+        {"gauss-legendre-odd",   rule_gausslegendreodd},
+        {"gauss-patterson",      rule_gausspatterson},
+        {"leja",                 rule_leja},
+        {"leja-odd",             rule_lejaodd},
+        {"rleja",                rule_rleja},
+        {"rleja-double2",        rule_rlejadouble2},
+        {"rleja-double4",        rule_rlejadouble4},
+        {"rleja-odd",            rule_rlejaodd},
+        {"rleja-shifted",        rule_rlejashifted},
+        {"rleja-shifted-even",   rule_rlejashiftedeven},
+        {"rleja-shifted-double", rule_rlejashifteddouble},
+        {"max-lebesgue",         rule_maxlebesgue},
+        {"max-lebesgue-odd",     rule_maxlebesgueodd},
+        {"min-lebesgue",         rule_minlebesgue},
+        {"min-lebesgue-odd",     rule_minlebesgueodd},
+        {"min-delta",            rule_mindelta},
+        {"min-delta-odd",        rule_mindeltaodd},
+        {"gauss-chebyshev1",     rule_gausschebyshev1},
+        {"gauss-chebyshev1-odd", rule_gausschebyshev1odd},
+        {"gauss-chebyshev2",     rule_gausschebyshev2},
+        {"gauss-chebyshev2-odd", rule_gausschebyshev2odd},
+        {"fejer2",               rule_fejer2},
+        {"gauss-gegenbauer",     rule_gaussgegenbauer},
+        {"gauss-gegenbauer-odd", rule_gaussgegenbauerodd},
+        {"gauss-jacobi",         rule_gaussjacobi},
+        {"gauss-jacobi-odd",     rule_gaussjacobiodd},
+        {"gauss-laguerre",       rule_gausslaguerre},
+        {"gauss-laguerre-odd",   rule_gausslaguerreodd},
+        {"gauss-hermite",        rule_gausshermite},
+        {"gauss-hermite-odd",    rule_gausshermiteodd},
+        {"custom-tabulated",     rule_customtabulated},
+        {"localp",               rule_localp},
+        {"localp-zero",          rule_localp0},
+        {"localp-boundary",      rule_localpb},
+        {"semi-localp",          rule_semilocalp},
+        {"wavelet",              rule_wavelet},
+        {"fourier",              rule_fourier}};
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the string rule name to the enumerate, used in ASCII I/O, command line and Python.
+ */
+inline TypeOneDRule getRuleString(std::string const &name){
+    try{
+        return getStringRuleMap().at(name);
+    }catch(std::out_of_range &){
+        return rule_none;
+    }
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the enumerate to a string, used in ASCII I/O, command line and Python.
+ */
+inline std::string getRuleString(TypeOneDRule rule){
+    auto smap = getStringRuleMap();
+    return std::find_if(smap.begin(), smap.end(),
+                        [&](std::pair<std::string, TypeOneDRule> r)->bool{ return (r.second == rule); })->first;
+}
+
+/*!
  * \ingroup TasmanianIO
  * \brief Write the flag to file, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
- * \endinternal
  */
 template<bool useAscii, IOPad pad>
 void writeFlag(bool flag, std::ostream &os){
@@ -102,10 +173,8 @@ void writeFlag(bool flag, std::ostream &os){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Read a flag, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
- * \endinternal
  */
 template<bool useAscii>
 bool readFlag(std::istream &os){
@@ -121,10 +190,8 @@ bool readFlag(std::istream &os){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Write the vector to the stream, the vector cannot be empty.
- * \endinternal
  */
 template<bool useAscii, IOPad pad, typename VecType>
 void writeVector(const std::vector<VecType> &x, std::ostream &os){
@@ -144,10 +211,8 @@ void writeVector(const std::vector<VecType> &x, std::ostream &os){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Read the vector from the stream.
- * \endinternal
  */
 template<bool useAscii, typename VecType>
 void readVector(std::istream &os, std::vector<VecType> &x){
@@ -159,10 +224,8 @@ void readVector(std::istream &os, std::vector<VecType> &x){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Write a bunch of numbers with the same type.
- * \endinternal
  */
 template<bool useAscii, IOPad pad, typename... Vals>
 void writeNumbers(std::ostream &os, Vals... vals){
@@ -171,10 +234,8 @@ void writeNumbers(std::ostream &os, Vals... vals){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Read a single number, used to read ints (and potentially cast to size_t) or read a double.
- * \endinternal
  */
 template<bool useAscii, typename Val>
 Val readNumber(std::istream &os){
@@ -188,15 +249,13 @@ Val readNumber(std::istream &os){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Write a rule.
- * \endinternal
  */
 template<bool useAscii>
 void writeRule(TypeOneDRule rule, std::ostream &os){
     if (useAscii){
-        os << OneDimensionalMeta::getIORuleString(rule) << std::endl;
+        os << getRuleString(rule) << std::endl;
     }else{
         int r = OneDimensionalMeta::getIORuleInt(rule);
         os.write((char*) &r, sizeof(int));
@@ -204,17 +263,15 @@ void writeRule(TypeOneDRule rule, std::ostream &os){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Read a rule.
- * \endinternal
  */
 template<bool useAscii>
 TypeOneDRule readRule(std::istream &is){
     if (useAscii){
         std::string T;
         is >> T;
-        return OneDimensionalMeta::getIORuleString(T.c_str());
+        return getRuleString(T);
     }else{
         return OneDimensionalMeta::getIORuleInt(readNumber<false, int>(is));
     }

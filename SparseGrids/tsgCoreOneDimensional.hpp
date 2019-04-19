@@ -126,12 +126,6 @@ namespace OneDimensionalMeta{
     //! \brief Return \b True if the \b rule has trigonometric basis.
     bool isFourier(TypeOneDRule rule);
 
-    //! \brief Map the string rule name to the enumerate, used in ASCII I/O, command line and Python.
-    TypeOneDRule getIORuleString(const char *name);
-    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeOneDRule enums.
-    std::map<std::string, TypeOneDRule> getStringToRuleMap();
-    //! \brief Map the enumerate to a string, used in ASCII I/O, command line and Python.
-    const char* getIORuleString(TypeOneDRule rule);
     //! \brief Map the enumerate to a human readable string, used in \b printStats().
     const char* getHumanString(TypeOneDRule rule);
     //! \brief Map the integer to enumerate, used in binary I/O and Fortran (compiler and version independent).

@@ -67,7 +67,7 @@ int tsgRead(void *grid, const char* filename){
 
 void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const char * sType, const char *sRule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
-    TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
+    TypeOneDRule rule = IO::getRuleString(sRule);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sType << ", defaulting to clenshaw-curtis." << endl; }
@@ -76,7 +76,7 @@ void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const
 }
 void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const char *sRule, const int *anisotropic_weights, const int *limit_levels){
     TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
-    TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
+    TypeOneDRule rule = IO::getRuleString(sRule);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sRule << ", defaulting to clenshaw-curtis." << endl; }
@@ -86,7 +86,7 @@ void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, con
     ((TasmanianSparseGrid*) grid)->makeSequenceGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights, limit_levels);
 }
 void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int depth, int order, const char *sRule, const int *limit_levels){
-    TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
+    TypeOneDRule rule = IO::getRuleString(sRule);
     #ifndef NDEBUG
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sRule << ", defaulting to localp." << endl; }
     #endif // NDEBUG
@@ -127,7 +127,20 @@ double tsgGetBeta(void *grid){ return ((TasmanianSparseGrid*) grid)->getBeta(); 
 int tsgGetOrder(void *grid){ return ((TasmanianSparseGrid*) grid)->getOrder(); }
 int tsgGetNumDimensions(void *grid){ return ((TasmanianSparseGrid*) grid)->getNumDimensions(); }
 int tsgGetNumOutputs(void *grid){ return ((TasmanianSparseGrid*) grid)->getNumOutputs(); }
-const char* tsgGetRule(void *grid){ return  OneDimensionalMeta::getIORuleString( ((TasmanianSparseGrid*) grid)->getRule() ); }
+char* tsgGetRule(void *grid){
+    std::string cppstring = IO::getRuleString( ((TasmanianSparseGrid*) grid)->getRule() );
+    char *cstring = new char[cppstring.size() + 1];
+    for(size_t i=0; i<cppstring.size(); i++) cstring[i] = cppstring[i];
+    cstring[cppstring.size()] = '\0';
+    return cstring;
+}
+void tsgCopyRuleChars(void *grid, int buffer_size, char *name, int *num_actual){
+    std::string cppstring = IO::getRuleString( ((TasmanianSparseGrid*) grid)->getRule() );
+    size_t max_num = std::min((size_t) buffer_size - 1, cppstring.size());
+    std::copy_n(cppstring.begin(), max_num, name);
+    name[max_num] = '\0';
+    *num_actual = (int) max_num;
+}
 const char* tsgGetCustomRuleDescription(void *grid){ return ((TasmanianSparseGrid*) grid)->getCustomRuleDescription(); }
 
 int tsgGetNumLoaded(void *grid){ return ((TasmanianSparseGrid*) grid)->getNumLoaded(); }

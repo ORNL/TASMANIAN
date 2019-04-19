@@ -146,7 +146,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetAlpha.restype = c_double
         self.pLibTSG.tsgGetBeta.restype = c_double
         self.pLibTSG.tsgGetOrder.restype = c_int
-        self.pLibTSG.tsgGetRule.restype = c_char_p
         self.pLibTSG.tsgGetCustomRuleDescription.restype = c_char_p
         self.pLibTSG.tsgGetLoadedPoints.restype = POINTER(c_double)
         self.pLibTSG.tsgGetNeededPoints.restype = POINTER(c_double)
@@ -184,7 +183,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetOrder.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNumDimensions.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNumOutputs.argtypes = [c_void_p]
-        self.pLibTSG.tsgGetRule.argtypes = [c_void_p]
+        self.pLibTSG.tsgCopyRuleChars.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int)] # char is not really const
         self.pLibTSG.tsgGetCustomRuleDescription.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNumLoaded.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNumNeeded.argtypes = [c_void_p]
@@ -268,6 +267,19 @@ class TasmanianSparseGrid:
 
         '''
         self.pLibTSG.tsgDestructTasmanianSparseGrid(self.pGrid)
+
+    def stringBufferToString(self, pName, iNumChars):
+        if (sys.version_info.major == 3):
+            S = [s for s in pName]
+            sName = ""
+            for iI in range(iNumChars):
+                sName += str(S[iI], encoding='utf8')
+        else:
+            S = [s for s in pName]
+            sName = ""
+            for iI in range(iNumChars):
+                sName += S[iI]
+        return sName
 
     def getVersion(self):
         '''
@@ -869,10 +881,10 @@ class TasmanianSparseGrid:
         if no grid has been made, it returns "unknown"
 
         '''
-        sRule = self.pLibTSG.tsgGetRule(self.pGrid)
-        if (sys.version_info.major == 3):
-            sRule = str(sRule, encoding='utf8')
-        return sRule
+        pName = create_string_buffer(128);
+        iNumChars = np.array([0], np.int32)
+        self.pLibTSG.tsgCopyRuleChars(self.pGrid, 128, pName, np.ctypeslib.as_ctypes(iNumChars))
+        return self.stringBufferToString(pName, iNumChars[0])
 
     def getCustomRuleDescription(self):
         '''
@@ -2031,18 +2043,7 @@ class TasmanianSparseGrid:
         pName = create_string_buffer(256)
         iNumChars = np.array([0], np.int32)
         self.pLibTSG.tsgGetGPUName(iGPUID, 256, pName, np.ctypeslib.as_ctypes(iNumChars))
-        iNumChars = iNumChars[0]
-        if (sys.version_info.major == 3):
-            S = [s for s in pName]
-            sName = ""
-            for iI in range(iNumChars):
-                sName += str(S[iI], encoding='utf8')
-        else:
-            S = [s for s in pName]
-            sName = ""
-            for iI in range(iNumChars):
-                sName += S[iI]
-        return sName
+        return self.stringBufferToString(pName, iNumChars[0])
 
     def printStats(self):
         '''

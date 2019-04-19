@@ -182,7 +182,7 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     if (outputs < 0) throw std::invalid_argument("ERROR: makeSequenceGrid() requires non-negative outputs");
     if (depth < 0) throw std::invalid_argument("ERROR: makeSequenceGrid() requires non-negative depth");
     if (!OneDimensionalMeta::isSequence(rule)){
-        std::string message = "ERROR: makeSequenceGrid() is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a sequence rule";
+        std::string message = "ERROR: makeSequenceGrid() is called with rule: " + IO::getRuleString(rule) + ", which is not a sequence rule";
         throw std::invalid_argument(message);
     }
     size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
@@ -211,7 +211,7 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
         throw std::invalid_argument(message);
     }
     if (!OneDimensionalMeta::isLocalPolynomial(rule)){
-        std::string message = "ERROR: makeLocalPolynomialGrid() is called with rule: " + std::string(OneDimensionalMeta::getIORuleString(rule)) + ", which is not a local polynomial rule";
+        std::string message = "ERROR: makeLocalPolynomialGrid() is called with rule: " + IO::getRuleString(rule) + ", which is not a local polynomial rule";
         throw std::invalid_argument(message);
     }
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires level_limits with either 0 or dimensions entries");
