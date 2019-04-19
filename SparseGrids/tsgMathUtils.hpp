@@ -90,7 +90,15 @@ inline int int3log3(int i){
  * \brief Computes std::pow(2, p), but uses only integer operations.
  */
 inline int pow2(int p){ return (1 << p); }
-
+/*!
+ * \ingroup TasmanianMaths
+ * \brief Computes std::pow(3, p), but uses only integer operations.
+ */
+inline int pow3(int p){
+    int result = 1;
+    for(int i=0; i<p; i++) result *= 3;
+    return result;
+}
 
 /*!
  * \internal
