@@ -505,52 +505,6 @@ enum TypeAcceleration{
     accel_gpu_magma
 };
 
-
-////////////////////////////////////////////////////////////
-//                                                        //
-//     ---  Moved from tsgHardcodedConstants.hpp  ---     //
-//                                                        //
-////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////////////////////////
-//
-//  On the purpose of this section:
-//
-//
-//  Hardcoding constants is a bad coding practice and should be avoided.
-//  On the other hand, numerical algorithms depend on many small tweaking parameters.
-//  For example, this code computes the nodes and abscissas of Gauss-Legendre rule on the fly,
-//  this is done with an iterative eigenvalue decomposition method that needs a stopping criteria,
-//  we can add another user specified parameter to the corresponding "makeGlobalGrid()" rule,
-//  however, this is an additional tweaking variable that the user has to understand and control.
-//  The goal of our code is to provide a most seamless experience to the user,
-//  one should think about the desired properties of a quadrature rule or interpolant and not
-//  about convergence of an iterative scheme (especially one hidden from top view)
-//  Therefore, the tolerance for such convergence criteria needs to be set inside the code to
-//  a "reasonable" value, which is a value that would work well for the overwhelming majority
-//  of use cases.
-//
-//  On the other hand, every application is different and the usage of the code will change
-//  over time. It is unreasonable to believe that one single value would work for absolutely
-//  everyone. Instead of "hiding" hardcoded constant throughout the code, all such constants
-//  will be exposed here so the user can make adjustments in compile time.
-//
-//  Long story short: do not adjust those variables unless you have a good reason.
-//
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-//! \internal
-//! \brief Tuning parameter for dense vs sparse evaluations of Local Polynomial Grids when using CPU BLAS.
-//! \ingroup SGEnumerates
-
-//! Defines the threshold for switching between sparse and dense version of batch evaluate for Local Polynomial Grids.
-//! Generally, because of caching and reuse of data, dense operations have 10x more flops per second than sparse ops;
-//! unless the sparse version of the algorithm can cut total flops by 10x (i.e., fill is less than 10%), then it
-//! is faster to convert the sparse matrix into a dense one and use dense linear algebra.
-//! The difference is noticeable if the number of outputs is sufficiently large;
-//! if the outputs are few there is very little caching anyway and hence use the sparse version to save memory.
-constexpr size_t TSG_LOCALP_BLAS_NUM_OUTPUTS = 2048;
-
 }
 
 #endif
