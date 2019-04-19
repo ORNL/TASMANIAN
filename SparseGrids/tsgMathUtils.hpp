@@ -28,27 +28,24 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_SPARSE_GRID_UTILS_HPP
-#define __TASMANIAN_SPARSE_GRID_UTILS_HPP
+#ifndef __TASMANIAN_SPARSE_GRID_MATHUTILS_HPP
+#define __TASMANIAN_SPARSE_GRID_MATHUTILS_HPP
 
 /*!
  * \internal
- * \file tsgUtils.hpp
- * \brief Miscellaneous utility templates used thoughout the code.
+ * \file tsgMathUtils.hpp
+ * \brief Math functions and constants.
  * \author Miroslav Stoyanov
- * \ingroup TasmanianUtils
+ * \ingroup TasmanianMaths
  *
- * Templates uses throughout the internal algorithms of Tasmanian.
- * The header will be kept private.
+ * Simple functions and constnats used throughout the internal algorithms of Tasmanian.
  * \endinternal
  */
-
-#include "tsgMathUtils.hpp"
 
 /*!
  * \internal
  * \ingroup TasmanianSG
- * \addtogroup TasmanianUtils Miscellaneous utility templates
+ * \addtogroup TasmanianMaths Math functions and constants
  *
  * \endinternal
  */
@@ -57,50 +54,40 @@ namespace TasGrid{
 
 /*!
  * \internal
- * \ingroup TasmanianUtils
- * \brief Miscellaneous utility templates.
+ * \ingroup TasmanianMaths
+ * \brief Math functions and constants.
  */
-namespace Utils{
-
+namespace Maths{
 /*!
- * \internal
- * \brief Converts two integer-like variables to \b size_t and returns the product.
- * \ingroup TasmanianUtils
- * \endinternal
+ * \ingroup TasmanianMaths
+ * \brief Computes std::floor(std::log2(i)), but uses only integer operations.
  */
-template<typename IntA, typename IntB>
-inline size_t size_mult(IntA a, IntB b){ return static_cast<size_t>(a) * static_cast<size_t>(b); }
-
+inline int intlog2(int i){
+    int result = 0;
+    while (i >>= 1){ result++; }
+    return result;
+}
 /*!
- * \internal
- * \brief Wraps around a C-style of an array and mimics 2D data-structure.
- * \ingroup TasmanianUtils
- *
- * The Tasmanian external API accepts C-style arrays, which simplifies
- * interfacing with other languages such as C, Python and Fortran.
- * The arrays represent 2D data in strips with specific stride,
- * the Wrapper2D() takes such an array and logically divides it
- * so strips can be accessed without clumsy double-index notation.
- * \endinternal
+ * \ingroup TasmanianMaths
+ * \brief Computes std::pow(2, std::floor(std::log2(i))), but uses only integer operations.
  */
-template<typename T>
-class Wrapper2D{
-public:
-    //! \brief Wrap around \b raw_data with the given \b stride_size.
-    Wrapper2D(int stride_size, T *raw_data) : stride(static_cast<size_t>(stride_size)), data(raw_data){}
-    //! \brief Default destructor, \b raw_data has to be deleted elsewhere.
-    ~Wrapper2D(){}
-
-    //! \brief Return a pointer to the i-th strip.
-    T* getStrip(int i){ return &(data[size_mult(i, stride)]); }
-
-private:
-    size_t stride;
-    T *data;
-};
-
+inline int int2log2(int i){ // this is effectively: 2^(floor(log_2(i))), when i == 0, this returns 1
+    int result = 1;
+    while (i >>= 1){ result <<= 1; }
+    return result;
+}
+/*!
+ * \ingroup TasmanianMaths
+ * \brief Computes std::pow(3, std::floor(std::log(i) / std::log(2))), but uses only integer operations.
+ */
+inline int int3log3(int i){
+    int result = 1;
+    while(i >= 1){ i /= 3; result *= 3; }
+    return result;
 }
 
-}
+} // namespace Maths
+
+} // namespace TasGrid
 
 #endif

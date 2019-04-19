@@ -65,22 +65,6 @@ public:
     virtual double getArea(int point, int n, const double w[], const double x[]) const = 0;
     // integrate the function associated with the point, constant to cubic are known analytically, higher order need a 1-D quadrature rule
 
-    static int intlog2(int i){ // this is effectively: floor(log_2(i))
-        int result = 0;
-        while (i >>= 1){ result++; }
-        return result;
-    }
-    static int int2log2(int i){ // this is effectively: 2^(floor(log_2(i))), when i == 0, this returns 1
-        int result = 1;
-        while (i >>= 1){ result <<= 1; }
-        return result;
-    }
-    static int int3log3(int i){ // this is effectively: 3^(ceil(log_3(i+1)))
-        int result = 1;
-        while(i >= 1){ i /= 3; result *= 3; }
-        return result;
-    }
-
 protected:
     int max_order;
 };
@@ -115,20 +99,20 @@ public:
 
     double getNode(int point) const{
         if (isZeroOrder){
-            return -2.0 + (1.0 / ((double) int3log3(point))) * (3*point + 2 - point % 2);
+            return -2.0 + (1.0 / ((double) Maths::int3log3(point))) * (3*point + 2 - point % 2);
         }else{
             if ((rule == rule_localp) || (rule == rule_semilocalp)){
                 if (point == 0) return  0.0;
                 if (point == 1) return -1.0;
                 if (point == 2) return  1.0;
-                return ((double)(2*point - 1)) / ((double) int2log2(point - 1)) - 3.0;
+                return ((double)(2*point - 1)) / ((double) Maths::int2log2(point - 1)) - 3.0;
             }else if (rule == rule_localp0){
-                return ((double)(2*point +3) ) / ((double) int2log2(point + 1) ) - 3.0;
+                return ((double)(2*point +3) ) / ((double) Maths::int2log2(point + 1) ) - 3.0;
             }else{ // rule == rule_localpb
                 if (point == 0) return -1.0;
                 if (point == 1) return  1.0;
                 if (point == 2) return  0.0;
-                return ((double)(2*point - 1)) / ((double) int2log2(point - 1)) - 3.0;
+                return ((double)(2*point - 1)) / ((double) Maths::int2log2(point - 1)) - 3.0;
             }
         }
     }
@@ -140,24 +124,24 @@ public:
             return level;
         }else{
             if ((rule == rule_localp) || (rule == rule_semilocalp)){
-                return (point == 0) ? 0 : (point == 1) ? 1 : (intlog2(point - 1) + 1);
+                return (point == 0) ? 0 : (point == 1) ? 1 : (Maths::intlog2(point - 1) + 1);
             }else if (rule == rule_localp0){
-                return intlog2(point + 1);
+                return Maths::intlog2(point + 1);
             }else{ // rule == rule_localpb
-                return ((point == 0) || (point == 1)) ? 0 : (intlog2(point - 1) + 1);
+                return ((point == 0) || (point == 1)) ? 0 : (Maths::intlog2(point - 1) + 1);
             }
         }
     }
     double getSupport(int point) const{
         if (isZeroOrder){
-            return 1.0 / (double) int3log3(point);
+            return 1.0 / (double) Maths::int3log3(point);
         }else{
             if ((rule == rule_localp) || (rule == rule_semilocalp)){
-                return (point == 0) ? 1.0 : 1.0 / ((double) int2log2(point - 1));
+                return (point == 0) ? 1.0 : 1.0 / ((double) Maths::int2log2(point - 1));
             }else if (rule == rule_localp0){
-                return 1.0 / ((double) int2log2(point + 1));
+                return 1.0 / ((double) Maths::int2log2(point + 1));
             }else{ // rule == rule_localpb
-                return ((point == 0) || (point == 1)) ? 2.0 : 1.0 / ((double) int2log2(point - 1));
+                return ((point == 0) || (point == 1)) ? 2.0 : 1.0 / ((double) Maths::int2log2(point - 1));
             }
         }
     }
@@ -184,7 +168,7 @@ public:
 
     int getStepParent(int point) const{
         if (isZeroOrder){
-            int i3l3 = int3log3(point);
+            int i3l3 = Maths::int3log3(point);
             if (point == i3l3/3) return -1;
             if (point == i3l3-1) return -1;
             if ((point % 3 == 2) && (point % 2 == 0)) return point / 3 + 1;
@@ -205,7 +189,7 @@ public:
         if (isZeroOrder){
             if (point == 0) return (kid_number == 0) ? 1 : (kid_number==1) ? 2 : -1;
             if (kid_number == 3){
-                int i3l3 = int3log3(point);
+                int i3l3 = Maths::int3log3(point);
                 if (point == i3l3/3) return -1;
                 if (point == i3l3-1) return -1;
                 return (point % 2 == 0) ? 3*point + 3 : 3*point - 1;
@@ -307,7 +291,7 @@ protected:
     double scaleX(int point, double x) const{
         if (rule == rule_localp0){
             if (point == 0) return x;
-            return ((double) int2log2(point + 1) * (x + 3.0) - 3.0 - (double) (2*point));
+            return ((double) Maths::int2log2(point + 1) * (x + 3.0) - 3.0 - (double) (2*point));
         }
         if ((rule == rule_localp) || (rule == rule_semilocalp) || (rule == rule_localpb)){
             if (rule == rule_localp){
@@ -319,7 +303,7 @@ protected:
                 if (point == 1) return (x - 1.0) / 2.0;
                 if (point == 2) return x;
             }
-            return ((double) int2log2(point - 1) * (x + 3.0) + 1.0 - (double) (2*point));
+            return ((double) Maths::int2log2(point - 1) * (x + 3.0) + 1.0 - (double) (2*point));
         }
     }
 
