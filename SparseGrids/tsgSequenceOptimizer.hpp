@@ -90,7 +90,7 @@ public:
             return sum;
         }else if (rule == rule_minlebesgue){
             // points almost overlap, will cause an explosion in the Lebesgue constant
-            for(auto n : nodes) if (std::abs(x - n) < 10*TSG_NUM_TOL) return -1.E+100;
+            for(auto n : nodes) if (std::abs(x - n) < 10 * Maths::num_tol) return -1.E+100;
             tempFunctional<rule_maxlebesgue> M(nodes, x);
             OptimizerResult R = Optimizer::argMaxGlobal(M);
             return -R.fmax;
@@ -104,7 +104,7 @@ public:
             return sum + std::abs(*il);
         }else{ // rule == rule_mindelta
             // points almost overlap, will cause an explosion in the Lebesgue constant
-            for(auto n : nodes) if (std::abs(x - n) < 10*TSG_NUM_TOL) return -1.E+100;
+            for(auto n : nodes) if (std::abs(x - n) < 10 * Maths::num_tol) return -1.E+100;
             tempFunctional<rule_mindeltaodd> M(nodes, x);
             OptimizerResult R = Optimizer::argMaxGlobal(M);
             return -R.fmax;

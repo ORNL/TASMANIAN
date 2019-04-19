@@ -89,7 +89,7 @@ OptimizerResult argMaxLocalPattern(const VectorFunctional &F, double left, doubl
     double fr = F.getValue(xr);
     double d = xr - xm;
 
-    double tol = (F.hasDerivative()) ? TSG_NUM_TOL * 1.E-3 : TSG_NUM_TOL;
+    double tol = (F.hasDerivative()) ? Maths::num_tol * 1.E-3 : Maths::num_tol;
 
     while(d > tol){
         if ((fm >= fl) && (fm >= fr)){ // shrink the pattern
@@ -154,7 +154,7 @@ double argMaxLocalSecant(const VectorFunctional &F, double left, double right){
         t = d; d = dm; dm = t;
     }
     int itr = 0;
-    while((std::abs(d) > 3*TSG_NUM_TOL) && (itr < TSG_MAX_SECANT_ITERATIONS)){
+    while((std::abs(d) > 3 * Maths::num_tol) && (itr < TSG_MAX_SECANT_ITERATIONS)){
         double xp = x - d * (x - xm) / (d - dm);
         xm = x; dm = d; x = xp;
 

@@ -570,7 +570,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (std::abs(sum - Maths::pi) > TSG_NUM_TOL){
+        if (std::abs(sum - Maths::pi) > Maths::num_tol){
             cout << sum << "     " << Maths::pi << endl;
             cout << "ERROR: sum of weight in transformed gauss-chebyshev-1 rule is off by: " << std::abs(sum - Maths::pi) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -592,7 +592,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         std::vector<double> p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (std::abs(sum - 9.0 * Maths::pi / 8.0) > TSG_NUM_TOL){
+        if (std::abs(sum - 9.0 * Maths::pi / 8.0) > Maths::num_tol){
             cout << sum << "     " << 9.0 * Maths::pi / 8.0 << endl;
             cout << "ERROR: sum of weight in transformed gauss-chebyshev-2 rule is off by: " << std::abs(sum - 9.0 * Maths::pi / 8.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -613,7 +613,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (std::abs(sum - 8.1) > TSG_NUM_TOL){
+        if (std::abs(sum - 8.1) > Maths::num_tol){
             cout << sum << "     " << 8.1 << endl;
             cout << "ERROR: sum of weight in transformed gauss-genebauer rule is off by: " << std::abs(sum - 8.1) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -633,7 +633,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (std::abs(sum - 12.15) > TSG_NUM_TOL){
+        if (std::abs(sum - 12.15) > Maths::num_tol){
             cout << sum << "     " << 12.15 << endl;
             cout << "ERROR: sum of weight in transformed gauss-jacobi rule is off by: " << std::abs(sum - 12.15) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -653,7 +653,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (std::abs(sum - 96.0 * 512.0 / 27.0) > TSG_NUM_TOL){
+        if (std::abs(sum - 96.0 * 512.0 / 27.0) > Maths::num_tol){
             cout << sum << "     " << 96.0 * 512.0 / 27.0 << endl;
             cout << "ERROR: sum of weight in transformed gauss-laguerre rule is off by: " << std::abs(sum - 96.0 * 512.0 / 27.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -680,7 +680,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        if (std::abs(sum - (8.0 * Maths::pi / 3.0) * std::sqrt(6.0)) > TSG_NUM_TOL){
+        if (std::abs(sum - (8.0 * Maths::pi / 3.0) * std::sqrt(6.0)) > Maths::num_tol){
             cout << sum << "     " << 96.0 * 512.0 / 27.0 << endl;
             cout << "ERROR: sum of weight in transformed gauss-hermite rule is off by: " << std::abs(sum - (8.0 * Maths::pi / 3.0) * std::sqrt(6.0)) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << TasGrid::OneDimensionalMeta::getIORuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -953,7 +953,7 @@ bool ExternalTester::testAllPWLocal() const{
             }
         }
         for(int i=0; i<10; i++){
-            if (std::abs(y[i]) > TSG_NUM_TOL){
+            if (std::abs(y[i]) > Maths::num_tol){
                 cout << "Error in evaluateSparseHierarchicalFunctions() (localp)" << endl;
                 pass = false;
             }
@@ -1023,7 +1023,7 @@ bool ExternalTester::testAllWavelet() const{
             }
         }
         for(int i=0; i<10; i++){
-            if (std::abs(y[i]) > TSG_NUM_TOL){
+            if (std::abs(y[i]) > Maths::num_tol){
                 cout << "Error in evaluateSparseHierarchicalFunctions() (wavelet)" << endl;
                 cout << y[i] << endl;
                 pass = false;
@@ -1040,7 +1040,7 @@ bool ExternalTester::testAllWavelet() const{
             }
         }
         for(int i=0; i<10; i++){
-            if (std::abs(y[i]) > TSG_NUM_TOL){
+            if (std::abs(y[i]) > Maths::num_tol){
                 cout << "Error in getHierarchicalCoefficients() (wavelet)" << endl;
                 cout << y[i] << endl;
                 pass = false;
@@ -1080,7 +1080,7 @@ bool ExternalTester::testAllFourier() const{
             }
         }
         for(int i=0; i<num_eval; i++){
-            if (std::abs(y[i]) > TSG_NUM_TOL){
+            if (std::abs(y[i]) > Maths::num_tol){
                 cout << "Error in getHierarchicalCoefficients() (fourier)" << endl;
                 cout << "y["<<i<<"] = "<<y[i] << endl;
                 pass = false;
@@ -1454,7 +1454,7 @@ bool ExternalTester::testAllDomain() const{
             }
             auto loaded_points = grid.getLoadedPoints();
             for(int j=0; j<num_needed * f->getNumInputs(); j++){
-                if (std::abs(needed_points[j] - loaded_points[j]) > TSG_NUM_TOL){
+                if (std::abs(needed_points[j] - loaded_points[j]) > Maths::num_tol){
                     cout << "Mismatch between needed and loaded points" << endl;
                     pass2 = false;
                 }
@@ -1560,7 +1560,7 @@ bool ExternalTester::testAllDomain() const{
             }
             auto loaded_points = grid.getLoadedPoints();
             for(int j=0; j<num_needed * f->getNumInputs(); j++){
-                if (std::abs(needed_points[j] - loaded_points[j]) > TSG_NUM_TOL){
+                if (std::abs(needed_points[j] - loaded_points[j]) > Maths::num_tol){
                     cout << "Mismatch between needed and loaded points" << endl;
                     pass2 = false;
                 }
@@ -1878,7 +1878,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             //cout << cpuy[i] << "  " << truey[i] << "  " << std::abs(cpuy[i] - truey[i]) << endl;
             if (err < std::abs(cpuy[i] - truey[i])) err = std::abs(cpuy[i] - truey[i]);
         }
-        if ((err > TSG_NUM_TOL) || (cpuy.size() != (size_t) numx * grid.getNumPoints())){
+        if ((err > Maths::num_tol) || (cpuy.size() != (size_t) numx * grid.getNumPoints())){
             cout << "ERROR: failed Sequence grid GPU basis evaluations with error: " << err << endl;
             grid.printStats();
             pass = false;
@@ -1920,7 +1920,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             //cout << cpuy[i] << "  " << truey[i] << "  " << std::abs(cpuy[i] - truey[i]) << endl;
             if (err < std::abs(cpuy[i] - truey[i])) err = std::abs(cpuy[i] - truey[i]);
         }
-        if (err > TSG_NUM_TOL){
+        if (err > Maths::num_tol){
             cout << "ERROR: failed Sequence grid GPU basis evaluations with error: " << err << endl;
             grid.printStats();
             pass = false;
@@ -1985,7 +1985,7 @@ bool ExternalTester::testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const
         double const *coeff_ref = grid_ref.getHierarchicalCoefficients();
         double err = 0.0;
         for(int i=0; i<num_coeffs; i++) err = std::max(err, std::abs(coeff_acc[i] - coeff_ref[i]));
-        if (err >= TSG_NUM_TOL){
+        if (err >= Maths::num_tol){
             cout << "ERROR: accelerated loadNeededPoints() failed for rule: " << OneDimensionalMeta::getHumanString(rule) << " at gpu: " << g << " with error: " << err << endl;
             pass = false;
         }

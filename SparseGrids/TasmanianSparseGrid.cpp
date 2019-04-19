@@ -732,7 +732,7 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
                    }
                     r /= cm[j];
                     r -= b; // transformed_x -b = 0
-                    while(std::abs(r) > TSG_NUM_TOL){
+                    while(std::abs(r) > Maths::num_tol){
                         this_x[j] -= r * cm[j] / dr;
 
                         logx = std::log(std::abs(this_x[j]));

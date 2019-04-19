@@ -90,7 +90,7 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
 }
 
 void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
-    const double tol = TSG_NUM_TOL;
+    const double tol = Maths::num_tol;
     if (n == 1){ z[0] = z[0]*z[0]; return; }
 
     for(int l=0; l<n-1; l++){
@@ -303,7 +303,7 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
 
 namespace TasSparse{
 
-SparseMatrix::SparseMatrix() : tol(TSG_NUM_TOL), num_rows(0){}
+SparseMatrix::SparseMatrix() : tol(Maths::num_tol), num_rows(0){}
 SparseMatrix::~SparseMatrix(){}
 
 void SparseMatrix::load(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals){

@@ -540,18 +540,6 @@ enum TypeAcceleration{
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 //! \internal
-//! \brief Numerical tolerance for various algorithms.
-//! \ingroup SGEnumerates
-
-//! NUM_TOL is used in many places:
-//! - as a stopping criteria for various iterative schemes (e.g., finding leja points)
-//! - drop criteria for eigenvalue solver related to Gauss rules
-//! - comparison between nodes to detect repeated points in non-nested rules (e.g., all odd Chebyshev rules include zero)
-//! - determining sparse matrix pattern, entries smaller than NUM_TOL will be ignored (for wavelet grids)
-//! - drop criteria in estimating anisotropic coefficients (refinement or just the coefficients) surpluses or Legendre coefficients below 10^3 times NUM_TOL will be ignored
-constexpr double TSG_NUM_TOL = 1.E-12;
-
-//! \internal
 //! \brief Defines the maximum number of secant method iterations to be used for finding Leja, Lebesgue, and Delta points.
 //! \ingroup SGEnumerates
 

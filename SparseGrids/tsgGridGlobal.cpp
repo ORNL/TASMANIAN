@@ -525,7 +525,7 @@ void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double
     std::vector<int> p(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         int i = 0;
-        while(std::abs(wrapper.getNode(i) - x[j]) > TSG_NUM_TOL) i++; // convert canonical node to index
+        while(std::abs(wrapper.getNode(i) - x[j]) > Maths::num_tol) i++; // convert canonical node to index
         p[j] = i;
     }
 
@@ -739,7 +739,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
 }
 
 void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
-    double tol = 1000.0 * TSG_NUM_TOL;
+    double tol = 1000.0 * Maths::num_tol;
     std::vector<double> surp = computeSurpluses(output, false);
 
     int num_points = points.getNumIndexes();

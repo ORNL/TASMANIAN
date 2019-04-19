@@ -96,6 +96,21 @@ inline int int3log3(int i){
  */
 constexpr double pi = 3.14159265358979323846;
 
+/*!
+ * \internal
+ * \ingroup TasmanianMaths
+ * \brief Numerical tolerance for various algorithms.
+ *
+ *  num_tol is used in many places:
+ *  - as a stopping criteria for various iterative schemes (e.g., finding leja points)
+ *  - drop criteria for eigenvalue solver related to Gauss rules
+ *  - comparison between nodes to detect repeated points in non-nested rules (e.g., all odd Chebyshev rules include zero)
+ *  - determining sparse matrix pattern, entries smaller than \b num_tol will be ignored (for wavelet grids)
+ *  - drop criteria in estimating anisotropic coefficients (refinement or just the coefficients) surpluses or Legendre coefficients below 10^3 times \b num_tol will be ignored
+ * \endinternal
+ */
+constexpr double num_tol = 1.E-12;
+
 } // namespace Maths
 
 } // namespace TasGrid

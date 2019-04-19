@@ -519,7 +519,7 @@ void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vect
     std::vector<int> p(num_dimensions); // convert x to p, maybe expensive
     for(int j=0; j<num_dimensions; j++){
         p[j] = 0;
-        while(std::abs(rule->getNode(p[j]) - x[j]) > TSG_NUM_TOL) p[j]++;
+        while(std::abs(rule->getNode(p[j]) - x[j]) > Maths::num_tol) p[j]++;
     }
 
     dynamic_values->data.push_front({p, y});
