@@ -31,7 +31,7 @@
 #ifndef __TASMANIAN_IOHELPERS_HPP
 #define __TASMANIAN_IOHELPERS_HPP
 
-#include "tsgCoreOneDimensional.hpp"
+#include "tsgEnumerates.hpp"
 
 /*!
  * \internal
