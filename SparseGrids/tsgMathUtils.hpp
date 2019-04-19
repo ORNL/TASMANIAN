@@ -85,6 +85,12 @@ inline int int3log3(int i){
     while(i >= 1){ i /= 3; result *= 3; }
     return result;
 }
+/*!
+ * \ingroup TasmanianMaths
+ * \brief Computes std::pow(2, p), but uses only integer operations.
+ */
+inline int pow2(int p){ return (1 << p); }
+
 
 /*!
  * \internal

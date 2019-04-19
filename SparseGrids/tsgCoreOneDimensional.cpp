@@ -207,15 +207,15 @@ int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule){
 
         case rule_rlejashiftedeven:   return 2*(level + 1);
 
-        case rule_rlejashifteddouble: return (1 << (level+1));
+        case rule_rlejashifteddouble: return Maths::pow2(level+1);
 
         case rule_clenshawcurtis0:
-        case rule_gausspatterson:     return ((1 << (level+1)) - 1);
+        case rule_gausspatterson:     return Maths::pow2(level+1) - 1;
 
-        case rule_clenshawcurtis:     return (level == 0) ? 1 : ((1 << level) + 1);
+        case rule_clenshawcurtis:     return (level == 0) ? 1 : (Maths::pow2(level) + 1);
         case rule_rlejadouble2:       if (level < 3){ return getNumPoints(level, rule_clenshawcurtis); }; lcc = 2 + (level-3)/2; return (getNumPoints(lcc,rule_clenshawcurtis) + ((getNumPoints(lcc+1,rule_clenshawcurtis)-getNumPoints(lcc,rule_clenshawcurtis))/2) * ((level-3)%2 +1));
         case rule_rlejadouble4:       if (level < 3){ return getNumPoints(level, rule_clenshawcurtis); }; lcc = 2 + (level-3)/4; return (getNumPoints(lcc,rule_clenshawcurtis) + ((getNumPoints(lcc+1,rule_clenshawcurtis)-getNumPoints(lcc,rule_clenshawcurtis))/4) * ((level-3)%4 +1));
-        case rule_fejer2:             return ((1 << (level+1)) - 1);
+        case rule_fejer2:             return Maths::pow2(level+1) - 1;
 
         case rule_fourier:            lcc = 1; for(int k=0; k<level; k++) { lcc *= 3; } return lcc;
 
@@ -256,13 +256,13 @@ int OneDimensionalMeta::getIExact(int level, TypeOneDRule rule){
 
         case rule_rlejashiftedeven:   return 2*level + 1;
 
-        case rule_rlejashifteddouble: return ((1 << (level+1)) -1);
+        case rule_rlejashifteddouble: return Maths::pow2(level+1) -1;
 
         case rule_gausspatterson:
-        case rule_fejer2:             return ((1 << (level+1)) - 2);
+        case rule_fejer2:             return Maths::pow2(level+1) -2;
 
-        case rule_clenshawcurtis:     return (level > 0) ? (1 << level) : 0;
-        case rule_clenshawcurtis0:    return ((1 << (level+1)) +1);
+        case rule_clenshawcurtis:     return (level > 0) ? Maths::pow2(level) : 0;
+        case rule_clenshawcurtis0:    return Maths::pow2(level+1) +1;
         case rule_rlejadouble2:       return getNumPoints(level,rule_rlejadouble2)-1;
         case rule_rlejadouble4:       return getNumPoints(level,rule_rlejadouble4)-1;
         case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
@@ -306,13 +306,13 @@ int OneDimensionalMeta::getQExact(int level, TypeOneDRule rule){
 
         case rule_rlejashifteddouble: return ((1 << (level+1)) -1);
 
-        case rule_gausspatterson:     return (level == 0) ? 1 : (3*(1 << level) - 1);
-        case rule_clenshawcurtis:     return (level == 0) ? 1 : ((1 << level) + 1);
-        case rule_clenshawcurtis0:    return (level == 0) ? 1 : ((1 << (level+1)) + 1);
+        case rule_gausspatterson:     return (level == 0) ? 1 : (3 * Maths::pow2(level) - 1);
+        case rule_clenshawcurtis:     return (level == 0) ? 1 : (Maths::pow2(level) + 1);
+        case rule_clenshawcurtis0:    return (level == 0) ? 1 : (Maths::pow2(level+1) + 1);
         case rule_chebyshev:          return level+1;
         case rule_rlejadouble2:       return getNumPoints(level,rule_rlejadouble2);
         case rule_rlejadouble4:       return getNumPoints(level,rule_rlejadouble4)-1;
-        case rule_fejer2:             return ((1 << (level+1)) - 1);
+        case rule_fejer2:             return Maths::pow2(level+1) - 1;
         case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
         default:
             return level; // should not be called, but compiler complains for the lack of return/default
