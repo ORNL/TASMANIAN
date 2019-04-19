@@ -128,10 +128,6 @@ namespace OneDimensionalMeta{
 
     //! \brief Map the enumerate to a human readable string, used in \b printStats().
     const char* getHumanString(TypeOneDRule rule);
-    //! \brief Map the integer to enumerate, used in binary I/O and Fortran (compiler and version independent).
-    TypeOneDRule getIORuleInt(int index);
-    //! \brief Map the enumerate to an integer, used in binary I/O and Fortran (compiler and version independent).
-    int getIORuleInt(TypeOneDRule rule);
 
     //! \brief Identifies the general contour, linear \b type_level, log-corrected \b type_curved, or hyperbolic \b type_hyperbolic.
 

@@ -108,8 +108,7 @@ void tsgmg_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *
     ll  = (opt_flags[4] != 0 ) ? llimits            : 0;
 
     _tsg_grids[*id]->makeGlobalGrid(*dimensions, *outputs, *depth,
-        OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule),
-        aw, al, be, cfn, ll);
+        OneDimensionalMeta::getIOTypeInt(*type), IO::getRuleInt(*rule), aw, al, be, cfn, ll);
 }
 void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *rule, int *opt_flags,
             const int *aniso_weights, const int *llimits){
@@ -119,7 +118,7 @@ void tsgms_(int *id, int *dimensions, int *outputs, int *depth, int *type, int *
     ll  = (opt_flags[1] != 0 ) ? llimits            : 0;
 
     _tsg_grids[*id]->makeSequenceGrid(*dimensions, *outputs, *depth,
-        OneDimensionalMeta::getIOTypeInt(*type), OneDimensionalMeta::getIORuleInt(*rule), aw, ll);
+        OneDimensionalMeta::getIOTypeInt(*type), IO::getRuleInt(*rule), aw, ll);
 }
 void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags,
             int *order, int *rule, const int *llimits){
@@ -130,7 +129,7 @@ void tsgml_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags,
     ord = (opt_flags[1] != 0) ? *order  : 1;
     ll  = (opt_flags[2] != 0) ? llimits : 0;
 
-    _tsg_grids[*id]->makeLocalPolynomialGrid(*dimensions, *outputs, *depth, ord, OneDimensionalMeta::getIORuleInt(ru), ll);
+    _tsg_grids[*id]->makeLocalPolynomialGrid(*dimensions, *outputs, *depth, ord, IO::getRuleInt(ru), ll);
 }
 void tsgmw_(int *id, int *dimensions, int *outputs, int *depth, int *opt_flags, int *order, const int *llimits){
     int ord;
@@ -170,7 +169,7 @@ void tsggbe_(int *id, double *beta){ *beta = _tsg_grids[*id]->getBeta(); }
 void tsggor_(int *id, int *order){ *order = _tsg_grids[*id]->getOrder(); }
 void tsggnd_(int *id, int *dims){ *dims = _tsg_grids[*id]->getNumDimensions(); }
 void tsggno_(int *id, int *outs){ *outs = _tsg_grids[*id]->getNumOutputs(); }
-void tsggru_(int *id, int *rule){ *rule = OneDimensionalMeta::getIORuleInt(_tsg_grids[*id]->getRule()); }
+void tsggru_(int *id, int *rule){ *rule = IO::getRuleInt(_tsg_grids[*id]->getRule()); }
 
 // getNumNeeded/Loaded/Points
 void tsggnn_(int *id, int *num_points){ *num_points = _tsg_grids[*id]->getNumNeeded(); }

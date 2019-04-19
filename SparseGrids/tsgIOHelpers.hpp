@@ -158,6 +158,45 @@ inline std::string getRuleString(TypeOneDRule rule){
 
 /*!
  * \ingroup TasmanianIO
+ * \brief Creates a map with \b int (used by Fortran and binary I/O) mapped to \b TypeOneDRule enums.
+ */
+inline std::vector<TypeOneDRule> getIntRuleMap(){
+    return {rule_none, rule_clenshawcurtis, rule_clenshawcurtis0,
+        rule_chebyshev, rule_chebyshevodd, rule_gausslegendre, rule_gausslegendreodd,
+        rule_gausspatterson, rule_leja, rule_lejaodd,
+        rule_rleja, rule_rlejadouble2, rule_rlejadouble4, rule_rlejaodd,
+        rule_rlejashifted, rule_rlejashiftedeven, rule_rlejashifteddouble,
+        rule_maxlebesgue, rule_maxlebesgueodd, rule_minlebesgue, rule_minlebesgueodd,
+        rule_mindelta, rule_mindeltaodd, rule_gausschebyshev1, rule_gausschebyshev1odd,
+        rule_gausschebyshev2, rule_gausschebyshev2odd, rule_fejer2,
+        rule_gaussgegenbauer, rule_gaussgegenbauerodd, rule_gaussjacobi, rule_gaussjacobiodd,
+        rule_gausslaguerre, rule_gausslaguerreodd, rule_gausshermite, rule_gausshermiteodd,
+        rule_customtabulated,
+        rule_localp, rule_localp0, rule_semilocalp,
+        rule_wavelet, rule_fourier, rule_localpb};
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the int rule index to the enumerate, used in Fortran and binary IO.
+ */
+inline TypeOneDRule getRuleInt(int r){
+    auto rmap = getIntRuleMap();
+    return ((size_t) r < rmap.size()) ? rmap[(size_t) r] : rule_none;
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the enumerate to an int, used in Fortran and binary IO.
+ */
+inline int getRuleInt(TypeOneDRule rule){
+    auto rmap = getIntRuleMap();
+    return (int) std::distance(rmap.begin(), std::find_if(rmap.begin(), rmap.end(),
+                               [&](TypeOneDRule r)->bool{ return (r == rule); }));
+}
+
+/*!
+ * \ingroup TasmanianIO
  * \brief Write the flag to file, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
  */
 template<bool useAscii, IOPad pad>
@@ -257,7 +296,7 @@ void writeRule(TypeOneDRule rule, std::ostream &os){
     if (useAscii){
         os << getRuleString(rule) << std::endl;
     }else{
-        int r = OneDimensionalMeta::getIORuleInt(rule);
+        int r = getRuleInt(rule);
         os.write((char*) &r, sizeof(int));
     }
 }
@@ -273,7 +312,7 @@ TypeOneDRule readRule(std::istream &is){
         is >> T;
         return getRuleString(T);
     }else{
-        return OneDimensionalMeta::getIORuleInt(readNumber<false, int>(is));
+        return getRuleInt(readNumber<false, int>(is));
     }
 }
 
