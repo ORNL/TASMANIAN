@@ -176,13 +176,6 @@ namespace OneDimensionalMeta{
     //! \brief Return \b True if the multi-index selection type has log-correction term (need to use floating point indexing).
     inline bool isTypeCurved(TypeDepth type){ return (getControurType(type) == type_curved); }
 
-    //! \brief Map the string to the enumerate multi-index selection strategy, used in command line and Python.
-    TypeDepth getIOTypeString(const char *name);
-    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeDepth enums.
-    std::map<std::string, TypeDepth> getStringToDepthMap();
-    //! \brief Map the integer to the enumerate multi-index selection strategy, used in Fortran.
-    TypeDepth getIOTypeInt(int type);
-
     //! \brief Map the string to the enumerate hierarchical refinement strategy, used in command line and Python.
     TypeRefinement getIOTypeRefinementString(const char *name);
     //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeRefinement enums.

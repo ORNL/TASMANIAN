@@ -197,6 +197,48 @@ inline int getRuleInt(TypeOneDRule rule){
 
 /*!
  * \ingroup TasmanianIO
+ * \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeDepth enums.
+ */
+inline std::map<std::string, TypeDepth> getStringToDepthMap(){
+    return std::initializer_list<std::pair<std::string const, TypeDepth>>{
+        {"level",        type_level},
+        {"curved",       type_curved},
+        {"iptotal",      type_iptotal},
+        {"ipcurved",     type_ipcurved},
+        {"qptotal",      type_qptotal},
+        {"qpcurved",     type_qpcurved},
+        {"hyperbolic",   type_hyperbolic},
+        {"iphyperbolic", type_iphyperbolic},
+        {"qphyperbolic", type_qphyperbolic},
+        {"tensor",       type_tensor},
+        {"iptensor",     type_iptensor},
+        {"qptensor",     type_qptensor}};
+}
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the string to the enumerate multi-index selection strategy, used in command line and Python.
+ */
+inline TypeDepth getDepthTypeString(std::string const &name){
+    try{
+        return getStringToDepthMap().at(name);
+    }catch(std::out_of_range &){
+        return type_none;
+    }
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the integer to the enumerate multi-index selection strategy, used in Fortran.
+ */
+inline TypeDepth getDepthTypeInt(int t){
+    std::vector<TypeDepth> imap = {type_none, type_level, type_curved, type_iptotal,
+        type_ipcurved, type_qptotal, type_qpcurved, type_hyperbolic, type_iphyperbolic,
+        type_qphyperbolic, type_tensor, type_iptensor, type_qptensor};
+    return ((size_t) t < imap.size()) ? imap[(size_t) t] : type_none;
+}
+
+/*!
+ * \ingroup TasmanianIO
  * \brief Write the flag to file, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
  */
 template<bool useAscii, IOPad pad>

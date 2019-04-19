@@ -395,46 +395,6 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
             return "unknown";
     }
 }
-std::map<std::string, TypeDepth> OneDimensionalMeta::getStringToDepthMap(){
-    return {
-        {"level",        type_level},
-        {"curved",       type_curved},
-        {"iptotal",      type_iptotal},
-        {"ipcurved",     type_ipcurved},
-        {"qptotal",      type_qptotal},
-        {"qpcurved",     type_qpcurved},
-        {"hyperbolic",   type_hyperbolic},
-        {"iphyperbolic", type_iphyperbolic},
-        {"qphyperbolic", type_qphyperbolic},
-        {"tensor",       type_tensor},
-        {"iptensor",     type_iptensor},
-        {"qptensor",     type_qptensor}};
-}
-TypeDepth OneDimensionalMeta::getIOTypeString(const char *name){
-    try{
-        return getStringToDepthMap().at(name);
-    }catch(std::out_of_range &){
-        return type_none;
-    }
-}
-TypeDepth OneDimensionalMeta::getIOTypeInt(int type){
-    switch (type){
-        case  1: return type_level;
-        case  2: return type_curved;
-        case  3: return type_iptotal;
-        case  4: return type_ipcurved;
-        case  5: return type_qptotal;
-        case  6: return type_qpcurved;
-        case  7: return type_hyperbolic;
-        case  8: return type_iphyperbolic;
-        case  9: return type_qphyperbolic;
-        case 10: return type_tensor;
-        case 11: return type_iptensor;
-        case 12: return type_qptensor;
-        default:
-            return type_none;
-    }
-}
 
 std::map<std::string, TypeRefinement> OneDimensionalMeta::getStringToRefinementMap(){
     return {

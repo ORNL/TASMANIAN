@@ -289,7 +289,7 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide valid depth type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-            TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(args.front().c_str());
+            TypeDepth depth_type = IO::getDepthTypeString(args.front());
             if (depth_type == type_none){
                 cerr << "ERROR: " << args.front() << " is not a valid type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
