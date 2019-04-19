@@ -31,7 +31,6 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WAVELET_HPP
 #define __TASMANIAN_SPARSE_GRID_WAVELET_HPP
 
-#include "tsgGridCore.hpp"
 #include "tsgRuleWavelet.hpp"
 
 namespace TasGrid{

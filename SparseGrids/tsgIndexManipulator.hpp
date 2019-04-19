@@ -31,11 +31,8 @@
 #ifndef __TSG_INDEX_MANIPULATOR_HPP
 #define __TSG_INDEX_MANIPULATOR_HPP
 
-#include <functional>
-
 #include "tsgIndexSets.hpp"
 #include "tsgOneDimensionalWrapper.hpp"
-#include "tsgRuleLocalPolynomial.hpp"
 
 /*!
  * \internal
@@ -67,7 +64,7 @@ namespace TasGrid{
 
 /*!
  * \internal
- * \ingroup TasmanianIO
+ * \ingroup TasmanianMultiIndexManipulations
  * \brief Collection of algorithm to manipulate multi-indexes.
  */
 namespace MultiIndexManipulations{
@@ -282,79 +279,6 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset);
 /*!
  * \internal
  * \ingroup TasmanianMultiIndexManipulations
- * \brief Cache the indexes slot numbers of the parents of the multi-indexes in \b mset.
- *
- * Each node defined by a multi-index in \b mset can have one or more parents in each direction,
- * where the parent-offspring relation is defined by the \b rule. For each index in \b mset, the
- * Data2D structure \b parents will hold a strip with the location of each parent in \b mset
- * (or -1 if the parent is missing from \b mset).
- * \endinternal
- */
-Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule);
-
-/*!
- * \internal
- * \ingroup TasmanianMultiIndexManipulations
- * \brief Cache the indexes slot numbers of the children of the multi-indexes in \b mset.
- *
- * Each node defined by a multi-index in \b mset can have one or more children in each direction,
- * where the parent-offspring relation is defined by the \b rule. For each index in \b mset, the
- * returned Data2D structure will hold a strip with the location of each child in \b mset
- * (or -1 if the kid is missing from \b mset).
- * \endinternal
- */
-Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule);
-
-/*!
- * \internal
- * \brief Returns a vector that is the sum of the one dimensional levels of each multi-index in the set.
- * \ingroup TasmanianMultiIndexManipulations
- * \endinternal
- */
-std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule);
-
-/*!
- * \internal
- * \brief Will call \b apply() with the slot index in \b mset of each parent/child of \b point.
- * \ingroup TasmanianMultiIndexManipulations
- * \endinternal
- */
-inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule, std::function<void(int i)> apply){
-    int max_kids = rule->getMaxNumKids();
-    for(auto &v : point){
-        int save = v; // replace one by one each index of p with either parent or kid
-
-        // check the parents
-        v = rule->getParent(save);
-        if (v > -1){
-            int parent_index = mset.getSlot(point);
-            if (parent_index > -1)
-                apply(parent_index);
-        }
-
-        v = rule->getStepParent(save);
-        if (v > -1){
-            int parent_index = mset.getSlot(point);
-            if (parent_index > -1)
-                apply(parent_index);
-        }
-
-        for(int k=0; k<max_kids; k++){
-            v = rule->getKid(save, k);
-            if (v > -1){
-                int kid_index = mset.getSlot(point);
-                if (kid_index > -1)
-                    apply(kid_index);
-            }
-        }
-
-        v = save; // restore the original index for the next iteration
-    }
-}
-
-/*!
- * \internal
- * \ingroup TasmanianMultiIndexManipulations
  * \brief Using the \b flagged map, create a set with the flagged children of \b mset but only if they obey the \b level_limits.
  *
  * \endinternal
@@ -511,27 +435,6 @@ MultiIndexSet addExclusiveChildren(const MultiIndexSet &tensors, const MultiInde
     }
 
     return MultiIndexSet(tens);
-}
-
-/*!
- * \internal
- * \ingroup TasmanianMultiIndexManipulations
- * \brief Split the \b data into strips with given \b stride and return into \b Data2D structures grouped by \b levels, preserves the order.
- *
- * \endinternal
- */
-template<typename T>
-std::vector<Data2D<T>> splitByLevels(size_t stride, std::vector<T> const &data, std::vector<int> const &levels){
-    size_t top_level = (size_t) *std::max_element(levels.begin(), levels.end());
-
-    std::vector<Data2D<T>> split(top_level + 1, Data2D<T>(stride, 0));
-
-    for( struct {int i; typename std::vector<T>::const_iterator idata;} v = {0, data.begin()};
-         v.idata != data.end();
-         v.i++, std::advance(v.idata, stride))
-        split[levels[v.i]].appendStrip(v.idata);
-
-    return split;
 }
 
 }

@@ -35,7 +35,7 @@
 
 #include "TasmanianSparseGrid.hpp"
 
-using TasGrid::tsg_pi;
+using TasGrid::Maths::pi;
 
 BaseFunction::BaseFunction(){}
 BaseFunction::~BaseFunction(){}
@@ -78,23 +78,23 @@ void TwoOneCos::eval(const double x[], double y[]) const{ y[0] = std::cos(-x[0]*
 
 TwoOneSinSin::TwoOneSinSin(){} TwoOneSinSin::~TwoOneSinSin(){} int TwoOneSinSin::getNumInputs() const{ return 2; } int TwoOneSinSin::getNumOutputs() const{ return 1; }
 const char* TwoOneSinSin::getDescription() const{ return "f(x,y) = sin(pi * x) sin(pi * y)"; }
-void TwoOneSinSin::eval(const double x[], double y[]) const{ y[0] = std::sin(tsg_pi * x[0]) * std::sin(tsg_pi * x[1]); } void TwoOneSinSin::getIntegral(double y[]) const{ y[0] = 0.0; }
+void TwoOneSinSin::eval(const double x[], double y[]) const{ y[0] = std::sin(pi * x[0]) * std::sin(pi * x[1]); } void TwoOneSinSin::getIntegral(double y[]) const{ y[0] = 0.0; }
 
 TwoOneCosCos::TwoOneCosCos(){} TwoOneCosCos::~TwoOneCosCos(){} int TwoOneCosCos::getNumInputs() const{ return 2; } int TwoOneCosCos::getNumOutputs() const{ return 1; }
 const char* TwoOneCosCos::getDescription() const{ return "f(x,y) = cos(pi/2 * x) cos(pi/2 * y)"; }
-void TwoOneCosCos::eval(const double x[], double y[]) const{ y[0] = std::cos(0.5 * tsg_pi * x[0]) * std::cos(0.5 * tsg_pi * x[1]); } void TwoOneCosCos::getIntegral(double y[]) const{ y[0] = 16.0 / (tsg_pi * tsg_pi); }
+void TwoOneCosCos::eval(const double x[], double y[]) const{ y[0] = std::cos(0.5 * pi * x[0]) * std::cos(0.5 * pi * x[1]); } void TwoOneCosCos::getIntegral(double y[]) const{ y[0] = 16.0 / (pi * pi); }
 
 TwoOneExpSinCos::TwoOneExpSinCos() {} TwoOneExpSinCos::~TwoOneExpSinCos() {} int TwoOneExpSinCos::getNumInputs() const{ return 2; } int TwoOneExpSinCos::getNumOutputs() const{ return 1; }
 const char* TwoOneExpSinCos::getDescription() const{ return "f(x,y) = exp(sin(2*pi*x) + cos(2*pi*y)) on [0,1]^2 "; }
-void TwoOneExpSinCos::eval(const double x[], double y[]) const{ y[0] = std::exp(std::sin(2*tsg_pi*x[0])+std::cos(2*tsg_pi*x[1])); } void TwoOneExpSinCos::getIntegral(double y[]) const{ y[0] = 1.6029228068079633; }
+void TwoOneExpSinCos::eval(const double x[], double y[]) const{ y[0] = std::exp(std::sin(2*pi*x[0])+std::cos(2*pi*x[1])); } void TwoOneExpSinCos::getIntegral(double y[]) const{ y[0] = 1.6029228068079633; }
 
 TwoOneSinCosAxis::TwoOneSinCosAxis() {} TwoOneSinCosAxis::~TwoOneSinCosAxis() {} int TwoOneSinCosAxis::getNumInputs() const{ return 2; } int TwoOneSinCosAxis::getNumOutputs() const{ return 1; }
 const char* TwoOneSinCosAxis::getDescription() const{ return "f(x,y) = 1.0 + sin(pi * (x + y)) * cos(pi * (x - y)) on [-1,1]^2 "; }
-void TwoOneSinCosAxis::eval(const double x[], double y[]) const{ y[0] = 1.0 + std::sin(tsg_pi*(x[0] + x[1])) * std::cos(tsg_pi*(x[0] - x[1])); } void TwoOneSinCosAxis::getIntegral(double y[]) const{ y[0] = 4.0; }
+void TwoOneSinCosAxis::eval(const double x[], double y[]) const{ y[0] = 1.0 + std::sin(pi*(x[0] + x[1])) * std::cos(pi*(x[0] - x[1])); } void TwoOneSinCosAxis::getIntegral(double y[]) const{ y[0] = 4.0; }
 
 TwoTwoSinCos::TwoTwoSinCos() {} TwoTwoSinCos::~TwoTwoSinCos() {} int TwoTwoSinCos::getNumInputs() const{ return 2; } int TwoTwoSinCos::getNumOutputs() const{ return 2; }
 const char* TwoTwoSinCos::getDescription() const{ return "f(x,y) = [sin(2*pi*x)cos(4*pi*y), x^2*cos(2*pi*x)]"; }
-void TwoTwoSinCos::eval(const double x[], double y[]) const{ y[0] = std::sin(2*tsg_pi*x[0])*std::cos(4*tsg_pi*x[1]); y[1] = x[0]*x[0]*cos(2*tsg_pi*x[0]); } void TwoTwoSinCos::getIntegral(double y[]) const{ y[0] = 0.0; y[1] = 1.0 / (2.0 * tsg_pi * tsg_pi); }
+void TwoTwoSinCos::eval(const double x[], double y[]) const{ y[0] = std::sin(2*pi*x[0])*std::cos(4*pi*x[1]); y[1] = x[0]*x[0]*cos(2*pi*x[0]); } void TwoTwoSinCos::getIntegral(double y[]) const{ y[0] = 0.0; y[1] = 1.0 / (2.0 * pi * pi); }
 
 TwoOneExpm40::TwoOneExpm40(){} TwoOneExpm40::~TwoOneExpm40(){} int TwoOneExpm40::getNumInputs() const{ return 2; } int TwoOneExpm40::getNumOutputs() const{ return 1; }
 const char* TwoOneExpm40::getDescription() const{ return "f(x,y) = 1.0 / (1.0 + exp(-40.0 * (sqrt(x^2 + y^2) - 0.4)))"; }
@@ -114,7 +114,7 @@ void EightOneCosSum::eval(const double x[], double y[]) const{ y[0] = std::cos(x
 
 ThreeOneUnitBall::ThreeOneUnitBall(){} ThreeOneUnitBall::~ThreeOneUnitBall(){} int ThreeOneUnitBall::getNumInputs() const{ return 3; } int ThreeOneUnitBall::getNumOutputs() const{ return 1; }
 const char* ThreeOneUnitBall::getDescription() const{ return "f(y_i) = 1 if |x| < 1, 0 otherwise"; }
-void ThreeOneUnitBall::eval(const double x[], double y[]) const{ if ((x[0]*x[0]+x[1]*x[1]+x[2]*x[2]) <= 1.0){ y[0] = 1.0; }else{ y[0] = 0.0; } } void ThreeOneUnitBall::getIntegral(double y[]) const{ y[0] = (4.0/3.0) * tsg_pi; }
+void ThreeOneUnitBall::eval(const double x[], double y[]) const{ if ((x[0]*x[0]+x[1]*x[1]+x[2]*x[2]) <= 1.0){ y[0] = 1.0; }else{ y[0] = 0.0; } } void ThreeOneUnitBall::getIntegral(double y[]) const{ y[0] = (4.0/3.0) * pi; }
 
 TwoOneConstGC1::TwoOneConstGC1(){} TwoOneConstGC1::~TwoOneConstGC1(){} int TwoOneConstGC1::getNumInputs() const{ return 2; } int TwoOneConstGC1::getNumOutputs() const{ return 1; }
 const char* TwoOneConstGC1::getDescription() const{ return "f(x,y) = exp(x+y), integrated against 1.0 / (sqrt(1 - x*x) * sqrt(1 - y*y))"; }

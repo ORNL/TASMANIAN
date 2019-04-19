@@ -66,8 +66,8 @@ int tsgRead(void *grid, const char* filename){
 }
 
 void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const char * sType, const char *sRule, const int *anisotropic_weights, double alpha, double beta, const char* custom_filename, const int *limit_levels){
-    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
-    TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
+    TypeOneDRule rule = IO::getRuleString(sRule);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sType << ", defaulting to clenshaw-curtis." << endl; }
@@ -75,8 +75,8 @@ void tsgMakeGlobalGrid(void *grid, int dimensions, int outputs, int depth, const
     ((TasmanianSparseGrid*) grid)->makeGlobalGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights, alpha, beta, custom_filename, limit_levels);
 }
 void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const char *sRule, const int *anisotropic_weights, const int *limit_levels){
-    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
-    TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
+    TypeOneDRule rule = IO::getRuleString(sRule);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sRule << ", defaulting to clenshaw-curtis." << endl; }
@@ -86,7 +86,7 @@ void tsgMakeSequenceGrid(void *grid, int dimensions, int outputs, int depth, con
     ((TasmanianSparseGrid*) grid)->makeSequenceGrid(dimensions, outputs, depth, depth_type, rule, anisotropic_weights, limit_levels);
 }
 void tsgMakeLocalPolynomialGrid(void *grid, int dimensions, int outputs, int depth, int order, const char *sRule, const int *limit_levels){
-    TypeOneDRule rule = OneDimensionalMeta::getIORuleString(sRule);
+    TypeOneDRule rule = IO::getRuleString(sRule);
     #ifndef NDEBUG
     if (rule == rule_none){ cerr << "WARNING: incorrect rule type: " << sRule << ", defaulting to localp." << endl; }
     #endif // NDEBUG
@@ -97,7 +97,7 @@ void tsgMakeWaveletGrid(void *grid, int dimensions, int outputs, int depth, int 
     ((TasmanianSparseGrid*) grid)->makeWaveletGrid(dimensions, outputs, depth, order, limit_levels);
 }
 void tsgMakeFourierGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const int *anisotropic_weights, const int *limit_levels){
-    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_level." << endl; }
     #endif // NDEBUG
@@ -106,7 +106,7 @@ void tsgMakeFourierGrid(void *grid, int dimensions, int outputs, int depth, cons
 }
 
 void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
-    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // NDEBUG
@@ -114,7 +114,7 @@ void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *a
     ((TasmanianSparseGrid*) grid)->updateGlobalGrid(depth, depth_type, anisotropic_weights, limit_levels);
 }
 void tsgUpdateSequenceGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
-    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // NDEBUG
@@ -127,7 +127,20 @@ double tsgGetBeta(void *grid){ return ((TasmanianSparseGrid*) grid)->getBeta(); 
 int tsgGetOrder(void *grid){ return ((TasmanianSparseGrid*) grid)->getOrder(); }
 int tsgGetNumDimensions(void *grid){ return ((TasmanianSparseGrid*) grid)->getNumDimensions(); }
 int tsgGetNumOutputs(void *grid){ return ((TasmanianSparseGrid*) grid)->getNumOutputs(); }
-const char* tsgGetRule(void *grid){ return  OneDimensionalMeta::getIORuleString( ((TasmanianSparseGrid*) grid)->getRule() ); }
+char* tsgGetRule(void *grid){
+    std::string cppstring = IO::getRuleString( ((TasmanianSparseGrid*) grid)->getRule() );
+    char *cstring = new char[cppstring.size() + 1];
+    for(size_t i=0; i<cppstring.size(); i++) cstring[i] = cppstring[i];
+    cstring[cppstring.size()] = '\0';
+    return cstring;
+}
+void tsgCopyRuleChars(void *grid, int buffer_size, char *name, int *num_actual){
+    std::string cppstring = IO::getRuleString( ((TasmanianSparseGrid*) grid)->getRule() );
+    size_t max_num = std::min((size_t) buffer_size - 1, cppstring.size());
+    std::copy_n(cppstring.begin(), max_num, name);
+    name[max_num] = '\0';
+    *num_actual = (int) max_num;
+}
 const char* tsgGetCustomRuleDescription(void *grid){ return ((TasmanianSparseGrid*) grid)->getCustomRuleDescription(); }
 
 int tsgGetNumLoaded(void *grid){ return ((TasmanianSparseGrid*) grid)->getNumLoaded(); }
@@ -217,7 +230,7 @@ void tsgClearLevelLimits(void *grid){ ((TasmanianSparseGrid*) grid)->clearLevelL
 void tsgGetLevelLimits(void *grid, int *limits){ ((TasmanianSparseGrid*) grid)->getLevelLimits(limits); }
 
 void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth, int output, const int *level_limits){
-    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // NDEBUG
@@ -225,7 +238,7 @@ void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth,
     ((TasmanianSparseGrid*) grid)->setAnisotropicRefinement(depth_type, min_growth, output, level_limits);
 }
 int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int output, int *num_coefficients){
-    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // NDEBUG
@@ -240,7 +253,7 @@ int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int outp
     return result;
 }
 void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, int output, int *coefficients){
-    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // NDEBUG
@@ -256,7 +269,7 @@ void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output, con
     ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, output, level_limits);
 }
 void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output, const int *level_limits){
-    TypeRefinement ref_type = OneDimensionalMeta::getIOTypeRefinementString(sRefinementType);
+    TypeRefinement ref_type = IO::getTypeRefinementString(sRefinementType);
     #ifndef NDEBUG
     if (ref_type == refine_none){ cerr << "WARNING: incorrect refinement type: " << sRefinementType << ", defaulting to type_classic." << endl; }
     #endif // NDEBUG
@@ -276,7 +289,7 @@ int tsgIsUsingConstruction(void *grid){
     return (((TasmanianSparseGrid*) grid)->isUsingConstruction()) ? 1 : 0;
 }
 void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, int output, const int *anisotropic_weights, const int *limit_levels){ // internal use only
-    TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(sType);
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // NDEBUG
@@ -300,7 +313,7 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
 }
 void* tsgGetCandidateConstructionPointsSurplusVoidPntr(void *grid, double tolerance, const char *sRefType, int output,
                                                        const int *limit_levels, const double *scale_correction){ // internal use only
-    TypeRefinement ref_type = OneDimensionalMeta::getIOTypeRefinementString(sRefType);
+    TypeRefinement ref_type = IO::getTypeRefinementString(sRefType);
     #ifndef NDEBUG
     if (ref_type == refine_none){ cerr << "WARNING: incorrect depth type: " << sRefType << ", defaulting to refine_classic." << endl; }
     #endif // NDEBUG

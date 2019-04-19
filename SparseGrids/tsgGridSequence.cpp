@@ -362,7 +362,7 @@ void GridSequence::loadConstructedPoint(const double x[], const std::vector<doub
     std::vector<int> p(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         size_t i = 0;
-        while((i < nodes.size()) && (std::abs(nodes[i] - x[j]) > TSG_NUM_TOL)) i++; // convert canonical node to index
+        while((i < nodes.size()) && (std::abs(nodes[i] - x[j]) > Maths::num_tol)) i++; // convert canonical node to index
         if (i < nodes.size()){
             p[j] = (int) i;
         }else{
@@ -581,7 +581,7 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
 }
 
 void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
-    double tol = 1000 * TSG_NUM_TOL;
+    double tol = 1000 * Maths::num_tol;
     int num_points = points.getNumIndexes();
     std::vector<double> max_surp(num_points);
 

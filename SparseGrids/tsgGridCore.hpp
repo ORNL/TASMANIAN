@@ -33,6 +33,7 @@
 
 #include "tsgDConstructGridGlobal.hpp"
 #include "tsgCudaLoadStructures.hpp"
+#include "tsgHierarchyManipulator.hpp"
 
 namespace TasGrid{
 

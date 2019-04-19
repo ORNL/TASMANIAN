@@ -103,15 +103,15 @@ bool TasgridWrapper::checkSane() const{
         if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)" << endl; pass = false; }
         if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)" << endl; pass = false; }
         if (rule == rule_none){ cerr << "ERROR: must specify rule to use (e.g., clenshaw-curtis)" << endl; pass = false; }
-        if (!(OneDimensionalMeta::isGlobal(rule))){ cerr << "ERROR: cannot use global grids with rule: " << OneDimensionalMeta::getIORuleString(rule) << endl; pass = false; }
+        if (!(OneDimensionalMeta::isGlobal(rule))){ cerr << "ERROR: cannot use global grids with rule: " << IO::getRuleString(rule) << endl; pass = false; }
         if ((rule == rule_gaussgegenbauer) || (rule == rule_gausslaguerre) || (rule == rule_gausshermite) || (rule == rule_gaussgegenbauerodd) || (rule == rule_gausshermiteodd) ){
-            if (!set_alpha){ cerr << "ERROR: one dimensional rule " << OneDimensionalMeta::getIORuleString(rule) << " requires alpha parameter" << endl; pass = false; }
+            if (!set_alpha){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires alpha parameter" << endl; pass = false; }
         }else if (rule == rule_gaussjacobi){
-            if (!set_alpha){ cerr << "ERROR: one dimensional rule " << OneDimensionalMeta::getIORuleString(rule) << " requires alpha parameter" << endl; pass = false; }
-            if (!set_beta ){ cerr << "ERROR: one dimensional rule " << OneDimensionalMeta::getIORuleString(rule) << " requires beta parameter" << endl; pass = false; }
+            if (!set_alpha){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires alpha parameter" << endl; pass = false; }
+            if (!set_beta ){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires beta parameter" << endl; pass = false; }
         }else{
-            if (set_alpha){ cerr << "WARNING: alpha parameter set, but one dimensional rule " << OneDimensionalMeta::getIORuleString(rule) << " doesn't depend on alpha" << endl; }
-            if (set_beta ){ cerr << "WARNING: beta parameter set, but one dimensional rule " << OneDimensionalMeta::getIORuleString(rule) << " doesn't depend on beta" << endl; }
+            if (set_alpha){ cerr << "WARNING: alpha parameter set, but one dimensional rule " << IO::getRuleString(rule) << " doesn't depend on alpha" << endl; }
+            if (set_beta ){ cerr << "WARNING: beta parameter set, but one dimensional rule " << IO::getRuleString(rule) << " doesn't depend on beta" << endl; }
         }
         if (customfilename.empty()){
             if (rule == rule_customtabulated){
@@ -119,7 +119,7 @@ bool TasgridWrapper::checkSane() const{
             }
         }else{
             if (rule != rule_customtabulated){
-                cerr << "WARNING: -customflile given, but is only valid for the custom-tabulated rule and not rule " << OneDimensionalMeta::getIORuleString(rule) << endl;
+                cerr << "WARNING: -customflile given, but is only valid for the custom-tabulated rule and not rule " << IO::getRuleString(rule) << endl;
             }
         }
         if (gridfilename.empty() && outfilename.empty() && (printCout == false)){
@@ -135,7 +135,7 @@ bool TasgridWrapper::checkSane() const{
         if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)" << endl; pass = false; }
         if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)" << endl; pass = false; }
         if (rule == rule_none){ cerr << "ERROR: must specify rule to use (e.g., rleja)" << endl; pass = false; }
-        if (!(OneDimensionalMeta::isSequence(rule))){ cerr << "ERROR: rule is set to " << OneDimensionalMeta::getIORuleString(rule) << " which is not a sequence rule (e.g., leja, rleja, min/max-lebesgue)" << endl; pass = false; }
+        if (!(OneDimensionalMeta::isSequence(rule))){ cerr << "ERROR: rule is set to " << IO::getRuleString(rule) << " which is not a sequence rule (e.g., leja, rleja, min/max-lebesgue)" << endl; pass = false; }
         if (gridfilename.empty() && outfilename.empty() && (printCout == false)){
             cerr << "ERROR: no means of output are specified, you should specify -gridfile, -outfile or -print" << endl; pass = false;
         }
@@ -149,7 +149,7 @@ bool TasgridWrapper::checkSane() const{
         if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)" << endl; pass = false; }
         if (order < -1){ cerr << "ERROR: the maximum order cannot be less than -1"; pass = false; }
         if (rule == rule_none){ cerr << "ERROR: must specify rule to use (e.g., localp)" << endl; pass = false; }
-        if (!(OneDimensionalMeta::isLocalPolynomial(rule))){ cerr << "ERROR: cannot use a local polynomial grid with rule: " << OneDimensionalMeta::getIORuleString(rule) << endl; pass = false; }
+        if (!(OneDimensionalMeta::isLocalPolynomial(rule))){ cerr << "ERROR: cannot use a local polynomial grid with rule: " << IO::getRuleString(rule) << endl; pass = false; }
         if (gridfilename.empty() && outfilename.empty() && (printCout == false)){
             cerr << "ERROR: no means of output are specified, you should specify -gridfile, -outfile or -print" << endl; pass = false;
         }
@@ -190,11 +190,11 @@ bool TasgridWrapper::checkSane() const{
             if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)" << endl; pass = false; }
 
             if ((rule == rule_gaussgegenbauer) || (rule == rule_gausslaguerre) || (rule == rule_gausshermite) || (rule == rule_gaussgegenbauerodd) || (rule == rule_gausshermiteodd)){
-                if (!set_alpha){ cerr << "ERROR: one dimensional rule " << OneDimensionalMeta::getIORuleString(rule) << " requires alpha parameter" << endl; pass = false; }
+                if (!set_alpha){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires alpha parameter" << endl; pass = false; }
             }
             if (rule == rule_gaussjacobi){
-                if (!set_alpha){ cerr << "ERROR: one dimensional rule " << OneDimensionalMeta::getIORuleString(rule) << " requires alpha parameter" << endl; pass = false; }
-                if (!set_beta ){ cerr << "ERROR: one dimensional rule " << OneDimensionalMeta::getIORuleString(rule) << " requires beta parameter" << endl; pass = false; }
+                if (!set_alpha){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires alpha parameter" << endl; pass = false; }
+                if (!set_beta ){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires beta parameter" << endl; pass = false; }
             }
         }else if (OneDimensionalMeta::isLocalPolynomial(rule)){
             if (order < -1){ cerr << "ERROR: the maximum order cannot be less than -1"; pass = false; }
@@ -206,7 +206,7 @@ bool TasgridWrapper::checkSane() const{
             if (rule == rule_none){
                 cerr << "ERROR: must specify rule to use (e.g., clenshaw-curtis or localp)" << endl; pass = false;
             }else{
-                cerr << "ERROR: cannot make a quadrature with rule " << OneDimensionalMeta::getIORuleString(rule) << endl; pass = false;
+                cerr << "ERROR: cannot make a quadrature with rule " << IO::getRuleString(rule) << endl; pass = false;
             }
         }
         if (outfilename.empty() && (printCout == false)){

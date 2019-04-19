@@ -28,27 +28,24 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_SPARSE_GRID_UTILS_HPP
-#define __TASMANIAN_SPARSE_GRID_UTILS_HPP
+#ifndef __TASMANIAN_SPARSE_GRID_MATHUTILS_HPP
+#define __TASMANIAN_SPARSE_GRID_MATHUTILS_HPP
 
 /*!
  * \internal
- * \file tsgUtils.hpp
- * \brief Miscellaneous utility templates used thoughout the code.
+ * \file tsgMathUtils.hpp
+ * \brief Math functions and constants.
  * \author Miroslav Stoyanov
- * \ingroup TasmanianUtils
+ * \ingroup TasmanianMaths
  *
- * Templates uses throughout the internal algorithms of Tasmanian.
- * The header will be kept private.
+ * Simple functions and constnats used throughout the internal algorithms of Tasmanian.
  * \endinternal
  */
-
-#include "tsgMathUtils.hpp"
 
 /*!
  * \internal
  * \ingroup TasmanianSG
- * \addtogroup TasmanianUtils Miscellaneous utility templates
+ * \addtogroup TasmanianMaths Math functions and constants
  *
  * \endinternal
  */
@@ -57,50 +54,79 @@ namespace TasGrid{
 
 /*!
  * \internal
- * \ingroup TasmanianUtils
- * \brief Miscellaneous utility templates.
+ * \ingroup TasmanianMaths
+ * \brief Math functions and constants.
  */
-namespace Utils{
+namespace Maths{
+/*!
+ * \ingroup TasmanianMaths
+ * \brief Computes std::floor(std::log2(i)), but uses only integer operations.
+ */
+inline int intlog2(int i){
+    int result = 0;
+    while (i >>= 1){ result++; }
+    return result;
+}
+/*!
+ * \ingroup TasmanianMaths
+ * \brief Computes std::pow(2, std::floor(std::log2(i))), but uses only integer operations.
+ */
+inline int int2log2(int i){ // this is effectively: 2^(floor(log_2(i))), when i == 0, this returns 1
+    int result = 1;
+    while (i >>= 1){ result <<= 1; }
+    return result;
+}
+/*!
+ * \ingroup TasmanianMaths
+ * \brief Computes std::pow(3, std::floor(std::log(i) / std::log(2))), but uses only integer operations.
+ */
+inline int int3log3(int i){
+    int result = 1;
+    while(i >= 1){ i /= 3; result *= 3; }
+    return result;
+}
+/*!
+ * \ingroup TasmanianMaths
+ * \brief Computes std::pow(2, p), but uses only integer operations.
+ */
+inline int pow2(int p){ return (1 << p); }
+/*!
+ * \ingroup TasmanianMaths
+ * \brief Computes std::pow(3, p), but uses only integer operations.
+ */
+inline int pow3(int p){
+    int result = 1;
+    for(int i=0; i<p; i++) result *= 3;
+    return result;
+}
 
 /*!
  * \internal
- * \brief Converts two integer-like variables to \b size_t and returns the product.
- * \ingroup TasmanianUtils
- * \endinternal
- */
-template<typename IntA, typename IntB>
-inline size_t size_mult(IntA a, IntB b){ return static_cast<size_t>(a) * static_cast<size_t>(b); }
-
-/*!
- * \internal
- * \brief Wraps around a C-style of an array and mimics 2D data-structure.
- * \ingroup TasmanianUtils
+ * \ingroup TasmanianMaths
+ * \brief Half-period of the \b std::sin() and \b std::cos() functions.
  *
- * The Tasmanian external API accepts C-style arrays, which simplifies
- * interfacing with other languages such as C, Python and Fortran.
- * The arrays represent 2D data in strips with specific stride,
- * the Wrapper2D() takes such an array and logically divides it
- * so strips can be accessed without clumsy double-index notation.
+ * Borrowed from "math.h", let's hope they don't change the value in a future standard.
  * \endinternal
  */
-template<typename T>
-class Wrapper2D{
-public:
-    //! \brief Wrap around \b raw_data with the given \b stride_size.
-    Wrapper2D(int stride_size, T *raw_data) : stride(static_cast<size_t>(stride_size)), data(raw_data){}
-    //! \brief Default destructor, \b raw_data has to be deleted elsewhere.
-    ~Wrapper2D(){}
+constexpr double pi = 3.14159265358979323846;
 
-    //! \brief Return a pointer to the i-th strip.
-    T* getStrip(int i){ return &(data[size_mult(i, stride)]); }
+/*!
+ * \internal
+ * \ingroup TasmanianMaths
+ * \brief Numerical tolerance for various algorithms.
+ *
+ *  num_tol is used in many places:
+ *  - as a stopping criteria for various iterative schemes (e.g., finding leja points)
+ *  - drop criteria for eigenvalue solver related to Gauss rules
+ *  - comparison between nodes to detect repeated points in non-nested rules (e.g., all odd Chebyshev rules include zero)
+ *  - determining sparse matrix pattern, entries smaller than \b num_tol will be ignored (for wavelet grids)
+ *  - drop criteria in estimating anisotropic coefficients (refinement or just the coefficients) surpluses or Legendre coefficients below 10^3 times \b num_tol will be ignored
+ * \endinternal
+ */
+constexpr double num_tol = 1.E-12;
 
-private:
-    size_t stride;
-    T *data;
-};
+} // namespace Maths
 
-}
-
-}
+} // namespace TasGrid
 
 #endif

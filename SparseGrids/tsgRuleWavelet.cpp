@@ -228,9 +228,9 @@ const char * RuleWavelet::getDescription() const{
 int RuleWavelet::getLevel(int point) const{
     // Returns the level to which the given node belongs.
     if(order == 1){
-        return (point <= 2) ? 0 : BaseRuleLocalPolynomial::intlog2(point - 1);
+        return (point <= 2) ? 0 : Maths::intlog2(point - 1);
     }else{
-        return (point < 5) ? 0 : BaseRuleLocalPolynomial::intlog2(point - 1) - 1;
+        return (point < 5) ? 0 : Maths::intlog2(point - 1) - 1;
     }
 }
 void RuleWavelet::getChildren(int point, int &first, int &second) const{
@@ -281,7 +281,7 @@ double RuleWavelet::getNode(int point) const {
     if (point == 0) return  0.0;
     if (point == 1) return -1.0;
     if (point == 2) return  1.0;
-    return ((double)(2*point - 1)) / ((double) BaseRuleLocalPolynomial::int2log2(point - 1)) - 3.0;
+    return ((double)(2*point - 1)) / ((double) Maths::int2log2(point - 1)) - 3.0;
 }
 
 double RuleWavelet::getWeight(int point) const{
@@ -336,7 +336,7 @@ inline double RuleWavelet::eval_cubic(int point, double x) const{
         const double *phi = &(data[1][((point+1)/2) * num_data_points]);
         return interpolate(phi, x);
     }
-    int l = BaseRuleLocalPolynomial::intlog2(point - 1);
+    int l = Maths::intlog2(point - 1);
 
     if(l == 2){
         if (point > 6){
@@ -377,7 +377,7 @@ inline double RuleWavelet::eval_linear(int point, double x) const{
     // Given a wavelet designated by point and a value x, evaluates the wavelet at x.
 
     // Standard Lifted Wavelets
-    int l = BaseRuleLocalPolynomial::intlog2(point - 1);
+    int l = Maths::intlog2(point - 1);
     int subindex = (point - 1) % (1 << l);
     double scale = pow(2,l-2);
 

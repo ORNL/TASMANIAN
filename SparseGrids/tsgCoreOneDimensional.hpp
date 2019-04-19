@@ -126,18 +126,8 @@ namespace OneDimensionalMeta{
     //! \brief Return \b True if the \b rule has trigonometric basis.
     bool isFourier(TypeOneDRule rule);
 
-    //! \brief Map the string rule name to the enumerate, used in ASCII I/O, command line and Python.
-    TypeOneDRule getIORuleString(const char *name);
-    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeOneDRule enums.
-    std::map<std::string, TypeOneDRule> getStringToRuleMap();
-    //! \brief Map the enumerate to a string, used in ASCII I/O, command line and Python.
-    const char* getIORuleString(TypeOneDRule rule);
     //! \brief Map the enumerate to a human readable string, used in \b printStats().
     const char* getHumanString(TypeOneDRule rule);
-    //! \brief Map the integer to enumerate, used in binary I/O and Fortran (compiler and version independent).
-    TypeOneDRule getIORuleInt(int index);
-    //! \brief Map the enumerate to an integer, used in binary I/O and Fortran (compiler and version independent).
-    int getIORuleInt(TypeOneDRule rule);
 
     //! \brief Identifies the general contour, linear \b type_level, log-corrected \b type_curved, or hyperbolic \b type_hyperbolic.
 
@@ -185,20 +175,6 @@ namespace OneDimensionalMeta{
 
     //! \brief Return \b True if the multi-index selection type has log-correction term (need to use floating point indexing).
     inline bool isTypeCurved(TypeDepth type){ return (getControurType(type) == type_curved); }
-
-    //! \brief Map the string to the enumerate multi-index selection strategy, used in command line and Python.
-    TypeDepth getIOTypeString(const char *name);
-    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeDepth enums.
-    std::map<std::string, TypeDepth> getStringToDepthMap();
-    //! \brief Map the integer to the enumerate multi-index selection strategy, used in Fortran.
-    TypeDepth getIOTypeInt(int type);
-
-    //! \brief Map the string to the enumerate hierarchical refinement strategy, used in command line and Python.
-    TypeRefinement getIOTypeRefinementString(const char *name);
-    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeRefinement enums.
-    std::map<std::string, TypeRefinement> getStringToRefinementMap();
-    //! \brief Map the integer to the enumerate hierarchical refinement strategy, used in Fortran.
-    TypeRefinement getIOTypeRefinementInt(int ref);
 }
 
 //! \internal

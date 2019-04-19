@@ -105,6 +105,8 @@ set(Tasmanian_source_libsparsegrid
         tsgGridFourier.cpp
         tsgIndexManipulator.hpp
         tsgIndexManipulator.cpp
+        tsgHierarchyManipulator.hpp
+        tsgHierarchyManipulator.cpp
         tsgIOHelpers.hpp
         tsgIndexSets.hpp
         tsgIndexSets.cpp
@@ -117,6 +119,7 @@ set(Tasmanian_source_libsparsegrid
         tsgRuleWavelet.cpp
         tsgSequenceOptimizer.hpp
         tsgSequenceOptimizer.cpp
+        tsgMathUtils.hpp
         tsgUtils.hpp)
 
 # source files specific to cuda, used for both static and shared libs

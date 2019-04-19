@@ -31,7 +31,7 @@
 #ifndef __TASMANIAN_IOHELPERS_HPP
 #define __TASMANIAN_IOHELPERS_HPP
 
-#include "tsgCoreOneDimensional.hpp"
+#include "tsgEnumerates.hpp"
 
 /*!
  * \internal
@@ -84,10 +84,193 @@ enum IOPad{
 };
 
 /*!
- * \internal
+ * \ingroup TasmanianIO
+ * \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeOneDRule enums.
+ */
+inline std::map<std::string, TypeOneDRule> getStringRuleMap(){
+    return std::initializer_list<std::pair<std::string const, TypeOneDRule>>{
+        {"none",                 rule_none},
+        {"clenshaw-curtis",      rule_clenshawcurtis},
+        {"clenshaw-curtis-zero", rule_clenshawcurtis0},
+        {"chebyshev",            rule_chebyshev},
+        {"chebyshev-odd",        rule_chebyshevodd},
+        {"gauss-legendre",       rule_gausslegendre},
+        {"gauss-legendre-odd",   rule_gausslegendreodd},
+        {"gauss-patterson",      rule_gausspatterson},
+        {"leja",                 rule_leja},
+        {"leja-odd",             rule_lejaodd},
+        {"rleja",                rule_rleja},
+        {"rleja-double2",        rule_rlejadouble2},
+        {"rleja-double4",        rule_rlejadouble4},
+        {"rleja-odd",            rule_rlejaodd},
+        {"rleja-shifted",        rule_rlejashifted},
+        {"rleja-shifted-even",   rule_rlejashiftedeven},
+        {"rleja-shifted-double", rule_rlejashifteddouble},
+        {"max-lebesgue",         rule_maxlebesgue},
+        {"max-lebesgue-odd",     rule_maxlebesgueodd},
+        {"min-lebesgue",         rule_minlebesgue},
+        {"min-lebesgue-odd",     rule_minlebesgueodd},
+        {"min-delta",            rule_mindelta},
+        {"min-delta-odd",        rule_mindeltaodd},
+        {"gauss-chebyshev1",     rule_gausschebyshev1},
+        {"gauss-chebyshev1-odd", rule_gausschebyshev1odd},
+        {"gauss-chebyshev2",     rule_gausschebyshev2},
+        {"gauss-chebyshev2-odd", rule_gausschebyshev2odd},
+        {"fejer2",               rule_fejer2},
+        {"gauss-gegenbauer",     rule_gaussgegenbauer},
+        {"gauss-gegenbauer-odd", rule_gaussgegenbauerodd},
+        {"gauss-jacobi",         rule_gaussjacobi},
+        {"gauss-jacobi-odd",     rule_gaussjacobiodd},
+        {"gauss-laguerre",       rule_gausslaguerre},
+        {"gauss-laguerre-odd",   rule_gausslaguerreodd},
+        {"gauss-hermite",        rule_gausshermite},
+        {"gauss-hermite-odd",    rule_gausshermiteodd},
+        {"custom-tabulated",     rule_customtabulated},
+        {"localp",               rule_localp},
+        {"localp-zero",          rule_localp0},
+        {"localp-boundary",      rule_localpb},
+        {"semi-localp",          rule_semilocalp},
+        {"wavelet",              rule_wavelet},
+        {"fourier",              rule_fourier}};
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the string rule name to the enumerate, used in ASCII I/O, command line and Python.
+ */
+inline TypeOneDRule getRuleString(std::string const &name){
+    try{
+        return getStringRuleMap().at(name);
+    }catch(std::out_of_range &){
+        return rule_none;
+    }
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the enumerate to a string, used in ASCII I/O, command line and Python.
+ */
+inline std::string getRuleString(TypeOneDRule rule){
+    auto smap = getStringRuleMap();
+    return std::find_if(smap.begin(), smap.end(),
+                        [&](std::pair<std::string, TypeOneDRule> r)->bool{ return (r.second == rule); })->first;
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Creates a map with \b int (used by Fortran and binary I/O) mapped to \b TypeOneDRule enums.
+ */
+inline std::vector<TypeOneDRule> getIntRuleMap(){
+    return {rule_none, rule_clenshawcurtis, rule_clenshawcurtis0,
+        rule_chebyshev, rule_chebyshevodd, rule_gausslegendre, rule_gausslegendreodd,
+        rule_gausspatterson, rule_leja, rule_lejaodd,
+        rule_rleja, rule_rlejadouble2, rule_rlejadouble4, rule_rlejaodd,
+        rule_rlejashifted, rule_rlejashiftedeven, rule_rlejashifteddouble,
+        rule_maxlebesgue, rule_maxlebesgueodd, rule_minlebesgue, rule_minlebesgueodd,
+        rule_mindelta, rule_mindeltaodd, rule_gausschebyshev1, rule_gausschebyshev1odd,
+        rule_gausschebyshev2, rule_gausschebyshev2odd, rule_fejer2,
+        rule_gaussgegenbauer, rule_gaussgegenbauerodd, rule_gaussjacobi, rule_gaussjacobiodd,
+        rule_gausslaguerre, rule_gausslaguerreodd, rule_gausshermite, rule_gausshermiteodd,
+        rule_customtabulated,
+        rule_localp, rule_localp0, rule_semilocalp,
+        rule_wavelet, rule_fourier, rule_localpb};
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the int rule index to the enumerate, used in Fortran and binary IO.
+ */
+inline TypeOneDRule getRuleInt(int r){
+    auto rmap = getIntRuleMap();
+    return ((size_t) r < rmap.size()) ? rmap[(size_t) r] : rule_none;
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the enumerate to an int, used in Fortran and binary IO.
+ */
+inline int getRuleInt(TypeOneDRule rule){
+    auto rmap = getIntRuleMap();
+    return (int) std::distance(rmap.begin(), std::find_if(rmap.begin(), rmap.end(),
+                               [&](TypeOneDRule r)->bool{ return (r == rule); }));
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeDepth enums.
+ */
+inline std::map<std::string, TypeDepth> getStringToDepthMap(){
+    return std::initializer_list<std::pair<std::string const, TypeDepth>>{
+        {"level",        type_level},
+        {"curved",       type_curved},
+        {"iptotal",      type_iptotal},
+        {"ipcurved",     type_ipcurved},
+        {"qptotal",      type_qptotal},
+        {"qpcurved",     type_qpcurved},
+        {"hyperbolic",   type_hyperbolic},
+        {"iphyperbolic", type_iphyperbolic},
+        {"qphyperbolic", type_qphyperbolic},
+        {"tensor",       type_tensor},
+        {"iptensor",     type_iptensor},
+        {"qptensor",     type_qptensor}};
+}
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the string to the enumerate multi-index selection strategy, used in command line and Python.
+ */
+inline TypeDepth getDepthTypeString(std::string const &name){
+    try{
+        return getStringToDepthMap().at(name);
+    }catch(std::out_of_range &){
+        return type_none;
+    }
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the integer to the enumerate multi-index selection strategy, used in Fortran.
+ */
+inline TypeDepth getDepthTypeInt(int t){
+    std::vector<TypeDepth> imap = {type_none, type_level, type_curved, type_iptotal,
+        type_ipcurved, type_qptotal, type_qpcurved, type_hyperbolic, type_iphyperbolic,
+        type_qphyperbolic, type_tensor, type_iptensor, type_qptensor};
+    return ((size_t) t < imap.size()) ? imap[(size_t) t] : type_none;
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeRefinement enums.
+ */
+inline std::map<std::string, TypeRefinement> getStringToRefinementMap(){
+    return std::initializer_list<std::pair<std::string const, TypeRefinement>>{
+        {"classic",   refine_classic},
+        {"parents",   refine_parents_first},
+        {"direction", refine_direction_selective},
+        {"fds",       refine_fds}};
+}
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the string to the enumerate hierarchical refinement strategy, used in command line and Python.
+ */
+inline TypeRefinement getTypeRefinementString(std::string const &name){
+    try{
+        return getStringToRefinementMap().at(name);
+    }catch(std::out_of_range &){
+        return refine_none;
+    }
+}
+/*!
+ * \ingroup TasmanianIO
+ * \brief Map the integer to the enumerate hierarchical refinement strategy, used by Fortran.
+ */
+inline TypeRefinement getTypeRefinementInt(int refinement){
+    std::vector<TypeRefinement> imap = {refine_none, refine_classic, refine_parents_first, refine_direction_selective, refine_fds};
+    return ((size_t) refinement < imap.size()) ? imap[(size_t) refinement] : refine_none;
+}
+
+/*!
  * \ingroup TasmanianIO
  * \brief Write the flag to file, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
- * \endinternal
  */
 template<bool useAscii, IOPad pad>
 void writeFlag(bool flag, std::ostream &os){
@@ -102,10 +285,8 @@ void writeFlag(bool flag, std::ostream &os){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Read a flag, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
- * \endinternal
  */
 template<bool useAscii>
 bool readFlag(std::istream &os){
@@ -121,10 +302,8 @@ bool readFlag(std::istream &os){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Write the vector to the stream, the vector cannot be empty.
- * \endinternal
  */
 template<bool useAscii, IOPad pad, typename VecType>
 void writeVector(const std::vector<VecType> &x, std::ostream &os){
@@ -144,10 +323,8 @@ void writeVector(const std::vector<VecType> &x, std::ostream &os){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Read the vector from the stream.
- * \endinternal
  */
 template<bool useAscii, typename VecType>
 void readVector(std::istream &os, std::vector<VecType> &x){
@@ -159,10 +336,8 @@ void readVector(std::istream &os, std::vector<VecType> &x){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Write a bunch of numbers with the same type.
- * \endinternal
  */
 template<bool useAscii, IOPad pad, typename... Vals>
 void writeNumbers(std::ostream &os, Vals... vals){
@@ -171,10 +346,8 @@ void writeNumbers(std::ostream &os, Vals... vals){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Read a single number, used to read ints (and potentially cast to size_t) or read a double.
- * \endinternal
  */
 template<bool useAscii, typename Val>
 Val readNumber(std::istream &os){
@@ -188,35 +361,31 @@ Val readNumber(std::istream &os){
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Write a rule.
- * \endinternal
  */
 template<bool useAscii>
 void writeRule(TypeOneDRule rule, std::ostream &os){
     if (useAscii){
-        os << OneDimensionalMeta::getIORuleString(rule) << std::endl;
+        os << getRuleString(rule) << std::endl;
     }else{
-        int r = OneDimensionalMeta::getIORuleInt(rule);
+        int r = getRuleInt(rule);
         os.write((char*) &r, sizeof(int));
     }
 }
 
 /*!
- * \internal
  * \ingroup TasmanianIO
  * \brief Read a rule.
- * \endinternal
  */
 template<bool useAscii>
 TypeOneDRule readRule(std::istream &is){
     if (useAscii){
         std::string T;
         is >> T;
-        return OneDimensionalMeta::getIORuleString(T.c_str());
+        return getRuleString(T);
     }else{
-        return OneDimensionalMeta::getIORuleInt(readNumber<false, int>(is));
+        return getRuleInt(readNumber<false, int>(is));
     }
 }
 

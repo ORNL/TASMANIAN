@@ -207,17 +207,17 @@ int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule){
 
         case rule_rlejashiftedeven:   return 2*(level + 1);
 
-        case rule_rlejashifteddouble: return (1 << (level+1));
+        case rule_rlejashifteddouble: return Maths::pow2(level+1);
 
         case rule_clenshawcurtis0:
-        case rule_gausspatterson:     return ((1 << (level+1)) - 1);
+        case rule_gausspatterson:     return Maths::pow2(level+1) - 1;
 
-        case rule_clenshawcurtis:     return (level == 0) ? 1 : ((1 << level) + 1);
+        case rule_clenshawcurtis:     return (level == 0) ? 1 : (Maths::pow2(level) + 1);
         case rule_rlejadouble2:       if (level < 3){ return getNumPoints(level, rule_clenshawcurtis); }; lcc = 2 + (level-3)/2; return (getNumPoints(lcc,rule_clenshawcurtis) + ((getNumPoints(lcc+1,rule_clenshawcurtis)-getNumPoints(lcc,rule_clenshawcurtis))/2) * ((level-3)%2 +1));
         case rule_rlejadouble4:       if (level < 3){ return getNumPoints(level, rule_clenshawcurtis); }; lcc = 2 + (level-3)/4; return (getNumPoints(lcc,rule_clenshawcurtis) + ((getNumPoints(lcc+1,rule_clenshawcurtis)-getNumPoints(lcc,rule_clenshawcurtis))/4) * ((level-3)%4 +1));
-        case rule_fejer2:             return ((1 << (level+1)) - 1);
+        case rule_fejer2:             return Maths::pow2(level+1) - 1;
 
-        case rule_fourier:            lcc = 1; for(int k=0; k<level; k++) { lcc *= 3; } return lcc;
+        case rule_fourier:            return Maths::pow3(level);
 
         default:
             return level; // should not be called, but compiler complains for the lack of return/default
@@ -256,16 +256,16 @@ int OneDimensionalMeta::getIExact(int level, TypeOneDRule rule){
 
         case rule_rlejashiftedeven:   return 2*level + 1;
 
-        case rule_rlejashifteddouble: return ((1 << (level+1)) -1);
+        case rule_rlejashifteddouble: return Maths::pow2(level+1) -1;
 
         case rule_gausspatterson:
-        case rule_fejer2:             return ((1 << (level+1)) - 2);
+        case rule_fejer2:             return Maths::pow2(level+1) -2;
 
-        case rule_clenshawcurtis:     return (level > 0) ? (1 << level) : 0;
-        case rule_clenshawcurtis0:    return ((1 << (level+1)) +1);
+        case rule_clenshawcurtis:     return (level > 0) ? Maths::pow2(level) : 0;
+        case rule_clenshawcurtis0:    return Maths::pow2(level+1) +1;
         case rule_rlejadouble2:       return getNumPoints(level,rule_rlejadouble2)-1;
         case rule_rlejadouble4:       return getNumPoints(level,rule_rlejadouble4)-1;
-        case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
+        case rule_fourier:            return (Maths::pow3(level)-1)/2;
         default:
             return level; // should not be called, but compiler complains for the lack of return/default
     }
@@ -304,16 +304,16 @@ int OneDimensionalMeta::getQExact(int level, TypeOneDRule rule){
 
         case rule_rlejashiftedeven:   return 2*level;
 
-        case rule_rlejashifteddouble: return ((1 << (level+1)) -1);
+        case rule_rlejashifteddouble: return Maths::pow2(level+1) -1;
 
-        case rule_gausspatterson:     return (level == 0) ? 1 : (3*(1 << level) - 1);
-        case rule_clenshawcurtis:     return (level == 0) ? 1 : ((1 << level) + 1);
-        case rule_clenshawcurtis0:    return (level == 0) ? 1 : ((1 << (level+1)) + 1);
+        case rule_gausspatterson:     return (level == 0) ? 1 : (3 * Maths::pow2(level) - 1);
+        case rule_clenshawcurtis:     return (level == 0) ? 1 : (Maths::pow2(level) + 1);
+        case rule_clenshawcurtis0:    return (level == 0) ? 1 : (Maths::pow2(level+1) + 1);
         case rule_chebyshev:          return level+1;
         case rule_rlejadouble2:       return getNumPoints(level,rule_rlejadouble2);
         case rule_rlejadouble4:       return getNumPoints(level,rule_rlejadouble4)-1;
-        case rule_fejer2:             return ((1 << (level+1)) - 1);
-        case rule_fourier:            return (getNumPoints(level,rule_fourier)-1)/2;
+        case rule_fejer2:             return Maths::pow2(level+1) - 1;
+        case rule_fourier:            return (Maths::pow3(level)-1)/2;
         default:
             return level; // should not be called, but compiler complains for the lack of return/default
     }
@@ -395,268 +395,6 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
             return "unknown";
     }
 }
-const char* OneDimensionalMeta::getIORuleString(TypeOneDRule rule){
-    switch (rule){
-        case rule_clenshawcurtis:     return "clenshaw-curtis";
-        case rule_clenshawcurtis0:    return "clenshaw-curtis-zero";
-        case rule_chebyshev:          return "chebyshev";
-        case rule_chebyshevodd:       return "chebyshev-odd";
-        case rule_gausslegendre:      return "gauss-legendre";
-        case rule_gausslegendreodd:   return "gauss-legendre-odd";
-        case rule_gausspatterson:     return "gauss-patterson";
-        case rule_leja:               return "leja";
-        case rule_lejaodd:            return "leja-odd";
-        case rule_rleja:              return "rleja";
-        case rule_rlejaodd:           return "rleja-odd";
-        case rule_rlejadouble2:       return "rleja-double2";
-        case rule_rlejadouble4:       return "rleja-double4";
-        case rule_rlejashifted:       return "rleja-shifted";
-        case rule_rlejashiftedeven:   return "rleja-shifted-even";
-        case rule_rlejashifteddouble: return "rleja-shifted-double";
-        case rule_maxlebesgue:        return "max-lebesgue";
-        case rule_maxlebesgueodd:     return "max-lebesgue-odd";
-        case rule_minlebesgue:        return "min-lebesgue";
-        case rule_minlebesgueodd:     return "min-lebesgue-odd";
-        case rule_mindelta:           return "min-delta";
-        case rule_mindeltaodd:        return "min-delta-odd";
-        case rule_gausschebyshev1:    return "gauss-chebyshev1";
-        case rule_gausschebyshev1odd: return "gauss-chebyshev1-odd";
-        case rule_gausschebyshev2:    return "gauss-chebyshev2";
-        case rule_gausschebyshev2odd: return "gauss-chebyshev2-odd";
-        case rule_fejer2:             return "fejer2";
-        case rule_gaussgegenbauer:    return "gauss-gegenbauer";
-        case rule_gaussgegenbauerodd: return "gauss-gegenbauer-odd";
-        case rule_gaussjacobi:        return "gauss-jacobi";
-        case rule_gaussjacobiodd:     return "gauss-jacobi-odd";
-        case rule_gausslaguerre:      return "gauss-laguerre";
-        case rule_gausslaguerreodd:   return "gauss-laguerre-odd";
-        case rule_gausshermite:       return "gauss-hermite";
-        case rule_gausshermiteodd:    return "gauss-hermite-odd";
-        case rule_customtabulated:    return "custom-tabulated";
-        case rule_localp:             return "localp";
-        case rule_localp0:            return "localp-zero";
-        case rule_localpb:            return "localp-boundary";
-        case rule_semilocalp:         return "semi-localp";
-        case rule_wavelet:            return "wavelet";
-        case rule_fourier:            return "fourier";
-        default:
-            return "unknown";
-    }
-}
-std::map<std::string, TypeOneDRule> OneDimensionalMeta::getStringToRuleMap(){
-    return {
-        {"clenshaw-curtis",      rule_clenshawcurtis},
-        {"clenshaw-curtis-zero", rule_clenshawcurtis0},
-        {"chebyshev",            rule_chebyshev},
-        {"chebyshev-odd",        rule_chebyshevodd},
-        {"gauss-legendre",       rule_gausslegendre},
-        {"gauss-legendre-odd",   rule_gausslegendreodd},
-        {"gauss-patterson",      rule_gausspatterson},
-        {"leja",                 rule_leja},
-        {"leja-odd",             rule_lejaodd},
-        {"rleja",                rule_rleja},
-        {"rleja-double2",        rule_rlejadouble2},
-        {"rleja-double4",        rule_rlejadouble4},
-        {"rleja-odd",            rule_rlejaodd},
-        {"rleja-shifted",        rule_rlejashifted},
-        {"rleja-shifted-even",   rule_rlejashiftedeven},
-        {"rleja-shifted-double", rule_rlejashifteddouble},
-        {"max-lebesgue",         rule_maxlebesgue},
-        {"max-lebesgue-odd",     rule_maxlebesgueodd},
-        {"min-lebesgue",         rule_minlebesgue},
-        {"min-lebesgue-odd",     rule_minlebesgueodd},
-        {"min-delta",            rule_mindelta},
-        {"min-delta-odd",        rule_mindeltaodd},
-        {"gauss-chebyshev1",     rule_gausschebyshev1},
-        {"gauss-chebyshev1-odd", rule_gausschebyshev1odd},
-        {"gauss-chebyshev2",     rule_gausschebyshev2},
-        {"gauss-chebyshev2-odd", rule_gausschebyshev2odd},
-        {"fejer2",               rule_fejer2},
-        {"gauss-gegenbauer",     rule_gaussgegenbauer},
-        {"gauss-gegenbauer-odd", rule_gaussgegenbauerodd},
-        {"gauss-jacobi",         rule_gaussjacobi},
-        {"gauss-jacobi-odd",     rule_gaussjacobiodd},
-        {"gauss-laguerre",       rule_gausslaguerre},
-        {"gauss-laguerre-odd",   rule_gausslaguerreodd},
-        {"gauss-hermite",        rule_gausshermite},
-        {"gauss-hermite-odd",    rule_gausshermiteodd},
-        {"custom-tabulated",     rule_customtabulated},
-        {"localp",               rule_localp},
-        {"localp-zero",          rule_localp0},
-        {"localp-boundary",      rule_localpb},
-        {"semi-localp",          rule_semilocalp},
-        {"wavelet",              rule_wavelet},
-        {"fourier",              rule_fourier}};
-}
-TypeOneDRule OneDimensionalMeta::getIORuleString(const char *name){
-    try{
-        return getStringToRuleMap().at(name);
-    }catch(std::out_of_range &){
-        return rule_none;
-    }
-}
-TypeOneDRule OneDimensionalMeta::getIORuleInt(int index){
-    switch (index){
-        case  1: return rule_clenshawcurtis;
-        case  2: return rule_clenshawcurtis0;
-        case  3: return rule_chebyshev;
-        case  4: return rule_chebyshevodd;
-        case  5: return rule_gausslegendre;
-        case  6: return rule_gausslegendreodd;
-        case  7: return rule_gausspatterson;
-        case  8: return rule_leja;
-        case  9: return rule_lejaodd;
-        case 10: return rule_rleja;
-        case 11: return rule_rlejaodd;
-        case 12: return rule_rlejadouble2;
-        case 13: return rule_rlejadouble4;
-        case 14: return rule_rlejashifted;
-        case 15: return rule_rlejashiftedeven;
-        case 16: return rule_rlejashifteddouble;
-        case 17: return rule_maxlebesgue;
-        case 18: return rule_maxlebesgueodd;
-        case 19: return rule_minlebesgue;
-        case 20: return rule_minlebesgueodd;
-        case 21: return rule_mindelta;
-        case 22: return rule_mindeltaodd;
-        case 23: return rule_gausschebyshev1;
-        case 24: return rule_gausschebyshev1odd;
-        case 25: return rule_gausschebyshev2;
-        case 26: return rule_gausschebyshev2odd;
-        case 27: return rule_fejer2;
-        case 28: return rule_gaussgegenbauer;
-        case 29: return rule_gaussgegenbauerodd;
-        case 30: return rule_gaussjacobi;
-        case 31: return rule_gaussjacobiodd;
-        case 32: return rule_gausslaguerre;
-        case 33: return rule_gausslaguerreodd;
-        case 34: return rule_gausshermite;
-        case 35: return rule_gausshermiteodd;
-        case 36: return rule_customtabulated;
-        case 37: return rule_localp;
-        case 38: return rule_localp0;
-        case 39: return rule_semilocalp;
-        case 40: return rule_wavelet;
-        case 41: return rule_fourier;
-        case 42: return rule_localpb;
-        default:
-            return rule_none;
-    }
-}
-int OneDimensionalMeta::getIORuleInt(TypeOneDRule rule){
-    switch (rule){
-        case rule_clenshawcurtis:     return  1;
-        case rule_clenshawcurtis0:    return  2;
-        case rule_chebyshev:          return  3;
-        case rule_chebyshevodd:       return  4;
-        case rule_gausslegendre:      return  5;
-        case rule_gausslegendreodd:   return  6;
-        case rule_gausspatterson:     return  7;
-        case rule_leja:               return  8;
-        case rule_lejaodd:            return  9;
-        case rule_rleja:              return 10;
-        case rule_rlejaodd:           return 11;
-        case rule_rlejadouble2:       return 12;
-        case rule_rlejadouble4:       return 13;
-        case rule_rlejashifted:       return 14;
-        case rule_rlejashiftedeven:   return 15;
-        case rule_rlejashifteddouble: return 16;
-        case rule_maxlebesgue:        return 17;
-        case rule_maxlebesgueodd:     return 18;
-        case rule_minlebesgue:        return 19;
-        case rule_minlebesgueodd:     return 20;
-        case rule_mindelta:           return 21;
-        case rule_mindeltaodd:        return 22;
-        case rule_gausschebyshev1:    return 23;
-        case rule_gausschebyshev1odd: return 24;
-        case rule_gausschebyshev2:    return 25;
-        case rule_gausschebyshev2odd: return 26;
-        case rule_fejer2:             return 27;
-        case rule_gaussgegenbauer:    return 28;
-        case rule_gaussgegenbauerodd: return 29;
-        case rule_gaussjacobi:        return 30;
-        case rule_gaussjacobiodd:     return 31;
-        case rule_gausslaguerre:      return 32;
-        case rule_gausslaguerreodd:   return 33;
-        case rule_gausshermite:       return 34;
-        case rule_gausshermiteodd:    return 35;
-        case rule_customtabulated:    return 36;
-        case rule_localp:             return 37;
-        case rule_localp0:            return 38;
-        case rule_localpb:            return 42;
-        case rule_semilocalp:         return 39;
-        case rule_wavelet:            return 40;
-        case rule_fourier:            return 41;
-        default:
-            return 0;
-    }
-}
-
-std::map<std::string, TypeDepth> OneDimensionalMeta::getStringToDepthMap(){
-    return {
-        {"level",        type_level},
-        {"curved",       type_curved},
-        {"iptotal",      type_iptotal},
-        {"ipcurved",     type_ipcurved},
-        {"qptotal",      type_qptotal},
-        {"qpcurved",     type_qpcurved},
-        {"hyperbolic",   type_hyperbolic},
-        {"iphyperbolic", type_iphyperbolic},
-        {"qphyperbolic", type_qphyperbolic},
-        {"tensor",       type_tensor},
-        {"iptensor",     type_iptensor},
-        {"qptensor",     type_qptensor}};
-}
-TypeDepth OneDimensionalMeta::getIOTypeString(const char *name){
-    try{
-        return getStringToDepthMap().at(name);
-    }catch(std::out_of_range &){
-        return type_none;
-    }
-}
-TypeDepth OneDimensionalMeta::getIOTypeInt(int type){
-    switch (type){
-        case  1: return type_level;
-        case  2: return type_curved;
-        case  3: return type_iptotal;
-        case  4: return type_ipcurved;
-        case  5: return type_qptotal;
-        case  6: return type_qpcurved;
-        case  7: return type_hyperbolic;
-        case  8: return type_iphyperbolic;
-        case  9: return type_qphyperbolic;
-        case 10: return type_tensor;
-        case 11: return type_iptensor;
-        case 12: return type_qptensor;
-        default:
-            return type_none;
-    }
-}
-
-std::map<std::string, TypeRefinement> OneDimensionalMeta::getStringToRefinementMap(){
-    return {
-        {"classic",   refine_classic},
-        {"parents",   refine_parents_first},
-        {"direction", refine_direction_selective},
-        {"fds",       refine_fds}};
-}
-TypeRefinement OneDimensionalMeta::getIOTypeRefinementString(const char *name){
-    try{
-        return getStringToRefinementMap().at(name);
-    }catch(std::out_of_range &){
-        return refine_none;
-    }
-}
-TypeRefinement OneDimensionalMeta::getIOTypeRefinementInt(int ref){
-    switch (ref){
-        case  1: return refine_classic;
-        case  2: return refine_parents_first;
-        case  3: return refine_direction_selective;
-        case  4: return refine_fds;
-        default:
-            return refine_none;
-    }
-}
 
 // Gauss-Legendre
 void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x){
@@ -687,7 +425,7 @@ void OneDimensionalNodes::getChebyshev(int m, std::vector<double> &w, std::vecto
     };
 
     for(i=0; i<m; i++){
-        x[i] = std::cos(((double) (m-i-1)) * tsg_pi / ((double) (m-1)));
+        x[i] = std::cos(((double) (m-i-1)) * Maths::pi / ((double) (m-1)));
     };
 
     // may also have to set the mid-point to 0.0
@@ -695,7 +433,7 @@ void OneDimensionalNodes::getChebyshev(int m, std::vector<double> &w, std::vecto
 
     for(i=0; i<m; i++){
         w[i] = 1.0;
-        double theta = ((double) i) * tsg_pi / ((double) (m-1));
+        double theta = ((double) i) * Maths::pi / ((double) (m-1));
         for(j=1; j<=(m-1)/2; j++){
             if (2*j == (m-1)){
                 b = 1.0;
@@ -719,8 +457,8 @@ void OneDimensionalNodes::getGaussChebyshev1(int m, std::vector<double> &w, std:
     x.resize(m);
 
     for(int i=0; i<m; i++){
-        x[m-i-1] = std::cos(tsg_pi*(2*i+1) / (2*((double)m)));
-        w[i] = tsg_pi / m;
+        x[m-i-1] = std::cos(Maths::pi*(2*i+1) / (2*((double)m)));
+        w[i] = Maths::pi / m;
     }
 }
 // get Gauss-Chebyshev-type2 quadrature points
@@ -729,9 +467,9 @@ void OneDimensionalNodes::getGaussChebyshev2(int m, std::vector<double> &w, std:
     x.resize(m);
 
     for(int i=0; i<m; i++){
-        double theta = tsg_pi*((double)(i+1))/((double)(m+1));
+        double theta = Maths::pi*((double)(i+1))/((double)(m+1));
         x[m-i-1] = std::cos(theta);
-        w[i] = (tsg_pi / ((double)(m+1))) * std::sin(theta)* std::sin(theta);
+        w[i] = (Maths::pi / ((double)(m+1))) * std::sin(theta)* std::sin(theta);
     }
 }
 // get Gauss-Jacobi quadrature points
@@ -809,7 +547,7 @@ void OneDimensionalNodes::getClenshawCurtisNodes(int level, std::vector<double> 
         for(int l=2; l<=level; l++){
             n = OneDimensionalMeta::getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                  nodes[count++] = std::cos(tsg_pi * ((double) (n-i-1)) / ((double) (n - 1)));
+                  nodes[count++] = std::cos(Maths::pi * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
@@ -830,7 +568,7 @@ double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     }
 
     double weight = 1.0;
-    double theta = ((double) ieffective) * tsg_pi / ((double) (n-1));
+    double theta = ((double) ieffective) * Maths::pi / ((double) (n-1));
     for(int j=1; j<(n-1)/2; j++){
         weight -= 2.0 * std::cos(2.0 * j * theta) / ((double) (4*j*j - 1));
     }
@@ -851,7 +589,7 @@ void OneDimensionalNodes::getClenshawCurtisNodesZero(int level, std::vector<doub
         for(int l=2; l<=level+1; l++){
             n = OneDimensionalMeta::getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                nodes[count++] = std::cos(tsg_pi * ((double) (n-i-1)) / ((double) (n - 1)));
+                nodes[count++] = std::cos(Maths::pi * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
@@ -869,7 +607,7 @@ double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     }
 
     double weight = 1.0;
-    double theta = ((double) ieffective) * tsg_pi / ((double) (n-1));
+    double theta = ((double) ieffective) * Maths::pi / ((double) (n-1));
     for(int j=1; j<(n-1)/2; j++){
         weight -= 2.0 * std::cos(2.0 * j * theta) / ((double) (4*j*j - 1));
     }
@@ -889,7 +627,7 @@ void OneDimensionalNodes::getFejer2Nodes(int level, std::vector<double> &nodes){
         for(int l=2; l<=level+1; l++){
             n = OneDimensionalMeta::getNumPoints(l, rule_clenshawcurtis);
             for(int i=1; i<n; i+=2){
-                nodes[count++] = std::cos(tsg_pi * ((double) (n-i-1)) / ((double) (n - 1)));
+                nodes[count++] = std::cos(Maths::pi * ((double) (n-i-1)) / ((double) (n - 1)));
             }
         }
     }
@@ -907,7 +645,7 @@ double OneDimensionalNodes::getFejer2Weight(int level, int point){
     }
 
     double weight = 1.0;
-    double theta = ((double) (n-ieffective)) * tsg_pi / ((double) (n+1));
+    double theta = ((double) (n-ieffective)) * Maths::pi / ((double) (n+1));
     for(int j=1; j<=(n-1)/2; j++){
         weight -= 2.0 * std::cos(2.0 * j * theta) / ((double) (4*j*j - 1));
     }
@@ -920,11 +658,11 @@ double OneDimensionalNodes::getFejer2Weight(int level, int point){
 void OneDimensionalNodes::getRLeja(int n, std::vector<double> &nodes){
     nodes.resize(n);
     nodes[0] = 0.0;
-    if (n > 1){ nodes[1] = tsg_pi; }
-    if (n > 2){ nodes[2] = 0.5 * tsg_pi; }
+    if (n > 1){ nodes[1] = Maths::pi; }
+    if (n > 2){ nodes[2] = 0.5 * Maths::pi; }
     for(int i=3; i<n; i++){
         if (i % 2 == 0){
-            nodes[i] = nodes[i-1] + tsg_pi;
+            nodes[i] = nodes[i-1] + Maths::pi;
         }else{
             nodes[i] = 0.5 * nodes[(i+1)/2];
         }

@@ -163,7 +163,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     if (num_outputs == 0){
         points = std::move(needed);
         needed = MultiIndexSet();
-        parents = MultiIndexManipulations::computeDAGup(points, rule.get());
+        parents = HierarchyManipulations::computeDAGup(points, rule.get());
     }else{
         values.resize(num_outputs, needed.getNumIndexes());
     }
@@ -253,7 +253,7 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
 
 #ifdef Tasmanian_ENABLE_BLAS
 void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) const{
-    if ((sparse_affinity == 1) || ((sparse_affinity == 0) && ((size_t) num_outputs <= TSG_LOCALP_BLAS_NUM_OUTPUTS))){
+    if ((sparse_affinity == 1) || ((sparse_affinity == 0) && (num_outputs <= 1024))){
         evaluateBatch(x, num_x, y);
         return;
     }
@@ -294,15 +294,15 @@ void GridLocalPolynomial::evaluateBlas(const double x[], int num_x, double y[]) 
 void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double *vals){
     updateValues(vals);
 
-    std::vector<int> levels = MultiIndexManipulations::computeLevels(points, rule.get());
+    std::vector<int> levels = HierarchyManipulations::computeLevels(points, rule.get());
 
-    std::vector<Data2D<int>> lpnts = MultiIndexManipulations::splitByLevels((size_t) num_dimensions, points.getVector(), levels);
-    std::vector<Data2D<double>> lvals = MultiIndexManipulations::splitByLevels((size_t) num_outputs, values.getVector(), levels);
+    std::vector<Data2D<int>> lpnts = HierarchyManipulations::splitByLevels((size_t) num_dimensions, points.getVector(), levels);
+    std::vector<Data2D<double>> lvals = HierarchyManipulations::splitByLevels((size_t) num_outputs, values.getVector(), levels);
 
     Data2D<double> allx(num_dimensions, points.getNumIndexes());
     getPoints(allx.getVector().data());
 
-    std::vector<Data2D<double>> lx = MultiIndexManipulations::splitByLevels((size_t) num_dimensions, allx.getVector(), levels);
+    std::vector<Data2D<double>> lx = HierarchyManipulations::splitByLevels((size_t) num_dimensions, allx.getVector(), levels);
 
     MultiIndexSet cumulative_poitns((size_t) num_dimensions, std::move(lpnts[0].getVector()));
 
@@ -488,13 +488,13 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
         double weight = 0.0;
         std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // get the point
 
-        MultiIndexManipulations::touchAllImmediateRelatives(p, points, rule.get(),
+        HierarchyManipulations::touchAllImmediateRelatives(p, points, rule.get(),
                                                             [&](int relative)->void{ weight = std::max(weight, getDominantSurplus(relative)); });
         refine_weights[i] = weight; // those will be inverted
     }
 
     // compute the weights for the initial points
-    std::vector<int> initial_levels =  MultiIndexManipulations::computeLevels(dynamic_values->initial_points, rule.get());
+    std::vector<int> initial_levels =  HierarchyManipulations::computeLevels(dynamic_values->initial_points, rule.get());
 
     std::forward_list<NodeData> weighted_points;
     for(int i=0; i<dynamic_values->initial_points.getNumIndexes(); i++){
@@ -519,7 +519,7 @@ void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vect
     std::vector<int> p(num_dimensions); // convert x to p, maybe expensive
     for(int j=0; j<num_dimensions; j++){
         p[j] = 0;
-        while(std::abs(rule->getNode(p[j]) - x[j]) > TSG_NUM_TOL) p[j]++;
+        while(std::abs(rule->getNode(p[j]) - x[j]) > Maths::num_tol) p[j]++;
     }
 
     dynamic_values->data.push_front({p, y});
@@ -529,7 +529,7 @@ void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vect
     auto t = dynamic_values->data.begin();
     while(t != dynamic_values->data.end()){
         bool isConnected = false;
-        MultiIndexManipulations::touchAllImmediateRelatives(t->point, points, rule.get(),
+        HierarchyManipulations::touchAllImmediateRelatives(t->point, points, rule.get(),
                                                             [&](int)->void{ isConnected = true; });
         int lvl = rule->getLevel(t->point[0]);
         for(int j=1; j<num_dimensions; j++) lvl += rule->getLevel(t->point[j]);
@@ -579,7 +579,7 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
             std::copy_n(values.getValues(g), num_outputs, surpluses.getStrip(g)); // reset the surpluses to the values (will be updated)
         }
 
-        Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
+        Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
         updateSurpluses(points, top_level + 1, levels, dagUp); // compute the current DAG and update the surplused for the descendants
     }
     buildTree(); // the tree is needed for evaluate(), must be rebuild every time the points set is updated
@@ -636,7 +636,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     // apply the transpose of the surplus transformation
     Data2D<int> lparents;
     if (parents.getNumStrips() != work.getNumIndexes()) // if the current dag loaded in parents does not reflect the indexes in work
-        lparents = MultiIndexManipulations::computeDAGup(work, rule.get());
+        lparents = HierarchyManipulations::computeDAGup(work, rule.get());
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -715,9 +715,9 @@ void GridLocalPolynomial::recomputeSurpluses(){
     surpluses.resize(num_outputs, num_points);
     surpluses.getVector() = values.getVector(); // copy assignment
 
-    Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
+    Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
 
-    std::vector<int> level = MultiIndexManipulations::computeLevels(points, rule.get());
+    std::vector<int> level = HierarchyManipulations::computeLevels(points, rule.get());
 
     updateSurpluses(points, top_level, level, dagUp);
 }
@@ -890,10 +890,10 @@ void GridLocalPolynomial::buildTree(){
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
 
-    std::vector<int> level = MultiIndexManipulations::computeLevels(work, rule.get());
+    std::vector<int> level = HierarchyManipulations::computeLevels(work, rule.get());
     top_level = *std::max_element(level.begin(), level.end());
 
-    Data2D<int> kids = MultiIndexManipulations::computeDAGDown(work, rule.get());
+    Data2D<int> kids = HierarchyManipulations::computeDAGDown(work, rule.get());
 
     int max_kids = (int) kids.getStride();
 
@@ -978,12 +978,12 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
 
     Data2D<int> lparents;
     if (parents.getNumStrips() != work.getNumIndexes())
-        lparents = MultiIndexManipulations::computeDAGup(work, rule.get());
+        lparents = HierarchyManipulations::computeDAGup(work, rule.get());
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
     int num_points = work.getNumIndexes();
-    std::vector<int> level = MultiIndexManipulations::computeLevels(work, rule.get());
+    std::vector<int> level = HierarchyManipulations::computeLevels(work, rule.get());
 
     std::vector<double> node(num_dimensions);
     int max_parents = rule->getMaxNumParents() * num_dimensions;
@@ -1097,7 +1097,7 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
         }
     }else{
         // construct a series of 1D interpolants and use a refinement criteria that is a combination of the two hierarchical coefficients
-        Data2D<int> dagUp = MultiIndexManipulations::computeDAGup(points, rule.get());
+        Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
 
         int max_1D_parents = rule->getMaxNumParents();
 

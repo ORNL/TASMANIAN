@@ -388,9 +388,9 @@ bool DreamExternalTester::testCustomModel(){
                                  auto ic = candidates.begin();
                                  auto iv = values.begin();
                                  while(iv != values.end()){ // takes the first and last parameters
-                                     *iv++ = 1.0 - std::sin(tsg_pi * *ic++);
+                                     *iv++ = 1.0 - std::sin(DreamMaths::pi * *ic++);
                                      ic++;
-                                     *iv++ = 1.0 - std::sin(tsg_pi * *ic++);
+                                     *iv++ = 1.0 - std::sin(DreamMaths::pi * *ic++);
                                  }
                              },
                              uniform_prior,

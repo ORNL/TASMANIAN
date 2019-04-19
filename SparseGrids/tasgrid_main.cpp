@@ -289,7 +289,7 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide valid depth type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-            TypeDepth depth_type = OneDimensionalMeta::getIOTypeString(args.front().c_str());
+            TypeDepth depth_type = IO::getDepthTypeString(args.front());
             if (depth_type == type_none){
                 cerr << "ERROR: " << args.front() << " is not a valid type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
@@ -301,7 +301,7 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide valid -onedim!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-            TypeOneDRule rule = OneDimensionalMeta::getIORuleString(args.front().c_str());
+            TypeOneDRule rule = IO::getRuleString(args.front());
             if (rule == rule_none){
                 cerr << "ERROR: " << args.front() << " is not a valid rule!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
@@ -360,7 +360,7 @@ int main(int argc, const char ** argv){
                 cerr << "ERROR: must provide valid depth type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
             }
-            TypeRefinement ref  = OneDimensionalMeta::getIOTypeRefinementString(args.front().c_str());
+            TypeRefinement ref  = IO::getTypeRefinementString(args.front());
             if (ref == refine_none){
                 cerr << "ERROR: " << args.front() << " is not a valid refinement type!!!  For help see: ./tasgrid -help" << endl << endl;
                 return 1;
