@@ -304,7 +304,7 @@ template<TypeOneDRule rule> OptimizerResult computeMaximum(CurrentNodes<rule> co
         #pragma omp for schedule(dynamic)
         for(int i=0; i<num_intervals; i++){
             thread_result = computeLocalMaximum(current, sorted[i], sorted[i+1]);
-            if (thread_result.value > thread_max.value)
+            if ((!std::isnan(thread_result.value)) && (thread_result.value > thread_max.value))
                 thread_max = thread_result;
         }
 
