@@ -165,8 +165,8 @@ double argMaxLocalSecant(const VectorFunctional &F, double left, double right){
     return (std::abs(d) < std::abs(dm)) ? x : xm;
 }
 
-void getPrecomputedMinLebesgueNodes(std::vector<double> &precomputed){
-    precomputed = { 0.00000000000000000e+00,
+std::vector<double> getPrecomputedMinLebesgueNodes(){
+    return        { 0.00000000000000000e+00,
                     1.00000000000000000e+00,
                    -1.00000000000000000e+00,
                     5.77350269189625731e-01,
@@ -218,8 +218,8 @@ void getPrecomputedMinLebesgueNodes(std::vector<double> &precomputed){
                     9.51233414543255273e-01};
 }
 
-void getPrecomputedMinDeltaNodes(std::vector<double> &precomputed){
-    precomputed = { 0.00000000000000000e+00,
+std::vector<double> getPrecomputedMinDeltaNodes(){
+    return        { 0.00000000000000000e+00,
                     1.00000000000000000e+00,
                    -1.00000000000000000e+00,
                     5.85786437626666157e-01,
@@ -270,6 +270,41 @@ void getPrecomputedMinDeltaNodes(std::vector<double> &precomputed){
                     9.81787150881257009e-01,
                    -9.81715548483999001e-01};
 }
+
+inline std::vector<double> getPrecomputed(TypeOneDRule rule){
+    if (rule == rule_leja){
+        return {0.0, 1.0, -1.0, std::sqrt(1.0/3.0)};
+    }else if (rule == rule_maxlebesgue){
+        return {0.0, 1.0, -1.0, 0.5};
+    }else if (rule == rule_minlebesgue){
+        return getPrecomputedMinLebesgueNodes();
+    }else{ // rule_mindelta
+        return getPrecomputedMinDeltaNodes();
+    }
+}
+
+template<TypeOneDRule rule>
+std::vector<double> getGreedyNodes(int n){
+    // load the first few precomputed nodes
+    auto precomputed = getPrecomputed(rule);
+    size_t usefirst = std::min(precomputed.size(), (size_t) n);
+    std::vector<double> nodes(precomputed.begin(), precomputed.begin() + usefirst);
+    if (n > (int) precomputed.size()){
+        nodes.reserve((size_t) n);
+        for(int i = (int) precomputed.size(); i<n; i++){
+            Optimizer::tempFunctional<rule> g(nodes);
+            Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(g);
+            nodes.push_back(R.xmax);
+        }
+    }
+
+    return nodes;
+}
+
+template std::vector<double> getGreedyNodes<rule_leja>(int n);
+template std::vector<double> getGreedyNodes<rule_maxlebesgue>(int n);
+template std::vector<double> getGreedyNodes<rule_minlebesgue>(int n);
+template std::vector<double> getGreedyNodes<rule_mindelta>(int n);
 
 }
 

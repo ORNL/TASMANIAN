@@ -272,35 +272,10 @@ private:
     std::vector<double> coeff_less1;
 };
 
-void getPrecomputedMinLebesgueNodes(std::vector<double> &precomputed);
-void getPrecomputedMinDeltaNodes(std::vector<double> &precomputed);
+std::vector<double> getPrecomputedMinLebesgueNodes();
+std::vector<double> getPrecomputedMinDeltaNodes();
 
-template<TypeOneDRule rule>
-void getGreedyNodes(int n, std::vector<double> &nodes){
-    nodes.clear();
-    nodes.reserve(n);
-    // load the first few precomputed nodes
-    std::vector<double> precomputed;
-    if (rule == rule_leja){
-        precomputed = {0.0, 1.0, -1.0, std::sqrt(1.0/3.0)};
-    }else if (rule == rule_maxlebesgue){
-        precomputed = {0.0, 1.0, -1.0, 0.5};
-    }else if (rule == rule_minlebesgue){
-        getPrecomputedMinLebesgueNodes(precomputed);
-    }else if (rule == rule_mindelta){
-        getPrecomputedMinDeltaNodes(precomputed);
-    }
-    int usefirst = (n > (int) precomputed.size()) ? (int) precomputed.size() : n;
-    nodes.resize(usefirst);
-    std::copy(precomputed.data(), precomputed.data() + usefirst, nodes.data());
-    if (n > (int) precomputed.size()){
-        for(int i = (int) precomputed.size(); i<n; i++){
-            Optimizer::tempFunctional<rule> g(nodes);
-            Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(g);
-            nodes.push_back(R.xmax);
-        }
-    }
-}
+template<TypeOneDRule rule> std::vector<double> getGreedyNodes(int n);
 
 }
 
