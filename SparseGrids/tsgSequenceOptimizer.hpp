@@ -33,6 +33,32 @@
 
 #include "tsgEnumerates.hpp"
 
+/*!
+ * \internal
+ * \file tsgSequenceOptimizer.hpp
+ * \brief Algorithms for computing greedy sequences.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianSets
+ *
+ * \endinternal
+ */
+
+/*!
+ * \internal
+ * \ingroup TasmanianSG
+ * \addtogroup TasmanianSequenceOpt Greedy Sequences
+ *
+ * \par Sequence One Dimensional Rules
+ * Nested rules that grow with one point per level allow great flexibility in
+ * constructing sparse grids; however, controlling the Lebesgue constant for
+ * such sequences is a challenge. The standard way to construct a sequence is
+ * to follow a greedy optimization problem, start with a few initial nodes
+ * (usually 0, 1, -1) then add new nodes at the maximum of a specific functional.
+ * Thus, nodes are computed one at a time and one-dimensional optimization
+ * algorithms are needed.
+ * \endinternal
+ */
+
 namespace TasGrid{
 
 namespace Optimizer{
@@ -51,6 +77,7 @@ public:
 };
 
 struct OptimizerResult{
+    double node, value;
     double xmax, fmax;
 };
 
@@ -273,6 +300,7 @@ private:
 };
 
 template<TypeOneDRule rule> double getNextNode(std::vector<double> const &nodes);
+template<TypeOneDRule rule> double getNextNode2(std::vector<double> const &nodes);
 
 std::vector<double> getPrecomputedMinLebesgueNodes();
 std::vector<double> getPrecomputedMinDeltaNodes();

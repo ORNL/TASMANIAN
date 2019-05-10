@@ -33,9 +33,382 @@
 
 #include "tsgSequenceOptimizer.hpp"
 
+using std::cout;
+using std::endl;
+
 namespace TasGrid{
 
 namespace Optimizer{
+
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Computes the coefficients needed for fast evaluation of the Lagrange polynomials.
+ */
+std::vector<double> makeCoefficients(std::vector<double> const &nodes){
+    size_t num_nodes = nodes.size();
+    std::vector<double> coeffs(num_nodes);
+    for(size_t i=0; i<num_nodes; i++){
+        double c = 1.0;
+        for(size_t j=0; j<i; j++){
+            c *= (nodes[i] - nodes[j]);
+        }
+        for(size_t j=i+1; j<num_nodes; j++){
+            c *= (nodes[i] - nodes[j]);
+        }
+        coeffs[i] = c;
+    }
+    return coeffs;
+}
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Computes the values of the Lagrange polynomials at \b x, used in most functionals.
+ */
+std::vector<double> evalLagrange(std::vector<double> const &nodes, std::vector<double> const &coeffs, double x){
+    int num_nodes = (int) nodes.size();
+    std::vector<double> lag(nodes.size());
+    lag[0] = 1.0;
+    for(int i=0; i<num_nodes-1; i++){
+        lag[i+1] = (x - nodes[i]) * lag[i];
+    }
+    double w = 1.0;
+    lag[num_nodes-1] /= coeffs[num_nodes-1];
+    for(int i= num_nodes-2; i>=0; i--){
+        w *= (x - nodes[i+1]);
+        lag[i] *= w / coeffs[i];
+    }
+    return lag;
+}
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Computes the derivative of the \b inode basis functions at \b x.
+ */
+double differentiateBasis(std::vector<double> const &nodes, std::vector<double> const &coeffs, size_t inode, double x){
+    size_t num_nodes = nodes.size();
+    double s = 1.0;
+    double p = 1.0;
+    double n = (inode != 0) ? (x - nodes[0]) : (x - nodes[1]);
+
+    for(size_t j=1; j<inode; j++){
+        p *= n;
+        n = (x - nodes[j]);
+        s *= n;
+        s += p;
+    }
+    for(size_t j = ((inode == 0) ? 2 : inode+1); j<num_nodes; j++){
+        p *= n;
+        n = (x - nodes[j]);
+        s *= n;
+        s += p;
+    }
+    return s / coeffs[inode];
+}
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Data needed for the functional associated with the sequence rule, specialized for each case.
+ *
+ * In most cases, we are working with Lagrange polynomials and associated coefficients.
+ */
+template<TypeOneDRule> struct CurrentNodes{
+    CurrentNodes(std::vector<double> const &cnodes)
+        : nodes(cnodes), coeff(makeCoefficients(cnodes)){}
+    //! \brief Constructor that combines the \b cnodes with the \b new_node.
+    CurrentNodes(std::vector<double> const &cnodes, double new_node)
+            : nodes(cnodes){
+        nodes.push_back(new_node);
+        coeff = makeCoefficients(nodes);
+    }
+    //! \brief Current set of nodes.
+    std::vector<double> nodes;
+    //! \brief Coefficients cache.
+    std::vector<double> coeff;
+};
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Specialization for \b rule_leja, no need for coefficients.
+ */
+template<> struct CurrentNodes<rule_leja>{
+    //! \brief Retain a copy of the nodes.
+    CurrentNodes(std::vector<double> const &cnodes) : nodes(cnodes){}
+    //! \brief Current set of nodes.
+    std::vector<double> nodes;
+};
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Specialization for \b rule_mindeltaodd, requires two levels.
+ */
+template<> struct CurrentNodes<rule_mindeltaodd>{
+    //! \brief Construct two levels using the \b cnodes and \b cnodes with added \b new_node.
+    CurrentNodes(std::vector<double> const &cnodes, double new_node)
+            : nodes(cnodes), nodes_less1(cnodes), coeff_less1(makeCoefficients(cnodes)){
+        nodes.push_back(new_node);
+        coeff = makeCoefficients(nodes);
+    }
+    //! \brief Nodes for the current and previous levels.
+    std::vector<double> nodes, nodes_less1;
+    //! \brief Coefficients cache for both levels.
+    std::vector<double> coeff, coeff_less1;
+};
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Indicates whether a \b rule has associated derivative, most do.
+ */
+template<TypeOneDRule rule> struct HasDerivative{ static constexpr bool value = true; };
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Specialization for \b rule_minlebesgue which uses a min-max problem and cannot be differentiated.
+ */
+template<> struct HasDerivative<rule_minlebesgue>{ static constexpr bool value = false; };
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Specialization for \b rule_mindelta which uses a min-max problem and cannot be differentiated.
+ */
+template<> struct HasDerivative<rule_mindelta>{ static constexpr bool value = false; };
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Computes the value of the functional for given \b x, specialized for each sequence.
+ */
+template<TypeOneDRule rule> double getValue(CurrentNodes<rule> const&, double){ return 0.0; }
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Computes the derivative of the functional for given \b x, specialized for each sequence with \b HasDerivative<rule>::value \b = \b true.
+ */
+template<TypeOneDRule rule> double getDerivative(CurrentNodes<rule> const&, double){ return 0.0; }
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Uses the secant method to find local maximum of the  functional of the current nodes, uses \b left and \b right as starting points.
+ *
+ * Uses the secant method to find the zero of the derivative of the functional associated with the \b rule.
+ * The method converges fast but may converge to the wrong answer if the initial guess is not close to the zero.
+ * When called from \b computeLocalMaximum(), the result of a coarse pattern search is used as initial guess.
+ */
+template<TypeOneDRule rule>
+OptimizerResult performSecantSearch(CurrentNodes<rule> const& current, double left, double right){
+    auto func = [&](double x)->OptimizerResult{ return {x, getDerivative<rule>(current, x)}; };
+
+    OptimizerResult past    = func(left);
+    OptimizerResult present = func(right);
+
+    if (std::abs(past.value) < std::abs(present.value))
+        std::swap(past, present);
+
+    int iterations = 0;
+    while((std::abs(present.value) > 3.0 * Maths::num_tol) && (iterations < 1000)){ // 1000 guards against stagnation
+        OptimizerResult future = func(present.node - present.value * (present.node - past.node) / (present.value - past.value));
+        past    = present;
+        present = future;
+        iterations++;
+    }
+
+    return present;
+}
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Finds the maximum of the functional of the current nodes in the interval between \b left_node and \b right_node.
+ *
+ * Uses pattern search with simple left, middle, and right points.
+ * If the functional of the \b rule is differentiable, then the pattern search is used as an initial guess
+ * to secant optimization method.
+ */
+template<TypeOneDRule rule>
+OptimizerResult computeLocalMaximum(CurrentNodes<rule> const& current, double left_node, double right_node){
+    auto func = [&](double x)->OptimizerResult{ return {x, getValue<rule>(current, x)}; };
+
+    double pattern = 0.5 * (right_node - left_node); // pattern width
+    OptimizerResult left   = func(left_node);
+    OptimizerResult middle = func(left_node + pattern);
+    OptimizerResult right  = func(right_node);
+
+    // if differentiable, use coarse tolerance since we will post-process.
+    double tolerance = (HasDerivative<rule>::value) ? Maths::num_tol * 1.E-3 : Maths::num_tol;
+
+    while(pattern > tolerance){
+        if (middle.value >= std::max(left.value, right.value)){ // middle is largest, shrink
+            pattern /= 2.0;
+            left  = func(middle.node - pattern);
+            right = func(middle.node + pattern);
+        }else if (left.value >= std::max(middle.value, right.value)){ // left is the largest
+            if (left.node - pattern < left_node){ // if going out of bounds
+                pattern /= 2.0;
+                right  = middle;
+                middle = func(left.node + pattern);
+            }else{ // shift left
+                right  = middle;
+                middle = left;
+                left  = func(middle.node - pattern);
+            }
+        }else{ // right must be the largest
+            if (right.node + pattern > right_node){ // if going out of bounds
+                pattern /= 2.0;
+                left   = middle;
+                middle = func(right.node - pattern);
+            }else{ // shift right
+                left   = middle;
+                middle = right;
+                right  = func(middle.node + pattern);
+            }
+        }
+    }
+
+    if (HasDerivative<rule>::value){
+        middle = performSecantSearch(current, left.node, right.node); // this returns the derivative
+        middle = func(middle.node);
+    }
+
+    return middle;
+}
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Finds the maximum of the functional over the interval (-1, 1).
+ *
+ * Given the \b current set of nodes, construct the functional for the given \b rule
+ * and perform a local optimization on every interval, i.e., compute the local maximum
+ * between every two adjacent nodes in \b current.
+ * The work in done in parallel and the global maximum is reported as the largest among
+ * the local maximums.
+ */
+template<TypeOneDRule rule> OptimizerResult computeMaximum(CurrentNodes<rule> const& current){
+    std::vector<double> sorted = current.nodes;
+    std::sort(sorted.begin(), sorted.end());
+    int num_intervals = (int) sorted.size() - 1;
+
+    auto func = [&](double x)->OptimizerResult{ return {x, getValue<rule>(current, x)}; };
+
+    OptimizerResult max_result = func(-1.0);
+
+    OptimizerResult right_result = func(1.0);
+
+    if (right_result.value > max_result.value)
+        max_result = right_result;
+
+    #pragma omp parallel
+    {
+        OptimizerResult thread_max = max_result, thread_result;
+
+        #pragma omp for schedule(dynamic)
+        for(int i=0; i<num_intervals; i++){
+            thread_result = computeLocalMaximum(current, sorted[i], sorted[i+1]);
+            if (thread_result.value > thread_max.value)
+                thread_max = thread_result;
+        }
+
+        #pragma omp critical
+        {
+            if (thread_max.value > max_result.value){
+                max_result = thread_max;
+            }
+        }
+    }
+
+    return max_result;
+}
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief The \b rule_leja functional.
+ */
+template<> double getValue<rule_leja>(CurrentNodes<rule_leja> const& current, double x){
+    double p = 1.0;
+    for(auto n : current.nodes) p *= (x - n);
+    return std::abs(p);
+}
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief The \b rule_maxlebesgue functional.
+ */
+template<> double getValue<rule_maxlebesgue>(CurrentNodes<rule_maxlebesgue> const& current, double x){
+    std::vector<double> lag = evalLagrange(current.nodes, current.coeff, x);
+    double sum = 0.0;
+    for(auto l : lag) sum += std::abs(l);
+    return sum;
+}
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief The \b rule_mindeltaodd functional (indicates companion to \b rule_mindelta for the min-max problem).
+ */
+template<> double getValue<rule_mindeltaodd>(CurrentNodes<rule_mindeltaodd> const& current, double x){
+    auto lag       = evalLagrange(current.nodes, current.coeff, x);
+    auto lag_less1 = evalLagrange(current.nodes_less1, current.coeff_less1, x);
+
+    return std::abs(lag.back()) + std::inner_product(lag_less1.begin(), lag_less1.end(), lag.begin(), 0.0,
+                                     std::plus<double>(), [](double a, double b)->double{ return std::abs(a - b); });
+}
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief The \b rule_minlebesgue functional, uses the \b rule_maxlebesgue functions in min-max problem.
+ */
+template<> double getValue<rule_minlebesgue>(CurrentNodes<rule_minlebesgue> const& current, double x){
+    for(auto n : current.nodes) if (std::abs(x - n) < 10 * Maths::num_tol) return -1.E+100;
+
+    CurrentNodes<rule_maxlebesgue> companion(current.nodes, x);
+    return - computeMaximum(companion).value;
+}
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief The \b rule_mindelta functional, uses the \b rule_mindeltaodd functions in min-max problem.
+ */
+template<> double getValue<rule_mindelta>(CurrentNodes<rule_mindelta> const& current, double x){
+    for(auto n : current.nodes) if (std::abs(x - n) < 10 * Maths::num_tol) return -1.E+100;
+
+    CurrentNodes<rule_mindeltaodd> companion(current.nodes, x);
+    return - computeMaximum(companion).value;
+}
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief The derivative of the \b rule_leja functional.
+ */
+template<> double getDerivative<rule_leja>(CurrentNodes<rule_leja> const& current, double x){
+    double s = 1.0, p = 1.0, n = (x - current.nodes[0]);
+    for(size_t j=1; j<current.nodes.size(); j++){
+        p *= n;
+        n = (x - current.nodes[j]);
+        s *= n;
+        s += p;
+    }
+    return s;
+}
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief The derivative of the \b rule_maxlebesgue functional.
+ */
+template<> double getDerivative<rule_maxlebesgue>(CurrentNodes<rule_maxlebesgue> const& current, double x){
+    std::vector<double> lag = evalLagrange(current.nodes, current.coeff, x);
+    double sum = 0.0;
+    for(size_t i=0; i<lag.size(); i++)
+        sum += Maths::sign(lag[i]) * differentiateBasis(current.nodes, current.coeff, i, x);
+    return sum;
+}
+
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief The derivative of the \b rule_mindeltaodd functional.
+ */
+template<> double getDerivative<rule_mindeltaodd>(CurrentNodes<rule_mindeltaodd> const& current, double x){
+    auto lag       = evalLagrange(current.nodes,       current.coeff,       x);
+    auto lag_less1 = evalLagrange(current.nodes_less1, current.coeff_less1, x);
+
+    double sum = 0.0;
+    for(size_t i=0; i<lag_less1.size(); i++){
+        sum += Maths::sign(lag[i] - lag_less1[i])
+                * (differentiateBasis(current.nodes,        current.coeff,       i, x)
+                   - differentiateBasis(current.nodes_less1, current.coeff_less1, i, x));
+    }
+    return sum + Maths::sign(lag.back()) * differentiateBasis(current.nodes, current.coeff, lag.size() - 1, x);
+}
+
+
+
 
 VectorFunctional::VectorFunctional(){}
 VectorFunctional::~VectorFunctional(){}
@@ -166,8 +539,18 @@ double argMaxLocalSecant(const VectorFunctional &F, double left, double right){
 }
 
 template<TypeOneDRule rule> double getNextNode(std::vector<double> const &nodes){
+    return computeMaximum(CurrentNodes<rule>(nodes)).node;
+}
+
+template double getNextNode2<rule_leja>(std::vector<double> const &nodes);
+template double getNextNode2<rule_maxlebesgue>(std::vector<double> const &nodes);
+template double getNextNode2<rule_minlebesgue>(std::vector<double> const &nodes);
+template double getNextNode2<rule_mindelta>(std::vector<double> const &nodes);
+
+template<TypeOneDRule rule> double getNextNode2(std::vector<double> const &nodes){
     Optimizer::tempFunctional<rule> g(nodes);
     return Optimizer::argMaxGlobal(g).xmax;
+    //return computeMaximum(CurrentNodes<rule>(nodes)).node;
 }
 
 template double getNextNode<rule_leja>(std::vector<double> const &nodes);
