@@ -165,6 +165,16 @@ double argMaxLocalSecant(const VectorFunctional &F, double left, double right){
     return (std::abs(d) < std::abs(dm)) ? x : xm;
 }
 
+template<TypeOneDRule rule> double getNextNode(std::vector<double> const &nodes){
+    Optimizer::tempFunctional<rule> g(nodes);
+    return Optimizer::argMaxGlobal(g).xmax;
+}
+
+template double getNextNode<rule_leja>(std::vector<double> const &nodes);
+template double getNextNode<rule_maxlebesgue>(std::vector<double> const &nodes);
+template double getNextNode<rule_minlebesgue>(std::vector<double> const &nodes);
+template double getNextNode<rule_mindelta>(std::vector<double> const &nodes);
+
 std::vector<double> getPrecomputedMinLebesgueNodes(){
     return        { 0.00000000000000000e+00,
                     1.00000000000000000e+00,
@@ -291,11 +301,8 @@ std::vector<double> getGreedyNodes(int n){
     std::vector<double> nodes(precomputed.begin(), precomputed.begin() + usefirst);
     if (n > (int) precomputed.size()){
         nodes.reserve((size_t) n);
-        for(int i = (int) precomputed.size(); i<n; i++){
-            Optimizer::tempFunctional<rule> g(nodes);
-            Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(g);
-            nodes.push_back(R.xmax);
-        }
+        for(int i = (int) precomputed.size(); i<n; i++)
+            nodes.push_back(getNextNode<rule>(nodes));
     }
 
     return nodes;

@@ -272,6 +272,8 @@ private:
     std::vector<double> coeff_less1;
 };
 
+template<TypeOneDRule rule> double getNextNode(std::vector<double> const &nodes);
+
 std::vector<double> getPrecomputedMinLebesgueNodes();
 std::vector<double> getPrecomputedMinDeltaNodes();
 
