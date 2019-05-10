@@ -33,14 +33,9 @@
 
 #include "tsgSequenceOptimizer.hpp"
 
-using std::cout;
-using std::endl;
-
 namespace TasGrid{
 
 namespace Optimizer{
-
-
 /*!
  * \ingroup TasmanianSequenceOpt
  * \brief Computes the coefficients needed for fast evaluation of the Lagrange polynomials.
@@ -407,157 +402,6 @@ template<> double getDerivative<rule_mindeltaodd>(CurrentNodes<rule_mindeltaodd>
     return sum + Maths::sign(lag.back()) * differentiateBasis(current.nodes, current.coeff, lag.size() - 1, x);
 }
 
-
-
-
-VectorFunctional::VectorFunctional(){}
-VectorFunctional::~VectorFunctional(){}
-
-OptimizerResult argMaxGlobal(const VectorFunctional &F){
-    std::vector<double> sorted;
-    F.getIntervals(sorted);
-    int num_intervals = (int) sorted.size() - 1;
-
-    OptimizerResult MaxResult;
-
-    MaxResult.xmax = -1.0;
-    MaxResult.fmax = F.getValue(MaxResult.xmax);
-
-    double x = 1.0;
-    double f = F.getValue(x);
-    if (f > MaxResult.fmax){
-        MaxResult.xmax = x;
-        MaxResult.fmax = f;
-    }
-
-    #pragma omp parallel
-    {
-        OptimizerResult LocalMaxResult = MaxResult, LocalResult;
-
-        #pragma omp for schedule(dynamic)
-        for(int i=0; i<num_intervals; i++){
-            LocalResult = argMaxLocalPattern(F, sorted[i], sorted[i+1]);
-            if (LocalResult.fmax > LocalMaxResult.fmax){
-                LocalMaxResult = LocalResult;
-            }
-
-            #pragma omp critical
-            {
-                if (LocalMaxResult.fmax > MaxResult.fmax){
-                    MaxResult = LocalMaxResult;
-                }
-            }
-        }
-    }
-
-    return MaxResult;
-}
-
-OptimizerResult argMaxLocalPattern(const VectorFunctional &F, double left, double right){
-    double xl = left;
-    double xr = right;
-    double xm = 0.5 * (left + right);
-    double fl = F.getValue(xl);
-    double fm = F.getValue(xm);
-    double fr = F.getValue(xr);
-    double d = xr - xm;
-
-    double tol = (F.hasDerivative()) ? Maths::num_tol * 1.E-3 : Maths::num_tol;
-
-    while(d > tol){
-        if ((fm >= fl) && (fm >= fr)){ // shrink the pattern
-            d /= 2.0;
-            xl = xm - d;
-            xr = xm + d;
-            fr = F.getValue(xr);
-            fl = F.getValue(xl);
-        }else if ((fl >= fm) && (fl >= fr)){ // if the left point is the maximum
-            if (xl - d < left){ // if shifting left would get us outside the interval
-                d /= 2.0;
-                xm = xl + d;
-                xr = xm + d;
-                fm = F.getValue(xm);
-                fr = F.getValue(xr);
-            }else{ // shift left
-                xr = xm;
-                fr = fm;
-                xm = xl;
-                fm = fl;
-                xl -= d;
-                fl = F.getValue(xl);
-            }
-        }else{ // the right point is the largest
-            if (xr + d > right){ // if shifting right would get us outside the interval
-                d /= 2.0;
-                xm = xr - d;
-                xl = xm - d;
-                fm = F.getValue(xm);
-                fl = F.getValue(xl);
-            }else{ // shift right
-                xl = xm;
-                fl = fm;
-                xm = xr;
-                fm = fr;
-                xr += d;
-                fr = F.getValue(xr);
-            }
-        }
-    }
-    // the post-processing here can give you a digit or two of extra accuracy
-    // however, the secant method by itself is unstable when the number of poitns grows
-    OptimizerResult R;
-    if (F.hasDerivative()){
-        R.xmax = argMaxLocalSecant(F, xl, xr);
-        R.fmax = F.getValue(R.xmax);
-    }else{
-        R.fmax = fm;
-        R.xmax = xm;
-    }
-    return R;
-}
-
-double argMaxLocalSecant(const VectorFunctional &F, double left, double right){
-    double xm = left;
-    double dm = F.getDiff(xm);
-    double x = right;
-    double d = F.getDiff(x);
-
-    if (std::abs(d) > std::abs(dm)){
-        double t = x; x = xm; xm = t;
-        t = d; d = dm; dm = t;
-    }
-    int itr = 0;
-    while((std::abs(d) > 3 * Maths::num_tol) && (itr < 1000)){ // 1000 guards against stagnation
-        double xp = x - d * (x - xm) / (d - dm);
-        xm = x; dm = d; x = xp;
-
-        d = F.getDiff(x);
-
-        itr++;
-    }
-    return (std::abs(d) < std::abs(dm)) ? x : xm;
-}
-
-template<TypeOneDRule rule> double getNextNode(std::vector<double> const &nodes){
-    return computeMaximum(CurrentNodes<rule>(nodes)).node;
-}
-
-template double getNextNode2<rule_leja>(std::vector<double> const &nodes);
-template double getNextNode2<rule_maxlebesgue>(std::vector<double> const &nodes);
-template double getNextNode2<rule_minlebesgue>(std::vector<double> const &nodes);
-template double getNextNode2<rule_mindelta>(std::vector<double> const &nodes);
-
-template<TypeOneDRule rule> double getNextNode2(std::vector<double> const &nodes){
-    Optimizer::tempFunctional<rule> g(nodes);
-    return Optimizer::argMaxGlobal(g).xmax;
-    //return computeMaximum(CurrentNodes<rule>(nodes)).node;
-}
-
-template double getNextNode<rule_leja>(std::vector<double> const &nodes);
-template double getNextNode<rule_maxlebesgue>(std::vector<double> const &nodes);
-template double getNextNode<rule_minlebesgue>(std::vector<double> const &nodes);
-template double getNextNode<rule_mindelta>(std::vector<double> const &nodes);
-
 std::vector<double> getPrecomputedMinLebesgueNodes(){
     return        { 0.00000000000000000e+00,
                     1.00000000000000000e+00,
@@ -675,6 +519,15 @@ inline std::vector<double> getPrecomputed(TypeOneDRule rule){
         return getPrecomputedMinDeltaNodes();
     }
 }
+
+template<TypeOneDRule rule> double getNextNode(std::vector<double> const &nodes){
+    return computeMaximum(CurrentNodes<rule>(nodes)).node;
+}
+
+template double getNextNode<rule_leja>(std::vector<double> const &nodes);
+template double getNextNode<rule_maxlebesgue>(std::vector<double> const &nodes);
+template double getNextNode<rule_minlebesgue>(std::vector<double> const &nodes);
+template double getNextNode<rule_mindelta>(std::vector<double> const &nodes);
 
 template<TypeOneDRule rule>
 std::vector<double> getGreedyNodes(int n){
