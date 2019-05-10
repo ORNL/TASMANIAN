@@ -35,7 +35,8 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
     set(DOXYGEN_EXCLUDE_SYMBOLS TasGrid::Data2D TasGrid::MultiIndexSet TasGrid::StorageSet TasGrid::CustomTabulated TasGrid::OneDimensionalWrapper
         TasGrid::TasSparse::SparseMatrix TasGrid::CudaEngine TasGrid::AccelerationDomainTransform TasGrid::DynamicConstructorDataGlobal
         TasGrid::NodeData TasGrid::TensorData TasGrid::CacheLagrange TasGrid::MultiIndexManipulations::ProperWeights
-        TasGrid::Utils::Wrapper2D TasGrid::SimpleConstructData TasGrid::DynamicConstructorDataGlobal)
+        TasGrid::Utils::Wrapper2D TasGrid::SimpleConstructData TasGrid::DynamicConstructorDataGlobal
+        TasGrid::Optimizer::CurrentNodes TasGrid::Optimizer::HasDerivative TasGrid::Optimizer::OptimizerResult)
 endif()
 
 doxygen_add_docs(Tasmanian_doxygen
@@ -58,6 +59,8 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/tsgOneDimensionalWrapper.hpp
                  SparseGrids/tsgLinearSolvers.hpp
                  SparseGrids/tsgDConstructGridGlobal.hpp
+                 SparseGrids/tsgSequenceOptimizer.hpp
+                 SparseGrids/tsgSequenceOptimizer.cpp
                  DREAM/tsgDreamEnumerates.hpp
                  DREAM/tsgDreamState.hpp
                  DREAM/tsgDreamSample.hpp

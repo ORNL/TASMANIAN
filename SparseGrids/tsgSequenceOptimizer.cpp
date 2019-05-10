@@ -106,6 +106,7 @@ double differentiateBasis(std::vector<double> const &nodes, std::vector<double> 
  * In most cases, we are working with Lagrange polynomials and associated coefficients.
  */
 template<TypeOneDRule> struct CurrentNodes{
+    //! \brief Default constructor, retain a copy of the nodes and compute the coefficients.
     CurrentNodes(std::vector<double> const &cnodes)
         : nodes(cnodes), coeff(makeCoefficients(cnodes)){}
     //! \brief Constructor that combines the \b cnodes with the \b new_node.
@@ -140,27 +141,40 @@ template<> struct CurrentNodes<rule_mindeltaodd>{
         nodes.push_back(new_node);
         coeff = makeCoefficients(nodes);
     }
-    //! \brief Nodes for the current and previous levels.
-    std::vector<double> nodes, nodes_less1;
-    //! \brief Coefficients cache for both levels.
-    std::vector<double> coeff, coeff_less1;
+    //! \brief Nodes for the current level.
+    std::vector<double> nodes;
+    //! \brief Nodes for the previous level.
+    std::vector<double> nodes_less1;
+    //! \brief Coefficients cache current level.
+    std::vector<double> coeff;
+    //! \brief Coefficients cache for previous level.
+    std::vector<double> coeff_less1;
 };
 
 /*!
  * \ingroup TasmanianSequenceOpt
  * \brief Indicates whether a \b rule has associated derivative, most do.
  */
-template<TypeOneDRule rule> struct HasDerivative{ static constexpr bool value = true; };
+template<TypeOneDRule rule> struct HasDerivative{
+    //! \brief Indicates whether the functional is differentiable.
+    static constexpr bool value = true;
+};
 /*!
  * \ingroup TasmanianSequenceOpt
  * \brief Specialization for \b rule_minlebesgue which uses a min-max problem and cannot be differentiated.
  */
-template<> struct HasDerivative<rule_minlebesgue>{ static constexpr bool value = false; };
+template<> struct HasDerivative<rule_minlebesgue>{
+    //! \brief Indicates non-differentiable.
+    static constexpr bool value = false;
+};
 /*!
  * \ingroup TasmanianSequenceOpt
  * \brief Specialization for \b rule_mindelta which uses a min-max problem and cannot be differentiated.
  */
-template<> struct HasDerivative<rule_mindelta>{ static constexpr bool value = false; };
+template<> struct HasDerivative<rule_mindelta>{
+    //! \brief Indicates non-differentiable.
+    static constexpr bool value = false;
+};
 
 /*!
  * \ingroup TasmanianSequenceOpt

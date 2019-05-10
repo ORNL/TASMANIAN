@@ -66,19 +66,41 @@ namespace Optimizer{
 /*!
  * \ingroup TasmanianSequenceOpt
  * \brief Simple pair of numbers for the \b node and the \b value of the functional at the node.
- *
- * In most cases, we are working with Lagrange polynomials and associated coefficients.
  */
 struct OptimizerResult{
-    double node, value;
+    //! \brief Node where the functional was evaluated.
+    double node;
+    //! \brief Value of the functional.
+    double value;
 };
 
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief For the given \b rule and set of \b nodes, compute the next node using the greedy procedure.
+ */
 template<TypeOneDRule rule> double getNextNode(std::vector<double> const &nodes);
-template<TypeOneDRule rule> double getNextNode2(std::vector<double> const &nodes);
 
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Get the hard-coded pre-computed nodes.
+ *
+ * Some nodes are very expensive to compute, thus we store a pre-computed set
+ * that contains enough nodes for most applications.
+ */
 std::vector<double> getPrecomputedMinLebesgueNodes();
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Get the hard-coded pre-computed nodes.
+ *
+ * Some nodes are very expensive to compute, thus we store a pre-computed set
+ * that contains enough nodes for most applications.
+ */
 std::vector<double> getPrecomputedMinDeltaNodes();
 
+/*!
+ * \ingroup TasmanianSequenceOpt
+ * \brief Get \b n nodes for the given sequence \b rule, either compute or use pre-computed.
+ */
 template<TypeOneDRule rule> std::vector<double> getGreedyNodes(int n);
 
 }
