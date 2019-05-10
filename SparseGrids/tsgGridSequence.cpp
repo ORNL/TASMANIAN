@@ -772,13 +772,13 @@ void GridSequence::prepareSequence(int num_external){
 
     if ((size_t) max_level > nodes.size()){
         if (rule == rule_leja){
-            Optimizer::getGreedyNodes<rule_leja>(max_level, nodes);
+            nodes = Optimizer::getGreedyNodes<rule_leja>(max_level);
         }else if (rule == rule_maxlebesgue){
-            Optimizer::getGreedyNodes<rule_maxlebesgue>(max_level, nodes);
+            nodes = Optimizer::getGreedyNodes<rule_maxlebesgue>(max_level);
         }else if (rule == rule_minlebesgue){
-            Optimizer::getGreedyNodes<rule_minlebesgue>(max_level, nodes);
+            nodes = Optimizer::getGreedyNodes<rule_minlebesgue>(max_level);
         }else if (rule == rule_mindelta){
-            Optimizer::getGreedyNodes<rule_mindelta>(max_level, nodes);
+            nodes = Optimizer::getGreedyNodes<rule_mindelta>(max_level);
         }else if (rule == rule_rleja){
             OneDimensionalNodes::getRLeja(max_level, nodes);
         }else if (rule == rule_rlejashifted){

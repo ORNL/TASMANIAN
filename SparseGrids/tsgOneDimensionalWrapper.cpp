@@ -166,13 +166,13 @@ void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, T
         }else if ((rule == rule_rlejashifted) || (rule == rule_rlejashiftedeven) || (rule == rule_rlejashifteddouble)){
             OneDimensionalNodes::getRLejaShifted(OneDimensionalMeta::getNumPoints(max_level,rule), unique);
         }else if ((rule == rule_leja) || (rule == rule_lejaodd)){
-            Optimizer::getGreedyNodes<rule_leja>(OneDimensionalMeta::getNumPoints(max_level, rule), unique);
+            unique = Optimizer::getGreedyNodes<rule_leja>(OneDimensionalMeta::getNumPoints(max_level, rule));
         }else if ((rule == rule_maxlebesgue) || (rule == rule_maxlebesgueodd)){
-            Optimizer::getGreedyNodes<rule_maxlebesgue>(OneDimensionalMeta::getNumPoints(max_level, rule), unique);
+            unique = Optimizer::getGreedyNodes<rule_maxlebesgue>(OneDimensionalMeta::getNumPoints(max_level, rule));
         }else if ((rule == rule_minlebesgue) || (rule == rule_minlebesgueodd)){
-            Optimizer::getGreedyNodes<rule_minlebesgue>(OneDimensionalMeta::getNumPoints(max_level, rule), unique);
+            unique = Optimizer::getGreedyNodes<rule_minlebesgue>(OneDimensionalMeta::getNumPoints(max_level, rule));
         }else if ((rule == rule_mindelta) || (rule == rule_mindeltaodd)){
-            Optimizer::getGreedyNodes<rule_mindelta>(OneDimensionalMeta::getNumPoints(max_level, rule), unique);
+            unique = Optimizer::getGreedyNodes<rule_mindelta>(OneDimensionalMeta::getNumPoints(max_level, rule));
         }else{ // if (rule==rule_fourier)
             OneDimensionalNodes::getFourierNodes(max_level, unique);
         }

@@ -433,25 +433,21 @@ bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
         // test the hard-coded sequence values vs the optimizer
         if (rule == rule_minlebesgue){
             int n = 22;
-            std::vector<double> minleb, precomputed;
-            Optimizer::getGreedyNodes<rule_minlebesgue>(n, minleb);
-            Optimizer::getPrecomputedMinLebesgueNodes(precomputed);
+            auto minleb = Optimizer::getGreedyNodes<rule_minlebesgue>(n);
+            auto precomputed = Optimizer::getPrecomputedMinLebesgueNodes();
 
-            TasGrid::Optimizer::tempFunctional<rule_minlebesgue> g(minleb);
-            TasGrid::Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(g);
-            if (std::abs(R.xmax - precomputed[n]) > 1.E-8){
+            double R = Optimizer::getNextNode<rule_minlebesgue>(minleb);
+            if (std::abs(R - precomputed[n]) > 1.E-8){
                 pass = false;
                 cout << "ERROR: mismatch in stored vs computed nodes for rule_minlebesgue rule" << endl;
             }
         }else if (rule == rule_mindelta){
             int n = 22;
-            std::vector<double> mindel, precomputed;
-            Optimizer::getGreedyNodes<rule_mindelta>(n, mindel);
-            Optimizer::getPrecomputedMinDeltaNodes(precomputed);
+            auto mindel = Optimizer::getGreedyNodes<rule_mindelta>(n);
+            auto precomputed = Optimizer::getPrecomputedMinDeltaNodes();
 
-            TasGrid::Optimizer::tempFunctional<rule_mindelta> d(mindel);
-            TasGrid::Optimizer::OptimizerResult R = Optimizer::argMaxGlobal(d);
-            if (std::abs(R.xmax - precomputed[n]) > 1.E-9){ // this seems large, double-check
+            double R = Optimizer::getNextNode<rule_mindelta>(mindel);
+            if (std::abs(R - precomputed[n]) > 1.E-9){ // this seems large, double-check
                 pass = false;
                 cout << "ERROR: mismatch in stored vs computed nodes for rule_mindelta rule" << endl;
             }
