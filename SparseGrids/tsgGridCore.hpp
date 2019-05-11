@@ -31,6 +31,17 @@
 #ifndef __TSG_BASE_CLASS_HPP
 #define __TSG_BASE_CLASS_HPP
 
+/*!
+ * \internal
+ * \file tsgGridCore.hpp
+ * \brief Definition for the base grid class.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianSets
+ *
+ * Definition of the BaseCanonicalGrid class used by all grids.
+ * \endinternal
+ */
+
 #include "tsgDConstructGridGlobal.hpp"
 #include "tsgCudaLoadStructures.hpp"
 #include "tsgHierarchyManipulator.hpp"
