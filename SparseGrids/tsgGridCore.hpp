@@ -35,6 +35,7 @@
 #include "tsgCudaLoadStructures.hpp"
 #include "tsgHierarchyManipulator.hpp"
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 namespace TasGrid{
 
 class BaseCanonicalGrid{
@@ -104,5 +105,6 @@ protected:
 };
 
 }
+#endif
 
 #endif
