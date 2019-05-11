@@ -39,8 +39,8 @@ namespace TasGrid{
 
 class BaseCanonicalGrid{
 public:
-    BaseCanonicalGrid();
-    virtual ~BaseCanonicalGrid();
+    BaseCanonicalGrid(){}
+    virtual ~BaseCanonicalGrid(){}
 
     virtual bool isGlobal() const{ return false; }
     virtual bool isSequence() const{ return false; }
@@ -101,21 +101,6 @@ protected:
     int num_dimensions, num_outputs;
     MultiIndexSet points;
     MultiIndexSet needed;
-};
-
-class SplitDirections{
-public:
-    SplitDirections(const MultiIndexSet &points);
-    ~SplitDirections();
-
-    int getNumJobs() const;
-    int getJobDirection(int job) const;
-    int getJobNumPoints(int job) const;
-    const int* getJobPoints(int job) const;
-
-private:
-    std::vector<int> job_directions;
-    std::vector<std::vector<int>> job_pnts;
 };
 
 }

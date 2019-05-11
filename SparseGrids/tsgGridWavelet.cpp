@@ -463,7 +463,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
             }
         }
     }else{
-        SplitDirections split(points);
+        HierarchyManipulations::SplitDirections split(points);
 
         for(int s=0; s<split.getNumJobs(); s++){
             int d = split.getJobDirection(s);

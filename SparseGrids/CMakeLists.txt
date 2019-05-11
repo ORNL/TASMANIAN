@@ -89,7 +89,6 @@ set(Tasmanian_source_libsparsegrid
         tsgCudaLoadStructures.hpp
         tsgEnumerates.hpp
         tsgGridCore.hpp
-        tsgGridCore.cpp
         tsgGridGlobal.hpp
         tsgGridGlobal.cpp
         tsgGridWavelet.hpp

@@ -159,6 +159,34 @@ std::vector<Data2D<T>> splitByLevels(size_t stride, std::vector<T> const &data, 
     return split;
 }
 
+/*!
+ * \internal
+ * \ingroup TasmanianHierarchyManipulations
+ * \brief Reorganize the \b points into sets of nodes that align in one-dimension, used for directioal local p refinement.
+ *
+ * \endinternal
+ */
+class SplitDirections{
+public:
+    //! \brief Constructor, deinfe the set to split into directions.
+    SplitDirections(const MultiIndexSet &points);
+    //! \brief Destroy all data.
+    ~SplitDirections(){}
+
+    //! \brief Returns the number of one dimensional jobs.
+    int getNumJobs() const{ return (int) job_pnts.size(); }
+    //! \brief Return the direction for the \b job.
+    int getJobDirection(int job) const{ return job_directions[job]; }
+    //! \brief Return the number of points associated with the \b job.
+    int getJobNumPoints(int job) const{ return (int) job_pnts[job].size(); }
+    //! \brief Return the indexes of the points associated with the job.
+    const int* getJobPoints(int job) const{ return job_pnts[job].data(); }
+
+private:
+    std::vector<int> job_directions;
+    std::vector<std::vector<int>> job_pnts;
+};
+
 }
 
 }
