@@ -79,32 +79,25 @@
 namespace TasGrid{
 
 #ifdef Tasmanian_ENABLE_CUDA
-//! \defgroup TasmanianCudaVector CUDA Vector class for RAII-style of memory management.
-//!
-//! A template class that allows for RAII style of memory management for CUDA arrays.
-
-
-//! \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector
-//! \ingroup TasmanianCudaVector
-
-//! \b NOTE: This class is not intended to replace CUDA Thrust or CUDA arrays as a whole;
-//! the class is primarily used for internal Tasmanian API and can be safely ignored by the majority Tasmanian users.
-//! This documentation is provided for developers and can be useful to users that want to do simple data movement between
-//! different CUDA enabled libraries without "getting dirty" with non-RAII and (sometimes) non-intuitive CUDA API.
-//!
-//! \par Wraps Around a CUDA Array
-//! The class can be instantiated with either \b int or \b double (other types are not currently available through the external API).
-//! The class can either allocate (and deallocate with the descructor) a CUDA array of desired size,
-//! and load/unload data to a CPU std::vector with the same type.
-//!
-//! \par Deliberately Omitted Functionality
-//! The class is not intended to do any of the following:
-//! - No random memory access to ranges and elements
-//! - No algorithm operations (although \b CudaVector.data() can be passes to kernels and functions in place of an array)
-//! - No reserve/insert functionality, the size is always the size of the allocated memory
+/*!
+ * \ingroup TasmanianAcceleration
+ * \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector.
+ *
+ * \par Wraps Around a CUDA Array
+ * The class can be instantiated with either \b int or \b double (other types are not currently available through the external API).
+ * The class can either allocate (and deallocate with the descructor) a CUDA array of desired size,
+ * and load/unload data to a CPU std::vector with the same type.
+ *
+ * Note that the class does not provide single entry access and it is not copiable or movable.
+ */
 template<typename T>
 class CudaVector{
 public:
+    //! \brief Delete the copy-constructor.
+    CudaVector(CudaVector<T> const &) = delete;
+    //! \brief Delete the copy-assignment.
+    CudaVector<T>& operator =(CudaVector<T> const &) = delete;
+
     //! \brief Default constructor, creates an empty (null) array.
     CudaVector() : num_entries(0), gpu_data(nullptr){}
     //! \brief Construct a vector with \b count number of entries.
