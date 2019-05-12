@@ -31,16 +31,28 @@
 #ifndef __TSG_BASE_CLASS_HPP
 #define __TSG_BASE_CLASS_HPP
 
+/*!
+ * \internal
+ * \file tsgGridCore.hpp
+ * \brief Definition for the base grid class.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianSets
+ *
+ * Definition of the BaseCanonicalGrid class used by all grids.
+ * \endinternal
+ */
+
 #include "tsgDConstructGridGlobal.hpp"
 #include "tsgCudaLoadStructures.hpp"
 #include "tsgHierarchyManipulator.hpp"
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 namespace TasGrid{
 
 class BaseCanonicalGrid{
 public:
-    BaseCanonicalGrid();
-    virtual ~BaseCanonicalGrid();
+    BaseCanonicalGrid(){}
+    virtual ~BaseCanonicalGrid(){}
 
     virtual bool isGlobal() const{ return false; }
     virtual bool isSequence() const{ return false; }
@@ -103,21 +115,7 @@ protected:
     MultiIndexSet needed;
 };
 
-class SplitDirections{
-public:
-    SplitDirections(const MultiIndexSet &points);
-    ~SplitDirections();
-
-    int getNumJobs() const;
-    int getJobDirection(int job) const;
-    int getJobNumPoints(int job) const;
-    const int* getJobPoints(int job) const;
-
-private:
-    std::vector<int> job_directions;
-    std::vector<std::vector<int>> job_pnts;
-};
-
 }
+#endif
 
 #endif

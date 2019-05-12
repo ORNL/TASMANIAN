@@ -136,7 +136,52 @@ std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomia
     return level;
 }
 
-} // MultiIndexManipulations
+SplitDirections::SplitDirections(const MultiIndexSet &points){
+    // split the points into "jobs", where each job represents a batch of
+    // points that lay on a line in some direction
+    // int    job_directions[i] gives the direction of the i-th job
+    // vector job_pnts[i] gives a list of the points (using indexes within the set)
+    int num_points = points.getNumIndexes();
+    size_t num_dimensions = points.getNumDimensions();
+
+    auto doesBelongSameLine = [&](const int a[], const int b[], size_t direction)->
+                                    bool{
+                                        for(size_t i=0; i<num_dimensions; i++)
+                                            if ((i != direction) && (a[i] != b[i])) return false;
+                                        return true;
+                                    };
+
+    for(size_t d=0; d<num_dimensions; d++){
+        // working with direction d
+        // sort all points but ignore index d
+        std::vector<int> map(num_points);
+        std::iota(map.begin(), map.end(), 0);
+        std::sort(map.begin(), map.end(), [&](int a, int b)->bool{
+            const int * idxa = points.getIndex(a);
+            const int * idxb = points.getIndex(b);
+            // lexigographical order ignoring dimension d
+            for(size_t j=0; j<num_dimensions; j++)
+                if (j != d){
+                    if (idxa[j] < idxb[j]) return true;
+                    if (idxa[j] > idxb[j]) return false;
+                }
+            return false;
+        });
+
+        auto imap = map.begin();
+        while(imap != map.end()){
+            // new job, get reference index
+            const int *p = points.getIndex(*imap);
+            job_directions.push_back((int) d);
+            job_pnts.emplace_back(std::vector<int>(1, *imap++));
+            // while the points are in the same direction as the reference, add to the same job
+            while((imap != map.end()) && doesBelongSameLine(p, points.getIndex(*imap), d))
+                job_pnts.back().push_back(*imap++);
+        }
+    }
+}
+
+} // HierarchyManipulations
 
 } // TasGrid
 

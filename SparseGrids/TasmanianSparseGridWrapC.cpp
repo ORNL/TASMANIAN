@@ -58,9 +58,7 @@ int tsgRead(void *grid, const char* filename){
         ((TasmanianSparseGrid*) grid)->read(filename);
         return 1;
     }catch(std::runtime_error &e){
-        #ifndef NDEBUG
         cerr << e.what() << endl;
-        #endif // NDEBUG
         return 0;
     }
 }

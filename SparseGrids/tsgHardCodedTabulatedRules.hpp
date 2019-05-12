@@ -31,21 +31,54 @@
 #ifndef __TASMANIAN_SPARSE_HARDCODED_RULES_HPP
 #define __TASMANIAN_SPARSE_HARDCODED_RULES_HPP
 
+/*!
+ * \internal
+ * \file tsgHardCodedTabulatedRules.hpp
+ * \brief Hard-coded nodes and weights.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianSets
+ *
+ * Some rules are hard to compute on the fly, thus points and weights are hard-coded.
+ * \endinternal
+ */
+
 #include "tsgCoreOneDimensional.hpp"
 
 namespace TasGrid{
 
+/*!
+ * \internal
+ * \ingroup TasmanianCoreOneDimensional
+ * \brief Rule with hard-corded tabulated points and weights.
+ *
+ * The Gauss-Patterson rule combines nested points with the optimality of the Gauss quadratures.
+ * While not as powerful as Gauss-Legendre in one and tow dimensions, the rule wins in
+ * polynomial space of exactness with respect to integration for 3 or more dimensions.
+ * However, the points and weights are very hard to compute and most algorithms are very
+ * ill-conditioned. Thus, it is beneficial to have the points for the first 9 levels hard-coded.
+ *
+ * Note that Gauss-Legendre rule combined with a full tensor grid gives highest exactness per
+ * number of points with respect to integration in one and two dimensions.
+ * \endinternal
+ */
 class TableGaussPatterson{
 public:
+    //! \brief Constructor, loads the nodes into the internal data structures.
     TableGaussPatterson();
-    ~TableGaussPatterson();
+    //! \brief Destrutor, cleans all memory.
+    ~TableGaussPatterson(){}
 
-    static int getNumLevels();
+    //! \brief Return the number of hard-coded levels.
+    static int getNumLevels(){ return 9; }
+    //! \brief Returns the nodes for the \b level, note that the nodes are nested.
     void getNodes(int level, std::vector<double> &x) const;
+    //! \brief Return the quadrature weight for \b level and given \b point.
     double getWeight(int level, int point) const;
 
 protected:
+    //! \brief Load the nodes into the local data-strutures.
     void loadNodes();
+    //! \brief Load the weights into the local data-structures.
     void loadWeights();
 
 private:

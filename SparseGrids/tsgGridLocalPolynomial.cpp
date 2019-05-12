@@ -1101,7 +1101,7 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
 
         int max_1D_parents = rule->getMaxNumParents();
 
-        SplitDirections split(points);
+        HierarchyManipulations::SplitDirections split(points);
 
         #pragma omp parallel for
         for(int j=0; j<split.getNumJobs(); j++){ // split.getNumJobs() gives the number of 1D interpolants to construct
