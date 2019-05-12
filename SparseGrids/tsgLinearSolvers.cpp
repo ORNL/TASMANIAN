@@ -102,7 +102,7 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
             double g = (d[l+1] - p) / (2.0 * e[l]);
             double r = std::sqrt(g*g + 1.0);
 
-            g = d[m] - p + e[l] / (g + ((g>=0) ? 1.0 : -1.0) * r); // sign function here may be unstable
+            g = d[m] - p + e[l] / (g + Maths::sign(g) * r); // sign function here may be unstable
 
             double s = 1.0;
             double c = 1.0;
