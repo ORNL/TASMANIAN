@@ -56,6 +56,7 @@ using namespace TasGrid;
 
 /*!
  * \internal
+ * \ingroup TasmanianCLI
  * \brief Creates a std::deque of strings from the CLI arguments, skips the first argument.
  *
  * Converts the CLI arguments to strings, the first argument is the name of the executable and it is omitted.
@@ -70,6 +71,7 @@ inline std::deque<std::string> stringArgs(int argc, const char** argv){
 
 /*!
  * \internal
+ * \ingroup TasmanianCLI
  * \brief Returns \b true if the string contains a sub-string with the word "help" (case insensitive).
  *
  * \endinternal
@@ -90,6 +92,7 @@ inline bool hasHelp(std::string const &arg){
 
 /*!
  * \internal
+ * \ingroup TasmanianCLI
  * \brief Returns \b true if the string contains a request for version information.
  *
  * Accepted strings are "-v", "version", "verbose", and "info" with "-" or "--".
@@ -118,6 +121,7 @@ inline bool hasInfo(std::string const &s){
 
 /*!
  * \internal
+ * \ingroup TasmanianCLI
  * \brief Returns \b true if the string contains "random", "-random", "rand", or "-rand"
  *
  * \endinternal
