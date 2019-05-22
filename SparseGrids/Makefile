@@ -8,6 +8,7 @@ LIBS = $(CommonLIBS)
 
 LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp tsgGridGlobal.hpp tsgCacheLagrange.hpp tsgSequenceOptimizer.hpp \
            tsgEnumerates.hpp tsgOneDimensionalWrapper.hpp tsgGridSequence.hpp tsgGridCore.hpp tsgLinearSolvers.hpp \
+           tsgHierarchyManipulator.hpp \
            tsgRuleLocalPolynomial.hpp tsgHardCodedTabulatedRules.hpp tsgGridLocalPolynomial.hpp tsgGridFourier.hpp \
            tsgRuleWavelet.hpp tsgCudaLoadStructures.hpp tsgGridWavelet.hpp \
            tsgCudaLinearAlgebra.hpp tsgCudaBasisEvaluations.hpp tsgAcceleratedDataStructures.hpp \
@@ -16,11 +17,11 @@ LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp ts
            TasmanianSparseGrid.hpp
 
 LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlobal.o tsgSequenceOptimizer.o tsgOneDimensionalWrapper.o \
-         tsgGridCore.o tsgLinearSolvers.o tsgGridSequence.o tsgHardCodedTabulatedRules.o \
+         tsgLinearSolvers.o tsgGridSequence.o tsgHardCodedTabulatedRules.o tsgHierarchyManipulator.o\
          tsgGridLocalPolynomial.o tsgRuleWavelet.o tsgGridWavelet.o tsgGridFourier.o \
          tsgDConstructGridGlobal.o \
          tsgAcceleratedDataStructures.o $(TASMANIAN_CUDA_KERNELS) \
-         TasmanianSparseGrid.o
+         TasmanianSparseGridWrapC.o TasmanianSparseGrid.o
 
 WROBJ = tasgrid_main.o tasgridTestFunctions.o tasgridExternalTests.o tasgridWrapper.o
 

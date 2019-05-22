@@ -52,7 +52,7 @@ bool DreamExternalTester::testFit(const std::vector<int> &cell_count_a, const st
     double suma = (double) std::accumulate(cell_count_a.begin(), cell_count_a.end(), 0);
     double sumb = (double) std::accumulate(cell_count_b.begin(), cell_count_b.end(), 0);
 
-    double scale = sqrt(sumb / suma);
+    double scale = std::sqrt(sumb / suma);
 
     double test_value = 0.0;
 
@@ -112,13 +112,12 @@ bool DreamExternalTester::compareSamples(const std::vector<double> &lower, const
 bool DreamExternalTester::testGaussian3D(){
     bool passAll = true;
     int num_dimensions = 3;
-    int rseed = 42, num_samples = 1000, num_chains = 20;
+    int num_samples = 1000, num_chains = 20;
     int num_iterations = num_samples / num_chains + 2;
     int num_burnup = 20 * num_iterations;
-    if (usetimeseed) rseed = getRandomRandomSeed();
 
-    std::minstd_rand park_miller;
-    park_miller.seed(rseed);
+    std::minstd_rand park_miller(42);
+    if (usetimeseed) park_miller.seed(getRandomRandomSeed());
     std::uniform_real_distribution<double> unif(0.0, 1.0);
 
     // compute reference samples, mean 2.0, std 3.0
@@ -184,13 +183,12 @@ bool DreamExternalTester::testGaussian3D(){
 bool DreamExternalTester::testGaussian2D(){
     bool passAll = true;
     int num_dimensions = 2;
-    int rseed = 42, num_samples = 1000, num_chains = 20;
+    int num_samples = 1000, num_chains = 20;
     int num_iterations = num_samples / num_chains + 2;
     int num_burnup = 20 * num_iterations;
-    if (usetimeseed) rseed = getRandomRandomSeed();
 
-    std::minstd_rand park_miller;
-    park_miller.seed(rseed);
+    std::minstd_rand park_miller(42);
+    if (usetimeseed) park_miller.seed(getRandomRandomSeed());
     std::uniform_real_distribution<double> unif(0.0, 1.0);
 
     // compute reference samples, mean 0.3, std 0.15 (3 deviations fit in [-1, 1]^2)
@@ -325,13 +323,12 @@ bool DreamExternalTester::testKnownDistributions(){
 bool DreamExternalTester::testCustomModel(){
     bool passAll = true;
     int num_dimensions = 3;
-    int rseed = 42, num_samples = 1000, num_chains = 40;
+    int num_samples = 1000, num_chains = 40;
     int num_iterations = num_samples / num_chains + 2;
     int num_burnup = 20 * num_iterations;
-    if (usetimeseed) rseed = getRandomRandomSeed();
 
-    std::minstd_rand park_miller;
-    park_miller.seed(rseed);
+    std::minstd_rand park_miller(42);
+    if (usetimeseed) park_miller.seed(getRandomRandomSeed());
     std::uniform_real_distribution<double> unif(0.0, 1.0);
 
     // compute reference samples, means 1.5, 2.0 and 2.5, variance 4.0, 9.0, 4.0
@@ -391,9 +388,9 @@ bool DreamExternalTester::testCustomModel(){
                                  auto ic = candidates.begin();
                                  auto iv = values.begin();
                                  while(iv != values.end()){ // takes the first and last parameters
-                                     *iv++ = 1.0 - sin(M_PI * *ic++);
+                                     *iv++ = 1.0 - std::sin(DreamMaths::pi * *ic++);
                                      ic++;
-                                     *iv++ = 1.0 - sin(M_PI * *ic++);
+                                     *iv++ = 1.0 - std::sin(DreamMaths::pi * *ic++);
                                  }
                              },
                              uniform_prior,
@@ -419,13 +416,12 @@ bool DreamExternalTester::testCustomModel(){
 bool DreamExternalTester::testGridModel(){
     bool passAll = true;
     int num_dimensions = 2, num_outputs = 64;
-    int rseed = 42, num_samples = 1000, num_chains = 40;
+    int num_samples = 1000, num_chains = 40;
     int num_iterations = num_samples / num_chains + 2;
     int num_burnup = 20 * num_iterations;
-    if (usetimeseed) rseed = getRandomRandomSeed();
 
-    std::minstd_rand park_miller;
-    park_miller.seed(rseed);
+    std::minstd_rand park_miller(42);
+    if (usetimeseed) park_miller.seed(getRandomRandomSeed());
     std::uniform_real_distribution<double> unif(0.0, 1.0);
 
     // Construct sparse grid approximation to the SinSin model

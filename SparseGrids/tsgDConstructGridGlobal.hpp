@@ -152,14 +152,16 @@ template<bool useAscii>
 std::forward_list<NodeData> readNodeDataList(size_t num_dimensions, size_t num_outputs, std::istream &is){
     std::forward_list<NodeData> data;
     int num_nodes = IO::readNumber<useAscii, int>(is);
+
     for(int i=0; i<num_nodes; i++){
-        NodeData nd;
-        nd.point.resize(num_dimensions);
-        IO::readVector<useAscii>(is, nd.point);
-        nd.value.resize(num_outputs);
-        IO::readVector<useAscii>(is, nd.value);
-        data.push_front(std::move(nd));
+        data.emplace_front(NodeData{
+                            std::vector<int>(num_dimensions), // point
+                            std::vector<double>(num_outputs)  // value
+                           });
+        IO::readVector<useAscii>(is, data.front().point);
+        IO::readVector<useAscii>(is, data.front().value);
     }
+
     return data;
 }
 
@@ -249,10 +251,10 @@ struct SimpleConstructData{
  * \endinternal
  */
 template<bool useAscii>
-std::unique_ptr<SimpleConstructData> readSimpleConstructionData(size_t num_dimensions, size_t num_outputs, std::ifstream &ifs){
+std::unique_ptr<SimpleConstructData> readSimpleConstructionData(size_t num_dimensions, size_t num_outputs, std::istream &is){
     std::unique_ptr<SimpleConstructData> dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
-    dynamic_values->initial_points.read<useAscii>(ifs);
-    dynamic_values->data = readNodeDataList<useAscii>(num_dimensions, num_outputs, ifs);
+    dynamic_values->initial_points.read<useAscii>(is);
+    dynamic_values->data = readNodeDataList<useAscii>(num_dimensions, num_outputs, is);
     return dynamic_values;
 }
 

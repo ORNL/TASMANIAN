@@ -87,6 +87,17 @@ enum TypeDistribution{
     dist_gamma
 };
 
+namespace DreamMaths{
+/*!
+ * \internal
+ * \ingroup DREAMEnumerates
+ * \brief Dream copy of \b TasGrid::Maths::pi.
+ *
+ * \endinternal
+ */
+constexpr double pi = TasGrid::Maths::pi;
+}
+
 }
 
 #endif

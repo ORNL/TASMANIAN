@@ -31,12 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_CUDA_LOAD_STRUCTS_HPP
 #define __TASMANIAN_SPARSE_CUDA_LOAD_STRUCTS_HPP
 
-#include "TasmanianConfig.hpp"
 #include "tsgAcceleratedDataStructures.hpp"
-
-#include <iostream>
-#include <vector>
-#include <memory>
 
 namespace TasGrid{
 
@@ -68,16 +63,25 @@ struct CudaFourierData{
 };
 
 //! \internal
-//! \brief Wrapper structure for the vecors needed by Locall Polynomial grid CUDA methods.
+//! \brief Wrapper structure for the vectors needed by Local Polynomial grid CUDA methods.
 
 //! The \b surpluses are the hierarchical surpluses and used in the linear algebra (stage 2) of the evaluations.
 //! The \b nodes and \b support describe the basis functions, negative support is used to distinguish
 //! between local and global support and different order of the first few basis functions.
-//! The \b hpntr, \b hindx, and \b hroots, describe the hierarchicy and are used in the sparse matrix algorithm.
+//! The \b hpntr, \b hindx, and \b hroots, describe the hierarchy and are used in the sparse matrix algorithm.
 template<typename FP>
 struct CudaLocalPolynomialData{
-    CudaVector<double> surpluses, nodes, support;
+    CudaVector<FP> surpluses, nodes, support;
     CudaVector<int> hpntr, hindx, hroots;
+};
+
+//! \internal
+//! \brief Wrapper structure for the vectors needed by Wavelet grid CUDA methods.
+
+//! The \b coefficients are the hierarchical coefficients and used in the linear algebra (stage 2) of the evaluations.
+template<typename FP>
+struct CudaWaveletData{
+    CudaVector<FP> coefficients;
 };
 
 #endif

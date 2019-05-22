@@ -32,13 +32,11 @@
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_CPP
 
 #include "tsgGridGlobal.hpp"
-
 #include "tsgHiddenExternals.hpp"
-#include "tsgUtils.hpp"
 
 namespace TasGrid{
 
-GridGlobal::GridGlobal() : num_dimensions(0), num_outputs(0), alpha(0.0), beta(0.0){}
+GridGlobal::GridGlobal() : alpha(0.0), beta(0.0){}
 GridGlobal::~GridGlobal(){}
 
 template<bool useAscii> void GridGlobal::write(std::ostream &os) const{
@@ -71,7 +69,7 @@ template<bool useAscii> void GridGlobal::write(std::ostream &os) const{
     }
 }
 
-template<bool useAscii> void GridGlobal::read(std::ifstream &is){
+template<bool useAscii> void GridGlobal::read(std::istream &is){
     reset(true); // true deletes any custom rule
     num_dimensions = IO::readNumber<useAscii, int>(is);
     num_outputs = IO::readNumber<useAscii, int>(is);
@@ -112,8 +110,8 @@ template<bool useAscii> void GridGlobal::read(std::ifstream &is){
 
 template void GridGlobal::write<true>(std::ostream &) const;
 template void GridGlobal::write<false>(std::ostream &) const;
-template void GridGlobal::read<true>(std::ifstream &);
-template void GridGlobal::read<false>(std::ifstream &);
+template void GridGlobal::read<true>(std::istream &);
+template void GridGlobal::read<false>(std::istream &);
 
 void GridGlobal::reset(bool includeCustom){
     clearAccelerationData();
@@ -183,16 +181,14 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
         custom.read(custom_filename);
     }
 
-    MultiIndexSet tset = selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits);
-
-    setTensors(tset, cnum_outputs, crule, calpha, cbeta);
+    setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits),
+               cnum_outputs, crule, calpha, cbeta);
 }
 void GridGlobal::copyGrid(const GridGlobal *global){
     custom = CustomTabulated();
     if (global->rule == rule_customtabulated) custom = global->custom;
 
-    MultiIndexSet tset = global->tensors;
-    setTensors(tset, global->num_outputs, global->rule, global->alpha, global->beta);
+    setTensors(MultiIndexSet(global->tensors), global->num_outputs, global->rule, global->alpha, global->beta);
 
     if ((num_outputs > 0) && (!(global->points.empty()))){ // if there are values inside the source object
         loadNeededPoints(global->values.getValues(0));
@@ -210,14 +206,14 @@ void GridGlobal::copyGrid(const GridGlobal *global){
     }
 }
 
-void GridGlobal::setTensors(MultiIndexSet &tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){
+void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){
     reset(false);
-    num_dimensions = (int) tset.getNumDimensions();
+    tensors = std::move(tset);
+
+    num_dimensions = (int) tensors.getNumDimensions();
     num_outputs = cnum_outputs;
     rule = crule;
     alpha = calpha;  beta = cbeta;
-
-    tensors = std::move(tset);
 
     max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
@@ -278,18 +274,6 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
         }
     }
 }
-
-int GridGlobal::getNumDimensions() const{ return num_dimensions; }
-int GridGlobal::getNumOutputs() const{ return num_outputs; }
-TypeOneDRule GridGlobal::getRule() const{ return rule; }
-const char* GridGlobal::getCustomRuleDescription() const{ return (custom.getNumLevels() > 0) ? custom.getDescription() : "";  }
-
-double GridGlobal::getAlpha() const{ return alpha; }
-double GridGlobal::getBeta() const{ return beta; }
-
-int GridGlobal::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
-int GridGlobal::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridGlobal::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
 void GridGlobal::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
     std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
@@ -382,7 +366,7 @@ void GridGlobal::acceptUpdatedTensors(){
     }
 }
 
-void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridGlobal::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_values.clear();
     #endif
@@ -396,8 +380,7 @@ void GridGlobal::loadNeededPoints(const double *vals, TypeAcceleration){
 void GridGlobal::mergeRefinement(){
     if (needed.empty()) return; // nothing to do
     int num_all_points = getNumLoaded() + getNumNeeded();
-    std::vector<double> vals(((size_t) num_all_points) * ((size_t) num_outputs), 0.0);
-    values.setValues(vals);
+    values.setValues(std::vector<double>(Utils::size_mult(num_outputs, num_all_points), 0.0));
     acceptUpdatedTensors();
 }
 
@@ -416,38 +399,38 @@ void GridGlobal::beginConstruction(){
         values.resize(num_outputs, 0);
     }
 }
-void GridGlobal::writeConstructionDataBinary(std::ofstream &ofs) const{
-    dynamic_values->write<false>(ofs);
+void GridGlobal::writeConstructionDataBinary(std::ostream &os) const{
+    dynamic_values->write<false>(os);
 }
-void GridGlobal::writeConstructionData(std::ofstream &ofs) const{
-    dynamic_values->write<true>(ofs);
+void GridGlobal::writeConstructionData(std::ostream &os) const{
+    dynamic_values->write<true>(os);
 }
-void GridGlobal::readConstructionDataBinary(std::ifstream &ifs){
+void GridGlobal::readConstructionDataBinary(std::istream &is){
     dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal((size_t) num_dimensions, (size_t) num_outputs));
-    dynamic_values->read<false>(ifs);
+    dynamic_values->read<false>(is);
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
         wrapper.load(custom, max_level, rule, alpha, beta);
     dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
-void GridGlobal::readConstructionData(std::ifstream &ifs){
+void GridGlobal::readConstructionData(std::istream &is){
     dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal((size_t) num_dimensions, (size_t) num_outputs));
-    dynamic_values->read<true>(ifs);
+    dynamic_values->read<true>(is);
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
         wrapper.load(custom, max_level, rule, alpha, beta);
     dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
-void GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
     std::vector<int> weights;
     if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
         int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
         if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
             estimateAnisotropicCoefficients(type, output, weights);
     }
-    getCandidateConstructionPoints(type, weights, x, level_limits);
+    return getCandidateConstructionPoints(type, weights, level_limits);
 }
-void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);
 
     // computing the weight for each index requires the cache for the one dimensional indexes
@@ -479,37 +462,37 @@ void GridGlobal::getCandidateConstructionPoints(TypeDepth type, const std::vecto
 
     if (weights.contour == type_level){
         std::vector<std::vector<int>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             if (cache.empty()){
                 build_exactness((size_t) wrapper.getNumLevels());
                 cache = MultiIndexManipulations::generateLevelWeightsCache<int, type_level, true>(weights, get_exact, wrapper.getNumLevels());
             }
 
             return (double) MultiIndexManipulations::getIndexWeight<int, type_level>(t, cache);
-        }, x, level_limits);
+        }, level_limits);
     }else if (weights.contour == type_curved){
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             if (cache.empty()){
                 build_exactness((size_t) wrapper.getNumLevels());
                 cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_curved, true>(weights, get_exact, wrapper.getNumLevels());
             }
 
             return MultiIndexManipulations::getIndexWeight<double, type_curved>(t, cache);
-        }, x, level_limits);
+        }, level_limits);
     }else{
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             if (cache.empty()){
                 build_exactness((size_t) wrapper.getNumLevels());
                 cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_hyperbolic, true>(weights, get_exact, wrapper.getNumLevels());
             }
 
             return MultiIndexManipulations::getIndexWeight<double, type_hyperbolic>(t, cache);
-        }, x, level_limits);
+        }, level_limits);
     }
 }
-void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits){
     dynamic_values->clearTesnors(); // clear old tensors
     MultiIndexSet init_tensors = dynamic_values->getInitialTensors(); // get the initial tensors (created with make grid)
 
@@ -534,14 +517,15 @@ void GridGlobal::getCandidateConstructionPoints(std::function<double(const int *
     }
     std::vector<int> node_indexes;
     dynamic_values->getNodesIndexes(node_indexes);
-    x.resize(node_indexes.size());
+    std::vector<double> x(node_indexes.size());
     mapIndexesToNodes(node_indexes, x.data());
+    return x;
 }
 void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double> &y){
     std::vector<int> p(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         int i = 0;
-        while(fabs(wrapper.getNode(i) - x[j]) > TSG_NUM_TOL) i++; // convert canonical node to index
+        while(std::abs(wrapper.getNode(i) - x[j]) > Maths::num_tol) i++; // convert canonical node to index
         p[j] = i;
     }
 
@@ -559,7 +543,7 @@ void GridGlobal::loadConstructedTensors(){
     bool added_any = false;
     while(dynamic_values->ejectCompleteTensor(tensors, tensor, new_points, new_values)){
         if (points.empty()){
-            values.setValues(new_values);
+            values.setValues(std::move(new_values));
             points = std::move(new_points);
         }else{
             values.addValues(points, new_points, new_values.data());
@@ -567,7 +551,7 @@ void GridGlobal::loadConstructedTensors(){
         }
 
         if (tensors.empty()){
-            tensors = MultiIndexSet((size_t) num_dimensions, tensor);
+            tensors = MultiIndexSet((size_t) num_dimensions, std::move(tensor));
         }else{
             tensors.addSortedIndexes(tensor);
         }
@@ -629,6 +613,9 @@ void GridGlobal::evaluateBlas(const double x[], int num_x, double y[]) const{
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
+void GridGlobal::loadNeededPointsCuda(CudaEngine *, const double *vals){
+    loadNeededPoints(vals);
+}
 void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     if (cuda_values.size() == 0) cuda_values.load(values.getVector());
 
@@ -639,6 +626,9 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
     engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_values, weights.getVector(), y);
 }
 void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
+void GridGlobal::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
+    throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for global grids.");
+}
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
@@ -672,7 +662,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
         double max_surp = 0.0;
         for(int i=0; i<num_points; i++){
             surp[i] = values.getValues(i)[output];
-            if (fabs(surp[i]) > max_surp) max_surp = fabs(surp[i]);
+            if (std::abs(surp[i]) > max_surp) max_surp = std::abs(surp[i]);
         }
 
         GridSequence seq; // there is an extra copy here, but the sequence grid does the surplus computation automatically
@@ -685,7 +675,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
 
         if (normalize) for(auto &s : surp) s /= max_surp;
     }else{
-        MultiIndexSet polynomial_set = getPolynomialSpace(true);
+        MultiIndexSet polynomial_set = getPolynomialSpaceSet(true);
 
         MultiIndexSet quadrature_tensors =
             MultiIndexManipulations::generateLowerMultiIndexSet((size_t) num_dimensions, [&](const std::vector<int> &index) ->
@@ -699,7 +689,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
 
         GridGlobal QuadGrid;
         if (getMaxQuadLevel < TableGaussPatterson::getNumLevels()-1){
-            QuadGrid.setTensors(quadrature_tensors, 0, rule_gausspatterson, 0.0, 0.0);
+            QuadGrid.setTensors(std::move(quadrature_tensors), 0, rule_gausspatterson, 0.0, 0.0);
         }else{
             quadrature_tensors =
                 MultiIndexManipulations::generateLowerMultiIndexSet((size_t) num_dimensions, [&](const std::vector<int> &index) ->
@@ -708,7 +698,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
                         for(auto &i : qindex) i = (i > 0) ? 1 + OneDimensionalMeta::getQExact(i - 1, rule_clenshawcurtis) : 0;
                         return polynomial_set.missing(qindex);
                     });
-            QuadGrid.setTensors(quadrature_tensors, 0, rule_clenshawcurtis, 0.0, 0.0);
+            QuadGrid.setTensors(std::move(quadrature_tensors), 0, rule_clenshawcurtis, 0.0, 0.0);
         }
 
         size_t qn = (size_t) QuadGrid.getNumPoints();
@@ -738,9 +728,9 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
                 for(int j=0; j<num_dimensions; j++) v *= legendre(p[j], *iter_x++);
                 c += v * ii;
             }
-            double nrm = sqrt((double) p[0] + 0.5);
+            double nrm = std::sqrt((double) p[0] + 0.5);
             for(int j=1; j<num_dimensions; j++){
-                nrm *= sqrt((double) p[j] + 0.5);
+                nrm *= std::sqrt((double) p[j] + 0.5);
             }
             surp[i] = c * nrm;
         }
@@ -749,14 +739,14 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
 }
 
 void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
-    double tol = 1000.0 * TSG_NUM_TOL;
+    double tol = 1000.0 * Maths::num_tol;
     std::vector<double> surp = computeSurpluses(output, false);
 
     int num_points = points.getNumIndexes();
 
     int n = 0, m;
     for(int j=0; j<num_points; j++){
-        surp[j] = fabs(surp[j]);
+        surp[j] = std::abs(surp[j]);
         if (surp[j] > tol) n++;
     }
 
@@ -844,7 +834,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
     std::vector<bool> flagged(n);
 
     for(int i=0; i<n; i++)
-        flagged[i] = (fabs(surp[i]) > tolerance);
+        flagged[i] = (std::abs(surp[i]) > tolerance);
 
     MultiIndexSet kids = MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits);
 
@@ -856,12 +846,12 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
         proposeUpdatedTensors();
     }
 }
-void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration acc){
+void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_values.clear();
     #endif
     if (!points.empty()) clearRefinement();
-    loadNeededPoints(c, acc);
+    loadNeededPoints(c);
 }
 
 double GridGlobal::legendre(int n, double x){
@@ -882,7 +872,7 @@ void GridGlobal::clearAccelerationData(){
     #endif
 }
 
-MultiIndexSet GridGlobal::getPolynomialSpace(bool interpolation) const{
+MultiIndexSet GridGlobal::getPolynomialSpaceSet(bool interpolation) const{
     if (interpolation){
         if (rule == rule_customtabulated){
             return MultiIndexManipulations::createPolynomialSpace(active_tensors, [&](int l)-> int{ return custom.getIExact(l); });
@@ -898,12 +888,8 @@ MultiIndexSet GridGlobal::getPolynomialSpace(bool interpolation) const{
     }
 }
 
-void GridGlobal::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
-    MultiIndexSet polynomial_set = getPolynomialSpace(interpolation);
-
-    n = polynomial_set.getNumIndexes();
-    poly = new int[polynomial_set.getVector().size()];
-    std::copy(polynomial_set.getVector().begin(), polynomial_set.getVector().end(), poly);
+std::vector<int> GridGlobal::getPolynomialSpace(bool interpolation) const{
+    return std::move(getPolynomialSpaceSet(interpolation).getVector());
 }
 const int* GridGlobal::getPointIndexes() const{
     return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));

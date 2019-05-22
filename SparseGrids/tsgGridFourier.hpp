@@ -31,19 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_FOURIER_HPP
 #define __TASMANIAN_SPARSE_GRID_FOURIER_HPP
 
-#include <cstdlib>
-#include <math.h>
-#include <complex>
-
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
-#include "tsgCoreOneDimensional.hpp"
-#include "tsgIndexManipulator.hpp"
-#include "tsgLinearSolvers.hpp"
-#include "tsgOneDimensionalWrapper.hpp"
 #include "tsgGridCore.hpp"
-
-#include "tsgCudaLoadStructures.hpp"
 
 namespace TasGrid{
 
@@ -60,17 +48,11 @@ public:
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void copyGrid(const GridFourier *fourier);
 
-    void setTensors(MultiIndexSet &tset, int cnum_outputs);
+    void setTensors(MultiIndexSet &&tset, int cnum_outputs);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
-    TypeOneDRule getRule() const;
+    TypeOneDRule getRule() const{ return rule_fourier; }
 
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
-
-    void loadNeededPoints(const double *vals, TypeAcceleration acc = accel_none);
+    void loadNeededPoints(const double *vals);
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
@@ -88,8 +70,10 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
+    void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
     #endif
 
     void integrate(double q[], double *conformal_correction) const;
@@ -125,8 +109,8 @@ protected:
             cache[j].resize(max_power[j] +1);
             cache[j][0] = std::complex<T>(1.0, 0.0);
 
-            T theta = -2.0 * M_PI * x[j];
-            std::complex<T> step(cos(theta), sin(theta));
+            T theta = -2.0 * Maths::pi * x[j];
+            std::complex<T> step(std::cos(theta), std::sin(theta));
             std::complex<T> pw(1.0, 0.0);
             for(int i=1; i<max_power[j]; i += 2){
                 pw *= step;
@@ -193,16 +177,12 @@ protected:
     #endif
 
 private:
-    int num_dimensions, num_outputs;
-
     OneDimensionalWrapper wrapper;
 
     MultiIndexSet tensors;
     MultiIndexSet active_tensors;
     std::vector<int> active_w;
     std::vector<int> max_levels;
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     Data2D<double> fourier_coefs;
 

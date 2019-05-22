@@ -32,13 +32,11 @@
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_NESTED_CPP
 
 #include "tsgGridSequence.hpp"
-
 #include "tsgHiddenExternals.hpp"
-#include "tsgUtils.hpp"
 
 namespace TasGrid{
 
-GridSequence::GridSequence() : num_dimensions(0), num_outputs(0){}
+GridSequence::GridSequence(){}
 GridSequence::~GridSequence(){}
 
 template<bool useAscii> void GridSequence::write(std::ostream &os) const{
@@ -57,7 +55,7 @@ template<bool useAscii> void GridSequence::write(std::ostream &os) const{
     if (num_outputs > 0) values.write<useAscii>(os);
 }
 
-template<bool useAscii> void GridSequence::read(std::ifstream &is){
+template<bool useAscii> void GridSequence::read(std::istream &is){
     reset();
     num_dimensions = IO::readNumber<useAscii, int>(is);
     num_outputs = IO::readNumber<useAscii, int>(is);
@@ -66,10 +64,8 @@ template<bool useAscii> void GridSequence::read(std::ifstream &is){
     if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
     if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
 
-    if (IO::readFlag<useAscii>(is)){
-        surpluses.resize(num_outputs, points.getNumIndexes());
-        IO::readVector<useAscii>(is, surpluses.getVector());
-    }
+    if (IO::readFlag<useAscii>(is))
+        surpluses = IO::readData2D<useAscii, double>(is, num_outputs, points.getNumIndexes());
 
     if (num_outputs > 0) values.read<useAscii>(is);
 
@@ -78,8 +74,8 @@ template<bool useAscii> void GridSequence::read(std::ifstream &is){
 
 template void GridSequence::write<true>(std::ostream &) const;
 template void GridSequence::write<false>(std::ostream &) const;
-template void GridSequence::read<true>(std::ifstream &);
-template void GridSequence::read<false>(std::ifstream &);
+template void GridSequence::read<true>(std::istream &);
+template void GridSequence::read<false>(std::istream &);
 
 void GridSequence::reset(){
     clearAccelerationData();
@@ -162,14 +158,6 @@ void GridSequence::updateGrid(MultiIndexSet &update){
     }
 }
 
-int GridSequence::getNumDimensions() const{ return num_dimensions; }
-int GridSequence::getNumOutputs() const{ return num_outputs; }
-TypeOneDRule GridSequence::getRule() const{ return rule; }
-
-int GridSequence::getNumLoaded() const{ return (((points.empty()) || (num_outputs == 0)) ? 0 : points.getNumIndexes()); }
-int GridSequence::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridSequence::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
-
 void GridSequence::getLoadedPoints(double *x) const{
     std::transform(points.getVector().begin(), points.getVector().end(), x, [&](int i)->double{ return nodes[i]; });
 }
@@ -210,7 +198,7 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
     applyTransformationTransposed(weights);
 }
 
-void GridSequence::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridSequence::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaSurpluses(); // changing values and surpluses, clear the cache
     #endif
@@ -240,8 +228,7 @@ void GridSequence::mergeRefinement(){
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    std::vector<double> vals(num_vals, 0.0);
-    values.setValues(vals);
+    values.setValues(std::vector<double>(num_vals, 0.0));
     if (points.empty()){ // relabel needed as points (loaded)
         points = std::move(needed);
         needed = MultiIndexSet();
@@ -264,19 +251,19 @@ void GridSequence::beginConstruction(){
         needed = MultiIndexSet();
     }
 }
-void GridSequence::writeConstructionDataBinary(std::ofstream &ofs) const{
-    dynamic_values->write<false>(ofs);
+void GridSequence::writeConstructionDataBinary(std::ostream &os) const{
+    dynamic_values->write<false>(os);
 }
-void GridSequence::writeConstructionData(std::ofstream &ofs) const{
-    dynamic_values->write<true>(ofs);
+void GridSequence::writeConstructionData(std::ostream &os) const{
+    dynamic_values->write<true>(os);
 }
-void GridSequence::readConstructionDataBinary(std::ifstream &ifs){
-    dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, ifs);
+void GridSequence::readConstructionDataBinary(std::istream &is){
+    dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, is);
 }
-void GridSequence::readConstructionData(std::ifstream &ifs){
-    dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, ifs);
+void GridSequence::readConstructionData(std::istream &is){
+    dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, is);
 }
-void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);
 
     auto level_exact = [&](int l) -> int{ return l; };
@@ -284,7 +271,7 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vec
 
     if (weights.contour == type_level){
         std::vector<std::vector<int>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             // see the same named function in GridGlobal
             if (cache.empty()){
                 if (OneDimensionalMeta::isExactQuadrature(type)){
@@ -297,10 +284,10 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vec
             int w = 0;
             for(int j=0; j<num_dimensions; j++) w += cache[j][t[j]];
             return (double) w;
-        }, x, level_limits);
+        }, level_limits);
     }else if (weights.contour == type_curved){
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             // see the same named function in GridGlobal
             if (cache.empty()){
                 if (OneDimensionalMeta::isExactQuadrature(type)){
@@ -313,10 +300,10 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vec
             double w = 0.0;
             for(int j=0; j<num_dimensions; j++) w += cache[j][t[j]];
             return w;
-        }, x, level_limits);
+        }, level_limits);
     }else{
         std::vector<std::vector<double>> cache;
-        getCandidateConstructionPoints([&](int const *t) -> double{
+        return getCandidateConstructionPoints([&](int const *t) -> double{
             // see the same named function in GridGlobal
             if (cache.empty()){
                 if (OneDimensionalMeta::isExactQuadrature(type)){
@@ -329,19 +316,19 @@ void GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vec
             double w = 1.0;
             for(int j=0; j<num_dimensions; j++) w *= cache[j][t[j]];
             return w;
-        }, x, level_limits);
+        }, level_limits);
     }
 }
-void GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridSequence::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
     std::vector<int> weights;
     if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
         int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
         if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
             estimateAnisotropicCoefficients(type, output, weights);
     }
-    getCandidateConstructionPoints(type, weights, x, level_limits);
+    return getCandidateConstructionPoints(type, weights, level_limits);
 }
-void GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits){
+std::vector<double> GridSequence::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits){
     // get the new candidate points that will ensure lower completeness and are not included in the initial set
     MultiIndexSet new_points = (level_limits.empty()) ?
         MultiIndexManipulations::addExclusiveChildren<false>(points, dynamic_values->initial_points, level_limits) :
@@ -361,7 +348,7 @@ void GridSequence::getCandidateConstructionPoints(std::function<double(const int
 
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    x.resize(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
     auto t = weighted_points.begin();
     auto ix = x.begin();
     while(t != weighted_points.end()){
@@ -369,12 +356,13 @@ void GridSequence::getCandidateConstructionPoints(std::function<double(const int
         std::advance(ix, num_dimensions);
         t++;
     }
+    return x;
 }
 void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){
     std::vector<int> p(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         size_t i = 0;
-        while((i < nodes.size()) && (fabs(nodes[i] - x[j]) > TSG_NUM_TOL)) i++; // convert canonical node to index
+        while((i < nodes.size()) && (std::abs(nodes[i] - x[j]) > Maths::num_tol)) i++; // convert canonical node to index
         if (i < nodes.size()){
             p[j] = (int) i;
         }else{
@@ -414,16 +402,13 @@ void GridSequence::loadConstructedPoint(const double x[], const std::vector<doub
 }
 void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
     if (points.empty()){ // only one point
-        auto p = point; // create new so it can be moved
-        points = MultiIndexSet((size_t) num_dimensions, p);
+        points = MultiIndexSet((size_t) num_dimensions, std::vector<int>(point));
         values.resize(num_outputs, 1);
-        auto v = value; // create new to allow copy move
-        values.setValues(v);
+        values.setValues(std::vector<double>(value));
         surpluses.resize(num_outputs, 1);
         surpluses.getVector() = value; // the surplus of one point is the value itself
     }else{ // merge with existing points
-        auto p = point;
-        MultiIndexSet temp(num_dimensions, p);
+        MultiIndexSet temp(num_dimensions, std::vector<int>(point));
         values.addValues(points, temp, value.data());
 
         points.addSortedIndexes(point);
@@ -477,6 +462,9 @@ void GridSequence::evaluateBlas(const double x[], int num_x, double y[]) const{
 #endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
+void GridSequence::loadNeededPointsCuda(CudaEngine *, const double *vals){
+    loadNeededPoints(vals);
+}
 void GridSequence::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses();
 
@@ -486,17 +474,16 @@ void GridSequence::evaluateCudaMixed(CudaEngine *engine, const double x[], int n
     engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, hweights.getVector(), y);
 }
 void GridSequence::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_outputs, num_x);
+    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_result.data());
+    gpu_result.unload(y);
+}
+void GridSequence::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
     loadCudaSurpluses();
 
-    int num_points = points.getNumIndexes();
-    CudaVector<double> gpu_x;
-    gpu_x.load(((size_t) num_dimensions) * ((size_t) num_x), x);
-    CudaVector<double> gpu_basis(num_x, num_points);
-    CudaVector<double> gpu_result(num_x, num_outputs);
-
-    evaluateHierarchicalFunctionsGPU(gpu_x.data(), num_x, gpu_basis.data());
-    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_result);
-    gpu_result.unload(y);
+    CudaVector<double> gpu_basis(points.getNumIndexes(), cpu_num_x);
+    evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
+    engine->denseMultiply(num_outputs, cpu_num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_y);
 }
 #endif // Tasmanian_ENABLE_CUDA
 
@@ -594,7 +581,7 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
 }
 
 void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
-    double tol = 1000 * TSG_NUM_TOL;
+    double tol = 1000 * Maths::num_tol;
     int num_points = points.getNumIndexes();
     std::vector<double> max_surp(num_points);
 
@@ -604,7 +591,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
             const double *val = values.getValues(i);
             int k=0;
             for(auto &n : nrm){
-                double v = fabs(val[k++]);
+                double v = std::abs(val[k++]);
                 if (n < v) n = v;
             }
         }
@@ -613,7 +600,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
             const double *s = surpluses.getStrip(i);
             double smax = 0.0;
             for(int k=0; k<num_outputs; k++){
-                double v = fabs(s[k]) / nrm[k];
+                double v = std::abs(s[k]) / nrm[k];
                 if (smax < v) smax = v;
             }
             max_surp[i] = smax;
@@ -714,7 +701,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     for(int i=0; i<num_points; i++){
         const double *val = values.getValues(i);
         for(int k=0; k<num_outputs; k++){
-            double v = fabs(val[k]);
+            double v = std::abs(val[k]);
             if (norm[k] < v) norm[k] = v;
         }
     }
@@ -722,16 +709,16 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     if (output == -1){
         for(int i=0; i<num_points; i++){
             const double *s = surpluses.getStrip(i);
-            double smax = fabs(s[0]) / norm[0];
+            double smax = std::abs(s[0]) / norm[0];
             for(int k=1; k<num_outputs; k++){
-                double v = fabs(s[k]) / norm[k];
+                double v = std::abs(s[k]) / norm[k];
                 if (smax < v) smax = v;
             }
             flagged[i] = (smax > tolerance);
         }
     }else{
         for(int i=0; i<num_points; i++){
-            flagged[i] = ((fabs(surpluses.getStrip(i)[output]) / norm[output]) > tolerance);
+            flagged[i] = ((std::abs(surpluses.getStrip(i)[output]) / norm[output]) > tolerance);
         }
     }
 
@@ -745,17 +732,15 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
     }
 }
 
-void GridSequence::getPolynomialSpace(bool interpolation, int &n, int* &poly) const{
-    MultiIndexSet space; // used only when interpolation is false
-    const MultiIndexSet &work = (points.empty()) ? needed : points;
-    if (!interpolation){ // when using interpolation, the polynomial space coincides with points/needed
-        space = MultiIndexManipulations::createPolynomialSpace(work, [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); });
+std::vector<int> GridSequence::getPolynomialSpace(bool interpolation) const{
+    if (interpolation){
+        return (points.empty()) ? needed.getVector() : points.getVector(); // copy
+    }else{
+        MultiIndexSet polynomial_set = MultiIndexManipulations::createPolynomialSpace(
+            (points.empty()) ? needed : points,
+            [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); });
+        return std::move(polynomial_set.getVector());
     }
-    const MultiIndexSet &result = (interpolation) ? work : space;
-
-    n = result.getNumIndexes();
-    poly = new int[result.getVector().size()];
-    std::copy(result.getVector().begin(), result.getVector().end(), poly);
 }
 const double* GridSequence::getSurpluses() const{
     return surpluses.getVector().data();
@@ -787,13 +772,13 @@ void GridSequence::prepareSequence(int num_external){
 
     if ((size_t) max_level > nodes.size()){
         if (rule == rule_leja){
-            Optimizer::getGreedyNodes<rule_leja>(max_level, nodes);
+            nodes = Optimizer::getGreedyNodes<rule_leja>(max_level);
         }else if (rule == rule_maxlebesgue){
-            Optimizer::getGreedyNodes<rule_maxlebesgue>(max_level, nodes);
+            nodes = Optimizer::getGreedyNodes<rule_maxlebesgue>(max_level);
         }else if (rule == rule_minlebesgue){
-            Optimizer::getGreedyNodes<rule_minlebesgue>(max_level, nodes);
+            nodes = Optimizer::getGreedyNodes<rule_minlebesgue>(max_level);
         }else if (rule == rule_mindelta){
-            Optimizer::getGreedyNodes<rule_mindelta>(max_level, nodes);
+            nodes = Optimizer::getGreedyNodes<rule_mindelta>(max_level);
         }else if (rule == rule_rleja){
             OneDimensionalNodes::getRLeja(max_level, nodes);
         }else if (rule == rule_rlejashifted){
@@ -853,41 +838,46 @@ void GridSequence::recomputeSurpluses(){
 
     Data2D<int> parents = MultiIndexManipulations::computeDAGup(points);
 
+    std::vector<std::vector<int>> indexses_for_levels((size_t) top_level+1);
+    for(int i=0; i<num_points; i++)
+        if (level[i] > 0) indexses_for_levels[level[i]].push_back(i);
+
     for(int l=1; l<=top_level; l++){
+        int level_size = (int) indexses_for_levels[l].size();
         #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<num_points; i++){
-            if (level[i] == l){
-                const int* p = points.getIndex(i);
-                double *surpi = surpluses.getStrip(i);
+        for(int s=0; s<level_size; s++){
+            int i = indexses_for_levels[l][s];
 
-                std::vector<int> monkey_count(top_level + 1);
-                std::vector<int> monkey_tail(top_level + 1);
-                std::vector<bool> used(num_points, false);
+            const int* p = points.getIndex(i);
+            double *surpi = surpluses.getStrip(i);
 
-                int current = 0;
+            std::vector<int> monkey_count(top_level + 1);
+            std::vector<int> monkey_tail(top_level + 1);
+            std::vector<bool> used(num_points, false);
 
-                monkey_count[0] = 0;
-                monkey_tail[0] = i;
+            int current = 0;
 
-                while(monkey_count[0] < num_dimensions){
-                    if (monkey_count[current] < num_dimensions){
-                        int branch = parents.getStrip(monkey_tail[current])[monkey_count[current]];
-                        if ((branch == -1) || (used[branch])){
-                            monkey_count[current]++;
-                        }else{
-                            const double *branch_surp = surpluses.getStrip(branch);;
-                            double basis_value = evalBasis(points.getIndex(branch), p);
-                            for(int k=0; k<num_outputs; k++){
-                                 surpi[k] -= basis_value * branch_surp[k];
-                            }
-                            used[branch] = true;
+            monkey_count[0] = 0;
+            monkey_tail[0] = i;
 
-                            monkey_count[++current] = 0;
-                            monkey_tail[current] = branch;
-                        }
+            while(monkey_count[0] < num_dimensions){
+                if (monkey_count[current] < num_dimensions){
+                    int branch = parents.getStrip(monkey_tail[current])[monkey_count[current]];
+                    if ((branch == -1) || (used[branch])){
+                        monkey_count[current]++;
                     }else{
-                        monkey_count[--current]++;
+                        const double *branch_surp = surpluses.getStrip(branch);;
+                        double basis_value = evalBasis(points.getIndex(branch), p);
+                        for(int k=0; k<num_outputs; k++){
+                                surpi[k] -= basis_value * branch_surp[k];
+                        }
+                        used[branch] = true;
+
+                        monkey_count[++current] = 0;
+                        monkey_tail[current] = branch;
                     }
+                }else{
+                    monkey_count[--current]++;
                 }
             }
         }

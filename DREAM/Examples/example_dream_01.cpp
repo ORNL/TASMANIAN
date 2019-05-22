@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
-#include "math.h"
 
 #include "TasmanianDREAM.hpp"
 
@@ -57,7 +56,7 @@ void dream_example_01(){
     TasDREAM::SampleDREAM(num_burnup_iterations, num_collect_iterations,
                           [&](const std::vector<double> &candidates, std::vector<double> &values){ // use lambda to implement the formula
                               std::transform(candidates.begin(), candidates.end(), values.begin(),
-                                             [&](double x)->double{ return exp(-x*x); }); // implement the formula
+                                             [&](double x)->double{ return std::exp(-x*x); }); // implement the formula
                           },
                           [&](const std::vector<double>&)->bool{ return true; }, // unbound domain
                           TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
@@ -71,9 +70,9 @@ void dream_example_01(){
 
     cout << "Using regular form:" << endl;
     cout << "       mean:" << setw(13) << std::fixed << mean[0]
-         << "   error:" << setw(12) << std::scientific << fabs(mean[0]) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(mean[0]) << endl;
     cout << "   variance:" << setw(13) << std::fixed << variance[0]
-         << "   error:" << setw(12) << std::scientific << fabs(variance[0] - 0.5) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(variance[0] - 0.5) << endl;
 
 
     // Repeat the same experiment, but using log-form
@@ -98,9 +97,9 @@ void dream_example_01(){
 
     cout << "Using regular form:" << endl;
     cout << "       mean:" << setw(13) << std::fixed << mean[0]
-         << "   error:" << setw(12) << std::scientific << fabs(mean[0]) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(mean[0]) << endl;
     cout << "   variance:" << setw(13) << std::fixed << variance[0]
-         << "   error:" << setw(12) << std::scientific << fabs(variance[0] - 0.5) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(variance[0] - 0.5) << endl;
 
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
 #ifndef __TASMANIAN_DOXYGEN_SKIP

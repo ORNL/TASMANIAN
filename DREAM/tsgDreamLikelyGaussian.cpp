@@ -63,7 +63,7 @@ void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, const std::v
         std::advance(im, num_outputs);
     }
     #endif
-    if (form == regform) for(auto &l : likely) l = exp(l);
+    if (form == regform) for(auto &l : likely) l = std::exp(l);
 }
 
 }

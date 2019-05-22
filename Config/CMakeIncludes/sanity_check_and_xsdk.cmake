@@ -68,38 +68,22 @@ endif()
 
 # OpenMP setup
 if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
-    find_package(OpenMP)
-
-    if (NOT OPENMP_CXX_FOUND)
-        if (Tasmanian_ENABLE_RECOMMENDED)
-            set(Tasmanian_ENABLE_OPENMP OFF)
-            message(STATUS "Tasmanian could not find OpenMP, the library will run in single-threaded mode")
-        else()
-            message(FATAL_ERROR "Tasmanian_ENABLE_OPENMP is ON, but find_package(OpenMP) failed")
-        endif()
+    if (Tasmanian_ENABLE_OPENMP)
+        find_package(OpenMP REQUIRED) # OpenMP requested explicitly, require regardless of ENABLE_RECOMMENDED
     else()
-        set(Tasmanian_ENABLE_OPENMP ON) # if using RECOMMENDED, make sure OPENMP is ON
+        find_package(OpenMP)
+        set(Tasmanian_ENABLE_OPENMP ${OPENMP_CXX_FOUND}) # set ENABLE_OPENMP if OpenMP_CXX_FOUND
     endif()
 endif()
 
 # check for BLAS
 if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
     if (NOT DEFINED BLAS_LIBRARIES) # user defined BLAS libraries are an XSDK requirement
-        find_package(BLAS)
-
-        if (BLAS_FOUND)
-            set(Tasmanian_ENABLE_BLAS ON) # set ON if using Tasmanian_ENABLE_RECOMMENDED
+        if (Tasmanian_ENABLE_BLAS)
+            find_package(BLAS REQUIRED) # if BLAS enabled explicitly, require
         else()
-            if (Tasmanian_ENABLE_RECOMMENDED)
-                set(Tasmanian_ENABLE_BLAS OFF)
-                message(STATUS "Tasmanian could not find BLAS, which gives significant boost when working with grid with many outputs")
-            else()
-                message(FATAL_ERROR "Tasmanian_ENABLE_BLAS is ON, but find_package(BLAS) failed")
-            endif()
-        endif()
-    else()
-        if (Tasmanian_ENABLE_RECOMMENDED)
-            set(Tasmanian_ENABLE_BLAS ON) # set ON if using Tasmanian_ENABLE_RECOMMENDED
+            find_package(BLAS)
+            set(Tasmanian_ENABLE_BLAS ${BLAS_FOUND})
         endif()
     endif()
 endif()
@@ -134,14 +118,10 @@ endif()
 
 # Tasmanian_ENABLE_CUDA support for the add_library vs cuda_add_library
 if (Tasmanian_ENABLE_CUDA)
-    find_package(CUDA REQUIRED)
+    enable_language(CUDA)
 
-    # "CUDA_STANDARD" per-target is used only by enable_language(CUDA), set the flag manually
-    list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
-
-    # CUDA 10 no longer uses cuBlas device library, but "older" cmake (e.g., cmake 3.11) look for that
-    # if CUDA is found but some library is missing, try to build anyway
-    list(FILTER CUDA_CUBLAS_LIBRARIES EXCLUDE REGEX "-NOTFOUND$")
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/")
+    find_package(TasmanianCudaMathLibs REQUIRED)
 endif()
 
 # check for MAGMA
@@ -150,7 +130,6 @@ if (Tasmanian_ENABLE_MAGMA)
         message(FATAL_ERROR "Currently Tasmanian can use only CUDA related capability from MAGMA, hence Tasmanian_ENABLE_CUDA must be set ON")
     endif()
 
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/")
     find_package(TasmanianMAGMA)
 
     if (Tasmanian_MAGMA_FOUND)
@@ -194,9 +173,6 @@ if (Tasmanian_ENABLE_RECOMMENDED)
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         set(CMAKE_CXX_FLAGS_RELEASE "/MD /Ox /DNDEBUG ${OpenMP_CXX_FLAGS}") # cmake overwrites flags a lot, careful how you set those
         set(CMAKE_CXX_FLAGS_DEBUG "/MD /Ox ${OpenMP_CXX_FLAGS}")
-        if (Tasmanian_ENABLE_CUDA)
-            list(REMOVE_ITEM CUDA_NVCC_FLAGS "-std=c++11") # c++11 is default under windows, the flag only generates warnings
-        endif()
     endif()
 endif()
 

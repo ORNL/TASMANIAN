@@ -43,6 +43,8 @@
  * \endinternal
  */
 
+#include "tsgMathUtils.hpp"
+
 /*!
  * \internal
  * \ingroup TasmanianSG

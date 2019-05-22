@@ -31,12 +31,8 @@
 #ifndef __TSG_INDEX_MANIPULATOR_HPP
 #define __TSG_INDEX_MANIPULATOR_HPP
 
-#include <numeric>
-#include <iostream>
-
 #include "tsgIndexSets.hpp"
 #include "tsgOneDimensionalWrapper.hpp"
-#include "tsgRuleLocalPolynomial.hpp"
 
 /*!
  * \internal
@@ -68,7 +64,7 @@ namespace TasGrid{
 
 /*!
  * \internal
- * \ingroup TasmanianIO
+ * \ingroup TasmanianMultiIndexManipulations
  * \brief Collection of algorithm to manipulate multi-indexes.
  */
 namespace MultiIndexManipulations{
@@ -95,7 +91,7 @@ inline MultiIndexSet generateLowerMultiIndexSet(size_t num_dimensions, std::func
         }
         is_in = inside(root);
     }
-    return MultiIndexSet(num_dimensions, indexes);
+    return MultiIndexSet(num_dimensions, std::move(indexes));
 }
 
 /*!
@@ -198,7 +194,7 @@ std::vector<std::vector<CacheType>> generateLevelWeightsCache(ProperWeights cons
         double wc = (contour == type_level) ? 0.0 : weights.curved[j]; // curved weights
 
         size_t i = 0; // keep track of the index
-        CacheType w = (CacheType) (contour == type_hyperbolic) ? 1 : 0;
+        CacheType w = static_cast<CacheType>((contour == type_hyperbolic) ? 1 : 0);
         cache[j].push_back(w); // initial entry
         do{ // accumulate the cache
             i++;
@@ -208,11 +204,11 @@ std::vector<std::vector<CacheType>> generateLevelWeightsCache(ProperWeights cons
             int e = exactness_cache[i];
 
             if (contour == type_level){
-                w = wl * e;
+                w = static_cast<CacheType>(wl * e);
             }else if (contour == type_curved){
-                w = (CacheType)(wl * e) + wc * log1p((CacheType) e);
+                w = static_cast<CacheType>(wl * e) + static_cast<CacheType>(wc * std::log1p(static_cast<CacheType>(e)));
             }else{ // must be hyperbolic
-                w = pow((CacheType) (1 + e), wc);
+                w = static_cast<CacheType>(pow((CacheType) (1 + e), wc));
             }
 
             cache[j].push_back(w);
@@ -279,66 +275,6 @@ std::vector<int> getMaxIndexes(const MultiIndexSet &mset);
  * \endinternal
  */
 Data2D<int> computeDAGup(MultiIndexSet const &mset);
-
-/*!
- * \internal
- * \ingroup TasmanianMultiIndexManipulations
- * \brief Cache the indexes slot numbers of the parents of the multi-indexes in \b mset.
- *
- * Each node defined by a multi-index in \b mset can have one or more parents in each direction,
- * where the parent-offspring relation is defined by the \b rule. For each index in \b mset, the
- * Data2D structure \b parents will hold a strip with the location of each parent in \b mset
- * (or -1 if the parent is missing from \b mset).
- * \endinternal
- */
-Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule);
-
-/*!
- * \internal
- * \brief Returns a vector that is the sum of the one dimensional levels of each multi-index in the set.
- * \ingroup TasmanianMultiIndexManipulations
- * \endinternal
- */
-std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule);
-
-/*!
- * \internal
- * \brief Will call \b apply() with the slot index in \b mset of each parent/child of \b point.
- * \ingroup TasmanianMultiIndexManipulations
- * \endinternal
- */
-inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule, std::function<void(int i)> apply){
-    int max_kids = rule->getMaxNumKids();
-    for(auto &v : point){
-        int save = v; // replace one by one each index of p with either parent or kid
-
-        // check the parents
-        v = rule->getParent(save);
-        if (v > -1){
-            int parent_index = mset.getSlot(point);
-            if (parent_index > -1)
-                apply(parent_index);
-        }
-
-        v = rule->getStepParent(save);
-        if (v > -1){
-            int parent_index = mset.getSlot(point);
-            if (parent_index > -1)
-                apply(parent_index);
-        }
-
-        for(int k=0; k<max_kids; k++){
-            v = rule->getKid(save, k);
-            if (v > -1){
-                int kid_index = mset.getSlot(point);
-                if (kid_index > -1)
-                    apply(kid_index);
-            }
-        }
-
-        v = save; // restore the original index for the next iteration
-    }
-}
 
 /*!
  * \internal
@@ -434,7 +370,7 @@ inline MultiIndexSet createActiveTensors(const MultiIndexSet &mset, const std::v
         std::advance(iset, num_dimensions);
     }
 
-    return MultiIndexSet(num_dimensions, indexes);
+    return MultiIndexSet(num_dimensions, std::move(indexes));
 }
 
 /*!

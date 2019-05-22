@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
-#include "math.h"
 
 #include "TasmanianDREAM.hpp"
 
@@ -44,6 +43,8 @@ void dream_example_02(){
     cout << "           use sparse grid to interpolate the likelihood" << endl;
     cout << "     NOTE: 32 corresponds to discretization error in t" << endl << endl;
 
+    constexpr double pi = 3.14159265358979323846;
+
     int num_dimensions = 2;
     int num_chains = 100;
     int num_burnup_iterations = 3000;
@@ -57,7 +58,7 @@ void dream_example_02(){
             double dt = 1.0 / ((double) data.size());
             double t = 0.5 * dt;
             for(auto &d : data){
-                d = sin(x0 * M_PI * t + x1);
+                d = std::sin(x0 * pi * t + x1);
                 t += dt;
             }
         };
@@ -77,7 +78,7 @@ void dream_example_02(){
 
     // generate the data, normally this will come from an external source
     std::vector<double> data(num_discrete_nodes);
-    model(1.0, 0.3 * M_PI, data); // "true" values: x0 = 1.0, x1 = 0.3 * M_PI
+    model(1.0, 0.3 * pi, data); // "true" values: x0 = 1.0, x1 = 0.3 * pi
 
     // construct a sparse grid approximation for the log of the likelihood (i.e., will use logform later)
     // for details consult the documentation of the sparse grids module
@@ -120,9 +121,9 @@ void dream_example_02(){
 
     cout << "Inferred values (using 10th order polynomial sparse grid):" << endl;
     cout << "   frequency:" << setw(12) << std::fixed << expectation[0]
-         << "   error:" << setw(12) << std::scientific << fabs(expectation[0] - 1.0) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(expectation[0] - 1.0) << endl;
     cout << "  correction:" << setw(12) << std::fixed << expectation[1]
-         << "   error:" << setw(12) << std::scientific << fabs(expectation[1] - 0.3 * M_PI) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(expectation[1] - 0.3 * pi) << endl << endl;
 
     // Solve the same example, but switch to 30-th order polynomial with Sequence grid
 
@@ -157,9 +158,9 @@ void dream_example_02(){
 
     cout << "Inferred values (using 30th order polynomial sparse grid):" << endl;
     cout << "   frequency:" << setw(12) << std::fixed << expectation[0]
-         << "   error:" << setw(12) << std::scientific << fabs(expectation[0] - 1.0) << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(expectation[0] - 1.0) << endl;
     cout << "  correction:" << setw(12) << std::fixed << expectation[1]
-         << "   error:" << setw(12) << std::scientific << fabs(expectation[1] - 0.3 * M_PI) << endl << endl;
+         << "   error:" << setw(12) << std::scientific << std::abs(expectation[1] - 0.3 * pi) << endl << endl;
 
     cout << endl << "-------------------------------------------------------------------------------------------------" << endl;
 #ifndef __TASMANIAN_DOXYGEN_SKIP

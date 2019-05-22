@@ -31,9 +31,6 @@
 #ifndef __TSG_ONE_DIMENSIONAL_WRAPPER_CPP
 #define __TSG_ONE_DIMENSIONAL_WRAPPER_CPP
 
-#include <stdexcept>
-#include <string>
-
 #include "tsgOneDimensionalWrapper.hpp"
 
 namespace TasGrid{
@@ -105,7 +102,7 @@ void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, T
             for(auto x : nodes[l]){
                 int point = -1;
                 for(int j=0; j<(int) unique.size(); j++){
-                    if (fabs(x - unique[j]) < TSG_NUM_TOL){
+                    if (std::abs(x - unique[j]) < Maths::num_tol){
                         point = j;
                         break;
                     }
@@ -169,13 +166,13 @@ void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, T
         }else if ((rule == rule_rlejashifted) || (rule == rule_rlejashiftedeven) || (rule == rule_rlejashifteddouble)){
             OneDimensionalNodes::getRLejaShifted(OneDimensionalMeta::getNumPoints(max_level,rule), unique);
         }else if ((rule == rule_leja) || (rule == rule_lejaodd)){
-            Optimizer::getGreedyNodes<rule_leja>(OneDimensionalMeta::getNumPoints(max_level, rule), unique);
+            unique = Optimizer::getGreedyNodes<rule_leja>(OneDimensionalMeta::getNumPoints(max_level, rule));
         }else if ((rule == rule_maxlebesgue) || (rule == rule_maxlebesgueodd)){
-            Optimizer::getGreedyNodes<rule_maxlebesgue>(OneDimensionalMeta::getNumPoints(max_level, rule), unique);
+            unique = Optimizer::getGreedyNodes<rule_maxlebesgue>(OneDimensionalMeta::getNumPoints(max_level, rule));
         }else if ((rule == rule_minlebesgue) || (rule == rule_minlebesgueodd)){
-            Optimizer::getGreedyNodes<rule_minlebesgue>(OneDimensionalMeta::getNumPoints(max_level, rule), unique);
+            unique = Optimizer::getGreedyNodes<rule_minlebesgue>(OneDimensionalMeta::getNumPoints(max_level, rule));
         }else if ((rule == rule_mindelta) || (rule == rule_mindeltaodd)){
-            Optimizer::getGreedyNodes<rule_mindelta>(OneDimensionalMeta::getNumPoints(max_level, rule), unique);
+            unique = Optimizer::getGreedyNodes<rule_mindelta>(OneDimensionalMeta::getNumPoints(max_level, rule));
         }else{ // if (rule==rule_fourier)
             OneDimensionalNodes::getFourierNodes(max_level, unique);
         }

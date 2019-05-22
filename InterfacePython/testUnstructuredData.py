@@ -92,18 +92,6 @@ class TestTasClass(unittest.TestCase):
         pSparse = TasmanianSG.TasmanianSimpleSparseMatrix()
         np.testing.assert_almost_equal(np.empty([0,0], np.float64), pSparse.getDenseForm(), 14, "TasmanianSimpleSparseMatrix.getDense()", True)
 
-        grid.makeGlobalGrid(2, 1, 4, 'iptotal', 'fejer2')
-        aPoints = np.array([[0.33, 0.25], [-0.27, 0.39], [0.97, -0.76], [-0.44, 0.21], [-0.813, 0.03], [-0.666, 0.666]])
-        aDense = grid.evaluateHierarchicalFunctions(aPoints)
-        pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
-        np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
-
-        grid.makeSequenceGrid(2, 1, 4, 'iptotal', 'min-delta')
-        aPoints = np.array([[0.33, 0.25], [-0.27, 0.39], [0.97, -0.76], [-0.44, 0.21], [-0.813, 0.03], [-0.666, 0.666]])
-        aDense = grid.evaluateHierarchicalFunctions(aPoints)
-        pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
-        np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
-
         grid.makeLocalPolynomialGrid(2, 1, 4, 1, 'localp')
         aPoints = np.array([[0.33, 0.25], [-0.27, 0.39], [0.97, -0.76], [-0.44, 0.21], [-0.813, 0.03], [-0.666, 0.666]])
         aDense = grid.evaluateHierarchicalFunctions(aPoints)
@@ -111,13 +99,6 @@ class TestTasClass(unittest.TestCase):
         np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
 
         grid.makeWaveletGrid(2, 1, 4, 1)
-        aPoints = np.array([[0.33, 0.25], [-0.27, 0.39], [0.97, -0.76], [-0.44, 0.21], [-0.813, 0.03], [-0.666, 0.666]])
-        aDense = grid.evaluateHierarchicalFunctions(aPoints)
-        pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)
-        np.testing.assert_almost_equal(aDense, pSparse.getDenseForm(), 14, "evaluateSparseHierarchicalFunctions", True)
-
-        grid.makeFourierGrid(2, 1, 4, "level")
-        grid.setDomainTransform(np.array([[-1.0, 1.0], [-1.0, 1.0]]))
         aPoints = np.array([[0.33, 0.25], [-0.27, 0.39], [0.97, -0.76], [-0.44, 0.21], [-0.813, 0.03], [-0.666, 0.666]])
         aDense = grid.evaluateHierarchicalFunctions(aPoints)
         pSparse = grid.evaluateSparseHierarchicalFunctions(aPoints)

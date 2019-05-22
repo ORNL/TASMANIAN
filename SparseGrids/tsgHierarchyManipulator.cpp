@@ -28,15 +28,113 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TSG_BASE_CLASS_CPP
-#define __TSG_BASE_CLASS_CPP
+#ifndef __TSG_HIERARCHY_MANIPULATOR_CPP
+#define __TSG_HIERARCHY_MANIPULATOR_CPP
 
-#include "tsgGridCore.hpp"
+#include "tsgHierarchyManipulator.hpp"
 
 namespace TasGrid{
 
-BaseCanonicalGrid::BaseCanonicalGrid(){}
-BaseCanonicalGrid::~BaseCanonicalGrid(){}
+namespace HierarchyManipulations{
+
+Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
+    size_t num_dimensions = mset.getNumDimensions();
+    int num_points = mset.getNumIndexes();
+    if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
+        int max_parents = rule->getMaxNumParents() * (int) num_dimensions;
+        Data2D<int> parents(max_parents, num_points, -1);
+        int level0_offset = rule->getNumPoints(0);
+        #pragma omp parallel for schedule(static)
+        for(int i=0; i<num_points; i++){
+            const int *p = mset.getIndex(i);
+            std::vector<int> dad(num_dimensions);
+            std::copy_n(p, num_dimensions, dad.data());
+            int *pp = parents.getStrip(i);
+            for(size_t j=0; j<num_dimensions; j++){
+                if (dad[j] >= level0_offset){
+                    int current = p[j];
+                    dad[j] = rule->getParent(current);
+                    pp[2*j] = mset.getSlot(dad);
+                    while ((dad[j] >= level0_offset) && (pp[2*j] == -1)){
+                        current = dad[j];
+                        dad[j] = rule->getParent(current);
+                        pp[2*j] = mset.getSlot(dad);
+                    }
+                    dad[j] = rule->getStepParent(current);
+                    if (dad[j] != -1){
+                        pp[2*j + 1] = mset.getSlot(dad);
+                    }
+                    dad[j] = p[j];
+                }
+            }
+        }
+        return parents;
+    }else{ // this assumes that level zero has only one node
+        Data2D<int> parents((int) num_dimensions, num_points);
+        #pragma omp parallel for schedule(static)
+        for(int i=0; i<num_points; i++){
+            const int *p = mset.getIndex(i);
+            std::vector<int> dad(num_dimensions);
+            std::copy_n(p, num_dimensions, dad.data());
+            int *pp = parents.getStrip(i);
+            for(size_t j=0; j<num_dimensions; j++){
+                if (dad[j] == 0){
+                    pp[j] = -1;
+                }else{
+                    dad[j] = rule->getParent(dad[j]);
+                    pp[j] = mset.getSlot(dad.data());
+                    while((dad[j] != 0) && (pp[j] == -1)){
+                        dad[j] = rule->getParent(dad[j]);
+                        pp[j] = mset.getSlot(dad);
+                    }
+                    dad[j] = p[j];
+                }
+            }
+        }
+        return parents;
+    }
+}
+
+Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
+    size_t num_dimensions = mset.getNumDimensions();
+    int max_1d_kids = rule->getMaxNumKids();
+    int num_points = mset.getNumIndexes();
+    Data2D<int> kids(Utils::size_mult(max_1d_kids, num_dimensions), num_points);
+
+    #pragma omp parallel for
+    for(int i=0; i<num_points; i++){
+        std::vector<int> kid(num_dimensions);
+        std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+        auto family = kids.getIStrip(i);
+
+        for(size_t j=0; j<num_dimensions; j++){
+            int current = kid[j];
+            for(int k=0; k<max_1d_kids; k++){
+                kid[j] = rule->getKid(current, k);
+                *family++ = (kid[j] == -1) ? -1 : mset.getSlot(kid);
+            }
+            kid[j] = current;
+        }
+    }
+
+    return kids;
+}
+
+std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule){
+    size_t num_dimensions = mset.getNumDimensions();
+    int num_points = mset.getNumIndexes();
+    std::vector<int> level((size_t) num_points);
+    #pragma omp parallel for schedule(static)
+    for(int i=0; i<num_points; i++){
+        const int *p = mset.getIndex(i);
+        int current_level = rule->getLevel(p[0]);
+        for(size_t j=1; j<num_dimensions; j++){
+            current_level += rule->getLevel(p[j]);
+        }
+        level[i] = current_level;
+    }
+    return level;
+}
 
 SplitDirections::SplitDirections(const MultiIndexSet &points){
     // split the points into "jobs", where each job represents a batch of
@@ -75,21 +173,16 @@ SplitDirections::SplitDirections(const MultiIndexSet &points){
             // new job, get reference index
             const int *p = points.getIndex(*imap);
             job_directions.push_back((int) d);
-            std::vector<int> pnts = {*imap++};
+            job_pnts.emplace_back(std::vector<int>(1, *imap++));
             // while the points are in the same direction as the reference, add to the same job
             while((imap != map.end()) && doesBelongSameLine(p, points.getIndex(*imap), d))
-                pnts.push_back(*imap++);
-            job_pnts.push_back(std::move(pnts));
+                job_pnts.back().push_back(*imap++);
         }
     }
 }
-SplitDirections::~SplitDirections(){}
 
-int SplitDirections::getNumJobs() const{ return (int) job_pnts.size(); }
-int SplitDirections::getJobDirection(int job) const{ return job_directions[job]; }
-int SplitDirections::getJobNumPoints(int job) const{ return (int) job_pnts[job].size(); }
-const int* SplitDirections::getJobPoints(int job) const{ return job_pnts[job].data(); }
+} // HierarchyManipulations
 
-}
+} // TasGrid
 
 #endif

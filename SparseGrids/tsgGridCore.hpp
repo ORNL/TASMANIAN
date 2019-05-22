@@ -31,18 +31,28 @@
 #ifndef __TSG_BASE_CLASS_HPP
 #define __TSG_BASE_CLASS_HPP
 
-#include <numeric>
+/*!
+ * \internal
+ * \file tsgGridCore.hpp
+ * \brief Definition for the base grid class.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianSets
+ *
+ * Definition of the BaseCanonicalGrid class used by all grids.
+ * \endinternal
+ */
 
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
-#include "tsgAcceleratedDataStructures.hpp"
+#include "tsgDConstructGridGlobal.hpp"
+#include "tsgCudaLoadStructures.hpp"
+#include "tsgHierarchyManipulator.hpp"
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 namespace TasGrid{
 
 class BaseCanonicalGrid{
 public:
-    BaseCanonicalGrid();
-    virtual ~BaseCanonicalGrid();
+    BaseCanonicalGrid(){}
+    virtual ~BaseCanonicalGrid(){}
 
     virtual bool isGlobal() const{ return false; }
     virtual bool isSequence() const{ return false; }
@@ -50,13 +60,13 @@ public:
     virtual bool isWavelet() const{ return false; }
     virtual bool isFourier() const{ return false; }
 
-    virtual int getNumDimensions() const = 0;
-    virtual int getNumOutputs() const = 0;
+    int getNumDimensions() const{ return num_dimensions; }
+    int getNumOutputs() const{ return num_outputs; }
     virtual TypeOneDRule getRule() const = 0;
 
-    virtual int getNumLoaded() const = 0;
-    virtual int getNumNeeded() const = 0;
-    virtual int getNumPoints() const = 0;
+    int getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
+    int getNumNeeded() const{ return needed.getNumIndexes(); }
+    int getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
 
     virtual void getLoadedPoints(double *x) const = 0;
     virtual void getNeededPoints(double *x) const = 0;
@@ -65,7 +75,7 @@ public:
     virtual void getQuadratureWeights(double weights[]) const = 0;
     virtual void getInterpolationWeights(const double x[], double weights[]) const = 0;
 
-    virtual void loadNeededPoints(const double *vals, TypeAcceleration acc) = 0;
+    virtual void loadNeededPoints(const double *vals) = 0;
 
     virtual void evaluate(const double x[], double y[]) const = 0;
     virtual void integrate(double q[], double *conformal_correction) const = 0;
@@ -77,18 +87,20 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
+    virtual void loadNeededPointsCuda(CudaEngine *engine, const double *vals) = 0;
     virtual void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
+    virtual void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const = 0;
     #endif
 
     virtual void clearRefinement() = 0;
     virtual void mergeRefinement() = 0;
 
     virtual void beginConstruction(){}
-    virtual void writeConstructionDataBinary(std::ofstream&) const{}
-    virtual void writeConstructionData(std::ofstream&) const{}
-    virtual void readConstructionDataBinary(std::ifstream&){}
-    virtual void readConstructionData(std::ifstream&){}
+    virtual void writeConstructionDataBinary(std::ostream&) const{}
+    virtual void writeConstructionData(std::ostream&) const{}
+    virtual void readConstructionDataBinary(std::istream&){}
+    virtual void readConstructionData(std::istream&){}
     virtual void loadConstructedPoint(const double[], const std::vector<double> &){}
     virtual void finishConstruction(){}
 
@@ -96,23 +108,14 @@ public:
     virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) = 0;
 
     virtual void clearAccelerationData() = 0;
-};
 
-class SplitDirections{
-public:
-    SplitDirections(const MultiIndexSet &points);
-    ~SplitDirections();
-
-    int getNumJobs() const;
-    int getJobDirection(int job) const;
-    int getJobNumPoints(int job) const;
-    const int* getJobPoints(int job) const;
-
-private:
-    std::vector<int> job_directions;
-    std::vector<std::vector<int>> job_pnts;
+protected:
+    int num_dimensions, num_outputs;
+    MultiIndexSet points;
+    MultiIndexSet needed;
 };
 
 }
+#endif
 
 #endif

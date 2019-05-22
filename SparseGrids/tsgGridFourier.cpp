@@ -33,11 +33,10 @@
 
 #include "tsgGridFourier.hpp"
 #include "tsgHiddenExternals.hpp"
-#include "tsgUtils.hpp"
 
 namespace TasGrid{
 
-GridFourier::GridFourier() : num_dimensions(0), num_outputs(0), max_levels(0){}
+GridFourier::GridFourier() : max_levels(0){}
 GridFourier::~GridFourier(){}
 
 template<bool useAscii> void GridFourier::write(std::ostream &os) const{
@@ -82,10 +81,8 @@ template<bool useAscii> void GridFourier::read(std::istream &is){
 
     if (num_outputs > 0){
         values.read<useAscii>(is);
-        if (IO::readFlag<useAscii>(is)){
-            fourier_coefs.resize(num_outputs, 2 * points.getNumIndexes());
-            IO::readVector<useAscii>(is, fourier_coefs.getVector());
-        }
+        if (IO::readFlag<useAscii>(is))
+            fourier_coefs = IO::readData2D<useAscii, double>(is, num_outputs, 2 * points.getNumIndexes());
     }
 
     if (IO::readFlag<useAscii>(is)) throw std::runtime_error("ERROR: refinement not implemented for Fourier grids.");
@@ -115,30 +112,27 @@ void GridFourier::reset(){
 }
 
 void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-
-    MultiIndexSet tset = (OneDimensionalMeta::isExactLevel(type)) ?
+    setTensors( (OneDimensionalMeta::isExactLevel(type)) ?
         MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
                                                [&](int i) -> int{ return i; }, anisotropic_weights, level_limits) :
         MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
-                                               [&](int i) -> int{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, level_limits);
-
-    setTensors(tset, cnum_outputs);
+                                               [&](int i) -> int{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, level_limits),
+    cnum_outputs);
 }
 
 void GridFourier::copyGrid(const GridFourier *fourier){
-    MultiIndexSet tset = fourier->tensors;
-    setTensors(tset, fourier->num_outputs);
+    setTensors(MultiIndexSet(fourier->tensors), fourier->num_outputs);
     if ((num_outputs > 0) && (!fourier->points.empty())){ // if there are values inside the source object
         loadNeededPoints(fourier->values.getValues(0));
     }
 }
 
-void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
+void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
     reset();
-    num_dimensions = (int) tset.getNumDimensions();
-    num_outputs = cnum_outputs;
-
     tensors = std::move(tset);
+
+    num_dimensions = (int) tensors.getNumDimensions();
+    num_outputs = cnum_outputs;
 
     max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
@@ -164,15 +158,7 @@ void GridFourier::setTensors(MultiIndexSet &tset, int cnum_outputs){
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
 
-int GridFourier::getNumDimensions() const{ return num_dimensions; }
-int GridFourier::getNumOutputs() const{ return num_outputs; }
-TypeOneDRule GridFourier::getRule() const{ return rule_fourier; }
-
-int GridFourier::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
-int GridFourier::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridFourier::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
-
-void GridFourier::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridFourier::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaCoefficients(); // changing values and Fourier coefficients, clear the cache
     #endif
@@ -426,6 +412,9 @@ void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
+void GridFourier::loadNeededPointsCuda(CudaEngine *, const double *vals){
+    loadNeededPoints(vals);
+}
 void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaCoefficients();
     Data2D<double> wreal;
@@ -434,21 +423,24 @@ void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int nu
 
     int num_points = points.getNumIndexes();
     CudaVector<double> gpu_real(wreal.getVector()), gpu_imag(wimag.getVector()), gpu_y(num_outputs, num_x);
-    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
-    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
+    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y.data());
+    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y.data());
     gpu_y.unload(y);
 }
 void GridFourier::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_y(num_outputs, num_x);
+    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_y.data());
+    gpu_y.unload(y);
+}
+void GridFourier::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
     loadCudaCoefficients();
 
-    CudaVector<double> gpu_real, gpu_imag, gpu_x, gpu_y(num_outputs, num_x);
-    gpu_x.load(((size_t) num_dimensions) * ((size_t) num_x), x);
-    evaluateHierarchicalFunctionsInternalGPU(gpu_x.data(), num_x, gpu_real, gpu_imag);
+    CudaVector<double> gpu_real, gpu_imag;
+    evaluateHierarchicalFunctionsInternalGPU(gpu_x, cpu_num_x, gpu_real, gpu_imag);
 
     int num_points = points.getNumIndexes();
-    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
-    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
-    gpu_y.unload(y);
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
 }
 #endif
 

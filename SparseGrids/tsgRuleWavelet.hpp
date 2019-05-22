@@ -31,11 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP
 #define __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP
 
-#include "math.h"
-#include <vector>
-
-#include "tsgEnumerates.hpp"
-#include "tsgRuleLocalPolynomial.hpp"
+#include "tsgGridCore.hpp"
 
 namespace TasGrid{
 // These macros are used in accessing coarse and fine level coefficients for the cascade algorithm.
@@ -62,18 +58,20 @@ public:
     int getParent(int point) const; // Returns the parent of the given node
 
 protected:
-    double eval_linear(int pt, double x) const;
-    double eval_cubic(int pt, double x) const;
-    double linear_boundary_wavelet(double x) const;
-    double linear_central_wavelet(double x) const;
+    inline double eval_linear(int pt, double x) const;
+    inline double eval_cubic(int pt, double x) const;
+    inline double linear_boundary_wavelet(double x) const;
+    inline double linear_central_wavelet(double x) const;
     int order;
     int iteration_depth;
+    int num_data_points;
     static void cubic_cascade(double *y, int starting_level, int iteration_depth);
 
-    int find_index(double x) const;
-    double interpolate(const double *y, double x, int interpolation_order = 3) const;
+    inline int find_index(double x) const;
+    inline double interpolate(const double *y, double x) const;
 
     std::vector<std::vector<double>> data;
+    std::vector<double> cachexs;
 };
 
 } // namespace TasGrid

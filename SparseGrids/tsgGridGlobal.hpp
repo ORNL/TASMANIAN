@@ -31,22 +31,8 @@
 #ifndef __TASMANIAN_SPARSE_GRID_GLOBAL_HPP
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_HPP
 
-#include <cstdlib>
-#include <memory>
-
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
-#include "tsgCoreOneDimensional.hpp"
-#include "tsgIndexManipulator.hpp"
-#include "tsgLinearSolvers.hpp"
-#include "tsgCacheLagrange.hpp"
-#include "tsgOneDimensionalWrapper.hpp"
-#include "tsgDConstructGridGlobal.hpp"
-#include "tsgGridCore.hpp"
-
-#include "tsgAcceleratedDataStructures.hpp"
-
 #include "tsgGridSequence.hpp"
+#include "tsgCacheLagrange.hpp"
 
 namespace TasGrid{
 
@@ -58,26 +44,20 @@ public:
     bool isGlobal() const{ return true; }
 
     template<bool useAscii> void write(std::ostream &os) const;
-    template<bool useAscii> void read(std::ifstream &is);
+    template<bool useAscii> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits);
     void copyGrid(const GridGlobal *global);
 
-    void setTensors(MultiIndexSet &tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta);
+    void setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta);
 
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
-    TypeOneDRule getRule() const;
-    const char* getCustomRuleDescription() const; // returns the description of the custom rule (only if rule_customtabulated is used)
+    TypeOneDRule getRule() const{ return rule; }
+    const char* getCustomRuleDescription() const{ return (custom.getNumLevels() > 0) ? custom.getDescription() : "";  }
 
-    double getAlpha() const;
-    double getBeta() const;
-
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
+    double getAlpha() const{ return alpha; }
+    double getBeta() const{ return beta; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
@@ -86,7 +66,7 @@ public:
     void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
 
-    void loadNeededPoints(const double *vals, TypeAcceleration acc = accel_none);
+    void loadNeededPoints(const double *vals);
     const double* getLoadedValues() const;
 
     void evaluate(const double x[], double y[]) const;
@@ -99,8 +79,10 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
+    void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPU(CudaEngine*, const double[], int, double[]) const;
     #endif
 
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
@@ -111,13 +93,13 @@ public:
     void mergeRefinement();
 
     void beginConstruction();
-    void writeConstructionDataBinary(std::ofstream &ofs) const;
-    void writeConstructionData(std::ofstream &ofs) const;
-    void readConstructionDataBinary(std::ifstream &ifs);
-    void readConstructionData(std::ifstream &ifs);
-    void getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, std::vector<double> &x, const std::vector<int> &level_limits);
-    void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits);
-    void getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, std::vector<double> &x, const std::vector<int> &level_limits);
+    void writeConstructionDataBinary(std::ostream &os) const;
+    void writeConstructionData(std::ostream &os) const;
+    void readConstructionDataBinary(std::istream &is);
+    void readConstructionData(std::istream &is);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void finishConstruction();
 
@@ -126,7 +108,7 @@ public:
 
     void clearAccelerationData();
 
-    void getPolynomialSpace(bool interpolation, int &n, int* &poly) const;
+    std::vector<int> getPolynomialSpace(bool interpolation) const;
 
     const int* getPointIndexes() const;
 
@@ -144,13 +126,12 @@ protected:
     void recomputeTensorRefs(const MultiIndexSet &work);
     void proposeUpdatedTensors();
     void acceptUpdatedTensors();
-    MultiIndexSet getPolynomialSpace(bool interpolation) const;
+    MultiIndexSet getPolynomialSpaceSet(bool interpolation) const;
 
     void mapIndexesToNodes(const std::vector<int> &indexes, double *x) const;
     void loadConstructedTensors();
 
 private:
-    int num_dimensions, num_outputs;
     TypeOneDRule rule;
     double alpha, beta;
 
@@ -159,8 +140,6 @@ private:
     MultiIndexSet tensors;
     MultiIndexSet active_tensors;
     std::vector<int> active_w;
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     std::vector<std::vector<int>> tensor_refs;
 

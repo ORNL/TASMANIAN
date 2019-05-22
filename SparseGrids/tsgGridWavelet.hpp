@@ -31,13 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WAVELET_HPP
 #define __TASMANIAN_SPARSE_GRID_WAVELET_HPP
 
-#include "tsgIOHelpers.hpp"
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
-#include "tsgIndexManipulator.hpp"
 #include "tsgRuleWavelet.hpp"
-#include "tsgLinearSolvers.hpp"
-#include "tsgGridCore.hpp"
 
 namespace TasGrid{
 
@@ -55,14 +49,8 @@ public:
     void copyGrid(const GridWavelet *wav);
     void setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder); // for FDS purposes
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
-    TypeOneDRule getRule() const;
-    int getOrder() const;
-
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const;
+    TypeOneDRule getRule() const{ return rule_wavelet; }
+    int getOrder() const{ return order; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
@@ -71,7 +59,7 @@ public:
     void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
 
-    void loadNeededPoints(const double *vals, TypeAcceleration acc);
+    void loadNeededPoints(const double *vals);
 
     void evaluate(const double x[], double y[]) const;
     void integrate(double q[], double *conformal_correction) const;
@@ -83,8 +71,10 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
+    void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
     void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const;
     void evaluateCuda(CudaEngine*, const double*, int, double[]) const;
+    void evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits);
@@ -117,19 +107,28 @@ protected:
     void addChild(const int point[], int direction, Data2D<int> &destination) const;
     void addChildLimited(const int point[], int direction, const std::vector<int> &level_limits, Data2D<int> &destination) const;
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    void loadCudaCoefficients() const{
+        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaWaveletData<double>>(new CudaWaveletData<double>);
+        if (cuda_cache->coefficients.empty()) cuda_cache->coefficients.load(coefficients.getVector());
+    }
+    void clearCudaCoefficients(){ if (cuda_cache) cuda_cache->coefficients.clear(); }
+    #endif
+
 private:
     RuleWavelet rule1D;
 
-    int num_dimensions, num_outputs, order;
+    int order;
 
     Data2D<double> coefficients; // a.k.a., surpluses
-
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     StorageSet values;
 
     TasSparse::SparseMatrix inter_matrix;
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    mutable std::unique_ptr<CudaWaveletData<double>> cuda_cache;
+    #endif
 };
 
 }

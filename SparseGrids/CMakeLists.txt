@@ -11,8 +11,13 @@ else()
 endif()
 
 if (Tasmanian_ENABLE_CUDA)
-    cuda_add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
+    # CMake does not automatically add the CUDA include path, any source file that adds <cuda.h> directly or transitively
+    # must be labeled as "CUDA" source files and compiled with the nvcc compiler.
+    # Beware that the nvcc compiler seems to struggle with some STL algorithms, transitive inclusion of <cuda.h> must be minimized.
+    set_source_files_properties(${Tasmanian_source_lisparsegrid_cuda} tsgAcceleratedDataStructures.cpp PROPERTIES LANGUAGE CUDA)
+    add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
     set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CUDA_STANDARD 11)
+    target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_cudamathlibs}) # add the math libraries
 else()
     add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid})
 endif()
@@ -51,15 +56,10 @@ if (Tasmanian_ENABLE_BLAS)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${BLAS_LIBRARIES})
 endif()
 
-if (Tasmanian_ENABLE_CUDA) # this must come after MAGMA, since MAGMA doesn't come with package config
-    target_link_libraries(${Tasmanian_libtsg_target_name} ${CUDA_cusparse_LIBRARY} ${CUDA_CUBLAS_LIBRARIES} ${CUDA_LIBRARIES})
-
-    target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC ${CUDA_INCLUDE_DIRS})
-endif()
-
 if (Tasmanian_ENABLE_OPENMP)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${OpenMP_CXX_LIBRARIES})
-    target_compile_options(${Tasmanian_libtsg_target_name} PRIVATE ${OpenMP_CXX_FLAGS})
+    # the nvcc compiler does nor recognize OpenMP, add the flag only to non-CUDA source files
+    target_compile_options(${Tasmanian_libtsg_target_name} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
 endif()
 
 install(TARGETS "${Tasmanian_libtsg_target_name}"
@@ -78,6 +78,7 @@ endmacro()
 set(Tasmanian_source_libsparsegrid
         TasmanianSparseGrid.hpp
         TasmanianSparseGrid.cpp
+        TasmanianSparseGridWrapC.cpp
         tsgAcceleratedDataStructures.hpp
         tsgAcceleratedDataStructures.cpp
         tsgCacheLagrange.hpp
@@ -88,7 +89,6 @@ set(Tasmanian_source_libsparsegrid
         tsgCudaLoadStructures.hpp
         tsgEnumerates.hpp
         tsgGridCore.hpp
-        tsgGridCore.cpp
         tsgGridGlobal.hpp
         tsgGridGlobal.cpp
         tsgGridWavelet.hpp
@@ -104,6 +104,8 @@ set(Tasmanian_source_libsparsegrid
         tsgGridFourier.cpp
         tsgIndexManipulator.hpp
         tsgIndexManipulator.cpp
+        tsgHierarchyManipulator.hpp
+        tsgHierarchyManipulator.cpp
         tsgIOHelpers.hpp
         tsgIndexSets.hpp
         tsgIndexSets.cpp
@@ -116,6 +118,7 @@ set(Tasmanian_source_libsparsegrid
         tsgRuleWavelet.cpp
         tsgSequenceOptimizer.hpp
         tsgSequenceOptimizer.cpp
+        tsgMathUtils.hpp
         tsgUtils.hpp)
 
 # source files specific to cuda, used for both static and shared libs
@@ -130,6 +133,7 @@ set(Tasmanian_source_libsparsegrid_cuda
 ########################################################################
 add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  TasmanianSparseGrid.hpp
+                                 tasgridCLICommon.hpp
                                  tasgridExternalTests.hpp
                                  tasgridExternalTests.cpp
                                  tasgridTestFunctions.hpp
@@ -138,6 +142,7 @@ add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  tasgridWrapper.cpp)
 add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   TasmanianSparseGrid.hpp
+                                  tasgridCLICommon.hpp
                                   tasgridExternalTests.hpp
                                   tasgridExternalTests.cpp
                                   tasgridTestFunctions.hpp
@@ -145,11 +150,18 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridUnitTests.hpp
                                   tasgridUnitTests.cpp
                                   tasgridTestInterfaceC.cpp)
-add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
+#add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
+add_executable(Tasmanian_benchmarks  Benchmarks/benchCommon.hpp
+                                     tasgridCLICommon.hpp
+                                     Benchmarks/benchMakeGrid.hpp
+                                     Benchmarks/benchLoadNeeded.hpp
+                                     Benchmarks/benchEvaluate.hpp
+                                     Benchmarks/bench_main.cpp)
 
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
 set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")
-set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
+#set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
+set_target_properties(Tasmanian_benchmarks PROPERTIES OUTPUT_NAME "benchmark")
 
 if (Tasmanian_ENABLE_OPENMP)
     # the OpenMP libraries are carried transitively from sparse grids library
@@ -167,23 +179,16 @@ endif()
 
 if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
     Tasmanian_macro_add_libsparsegrid(STATIC)
-
-    # if static libraries are available, executables link statically
-    target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_static)
-    target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid_static)
-    target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_static)
+    add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_static)
 else() # if there are not static libs, use shared libs for the executables
-    target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid_shared)
-    target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid_shared)
-    target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid_shared)
+    add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_shared)
 endif()
 
-# hack a dependency problem in parallel make
-# without this, if both static and shared libs are enabled, make -j tries to compile shared cuda kernels twice
-# which creates a race condition and the build randomly fails
-if ("${Tasmanian_libs_type}" STREQUAL "BOTH")
-    add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_libsparsegrid_static)
-endif()
+target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid)
+target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid)
+#target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid)
+target_link_libraries(Tasmanian_benchmarks           Tasmanian_libsparsegrid)
+
 
 # data file, needed for testing and reference about custom rule definitions
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
@@ -198,9 +203,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     # thus on Windows, we specifically add _static to the name of the lib
     # furthermore, additional defines are needed to suppress extraneous warnings and adjust some system calls
     macro(Tasmanian_macro_sparsegrids_windows_defines Tasmanian_sg_target)
-        target_compile_definitions(${Tasmanian_sg_target} PRIVATE -D_TASMANIAN_WINDOWS_) # overwrittes gettime()
         target_compile_definitions(${Tasmanian_sg_target} PRIVATE -D_SCL_SECURE_NO_WARNINGS) # suppresses warnings regarding pointers to the middle of an array
-        target_compile_definitions(${Tasmanian_sg_target} PUBLIC  -D_USE_MATH_DEFINES) # needed to include M_PI constant
         target_compile_definitions(${Tasmanian_sg_target} PUBLIC  -D_HAS_ITERATOR_DEBUGGING=0) # needed to prevent crash on using STL vector iterators
     endmacro()
 

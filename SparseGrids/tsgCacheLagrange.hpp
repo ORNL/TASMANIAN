@@ -38,7 +38,7 @@
  * \ingroup TasmanianAcceleration
  */
 
-#include "tsgOneDimensionalWrapper.hpp"
+#include "tsgGridCore.hpp"
 
 namespace TasGrid{
 

@@ -1,6 +1,20 @@
 Changelog for version 6.1 (may rename this to 7.0 later)
 --------------
 
+* new dynamic construction algorithms have been added
+    * removed the need for blocking between refinement iterations
+        * Tasmanian can accept data one-point at a time
+        * new candidate points can be requested at any time
+    * candidate points for dynamic construction are weighted by "importance"
+    * the dynamic construction process is available through C++ and Python interfaces
+
+* modernized C++ compatibility
+    * see the updated DREAM api notes
+    * TasmanianSparseGrid has move and copy constructors and `operator=` overloads
+    * Tasmanian C++ API no-longer returns raw-pointers, only STL containers
+    * **broke backward api** affects mostly get points and weights
+    * externally allocated raw-pointers are still accepted and used by C/Python/Fortran APIs
+
 * improved the `add_subdirectory()` capability
     * can specify the export name used by the Tasmanian install commands
         * `set(Tasmanian_export_name <name> CACHE INTERNAL "")`
@@ -9,12 +23,12 @@ Changelog for version 6.1 (may rename this to 7.0 later)
     * the export name functionality is required to import the transitive dependencies
     * in addition, when using `add_subdirectory()`:
         * will not enable testing, tests are still set if enabled by the master project
-        * will not install package-config, that's master's job now
+        * will not install package-config, that is the job of the master project
         * will not install example CMakeLists.txt or post-install tests
         * (`make test_install` and examples require Tasmanian package-config)
 
 * updated the DREAM interface:
-    * excessive polymorphism is replaced y lambdas
+    * excessive polymorphism is replaced by lambdas
     * sampling is done by a template
     * can specify arbitrary domain (using lambdas)
     * Note: the old API is completely obsolete and incompatible
@@ -28,6 +42,7 @@ Changelog for version 6.1 (may rename this to 7.0 later)
 * require cmake 3.10 or newer
     * removed the clumsy work-around for OpenMP on old cmake systems
     * removed other small legacy cmake fixes
+    * added cuda as a cmake lang, added multiple hacks to avoid feature regression
 
 
 Changelog for version 6.0

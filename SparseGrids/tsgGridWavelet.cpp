@@ -32,16 +32,11 @@
 #define __TASMANIAN_SPARSE_GRID_WAVELET_CPP
 
 #include "tsgGridWavelet.hpp"
-
-#include "tsgUtils.hpp"
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
+#include "tsgHiddenExternals.hpp"
 
 namespace TasGrid{
 
-GridWavelet::GridWavelet() : rule1D(1, 10), num_dimensions(0), num_outputs(0), order(1){}
+GridWavelet::GridWavelet() : rule1D(1, 10), order(1){}
 GridWavelet::~GridWavelet(){}
 
 void GridWavelet::reset(){
@@ -80,17 +75,13 @@ template<bool useAscii> void GridWavelet::read(std::istream &is){
 
     if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
     if (useAscii){ // backwards compatible: surpluses and needed, or needed and surpluses
-        if (IO::readFlag<useAscii>(is)){
-            coefficients.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, coefficients.getVector());
-        }
+        if (IO::readFlag<useAscii>(is))
+            coefficients = IO::readData2D<useAscii, double>(is, num_outputs, points.getNumIndexes());
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
     }else{
         if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
-        if (IO::readFlag<useAscii>(is)){
-            coefficients.resize(num_outputs, points.getNumIndexes());
-            IO::readVector<useAscii>(is, coefficients.getVector());
-        }
+        if (IO::readFlag<useAscii>(is))
+            coefficients = IO::readData2D<useAscii, double>(is, num_outputs, points.getNumIndexes());
     }
 
     if (num_outputs > 0) values.read<useAscii>(is);
@@ -110,12 +101,12 @@ void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int
 
     rule1D.updateOrder(order);
 
-    MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [&](int i) -> long long{ return i; }, std::vector<int>(), level_limits);
+    MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [](int i) -> int{ return i; }, std::vector<int>(), level_limits);
 
     if (order == 1){
-        needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return (1 << (l + 1)) + 1; });
+        needed = MultiIndexManipulations::generateNestedPoints(tensors, [](int l)->int{ return (1 << (l + 1)) + 1; });
     }else{
-        needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return (1 << (l + 2)) + 1; });
+        needed = MultiIndexManipulations::generateNestedPoints(tensors, [](int l)->int{ return (1 << (l + 2)) + 1; });
     }
 
     if (num_outputs == 0){
@@ -165,15 +156,6 @@ void GridWavelet::setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder){
     buildInterpolationMatrix();
 }
 
-int GridWavelet::getNumDimensions() const{ return num_dimensions;  }
-int GridWavelet::getNumOutputs() const{ return num_outputs;  }
-TypeOneDRule GridWavelet::getRule() const{ return rule_wavelet;  }
-int GridWavelet::getOrder() const{ return order;  }
-
-int GridWavelet::getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
-int GridWavelet::getNumNeeded() const{ return needed.getNumIndexes(); }
-int GridWavelet::getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
-
 void GridWavelet::getLoadedPoints(double *x) const{
     int num_points = points.getNumIndexes();
     #pragma omp parallel for schedule(static)
@@ -216,7 +198,10 @@ void GridWavelet::getInterpolationWeights(const double x[], double *weights) con
 	}
 	solveTransposed(weights);
 }
-void GridWavelet::loadNeededPoints(const double *vals, TypeAcceleration){
+void GridWavelet::loadNeededPoints(const double *vals){
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaCoefficients();
+    #endif
     if (points.empty()){
         values.setValues(vals);
         points = std::move(needed);
@@ -233,10 +218,12 @@ void GridWavelet::loadNeededPoints(const double *vals, TypeAcceleration){
 }
 void GridWavelet::mergeRefinement(){
     if (needed.empty()) return; // nothing to do
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaCoefficients();
+    #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t size_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    std::vector<double> vals(size_vals, 0.0);
-    values.setValues(vals);
+    values.setValues(std::vector<double>(size_vals, 0.0));
     if (points.empty()){
         points = std::move(needed);
     }else{
@@ -248,20 +235,16 @@ void GridWavelet::mergeRefinement(){
     coefficients.fill(0.0);
 }
 void GridWavelet::evaluate(const double x[], double y[]) const{
+    std::fill(y, y + num_outputs, 0.0);
+
     int num_points = points.getNumIndexes();
-	std::vector<double> basis_values(num_points);
-	#pragma omp parallel for
-	for(int i=0; i<num_points; i++){
-        basis_values[i] = evalBasis(points.getIndex(i), x);
-	}
-	for(int j=0; j<num_outputs; j++){
-        double sum = 0.0;
-        #pragma omp parallel for reduction(+ : sum)
-        for(int i=0; i<num_points; i++){
-            sum += basis_values[i] * coefficients.getStrip(i)[j];
-        }
-        y[j] = sum;
-	}
+
+    for(int i=0; i<num_points; i++){
+        double basis_value = evalBasis(points.getIndex(i), x);
+        const double *s = coefficients.getStrip(i);
+        for(int k=0; k<num_outputs; k++)
+            y[k] += basis_value * s[k];
+    }
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
     Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
@@ -272,12 +255,28 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{
+    int num_points = points.getNumIndexes();
+    Data2D<double> weights(num_points, num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, coefficients.getStrip(0), weights.getStrip(0), 0.0, y);
+}
 #endif
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridWavelet::evaluateCudaMixed(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
-void GridWavelet::evaluateCuda(CudaEngine*, const double x[], int num_x, double y[]) const{ evaluateBatch(x, num_x, y); }
+void GridWavelet::loadNeededPointsCuda(CudaEngine *, const double *vals){ loadNeededPoints(vals); }
+void GridWavelet::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+    loadCudaCoefficients();
+
+    Data2D<double> weights(points.getNumIndexes(), num_x);
+    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+
+    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.getVector(), y);
+}
+void GridWavelet::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
+void GridWavelet::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
+    throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for wavelet grids.");
+}
 #endif
 
 void GridWavelet::integrate(double q[], double *conformal_correction) const{
@@ -428,7 +427,7 @@ std::vector<double> GridWavelet::getNormalization() const{
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
         for(int j=0; j<num_outputs; j++){
-            if (norm[j] < fabs(v[j])) norm[j] = fabs(v[j]);
+            if (norm[j] < std::abs(v[j])) norm[j] = std::abs(v[j]);
         }
     }
     return norm;
@@ -453,10 +452,10 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
             const double *s = coefficients.getStrip(i);
             if (output == -1){
                 for(size_t k=0; k<((size_t) num_outputs); k++){
-                    if (small && ((fabs(s[k]) / norm[k]) > tolerance)) small = false;
+                    if (small && ((std::abs(s[k]) / norm[k]) > tolerance)) small = false;
                 }
             }else{
-                small = !((fabs(s[output]) / norm[output]) > tolerance);
+                small = !((std::abs(s[output]) / norm[output]) > tolerance);
             }
             if (!small){
                 int *p = pmap.getStrip(i);
@@ -464,7 +463,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
             }
         }
     }else{
-        SplitDirections split(points);
+        HierarchyManipulations::SplitDirections split(points);
 
         for(int s=0; s<split.getNumJobs(); s++){
             int d = split.getJobDirection(s);
@@ -490,11 +489,11 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 std::copy(p, p + num_dimensions, indexes.getStrip(i));
             }
 
-            MultiIndexSet pointset(num_dimensions, indexes.getVector());
+            MultiIndexSet pointset(num_dimensions, std::move(indexes.getVector()));
 
             GridWavelet direction_grid;
             direction_grid.setNodes(pointset, active_outputs, order);
-            direction_grid.loadNeededPoints(vals.getStrip(0), accel_none);
+            direction_grid.loadNeededPoints(vals.getStrip(0));
 
             for(int i=0; i<nump; i++){
                 bool small = true;
@@ -502,10 +501,10 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 const double *soeff = coefficients.getStrip(pnts[i]);
                 if (output == -1){
                     for(int k=0; k<num_outputs; k++){
-                        if (small && ((fabs(soeff[k]) / norm[k]) > tolerance) && ((fabs(coeff[k]) / norm[k]) > tolerance)) small = false;
+                        if (small && ((std::abs(soeff[k]) / norm[k]) > tolerance) && ((std::abs(coeff[k]) / norm[k]) > tolerance)) small = false;
                     }
                 }else{
-                    if (((fabs(soeff[output]) / norm[output]) > tolerance) && ((fabs(coeff[0]) / norm[output]) > tolerance)) small = false;
+                    if (((std::abs(soeff[output]) / norm[output]) > tolerance) && ((std::abs(coeff[0]) / norm[output]) > tolerance)) small = false;
                 }
                 pmap.getStrip(pnts[i])[d] = (small) ? 0 : 1;
             }
@@ -576,6 +575,7 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
     int num_points = work.getNumIndexes();
     Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
     Utils::Wrapper2D<double> ywrap(num_points, y);
+    #pragma omp parallel for
     for(int i=0; i<num_x; i++){
         double const *this_x = xwrap.getStrip(i);
         double *this_y = ywrap.getStrip(i);
@@ -592,6 +592,9 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
 }
 
 void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration){
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaCoefficients();
+    #endif
     int num_points = getNumPoints();
     size_t size_coeff = ((size_t) num_points) * ((size_t) num_outputs);
     if (!points.empty()){
@@ -653,7 +656,11 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
         needed = MultiIndexSet(refined);
 }
 
-void GridWavelet::clearAccelerationData(){}
+void GridWavelet::clearAccelerationData(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    if (cuda_cache) cuda_cache.reset();
+    #endif
+}
 
 }
 

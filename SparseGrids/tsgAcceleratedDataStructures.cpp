@@ -58,12 +58,11 @@ template<typename T> void CudaVector<T>::resize(size_t count){
 }
 template<typename T> void CudaVector<T>::clear(){
     num_entries = 0;
-    if (dynamic_mode && (gpu_data != nullptr)){ // if I own the data and the data is not null
+    if (gpu_data != nullptr){ // if I own the data and the data is not null
         cudaError_t cudaStat = cudaFree(gpu_data);
         AccelerationMeta::cudaCheckError((void*) &cudaStat, "CudaVector::clear(), call to cudaFree()");
     }
     gpu_data = nullptr;
-    dynamic_mode = true; // The old data is gone and I own the current (null) data
 }
 template<typename T> void CudaVector<T>::load(size_t count, const T* cpu_data){
     resize(count);
@@ -128,21 +127,21 @@ void CudaEngine::magmaPrepare(){
     }
     #endif
 }
-void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, CudaVector<double> &C){
+void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, double C[]){
     #ifdef Tasmanian_ENABLE_MAGMA
     if (magma){
         magmaPrepare();
         if (M > 1){
             if (N > 1){ // matrix mode
                 magma_dgemm(MagmaNoTrans, MagmaNoTrans, M, N, K,
-                            alpha, A.data(), M, B.data(), K, beta, C.data(), M, (magma_queue_t) magmaCudaQueue);
+                            alpha, A.data(), M, B.data(), K, beta, C, M, (magma_queue_t) magmaCudaQueue);
             }else{ // matrix vector, A * v = C
                 magma_dgemv(MagmaNoTrans, M, K,
-                            alpha, A.data(), M, B.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
+                            alpha, A.data(), M, B.data(), 1, beta, C, 1, (magma_queue_t) magmaCudaQueue);
             }
         }else{ // matrix vector B^T * v = C
             magma_dgemv(MagmaTrans, K, N,
-                        alpha, B.data(), K, A.data(), 1, beta, C.data(), 1, (magma_queue_t) magmaCudaQueue);
+                        alpha, B.data(), K, A.data(), 1, beta, C, 1, (magma_queue_t) magmaCudaQueue);
         }
         return;
     }
@@ -152,19 +151,19 @@ void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVect
     if (M > 1){
         if (N > 1){ // matrix mode
             stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K,
-                                &alpha, A.data(), M, B.data(), K, &beta, C.data(), M);
+                                &alpha, A.data(), M, B.data(), K, &beta, C, M);
         }else{ // matrix vector, A * v = C
             stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, M, K,
-                            &alpha, A.data(), M, B.data(), 1, &beta, C.data(), 1);
+                            &alpha, A.data(), M, B.data(), 1, &beta, C, 1);
         }
     }else{ // matrix vector B^T * v = C
         stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_T, K, N,
-                            &alpha, B.data(), K, A.data(), 1, &beta, C.data(), 1);
+                            &alpha, B.data(), K, A.data(), 1, &beta, C, 1);
     }
     AccelerationMeta::cublasCheckError((void*) &stat, "while calling CudaEngine::denseMultiply()");
 }
 void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                                const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, CudaVector<double> &C){
+                                const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, double C[]){
     #ifdef Tasmanian_ENABLE_MAGMA
     //if (magma){ // TODO: Enable more MAGMA sparse capabilities
     //    return;
@@ -181,7 +180,7 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
             cusparseSetMatIndexBase(mat_desc, CUSPARSE_INDEX_BASE_ZERO);
             cusparseSetMatDiagType(mat_desc, CUSPARSE_DIAG_TYPE_NON_UNIT);
 
-            CudaVector<double> tempC(C.size());
+            CudaVector<double> tempC(M, N);
             sparse_stat = cusparseDcsrmm2((cusparseHandle_t) cusparseHandle,
                                           CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, N, M, K, (int) indx.size(),
                                           &alpha, mat_desc, vals.data(), pntr.data(), indx.data(), A.data(), M, &beta, tempC.data(), N);
@@ -193,7 +192,7 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
             double talpha = 1.0, tbeta = 0.0;
             cublasStatus_t dense_stat;
             dense_stat = cublasDgeam((cublasHandle_t) cublasHandle,
-                                     CUBLAS_OP_T, CUBLAS_OP_T, M, N, &talpha, tempC.data(), N, &tbeta, tempC.data(), N, C.data(), M);
+                                     CUBLAS_OP_T, CUBLAS_OP_T, M, N, &talpha, tempC.data(), N, &tbeta, tempC.data(), N, C, M);
             AccelerationMeta::cublasCheckError((void*) &dense_stat, "cublasDgeam() in CudaEngine::sparseMultiply()");
         }else{ // dense matrix has only one row, use sparse matrix times dense vector
             cusparseMatDescr_t mat_desc;
@@ -205,7 +204,7 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
 
             sparse_stat = cusparseDcsrmv((cusparseHandle_t) cusparseHandle,
                                         CUSPARSE_OPERATION_NON_TRANSPOSE, N, K, (int) indx.size(),
-                                        &alpha, mat_desc, vals.data(), pntr.data(), indx.data(), A.data(), &beta, C.data());
+                                        &alpha, mat_desc, vals.data(), pntr.data(), indx.data(), A.data(), &beta, C);
             AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDcsrmv() in CudaEngine::sparseMultiply()");
 
             cusparseDestroyMatDescr(mat_desc);
@@ -222,26 +221,27 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
 
         sparse_stat = cusparseDgemvi((cusparseHandle_t) cusparseHandle,
                                         CUSPARSE_OPERATION_NON_TRANSPOSE, M, K, &alpha, A.data(), M, (int) indx.size(), vals.data(),
-                                        indx.data(), &beta, C.data(), CUSPARSE_INDEX_BASE_ZERO, gpu_buffer.data());
+                                        indx.data(), &beta, C, CUSPARSE_INDEX_BASE_ZERO, gpu_buffer.data());
         AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDgemvi() in CudaEngine::sparseMultiply()");
     }
 }
 void CudaEngine::setDevice() const{ cudaSetDevice(gpu); }
 #endif
 
+std::map<std::string, TypeAcceleration> AccelerationMeta::getStringToAccelerationMap(){
+    return {
+        {"none",        accel_none},
+        {"cpu-blas",    accel_cpu_blas},
+        {"gpu-default", accel_gpu_default},
+        {"gpu-cublas",  accel_gpu_cublas},
+        {"gpu-cuda",    accel_gpu_cuda},
+        {"gpu-magma",   accel_gpu_magma}};
+}
 
 TypeAcceleration AccelerationMeta::getIOAccelerationString(const char * name){
-    if (strcmp(name, "cpu-blas") == 0){
-        return accel_cpu_blas;
-    }else if (strcmp(name, "gpu-default") == 0){
-        return accel_gpu_default;
-    }else if (strcmp(name, "gpu-cublas") == 0){
-        return accel_gpu_cublas;
-    }else if (strcmp(name, "gpu-cuda") == 0){
-        return accel_gpu_cuda;
-    }else if (strcmp(name, "gpu-magma") == 0){
-        return accel_gpu_magma;
-    }else{
+    try{
+        return getStringToAccelerationMap().at(name);
+    }catch(std::out_of_range &){
         return accel_none;
     }
 }
@@ -417,20 +417,13 @@ unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){
     cudaGetDeviceProperties(&prop, deviceID);
     return prop.totalGlobalMem;
 }
-char* AccelerationMeta::getCudaDeviceName(int deviceID){
-    char *name = new char[1];
-    name[0] = '\0';
-    if ((deviceID < 0) || (deviceID >= getNumCudaDevices())) return name;
+std::string AccelerationMeta::getCudaDeviceName(int deviceID){
+    if ((deviceID < 0) || (deviceID >= getNumCudaDevices())) return std::string();
+
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, deviceID);
 
-    int c = 0; while(prop.name[c] != '\0'){ c++; }
-    delete[] name;
-    name = new char[c+1];
-    for(int i=0; i<c; i++){ name[i] = prop.name[i]; }
-    name[c] = '\0';
-
-    return name;
+    return std::string(prop.name);
 }
 template<typename T> void AccelerationMeta::recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
     cpu_data.resize(num_entries);
@@ -449,17 +442,7 @@ template void AccelerationMeta::delCudaArray<double>(double*);
 template void AccelerationMeta::delCudaArray<int>(int*);
 
 
-AccelerationDomainTransform::AccelerationDomainTransform() : num_dimensions(0), padded_size(0){}
-AccelerationDomainTransform::~AccelerationDomainTransform(){}
-
-void AccelerationDomainTransform::clear(){
-    num_dimensions = 0;
-    padded_size = 0;
-    gpu_trans_a.clear();
-    gpu_trans_b.clear();
-}
-bool AccelerationDomainTransform::empty(){ return (num_dimensions == 0); }
-void AccelerationDomainTransform::load(const std::vector<double> &transform_a, const std::vector<double> &transform_b){
+AccelerationDomainTransform::AccelerationDomainTransform(std::vector<double> const &transform_a, std::vector<double> const &transform_b){
     // The points are stored contiguously in a vector with stride equal to num_dimensions
     // Using the contiguous memory in a contiguous fashion on the GPU implies that thread 0 works on dimension 0, thread 1 on dim 1 ...
     // But the number of dimensions is often way less than the number of threads
@@ -485,6 +468,8 @@ void AccelerationDomainTransform::load(const std::vector<double> &transform_a, c
     gpu_trans_a.load(rate);
     gpu_trans_b.load(shift);
 }
+AccelerationDomainTransform::~AccelerationDomainTransform(){}
+
 void AccelerationDomainTransform::getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, CudaVector<double> &gpu_canonical_x){
     gpu_canonical_x.resize(((size_t) num_dimensions) * ((size_t) num_x));
     TasCUDA::dtrans2can(use01, num_dimensions, num_x, padded_size, gpu_trans_a.data(), gpu_trans_b.data(), gpu_transformed_x, gpu_canonical_x.data());

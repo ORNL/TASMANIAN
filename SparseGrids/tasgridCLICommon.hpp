@@ -28,66 +28,107 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_SPARSE_HARDCODED_RULES_HPP
-#define __TASMANIAN_SPARSE_HARDCODED_RULES_HPP
+#ifndef __TASGRID_COMMON_HPP
+#define __TASGRID_COMMON_HPP
 
 /*!
  * \internal
- * \file tsgHardCodedTabulatedRules.hpp
- * \brief Hard-coded nodes and weights.
+ * \file tasgridCLICommon.hpp
+ * \brief Common executable includes and templates.
  * \author Miroslav Stoyanov
- * \ingroup TasmanianSets
+ * \ingroup TasmanianCLI
  *
- * Some rules are hard to compute on the fly, thus points and weights are hard-coded.
+ * Defines common includes for the various executables and templates for managing command line arguments.
  * \endinternal
  */
 
-#include "tsgCoreOneDimensional.hpp"
+#include <random>
+#include <deque>
+#include <cctype>
 
-namespace TasGrid{
+#include "TasmanianSparseGrid.hpp"
+
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::setw;
+using namespace TasGrid;
 
 /*!
  * \internal
- * \ingroup TasmanianCoreOneDimensional
- * \brief Rule with hard-corded tabulated points and weights.
+ * \ingroup TasmanianCLI
+ * \brief Creates a std::deque of strings from the CLI arguments, skips the first argument.
  *
- * The Gauss-Patterson rule combines nested points with the optimality of the Gauss quadratures.
- * While not as powerful as Gauss-Legendre in one and tow dimensions, the rule wins in
- * polynomial space of exactness with respect to integration for 3 or more dimensions.
- * However, the points and weights are very hard to compute and most algorithms are very
- * ill-conditioned. Thus, it is beneficial to have the points for the first 9 levels hard-coded.
- *
- * Note that Gauss-Legendre rule combined with a full tensor grid gives highest exactness per
- * number of points with respect to integration in one and two dimensions.
+ * Converts the CLI arguments to strings, the first argument is the name of the executable and it is omitted.
  * \endinternal
  */
-class TableGaussPatterson{
-public:
-    //! \brief Constructor, loads the nodes into the internal data structures.
-    TableGaussPatterson();
-    //! \brief Destrutor, cleans all memory.
-    ~TableGaussPatterson(){}
-
-    //! \brief Return the number of hard-coded levels.
-    static int getNumLevels(){ return 9; }
-    //! \brief Returns the nodes for the \b level, note that the nodes are nested.
-    void getNodes(int level, std::vector<double> &x) const;
-    //! \brief Return the quadrature weight for \b level and given \b point.
-    double getWeight(int level, int point) const;
-
-protected:
-    //! \brief Load the nodes into the local data-strutures.
-    void loadNodes();
-    //! \brief Load the weights into the local data-structures.
-    void loadWeights();
-
-private:
-    std::vector<double> nodes; // contains the x-coordinate of each sample point
-    std::vector<double> weights; // contains the weight associated with each level
-
-    std::vector<int> weights_offsets;
-};
-
+inline std::deque<std::string> stringArgs(int argc, const char** argv){
+    std::deque<std::string> args;
+    for(int i = 1; i < argc; i++)
+        args.push_back(std::string(argv[i]));
+    return args;
 }
+
+/*!
+ * \internal
+ * \ingroup TasmanianCLI
+ * \brief Returns \b true if the string contains a sub-string with the word "help" (case insensitive).
+ *
+ * \endinternal
+ */
+inline bool hasHelp(std::string const &arg){
+    std::string lower(arg.size(), ' ');
+    std::transform(arg.begin(), arg.end(), lower.begin(),
+        [](char c)->char{
+            return static_cast<char>(std::tolower(static_cast<int>(c)));
+        });
+
+    auto pos = lower.find("help");
+    if ((pos < lower.size()) && (pos  + 4 <= lower.size()))
+        return (lower.substr(pos, pos + 4).compare("help") == 0);
+
+    return false;
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianCLI
+ * \brief Returns \b true if the string contains a request for version information.
+ *
+ * Accepted strings are "-v", "version", "verbose", and "info" with "-" or "--".
+ * \endinternal
+ */
+inline bool hasInfo(std::string const &s){
+    std::map<std::string, bool> accpetable = {
+        {"-v",   true},
+        {"version", true},
+        {"-version", true},
+        {"--version",   true},
+        {"verbose",   true},
+        {"-verbose",   true},
+        {"--verbose",   true},
+        {"info",  true},
+        {"-info",  true},
+        {"--info",  true},
+    };
+
+    try{
+        return accpetable.at(s);
+    }catch(std::out_of_range &){
+        return false;
+    }
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianCLI
+ * \brief Returns \b true if the string contains "random", "-random", "rand", or "-rand"
+ *
+ * \endinternal
+ */
+inline bool hasRandom(std::string const &s){
+    return ((s == "random") || (s == "-random") || (s == "rand") || (s == "-rand"));
+}
+
 
 #endif

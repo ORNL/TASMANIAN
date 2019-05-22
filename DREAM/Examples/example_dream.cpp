@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
-#include "math.h"
 
 //#include "TasmanianSparseGrid.hpp" // TasmanianDREAM.hpp includes TasmanianSparseGrid.hpp
 #include "TasmanianDREAM.hpp"

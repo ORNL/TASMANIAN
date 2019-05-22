@@ -31,13 +31,6 @@
 #ifndef __TASMANIAN_TASDREAM_EXTERNAL_TESTS_HPP
 #define __TASMANIAN_TASDREAM_EXTERNAL_TESTS_HPP
 
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-
-#include <math.h>
-#include <vector>
-#include <numeric>
 #include <random>
 
 #include "TasmanianDREAM.hpp"
@@ -85,9 +78,9 @@ inline void reportPassFail(bool pass, const char *name, const char *variant){
 }
 
 //! \internal
-//! \brief Get a random number to be used for a random seed, uses \b srand() with \b time(\b nullptr).
+//! \brief Get a random number to be used for a random seed, uses \b std::time(\b nullptr).
 //! \ingroup TasDREAMTesting
-inline int getRandomRandomSeed(){ srand((int) time(nullptr)); return rand(); }
+inline long unsigned getRandomRandomSeed(){ return static_cast<long unsigned>(std::time(nullptr)); }
 
 //! \internal
 //! \brief Dump the history of the state to \b cout using one point per line (debug use only).
@@ -114,7 +107,7 @@ inline void printStats(const TasmanianDREAM &state, const char *message = nullpt
     cout << std::scientific; cout.precision(6);
     for(auto m : mean) cout << m << "  ";
     cout << endl;
-    for(auto v : variance) cout << sqrt(v) << "  ";
+    for(auto v : variance) cout << std::sqrt(v) << "  ";
     cout << endl;
 }
 
@@ -140,7 +133,7 @@ inline void printMode(const TasmanianDREAM &state, const char *message = nullptr
 inline void getSinSinModel(double magnitude, double frequency, double time_step, int num_steps, double *y){
     double t = time_step;
     for(int i=0; i<num_steps; i++){
-        y[i] = sin(M_PI * t) + magnitude * sin(frequency * M_PI * t);
+        y[i] = std::sin(DreamMaths::pi * t) + magnitude * std::sin(frequency * DreamMaths::pi * t);
         t += time_step;
     }
 }
@@ -182,7 +175,7 @@ protected:
 
     //! \brief Generate samples from custom models.
     bool testCustomModel();
-    
+
     //! \brief Generate samples from sparse grid model.
     bool testGridModel();
 

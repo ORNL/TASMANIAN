@@ -31,17 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_LPOLY_HPP
 #define __TASMANIAN_SPARSE_GRID_LPOLY_HPP
 
-#include <vector>
-#include <memory>
-
-#include "tsgEnumerates.hpp"
-#include "tsgIndexSets.hpp"
-#include "tsgIndexManipulator.hpp"
 #include "tsgGridCore.hpp"
-#include "tsgRuleLocalPolynomial.hpp"
-#include "tsgDConstructGridGlobal.hpp"
-
-#include "tsgCudaLoadStructures.hpp"
 
 //! \internal
 //! \file tsgGridLocalPolynomial.hpp
@@ -73,14 +63,8 @@ public:
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     void copyGrid(const GridLocalPolynomial *pwpoly);
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
-    TypeOneDRule getRule() const;
-    int getOrder() const;
-
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const;
+    TypeOneDRule getRule() const{ return rule->getType(); }
+    int getOrder() const{ return order; }
 
     void getLoadedPoints(double *x) const;
     void getNeededPoints(double *x) const;
@@ -89,7 +73,7 @@ public:
     void getQuadratureWeights(double weights[]) const;
     void getInterpolationWeights(const double x[], double weights[]) const;
 
-    void loadNeededPoints(const double *vals, TypeAcceleration acc = accel_none);
+    void loadNeededPoints(const double *vals);
 
     void evaluate(const double x[], double y[]) const;
     void integrate(double q[], double *conformal_correction) const;
@@ -101,8 +85,10 @@ public:
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
+    void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction);
@@ -111,11 +97,11 @@ public:
     int removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction); // returns the number of points kept
 
     void beginConstruction();
-    void writeConstructionDataBinary(std::ofstream &ofs) const;
-    void writeConstructionData(std::ofstream &ofs) const;
-    void readConstructionDataBinary(std::ifstream &ifs);
-    void readConstructionData(std::ifstream &ifs);
-    void getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction, std::vector<double> &x);
+    void writeConstructionDataBinary(std::ostream &os) const;
+    void writeConstructionData(std::ostream &os) const;
+    void readConstructionDataBinary(std::istream &is);
+    void readConstructionData(std::istream &is);
+    std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void finishConstruction();
 
@@ -129,23 +115,31 @@ public:
     const int* getPointIndexes() const;
     const int* getNeededIndexes() const;
 
-    void buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, int* &spntr, int* &sindx, double* &svals) const;
     void buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const;
     void buildSpareBasisMatrixStatic(const double x[], int num_x, int num_chunk, int *spntr, int *sindx, double *svals) const;
     int getSpareBasisMatrixNZ(const double x[], int num_x) const;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<double> &gpu_y) const;
+    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const;
     void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const;
     #endif
 
 protected:
     void reset(bool clear_rule = true);
 
+    //! \brief Create a new grid with given parameters and moving the data out of the vectors and sets.
+    GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule, std::vector<int> &&pnts, std::vector<double> &&vals, std::vector<double> &&surps);
+
+    //! \brief Used as part of the loadNeededPoints() algorithm, updates the values and cuda cache, but does not touch the surpluses.
+    void updateValues(double const *vals);
+
     //! \internal
     //! \brief makes the unique pointer associated with this rule, assuming that **order** is already set
     //! \ingroup TasmanianLocalPolynomialGrids
     void makeRule(TypeOneDRule trule);
+
+    //! \brief Tuning decision whether to use sparse or dense.
+    bool useDense() const{ return (sparse_affinity == -1) || ((sparse_affinity == 0) && (num_dimensions > 6)); }
 
     void buildTree();
 
@@ -349,12 +343,9 @@ protected:
     #endif
 
 private:
-    int num_dimensions, num_outputs, order, top_level;
+    int order, top_level;
 
     Data2D<double> surpluses;
-
-    MultiIndexSet points;
-    MultiIndexSet needed;
 
     StorageSet values;
     Data2D<int> parents;

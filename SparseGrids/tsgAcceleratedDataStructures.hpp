@@ -31,8 +31,6 @@
 #ifndef __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_HPP
 #define __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_HPP
 
-#include <stdexcept>
-
 #include "tsgEnumerates.hpp"
 
 //! \internal
@@ -81,40 +79,33 @@
 namespace TasGrid{
 
 #ifdef Tasmanian_ENABLE_CUDA
-//! \defgroup TasmanianCudaVector CUDA Vector class for RAII-style of memory management.
-//!
-//! A template class that allows for RAII style of memory management for CUDA arrays.
-
-
-//! \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector
-//! \ingroup TasmanianCudaVector
-
-//! \b NOTE: This class is not intended to replace CUDA Thrust or CUDA arrays as a whole;
-//! the class is primarily used for internal Tasmanian API and can be safely ignored by the majority Tasmanian users.
-//! This documentation is provided for developers and can be useful to users that want to do simple data movement between
-//! different CUDA enabled libraries without "getting dirty" with non-RAII and (sometimes) non-intuitive CUDA API.
-//!
-//! \par Wraps Around a CUDA Array
-//! The class can be instantiated with either \b int or \b double (other types are not currently available through the external API).
-//! The class can either allocate (and deallocate with the descructor) a CUDA array of desired size,
-//! and load/unload data to a CPU std::vector with the same type.
-//!
-//! \par Deliberately Omitted Functionality
-//! The class is not intended to do any of the following:
-//! - No random memory access to ranges and elements
-//! - No algorithm operations (although \b CudaVector.data() can be passes to kernels and functions in place of an array)
-//! - No reserve/insert functionality, the size is always the size of the allocated memory
+/*!
+ * \ingroup TasmanianAcceleration
+ * \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector.
+ *
+ * \par Wraps Around a CUDA Array
+ * The class can be instantiated with either \b int or \b double (other types are not currently available through the external API).
+ * The class can either allocate (and deallocate with the descructor) a CUDA array of desired size,
+ * and load/unload data to a CPU std::vector with the same type.
+ *
+ * Note that the class does not provide single entry access and it is not copiable or movable.
+ */
 template<typename T>
 class CudaVector{
 public:
+    //! \brief Delete the copy-constructor.
+    CudaVector(CudaVector<T> const &) = delete;
+    //! \brief Delete the copy-assignment.
+    CudaVector<T>& operator =(CudaVector<T> const &) = delete;
+
     //! \brief Default constructor, creates an empty (null) array.
-    CudaVector() : num_entries(0), dynamic_mode(true), gpu_data(nullptr){}
+    CudaVector() : num_entries(0), gpu_data(nullptr){}
     //! \brief Construct a vector with \b count number of entries.
 
     //! Allocates an array that will be automatically deleted
     //! if \b clear() is called, or \b resize() or \b load() functions
     //! are used with size that is different from \b count.
-    CudaVector(size_t count) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(count); }
+    CudaVector(size_t count) : num_entries(0), gpu_data(nullptr){ resize(count); }
 
     //! \brief Same as \b CudaVector(dim1 * dim2), but guards against overflow.
 
@@ -122,9 +113,11 @@ public:
     //! for example, passing number of points and number of dimensions separately makes the code more readable,
     //! and both integers are converted to size_t before multiplication which prevents overflow.
     //! Note: the dimensions \b will \b not be stored, the underlying data is still one dimensional.
-    CudaVector(int dim1, int dim2) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ resize(((size_t) dim1) * ((size_t) dim2)); }
+    CudaVector(int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(Utils::size_mult(dim1, dim2)); }
     //! \brief Create a vector with size that matches \b cpu_data and copy the data to the CUDA device.
-    CudaVector(const std::vector<T> &cpu_data) : num_entries(0), dynamic_mode(true), gpu_data(nullptr){ load(cpu_data); }
+    CudaVector(const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(cpu_data); }
+    //! \brief Construct a vector and load with date provided on to the cpu.
+    CudaVector(int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(Utils::size_mult(dim1, dim2), cpu_data); }
     //! \brief Destructor, release all allocated memory.
     ~CudaVector(){ clear(); }
 
@@ -165,27 +158,11 @@ public:
         T* external = gpu_data;
         gpu_data = nullptr;
         num_entries = 0;
-        dynamic_mode = true;
         return external;
-    }
-
-    //! \brief Create internal alias to the \b external buffer, assume the buffer has size \b count; the alias will \b not be deleted.
-
-    //! The purpose of the \b wrap() method is to assume control a user allocated CUDA array passed as an input.
-    //! That allows to have a consistent internal API using only \b CudaVector classes,
-    //! while the external API does not force the user into a Tasmanian specific data-structure (only native CUDA arrays are required).
-    //!
-    //! Using \b wrap() suppresses the deletion of the data from the destructor, \b clear(), or \b load() (from a vector/array of different size).
-    //! The wrapped array has to be deleted through \b external or with \b AccelerationMeta::delCudaArray(\b vector.eject()).
-    void wrap(size_t count, T* external){
-        gpu_data = external;
-        num_entries = count;
-        dynamic_mode = false;
     }
 
 private:
     size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
-    bool dynamic_mode; // was the memory allocated or wrapped around an exiting object
     T *gpu_data; // the CUDA array
 };
 
@@ -213,12 +190,12 @@ public:
     //! Automatically calls CUDA or MAGMA libraries at the back-end.
     //!
     //! Assumes that all vectors have the correct order.
-    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, CudaVector<double> &C);
+    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, double C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
     void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const std::vector<double> &B, double C[]){
-        CudaVector<double> gpuB(B), gpuC(((size_t) M) * ((size_t) N));
-        denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC);
+        CudaVector<double> gpuB(B), gpuC(M, N);
+        denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC.data());
         gpuC.unload(C);
     }
 
@@ -231,14 +208,14 @@ public:
     //!
     //! Assumes that all vectors have the correct size.
     void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                        const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, CudaVector<double> &C);
+                        const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, double C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
     void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
                         const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<double> &vals, double C[]){
         CudaVector<int> gpu_pntr(pntr), gpu_indx(indx);
         CudaVector<double> gpu_vals(vals), gpu_c(M, N);
-        sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, 0.0, gpu_c);
+        sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, 0.0, gpu_c.data());
         gpu_c.unload(C);
     }
 
@@ -282,17 +259,11 @@ private:
 //! \b Note: Conformal mapping and the non-linear Gauss-Hermite and Gauss-Laguerre transforms are not supported.
 class AccelerationDomainTransform{
 public:
-    //! \brief Default constructor, the object cannot be used until \b load() is called.
-    AccelerationDomainTransform();
+    //! \brief Constructor, load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
+    AccelerationDomainTransform(std::vector<double> const &transform_a, std::vector<double> const &transform_b);
     //! \brief Destructor, clear all loaded data.
     ~AccelerationDomainTransform();
 
-    //! \brief Clear the transform (if loaded), used when the grid is reset of \b clearDomainTransform() is called.
-    void clear();
-    //! \brief Return \b false if \b load() has already been called.
-    bool empty();
-    //! \brief Load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
-    void load(const std::vector<double> &transform_a, const std::vector<double> &transform_b);
     //! \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
 
     //! Takes the user provided \b gpu_transformed_x points of dimension matching the grid num_dimensions and total number \b num_x.
@@ -418,6 +389,8 @@ namespace AccelerationMeta{
     //! \brief Convert the string (coming from C or Python) into an enumerated type.
     //! \ingroup TasmanianAcceleration
     TypeAcceleration getIOAccelerationString(const char * name);
+    //! \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeAcceleration enums.
+    std::map<std::string, TypeAcceleration> getStringToAccelerationMap();
     //! \internal
     //! \brief Convert the enumerated type to a string, the inverse of \b getIOAccelerationString()
     //! \ingroup TasmanianAcceleration
@@ -471,7 +444,7 @@ namespace AccelerationMeta{
     //! The character array has to be manually deleted to avoid memory leaks.
     //! This causes issues between different versions of CUDA, Nvidia uses fixed length character arrays and Tasmanian makes a copy;
     //! sometimes different versions of CUDA use different name length which causes unexpected crashes on the CUDA side.
-    char* getCudaDeviceName(int deviceID);
+    std::string getCudaDeviceName(int deviceID);
 
     //! \internal
     //! \brief Copy a device array to the main memory, used for testing only, always favor using \b CudaVector (if possible).

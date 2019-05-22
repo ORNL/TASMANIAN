@@ -31,25 +31,9 @@
 #ifndef __TASGRID_TESTER_HPP
 #define __TASGRID_TESTER_HPP
 
-#include <cstdlib>
-#include <cstdio>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip>
-#include <random>
-#include <string.h>
-#include <math.h>
-
-#include "TasmanianSparseGrid.hpp"
+#include "tasgridCLICommon.hpp"
 
 #include "tasgridTestFunctions.hpp"
-
-using std::cout;
-using std::endl;
-using std::setw;
-
-using namespace TasGrid;
 
 struct TestResults{
     double error;
@@ -60,8 +44,31 @@ enum TestType{
     type_integration, type_nodal_interpolation, type_internal_interpolation
 };
 
+/*!
+ * \internal
+ * \brief Enumerated list of all individual sparse grid ctests.
+ *
+ * \endinternal
+ */
 enum TestList{
-    test_all, test_acceleration, test_domain, test_refinement, test_global, test_local, test_wavelet, test_fourier
+    //! \brief Perform all tests.
+    test_all,
+    //! \brief Test consistency in the results of all acceleration types.
+    test_acceleration,
+    //! \brief Test correctness of domain transforms and quadrature weight scaling.
+    test_domain,
+    //! \brief Test various refinement strategies.
+    test_refinement,
+    //! \brief Test correctness of global grid algorithms.
+    test_global,
+    //! \brief Test correctness of local polynomial grid algorithms.
+    test_local,
+    //! \brief Test correctness of wavelet grids.
+    test_wavelet,
+    //! \brief Test correctness of Fourier grids.
+    test_fourier,
+    //! \brief This is not a test, indicates an error in parsing CLI arguments.
+    test_none
 };
 
 class ExternalTester{
@@ -72,6 +79,9 @@ public:
 
     void setVerbose(bool new_verbose);
     void setGPUID(int gpu_id);
+
+    //! \brief Converts the string to a TestList, returns \b test_none if not compatible.
+    static TestList hasTest(std::string const &s);
 
     bool Test(TestList test) const;
 
@@ -87,6 +97,7 @@ public:
                                const std::vector<int> &np, const std::vector<double> &errs) const;
     bool testAcceleration(const BaseFunction *f, TasmanianSparseGrid *grid) const;
     bool testGPU2GPUevaluations() const;
+    bool testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const;
 
     TestResults getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid *grid, TestType type, const double *x = 0) const;
 

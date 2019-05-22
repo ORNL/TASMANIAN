@@ -31,23 +31,7 @@
 #ifndef __TASGRID_WRAPPER_HPP
 #define __TASGRID_WRAPPER_HPP
 
-#include <cstdlib>
-#include <cstdio>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip>
-#include <string.h>
-#include <math.h>
-
-#include "TasmanianSparseGrid.hpp"
-
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::setw;
-
-using namespace TasGrid;
+#include "tasgridCLICommon.hpp"
 
 enum TypeCommand{
     command_none,
@@ -102,40 +86,38 @@ public:
     TasgridWrapper();
     ~TasgridWrapper();
 
+    static TypeCommand hasCommand(std::string const &s);
     static TypeConformalMap getConfromalType(const char* name);
 
-    void setCommand(TypeCommand com);
-    TypeCommand getCommand() const;
+    void setCommand(TypeCommand com){ command = com; }
+    TypeCommand getCommand() const{ return command; }
+    void setNumDimensions(int dim){ num_dimensions = dim; }
+    void setNumOutputs(int out){ num_outputs = out; }
+    void setNumDepth(int d){ depth = d; }
+    void setOrder(int o){ order = o; }
+    void setDepthType(TypeDepth dt){ depth_type = dt; }
+    void setConformalType(TypeConformalMap con){ conformal = con; }
+    void setRule(TypeOneDRule r){ rule = r;}
+    TypeOneDRule getRule() const{ return rule; }
+    void setAlpha(double a){ alpha = a;  set_alpha = true; }
+    void setBeta(double b){ beta = b; set_beta = true; }
+    void setTolerance(double tol){ tolerance = tol;  set_tolerance = true; }
+    void setRefOutput(int out){ ref_output = out; }
+    void setMinGrowth(int mg){ min_growth = mg; }
+    void setTypeRefinement(TypeRefinement rt){ tref = rt; set_tref = true; }
+    void setPrintPoints(bool pp){ printCout = pp; }
+    void setUseASCII(bool ascii){ useASCII = ascii; }
+    void setGPID(int gpuid){ set_gpuid = gpuid; }
 
-    void setNumDimensions(int dim);
-    void setNumOutputs(int out);
-    void setNumDepth(int d);
-    void setOrder(int o);
-    void setDepthType(TypeDepth dt);
-    void setConformalType(TypeConformalMap con);
-    void setRule(TypeOneDRule r);
-    TypeOneDRule getRule() const;
-    void setAlpha(double a);
-    void setBeta(double b);
-
-    void setTolerance(double tol);
-    void setRefOutput(int out);
-    void setMinGrowth(int mg);
-    void setTypeRefinement(TypeRefinement rt);
-
-    void setGridFilename(const char *filename);
-    void setOutFilename(const char *filename);
-    void setValsFilename(const char *filename);
-    void setXFilename(const char *filename);
-    void setAnisoFilename(const char *filename);
-    void setTransformFilename(const char *filename);
-    void setConformalFilename(const char *filename);
-    void setCustomFilename(const char *filename);
-    void setLevelLimitsFilename(const char *filename);
-
-    void setPrintPoints(bool pp);
-    void setUseASCII(bool ascii);
-    void setGPID(int gpuid);
+    void setGridFilename(std::string const &filename){ gridfilename = filename; }
+    void setOutFilename(std::string const &filename){ outfilename = filename; }
+    void setValsFilename(std::string const &filename){ valsfilename = filename; }
+    void setXFilename(std::string const &filename){ xfilename = filename; }
+    void setAnisoFilename(std::string const &filename){ anisofilename = filename; }
+    void setTransformFilename(std::string const &filename){ transformfilename = filename; }
+    void setConformalFilename(std::string const &filename){ conformalfilename = filename; }
+    void setCustomFilename(std::string const &filename){ customfilename = filename; }
+    void setLevelLimitsFilename(std::string const &filename){ levellimitfilename = filename; }
 
     bool executeCommand();
 
@@ -178,17 +160,16 @@ protected:
 
     bool getSummary();
 
-    bool getSurpluses();
     bool getPointsIndexes();
     bool getNeededIndexes();
 
-    int* readAnisotropicFile(int num_weights) const;
-    double* readTransform() const;
-    int* readLevelLimits(int num_weights) const;
+    std::vector<int> readAnisotropicFile(int num_weights) const;
+    std::pair<std::vector<double>, std::vector<double>> readTransform() const;
+    std::vector<int> readLevelLimits(int num_weights) const;
 
-    static void readMatrix(const char *filename, size_t &rows, size_t &cols, double* &mat);
-    static void writeMatrix(const char *filename, int rows, int cols, const double mat[], bool ascii);
-    static void printMatrix(int rows, int cols, const double mat[], bool isComplex = false);
+    static Data2D<double> readMatrix(std::string const &filename);
+    void writeMatrix(std::string const &filename, int rows, int cols, const double mat[]) const;
+    void printMatrix(int rows, int cols, const double mat[], bool isComplex = false) const;
 
 private:
     TasmanianSparseGrid grid;
@@ -210,15 +191,15 @@ private:
     TypeRefinement tref;
     bool set_tref;
 
-    const char *gridfilename;
-    const char *outfilename;
-    const char *valsfilename;
-    const char *xfilename;
-    const char *anisofilename;
-    const char *transformfilename;
-    const char *conformalfilename;
-    const char *customfilename;
-    const char *levellimitfilename;
+    std::string gridfilename;
+    std::string outfilename;
+    std::string valsfilename;
+    std::string xfilename;
+    std::string anisofilename;
+    std::string transformfilename;
+    std::string conformalfilename;
+    std::string customfilename;
+    std::string levellimitfilename;
 
     bool printCout;
     bool useASCII;

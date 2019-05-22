@@ -39,7 +39,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #
 # Selecting specific packages for find_package()
 #     -D PYTHON_EXECUTABLE:PATH
-#     -D CUDA_TOOLKIT_ROOT_DIR:PATH
+#     -D CMAKE_CUDA_COMPILER:PATH
 #     -D Tasmanian_MAGMA_ROOT_DIR:PATH (or just MAGMA_ROOT_DIR)
 #
 # Directly specifying libraries and bypassing find_package()
@@ -216,7 +216,7 @@ if (NOT USE_XSDK_DEFAULTS)
         message(STATUS " -D CMAKE_CXX_FLAGS_RELEASE:STRING=${CMAKE_CXX_FLAGS_RELEASE}")
     endif()
     if (Tasmanian_ENABLE_CUDA)
-        message(STATUS " -D CUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}")
+        message(STATUS " -D CMAKE_CUDA_FLAGS:STRING=${CMAKE_CUDA_FLAGS}")
     endif()
     if (DEFINED BUILD_SHARED_LIBS)
         message(STATUS " -D BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")

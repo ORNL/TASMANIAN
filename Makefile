@@ -21,7 +21,7 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
           ./include/TasmanianConfig.hpp
 
 ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py \
-              sandbox.py example_sparse_grids.cpp \
+              sandbox.py \
               $(wildcard ./DREAM/Examples/example_dream*.cpp) \
               libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid dreamtest gridtest $(HEADERS)
 
@@ -146,8 +146,8 @@ testTSG.py: ./InterfacePython/testTSG.py
 sandbox.py: ./InterfacePython/sandbox.py
 	cp ./InterfacePython/sandbox.py .
 
-example_sparse_grids.cpp: ./SparseGrids/Examples/example_sparse_grids.cpp
-	cp ./SparseGrids/Examples/example_sparse_grids.cpp .
+#example_sparse_grids.cpp: ./SparseGrids/Examples/example_sparse_grids.cpp
+#	cp ./SparseGrids/Examples/example_sparse_grids.cpp .
 
 example_dre%.cpp: ./DREAM/Examples/example_dre%.cpp
 	cp ./$< ./$@
@@ -215,8 +215,9 @@ test: $(ALL_TARGETS)
 
 .PHONY: examples
 examples: $(ALL_TARGETS) example_dream
-	$(CC) $(OPTC) $(IADD) -c example_sparse_grids.cpp -o example_sparse_grids.o
-	$(CC) $(OPTL) $(LADD) example_sparse_grids.o -o example_sparse_grids $(LIBS)
+	echo "Done examples"
+#	$(CC) $(OPTC) $(IADD) -c example_sparse_grids.cpp -o example_sparse_grids.o
+#	$(CC) $(OPTL) $(LADD) example_sparse_grids.o -o example_sparse_grids $(LIBS)
 
 example_dream: $(ALL_TARGETS) $(DREAM_EXAMPLES_OBJ)
 	$(CC) $(OPTL) $(LADD) $(DREAM_EXAMPLES_OBJ) -o example_dream $(LIBS)

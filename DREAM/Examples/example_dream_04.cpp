@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <ctime>
-#include "math.h"
 
 #include "TasmanianDREAM.hpp"
 
@@ -19,8 +18,8 @@ using namespace std;
  * \addtogroup TasmanianDREAMExamples4 Tasmanian DREAM module, example 4
  *
  * Example 4:
- * Given data that is the superposition of two sin-waves,
- * use Sparse Grid and Bayesian inference to identify the frequencies and shifts of each wave.
+ * Given data that is the superposition of two exponential curves,
+ * use Sparse Grid and Bayesian inference to identify the scale and growth of each curve.
  * Higher dimensions and bi-modal posterior will decrease the acceptance rate,
  * thus we need more samples than the previous example.
  */
@@ -61,7 +60,7 @@ void dream_example_04(){
             double dt = 1.0 / ((double) data.size());
             double t = 0.5 * dt;
             for(auto &d : data){
-                d = x0 * exp(x1 * t) + x2 * exp(x3 * t);
+                d = x0 * std::exp(x1 * t) + x2 * std::exp(x3 * t);
                 t += dt;
             }
         };
@@ -152,10 +151,10 @@ void dream_example_04(){
     cout << "Acceptance rate: " << std::fixed << state.getAcceptanceRate() << "\n\n";
     cout << "High dimensions and multiple modes reduce the acceptance rate, and sampling parameters (e.g., differential update magnitude), aff.\n\n";
     cout << "Inferred values (noise free case):" << endl;
-    cout << " low   rate:" << setw(12) << std::fixed << rate_low   << "   error:" << setw(12) << std::scientific << fabs(rate_low - 1.0)   << endl;
-    cout << " low  scale:" << setw(12) << std::fixed << scale_low  << "   error:" << setw(12) << std::scientific << fabs(scale_low - 1.0)  << "\n" << endl;
-    cout << " high  rate:" << setw(12) << std::fixed << rate_high  << "   error:" << setw(12) << std::scientific << fabs(rate_high - 3.0)  << endl;
-    cout << " high scale:" << setw(12) << std::fixed << scale_high << "   error:" << setw(12) << std::scientific << fabs(scale_high - 0.4) << "\n" << endl;
+    cout << " low   rate:" << setw(12) << std::fixed << rate_low   << "   error:" << setw(12) << std::scientific << std::abs(rate_low - 1.0)   << endl;
+    cout << " low  scale:" << setw(12) << std::fixed << scale_low  << "   error:" << setw(12) << std::scientific << std::abs(scale_low - 1.0)  << "\n" << endl;
+    cout << " high  rate:" << setw(12) << std::fixed << rate_high  << "   error:" << setw(12) << std::scientific << std::abs(rate_high - 3.0)  << endl;
+    cout << " high scale:" << setw(12) << std::fixed << scale_high << "   error:" << setw(12) << std::scientific << std::abs(scale_high - 0.4) << "\n" << endl;
 
     cout << "\n" << "-------------------------------------------------------------------------------------------------" << endl;
 

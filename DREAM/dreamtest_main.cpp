@@ -28,44 +28,45 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include <iostream>
+#include "tasgridCLICommon.hpp"
 
 #include "tasdreamExternalTests.hpp"
 
 using namespace std;
 
-//enum TypeHelp{
-//    help_generic,
-//    help_benchmark
-//};
-
-//void printHelp(TypeHelp ht = help_generic);
+void printHelp();
 
 int main(int argc, const char ** argv){
+
     //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
+
+    std::deque<std::string> args = stringArgs(argc, argv);
+    if (!args.empty() && hasHelp(args.front())){
+        printHelp();
+        return 0;
+    }
 
     bool debug = false;
     TypeDREAMTest test = test_all;
 
     DreamExternalTester tester;
-    int k = 1;
-    while(k < argc){
-        if ((strcmp(argv[k],"verbose") == 0) || (strcmp(argv[k],"-verbose") == 0)){
+
+    while(!args.empty()){
+        if (hasInfo(args.front())){
             tester.showVerbose();
-            tester.showStatsValues();
-        }else if ((strcmp(argv[k],"v") == 0) || (strcmp(argv[k],"-v") == 0)){
-            tester.showVerbose();
-        }else if ((strcmp(argv[k],"random") == 0) || (strcmp(argv[k],"-random") == 0)){
-            tester.useRandomRandomSeed();
-        }else if ((strcmp(argv[k],"debug") == 0)) debug = true;
-        else if ((strcmp(argv[k],"analytic") == 0)) test = test_analytic;
-        else if ((strcmp(argv[k],"posterior") == 0)) test = test_posterior;
+            if ((args.front() == "verbose") || (args.front() == "-verbose"))
+                tester.showStatsValues();
+        }else if (hasRandom(args.front())) tester.useRandomRandomSeed();
+        else if (args.front() == "debug") debug = true;
+        else if (args.front() == "analytic") test = test_analytic;
+        else if (args.front() == "posterior") test = test_posterior;
+        else if (args.front() == "all") test = test_all;
         else{
-            cerr << "ERROR: Unknown option '" << argv[k] << "'" << endl;
-            cerr << "   to see list of available options use: ./gridtest --help" << endl;
+            cerr << "ERROR: Unknown option '" << args.front() << "'" << endl;
+            cerr << "   to see list of available options use: ./dreamtest --help" << endl;
             return 1;
         }
-        k++;
+        args.pop_front();
     }
 
     if (debug){
@@ -74,4 +75,18 @@ int main(int argc, const char ** argv){
     }
 
     return (tester.performTests(test)) ? 0 : 1;
+}
+
+void printHelp(){
+    cout << endl;
+    cout << "Usage: dreamtest <command1> <command2> ...\n\n";
+    cout << "Commands\tAction\n";
+    cout << "all\t\tRun all tests (default if no commands are given)\n";
+    cout << "analytic\tRun the tests associated with analytic probability distributions\n";
+    cout << "posterior\tRun the tests associated with Bayesian inference\n";
+    cout << "-v\t\tShow verbose test information\n";
+    cout << "verbose\t\tIn addition to -v also shows critical test values\n";
+    cout << "random\t\tDo not use the hard-coded random seed, use the time as random seed\n";
+    cout << "debug\t\tRun the code implemented in tasdreamExternalTests.cpp function testDebug()\n";
+    cout << endl;
 }

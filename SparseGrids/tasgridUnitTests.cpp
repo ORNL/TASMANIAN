@@ -39,6 +39,22 @@ GridUnitTester::~GridUnitTester(){}
 
 void GridUnitTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 
+UnitTests GridUnitTester::hasTest(std::string const &s){
+    std::map<std::string, UnitTests> string_to_test = {
+        {"all",    unit_all},
+        {"cover",  unit_cover},
+        {"errors", unit_except},
+        {"api",    unit_api},
+        {"c",      unit_c},
+    };
+
+    try{
+        return string_to_test.at(s);
+    }catch(std::out_of_range &){
+        return unit_none;
+    }
+}
+
 bool GridUnitTester::Test(UnitTests test){
     cout << endl << endl;
     cout << "---------------------------------------------------------------------" << endl;
@@ -276,7 +292,7 @@ void GridUnitTester::gridLoadEN2(TasmanianSparseGrid *grid) const{
             nrm += *iter_x * *iter_x;
             iter_x++;
         }
-        nrm = exp(-nrm);
+        nrm = std::exp(-nrm);
         for(int i=0; i<outs; i++) *iter_y++ = nrm;
     }
     grid->loadNeededPoints(vals);
@@ -285,12 +301,12 @@ void GridUnitTester::gridLoadEN2(TasmanianSparseGrid *grid) const{
 bool GridUnitTester::doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec) const{
     if (a.size() != b.size()) return false;
     auto ib = b.begin();
-    for(auto x : a) if (fabs(x - *ib++) > prec) return false;
+    for(auto x : a) if (std::abs(x - *ib++) > prec) return false;
     return true;
 }
 bool GridUnitTester::doesMatch(const std::vector<double> &a, const double b[], double prec) const{
     auto ib = b;
-    for(auto x : a) if (fabs(x - *ib++) > prec) return false;
+    for(auto x : a) if (std::abs(x - *ib++) > prec) return false;
     return true;
 }
 bool GridUnitTester::doesMatch(const std::vector<int> &a, const int b[]) const{
@@ -299,7 +315,7 @@ bool GridUnitTester::doesMatch(const std::vector<int> &a, const int b[]) const{
     return true;
 }
 bool GridUnitTester::doesMatch(size_t n, double a[], const double b[], double prec) const{
-    for(size_t i=0; i<n; i++) if (fabs(a[i] - b[i]) > prec) return false;
+    for(size_t i=0; i<n; i++) if (std::abs(a[i] - b[i]) > prec) return false;
     return true;
 }
 
@@ -309,31 +325,12 @@ bool GridUnitTester::testAPIconsistency(){
 
     // test array and vector consistency between the two versions of the API
     bool pass = true;
-    double *apoints;
     std::vector<double> vpoints;
 
     TasmanianSparseGrid grid;
     grid.makeGlobalGrid(2, 1, 4, type_iptotal, rule_clenshawcurtis);
     gridLoadEN2(&grid);
     grid.setAnisotropicRefinement(type_iptotal, 10, 0);
-
-    apoints = grid.getPoints();
-    grid.getPoints(vpoints);
-    pass = pass && doesMatch(vpoints, apoints);
-    delete[] apoints;
-    vpoints.clear();
-
-    apoints = grid.getLoadedPoints();
-    grid.getLoadedPoints(vpoints);
-    pass = pass && doesMatch(vpoints, apoints);
-    delete[] apoints;
-    vpoints.clear();
-
-    apoints = grid.getNeededPoints();
-    grid.getNeededPoints(vpoints);
-    pass = pass && doesMatch(vpoints, apoints);
-    delete[] apoints;
-    vpoints.clear();
 
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "getPoints()" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
@@ -387,42 +384,6 @@ bool GridUnitTester::testAPIconsistency(){
     if (llimits.size() != 0) pass = false;
 
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "level limits" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
-    passAll = pass && passAll;
-
-    pass = true;
-    grid.makeLocalPolynomialGrid(3, 2, 4, rule_localp);
-    int *apntr, *aindx;
-    double *avals;
-    std::vector<int> vpntr, vindx;
-    std::vector<double> vvals;
-    x = {0.33, 0.33, 0.33, 0.0, 0.44, 0.66, 0.1, -0.33, -0.66};
-    grid.evaluateSparseHierarchicalFunctions(x.data(), 3, apntr, aindx, avals);
-    grid.evaluateSparseHierarchicalFunctions(x, vpntr, vindx, vvals);
-    pass = doesMatch(vpntr, apntr) && doesMatch(vindx, aindx) && doesMatch(vvals, avals);
-    delete[] apntr;
-    delete[] aindx;
-    delete[] avals;
-    vpntr.clear();
-    vindx.clear();
-    vvals.clear();
-
-    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "localp sparse basis" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
-    passAll = pass && passAll;
-
-    pass = true;
-    grid.makeWaveletGrid(3, 3, 2, 3);
-    x = {0.33, 0.33, 0.33, 0.0, 0.44, 0.66, 0.1, -0.33, -0.66};
-    grid.evaluateSparseHierarchicalFunctions(x.data(), 3, apntr, aindx, avals);
-    grid.evaluateSparseHierarchicalFunctions(x, vpntr, vindx, vvals);
-    pass = doesMatch(vpntr, apntr) && doesMatch(vindx, aindx) && doesMatch(vvals, avals);
-    delete[] apntr;
-    delete[] aindx;
-    delete[] avals;
-    vpntr.clear();
-    vindx.clear();
-    vvals.clear();
-
-    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "wavelet sparse basis" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
 
     // test integer-to-enumerate and string-to-enumerate conversion

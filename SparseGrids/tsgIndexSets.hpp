@@ -31,11 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 #define __TASMANIAN_SPARSE_GRID_INDEX_SETS_HPP
 
-#include <functional>
-#include <algorithm>
-
 #include "tsgIOHelpers.hpp"
-#include "tsgUtils.hpp"
 
 /*!
  * \internal
@@ -88,6 +84,8 @@ public:
     Data2D(size_t new_stride, int new_num_strips) : stride(new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips){}
     //! \brief Create data-structure with given \b stride and number of \b strips and initializes with \b val.
     Data2D(int new_stride, int new_num_strips, T val) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips, val){}
+    //! \brief Create data-structure with given \b stride and number of \b strips and moves \b data into the internal vector.
+    Data2D(int new_stride, int new_num_strips, std::vector<T> &&data) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(data){}
     //! \brief Default destructor.
     ~Data2D(){}
 
@@ -105,6 +103,10 @@ public:
     T* getStrip(int i){ return &(vec[i*stride]); }
     //! \brief Returns a const reference to the \b i-th strip.
     T const* getStrip(int i) const{ return &(vec[i*stride]); }
+    //! \brief Return iterator set at the \b i-th strip.
+    typename std::vector<T>::iterator getIStrip(int i){ return vec.begin() + Utils::size_mult(stride, i); }
+    //! \brief Return const_iterator set at the \b i-th strip.
+    typename std::vector<T>::const_iterator getIStrip(int i) const{ return vec.cbegin() + Utils::size_mult(stride, i); }
     //! \brief Returns the stride.
     size_t getStride() const{ return stride; }
     //! \brief Returns the number of strips.
@@ -122,10 +124,15 @@ public:
         vec = std::vector<double>();
     }
 
+    //! \brief Uses std::vector::insert to append the data.
+    void appendStrip(typename std::vector<T>::const_iterator const &x){
+        vec.insert(vec.end(), x, x + stride);
+        num_strips++;
+    }
+
     //! \brief Uses std::vector::insert to append \b x, assumes \b x.size() is one stride.
     void appendStrip(const std::vector<T> &x){
-        vec.insert(vec.end(), x.begin(), x.end());
-        num_strips++;
+        appendStrip(x.begin());
     }
 
     //! \brief Uses std::vector::insert to append a strip \b x to the existing data at position \b pos, assumes \b x.size() is one stride.
@@ -141,6 +148,21 @@ private:
     size_t stride, num_strips;
     std::vector<T> vec;
 };
+
+namespace IO{
+    /*!
+    * \internal
+    * \ingroup TasmanianIO
+    * \brief Read the Data2D structure from the stream, assumes the given number of strips and stride.
+    * \endinternal
+    */
+    template<bool useAscii, typename DataType, typename IndexStride, typename IndexNumStrips>
+    Data2D<DataType> readData2D(std::istream &is, IndexStride stride, IndexNumStrips num_strips){
+        Data2D<DataType> data(stride, num_strips);
+        readVector<useAscii>(is, data.getVector());
+        return data;
+    }
+}
 
 /*!
  * \internal
@@ -161,8 +183,8 @@ public:
     //! \brief Default constructor, makes an empty set.
     MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
     //! \brief Constructor, makes a set by \b moving out of the vector, the vector must be already sorted.
-    MultiIndexSet(size_t cnum_dimensions, std::vector<int> &new_indexes) :
-        num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)), indexes(std::move(new_indexes)){}
+    MultiIndexSet(size_t cnum_dimensions, std::vector<int> &&new_indexes) :
+        num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)), indexes(new_indexes){}
     //! \brief Copy a collection of unsorted indexes into a sorted multi-index set, sorts during the copy.
     MultiIndexSet(Data2D<int> &data) : num_dimensions((size_t) data.getStride()), cache_num_indexes(0){ setData2D(data); }
     //! \brief Default destructor.
@@ -279,8 +301,8 @@ public:
 
     //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
     void setValues(const double vals[]);
-    //! \brief Replace the existing values with **vals** using `std::move()`, the size of **vals** must be **num_outputs** times **num_values**
-    void setValues(std::vector<double> &vals);
+    //! \brief Replace the existing values with \b vals using move semantics, the size of \b vals must be \b num_outputs times \b num_values
+    void setValues(std::vector<double> &&vals);
 
     /*!
      * \brief Add more values to the set, the \b old_set and \b new_set are the associated multi-index sets required to maintain order.

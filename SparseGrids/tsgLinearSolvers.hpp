@@ -31,8 +31,6 @@
 #ifndef __TASMANIAN_LINEAR_SOLVERS_HPP
 #define __TASMANIAN_LINEAR_SOLVERS_HPP
 
-#include <list>
-#include <math.h>
 #include <complex>
 
 #include "tsgEnumerates.hpp"

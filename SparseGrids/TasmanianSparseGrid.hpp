@@ -42,7 +42,6 @@
 #define __TASMANIAN_SPARSE_GRID_HPP
 
 #include "tsgGridGlobal.hpp"
-#include "tsgGridSequence.hpp"
 #include "tsgGridLocalPolynomial.hpp"
 #include "tsgGridWavelet.hpp"
 #include "tsgGridFourier.hpp"
@@ -65,7 +64,11 @@ class TasmanianSparseGrid{
 public:
     TasmanianSparseGrid();
     TasmanianSparseGrid(const TasmanianSparseGrid &source);
+    TasmanianSparseGrid(TasmanianSparseGrid &&source) = default;
     ~TasmanianSparseGrid();
+
+    TasmanianSparseGrid& operator=(TasmanianSparseGrid const &source);
+    TasmanianSparseGrid& operator=(TasmanianSparseGrid &&source) = default;
 
     static const char* getVersion(); // human readable
     static int getVersionMajor();
@@ -78,86 +81,92 @@ public:
     void write(const char *filename, bool binary = false) const;
     void read(const char *filename); // auto-check if format is binary or ascii
 
-    void write(std::ofstream &ofs, bool binary = false) const;
-    void read(std::ifstream &ifs, bool binary = false);
+    void write(std::ostream &ofs, bool binary = false) const;
+    void read(std::istream &ifs, bool binary = false);
 
-    void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const int *level_limits = 0);
-    void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, double alpha = 0.0, double beta = 0.0, const char* custom_filename = 0, const std::vector<int> &level_limits = std::vector<int>());
+    void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
+                        std::vector<int> const &anisotropic_weights, double alpha = 0.0, double beta = 0.0,
+                        const char* custom_filename = nullptr, std::vector<int> const &level_limits = std::vector<int>());
+    void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
+                        const int *anisotropic_weights = nullptr, double alpha = 0.0, double beta = 0.0,
+                        const char* custom_filename = nullptr, const int *level_limits = nullptr);
 
-    void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights = 0, const int *level_limits = 0);
-    void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+    void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
+                          std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
+    void makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
+                          const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
 
-    void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp, const int *level_limits = 0);
-    void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const std::vector<int> &level_limits);
+    void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, std::vector<int> const &level_limits);
+    void makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp, const int *level_limits = nullptr);
 
-    void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, const int *level_limits = 0);
-    void makeWaveletGrid(int dimensions, int outputs, int depth, int order, const std::vector<int> &level_limits);
+    void makeWaveletGrid(int dimensions, int outputs, int depth, int order, std::vector<int> const &level_limits);
+    void makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, const int *level_limits = nullptr);
 
-    void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights = 0, const int* level_limits = 0);
-    void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+    void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type,
+                         std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
+    void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights = nullptr, const int* level_limits = nullptr);
 
     void copyGrid(const TasmanianSparseGrid *source);
 
-    void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
-    void updateGlobalGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+    void updateGlobalGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
+    void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
 
-    void updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights = 0, const int *level_limits = 0);
-    void updateSequenceGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits = std::vector<int>());
+    void updateSequenceGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
+    void updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
 
-    double getAlpha() const;
-    double getBeta() const;
-    int getOrder() const;
+    double getAlpha() const{ return (isGlobal()) ? getGridGlobal()->getAlpha() : 0.0; }
+    double getBeta() const{ return (isGlobal()) ? getGridGlobal()->getBeta() : 0.0; }
+    int getOrder() const{ return (isLocalPolynomial()) ? getGridLocalPolynomial()->getOrder() : ((isWavelet()) ? getGridWavelet()->getOrder() : -1); }
 
-    int getNumDimensions() const;
-    int getNumOutputs() const;
+    int getNumDimensions() const{ return (base) ? base->getNumDimensions() : 0; }
+    int getNumOutputs() const{ return (base) ? base->getNumOutputs() : 0; }
     TypeOneDRule getRule() const;
     const char* getCustomRuleDescription() const; // used only for Global Grids with rule_customtabulated
 
-    int getNumLoaded() const;
-    int getNumNeeded() const;
-    int getNumPoints() const; // returns the number of loaded points unless no points are loaded, then returns the number of needed points
+    int getNumLoaded() const{ return (base) ? base->getNumLoaded() : 0; }
+    int getNumNeeded() const{ return (base) ? base->getNumNeeded() : 0; }
+    int getNumPoints() const{ return (base) ? base->getNumPoints() : 0; }
 
-    double* getLoadedPoints() const;
-    double* getNeededPoints() const;
-    double* getPoints() const; // returns the loaded points unless no points are loaded, then returns the needed points
+    std::vector<double> getLoadedPoints() const{ std::vector<double> x; getLoadedPoints(x); return x; }
+    std::vector<double> getNeededPoints() const{ std::vector<double> x; getNeededPoints(x); return x; }
+    std::vector<double> getPoints() const{ std::vector<double> x; getPoints(x); return x; }
+
+    void getLoadedPoints(std::vector<double> &x) const{ x.resize((size_t) getNumDimensions() * (size_t) getNumLoaded()); getLoadedPoints(x.data()); }
+    void getNeededPoints(std::vector<double> &x) const{ x.resize((size_t) getNumDimensions() * (size_t) getNumNeeded()); getNeededPoints(x.data()); }
+    void getPoints(std::vector<double> &x) const{ x.resize((size_t) getNumDimensions() * (size_t) getNumPoints()); getPoints(x.data()); }
 
     void getLoadedPoints(double *x) const; // using static memory, assuming x has size num_dimensions X get***Points()
     void getNeededPoints(double *x) const;
     void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
 
-    void getLoadedPoints(std::vector<double> &x) const; // dynamic memory, resizes x
-    void getNeededPoints(std::vector<double> &x) const;
-    void getPoints(std::vector<double> &x) const; // returns the loaded points unless no points are loaded, then returns the needed points
-
-    double* getQuadratureWeights() const;
-    double* getInterpolationWeights(const double x[]) const;
-
+    std::vector<double> getQuadratureWeights() const{ std::vector<double> w; getQuadratureWeights(w); return w; }
+    void getQuadratureWeights(std::vector<double> &weights) const{ weights.resize((size_t) getNumPoints()); getQuadratureWeights(weights.data()); }
     void getQuadratureWeights(double weights[]) const; // static memory, assumes that weights has size getNumPoints()
-    void getInterpolationWeights(const double x[], double weights[]) const; // static memory, assumes that weights has size getNumPoints()
 
-    void getQuadratureWeights(std::vector<double> &weights) const; // dynamic memory, resizes weights
-    void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const; // dynamic memory, resizes weights
+    std::vector<double> getInterpolationWeights(std::vector<double> const &x) const;
+    std::vector<double> getInterpolationWeights(double const x[]) const{ std::vector<double> w((size_t) getNumPoints()); getInterpolationWeights(x, w.data()); return w; }
+    void getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const;
+    void getInterpolationWeights(const double x[], double weights[]) const;
 
+    void loadNeededPoints(std::vector<double> const &vals); // checks if vals has size num_outputs X getNumNeeded()
     void loadNeededPoints(const double *vals); // no error checking
-    void loadNeededPoints(const std::vector<double> &vals); // checks if vals has size num_outputs X getNumNeeded()
 
+    void evaluate(std::vector<double> const &x, std::vector<double> &y) const;
     void evaluate(const double x[], double y[]) const; // has size num_dimensions, y has size num_outputs
-    void evaluateFast(const double x[], double y[]) const{ evaluateBatch(x, 1, y); }; // evaluate that is potentially not thread safe!
+    void evaluateBatch(std::vector<double> const &x, std::vector<double> &y) const;
     void evaluateBatch(const double x[], int num_x, double y[]) const; // uses acceleration, OpenMP, BLAS, GPU, etc., x is num_dimensions X num_x, y is num_outputs X num_x
+    void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // both arrays sit on the cuda device
+    void evaluateFast(std::vector<double> const &x, std::vector<double> &y) const{ evaluateBatch(x, y); }
+    void evaluateFast(const double x[], double y[]) const{ evaluateBatch(x, 1, y); }; // evaluate that is potentially not thread safe!
+    void integrate(std::vector<double> &q) const;
     void integrate(double q[]) const; // y has size num_outputs
 
-    // same as above, but num_x = x.size() / num_dimensions, and y is resized
-    void evaluate(const std::vector<double> &x, std::vector<double> &y) const;
-    void evaluateFast(const std::vector<double> &x, std::vector<double> &y) const{ evaluateBatch(x, y); }
-    void evaluateBatch(const std::vector<double> &x, std::vector<double> &y) const;
-    void integrate(std::vector<double> &q) const;
-
-    bool isGlobal() const;
-    bool isSequence() const;
-    bool isLocalPolynomial() const;
-    bool isWavelet() const;
-    bool isFourier() const;
-    inline bool empty() const{ return (base.get() == nullptr); }
+    bool isGlobal() const{ return base && base->isGlobal(); }
+    bool isSequence() const{ return base && base->isSequence(); }
+    bool isLocalPolynomial() const{ return base && base->isLocalPolynomial(); }
+    bool isWavelet() const{ return base && base->isWavelet(); }
+    bool isFourier() const{ return base && base->isFourier(); }
+    bool empty() const{ return !base; }
 
     void setDomainTransform(const double a[], const double b[]); // set the ranges of the box, a[] and b[] must have size num_dimensions
     bool isSetDomainTransfrom() const;
@@ -166,6 +175,7 @@ public:
     void setDomainTransform(const std::vector<double> &a, const std::vector<double> &b);
     void getDomainTransform(std::vector<double> &a, std::vector<double> &b) const;
 
+    void setConformalTransformASIN(std::vector<int> const &truncation){ setConformalTransformASIN(truncation.data()); }
     void setConformalTransformASIN(const int truncation[]);
     bool isSetConformalTransformASIN() const;
     void clearConformalTransform();
@@ -174,18 +184,20 @@ public:
     void clearLevelLimits(); // level limits will be set anew if non-null vector is given to refine command
     void getLevelLimits(int *limits) const; // static, assume limits is already allocated with length num_dimensions
     void getLevelLimits(std::vector<int> &limits) const; // allocates the vector
+    std::vector<int> getLevelLimits() const{ std::vector<int> ll; getLevelLimits(ll); return ll; }
 
-    void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = 0);
+    void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = nullptr);
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
 
-    int* estimateAnisotropicCoefficients(TypeDepth type, int output);
-    void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights);
+    void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
+    std::vector<int> estimateAnisotropicCoefficients(TypeDepth type, int output) const{ std::vector<int> w; estimateAnisotropicCoefficients(type, output, w); return w; }
 
-    void setSurplusRefinement(double tolerance, int output, const int *level_limits = 0);
-    void setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits);
+    void setSurplusRefinement(double tolerance, int output, std::vector<int> const &level_limits);
+    void setSurplusRefinement(double tolerance, int output, const int *level_limits = nullptr);
 
-    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = 0, const double *scale_correction = 0); // -1 indicates using all outputs
-    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction = std::vector<double>()); // -1 indicates using all outputs
+    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output,
+                              std::vector<int> const &level_limits, std::vector<double> const &scale_correction = std::vector<double>()); // -1 indicates using all outputs
+    void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = nullptr, const double *scale_correction = nullptr); // -1 indicates using all outputs
     // if using only one output, scale_correction has size getNumPoints(), if using all outputs, scale_correction has size num_outputs X getNumDimensions()
     // correction is multiplied by the relative coefficient (normalized across outputs) when comparing against the tolerance
     // empty scale_correction is equivalent to passing constant 1.0 vector
@@ -200,12 +212,13 @@ public:
     //! \brief Generate a sorted list of points weighted by descending importance using the \b type and provided anisotropic_weights (expensive call, roughly equivalent to set-refinement)
 
     //! If no weights are provided, isotropic weights will be imposed. Tensor types fall-back to \b type_level (not recommended to use here).
-    void getCandidateConstructionPoints(TypeDepth type, std::vector<double> &x, const std::vector<int> &anisotropic_weights = std::vector<int>(), const std::vector<int> &level_limits = std::vector<int>());
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, std::vector<int> const &anisotropic_weights = std::vector<int>(),
+                                                       std::vector<int> const &level_limits = std::vector<int>());
     //! \brief Same as \b getCandidateConstructionPoints() but the weights are obtained from a call to \b estimateAnisotropicCoefficients().
 
     //! Unlike \b estimateAnisotropicCoefficients(), this function will not throw if the grid is empty; instead, isotropic coefficient will be used
     //! until enough points are loaded so that coefficients can be estimated.
-    void getCandidateConstructionPoints(TypeDepth type, int output, std::vector<double> &x, const std::vector<int> &level_limits = std::vector<int>());
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, std::vector<int> const &level_limits = std::vector<int>());
 
     /*!
      * \brief Returns a sorted list of points weighted by descending importance using the hierarchical surpluses.
@@ -213,24 +226,31 @@ public:
      * Used by the local polynomial grids, performs a refinement similar to \b setSurplusRefinement(\b double, \b TypeRefinement),
      * but in a construction context and the returned points are sorted by magnitude of the hierarchical surplus.
      */
-    void getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, std::vector<double> &x, int output = -1, const std::vector<int> &level_limits = std::vector<int>(), const std::vector<double> &scale_correction = std::vector<double>());
+    std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output = -1,
+                                                       std::vector<int> const &level_limits = std::vector<int>(),
+                                                       std::vector<double> const &scale_correction = std::vector<double>());
     //! \brief Add the value of a single point (if the tensor of the point is not complete, the grid will not be updated but the value will be stored)
-    void loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y);
+    void loadConstructedPoint(std::vector<double> const &x, std::vector<double> const &y);
     //! \brief Same as \b loadConstructedPoint() but using arrays in place of vectors (array size is not checked)
     void loadConstructedPoint(const double x[], const double y[]);
     //! \brief End the procedure, clears flags and unused constructed points, can go back to using regular refinement
     void finishConstruction();
 
     const double* getHierarchicalCoefficients() const; // formerly getSurpluses();  returns an alias to internal data structure
-    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
-    void evaluateSparseHierarchicalFunctions(const double x[], int num_x, int* &pntr, int* &indx, double* &vals) const;
-    void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
+    void setHierarchicalCoefficients(const std::vector<double> &c);
     void setHierarchicalCoefficients(const double c[]);
 
-    void evaluateHierarchicalFunctions(const std::vector<double> &x, std::vector<double> &y) const;
-    void setHierarchicalCoefficients(const std::vector<double> &c);
+    void evaluateHierarchicalFunctions(std::vector<double> const &x, std::vector<double> &y) const;
+    std::vector<double> evaluateHierarchicalFunctions(std::vector<double> const &x) const{
+        std::vector<double> y;
+        evaluateHierarchicalFunctions(x, y);
+        return y;
+    }
+    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
-    void getGlobalPolynomialSpace(bool interpolation, int &num_indexes, int* &poly) const;
+    void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
+
+    std::vector<int> getGlobalPolynomialSpace(bool interpolation) const;
 
     void printStats(std::ostream &os = std::cout) const;
 
@@ -244,7 +264,7 @@ public:
     int getGPUID() const;
     static int getNumGPUs();
     static int getGPUMemory(int gpu); // returns the MB of a given GPU
-    static char* getGPUName(int gpu); // returns a null-terminated char array
+    static std::string getGPUName(int gpu); // returns a null-terminated char array
 
     // functions assuming vectors are pre-allocated on the GPU (stable for the implemented cases)
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const; // does not work for Global or LocalPolynomial with order > 2
@@ -258,7 +278,7 @@ public:
 
 
     // EXPERIMENTAL: works only for LocalPolynomial grids (will be moved to sequences and others)
-    void removePointsByHierarchicalCoefficient(double tolerance, int output = -1, const double *scale_correction = 0); // have python error tests, but needs math consistency test
+    void removePointsByHierarchicalCoefficient(double tolerance, int output = -1, const double *scale_correction = nullptr); // have python error tests, but needs math consistency test
 
 
     // WARNING: the functions below are mostly for debugging and research purposes
@@ -295,11 +315,11 @@ protected:
     #endif
     void formTransformedPoints(int num_points, double x[]) const; // when calling get***Points()
 
-    void writeAscii(std::ofstream &ofs) const;
-    void readAscii(std::ifstream &ifs);
+    void writeAscii(std::ostream &ofs) const;
+    void readAscii(std::istream &ifs);
 
-    void writeBinary(std::ofstream &ofs) const;
-    void readBinary(std::ifstream &ifs);
+    void writeBinary(std::ostream &ofs) const;
+    void readBinary(std::istream &ifs);
 
 private:
     std::unique_ptr<BaseCanonicalGrid> base;
@@ -309,15 +329,62 @@ private:
     std::vector<int> llimits;
 
     TypeAcceleration acceleration;
-    int gpuID;
+    int gpu_id;
 
     bool usingDynamicConstruction;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaEngine> engine;
-    mutable AccelerationDomainTransform acc_domain;
+    mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
     #endif
 };
+
+inline TasmanianSparseGrid
+makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
+               std::vector<int> const &anisotropic_weights = std::vector<int>(), double alpha = 0.0, double beta = 0.0,
+               const char* custom_filename = nullptr, std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeGlobalGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid
+makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
+                 std::vector<int> const &anisotropic_weights = std::vector<int>(), std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeSequenceGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid
+makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order = 1, TypeOneDRule rule = rule_localp, std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeLocalPolynomialGrid(dimensions, outputs, depth, order, rule, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid
+makeWaveletGrid(int dimensions, int outputs, int depth, int order = 1, std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeWaveletGrid(dimensions, outputs, depth, order, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid
+makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type,
+                std::vector<int> const &anisotropic_weights = std::vector<int>(), std::vector<int> const &level_limits = std::vector<int>()){
+    TasmanianSparseGrid grid;
+    grid.makeFourierGrid(dimensions, outputs, depth, type, anisotropic_weights, level_limits);
+    return grid;
+}
+
+inline TasmanianSparseGrid readGrid(const char *filename){
+    TasmanianSparseGrid grid;
+    grid.read(filename);
+    return grid;
+}
+
+inline TasmanianSparseGrid readGrid(std::string const &filename){ return readGrid(filename.c_str()); }
 #endif // Doxygen skip
 
 }
