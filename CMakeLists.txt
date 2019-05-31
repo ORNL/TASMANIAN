@@ -151,55 +151,12 @@ endif()
 
 
 ########################################################################
-# Skip test post-install, exports and package config,
-# in the case when Tasmanian is merged into an external master project.
-# The master should be responsible for such testing and exporting
+# Tasmanian is merged into an external master project then skip the exports
+# The master should be responsible for post-install testing and exporting
 ########################################################################
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-########################################################################
-# Testing: post install, make test_install
-# checks if the executables run and if the examples compile and run
-########################################################################
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Testing/test_post_install.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh")
-    if (Tasmanian_ENABLE_FORTRAN)
-        add_custom_target(test_install COMMAND "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh"
-                                               "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}")
-    else()
-        add_custom_target(test_install COMMAND "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh"
-                                               "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
-    endif()
-
-########################################################################
-# Install exports, package-config files, and examples cmake file
-########################################################################
-    install(EXPORT "${Tasmanian_export_name}" DESTINATION "lib/${CMAKE_PROJECT_NAME}" FILE "${CMAKE_PROJECT_NAME}.cmake")
-
-    configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianConfig.in.cmake"
-                                  "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.cmake"
-                                  INSTALL_DESTINATION "lib/Tasmanian/")
-    write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfigVersion.cmake"
-                                     COMPATIBILITY AnyNewerVersion)
-    # not sure why it is necessary to explicitly install TasmanianConfig.cmake, INSTALL_DESTINATION above doesn't work
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.cmake"
-            DESTINATION "lib/Tasmanian/"
-            PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfigVersion.cmake"
-            DESTINATION "lib/Tasmanian/"
-            PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
-
-    # cmake file for the examples, to be used post-install
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.txt" "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt"
-            DESTINATION "share/Tasmanian/examples/"
-            PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+    include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/exports.cmake")
 endif()
-
-
-# configure environment shell script that can be sourced to set path and lib path
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianENVsetup.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianENVsetup.sh" @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianENVsetup.sh"
-        DESTINATION "share/Tasmanian/"
-        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 
 ########################################################################
