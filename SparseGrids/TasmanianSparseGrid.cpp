@@ -99,6 +99,7 @@ void TasmanianSparseGrid::write(const char *filename, bool binary) const{
     }else{
         ofs.open(filename);
     }
+    if (!ofs.good()) throw std::runtime_error(std::string("ERROR: occurred when trying to write to file: ") + filename);
     write(ofs, binary);
     ofs.close();
 }
@@ -107,6 +108,7 @@ void TasmanianSparseGrid::read(const char *filename){
     char TSG[3];
     bool binary_format = false;
     ifs.open(filename, std::ios::in | std::ios::binary);
+    if (!ifs.good()) throw std::runtime_error(std::string("ERROR: occurred when trying to open file: ") + filename);
     ifs.read(TSG, 3 * sizeof(char));
     if ((TSG[0] == 'T') && (TSG[1] == 'S') && (TSG[2] == 'G')){
         binary_format = true;
@@ -117,6 +119,7 @@ void TasmanianSparseGrid::read(const char *filename){
     }else{
         ifs.open(filename);
     }
+    if (!ifs.good()) throw std::runtime_error(std::string("ERROR: occurred when trying to open file: ") + filename);
     read(ifs, binary_format);
     ifs.close();
 }
