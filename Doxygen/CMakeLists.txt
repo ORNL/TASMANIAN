@@ -2,7 +2,7 @@ find_package(Doxygen REQUIRED OPTIONAL_COMPONENTS dot)
 
 set(DOXYGEN_GENERATE_HTML      "YES")
 set(DOXYGEN_DISABLE_INDEX       "NO")
-set(DOXYGEN_GENERATE_TREEVIEW  "YES") # left-hand index
+set(DOXYGEN_GENERATE_TREEVIEW   "YES") # left-hand index
 set(DOXYGEN_SORT_GROUP_NAMES    "NO") # disable automatic sorting
 set(DOXYGEN_SORT_MEMBER_DOCS    "NO") # use the order in the source files (logical order)
 set(DOXYGEN_SORT_BRIEF_DOCS     "NO") # which is more logical than the alphabetical one
@@ -15,17 +15,23 @@ if (Tasmanian_ENABLE_CUDA)
     list(APPEND DOXYGEN_PREDEFINED "Tasmanian_ENABLE_CUDA")
 endif()
 
+
 set(DOXYGEN_HTML_EXTRA_STYLESHEET  ${CMAKE_CURRENT_SOURCE_DIR}/tasmanian.css)
-set(DOXYGEN_HTML_COLORSTYLE_HUE    "110") # green-ish pages
-set(DOXYGEN_HTML_COLORSTYLE_SAT    "100")
-set(DOXYGEN_HTML_COLORSTYLE_GAMMA  "240")
+set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/header.html")
+set(DOXYGEN_HTML_FOOTER "${CMAKE_CURRENT_SOURCE_DIR}/footer.html")
+set(DOXYGEN_HTML_COLORSTYLE_HUE    "175") # green-ish pages
+set(DOXYGEN_HTML_COLORSTYLE_SAT    "50")
+set(DOXYGEN_HTML_COLORSTYLE_GAMMA  "20")
+
+
+set(IMAGE_PATH "images")
 
 set(DOXYGEN_FORMULA_FONTSIZE "16")
 
 set(DOXYGEN_PROJECT_NAME   "Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN: ${PROJECT_NAME} v${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
 set(DOXYGEN_PROJECT_NUMBER "") # if project number is given, the rendered font is too small
 
-set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
+set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "README.md")
 
 set(DOXYGEN_EXAMPLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../") # finding the examples for all modules requires the use of the root dir
 
