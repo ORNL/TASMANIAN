@@ -18,9 +18,14 @@ TABLE OF CONTENTS
 2 - GLOBAL
 ******************************************************************************/
 
+html, 
+body, 
+#doc-content {
+        height: 100% !important;
+}
+
 html {
-        font-size: 16px;
-        background: url('https://tasmanian.ornl.gov/assets/webtreatsetc-starfield-patterns/JPGS/backgrounsetc-starfield-4.jpg') fixed repeat;
+        font-size: 13px;
 }
 
 div.headertitle, div.contents, #main-nav, #projectname {
@@ -28,6 +33,12 @@ div.headertitle, div.contents, #main-nav, #projectname {
         margin: 1em auto;
         display: block;
         clear: both;
+}
+
+#side-nav,
+#doc-content, 
+#nav-tree {
+        background: #fff; 
 }
 
 
@@ -58,22 +69,35 @@ h1, h2, h3, h4, h5, h6 {
         width: 100%;
         text-align: center;
         background: url('https://tasmanian.ornl.gov/assets/webtreatsetc-starfield-patterns/JPGS/backgrounsetc-starfield-4.jpg') fixed repeat;
-        height: 200px;
 }
 
 #projectname {
-        font-size: 2em;
+        font-size: 1.25em;
         color: #fff;
         text-shadow: #000 6px 4px 50px;
 }
 
+.doxygen {
+        position: absolute;
+        color: #fff;
+        background: rgba(255, 255, 255, .5);
+        padding: 5px;
+        border-radius: 10px;
+        font-size: .75em;
+        right: 10px;
+        top: 10px;
+}
+
+.doxygen img {
+        width: 60px;
+}
 
 /******************************************************************************
 3.2 - Search
 ******************************************************************************/
 
 #MSearchField, #MSearchBox .right, #MSearchBox .left {
-        background: none;
+        background: #fff;
 }
 
 #MSearchField {
@@ -82,49 +106,30 @@ h1, h2, h3, h4, h5, h6 {
         padding-bottom: .5em;
 }
 
-#MSearchBox .left,
-#MSearchField{
-        width: 95%
+#MSearchBox {
+        width: 50%;
+        position: relative;
+        background: #fff;
+        margin: 10px auto 0;
+        height: 30px;
+        border-radius: 10px;
+        overflow: hidden;
 }
 
-@media only screen and (max-width: 856px) {
-        .sm-dox li[style*="float:right"] {
-          width: 100%;
-          float:left;
-        }
-
-        #MSearchBox .left {
-                width: 100%;
-        }
-
-        #MSearchField {
-                width: 97%;
-                position: relative;
-        }
-
-        #MSearchResultsWindow {
-                width: 100%;
-                left: 0 !important;
-                box-shadow: 2px 2px 10px rgba(0, 0, 0, .75);
-                border: none;
-                border-bottom: 1px solid #000;
-        }
-
-        iframe#MSearchResults {
-                width: 100%;
-        }
-
-        #SRIndex {
-                padding:1em 1em 15px;
-        }
+#MSearchBox .left{
+        position: relative;
+    top: 5px;
 }
+
 
 /******************************************************************************
 3.3 - MAIN MENU (TOP)
 ******************************************************************************/
 
 #main-nav {
-        padding: 1em 0;
+        padding: 0;
+        margin: 0;
+        display: none;
 }
 
 .sm-dox {
@@ -157,7 +162,10 @@ h1, h2, h3, h4, h5, h6 {
 
 #top {
         border-bottom: 1px solid rgba(126, 88, 38, .75);
+        background: url('https://tasmanian.ornl.gov/assets/webtreatsetc-starfield-patterns/JPGS/backgrounsetc-starfield-4.jpg') fixed repeat;
 }
+
+
 
 
 /******************************************************************************
@@ -188,13 +196,6 @@ div#nav-tree {
         border-right: 1px solid rgba(126, 88, 38, .75);
         background: none;
        
-}
-
-
-@media only screen and (max-width: 767px) {
-        div#side-nav {
-          display: none;
-        }
 }
 
 /******************************************************************************
@@ -241,6 +242,10 @@ div.summary a {
 /******************************************************************************
 4 - CONTENT
 ******************************************************************************/
+.PageDoc {
+        position: relative;
+        top: -16px;
+}
 
 
 /******************************************************************************
@@ -261,11 +266,11 @@ table.memberdecls {
 }
 
 tr.heading h2 {
-        margin-top: 1em;
+        margin-top: .5em;
 }
 
 tr[class^="memitem:"] td {
-        padding: 1em;
+        padding: .5em;
 }
 
 tr[class^="memitem:"] td.memTemplItemLeft, 
@@ -275,13 +280,13 @@ tr[class^="memitem:"] td.memItemLeft {
 }
 
 tr[class^="memdesc:"] td {
-        padding: 1em;
+        padding: .5em;
         border-bottom: 1px solid rgba(0, 0, 0, .10); 
 }
 
 
 tr[class^="separator:"] {
-        height: 2em;
+        height: 1em;
 }
 
 
@@ -321,7 +326,7 @@ address.footer {
         margin-top: 1.5em;
         padding: 3em 0;
         text-align: center;
-        background: url('https://tasmanian.ornl.gov/assets/webtreatsetc-starfield-patterns/JPGS/backgrounsetc-starfield-4.jpg') fixed repeat;
+        background: #fff;
         color: #fff;
         font-size: 1em;
 }
