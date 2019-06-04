@@ -38,7 +38,7 @@ echo "--------------------------------------------------------------------------
 echo " Test 2: compile and run the C++ examples"
 echo "--------------------------------------------------------------------------------"
 echo 'Building  "cmake @CMAKE_INSTALL_PREFIX@/share/Tasmanian/examples"'
-cmake $1 @CMAKE_INSTALL_PREFIX@/share/Tasmanian/examples || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
+@CMAKE_COMMAND@ $1 @CMAKE_INSTALL_PREFIX@/share/Tasmanian/examples || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
 echo 'Compiling "make"'
 make || { echo "ERROR: Could not compile the C++ examples"; exit 1; }
 echo 'Executing "./example_sparse_grids" SKIP WILL FIX THE EXAMPLES LATER'
