@@ -29,6 +29,16 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfigVersion.cma
         DESTINATION "lib/Tasmanian/"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
+# TasmanianMake.in for GNU Make include/link
+get_target_property(Tasmanian_list Tasmanian_libsparsegrid INTERFACE_LINK_LIBRARIES)
+foreach(Tasmanian_lib_ ${Tasmanian_list})
+    set(Tasmanian_libs "${Tasmanian_libs} ${Tasmanian_lib_}")
+endforeach()
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianMakefile.in" "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianMakefile.in" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianMakefile.in"
+        DESTINATION "share/Tasmanian/"
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+
 # cmake file for the examples, to be used post-install
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.txt" "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt"
