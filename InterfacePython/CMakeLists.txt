@@ -134,7 +134,12 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
 
 # Create symlink for backward compatibility
-install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${Tasmanian_python_install_path} ${Tasmanian_PYTHONPATH} )" )
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    # Windows does not support sym-link, but it is still beneficial to have a version independent python module
+    install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py ${Tasmanian_PYTHONPATH}/TasmanianSG.py )" )
+else()
+    install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${Tasmanian_python_install_path} ${Tasmanian_PYTHONPATH} )" )
+endif()
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py"
         DESTINATION "share/Tasmanian/examples/"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
