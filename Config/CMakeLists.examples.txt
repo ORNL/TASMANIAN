@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.10)
 project(Tasmanian_Examples)
 
 # if given the Tasmanian install path, find_package() can be used to include the correct version of Tasmanian with all targets
