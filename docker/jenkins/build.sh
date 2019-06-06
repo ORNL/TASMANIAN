@@ -54,7 +54,7 @@ else
     exit 1
 fi
 make -j${NPROC}
-ctest -j1 --no-compress-output -V -T Test
+ctest -j${NPROC} --no-compress-output -T Test
 make install
 make test_install
 
