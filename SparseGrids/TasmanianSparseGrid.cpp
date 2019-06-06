@@ -1227,6 +1227,8 @@ const int* TasmanianSparseGrid::getPointsIndexes() const{
         return getGridGlobal()->getPointIndexes();
     }else if (isSequence()){
         return getGridSequence()->getPointIndexes();
+    }else if (isFourier()){
+        return getGridFourier()->getPointIndexes();
     }else{
         throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is neither Local Polynomial, nor Wavelet, nor Sequence");
     }
