@@ -91,7 +91,6 @@ public:
     void clearRefinement();
     void mergeRefinement();
 
-    const int* getPointIndexes() const;
     const double* getFourierCoefs() const;
 
 protected:

@@ -521,9 +521,6 @@ void GridFourier::clearAccelerationData(){
 void GridFourier::clearRefinement(){ return; }     // to be expanded later
 void GridFourier::mergeRefinement(){ return; }     // to be expanded later
 
-const int* GridFourier::getPointIndexes() const{
-    return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
-}
 const double* GridFourier::getFourierCoefs() const{
     return fourier_coefs.getStrip(0);
 }

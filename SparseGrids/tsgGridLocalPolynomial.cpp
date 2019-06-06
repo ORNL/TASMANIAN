@@ -1268,9 +1268,6 @@ void GridLocalPolynomial::clearRefinement(){ needed = MultiIndexSet(); }
 const double* GridLocalPolynomial::getSurpluses() const{
     return surpluses.getVector().data();
 }
-const int* GridLocalPolynomial::getPointIndexes() const{
-    return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
-}
 const int* GridLocalPolynomial::getNeededIndexes() const{
     return (needed.empty()) ? 0 : needed.getIndex(0);
 }

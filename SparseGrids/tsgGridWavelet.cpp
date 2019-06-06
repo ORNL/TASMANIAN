@@ -614,9 +614,6 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     evaluateBatch(x.data(), points.getNumIndexes(), values.getValues(0));
 }
 
-const int* GridWavelet::getPointIndexes() const{
-    return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
-}
 void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits){
     clearRefinement();
 

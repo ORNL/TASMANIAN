@@ -112,7 +112,6 @@ public:
     void setFavorSparse(bool favor);
 
     const double* getSurpluses() const;
-    const int* getPointIndexes() const;
     const int* getNeededIndexes() const;
 
     void buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const;

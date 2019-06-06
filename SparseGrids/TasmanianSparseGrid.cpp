@@ -1219,18 +1219,10 @@ const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
     }
 }
 const int* TasmanianSparseGrid::getPointsIndexes() const{
-    if (isLocalPolynomial()){
-        return getGridLocalPolynomial()->getPointIndexes();
-    }else if (isWavelet()){
-        return getGridWavelet()->getPointIndexes();
-    }else if (isGlobal()){
-        return getGridGlobal()->getPointIndexes();
-    }else if (isSequence()){
-        return getGridSequence()->getPointIndexes();
-    }else if (isFourier()){
-        return getGridFourier()->getPointIndexes();
+    if (empty()){
+        throw std::runtime_error("ERROR: getPointIndexes() called for a grid that has not been initialized");
     }else{
-        throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is neither Local Polynomial, nor Wavelet, nor Sequence");
+        return base->getPointIndexes();
     }
 }
 const int* TasmanianSparseGrid::getNeededIndexes() const{

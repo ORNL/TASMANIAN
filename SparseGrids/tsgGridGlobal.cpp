@@ -891,9 +891,6 @@ MultiIndexSet GridGlobal::getPolynomialSpaceSet(bool interpolation) const{
 std::vector<int> GridGlobal::getPolynomialSpace(bool interpolation) const{
     return std::move(getPolynomialSpaceSet(interpolation).getVector());
 }
-const int* GridGlobal::getPointIndexes() const{
-    return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
-}
 
 }
 
