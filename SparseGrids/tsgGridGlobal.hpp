@@ -110,8 +110,6 @@ public:
 
     std::vector<int> getPolynomialSpace(bool interpolation) const;
 
-    const int* getPointIndexes() const;
-
 protected:
     void reset(bool includeCustom);
 

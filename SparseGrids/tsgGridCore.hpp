@@ -67,6 +67,7 @@ public:
     int getNumLoaded() const{ return (num_outputs == 0) ? 0 : points.getNumIndexes(); }
     int getNumNeeded() const{ return needed.getNumIndexes(); }
     int getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
+    const int* getPointIndexes() const{ return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0)); }
 
     virtual void getLoadedPoints(double *x) const = 0;
     virtual void getNeededPoints(double *x) const = 0;

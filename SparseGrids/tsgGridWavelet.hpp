@@ -86,7 +86,6 @@ public:
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
     const double* getSurpluses() const;
-    const int* getPointIndexes() const;
 
     void clearAccelerationData();
 

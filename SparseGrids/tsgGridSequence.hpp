@@ -106,7 +106,6 @@ public:
     std::vector<int> getPolynomialSpace(bool interpolation) const;
 
     const double* getSurpluses() const;
-    const int* getPointIndexes() const;
 
     void clearAccelerationData();
 

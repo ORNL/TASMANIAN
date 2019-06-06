@@ -745,9 +745,6 @@ std::vector<int> GridSequence::getPolynomialSpace(bool interpolation) const{
 const double* GridSequence::getSurpluses() const{
     return surpluses.getVector().data();
 }
-const int* GridSequence::getPointIndexes() const{
-    return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0));
-}
 
 void GridSequence::prepareSequence(int num_external){
     int mp = 0, mn = 0, max_level;
