@@ -18,10 +18,12 @@ TABLE OF CONTENTS
 2 - GLOBAL
 ******************************************************************************/
 
-html, 
-body, 
-#doc-content {
+html, body {
         height: 100% !important;
+}
+
+#doc-content {
+        height: 100% - 56px
 }
 
 html {
@@ -29,16 +31,16 @@ html {
 }
 
 div.headertitle, div.contents, #main-nav, #projectname {
-        width: 90%;
+        width: 95%;
         margin: 1em auto;
         display: block;
         clear: both;
 }
 
 #side-nav,
-#doc-content, 
+#doc-content,
 #nav-tree {
-        background: #fff; 
+        background: #fff;
 }
 
 
@@ -180,12 +182,12 @@ div#side-nav {
 div#side-nav:not([style*="width"]):hover {
         transition: width .25s;
         width: 3px;
-} 
+}
 */
 
 #nav-sync {
         display: none;
-        
+
 }
 
 div#nav-tree {
@@ -195,7 +197,7 @@ div#nav-tree {
 .ui-resizable-handle.ui-resizable-e {
         border-right: 1px solid rgba(126, 88, 38, .75);
         background: none;
-       
+
 }
 
 /******************************************************************************
@@ -213,7 +215,7 @@ div.navpath {
 
 div.header{
         background-image: none;
-        background: #efefef; 
+        background: #efefef;
         border-bottom: none;
         margin-bottom: 1em;
 }
@@ -273,7 +275,7 @@ tr[class^="memitem:"] td {
         padding: .5em;
 }
 
-tr[class^="memitem:"] td.memTemplItemLeft, 
+tr[class^="memitem:"] td.memTemplItemLeft,
 tr[class^="memitem:"] td.memItemLeft {
         background: rgba(126, 88, 38, .45);
         color: #fff;
@@ -281,7 +283,7 @@ tr[class^="memitem:"] td.memItemLeft {
 
 tr[class^="memdesc:"] td {
         padding: .5em;
-        border-bottom: 1px solid rgba(0, 0, 0, .10); 
+        border-bottom: 1px solid rgba(0, 0, 0, .10);
 }
 
 
