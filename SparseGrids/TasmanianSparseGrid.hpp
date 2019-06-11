@@ -50,7 +50,13 @@
  * \defgroup TasmanianSG Sparse Grids
  *
  * \par Sparse Grids
- * A family of algorithms for multidimensional integration and interpolation ...
+ * A family of algorithms for multidimensional integration and interpolation
+ * where the operator is constructed as a linear combination of tensors
+ * with different number of points in each direction.
+ * The combination of tensors is chosen to include a specific function space
+ * that is optimal for approximation of the target model.
+ * For more details of the sparse grid construction, refer to the
+ * .pdf manual available at [http://tasmanian.ornl.gov/](http://tasmanian.ornl.gov/)
  */
 
 /*!
