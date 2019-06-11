@@ -1306,6 +1306,7 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     int num_kept = 0; for(int i=0; i<num_points; i++) num_kept += (pmap[i]) ? 1 : 0;
 
     if (num_kept == num_points) return num_points; // trivial case, remove nothing
+    clearAccelerationData();
 
     // save a copy of the points and the values
     Data2D<int> point_kept(num_dimensions, num_kept);
@@ -1314,11 +1315,14 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     values_kept.resize(num_outputs, num_kept);
     values_kept.getVector().resize(Utils::size_mult(num_kept, num_outputs));
 
+    Data2D<double> surpluses_kept(num_outputs, num_kept);
+
     num_kept = 0;
     for(int i=0; i<num_points; i++){
         if (pmap[i]){
             std::copy_n(points.getIndex(i), num_dimensions, point_kept.getStrip(num_kept));
             std::copy_n(values.getValues(i), num_outputs, values_kept.getValues(num_kept));
+            std::copy_n(surpluses.getStrip(i), num_outputs, surpluses_kept.getStrip(num_kept));
             num_kept++;
         }
     }
@@ -1334,8 +1338,9 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
 
     values = std::move(values_kept);
 
+    surpluses = std::move(surpluses_kept);
+
     buildTree();
-    recomputeSurpluses();
 
     return points.getNumIndexes();
 }

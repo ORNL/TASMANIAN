@@ -277,8 +277,17 @@ public:
     void evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const;
 
 
-    // EXPERIMENTAL: works only for LocalPolynomial grids (will be moved to sequences and others)
-    void removePointsByHierarchicalCoefficient(double tolerance, int output = -1, const double *scale_correction = nullptr); // have python error tests, but needs math consistency test
+    /*!
+     * \brief Removes all points from the grid that have relative surplus less than the \b tolerance.
+     *
+     * The \b output and \b scale_correction variables have the same effects as in the call to \b setSurplusRefinement().
+     * The purpose of this call is to reduce the number of points and thus the memory footprint of the grid.
+     * As such, points will be removed with no regard of preserving lower completeness or connectivity of the hierarchical graphs;
+     * therefore, it is possible that the grid no longer has a valid state with respect to the update and refinement algorithms.
+     * Calling \b loadNeededPoints() or any refinement or construction method after the removal of points may lead to undefined behavior;
+     * get, evaluate and file I/O methods can be called safely.
+     */
+    void removePointsByHierarchicalCoefficient(double tolerance, int output = -1, const double *scale_correction = nullptr);
 
 
     // WARNING: the functions below are mostly for debugging and research purposes
