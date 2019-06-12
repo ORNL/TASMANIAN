@@ -68,7 +68,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/tsgDConstructGridGlobal.hpp
                  SparseGrids/tsgSequenceOptimizer.hpp
                  SparseGrids/tsgSequenceOptimizer.cpp
-                 SparseGrids/tsgGridCore.cpp
+                 SparseGrids/tsgGridCore.hpp
                  DREAM/tsgDreamEnumerates.hpp
                  DREAM/tsgDreamState.hpp
                  DREAM/tsgDreamSample.hpp
