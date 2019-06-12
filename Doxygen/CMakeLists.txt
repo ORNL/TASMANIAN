@@ -26,7 +26,7 @@ set(DOXYGEN_HTML_COLORSTYLE_GAMMA  "20")
 
 set(IMAGE_PATH "images")
 
-set(DOXYGEN_FORMULA_FONTSIZE "16")
+set(DOXYGEN_FORMULA_FONTSIZE "14")
 
 set(DOXYGEN_PROJECT_NAME   "Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN: ${PROJECT_NAME} v${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
 set(DOXYGEN_PROJECT_NUMBER "") # if project number is given, the rendered font is too small
@@ -68,7 +68,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/tsgDConstructGridGlobal.hpp
                  SparseGrids/tsgSequenceOptimizer.hpp
                  SparseGrids/tsgSequenceOptimizer.cpp
-                 SparseGrids/tsgGridCore.cpp
+                 SparseGrids/tsgGridCore.hpp
                  DREAM/tsgDreamEnumerates.hpp
                  DREAM/tsgDreamState.hpp
                  DREAM/tsgDreamSample.hpp
