@@ -27,7 +27,7 @@ html, body {
 }
 
 html {
-        font-size: 13px;
+        font-size: 100%;
 }
 
 div.headertitle, div.contents, #main-nav, #projectname {
@@ -58,6 +58,9 @@ h1, h2, h3, h4, h5, h6 {
 
 }
 
+h2 {
+        font-size: 110%;
+}
 
 /******************************************************************************
 3.1 - PAGE TITLE
@@ -237,7 +240,7 @@ div.summary a {
 }
 
 .title {
-        font: 2.5em 'Source Sans Pro', sans-serif;
+        font: 2.0em 'Source Sans Pro', sans-serif;
 }
 
 
