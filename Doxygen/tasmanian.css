@@ -306,6 +306,7 @@ div.fragment {
 
 div.line {
         font-family: 'Courier New', Courier, monospace !important;
+        font-size: 95%;
         margin: .5em auto;
 }
 
