@@ -518,6 +518,76 @@ void GridFourier::clearAccelerationData(){
     cuda_cache.reset();
     #endif
 }
+
+void GridFourier::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
+    double tol = 1000.0 * Maths::num_tol;
+    int num_points = points.getNumIndexes();
+    std::vector<double> max_fcoef(num_points);
+
+    if (output == -1){
+        // normalize in case of outputs with hugely different scaling
+        std::vector<double> nrm(num_outputs, 0.0);
+        for(int i=0; i<num_points; i++){
+            const double *val = values.getValues(i);
+            int k=0;
+            for(auto &n : nrm){
+                double v = std::abs(val[k++]);
+                if (n < v) n = v;
+            }
+        }
+        #pragma omp parallel for
+        for(int i=0; i<num_points; i++){
+            const double *fcreal = fourier_coefs.getStrip(i);
+            const double *fcimag = fourier_coefs.getStrip(i + num_points);
+            double fcmax = 0.0;
+            for(int k=0; k<num_outputs; k++){
+                double v = std::sqrt(fcreal[k] * fcreal[k] + fcimag[k] * fcimag[k]) / nrm[k];
+                if (fcmax < v) fcmax = v;
+            }
+            max_fcoef[i] = fcmax;
+        }
+    }else{
+        int i = 0;
+        for(auto &m : max_fcoef){
+            const double *fcreal = fourier_coefs.getStrip(i);
+            const double *fcimag = fourier_coefs.getStrip(i++ + num_points);
+            m = std::sqrt(fcreal[output] * fcreal[output] + fcimag[output] * fcimag[output]);
+        }
+    }
+
+    int n = 0;
+    int m = num_dimensions + 1;
+    for(int i=0; i<num_points; i++) n += (max_fcoef[i] > tol) ? 1 : 0;
+
+    Data2D<double> A(n,m);
+    std::vector<double> b(n);
+
+    int count = 0;
+    bool ishyperbolic = (OneDimensionalMeta::getControurType(type) == type_hyperbolic);
+    for(int c=0; c<num_points; c++){
+        const int *indx = points.getIndex(c);
+        if (max_fcoef[c] > tol){
+            for(int j=0; j<num_dimensions; j++) A.getStrip(j)[count] = (ishyperbolic) ? log((double) (indx[j]+1)) : ((double) indx[j]);
+            A.getStrip(num_dimensions)[count] = 1.0;
+            b[count++] = -log(max_fcoef[c]);
+        }
+    }
+
+    std::vector<double> x(m);
+    TasmanianDenseSolver::solveLeastSquares(n, m, A.getStrip(0), b.data(), 1.E-5, x.data());
+
+    weights.resize(--m);
+    for(int j=0; j<m; j++) weights[j] = (int)(x[j] * 1000.0 + 0.5);
+
+    int min_weight = *std::max_element(weights.begin(), weights.end()); // start with max weight (placeholder name)
+    if (min_weight < 0){ // all directions are diverging, default to isotropic total degree
+        for(int j=0; j<num_dimensions; j++) weights[j] = 1;
+    }else{
+        for(int j=0; j<num_dimensions; j++) if ((weights[j] > 0) && (weights[j] < min_weight)) min_weight = weights[j]; // find the smallest positive element now
+        for(int j=0; j<num_dimensions; j++) if (weights[j] <= 0) weights[j] = min_weight;
+    }
+}
+
 void GridFourier::clearRefinement(){ return; }     // to be expanded later
 void GridFourier::mergeRefinement(){ return; }     // to be expanded later
 

@@ -88,6 +88,8 @@ public:
     #endif
 
     void clearAccelerationData();
+
+    void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
     void clearRefinement();
     void mergeRefinement();
 
