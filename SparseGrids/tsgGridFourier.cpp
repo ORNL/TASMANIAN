@@ -567,7 +567,7 @@ void GridFourier::estimateAnisotropicCoefficients(TypeDepth type, int output, st
     for(int c=0; c<num_points; c++){
         const int *indx = points.getIndex(c);
         if (max_fcoef[c] > tol){
-            for(int j=0; j<num_dimensions; j++) A.getStrip(j)[count] = (ishyperbolic) ? log((double) (indx[j]+1)) : ((double) indx[j]);
+            for(int j=0; j<num_dimensions; j++) A.getStrip(j)[count] = (ishyperbolic) ? log((double) ((indx[j]+1)/2 + 1)) : ((double) ((indx[j]+1)/2));
             A.getStrip(num_dimensions)[count] = 1.0;
             b[count++] = -log(max_fcoef[c]);
         }
