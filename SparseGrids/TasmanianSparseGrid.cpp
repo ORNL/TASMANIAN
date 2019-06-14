@@ -891,6 +891,8 @@ void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
         }else{
             getGridGlobal()->estimateAnisotropicCoefficients(type, output, weights);
         }
+    }else if (isFourier()){
+        getGridFourier()->estimateAnisotropicCoefficients(type, output, weights);
     }else{
         throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a grid that is neither Sequence nor Global with a sequence rule");
     }

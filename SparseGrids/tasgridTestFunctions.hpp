@@ -262,4 +262,11 @@ public:
     int getNumInputs() const; int getNumOutputs() const; const char* getDescription() const; void eval(const double x[], double y[]) const; void getIntegral(double y[]) const;
 };
 
+class TwoOneC1C2Periodic: public BaseFunction{
+public:
+    TwoOneC1C2Periodic(); ~TwoOneC1C2Periodic();
+
+    int getNumInputs() const; int getNumOutputs() const; const char* getDescription() const; void eval(const double x[], double y[]) const; void getIntegral(double y[]) const;
+};
+
 #endif

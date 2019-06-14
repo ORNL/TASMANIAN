@@ -36,6 +36,20 @@
 
 std::minstd_rand park_miller(10);
 
+void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
+    int num_dimensions = grid.getNumDimensions();
+    int num_outputs    = grid.getNumOutputs();
+    int num_needed     = grid.getNumNeeded();
+    if (num_needed > 0){
+        std::vector<double> points;
+        grid.getNeededPoints(points);
+        std::vector<double> values(num_outputs * num_needed);
+        for(int i=0; i<num_needed; i++)
+            f->eval(&points[i*num_dimensions], &values[i*num_outputs]);
+        grid.loadNeededPoints(values);
+    }
+}
+
 ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1) {}
 ExternalTester::~ExternalTester(){}
 void ExternalTester::resetRandomSeed(){ park_miller.seed(static_cast<long unsigned>(std::time(nullptr))); }
@@ -1301,6 +1315,26 @@ bool ExternalTester::testAllRefinement() const{
 
     cout << "      Refinement                  anisotropic" << setw(15) << ((pass2) ? "Pass" : "FAIL") << endl;
 
+    bool pass5 = true;
+    {
+        const BaseFunction *f = &f21c1c2periodic;
+        grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 8, type_hyperbolic);
+        double transform_a[2] = {-1.0, -1.0};
+        double transform_b[2] = { 1.0,  1.0};
+        grid.setDomainTransform(transform_a, transform_b);
+        loadValues(f, grid);
+
+        std::vector<int> weights;
+        grid.estimateAnisotropicCoefficients(type_hyperbolic, 0, weights);
+        double aniso_ratio = ((double) weights[0]) / ((double) weights[1]);
+        if (std::abs(aniso_ratio - 0.75) > 0.05){
+            pass5 = false;
+            cout << "ERROR: failed estimating anisotropic coefficients for Fourier grid with " << f->getDescription() << endl;
+            cout << "Anisotropy ratio should be 3/4 but instead is " << aniso_ratio << endl;
+        }
+    }
+    cout << "      Estimate anisotropy             Fourier" << setw(15) << ((pass5) ? "Pass" : "FAIL") << endl;
+
     bool pass3 = true;
     {
         const BaseFunction *f = &f21aniso;
@@ -1357,7 +1391,7 @@ bool ExternalTester::testAllRefinement() const{
     }
     cout << "      Construction              dynamic/local" << setw(15) << ((pass4) ? "Pass" : "FAIL") << endl;
 
-    return (pass && pass2 && pass3 && pass4);
+    return (pass && pass2 && pass3 && pass4 && pass5);
 }
 
 bool ExternalTester::testAllDomain() const{
@@ -1927,20 +1961,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     #else
     return true;
     #endif // Tasmanian_ENABLE_CUDA
-}
-
-void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
-    int num_dimensions = grid.getNumDimensions();
-    int num_outputs    = grid.getNumOutputs();
-    int num_needed     = grid.getNumNeeded();
-    if (num_needed > 0){
-        std::vector<double> points;
-        grid.getNeededPoints(points);
-        std::vector<double> values(num_outputs * num_needed);
-        for(int i=0; i<num_needed; i++)
-            f->eval(&points[i*num_dimensions], &values[i*num_outputs]);
-        grid.loadNeededPoints(values);
-    }
 }
 
 bool ExternalTester::testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const{

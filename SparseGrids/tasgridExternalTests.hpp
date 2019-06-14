@@ -149,6 +149,7 @@ private:
     TwoOneConformalOne f21conformal;
     SixteenOneActive3 f16active3;
     Two3KExpSinCos f23Kexpsincos;
+    TwoOneC1C2Periodic f21c1c2periodic;
 };
 
 #endif

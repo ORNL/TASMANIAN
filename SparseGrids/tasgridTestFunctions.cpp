@@ -193,4 +193,9 @@ void Two3KExpSinCos::getIntegral(double y[]) const{
     }
 }
 
+TwoOneC1C2Periodic::TwoOneC1C2Periodic(){} TwoOneC1C2Periodic::~TwoOneC1C2Periodic(){} int TwoOneC1C2Periodic::getNumInputs() const{ return 2; } int TwoOneC1C2Periodic::getNumOutputs() const { return 1; }
+const char* TwoOneC1C2Periodic::getDescription() const{ return "f(x,y) = (x^3-x) + (y^4-2y^2)"; }
+void TwoOneC1C2Periodic::eval(const double x[], double y[]) const { y[0] = x[0] * (x[0] * x[0] - 1.0) + x[1] * x[1] * (x[1] * x[1] - 2.0); } void TwoOneC1C2Periodic::getIntegral(double y[]) const{ y[0] = -28.0 / 15.0; }
+
+
 #endif
