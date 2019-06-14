@@ -127,6 +127,10 @@ void GridFourier::copyGrid(const GridFourier *fourier){
     }
 }
 
+void GridFourier::updateGrid(){ return; }
+
+void GridFourier::selectTensors(){ return; }    // will be used in updateGrid() and makeGrid()
+
 void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
     reset();
     tensors = std::move(tset);
@@ -157,6 +161,10 @@ void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
 
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
+
+void GridFourier::proposeUpdatedTensors(){ return; }
+
+void GridFourier::acceptUpdatedTensors(){ return; }
 
 void GridFourier::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
@@ -588,6 +596,7 @@ void GridFourier::estimateAnisotropicCoefficients(TypeDepth type, int output, st
     }
 }
 
+void GridFourier::setAnisotropicRefinement(){ return; }
 void GridFourier::clearRefinement(){ return; }     // to be expanded later
 void GridFourier::mergeRefinement(){ return; }     // to be expanded later
 
