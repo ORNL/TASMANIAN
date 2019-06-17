@@ -1311,6 +1311,28 @@ bool ExternalTester::testAllRefinement() const{
         if (!testAnisotropicRefinement(f, &grid, type_ipcurved, 1, np, errs, 7)){
             cout << "ERROR: failed anisotropic refinement using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
         }
+    }{
+        const BaseFunction *f = &f21c1c2periodic;
+        grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_hyperbolic);
+        double transform_a[2] = {-1.0, -1.0};
+        double transform_b[2] = { 1.0,  1.0};
+        grid.setDomainTransform(transform_a, transform_b);
+        int np[5] = { 17, 35, 111, 273, 759 };
+        double errs[5] = { 1.28e-2, 2.80e-3, 1.97e-4, 6.78e-5, 5.65e-5 };
+        if (!testAnisotropicRefinement(f, &grid, type_hyperbolic, 1, np, errs, 5)){
+            cout << "ERROR: failed anisotropic refinement using Fourier hyperbolic nodes for " << f->getDescription() << endl;  pass2 = false;
+        }
+    }{
+        const BaseFunction *f = &f21c1c2periodic;
+        grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_level);
+        double transform_a[2] = {-1.0, -1.0};
+        double transform_b[2] = { 1.0,  1.0};
+        grid.setDomainTransform(transform_a, transform_b);
+        int np[5] = { 81, 135, 297, 819, 945 };
+        double errs[5] = { 1.32e-3, 1.90e-4, 6.73e-5, 5.66e-5, 2.19e-6 };
+        if (!testAnisotropicRefinement(f, &grid, type_level, 1, np, errs, 5)){
+            cout << "ERROR: failed anisotropic refinement using Fourier level nodes for " << f->getDescription() << endl;  pass2 = false;
+        }
     }
 
     cout << "      Refinement                  anisotropic" << setw(15) << ((pass2) ? "Pass" : "FAIL") << endl;
