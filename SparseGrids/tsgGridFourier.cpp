@@ -61,7 +61,12 @@ template<bool useAscii> void GridFourier::write(std::ostream &os) const{
         if (fourier_coefs.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(fourier_coefs.getVector(), os);
     }
 
-    IO::writeFlag<useAscii, IO::pad_line>(false, os);
+    IO::writeFlag<useAscii, IO::pad_line>(!updated_tensors.empty(), os);
+    if (!updated_tensors.empty()){
+        updated_tensors.write<useAscii>(os);
+        updated_active_tensors.write<useAscii>(os);
+        IO::writeVector<useAscii, IO::pad_line>(updated_active_w, os);
+    }
 }
 template<bool useAscii> void GridFourier::read(std::istream &is){
     reset();
@@ -85,9 +90,20 @@ template<bool useAscii> void GridFourier::read(std::istream &is){
             fourier_coefs = IO::readData2D<useAscii, double>(is, num_outputs, 2 * points.getNumIndexes());
     }
 
-    if (IO::readFlag<useAscii>(is)) throw std::runtime_error("ERROR: refinement not implemented for Fourier grids.");
+    int oned_max_level;
+    if (IO::readFlag<useAscii>(is)){
+        updated_tensors.read<useAscii>(is);
+        oned_max_level = updated_tensors.getMaxIndex();
 
-    wrapper.load(CustomTabulated(), *std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
+        updated_active_tensors.read<useAscii>(is);
+
+        updated_active_w.resize((size_t) updated_active_tensors.getNumIndexes());
+        IO::readVector<useAscii>(is, updated_active_w);
+    }else{
+        oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
+    }
+
+    wrapper.load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
 
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
