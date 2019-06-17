@@ -190,26 +190,26 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         std::vector<double> result_true(num_mc * num_outputs);
         setRandomX(num_dimensions * num_mc, test_x.data());
 
-		#pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
-		for(int i=0; i<num_mc; i++){
-			grid->evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_outputs]));
-			f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_outputs]));
-		}
+        #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
+        for(int i=0; i<num_mc; i++){
+            grid->evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_outputs]));
+            f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_outputs]));
+        }
 
-		for(int i=0; i<num_mc; i++){
-			for(int k=0; k<num_outputs; k++){
+        for(int i=0; i<num_mc; i++){
+            for(int k=0; k<num_outputs; k++){
                 double nrmik = std::abs(result_true[i * num_outputs + k]);
                 double errik = std::abs(result_true[i * num_outputs + k] - result_tasm[i * num_outputs + k]);
                 if (nrm[k] < nrmik) nrm[k] = nrmik;
                 if (err[k] < errik) err[k] = errik;
-			}
-		}
+            }
+        }
 
-		double rel_err = 0.0; // relative error
-		for(int k=0; k<num_outputs; k++){
+        double rel_err = 0.0; // relative error
+        for(int k=0; k<num_outputs; k++){
             double relative_errork = err[k] / nrm[k];
-			if (rel_err < relative_errork) rel_err = relative_errork;
-		}
+            if (rel_err < relative_errork) rel_err = relative_errork;
+        }
 
         R.error = rel_err;
     }

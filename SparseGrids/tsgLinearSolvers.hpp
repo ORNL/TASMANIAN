@@ -130,7 +130,7 @@ public:
     int getNumRows() const;
 
     //! \brief Solve `op(A) x = b` where `op` is either identity (find the coefficients) or transpose (find the interpolation weights).
-	void solve(const double b[], double x[], bool transposed = false) const;
+    void solve(const double b[], double x[], bool transposed = false) const;
 
 protected:
     //! \brief Clear the internal data structures (maybe not needed?)

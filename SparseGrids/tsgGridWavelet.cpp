@@ -183,20 +183,20 @@ void GridWavelet::getPoints(double *x) const{
 void GridWavelet::getQuadratureWeights(double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
-	#pragma omp parallel for
-	for(int i=0; i<num_points; i++){
-		weights[i] = evalIntegral(work.getIndex(i));
-	}
-	solveTransposed(weights);
+    #pragma omp parallel for
+    for(int i=0; i<num_points; i++){
+        weights[i] = evalIntegral(work.getIndex(i));
+    }
+    solveTransposed(weights);
 }
 void GridWavelet::getInterpolationWeights(const double x[], double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
-	#pragma omp parallel for
-	for(int i=0; i<num_points; i++){
+    #pragma omp parallel for
+    for(int i=0; i<num_points; i++){
         weights[i] = evalBasis(work.getIndex(i), x);
-	}
-	solveTransposed(weights);
+    }
+    solveTransposed(weights);
 }
 void GridWavelet::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
@@ -388,7 +388,7 @@ void GridWavelet::recomputeCoefficients(){
 
     std::vector<double> b(num_points), x(num_points);
 
-	for(int output = 0; output < num_outputs; output++){
+    for(int output = 0; output < num_outputs; output++){
         // Copy relevant portion
         std::fill(x.begin(), x.end(), 0.0);
         std::fill(b.begin(), b.end(), 0.0);

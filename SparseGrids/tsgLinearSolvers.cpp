@@ -332,12 +332,12 @@ void SparseMatrix::computeILU(){
     indxD.resize(num_rows);
     ilu.resize(pntr[num_rows]);
     for(int i=0; i<num_rows; i++){
-		int j = pntr[i];
-		while(indx[j] < i){ j++; };
-		indxD[i] = j;
-	}
+        int j = pntr[i];
+        while(indx[j] < i){ j++; };
+        indxD[i] = j;
+    }
 
-	ilu = vals;
+    ilu = vals;
 
     for(int i=0; i<num_rows-1; i++){
         double u = ilu[indxD[i]];
