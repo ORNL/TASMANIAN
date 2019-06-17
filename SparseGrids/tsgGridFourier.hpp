@@ -189,6 +189,11 @@ private:
     MultiIndexSet tensors;
     MultiIndexSet active_tensors;
     std::vector<int> active_w;
+
+    MultiIndexSet updated_tensors;
+    MultiIndexSet updated_active_tensors;
+    std::vector<int> updated_active_w;
+
     std::vector<int> max_levels;
 
     Data2D<double> fourier_coefs;
