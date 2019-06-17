@@ -47,6 +47,7 @@ public:
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void copyGrid(const GridFourier *fourier);
+    void updateGrid();
 
     void setTensors(MultiIndexSet &&tset, int cnum_outputs);
 
@@ -90,6 +91,7 @@ public:
     void clearAccelerationData();
 
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
+    void setAnisotropicRefinement();
     void clearRefinement();
     void mergeRefinement();
 
@@ -98,6 +100,10 @@ public:
 protected:
     void reset();
     void calculateFourierCoefficients();
+
+    void selectTensors();
+    void proposeUpdatedTensors();
+    void acceptUpdatedTensors();
 
     std::vector<std::vector<int>> generateIndexingMap() const;
 
