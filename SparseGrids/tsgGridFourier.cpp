@@ -128,12 +128,7 @@ void GridFourier::reset(){
 }
 
 void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-    setTensors( (OneDimensionalMeta::isExactLevel(type)) ?
-        MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
-                                               [&](int i) -> int{ return i; }, anisotropic_weights, level_limits) :
-        MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
-                                               [&](int i) -> int{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, level_limits),
-    cnum_outputs);
+    setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, level_limits), cnum_outputs);
 }
 
 void GridFourier::copyGrid(const GridFourier *fourier){
@@ -143,9 +138,31 @@ void GridFourier::copyGrid(const GridFourier *fourier){
     }
 }
 
-void GridFourier::updateGrid(){ return; }
+void GridFourier::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+    if ((num_outputs == 0) || points.empty()){
+        makeGrid(num_dimensions, num_outputs, depth, type, anisotropic_weights, level_limits);
+    }else{
+        clearRefinement();
 
-void GridFourier::selectTensors(){ return; }    // will be used in updateGrid() and makeGrid()
+        updated_tensors = selectTensors((size_t) num_dimensions, depth, type, anisotropic_weights, level_limits);
+
+        MultiIndexSet new_tensors = updated_tensors.diffSets(tensors);
+
+        if (!new_tensors.empty()){
+            updated_tensors.addMultiIndexSet(tensors);
+            proposeUpdatedTensors();
+        }
+    }
+}
+
+MultiIndexSet GridFourier::selectTensors(size_t dims, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights,
+                                        std::vector<int> const &level_limits) const{
+    return (OneDimensionalMeta::isExactLevel(type)) ?
+        MultiIndexManipulations::selectTensors(dims, depth, type,
+                                               [&](int i) -> int{ return i; }, anisotropic_weights, level_limits) :
+        MultiIndexManipulations::selectTensors(dims, depth, type,
+                                               [&](int i) -> int{ return OneDimensionalMeta::getIExact(i, rule_fourier); }, anisotropic_weights, level_limits);
+}
 
 void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
     reset();
@@ -178,28 +195,59 @@ void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
 
-void GridFourier::proposeUpdatedTensors(){ return; }
+void GridFourier::proposeUpdatedTensors(){
+    wrapper.load(CustomTabulated(), updated_tensors.getMaxIndex(), rule_fourier, 0.0, 0.0);
 
-void GridFourier::acceptUpdatedTensors(){ return; }
+    std::vector<int> updates_tensor_w = MultiIndexManipulations::computeTensorWeights(updated_tensors);
+    updated_active_tensors = MultiIndexManipulations::createActiveTensors(updated_tensors, updates_tensor_w);
+
+    updated_active_w.reserve(updated_active_tensors.getNumIndexes());
+    for(auto w : updates_tensor_w) if (w != 0) updated_active_w.push_back(w);
+
+    MultiIndexSet new_points = MultiIndexManipulations::generateNestedPoints(updated_tensors,
+                                [&](int l) -> int{ return wrapper.getNumPoints(l); });
+
+    needed = new_points.diffSets(points);
+}
+
+void GridFourier::acceptUpdatedTensors(){
+    if (points.empty()){
+        #ifdef Tasmanian_ENABLE_CUDA
+        clearCudaNodes(); // the points and needed will change, clear the cache
+        #endif
+        points = std::move(needed);
+        needed = MultiIndexSet();
+    }else if (!needed.empty()){
+        points.addMultiIndexSet(needed);
+        needed = MultiIndexSet();
+
+        tensors = std::move(updated_tensors);
+        updated_tensors = MultiIndexSet();
+
+        active_tensors = std::move(updated_active_tensors);
+        updated_active_tensors = MultiIndexSet();
+
+        active_w = std::move(updated_active_w);
+        updated_active_w = std::vector<int>();
+
+        max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
+    }
+}
 
 void GridFourier::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaCoefficients(); // changing values and Fourier coefficients, clear the cache
     #endif
-    if (needed.empty()){
+    if (points.empty() || needed.empty()){
         values.setValues(vals);
     }else{
-        #ifdef Tasmanian_ENABLE_CUDA
-        clearCudaNodes(); // the points and needed will change, clear the cache
-        #endif
-        values.setValues(vals);
-        points = std::move(needed);
-        needed = MultiIndexSet();
-        // other options for the refinement
+        values.addValues(points, needed, vals);
     }
-    max_power = MultiIndexManipulations::getMaxIndexes(points);
 
+    acceptUpdatedTensors();
     calculateFourierCoefficients();
+
+    max_power = MultiIndexManipulations::getMaxIndexes(points);
 }
 
 void GridFourier::getLoadedPoints(double *x) const{
@@ -518,6 +566,8 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     if (points.empty()){
         points = std::move(needed);
         needed = MultiIndexSet();
+    }else{
+        clearRefinement();
     }
     fourier_coefs.resize(num_outputs, 2 * getNumPoints());
     std::copy_n(c, 2 * ((size_t) num_outputs) * ((size_t) getNumPoints()), fourier_coefs.getStrip(0));
@@ -612,9 +662,30 @@ void GridFourier::estimateAnisotropicCoefficients(TypeDepth type, int output, st
     }
 }
 
-void GridFourier::setAnisotropicRefinement(){ return; }
-void GridFourier::clearRefinement(){ return; }     // to be expanded later
-void GridFourier::mergeRefinement(){ return; }     // to be expanded later
+void GridFourier::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
+    clearRefinement();
+    std::vector<int> weights;
+    estimateAnisotropicCoefficients(type, output, weights);
+
+    int level = 0;
+    do{
+        updateGrid(++level, type, weights, level_limits);
+    }while(getNumNeeded() < min_growth);
+}
+
+void GridFourier::clearRefinement(){
+    needed = MultiIndexSet();
+    updated_tensors = MultiIndexSet();
+    updated_active_tensors = MultiIndexSet();
+    updated_active_w = std::vector<int>();
+}
+
+void GridFourier::mergeRefinement(){
+    if (needed.empty()) return; // nothing to do
+    int num_all_points = getNumLoaded() + getNumNeeded();
+    values.setValues(std::vector<double>(Utils::size_mult(num_outputs, num_all_points), 0.0));
+    acceptUpdatedTensors();
+}
 
 const double* GridFourier::getFourierCoefs() const{
     return fourier_coefs.getStrip(0);

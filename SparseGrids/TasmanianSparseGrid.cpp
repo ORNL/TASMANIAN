@@ -871,8 +871,10 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
         }else{
             getGridGlobal()->setAnisotropicRefinement(type, min_growth, output, llimits);
         }
+    }else if (isFourier()){
+        getGridFourier()->setAnisotropicRefinement(type, min_growth, output, llimits);
     }else{
-        throw std::runtime_error("ERROR: setAnisotropicRefinement() called for a grid that is neither Sequence nor Global with a sequence rule");
+        throw std::runtime_error("ERROR: setAnisotropicRefinement() called for a grid that is neither Sequence, nor Global with a sequence rule, nor Fourier");
     }
 }
 

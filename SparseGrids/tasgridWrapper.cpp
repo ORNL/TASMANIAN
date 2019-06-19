@@ -619,8 +619,8 @@ bool TasgridWrapper::refineGrid(){
         }
     }
     if (effective_command == command_refine_aniso){
-        if ((!grid.isGlobal()) && (!grid.isSequence())){
-            cerr << "ERROR: anisotropic refinement can be used only for global and sequence grids!" << endl;
+        if ((!grid.isGlobal()) && (!grid.isSequence()) && (!grid.isFourier())){
+            cerr << "ERROR: anisotropic refinement can be used only for global/sequence/Fourier grids!" << endl;
             return false;
         }
         if (set_tolerance){

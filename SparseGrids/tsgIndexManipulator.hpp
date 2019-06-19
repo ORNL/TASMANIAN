@@ -133,7 +133,7 @@ struct ProperWeights{
                 curved = std::vector<double>(num_dimensions, 1.0);
             }else{
                 linear = std::vector<int>(num_dimensions, 1); // used only for offset normalization
-                double exponent_normalization = (double) std::accumulate(weights.begin(), weights.end(), 0);
+                double exponent_normalization = (double) *std::min_element(weights.begin(), weights.end());
                 curved = std::vector<double>(num_dimensions);
                 std::transform(weights.begin(), weights.end(), curved.begin(),
                                [&](int i)->double{ return ((double) i) / exponent_normalization; });
