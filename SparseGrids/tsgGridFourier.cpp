@@ -368,53 +368,74 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     // However, we consider only the real values (the complex ones add-up to zero), thus we really need A^T (regular transpose)
     // The Fourier transform is symmetric with respect to regular transpose, which leaves only the indexing
     // Take the basis functions, reindex and reorder to a data strucutre, take FFT, reindex and reorder into the weights
+    //
+    //
+    // This code uses a O(N) algorithm instead of an O(N log N) FFT. On a 1D tensor with N=3^l points, we must compute the
+    // Fourier transform of
+    //      {x_n} = e^(2 \pi i x * {0,1,2, ..., (N-1)/2, -(N-1)/2, ..., -2, -1}).           (componentwise operations)
+    // The FFT is
+    //      X[m] = \sum_{j=0}^{N-1} e^{-2 \pi i j m / N} x_n
+    //           = ( \sum_{j=0}^{(N-1)/2} e^{-2 \pi i j m / N} e^{2 \pi i x j} )
+    //                + ( \sum_{j=1}^{(N-1)/2} e^{2 \pi i j m / N} e^{-2 \pi i x j} )
+    //           = 2 * Re[ \sum_{j=0}^{(N-1)/2} e^{-2 \pi i j m / N} e^{2 \pi i x j} ] - 1
+    //           = 2 * Re[ \sum_{j=0}^{(N-1)/2} (e^{2 \pi i (x-m/N)})^j ] - 1
+    //           = 2 * Re[ \frac{1 - e^{2 \pi i (x-m/N) (N+1)/2}}{1 - e^{2 \pi i (x-m/N)}} ] - 1
+    // The cost is mainly driven by evaluating the complex exponentials, so we compute what we can at the beginning and
+    // park it in a cache.
 
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     std::vector<std::vector<int>> index_map = generateIndexingMap();
 
     std::fill(weights, weights + getNumPoints(), 0.0);
 
-    std::vector<std::complex<double>> basisFuncs(work.getNumIndexes());
-    computeBasis<double, true>(work, x, (double*) basisFuncs.data(), 0);
+    // compute what we need for e^{-2 \pi i m / N}
+    int maxl = active_tensors.getMaxIndex() + 1;
+    std::vector<std::vector<std::complex<double>>> expcache(maxl);
+    for(int i=0; i<maxl; i++){
+        int num_oned_points = wrapper.getNumPoints(i);
+        expcache[i].resize(num_oned_points);
+        expcache[i][0] = std::complex<double>(1.0, 0.0);
+        double theta = -2.0 * Maths::pi / ((double) num_oned_points);       // step angle
+        std::complex<double> step(std::cos(theta), std::sin(theta));
+        for(int j=1; j<num_oned_points; j++) expcache[i][j] = expcache[i][j-1] * step;
+    }
+
+    // compute what we need for e^{2 \pi i x (N+1)/2}
+    std::vector<std::vector<std::complex<double>>> numerator_cache(num_dimensions);
+    for(int k=0; k<num_dimensions; k++){
+        numerator_cache[k].resize(max_levels[k]+1);
+        double theta = 2.0 * Maths::pi * x[k];
+        numerator_cache[k][0] = std::complex<double>(std::cos(theta), std::sin(theta));
+        for(int j=1; j<max_levels[k]+1; j++){
+            numerator_cache[k][j] = numerator_cache[k][j-1];
+            for(int i=0; i<wrapper.getNumPoints(j-1); i++) numerator_cache[k][j] *= numerator_cache[k][0];
+        }
+    }
 
     for(int n=0; n<active_tensors.getNumIndexes(); n++){
         const int *levels = active_tensors.getIndex(n);
         int num_tensor_points = 1;
         std::vector<int> num_oned_points(num_dimensions);
-        std::vector<int> cnum_oned_points(num_dimensions, 1);
         for(int j=0; j<num_dimensions; j++){
             num_oned_points[j] = wrapper.getNumPoints(levels[j]);
             num_tensor_points *= num_oned_points[j];
         }
-        for(int j=num_dimensions-2; j>=0; j--) cnum_oned_points[j] = num_oned_points[j+1] * cnum_oned_points[j+1];
-
-        std::vector<std::vector<std::complex<double>>> tensor_data(num_tensor_points);
         std::vector<int> p(num_dimensions);
-        for(int i=0; i<num_tensor_points; i++){ // v++->resize() means apply resize to the vector that v references and then increment v
-            int r = 0;
-            int t = i;
-            // here rj is the real multi-index corresponding to "i"
-            for(int j=num_dimensions-1; j>=0; j--){
-                p[j] = t % num_oned_points[j]; // index of the exponent is p, convert to spacial index rj (cumulative r)
-                t /= num_oned_points[j];
-                int rj = (p[j] % 2 == 0) ? (p[j]+1) / 2 : num_oned_points[j] - (p[j]+1) / 2; // +/- index
-                r += rj * cnum_oned_points[j];
-            }
-            tensor_data[r].resize(1, std::complex<double> (basisFuncs[work.getSlot(p)]));
-        }
 
-        TasmanianFourierTransform::fast_fourier_transform(tensor_data, num_oned_points);
-
-        auto v = tensor_data.begin(); // v++->data() means: get the 0-th entry from current v and move to the next v
         double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
         for(int i=0; i<num_tensor_points; i++){
             // We interpret this "i" as running through the spatial indexing; convert to internal
             int t=i;
+            double fftprod = 1.0;
             for(int j=num_dimensions-1; j>=0; j--){ // here p is the index of the spacial point in Tasmanian indexing
-                p[j] = index_map[levels[j]][t % num_oned_points[j]];
+                int r = t % num_oned_points[j];
+                int offset = (r*(num_oned_points[j]+1)/2) % num_oned_points[j];     // in order to fetch reduced form of (N+1)*r/(2*N)
+                fftprod *= 2.0 * ( (1.0 - numerator_cache[j][levels[j]] * expcache[levels[j]][offset])
+                            / (1.0 - numerator_cache[j][0] * expcache[levels[j]][r]) ).real() - 1.0;
+                p[j] = index_map[levels[j]][r];
                 t /= num_oned_points[j];
             }
-            weights[work.getSlot(p)] += tensorw * v++->data()->real();
+            weights[work.getSlot(p)] += (tensorw * fftprod);
         }
     }
 }
