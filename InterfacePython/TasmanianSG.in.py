@@ -1461,7 +1461,7 @@ class TasmanianSparseGrid:
 
         return aCoeff
 
-    def setSurplusRefinement(self, fTolerance, iOutput, sCriteria = "", liLevelLimits = []):
+    def setSurplusRefinement(self, fTolerance, iOutput, sCriteria = "", liLevelLimits = [], llfScaleCorrection = []):
         '''
         using hierarchical surplusses as an error indicator, the surplus
         refinement adds points to the grid to improve accuracy
@@ -1486,6 +1486,20 @@ class TasmanianSparseGrid:
                    'classic'  'parents'   'direction'   'fds'
                   applicable only for Local Polynomial and Wavelet grids
 
+        llfScaleCorrection: 2-D numpy.ndarray of non-negative numbers
+                            Instead of comparing the normalized surpluses to
+                            the tolerance, the scaled surplus will be used.
+                            The correction allows to manually guide the
+                            refinement process.
+                            The surplus of the j-th output of the i-th point
+                            will be scaled by llfScaleCorrection[i][j].
+                            llfScaleCorrection.shape[0] must be equal to
+                            getNumLoaded()
+                            If empty, the scale is assumed 1.0
+                            llfScaleCorrection.shape[1] must be equal to the
+                            number of outputs used in the process, which is
+                            equal to getNumOutputs() for iOutput == -1,
+                            or 1 if iOutput > -1.
         '''
         if (self.isGlobal()):
             raise TasmanianInputError("setSurplusRefinement", "ERROR: setSurplusRefinement cannot be used with global grids")
@@ -1493,6 +1507,18 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("setSurplusRefinement", "ERROR: cannot call setSurplusRefinement for a grid before any points are loaded, i.e., call loadNeededPoints first!")
         if (fTolerance < 0.0):
             raise TasmanianInputError("fTolerance", "ERROR: fTolerance must be non-negative")
+        iActiveOutputs = self.getNumOutputs()
+        pScaleCorrection = None
+        if (len(llfScaleCorrection) > 0):
+            if (iOutput > -1):
+                iActiveOutputs = 1
+            if (len(llfScaleCorrection.shape) != 2):
+                raise TasmanianInputError("llfScaleCorrection", "ERROR: llfScaleCorrection must be a 2-D numpy.ndarray, instead it has {0:1d} dimensions".format(len(llfScaleCorrection.shape)))
+            if (llfScaleCorrection.shape[0] != self.getNumLoaded()):
+                raise TasmanianInputError("llfScaleCorrection", "ERROR: leading dimension of llfScaleCorrection is {0:1d} but the number of current points is {1:1d}".format(llfScaleCorrection.shape[0], self.getNumLoaded()))
+            if (llfScaleCorrection.shape[1] != iActiveOutputs):
+                raise TasmanianInputError("llfScaleCorrection", "ERROR: second dimension of llfScaleCorrection is {0:1d} but the refinement is set to use {1:1d}".format(llfScaleCorrection.shape[0], iActiveOutputs))
+            pScaleCorrection = np.ctypeslib.as_ctypes(llfScaleCorrection.reshape([self.getNumLoaded() * iActiveOutputs]))
 
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
@@ -1512,7 +1538,7 @@ class TasmanianSparseGrid:
                 raise TasmanianInputError("sCriteria", "ERROR: sCriteria cannot be used for sequence grids")
             if (sys.version_info.major == 3):
                 sCriteria = bytes(sCriteria, encoding='utf8')
-            self.pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput, pLevelLimits, None)
+            self.pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput, pLevelLimits, pScaleCorrection)
 
     def clearRefinement(self):
         '''
