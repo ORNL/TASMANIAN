@@ -54,6 +54,21 @@ class TestTasClass(unittest.TestCase):
         self.assertLess(aC[2], 0.0, 'wrong anisotropic weights estimated, beta 1')
         self.assertLess(aC[3], 0.0, 'wrong anisotropic weights estimated, beta 2')
 
+    def checkLocalpSurplus(self):
+        '''
+        Check surplus refinement for local polynomial grids
+        '''
+        grid = TasmanianSG.TasmanianSparseGrid()
+        grid.makeLocalPolynomialGrid(2, 1, 4, 1, 'semi-localp')
+        ttc.loadExpN2(grid)
+        aPoints = grid.getPoints()
+        aScale = np.array([[1.0 if aPoints[i,0] > 0.0 else 0.0] for i in range(aPoints.shape[0])])
+        grid.setSurplusRefinement(1.E-9, 0, 'classic', [], aScale)
+        aNeeded = grid.getNeededPoints()
+        for iI in range(aNeeded.shape[0]):
+            self.assertLess(0.0, aNeeded[iI, 0], 'wrong set of needed points after rescaling')
+
+
     def checkFileIO(self):
         '''
         Read/Write regular refinement.
@@ -149,5 +164,6 @@ class TestTasClass(unittest.TestCase):
     def performRefinementTest(self):
         self.checkSetClear()
         self.checkAnisoCoeff()
+        self.checkLocalpSurplus()
         self.checkFileIO()
         self.checkConstruction()
