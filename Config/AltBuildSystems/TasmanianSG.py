@@ -146,7 +146,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetAlpha.restype = c_double
         self.pLibTSG.tsgGetBeta.restype = c_double
         self.pLibTSG.tsgGetOrder.restype = c_int
-        self.pLibTSG.tsgGetRule.restype = c_char_p
         self.pLibTSG.tsgGetCustomRuleDescription.restype = c_char_p
         self.pLibTSG.tsgGetLoadedPoints.restype = POINTER(c_double)
         self.pLibTSG.tsgGetNeededPoints.restype = POINTER(c_double)
@@ -166,7 +165,6 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetGPUID.restype = c_int
         self.pLibTSG.tsgGetNumGPUs.restype = c_int
         self.pLibTSG.tsgGetGPUMemory.restype = c_int
-        self.pLibTSG.tsgGetGPUName.restype = c_char_p
 
         self.pLibTSG.tsgDestructTasmanianSparseGrid.argtypes = [c_void_p]
         self.pLibTSG.tsgCopyGrid.argtypes = [c_void_p, c_void_p]
@@ -185,7 +183,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetOrder.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNumDimensions.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNumOutputs.argtypes = [c_void_p]
-        self.pLibTSG.tsgGetRule.argtypes = [c_void_p]
+        self.pLibTSG.tsgCopyRuleChars.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int)] # char is not really const
         self.pLibTSG.tsgGetCustomRuleDescription.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNumLoaded.argtypes = [c_void_p]
         self.pLibTSG.tsgGetNumNeeded.argtypes = [c_void_p]
@@ -225,7 +223,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgSetAnisotropicRefinement.argtypes = [c_void_p, c_char_p, c_int, c_int, POINTER(c_int)]
         self.pLibTSG.tsgEstimateAnisotropicCoefficientsStatic.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgSetGlobalSurplusRefinement.argtypes = [c_void_p, c_double, c_int, POINTER(c_int)]
-        self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int, POINTER(c_int)]
+        self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int, POINTER(c_int), POINTER(c_double)]
         self.pLibTSG.tsgClearRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgMergeRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient.argtypes = [c_void_p, c_double, c_int, POINTER(c_double)]
@@ -269,6 +267,19 @@ class TasmanianSparseGrid:
 
         '''
         self.pLibTSG.tsgDestructTasmanianSparseGrid(self.pGrid)
+
+    def stringBufferToString(self, pName, iNumChars):
+        if (sys.version_info.major == 3):
+            S = [s for s in pName]
+            sName = ""
+            for iI in range(iNumChars):
+                sName += str(S[iI], encoding='utf8')
+        else:
+            S = [s for s in pName]
+            sName = ""
+            for iI in range(iNumChars):
+                sName += S[iI]
+        return sName
 
     def getVersion(self):
         '''
@@ -870,10 +881,10 @@ class TasmanianSparseGrid:
         if no grid has been made, it returns "unknown"
 
         '''
-        sRule = self.pLibTSG.tsgGetRule(self.pGrid)
-        if (sys.version_info.major == 3):
-            sRule = str(sRule, encoding='utf8')
-        return sRule
+        pName = create_string_buffer(128);
+        iNumChars = np.array([0], np.int32)
+        self.pLibTSG.tsgCopyRuleChars(self.pGrid, 128, pName, np.ctypeslib.as_ctypes(iNumChars))
+        return self.stringBufferToString(pName, iNumChars[0])
 
     def getCustomRuleDescription(self):
         '''
@@ -1450,7 +1461,7 @@ class TasmanianSparseGrid:
 
         return aCoeff
 
-    def setSurplusRefinement(self, fTolerance, iOutput, sCriteria = "", liLevelLimits = []):
+    def setSurplusRefinement(self, fTolerance, iOutput, sCriteria = "", liLevelLimits = [], llfScaleCorrection = []):
         '''
         using hierarchical surplusses as an error indicator, the surplus
         refinement adds points to the grid to improve accuracy
@@ -1475,6 +1486,20 @@ class TasmanianSparseGrid:
                    'classic'  'parents'   'direction'   'fds'
                   applicable only for Local Polynomial and Wavelet grids
 
+        llfScaleCorrection: 2-D numpy.ndarray of non-negative numbers
+                            Instead of comparing the normalized surpluses to
+                            the tolerance, the scaled surplus will be used.
+                            The correction allows to manually guide the
+                            refinement process.
+                            The surplus of the j-th output of the i-th point
+                            will be scaled by llfScaleCorrection[i][j].
+                            llfScaleCorrection.shape[0] must be equal to
+                            getNumLoaded()
+                            If empty, the scale is assumed 1.0
+                            llfScaleCorrection.shape[1] must be equal to the
+                            number of outputs used in the process, which is
+                            equal to getNumOutputs() for iOutput == -1,
+                            or 1 if iOutput > -1.
         '''
         if (self.isGlobal()):
             raise TasmanianInputError("setSurplusRefinement", "ERROR: setSurplusRefinement cannot be used with global grids")
@@ -1482,6 +1507,18 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("setSurplusRefinement", "ERROR: cannot call setSurplusRefinement for a grid before any points are loaded, i.e., call loadNeededPoints first!")
         if (fTolerance < 0.0):
             raise TasmanianInputError("fTolerance", "ERROR: fTolerance must be non-negative")
+        iActiveOutputs = self.getNumOutputs()
+        pScaleCorrection = None
+        if (len(llfScaleCorrection) > 0):
+            if (iOutput > -1):
+                iActiveOutputs = 1
+            if (len(llfScaleCorrection.shape) != 2):
+                raise TasmanianInputError("llfScaleCorrection", "ERROR: llfScaleCorrection must be a 2-D numpy.ndarray, instead it has {0:1d} dimensions".format(len(llfScaleCorrection.shape)))
+            if (llfScaleCorrection.shape[0] != self.getNumLoaded()):
+                raise TasmanianInputError("llfScaleCorrection", "ERROR: leading dimension of llfScaleCorrection is {0:1d} but the number of current points is {1:1d}".format(llfScaleCorrection.shape[0], self.getNumLoaded()))
+            if (llfScaleCorrection.shape[1] != iActiveOutputs):
+                raise TasmanianInputError("llfScaleCorrection", "ERROR: second dimension of llfScaleCorrection is {0:1d} but the refinement is set to use {1:1d}".format(llfScaleCorrection.shape[0], iActiveOutputs))
+            pScaleCorrection = np.ctypeslib.as_ctypes(llfScaleCorrection.reshape([self.getNumLoaded() * iActiveOutputs]))
 
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
@@ -1501,7 +1538,7 @@ class TasmanianSparseGrid:
                 raise TasmanianInputError("sCriteria", "ERROR: sCriteria cannot be used for sequence grids")
             if (sys.version_info.major == 3):
                 sCriteria = bytes(sCriteria, encoding='utf8')
-            self.pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput, pLevelLimits)
+            self.pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput, pLevelLimits, pScaleCorrection)
 
     def clearRefinement(self):
         '''
@@ -2032,18 +2069,7 @@ class TasmanianSparseGrid:
         pName = create_string_buffer(256)
         iNumChars = np.array([0], np.int32)
         self.pLibTSG.tsgGetGPUName(iGPUID, 256, pName, np.ctypeslib.as_ctypes(iNumChars))
-        iNumChars = iNumChars[0]
-        if (sys.version_info.major == 3):
-            S = [s for s in pName]
-            sName = ""
-            for iI in range(iNumChars):
-                sName += str(S[iI], encoding='utf8')
-        else:
-            S = [s for s in pName]
-            sName = ""
-            for iI in range(iNumChars):
-                sName += S[iI]
-        return sName
+        return self.stringBufferToString(pName, iNumChars[0])
 
     def printStats(self):
         '''
