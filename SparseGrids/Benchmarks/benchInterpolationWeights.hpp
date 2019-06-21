@@ -3,29 +3,28 @@
 
 #include "benchCommon.hpp"
 
-bool benchmark_fft(std::deque<std::string> &args){
-    if (args.size() < 5) return false;
+bool benchmark_iweights(std::deque<std::string> &args){
+    if (args.size() < 8) return false;
 
     // report the test parameters to reference later
-    cout << "fourier";
     for(auto &s : args) cout << " " << s;
     cout << endl;
 
-    auto grid_family = GridFamily::fourier;
+    auto grid_family = getGridFamily(args);
+    if (grid_family == GridFamily::none) return false;
 
-    int num_dimensions, num_depth, iteratons, num_jumps;
+    int num_dimensions, num_depth, order, iteratons, num_jumps;
     TypeDepth dtype;
+    TypeOneDRule rule;
 
-    auto riter = readEntries(args.begin(), num_dimensions, num_depth, dtype, iteratons, num_jumps);
+    auto riter = readEntries(args.begin(), num_dimensions, num_depth, dtype, rule, order, iteratons, num_jumps);
 
     auto extra = extractWeightsLimits(grid_family, num_dimensions, dtype, riter, args.end());
 
     int num_outputs = 1;
-    auto make_grid = getLambdaMakeGrid(grid_family, num_dimensions, num_outputs, num_depth, dtype, rule_fourier, 0, extra);
+    auto make_grid = getLambdaMakeGrid(grid_family, num_dimensions, num_outputs, num_depth, dtype, rule, order, extra);
 
     num_jumps = std::max(num_jumps, 1); // make at least one test
-
-    cout << "Testing getInterpolationWeights() for Fourier grid" << endl << endl;
 
     cout << setw(20) << "points" << setw(20) << "milliseconds" << endl;
 
@@ -42,8 +41,10 @@ bool benchmark_fft(std::deque<std::string> &args){
         std::vector<double> weights(grid.getNumPoints());
 
         auto time_start = std::chrono::system_clock::now();
+
         for(int i=0; i < iteratons; i++)
             grid.getInterpolationWeights(inputs[i], weights);
+
         auto time_end = std::chrono::system_clock::now();
 
         long long elapsed = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count();

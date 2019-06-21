@@ -1,7 +1,7 @@
 #include "benchMakeGrid.hpp"
 #include "benchLoadNeeded.hpp"
 #include "benchEvaluate.hpp"
-#include "benchFFT.hpp"
+#include "benchInterpolationWeights.hpp"
 
 void printHelp(BenchFuction test);
 
@@ -30,8 +30,8 @@ int main(int argc, const char** argv){
         pass = benchmark_loadneeded(args);
     if (test == bench_evaluate)
         pass = benchmark_evaluate(args);
-    if (test == bench_fft)
-        pass = benchmark_fft(args);
+    if (test == bench_iweights)
+        pass = benchmark_iweights(args);
 
     if (!pass) // if problem with inputs
         printHelp(test);
@@ -42,7 +42,7 @@ int main(int argc, const char** argv){
 void printHelp(BenchFuction test){
     if (test == bench_none){
         cout << "\nusage: ./benchmark <function> <parameters>\n\n";
-        cout << "functions: makegrid, loadneeded, evaluate, fft\n";
+        cout << "functions: makegrid, loadneeded, evaluate, iweights\n";
         cout << "\n see: ./benchmark <function> help\n";
     }else if (test == bench_make){
         cout << "\nusage: ./benchmark makegrid <grid> <dims> <depth> <type> <rule> <iters> <jumps> <aniso>\n\n";
@@ -86,12 +86,14 @@ void printHelp(BenchFuction test){
         cout << "gpu   : cuda device ID; ignored for cpu acceleration\n";
         cout << "aniso : (optional) list of anisotropic weights and level limits\n";
         cout << "      : anisotropic weights come first (if used by the grid), then level limits\n";
-    }else if (test == bench_fft){
-        cout << "\nBenchmark for getInterpolationWeights() for Fourier grids\n";
-        cout << "\nusage: ./benchmark fft <dims> <depth> <type> <iters> <jumps> <aniso>\n\n";
+    }else if (test == bench_iweights){
+        cout << "\nusage: ./benchmark iweights <grid> <dims> <depth> <type> <rule> <order> <iters> <jumps> <aniso>\n\n";
+        cout << "grid  : global, sequence, localp, wavelet, fourier\n";
         cout << "dims  : number of dimensions\n";
         cout << "depth : grid density\n";
         cout << "type  : level, iptotal, etc.; ignored if not used by the grid\n";
+        cout << "rule  : rleja, clenshaw-curtis, etc.; ignored for wavelet and Fourier grids\n";
+        cout << "order : -1, 0, 1, 2; ignored if not used by the grid\n";
         cout << "iters : number of times to repeat the function call\n";
         cout << "jumps : how many times to increase <depth> by 1\n";
         cout << "aniso : (optional) list of anisotropic weights and level limits\n";

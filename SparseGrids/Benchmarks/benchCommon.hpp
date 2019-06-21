@@ -10,7 +10,7 @@ enum BenchFuction{
     bench_make,
     bench_loadneeded,
     bench_evaluate,
-    bench_fft
+    bench_iweights
 };
 
 BenchFuction getTest(std::string const &s){
@@ -18,7 +18,7 @@ BenchFuction getTest(std::string const &s){
         {"evaluate", bench_evaluate},
         {"loadneeded", bench_loadneeded},
         {"makegrid", bench_make},
-        {"fft", bench_fft}
+        {"iweights", bench_iweights}
     };
 
     try{
