@@ -223,7 +223,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgSetAnisotropicRefinement.argtypes = [c_void_p, c_char_p, c_int, c_int, POINTER(c_int)]
         self.pLibTSG.tsgEstimateAnisotropicCoefficientsStatic.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int)]
         self.pLibTSG.tsgSetGlobalSurplusRefinement.argtypes = [c_void_p, c_double, c_int, POINTER(c_int)]
-        self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int, POINTER(c_int)]
+        self.pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c_int, POINTER(c_int), POINTER(c_double)]
         self.pLibTSG.tsgClearRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgMergeRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient.argtypes = [c_void_p, c_double, c_int, POINTER(c_double)]
@@ -1512,7 +1512,7 @@ class TasmanianSparseGrid:
                 raise TasmanianInputError("sCriteria", "ERROR: sCriteria cannot be used for sequence grids")
             if (sys.version_info.major == 3):
                 sCriteria = bytes(sCriteria, encoding='utf8')
-            self.pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput, pLevelLimits)
+            self.pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput, pLevelLimits, None)
 
     def clearRefinement(self):
         '''
