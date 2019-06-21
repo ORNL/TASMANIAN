@@ -266,13 +266,13 @@ void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, in
 void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output, const int *level_limits){
     ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, output, level_limits);
 }
-void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output, const int *level_limits){
+void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output, const int *level_limits, const double *scale_correction){
     TypeRefinement ref_type = IO::getTypeRefinementString(sRefinementType);
     #ifndef NDEBUG
     if (ref_type == refine_none){ cerr << "WARNING: incorrect refinement type: " << sRefinementType << ", defaulting to type_classic." << endl; }
     #endif // NDEBUG
     if (ref_type == refine_none){ ref_type = refine_classic; }
-    ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, ref_type, output, level_limits);
+    ((TasmanianSparseGrid*) grid)->setSurplusRefinement(tolerance, ref_type, output, level_limits, scale_correction);
 }
 void tsgClearRefinement(void *grid){
     ((TasmanianSparseGrid*) grid)->clearRefinement();
