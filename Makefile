@@ -18,7 +18,7 @@ CMAKE_IN_HEADERS = $(wildcard ./DREAM/*.in.hpp) \
 # header names with ./include as opposed to ./SparseGrids
 HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./DREAM/*.hpp))) \
           $(patsubst ./SparseGrids/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./SparseGrids/*.h*))) \
-          ./include/TasmanianConfig.hpp
+          ./include/TasmanianConfig.hpp ./include/Tasmanian.hpp
 
 ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py \
               sandbox.py \
@@ -52,6 +52,10 @@ SparseGrids/TasmanianConfig.hpp: ./Config/AltBuildSystems/TasmanianConfig.hpp
 include/TasmanianConfig.hpp: ./SparseGrids/TasmanianConfig.hpp
 	mkdir -p ./include
 	cp ./SparseGrids/TasmanianConfig.hpp ./include/
+
+include/Tasmanian.hpp: ./include/Tasmanian.hpp
+	mkdir -p ./include
+	cp ./Config/Tasmanian.hpp ./include/
 
 # Sparse Grids
 libtasmaniansparsegrid.so: ./SparseGrids/libtasmaniansparsegrid.so

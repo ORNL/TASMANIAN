@@ -48,6 +48,7 @@ endif()
 doxygen_add_docs(Tasmanian_doxygen
                  README.md
                  Doxygen/Installation.md
+                 Config/Tasmanian.hpp
                  SparseGrids/TasmanianSparseGrid.hpp
                  DREAM/TasmanianDREAM.hpp
                  SparseGrids/tsgEnumerates.hpp

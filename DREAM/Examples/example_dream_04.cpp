@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <ctime>
 
-#include "TasmanianDREAM.hpp"
+#include "Tasmanian.hpp" // testing if Tasmanian.hpp includes TasmanianDREAM.hpp
 
 using namespace std;
 
