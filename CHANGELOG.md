@@ -6,6 +6,8 @@ Changelog for version 6.1 (may rename this to 7.0 later)
     * equivalently Tasmanian::Tasmanian_shared, Tasmanian::Tasmanian_static
     * also Tasmanian_master and Tasmanian::Tasmanian will always point to an available target
 
+* new Tasmanian master header to add all modules: Tasmanian.hpp
+
 * new dynamic construction algorithms have been added
     * removed the need for blocking between refinement iterations
         * Tasmanian can accept data one-point at a time
