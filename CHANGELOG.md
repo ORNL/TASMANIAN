@@ -1,6 +1,11 @@
 Changelog for version 6.1 (may rename this to 7.0 later)
 --------------
 
+* new Tasmanian CMake master targets that handle all modules
+    * now available Tasmanian_shared and Tasmanian_static
+    * equivalently Tasmanian::Tasmanian_shared, Tasmanian::Tasmanian_static
+    * also Tasmanian_master and Tasmanian::Tasmanian will always point to an available target
+
 * new dynamic construction algorithms have been added
     * removed the need for blocking between refinement iterations
         * Tasmanian can accept data one-point at a time
