@@ -129,6 +129,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
 # each sub-directory creates a set of targets and links those to
 # existing targets (hence the order is important)
 # After CXX, the interfaces Fortran, Python, MATLAB can come in any order
+# Finally, add the master target to link to all of the above
 ########################################################################
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids" "${CMAKE_CURRENT_BINARY_DIR}/SparseGrids")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DREAM"       "${CMAKE_CURRENT_BINARY_DIR}/DREAM")
@@ -148,6 +149,8 @@ endif()
 if (Tasmanian_ENABLE_DOXYGEN)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Doxygen"  "${CMAKE_CURRENT_BINARY_DIR}/Doxygen")
 endif()
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/master_targets.cmake")
 
 
 ########################################################################
