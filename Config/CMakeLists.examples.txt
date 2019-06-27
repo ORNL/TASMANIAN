@@ -27,7 +27,7 @@ add_executable(example_dream         example_dream_01.cpp
                                      example_dream.cpp)
 
 #target_link_libraries(example_sparse_grids  Tasmanian_libsparsegrid)
-target_link_libraries(example_dream         Tasmanian_libdream)
+target_link_libraries(example_dream         Tasmanian::Tasmanian)
 
 # if Fortran is available, then add the Fortran example
 if (TARGET Tasmanian_libfortran90)
