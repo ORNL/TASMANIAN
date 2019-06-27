@@ -3,18 +3,18 @@
 ########################################################################
 macro(Tasmanian_add_mpi Tasmanian_target)
     if (Tasmanian_ENABLE_MPI)
-        target_link_libraries(${Tasmanian_target} ${MPI_CXX_LIBRARIES})
+        target_link_libraries(${Tasmanian_target} INTERFACE ${MPI_CXX_LIBRARIES})
 
         if (DEFINED MPI_CXX_INCLUDE_PATH)
-            target_include_directories(${Tasmanian_target} PUBLIC "${MPI_CXX_INCLUDE_PATH}")
+            target_include_directories(${Tasmanian_target} INTERFACE "${MPI_CXX_INCLUDE_PATH}")
         endif()
 
         if(DEFINED MPI_CXX_COMPILE_FLAGS)
-            target_compile_options(${Tasmanian_target} PUBLIC "${MPI_CXX_COMPILE_FLAGS}")
+            target_compile_options(${Tasmanian_target} INTERFACE "${MPI_CXX_COMPILE_FLAGS}")
         endif()
 
         if(DEFINED MPI_CXX_LINK_FLAGS)
-            set_target_properties(${Tasmanian_target} PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+            set_target_properties(${Tasmanian_target} PROPERTIES INTERFACE_LINK_OPTIONS "${MPI_CXX_LINK_FLAGS}")
         endif()
     endif()
 endmacro(Tasmanian_add_mpi)
