@@ -126,6 +126,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
 ########################################################################
 # Setup targets
 # CXX subdirs have to come first, SparseGrids must precede DREAM
+# the Addons must come last
 # each sub-directory creates a set of targets and links those to
 # existing targets (hence the order is important)
 # After CXX, the interfaces Fortran, Python, MATLAB can come in any order
@@ -133,6 +134,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
 ########################################################################
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids" "${CMAKE_CURRENT_BINARY_DIR}/SparseGrids")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DREAM"       "${CMAKE_CURRENT_BINARY_DIR}/DREAM")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Addons"      "${CMAKE_CURRENT_BINARY_DIR}/Addons")
 
 if (Tasmanian_ENABLE_FORTRAN)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceFortran"  "${CMAKE_CURRENT_BINARY_DIR}/Fortran")
