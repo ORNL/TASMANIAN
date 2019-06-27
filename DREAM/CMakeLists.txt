@@ -39,25 +39,6 @@ if (Tasmanian_ENABLE_BLAS)
     target_link_libraries(${Tasmanian_libtdr_target_name} ${BLAS_LIBRARIES})
 endif()
 
-########################################################################
-# MPI setup (experimental, DREAM distributed posterior only)
-########################################################################
-if (Tasmanian_ENABLE_MPI)
-    target_link_libraries(${Tasmanian_libtdr_target_name} ${MPI_CXX_LIBRARIES})
-
-    if (DEFINED MPI_CXX_INCLUDE_PATH)
-        target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC "${MPI_CXX_INCLUDE_PATH}")
-    endif()
-
-    if(DEFINED MPI_CXX_COMPILE_FLAGS)
-        target_compile_options(${Tasmanian_libtdr_target_name} PUBLIC "${MPI_CXX_COMPILE_FLAGS}")
-    endif()
-
-    if(DEFINED MPI_CXX_LINK_FLAGS)
-        set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-    endif()
-endif()
-
 install(TARGETS "${Tasmanian_libtdr_target_name}"
         EXPORT  "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"
