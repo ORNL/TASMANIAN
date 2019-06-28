@@ -28,30 +28,27 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
+#ifndef __TASMANIAN_ADDONS_COMMON_HPP
+#define __TASMANIAN_ADDONS_COMMON_HPP
+
 /*!
- * \file Tasmanian.hpp
- * \brief Master header to include all modules.
+ * \file tsgAddonsCommon.hpp
+ * \brief Common includes and methods for all addons.
  * \author Miroslav Stoyanov
- * \ingroup Tasmanian
+ * \ingroup TasmanianAddonsCommon
  *
- * The header needed to access all Tasmanian modules.
+ * All addon templates will include this core file.
  */
 
-#ifndef __TASMANIAN_HPP
-#define __TASMANIAN_HPP
+#include "TasmanianDREAM.hpp" // also brings in TasmanianSparseGrids.hpp
 
 /*!
- * \defgroup Tasmanian Tasmanian
+ * \internal
+ * \ingroup TasmanianAddons
+ * \addtogroup TasmanianAddonsCommon Addons Common
  *
- * \par Sparse Grids
- * The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN
- * consists of several modules that can be used individually by including the
- * corresponding headers, or conjountly using the master header:
- * \code
- * #include "Tasmanian.hpp"
- * \endcode
+ * Common Methods for the Addons Module.
+ * \endinternal
  */
-
-#include "TasmanianAddons.hpp" // includes DREAM and Sparse Grid
 
 #endif
