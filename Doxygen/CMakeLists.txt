@@ -51,6 +51,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  Config/Tasmanian.hpp
                  SparseGrids/TasmanianSparseGrid.hpp
                  DREAM/TasmanianDREAM.hpp
+                 Addons/TasmanianAddons.hpp
                  SparseGrids/tsgEnumerates.hpp
                  SparseGrids/tsgUtils.hpp
                  SparseGrids/tsgMathUtils.hpp
@@ -81,6 +82,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamLikelihoodCore.hpp
                  DREAM/tsgDreamLikelyGaussian.hpp
                  DREAM/tsgDreamInternalBlas.hpp
+                 Addons/tsgAddonsCommon.hpp
                  DREAM/Examples/example_dream.cpp
                  DREAM/Examples/example_dream_01.cpp
                  DREAM/Examples/example_dream_02.cpp

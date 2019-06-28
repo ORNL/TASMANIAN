@@ -31,6 +31,27 @@
 #ifndef __TASMANIAN_ADDONS_HPP
 #define __TASMANIAN_ADDONS_HPP
 
+/*!
+ * \file TasmanianAddons.hpp
+ * \brief Header to include add addon templates.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianAddons
+ *
+ * All addon templates are included with this single header.
+ */
+
 #include "tsgAddonsCommon.hpp"
+
+/*!
+ * \defgroup TasmanianAddons Additional Capabilities
+ *
+ * \par Extra Capabilities
+ * The Addon module of Tasmanian offers a series of templates that offer
+ * additional capabilities not necessarily included in the core modules.
+ * The templates sit in a separate module for various reasons, e.g.,
+ * - some methods are hard to classify or address fringe use cases
+ * - the templates depend on third-party libraries and should not overwhelm
+ *   the core modules with dependencies
+ */
 
 #endif

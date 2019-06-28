@@ -31,6 +31,24 @@
 #ifndef __TASMANIAN_ADDONS_COMMON_HPP
 #define __TASMANIAN_ADDONS_COMMON_HPP
 
+/*!
+ * \file tsgAddonsCommon.hpp
+ * \brief Common includes and methods for all addons.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianAddonsCommon
+ *
+ * All addon templates will include this core file.
+ */
+
 #include "TasmanianDREAM.hpp" // also brings in TasmanianSparseGrids.hpp
+
+/*!
+ * \internal
+ * \ingroup TasmanianAddons
+ * \addtogroup TasmanianAddonsCommon Addons Common
+ *
+ * Common Methods for the Addons Module.
+ * \endinternal
+ */
 
 #endif

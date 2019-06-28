@@ -1,6 +1,9 @@
 Changelog for version 6.1 (may rename this to 7.0 later)
 --------------
 
+* new module "Tasmanian Addons" consisting of miscellaneous templates
+    * use through the master target and header, cannot be used independently
+
 * new Tasmanian CMake master targets that handle all modules
     * now available Tasmanian_shared and Tasmanian_static
     * equivalently Tasmanian::Tasmanian_shared, Tasmanian::Tasmanian_static
