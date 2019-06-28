@@ -38,7 +38,7 @@ if (Tasmanian_ENABLE_MPI)
         set_target_properties(Tasmanian_addons PROPERTIES INTERFACE_LINK_OPTIONS "${MPI_CXX_LINK_FLAGS}")
     endif()
 
-    add_executable(Tasmanian_mpitester testMPI.cpp)
+    add_executable(Tasmanian_mpitester testMPI.cpp testMPI.hpp)
     set_target_properties(Tasmanian_mpitester PROPERTIES OUTPUT_NAME "mpitester")
     target_link_libraries(Tasmanian_mpitester Tasmanian_addons Tasmanian_libdream)
     add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} -np 3 mpitester)

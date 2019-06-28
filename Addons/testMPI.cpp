@@ -28,14 +28,51 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include "TasmanianAddons.hpp"
-#include "tasgridCLICommon.hpp"
+#include "testMPI.hpp"
+
+using std::cout;
+using std::setw;
+
+inline int fail(){
+    MPI_Finalize();
+    return 1;
+}
 
 int main(int argc, char ** argv){
 
+    constexpr bool binary = true;
+    constexpr bool ascii = false;
+
     MPI_Init(&argc, &argv);
 
+    int me;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    if (me == 0) cout << "\n";
+
+    // --------------- Send/Recv <ascii> ----------------- //
+    bool pass = testSendReceive<ascii>();
+
+    if (!pass) return fail();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (me == 0)
+        cout << "    MPI Send/Recv     <ascii>    Pass\n";
+
+    // --------------- Send/Recv <binary> ----------------- //
+    pass = testSendReceive<binary>();
+
+    if (!pass) return fail();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (me == 0)
+        cout << "    MPI Send/Recv    <binary>    Pass\n";
+
+
+    // --------------- Finalize ------------------------- //
     MPI_Finalize();
 
-    return 0;
+    if (me == 0) cout << "\n";
+    return (pass) ? 0 : 1;
 }
