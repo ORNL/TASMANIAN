@@ -28,30 +28,9 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-/*!
- * \file Tasmanian.hpp
- * \brief Master header to include all modules.
- * \author Miroslav Stoyanov
- * \ingroup Tasmanian
- *
- * The header needed to access all Tasmanian modules.
- */
+#ifndef __TASMANIAN_ADDONS_HPP
+#define __TASMANIAN_ADDONS_HPP
 
-#ifndef __TASMANIAN_HPP
-#define __TASMANIAN_HPP
-
-/*!
- * \defgroup Tasmanian Tasmanian
- *
- * \par Sparse Grids
- * The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN
- * consists of several modules that can be used individually by including the
- * corresponding headers, or conjountly using the master header:
- * \code
- * #include "Tasmanian.hpp"
- * \endcode
- */
-
-#include "TasmanianAddons.hpp" // includes DREAM and Sparse Grid
+#include "tsgAddonsCommon.hpp"
 
 #endif

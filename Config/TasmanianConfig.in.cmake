@@ -11,7 +11,9 @@ check_required_components(Tasmanian)
 
 add_library(Tasmanian_libsparsegrid INTERFACE)
 add_library(Tasmanian_libdream INTERFACE)
+
 add_library(Tasmanian::Tasmanian INTERFACE IMPORTED)
+set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_master)
 
 if (TARGET Tasmanian_shared)
     add_library(Tasmanian::Tasmanian_shared INTERFACE IMPORTED)
@@ -25,7 +27,6 @@ if (TARGET Tasmanian_static)
 
     add_library(Tasmanian::Tasmanian_static INTERFACE IMPORTED)
     set_target_properties(Tasmanian::Tasmanian_static PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_static)
-    set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_static)
 
     if (@Tasmanian_ENABLE_CUDA@)
     # Since Tasmanian does not transitively include <cuda.h> and since all CUDA calls are wrapped in CXX API,
@@ -47,7 +48,6 @@ if (TARGET Tasmanian_static)
 else()
     target_link_libraries(Tasmanian_libsparsegrid INTERFACE Tasmanian_libsparsegrid_shared)
     target_link_libraries(Tasmanian_libdream INTERFACE Tasmanian_libdream_shared)
-    set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
 endif()
 
 if (@Tasmanian_ENABLE_FORTRAN@)

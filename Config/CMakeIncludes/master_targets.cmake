@@ -21,6 +21,7 @@ endmacro(Tasmanian_add_mpi)
 
 # add master target
 add_library(Tasmanian_master INTERFACE)
+target_link_libraries(Tasmanian_master INTERFACE Tasmanian_addons)
 
 # add :: interface, useful when using with add_subdirectory()
 add_library(Tasmanian::Tasmanian INTERFACE IMPORTED)
@@ -51,6 +52,8 @@ if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
 else()
     target_link_libraries(Tasmanian_master INTERFACE Tasmanian_shared)
 endif()
+
+install(TARGETS Tasmanian_master EXPORT "${Tasmanian_export_name}")
 
 # add executable that has the sole purpose of testing the master target
 add_executable(tasmanian_version "${CMAKE_CURRENT_SOURCE_DIR}/Testing/tasmanian_version.cpp")
