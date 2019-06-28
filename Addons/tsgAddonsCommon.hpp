@@ -42,6 +42,10 @@
 
 #include "TasmanianDREAM.hpp" // also brings in TasmanianSparseGrids.hpp
 
+#ifdef Tasmanian_ENABLE_MPI
+#include "mpi.h"
+#endif
+
 /*!
  * \internal
  * \ingroup TasmanianAddons
