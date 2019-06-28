@@ -21,6 +21,23 @@ Tasmanian_addon_sources(PATH .
                         FILES tsgAddonsCommon.hpp
                               TasmanianAddons.hpp)
 
+# The Tasmanian MPI capabilities are templated into the Addons
+if (Tasmanian_ENABLE_MPI)
+    target_link_libraries(Tasmanian_addons INTERFACE ${MPI_CXX_LIBRARIES})
+
+    if (DEFINED MPI_CXX_INCLUDE_PATH)
+        target_include_directories(Tasmanian_addons INTERFACE "${MPI_CXX_INCLUDE_PATH}")
+    endif()
+
+    if(DEFINED MPI_CXX_COMPILE_FLAGS)
+        target_compile_options(Tasmanian_addons INTERFACE "${MPI_CXX_COMPILE_FLAGS}")
+    endif()
+
+    if(DEFINED MPI_CXX_LINK_FLAGS)
+        set_target_properties(Tasmanian_addons PROPERTIES INTERFACE_LINK_OPTIONS "${MPI_CXX_LINK_FLAGS}")
+    endif()
+endif()
+
 # install directives
 target_include_directories(Tasmanian_addons INTERFACE $<INSTALL_INTERFACE:include>)
 get_target_property(tsg_sources Tasmanian_addons INTERFACE_SOURCES)
