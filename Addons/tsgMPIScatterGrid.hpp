@@ -81,6 +81,28 @@ public:
 /*!
  * \ingroup TasmanianAddonsMPIGridSend
  * \brief Send a grid to another process in the MPI comm.
+ *
+ * Send the grid to the destination rank across an MPI comm.
+ * The syntax deliberately mimics MPI_Send and the behavior is mostly the same,
+ * except the process uses two messages:
+ * the size of the grid (in units of memory as opposed to points),
+ * and the the actual data and meta-data similar to the file I/O methods.
+ * The transfer can be done in either binary or ASCII format, but binary results
+ * in smaller messages and less computational overhead;
+ * thus, ASCII is provided mostly for debugging purposes.
+ *
+ * \param grid        is the grid to send.
+ * \param destination is the rank of the recipient MPI process.
+ * \param tag_size    is the tag to use for the size message.
+ * \param tag_data    is the tag to use for the data message.
+ * \param comm        is the MPI comm where the source and destination reside.
+ *
+ * \return the error code of the fist failed MPI_Send command
+ *         (corresponding to either the size of the data message),
+ *         if MPI_SUCCESS is returned then both messages were successful.
+ *
+ * \b Note: this call must be mirrored by TasGrid::MPIGridRecv() on the
+ *          destination process.
  */
 template<bool binary = true>
 int MPIGridSend(TasmanianSparseGrid const &grid, int destination, int tag_size, int tag_data, MPI_Comm comm){
@@ -99,6 +121,20 @@ int MPIGridSend(TasmanianSparseGrid const &grid, int destination, int tag_size, 
 /*!
  * \ingroup TasmanianAddonsMPIGridSend
  * \brief Receive a grid from another process in the MPI comm.
+ *
+ * Receive a grid that has been send with TasGrid::MPIGridSend().
+ * This call intercepts both messages and compiles them into a sparse grid object.
+ *
+ * \param grid is the output grid, it will be overwritten with grid send by
+ *             the source rank similar to TasGrid::TasmanianSparseGrid::read().
+ * \param source   is the rank of the process in the MPI comm that issued the send command.
+ * \param tag_size is the tag used in the size portion of the send command.
+ * \param tag_data is the tag used in the data portion of the send command.
+ * \param comm        is the MPI comm where the source and destination reside.
+ *
+ * \return the error code of the fist failed MPI_Recv command
+ *         (corresponding to either the size of the data message),
+ *         if MPI_SUCCESS is returned then both messages were successful.
  */
 template<bool binary = true>
 int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_data, MPI_Comm comm, MPI_Status *status){
