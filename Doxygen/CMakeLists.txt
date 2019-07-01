@@ -8,13 +8,12 @@ set(DOXYGEN_SORT_MEMBER_DOCS    "NO") # use the order in the source files (logic
 set(DOXYGEN_SORT_BRIEF_DOCS     "NO") # which is more logical than the alphabetical one
 
 set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP") # indicate sections to skip from the documentation
-if (Tasmanian_ENABLE_BLAS)
-    list(APPEND DOXYGEN_PREDEFINED "Tasmanian_ENABLE_BLAS")
-endif()
-if (Tasmanian_ENABLE_CUDA)
-    list(APPEND DOXYGEN_PREDEFINED "Tasmanian_ENABLE_CUDA")
-endif()
-
+foreach(_tsg_opt Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_CUDA Tasmanian_ENABLE_MPI)
+    if (${_tsg_opt})
+        list(APPEND DOXYGEN_PREDEFINED ${_tsg_opt})
+    endif()
+endforeach()
+unset(_tsg_opt)
 
 set(DOXYGEN_HTML_EXTRA_STYLESHEET  ${CMAKE_CURRENT_SOURCE_DIR}/tasmanian.css)
 set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/header.html")
@@ -82,6 +81,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamLikelihoodCore.hpp
                  DREAM/tsgDreamLikelyGaussian.hpp
                  DREAM/tsgDreamInternalBlas.hpp
+                 Addons/tsgMPIScatterGrid.hpp
                  Addons/tsgAddonsCommon.hpp
                  DREAM/Examples/example_dream.cpp
                  DREAM/Examples/example_dream_01.cpp

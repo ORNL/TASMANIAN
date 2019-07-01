@@ -40,7 +40,7 @@
  * All addon templates are included with this single header.
  */
 
-#include "tsgAddonsCommon.hpp"
+#include "tsgMPIScatterGrid.hpp"
 
 /*!
  * \defgroup TasmanianAddons Additional Capabilities

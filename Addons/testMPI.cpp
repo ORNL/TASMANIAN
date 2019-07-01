@@ -28,33 +28,51 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_ADDONS_COMMON_HPP
-#define __TASMANIAN_ADDONS_COMMON_HPP
+#include "testMPI.hpp"
 
-/*!
- * \file tsgAddonsCommon.hpp
- * \brief Common includes and methods for all addons.
- * \author Miroslav Stoyanov
- * \ingroup TasmanianAddonsCommon
- *
- * All addon templates will include this core file.
- */
+using std::cout;
+using std::setw;
 
-#include <sstream>
+inline int fail(){
+    MPI_Finalize();
+    return 1;
+}
 
-#include "TasmanianDREAM.hpp" // also brings in TasmanianSparseGrids.hpp
+int main(int argc, char ** argv){
 
-#ifdef Tasmanian_ENABLE_MPI
-#include "mpi.h"
-#endif
+    constexpr bool binary = true;
+    constexpr bool ascii = false;
 
-/*!
- * \internal
- * \ingroup TasmanianAddons
- * \addtogroup TasmanianAddonsCommon Addons Common
- *
- * Common Methods for the Addons Module.
- * \endinternal
- */
+    MPI_Init(&argc, &argv);
 
-#endif
+    int me;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    if (me == 0) cout << "\n";
+
+    // --------------- Send/Recv <ascii> ----------------- //
+    bool pass = testSendReceive<ascii>();
+
+    if (!pass) return fail();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (me == 0)
+        cout << "    MPI Send/Recv     <ascii>    Pass\n";
+
+    // --------------- Send/Recv <binary> ----------------- //
+    pass = testSendReceive<binary>();
+
+    if (!pass) return fail();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (me == 0)
+        cout << "    MPI Send/Recv    <binary>    Pass\n";
+
+
+    // --------------- Finalize ------------------------- //
+    MPI_Finalize();
+
+    if (me == 0) cout << "\n";
+    return (pass) ? 0 : 1;
+}
