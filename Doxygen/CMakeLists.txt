@@ -7,13 +7,9 @@ set(DOXYGEN_SORT_GROUP_NAMES    "NO") # disable automatic sorting
 set(DOXYGEN_SORT_MEMBER_DOCS    "NO") # use the order in the source files (logical order)
 set(DOXYGEN_SORT_BRIEF_DOCS     "NO") # which is more logical than the alphabetical one
 
-set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP") # indicate sections to skip from the documentation
-foreach(_tsg_opt Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_CUDA Tasmanian_ENABLE_MPI)
-    if (${_tsg_opt})
-        list(APPEND DOXYGEN_PREDEFINED ${_tsg_opt})
-    endif()
-endforeach()
-unset(_tsg_opt)
+# skip sections marked with __TASMANIAN_DOXYGEN_SKIP to avoid extraneous warnings
+# document all options regardless of the build, mostly affects the internal API
+set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP;Tasmanian_ENABLE_BLAS;Tasmanian_ENABLE_CUDA;Tasmanian_ENABLE_MPI")
 
 set(DOXYGEN_HTML_EXTRA_STYLESHEET  ${CMAKE_CURRENT_SOURCE_DIR}/tasmanian.css)
 set(DOXYGEN_HTML_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/header.html")
