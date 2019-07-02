@@ -227,13 +227,12 @@ Tasmanian will install CMake package-config files in `<install-path>/lib/Tasmani
 ```
 The imported targets will be called:
 ```
-  Tasmanian_libsparsegrid_shared  Tasmanian_libsparsegrid_static
-  Tasmanian_libdream_shared       Tasmanian_libdream_static
+  Tasmanian::Tasmanian_shared     Tasmanian::Tasmanian_static
   Tasmanian_libfortran90_shared   Tasmanian_libfortran90_static
 ```
 **Note:** depending on the install options, not all targets may be available, e.g., using `-D BUILD_SHARED_LIBS=ON` will disable the static targets. In order to simplify the user code, the package-config will also create CMake interface targets without the shared/static suffixes:
 ```
-  Tasmanian_libsparsegrid    Tasmanian_libdream    Tasmanian_libfortran90
+  Tasmanian::Tasmanian    Tasmanian_libfortran90
 ```
 The interface targets will always depend on valid imported targets; if both shared and static libraries are present, the static libraries will be chosen by default. Example use case of the Tasmanian package-config is included in:
 ```

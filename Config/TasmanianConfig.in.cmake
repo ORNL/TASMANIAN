@@ -12,11 +12,11 @@ check_required_components(Tasmanian)
 add_library(Tasmanian_libsparsegrid INTERFACE)
 add_library(Tasmanian_libdream INTERFACE)
 
-add_library(Tasmanian::Tasmanian INTERFACE IMPORTED)
+add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
 set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_master)
 
 if (TARGET Tasmanian_shared)
-    add_library(Tasmanian::Tasmanian_shared INTERFACE IMPORTED)
+    add_library(Tasmanian::Tasmanian_shared INTERFACE IMPORTED GLOBAL)
     set_target_properties(Tasmanian::Tasmanian_shared PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
 endif()
 
@@ -25,7 +25,7 @@ if (TARGET Tasmanian_static)
     target_link_libraries(Tasmanian_libsparsegrid INTERFACE Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_libdream INTERFACE Tasmanian_libdream_static)
 
-    add_library(Tasmanian::Tasmanian_static INTERFACE IMPORTED)
+    add_library(Tasmanian::Tasmanian_static INTERFACE IMPORTED GLOBAL)
     set_target_properties(Tasmanian::Tasmanian_static PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_static)
 
     if (@Tasmanian_ENABLE_CUDA@)

@@ -1,6 +1,8 @@
 Changelog for version 6.1 (may rename this to 7.0 later)
 --------------
 
+* improved MPI capability, see the updated documentation
+
 * new module "Tasmanian Addons" consisting of miscellaneous templates
     * use through the master target and header, cannot be used independently
 
