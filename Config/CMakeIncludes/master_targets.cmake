@@ -6,7 +6,7 @@
 add_library(Tasmanian_master INTERFACE)
 
 # add :: interface, useful when using with add_subdirectory()
-add_library(Tasmanian::Tasmanian INTERFACE IMPORTED)
+add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
 set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_master)
 
 # add shared variant
@@ -15,7 +15,7 @@ if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
     target_link_libraries(Tasmanian_shared INTERFACE "Tasmanian_libdream_shared;Tasmanian_addons")
     install(TARGETS Tasmanian_shared EXPORT "${Tasmanian_export_name}")
 
-    add_library(Tasmanian::Tasmanian_shared INTERFACE IMPORTED)
+    add_library(Tasmanian::Tasmanian_shared INTERFACE IMPORTED GLOBAL)
     set_target_properties(Tasmanian::Tasmanian_shared PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
 endif()
 
@@ -25,7 +25,7 @@ if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
     target_link_libraries(Tasmanian_static INTERFACE "Tasmanian_libdream_static;Tasmanian_addons")
     install(TARGETS Tasmanian_static EXPORT "${Tasmanian_export_name}")
 
-    add_library(Tasmanian::Tasmanian_static INTERFACE IMPORTED)
+    add_library(Tasmanian::Tasmanian_static INTERFACE IMPORTED GLOBAL)
     set_target_properties(Tasmanian::Tasmanian_static PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_static)
 
     target_link_libraries(Tasmanian_master INTERFACE Tasmanian_static)
