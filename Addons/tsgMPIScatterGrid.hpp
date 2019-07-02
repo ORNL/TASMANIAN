@@ -46,7 +46,7 @@
 
 /*!
  * \ingroup TasmanianAddons
- * \addtogroup TasmanianAddonsMPIGridSend MPI Send/Receive for Sparse Grids
+ * \addtogroup TasmanianAddonsMPIGridSend MPI Send/Receive/Bcast for Sparse Grids
  *
  * Methods to send/receive TasGrid::TasmanianSparseGrid objects.
  * The syntax mimics the raw MPI_Send and MPI_Recv calls,
