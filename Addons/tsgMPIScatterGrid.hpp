@@ -155,6 +155,25 @@ int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_dat
 /*!
  * \ingroup TasmanianAddonsMPIGridSend
  * \brief Broadcast a grid to all processes in an MPI comm.
+ *
+ * Make all \b grid variables for all process in the \b comm match the grid
+ * on the \b root process.
+ * This call uses two MPI_Bcast() calls, the grid size (in memory units)
+ * and the actual grid data.
+ * The transfer can be done in either binary or ASCII format, but binary results
+ * in smaller messages and less computational overhead;
+ * thus, ASCII is provided mostly for debugging purposes.
+ *
+ * \param grid is the grid to broadcast across the MPI comm, the grid on the \b root
+ *             process will not be modified (i.e., treat as const),
+ *             in all other cases, the grid will be overwritten similar to
+ *             the TasGrid::TasmanianSparseGrid::read().
+ * \param root is the process that holds the data that needs to be send across.
+ * \param comm is the MPI comm of all process that need to share the grid.
+ *
+ * \return the error code of the fist failed MPI_Bcast() command
+ *         (corresponding to either the size of the data message),
+ *         if MPI_SUCCESS is returned then both messages were successful.
  */
 template<bool binary = true>
 int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
