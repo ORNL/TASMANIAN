@@ -54,19 +54,13 @@ bool testSendReceive(){
     int me, tag_size = 0, tag_data = 1;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     if (me == 0){
-        TasGrid::MPIGridSend<use_binary>(true_grid, 1, tag_size, tag_data, MPI_COMM_WORLD);
-        return true;
+        return (TasGrid::MPIGridSend<use_binary>(true_grid, 1, tag_size, tag_data, MPI_COMM_WORLD) == MPI_SUCCESS);
     }else if (me == 1){
         MPI_Status status;
         TasGrid::TasmanianSparseGrid grid;
-        TasGrid::MPIGridRecv<use_binary>(grid, 0, tag_size, tag_data, MPI_COMM_WORLD, &status);
-        if (true_grid.getNumPoints()     != grid.getNumPoints())     return false;
-        if (true_grid.getNumDimensions() != grid.getNumDimensions()) return false;
-        auto p1 = true_grid.getPoints();
-        auto p2 = grid.getPoints();
-        double err = 0.0;
-        for(auto x = p1.begin(), y = p2.begin(); x != p1.end(); x++, y++) err += std::abs(*x - *y);
-        return (err == 0.0); // bit-wise match is reasonable to expect here
+        auto result = TasGrid::MPIGridRecv<use_binary>(grid, 0, tag_size, tag_data, MPI_COMM_WORLD, &status);
+        if (result != MPI_SUCCESS) return false;
+        return checkPoints(true_grid, grid);
     }else{
         return true;
     }

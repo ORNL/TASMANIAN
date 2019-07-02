@@ -50,22 +50,14 @@ int main(int argc, char ** argv){
     if (me == 0) cout << "\n";
 
     // --------------- Send/Recv <ascii> ----------------- //
-    bool pass = testSendReceive<ascii>();
-
-    if (!pass) return fail();
-
+    if (!testSendReceive<ascii>()) return fail();
     MPI_Barrier(MPI_COMM_WORLD);
-
     if (me == 0)
         cout << "    MPI Send/Recv     <ascii>    Pass\n";
 
     // --------------- Send/Recv <binary> ----------------- //
-    pass = testSendReceive<binary>();
-
-    if (!pass) return fail();
-
+    if (!testSendReceive<binary>()) return fail();
     MPI_Barrier(MPI_COMM_WORLD);
-
     if (me == 0)
         cout << "    MPI Send/Recv    <binary>    Pass\n";
 
@@ -85,5 +77,5 @@ int main(int argc, char ** argv){
     MPI_Finalize();
 
     if (me == 0) cout << "\n";
-    return (pass) ? 0 : 1;
+    return 0;
 }
