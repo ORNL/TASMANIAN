@@ -37,7 +37,8 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
         TasGrid::TasSparse::SparseMatrix TasGrid::CudaEngine TasGrid::AccelerationDomainTransform TasGrid::TableGaussPatterson
         TasGrid::NodeData TasGrid::TensorData TasGrid::CacheLagrange TasGrid::MultiIndexManipulations::ProperWeights
         TasGrid::Utils::Wrapper2D TasGrid::SimpleConstructData TasGrid::DynamicConstructorDataGlobal
-        TasGrid::Optimizer::CurrentNodes TasGrid::Optimizer::HasDerivative TasGrid::Optimizer::OptimizerResult)
+        TasGrid::Optimizer::CurrentNodes TasGrid::Optimizer::HasDerivative TasGrid::Optimizer::OptimizerResult
+        TasGrid::VectorToStreamBuffer)
 endif()
 
 doxygen_add_docs(Tasmanian_doxygen
