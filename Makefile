@@ -14,6 +14,7 @@ CMAKE_IN_HEADERS = $(wildcard ./DREAM/*.in.hpp) \
                    $(wildcard ./SparseGrids/*.*.hpp) \
                    $(wildcard ./SparseGrids/*.*.h) \
                    $(wildcard ./SparseGrids/tasgrid*.hpp) \
+                   $(wildcard ./Addons/test*.hpp) \
 
 # header names with ./include as opposed to ./SparseGrids
 HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./DREAM/*.hpp))) \
