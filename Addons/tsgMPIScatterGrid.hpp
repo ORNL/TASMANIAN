@@ -103,6 +103,19 @@ public:
  *
  * \b Note: this call must be mirrored by TasGrid::MPIGridRecv() on the
  *          destination process.
+ *
+ * Example usage, process 0 creates a grid and sends it to process 1:
+ * \code
+ *   int me, tag_size = 0, tag_data = 1;
+ *   MPI_Comm_rank(MPI_COMM_WORLD, &me);
+ *   MPI_Status status;
+ *   TasGrid::TasmanianSparseGrid grid;
+ *   if (me == 0) grid.makeGlobalGrid(3, 4, 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+ *   if (me == 0) MPIGridSend(grid, 1, tag_size, tag_data, MPI_COMM_WORLD);
+ *   else if (me == 1) MPIGridRecv(grid, 0, tag_size, tag_data, MPI_COMM_WORLD, &status);
+ *   // at this line, process 1 has a grid equivalent to that of process 0
+ *   // processes with rank 2 and above do nothing, i.e., they have an empty grid
+ * \endcode
  */
 template<bool binary = true>
 int MPIGridSend(TasmanianSparseGrid const &grid, int destination, int tag_size, int tag_data, MPI_Comm comm){
@@ -174,6 +187,15 @@ int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_dat
  * \return the error code of the fist failed MPI_Bcast() command
  *         (corresponding to either the size of the data message),
  *         if MPI_SUCCESS is returned then both messages were successful.
+ *
+ * Example usage, process 0 reads a grid from a file and sends it to all processes:
+ * \code
+ *   int me;
+ *   MPI_Comm_rank(MPI_COMM_WORLD, &me);
+ *   auto grid = (me == 0) ? TasGrid::readGrid("foo") : TasGrid::TasmanianSparseGrid();
+ *   MPIGridBcast(grid, 0, MPI_COMM_WORLD);
+ *   // at this line, every process has the same grid as if they all read it from "foo"
+ * \endcode
  */
 template<bool binary = true>
 int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
