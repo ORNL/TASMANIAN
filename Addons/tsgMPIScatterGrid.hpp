@@ -103,6 +103,19 @@ public:
  *
  * \b Note: this call must be mirrored by TasGrid::MPIGridRecv() on the
  *          destination process.
+ *
+ * Example usage, process 0 creates a grid and sends it to process 1:
+ * \code
+ *   int me, tag_size = 0, tag_data = 1;
+ *   MPI_Comm_rank(MPI_COMM_WORLD, &me);
+ *   MPI_Status status;
+ *   TasGrid::TasmanianSparseGrid grid;
+ *   if (me == 0) grid.makeGlobalGrid(3, 4, 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+ *   if (me == 0) MPIGridSend(grid, 1, tag_size, tag_data, MPI_COMM_WORLD);
+ *   else if (me == 1) MPIGridRecv(grid, 0, tag_size, tag_data, MPI_COMM_WORLD, &status);
+ *   // at this line, process 1 has a grid equivalent to that of process 0
+ *   // processes with rank 2 and above do nothing, i.e., they have an empty grid
+ * \endcode
  */
 template<bool binary = true>
 int MPIGridSend(TasmanianSparseGrid const &grid, int destination, int tag_size, int tag_data, MPI_Comm comm){
@@ -150,6 +163,69 @@ int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_dat
     std::istream is(&data_buffer);
     grid.read(is, binary);
     return result;
+}
+
+/*!
+ * \ingroup TasmanianAddonsMPIGridSend
+ * \brief Broadcast a grid to all processes in an MPI comm.
+ *
+ * Make all \b grid variables for all process in the \b comm match the grid
+ * on the \b root process.
+ * This call uses two MPI_Bcast() calls, the grid size (in memory units)
+ * and the actual grid data.
+ * The transfer can be done in either binary or ASCII format, but binary results
+ * in smaller messages and less computational overhead;
+ * thus, ASCII is provided mostly for debugging purposes.
+ *
+ * \param grid is the grid to broadcast across the MPI comm, the grid on the \b root
+ *             process will not be modified (i.e., treat as const),
+ *             in all other cases, the grid will be overwritten similar to
+ *             the TasGrid::TasmanianSparseGrid::read().
+ * \param root is the process that holds the data that needs to be send across.
+ * \param comm is the MPI comm of all process that need to share the grid.
+ *
+ * \return the error code of the fist failed MPI_Bcast() command
+ *         (corresponding to either the size of the data message),
+ *         if MPI_SUCCESS is returned then both messages were successful.
+ *
+ * Example usage, process 0 reads a grid from a file and sends it to all processes:
+ * \code
+ *   int me;
+ *   MPI_Comm_rank(MPI_COMM_WORLD, &me);
+ *   auto grid = (me == 0) ? TasGrid::readGrid("foo") : TasGrid::TasmanianSparseGrid();
+ *   MPIGridBcast(grid, 0, MPI_COMM_WORLD);
+ *   // at this line, every process has the same grid as if they all read it from "foo"
+ * \endcode
+ */
+template<bool binary = true>
+int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
+    int me; // my rank within the comm
+    MPI_Comm_rank(comm, &me);
+    if (me == root){ // sends the grid
+        std::stringstream ss;
+        grid.write(ss, binary);
+
+        while(ss.str().size() % 16 != 0) ss << " "; // pad with empty chars to align to 16 bytes, i.e., long double
+
+        unsigned long long data_size = (unsigned long long) ss.str().size();
+        auto result = MPI_Bcast(&data_size, 1, MPI_UNSIGNED_LONG_LONG, me, comm);
+        if (result != MPI_SUCCESS) return result;
+
+        return MPI_Bcast(const_cast<char*>(ss.str().c_str()), (int) (data_size / 16), MPI_LONG_DOUBLE, me, comm); // Bcast root does not modify the buffer, this is const-correct
+    }else{ // receives the grid
+        unsigned long long data_size;
+
+        auto result = MPI_Bcast(&data_size, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
+        if (result != MPI_SUCCESS) return result;
+
+        std::vector<char> buff((size_t) data_size);
+        result = MPI_Bcast(buff.data(), (int) (buff.size() / 16), MPI_LONG_DOUBLE, root, comm);
+
+        VectorToStreamBuffer data_buffer(buff); // do not modify buff after this point
+        std::istream is(&data_buffer);
+        grid.read(is, binary);
+        return result;
+    }
 }
 
 }
