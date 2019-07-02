@@ -94,8 +94,8 @@ doxygen_add_docs(Tasmanian_doxygen
 if (TARGET Tasmanian_libsparsegrid_shared)
     add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_doxygen)
 endif()
-if (TARGET Tasmanian_libsparsegrid_shared)
-    add_dependencies(Tasmanian_libsparsegrid_shared Tasmanian_doxygen)
+if (TARGET Tasmanian_libsparsegrid_static)
+    add_dependencies(Tasmanian_libsparsegrid_static Tasmanian_doxygen)
 endif()
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION "share/Tasmanian/docs")
