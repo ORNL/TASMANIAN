@@ -152,6 +152,41 @@ int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_dat
     return result;
 }
 
+/*!
+ * \ingroup TasmanianAddonsMPIGridSend
+ * \brief Broadcast a grid to all processes in an MPI comm.
+ */
+template<bool binary = true>
+int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
+    int me; // my rank within the comm
+    MPI_Comm_rank(comm, &me);
+    if (me == root){ // sends the grid
+        std::stringstream ss;
+        grid.write(ss, binary);
+
+        while(ss.str().size() % 16 != 0) ss << " "; // pad with empty chars to align to 16 bytes, i.e., long double
+
+        unsigned long long data_size = (unsigned long long) ss.str().size();
+        auto result = MPI_Bcast(&data_size, 1, MPI_UNSIGNED_LONG_LONG, me, comm);
+        if (result != MPI_SUCCESS) return result;
+
+        return MPI_Bcast(const_cast<char*>(ss.str().c_str()), (int) (data_size / 16), MPI_LONG_DOUBLE, me, comm); // Bcast root does not modify the buffer, this is const-correct
+    }else{ // receives the grid
+        unsigned long long data_size;
+
+        auto result = MPI_Bcast(&data_size, 1, MPI_UNSIGNED_LONG_LONG, root, comm);
+        if (result != MPI_SUCCESS) return result;
+
+        std::vector<char> buff((size_t) data_size);
+        result = MPI_Bcast(buff.data(), (int) (buff.size() / 16), MPI_LONG_DOUBLE, root, comm);
+
+        VectorToStreamBuffer data_buffer(buff); // do not modify buff after this point
+        std::istream is(&data_buffer);
+        grid.read(is, binary);
+        return result;
+    }
+}
+
 }
 
 #endif // Tasmanian_ENABLE_MPI

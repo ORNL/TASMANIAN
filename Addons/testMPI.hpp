@@ -32,6 +32,19 @@
 #include "tasgridCLICommon.hpp"
 
 /*!
+ * \brief Check if the points in the two grids match bit-wise.
+ */
+inline bool checkPoints(TasGrid::TasmanianSparseGrid const &gridA, TasGrid::TasmanianSparseGrid const &gridB){
+    if (gridA.getNumPoints()     != gridB.getNumPoints())     return false;
+    if (gridA.getNumDimensions() != gridB.getNumDimensions()) return false;
+    auto pA = gridA.getPoints();
+    auto pB = gridB.getPoints();
+    double err = 0.0;
+    for(auto x = pA.begin(), y = pB.begin(); x != pA.end(); x++, y++) err += std::abs(*x - *y);
+    return (err == 0.0); // bit-wise match is reasonable to expect here, but use with caution for some grids
+}
+
+/*!
  * \brief Simple test of MPI Send/Recv of sparse grids, binary and ascii formats.
  */
 template<bool use_binary>
@@ -56,5 +69,24 @@ bool testSendReceive(){
         return (err == 0.0); // bit-wise match is reasonable to expect here
     }else{
         return true;
+    }
+}
+
+/*!
+ * \brief Simple test of MPI Send/Recv of sparse grids, binary and ascii formats.
+ */
+template<bool use_binary>
+bool testBcast(){
+    auto true_grid = TasGrid::makeGlobalGrid(5, 1, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+
+    int me;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    if (me == 1){ // using proc 1 to Bcast the grid
+        return (TasGrid::MPIGridBcast<use_binary>(true_grid, 1, MPI_COMM_WORLD) == MPI_SUCCESS);
+    }else{
+        TasGrid::TasmanianSparseGrid grid;
+        auto result = TasGrid::MPIGridBcast<use_binary>(grid, 1, MPI_COMM_WORLD);
+        if (result != MPI_SUCCESS) return false;
+        return checkPoints(true_grid, grid);
     }
 }

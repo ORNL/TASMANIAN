@@ -69,6 +69,17 @@ int main(int argc, char ** argv){
     if (me == 0)
         cout << "    MPI Send/Recv    <binary>    Pass\n";
 
+    // ----------------- Bcast <ascii> ------------------ //
+    if (!testBcast<ascii>()) return fail();
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (me == 0)
+        cout << "        MPI Bcast     <ascii>    Pass\n";
+
+    // ----------------- Bcast <binary> ----------------- //
+    if (!testBcast<binary>()) return fail();
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (me == 0)
+        cout << "        MPI Bcast    <binary>    Pass\n";
 
     // --------------- Finalize ------------------------- //
     MPI_Finalize();
