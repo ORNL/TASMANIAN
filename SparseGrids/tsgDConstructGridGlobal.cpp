@@ -159,37 +159,53 @@ bool DynamicConstructorDataGlobal::addNewNode(const std::vector<int> &point, con
     return false; // could not find a tensor that contains this node???
 }
 
-bool DynamicConstructorDataGlobal::ejectCompleteTensor(const MultiIndexSet &current_tensors, std::vector<int> &tensor, MultiIndexSet &points, std::vector<double> &vals){
-    for(auto p = tensors.before_begin(), t = tensors.begin(); t != tensors.end(); t++, p++){
-        if (t->loaded.empty()){ // empty loaded means all have been loaded
-            if (MultiIndexManipulations::isLowerComplete(t->tensor, current_tensors)){
-                tensor = t->tensor;
-                points = t->points;
-                vals.resize(Utils::size_mult(points.getNumIndexes(),  num_outputs));
-                Data2D<double> wvals(num_outputs, points.getNumIndexes());
-                auto d = data.before_begin();
-                auto v = data.begin();
-                int found = 0;
-                while(found < points.getNumIndexes()){
-                    int slot = points.getSlot(v->point);
-                    if (slot == -1){
-                        d++;
-                        v++;
-                    }else{
-                        std::copy_n(v->value.begin(), num_outputs, wvals.getStrip(slot));
-                        data.erase_after(d);
-                        v = d;
-                        v++;
-                        found++;
-                    }
+void DynamicConstructorDataGlobal::ejectCompleteTensor(MultiIndexSet const &current_tensors, MultiIndexSet &new_tensors, MultiIndexSet &new_points, StorageSet &vals){
+    new_points = MultiIndexSet(); // reset tensors
+    vals = StorageSet();
+
+    Data2D<int> candidate_tensors(num_dimensions, 0); // get a list of completed tensors
+    for(auto &t : tensors)
+        if (t.loaded.empty())
+            candidate_tensors.appendStrip(t.tensor);
+
+    // get the completed tensors that can be added to current_tensors while still preserving lower-completion
+    new_tensors = MultiIndexManipulations::getLargestCompletion(current_tensors, MultiIndexSet(candidate_tensors));
+    if (new_tensors.empty()) return;
+
+    vals.resize((int) num_outputs, 0);
+    auto p = tensors.before_begin(), t = tensors.begin();
+    while(t != tensors.end()){
+        if (new_tensors.missing(t->tensor)){ // if not using this tensor, advance to the next
+            t++;
+            p++;
+        }else{ // if using the tensor
+            int num_searching = t->points.getNumIndexes();
+            Data2D<double> wvals(num_outputs, num_searching); // find all the values of the points
+            int found = 0;
+
+            auto d = data.before_begin();
+            auto v = data.begin();
+            while(found < num_searching){ // until all are found
+                int slot = t->points.getSlot(v->point);
+                if (slot == -1){ // this is not a point that we are looking for
+                    d++;
+                    v++;
+                }else{ // point found, copy the value and extract it from the list
+                    std::copy_n(v->value.begin(), num_outputs, wvals.getStrip(slot));
+                    data.erase_after(d);
+                    v = d;
+                    v++;
+                    found++;
                 }
-                tensors.erase_after(p);
-                vals = std::move(wvals.getVector());
-                return true;
             }
+
+            vals.addValues(new_points, t->points, wvals.getStrip(0));
+            new_points.addMultiIndexSet(t->points);
+            tensors.erase_after(p);
+            t = p;
+            t++;
         }
     }
-    return false; // could not find a complete tensor with parents present in tensors
 }
 
 }

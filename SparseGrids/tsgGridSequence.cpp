@@ -379,22 +379,7 @@ void GridSequence::loadConstructedPoint(const double x[], const std::vector<doub
         expandGrid(p, y, surplus);
         dynamic_values->initial_points.removeIndex(p);
 
-        auto d = dynamic_values->data.before_begin();
-        auto t = dynamic_values->data.begin();
-        while(t != dynamic_values->data.end()){
-            if (MultiIndexManipulations::isLowerComplete(t->point, points)){ // remove another point
-                std::vector<double> xnode(num_dimensions);
-                std::transform(t->point.begin(), t->point.end(), xnode.begin(), [&](int i)->double{ return nodes[i]; });
-                evaluate(xnode.data(), approx_value.data());
-                std::transform(approx_value.begin(), approx_value.end(), t->value.begin(), surplus.begin(), [&](double e, double v)->double{ return v - e; });
-                expandGrid(t->point, t->value, surplus);
-                dynamic_values->data.erase_after(d);
-                d = dynamic_values->data.before_begin(); // restart the search
-                t = dynamic_values->data.begin();
-            }else{
-                d++; t++;
-            }
-        }
+        loadConstructedPoints(); // batch operation, if the new point has unleashed a bunch of previously available ones
     }else{
         dynamic_values->data.push_front({p, y});
         dynamic_values->initial_points.removeIndex(p);
@@ -415,6 +400,29 @@ void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<d
         surpluses.appendStrip(points.getSlot(point), surplus);
     }
     prepareSequence(0); // update the directional max_levels, will not shrink the number of nodes
+}
+void GridSequence::loadConstructedPoints(){
+    Data2D<int> candidates(num_dimensions, 0);
+    for(auto &d : dynamic_values->data)
+        candidates.appendStrip(d.point);
+    auto new_points = MultiIndexManipulations::getLargestCompletion(points, MultiIndexSet(candidates));
+    if (new_points.empty()) return;
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaNodes(); // the points will change, clear the cache
+    clearCudaSurpluses();
+    #endif
+
+    auto vals = dynamic_values->extractValues(new_points);
+    if (points.empty()){
+        points = std::move(new_points);
+        values.setValues(std::move(vals));
+    }else{
+        values.addValues(points, new_points, vals.data());
+        points.addMultiIndexSet(new_points);
+    }
+    prepareSequence(0); // update the directional max_levels, will not shrink the number of nodes
+    recomputeSurpluses(); // costly, but the only option under the circumstances
 }
 void GridSequence::finishConstruction(){
     dynamic_values.reset();

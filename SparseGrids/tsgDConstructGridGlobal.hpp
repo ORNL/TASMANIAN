@@ -209,8 +209,8 @@ public:
     //! \brief Add a new data point with the index and the value, returns \b true if there is enough data to complete a tensor.
     bool addNewNode(const std::vector<int> &point, const std::vector<double> &value); // returns whether a tensor is complete
 
-    //! \brief Return a completed tensor with parent-tensors included in tensors, returns \b true if such tensor has been found.
-    bool ejectCompleteTensor(const MultiIndexSet &current_tensors, std::vector<int> &tensor, MultiIndexSet &points, std::vector<double> &vals);
+    //! \brief Returns a new set of tensors, points and values that can be added to the current tensors.
+    void ejectCompleteTensor(MultiIndexSet const &current_tensors, MultiIndexSet &new_tensors, MultiIndexSet &new_points, StorageSet &vals);
 
 private:
     size_t num_dimensions, num_outputs;
@@ -240,6 +240,27 @@ struct SimpleConstructData{
     void write(std::ostream &os) const{
         initial_points.write<useAscii>(os);
         writeNodeDataList<useAscii>(data, os);
+    }
+    //! \brief Remove \b points from the \b data and return a vector of the values in the \b points order.
+    std::vector<double> extractValues(MultiIndexSet const &points){
+        size_t num_outputs = data.front().value.size();
+        int num_points = points.getNumIndexes();
+        Data2D<double> result(num_outputs, num_points);
+        auto p = data.before_begin();
+        auto d = data.begin();
+        while(d != data.end()){
+            int slot = points.getSlot(d->point);
+            if (slot != -1){ // found a point
+                std::copy_n(d->value.begin(), num_outputs, result.getStrip(slot));
+                data.erase_after(p);
+                d = p;
+                d++;
+            }else{
+                p++;
+                d++;
+            }
+        }
+        return result.getVector();
     }
 };
 
