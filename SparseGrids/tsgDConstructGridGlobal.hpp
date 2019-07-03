@@ -212,6 +212,9 @@ public:
     //! \brief Return a completed tensor with parent-tensors included in tensors, returns \b true if such tensor has been found.
     bool ejectCompleteTensor(const MultiIndexSet &current_tensors, std::vector<int> &tensor, MultiIndexSet &points, std::vector<double> &vals);
 
+    //! \brief Returns a new set of tensors, points and values that can be added to the current tensors.
+    void ejectCompleteTensor(MultiIndexSet const &current_tensors, MultiIndexSet &new_tensors, MultiIndexSet &new_points, StorageSet &vals);
+
 private:
     size_t num_dimensions, num_outputs;
     std::forward_list<NodeData> data;
