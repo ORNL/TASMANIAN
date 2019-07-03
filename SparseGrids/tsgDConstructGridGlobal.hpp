@@ -241,6 +241,27 @@ struct SimpleConstructData{
         initial_points.write<useAscii>(os);
         writeNodeDataList<useAscii>(data, os);
     }
+    //! \brief Remove \b points from the \b data and return a vector of the values in the \b points order.
+    std::vector<double> extractValues(MultiIndexSet const &points){
+        size_t num_outputs = data.front().value.size();
+        int num_points = points.getNumIndexes();
+        Data2D<double> result(num_outputs, num_points);
+        auto p = data.before_begin();
+        auto d = data.begin();
+        while(d != data.end()){
+            int slot = points.getSlot(d->point);
+            if (slot != -1){ // found a point
+                std::copy_n(d->value.begin(), num_outputs, result.getStrip(slot));
+                data.erase_after(p);
+                d = p;
+                d++;
+            }else{
+                p++;
+                d++;
+            }
+        }
+        return result.getVector();
+    }
 };
 
 /*!

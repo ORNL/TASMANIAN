@@ -138,6 +138,7 @@ protected:
     }
 
     void expandGrid(const std::vector<int> &point, const std::vector<double> &values, const std::vector<double> &surplus);
+    void loadConstructedPoints();
     void recomputeSurpluses();
     void applyTransformationTransposed(double weights[]) const;
 
