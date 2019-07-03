@@ -209,9 +209,6 @@ public:
     //! \brief Add a new data point with the index and the value, returns \b true if there is enough data to complete a tensor.
     bool addNewNode(const std::vector<int> &point, const std::vector<double> &value); // returns whether a tensor is complete
 
-    //! \brief Return a completed tensor with parent-tensors included in tensors, returns \b true if such tensor has been found.
-    bool ejectCompleteTensor(const MultiIndexSet &current_tensors, std::vector<int> &tensor, MultiIndexSet &points, std::vector<double> &vals);
-
     //! \brief Returns a new set of tensors, points and values that can be added to the current tensors.
     void ejectCompleteTensor(MultiIndexSet const &current_tensors, MultiIndexSet &new_tensors, MultiIndexSet &new_points, StorageSet &vals);
 

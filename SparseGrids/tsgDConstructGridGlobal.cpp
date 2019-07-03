@@ -159,39 +159,6 @@ bool DynamicConstructorDataGlobal::addNewNode(const std::vector<int> &point, con
     return false; // could not find a tensor that contains this node???
 }
 
-bool DynamicConstructorDataGlobal::ejectCompleteTensor(const MultiIndexSet &current_tensors, std::vector<int> &tensor, MultiIndexSet &points, std::vector<double> &vals){
-    for(auto p = tensors.before_begin(), t = tensors.begin(); t != tensors.end(); t++, p++){
-        if (t->loaded.empty()){ // empty loaded means all have been loaded
-            if (MultiIndexManipulations::isLowerComplete(t->tensor, current_tensors)){
-                tensor = t->tensor;
-                points = t->points;
-                vals.resize(Utils::size_mult(points.getNumIndexes(),  num_outputs));
-                Data2D<double> wvals(num_outputs, points.getNumIndexes());
-                auto d = data.before_begin();
-                auto v = data.begin();
-                int found = 0;
-                while(found < points.getNumIndexes()){
-                    int slot = points.getSlot(v->point);
-                    if (slot == -1){
-                        d++;
-                        v++;
-                    }else{
-                        std::copy_n(v->value.begin(), num_outputs, wvals.getStrip(slot));
-                        data.erase_after(d);
-                        v = d;
-                        v++;
-                        found++;
-                    }
-                }
-                tensors.erase_after(p);
-                vals = std::move(wvals.getVector());
-                return true;
-            }
-        }
-    }
-    return false; // could not find a complete tensor with parents present in tensors
-}
-
 void DynamicConstructorDataGlobal::ejectCompleteTensor(MultiIndexSet const &current_tensors, MultiIndexSet &new_tensors, MultiIndexSet &new_points, StorageSet &vals){
     new_points = MultiIndexSet(); // reset tensors
     vals = StorageSet();
