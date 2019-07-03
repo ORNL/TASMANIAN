@@ -537,39 +537,31 @@ void GridGlobal::loadConstructedTensors(){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_values.clear();
     #endif
-    std::vector<int> tensor;
-    MultiIndexSet new_points;
-    std::vector<double> new_values;
-    bool added_any = false;
-    while(dynamic_values->ejectCompleteTensor(tensors, tensor, new_points, new_values)){
-        if (points.empty()){
-            values.setValues(std::move(new_values));
-            points = std::move(new_points);
-        }else{
-            values.addValues(points, new_points, new_values.data());
-            points.addMultiIndexSet(new_points);
-        }
+    MultiIndexSet new_tensors, new_points;
+    StorageSet new_values;
+    dynamic_values->ejectCompleteTensor(tensors, new_tensors, new_points, new_values);
+    if (new_tensors.empty()) return; // nothing to do
 
-        if (tensors.empty()){
-            tensors = MultiIndexSet((size_t) num_dimensions, std::move(tensor));
-        }else{
-            tensors.addSortedIndexes(tensor);
-        }
-        added_any = true;
+    if (points.empty()){ // no loaded points yet
+        values = std::move(new_values);
+        points = std::move(new_points);
+    }else{
+        values.addValues(points, new_points, new_values.getValues(0));
+        points.addMultiIndexSet(new_points);
     }
 
-    if (added_any){
-        std::vector<int> tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
-        active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
+    tensors.addMultiIndexSet(new_tensors);
+    // recompute the tensor weights
+    auto tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
+    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
 
-        active_w = std::vector<int>();
-        active_w.reserve(active_tensors.getNumIndexes());
-        for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
+    active_w = std::vector<int>();
+    active_w.reserve(active_tensors.getNumIndexes());
+    for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
 
-        max_levels = MultiIndexManipulations::getMaxIndexes(active_tensors);
+    max_levels = MultiIndexManipulations::getMaxIndexes(active_tensors);
 
-        recomputeTensorRefs(points);
-    }
+    recomputeTensorRefs(points);
 }
 void GridGlobal::finishConstruction(){
     dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>();
