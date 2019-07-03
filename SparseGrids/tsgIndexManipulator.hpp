@@ -404,6 +404,47 @@ inline bool isLowerComplete(std::vector<int> const &point, MultiIndexSet const &
 /*!
  * \internal
  * \ingroup TasmanianMultiIndexManipulations
+ * \brief Return the largest subset of \b candidates such that adding it to \b current will preserve lower completeness.
+ *
+ * \endinternal
+ */
+inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiIndexSet const &candidates){
+    if (candidates.empty()) return MultiIndexSet();
+    auto num_dimensions = candidates.getNumDimensions();
+    MultiIndexSet result; // start with an empty set
+    if (current.empty()){
+        if (candidates.missing(std::vector<int>(num_dimensions, 0))){
+            return MultiIndexSet(); // current is empty, 0-th index is the only thing that can be added
+        }else{
+            result = MultiIndexSet(num_dimensions, std::vector<int>(num_dimensions, 0));
+        }
+    }
+    bool loopon = true;
+    while(loopon){
+        Data2D<int> update(num_dimensions, 0);
+
+        MultiIndexSet total = current;
+        if (!result.empty()) total.addMultiIndexSet(result);
+        for(int i=0; i<total.getNumIndexes(); i++){
+            std::vector<int> kid(total.getIndex(i), total.getIndex(i) + num_dimensions);
+            for(auto &k : kid){
+                k++; // construct the kid in the new direction
+                if (!candidates.missing(kid) && result.missing(kid) && isLowerComplete(kid, total))
+                    update.appendStrip(kid);
+                k--;
+            }
+        }
+
+        loopon = (update.getNumStrips() > 0);
+        if (loopon) result.addMultiIndexSet(MultiIndexSet(update));
+    }
+    return result;
+}
+
+
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
  * \brief For a set of \b tensors create an \b mset that contain the children of indexes in \b tensors that are missing from \b exclude and obey the \b level_limits.
  *
  * If \b limited is \b false, then the \b level_limits are ignored.
