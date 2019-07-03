@@ -141,6 +141,51 @@ inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet co
 /*!
  * \internal
  * \ingroup TasmanianHierarchyManipulations
+ * \brief Return the largest subset of \b candidates such that adding it to \b current will result in connected graph.
+ *
+ * \endinternal
+ */
+inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiIndexSet const &candidates, BaseRuleLocalPolynomial const *rule){
+    if (candidates.empty()) return MultiIndexSet();
+    auto num_dimensions = candidates.getNumDimensions();
+    MultiIndexSet result; // start with an empty set
+    if (current.empty()){
+        if (candidates.missing(std::vector<int>(num_dimensions, 0))){
+            return MultiIndexSet(); // current is empty, 0-th index is the only thing that can be added
+        }else{
+            result = MultiIndexSet(num_dimensions, std::vector<int>(num_dimensions, 0));
+        }
+    }
+    int max_kids      = rule->getMaxNumKids();
+    int max_relatives = rule->getMaxNumParents() + max_kids;
+    bool loopon = true;
+    while(loopon){
+        Data2D<int> update(num_dimensions, 0);
+
+        MultiIndexSet total = current;
+        if (!result.empty()) total.addMultiIndexSet(result);
+        for(int i=0; i<total.getNumIndexes(); i++){
+            std::vector<int> relative(total.getIndex(i), total.getIndex(i) + num_dimensions);
+            for(auto &r : relative){
+                int k = r; // save the value
+                for(int j=0; j<max_relatives; j++){
+                    r = (j < max_kids) ? rule->getKid(k, j) : ((j - max_kids == 0) ? rule->getParent(k) : rule->getStepParent(k));
+                    if ((r != -1) && !candidates.missing(relative) && total.missing(relative))
+                        update.appendStrip(relative);
+                }
+                r = k;
+            }
+        }
+
+        loopon = (update.getNumStrips() > 0);
+        if (loopon) result.addMultiIndexSet(MultiIndexSet(update));
+    }
+    return result;
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianHierarchyManipulations
  * \brief Split the \b data into strips with given \b stride and return into \b Data2D structures grouped by \b levels, preserves the order.
  *
  * \endinternal

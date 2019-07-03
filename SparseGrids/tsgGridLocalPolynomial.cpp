@@ -522,26 +522,20 @@ void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vect
         while(std::abs(rule->getNode(p[j]) - x[j]) > Maths::num_tol) p[j]++;
     }
 
-    dynamic_values->data.push_front({p, y});
     dynamic_values->initial_points.removeIndex(p);
 
-    auto d = dynamic_values->data.before_begin();
-    auto t = dynamic_values->data.begin();
-    while(t != dynamic_values->data.end()){
-        bool isConnected = false;
-        HierarchyManipulations::touchAllImmediateRelatives(t->point, points, rule.get(),
-                                                            [&](int)->void{ isConnected = true; });
-        int lvl = rule->getLevel(t->point[0]);
-        for(int j=1; j<num_dimensions; j++) lvl += rule->getLevel(t->point[j]);
+    bool isConnected = false;
+    HierarchyManipulations::touchAllImmediateRelatives(p, points, rule.get(),
+                                                       [&](int)->void{ isConnected = true; });
 
-        if (isConnected || (lvl == 0)){ // found a point that needs to add to the grid
-            expandGrid(t->point, t->value);
-            dynamic_values->data.erase_after(d);
-            d = dynamic_values->data.before_begin(); // restart the search
-            t = dynamic_values->data.begin();
-        }else{
-            d++; t++;
-        }
+    int lvl = rule->getLevel(p[0]);
+    for(int j=1; j<num_dimensions; j++) lvl += rule->getLevel(p[j]);
+
+    if (isConnected || (lvl == 0)){
+        expandGrid(p, y);
+        loadConstructedPoints();
+    }else{
+        dynamic_values->data.push_front({p, y});
     }
 }
 void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::vector<double> &value){
@@ -583,6 +577,29 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
         updateSurpluses(points, top_level + 1, levels, dagUp); // compute the current DAG and update the surplused for the descendants
     }
     buildTree(); // the tree is needed for evaluate(), must be rebuild every time the points set is updated
+}
+void GridLocalPolynomial::loadConstructedPoints(){
+    Data2D<int> candidates(num_dimensions, 0);
+    for(auto &d : dynamic_values->data)
+        candidates.appendStrip(d.point);
+    auto new_points = HierarchyManipulations::getLargestConnected(points, MultiIndexSet(candidates), rule.get());
+    if (new_points.empty()) return;
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaBasisHierarchy(); // the points will change, clear the cache
+    clearCudaSurpluses();
+    #endif
+
+    auto vals = dynamic_values->extractValues(new_points);
+    if (points.empty()){
+        points = std::move(new_points);
+        values.setValues(std::move(vals));
+    }else{
+        values.addValues(points, new_points, vals.data());
+        points.addMultiIndexSet(new_points);
+    }
+    buildTree();
+    recomputeSurpluses(); // costly, but the only option under the circumstances
 }
 void GridLocalPolynomial::finishConstruction(){ dynamic_values.reset(); }
 
