@@ -148,6 +148,9 @@ protected:
     //! \brief Add the \b point to the grid using the \b values.
     void expandGrid(std::vector<int> const &point, std::vector<double> const &value);
 
+    //! \brief Looks for a batch of constructed points and processes all that will result in a connected graph.
+    void loadConstructedPoints();
+
     void recomputeSurpluses();
 
     /*!
