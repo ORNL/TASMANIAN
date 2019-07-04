@@ -875,9 +875,9 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
             std::vector<double> y(outs);
             f->eval(x.data(), y.data());
             if (i % 3 == 0){ // every third point uses the array interface for testing purpose
-                grid->loadConstructedPoint(x.data(), y.data());
+                grid->loadConstructedPoints(x.data(), 1, y.data());
             }else{
-                grid->loadConstructedPoint(x, y);
+                grid->loadConstructedPoints(x, y);
             }
         }
 

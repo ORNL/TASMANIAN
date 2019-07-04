@@ -230,9 +230,9 @@ public:
                                                        std::vector<int> const &level_limits = std::vector<int>(),
                                                        std::vector<double> const &scale_correction = std::vector<double>());
     //! \brief Add the value of a single point (if the tensor of the point is not complete, the grid will not be updated but the value will be stored)
-    void loadConstructedPoint(std::vector<double> const &x, std::vector<double> const &y);
+    void loadConstructedPoints(std::vector<double> const &x, std::vector<double> const &y);
     //! \brief Same as \b loadConstructedPoint() but using arrays in place of vectors (array size is not checked)
-    void loadConstructedPoint(const double x[], const double y[]);
+    void loadConstructedPoints(const double x[], int numx, const double y[]);
     //! \brief End the procedure, clears flags and unused constructed points, can go back to using regular refinement
     void finishConstruction();
 

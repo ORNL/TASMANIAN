@@ -351,7 +351,7 @@ int tsgGetCandidateConstructionPointsPythonGetNP(void *grid, const void *vecx){
 void tsgGetCandidateConstructionPointsPythonStatic(const void *vecx, double *x){ std::copy_n(((std::vector<double>*) vecx)->data(), ((std::vector<double>*) vecx)->size(), x); }
 void tsgGetCandidateConstructionPointsPythonDeleteVect(void *vecx){ delete ((std::vector<double>*) vecx); }
 void tsgLoadConstructedPoint(void *grid, const double *x, const double *y){
-    ((TasmanianSparseGrid*) grid)->loadConstructedPoint(x, y);
+    ((TasmanianSparseGrid*) grid)->loadConstructedPoints(x, 1, y);
 }
 void tsgFinishConstruction(void *grid){
     ((TasmanianSparseGrid*) grid)->finishConstruction();
