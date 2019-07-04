@@ -101,6 +101,7 @@ public:
     std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits);
     std::vector<double> getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
+    void loadConstructedPoint(const double x[], int numx, const double y[]);
     void finishConstruction();
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
@@ -128,6 +129,7 @@ protected:
 
     void mapIndexesToNodes(const std::vector<int> &indexes, double *x) const;
     void loadConstructedTensors();
+    std::vector<int> getMultiIndex(const double x[]);
 
 private:
     TypeOneDRule rule;

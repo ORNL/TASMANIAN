@@ -909,6 +909,35 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
     }
     grid->finishConstruction();
     if (grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to finalize." << endl; return false; }
+
+    TasmanianSparseGrid grid2;
+    if (grid->isGlobal()){
+        // the goal here is to create a new grid by using only the points and values from the old grid
+        // since we don't have the tensor data here, we create a global grid that is much larger (superset) of the current one
+        // then the points will be loaded with a single command and only the loaded points will be used
+        grid2 = makeGlobalGrid(grid->getNumDimensions(), grid->getNumOutputs(),
+                               (grid->getRule() == rule_rlejadouble4) ? 30 : 9,
+                               type_level, grid->getRule());
+    }else{
+        return true;
+    }
+
+    grid2.beginConstruction();
+    auto pnts = grid->getPoints();
+    std::vector<double> vals;
+    grid->evaluateBatch(pnts, vals);
+    grid2.loadConstructedPoints(pnts, vals);
+    grid2.finishConstruction();
+
+    if (grid->getNumLoaded() != grid2.getNumLoaded()){ cout << "ERROR: did not load a batch of points." << endl; return false; }
+    std::vector<double> xpnts(grid->getNumDimensions() * 10), res1, res2;
+    setRandomX((int) xpnts.size(), xpnts.data());
+    grid->evaluateBatch(xpnts, res1);
+    grid2.evaluateBatch(xpnts, res2);
+    double err = std::inner_product(res1.begin(), res1.end(), res2.begin(), 0.0,
+                                   [](double a, double b)->double{ return std::max(a, b); },
+                                   [](double a, double b)->double{ return std::abs(a - b); });
+    if (err > Maths::num_tol){ cout << "ERROR: failed evaluate after loading batch points." << endl; return false; }
     return true;
 }
 

@@ -1045,9 +1045,9 @@ void TasmanianSparseGrid::loadConstructedPoints(const double x[], int numx, cons
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, numx);
     if (numx == 1)
-        base->loadConstructedPoint(x, std::vector<double>(y, y + base->getNumOutputs()));
+        base->loadConstructedPoint(x_canonical, std::vector<double>(y, y + base->getNumOutputs()));
     else
-        base->loadConstructedPoint(x, numx, y);
+        base->loadConstructedPoint(x_canonical, numx, y);
 }
 void TasmanianSparseGrid::finishConstruction(){
     if (usingDynamicConstruction) base->finishConstruction();

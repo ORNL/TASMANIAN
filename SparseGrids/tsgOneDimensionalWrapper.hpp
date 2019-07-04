@@ -66,8 +66,10 @@ public:
     //! \brief Get the global index of point \b j on \b level (used only by non-nested rules).
     int getPointIndex(int level, int j) const;
 
+    //! \brief Get number of loaded nodes.
+    int getNumNodes() const{ return (int) unique.size(); }
     //! \brief Get the canonical coordinate of the node with global index \b j.
-    double getNode(int j) const;
+    double getNode(int j) const{ return unique[j]; }
     //! \brief Get the quadrature weight of the \b j-th node on the \b level (for non-nested rules, using index local to the level)
     double getWeight(int level, int j) const;
 

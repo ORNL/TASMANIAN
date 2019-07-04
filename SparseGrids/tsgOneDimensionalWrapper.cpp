@@ -251,7 +251,6 @@ OneDimensionalWrapper::~OneDimensionalWrapper(){}
 int OneDimensionalWrapper::getNumPoints(int level) const{ return num_points[level]; }
 int OneDimensionalWrapper::getPointIndex(int level, int j) const{ return indx[pntr[level] + j]; }
 
-double OneDimensionalWrapper::getNode(int j) const{ return unique[j]; }
 double OneDimensionalWrapper::getWeight(int level, int j) const{ return weights[level][j];  }
 
 const double* OneDimensionalWrapper::getNodes(int level) const{ return (isNonNested) ? nodes[level].data() : unique.data(); }
