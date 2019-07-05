@@ -99,6 +99,7 @@ public:
     std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits);
     std::vector<double> getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
+    void loadConstructedPoint(const double x[], int numx, const double y[]);
     void finishConstruction();
 
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
@@ -137,6 +138,7 @@ protected:
         return cache;
     }
 
+    std::vector<int> getMultiIndex(const double x[]);
     void expandGrid(const std::vector<int> &point, const std::vector<double> &values, const std::vector<double> &surplus);
     void loadConstructedPoints();
     void recomputeSurpluses();

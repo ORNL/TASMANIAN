@@ -358,17 +358,21 @@ std::vector<double> GridSequence::getCandidateConstructionPoints(std::function<d
     }
     return x;
 }
-void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){
+std::vector<int> GridSequence::getMultiIndex(const double x[]){
     std::vector<int> p(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
-        size_t i = 0;
-        while((i < nodes.size()) && (std::abs(nodes[i] - x[j]) > Maths::num_tol)) i++; // convert canonical node to index
-        if (i < nodes.size()){
-            p[j] = (int) i;
-        }else{
-            throw std::runtime_error("ERROR: GridSequence::loadConstructedPoint() x is not a vector returned by getCandidateConstructionPoints()");
+        int i = 0;
+        while(std::abs(nodes[i] - x[j]) > Maths::num_tol){
+            i++; // convert canonical node to index
+            if (i == (int) nodes.size())
+                prepareSequence(i);
         }
+        p[j] = i;
     }
+    return p;
+}
+void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){
+    auto p = getMultiIndex(x);
 
     if (MultiIndexManipulations::isLowerComplete(p, points)){
         std::vector<double> approx_value(num_outputs), surplus(num_outputs);;
@@ -384,6 +388,13 @@ void GridSequence::loadConstructedPoint(const double x[], const std::vector<doub
         dynamic_values->data.push_front({p, y});
         dynamic_values->initial_points.removeIndex(p);
     }
+}
+void GridSequence::loadConstructedPoint(const double x[], int numx, const double y[]){
+    Utils::Wrapper2D<const double> wrapx(num_dimensions, x);
+    Utils::Wrapper2D<const double> wrapy(num_outputs, y);
+    for(int i=0; i<numx; i++)
+        dynamic_values->data.push_front({getMultiIndex(wrapx.getStrip(i)), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs)});
+    loadConstructedPoints();
 }
 void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
     if (points.empty()){ // only one point

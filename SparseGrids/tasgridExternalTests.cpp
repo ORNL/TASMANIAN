@@ -918,6 +918,8 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
         grid2 = makeGlobalGrid(grid->getNumDimensions(), grid->getNumOutputs(),
                                (grid->getRule() == rule_rlejadouble4) ? 30 : 9,
                                type_level, grid->getRule());
+    }else if (grid->isSequence()){
+        grid2 = makeSequenceGrid(grid->getNumDimensions(), grid->getNumOutputs(), 0, type_level, grid->getRule());
     }else{
         return true;
     }
