@@ -920,6 +920,8 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
                                type_level, grid->getRule());
     }else if (grid->isSequence()){
         grid2 = makeSequenceGrid(grid->getNumDimensions(), grid->getNumOutputs(), 0, type_level, grid->getRule());
+    }else if (grid->isLocalPolynomial()){
+        grid2 = makeLocalPolynomialGrid(grid->getNumDimensions(), grid->getNumOutputs(), 0, grid->getOrder(), grid->getRule());
     }else{
         return true;
     }
