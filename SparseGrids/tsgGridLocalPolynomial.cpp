@@ -515,12 +515,17 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
         ix = std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule->getNode(i); });
     return x;
 }
-void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){
+std::vector<int> GridLocalPolynomial::getMultiIndex(const double x[]){
     std::vector<int> p(num_dimensions); // convert x to p, maybe expensive
     for(int j=0; j<num_dimensions; j++){
-        p[j] = 0;
-        while(std::abs(rule->getNode(p[j]) - x[j]) > Maths::num_tol) p[j]++;
+        int i = 0;
+        while(std::abs(rule->getNode(i) - x[j]) > Maths::num_tol) i++;
+        p[j] = i;
     }
+    return p;
+}
+void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){
+    auto p = getMultiIndex(x);
 
     dynamic_values->initial_points.removeIndex(p);
 
@@ -577,6 +582,13 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
         updateSurpluses(points, top_level + 1, levels, dagUp); // compute the current DAG and update the surplused for the descendants
     }
     buildTree(); // the tree is needed for evaluate(), must be rebuild every time the points set is updated
+}
+void GridLocalPolynomial::loadConstructedPoint(const double x[], int numx, const double y[]){
+    Utils::Wrapper2D<const double> wrapx(num_dimensions, x);
+    Utils::Wrapper2D<const double> wrapy(num_outputs, y);
+    for(int i=0; i<numx; i++)
+        dynamic_values->data.push_front({getMultiIndex(wrapx.getStrip(i)), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs)});
+    loadConstructedPoints();
 }
 void GridLocalPolynomial::loadConstructedPoints(){
     Data2D<int> candidates(num_dimensions, 0);

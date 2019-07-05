@@ -103,6 +103,7 @@ public:
     virtual void readConstructionDataBinary(std::istream&){}
     virtual void readConstructionData(std::istream&){}
     virtual void loadConstructedPoint(const double[], const std::vector<double> &){}
+    virtual void loadConstructedPoint(const double[], int, const double[]){}
     virtual void finishConstruction(){}
 
     virtual void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const = 0; // add acceleration here

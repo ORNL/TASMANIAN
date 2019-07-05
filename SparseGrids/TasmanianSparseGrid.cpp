@@ -1035,18 +1035,19 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(double t
     if (!level_limits.empty()) llimits = level_limits;
     return getGridLocalPolynomial()->getCandidateConstructionPoints(tolerance, criteria, output, llimits, ((scale_correction.empty()) ? nullptr : scale_correction.data()));
 }
-void TasmanianSparseGrid::loadConstructedPoint(const std::vector<double> &x, const std::vector<double> &y){
-    if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
-    if (x.size() != (size_t) getNumDimensions()) throw std::runtime_error("ERROR: loadConstructedPoint() called with incorrect size for x");
-    if (y.size() != (size_t) getNumOutputs()) throw std::runtime_error("ERROR: loadConstructedPoint() called with incorrect size for y");
-    Data2D<double> x_tmp;
-    const double *x_canonical = formCanonicalPoints(x.data(), x_tmp, 1);
-    base->loadConstructedPoint(x_canonical, y);
+void TasmanianSparseGrid::loadConstructedPoints(const std::vector<double> &x, const std::vector<double> &y){
+    int numx = (int) x.size() / base->getNumDimensions();
+    if (y.size() < Utils::size_mult(numx, base->getNumOutputs())) throw std::runtime_error("ERROR: loadConstructedPoint() called with incorrect size for y");
+    loadConstructedPoints(x.data(), numx, y.data());
 }
-void TasmanianSparseGrid::loadConstructedPoint(const double x[], const double y[]){
+void TasmanianSparseGrid::loadConstructedPoints(const double x[], int numx, const double y[]){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: loadConstructedPoint() called before beginConstruction()");
-    std::vector<double> vecx(x, x + getNumDimensions()), vecy(y, y + getNumOutputs());
-    loadConstructedPoint(vecx, vecy);
+    Data2D<double> x_tmp;
+    const double *x_canonical = formCanonicalPoints(x, x_tmp, numx);
+    if (numx == 1)
+        base->loadConstructedPoint(x_canonical, std::vector<double>(y, y + base->getNumOutputs()));
+    else
+        base->loadConstructedPoint(x_canonical, numx, y);
 }
 void TasmanianSparseGrid::finishConstruction(){
     if (usingDynamicConstruction) base->finishConstruction();

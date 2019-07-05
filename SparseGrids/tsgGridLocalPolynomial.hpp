@@ -103,6 +103,7 @@ public:
     void readConstructionData(std::istream &is);
     std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
+    void loadConstructedPoint(const double x[], int numx, const double y[]);
     void finishConstruction();
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
@@ -147,6 +148,9 @@ protected:
 
     //! \brief Add the \b point to the grid using the \b values.
     void expandGrid(std::vector<int> const &point, std::vector<double> const &value);
+
+    //! \brief Return the multi-index of canonical point \b x.
+    std::vector<int> getMultiIndex(const double x[]);
 
     //! \brief Looks for a batch of constructed points and processes all that will result in a connected graph.
     void loadConstructedPoints();

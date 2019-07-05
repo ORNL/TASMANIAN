@@ -521,17 +521,29 @@ std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<dou
     mapIndexesToNodes(node_indexes, x.data());
     return x;
 }
-void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double> &y){
+std::vector<int> GridGlobal::getMultiIndex(const double x[]){
     std::vector<int> p(num_dimensions);
     for(int j=0; j<num_dimensions; j++){
         int i = 0;
-        while(std::abs(wrapper.getNode(i) - x[j]) > Maths::num_tol) i++; // convert canonical node to index
+        while(std::abs(wrapper.getNode(i) - x[j]) > Maths::num_tol){
+            i++; // convert canonical node to index
+            if (i == wrapper.getNumNodes())
+                wrapper.load(custom, wrapper.getNumLevels(), wrapper.getType(), alpha, beta);
+        }
         p[j] = i;
     }
-
-    if (dynamic_values->addNewNode(p, y)){ // if a new tensor is complete
+    return p;
+}
+void GridGlobal::loadConstructedPoint(const double x[], const std::vector<double> &y){
+    if (dynamic_values->addNewNode(getMultiIndex(x), y)) // if a new tensor is complete
         loadConstructedTensors();
-    }
+}
+void GridGlobal::loadConstructedPoint(const double x[], int numx, const double y[]){
+    Utils::Wrapper2D<const double> wrapx(num_dimensions, x);
+    Utils::Wrapper2D<const double> wrapy(num_outputs, y);
+    for(int i=0; i<numx; i++)
+        dynamic_values->addNewNode(getMultiIndex(wrapx.getStrip(i)), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs));
+    loadConstructedTensors();
 }
 void GridGlobal::loadConstructedTensors(){
     #ifdef Tasmanian_ENABLE_CUDA
