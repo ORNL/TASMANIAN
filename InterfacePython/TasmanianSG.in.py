@@ -1668,7 +1668,23 @@ class TasmanianSparseGrid:
 
     def loadConstructedPoint(self, lfX, lfY):
         '''
-        load the currently computed point
+        load the currently computed point or points
+
+        lfX: should be 1D (single point case) or 2D (multi-point case)
+             numpy.ndarray
+             1D case: the lenght should be iDimensions indicating the
+             computed point
+             2D case: lfX.shape[1] shold be iDimensions and lfX.shape[0]
+             should be the number of computed points
+        lfY: should be a 1D or 2D numpy.ndarray matching lfY
+             1D case: the length should be iOutputs indicated the
+             corresponding model value
+             2D case: lfY.shape[1] should be iOutputs and lfY.shape[0]
+             must match lfX.shape[0]
+
+        if lfX or lfY are not numpy.ndarrays, an attempt would be made
+        to cast them using numpy.array() funciton (e.g., lfX and lfY
+        could be 1D lists or tuples).
         '''
         if (not self.isUsingConstruction()):
             raise TasmanianInputError("loadConstructedPoint", "ERROR: calling loadConstructedPoint() before beginConstruction()")
@@ -1676,14 +1692,30 @@ class TasmanianSparseGrid:
         iNumOuts = self.getNumOutputs()
         if (not isinstance(lfX, np.ndarray)):
             lfX = np.array(lfX)
-        if (lfX.shape[0] != iNumDims):
-            raise TasmanianInputError("lfX", "ERROR: lfX should be numpy.ndarray with length equal to the grid dimension")
         if (not isinstance(lfY, np.ndarray)):
             lfY = np.array(lfY)
-        if (lfY.shape[0] != iNumOuts):
-            raise TasmanianInputError("lfY", "ERROR: lfY should be numpy.ndarray with length equal to the model outputs")
+        if (len(lfX.shape) == 1):
+            if (lfX.shape[0] != iNumDims):
+                raise TasmanianInputError("lfX", "ERROR: lfX should be 1D numpy.ndarray with length equal to the grid dimension")
+            if (len(lfY.shape) != 1 or lfY.shape[0] != iNumOuts):
+                raise TasmanianInputError("lfY", "ERROR: lfY should be 1D numpy.ndarray with length equal to the model outputs")
+            self.pLibTSG.tsgLoadConstructedPoint(self.pGrid, np.ctypeslib.as_ctypes(lfX), 1, np.ctypeslib.as_ctypes(lfY))
+        elif (len(lfX.shape) == 2):
+            iNumX = lfX.shape[0]
+            if (iNumX == 0):
+                return
+            if (len(lfY.shape) != 2):
+                raise TasmanianInputError("lfY", "ERROR: if lfX is 2D array, then lfY should be 2D array as well")
+            if (lfX.shape[1] != iNumDims):
+                raise TasmanianInputError("lfX", "ERROR: lfX should be 2D numpy.ndarray with shape[1] equal to the grid dimension")
+            if (lfY.shape[1] != iNumOuts):
+                raise TasmanianInputError("lfX", "ERROR: lfY should be 2D numpy.ndarray with shape[1] equal to the model outputs")
+            if (lfY.shape[0] != iNumX):
+                raise TasmanianInputError("lfY", "ERROR: lfY should provide the same number of entries as lfX, i.e., shape[0] must match")
+            self.pLibTSG.tsgLoadConstructedPoint(self.pGrid, np.ctypeslib.as_ctypes(lfX.reshape(iNumX * iNumDims)), iNumX, np.ctypeslib.as_ctypes(lfY.reshape(iNumX * iNumOuts)))
+        else:
+            raise TasmanianInputError("lfX", "ERROR: lfX should be 1D or 2D numpy.ndarray")
 
-        self.pLibTSG.tsgLoadConstructedPoint(self.pGrid, np.ctypeslib.as_ctypes(lfX), 1, np.ctypeslib.as_ctypes(lfY))
 
     def finishConstruction(self):
         '''

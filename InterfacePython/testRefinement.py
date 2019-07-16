@@ -161,6 +161,21 @@ class TestTasClass(unittest.TestCase):
                 gridB.read("testSave")
                 ttc.compareGrids(gridA, gridB)
 
+        # check multi-point load
+        gridA = TasmanianSG.TasmanianSparseGrid()
+        gridA.makeLocalPolynomialGrid(3, 2, 4);
+        ttc.loadExpN2(gridA)
+
+        gridB = TasmanianSG.TasmanianSparseGrid()
+        gridB.makeLocalPolynomialGrid(3, 2, 0)
+
+        gridB.beginConstruction()
+        aX = gridA.getPoints()
+        aY = gridA.evaluateBatch(aX)
+        gridB.loadConstructedPoint(aX, aY)
+        gridB.finishConstruction()
+        ttc.compareGrids(gridA, gridB)
+
     def performRefinementTest(self):
         self.checkSetClear()
         self.checkAnisoCoeff()
