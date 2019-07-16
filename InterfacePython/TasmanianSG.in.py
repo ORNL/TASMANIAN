@@ -239,7 +239,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP.argtypes = [c_void_p, c_void_p]
         self.pLibTSG.tsgGetCandidateConstructionPointsPythonStatic.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgGetCandidateConstructionPointsPythonDeleteVect.argtypes = [c_void_p]
-        self.pLibTSG.tsgLoadConstructedPoint.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
+        self.pLibTSG.tsgLoadConstructedPoint.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
         self.pLibTSG.tsgFinishConstruction.argtypes = [c_void_p]
         self.pLibTSG.tsgPrintStats.argtypes = [c_void_p]
         self.pLibTSG.tsgEnableAcceleration.argtypes = [c_void_p, c_char_p]
@@ -1683,7 +1683,7 @@ class TasmanianSparseGrid:
         if (lfY.shape[0] != iNumOuts):
             raise TasmanianInputError("lfY", "ERROR: lfY should be numpy.ndarray with length equal to the model outputs")
 
-        self.pLibTSG.tsgLoadConstructedPoint(self.pGrid, np.ctypeslib.as_ctypes(lfX), np.ctypeslib.as_ctypes(lfY))
+        self.pLibTSG.tsgLoadConstructedPoint(self.pGrid, np.ctypeslib.as_ctypes(lfX), 1, np.ctypeslib.as_ctypes(lfY))
 
     def finishConstruction(self):
         '''
