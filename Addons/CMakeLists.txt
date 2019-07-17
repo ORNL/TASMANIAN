@@ -20,6 +20,8 @@ add_library(Tasmanian_addons INTERFACE)
 Tasmanian_addon_sources(PATH .
                         FILES tsgAddonsCommon.hpp
                               tsgMPIScatterGrid.hpp
+                              tsgCandidateManager.hpp
+                              tsgConstructSurrogate.hpp
                               TasmanianAddons.hpp)
 
 # The Tasmanian MPI capabilities are templated into the Addons
