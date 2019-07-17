@@ -30,7 +30,11 @@
 
 #include "testConstructSurrogate.hpp"
 
-int main(int argc, char ** argv){
+int main(int, char **){
+
+    CandidateManager manager(2);
+
+    manager = std::vector<double>(4, 1.0);
 
     return 0;
 }

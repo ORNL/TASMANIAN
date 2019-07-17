@@ -424,6 +424,8 @@ void GridSequence::loadConstructedPoints(){
     clearCudaSurpluses();
     #endif
 
+    dynamic_values->initial_points = dynamic_values->initial_points.diffSets(new_points);
+
     auto vals = dynamic_values->extractValues(new_points);
     if (points.empty()){
         points = std::move(new_points);

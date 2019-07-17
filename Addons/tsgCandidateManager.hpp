@@ -52,6 +52,92 @@
 
 namespace TasGrid{
 
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Manages candidate points.
+ *
+ * Class for book keeping of candidate construction points,
+ * e.g., started jobs, finished jobs, available jobs.
+ * \endinternal
+ */
+class CandidateManager{
+protected:
+    enum TypeStatus{ free, running, done };
+public:
+    template<typename IntType>
+    CandidateManager(IntType dimensions) : num_dimensions((size_t) dimensions),
+        num_candidates(0), num_running(0), num_done(0){}
+    ~CandidateManager(){}
+
+    void operator=(std::vector<double> &&new_candidates){
+        candidates = std::move(new_candidates);
+        num_candidates = candidates.size() / num_dimensions;
+        num_done = 0;
+
+        sort_candidates();
+        status.resize(num_candidates);
+        std::fill(status.begin(), status.end(), free);
+        for(auto const &p : running_jobs){
+            size_t i = find(p);
+            if (i < num_candidates) status[i] = running;
+        }
+    }
+
+    void complete(std::vector<double> const &p){
+        num_done++;
+        auto i = find(p);
+        status[i] = done;
+    }
+
+protected:
+    //! \brief Return \b true if entries in \b a and \b b match to \b Maths::num_tol, assumes sizes match already.
+    bool match(std::vector<double> const &a, std::vector<double> const &b) const{
+        for(auto ia = a.begin(), ib = b.begin(); ia != a.end(); ia++, ib++)
+            if (std::abs(*ia - *ib) > Maths::num_tol) return false;
+        return true;
+    }
+
+    //! \brief Return \b true if the lexicographical order of \b a is before \b b.
+    bool compare(double const a[], double const b[]) const{
+        for(size_t i=0; i<num_dimensions; i++)
+            if (a[i] < b[i] - Maths::num_tol) return true;
+        return false;
+    }
+
+    //! \brief Creates a sorted list of all candidates.
+    void sort_candidates(){
+        sorted.resize(num_candidates);
+        std::iota(sorted.begin(), sorted.end(), 0);
+        std::sort(sorted.begin(), sorted.end(), [&](size_t a, size_t b)->bool{ return compare(&candidates[a*num_dimensions], &candidates[b*num_dimensions]); });
+    }
+
+    //! \brief Find the index of the \b point within the \b canidates vector, returns \b num_candidates if not found.
+    size_t find(std::vector<double> const &point){
+        size_t sstart = 0, send = num_candidates - 1, current = (sstart + send) / 2;
+        while (sstart <= send){
+            if (compare(&candidates[current*num_dimensions], point.data())){
+                sstart = current + 1;
+            }else if (compare(point.data(), &candidates[current*num_dimensions])){
+                send = current - 1;
+            }else{
+                return current;
+            }
+            current = (sstart + send) / 2;
+        }
+        return num_candidates;
+    }
+
+private:
+    size_t const num_dimensions;
+    size_t num_candidates, num_running, num_done;
+    std::vector<double> candidates;
+    std::vector<size_t> sorted;
+    std::vector<TypeStatus> status;
+    std::forward_list<std::vector<double>> running_jobs;
+};
+
+
 }
 
 #endif
