@@ -1592,15 +1592,15 @@ class TasmanianSparseGrid:
             or ((sys.version_info.major == 2) and isinstance(liAnisotropicWeightsOrOutput, (int, long)))):
             iOutput = liAnisotropicWeightsOrOutput
         elif (isinstance(liAnisotropicWeightsOrOutput, (list, np.ndarray))):
-            if (len(liAnisotropicWeights) > 0):
+            if (len(liAnisotropicWeightsOrOutput) > 0):
                 if (sType in lsTsgCurvedTypes):
                     iNumWeights = 2*iNumDims
                 else:
                     iNumWeights = iNumDims
-                if (len(liAnisotropicWeights) != iNumWeights):
-                    raise TasmanianInputError("liAnisotropicWeights", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
+                if (len(liAnisotropicWeightsOrOutput) != iNumWeights):
+                    raise TasmanianInputError("liAnisotropicWeightsOrOutput", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeightsOrOutput)))
                 else:
-                    aAWeights = np.array([liAnisotropicWeights[i] for i in range(iNumWeights)], np.int32)
+                    aAWeights = np.array([liAnisotropicWeightsOrOutput[i] for i in range(iNumWeights)], np.int32)
                     pAnisoWeights = np.ctypeslib.as_ctypes(aAWeights)
         else:
             raise TasmanianInputError("liAnisotropicWeightsOrOutput", "ERROR: liAnisotropicWeightsOrOutput should be either an integer or numpy.ndarray")
@@ -1634,7 +1634,7 @@ class TasmanianSparseGrid:
         returns the sorted points for the construction
         '''
         if (not self.isUsingConstruction()):
-            raise TasmanianInputError("getCandidateConstructionPoints", "ERROR: calling getCandidateConstructionPoints() before beginConstruction()")
+            raise TasmanianInputError("getCandidateConstructionPointsSurplus", "ERROR: calling getCandidateConstructionPointsSurplus() before beginConstruction()")
         iNumDims = self.getNumDimensions()
 
         if (sys.version_info.major == 3):
@@ -1709,7 +1709,7 @@ class TasmanianSparseGrid:
             if (lfX.shape[1] != iNumDims):
                 raise TasmanianInputError("lfX", "ERROR: lfX should be 2D numpy.ndarray with shape[1] equal to the grid dimension")
             if (lfY.shape[1] != iNumOuts):
-                raise TasmanianInputError("lfX", "ERROR: lfY should be 2D numpy.ndarray with shape[1] equal to the model outputs")
+                raise TasmanianInputError("lfY", "ERROR: lfY should be 2D numpy.ndarray with shape[1] equal to the model outputs")
             if (lfY.shape[0] != iNumX):
                 raise TasmanianInputError("lfY", "ERROR: lfY should provide the same number of entries as lfX, i.e., shape[0] must match")
             self.pLibTSG.tsgLoadConstructedPoint(self.pGrid, np.ctypeslib.as_ctypes(lfX.reshape(iNumX * iNumDims)), iNumX, np.ctypeslib.as_ctypes(lfY.reshape(iNumX * iNumOuts)))
