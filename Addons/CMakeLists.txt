@@ -46,6 +46,11 @@ if (Tasmanian_ENABLE_MPI)
     add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} -np 3 mpitester)
 endif()
 
+# test for non-MPI capabilities
+add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp)
+set_target_properties(Tasmanian_addontester PROPERTIES OUTPUT_NAME "addontester")
+target_link_libraries(Tasmanian_addontester Tasmanian_addons Tasmanian_libdream)
+add_test(AddonTests addontester)
 
 # install directives
 target_include_directories(Tasmanian_addons INTERFACE $<INSTALL_INTERFACE:include>)
