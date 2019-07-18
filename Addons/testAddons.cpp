@@ -38,8 +38,9 @@ int main(int, char **){
     cout << "---------------------------------------------------------------------" << endl << endl;
 
     bool pass_all = true;
+    bool verbose = true; // keep in verbose mode for now
 
-    bool pass = testConstructSurrogate();
+    bool pass = testConstructSurrogate(verbose);
     cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
     pass_all = pass_all && pass;
 

@@ -35,13 +35,17 @@ using std::cout;
 using std::setw;
 
 //! \brief Runs tests and throws if the surrogates do not match to the given tolerance.
-inline void compareGrids(double tolerance, TasGrid::TasmanianSparseGrid const &a, TasGrid::TasmanianSparseGrid const &b){
+inline void compareGrids(double tolerance, TasGrid::TasmanianSparseGrid const &a, TasGrid::TasmanianSparseGrid const &b, bool check_num_points){
     if (a.getNumDimensions() != b.getNumDimensions())
         throw std::runtime_error("grids have wrong dimensions");
     if (a.getNumOutputs() != b.getNumOutputs())
         throw std::runtime_error("grids have wrong outputs");
-    if (a.getNumPoints() != b.getNumPoints())
-        throw std::runtime_error("grids have wrong number of points");
+    if (check_num_points){ // some tests have a random number of points
+        if (a.getNumPoints() != b.getNumPoints()){
+            cout << "number of points = " << a.getNumPoints() << "  " << b.getNumPoints() << endl;
+            throw std::runtime_error("grids have wrong number of points");
+        }
+    }
 
     std::minstd_rand park_miller(77);
     std::uniform_real_distribution<double> unif(-1.0, 1.0);
@@ -55,12 +59,14 @@ inline void compareGrids(double tolerance, TasGrid::TasmanianSparseGrid const &a
     for(auto ia = resa.begin(), ib = resb.begin(); ia != resa.end(); ia++, ib++)
         err = std::max(err, std::abs(*ia - *ib));
 
-    if (err > tolerance)
+    if (err > tolerance){
+        cout << "difference = " << err << endl;
         throw std::runtime_error("grids have outputs that differ by more than the tolerance");
+    }
 }
 
 //! \brief Simple sequential construction for reference purposes.
-void simpleSequentialConstruction(std::function<void(std::vector<double> const &x, std::vector<double> &y)> model,
+void simpleSequentialConstruction(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t)> model,
                                   size_t max_num_samples, size_t num_parallel_jobs,
                                   TasmanianSparseGrid &grid,
                                   double tolerance, TypeRefinement criteria, int output = -1,
@@ -72,11 +78,11 @@ void simpleSequentialConstruction(std::function<void(std::vector<double> const &
     auto candidates = grid.getCandidateConstructionPoints(tolerance, criteria, output, level_limits, scale_correction);
     while(!candidates.empty() && (grid.getNumLoaded() < (int) max_num_samples)){
         CompleteStorage storage(grid.getNumDimensions());
-        size_t num_samples = std::min(num_parallel_jobs, max_num_samples - grid.getNumLoaded());
+        size_t num_samples = std::min(std::min(num_parallel_jobs, max_num_samples - grid.getNumLoaded()), candidates.size() / grid.getNumDimensions());
         for(size_t i=0; i<num_samples; i++){
             std::vector<double> x(&candidates[i*grid.getNumDimensions()], &candidates[i*grid.getNumDimensions()] + grid.getNumDimensions());
             std::vector<double> y(grid.getNumOutputs());
-            model(x, y);
+            model(x, y, 0);
             storage.add(x, y);
         }
         storage.load(grid);
@@ -88,14 +94,30 @@ void simpleSequentialConstruction(std::function<void(std::vector<double> const &
 }
 
 //! \brief Tests the templates for automated construction.
-bool testConstructSurrogate(){
-    auto model_exp = [&](std::vector<double> const &x, std::vector<double> &y)->void{ y = {std::exp(x[0] + x[1])}; };
+bool testConstructSurrogate(bool verbose){
+    // when the model is very fast, a thread can be locked out from reporting "success", the yield command gives everyone a chance to chime in
+    auto model_exp = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + x[1])}; };
     auto grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
     auto reference_grid = grid;
 
-    TasGrid::constructSurrogate(model_exp, -1, 2, grid, 1.E-4, TasGrid::refine_classic);
-    simpleSequentialConstruction(model_exp, 700, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
-    compareGrids(1.E-9, grid, reference_grid);
+    TasGrid::constructSurrogate<true>(model_exp, -1, 2, grid, 1.E-4, TasGrid::refine_classic); // parallel
+    simpleSequentialConstruction(model_exp, 300, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
+    compareGrids(1.E-4, grid, reference_grid, false);
+    if (verbose) cout << std::setw(40) << "parallel localp unlimited budget" << std::setw(10) << "Pass" << endl;
+
+    grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 1);
+    reference_grid = grid;
+    TasGrid::constructSurrogate<true>(model_exp, 500, 8, grid, 1.E-4, TasGrid::refine_classic); // parallel, limit points
+    simpleSequentialConstruction(model_exp, 500, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
+    compareGrids(1.E-3, grid, reference_grid, true);
+    if (verbose) cout << std::setw(40) << "parallel localp limited budget" << std::setw(10) << "Pass" << endl;
+
+    grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
+    reference_grid = grid;
+    TasGrid::constructSurrogate<false>(model_exp, -1, 2, grid, 1.E-4, TasGrid::refine_classic); // sequential
+    simpleSequentialConstruction(model_exp, 300, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
+    compareGrids(1.E-9, grid, reference_grid, true);
+    if (verbose) cout << std::setw(40) << "sequential localp limited budget" << std::setw(10) << "Pass" << endl;
 
     return true;
 }

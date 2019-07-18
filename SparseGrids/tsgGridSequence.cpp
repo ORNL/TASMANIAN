@@ -391,9 +391,20 @@ void GridSequence::loadConstructedPoint(const double x[], const std::vector<doub
 }
 void GridSequence::loadConstructedPoint(const double x[], int numx, const double y[]){
     Utils::Wrapper2D<const double> wrapx(num_dimensions, x);
+    std::vector<std::vector<int>> pnts(numx);
+    for(int i=0; i<numx; i++)
+        pnts[i] = getMultiIndex(wrapx.getStrip(i));
+
+    if (!dynamic_values->initial_points.empty()){
+        Data2D<int> combined_pnts(num_dimensions, numx);
+        for(int i=0; i<numx; i++)
+            std::copy_n(pnts[i].begin(), num_dimensions, combined_pnts.getIStrip(i));
+        dynamic_values->initial_points = dynamic_values->initial_points.diffSets(MultiIndexSet(combined_pnts));
+    }
+
     Utils::Wrapper2D<const double> wrapy(num_outputs, y);
     for(int i=0; i<numx; i++)
-        dynamic_values->data.push_front({getMultiIndex(wrapx.getStrip(i)), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs)});
+        dynamic_values->data.push_front({std::move(pnts[i]), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs)});
     loadConstructedPoints();
 }
 void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
@@ -423,8 +434,6 @@ void GridSequence::loadConstructedPoints(){
     clearCudaNodes(); // the points will change, clear the cache
     clearCudaSurpluses();
     #endif
-
-    dynamic_values->initial_points = dynamic_values->initial_points.diffSets(new_points);
 
     auto vals = dynamic_values->extractValues(new_points);
     if (points.empty()){

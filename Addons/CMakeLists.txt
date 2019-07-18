@@ -24,6 +24,10 @@ Tasmanian_addon_sources(PATH .
                               tsgConstructSurrogate.hpp
                               TasmanianAddons.hpp)
 
+if (NOT Tasmanian_ENABLE_OPENMP) # using threading without OpenMP
+    target_link_libraries(Tasmanian_addons INTERFACE ${CMAKE_THREAD_LIBS_INIT})
+endif()
+
 # The Tasmanian MPI capabilities are templated into the Addons
 if (Tasmanian_ENABLE_MPI)
     target_link_libraries(Tasmanian_addons INTERFACE ${MPI_CXX_LIBRARIES})

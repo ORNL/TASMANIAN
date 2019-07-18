@@ -76,6 +76,11 @@ if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     endif()
 endif()
 
+# fallback threads library if OpenMP is disabled, needed for Addons
+if (NOT Tasmanian_ENABLE_OPENMP)
+    find_package(Threads REQUIRED)
+endif()
+
 # check for BLAS
 if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
     if (NOT DEFINED BLAS_LIBRARIES) # user defined BLAS libraries are an XSDK requirement
