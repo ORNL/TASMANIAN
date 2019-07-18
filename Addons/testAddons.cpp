@@ -32,9 +32,27 @@
 
 int main(int, char **){
 
-    CandidateManager manager(2);
+    cout << "\n\n";
+    cout << "---------------------------------------------------------------------" << endl;
+    cout << "          Tasmanian Addons Module: Functionality Test" << endl;
+    cout << "---------------------------------------------------------------------" << endl << endl;
 
-    manager = std::vector<double>(4, 1.0);
+    bool pass_all = true;
 
-    return 0;
+    bool pass = testConstructSurrogate();
+    cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
+    pass_all = pass_all && pass;
+
+    cout << "\n";
+    if (pass){
+        cout << "---------------------------------------------------------------------" << endl;
+        cout << "               All Tests Completed Successfully" << endl;
+        cout << "---------------------------------------------------------------------" << endl << endl;
+    }else{
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl;
+        cout << "         Some Tests Have Failed" << endl;
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
+    }
+
+    return ((pass_all) ? 0 : 1);
 }
