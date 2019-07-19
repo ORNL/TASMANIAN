@@ -8,7 +8,7 @@ import math
 
 #from random import uniform
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 #import matplotlib.colors as cols
 #from mpl_toolkits.mplot3d import Axes3D
 
@@ -21,11 +21,3 @@ import matplotlib.pyplot as plt
 ###############################################################################
 
 print("Add code to this file to test, debug, or develop features")
-
-grid = TasmanianSG.TasmanianSparseGrid()
-grid.read("test")
-#grid.read("ref")
-
-grid.plotPoints2D()
-
-plt.show()
