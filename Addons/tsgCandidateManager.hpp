@@ -48,6 +48,12 @@
  * \ingroup TasmanianAddons
  * \addtogroup TasmanianAddonsConstruct Automated Surrogate Construction Procedure
  *
+ * Templates that perform an automated surrogate construction to a model defined
+ * by a lambda expression.
+ * This allows for a one-click (or one function call) grid construction where
+ * the samples can be computed either sequentially or in parallel.
+ * The procedure is carried out until either a target accuracy is reached
+ * or a computational budget is exhausted.
  */
 
 namespace TasGrid{
