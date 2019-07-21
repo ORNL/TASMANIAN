@@ -27,6 +27,25 @@
  * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
+
+/*!
+ * \file example_sparse_grids.cpp
+ * \brief Examples for the Tasmanian Sparse Grid module.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianSGExamples
+ *
+ * The main file that runs all sparse grid examples.
+ */
+
+/*!
+ * \defgroup TasmanianSGExamples Examples for the Tasmanian Sparse Grid module
+ *
+ * Several examples are included that demonstrate the proper usage of
+ * the TasmanianSparseGrid class.
+ * The examples include quadrature and interpolation tasks,
+ * as well as constructing surrogates from random data.
+ */
+
 #include <iostream>
 #include <iomanip>
 #include <ctime>
@@ -37,20 +56,15 @@
 using namespace std;
 
 int main(int argc, const char**){
+
+    // some of the exmaples take long time, for post-install testing purposes
+    // optionally limit examples to the first 3
+    bool limit_examples = (argc > 1);
+
+    return 0;
+}
+
 /*
- * The purpose of this file is to demonstrate the proper way to call
- * functions from the TASMANIAN Sparse Grids library.
- * The 11 examples are for illustrative purposes only.
- *
- */
-
-    bool limit_examples = false;
-    if (argc > 1){
-        // some of the exmaples take long time, for post-install testing purposes
-        // optionally limit examples to the first 2 (covers dream and sparse grids)
-        limit_examples = true;
-    }
-
 {
 // EXAMPLE 1: integrate: f(x,y) = exp(-x^2) * cos(y) over [-1,1] x [-1,1]
 // using classical Smolyak grid with Clenshaw-Curtis points and weights
@@ -962,3 +976,4 @@ int main(int argc, const char**){
 
     return 0;
 }
+*/

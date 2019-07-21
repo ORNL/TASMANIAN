@@ -151,7 +151,7 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridUnitTests.hpp
                                   tasgridUnitTests.cpp
                                   tasgridTestInterfaceC.cpp)
-#add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
+add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
 add_executable(Tasmanian_benchmarks  Benchmarks/benchCommon.hpp
                                      tasgridCLICommon.hpp
                                      Benchmarks/benchMakeGrid.hpp
@@ -161,7 +161,7 @@ add_executable(Tasmanian_benchmarks  Benchmarks/benchCommon.hpp
 
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
 set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")
-#set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
+set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
 set_target_properties(Tasmanian_benchmarks PROPERTIES OUTPUT_NAME "benchmark")
 
 if (Tasmanian_ENABLE_OPENMP)
@@ -187,7 +187,7 @@ endif()
 
 target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid)
 target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid)
-#target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid)
+target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_libsparsegrid)
 target_link_libraries(Tasmanian_benchmarks           Tasmanian_libsparsegrid)
 
 
