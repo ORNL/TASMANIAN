@@ -82,6 +82,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  Addons/tsgCandidateManager.hpp
                  Addons/tsgMPIScatterGrid.hpp
                  Addons/tsgAddonsCommon.hpp
+                 SparseGrids/Examples/example_sparse_grids.cpp
                  DREAM/Examples/example_dream.cpp
                  DREAM/Examples/example_dream_01.cpp
                  DREAM/Examples/example_dream_02.cpp
