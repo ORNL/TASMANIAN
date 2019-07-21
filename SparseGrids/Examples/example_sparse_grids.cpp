@@ -46,14 +46,8 @@
  * as well as constructing surrogates from random data.
  */
 
-#include <iostream>
-#include <iomanip>
-#include <ctime>
-#include "math.h"
-
-#include "TasmanianSparseGrid.hpp"
-
-using namespace std;
+#ifndef __TASMANIAN_DOXYGEN_SKIP
+void sparse_grids_example_01();
 
 int main(int argc, const char**){
 
@@ -61,8 +55,12 @@ int main(int argc, const char**){
     // optionally limit examples to the first 3
     bool limit_examples = (argc > 1);
 
+    sparse_grids_example_01();
+
     return 0;
 }
+
+#endif // __TASMANIAN_DOXYGEN_SKIP
 
 /*
 {

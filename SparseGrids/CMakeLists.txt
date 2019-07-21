@@ -151,7 +151,8 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridUnitTests.hpp
                                   tasgridUnitTests.cpp
                                   tasgridTestInterfaceC.cpp)
-add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids.cpp)
+add_executable(Tasmanian_example_sparse_grids Examples/example_sparse_grids_01.cpp
+                                              Examples/example_sparse_grids.cpp)
 add_executable(Tasmanian_benchmarks  Benchmarks/benchCommon.hpp
                                      tasgridCLICommon.hpp
                                      Benchmarks/benchMakeGrid.hpp
