@@ -84,6 +84,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  Addons/tsgAddonsCommon.hpp
                  SparseGrids/Examples/example_sparse_grids.cpp
                  SparseGrids/Examples/example_sparse_grids_01.cpp
+                 SparseGrids/Examples/example_sparse_grids_02.cpp
                  DREAM/Examples/example_dream.cpp
                  DREAM/Examples/example_dream_01.cpp
                  DREAM/Examples/example_dream_02.cpp

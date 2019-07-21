@@ -20,7 +20,9 @@ find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasm
 # without having to explicitly check for _static or _shared targets
 
 add_executable(example_sparse_grids  example_sparse_grids_01.cpp
+                                     example_sparse_grids_02.cpp
                                      example_sparse_grids.cpp)
+
 add_executable(example_dream         example_dream_01.cpp
                                      example_dream_02.cpp
                                      example_dream_03.cpp
