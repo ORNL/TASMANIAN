@@ -527,11 +527,16 @@ std::vector<int> GridLocalPolynomial::getMultiIndex(const double x[]){
 void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vector<double> &y){
     auto p = getMultiIndex(x);
 
+    //std::cout << "initial before removal = " << dynamic_values->initial_points.getNumIndexes() << std::endl;
+
     dynamic_values->initial_points.removeIndex(p);
+
+    //std::cout << "initial = " << dynamic_values->initial_points.getNumIndexes() << "  data = " << std::distance(dynamic_values->data.begin(), dynamic_values->data.end()) << std::endl;
 
     bool isConnected = false;
     HierarchyManipulations::touchAllImmediateRelatives(p, points, rule.get(),
                                                        [&](int)->void{ isConnected = true; });
+    //std::cout << "HERE - is connected" << std::endl;
 
     int lvl = rule->getLevel(p[0]);
     for(int j=1; j<num_dimensions; j++) lvl += rule->getLevel(p[j]);
@@ -585,9 +590,21 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
 }
 void GridLocalPolynomial::loadConstructedPoint(const double x[], int numx, const double y[]){
     Utils::Wrapper2D<const double> wrapx(num_dimensions, x);
+    std::vector<std::vector<int>> pnts(numx);
+    for(int i=0; i<numx; i++)
+        pnts[i] = getMultiIndex(wrapx.getStrip(i));
+
+    if (!dynamic_values->initial_points.empty()){
+        Data2D<int> combined_pnts(num_dimensions, numx);
+        for(int i=0; i<numx; i++)
+            std::copy_n(pnts[i].begin(), num_dimensions, combined_pnts.getIStrip(i));
+        dynamic_values->initial_points = dynamic_values->initial_points.diffSets(MultiIndexSet(combined_pnts));
+    }
+
     Utils::Wrapper2D<const double> wrapy(num_outputs, y);
     for(int i=0; i<numx; i++)
-        dynamic_values->data.push_front({getMultiIndex(wrapx.getStrip(i)), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs)});
+        dynamic_values->data.push_front({std::move(pnts[i]), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs)});
+
     loadConstructedPoints();
 }
 void GridLocalPolynomial::loadConstructedPoints(){

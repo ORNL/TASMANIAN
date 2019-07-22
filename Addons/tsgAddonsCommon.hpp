@@ -41,6 +41,8 @@
  */
 
 #include <sstream>
+#include <thread>
+#include <mutex>
 
 #include "TasmanianDREAM.hpp" // also brings in TasmanianSparseGrids.hpp
 

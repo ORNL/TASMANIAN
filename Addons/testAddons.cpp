@@ -28,31 +28,32 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_ADDONS_HPP
-#define __TASMANIAN_ADDONS_HPP
+#include "testConstructSurrogate.hpp"
 
-/*!
- * \file TasmanianAddons.hpp
- * \brief Header to include add addon templates.
- * \author Miroslav Stoyanov
- * \ingroup TasmanianAddons
- *
- * All addon templates are included with this single header.
- */
+int main(int, char **){
 
-#include "tsgMPIScatterGrid.hpp"
-#include "tsgConstructSurrogate.hpp"
+    cout << "\n\n";
+    cout << "---------------------------------------------------------------------" << endl;
+    cout << "          Tasmanian Addons Module: Functionality Test" << endl;
+    cout << "---------------------------------------------------------------------" << endl << endl;
 
-/*!
- * \defgroup TasmanianAddons Additional Capabilities
- *
- * \par Extra Capabilities
- * The Addon module of Tasmanian offers a series of templates that offer
- * additional capabilities not necessarily included in the core modules.
- * The templates sit in a separate module for various reasons, e.g.,
- * - some methods are hard to classify or address fringe use cases
- * - the templates depend on third-party libraries and should not overwhelm
- *   the core modules with dependencies
- */
+    bool pass_all = true;
+    bool verbose = true; // keep in verbose mode for now
 
-#endif
+    bool pass = testConstructSurrogate(verbose);
+    cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
+    pass_all = pass_all && pass;
+
+    cout << "\n";
+    if (pass){
+        cout << "---------------------------------------------------------------------" << endl;
+        cout << "               All Tests Completed Successfully" << endl;
+        cout << "---------------------------------------------------------------------" << endl << endl;
+    }else{
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl;
+        cout << "         Some Tests Have Failed" << endl;
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
+    }
+
+    return ((pass_all) ? 0 : 1);
+}

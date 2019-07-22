@@ -20,7 +20,13 @@ add_library(Tasmanian_addons INTERFACE)
 Tasmanian_addon_sources(PATH .
                         FILES tsgAddonsCommon.hpp
                               tsgMPIScatterGrid.hpp
+                              tsgCandidateManager.hpp
+                              tsgConstructSurrogate.hpp
                               TasmanianAddons.hpp)
+
+if (NOT Tasmanian_ENABLE_OPENMP) # using threading without OpenMP
+    target_link_libraries(Tasmanian_addons INTERFACE ${CMAKE_THREAD_LIBS_INIT})
+endif()
 
 # The Tasmanian MPI capabilities are templated into the Addons
 if (Tasmanian_ENABLE_MPI)
@@ -44,6 +50,11 @@ if (Tasmanian_ENABLE_MPI)
     add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} -np 3 mpitester)
 endif()
 
+# test for non-MPI capabilities
+add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp)
+set_target_properties(Tasmanian_addontester PROPERTIES OUTPUT_NAME "addontester")
+target_link_libraries(Tasmanian_addontester Tasmanian_addons Tasmanian_libdream)
+add_test(AddonTests addontester)
 
 # install directives
 target_include_directories(Tasmanian_addons INTERFACE $<INSTALL_INTERFACE:include>)
