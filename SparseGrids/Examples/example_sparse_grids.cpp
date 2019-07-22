@@ -49,6 +49,7 @@
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 void sparse_grids_example_01();
 void sparse_grids_example_02();
+void sparse_grids_example_03();
 
 int main(int argc, const char**){
 
@@ -58,6 +59,9 @@ int main(int argc, const char**){
 
     sparse_grids_example_01();
     sparse_grids_example_02();
+    sparse_grids_example_03();
+
+    if (limit_examples) return 0; // skip more expensive examples
 
     return 0;
 }
