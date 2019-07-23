@@ -1640,6 +1640,8 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("getCandidateConstructionPointsSurplus", "ERROR: calling getCandidateConstructionPointsSurplus() before beginConstruction()")
         iNumDims = self.getNumDimensions()
 
+        if (not sRefinementType in lsTsgRefineTypes):
+            raise TasmanianInputError("sRefinementType", "ERROR: calling getCandidateConstructionPointsSurplus() called with incorrect type, see TasmanianSG.lsTsgRefineTypes")
         if (sys.version_info.major == 3):
             sRefinementType = bytes(sRefinementType, encoding='utf8')
 
