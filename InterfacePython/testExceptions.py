@@ -130,6 +130,7 @@ class TestTasClass(unittest.TestCase):
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); ttc.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, '', [2, 3, 4]);", "liLevelLimits"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); ttc.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, '', [2, 3]);", "notError"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); ttc.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0);", "sCriteria"],
+                   ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); ttc.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'class');", "sCriteria"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); ttc.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic');", "notError"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); ttc.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic', [2, 3, 4]);", "liLevelLimits"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); ttc.loadExpN2(grid); grid.setSurplusRefinement(1.E-4, 0, 'classic', [], np.ones([3]));", "llfScaleCorrection"],
