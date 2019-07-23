@@ -1879,8 +1879,6 @@ class TasmanianSparseGrid:
         lfX = llfX.reshape([llfX.shape[0] * llfX.shape[1]])
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic(self.pGrid, np.ctypeslib.as_ctypes(lfX), iNumX,
                                                         np.ctypeslib.as_ctypes(pMat.aPntr), np.ctypeslib.as_ctypes(pMat.aIndx), np.ctypeslib.as_ctypes(pMat.aVals))
-        if self.isFourier():
-            pMat.aVals = pMat.aVals[0::2] + 1j * pMat.aVals[1::2]
 
         return pMat
 

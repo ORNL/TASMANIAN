@@ -88,6 +88,12 @@ class TestTasClass(unittest.TestCase):
         aVan = grid.evaluateHierarchicalFunctions(aPoints)
         np.testing.assert_almost_equal(aVan, aResult, 14, "evaluateHierarchicalFunctions", True)
 
+        grid.makeFourierGrid(2, 1, 1, "level")
+        aPoints = np.array([[0.25, 0.5]]);
+        aResult = np.array([[1.0 + 0.0 * 1j, -1.0 + 0.0 * 1j, -1.0 + 0.0 * 1j, 0.0 - 1.0 * 1j, 0.0 + 1.0 * 1j]])
+        aVan = grid.evaluateHierarchicalFunctions(aPoints)
+        np.testing.assert_almost_equal(aVan, aResult, 14, "evaluateHierarchicalFunctions", True)
+
         # sparse hierarchical functions
         pSparse = TasmanianSG.TasmanianSimpleSparseMatrix()
         np.testing.assert_almost_equal(np.empty([0,0], np.float64), pSparse.getDenseForm(), 14, "TasmanianSimpleSparseMatrix.getDense()", True)

@@ -163,6 +163,7 @@ class TestTasClass(unittest.TestCase):
                    ["grid.makeLocalPolynomialGrid(2, 1, 2, 1, 'localp'); grid.setHierarchicalCoefficients(np.array([[1.0, 1.0],]));", "llfCoefficients"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 1, 1, 'localp'); grid.setHierarchicalCoefficients(np.array([[1.0, 1.0],[1.0, 1.0],[1.0, 1.0],[1.0, 1.0],[1.0, 1.0],]));", "llfCoefficients"],
                    ["grid.makeLocalPolynomialGrid(2, 1, 1, 1, 'localp'); grid.setHierarchicalCoefficients(np.array([[1.0,],[1.0,],[1.0,],[1.0,],[1.0,]]));", "notError"],
+                   ["grid.makeFourierGrid(2, 1, 1, 'level'); grid.setHierarchicalCoefficients(np.array([[1.0,],[1.0,],[1.0,],[1.0,],[1.0,]]));", "llfCoefficients"],
                    ["grid.makeGlobalGrid(2, 1, 3, 'level', 'rleja'); grid.getCandidateConstructionPoints('level', -1);", "getCandidateConstructionPoints"],
                    ["grid.makeGlobalGrid(2, 1, 3, 'level', 'rleja'); grid.beginConstruction(); grid.getCandidateConstructionPoints('lev', -1);", "sType"],
                    ["grid.makeGlobalGrid(2, 1, 3, 'level', 'rleja'); grid.beginConstruction(); grid.getCandidateConstructionPoints('level', [0]);", "liAnisotropicWeightsOrOutput"],

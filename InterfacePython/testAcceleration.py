@@ -90,7 +90,8 @@ class TestTasClass(unittest.TestCase):
                    'grid.makeLocalPolynomialGrid(2, 1, 4, 3, "localp")',
                    'grid.makeLocalPolynomialGrid(2, 1, 4, 4, "semi-localp")',
                    'grid.makeWaveletGrid(2, 1, 3, 1)',
-                   'grid.makeWaveletGrid(2, 1, 3, 3)' ]
+                   'grid.makeWaveletGrid(2, 1, 3, 3)',
+                   'grid.makeFourierGrid(2, 1, 3, "level")' ]
         lTests = ['grid.makeLocalPolynomialGrid(2, 3, 4, 1, "localp")']
 
         iNumGPUs = grid.getNumGPUs()
