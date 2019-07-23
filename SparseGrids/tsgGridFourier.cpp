@@ -132,10 +132,26 @@ void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Typ
 }
 
 void GridFourier::copyGrid(const GridFourier *fourier){
-    setTensors(MultiIndexSet(fourier->tensors), fourier->num_outputs);
-    if ((num_outputs > 0) && (!fourier->points.empty())){ // if there are values inside the source object
-        loadNeededPoints(fourier->values.getValues(0));
-    }
+    num_dimensions = fourier->num_dimensions;
+    num_outputs    = fourier->num_outputs;
+    points = fourier->points;
+    needed = fourier->needed;
+
+    wrapper = fourier->wrapper;
+
+    tensors        = fourier->tensors;
+    active_tensors = fourier->active_tensors;
+    active_w       = fourier->active_w;
+
+    updated_tensors        = fourier->updated_tensors;
+    updated_active_tensors = fourier->updated_active_tensors;
+    updated_active_w       = fourier->updated_active_w;
+
+    max_levels    = fourier->max_levels;
+    fourier_coefs = fourier->fourier_coefs;
+    values        = fourier->values;
+
+    max_power = fourier->max_power;
 }
 
 void GridFourier::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
