@@ -176,6 +176,31 @@ class TestTasClass(unittest.TestCase):
         gridB.finishConstruction()
         ttc.compareGrids(gridA, gridB)
 
+        # check some mem-leaks and crashes (correctness is elsewhere)
+        gridA = TasmanianSG.TasmanianSparseGrid()
+        gridA.makeLocalPolynomialGrid(2, 5, 0)
+        gridA.beginConstruction()
+        gridA.loadConstructedPoint(np.empty([0, 2]), np.empty([0, 5])) # empty input, check for crash
+
+        gridA.makeLocalPolynomialGrid(2, 1, 1)
+        gridA.loadNeededPoints(np.ones([5, 1]))
+        gridA.beginConstruction()
+        aPoints = gridA.getCandidateConstructionPointsSurplus(1.E-4, "classic") # should generate empty output
+        np.testing.assert_almost_equal(aPoints, np.empty([0, 0]), 14, "failed to generate empty list of construction points", True)
+
+        gridA.makeLocalPolynomialGrid(2, 1, 0)
+        gridA.loadNeededPoints(np.ones([1, 1]))
+        gridA.beginConstruction()
+        aPoints = gridA.getCandidateConstructionPointsSurplus(1.E-4, "classic", 0, [], np.array([[1.E-6]])) # should generate empty output
+        np.testing.assert_almost_equal(aPoints, np.empty([0, 0]), 14, "failed to generate empty list of construction points", True)
+
+        gridA.makeGlobalGrid(2, 1, 1, "tensor", "clenshaw-curtis")
+        gridA.loadNeededPoints(np.ones([9, 1]))
+        gridA.beginConstruction()
+        aPoints = gridA.getCandidateConstructionPoints("ipcurved", [5, 5, 2, 2], [1, 1]) # should generate empty output
+        np.testing.assert_almost_equal(aPoints, np.empty([0, 0]), 14, "failed to generate empty list of construction points", True)
+
+
     def performRefinementTest(self):
         self.checkSetClear()
         self.checkAnisoCoeff()
