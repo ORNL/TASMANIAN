@@ -47,7 +47,7 @@ if (Tasmanian_ENABLE_MPI)
     add_executable(Tasmanian_mpitester testMPI.cpp testMPI.hpp)
     set_target_properties(Tasmanian_mpitester PROPERTIES OUTPUT_NAME "mpitester")
     target_link_libraries(Tasmanian_mpitester Tasmanian_addons Tasmanian_libdream)
-    add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} -np 3 mpitester)
+    add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} mpitester ${MPIEXEC_POSTFLAGS})
 endif()
 
 # test for non-MPI capabilities
