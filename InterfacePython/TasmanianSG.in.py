@@ -1653,7 +1653,7 @@ class TasmanianSparseGrid:
 
         pScale = None
         if (len(aScaleCorrection) > 0):
-            pScale = np.ctypeslib.as_ctypes(aScaleCorrection)
+            pScale = np.ctypeslib.as_ctypes(aScaleCorrection.reshape([np.prod(aScaleCorrection.shape),]))
 
         pVector = self.pLibTSG.tsgGetCandidateConstructionPointsSurplusVoidPntr(self.pGrid, c_double(fTolerance), c_char_p(sRefinementType), iOutput, pLevelLimits, pScale)
 
