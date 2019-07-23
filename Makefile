@@ -25,9 +25,11 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
 ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py \
               sandbox.py \
               $(wildcard ./DREAM/Examples/example_dream*.cpp) \
+              $(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp) \
               libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid dreamtest gridtest $(HEADERS)
 
 DREAM_EXAMPLES_OBJ = $(patsubst ./DREAM/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./DREAM/Examples/example_dream*.cpp)))
+SG_EXAMPLES_OBJ = $(patsubst ./SparseGrids/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp)))
 
 CONFIGURED_HEADERS = ./SparseGrids/TasmanianConfig.hpp
 
@@ -160,8 +162,8 @@ testTSG.py: ./InterfacePython/testTSG.py
 sandbox.py: ./InterfacePython/sandbox.py
 	cp ./InterfacePython/sandbox.py .
 
-#example_sparse_grids.cpp: ./SparseGrids/Examples/example_sparse_grids.cpp
-#	cp ./SparseGrids/Examples/example_sparse_grids.cpp .
+example_spa%.cpp: ./SparseGrids/Examples/example_spa%.cpp
+	cp ./$< ./$@
 
 example_dre%.cpp: ./DREAM/Examples/example_dre%.cpp
 	cp ./$< ./$@
@@ -228,13 +230,16 @@ test: $(ALL_TARGETS)
 	PYTHONPATH=$(PYTHONPATH):./InterfacePython ./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
 
 .PHONY: examples
-examples: $(ALL_TARGETS) example_dream
+examples: $(ALL_TARGETS) example_dream example_sparse_grids
 	echo "Done examples"
 #	$(CC) $(OPTC) $(IADD) -c example_sparse_grids.cpp -o example_sparse_grids.o
 #	$(CC) $(OPTL) $(LADD) example_sparse_grids.o -o example_sparse_grids $(LIBS)
 
 example_dream: $(ALL_TARGETS) $(DREAM_EXAMPLES_OBJ)
 	$(CC) $(OPTL) $(LADD) $(DREAM_EXAMPLES_OBJ) -o example_dream $(LIBS)
+
+example_sparse_grids: $(ALL_TARGETS) $(SG_EXAMPLES_OBJ)
+	$(CC) $(OPTL) $(LADD) $(SG_EXAMPLES_OBJ) -o example_sparse_grids $(LIBS)
 
 %.o: %.cpp
 	$(CC) $(OPTC) $(IADD) -c $<
