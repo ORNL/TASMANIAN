@@ -69,6 +69,7 @@ namespace TasGrid{
  */
 class CandidateManager{
 protected:
+    //! \brief Jobs are divided into already checked-out (running), checked-in (done), and available (free).
     enum TypeStatus{ free, running, done };
 public:
     //! \brief Constructor, accepts number of dimensions as a constant parameter.

@@ -49,10 +49,18 @@
 /*!
  * \internal
  * \ingroup TasmanianSG
- * \addtogroup TasmanianHierarchyManipulations Multi-Index manipulation algorithms
+ * \addtogroup TasmanianHierarchyManipulations Hierarchical multi-Index manipulation algorithms
  *
  * \par One Dimensional Hierarchy
- * <TODO>
+ * The construction of Global, Sequence and Fourier grids the multi-index hierarchy is associated
+ * with tensors and has very simple structure, in one dimension there is only one parent and
+ * one child indicated by the previous and next index.
+ * The Local-Polynomial and Wavelet girds use more complex hierarchies that have multiple
+ * children and (in some cases) parents.
+ * Many of the associated manipulation algorithms require a \b rule object that
+ * describes the hierarchy, and additional algorithms are needed to handle the more complex
+ * parent-child relations.
+ *
  * \endinternal
  */
 
@@ -141,7 +149,7 @@ inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet co
 /*!
  * \internal
  * \ingroup TasmanianHierarchyManipulations
- * \brief Return the largest subset of \b candidates such that adding it to \b current will result in connected graph.
+ * \brief Return the largest subset of \b candidates such that adding it to \b current will result in a connected graph.
  *
  * \endinternal
  */
@@ -186,7 +194,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
 /*!
  * \internal
  * \ingroup TasmanianHierarchyManipulations
- * \brief Split the \b data into strips with given \b stride and return into \b Data2D structures grouped by \b levels, preserves the order.
+ * \brief Split the \b data into strips with given \b stride and returns \b Data2D structures grouped by \b levels, preserves the order.
  *
  * \endinternal
  */
@@ -207,7 +215,7 @@ std::vector<Data2D<T>> splitByLevels(size_t stride, std::vector<T> const &data, 
 /*!
  * \internal
  * \ingroup TasmanianHierarchyManipulations
- * \brief Reorganize the \b points into sets of nodes that align in one-dimension, used for directioal local p refinement.
+ * \brief Reorganize the \b points into sets of nodes that align in one-dimension, used for directional localp refinement.
  *
  * \endinternal
  */

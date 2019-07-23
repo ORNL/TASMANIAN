@@ -221,7 +221,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * If set to parallel mode, the lambda will be called in separate threads concurently
  * up to the specified maximum number.
  *
- * \param parallel_construction defines the use of parallel or sequential mode.
+ * \tparam parallel_construction defines the use of parallel or sequential mode.
  *
  * \param model defines the input-output relation to be approximated by the surrogate.
  *      In each call, \b x will have size equal to the dimension of the gird and

@@ -91,6 +91,8 @@ public:
  * in smaller messages and less computational overhead;
  * thus, ASCII is provided mostly for debugging purposes.
  *
+ * \tparam binary defines whether to use binary (\b true) or ASCII (\b false) mode.
+ *
  * \param grid        is the grid to send.
  * \param destination is the rank of the recipient MPI process.
  * \param tag_size    is the tag to use for the size message.
@@ -138,19 +140,27 @@ int MPIGridSend(TasmanianSparseGrid const &grid, int destination, int tag_size, 
  * Receive a grid that has been send with TasGrid::MPIGridSend().
  * This call intercepts both messages and compiles them into a sparse grid object.
  *
+ * \tparam binary defines whether to use binary (\b true) or ASCII (\b false) mode.
+ *
  * \param grid is the output grid, it will be overwritten with grid send by
  *             the source rank similar to TasGrid::TasmanianSparseGrid::read().
  * \param source   is the rank of the process in the MPI comm that issued the send command.
  * \param tag_size is the tag used in the size portion of the send command.
  * \param tag_data is the tag used in the data portion of the send command.
- * \param comm        is the MPI comm where the source and destination reside.
+ * \param comm     is the MPI comm where the source and destination reside.
+ * \param status is the status of the first faield MPI_Recv() command
+ *               (corresponding to either the size of the data message),
+ *               if MPI_SUCCESS is returned, then the status corresponds
+ *               to the successful data message
  *
- * \return the error code of the fist failed MPI_Recv command
+ * \return the error code of the fist failed MPI_Recv() command
  *         (corresponding to either the size of the data message),
  *         if MPI_SUCCESS is returned then both messages were successful.
  */
 template<bool binary = true>
-int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_data, MPI_Comm comm, MPI_Status *status){
+int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_data, MPI_Comm comm, MPI_Status *status = nullptr){
+    MPI_Status internal_status;
+    if (status == nullptr) status = &internal_status;
     unsigned long long data_size;
 
     auto result = MPI_Recv(&data_size, 1, MPI_UNSIGNED_LONG_LONG, source, tag_size, comm,  status);
@@ -176,6 +186,8 @@ int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_dat
  * The transfer can be done in either binary or ASCII format, but binary results
  * in smaller messages and less computational overhead;
  * thus, ASCII is provided mostly for debugging purposes.
+ *
+ * \tparam binary defines whether to use binary (\b true) or ASCII (\b false) mode.
  *
  * \param grid is the grid to broadcast across the MPI comm, the grid on the \b root
  *             process will not be modified (i.e., treat as const),
