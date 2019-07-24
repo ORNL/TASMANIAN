@@ -188,22 +188,31 @@ void GridGlobal::copyGrid(const GridGlobal *global){
     custom = CustomTabulated();
     if (global->rule == rule_customtabulated) custom = global->custom;
 
-    setTensors(MultiIndexSet(global->tensors), global->num_outputs, global->rule, global->alpha, global->beta);
+    num_dimensions = global->num_dimensions;
+    num_outputs    = global->num_outputs;
+    points = global->points;
+    needed = global->needed;
 
-    if ((num_outputs > 0) && (!(global->points.empty()))){ // if there are values inside the source object
-        loadNeededPoints(global->values.getValues(0));
-    }
+    rule  = global->rule;
+    alpha = global->alpha;
+    beta  = global->beta;
+    wrapper = global->wrapper;
 
-    // if there is an active refinement awaiting values
-    if (!(global->updated_tensors.empty())){
-        updated_tensors = global->updated_tensors;
-        updated_active_tensors = global->updated_active_tensors;
-        updated_active_w = global->updated_active_w;
+    tensors        = global->tensors;
+    active_tensors = global->active_tensors;
+    active_w       = global->active_w;
 
-        needed = global->needed;
+    tensor_refs = global->tensor_refs;
+    max_levels  = global->max_levels;
 
-        wrapper.load(custom, global->wrapper.getNumLevels(), rule, alpha, beta);
-    }
+    values = global->values;
+
+    updated_tensors        = global->updated_tensors;
+    updated_active_tensors = global->updated_active_tensors;
+    updated_active_w       = global->updated_active_w;
+
+    if (global->dynamic_values)
+        dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(*global->dynamic_values));
 }
 
 void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){

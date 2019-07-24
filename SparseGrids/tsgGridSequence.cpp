@@ -101,23 +101,23 @@ void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Ty
     setPoints(pset, cnum_outputs, crule);
 }
 void GridSequence::copyGrid(const GridSequence *seq){
-    MultiIndexSet pset;
-    if (seq->points.empty()){
-        pset = seq->needed;
-    }else{
-        pset = seq->points;
-    }
-    setPoints(pset, seq->num_outputs, seq->rule);
+    num_dimensions = seq->num_dimensions;
+    num_outputs    = seq->num_outputs;
+    points = seq->points;
+    needed = seq->needed;
 
-    if ((num_outputs > 0) && (!seq->points.empty())){ // if there are values inside the source object
-        loadNeededPoints(seq->values.getValues(0));
-    }
+    rule = seq->rule;
 
-    if ((!seq->points.empty()) && (!seq->needed.empty())){ // there is a refinement
-        needed = seq->needed;
-        prepareSequence(0);
-    }
     surpluses = seq->surpluses;
+    nodes = seq->nodes;
+    coeff = seq->coeff;
+
+    values = seq->values;
+
+    max_levels = seq->max_levels;
+
+    if (seq->dynamic_values)
+        dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData(*seq->dynamic_values));
 }
 
 void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule crule){

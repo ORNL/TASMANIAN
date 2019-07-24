@@ -298,6 +298,7 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
     }
     conformal_asin_power = source->conformal_asin_power;
     llimits = source->llimits;
+    usingDynamicConstruction = source->usingDynamicConstruction;
 }
 
 void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){

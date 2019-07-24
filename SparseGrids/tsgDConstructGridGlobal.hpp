@@ -180,6 +180,8 @@ class DynamicConstructorDataGlobal{
 public:
     //! \brief The only constructor, requires that the dimension and the number of model outputs is specified.
     DynamicConstructorDataGlobal(size_t cnum_dimensions, size_t cnum_outputs);
+    //! \brief Default copy constructor.
+    DynamicConstructorDataGlobal(DynamicConstructorDataGlobal const &) = default;
     //! \brief Default destructor, release all used memory and erase all stored data.
     ~DynamicConstructorDataGlobal();
 
