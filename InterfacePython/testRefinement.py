@@ -108,25 +108,32 @@ class TestTasClass(unittest.TestCase):
             for sFormat in [False, True]: # test binary and ascii format
                 gridA = TasmanianSG.TasmanianSparseGrid()
                 gridB = TasmanianSG.TasmanianSparseGrid()
+                gridC = TasmanianSG.TasmanianSparseGrid()
 
                 exec(sMakeGrids)
 
                 gridA.beginConstruction()
                 gridB.beginConstruction()
+                gridA.printStats()
 
                 gridB.write("testSave", bUseBinaryFormat = sFormat)
                 gridB.makeSequenceGrid(1, 1, 0, "level", "rleja") # clean the grid
                 gridB.read("testSave")
                 ttc.compareGrids(gridA, gridB)
+                gridC.copyGrid(gridA)
+                ttc.compareGrids(gridA, gridC)
 
                 for t in range(5): # use 5 iterations
                     if (gridA.isLocalPolynomial()):
                         aPointsA = gridA.getCandidateConstructionPointsSurplus(1.E-4, "fds")
                         aPointsB = gridB.getCandidateConstructionPointsSurplus(1.E-4, "fds")
+                        aPointsC = gridC.getCandidateConstructionPointsSurplus(1.E-4, "fds")
                     else:
                         aPointsA = gridA.getCandidateConstructionPoints("level", 0)
                         aPointsB = gridB.getCandidateConstructionPoints("level", 0)
+                        aPointsC = gridC.getCandidateConstructionPoints("level", 0)
                     np.testing.assert_almost_equal(aPointsA, aPointsB, decimal=11)
+                    np.testing.assert_almost_equal(aPointsA, aPointsC, decimal=11)
 
                     iNumPoints = int(aPointsA.shape[0] / 2)
                     if (iNumPoints > 32): iNumPoints = 32
@@ -146,12 +153,16 @@ class TestTasClass(unittest.TestCase):
 
                         gridA.loadConstructedPoint(aPoint, aValue)
                         gridB.loadConstructedPoint(aPoint, aValue)
+                        gridC.loadConstructedPoint(aPoint, aValue)
 
                     # using straight construction or read/write should produce the same result
+                    ttc.compareGrids(gridA, gridC)
                     gridB.write("testSave", bUseBinaryFormat = sFormat)
                     gridB.makeSequenceGrid(1, 1, 0, "level", "rleja")
                     gridB.read("testSave")
                     ttc.compareGrids(gridA, gridB)
+                    gridC.copyGrid(gridA)
+                    ttc.compareGrids(gridA, gridC)
 
                 gridA.finishConstruction()
                 gridB.finishConstruction()
@@ -160,6 +171,8 @@ class TestTasClass(unittest.TestCase):
                 gridB.makeSequenceGrid(1, 1, 0, "level", "rleja")
                 gridB.read("testSave")
                 ttc.compareGrids(gridA, gridB)
+                gridC.copyGrid(gridA)
+                ttc.compareGrids(gridA, gridC)
 
         # check multi-point load
         gridA = TasmanianSG.TasmanianSparseGrid()
