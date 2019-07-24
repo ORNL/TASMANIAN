@@ -73,6 +73,19 @@ inline size_t size_mult(IntA a, IntB b){ return static_cast<size_t>(a) * static_
 
 /*!
  * \internal
+ * \ingroup TasmanianUtils
+ * \brief Copies an array into a vector, returns empty vector if the input is nullpntr.
+ *
+ * \endinternal
+ */
+template<typename T, typename I>
+std::vector<typename std::remove_const<T>::type> copyArray(T* x, I size){
+    return (x == nullptr) ? std::vector<typename std::remove_const<T>::type>() :
+        std::vector<typename std::remove_const<T>::type>(x, x + ((size_t) size));
+}
+
+/*!
+ * \internal
  * \brief Wraps around a C-style of an array and mimics 2D data-structure.
  * \ingroup TasmanianUtils
  *
