@@ -330,7 +330,8 @@ bool OneDimensionalMeta::isSequence(TypeOneDRule rule){
     return ((rule == rule_leja) || (rule == rule_rleja) || (rule == rule_rlejashifted) || (rule == rule_maxlebesgue) || (rule == rule_minlebesgue) || (rule == rule_mindelta));
 }
 bool OneDimensionalMeta::isGlobal(TypeOneDRule rule){
-    return !((rule == rule_semilocalp) || (rule == rule_localp0) || (rule == rule_localp) || (rule == rule_wavelet) || (rule == rule_fourier) || (rule == rule_none));
+    return !((rule == rule_semilocalp) || (rule == rule_localp0) || (rule == rule_localp) || (rule == rule_localpb)
+          || (rule == rule_wavelet) || (rule == rule_fourier) || (rule == rule_none));
 }
 bool OneDimensionalMeta::isSingleNodeGrowth(TypeOneDRule rule){
     return ((rule == rule_leja) || (rule == rule_rleja) || (rule == rule_rlejashifted) || (rule == rule_maxlebesgue) || (rule == rule_minlebesgue) || (rule == rule_mindelta) ||

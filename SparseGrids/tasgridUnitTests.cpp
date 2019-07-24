@@ -34,6 +34,27 @@
 #include "tasgridUnitTests.hpp"
 #include "tasgridExternalTests.hpp"
 
+void gridLoadEN2(TasmanianSparseGrid *grid){ // load points using model exp( - \| x \|^2 )
+    std::vector<double> points;
+    grid->getNeededPoints(points);
+    int dims = grid->getNumDimensions();
+    int outs = grid->getNumOutputs();
+    int nump = grid->getNumNeeded();
+    std::vector<double> vals(((size_t) nump) * ((size_t) outs));
+    auto iter_x = points.begin();
+    auto iter_y = vals.begin();
+    while(iter_x < points.end()){
+        double nrm = 0.0;
+        for(int i=0; i<dims; i++){
+            nrm += *iter_x * *iter_x;
+            iter_x++;
+        }
+        nrm = std::exp(-nrm);
+        for(int i=0; i<outs; i++) *iter_y++ = nrm;
+    }
+    grid->loadNeededPoints(vals);
+}
+
 GridUnitTester::GridUnitTester() : verbose(false){}
 GridUnitTester::~GridUnitTester(){}
 
@@ -93,209 +114,47 @@ bool GridUnitTester::testAllException(){
     int wfirst = 15, wsecond = 30, wthird = 15;
 
     // perform std::invalid_argument tests
-    for(int i=0; i<49; i++){
+    auto tests = getInvalidArgumentCalls();
+    int test_count = 0;
+    for(auto &t : tests)
         try{
-            invalidArgumentCall(i);
-            cout << "Missed arg exception i = " << i << " see GridUnitTester::invalidArgumentCall()" << endl;
+            test_count++;
+            t(); // run the test
+            cout << "Missed arg exception for test " << test_count << " see GridUnitTester::getInvalidArgumentCalls()" << endl;
             pass = false;
             break;
         }catch(std::invalid_argument &){
-            //cout << "Got argument error exception i = " << i << " with message: " << e.what() << endl;
+            //cout << "Got argument error exception on test " << test_count << " with message: " << e.what() << endl;
         }
-    }
 
-    if (verbose){
+    if (verbose)
         cout << setw(wfirst) << "Exception" << setw(wsecond) << "std::invalid_argument" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
-    }
 
     passAll = passAll && pass;
     pass = true;
 
     // perform std::runtime_error tests
-    for(int i=0; i<41; i++){
+    tests = getRuntimeErrorCalls();
+    test_count = 0;
+    for(auto &t : tests)
         try{
-            runtimeErrorCall(i);
-            cout << "Missed run exception i = " << i << " see GridUnitTester::runtimeErrorCall()" << endl;
+            test_count++;
+            t();
+            cout << "Missed runtime exception for test " << test_count << " see GridUnitTester::getRuntimeErrorCalls()" << endl;
             pass = false;
             break;
         }catch(std::runtime_error &){
-            //cout << "Got runtime error exception i = " << i << " with message: " << e.what() << endl;
+            //cout << "Got runtime error exception on test " << test_count << " with message: " << e.what() << endl;
         }
-    }
 
-    if (verbose){
+    if (verbose)
         cout << setw(wfirst) << "Exception" << setw(wsecond) << "std::runtime_error" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
-    }
+
     passAll = passAll && pass;
 
     cout << setw(wfirst+1) << "Exceptions" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
 
     return pass;
-}
-
-void GridUnitTester::invalidArgumentCall(int i){
-    TasmanianSparseGrid grid;
-    CustomTabulated custom;
-    std::vector<int> w;
-    switch(i){
-    case  0: grid.makeGlobalGrid(0, 1, 3, type_level, rule_gausslegendre); break; // dimension is 0
-    case  1: grid.makeGlobalGrid(2, -1, 3, type_level, rule_gausslegendre); break; // output is -1
-    case  2: grid.makeGlobalGrid(2, 2, -1, type_level, rule_rleja); break; // depth is -1
-    case  3: grid.makeGlobalGrid(2, 2, 1, type_level, rule_localp); break; // rule is localp
-    case  4: grid.makeGlobalGrid(2, 2, 2, type_level, rule_rleja, std::vector<int>()={3}); break; // aw is too short
-    case  5: grid.makeGlobalGrid(2, 2, 2, type_level, rule_customtabulated, std::vector<int>(), 0.0, 0.0, 0); break; // custom filename is empty
-    case  6: grid.makeGlobalGrid(2, 2, 2, type_level, rule_chebyshev, std::vector<int>(), 0.0, 0.0, 0, std::vector<int>()={3}); break; // level limits is too short
-    case  7: grid.makeSequenceGrid(0, 1, 3, type_level, rule_rleja); break; // dimension is 0
-    case  8: grid.makeSequenceGrid(2, -1, 3, type_level, rule_minlebesgue); break; // output is -1
-    case  9: grid.makeSequenceGrid(2, 2, -1, type_level, rule_rleja); break; // depth is -1
-    case 10: grid.makeSequenceGrid(2, 1, 3, type_level, rule_localp); break; // localp is not a sequence rule
-    case 11: grid.makeSequenceGrid(2, 2, 2, type_level, rule_rleja, std::vector<int>()={3}); break; // aw is too short
-    case 12: grid.makeSequenceGrid(2, 2, 2, type_level, rule_chebyshev, std::vector<int>(), std::vector<int>()={3}); break; // level limits is too short
-    case 13: grid.makeLocalPolynomialGrid(0,  1,  3,  3, rule_localp); break; // 0 is not valid dimensions
-    case 14: grid.makeLocalPolynomialGrid(2, -1,  3,  2, rule_localp); break; // -1 is not valid outputs
-    case 15: grid.makeLocalPolynomialGrid(2,  1, -1,  2, rule_localp); break; // -1 is not valid depth
-    case 16: grid.makeLocalPolynomialGrid(2,  1,  3, -2, rule_localp); break; // -2 is not a valid order
-    case 17: grid.makeLocalPolynomialGrid(2,  1,  3,  2, rule_mindelta); break; // mindelta is not a local rule
-    case 18: grid.makeLocalPolynomialGrid(2,  1,  3,  1, rule_localp, std::vector<int>()={3}); break; // level limits is too short
-    case 19: grid.makeWaveletGrid(0,  1,  3,  1,  0); break; // 0 is not a valid dimensions
-    case 20: grid.makeWaveletGrid(2, -1,  3,  1,  0); break; // -1 is not a valid outputs
-    case 21: grid.makeWaveletGrid(2,  1, -3,  1,  0); break; // -3 is not a valid depth
-    case 22: grid.makeWaveletGrid(2,  1,  3,  2,  0); break; // 2 is not a valid order (for wavelets)
-    case 23: grid.makeWaveletGrid(2,  1,  3,  1,  std::vector<int>()={3}); break; // level limits is too short
-    case 24: grid.makeFourierGrid(0, 1, 3, type_level); break; // dimension is 0
-    case 25: grid.makeFourierGrid(2, -1, 3, type_level); break; // output is -1
-    case 26: grid.makeFourierGrid(2, 2, -1, type_level); break; // depth is -1
-    case 27: grid.makeFourierGrid(2, 2, 2, type_level, std::vector<int>()={3}); break; // aw is too short
-    case 28: grid.makeFourierGrid(2, 2, 2, type_level, std::vector<int>(), std::vector<int>()={3}); break; // level limits is too short
-
-    case 29: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateGlobalGrid(-1, type_level); break; // depth is negative
-    case 30: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateGlobalGrid(3, type_level, std::vector<int>()={3}); break; // aw is too small
-    case 31: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateGlobalGrid(3, type_level, std::vector<int>(), std::vector<int>()={3}); break; // ll is too small
-    case 32: grid.makeSequenceGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(-1, type_level); break; // depth is negative
-    case 33: grid.makeSequenceGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(3, type_level, std::vector<int>()={3}); break; // aw is too small
-    case 34: grid.makeSequenceGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(3, type_level, std::vector<int>(), std::vector<int>()={3}); break; // ll is too small
-
-    case 35: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.setAnisotropicRefinement(type_iptotal, -1, 0, std::vector<int>()); break; // min_growth is negative
-    case 36: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setAnisotropicRefinement(type_iptotal, 1, 2, std::vector<int>()); break; // output out of range
-    case 37: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setAnisotropicRefinement(type_iptotal, 1, 0, std::vector<int>()={3}); break; // ll is too small
-
-    case 38: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.estimateAnisotropicCoefficients(type_iptotal, 2, w); break; // output out of range
-
-    case 39: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 2); break; // output out of range
-    case 40: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 0, std::vector<int>()={3}); break; // ll is too small
-    case 41: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); gridLoadEN2(&grid); grid.setSurplusRefinement(-0.1, 0); break; // tolerance is negative
-
-    case 42: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 2); break; // output out of range
-    case 43: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>()={3}); break; // ll is too small
-    case 44: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(-0.1, refine_classic, 0); break; // tolerance is negative
-    case 45: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(-0.1, refine_classic, 0, std::vector<int>()={3, 2}, std::vector<double>() = {3.0, 3.0}); break; // scale too small
-
-    case 46: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setDomainTransform(std::vector<double>() = {1.0}, std::vector<double>() = {3.0, 4.0}); break; // a is too small
-    case 47: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setDomainTransform(std::vector<double>() = {1.0, 2.0}, std::vector<double>() = {4.0}); break; // b is too small
-
-    case 48: custom.read("phantom.file"); break;
-
-    default: break;
-    }
-}
-
-void GridUnitTester::runtimeErrorCall(int i){
-    std::vector<double> v, u;
-    std::vector<int> w;
-    std::vector<int> transformAsin = {4, 4};
-    double a[2], b[2];
-    TasmanianSparseGrid grid;
-    CustomTabulated custom;
-    switch(i){
-    case  0: grid.updateGlobalGrid(2, type_level); break; // grid not initialized
-    case  1: grid.makeSequenceGrid(2, 1, 3, type_level, rule_rleja); grid.updateGlobalGrid(2, type_level); break; // grid not global
-    case  2: grid.updateSequenceGrid(2, type_level); break; // grid not initialized
-    case  3: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.updateSequenceGrid(2, type_level); break; // grid not sequence
-    case  4: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.getInterpolationWeights(std::vector<double>()={0.33}, v); break; // wrong size of x
-    case  5: grid.makeGlobalGrid(2, 1, 2, type_level, rule_rleja); grid.loadNeededPoints(std::vector<double>()={0.33, 0.22}); break; // wrong size of loaded data
-    case 35: {
-             grid.makeGlobalGrid(2, 1, 1, type_level, rule_clenshawcurtis);
-             grid.loadNeededPoints(std::vector<double>()={0.33, 0.22, 0.22, 0.22, 0.33});
-             grid.loadNeededPoints(std::vector<double>()={0.33, 0.22}); break; // wrong size of loaded data (when overwriting)
-             }
-
-    case  6: grid.setAnisotropicRefinement(type_iptotal, 1, 0, 0); break; // grid not init
-    case  7: grid.setAnisotropicRefinement(type_iptotal, 1, 0, std::vector<int>()); break; // grid not init
-    case  8: grid.makeGlobalGrid(2, 0, 3, type_level, rule_rleja); grid.setAnisotropicRefinement(type_iptotal,  1, 0, std::vector<int>()); break; // no outputs
-    case  9: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.setAnisotropicRefinement(type_iptotal,  1, 0, std::vector<int>()); break; // no loaded values
-    case 10: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setAnisotropicRefinement(type_iptotal,  1, 0, std::vector<int>()); break; // rule non-nested
-    case 11: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setAnisotropicRefinement(type_iptotal,  1, 0, std::vector<int>()); break; // grid is localp
-
-    case 12: grid.estimateAnisotropicCoefficients(type_iptotal, 1, w); break; // grid not init
-    case 13: grid.makeGlobalGrid(2, 0, 3, type_level, rule_rleja); grid.estimateAnisotropicCoefficients(type_iptotal, 0, w); break; // no outputs
-    case 14: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.estimateAnisotropicCoefficients(type_iptotal, 0, w); break; // no loaded values
-    case 15: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.estimateAnisotropicCoefficients(type_iptotal, 0, w); break; // rule non-nested
-    case 16: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.estimateAnisotropicCoefficients(type_iptotal, 0, w); break; // grid is localp
-
-    case 17: grid.setSurplusRefinement(0.01, 0, 0); break; // grid not init
-    case 18: grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // grid not init
-    case 19: grid.makeGlobalGrid(2, 0, 3, type_level, rule_rleja); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // no outputs
-    case 20: grid.makeGlobalGrid(2, 1, 3, type_level, rule_rleja); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // no loaded values
-    case 21: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // rule non-nested
-    case 22: grid.makeLocalPolynomialGrid(2, 1, 3); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, 0, std::vector<int>()); break; // grid is localp
-
-    case 23: grid.setSurplusRefinement(0.01, refine_classic, 0, 0); break; // grid not init
-    case 24: grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>()); break; // grid not init
-    case 25: grid.makeLocalPolynomialGrid(2, 0, 3); grid.setSurplusRefinement(0.01, refine_classic, 0); break; // no outputs
-    case 26: grid.makeLocalPolynomialGrid(2, 1, 3); grid.setSurplusRefinement(0.01, refine_classic, 0); break; // no loaded values
-    case 27: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>()); break; // rule non-local
-    case 28: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); gridLoadEN2(&grid); grid.setSurplusRefinement(0.01, refine_classic, 0, 0); break; // rule non-local
-
-    case 29: grid.setDomainTransform(a, b); break; // grid is not initialized
-    case 30: grid.getDomainTransform(a, b); break; // grid is not initialized
-    case 31: grid.setDomainTransform(u, v); break; // grid is not initialized
-
-    case 32: grid.setConformalTransformASIN(transformAsin.data()); break; // grid is not initialized
-    case 33: grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev); grid.getConformalTransformASIN(transformAsin.data()); break; // transform not initialized
-
-    case 34: {
-             grid.makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
-             std::vector<int> pntr, indx;
-             std::vector<double> vals;
-             std::vector<double> x = {-0.33, 0.33};
-             grid.evaluateSparseHierarchicalFunctions(x, pntr, indx, vals);
-             }
-             break;
-
-    case 36: grid.makeGlobalGrid(1, 1, 10, type_level, rule_gausspatterson); break; // gauss-patterson rule with very large level
-    case 37: {
-             const char *custom_filename = ExternalTester::findGaussPattersonTable();
-             grid.makeGlobalGrid(1, 1, 10, type_level, rule_customtabulated, 0, 0.0, 0.0, custom_filename); // custom-tabulated rule with very large level
-             }
-             break;
-
-    case 38: custom.read(ExternalTester::findGaussPattersonTable()); custom.getNumPoints(11); break;
-    case 39: custom.read(ExternalTester::findGaussPattersonTable()); custom.getIExact(11); break;
-    case 40: custom.read(ExternalTester::findGaussPattersonTable()); custom.getQExact(11); break;
-
-    default: break;
-    }
-}
-
-void GridUnitTester::gridLoadEN2(TasmanianSparseGrid *grid) const{
-    std::vector<double> points;
-    grid->getNeededPoints(points);
-    int dims = grid->getNumDimensions();
-    int outs = grid->getNumOutputs();
-    int nump = grid->getNumNeeded();
-    std::vector<double> vals(((size_t) nump) * ((size_t) outs));
-    auto iter_x = points.begin();
-    auto iter_y = vals.begin();
-    while(iter_x < points.end()){
-        double nrm = 0.0;
-        for(int i=0; i<dims; i++){
-            nrm += *iter_x * *iter_x;
-            iter_x++;
-        }
-        nrm = std::exp(-nrm);
-        for(int i=0; i<outs; i++) *iter_y++ = nrm;
-    }
-    grid->loadNeededPoints(vals);
 }
 
 bool GridUnitTester::doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec) const{
@@ -437,6 +296,370 @@ bool GridUnitTester::testCoverUnimportant(){
     str = rule.getDescription();
 
     return true;
+}
+
+std::vector<std::function<void(void)>> GridUnitTester::getInvalidArgumentCalls() const{
+    return std::vector<std::function<void(void)>>{
+        [](void)->void{
+            auto grid = makeGlobalGrid(0, 1, 3, type_level, rule_gausslegendre); // dimension is 0
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, -1, 3, type_level, rule_gausslegendre); // output is -1
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 2, -1, type_level, rule_rleja);  // depth is -1
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 2, 1, type_level, rule_localp);  // rule is localp
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 2, 2, type_level, rule_rleja, {3});  // aw is too short
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 2, 2, type_level, rule_customtabulated);  // custom filename is empty
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 2, 2, type_level, rule_chebyshev, {}, 0.0, 0.0, nullptr, {3});  // level limits is too short
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(0, 1, 3, type_level, rule_rleja);  // dimension is 0
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, -1, 3, type_level, rule_minlebesgue);  // output is -1
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 2, -1, type_level, rule_rleja);  // depth is -1
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 1, 3, type_level, rule_localp);  // localp is not a sequence rule
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 2, 2, type_level, rule_rleja, {3});  // aw is too short
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 2, 2, type_level, rule_chebyshev, {}, {3});  // level limits is too short
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(0,  1,  3,  3, rule_localp);  // 0 is not valid dimensions
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, -1,  3,  2, rule_localp);  // -1 is not valid outputs
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2,  1, -1,  2, rule_localp);  // -1 is not valid depth
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2,  1,  3, -2, rule_localp);  // -2 is not a valid order
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2,  1,  3,  2, rule_mindelta);  // mindelta is not a local rule
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2,  1,  3,  1, rule_localp, {3});  // level limits is too short
+        },
+        [](void)->void{
+            auto grid = makeWaveletGrid(0,  1,  3,  1);  // 0 is not a valid dimensions
+        },
+        [](void)->void{
+            auto grid = makeWaveletGrid(2, -1,  3,  1);  // -1 is not a valid outputs
+        },
+        [](void)->void{
+            auto grid = makeWaveletGrid(2,  1, -3,  1);  // -3 is not a valid depth
+        },
+        [](void)->void{
+            auto grid = makeWaveletGrid(2,  1,  3,  2);  // 2 is not a valid order for wavelets
+        },
+        [](void)->void{
+            auto grid = makeWaveletGrid(2,  1,  3,  1, {3});  // level limits is too short
+        },
+        [](void)->void{
+            auto grid = makeFourierGrid(0, 1, 3, type_level);  // dimension is 0
+        },
+        [](void)->void{
+            auto grid = makeFourierGrid(2, -1, 3, type_level);  // output is -1
+        },
+        [](void)->void{
+            auto grid = makeFourierGrid(2, 2, -1, type_level);  // depth is -1
+        },
+        [](void)->void{
+            auto grid = makeFourierGrid(2, 2, 2, type_level, {3});  // aw is too short
+        },
+        [](void)->void{
+            auto grid = makeFourierGrid(2, 2, 2, type_level, {}, {3});  // level limits is too short
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            grid.updateGlobalGrid(-1, type_level);  // depth is negative
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            grid.updateGlobalGrid(3, type_level, {3});  // aw is too small
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            grid.updateGlobalGrid(3, type_level, {}, {3});  // ll is too small
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 1, 3, type_level, rule_rleja);
+            grid.updateSequenceGrid(-1, type_level);  // depth is negative
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 1, 3, type_level, rule_rleja);
+            grid.updateSequenceGrid(3, type_level, {3});  // aw is too small
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 1, 3, type_level, rule_rleja);
+            grid.updateSequenceGrid(3, type_level, {}, {3});  // ll is too small
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            grid.setAnisotropicRefinement(type_iptotal, -1, 0, {1, 2});  // min_growth is negative
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            gridLoadEN2(&grid);
+            grid.setAnisotropicRefinement(type_iptotal, 1, 2, {});  // output out of range
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            gridLoadEN2(&grid);
+            grid.setAnisotropicRefinement(type_iptotal, 1, 0, {3});  // ll is too small
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            gridLoadEN2(&grid);
+            auto w = grid.estimateAnisotropicCoefficients(type_iptotal, 2);  // output out of range
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(0.01, 2);  // output out of range
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(0.01, 0, {3});  // ll is too small
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(-0.1, 0);  // tolerance is negative
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(0.01, refine_classic, 2);  // output out of range
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(0.01, refine_classic, 0, {3});  // ll is too small
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(-0.1, refine_classic, 0);  // tolerance is negative
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(-0.1, refine_classic, 0, {3, 2}, {3.0, 3.0});  //scale too small
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            grid.setDomainTransform({1.0}, {3.0, 4.0});  // a is too small
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            grid.setDomainTransform({1.0, 2.0}, {4.0});  // b is too small
+        },
+        [](void)->void{
+            CustomTabulated custom;
+            custom.read("phantom.file");
+        },
+    };
+}
+
+std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() const{
+    return std::vector<std::function<void(void)>>{
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.updateGlobalGrid(2, type_level);  // grid not initialized
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 1, 3, type_level, rule_rleja);
+            grid.updateGlobalGrid(2, type_level);  // grid not global
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.updateSequenceGrid(2, type_level);  // grid not initialized
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            grid.updateSequenceGrid(2, type_level);  // grid not sequence
+        },
+        [](void)->void{
+            std::vector<double> v;
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            grid.getInterpolationWeights({0.33}, v);  // wrong size of x
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 2, type_level, rule_rleja);
+            grid.loadNeededPoints({0.33, 0.22});  // wrong size of loaded data
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 1, type_level, rule_clenshawcurtis);
+            grid.loadNeededPoints({0.33, 0.22, 0.22, 0.22, 0.33});
+            grid.loadNeededPoints({0.33, 0.22});  // wrong size of loaded data (when overwriting)
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.setAnisotropicRefinement(type_iptotal, 1, 0, 0);  // grid not made
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.setAnisotropicRefinement(type_iptotal, 1, 0, {});  // grid not made
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 0, 3, type_level, rule_rleja);
+            grid.setAnisotropicRefinement(type_iptotal,  1, 0, {});  // no outputs
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            grid.setAnisotropicRefinement(type_iptotal,  1, 0, {});  // no loaded values
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
+            gridLoadEN2(&grid);
+            grid.setAnisotropicRefinement(type_iptotal,  1, 0, {});  // rule non-nested
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            gridLoadEN2(&grid);
+            grid.setAnisotropicRefinement(type_iptotal,  1, 0,{});  // grid is localp
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            auto w = grid.estimateAnisotropicCoefficients(type_iptotal, 1);  // grid not made
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 0, 3, type_level, rule_rleja);
+            auto w = grid.estimateAnisotropicCoefficients(type_iptotal, 0);  // no outputs
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            auto w = grid.estimateAnisotropicCoefficients(type_iptotal, 0);  // no loaded values
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
+            gridLoadEN2(&grid);
+            auto w = grid.estimateAnisotropicCoefficients(type_iptotal, 0);  // rule non-nested
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            gridLoadEN2(&grid);
+            auto w = grid.estimateAnisotropicCoefficients(type_iptotal, 0);  // grid is localp
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.setSurplusRefinement(0.01, 0, 0);  // grid not init
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.setSurplusRefinement(0.01, 0, {});  // grid not init
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 0, 3, type_level, rule_rleja);
+            grid.setSurplusRefinement(0.01, 0, {});  // no outputs
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
+            grid.setSurplusRefinement(0.01, 0, {});  // no loaded values
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(0.01, 0, {});  // rule non-nested
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(0.01, 0, {});  // grid is localp
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.setSurplusRefinement(0.01, refine_classic, 0, 0);  // grid not init
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.setSurplusRefinement(0.01, refine_classic, 0, {});  // grid not init
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 0, 3);
+            grid.setSurplusRefinement(0.01, refine_classic, 0);  // no outputs
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 3);
+            grid.setSurplusRefinement(0.01, refine_classic, 0);  // no loaded values
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(0.01, refine_classic, 0, {});  // rule non-local
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
+            gridLoadEN2(&grid);
+            grid.setSurplusRefinement(0.01, refine_classic, 0, 0);  // rule non-local
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.setDomainTransform({}, {});  // grid is not initialized
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.setDomainTransform(nullptr, nullptr);  // grid is not initialized
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.setConformalTransformASIN({4, 4});  // grid is not initialized
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
+            std::vector<int> transform(2);
+            grid.getConformalTransformASIN(transform.data());  // transform not initialized
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
+            std::vector<int> pntr, indx;
+            std::vector<double> vals;
+            std::vector<double> x = {-0.33, 0.33};
+            grid.evaluateSparseHierarchicalFunctions(x, pntr, indx, vals);
+        },
+        [](void)->void{
+            TasmanianSparseGrid grid;
+            grid.makeGlobalGrid(1, 1, 10, type_level, rule_gausspatterson);  // gauss-patterson rule with very large level
+        },
+        [](void)->void{
+            const char *custom_filename = ExternalTester::findGaussPattersonTable();
+            auto grid = makeGlobalGrid(1, 1, 10, type_level, rule_customtabulated, {}, 0.0, 0.0, custom_filename); // custom-tabulated rule with very large level
+        },
+        [](void)->void{
+            CustomTabulated custom;
+            custom.read(ExternalTester::findGaussPattersonTable());
+            custom.getNumPoints(11); // level too high
+        },
+        [](void)->void{
+            CustomTabulated custom;
+            custom.read(ExternalTester::findGaussPattersonTable());
+            custom.getIExact(11); // level too high
+        },
+        [](void)->void{
+            CustomTabulated custom;
+            custom.read(ExternalTester::findGaussPattersonTable());
+            custom.getQExact(11); // level too high
+        },
+    };
 }
 
 #endif
