@@ -33,6 +33,13 @@ else()
     target_link_libraries(Tasmanian_master INTERFACE Tasmanian_shared)
 endif()
 
+if (TARGET Tasmanian_libfortran90_shared)
+    target_link_libraries(Tasmanian_shared INTERFACE Tasmanian_libfortran90_shared)
+endif()
+if (TARGET Tasmanian_libfortran90_static)
+    target_link_libraries(Tasmanian_static INTERFACE Tasmanian_libfortran90_static)
+endif()
+
 install(TARGETS Tasmanian_master EXPORT "${Tasmanian_export_name}")
 
 # add executable that has the sole purpose of testing the master target
