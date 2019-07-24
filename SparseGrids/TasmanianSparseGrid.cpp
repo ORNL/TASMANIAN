@@ -145,6 +145,7 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
         int sizeaw = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
         aw.resize(sizeaw);
         std::copy(anisotropic_weights, anisotropic_weights + sizeaw, aw.data());
+        aw = std::vector<int>(anisotropic_weights, anisotropic_weights + ((OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions));
     }
     if (level_limits != 0){
         ll.resize(dimensions);
@@ -843,7 +844,7 @@ void TasmanianSparseGrid::getLevelLimits(std::vector<int> &limits) const{
 
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
     if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
-    if (base.get() == nullptr) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
+    if (empty()) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
     std::vector<int> ll;
     if (level_limits != 0){
         int dims = base->getNumDimensions();

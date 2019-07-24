@@ -54,10 +54,8 @@ public:
     bool testCoverUnimportant();
 
 protected:
-    void invalidArgumentCall(int i);
-    void runtimeErrorCall(int i);
-
-    void gridLoadEN2(TasmanianSparseGrid *grid) const; // load points using exp( - \| x \|^2 )
+    std::vector<std::function<void(void)>> getInvalidArgumentCalls() const;
+    std::vector<std::function<void(void)>> getRuntimeErrorCalls() const;
 
     bool doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec = 1.E-12) const;
     bool doesMatch(const std::vector<double> &a, const double b[], double prec = 1.E-12) const;
