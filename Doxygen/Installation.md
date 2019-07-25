@@ -124,7 +124,6 @@ The preferred way to install Tasmanian is to use the included CMake build script
 
 * Options to be used only by Tasmanian developers:
 ```
-  -D Tasmanian_DEVELOPMENT_BACKWARDS=ON (update the GNU Make Python scripts with the latest changes in InterfacePython)
   -D DOXYGEN_INTERNAL_DOCS=YES          (include documentation of the Tasmanian internals)
 ```
 

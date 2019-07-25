@@ -25,9 +25,6 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_EXTRA_INCLUDE_DIRS:PATH="appends more include paths"
 #    -D Tasmanian_EXTRA_LINK_DIRS:PATH="appends more link paths"
 #
-# Development only options: (only developers should use this)
-#    -D Tasmanian_DEVELOPMENT_BACKWARDS:BOOL=OFF
-#
 # xSDK options: (USE_XSDK_DEFAULTS must be ON to use the other XSDK options)
 #    -D USE_XSDK_DEFAULTS:BOOL=OFF
 #    -D XSDK_ENABLE_OPENMP:BOOL=OFF

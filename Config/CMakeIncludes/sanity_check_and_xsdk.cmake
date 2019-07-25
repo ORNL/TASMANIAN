@@ -189,7 +189,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git") # this is a git repo
     find_package(Git)
     # do not set the hash if git is missing or
     # if we are gnerating files for simple GNU Make compatiblity
-    if (Git_FOUND AND (NOT Tasmanian_DEVELOPMENT_BACKWARDS))
+    if (Git_FOUND)
         execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:%H -n 1
                         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
                         OUTPUT_VARIABLE   Tasmanian_git_hash)
