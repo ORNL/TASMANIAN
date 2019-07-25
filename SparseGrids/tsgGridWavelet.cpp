@@ -118,17 +118,17 @@ void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int
 
     buildInterpolationMatrix();
 }
-void GridWavelet::copyGrid(const GridWavelet *wav){
+void GridWavelet::copyGrid(const GridWavelet *wav, int ibegin, int iend){
     num_dimensions = wav->num_dimensions;
-    num_outputs    = wav->num_outputs;
+    num_outputs    = iend - ibegin;
     points = wav->points;
     needed = wav->needed;
 
     rule1D = wav->rule1D;
     order  = wav->order;
 
-    coefficients = wav->coefficients;
-    values       = wav->values;
+    coefficients = (num_outputs == wav->num_outputs) ? wav->coefficients : wav->coefficients.splitData(ibegin, iend);
+    values       = (num_outputs == wav->num_outputs) ? wav->values : wav->values.splitValues(ibegin, iend);
 
     inter_matrix = wav->inter_matrix;
 }

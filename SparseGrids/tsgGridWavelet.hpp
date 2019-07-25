@@ -46,7 +46,7 @@ public:
     template<bool useAscii> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
-    void copyGrid(const GridWavelet *wav);
+    void copyGrid(const GridWavelet *wav, int ibegin, int iend);
     void setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder); // for FDS purposes
 
     TypeOneDRule getRule() const{ return rule_wavelet; }

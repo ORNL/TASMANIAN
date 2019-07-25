@@ -131,9 +131,9 @@ void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Typ
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, level_limits), cnum_outputs);
 }
 
-void GridFourier::copyGrid(const GridFourier *fourier){
+void GridFourier::copyGrid(const GridFourier *fourier, int ibegin, int iend){
     num_dimensions = fourier->num_dimensions;
-    num_outputs    = fourier->num_outputs;
+    num_outputs    = iend - ibegin;
     points = fourier->points;
     needed = fourier->needed;
 
@@ -148,8 +148,8 @@ void GridFourier::copyGrid(const GridFourier *fourier){
     updated_active_w       = fourier->updated_active_w;
 
     max_levels    = fourier->max_levels;
-    fourier_coefs = fourier->fourier_coefs;
-    values        = fourier->values;
+    fourier_coefs = (num_outputs == fourier->num_outputs) ? fourier->fourier_coefs : fourier->fourier_coefs.splitData(ibegin, iend);
+    values        = (num_outputs == fourier->num_outputs) ? fourier->values : fourier->values.splitValues(ibegin, iend);
 
     max_power = fourier->max_power;
 }

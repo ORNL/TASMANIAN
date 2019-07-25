@@ -184,12 +184,12 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits),
                cnum_outputs, crule, calpha, cbeta);
 }
-void GridGlobal::copyGrid(const GridGlobal *global){
+void GridGlobal::copyGrid(const GridGlobal *global, int ibegin, int iend){
     custom = CustomTabulated();
     if (global->rule == rule_customtabulated) custom = global->custom;
 
     num_dimensions = global->num_dimensions;
-    num_outputs    = global->num_outputs;
+    num_outputs    = iend - ibegin;
     points = global->points;
     needed = global->needed;
 
@@ -205,14 +205,16 @@ void GridGlobal::copyGrid(const GridGlobal *global){
     tensor_refs = global->tensor_refs;
     max_levels  = global->max_levels;
 
-    values = global->values;
+    values = (num_outputs == global->num_outputs) ? global->values : global->values.splitValues(ibegin, iend);
 
     updated_tensors        = global->updated_tensors;
     updated_active_tensors = global->updated_active_tensors;
     updated_active_w       = global->updated_active_w;
 
-    if (global->dynamic_values)
+    if (global->dynamic_values){
         dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(*global->dynamic_values));
+        if (num_outputs != global->num_outputs) dynamic_values->restrictData(ibegin, iend);
+    }
 }
 
 void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){

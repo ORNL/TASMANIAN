@@ -44,6 +44,9 @@ void* tsgConstructTasmanianSparseGrid(){ return (void*) new TasmanianSparseGrid(
 void tsgDestructTasmanianSparseGrid(void *grid){ delete ((TasmanianSparseGrid*) grid); }
 
 void tsgCopyGrid(void *destination, void *source){ ((TasmanianSparseGrid*) destination)->copyGrid(((TasmanianSparseGrid*) source)); }
+void tsgCopySubGrid(void *destination, void *source, int outputs_begin, int outputs_end){
+    ((TasmanianSparseGrid*) destination)->copyGrid(((TasmanianSparseGrid*) source), outputs_begin, outputs_end);
+}
 
 const char* tsgGetVersion(){ return TasmanianSparseGrid::getVersion(); }
 const char* tsgGetLicense(){ return TasmanianSparseGrid::getLicense(); }

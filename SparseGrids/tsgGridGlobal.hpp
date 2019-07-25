@@ -47,7 +47,7 @@ public:
     template<bool useAscii> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits);
-    void copyGrid(const GridGlobal *global);
+    void copyGrid(const GridGlobal *global, int ibegin, int iend);
 
     void setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta);
 

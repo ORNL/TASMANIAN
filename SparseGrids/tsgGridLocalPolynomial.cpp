@@ -169,17 +169,17 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     }
 }
 
-void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
+void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly, int ibegin, int iend){
     num_dimensions = pwpoly->num_dimensions;
-    num_outputs    = pwpoly->num_outputs;
+    num_outputs    = iend - ibegin;
     points = pwpoly->points;
     needed = pwpoly->needed;
 
     order     = pwpoly->order;
     top_level = pwpoly->top_level;
 
-    surpluses = pwpoly->surpluses;
-    values    = pwpoly->values;
+    surpluses = (num_outputs == pwpoly->num_outputs) ? pwpoly->surpluses : pwpoly->surpluses.splitData(ibegin, iend);
+    values    = (num_outputs == pwpoly->num_outputs) ? pwpoly->values : pwpoly->values.splitValues(ibegin, iend);
     parents   = pwpoly->parents;
 
     roots = pwpoly->roots;
@@ -190,8 +190,10 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly){
 
     sparse_affinity = pwpoly->sparse_affinity;
 
-    if (pwpoly->dynamic_values)
+    if (pwpoly->dynamic_values){
         dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData(*pwpoly->dynamic_values));
+        if (num_outputs != pwpoly->num_outputs) dynamic_values->restrictData(ibegin, iend);
+    }
 }
 
 GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule,

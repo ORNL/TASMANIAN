@@ -238,24 +238,25 @@ void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth
     getGridFourier()->makeGrid(dimensions, outputs, depth, type, anisotropic_weights, llimits);
 }
 
-void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source){
+void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source, int outputs_begin, int outputs_end){
+    if (outputs_end == -1) outputs_end = source->getNumOutputs();
     clear();
     if (!source->empty()){
         if (source->isGlobal()){
             base = make_unique_ptr<GridGlobal>();
-            getGridGlobal()->copyGrid((GridGlobal*) source->base.get());
+            getGridGlobal()->copyGrid((GridGlobal*) source->base.get(), outputs_begin, outputs_end);
         }else if (source->isLocalPolynomial()){
             base = make_unique_ptr<GridLocalPolynomial>();
-            getGridLocalPolynomial()->copyGrid((GridLocalPolynomial*) source->base.get());
+            getGridLocalPolynomial()->copyGrid((GridLocalPolynomial*) source->base.get(), outputs_begin, outputs_end);
         }else if (source->isSequence()){
             base = make_unique_ptr<GridSequence>();
-            getGridSequence()->copyGrid((GridSequence*) source->base.get());
+            getGridSequence()->copyGrid((GridSequence*) source->base.get(), outputs_begin, outputs_end);
         }else if (source->isFourier()){
             base = make_unique_ptr<GridFourier>();
-            getGridFourier()->copyGrid((GridFourier*) source->base.get());
+            getGridFourier()->copyGrid((GridFourier*) source->base.get(), outputs_begin, outputs_end);
         }else if (source->isWavelet()){
             base = make_unique_ptr<GridWavelet>();
-            getGridWavelet()->copyGrid((GridWavelet*) source->base.get());
+            getGridWavelet()->copyGrid((GridWavelet*) source->base.get(), outputs_begin, outputs_end);
         }
     }
     if (source->domain_transform_a.size() > 0){

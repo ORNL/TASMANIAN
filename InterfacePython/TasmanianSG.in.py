@@ -168,7 +168,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetGPUMemory.restype = c_int
 
         self.pLibTSG.tsgDestructTasmanianSparseGrid.argtypes = [c_void_p]
-        self.pLibTSG.tsgCopyGrid.argtypes = [c_void_p, c_void_p]
+        self.pLibTSG.tsgCopySubGrid.argtypes = [c_void_p, c_void_p, c_int, c_int]
         self.pLibTSG.tsgWrite.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgWriteBinary.argtypes = [c_void_p, c_char_p]
         self.pLibTSG.tsgRead.argtypes = [c_void_p, c_char_p]
@@ -719,7 +719,7 @@ class TasmanianSparseGrid:
 
         self.pLibTSG.tsgMakeFourierGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), pAnisoWeights, pLevelLimits)
 
-    def copyGrid(self, pGrid):
+    def copyGrid(self, pGrid, iOutputsBegin = 0, iOutputsEnd = -1):
         '''
         accepts an instance of TasmanianSparseGrid class and creates
         a hard copy of the class and all included data
@@ -728,11 +728,24 @@ class TasmanianSparseGrid:
         pGrid: instance of TasmanianSparseGrid class
             the source for the copy
 
+        iOutputsBegin: integer indicating the first output to copy
+
+        iOutputsEnd: integer one bigger than the last output to copy
+                     if set to -1, all outputs from iOutputsBegin to
+                     the end will be copied
+
+        Examples:
+
+        grid.copyGrid(other, 0, -1) # copy all outputs (default)
+        grid.copyGrid(other, 0, other.getNumOutputs()) # also copy all
+        grid.copyGrid(other, 0, 3) # copy outputs 0, 1, and 2
+        grid.copyGrid(other, 1, 4) # copy outputs 1, 2, and 3
+
         '''
         if (not isinstance(pGrid, TasmanianSparseGrid)):
             raise TasmanianInputError("pGrid", "ERROR: pGrid must be an instance of TasmanianSparseGrid")
 
-        self.pLibTSG.tsgCopyGrid(self.pGrid, pGrid.pGrid)
+        self.pLibTSG.tsgCopySubGrid(self.pGrid, pGrid.pGrid, iOutputsBegin, iOutputsEnd)
 
     def updateGlobalGrid(self, iDepth, sType, liAnisotropicWeights=[], liLevelLimits=[]):
         '''
