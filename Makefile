@@ -147,8 +147,13 @@ include/tsg%.hpp: ./Addons/tsg%.hpp
 GaussPattersonRule.table: ./SparseGrids/GaussPattersonRule.table
 	cp ./SparseGrids/GaussPattersonRule.table .
 
-TasmanianSG.py: ./Config/AltBuildSystems/TasmanianSG.py
-	cp ./Config/AltBuildSystems/TasmanianSG.py .
+TasmanianSG.py: ./InterfacePython/TasmanianSG.in.py
+	cp ./InterfacePython/TasmanianSG.in.py TasmanianSG.py
+	sed -i -e 's|@Tasmanian_VERSION_MAJOR@|'6'|g' ./TasmanianSG.py
+	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'1'|g' ./TasmanianSG.py
+	sed -i -e 's|@Tasmanian_license@|'BSD\ 3-Clause\ with\ UT-Battelle\ disclaimer'|g' ./TasmanianSG.py
+	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianSG.py
+	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianSG.py
 
 example_sparse_grids.py: ./Config/AltBuildSystems/example_sparse_grids.py
 	cp ./Config/AltBuildSystems/example_sparse_grids.py .
