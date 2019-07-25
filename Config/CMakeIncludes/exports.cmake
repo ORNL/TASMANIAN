@@ -45,6 +45,22 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianMakefile.in"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 # cmake file for the examples, to be used post-install
+set(Tasmanian_components "")
+if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
+    set(Tasmanian_components "${Tasmanian_components} STATIC")
+endif()
+if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
+    set(Tasmanian_components "${Tasmanian_components} SHARED")
+endif()
+foreach(_comp OPENMP BLAS PYTHON CUDA MAGMA FORTRAN MPI)
+    if (Tasmanian_ENABLE_${_comp})
+        set(Tasmanian_components "${Tasmanian_components} ${_comp}")
+    endif()
+endforeach()
+unset(_comp)
+if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
+    set(Tasmanian_components "${Tasmanian_components} MATLAB")
+endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.txt" "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt"
         DESTINATION "share/Tasmanian/examples/"

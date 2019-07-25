@@ -7,8 +7,6 @@ cmake_minimum_required(VERSION 3.5)
 # but this doesn't seem to work, not sure if this is a "relocatable package" (low concern)
 include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
 
-check_required_components(Tasmanian)
-
 add_library(Tasmanian_libsparsegrid INTERFACE)
 add_library(Tasmanian_libdream INTERFACE)
 
@@ -18,6 +16,7 @@ set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES T
 if (TARGET Tasmanian_shared)
     add_library(Tasmanian::Tasmanian_shared INTERFACE IMPORTED GLOBAL)
     set_target_properties(Tasmanian::Tasmanian_shared PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
+    set(Tasmanian_SHARED_FOUND "ON")
 endif()
 
 # define _static/_shared independent libraries, default to static if both types are present
@@ -27,6 +26,7 @@ if (TARGET Tasmanian_static)
 
     add_library(Tasmanian::Tasmanian_static INTERFACE IMPORTED GLOBAL)
     set_target_properties(Tasmanian::Tasmanian_static PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_static)
+    set(Tasmanian_STATIC_FOUND "ON")
 
     if (@Tasmanian_ENABLE_CUDA@)
     # Since Tasmanian does not transitively include <cuda.h> and since all CUDA calls are wrapped in CXX API,
@@ -57,9 +57,39 @@ if (@Tasmanian_ENABLE_FORTRAN@)
     else()
         target_link_libraries(Tasmanian_libfortran90 INTERFACE Tasmanian_libfortran90_shared)
     endif()
+    set(Tasmanian_FORTRAN_FOUND "ON")
 endif()
 
 # export the python path so other projects can configure python scripts
 if (@Tasmanian_ENABLE_PYTHON@)
-    set(Tasmanian_PYTHONPATH "@Tasmanian_PYTHONPATH@")
+    set_and_check(Tasmanian_PYTHONPATH "@Tasmanian_PYTHONPATH@")
+    set(Tasmanian_PYTHON_FOUND "ON")
 endif()
+
+# export the MATLAB paths so other projects can write files directly to MATLAB
+if (NOT "@Tasmanian_MATLAB_WORK_FOLDER@" STREQUAL "")
+    set_and_check(Tasmanian_MATLAB_WORK_FOLDER "@Tasmanian_MATLAB_WORK_FOLDER@")
+    set_and_check(Tasmanian_MATLABPATH "@CMAKE_INSTALL_PREFIX@/share/Tasmanian/matlab/")
+    set(Tasmanian_MATLAB_FOUND "ON")
+endif()
+
+set(Tasmanian_OPENMP_FOUND "@Tasmanian_ENABLE_OPENMP@")
+set(Tasmanian_BLAS_FOUND   "@Tasmanian_ENABLE_BLAS@")
+set(Tasmanian_MPI_FOUND    "@Tasmanian_ENABLE_MPI@")
+set(Tasmanian_CUDA_FOUND   "@Tasmanian_ENABLE_CUDA@")
+
+# write component info
+foreach(_comp IN LISTS Tasmanian_FIND_COMPONENTS)
+    if (Tasmanian_${_comp}_FOUND)
+        message(STATUS "Tasmanian component ${_comp}: found")
+    else()
+        if (Tasmanian_FIND_REQUIRED_${_comp})
+            message(WARNING "Tasmanian rerquired component ${_comp}: missing (error)")
+        else()
+            message(STATUS "Tasmanian optional component ${_comp}: missing")
+        endif()
+    endif()
+endforeach()
+unset(_comp)
+
+check_required_components(Tasmanian)
