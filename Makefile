@@ -155,8 +155,10 @@ TasmanianSG.py: ./InterfacePython/TasmanianSG.in.py
 	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianSG.py
 	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianSG.py
 
-example_sparse_grids.py: ./Config/AltBuildSystems/example_sparse_grids.py
-	cp ./Config/AltBuildSystems/example_sparse_grids.py .
+example_sparse_grids.py: ./InterfacePython/example_sparse_grids.in.py
+	cp ./InterfacePython/example_sparse_grids.in.py example_sparse_grids.py
+	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python'|g' ./example_sparse_grids.py
+	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./example_sparse_grids.py
 
 InterfacePython/testConfigureData.py: ./Config/AltBuildSystems/testConfigureData.py
 	cp ./Config/AltBuildSystems/testConfigureData.py InterfacePython/
@@ -188,9 +190,6 @@ matlab:
 # Python 3
 .PHONY: python3
 python3: TasmanianSG.py testTSG.py example_sparse_grids.py
-	cp ./Config/AltBuildSystems/TasmanianSG.py .
-	cp ./Config/AltBuildSystems/example_sparse_grids.py .
-	cp ./InterfacePython/testTSG.py .
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' example_sparse_grids.py
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' testTSG.py
 
