@@ -190,6 +190,9 @@ public:
     //! \brief Read the data from a stream using ascii or binary format.
     template<bool useAscii> void read(std::istream &is);
 
+    //! \brief Restrict data between \b ibegin and \b iend entries.
+    void restrictData(int ibegin, int iend){ for(auto &d : data) d.value = std::vector<double>(d.value.begin() + ibegin, d.value.begin() + iend); }
+
     //! \brief Returns the maximum index of any of the stored tensors.
     int getMaxTensor() const;
 
@@ -243,6 +246,8 @@ struct SimpleConstructData{
         initial_points.write<useAscii>(os);
         writeNodeDataList<useAscii>(data, os);
     }
+    //! \brief Restrict data between \b ibegin and \b iend entries.
+    void restrictData(int ibegin, int iend){ for(auto &d : data) d.value = std::vector<double>(d.value.begin() + ibegin, d.value.begin() + iend); }
     //! \brief Remove \b points from the \b data and return a vector of the values in the \b points order.
     std::vector<double> extractValues(MultiIndexSet const &points){
         size_t num_outputs = data.front().value.size();

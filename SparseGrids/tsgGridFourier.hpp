@@ -46,7 +46,7 @@ public:
     template<bool useAscii> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
-    void copyGrid(const GridFourier *fourier);
+    void copyGrid(const GridFourier *fourier, int ibegin, int iend);
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
 
     void setTensors(MultiIndexSet &&tset, int cnum_outputs);

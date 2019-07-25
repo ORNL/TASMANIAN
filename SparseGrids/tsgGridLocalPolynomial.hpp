@@ -61,7 +61,7 @@ public:
     template<bool useAscii> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
-    void copyGrid(const GridLocalPolynomial *pwpoly);
+    void copyGrid(const GridLocalPolynomial *pwpoly, int ibegin, int iend);
 
     TypeOneDRule getRule() const{ return rule->getType(); }
     int getOrder() const{ return order; }

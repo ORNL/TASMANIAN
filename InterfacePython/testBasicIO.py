@@ -298,6 +298,56 @@ class TestTasClass(unittest.TestCase):
             gridB.copyGrid(gridA)
             ttc.compareGrids(gridA, gridB)
 
+    def checkCopySubgrid(self):
+        grid = TasmanianSG.TasmanianSparseGrid() # test grid
+        gridTotal = TasmanianSG.TasmanianSparseGrid() # test grid
+        gridRef1 = TasmanianSG.TasmanianSparseGrid() # test grid
+        gridRef2 = TasmanianSG.TasmanianSparseGrid() # test grid
+        gridRef3 = TasmanianSG.TasmanianSparseGrid() # test grid
+        gridRef4 = TasmanianSG.TasmanianSparseGrid() # test grid
+        # outputs:   source       0         0, 1, 2     2, 3, 4       5
+        lGrids = ['gridTotal', 'gridRef1', 'gridRef2', 'gridRef3', 'gridRef4']
+        lOutputs = [6, 1, 3, 3, 1];
+        lMake = ['.makeGlobalGrid(2, iOutputs, 4, "level", "clenshaw-curtis")',
+                 '.makeSequenceGrid(2, iOutputs, 4, "level", "rleja")',
+                 '.makeLocalPolynomialGrid(2, iOutputs, 4, 2)',
+                 '.makeWaveletGrid(2, iOutputs, 3)',
+                 '.makeFourierGrid(2, iOutputs, 4, "level")']
+
+        for sMake in lMake:
+            for iI in range(len(lOutputs)):
+                iOutputs = lOutputs[iI]
+                exec(lGrids[iI] + sMake)
+
+            gridTotalValues = []
+            gridRef1Values  = []
+            gridRef2Values  = []
+            gridRef3Values  = []
+            gridRef4Values  = []
+
+            aPoints = gridTotal.getPoints()
+            for iI in range(aPoints.shape[0]):
+                lModel = [i * np.exp(aPoints[iI][0] + aPoints[iI][1]) for i in range(1, 7)]
+                gridTotalValues.append(lModel)
+                gridRef1Values.append(lModel[0:1])
+                gridRef2Values.append(lModel[0:3])
+                gridRef3Values.append(lModel[2:5])
+                gridRef4Values.append(lModel[5:6])
+
+            for sGrid in lGrids:
+                exec(sGrid + ".loadNeededPoints(np.row_stack(" + sGrid + "Values))")
+
+            grid.copyGrid(gridTotal)
+            ttc.compareGrids(grid, gridTotal)
+            grid.copyGrid(gridTotal, 0, 1)
+            ttc.compareGrids(grid, gridRef1)
+            grid.copyGrid(gridTotal, 0, 3)
+            ttc.compareGrids(grid, gridRef2)
+            grid.copyGrid(gridTotal, 2, 5)
+            ttc.compareGrids(grid, gridRef3)
+            grid.copyGrid(gridTotal, 5, 6)
+            ttc.compareGrids(grid, gridRef4)
+
     def checkReadWriteMisc(self):
         '''
         Test reading and writing of domain transforms and testing all rules.
@@ -361,4 +411,5 @@ class TestTasClass(unittest.TestCase):
         self.checkReadWriteWavelet()
         self.checkReadWriteFourier()
 
+        self.checkCopySubgrid()
         self.checkReadWriteMisc()

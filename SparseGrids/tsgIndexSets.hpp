@@ -65,6 +65,33 @@ namespace TasGrid{
 /*!
  * \internal
  * \ingroup TasmanianSets
+ * \brief Take a vector logically organized into stips and strides and extract a sub-strip from every strip.
+ *
+ * Used in copy subset of the values and the Data2D surplusses.
+ * The vector is organized in strips with the given \b stride
+ * and the returned vector has the same number of strips
+ * but containing the data between the \b ibegin and \b iend (not including \b iend).
+ * \endinternal
+ */
+template<typename T>
+std::vector<T> spltVector2D(std::vector<T> const &x, size_t stride, int ibegin, int iend){
+    size_t sbegin(ibegin), send(iend);
+    size_t num_strips = x.size() / stride;
+    size_t new_stride = send - sbegin;
+    std::vector<T> result(num_strips * new_stride);
+    auto ix = x.begin();
+    auto ir = result.begin();
+    for(size_t i=0; i<num_strips; i++){
+        std::copy_n(ix + sbegin, new_stride, ir);
+        std::advance(ix, stride);
+        std::advance(ir, new_stride);
+    }
+    return result;
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianSets
  * \brief Generic 2D data structure divided into contiguous strips of fixed length (similar to a matrix).
  *
  * Many of the internal data-structures relevant to sparse grids can be represented as two dimensional arrays.
@@ -97,6 +124,14 @@ public:
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
         vec.resize(stride * num_strips);
+    }
+
+    //! \brief Get the data between \b ibegin and \b iend of each strip.
+    Data2D<T> splitData(int ibegin, int iend) const{
+        Data2D<T> result(iend - ibegin, 0);
+        result.num_strips = num_strips;
+        result.vec = spltVector2D(vec, stride, ibegin, iend);
+        return result;
     }
 
     //! \brief Returns a reference to the \b i-th strip.
@@ -303,6 +338,15 @@ public:
     void setValues(const double vals[]);
     //! \brief Replace the existing values with \b vals using move semantics, the size of \b vals must be \b num_outputs times \b num_values
     void setValues(std::vector<double> &&vals);
+
+    //! \brief Return a StorageSet with values between \b ibegin and \b iend.
+    StorageSet splitValues(int ibegin, int iend) const{
+        StorageSet result;
+        result.num_values = num_values;
+        result.num_outputs = (size_t) (iend - ibegin);
+        result.values = spltVector2D(values, num_outputs, ibegin, iend);
+        return result;
+    }
 
     /*!
      * \brief Add more values to the set, the \b old_set and \b new_set are the associated multi-index sets required to maintain order.

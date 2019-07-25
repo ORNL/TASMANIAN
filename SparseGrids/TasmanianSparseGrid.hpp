@@ -106,7 +106,7 @@ public:
                          std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
     void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights = nullptr, const int* level_limits = nullptr);
 
-    void copyGrid(const TasmanianSparseGrid *source);
+    void copyGrid(const TasmanianSparseGrid *source, int outputs_begin = 0, int outputs_end = -1);
 
     void updateGlobalGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
     void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);

@@ -100,24 +100,26 @@ void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Ty
 
     setPoints(pset, cnum_outputs, crule);
 }
-void GridSequence::copyGrid(const GridSequence *seq){
+void GridSequence::copyGrid(const GridSequence *seq, int ibegin, int iend){
     num_dimensions = seq->num_dimensions;
-    num_outputs    = seq->num_outputs;
+    num_outputs    = iend - ibegin;
     points = seq->points;
     needed = seq->needed;
 
     rule = seq->rule;
 
-    surpluses = seq->surpluses;
+    surpluses = (num_outputs == seq->num_outputs) ? seq->surpluses : seq->surpluses.splitData(ibegin, iend);
     nodes = seq->nodes;
     coeff = seq->coeff;
 
-    values = seq->values;
+    values = (num_outputs == seq->num_outputs) ? seq->values : seq->values.splitValues(ibegin, iend);
 
     max_levels = seq->max_levels;
 
-    if (seq->dynamic_values)
+    if (seq->dynamic_values){
         dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData(*seq->dynamic_values));
+        if (num_outputs != seq->num_outputs) dynamic_values->restrictData(ibegin, iend);
+    }
 }
 
 void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule crule){
