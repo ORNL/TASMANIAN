@@ -2,7 +2,6 @@
 # Python module, examples and tests
 #
 # Configure the .in. files using three stage configuration
-#   stage 0: (optional) keeps files up-to-date for the simple GNU-Make
 #   stage 1: everything (build, test, etc) should work in the build folder
 #   stage 2: everything should work after make install
 #
@@ -25,20 +24,6 @@ endif()
 
 if (Tasmanian_ENABLE_CUDA)
     set(Tasmanian_ENABLE_CUDA "ON")
-endif()
-
-
-########################################################################
-# Stage 0: for support of simple GNU-Make
-#          to be used only for development
-########################################################################
-if (Tasmanian_DEVELOPMENT_BACKWARDS)
-    set(Tasmanian_libsparsegrid_path "./libtasmaniansparsegrid.so")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/TasmanianSG.py")
-
-    set(Tasmanian_string_python_hashbang "/usr/bin/env python")
-    set(Tasmanian_python_example_import "#")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_SOURCE_DIR}/../Config/AltBuildSystems/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 endif()
 
 
