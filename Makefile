@@ -26,7 +26,8 @@ ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py In
               sandbox.py \
               $(wildcard ./DREAM/Examples/example_dream*.cpp) \
               $(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp) \
-              libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a tasgrid dreamtest gridtest $(HEADERS)
+              libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a \
+              tasgrid dreamtest gridtest addontester $(HEADERS)
 
 DREAM_EXAMPLES_OBJ = $(patsubst ./DREAM/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./DREAM/Examples/example_dream*.cpp)))
 SG_EXAMPLES_OBJ = $(patsubst ./SparseGrids/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp)))
@@ -104,6 +105,13 @@ dreamtest: libtasmaniandream.a libtasmaniandream.so ./DREAM/dreamtest
 
 DREAM/dreamtest: ./DREAM/libtasmaniandream.so libtasmaniansparsegrid.a $(TDR_SOURCE) $(CONFIGURED_HEADERS)
 	cd DREAM; make
+
+# Addons
+addontester: Addons/testAddons.o libtasmaniandream.a libtasmaniansparsegrid.a
+	$(CC) $(OPTL) $(LADD) -L. Addons/testAddons.o -o addontester libtasmaniandream.a libtasmaniansparsegrid.a
+
+Addons/testAddons.o: Addons/testAddons.cpp
+	$(CC) $(OPTC) $(IADD) -I./Addons/ -I./SparseGrids/ -c Addons/testAddons.cpp -o Addons/testAddons.o
 
 # Headers
 # many calls to mkdir, consider reducing
@@ -231,13 +239,12 @@ InterfaceFortran/libtasmanianfortran90.a:
 test: $(ALL_TARGETS)
 	./gridtest
 	./dreamtest
+	./addontester
 	PYTHONPATH=$(PYTHONPATH):./InterfacePython ./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
 
 .PHONY: examples
 examples: $(ALL_TARGETS) example_dream example_sparse_grids
 	echo "Done examples"
-#	$(CC) $(OPTC) $(IADD) -c example_sparse_grids.cpp -o example_sparse_grids.o
-#	$(CC) $(OPTL) $(LADD) example_sparse_grids.o -o example_sparse_grids $(LIBS)
 
 example_dream: $(ALL_TARGETS) $(DREAM_EXAMPLES_OBJ)
 	$(CC) $(OPTL) $(LADD) $(DREAM_EXAMPLES_OBJ) -o example_dream $(LIBS)
