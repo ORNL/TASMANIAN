@@ -1,5 +1,15 @@
 # Installation
 
+### Document Sections
+* Requirements
+* Install using CMake: the preferred way
+* Install with the `install` script-wrapper around CMake
+* Install with (basic) GNU Make
+* Install with Spack
+* Install on MS Windows platform
+* Install folder structure
+* Linking to Tasmanian: CMake Package Config
+
 ### Requirements
 
 Minimum requirements to use Tasmanian:
@@ -16,7 +26,7 @@ Optional features:
 * Basic [Python matplotlib](https://matplotlib.org/) support
 * Fully featured [MATLAB/Octave](https://www.gnu.org/software/octave/) interface via wrappers around the command-line tool
 * Fortran 90/95 interface using [gfortran](https://gcc.gnu.org/wiki/GFortran) or [ifort](https://software.intel.com/en-us/intel-compilers)
-* Distributed Bayesian inference using [Message Passing Interface (MPI)](https://en.wikipedia.org/wiki/Message_Passing_Interface)
+* Addon templates for the [Message Passing Interface (MPI)](https://en.wikipedia.org/wiki/Message_Passing_Interface)
 * [Doxygen](http://www.doxygen.org/) documentation
 
 **Note:** with the exception of the Intel compiler and the MAGMA library, the rest of the software is included in the repositories of most Linux distributions, e.g., [Ubuntu](https://www.ubuntu.com/) or [Fedora](https://getfedora.org/), as well as [Mac OSX Homebrew](https://brew.sh/).
@@ -35,7 +45,7 @@ Optional features:
 | Doxygen | 1.8.13              | 1.8.13           |
 | MPI     | 2.1, 3.1            | 3.1              |
 
-### Using CMake: the preferred way
+### Install using CMake: the preferred way
 
 The preferred way to install Tasmanian is to use the included CMake build script, which requires CMake version 3.10 or newer.
 
@@ -82,7 +92,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
       which greatly enhances the performance of `evaluateFast()` and `evaluateBatch()` calls
     * Matrix Algebra on GPU and Multicore Architectures (MAGMA) is a library for CUDA accelerated linear
       algebra developed at the University of Tennessee at Knoxville
-    * MPI allows the use of distributed memory in Bayesian inference
+    * MPI allows the use of distributed memory in Bayesian inference, parallel model construction, and send/receive grid through an MPI comm
 * The **Tasmanian_ENABLE_RECOMMENDED** option searches for OpenMP, BLAS, and Python, enables the options (if possible) and also sets the `-O3` flag
 * Additional interfaces are available, beyond the default C/C++ library and the command line tools:
     * Python and Fortran require appropriate interpreter and compiler
@@ -127,7 +137,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D DOXYGEN_INTERNAL_DOCS=YES          (include documentation of the Tasmanian internals)
 ```
 
-### Using the `install` script-wrapper around CMake
+### Install with the `install` script-wrapper around CMake
 
 Tasmanian also includes an `install` script that wraps around CMake and automatically calls the build commands.
 The script uses `Tasmanian_ENABLE_RECOMMENDED` option and allows for other options to be enabled/disabled
@@ -147,7 +157,7 @@ with command line switches.
     * using absolute paths is strongly recommended
     * if the MATLAB work-folder is omitted, the MATLAB interface will be disabled
 
-### Alternative (basic) build using GNU Make
+### Install with (basic) GNU Make
 
 The core capabilities of Tasmanian can be build with a few simple GNU Make commands.
 The basic build engine is useful for quick testing and exploring Tasmanian, or
@@ -165,15 +175,18 @@ by manually editing `Config/AltBuildSystems/Makefile.in` configuration file.
   make examples
   make clean
 ```
+In the basic mode, the source folder will become the installation folder, i.e.,
+the libraries, executables and Python modules will be build in the source folder `./`
+and the headers and Fortran module will be copied to the `./include` folder.
 
-### Using Spack
+### Install with Spack
 
 Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 ```
   spack install tasmanian@develop+blas+python+cuda
 ```
 
-### MS Windows Installation
+### Install on MS Windows platform
 
 Tasmanian has been tested with MS Visual Studio 2015 and 2017 and CMake 3.11.
 
@@ -216,24 +229,59 @@ Additional notes:
   <install-path>/share/Tasmanian/TasmanianENVsetup.sh
 ```
 * The Python module is version independent, i.e., the files work with all tested Python versions, the version independent symbolic-link `share/Tasmanian/python` allows to use the Python interface regardless of the version of Python used during the install.
-* Under MS Windows the shared library (e.g., the .dll files) are installed in `bin` and symbolic-links are not supported.
+* Under MS Windows the shared library (e.g., the .dll files) are installed in `bin` and symbolic-links are replaced by a hard copy.
 
-### CMake Package Config
+### Linking to Tasmanian: CMake Package Config
 
 Tasmanian will install CMake package-config files in `<install-path>/lib/Tasmanian`, the files will contain all necessary information to import the Tasmanian targets into other CMake projects using the CMake command:
 ```
   find_package(Tasmanian 6.1 PATHS "<install-path>")
 ```
-The imported targets will be called:
+See the included `CMakeLists.txt` in `<install-path>/share/Tasmanian/examples`.
+
+Note that the `PATHS` do not have to be specified explicitly
+if the `TasmanianENVsetup.sh` is sourced or if the `Tasmanian_ROOT` environment variable is set.
+
+The imported targets will be named:
 ```
-  Tasmanian::Tasmanian_shared     Tasmanian::Tasmanian_static
-  Tasmanian_libfortran90_shared   Tasmanian_libfortran90_static
+  Tasmanian::shared     (link to all shared libraries, if shared libraries were build)
+  Tasmanian::static     (link to all static libraries, if static libraries were build)
+  Tasmanian::Tasmanian  (always available and equivalent to either static or shared)
+  Tasmanian::tasgrid    (imported executable pointing to the command line tool)
 ```
-**Note:** depending on the install options, not all targets may be available, e.g., using `-D BUILD_SHARED_LIBS=ON` will disable the static targets. In order to simplify the user code, the package-config will also create CMake interface targets without the shared/static suffixes:
+In addition, the following variables will be set:
 ```
-  Tasmanian::Tasmanian    Tasmanian_libfortran90
+  Tasmanian_PYTHONPATH         (path to the Python module, if Python was enabled)
+  Tasmanian_MATLAB_WORK_FOLDER (path to the MATLAB work folder, if set during build)
+  Tasmanian_MATLABPATH         (path to the MATLAB scripts, if MATLAB was enabled)
+  Tasmanian_<component>_FOUND  (set to ON for each available component)
 ```
-The interface targets will always depend on valid imported targets; if both shared and static libraries are present, the static libraries will be chosen by default. Example use case of the Tasmanian package-config is included in:
+The possible components are:
 ```
-  <install-path>/share/Tasmanian/examples/CMakeLists.txt
+  SHARED STATIC OPENMP BLAS CUDA MAGMA MPI PYTHON MATLAB FORTRAN
+```
+The modules correspond to shared and static libraries and the cmake options used during build.
+
+All available components will be included even if the component is not explicitly requested.
+Requesting components can alter the behavior of `Tasmanian::Tasmanian`,
+help catch errors early in the build process,
+and/or print useful log messages. For example:
+```
+  find_package(Tasmanian 6.1 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
+```
+In the above example:
+* an error will be generated if Tasmanian was build without shared libraries, CUDA or Python support
+* the `Tasmanian::Tasmanian` target will be set to the shared libraries
+* a status message will report whether Tasmanian was build with OpenMP support
+
+The `Tasmanian::Tasmanian` target will point to the shared libraries if only shared libraries are available,
+or if the `SHARED` component is available and requested without the `STATIC` component.
+Otherwise, `Tasmanian::Tasmanian` will point to the `STATIC` libraries.
+For example:
+```
+  # suppose both shared and static libraries are available, then
+  find_package(... REQUIRED SHARED)                            # Tasmanian::Tasmanian is shared
+  find_package(... OPTIONAL_COMPONENTS SHARED)                 # Tasmanian::Tasmanian is shared
+  find_package(... REQUIRED SHARED OPTIONAL_COMPONENTS STATIC) # Tasmanian::Tasmanian is static
+  find_package(... <no SHARED/STATIC component specified>)     # Tasmanian::Tasmanian is static
 ```

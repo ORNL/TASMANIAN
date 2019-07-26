@@ -7,12 +7,17 @@ cmake_minimum_required(VERSION 3.10)
 # but this doesn't seem to work, not sure if this is a "relocatable package" (low concern)
 include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
 
-add_library(Tasmanian_libsparsegrid INTERFACE)
+add_executable(Tasmanian::tasgrid IMPORTED)
+set_property(TARGET Tasmanian::tasgrid PROPERTY IMPORTED_LOCATION "@CMAKE_INSTALL_PREFIX@/bin/tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}")
+
+add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
+
+add_library(Tasmanian_libsparsegrid INTERFACE) # for backwards compatibility
 add_library(Tasmanian_libdream INTERFACE)
 
 if (TARGET Tasmanian_shared)
-    add_library(Tasmanian::Tasmanian_shared INTERFACE IMPORTED GLOBAL)
-    set_target_properties(Tasmanian::Tasmanian_shared PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
+    add_library(Tasmanian::shared INTERFACE IMPORTED GLOBAL)
+    set_target_properties(Tasmanian::shared PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
     set(Tasmanian_SHARED_FOUND "ON")
 endif()
 
@@ -21,8 +26,8 @@ if (TARGET Tasmanian_static)
     target_link_libraries(Tasmanian_libsparsegrid INTERFACE Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_libdream INTERFACE Tasmanian_libdream_static)
 
-    add_library(Tasmanian::Tasmanian_static INTERFACE IMPORTED GLOBAL)
-    set_target_properties(Tasmanian::Tasmanian_static PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_static)
+    add_library(Tasmanian::static INTERFACE IMPORTED GLOBAL)
+    set_target_properties(Tasmanian::static PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_static)
     set(Tasmanian_STATIC_FOUND "ON")
 
     if (@Tasmanian_ENABLE_CUDA@)
@@ -55,6 +60,9 @@ if (@Tasmanian_ENABLE_FORTRAN@)
         target_link_libraries(Tasmanian_libfortran90 INTERFACE Tasmanian_libfortran90_shared)
     endif()
     set(Tasmanian_FORTRAN_FOUND "ON")
+
+    add_library(Tasmanian::Fortran INTERFACE IMPORTED GLOBAL)
+    set_target_properties(Tasmanian::Fortran PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian::Tasmanian)
 endif()
 
 # export the python path so other projects can configure python scripts
@@ -93,7 +101,6 @@ unset(_comp)
 check_required_components(Tasmanian)
 
 # if find_package(Tasmanian REQUIRED SHARED) is called without STATIC then default to shared libraries
-add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
 if ((SHARED IN_LIST Tasmanian_FIND_COMPONENTS) AND (NOT STATIC IN_LIST Tasmanian_FIND_COMPONENTS) AND (TARGET Tasmanian_shared))
     set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
 else() # otherwise use the default (static if existing, else shared)

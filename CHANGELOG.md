@@ -7,9 +7,9 @@ Changelog for version 6.1 (may rename this to 7.0 later)
     * use through the master target and header, cannot be used independently
 
 * new Tasmanian CMake master targets that handle all modules
-    * now available Tasmanian_shared and Tasmanian_static
-    * equivalently Tasmanian::Tasmanian_shared, Tasmanian::Tasmanian_static
-    * also Tasmanian_master and Tasmanian::Tasmanian will always point to an available target
+    * now available Tasmanian::shared and Tasmanian::static
+    * also Tasmanian::Tasmanian will always point to an available target
+    * added Tasmanian::tasgrid imported executable target
 
 * new Tasmanian master header to add all modules: Tasmanian.hpp
 
