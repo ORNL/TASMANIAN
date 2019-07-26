@@ -610,7 +610,7 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
         [](void)->void{
             auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
             gridLoadEN2(&grid);
-            grid.setSurplusRefinement(0.01, refine_classic, 0, {});  // rule non-local
+            grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>());  // rule non-local
         },
         [](void)->void{
             auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
@@ -663,6 +663,11 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
             CustomTabulated custom;
             custom.read(ExternalTester::findGaussPattersonTable());
             custom.getQExact(11); // level too high
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 1, 1, type_level, rule_leja);
+            gridLoadEN2(&grid);
+            grid.removePointsByHierarchicalCoefficient(0.1, -1, nullptr); // grid is not localp or wavelet
         },
     };
 }
