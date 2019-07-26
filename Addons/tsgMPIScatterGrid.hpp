@@ -240,6 +240,47 @@ int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
     }
 }
 
+/*!
+ * \ingroup TasmanianAddonsMPIGridSend
+ * \brief Split the grid across the comm where each rank receives an equal portion of the total outputs.
+ */
+template<bool binary = true>
+int MPIGridScatterOutputs(TasmanianSparseGrid const &source, TasmanianSparseGrid &destination, int root, int tag_size, int tag_data, MPI_Comm comm){
+    int me; // my rank within the comm
+    MPI_Comm_rank(comm, &me);
+
+    if (me == root){ // splitting and sending the grid
+        int num_ranks; MPI_Comm_size(comm, &num_ranks);
+        int num_effective_ranks = std::min(num_ranks, source.getNumOutputs());
+
+        int stride = source.getNumOutputs() / num_effective_ranks;
+        int extras = source.getNumOutputs() % num_effective_ranks;
+
+        // return the starting offset for the given rank
+        auto offset = [&](int rank)->int{ return rank * stride + std::min(rank, extras); };
+
+        for(int rank=0; rank<num_effective_ranks; rank++){
+            if (rank == root){ // this is me, take my own copy of the grid
+                destination = copyGrid(source, offset(rank), offset(rank+1));
+            }else{ // send the grid out
+                auto result = MPIGridSend(copyGrid(source, offset(rank), offset(rank+1)) , rank, tag_size, tag_data, comm);
+                if (result != MPI_SUCCESS) return result;
+            }
+        }
+        for(int rank=num_effective_ranks; rank<num_ranks; rank++){ // if there are any grid remaining, set those to empty
+            if (rank == root){ // this is me, take my own copy of the grid
+                destination = TasmanianSparseGrid();
+            }else{ // send the grid out
+                auto result = MPIGridSend(TasmanianSparseGrid() , rank, tag_size, tag_data, comm);
+                if (result != MPI_SUCCESS) return result;
+            }
+        }
+        return MPI_SUCCESS; // if we got here, all was successful
+    }else{ // receiving a grid
+        return MPIGridRecv(destination, root, tag_size, tag_data, comm);
+    }
+}
+
 }
 
 #endif // Tasmanian_ENABLE_MPI

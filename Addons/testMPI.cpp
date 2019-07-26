@@ -73,6 +73,18 @@ int main(int argc, char ** argv){
     if (me == 0)
         cout << "        MPI Bcast    <binary>    Pass\n";
 
+    // ----------------- Scatter <ascii> --------------- //
+    if (!testScatterOutputs<ascii>()) return fail();
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (me == 0)
+        cout << "      MPI Scatter     <ascii>    Pass\n";
+
+    // ----------------- Scatter <binary> --------------- //
+    if (!testScatterOutputs<binary>()) return fail();
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (me == 0)
+        cout << "      MPI Scatter    <binary>    Pass\n";
+
     // --------------- Finalize ------------------------- //
     MPI_Finalize();
 

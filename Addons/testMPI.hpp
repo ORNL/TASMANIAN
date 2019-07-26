@@ -84,3 +84,86 @@ bool testBcast(){
         return checkPoints(true_grid, grid);
     }
 }
+
+/*!
+ * \brief Simple test of MPI Scatter Outputs of sparse grids, binary and ascii formats.
+ */
+template<bool use_binary>
+bool testScatterOutputs(){
+    // grid has 7 outputs split between 3 ranks gives (3 2 2)
+    int me;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    auto reference_grid = TasGrid::makeGlobalGrid(3, (me == 0) ? 3 : 2, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+
+    loadNeededPoints<false, false>([&](double const x[], double y[], size_t)->void{
+                                        double expval = std::exp(x[0] + x[1] + x[2]); // 3 inputs
+                                        if (me == 0){
+                                            y[0] = expval;
+                                            y[1] = 2.0 * expval;
+                                            y[2] = 3.0 * expval;
+                                        }else if (me == 1){
+                                            y[0] = 4.0 * expval;
+                                            y[1] = 5.0 * expval;
+                                        }else{
+                                            y[0] = 6.0 * expval;
+                                            y[1] = 7.0 * expval;
+                                        }
+                                    }, reference_grid, 0);
+
+    TasmanianSparseGrid grid; // received grid
+
+    // use rank 1 for the root
+    if (me == 1){
+        auto full_grid = TasGrid::makeGlobalGrid(3, 7, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+        loadNeededPoints<false, false>([&](double const x[], double y[], size_t)->void{
+                                            double expval = std::exp(x[0] + x[1] + x[2]); // 3 inputs
+                                            for(size_t i=0; i<7; i++)
+                                                y[i] = double(i+1) * expval;
+                                        }, full_grid, 0);
+        MPIGridScatterOutputs<use_binary>(full_grid, grid, 1, 2, 3, MPI_COMM_WORLD);
+    }else{
+        MPIGridScatterOutputs<use_binary>(TasmanianSparseGrid(), grid, 1, 2, 3, MPI_COMM_WORLD);
+    }
+
+    std::minstd_rand park_miller(99);
+    std::uniform_real_distribution<double> unif(-1.0, 1.0);
+    std::vector<double> test_points(3 * 1000);
+    for(auto &t : test_points) t = unif(park_miller);
+
+    auto match = [&](TasmanianSparseGrid const &a, TasmanianSparseGrid const &b)->bool{
+        std::vector<double> resa, resb; // reference and actual result
+        a.evaluateBatch(test_points, resa);
+        b.evaluateBatch(test_points, resb);
+        double err = 0.0;
+        for(auto ia = resa.begin(), ib = resb.begin(); ia != resa.end(); ia++, ib++)
+            err = std::max(err, std::abs(*ia - *ib));
+        return (err < 1.E-13);
+    };
+
+    if (!match(grid, reference_grid)) throw std::runtime_error("ERROR: first iteration of MPIGridScatterOutputs() failed.");
+
+    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, 3, MPI_COMM_WORLD);
+    if (me == 2){
+        if (!grid.empty()) throw std::runtime_error("ERROR: second iteration of MPIGridScatterOutputs() failed.");
+    }else{
+        reference_grid = TasGrid::makeGlobalGrid(3, 1, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+        loadNeededPoints<false, false>([&](double const x[], double y[], size_t)->void{
+                                            double expval = std::exp(x[0] + x[1] + x[2]); // 3 inputs
+                                            y[0] = ((me == 0) ? 4.0 : 5.0) * expval;
+                                        }, reference_grid, 0);
+        if (!match(grid, reference_grid)) throw std::runtime_error("ERROR: second iteration of MPIGridScatterOutputs() failed.");
+    }
+
+    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, 3, MPI_COMM_WORLD);
+    if (me == 0){
+        reference_grid = TasGrid::makeGlobalGrid(3, 1, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+        loadNeededPoints<false, false>([&](double const x[], double y[], size_t)->void{
+                                            y[0] = 5.0 * std::exp(x[0] + x[1] + x[2]);
+                                        }, reference_grid, 0);
+        if (!match(grid, reference_grid)) throw std::runtime_error("ERROR: third iteration of MPIGridScatterOutputs() failed.");
+    }else{
+        if (!grid.empty()) throw std::runtime_error("ERROR: third iteration of MPIGridScatterOutputs() failed.");
+    }
+
+    return true;
+}
