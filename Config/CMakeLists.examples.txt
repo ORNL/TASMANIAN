@@ -43,3 +43,5 @@ if (TARGET Tasmanian::Fortran)
     target_link_libraries(example_sparse_grids_f90  Tasmanian::Tasmanian)
     set_property(TARGET example_sparse_grids_f90 PROPERTY LINKER_LANGUAGE Fortran)
 endif()
+
+add_custom_command(TARGET example_sparse_grids PRE_BUILD COMMAND Tasmanian::tasgrid -v)

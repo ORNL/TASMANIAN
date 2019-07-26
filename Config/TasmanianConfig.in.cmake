@@ -7,6 +7,9 @@ cmake_minimum_required(VERSION 3.10)
 # but this doesn't seem to work, not sure if this is a "relocatable package" (low concern)
 include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
 
+add_executable(Tasmanian::tasgrid IMPORTED)
+set_property(TARGET Tasmanian::tasgrid PROPERTY IMPORTED_LOCATION "@CMAKE_INSTALL_PREFIX@/bin/tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}")
+
 add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
 
 add_library(Tasmanian_libsparsegrid INTERFACE) # for backwards compatibility
