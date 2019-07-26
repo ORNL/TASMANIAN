@@ -10,9 +10,6 @@ include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cm
 add_library(Tasmanian_libsparsegrid INTERFACE)
 add_library(Tasmanian_libdream INTERFACE)
 
-add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
-set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_master)
-
 if (TARGET Tasmanian_shared)
     add_library(Tasmanian::Tasmanian_shared INTERFACE IMPORTED GLOBAL)
     set_target_properties(Tasmanian::Tasmanian_shared PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
@@ -79,7 +76,7 @@ set(Tasmanian_MPI_FOUND    "@Tasmanian_ENABLE_MPI@")
 set(Tasmanian_CUDA_FOUND   "@Tasmanian_ENABLE_CUDA@")
 
 # write component info
-foreach(_comp IN LISTS Tasmanian_FIND_COMPONENTS)
+foreach(_comp ${Tasmanian_FIND_COMPONENTS})
     if (Tasmanian_${_comp}_FOUND)
         message(STATUS "Tasmanian component ${_comp}: found")
     else()
@@ -93,3 +90,11 @@ endforeach()
 unset(_comp)
 
 check_required_components(Tasmanian)
+
+# if find_package(Tasmanian REQUIRED SHARED) is called without STATIC then default to shared libraries
+add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
+if ((SHARED IN_LIST Tasmanian_FIND_COMPONENTS) AND (NOT STATIC IN_LIST Tasmanian_FIND_COMPONENTS))
+    set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
+else() # otherwise use the default (static if existing, else shared)
+    set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_master)
+endif()
