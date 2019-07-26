@@ -34,12 +34,12 @@ add_executable(example_dream         example_dream_01.cpp
 target_link_libraries(example_sparse_grids  Tasmanian::Tasmanian)
 target_link_libraries(example_dream         Tasmanian::Tasmanian)
 
-# if target Tasmanian::Fortran90 is present,
+# if target Tasmanian::Fortran is present,
 # then Tasmanian was build with Fortran support
-if (TARGET Tasmanian::Fortran90)
+if (TARGET Tasmanian::Fortran)
     enable_language(Fortran)
     add_executable(example_sparse_grids_f90  example_sparse_grids.f90)
-    # Tasmanian::Tasmanian and Tasmanian::Fortran90 are equivalent even for CXX code
+    # Tasmanian::Tasmanian and Tasmanian::Fortran are equivalent even for CXX code
     target_link_libraries(example_sparse_grids_f90  Tasmanian::Tasmanian)
     set_property(TARGET example_sparse_grids_f90 PROPERTY LINKER_LANGUAGE Fortran)
 endif()

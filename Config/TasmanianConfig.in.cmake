@@ -9,12 +9,12 @@ include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cm
 
 add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
 
-add_library(Tasmanian_libsparsegrid INTERFACE)
+add_library(Tasmanian_libsparsegrid INTERFACE) # for backwards compatibility
 add_library(Tasmanian_libdream INTERFACE)
 
 if (TARGET Tasmanian_shared)
-    add_library(Tasmanian::Tasmanian_shared INTERFACE IMPORTED GLOBAL)
-    set_target_properties(Tasmanian::Tasmanian_shared PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
+    add_library(Tasmanian::shared INTERFACE IMPORTED GLOBAL)
+    set_target_properties(Tasmanian::shared PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
     set(Tasmanian_SHARED_FOUND "ON")
 endif()
 
@@ -23,8 +23,8 @@ if (TARGET Tasmanian_static)
     target_link_libraries(Tasmanian_libsparsegrid INTERFACE Tasmanian_libsparsegrid_static)
     target_link_libraries(Tasmanian_libdream INTERFACE Tasmanian_libdream_static)
 
-    add_library(Tasmanian::Tasmanian_static INTERFACE IMPORTED GLOBAL)
-    set_target_properties(Tasmanian::Tasmanian_static PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_static)
+    add_library(Tasmanian::static INTERFACE IMPORTED GLOBAL)
+    set_target_properties(Tasmanian::static PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_static)
     set(Tasmanian_STATIC_FOUND "ON")
 
     if (@Tasmanian_ENABLE_CUDA@)
@@ -58,8 +58,8 @@ if (@Tasmanian_ENABLE_FORTRAN@)
     endif()
     set(Tasmanian_FORTRAN_FOUND "ON")
 
-    add_library(Tasmanian::Fortran90 INTERFACE IMPORTED GLOBAL)
-    set_target_properties(Tasmanian::Fortran90 PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian::Tasmanian)
+    add_library(Tasmanian::Fortran INTERFACE IMPORTED GLOBAL)
+    set_target_properties(Tasmanian::Fortran PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian::Tasmanian)
 endif()
 
 # export the python path so other projects can configure python scripts
