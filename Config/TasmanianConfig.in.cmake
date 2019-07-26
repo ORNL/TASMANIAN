@@ -94,7 +94,7 @@ check_required_components(Tasmanian)
 
 # if find_package(Tasmanian REQUIRED SHARED) is called without STATIC then default to shared libraries
 add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
-if ((SHARED IN_LIST Tasmanian_FIND_COMPONENTS) AND (NOT STATIC IN_LIST Tasmanian_FIND_COMPONENTS))
+if ((SHARED IN_LIST Tasmanian_FIND_COMPONENTS) AND (NOT STATIC IN_LIST Tasmanian_FIND_COMPONENTS) AND (TARGET Tasmanian_shared))
     set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
 else() # otherwise use the default (static if existing, else shared)
     set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_master)
