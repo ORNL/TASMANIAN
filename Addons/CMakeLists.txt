@@ -20,6 +20,7 @@ add_library(Tasmanian_addons INTERFACE)
 Tasmanian_addon_sources(PATH .
                         FILES tsgAddonsCommon.hpp
                               tsgMPIScatterGrid.hpp
+                              tsgLoadNeededValues.hpp
                               tsgCandidateManager.hpp
                               tsgConstructSurrogate.hpp
                               TasmanianAddons.hpp)
