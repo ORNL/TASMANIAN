@@ -462,9 +462,8 @@ void TasmanianSparseGrid::clearDomainTransform(){
     #endif
 }
 void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
-    if (empty() || (domain_transform_a.size() == 0)){
+    if (empty() || (domain_transform_a.size() == 0))
         throw std::runtime_error("ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!");
-    }
     std::copy(domain_transform_a.begin(), domain_transform_a.end(), a);
     std::copy(domain_transform_b.begin(), domain_transform_b.end(), b);
 }

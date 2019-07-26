@@ -513,6 +513,11 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
             grid.loadNeededPoints({0.33, 0.22});  // wrong size of loaded data (when overwriting)
         },
         [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 0, type_level, rule_fejer2);
+            double a[2], b[2];
+            grid.getDomainTransform(a, b); // cannot call getDomainTransform(array overload) without transform
+        },
+        [](void)->void{
             TasmanianSparseGrid grid;
             grid.setAnisotropicRefinement(type_iptotal, 1, 0, 0);  // grid not made
         },
