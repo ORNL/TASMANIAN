@@ -108,7 +108,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
 
     refresh_candidates();
 
-    if (parallel_construction){
+    if (parallel_construction && (num_parallel_jobs > 0)){
         // allocate space for all x and y pairs, will be filled by workers and processed by main
         std::vector<std::vector<double>> x(num_parallel_jobs), y(num_parallel_jobs, std::vector<double>(grid.getNumOutputs()));
         size_t total_num_launched = 0; // count all launched jobs
@@ -218,7 +218,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * estimated importance.
  * The procedure is carried out until either tolerance is reached, the budget is exhausted,
  * or no more samples satisfy the level limits.
- * If set to parallel mode, the lambda will be called in separate threads concurently
+ * If set to parallel mode, the lambda will be called in separate threads concurrently
  * up to the specified maximum number.
  *
  * \tparam parallel_construction defines the use of parallel or sequential mode.
@@ -227,7 +227,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  *      In each call, \b x will have size equal to the dimension of the gird and
  *      will hold the required sample inputs, the \b y will have size equal to the
  *      outputs and must be loaded the with corresponding outputs.
- *      If using parallel mode, \b thread_id will be a number between 0 and
+ *      If using the parallel mode, \b thread_id will be a number between 0 and
  *      \b max_num_samples \b -1, all threads running simultaneously will be
  *      given a different thread id.
  * \param max_num_samples defines the computational budget for the surrogate construction.

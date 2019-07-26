@@ -41,6 +41,7 @@
  */
 
 #include "tsgMPIScatterGrid.hpp"
+#include "tsgLoadNeededValues.hpp"
 #include "tsgConstructSurrogate.hpp"
 
 /*!

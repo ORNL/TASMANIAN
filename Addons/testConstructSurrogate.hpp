@@ -118,10 +118,35 @@ void simpleSequentialConstruction(std::function<void(std::vector<double> const &
 
 //! \brief Tests the templates for automated construction.
 bool testConstructSurrogate(bool verbose){
+    // test the simple loadNeededPoints()
+    auto model_trig = [&](double const x[], double y[], size_t)->void{ y[0] = std::sin(x[0]) * std::cos(x[1]); };
+    auto model_trig_vec = [&](std::vector<double> const &x, std::vector<double> &y, size_t id)->void{ model_trig(x.data(), y.data(), id); };
+    auto grid = TasGrid::makeSequenceGrid(2, 1, 9, TasGrid::type_level, TasGrid::rule_leja);
+    auto reference_grid = grid;
+    auto points = reference_grid.getPoints();
+    std::vector<double> values(reference_grid.getNumPoints());
+    for(size_t i=0; i<values.size(); i++)
+        model_trig(&points[2*i], &values[i], 0);
+    reference_grid.loadNeededPoints(values);
+
+    loadNeededPoints<false, false>(model_trig, grid, -1); // sequential version ignores the num_threads
+    compareGrids(1.E-10, grid, reference_grid, true);
+
+    values = std::vector<double>(reference_grid.getNumPoints(), -1.0); // set wrong values
+    grid.loadNeededPoints(values);
+    loadNeededPoints<true, true>(model_trig, grid, 4); // reload the needed points using 4 threads
+    compareGrids(1.E-10, grid, reference_grid, true);
+
+    grid = TasGrid::makeSequenceGrid(2, 1, 9, TasGrid::type_level, TasGrid::rule_leja);
+    loadNeededPoints(model_trig_vec, grid, 4);
+    compareGrids(1.E-10, grid, reference_grid, true);
+
+    if (verbose) cout << std::setw(40) << "simple load values" << std::setw(10) << "Pass" << endl;
+
     // parallel construction is susceptible to order of execution, number of points and which points may change from one run to the next
     auto model_exp = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + x[1])}; };
-    auto grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
-    auto reference_grid = grid;
+    grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
+    reference_grid = grid;
 
     // Basic test, run until grid points are exhausted, number of points can still vary
     // due to child surplus being computed before or after the parent point has completed

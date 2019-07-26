@@ -78,6 +78,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamLikelihoodCore.hpp
                  DREAM/tsgDreamLikelyGaussian.hpp
                  DREAM/tsgDreamInternalBlas.hpp
+                 Addons/tsgLoadNeededValues.hpp
                  Addons/tsgConstructSurrogate.hpp
                  Addons/tsgCandidateManager.hpp
                  Addons/tsgMPIScatterGrid.hpp
