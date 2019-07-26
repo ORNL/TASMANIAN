@@ -74,6 +74,7 @@ set(Tasmanian_OPENMP_FOUND "@Tasmanian_ENABLE_OPENMP@")
 set(Tasmanian_BLAS_FOUND   "@Tasmanian_ENABLE_BLAS@")
 set(Tasmanian_MPI_FOUND    "@Tasmanian_ENABLE_MPI@")
 set(Tasmanian_CUDA_FOUND   "@Tasmanian_ENABLE_CUDA@")
+set(Tasmanian_MAGMA_FOUND  "@Tasmanian_ENABLE_MAGMA@")
 
 # write component info
 foreach(_comp ${Tasmanian_FIND_COMPONENTS})
