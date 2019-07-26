@@ -74,6 +74,7 @@ set(Tasmanian_OPENMP_FOUND "@Tasmanian_ENABLE_OPENMP@")
 set(Tasmanian_BLAS_FOUND   "@Tasmanian_ENABLE_BLAS@")
 set(Tasmanian_MPI_FOUND    "@Tasmanian_ENABLE_MPI@")
 set(Tasmanian_CUDA_FOUND   "@Tasmanian_ENABLE_CUDA@")
+set(Tasmanian_MAGMA_FOUND  "@Tasmanian_ENABLE_MAGMA@")
 
 # write component info
 foreach(_comp ${Tasmanian_FIND_COMPONENTS})
@@ -93,7 +94,7 @@ check_required_components(Tasmanian)
 
 # if find_package(Tasmanian REQUIRED SHARED) is called without STATIC then default to shared libraries
 add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
-if ((SHARED IN_LIST Tasmanian_FIND_COMPONENTS) AND (NOT STATIC IN_LIST Tasmanian_FIND_COMPONENTS))
+if ((SHARED IN_LIST Tasmanian_FIND_COMPONENTS) AND (NOT STATIC IN_LIST Tasmanian_FIND_COMPONENTS) AND (TARGET Tasmanian_shared))
     set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_shared)
 else() # otherwise use the default (static if existing, else shared)
     set_target_properties(Tasmanian::Tasmanian PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_master)

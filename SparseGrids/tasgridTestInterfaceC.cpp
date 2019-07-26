@@ -160,6 +160,18 @@ int testInterfaceC(){
     free(pspace);
     tsgDestructTasmanianSparseGrid(grid);
 
+    grid = tsgConstructTasmanianSparseGrid();
+    void* grid_copy = tsgConstructTasmanianSparseGrid();
+    tsgMakeGlobalGrid(grid, 2, 1, 1, "level", "fejer2", 0, 0.0, 0.0, 0, 0);
+    tsgCopyGrid(grid_copy, grid);
+    double *quad1 = tsgGetQuadratureWeights(grid);
+    double *quad2 = tsgGetQuadratureWeights(grid_copy);
+    for(i=0; i<tsgGetNumPoints(grid); i++) if (fabs(quad1[i] - quad2[i]) > 1.E-15){ printf("ERROR: mismatch in quadrature after copy.\n"); return 0; }
+    free(quad1);
+    free(quad2);
+    tsgDestructTasmanianSparseGrid(grid);
+    tsgDestructTasmanianSparseGrid(grid_copy);
+
     return 1;
 }
 

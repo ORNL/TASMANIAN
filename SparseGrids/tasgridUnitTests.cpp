@@ -513,6 +513,11 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
             grid.loadNeededPoints({0.33, 0.22});  // wrong size of loaded data (when overwriting)
         },
         [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 0, type_level, rule_fejer2);
+            double a[2], b[2];
+            grid.getDomainTransform(a, b); // cannot call getDomainTransform(array overload) without transform
+        },
+        [](void)->void{
             TasmanianSparseGrid grid;
             grid.setAnisotropicRefinement(type_iptotal, 1, 0, 0);  // grid not made
         },
@@ -605,7 +610,7 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
         [](void)->void{
             auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
             gridLoadEN2(&grid);
-            grid.setSurplusRefinement(0.01, refine_classic, 0, {});  // rule non-local
+            grid.setSurplusRefinement(0.01, refine_classic, 0, std::vector<int>());  // rule non-local
         },
         [](void)->void{
             auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
@@ -658,6 +663,11 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
             CustomTabulated custom;
             custom.read(ExternalTester::findGaussPattersonTable());
             custom.getQExact(11); // level too high
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 1, 1, type_level, rule_leja);
+            gridLoadEN2(&grid);
+            grid.removePointsByHierarchicalCoefficient(0.1, -1, nullptr); // grid is not localp or wavelet
         },
     };
 }

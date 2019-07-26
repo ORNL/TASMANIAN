@@ -140,15 +140,8 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
     int num_outputs = f->getNumOutputs();
     int num_points = grid->getNumPoints();
     if ((type == type_integration) || (type == type_nodal_interpolation)){
-        std::vector<double> points, weights;
-        grid->getPoints(points);
-        if (type == type_integration){
-            grid->getQuadratureWeights(weights);
-        }else{
-            std::vector<double> vx(f->getNumInputs());
-            std::copy(x, x + f->getNumInputs(), vx.data());
-            grid->getInterpolationWeights(vx, weights);
-        }
+        auto points = grid->getPoints();
+        auto weights = (type == type_integration) ? grid->getQuadratureWeights() : grid->getInterpolationWeights(Utils::copyArray(x, f->getNumInputs()));
 
         std::vector<double> y(num_outputs);
         std::vector<double> r(num_outputs, 0.0);
@@ -810,6 +803,9 @@ bool ExternalTester::testSurplusRefinement(const BaseFunction *f, TasmanianSpars
             grid->setSurplusRefinement(tol, 0);
         }else if (grid->isSequence()){
             grid->setSurplusRefinement(tol, -1);
+            TasmanianSparseGrid grid_copy(*grid); // test the copy-constructor
+            grid->makeGlobalGrid(1, 1, 1, type_level, rule_rleja);
+            grid->copyGrid(&grid_copy);
         }else{
             if (itr == 1){ // tests the array and vector overloads
                 grid->setSurplusRefinement(tol, rtype, -1, std::vector<int>());
