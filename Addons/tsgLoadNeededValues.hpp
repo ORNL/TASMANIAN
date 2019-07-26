@@ -81,7 +81,9 @@ namespace TasGrid{
  *             will be called with values corresponding to the model outputs at either
  *             the loaded or the needed points.
  *
- * \param num_threads is the number of parallel calls to the \b model lambda (if using parallel mode).
+ * \param num_threads is the number of parallel calls to the \b model lambda.
+ *                    If set to zero, sequential mode will be used without launching any threads,
+ *                    the number is ignored in sequential mode.
  *                    Note that this is using the C++ native std::thread as opposed to OpenMP.
  *
  * \throws std::runtime_error if grid.isUsingConstruction() is true or if grid.getNumOutputs() is zero.
@@ -115,7 +117,7 @@ void loadNeededPoints(std::function<void(double const x[], double y[], size_t th
     Utils::Wrapper2D<double> xwrap(grid.getNumDimensions(), points.data());
     Utils::Wrapper2D<double> ywrap(num_outputs, values.data());
 
-    if (parallel_construction){
+    if (parallel_construction && (num_threads > 0)){
         std::vector<bool> checked_out(num_points, false);
         std::mutex checked_out_lock;
 
