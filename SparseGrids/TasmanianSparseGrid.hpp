@@ -107,6 +107,7 @@ public:
     void makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights = nullptr, const int* level_limits = nullptr);
 
     void copyGrid(const TasmanianSparseGrid *source, int outputs_begin = 0, int outputs_end = -1);
+    void copyGrid(TasmanianSparseGrid const &source, int outputs_begin = 0, int outputs_end = -1){ copyGrid(&source, outputs_begin, outputs_end); }
 
     void updateGlobalGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
     void updateGlobalGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
@@ -394,6 +395,12 @@ inline TasmanianSparseGrid readGrid(const char *filename){
 }
 
 inline TasmanianSparseGrid readGrid(std::string const &filename){ return readGrid(filename.c_str()); }
+
+inline TasmanianSparseGrid copyGrid(TasmanianSparseGrid const &source, int outputs_begin = 0, int outputs_end = -1){
+    TasmanianSparseGrid grid;
+    grid.copyGrid(source, outputs_begin, outputs_end);
+    return grid;
+}
 #endif // Doxygen skip
 
 }
