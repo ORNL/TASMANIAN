@@ -810,6 +810,9 @@ bool ExternalTester::testSurplusRefinement(const BaseFunction *f, TasmanianSpars
             grid->setSurplusRefinement(tol, 0);
         }else if (grid->isSequence()){
             grid->setSurplusRefinement(tol, -1);
+            TasmanianSparseGrid grid_copy(*grid); // test the copy-constructor
+            grid->makeGlobalGrid(1, 1, 1, type_level, rule_rleja);
+            grid->copyGrid(&grid_copy);
         }else{
             if (itr == 1){ // tests the array and vector overloads
                 grid->setSurplusRefinement(tol, rtype, -1, std::vector<int>());
