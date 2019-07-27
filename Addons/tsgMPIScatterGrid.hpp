@@ -46,7 +46,7 @@
 
 /*!
  * \ingroup TasmanianAddons
- * \addtogroup TasmanianAddonsMPIGridSend MPI Send/Receive/Bcast for Sparse Grids
+ * \addtogroup TasmanianAddonsMPIGridSend MPI Send/Receive/Bcast/Scatter for Sparse Grids
  *
  * Methods to send/receive TasGrid::TasmanianSparseGrid objects.
  * The syntax mimics the raw MPI_Send and MPI_Recv calls,
@@ -237,6 +237,79 @@ int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
         std::istream is(&data_buffer);
         grid.read(is, binary);
         return result;
+    }
+}
+
+/*!
+ * \ingroup TasmanianAddonsMPIGridSend
+ * \brief Split the grid across the comm where each rank receives an equal portion of the total outputs.
+ *
+ * Split the grid across the ranks in the comm so that each rank receives a grid with the same type, rule,
+ * points, etc., but with a subset of the total outputs. The distribution is as close to even as possible,
+ * if there are less outputs than ranks, some ranks will receive an empty grid.
+ *
+ * \b Note: this does not use MPI_Scatter(), instead it makes multiple calls to MPIGridSend() and MPIGridRecv().
+ *
+ * \tparam binary defines whether to use binary (\b true) or ASCII (\b false) mode, see TasGrid::MPIGridSend().
+ *
+ * \param source grid located on the \b root rank is the grid to be distributed across,
+ *               for all other ranks the source will not be referenced.
+ * \param destination is the grid where the local portion of the scatter will be stored,
+ *                    the existing grid will be overwritten.
+ *                    If the \b source outputs are less than the number of \b comm ranks,
+ *                    then some of the destination grids will be empty.
+ * \param root is the rank that will hold the source sparse grid.
+ * \param tag_size same as in TasGrid::MPIGridSend().
+ * \param tag_size same as in TasGrid::MPIGridSend().
+ * \param comm is the MPI comm of all process that need to share a portion of the grid.
+ *
+ * Example usage, rank 0 creates a large grid and scatters is across comm:
+ * \code
+ *   int me;
+ *   MPI_Comm_rank(MPI_COMM_WORLD, &me);
+ *   auto source = (me == 0) ? TasGrid::readGrid("grid_with_many_outputs") : TasGrid::TasmanianSparseGrid();
+ *   TasGrid::TasmanianSparseGrid grid;
+ *   MPIGridScatterOutputs(source, grid, 0, 1, 2, comm);
+ *   // at this line, every process has a portion of the source at grid
+ *   // if the comm has 3 ranks,
+ *   // then 7 outputs will be split into 3 2 2
+ *   // and 2 outputs will become 1 1 empty
+ * \endcode
+ */
+template<bool binary = true>
+int MPIGridScatterOutputs(TasmanianSparseGrid const &source, TasmanianSparseGrid &destination, int root, int tag_size, int tag_data, MPI_Comm comm){
+    int me; // my rank within the comm
+    MPI_Comm_rank(comm, &me);
+
+    if (me == root){ // splitting and sending the grid
+        int num_ranks; MPI_Comm_size(comm, &num_ranks);
+        int num_effective_ranks = std::min(num_ranks, source.getNumOutputs());
+
+        int stride = source.getNumOutputs() / num_effective_ranks;
+        int extras = source.getNumOutputs() % num_effective_ranks;
+
+        // return the starting offset for the given rank
+        auto offset = [&](int rank)->int{ return rank * stride + std::min(rank, extras); };
+
+        for(int rank=0; rank<num_effective_ranks; rank++){
+            if (rank == root){ // this is me, take my own copy of the grid
+                destination = copyGrid(source, offset(rank), offset(rank+1));
+            }else{ // send the grid out
+                auto result = MPIGridSend(copyGrid(source, offset(rank), offset(rank+1)) , rank, tag_size, tag_data, comm);
+                if (result != MPI_SUCCESS) return result;
+            }
+        }
+        for(int rank=num_effective_ranks; rank<num_ranks; rank++){ // if there are any grid remaining, set those to empty
+            if (rank == root){ // this is me, take my own copy of the grid
+                destination = TasmanianSparseGrid();
+            }else{ // send the grid out
+                auto result = MPIGridSend(TasmanianSparseGrid() , rank, tag_size, tag_data, comm);
+                if (result != MPI_SUCCESS) return result;
+            }
+        }
+        return MPI_SUCCESS; // if we got here, all was successful
+    }else{ // receiving a grid
+        return MPIGridRecv(destination, root, tag_size, tag_data, comm);
     }
 }
 
