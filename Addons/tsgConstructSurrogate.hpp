@@ -228,9 +228,11 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * \tparam parallel_construction defines the use of parallel or sequential mode.
  *
  * \param model defines the input-output relation to be approximated by the surrogate.
- *      In each call, \b x will have size equal to the dimension of the gird and
- *      will hold the required sample inputs, the \b y will have size equal to the
- *      outputs and must be loaded the with corresponding outputs.
+ *      In each call, \b x will have size equal to an even multiple of the dimension of
+ *      the gird and will hold the required sample inputs for a set of points;
+ *      the number of points is controlled by \b max_samples_per_job
+ *      The \b y will have size equal to the number of samples time
+ *      the number of outputs and must be loaded the with corresponding outputs.
  *      If using the parallel mode, \b thread_id will be a number between 0 and
  *      \b max_num_samples \b -1, all threads running simultaneously will be
  *      given a different thread id.
@@ -242,6 +244,12 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  *      In sequential mode, i.e., when \b parallel_construction is \b false,
  *      this number will loosely control the frequency of recalculating
  *      the list of candidate "most important" samples.
+ *      If set to 0, it will be used as if set to 1.
+ * \param max_samples_per_job defines the largest number of samples per call to \b model.
+ *      In some cases, outputs can be more efficiently computed when the samples are
+ *      lumped together. If the model evaluations are not oprimized for batching
+ *      then this can be simply set to one.
+ *      If set to 0, it will be used as if set to 1.
  * \param grid is the resulting surrogate model.
  *      The grid must be initialized with the appropriate type, number of dimensions,
  *      number of outputs, and sufficiently large number of initial points
