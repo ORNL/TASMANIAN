@@ -153,13 +153,13 @@ bool testConstructSurrogate(bool verbose){
 
     // Basic test, run until grid points are exhausted, number of points can still vary
     // due to child surplus being computed before or after the parent point has completed
-    TasGrid::constructSurrogate<true>(model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel
+    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel
     simpleSequentialConstruction(model_exp, 300, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
     compareGrids(5.E-4, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel localp unlimited budget" << std::setw(10) << "Pass" << endl;
 
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
-    TasGrid::constructSurrogate<true>(model_exp2, -1, 2, 2, grid, 1.E-4, TasGrid::refine_classic); // parallel, batch 2
+    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_exp2, -1, 2, 2, grid, 1.E-4, TasGrid::refine_classic); // parallel, batch 2
     compareGrids(5.E-4, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel localp batch" << std::setw(10) << "Pass" << endl;
 
@@ -167,7 +167,7 @@ bool testConstructSurrogate(bool verbose){
     // compare the grids by how similar they are to each other
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 1);
     reference_grid = grid;
-    TasGrid::constructSurrogate<true>(model_exp, 500, 8, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel, limit points
+    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_exp, 500, 8, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel, limit points
     simpleSequentialConstruction(model_exp, 500, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
     compareGrids(5.E-4, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "parallel localp limited budget" << std::setw(10) << "Pass" << endl;
@@ -175,7 +175,7 @@ bool testConstructSurrogate(bool verbose){
     // Sequential test, checks the simpler algorithm, this should be deterministic
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
     reference_grid = grid;
-    TasGrid::constructSurrogate<false>(model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // sequential
+    TasGrid::constructSurrogate<TasGrid::mode_sequential>(model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // sequential
     simpleSequentialConstruction(model_exp, 300, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
     compareGrids(1.E-9, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "sequential localp limited budget" << std::setw(10) << "Pass" << endl;
@@ -184,7 +184,7 @@ bool testConstructSurrogate(bool verbose){
     auto model_aniso = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + 0.1 * x[1])}; };
     grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_rleja);
     reference_grid = grid;
-    TasGrid::constructSurrogate<true>(model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
+    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
     simpleSequentialConstruction(model_aniso, 200, 2, reference_grid, TasGrid::type_iptotal, 0);
     compareGrids(1.E-9, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "parallel anisotropic rleja" << std::setw(10) << "Pass" << endl;
@@ -193,7 +193,7 @@ bool testConstructSurrogate(bool verbose){
     // nevertheless the grid accuracy should match
     grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
     reference_grid = grid;
-    TasGrid::constructSurrogate<true>(model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
+    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
     simpleSequentialConstruction(model_aniso, 200, 2, reference_grid, TasGrid::type_iptotal, 0);
     compareGrids(1.E-9, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel anisotropic global" << std::setw(10) << "Pass" << endl;
@@ -212,7 +212,7 @@ bool testConstructSurrogate(bool verbose){
     reference_grid.loadNeededPoints(vals);
 
     grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_leja);
-    TasGrid::constructSurrogate<true>(model_aniso, reference_grid.getNumLoaded(), 4, 1, grid, TasGrid::type_iptotal, aweights); // parallel
+    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_aniso, reference_grid.getNumLoaded(), 4, 1, grid, TasGrid::type_iptotal, aweights); // parallel
     compareGrids(1.E-9, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "parallel weighted sequence" << std::setw(10) << "Pass" << endl;
 

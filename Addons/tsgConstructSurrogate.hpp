@@ -47,6 +47,19 @@
 namespace TasGrid{
 
 /*!
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Allows for expressive calls to TasGrid::constructSurrogate().
+ */
+constexpr bool mode_parallel = true;
+
+/*!
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Allows for expressive calls to TasGrid::constructSurrogate().
+ */
+constexpr bool mode_sequential = false;
+
+
+/*!
  * \internal
  * \ingroup TasmanianAddonsConstruct
  * \brief Construction algorithm using generic candidates procedure.
@@ -112,7 +125,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
 
     refresh_candidates();
 
-    if (parallel_construction){
+    if (parallel_construction == mode_parallel){
         // allocate space for all x and y pairs, will be filled by workers and processed by main
         std::vector<std::vector<double>> x(num_parallel_jobs), y(num_parallel_jobs, std::vector<double>(grid.getNumOutputs()));
 
@@ -226,6 +239,9 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * up to the specified maximum number.
  *
  * \tparam parallel_construction defines the use of parallel or sequential mode.
+ *      The variable is of type \b bool but the constexpr constants
+ *      TasGrid::mode_parallel and TasGrid::mode_sequential can be used to for more
+ *      expressive calls.
  *
  * \param model defines the input-output relation to be approximated by the surrogate.
  *      In each call, \b x will have size equal to an even multiple of the dimension of
@@ -309,7 +325,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * \endcode
  *
  */
-template<bool parallel_construction = true>
+template<bool parallel_construction = TasGrid::mode_parallel>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
                         size_t max_num_samples, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
@@ -336,7 +352,7 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * thus sampling will continue until the budget is exhausted
  * or the level limits are reached (which will produce a full tensor grid).
  */
-template<bool parallel_construction = true>
+template<bool parallel_construction = TasGrid::mode_parallel>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
                         size_t max_num_samples, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
@@ -362,7 +378,7 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * thus sampling will continue until the budget is exhausted
  * or the level limits are reached (which will produce a full tensor grid).
  */
-template<bool parallel_construction = true>
+template<bool parallel_construction = TasGrid::mode_parallel>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
                         size_t max_num_samples, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
