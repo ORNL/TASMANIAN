@@ -83,8 +83,33 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
 
     std::string filename = checkpoint_filename;
     std::string filename_old = checkpoint_filename + "_old";
-    if (!filename.empty())
-        grid.write(filename.c_str(), true); // initial checkpoint
+
+    if (!filename.empty()){ // recover from an existing checkpoint
+        auto save_grid = std::move(grid);
+        std::ifstream infile(filename, std::ios::binary);
+        try{ // attempt to recover from filename
+            if (!infile.good()) throw std::runtime_error("missing main checkpoint");
+            grid.read(infile, mode_binary);
+            complete.read(infile);
+        }catch(std::runtime_error &){
+            // main file is missing or is corrupt, try the older version
+            std::ifstream oldfile(filename_old, std::ios::binary);
+            try{
+                if (!oldfile.good()) throw std::runtime_error("missing main checkpoint");
+                grid.read(oldfile, mode_binary);
+                complete.read(oldfile);
+            }catch(std::runtime_error &){
+                // nothing could be recovered, start over
+                grid = std::move(save_grid);
+            }
+        }
+    }
+
+    if (!filename.empty()){ // initial checkpoint
+        std::ofstream ofs(filename, std::ios::binary);
+        grid.write(ofs, mode_binary); // write grid to current
+        complete.write(ofs);
+    }
 
     // prepare several commonly used steps
     auto checkpoint = [&]()->void{ // keeps two saved states for the constructed grid
@@ -94,15 +119,15 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
                 std::ofstream previous_state(filename, std::ios::binary);
                 previous_state << current_state.rdbuf();
             }
-            grid.write(filename.c_str(), true); // write grid to current
+            std::ofstream ofs(filename, std::ios::binary);
+            grid.write(ofs, mode_binary); // write grid to current
+            complete.write(ofs);
         }
     };
 
     auto load_complete = [&]()->void{ // loads any complete points, does nothing if getNumStored() is zero
-        if (complete.getNumStored() > 0){
+        if (complete.getNumStored() > 0)
             complete.load(grid);
-            checkpoint();
-        }
     };
 
     auto refresh_candidates = [&]()->void{ // loads complete and asks for new candidates
@@ -190,6 +215,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
                             workers[id] = std::thread(do_work, id);
                         }
                     }
+                    checkpoint();
                 }
 
             }
@@ -198,7 +224,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         complete.load(grid);
 
     }else{
-        std::vector<double> x(grid.getNumDimensions()), y(grid.getNumOutputs());
+        std::vector<double> x(grid.getNumDimensions()), y( grid.getNumOutputs());
 
         while((grid.getNumLoaded() + complete.getNumStored() + manager.getNumRunning() < max_num_samples) && (manager.getNumCandidates() > 0)){
             x = manager.next(max_num_samples - total_num_launched);
@@ -218,6 +244,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
                 // if done with the top % of the grid points, recompute the candidates
                 if (double(manager.getNumDone()) / double(manager.getNumCandidates()) > 0.2)
                     refresh_candidates();
+                checkpoint();
             }
         }
         complete.load(grid);
@@ -289,6 +316,11 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  *      in case of a system crash.
  *      If the filename is "foo" then the files will be called "foo" and "foo_old".
  *      No intermediate saves will be made if the string is empty.
+ *      If the string is not empty, the procedure will first attempt to recover
+ *      from "foo" and "foo_old".
+ *
+ * \b WARNING: if the checkpoint files contain data from an older runs, the files must be deleted
+ *             to avoid recovering from the old executing.
  *
  * \throws std::runtime_error if called for a grid that is not local polynomial.
  *
@@ -298,32 +330,18 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * system failure which can waste significant computing resources.
  * Checkpoint-restart is a technique to periodically save the computed result
  * and, in case of a crash, restart from the last saved point.
- * Here is an exmaple of how such procedure would work:
+ * For example, suppose the following call crashes mid-way:
  * \code
  * // original call
  * TasGrid::TasmanianSparseGrid grid = TasGrid::makeLocalPolynomialGrid(...);
  * constructSurrogate(model, budget, num_parallel, grid, 1.E-6, TasGrid::refine_classic, -1,
  *                    std::vector<int>(), std::vector<double>(), "foo");
  * \endcode
- * After a crash
- * \code
- *  TasGrid::TasmanianSparseGrid grid;
- *  try{ // attempt to recover from filename "foo"
- *      grid = TasGrid::read("foo");
- *  }catch(std::runtime_error &){
- *      // file "foo" is missing or is corrupt, use the older version
- *      try{
- *          grid = TasGrid::read("foo_old");
- *      }catch(std::runtime_error &){
- *          // nothing could be recovered, start over
- *          grid = TasGrid::makeLocalPolynomialGrid(...);
- *      }
- *  }
- *  constructSurrogate(model, budget - grid.getNumLoaded(), num_parallel, grid, 1.E-6,
- *                     TasGrid::refine_classic, -1,
- *                     std::vector<int>(), std::vector<double>(), "foo");
- * \endcode
- *
+ * After the crash, Tasmanian will attempt to recover the computed samples from
+ * files "foo" and "foo_old", if the files don't exist or do not contain
+ * valid recovery data, the procedure will restat from scrach.
+ * However, if the files were saved successfully the procedure will restat
+ * mid-way and samples will not have to be recomputed.
  */
 template<bool parallel_construction = TasGrid::mode_parallel>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
