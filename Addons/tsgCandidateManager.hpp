@@ -73,9 +73,9 @@ protected:
     enum TypeStatus{ free, running, done };
 public:
     //! \brief Constructor, accepts number of dimensions as a constant parameter.
-    template<typename IntType>
-    CandidateManager(IntType dimensions) : num_dimensions((size_t) dimensions),
-        num_candidates(0), num_running(0), num_done(0){}
+    template<typename IntTypeDim, typename IntTypeBatch>
+    CandidateManager(IntTypeDim dimensions, IntTypeBatch batch_size) : num_dimensions((size_t) dimensions),
+        num_batch(batch_size), num_candidates(0), num_running(0), num_done(0){}
     //! \brief Default destructor.
     ~CandidateManager(){}
 
@@ -95,39 +95,70 @@ public:
         status.resize(num_candidates);
         std::fill(status.begin(), status.end(), free);
         for(auto const &p : running_jobs){
-            size_t i = find(p);
+            size_t i = find(p.data());
             if (i < num_candidates) status[sorted[i]] = running;
         }
     }
 
     //! \brief Mark a point as "complete".
     void complete(std::vector<double> const &p){
-        num_done++;
-        num_running--;
-        auto i = find(p);
-        status[sorted[i]] = done;
+        size_t num_complete = p.size() / num_dimensions;
+        num_done += num_complete;
+        num_running -= num_complete;
 
-        for(auto ip = running_jobs.before_begin(), it = running_jobs.begin();
-            it != running_jobs.end();
-            ip++){
-            if (match(p, *it)){
-                running_jobs.erase_after(ip);
-                it = running_jobs.end(); // exit the for-loop
-            }else{
-                it++;
+        for(auto ip = p.begin(); ip != p.end(); std::advance(ip, num_dimensions)){
+            auto i = find(&*ip);
+            status[sorted[i]] = done;
+        }
+
+        std::vector<bool> searching(num_complete, true);
+        auto ib = running_jobs.before_begin();
+        while(num_complete > 0){
+            auto ir = ib;
+            ir++;
+            if (ir == running_jobs.end()){
+                ib = running_jobs.before_begin();
+                ir = running_jobs.begin();
             }
+
+            for(size_t i=0; i<searching.size(); i++){
+                if (searching[i]){
+                    if (match(&p[i * num_dimensions], ir->data())){
+                        running_jobs.erase_after(ib);
+                        ir = ib;
+                        ir++;
+                        num_complete--;
+                        searching[i] = false;
+                    }
+                }
+            }
+            ib++;
         }
     }
 
     //! \brief Returns the next best point to compute, returns empty vector if no points are available.
-    std::vector<double> next(){
+    std::vector<double> next(size_t remaining_budget){
+        size_t this_batch = std::min(remaining_budget, num_batch);
         size_t i = 0;
         while((i < num_candidates) && (status[i] != free)) i++;
         if (i == num_candidates) return std::vector<double>();
         num_running++;
         status[i] = running;
-        running_jobs.push_front(std::vector<double>(&candidates[i*num_dimensions], &candidates[i*num_dimensions] + num_dimensions));
-        return running_jobs.front();
+        std::vector<double> result(&candidates[i*num_dimensions], &candidates[i*num_dimensions] + num_dimensions);
+        running_jobs.push_front(result);
+
+        size_t num_next = 1;
+        while((i < num_candidates) && (num_next < this_batch)){
+            while((i < num_candidates) && (status[i] != free)) i++;
+            if (i < num_candidates){
+                running_jobs.push_front(std::vector<double>(&candidates[i*num_dimensions], &candidates[i*num_dimensions] + num_dimensions));
+                result.insert(result.end(), &candidates[i*num_dimensions], &candidates[i*num_dimensions] + num_dimensions);
+                num_next++;
+                num_running++;
+                status[i++] = running;
+            }
+        }
+        return result;
     }
 
     //! \brief Returns the number of running jobs.
@@ -141,9 +172,9 @@ public:
 
 protected:
     //! \brief Returns \b true if entries in \b a and \b b match to \b Maths::num_tol, assumes sizes match already.
-    bool match(std::vector<double> const &a, std::vector<double> const &b) const{
-        for(auto ia = a.begin(), ib = b.begin(); ia != a.end(); ia++, ib++)
-            if (std::abs(*ia - *ib) > Maths::num_tol) return false;
+    bool match(double const a[], double const b[]) const{
+        for(size_t i=0; i<num_dimensions; i++)
+            if (std::abs(a[i] - b[i]) > Maths::num_tol) return false;
         return true;
     }
 
@@ -164,13 +195,13 @@ protected:
     }
 
     //! \brief Find the index of the \b point within the \b canidates vector, returns \b num_candidates if not found.
-    size_t find(std::vector<double> const &point){
+    size_t find(double const point[]){
         size_t sstart = 0, send = num_candidates - 1, current = (sstart + send) / 2;
         while (sstart <= send){
             const double *cp = &candidates[sorted[current]*num_dimensions];
-            if (compare(cp, point.data())){
+            if (compare(cp, point)){
                 sstart = current + 1;
-            }else if (compare(point.data(), cp)){
+            }else if (compare(point, cp)){
                 send = current - 1;
             }else{
                 return current;
@@ -181,7 +212,7 @@ protected:
     }
 
 private:
-    size_t const num_dimensions;
+    size_t const num_dimensions, num_batch;
     size_t num_candidates, num_running, num_done;
     std::vector<double> candidates;
     std::vector<size_t> sorted;
