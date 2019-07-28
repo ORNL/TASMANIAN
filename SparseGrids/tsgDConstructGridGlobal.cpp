@@ -39,38 +39,38 @@ DynamicConstructorDataGlobal::DynamicConstructorDataGlobal(size_t cnum_dimension
     : num_dimensions(cnum_dimensions), num_outputs(cnum_outputs){}
 DynamicConstructorDataGlobal::~DynamicConstructorDataGlobal(){}
 
-template<bool useAscii> void DynamicConstructorDataGlobal::write(std::ostream &os) const{
-    if (useAscii){ os << std::scientific; os.precision(17); }
+template<bool use_ascii> void DynamicConstructorDataGlobal::write(std::ostream &os) const{
+    if (use_ascii == mode_ascii){ os << std::scientific; os.precision(17); }
     auto tensor_refs =  makeReverseReferenceVector(tensors);
 
-    IO::writeNumbers<useAscii, IO::pad_line, int>(os, (int) tensor_refs.size());
+    IO::writeNumbers<use_ascii, IO::pad_line, int>(os, (int) tensor_refs.size());
     for(auto d : tensor_refs){
-        IO::writeNumbers<useAscii, IO::pad_rspace, double>(os, d->weight);
-        IO::writeVector<useAscii, IO::pad_line>(d->tensor, os);
+        IO::writeNumbers<use_ascii, IO::pad_rspace, double>(os, d->weight);
+        IO::writeVector<use_ascii, IO::pad_line>(d->tensor, os);
     }
-    writeNodeDataList<useAscii>(data, os);
+    writeNodeDataList<use_ascii>(data, os);
 }
 
-template<bool useAscii> void DynamicConstructorDataGlobal::read(std::istream &is){
-    int num_entries = IO::readNumber<useAscii, int>(is);
+template<bool use_ascii> void DynamicConstructorDataGlobal::read(std::istream &is){
+    int num_entries = IO::readNumber<use_ascii, int>(is);
 
     for(int i=0; i<num_entries; i++){
         tensors.emplace_front(TensorData{
                               std::vector<int>(num_dimensions), // tensor
                               MultiIndexSet(), // points, will be set later
                               std::vector<bool>(), // loaded, will be set later
-                              IO::readNumber<useAscii, double>(is) // weight
+                              IO::readNumber<use_ascii, double>(is) // weight
                               });
-        IO::readVector<useAscii>(is, tensors.front().tensor);
+        IO::readVector<use_ascii>(is, tensors.front().tensor);
     }
 
-    data = readNodeDataList<useAscii>(num_dimensions, num_outputs, is);
+    data = readNodeDataList<use_ascii>(num_dimensions, num_outputs, is);
 }
 
-template void DynamicConstructorDataGlobal::write<true>(std::ostream &) const; // instantiate for faster build
-template void DynamicConstructorDataGlobal::write<false>(std::ostream &) const;
-template void DynamicConstructorDataGlobal::read<true>(std::istream &);
-template void DynamicConstructorDataGlobal::read<false>(std::istream &);
+template void DynamicConstructorDataGlobal::write<mode_ascii>(std::ostream &) const; // instantiate for faster build
+template void DynamicConstructorDataGlobal::write<mode_binary>(std::ostream &) const;
+template void DynamicConstructorDataGlobal::read<mode_ascii>(std::istream &);
+template void DynamicConstructorDataGlobal::read<mode_binary>(std::istream &);
 
 int DynamicConstructorDataGlobal::getMaxTensor() const{
     int max_tensor = 0;

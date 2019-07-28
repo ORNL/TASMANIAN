@@ -39,66 +39,66 @@ namespace TasGrid{
 GridFourier::GridFourier() : max_levels(0){}
 GridFourier::~GridFourier(){}
 
-template<bool useAscii> void GridFourier::write(std::ostream &os) const{
-    if (useAscii){ os << std::scientific; os.precision(17); }
-    IO::writeNumbers<useAscii, IO::pad_line>(os, num_dimensions, num_outputs);
+template<bool iomode> void GridFourier::write(std::ostream &os) const{
+    if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<iomode, IO::pad_line>(os, num_dimensions, num_outputs);
 
-    tensors.write<useAscii>(os);
-    active_tensors.write<useAscii>(os);
+    tensors.write<iomode>(os);
+    active_tensors.write<iomode>(os);
     if (!active_w.empty())
-        IO::writeVector<useAscii, IO::pad_line>(active_w, os);
+        IO::writeVector<iomode, IO::pad_line>(active_w, os);
 
-    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
-    if (!points.empty()) points.write<useAscii>(os);
-    IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
-    if (!needed.empty()) needed.write<useAscii>(os);
+    IO::writeFlag<iomode, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<iomode>(os);
+    IO::writeFlag<iomode, IO::pad_auto>(!needed.empty(), os);
+    if (!needed.empty()) needed.write<iomode>(os);
 
-    IO::writeVector<useAscii, IO::pad_line>(max_levels, os);
+    IO::writeVector<iomode, IO::pad_line>(max_levels, os);
 
     if (num_outputs > 0){
-        values.write<useAscii>(os);
-        IO::writeFlag<useAscii, IO::pad_auto>((fourier_coefs.getNumStrips() != 0), os);
-        if (fourier_coefs.getNumStrips() != 0) IO::writeVector<useAscii, IO::pad_line>(fourier_coefs.getVector(), os);
+        values.write<iomode>(os);
+        IO::writeFlag<iomode, IO::pad_auto>((fourier_coefs.getNumStrips() != 0), os);
+        if (fourier_coefs.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(fourier_coefs.getVector(), os);
     }
 
-    IO::writeFlag<useAscii, IO::pad_line>(!updated_tensors.empty(), os);
+    IO::writeFlag<iomode, IO::pad_line>(!updated_tensors.empty(), os);
     if (!updated_tensors.empty()){
-        updated_tensors.write<useAscii>(os);
-        updated_active_tensors.write<useAscii>(os);
-        IO::writeVector<useAscii, IO::pad_line>(updated_active_w, os);
+        updated_tensors.write<iomode>(os);
+        updated_active_tensors.write<iomode>(os);
+        IO::writeVector<iomode, IO::pad_line>(updated_active_w, os);
     }
 }
-template<bool useAscii> void GridFourier::read(std::istream &is){
+template<bool iomode> void GridFourier::read(std::istream &is){
     reset();
-    num_dimensions = IO::readNumber<useAscii, int>(is);
-    num_outputs = IO::readNumber<useAscii, int>(is);
+    num_dimensions = IO::readNumber<iomode, int>(is);
+    num_outputs = IO::readNumber<iomode, int>(is);
 
-    tensors.read<useAscii>(is);
-    active_tensors.read<useAscii>(is);
+    tensors.read<iomode>(is);
+    active_tensors.read<iomode>(is);
     active_w.resize((size_t) active_tensors.getNumIndexes());
-    IO::readVector<useAscii>(is, active_w);
+    IO::readVector<iomode>(is, active_w);
 
-    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
-    if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+    if (IO::readFlag<iomode>(is)) points.read<iomode>(is);
+    if (IO::readFlag<iomode>(is)) needed.read<iomode>(is);
 
     max_levels.resize((size_t) num_dimensions);
-    IO::readVector<useAscii>(is, max_levels);
+    IO::readVector<iomode>(is, max_levels);
 
     if (num_outputs > 0){
-        values.read<useAscii>(is);
-        if (IO::readFlag<useAscii>(is))
-            fourier_coefs = IO::readData2D<useAscii, double>(is, num_outputs, 2 * points.getNumIndexes());
+        values.read<iomode>(is);
+        if (IO::readFlag<iomode>(is))
+            fourier_coefs = IO::readData2D<iomode, double>(is, num_outputs, 2 * points.getNumIndexes());
     }
 
     int oned_max_level;
-    if (IO::readFlag<useAscii>(is)){
-        updated_tensors.read<useAscii>(is);
+    if (IO::readFlag<iomode>(is)){
+        updated_tensors.read<iomode>(is);
         oned_max_level = updated_tensors.getMaxIndex();
 
-        updated_active_tensors.read<useAscii>(is);
+        updated_active_tensors.read<iomode>(is);
 
         updated_active_w.resize((size_t) updated_active_tensors.getNumIndexes());
-        IO::readVector<useAscii>(is, updated_active_w);
+        IO::readVector<iomode>(is, updated_active_w);
     }else{
         oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
     }
@@ -108,10 +108,10 @@ template<bool useAscii> void GridFourier::read(std::istream &is){
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
 
-template void GridFourier::write<true>(std::ostream &) const;
-template void GridFourier::write<false>(std::ostream &) const;
-template void GridFourier::read<true>(std::istream &);
-template void GridFourier::read<false>(std::istream &);
+template void GridFourier::write<mode_ascii>(std::ostream &) const;
+template void GridFourier::write<mode_binary>(std::ostream &) const;
+template void GridFourier::read<mode_ascii>(std::istream &);
+template void GridFourier::read<mode_binary>(std::istream &);
 
 void GridFourier::reset(){
     clearAccelerationData();

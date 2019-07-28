@@ -40,9 +40,6 @@ inline int fail(){
 
 int main(int argc, char ** argv){
 
-    constexpr bool binary = true;
-    constexpr bool ascii = false;
-
     MPI_Init(&argc, &argv);
 
     int me;
@@ -50,37 +47,37 @@ int main(int argc, char ** argv){
     if (me == 0) cout << "\n";
 
     // --------------- Send/Recv <ascii> ----------------- //
-    if (!testSendReceive<ascii>()) return fail();
+    if (!testSendReceive<TasGrid::mode_ascii>()) return fail();
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "    MPI Send/Recv     <ascii>    Pass\n";
 
     // --------------- Send/Recv <binary> ----------------- //
-    if (!testSendReceive<binary>()) return fail();
+    if (!testSendReceive<TasGrid::mode_binary>()) return fail();
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "    MPI Send/Recv    <binary>    Pass\n";
 
     // ----------------- Bcast <ascii> ------------------ //
-    if (!testBcast<ascii>()) return fail();
+    if (!testBcast<TasGrid::mode_ascii>()) return fail();
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "        MPI Bcast     <ascii>    Pass\n";
 
     // ----------------- Bcast <binary> ----------------- //
-    if (!testBcast<binary>()) return fail();
+    if (!testBcast<TasGrid::mode_binary>()) return fail();
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "        MPI Bcast    <binary>    Pass\n";
 
     // ----------------- Scatter <ascii> --------------- //
-    if (!testScatterOutputs<ascii>()) return fail();
+    if (!testScatterOutputs<TasGrid::mode_ascii>()) return fail();
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "      MPI Scatter     <ascii>    Pass\n";
 
     // ----------------- Scatter <binary> --------------- //
-    if (!testScatterOutputs<binary>()) return fail();
+    if (!testScatterOutputs<TasGrid::mode_binary>()) return fail();
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "      MPI Scatter    <binary>    Pass\n";

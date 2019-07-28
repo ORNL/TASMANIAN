@@ -42,8 +42,11 @@ public:
 
     bool isWavelet() const{ return true; }
 
-    template<bool useAscii> void write(std::ostream &os) const;
-    template<bool useAscii> void read(std::istream &is);
+    void write(std::ostream &os, bool iomode) const{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
+    void read(std::istream &is, bool iomode){ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
+
+    template<bool iomode> void write(std::ostream &os) const;
+    template<bool iomode> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
     void copyGrid(const GridWavelet *wav, int ibegin, int iend);

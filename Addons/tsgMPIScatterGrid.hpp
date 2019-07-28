@@ -92,6 +92,8 @@ public:
  * thus, ASCII is provided mostly for debugging purposes.
  *
  * \tparam binary defines whether to use binary (\b true) or ASCII (\b false) mode.
+ *                Recommended use with constexpr constant TasGrid::mode_binary
+ *                and TasGrid::mode_ascii.
  *
  * \param grid        is the grid to send.
  * \param destination is the rank of the recipient MPI process.
@@ -119,7 +121,7 @@ public:
  *   // processes with rank 2 and above do nothing, i.e., they have an empty grid
  * \endcode
  */
-template<bool binary = true>
+template<bool binary = TasGrid::mode_binary>
 int MPIGridSend(TasmanianSparseGrid const &grid, int destination, int tag_size, int tag_data, MPI_Comm comm){
     std::stringstream ss;
     grid.write(ss, binary);
@@ -141,6 +143,8 @@ int MPIGridSend(TasmanianSparseGrid const &grid, int destination, int tag_size, 
  * This call intercepts both messages and compiles them into a sparse grid object.
  *
  * \tparam binary defines whether to use binary (\b true) or ASCII (\b false) mode.
+ *                Recommended use with constexpr constant TasGrid::mode_binary
+ *                and TasGrid::mode_ascii.
  *
  * \param grid is the output grid, it will be overwritten with grid send by
  *             the source rank similar to TasGrid::TasmanianSparseGrid::read().
@@ -157,7 +161,7 @@ int MPIGridSend(TasmanianSparseGrid const &grid, int destination, int tag_size, 
  *         (corresponding to either the size of the data message),
  *         if MPI_SUCCESS is returned then both messages were successful.
  */
-template<bool binary = true>
+template<bool binary = TasGrid::mode_binary>
 int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_data, MPI_Comm comm, MPI_Status *status = nullptr){
     MPI_Status internal_status;
     if (status == nullptr) status = &internal_status;
@@ -188,6 +192,8 @@ int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_dat
  * thus, ASCII is provided mostly for debugging purposes.
  *
  * \tparam binary defines whether to use binary (\b true) or ASCII (\b false) mode.
+ *                Recommended use with constexpr constant TasGrid::mode_binary
+ *                and TasGrid::mode_ascii.
  *
  * \param grid is the grid to broadcast across the MPI comm, the grid on the \b root
  *             process will not be modified (i.e., treat as const),
@@ -209,7 +215,7 @@ int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_dat
  *   // at this line, every process has the same grid as if they all read it from "foo"
  * \endcode
  */
-template<bool binary = true>
+template<bool binary = TasGrid::mode_binary>
 int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
     int me; // my rank within the comm
     MPI_Comm_rank(comm, &me);
@@ -260,7 +266,7 @@ int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
  *                    then some of the destination grids will be empty.
  * \param root is the rank that will hold the source sparse grid.
  * \param tag_size same as in TasGrid::MPIGridSend().
- * \param tag_size same as in TasGrid::MPIGridSend().
+ * \param tag_data same as in TasGrid::MPIGridSend().
  * \param comm is the MPI comm of all process that need to share a portion of the grid.
  *
  * Example usage, rank 0 creates a large grid and scatters is across comm:
@@ -276,7 +282,7 @@ int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
  *   // and 2 outputs will become 1 1 empty
  * \endcode
  */
-template<bool binary = true>
+template<bool binary = TasGrid::mode_binary>
 int MPIGridScatterOutputs(TasmanianSparseGrid const &source, TasmanianSparseGrid &destination, int root, int tag_size, int tag_data, MPI_Comm comm){
     int me; // my rank within the comm
     MPI_Comm_rank(comm, &me);
@@ -295,7 +301,7 @@ int MPIGridScatterOutputs(TasmanianSparseGrid const &source, TasmanianSparseGrid
             if (rank == root){ // this is me, take my own copy of the grid
                 destination = copyGrid(source, offset(rank), offset(rank+1));
             }else{ // send the grid out
-                auto result = MPIGridSend(copyGrid(source, offset(rank), offset(rank+1)) , rank, tag_size, tag_data, comm);
+                auto result = MPIGridSend<binary>(copyGrid(source, offset(rank), offset(rank+1)) , rank, tag_size, tag_data, comm);
                 if (result != MPI_SUCCESS) return result;
             }
         }
@@ -303,13 +309,13 @@ int MPIGridScatterOutputs(TasmanianSparseGrid const &source, TasmanianSparseGrid
             if (rank == root){ // this is me, take my own copy of the grid
                 destination = TasmanianSparseGrid();
             }else{ // send the grid out
-                auto result = MPIGridSend(TasmanianSparseGrid() , rank, tag_size, tag_data, comm);
+                auto result = MPIGridSend<binary>(TasmanianSparseGrid() , rank, tag_size, tag_data, comm);
                 if (result != MPI_SUCCESS) return result;
             }
         }
         return MPI_SUCCESS; // if we got here, all was successful
     }else{ // receiving a grid
-        return MPIGridRecv(destination, root, tag_size, tag_data, comm);
+        return MPIGridRecv<binary>(destination, root, tag_size, tag_data, comm);
     }
 }
 

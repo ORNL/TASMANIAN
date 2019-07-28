@@ -129,16 +129,16 @@ std::vector<const T*> makeReverseReferenceVector(const std::forward_list<T> &lis
  * \brief Writes a NodeData std::forward_list to a file using either binary or ascii format.
  * \endinternal
  */
-template<bool useAscii>
+template<bool use_ascii>
 void writeNodeDataList(const std::forward_list<NodeData> &data, std::ostream &os){
-    if (useAscii){ os << std::scientific; os.precision(17); }
+    if (use_ascii == mode_ascii){ os << std::scientific; os.precision(17); }
 
     auto data_refs = makeReverseReferenceVector(data);
 
-    IO::writeNumbers<useAscii, IO::pad_line>(os, (int) data_refs.size());
+    IO::writeNumbers<use_ascii, IO::pad_line>(os, (int) data_refs.size());
     for(auto d : data_refs){
-        IO::writeVector<useAscii, IO::pad_rspace>(d->point, os);
-        IO::writeVector<useAscii, IO::pad_line>(d->value, os);
+        IO::writeVector<use_ascii, IO::pad_rspace>(d->point, os);
+        IO::writeVector<use_ascii, IO::pad_line>(d->value, os);
     }
 }
 
@@ -148,18 +148,18 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, std::ostream &os
  * \brief Reads a NodeData std::forward_list from a file using either binary or ascii format.
  * \endinternal
  */
-template<bool useAscii>
+template<bool use_ascii>
 std::forward_list<NodeData> readNodeDataList(size_t num_dimensions, size_t num_outputs, std::istream &is){
     std::forward_list<NodeData> data;
-    int num_nodes = IO::readNumber<useAscii, int>(is);
+    int num_nodes = IO::readNumber<use_ascii, int>(is);
 
     for(int i=0; i<num_nodes; i++){
         data.emplace_front(NodeData{
                             std::vector<int>(num_dimensions), // point
                             std::vector<double>(num_outputs)  // value
                            });
-        IO::readVector<useAscii>(is, data.front().point);
-        IO::readVector<useAscii>(is, data.front().value);
+        IO::readVector<use_ascii>(is, data.front().point);
+        IO::readVector<use_ascii>(is, data.front().value);
     }
 
     return data;
@@ -186,9 +186,9 @@ public:
     ~DynamicConstructorDataGlobal();
 
     //! \brief Write the data to a stream using ascii or binary format.
-    template<bool useAscii> void write(std::ostream &os) const;
+    template<bool use_ascii> void write(std::ostream &os) const;
     //! \brief Read the data from a stream using ascii or binary format.
-    template<bool useAscii> void read(std::istream &is);
+    template<bool use_ascii> void read(std::istream &is);
 
     //! \brief Restrict data between \b ibegin and \b iend entries.
     void restrictData(int ibegin, int iend){ for(auto &d : data) d.value = std::vector<double>(d.value.begin() + ibegin, d.value.begin() + iend); }
@@ -241,10 +241,10 @@ struct SimpleConstructData{
     //! \brief Keeps track of the initial point set, so those can be computed first.
     MultiIndexSet initial_points;
     //! \brief Save to a file in either ascii or binary format.
-    template<bool useAscii>
+    template<bool use_ascii>
     void write(std::ostream &os) const{
-        initial_points.write<useAscii>(os);
-        writeNodeDataList<useAscii>(data, os);
+        initial_points.write<use_ascii>(os);
+        writeNodeDataList<use_ascii>(data, os);
     }
     //! \brief Restrict data between \b ibegin and \b iend entries.
     void restrictData(int ibegin, int iend){ for(auto &d : data) d.value = std::vector<double>(d.value.begin() + ibegin, d.value.begin() + iend); }
@@ -278,11 +278,11 @@ struct SimpleConstructData{
  *
  * \endinternal
  */
-template<bool useAscii>
+template<bool use_ascii>
 std::unique_ptr<SimpleConstructData> readSimpleConstructionData(size_t num_dimensions, size_t num_outputs, std::istream &is){
     std::unique_ptr<SimpleConstructData> dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
-    dynamic_values->initial_points.read<useAscii>(is);
-    dynamic_values->data = readNodeDataList<useAscii>(num_dimensions, num_outputs, is);
+    dynamic_values->initial_points.read<use_ascii>(is);
+    dynamic_values->data = readNodeDataList<use_ascii>(num_dimensions, num_outputs, is);
     return dynamic_values;
 }
 

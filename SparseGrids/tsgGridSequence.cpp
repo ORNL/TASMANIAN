@@ -39,43 +39,43 @@ namespace TasGrid{
 GridSequence::GridSequence(){}
 GridSequence::~GridSequence(){}
 
-template<bool useAscii> void GridSequence::write(std::ostream &os) const{
-    if (useAscii){ os << std::scientific; os.precision(17); }
-    IO::writeNumbers<useAscii, IO::pad_rspace>(os, num_dimensions, num_outputs);
-    IO::writeRule<useAscii>(rule, os);
+template<bool iomode> void GridSequence::write(std::ostream &os) const{
+    if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
+    IO::writeNumbers<iomode, IO::pad_rspace>(os, num_dimensions, num_outputs);
+    IO::writeRule<iomode>(rule, os);
 
-    IO::writeFlag<useAscii, IO::pad_auto>(!points.empty(), os);
-    if (!points.empty()) points.write<useAscii>(os);
-    IO::writeFlag<useAscii, IO::pad_auto>(!needed.empty(), os);
-    if (!needed.empty()) needed.write<useAscii>(os);
+    IO::writeFlag<iomode, IO::pad_auto>(!points.empty(), os);
+    if (!points.empty()) points.write<iomode>(os);
+    IO::writeFlag<iomode, IO::pad_auto>(!needed.empty(), os);
+    if (!needed.empty()) needed.write<iomode>(os);
 
-    IO::writeFlag<useAscii, IO::pad_auto>(!surpluses.empty(), os);
-    if (!surpluses.empty()) IO::writeVector<useAscii, IO::pad_line>(surpluses.getVector(), os);
+    IO::writeFlag<iomode, IO::pad_auto>(!surpluses.empty(), os);
+    if (!surpluses.empty()) IO::writeVector<iomode, IO::pad_line>(surpluses.getVector(), os);
 
-    if (num_outputs > 0) values.write<useAscii>(os);
+    if (num_outputs > 0) values.write<iomode>(os);
 }
 
-template<bool useAscii> void GridSequence::read(std::istream &is){
+template<bool iomode> void GridSequence::read(std::istream &is){
     reset();
-    num_dimensions = IO::readNumber<useAscii, int>(is);
-    num_outputs = IO::readNumber<useAscii, int>(is);
-    rule = IO::readRule<useAscii>(is);
+    num_dimensions = IO::readNumber<iomode, int>(is);
+    num_outputs = IO::readNumber<iomode, int>(is);
+    rule = IO::readRule<iomode>(is);
 
-    if (IO::readFlag<useAscii>(is)) points.read<useAscii>(is);
-    if (IO::readFlag<useAscii>(is)) needed.read<useAscii>(is);
+    if (IO::readFlag<iomode>(is)) points.read<iomode>(is);
+    if (IO::readFlag<iomode>(is)) needed.read<iomode>(is);
 
-    if (IO::readFlag<useAscii>(is))
-        surpluses = IO::readData2D<useAscii, double>(is, num_outputs, points.getNumIndexes());
+    if (IO::readFlag<iomode>(is))
+        surpluses = IO::readData2D<iomode, double>(is, num_outputs, points.getNumIndexes());
 
-    if (num_outputs > 0) values.read<useAscii>(is);
+    if (num_outputs > 0) values.read<iomode>(is);
 
     prepareSequence(0);
 }
 
-template void GridSequence::write<true>(std::ostream &) const;
-template void GridSequence::write<false>(std::ostream &) const;
-template void GridSequence::read<true>(std::istream &);
-template void GridSequence::read<false>(std::istream &);
+template void GridSequence::write<mode_ascii>(std::ostream &) const;
+template void GridSequence::write<mode_binary>(std::ostream &) const;
+template void GridSequence::read<mode_ascii>(std::istream &);
+template void GridSequence::read<mode_binary>(std::istream &);
 
 void GridSequence::reset(){
     clearAccelerationData();
@@ -253,17 +253,12 @@ void GridSequence::beginConstruction(){
         needed = MultiIndexSet();
     }
 }
-void GridSequence::writeConstructionDataBinary(std::ostream &os) const{
-    dynamic_values->write<false>(os);
+void GridSequence::writeConstructionData(std::ostream &os, bool iomode) const{
+    if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
 }
-void GridSequence::writeConstructionData(std::ostream &os) const{
-    dynamic_values->write<true>(os);
-}
-void GridSequence::readConstructionDataBinary(std::istream &is){
-    dynamic_values = readSimpleConstructionData<false>(num_dimensions, num_outputs, is);
-}
-void GridSequence::readConstructionData(std::istream &is){
-    dynamic_values = readSimpleConstructionData<true>(num_dimensions, num_outputs, is);
+void GridSequence::readConstructionData(std::istream &is, bool iomode){
+    if (iomode == mode_ascii) dynamic_values = readSimpleConstructionData<mode_ascii>(num_dimensions, num_outputs, is);
+    else dynamic_values = readSimpleConstructionData<mode_binary>(num_dimensions, num_outputs, is);
 }
 std::vector<double> GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);

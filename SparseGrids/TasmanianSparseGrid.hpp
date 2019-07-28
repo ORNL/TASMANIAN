@@ -78,11 +78,11 @@ public:
     static const char* getCmakeCxxFlags();
     static bool isOpenMPEnabled();
 
-    void write(const char *filename, bool binary = false) const;
+    void write(const char *filename, bool binary = mode_binary) const;
     void read(const char *filename); // auto-check if format is binary or ascii
 
-    void write(std::ostream &ofs, bool binary = false) const;
-    void read(std::istream &ifs, bool binary = false);
+    void write(std::ostream &ofs, bool binary = mode_binary) const;
+    void read(std::istream &ifs, bool binary = mode_binary);
 
     void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
                         std::vector<int> const &anisotropic_weights, double alpha = 0.0, double beta = 0.0,
