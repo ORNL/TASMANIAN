@@ -374,7 +374,7 @@ bool TasgridWrapper::updateGrid(){
     }
     return true;
 }
-void TasgridWrapper::writeGrid() const{ grid.write(gridfilename.c_str(), !useASCII); }
+void TasgridWrapper::writeGrid() const{ grid.write(gridfilename.c_str(), (useASCII) ? mode_ascii : mode_binary); }
 bool TasgridWrapper::readGrid(){
     try{
         grid.read(gridfilename.c_str());

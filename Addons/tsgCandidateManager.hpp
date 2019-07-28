@@ -238,6 +238,21 @@ public:
     //! \brief Default destructor.
     ~CompleteStorage(){}
 
+    //! \brief Write the stored samples to a stream
+    void write(std::ostream &os) const{
+        IO::writeNumbers<mode_binary, IO::pad_auto>(os, points.size(), values.size());
+        IO::writeVector<mode_binary, IO::pad_auto>(points, os);
+        IO::writeVector<mode_binary, IO::pad_auto>(values, os);
+    }
+
+    //! \brief Read the stored samples from the stream
+    void read(std::istream &is){
+        points.resize(IO::readNumber<mode_binary, size_t>(is));
+        values.resize(IO::readNumber<mode_binary, size_t>(is));
+        IO::readVector<mode_binary>(is, points);
+        IO::readVector<mode_binary>(is, values);
+    }
+
     //! \brief Add a point to the stored list.
     void add(std::vector<double> const &x, std::vector<double> const &y){
         points.insert(points.end(), x.begin(), x.end());

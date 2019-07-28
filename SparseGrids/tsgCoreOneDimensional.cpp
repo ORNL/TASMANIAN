@@ -32,6 +32,7 @@
 #define __TSG_CORE_ONE_DIMENSIONAL_CPP
 
 #include "tsgCoreOneDimensional.hpp"
+#include "tsgIOHelpers.hpp"
 
 namespace TasGrid{
 
@@ -40,8 +41,8 @@ CustomTabulated::~CustomTabulated(){}
 
 void CustomTabulated::reset(){ num_levels = 0; }
 
-template<bool useAscii> void CustomTabulated::write(std::ostream &ofs) const{
-    if (useAscii){ // format is messy here
+template<bool iomode> void CustomTabulated::write(std::ostream &ofs) const{
+    if (iomode == mode_ascii){ // format is messy here
         ofs << "description: " << description.c_str() << std::endl;
         ofs << "levels: " << num_levels << std::endl;
         for(int i=0; i<num_levels; i++){
@@ -66,9 +67,9 @@ template<bool useAscii> void CustomTabulated::write(std::ostream &ofs) const{
     }
 }
 
-template<bool useAscii> void CustomTabulated::read(std::istream &is){
+template<bool iomode> void CustomTabulated::read(std::istream &is){
     reset();
-    if (useAscii){ // messy format chosen for better human readability, hard to template and generalize
+    if (iomode == mode_ascii){ // messy format chosen for better human readability, hard to template and generalize
         std::string T;
         char dummy;
         is >> T;
@@ -119,10 +120,10 @@ template<bool useAscii> void CustomTabulated::read(std::istream &is){
     }
 }
 
-template void CustomTabulated::write<true>(std::ostream &) const;
-template void CustomTabulated::write<false>(std::ostream &) const;
-template void CustomTabulated::read<true>(std::istream &is);
-template void CustomTabulated::read<false>(std::istream &is);
+template void CustomTabulated::write<mode_ascii>(std::ostream &) const;
+template void CustomTabulated::write<mode_binary>(std::ostream &) const;
+template void CustomTabulated::read<mode_ascii>(std::istream &is);
+template void CustomTabulated::read<mode_binary>(std::istream &is);
 
 void CustomTabulated::read(const char* filename){
     std::ifstream ifs; ifs.open(filename);
@@ -131,7 +132,7 @@ void CustomTabulated::read(const char* filename){
         message += filename;
         throw std::invalid_argument(message);
     }
-    read<true>(ifs);
+    read<mode_ascii>(ifs);
     ifs.close();
 }
 

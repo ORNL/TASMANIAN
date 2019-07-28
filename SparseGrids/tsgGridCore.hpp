@@ -69,6 +69,9 @@ public:
     int getNumPoints() const{ return ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes()); }
     const int* getPointIndexes() const{ return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0)); }
 
+    virtual void write(std::ostream&, bool) const = 0;
+    virtual void read(std::istream&, bool) = 0;
+
     virtual void getLoadedPoints(double *x) const = 0;
     virtual void getNeededPoints(double *x) const = 0;
     virtual void getPoints(double *x) const = 0;
@@ -98,10 +101,8 @@ public:
     virtual void mergeRefinement() = 0;
 
     virtual void beginConstruction(){}
-    virtual void writeConstructionDataBinary(std::ostream&) const{}
-    virtual void writeConstructionData(std::ostream&) const{}
-    virtual void readConstructionDataBinary(std::istream&){}
-    virtual void readConstructionData(std::istream&){}
+    virtual void writeConstructionData(std::ostream&, bool) const{}
+    virtual void readConstructionData(std::istream&, bool){}
     virtual void loadConstructedPoint(const double[], const std::vector<double> &){}
     virtual void loadConstructedPoint(const double[], int, const double[]){}
     virtual void finishConstruction(){}

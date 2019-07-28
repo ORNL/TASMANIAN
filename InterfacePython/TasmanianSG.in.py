@@ -339,7 +339,7 @@ class TasmanianSparseGrid:
             sFilename = bytes(sFilename, encoding='utf8')
         return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) != 0)
 
-    def write(self, sFilename, bUseBinaryFormat = False):
+    def write(self, sFilename, bUseBinaryFormat = True):
         '''
         writes the grid to a file
 

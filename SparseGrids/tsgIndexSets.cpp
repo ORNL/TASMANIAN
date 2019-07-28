@@ -35,28 +35,28 @@
 
 namespace TasGrid{
 
-template<bool useAscii>
+template<bool iomode>
 void MultiIndexSet::write(std::ostream &os) const{
     if (cache_num_indexes > 0){
-        IO::writeNumbers<useAscii, IO::pad_rspace>(os, (int) num_dimensions, cache_num_indexes);
-        IO::writeVector<useAscii, IO::pad_line>(indexes, os);
+        IO::writeNumbers<iomode, IO::pad_rspace>(os, (int) num_dimensions, cache_num_indexes);
+        IO::writeVector<iomode, IO::pad_line>(indexes, os);
     }else{
-        IO::writeNumbers<useAscii, IO::pad_line>(os, (int) num_dimensions, cache_num_indexes);
+        IO::writeNumbers<iomode, IO::pad_line>(os, (int) num_dimensions, cache_num_indexes);
     }
 }
 
-template<bool useAscii>
+template<bool iomode>
 void MultiIndexSet::read(std::istream &is){
-    num_dimensions = (size_t) IO::readNumber<useAscii, int>(is);
-    cache_num_indexes = IO::readNumber<useAscii, int>(is);
+    num_dimensions = (size_t) IO::readNumber<iomode, int>(is);
+    cache_num_indexes = IO::readNumber<iomode, int>(is);
     indexes.resize(num_dimensions * ((size_t) cache_num_indexes));
-    IO::readVector<useAscii>(is, indexes);
+    IO::readVector<iomode>(is, indexes);
 }
 
-template void MultiIndexSet::write<true>(std::ostream &) const; // instantiate for faster build
-template void MultiIndexSet::write<false>(std::ostream &) const;
-template void MultiIndexSet::read<true>(std::istream &);
-template void MultiIndexSet::read<false>(std::istream &);
+template void MultiIndexSet::write<mode_ascii>(std::ostream &) const; // instantiate for faster build
+template void MultiIndexSet::write<mode_binary>(std::ostream &) const;
+template void MultiIndexSet::read<mode_ascii>(std::istream &);
+template void MultiIndexSet::read<mode_binary>(std::istream &);
 
 void MultiIndexSet::addSortedIndexes(const std::vector<int> &addition){
     if (indexes.empty()){
@@ -229,27 +229,27 @@ void MultiIndexSet::removeIndex(const std::vector<int> &p){
 StorageSet::StorageSet() : num_outputs(0), num_values(0){}
 StorageSet::~StorageSet(){}
 
-template<bool useAscii>
+template<bool iomode>
 void StorageSet::write(std::ostream &os) const{
-    IO::writeNumbers<useAscii, IO::pad_rspace>(os, (int) num_outputs, (int) num_values);
-    IO::writeFlag<useAscii, IO::pad_auto>((values.size() != 0), os);
+    IO::writeNumbers<iomode, IO::pad_rspace>(os, (int) num_outputs, (int) num_values);
+    IO::writeFlag<iomode, IO::pad_auto>((values.size() != 0), os);
     if (values.size() != 0)
-        IO::writeVector<useAscii, IO::pad_line>(values, os);
+        IO::writeVector<iomode, IO::pad_line>(values, os);
 }
-template<bool useAscii>
+template<bool iomode>
 void StorageSet::read(std::istream &is){
-    num_outputs = (size_t) IO::readNumber<useAscii, int>(is);
-    num_values = (size_t) IO::readNumber<useAscii, int>(is);
-    if (IO::readFlag<useAscii>(is)){
+    num_outputs = (size_t) IO::readNumber<iomode, int>(is);
+    num_values = (size_t) IO::readNumber<iomode, int>(is);
+    if (IO::readFlag<iomode>(is)){
         values.resize(num_outputs * num_values);
-        IO::readVector<useAscii>(is, values);
+        IO::readVector<iomode>(is, values);
     }
 }
 
-template void StorageSet::write<true>(std::ostream &) const;
-template void StorageSet::write<false>(std::ostream &) const;
-template void StorageSet::read<true>(std::istream &);
-template void StorageSet::read<false>(std::istream &);
+template void StorageSet::write<mode_ascii>(std::ostream &) const;
+template void StorageSet::write<mode_binary>(std::ostream &) const;
+template void StorageSet::read<mode_ascii>(std::istream &);
+template void StorageSet::read<mode_binary>(std::istream &);
 
 void StorageSet::resize(int cnum_outputs, int cnum_values){
     values = std::vector<double>();

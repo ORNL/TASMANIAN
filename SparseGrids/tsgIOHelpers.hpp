@@ -55,6 +55,19 @@
 namespace TasGrid{
 
 /*!
+ * \ingroup TasmanianSG
+ * \brief Constant allowing for more expressive selection of ascii and binary mode in IO methods.
+ */
+constexpr bool mode_ascii = false;
+
+/*!
+ * \ingroup TasmanianSG
+ * \brief Constant allowing for more expressive selection of ascii and binary mode in IO methods.
+ */
+constexpr bool mode_binary = true;
+
+
+/*!
  * \internal
  * \ingroup TasmanianIO
  * \brief Collection of I/O handling templates.
@@ -272,9 +285,9 @@ inline TypeRefinement getTypeRefinementInt(int refinement){
  * \ingroup TasmanianIO
  * \brief Write the flag to file, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
  */
-template<bool useAscii, IOPad pad>
+template<bool use_ascii, IOPad pad>
 void writeFlag(bool flag, std::ostream &os){
-    if (useAscii){
+    if (use_ascii == mode_ascii){
         os << ((flag) ? "1" : "0");
         if ((pad == pad_rspace) || ((pad == pad_auto) && flag)) os << " ";
         if ((pad == pad_line) || ((pad == pad_auto) && !flag)) os << std::endl;
@@ -288,9 +301,9 @@ void writeFlag(bool flag, std::ostream &os){
  * \ingroup TasmanianIO
  * \brief Read a flag, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
  */
-template<bool useAscii>
+template<bool use_ascii>
 bool readFlag(std::istream &os){
-    if (useAscii){
+    if (use_ascii == mode_ascii){
         int flag;
         os >> flag;
         return (flag == 1);
@@ -305,9 +318,9 @@ bool readFlag(std::istream &os){
  * \ingroup TasmanianIO
  * \brief Write the vector to the stream, the vector cannot be empty.
  */
-template<bool useAscii, IOPad pad, typename VecType>
+template<bool use_ascii, IOPad pad, typename VecType>
 void writeVector(const std::vector<VecType> &x, std::ostream &os){
-    if (useAscii){
+    if (use_ascii == mode_ascii){
         if (pad == pad_lspace)
             for(auto i : x) os << " " << i;
         if (pad == pad_rspace)
@@ -326,9 +339,9 @@ void writeVector(const std::vector<VecType> &x, std::ostream &os){
  * \ingroup TasmanianIO
  * \brief Read the vector from the stream.
  */
-template<bool useAscii, typename VecType>
+template<bool use_ascii, typename VecType>
 void readVector(std::istream &os, std::vector<VecType> &x){
-    if (useAscii){
+    if (use_ascii == mode_ascii){
         for(auto &i : x) os >> i;
     }else{
         os.read((char*) x.data(), x.size() * sizeof(VecType));
@@ -339,20 +352,20 @@ void readVector(std::istream &os, std::vector<VecType> &x){
  * \ingroup TasmanianIO
  * \brief Write a bunch of numbers with the same type.
  */
-template<bool useAscii, IOPad pad, typename... Vals>
+template<bool use_ascii, IOPad pad, typename... Vals>
 void writeNumbers(std::ostream &os, Vals... vals){
     std::vector<typename std::tuple_element<0, std::tuple<Vals...>>::type> values = {vals...};
-    writeVector<useAscii, pad>(values, os);
+    writeVector<use_ascii, pad>(values, os);
 }
 
 /*!
  * \ingroup TasmanianIO
  * \brief Read a single number, used to read ints (and potentially cast to size_t) or read a double.
  */
-template<bool useAscii, typename Val>
+template<bool use_ascii, typename Val>
 Val readNumber(std::istream &os){
     Val v;
-    if (useAscii){
+    if (use_ascii == mode_ascii){
         os >> v;
     }else{
         os.read((char*) &v, sizeof(Val));
@@ -364,9 +377,9 @@ Val readNumber(std::istream &os){
  * \ingroup TasmanianIO
  * \brief Write a rule.
  */
-template<bool useAscii>
+template<bool use_ascii>
 void writeRule(TypeOneDRule rule, std::ostream &os){
-    if (useAscii){
+    if (use_ascii == mode_ascii){
         os << getRuleString(rule) << std::endl;
     }else{
         int r = getRuleInt(rule);
@@ -378,14 +391,14 @@ void writeRule(TypeOneDRule rule, std::ostream &os){
  * \ingroup TasmanianIO
  * \brief Read a rule.
  */
-template<bool useAscii>
+template<bool use_ascii>
 TypeOneDRule readRule(std::istream &is){
-    if (useAscii){
+    if (use_ascii == mode_ascii){
         std::string T;
         is >> T;
         return getRuleString(T);
     }else{
-        return getRuleInt(readNumber<false, int>(is));
+        return getRuleInt(readNumber<mode_binary, int>(is));
     }
 }
 

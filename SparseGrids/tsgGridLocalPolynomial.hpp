@@ -57,8 +57,11 @@ public:
 
     bool isLocalPolynomial() const{ return true; }
 
-    template<bool useAscii> void write(std::ostream &os) const;
-    template<bool useAscii> void read(std::istream &is);
+    void write(std::ostream &os, bool iomode) const{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
+    void read(std::istream &is, bool iomode){ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
+
+    template<bool iomode> void write(std::ostream &os) const;
+    template<bool iomode> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     void copyGrid(const GridLocalPolynomial *pwpoly, int ibegin, int iend);
@@ -97,10 +100,8 @@ public:
     int removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction); // returns the number of points kept
 
     void beginConstruction();
-    void writeConstructionDataBinary(std::ostream &os) const;
-    void writeConstructionData(std::ostream &os) const;
-    void readConstructionDataBinary(std::istream &is);
-    void readConstructionData(std::istream &is);
+    void writeConstructionData(std::ostream &os, bool) const;
+    void readConstructionData(std::istream &is, bool);
     std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction);
     void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void loadConstructedPoint(const double x[], int numx, const double y[]);
