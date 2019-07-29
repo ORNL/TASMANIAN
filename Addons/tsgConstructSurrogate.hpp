@@ -58,6 +58,17 @@ constexpr bool mode_parallel = true;
  */
 constexpr bool mode_sequential = false;
 
+/*!
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Allows for expressive calls to TasGrid::constructSurrogate().
+ */
+constexpr bool with_initial_guess = true;
+
+/*!
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Allows for expressive calls to TasGrid::constructSurrogate().
+ */
+constexpr bool no_initial_guess = false;
 
 /*!
  * \internal
@@ -69,7 +80,7 @@ constexpr bool mode_sequential = false;
  * TasmanianSparseGrid::getCandidateConstructionPoints() overload.
  * \endinternal
  */
-template<bool parallel_construction>
+template<bool parallel_construction, bool use_initial_guess>
 void constructCommon(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
                      size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                      TasmanianSparseGrid &grid,
@@ -78,6 +89,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
     num_parallel_jobs   = std::max(size_t(1), num_parallel_jobs);
     max_samples_per_job = std::max(size_t(1), max_samples_per_job);
     size_t num_dimensions = (size_t) grid.getNumDimensions();
+    size_t num_outputs    = (size_t) grid.getNumOutputs();
     CandidateManager manager(num_dimensions, max_samples_per_job); // keeps track of started and ordered samples
     CompleteStorage complete(num_dimensions); // temporarily stores complete samples (batch loading is faster)
 
@@ -145,6 +157,15 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         return x;
     };
 
+    auto set_initial_guess = [&](std::vector<double> const &x, std::vector<double> &y)->void{
+        if (use_initial_guess){
+            if (grid.getNumLoaded()) grid.evaluateBatch(x, y);
+            else y.clear();
+        }else{
+            y.resize(num_outputs * (x.size() / num_dimensions));
+        }
+    };
+
     if (!grid.isUsingConstruction())
         grid.beginConstruction();
 
@@ -152,7 +173,8 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
 
     if (parallel_construction == mode_parallel){
         // allocate space for all x and y pairs, will be filled by workers and processed by main
-        std::vector<std::vector<double>> x(num_parallel_jobs), y(num_parallel_jobs, std::vector<double>(grid.getNumOutputs()));
+        std::vector<std::vector<double>> x(num_parallel_jobs),
+                                         y(num_parallel_jobs, std::vector<double>(max_samples_per_job * num_outputs));
 
         std::vector<size_t> finished_jobs;
         std::mutex finished_jobs_access;
@@ -174,6 +196,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
             x[id] = manager.next(max_num_points - total_num_launched);
             if (!x[id].empty()){
                 total_num_launched += x[id].size() / num_dimensions;
+                set_initial_guess(x[id], y[id]);
                 workers[id] = std::thread(do_work, id);
             }
         }
@@ -212,6 +235,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
 
                         if (!x[id].empty()){ // if empty, then we have finished all possible candidates (reached tolerance)
                             total_num_launched += x[id].size() / num_dimensions;
+                            set_initial_guess(x[id], y[id]);
                             workers[id] = std::thread(do_work, id);
                         }
                     }
@@ -234,6 +258,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
             }
             if (!x.empty()){ // could be empty if there are no more candidates
                 total_num_launched += x.size() / num_dimensions;
+                set_initial_guess(x, y);
                 model(x, y, 0); // compute a sample
                 complete.add(x, y);
                 manager.complete(x);
@@ -269,14 +294,28 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  *      The variable is of type \b bool but the constexpr constants
  *      TasGrid::mode_parallel and TasGrid::mode_sequential can be used to for more
  *      expressive calls.
+ * \tparam initial_guess defines the state of the output vector \b y when the model is called.
+ *      If the initial guess is set to \b true (or TasGrid::with_initial_guess),
+ *      then the input will be filled with the best guess for \b y based on the current grid,
+ *      i.e., the previously computed samples.
+ *      This mode is useful when the model can benefit from a good initial guess,
+ *      e.g., when using an iterative solver.
+ *      If the model cannot use an initial guess, then use \b false
+ *      or TasGrid::no_initial_guess to avoid extraneous calls to \b grid.evaluateBatch().
+ *
  *
  * \param model defines the input-output relation to be approximated by the surrogate.
- *      In each call, \b x will have size equal to an even multiple of the dimension of
+ *      - Entering each call, \b x will have size equal to an even multiple of the dimension of
  *      the gird and will hold the required sample inputs for a set of points;
- *      the number of points is controlled by \b max_samples_per_job
- *      The \b y will have size equal to the number of samples time
- *      the number of outputs and must be loaded the with corresponding outputs.
- *      If using the parallel mode, \b thread_id will be a number between 0 and
+ *      the number of points is controlled by \b max_samples_per_job.
+ *      - Exiting the call, \b y must have size equal to the number of samples time
+ *      the number of outputs and must be loaded the outputs corresponding to \b x.
+ *      If running with \b initial_guess, on entry, \b y will be either loaded with
+ *      the best guess based on the previously computed samples or empty which
+ *      will indicate that there are not enough samples to make even a coarse grid.
+ *      If running without \b initial_guess, the vector will always have the correct
+ *      size, but the values will be unspecified and should be overwritten.
+ *      - If using the parallel mode, \b thread_id will be a number between 0 and
  *      \b max_num_samples \b -1, all threads running simultaneously will be
  *      given a different thread id.
  * \param max_num_points defines the computational budget for the surrogate construction.
@@ -324,6 +363,16 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  *
  * \throws std::runtime_error if called for a grid that is not local polynomial.
  *
+ * \par Example
+ * Constructing a surrogate to a simple exponential function with budget of 100 points
+ * and running on 4 threads with one sample per thread:
+ * \code
+ *   auto grid = TasGrid::makeLocalPolynomialGrid(2, ..); // sync the dimensions with number of model inputs
+ *   TasGrid::constructSurrogate([&](std::vector<double> const &x, std::vector<double> &y)
+ *                               ->void{ y[0] = std::exp(x[0] + x[1]); },
+ *                               100, 4, 1, grid, 1.E-6, TasGrid::refine_classic);
+ * \endcode
+ * The procedure will terminate after 100 samples or after the tolerance of 1.E-6 has been reached.
  *
  * \par Checkpoint Restart
  * Large scale simulations that take long time to complete, run a significant risk of
@@ -343,7 +392,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * However, if the files were saved successfully the procedure will restart
  * mid-way and samples will not have to be recomputed.
  */
-template<bool parallel_construction = TasGrid::mode_parallel>
+template<bool parallel_construction = TasGrid::mode_parallel, bool initial_guess = no_initial_guess>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
                         size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
@@ -352,7 +401,8 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
                         std::vector<double> const &scale_correction = std::vector<double>(),
                         std::string const &checkpoint_filename = std::string()){
     if (!grid.isLocalPolynomial()) throw std::runtime_error("ERROR: construction (with tolerance and criteria) called for a grid that is not local polynomial.");
-    constructCommon<parallel_construction>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
+    constructCommon<parallel_construction, initial_guess>
+                                          (model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
                                                return g.getCandidateConstructionPoints(tolerance, criteria, output, level_limits, scale_correction);
                                            }, checkpoint_filename);
@@ -370,14 +420,15 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * thus sampling will continue until the budget is exhausted
  * or the level limits are reached (which will produce a full tensor grid).
  */
-template<bool parallel_construction = TasGrid::mode_parallel>
+template<bool parallel_construction = TasGrid::mode_parallel, bool initial_guess = no_initial_guess>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
                         size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         TypeDepth type, std::vector<int> const &anisotropic_weights = std::vector<int>(),
                         std::vector<int> const &level_limits = std::vector<int>(),
                         std::string const &checkpoint_filename = std::string()){
-    constructCommon<parallel_construction>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
+    constructCommon<parallel_construction, initial_guess>
+                                           (model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
                                                return g.getCandidateConstructionPoints(type, anisotropic_weights, level_limits);
                                            }, checkpoint_filename);
@@ -396,13 +447,14 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * thus sampling will continue until the budget is exhausted
  * or the level limits are reached (which will produce a full tensor grid).
  */
-template<bool parallel_construction = TasGrid::mode_parallel>
+template<bool parallel_construction = TasGrid::mode_parallel, bool initial_guess = no_initial_guess>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
                         size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         TypeDepth type, int output, std::vector<int> const &level_limits = std::vector<int>(),
                         std::string const &checkpoint_filename = std::string()){
-    constructCommon<parallel_construction>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
+    constructCommon<parallel_construction, initial_guess>
+                                           (model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
                                                return g.getCandidateConstructionPoints(type, output, level_limits);
                                            }, checkpoint_filename);
