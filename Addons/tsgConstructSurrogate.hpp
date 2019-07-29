@@ -339,8 +339,8 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * \endcode
  * After the crash, Tasmanian will attempt to recover the computed samples from
  * files "foo" and "foo_old", if the files don't exist or do not contain
- * valid recovery data, the procedure will restat from scrach.
- * However, if the files were saved successfully the procedure will restat
+ * valid recovery data, the procedure will restart from scratch.
+ * However, if the files were saved successfully the procedure will restart
  * mid-way and samples will not have to be recomputed.
  */
 template<bool parallel_construction = TasGrid::mode_parallel>
