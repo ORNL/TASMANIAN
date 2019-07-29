@@ -116,6 +116,7 @@ void constructCommon(AcceleratedModelLambda model,
     num_parallel_jobs   = std::max(size_t(1), num_parallel_jobs);
     max_samples_per_job = std::max(size_t(1), max_samples_per_job);
     size_t num_dimensions = (size_t) grid.getNumDimensions();
+    size_t num_outputs    = (size_t) grid.getNumOutputs();
     CandidateManager manager(num_dimensions, max_samples_per_job); // keeps track of started and ordered samples
     CompleteStorage complete(num_dimensions); // temporarily stores complete samples (batch loading is faster)
 
@@ -191,7 +192,7 @@ void constructCommon(AcceleratedModelLambda model,
     if (parallel_construction == mode_parallel){
         // allocate space for all x and y pairs, will be filled by workers and processed by main
         std::vector<std::vector<double>> x(num_parallel_jobs),
-                                         y(num_parallel_jobs, std::vector<double>(grid.getNumOutputs())),
+                                         y(num_parallel_jobs, std::vector<double>(max_samples_per_job * num_outputs)),
                                          y0(num_parallel_jobs);
 
         std::vector<size_t> finished_jobs;
@@ -214,6 +215,7 @@ void constructCommon(AcceleratedModelLambda model,
             x[id] = manager.next(max_num_points - total_num_launched);
             if (!x[id].empty()){
                 total_num_launched += x[id].size() / num_dimensions;
+                y[id].resize(num_outputs * (x[id].size() / num_dimensions));
                 if (std::is_same<InitialGuessMode, AcceleratedMode>::value && (grid.getNumLoaded() > 0))
                     grid.evaluateBatch(x[id], y0[id]);
                 workers[id] = std::thread(do_work, id);
@@ -254,6 +256,7 @@ void constructCommon(AcceleratedModelLambda model,
 
                         if (!x[id].empty()){ // if empty, then we have finished all possible candidates (reached tolerance)
                             total_num_launched += x[id].size() / num_dimensions;
+                            y[id].resize(num_outputs * (x[id].size() / num_dimensions));
                             if (std::is_same<InitialGuessMode, AcceleratedMode>::value && (grid.getNumLoaded() > 0))
                                 grid.evaluateBatch(x[id], y0[id]);
                             workers[id] = std::thread(do_work, id);
@@ -268,7 +271,7 @@ void constructCommon(AcceleratedModelLambda model,
         complete.load(grid);
 
     }else{
-        std::vector<double> x(grid.getNumDimensions()), y(grid.getNumOutputs()), y0(grid.getNumOutputs());
+        std::vector<double> x(grid.getNumDimensions()), y(max_samples_per_job * num_outputs), y0(max_samples_per_job * num_outputs);
 
         while((total_num_launched < max_num_points) && (manager.getNumCandidates() > 0)){
             x = manager.next(max_num_points - total_num_launched);

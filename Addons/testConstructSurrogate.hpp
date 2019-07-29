@@ -143,7 +143,7 @@ bool testConstructSurrogate(bool verbose){
     if (verbose) cout << std::setw(40) << "simple load values" << std::setw(10) << "Pass" << endl;
 
     // parallel construction is susceptible to order of execution, number of points and which points may change from one run to the next
-    auto model_exp = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + x[1])}; };
+    auto model_exp = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y[0] = std::exp(x[0] + x[1]); };
     auto model_exp2 = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{
         if (x.size() == 2) y = {std::exp(x[0] + x[1])}; // one sample
         else y = {std::exp(x[0] + x[1]), std::exp(x[2] + x[3])};}; // two samples
@@ -182,7 +182,7 @@ bool testConstructSurrogate(bool verbose){
     // The construction algorithm is the same, but check if the getCandidateConstructionPoints() lambda works right
     auto model_aniso = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + 0.1 * x[1])}; };
     auto model_aniso_init = [&](std::vector<double> const &x, std::vector<double> &y, std::vector<double> const &y0, size_t id)->void{
-        if (y0.size() > 0) y = {std::exp(x[0] + 0.1 * x[1])}; // make sure y0 holds a value
+        if (y0.size() > 0) y[0] = std::exp(x[0] + 0.1 * x[1]); // make sure y0 holds a value
         model_aniso(x, y, id); };
 
     grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_rleja);
