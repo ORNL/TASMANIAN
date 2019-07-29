@@ -739,14 +739,14 @@ bool TasgridWrapper::getEvalHierarchyDense(){
 
     return true;
 }
-template<bool useAscii>
+template<bool iomode>
 void writeSparseMatrix(int cols, std::vector<int> const &pntr, std::vector<int> const &indx, std::vector<double> const &vals, std::ostream &os){
     int nnz = (int) indx.size();
     int rows = (int) (pntr.size() - 1);
-    IO::writeNumbers<useAscii, IO::pad_line>(os, rows, cols, nnz);
-    IO::writeVector<useAscii, IO::pad_line>(pntr, os);
-    IO::writeVector<useAscii, IO::pad_line>(indx, os);
-    IO::writeVector<useAscii, IO::pad_line>(vals, os);
+    IO::writeNumbers<iomode, IO::pad_line>(os, rows, cols, nnz);
+    IO::writeVector<iomode, IO::pad_line>(pntr, os);
+    IO::writeVector<iomode, IO::pad_line>(indx, os);
+    IO::writeVector<iomode, IO::pad_line>(vals, os);
 }
 bool TasgridWrapper::getEvalHierarchySparse(){
     auto x = readMatrix(xfilename);
@@ -766,19 +766,19 @@ bool TasgridWrapper::getEvalHierarchySparse(){
         if (useASCII){
             std::ofstream ofs(outfilename);
             ofs << std::scientific; ofs.precision(17);
-            writeSparseMatrix<true>(num_p, pntr, indx, vals, ofs);
+            writeSparseMatrix<mode_ascii>(num_p, pntr, indx, vals, ofs);
             ofs.close();
         }else{
             std::ofstream ofs(outfilename, std::ios::out | std::ios::binary);
             char charTSG[3] = {'T', 'S', 'G'};
             ofs.write(charTSG, 3 * sizeof(char));
-            writeSparseMatrix<false>(num_p, pntr, indx, vals, ofs);
+            writeSparseMatrix<mode_binary>(num_p, pntr, indx, vals, ofs);
             ofs.close();
         }
     }
     if (printCout){
         cout << std::scientific; cout.precision(17);
-        writeSparseMatrix<true>(num_p, pntr, indx, vals, cout);
+        writeSparseMatrix<mode_ascii>(num_p, pntr, indx, vals, cout);
     }
     return true;
 }
@@ -873,19 +873,17 @@ std::vector<int> TasgridWrapper::readLevelLimits(int num_weights) const{
     return llimits;
 }
 
-template<bool useAscii>
+template<bool iomode>
 Data2D<double> readMatrixFromOpen(std::istream &is){
-    int rows = IO::readNumber<useAscii, int>(is);
-    int cols = IO::readNumber<useAscii, int>(is);
+    int rows = IO::readNumber<iomode, int>(is);
+    int cols = IO::readNumber<iomode, int>(is);
     Data2D<double> matrix(cols, rows);
     if (!matrix.empty())
-        IO::readVector<useAscii>(is, matrix.getVector());
+        IO::readVector<iomode>(is, matrix.getVector());
     return matrix;
 }
 
 Data2D<double> TasgridWrapper::readMatrix(std::string const &filename){
-    constexpr bool use_ascii = true;
-    constexpr bool use_binary = false;
     Data2D<double> matrix;
     if (filename.empty()) return matrix;
     std::ifstream ifs;
@@ -898,11 +896,11 @@ Data2D<double> TasgridWrapper::readMatrix(std::string const &filename){
     char tsg[3] = {'A', 'A', 'A'};
     ifs.read(tsg, 3*sizeof(char));
     if ((tsg[0] == 'T') && (tsg[1] == 'S') && (tsg[2] == 'G')){
-        matrix = readMatrixFromOpen<use_binary>(ifs);
+        matrix = readMatrixFromOpen<mode_binary>(ifs);
     }else{ // not a binary file
         ifs.close();
         ifs.open(filename);
-        matrix = readMatrixFromOpen<use_ascii>(ifs);
+        matrix = readMatrixFromOpen<mode_ascii>(ifs);
     }
     if (matrix.empty())
         cerr << "WARNING: empty file " << filename << endl;
