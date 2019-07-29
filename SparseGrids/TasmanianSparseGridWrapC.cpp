@@ -54,8 +54,8 @@ int tsgGetVersionMajor(){ return TasmanianSparseGrid::getVersionMajor(); }
 int tsgGetVersionMinor(){ return TasmanianSparseGrid::getVersionMinor(); }
 int tsgIsOpenMPEnabled(){ return (TasmanianSparseGrid::isOpenMPEnabled()) ? 1 : 0; }
 
-void tsgWrite(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename); }
-void tsgWriteBinary(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename, true); }
+void tsgWrite(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename, mode_ascii); }
+void tsgWriteBinary(void *grid, const char* filename){ ((TasmanianSparseGrid*) grid)->write(filename, mode_binary); }
 int tsgRead(void *grid, const char* filename){
     try{
         ((TasmanianSparseGrid*) grid)->read(filename);

@@ -91,7 +91,7 @@ class TestTasClass(unittest.TestCase):
             gridB.read("refTestFlename.grid")
             ttc.compareGrids(grid, gridB)
 
-            grid.write("refTestFlename.grid")
+            grid.write("refTestFlename.grid", bUseBinaryFormat = False)
             gridB.makeLocalPolynomialGrid(1, 1, 0, 1)
             gridB.read("refTestFlename.grid")
             ttc.compareGrids(grid, gridB)

@@ -100,7 +100,7 @@ class TestTasClass(unittest.TestCase):
             if (lT[8]):
                 ttc.loadExpN2(gridA)
 
-            gridA.write("testSave")
+            gridA.write("testSave", bUseBinaryFormat = False)
             gridB.read("testSave")
             ttc.compareGrids(gridA, gridB)
 
@@ -126,7 +126,7 @@ class TestTasClass(unittest.TestCase):
         gridB = TasmanianSG.TasmanianSparseGrid()
         gridB.makeGlobalGrid(2, 0, 4, 'level', 'gauss-patterson')
         ttc.compareGrids(gridA, gridB, bTestRuleNames = False)
-        gridA.write("testSave")
+        gridA.write("testSave", bUseBinaryFormat = False)
         gridB.makeGlobalGrid(2, 0, 4, 'level', 'clenshaw-curtis')
         gridB.read("testSave")
         ttc.compareGrids(gridA, gridB)
@@ -161,7 +161,7 @@ class TestTasClass(unittest.TestCase):
             if (lT[6]):
                 ttc.loadExpN2(gridA)
 
-            gridA.write("testSave")
+            gridA.write("testSave", bUseBinaryFormat = False)
             gridB.read("testSave")
             ttc.compareGrids(gridA, gridB)
 
@@ -203,7 +203,7 @@ class TestTasClass(unittest.TestCase):
             if (lT[6]):
                 ttc.loadExpN2(gridA)
 
-            gridA.write("testSave")
+            gridA.write("testSave", bUseBinaryFormat = False)
             gridB.read("testSave")
             ttc.compareGrids(gridA, gridB)
 
@@ -244,7 +244,7 @@ class TestTasClass(unittest.TestCase):
             if (lT[5]):
                 ttc.loadExpN2(gridA)
 
-            gridA.write("testSave")
+            gridA.write("testSave", bUseBinaryFormat = False)
             gridB.read("testSave")
             ttc.compareGrids(gridA, gridB)
 
@@ -284,7 +284,7 @@ class TestTasClass(unittest.TestCase):
             if (lT[4]):
                 ttc.loadExpN2(gridA)
 
-            gridA.write("testSave")
+            gridA.write("testSave", bUseBinaryFormat = False)
             gridB.read("testSave")
             ttc.compareGrids(gridA, gridB)
 
@@ -364,7 +364,7 @@ class TestTasClass(unittest.TestCase):
             gridB = TasmanianSG.TasmanianSparseGrid()
 
             exec(sGrid)
-            gridA.write("testSave")
+            gridA.write("testSave", bUseBinaryFormat = False)
             gridB.read("testSave")
             ttc.compareGrids(gridA, gridB)
 
@@ -395,12 +395,13 @@ class TestTasClass(unittest.TestCase):
         for sType in TasmanianSG.lsTsgGlobalTypes:
             for sRule in TasmanianSG.lsTsgSequenceRules:
                 gridA.makeSequenceGrid(2, 1, 3, sType, sRule)
-                gridA.write("testSave")
+                gridA.write("testSave", bUseBinaryFormat = False)
                 gridB.read("testSave")
                 ttc.compareGrids(gridA, gridB)
                 gridB.makeGlobalGrid(1, 0, 0, "level", "clenshaw-curtis")
                 gridA.write("testSave", bUseBinaryFormat = True)
                 gridB.read("testSave")
+                ttc.compareGrids(gridA, gridB)
 
     def performIOTest(self):
         self.checkMetaIO()
