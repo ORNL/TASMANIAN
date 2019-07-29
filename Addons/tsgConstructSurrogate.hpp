@@ -71,7 +71,7 @@ constexpr bool mode_sequential = false;
  */
 template<bool parallel_construction>
 void constructCommon(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
-                     size_t max_num_samples, size_t num_parallel_jobs, size_t max_samples_per_job,
+                     size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                      TasmanianSparseGrid &grid,
                      std::function<std::vector<double>(TasmanianSparseGrid &)> candidates,
                      std::string const &checkpoint_filename){
@@ -135,12 +135,12 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         manager = candidates(grid); // get new candidates
     };
 
-    size_t total_num_launched = 0; // count all launched jobs
+    size_t total_num_launched = complete.getNumStored() + grid.getNumLoaded(); // count all launched jobs, including the ones already complete
     auto checkout_sample = [&]()->std::vector<double>{ // get the "most-important" point that has not started yet
-        auto x = manager.next(max_num_samples - total_num_launched);
+        auto x = manager.next(max_num_points - total_num_launched);
         if (x.empty()){ // did not find a job, maybe we need to refresh the candidates
             refresh_candidates();
-            x = manager.next(max_num_samples - total_num_launched); // if this is empty, then we have exhausted all possible candidates
+            x = manager.next(max_num_points - total_num_launched); // if this is empty, then we have exhausted all possible candidates
         }
         return x;
     };
@@ -171,7 +171,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         // launch initial set of jobs
         std::vector<std::thread> workers(num_parallel_jobs);
         for(size_t id=0; id<num_parallel_jobs; id++){
-            x[id] = manager.next(max_num_samples - total_num_launched);
+            x[id] = manager.next(max_num_points - total_num_launched);
             if (!x[id].empty()){
                 total_num_launched += x[id].size() / num_dimensions;
                 workers[id] = std::thread(do_work, id);
@@ -203,7 +203,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
 
                 // relaunch the threads, if we still need to keep working
                 for(auto id : done){
-                    if (total_num_launched < max_num_samples){
+                    if (total_num_launched < max_num_points){
                         // refresh the candidates if enough of the current candidates have completed
                         if (double(manager.getNumDone()) / double(manager.getNumCandidates()) > 0.2)
                             refresh_candidates();
@@ -226,11 +226,11 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
     }else{
         std::vector<double> x(grid.getNumDimensions()), y( grid.getNumOutputs());
 
-        while((grid.getNumLoaded() + complete.getNumStored() + manager.getNumRunning() < max_num_samples) && (manager.getNumCandidates() > 0)){
-            x = manager.next(max_num_samples - total_num_launched);
+        while((total_num_launched < max_num_points) && (manager.getNumCandidates() > 0)){
+            x = manager.next(max_num_points - total_num_launched);
             if (x.empty()){ // need more candidates
                 refresh_candidates();
-                x = manager.next(max_num_samples - total_num_launched); // if this is empty, then we have exhausted the candidates
+                x = manager.next(max_num_points - total_num_launched); // if this is empty, then we have exhausted the candidates
             }
             if (!x.empty()){ // could be empty if there are no more candidates
                 total_num_launched += x.size() / num_dimensions;
@@ -244,8 +244,8 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
                 // if done with the top % of the grid points, recompute the candidates
                 if (double(manager.getNumDone()) / double(manager.getNumCandidates()) > 0.2)
                     refresh_candidates();
-                checkpoint();
             }
+            checkpoint();
         }
         complete.load(grid);
     }
@@ -279,9 +279,9 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  *      If using the parallel mode, \b thread_id will be a number between 0 and
  *      \b max_num_samples \b -1, all threads running simultaneously will be
  *      given a different thread id.
- * \param max_num_samples defines the computational budget for the surrogate construction.
- *      The construction procedure will terminate after maximum number of calls
- *      to the \b model lambda have been made.
+ * \param max_num_points defines the computational budget for the surrogate construction.
+ *      The construction procedure will terminate after the grid has reached
+ *      the maximum number of points.
  * \param num_parallel_jobs defined the maximum number of concurent thread
  *      executing different calls to the \b model.
  *      In sequential mode, i.e., when \b parallel_construction is \b false,
@@ -339,20 +339,20 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * \endcode
  * After the crash, Tasmanian will attempt to recover the computed samples from
  * files "foo" and "foo_old", if the files don't exist or do not contain
- * valid recovery data, the procedure will restat from scrach.
- * However, if the files were saved successfully the procedure will restat
+ * valid recovery data, the procedure will restart from scratch.
+ * However, if the files were saved successfully the procedure will restart
  * mid-way and samples will not have to be recomputed.
  */
 template<bool parallel_construction = TasGrid::mode_parallel>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
-                        size_t max_num_samples, size_t num_parallel_jobs, size_t max_samples_per_job,
+                        size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         double tolerance, TypeRefinement criteria, int output = -1,
                         std::vector<int> const &level_limits = std::vector<int>(),
                         std::vector<double> const &scale_correction = std::vector<double>(),
                         std::string const &checkpoint_filename = std::string()){
     if (!grid.isLocalPolynomial()) throw std::runtime_error("ERROR: construction (with tolerance and criteria) called for a grid that is not local polynomial.");
-    constructCommon<parallel_construction>(model, max_num_samples, num_parallel_jobs, max_samples_per_job, grid,
+    constructCommon<parallel_construction>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
                                                return g.getCandidateConstructionPoints(tolerance, criteria, output, level_limits, scale_correction);
                                            }, checkpoint_filename);
@@ -372,12 +372,12 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  */
 template<bool parallel_construction = TasGrid::mode_parallel>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
-                        size_t max_num_samples, size_t num_parallel_jobs, size_t max_samples_per_job,
+                        size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         TypeDepth type, std::vector<int> const &anisotropic_weights = std::vector<int>(),
                         std::vector<int> const &level_limits = std::vector<int>(),
                         std::string const &checkpoint_filename = std::string()){
-    constructCommon<parallel_construction>(model, max_num_samples, num_parallel_jobs, max_samples_per_job, grid,
+    constructCommon<parallel_construction>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
                                                return g.getCandidateConstructionPoints(type, anisotropic_weights, level_limits);
                                            }, checkpoint_filename);
@@ -398,11 +398,11 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  */
 template<bool parallel_construction = TasGrid::mode_parallel>
 void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
-                        size_t max_num_samples, size_t num_parallel_jobs, size_t max_samples_per_job,
+                        size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         TypeDepth type, int output, std::vector<int> const &level_limits = std::vector<int>(),
                         std::string const &checkpoint_filename = std::string()){
-    constructCommon<parallel_construction>(model, max_num_samples, num_parallel_jobs, max_samples_per_job, grid,
+    constructCommon<parallel_construction>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
                                                return g.getCandidateConstructionPoints(type, output, level_limits);
                                            }, checkpoint_filename);

@@ -132,8 +132,7 @@ bool testConstructSurrogate(bool verbose){
     loadNeededPoints<false, false>(model_trig, grid, -1); // sequential version ignores the num_threads
     compareGrids(1.E-10, grid, reference_grid, true);
 
-    values = std::vector<double>(reference_grid.getNumPoints(), -1.0); // set wrong values
-    grid.loadNeededPoints(values);
+    grid.loadNeededPoints(std::vector<double>(reference_grid.getNumPoints(), -1.0)); // set wrong values
     loadNeededPoints<true, true>(model_trig, grid, 4); // reload the needed points using 4 threads
     compareGrids(1.E-10, grid, reference_grid, true);
 
@@ -202,19 +201,35 @@ bool testConstructSurrogate(bool verbose){
     // i.e., the "most important" points are defined the same way through the user provided anisotropic weights
     std::vector<int> aweights = {1, 2};
     reference_grid = TasGrid::makeSequenceGrid(2, 1, 9, TasGrid::type_level, TasGrid::rule_leja, aweights);
-    auto pnts = reference_grid.getPoints();
-    std::vector<double> vals(reference_grid.getNumNeeded());
-    for(int i=0; i<reference_grid.getNumNeeded(); i++){
-        std::vector<double> x(&pnts[2*i], &pnts[2*i] + 2), y(1);
-        model_aniso(x, y, 0);
-        vals[i] = y[0];
-    }
-    reference_grid.loadNeededPoints(vals);
+    loadNeededPoints<mode_sequential>(model_aniso, reference_grid, 0);
 
     grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_leja);
     TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_aniso, reference_grid.getNumLoaded(), 4, 1, grid, TasGrid::type_iptotal, aweights); // parallel
     compareGrids(1.E-9, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "parallel weighted sequence" << std::setw(10) << "Pass" << endl;
+
+    // test checkpoint-restart
+    int num_good = 0;
+    auto model_crash = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{
+        y = {std::exp(x[0] + 0.1 * x[1])};
+        num_good++;
+        if (num_good == 10) throw std::runtime_error("test fail"); // simulate a crash on iteration 10
+    };
+
+    grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_leja);
+    try{
+        TasGrid::constructSurrogate<TasGrid::mode_sequential>(model_crash, reference_grid.getNumLoaded(),
+                                                              2, 1, grid, TasGrid::type_iptotal, aweights, {}, "checkpoint");
+    }catch(std::runtime_error &){
+        //cout << "Error caught!" << endl;
+        grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_rleja); // recovery should change the rule
+        TasGrid::constructSurrogate<TasGrid::mode_sequential>(model_crash, reference_grid.getNumLoaded(),
+                                                              2, 1, grid, TasGrid::type_iptotal, aweights, {}, "checkpoint");
+        if (grid.getRule() != rule_leja) throw std::runtime_error("Failed recovery from crash, wrong rule.");
+        compareGrids(1.E-9, grid, reference_grid, true);
+        if (verbose) cout << std::setw(40) << "parallel resilient sequence" << std::setw(10) << "Pass" << endl;
+    };
+    if (std::remove("checkpoint") != 0) throw std::runtime_error("Could not delete the 'checkpoint' file, the file must exists after the test.");
 
     return true;
 }

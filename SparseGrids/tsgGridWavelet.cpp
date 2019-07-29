@@ -278,19 +278,14 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();
 
     if (conformal_correction == 0){
-        std::vector<double> basis_integrals(num_points);
-        #pragma omp parallel for
+        std::fill_n(q, num_outputs, 0.0);
         for(int i=0; i<num_points; i++){
-            basis_integrals[i] = evalIntegral(points.getIndex(i));
+            double basis_integrals = evalIntegral(points.getIndex(i));
+            const double *coeff = coefficients.getStrip(i);
+            for(int j=0; j<num_outputs; j++)
+                q[j] += basis_integrals * coeff[j];
         }
-        for(int j=0; j<num_outputs; j++){
-            double sum = 0.0;
-            #pragma omp parallel for reduction(+ : sum)
-            for(int i=0; i<num_points; i++){
-                sum += basis_integrals[i] * coefficients.getStrip(i)[j];
-            }
-            q[j] = sum;
-        }
+
     }else{
         std::fill(q, q + num_outputs, 0.0);
         std::vector<double> w(num_points);

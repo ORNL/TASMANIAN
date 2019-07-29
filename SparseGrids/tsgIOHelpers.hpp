@@ -285,9 +285,9 @@ inline TypeRefinement getTypeRefinementInt(int refinement){
  * \ingroup TasmanianIO
  * \brief Write the flag to file, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
  */
-template<bool use_ascii, IOPad pad>
+template<bool iomode, IOPad pad>
 void writeFlag(bool flag, std::ostream &os){
-    if (use_ascii == mode_ascii){
+    if (iomode == mode_ascii){
         os << ((flag) ? "1" : "0");
         if ((pad == pad_rspace) || ((pad == pad_auto) && flag)) os << " ";
         if ((pad == pad_line) || ((pad == pad_auto) && !flag)) os << std::endl;
@@ -301,9 +301,9 @@ void writeFlag(bool flag, std::ostream &os){
  * \ingroup TasmanianIO
  * \brief Read a flag, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
  */
-template<bool use_ascii>
+template<bool iomode>
 bool readFlag(std::istream &os){
-    if (use_ascii == mode_ascii){
+    if (iomode == mode_ascii){
         int flag;
         os >> flag;
         return (flag == 1);
@@ -318,9 +318,9 @@ bool readFlag(std::istream &os){
  * \ingroup TasmanianIO
  * \brief Write the vector to the stream, the vector cannot be empty.
  */
-template<bool use_ascii, IOPad pad, typename VecType>
+template<bool iomode, IOPad pad, typename VecType>
 void writeVector(const std::vector<VecType> &x, std::ostream &os){
-    if (use_ascii == mode_ascii){
+    if (iomode == mode_ascii){
         if (pad == pad_lspace)
             for(auto i : x) os << " " << i;
         if (pad == pad_rspace)
@@ -339,9 +339,9 @@ void writeVector(const std::vector<VecType> &x, std::ostream &os){
  * \ingroup TasmanianIO
  * \brief Read the vector from the stream.
  */
-template<bool use_ascii, typename VecType>
+template<bool iomode, typename VecType>
 void readVector(std::istream &os, std::vector<VecType> &x){
-    if (use_ascii == mode_ascii){
+    if (iomode == mode_ascii){
         for(auto &i : x) os >> i;
     }else{
         os.read((char*) x.data(), x.size() * sizeof(VecType));
@@ -352,20 +352,20 @@ void readVector(std::istream &os, std::vector<VecType> &x){
  * \ingroup TasmanianIO
  * \brief Write a bunch of numbers with the same type.
  */
-template<bool use_ascii, IOPad pad, typename... Vals>
+template<bool iomode, IOPad pad, typename... Vals>
 void writeNumbers(std::ostream &os, Vals... vals){
     std::vector<typename std::tuple_element<0, std::tuple<Vals...>>::type> values = {vals...};
-    writeVector<use_ascii, pad>(values, os);
+    writeVector<iomode, pad>(values, os);
 }
 
 /*!
  * \ingroup TasmanianIO
  * \brief Read a single number, used to read ints (and potentially cast to size_t) or read a double.
  */
-template<bool use_ascii, typename Val>
+template<bool iomode, typename Val>
 Val readNumber(std::istream &os){
     Val v;
-    if (use_ascii == mode_ascii){
+    if (iomode == mode_ascii){
         os >> v;
     }else{
         os.read((char*) &v, sizeof(Val));
@@ -377,9 +377,9 @@ Val readNumber(std::istream &os){
  * \ingroup TasmanianIO
  * \brief Write a rule.
  */
-template<bool use_ascii>
+template<bool iomode>
 void writeRule(TypeOneDRule rule, std::ostream &os){
-    if (use_ascii == mode_ascii){
+    if (iomode == mode_ascii){
         os << getRuleString(rule) << std::endl;
     }else{
         int r = getRuleInt(rule);
@@ -391,9 +391,9 @@ void writeRule(TypeOneDRule rule, std::ostream &os){
  * \ingroup TasmanianIO
  * \brief Read a rule.
  */
-template<bool use_ascii>
+template<bool iomode>
 TypeOneDRule readRule(std::istream &is){
-    if (use_ascii == mode_ascii){
+    if (iomode == mode_ascii){
         std::string T;
         is >> T;
         return getRuleString(T);
