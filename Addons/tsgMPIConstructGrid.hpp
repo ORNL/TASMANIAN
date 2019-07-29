@@ -28,31 +28,41 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_ADDONS_HPP
-#define __TASMANIAN_ADDONS_HPP
+#ifndef __TASMANIAN_ADDONS_MPICONSTRUCTGRID_HPP
+#define __TASMANIAN_ADDONS_MPICONSTRUCTGRID_HPP
 
 /*!
- * \file TasmanianAddons.hpp
- * \brief Header to include add addon templates.
+ * \internal
+ * \file tsgMPIConstructGrid.hpp
+ * \brief Sparse Grids construction through sampling and MPI.
  * \author Miroslav Stoyanov
- * \ingroup TasmanianAddons
+ * \ingroup TasmanianAddonsCommon
  *
- * All addon templates are included with this single header.
+ * Templates that construct a sparse grid with sampling distributed across an MPI communicator.
+ * \endinternal
  */
 
-#include "tsgLoadNeededValues.hpp"
-#include "tsgMPIConstructGrid.hpp"
+#include "tsgMPIScatterGrid.hpp"
+#include "tsgConstructSurrogate.hpp"
 
 /*!
- * \defgroup TasmanianAddons Additional Capabilities
+ * \ingroup TasmanianAddons
+ * \addtogroup TasmanianAddonsMPIConstruct MPI Automated Surrogate Construction Procedure
  *
- * \par Extra Capabilities
- * The Addon module of Tasmanian offers a series of templates that offer
- * additional capabilities not necessarily included in the core modules.
- * The templates sit in a separate module for various reasons, e.g.,
- * - some methods are hard to classify or address fringe use cases
- * - the templates depend on third-party libraries and should not overwhelm
- *   the core modules with dependencies
+ * Distributed sampling procedure, construction similar to TasGrid::constructSurrogate()
+ * but the parallelism is associated with different ranks in an MPI communicator.
+ * These templates require Tasmanian_ENABLE_MPI=ON.
  */
+
+#ifdef Tasmanian_ENABLE_MPI
+
+namespace TasGrid{
+
+// \ingroup TasmanianAddonsConstruct
+
+
+}
+
+#endif // Tasmanian_ENABLE_MPI
 
 #endif
