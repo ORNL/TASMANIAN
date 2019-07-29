@@ -58,6 +58,44 @@ constexpr bool mode_parallel = true;
  */
 constexpr bool mode_sequential = false;
 
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Used for expressive template calls, indicates model that accepts an initial guess.
+ *
+ * \endinternal
+ */
+struct AcceleratedMode{};
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Used for expressive template calls, indicates model that does not accept initial guess.
+ *
+ * \endinternal
+ */
+struct StaticMode{};
+
+/*!
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Model described by inputs \b x, outputs \b y, initial guess \b y0, and running on thread with \b thread_id, see TasGrid::constructSurrogate().
+ */
+using AcceleratedModelLambda = std::function<void(std::vector<double> const &x, std::vector<double> &y, std::vector<double> const &y0, size_t thread_id)>;
+/*!
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Model described by inputs \b x, outputs \b y, no initial guess, and running on thread with \b thread_id, see TasGrid::constructSurrogate().
+ */
+using SimpleModelLambda = std::function<void(std::vector<double> const &, std::vector<double> &, size_t)>;
+
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Takes a lambda of a model without an initial guess and converts to model that ignored the initial guess.
+ *
+ * \endinternal
+ */
+AcceleratedModelLambda modelNoInit(SimpleModelLambda &model){
+    return [&](std::vector<double> const &x, std::vector<double> &y, std::vector<double> const &, size_t thread_id)->void{ model(x, y, thread_id); };
+}
 
 /*!
  * \internal
@@ -69,8 +107,8 @@ constexpr bool mode_sequential = false;
  * TasmanianSparseGrid::getCandidateConstructionPoints() overload.
  * \endinternal
  */
-template<bool parallel_construction>
-void constructCommon(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+template<bool parallel_construction, class InitialGuessMode>
+void constructCommon(AcceleratedModelLambda model,
                      size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                      TasmanianSparseGrid &grid,
                      std::function<std::vector<double>(TasmanianSparseGrid &)> candidates,
@@ -152,7 +190,9 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
 
     if (parallel_construction == mode_parallel){
         // allocate space for all x and y pairs, will be filled by workers and processed by main
-        std::vector<std::vector<double>> x(num_parallel_jobs), y(num_parallel_jobs, std::vector<double>(grid.getNumOutputs()));
+        std::vector<std::vector<double>> x(num_parallel_jobs),
+                                         y(num_parallel_jobs, std::vector<double>(grid.getNumOutputs())),
+                                         y0(num_parallel_jobs);
 
         std::vector<size_t> finished_jobs;
         std::mutex finished_jobs_access;
@@ -160,7 +200,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         // lambda that will handle the work
         auto do_work = [&](size_t thread_id)->void{
 
-            model(x[thread_id], y[thread_id], thread_id); // does the model evaluations
+            model(x[thread_id], y[thread_id], y0[thread_id], thread_id); // does the model evaluations
 
             {
                 std::lock_guard<std::mutex> lock(finished_jobs_access);
@@ -174,6 +214,8 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
             x[id] = manager.next(max_num_points - total_num_launched);
             if (!x[id].empty()){
                 total_num_launched += x[id].size() / num_dimensions;
+                if (std::is_same<InitialGuessMode, AcceleratedMode>::value && (grid.getNumLoaded() > 0))
+                    grid.evaluateBatch(x[id], y0[id]);
                 workers[id] = std::thread(do_work, id);
             }
         }
@@ -212,6 +254,8 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
 
                         if (!x[id].empty()){ // if empty, then we have finished all possible candidates (reached tolerance)
                             total_num_launched += x[id].size() / num_dimensions;
+                            if (std::is_same<InitialGuessMode, AcceleratedMode>::value && (grid.getNumLoaded() > 0))
+                                grid.evaluateBatch(x[id], y0[id]);
                             workers[id] = std::thread(do_work, id);
                         }
                     }
@@ -224,7 +268,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         complete.load(grid);
 
     }else{
-        std::vector<double> x(grid.getNumDimensions()), y( grid.getNumOutputs());
+        std::vector<double> x(grid.getNumDimensions()), y(grid.getNumOutputs()), y0(grid.getNumOutputs());
 
         while((total_num_launched < max_num_points) && (manager.getNumCandidates() > 0)){
             x = manager.next(max_num_points - total_num_launched);
@@ -234,7 +278,9 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
             }
             if (!x.empty()){ // could be empty if there are no more candidates
                 total_num_launched += x.size() / num_dimensions;
-                model(x, y, 0); // compute a sample
+                if (std::is_same<InitialGuessMode, AcceleratedMode>::value && (grid.getNumLoaded() > 0))
+                    grid.evaluateBatch(x, y0);
+                model(x, y, y0, 0); // compute a sample
                 complete.add(x, y);
                 manager.complete(x);
 
@@ -273,12 +319,20 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * \param model defines the input-output relation to be approximated by the surrogate.
  *      In each call, \b x will have size equal to an even multiple of the dimension of
  *      the gird and will hold the required sample inputs for a set of points;
- *      the number of points is controlled by \b max_samples_per_job
+ *      the number of points is controlled by \b max_num_points
  *      The \b y will have size equal to the number of samples time
  *      the number of outputs and must be loaded the with corresponding outputs.
  *      If using the parallel mode, \b thread_id will be a number between 0 and
  *      \b max_num_samples \b -1, all threads running simultaneously will be
  *      given a different thread id.
+ *      The \b y0 input will be the best guess for \b y given the current state of the grid,
+ *      it is useful in cases where the model can benefit from a good initial guess,
+ *      e.g., when using an iterative linear solver.
+ *      If the model cannot use such information, it is safe to ignore the parameter
+ *      or better yet, call the overload that does not accept \b y0 which will skip
+ *      the calls to \b grid.evaluateBatch().
+ *      If the grid does not have any loaded points (i.e., in the beginning of the
+ *      construction process), the initial guess will be an empty vector.
  * \param max_num_points defines the computational budget for the surrogate construction.
  *      The construction procedure will terminate after the grid has reached
  *      the maximum number of points.
@@ -344,7 +398,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * mid-way and samples will not have to be recomputed.
  */
 template<bool parallel_construction = TasGrid::mode_parallel>
-void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+void constructSurrogate(AcceleratedModelLambda model,
                         size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         double tolerance, TypeRefinement criteria, int output = -1,
@@ -352,10 +406,29 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
                         std::vector<double> const &scale_correction = std::vector<double>(),
                         std::string const &checkpoint_filename = std::string()){
     if (!grid.isLocalPolynomial()) throw std::runtime_error("ERROR: construction (with tolerance and criteria) called for a grid that is not local polynomial.");
-    constructCommon<parallel_construction>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
-                                           [&](TasmanianSparseGrid &g)->std::vector<double>{
-                                               return g.getCandidateConstructionPoints(tolerance, criteria, output, level_limits, scale_correction);
-                                           }, checkpoint_filename);
+    constructCommon<parallel_construction, AcceleratedMode>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
+                                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
+                                                                return g.getCandidateConstructionPoints(tolerance, criteria, output, level_limits, scale_correction);
+                                                            }, checkpoint_filename);
+}
+
+/*!
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Overload with model that cannot utilize an initial guess.
+ */
+template<bool parallel_construction = TasGrid::mode_parallel>
+void constructSurrogate(SimpleModelLambda model,
+                        size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
+                        TasmanianSparseGrid &grid,
+                        double tolerance, TypeRefinement criteria, int output = -1,
+                        std::vector<int> const &level_limits = std::vector<int>(),
+                        std::vector<double> const &scale_correction = std::vector<double>(),
+                        std::string const &checkpoint_filename = std::string()){
+    if (!grid.isLocalPolynomial()) throw std::runtime_error("ERROR: construction (with tolerance and criteria) called for a grid that is not local polynomial.");
+    constructCommon<parallel_construction, StaticMode>(modelNoInit(model), max_num_points, num_parallel_jobs, max_samples_per_job, grid,
+                                                       [&](TasmanianSparseGrid &g)->std::vector<double>{
+                                                           return g.getCandidateConstructionPoints(tolerance, criteria, output, level_limits, scale_correction);
+                                                       }, checkpoint_filename);
 }
 
 /*!
@@ -371,16 +444,33 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * or the level limits are reached (which will produce a full tensor grid).
  */
 template<bool parallel_construction = TasGrid::mode_parallel>
-void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+void constructSurrogate(AcceleratedModelLambda model,
                         size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         TypeDepth type, std::vector<int> const &anisotropic_weights = std::vector<int>(),
                         std::vector<int> const &level_limits = std::vector<int>(),
                         std::string const &checkpoint_filename = std::string()){
-    constructCommon<parallel_construction>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
-                                           [&](TasmanianSparseGrid &g)->std::vector<double>{
-                                               return g.getCandidateConstructionPoints(type, anisotropic_weights, level_limits);
-                                           }, checkpoint_filename);
+    constructCommon<parallel_construction, AcceleratedMode>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
+                                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
+                                                                return g.getCandidateConstructionPoints(type, anisotropic_weights, level_limits);
+                                                            }, checkpoint_filename);
+}
+
+/*!
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Overload with model that cannot utilize an initial guess.
+ */
+template<bool parallel_construction = TasGrid::mode_parallel>
+void constructSurrogate(SimpleModelLambda model,
+                        size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
+                        TasmanianSparseGrid &grid,
+                        TypeDepth type, std::vector<int> const &anisotropic_weights = std::vector<int>(),
+                        std::vector<int> const &level_limits = std::vector<int>(),
+                        std::string const &checkpoint_filename = std::string()){
+    constructCommon<parallel_construction, StaticMode>(modelNoInit(model), max_num_points, num_parallel_jobs, max_samples_per_job, grid,
+                                                       [&](TasmanianSparseGrid &g)->std::vector<double>{
+                                                           return g.getCandidateConstructionPoints(type, anisotropic_weights, level_limits);
+                                                       }, checkpoint_filename);
 }
 
 /*!
@@ -397,15 +487,33 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * or the level limits are reached (which will produce a full tensor grid).
  */
 template<bool parallel_construction = TasGrid::mode_parallel>
-void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+void constructSurrogate(AcceleratedModelLambda model,
                         size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         TypeDepth type, int output, std::vector<int> const &level_limits = std::vector<int>(),
                         std::string const &checkpoint_filename = std::string()){
-    constructCommon<parallel_construction>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
-                                           [&](TasmanianSparseGrid &g)->std::vector<double>{
-                                               return g.getCandidateConstructionPoints(type, output, level_limits);
-                                           }, checkpoint_filename);
+    constructCommon<parallel_construction, AcceleratedMode>(model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
+                                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
+                                                                return g.getCandidateConstructionPoints(type, output, level_limits);
+                                                            }, checkpoint_filename);
+}
+
+
+
+/*!
+ * \ingroup TasmanianAddonsConstruct
+ * \brief Overload with model that cannot utilize an initial guess.
+ */
+template<bool parallel_construction = TasGrid::mode_parallel>
+void constructSurrogate(SimpleModelLambda model,
+                        size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
+                        TasmanianSparseGrid &grid,
+                        TypeDepth type, int output, std::vector<int> const &level_limits = std::vector<int>(),
+                        std::string const &checkpoint_filename = std::string()){
+    constructCommon<parallel_construction, StaticMode>(modelNoInit(model), max_num_points, num_parallel_jobs, max_samples_per_job, grid,
+                                                       [&](TasmanianSparseGrid &g)->std::vector<double>{
+                                                           return g.getCandidateConstructionPoints(type, output, level_limits);
+                                                       }, checkpoint_filename);
 }
 
 }

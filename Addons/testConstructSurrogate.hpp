@@ -181,11 +181,20 @@ bool testConstructSurrogate(bool verbose){
 
     // The construction algorithm is the same, but check if the getCandidateConstructionPoints() lambda works right
     auto model_aniso = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + 0.1 * x[1])}; };
+    auto model_aniso_init = [&](std::vector<double> const &x, std::vector<double> &y, std::vector<double> const &y0, size_t id)->void{
+        if (y0.size() > 0) y = {std::exp(x[0] + 0.1 * x[1])}; // make sure y0 holds a value
+        model_aniso(x, y, id); };
+
     grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_rleja);
     reference_grid = grid;
     TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
     simpleSequentialConstruction(model_aniso, 200, 2, reference_grid, TasGrid::type_iptotal, 0);
     compareGrids(1.E-9, grid, reference_grid, true);
+
+    grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_rleja);
+    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_aniso_init, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel with initial guess
+    compareGrids(1.E-9, grid, reference_grid, true);
+
     if (verbose) cout << std::setw(40) << "parallel anisotropic rleja" << std::setw(10) << "Pass" << endl;
 
     // additional fluctuation of number of points can happen due to not enough points to complete a tensor
