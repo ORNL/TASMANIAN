@@ -33,58 +33,79 @@
 using std::cout;
 using std::setw;
 
-inline int fail(){
-    MPI_Finalize();
-    return 1;
-}
-
 int main(int argc, char ** argv){
 
-    MPI_Init(&argc, &argv);
+    //MPI_Init(&argc, &argv); // MPI_THREAD_MULTIPLE requires MPI_Init_thread()
+    int threads_available;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &threads_available);
 
     int me;
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     if (me == 0) cout << "\n";
 
     // --------------- Send/Recv <ascii> ----------------- //
-    if (!testSendReceive<TasGrid::mode_ascii>()) return fail();
+    if (!testSendReceive<TasGrid::mode_ascii>()) throw std::runtime_error("failed Send/Recv ascii");
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "    MPI Send/Recv     <ascii>    Pass\n";
 
     // --------------- Send/Recv <binary> ----------------- //
-    if (!testSendReceive<TasGrid::mode_binary>()) return fail();
+    if (!testSendReceive<TasGrid::mode_binary>()) throw std::runtime_error("failed Send/Recv binary");
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "    MPI Send/Recv    <binary>    Pass\n";
 
     // ----------------- Bcast <ascii> ------------------ //
-    if (!testBcast<TasGrid::mode_ascii>()) return fail();
+    if (!testBcast<TasGrid::mode_ascii>()) throw std::runtime_error("failed Bcast ascii");
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "        MPI Bcast     <ascii>    Pass\n";
 
     // ----------------- Bcast <binary> ----------------- //
-    if (!testBcast<TasGrid::mode_binary>()) return fail();
+    if (!testBcast<TasGrid::mode_binary>()) throw std::runtime_error("failed Bcast binary");
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "        MPI Bcast    <binary>    Pass\n";
 
     // ----------------- Scatter <ascii> --------------- //
-    if (!testScatterOutputs<TasGrid::mode_ascii>()) return fail();
+    if (!testScatterOutputs<TasGrid::mode_ascii>()) throw std::runtime_error("failed Scatter ascii");
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "      MPI Scatter     <ascii>    Pass\n";
 
     // ----------------- Scatter <binary> --------------- //
-    if (!testScatterOutputs<TasGrid::mode_binary>()) return fail();
+    if (!testScatterOutputs<TasGrid::mode_binary>()) throw std::runtime_error("failed Scatter binary");
     MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "      MPI Scatter    <binary>    Pass\n";
 
+    if (threads_available == MPI_THREAD_MULTIPLE){
+        // ----------------- Construct <no guess> ----------- //
+        testMPIconstruct<no_initial_guess>();
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (me == 0)
+            cout << "    MPI Construct   <no-init>    Pass\n";
+
+        // ----------------- Construct <with guess> --------- //
+        testMPIconstruct<with_initial_guess>();
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (me == 0)
+            cout << "    MPI Construct <with-init>    Pass\n";
+
+        // ----------------- Construct <with guess> --------- //
+        testMPIconstructStrict();
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (me == 0)
+            cout << "    MPI Construct    <strict>    Pass\n";
+
+    }else{
+        if (me == 0)
+            cout << "\n Skipping MPI construction since this version of MPI\n does not seem to support MPI_THREAD_MULTIPLE\n\n";
+    }
+
     // --------------- Finalize ------------------------- //
     MPI_Finalize();
 
-    if (me == 0) cout << "\n";
+    if (me == 0) cout << endl;
     return 0;
 }

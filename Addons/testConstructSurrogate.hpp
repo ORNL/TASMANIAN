@@ -152,13 +152,15 @@ bool testConstructSurrogate(bool verbose){
 
     // Basic test, run until grid points are exhausted, number of points can still vary
     // due to child surplus being computed before or after the parent point has completed
-    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel
+    TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
+                               (model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel
     simpleSequentialConstruction(model_exp, 300, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
     compareGrids(5.E-4, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel localp unlimited budget" << std::setw(10) << "Pass" << endl;
 
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
-    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_exp2, -1, 2, 2, grid, 1.E-4, TasGrid::refine_classic); // parallel, batch 2
+    TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
+                               (model_exp2, -1, 2, 2, grid, 1.E-4, TasGrid::refine_classic); // parallel, batch 2
     compareGrids(5.E-4, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel localp batch" << std::setw(10) << "Pass" << endl;
 
@@ -166,15 +168,17 @@ bool testConstructSurrogate(bool verbose){
     // compare the grids by how similar they are to each other
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 1);
     reference_grid = grid;
-    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_exp, 500, 8, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel, limit points
+    TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
+                               (model_exp, 500, 4, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel, limit points
     simpleSequentialConstruction(model_exp, 500, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
-    compareGrids(5.E-4, grid, reference_grid, true);
+    compareGrids(1.E-3, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "parallel localp limited budget" << std::setw(10) << "Pass" << endl;
 
     // Sequential test, checks the simpler algorithm, this should be deterministic
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
     reference_grid = grid;
-    TasGrid::constructSurrogate<TasGrid::mode_sequential>(model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // sequential
+    TasGrid::constructSurrogate<TasGrid::mode_sequential, no_initial_guess>
+                               (model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // sequential
     simpleSequentialConstruction(model_exp, 300, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
     compareGrids(1.E-9, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "sequential localp limited budget" << std::setw(10) << "Pass" << endl;
@@ -183,29 +187,43 @@ bool testConstructSurrogate(bool verbose){
     auto model_aniso = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + 0.1 * x[1])}; };
     grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_rleja);
     reference_grid = grid;
-    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
+    TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
+                               (model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
     simpleSequentialConstruction(model_aniso, 200, 2, reference_grid, TasGrid::type_iptotal, 0);
-    compareGrids(1.E-9, grid, reference_grid, true);
+    compareGrids(1.E-8, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "parallel anisotropic rleja" << std::setw(10) << "Pass" << endl;
 
     // additional fluctuation of number of points can happen due to not enough points to complete a tensor
     // nevertheless the grid accuracy should match
     grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
     reference_grid = grid;
-    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
+    TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
+                               (model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
     simpleSequentialConstruction(model_aniso, 200, 2, reference_grid, TasGrid::type_iptotal, 0);
-    compareGrids(1.E-9, grid, reference_grid, false);
+    compareGrids(1.E-8, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel anisotropic global" << std::setw(10) << "Pass" << endl;
 
     // fix the weights, the computed grid must be very similar to the direct anisotropic make grid
     // i.e., the "most important" points are defined the same way through the user provided anisotropic weights
+    // the atomic trick is used to ensure that no thread lags and holds important samples that affect the estimate for the anisotropy
+    std::atomic_int last;
+    last = -1;
+    auto model_atomic = [&](std::vector<double> const &x, std::vector<double> &y, size_t id)->void{
+        y = {std::exp(x[0] + 0.1 * x[1])};
+        if (last == (int) id){
+            std::this_thread::sleep_for(std::chrono::milliseconds(5)); // do not allow any thread to compute more than 2 samples in a row
+        }else{
+            last = (int) id;
+        }
+    };
     std::vector<int> aweights = {1, 2};
     reference_grid = TasGrid::makeSequenceGrid(2, 1, 9, TasGrid::type_level, TasGrid::rule_leja, aweights);
     loadNeededPoints<mode_sequential>(model_aniso, reference_grid, 0);
 
     grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_leja);
-    TasGrid::constructSurrogate<TasGrid::mode_parallel>(model_aniso, reference_grid.getNumLoaded(), 4, 1, grid, TasGrid::type_iptotal, aweights); // parallel
-    compareGrids(1.E-9, grid, reference_grid, true);
+    TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
+                               (model_atomic, reference_grid.getNumLoaded(), 4, 1, grid, TasGrid::type_iptotal, aweights); // parallel
+    compareGrids(1.E-7, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "parallel weighted sequence" << std::setw(10) << "Pass" << endl;
 
     // test checkpoint-restart
@@ -218,13 +236,15 @@ bool testConstructSurrogate(bool verbose){
 
     grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_leja);
     try{
-        TasGrid::constructSurrogate<TasGrid::mode_sequential>(model_crash, reference_grid.getNumLoaded(),
-                                                              2, 1, grid, TasGrid::type_iptotal, aweights, {}, "checkpoint");
+        TasGrid::constructSurrogate<TasGrid::mode_sequential, no_initial_guess>
+                                   (model_crash, reference_grid.getNumLoaded(),
+                                    2, 1, grid, TasGrid::type_iptotal, aweights, {}, "checkpoint");
     }catch(std::runtime_error &){
         //cout << "Error caught!" << endl;
         grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_rleja); // recovery should change the rule
-        TasGrid::constructSurrogate<TasGrid::mode_sequential>(model_crash, reference_grid.getNumLoaded(),
-                                                              2, 1, grid, TasGrid::type_iptotal, aweights, {}, "checkpoint");
+        TasGrid::constructSurrogate<TasGrid::mode_sequential, no_initial_guess>
+                                   (model_crash, reference_grid.getNumLoaded(),
+                                    2, 1, grid, TasGrid::type_iptotal, aweights, {}, "checkpoint");
         if (grid.getRule() != rule_leja) throw std::runtime_error("Failed recovery from crash, wrong rule.");
         compareGrids(1.E-9, grid, reference_grid, true);
         if (verbose) cout << std::setw(40) << "parallel resilient sequence" << std::setw(10) << "Pass" << endl;

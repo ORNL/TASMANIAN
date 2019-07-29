@@ -167,3 +167,93 @@ bool testScatterOutputs(){
 
     return true;
 }
+
+template<bool use_initial_guess>
+void testMPIconstruct(){
+    int me;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+
+    std::minstd_rand park_miller(99);
+    std::uniform_real_distribution<double> unif(-1.0, 1.0);
+    std::vector<double> test_points(3 * 1000);
+    for(auto &t : test_points) t = unif(park_miller);
+
+    auto match = [&](TasmanianSparseGrid const &a, TasmanianSparseGrid const &b)->bool{
+        std::vector<double> resa, resb; // reference and actual result
+        a.evaluateBatch(test_points, resa);
+        b.evaluateBatch(test_points, resb);
+        double err = 0.0;
+        for(auto ia = resa.begin(), ib = resb.begin(); ia != resa.end(); ia++, ib++)
+            err = std::max(err, std::abs(*ia - *ib));
+        constexpr double tolerance = 1.E-1;
+        if (err >= tolerance) std::cout << "error = " << err << std::endl;
+        return (err < tolerance);
+    };
+
+    auto model = [&](std::vector<double> const &x, std::vector<double> &y)->void{
+        size_t num_samples = x.size() / 3;
+        if (use_initial_guess == with_initial_guess)
+            y.resize(num_samples * 2); // y can be empty
+        for(size_t i=0; i<num_samples; i++){ // for each sample
+            y[2*i + 0] = std::exp(x[3*i + 0] + x[3*i + 1] + x[3*i + 2]);
+            y[2*i + 1] = std::sin(x[3*i + 0]) * std::cos(x[3*i + 1]) + std::sin(x[3*i + 2]) * std::cos(x[3*i + 1]);
+        }
+    };
+    auto modelt = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{
+        model(x, y);
+    };
+
+    auto grid = TasGrid::makeLocalPolynomialGrid(3, 2, 3);
+
+    mpiConstructSurrogate<use_initial_guess>(model, 3, 2, 300, 2, 3, 11, 22, 0, MPI_COMM_WORLD,
+                                             grid, 1.E-5, refine_classic, -1);
+
+    if (me == 0){
+        auto reference_grid = TasGrid::makeLocalPolynomialGrid(3, 2, 3);
+        constructSurrogate<mode_sequential>(modelt, 300, 0, 1, reference_grid, 1.E-5, refine_classic, -1);
+        if (!match(grid, reference_grid)) throw std::runtime_error("testMPIconstruct() grids mismatch.");
+    }
+}
+
+// this test must produce grids that match to within numeric precision
+// no matter the order of samples or any other considerations
+void testMPIconstructStrict(){
+    int me;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+
+    auto match = [](TasmanianSparseGrid const &a, TasmanianSparseGrid const &b)->bool{
+        if (a.getNumLoaded() != b.getNumLoaded()) return false;
+        auto pa = a.getLoadedPoints();
+        auto pb = b.getLoadedPoints();
+        double err = 0.0;
+        for(auto ia = pa.begin(), ib = pb.begin(); ia != pa.end(); ia++, ib++)
+            err = std::max(err, std::abs(*ia - *ib));
+        if (err >= Maths::num_tol)
+            cout << "points mismatch: " << err << endl;
+        return (err < Maths::num_tol);
+    };
+
+    auto modelt = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{
+        size_t num_samples = x.size() / 2;
+        for(size_t i=0; i<num_samples; i++) // for each sample
+            y[i] = std::exp(x[2*i] + x[2*i + 1]);
+    };
+    auto model = [&](std::vector<double> const &x, std::vector<double> &y)->void{
+        modelt(x, y, 0);
+        if (me == 0) throw std::runtime_error("ERROR: rank 0 should not participate in this.");
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+    };
+
+    std::vector<int> aweights = {1, 2};
+    auto reference_grid = TasGrid::makeSequenceGrid(2, 1, 6, TasGrid::type_level, TasGrid::rule_leja, aweights);
+    auto grid = copyGrid(reference_grid);
+    loadNeededPoints<mode_sequential>(modelt, reference_grid, 0);
+
+    mpiConstructSurrogate<no_initial_guess>
+        (model, 2, 1, reference_grid.getNumLoaded(), 1, 2, 11, 22, 0, MPI_COMM_WORLD, grid, TasGrid::type_iptotal, aweights);
+
+    if (me == 0){
+        if (!match(grid, reference_grid)) throw std::runtime_error("ERROR: CV construction failed.");
+    }
+
+}

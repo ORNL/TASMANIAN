@@ -43,6 +43,8 @@
 #include <sstream>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
+#include <atomic>
 
 #include "TasmanianDREAM.hpp" // also brings in TasmanianSparseGrids.hpp
 
