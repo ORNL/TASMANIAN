@@ -378,6 +378,16 @@ void constructCommon(AcceleratedModelLambda model,
  *
  * \throws std::runtime_error if called for a grid that is not local polynomial.
  *
+ * \par Example
+ * Constructing a surrogate to a simple exponential function with budget of 100 points
+ * and running on 4 threads with one sample per thread:
+ * \code
+ *   auto grid = TasGrid::makeLocalPolynomialGrid(2, ..); // sync the dimensions with number of model inputs
+ *   TasGrid::constructSurrogate([&](std::vector<double> const &x, std::vector<double> &y)
+ *                               ->void{ y[0] = std::exp(x[0] + x[1]); },
+ *                               100, 4, 1, grid, 1.E-6, TasGrid::refine_classic);
+ * \endcode
+ * The procedure will terminate after 100 samples or after the tolerance of 1.E-6 has been reached.
  *
  * \par Checkpoint Restart
  * Large scale simulations that take long time to complete, run a significant risk of
