@@ -60,7 +60,7 @@ namespace TasGrid{
 
 /*!
  * \internal
- * \ingroup TasmanianAddonsConstruct
+ * \ingroup TasmanianAddonsMPIConstruct
  * \brief MPI construction algorithm using generic candidates procedure.
  *
  * Implements the MPI algorithm with generic refinement procedure given to TasGrid::constructCommon().
@@ -154,6 +154,175 @@ void mpiConstructCommon(std::function<void(std::vector<double> const &x, std::ve
     }
 }
 
+/*!
+ * \ingroup TasmanianAddonsMPIConstruct
+ * \brief Construct a sparse grid surrogate to the model defined by the lambda, MPI version.
+ *
+ * The logic is the same as in TasGrid::constructSurrogate(), construct adaptive sparse grid
+ * surrogate to the mode defined by the lambda using parallel computations.
+ * The model will be executed with different inputs \b x on different ranks within the MPI communicator.
+ * All ranks of across the communicator must make an identical call with identical parameters
+ * before the \b grid. The grid and the refinement and checkpoint parameters will be used
+ * only by the \b root rank and will not be addressed by the rest.
+ *
+ * \par MPI and Multi-Threading
+ * This template will call TasGrid::constructSurrogate() and it will spawn a separate thread
+ * for each active ranks within the communicator. Thus, MPI must support multi-threading
+ * and the multi-threaded initialization call must be used:
+ * \code
+ *   // instead of calling MPI_Init() call the following
+ *   int threads_available;
+ *   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &threads_available);
+ *   if (threads_available != MPI_THREAD_MULTIPLE)
+ *      std::cerr << "MPI threading not available, TasGrid::mpiConstructSurrogate() will not work.\n";
+ * \endcode
+ * Note that the MPIGridSend() and other similar methods do not require multi-threading.
+ *
+ * The list of inputs is very similar to TasGrid::constructSurrogate(),
+ * here we outline the main differences.
+ *
+ * \tparam use_initial_guess defines whether to compute an initial guess for the model outputs
+ *          and send that over the communicator. The MPI procedure always runs in parallel mode
+ *          hence there is no additional template parameter.
+ *
+ * \param mode the inputs \b x and outputs \b y of the model are the same as in
+ *      TasGrid::constructSurrogate(); however, there is no thread_id.
+ *      Only one call of the model will be executed on each active rank and thus
+ *      the MPI native MPI_Comm_rank() can be used in place of the thread_id.
+ *
+ * \param num_dimensions must match \b grid.getNumDimensions().
+ *      This is a required parameter since only the \b root rank is assumed to have
+ *      access to the grid, the other ranks need to know the correct dimension without the grid.
+ * \param num_outputs must match \b grid.getNumOutputs(), see \b num_dimensions.
+ *
+ * \param max_num_points defines the computational budget, same as TasGrid::constructSurrogate().
+ *
+ * \param max_samples_per_job defines the number of samples that will be given to the model
+ *      in each call, see TasGrid::constructSurrogate().
+ *
+ * \param max_num_ranks defines the number of ranks to use, if it exceeds the size of the
+ *      communicator then all ranks will be used in the process. If less than the size,
+ *      the \b root process will not make calls to the model but it will be working
+ *      on the internal grid methods. This is useful when dealing with many points where
+ *      the cost of loading points is not negligible.
+ *      If the \b max_num_ranks is less than the communicator size minus one, then some of
+ *      the ranks will be completely idle (usually the ranks with higher number).
+ *
+ * \param tagx is the MPI_Send() tag to use when communicating the inputs \b x to the worker rank.
+ * \param tagy is the MPI_Send() tag to use when communicating the outputs \b y to the root rank.
+ *
+ * \param root is the MPI rank within the communicator that has the initial copy of the \b grid
+ *      as well as the refinement parameters that are identical to TasGrid::constructSurrogate().
+ *      The final result from the construction will be held by the \b root rank only,
+ *      the grids for the rest of other ranks will not be accessed.
+ *
+ * \param comm is the MPI communicator where sampling will take place, e.g., MPI_COMM_WORLD.
+ *
+ * \param grid on rank \b root is the grid to be constructed, ignored when the rank is different.
+ *
+ * \param tolerance refinement parameter, see TasGrid::constructSurrogate().
+ * \param criteria refinement parameter, see TasGrid::constructSurrogate().
+ * \param output refinement parameter, see TasGrid::constructSurrogate().
+ * \param level_limits refinement parameter, see TasGrid::constructSurrogate().
+ * \param scale_correction refinement parameter, see TasGrid::constructSurrogate().
+ *
+ * \param checkpoint_filename is either empty (skip checkpoints) or the filename to use
+ *      to save the intermediate results. Note that only the \b root rank will issue
+ *      read/write commands to the files.
+ *
+ * \par Example 1: Model that uses no MPI
+ * Construct a surrogate to a model described by a parametrized system of equations
+ * using a local polynomial gird and arbitrary number of MPI ranks. Rank 0 will be
+ * responsible for the grid construction and computing the initial guess for all
+ * solutions, the rest of the ranks will be calling a solver which makes no MPI calls.
+ * The computational budget is 10,000 points and the solver works with one equation
+ * at a time.
+ * \code
+ *  // solves the equation using the initial guess and makes no MPI calls
+ *  void solver(std::vector<double> const &inputs,
+ *              std::vector<double> &solution,
+ *              std::vector<double> &initial guess);
+ *  ...
+ *  int me, num_ranks, tagx = 11, tagy = 12;
+ *  MPI_Comm_rank(MPI_COMM_WORLD, &me); // rank of this process
+ *  MPI_Comm_size(comm, &num_ranks); // all ranks
+ *
+ *  int num_inputs = ...;  // must match the solver
+ *  int num_outputs = ...; // must match the solver
+ *
+ *  TasGrid::TasmanianSparseGrid grid;
+ *  if (me == 0)
+ *      grid = TasGrid::makeLocalPolynomialGrid(num_inputs, num_outputs, ...);
+ *
+ *  mpiConstructSurrogate<TasGrid::with_initial_guess>(
+ *      [&](std::vector<double> const &x, std::vector<double> &y)
+ *      ->void{
+ *          auto initial_guess = y; // on input y is the initial guess
+ *          std::vector<double> solution;
+ *          solver(x, solution, initial_guess);
+ *          y = solution; // on output y is the solution
+ *      },
+ *      num_dimensions, num_outputs,
+ *      10000, 1, num_ranks - 1, tagx, tagy, 0, MPI_COMM_WORLD,
+ *      grid, tolerance, TasGrid::refine_fds, ... );
+ *
+ *  // at this point, grid on rank 0 will hold the surrogate to solver()
+ *  // grid on all other processes will be empty()
+ * \endcode
+ *
+ * \par Example 2: Model that works on sub-communicator
+ * Suppose that the model requires multiple MPI ranks for efficient computing
+ * and it can operate on an arbitrary MPI communicator.
+ * In this example, we take the MPI world communicator and we sub-divide it
+ * into many smaller comms, then each sub-communicator will be used to handle
+ * an independent sample.
+ * In this example, all ranks participate in the process, assuming that
+ * the cost of the grid manipulations is negligible compared to the model simulations.
+ * There is no initial guess in the complicated model.
+ * \code
+ *  // model that computes the outputs using all ranks on an arbitrary communicator
+ *  void model(std::vector<double> const &inputs,
+ *             std::vector<double> &outputs,
+ *             MPI_Comm comm);
+ *  ...
+ *  // number of ranks to assign to the communicators for each call to model()
+ *  int ranks_per_model = ...;
+ *  int world_me, num_ranks, tagx = 11, tagy = 12;
+ *  MPI_Comm_rank(MPI_COMM_WORLD, &world_me); // rank of this process in world comm
+ *  MPI_Comm comm_worker; // local comm for the work done by the model
+ *  // split the world communicator into local ones
+ *  MPI_Comm_split(MPI_COMM_WORLD, world_me / ranks_per_model, world_me % ranks_per_model, &comm_worker);
+ *  int worker_me;
+ *  MPI_Comm_rank(comm_worker, &worker_me); // this procees rank within the worker comm
+ *  // create a sub-comm for the processes that would commonicate with Tasmanian
+ *  MPI_Comm comm_tasmanian; // communicator for Tasmanian operations
+ *  MPI_Comm_split(MPI_COMM_WORLD, (worker_me == 0) ? 0 : MPI_UNDEFINED, world_me, &comm_tasmanian);
+ *  int num_tasmanian_ranks;
+ *  if (worker_me == 0) MPI_Comm_size(comm_tasmanian, &num_tasmanian_ranks);
+ *  int tasmanian_root = 0; // world_me = zero is the same as tasmanian_root = zero
+ *
+ *  int num_inputs = ...;  // must match the solver
+ *  int num_outputs = ...; // must match the solver
+ *
+ *  if (worker_me == 0){
+ *      mpiConstructSurrogate(
+ *          [&](...)->void{
+ *              MPI_Bcast(... sent x to all ranks in comm_worker ...);
+ *              model(..., comm_worker); // participate in this model evaluation
+ *              MPI_Gather(... collect all results in this process ...);
+ *          },
+ *      num_inputs, num_outputs, 10000, 1, num_tasmanian_ranks, tagx, tagy,
+ *      tasmanian_root, comm_tasmanian,
+ *      grid, ...);
+ *  }else{
+ *      MPI_Bcast(... get x from rank 0 on comm_worker ...);
+ *      model(x, outputs, comm_worker);
+ *      MPI_Gather(... gather the results in rank 0 on comm_worker ...);
+ *  }
+ * \endcode
+ *  \b Note: the code above demonstrates the idea of the split world communicator,
+ *  an actual Implementation would differ in details and specifics.
+ */
 template<bool use_initial_guess = no_initial_guess>
 void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y)> model,
                            int num_dimensions, int num_outputs,
@@ -173,6 +342,14 @@ void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std:
                                           checkpoint_filename);
 }
 
+/*!
+ * \ingroup TasmanianAddonsMPIConstruct
+ * \brief Construct a sparse grid surrogate to the model defined by the lambda, MPI version.
+ *
+ * Uses the user provided \b anisotropic_weights to order the samples by importance,
+ * see TasmanianSparseGrid::getCandidateConstructionPoints().
+ * and the overloads to TasGrid::constructSurrogate().
+ */
 template<bool use_initial_guess = no_initial_guess>
 void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y)> model,
                            int num_dimensions, int num_outputs,
@@ -191,6 +368,15 @@ void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std:
                                           checkpoint_filename);
 }
 
+/*!
+ * \ingroup TasmanianAddonsMPIConstruct
+ * \brief Construct a sparse grid surrogate to the model defined by the lambda, MPI version.
+ *
+ * Uses anisotropic weights to order the samples by importance,
+ * starts with a fully isotropic grid until enough points are loaded to allow to estimate the weights,
+ * see TasmanianSparseGrid::getCandidateConstructionPoints().
+ * and the overloads to TasGrid::constructSurrogate().
+ */
 template<bool use_initial_guess = no_initial_guess>
 void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y)> model,
                            int num_dimensions, int num_outputs,

@@ -453,7 +453,7 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * \brief Construct a sparse grid surrogate to the model defined by the lambda.
  *
  * Uses anisotropic weights to order the samples by importance,
- * starts with a fully isotropic grid until enough points are loaded to allow to estimate the weightss.
+ * starts with a fully isotropic grid until enough points are loaded to allow to estimate the weights.
  * The procedure uses the anisotropic overload of TasmanianSparseGrid::getCandidateConstructionPoints(),
  * otherwise the function is identical to TasGrid::constructSurrogate().
  *
