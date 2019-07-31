@@ -52,13 +52,13 @@ set(Tasmanian_post_install "${Tasmanian_post_install}cmake alias target:       T
 set(Tasmanian_post_install "${Tasmanian_post_install}\n")
 
 if (Tasmanian_ENABLE_PYTHON)
-    set(Tasmanian_post_install "${Tasmanian_post_install}python module:      ${Tasmanian_python_install_path}/TasmanianSG.py\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}python alternative: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python/TasmanianSG.py\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}python module:      ${Tasmanian_python_install_path}/Tasmanian.py\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}python alternative: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python/Tasmanian.py\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}python example:     ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/examples/example_sparse_grids.py\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}                    to call the python module\n\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}                    to import the python module\n\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}                    import sys\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}                    sys.path.append(\\\"${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python\\\")\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}                    import TasmanianSG\n\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}                    import Tasmanian\n\n")
 endif()
 
 if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")

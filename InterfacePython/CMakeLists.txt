@@ -63,7 +63,9 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sandbox.py" "${CMAKE_CURRENT_BINARY_
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY) # needed for testing
 
 # See the matlab CMakeText.txt on how to copy multiple scripts
-set(Tasmanian_python_test_files testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py testRefinement.py testUnstructuredData.py testMisc.py)
+set(Tasmanian_python_test_files Tasmanian.py
+                                testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py
+                                testRefinement.py testUnstructuredData.py testMisc.py)
 
 foreach(Tasmanian_python_testing_file ${Tasmanian_python_test_files})
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${Tasmanian_python_testing_file}"
@@ -114,17 +116,28 @@ endif()
 ########################################################################
 # Installation
 ########################################################################
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py"
-        DESTINATION "${Tasmanian_python_install_path}"
-        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+macro(Tasmanian_python_install)
+    cmake_parse_arguments(_tsg_py "" "" "FILES" ${ARGN})
+    foreach(_tsg_py_file ${_tsg_py_FILES})
+        get_filename_component(_tsg_py_name ${_tsg_py_file} NAME)
 
-# Create symlink for backward compatibility
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-    # Windows does not support sym-link, but it is still beneficial to have a version independent python module
-    install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py ${Tasmanian_PYTHONPATH}/TasmanianSG.py )" )
-else()
-    install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${Tasmanian_python_install_path} ${Tasmanian_PYTHONPATH} )" )
-endif()
+        install(FILES ${_tsg_py_file} DESTINATION "${Tasmanian_python_install_path}"
+                PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+
+        if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+            # Windows does not support sym-link, but it is still beneficial to have a version independent python module
+            install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E copy ${_tsg_py_file} ${Tasmanian_PYTHONPATH}/${_tsg_py_name} )" )
+        endif()
+
+    endforeach()
+    if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+        install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${Tasmanian_python_install_path} ${Tasmanian_PYTHONPATH} )" )
+    endif()
+endmacro(Tasmanian_python_install)
+
+Tasmanian_python_install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py"
+                               "${CMAKE_CURRENT_SOURCE_DIR}/Tasmanian.py")
+
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py"
         DESTINATION "share/Tasmanian/examples/"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
