@@ -178,25 +178,34 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         std::vector<std::vector<double>> x(num_parallel_jobs),
                                          y(num_parallel_jobs, std::vector<double>(max_samples_per_job * num_outputs));
 
-        std::vector<int> work_flag(num_parallel_jobs);
+        std::vector<std::atomic_int> work_flag(num_parallel_jobs);
         constexpr int flag_done = 0;
         constexpr int flag_computing = 1;
         constexpr int flag_shutdown = 2;
 
-        std::condition_variable until_done;
+        std::condition_variable until_someone_done;
+        std::condition_variable until_new_job;
         std::mutex access_count_done;
         int count_done = 0;
 
         // lambda that will handle the work
         auto do_work = [&](size_t thread_id)->void{
-            model(x[thread_id], y[thread_id], thread_id); // does the model evaluations
 
-            { // must guarantee sync between work_flag and count_done, use a lock
-                std::lock_guard<std::mutex> lock(access_count_done);
-                work_flag[thread_id] = flag_done;
-                count_done++;
+            while(work_flag[thread_id] == flag_computing){
+                model(x[thread_id], y[thread_id], thread_id); // does the model evaluations
+
+                { // must guarantee sync between work_flag and count_done, use a lock
+                    std::lock_guard<std::mutex> lock(access_count_done);
+                    work_flag[thread_id] = flag_done;
+                    count_done++;
+                }
+                until_someone_done.notify_one(); // just finished some work, notify the main thread
+
+                { // wait till the main thread gives us an new piece of work
+                    std::unique_lock<std::mutex> lock(access_count_done);
+                    until_new_job.wait(lock, [&]()->bool{ return (work_flag[thread_id] != flag_done); });
+                }
             }
-            until_done.notify_one(); // just finished some work, notify the main thread
         };
 
         // launch initial set of jobs
@@ -217,8 +226,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
             bool any_done = false;
             for(size_t id=0; id<num_parallel_jobs; id++){
                 if (work_flag[id] == flag_done){
-                    workers[id].join(); // thread has completed
-                    if (!x.empty()){
+                    if (!x.empty()){ // shouldn't be empty
                         complete.add(x[id], y[id]);
                         manager.complete(x[id]);
                         any_done = true;
@@ -237,7 +245,6 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
                             total_num_launched += x[id].size() / num_dimensions;
                             set_initial_guess(x[id], y[id]);
                             work_flag[id] = flag_computing;
-                            workers[id] = std::thread(do_work, id);
                         }else{
                             work_flag[id] = flag_shutdown; // not enough samples, cancel the thread
                         }
@@ -250,16 +257,21 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         };
 
         while(manager.getNumRunning() > 0){ // main loop
-            // lock access to the count_done variable
-            std::unique_lock<std::mutex> lock(access_count_done);
-            // unlock and wait until some else increments the "done" count
-            until_done.wait(lock, [&]()->bool{ return (count_done > 0); });
-            // the lock is back on at this point, process the completed samples, reset the count and go back to waiting
-            count_done = 0;
-            if (collect_finished()) checkpoint(); // if new samples were computed, save the state
+            {   // lock access to the count_done variable
+                std::unique_lock<std::mutex> lock(access_count_done);
+                // unlock and wait until some else increments the "done" count
+                until_someone_done.wait(lock, [&]()->bool{ return (count_done > 0); });
+                // the lock is back on at this point, process the completed samples, reset the count and go back to waiting
+                count_done = 0;
+                if (collect_finished()) checkpoint(); // if new samples were computed, save the state
+            } // unlock the access_count_done and notify that we have loaded new jobs
+            // without the unlock, the threads will wake up but will not be able to read the worker flags
+            until_new_job.notify_all();
         }
 
         complete.load(grid); // flush completed jobs
+
+        for(auto &w : workers) if (w.joinable()) w.join(); // join all threads
 
     }else{
         std::vector<double> x(grid.getNumDimensions()), y( grid.getNumOutputs());
