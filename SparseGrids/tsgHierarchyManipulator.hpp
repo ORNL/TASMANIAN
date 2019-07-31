@@ -33,6 +33,7 @@
 
 #include "tsgIndexSets.hpp"
 #include "tsgRuleLocalPolynomial.hpp"
+#include "tsgIndexManipulator.hpp"
 
 /*!
  * \internal
@@ -149,6 +150,19 @@ inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet co
 /*!
  * \internal
  * \ingroup TasmanianHierarchyManipulations
+ * \brief Return the tensor set of all points that sit on level zero (i.e., have no parents).
+ *
+ * \endinternal
+ */
+inline MultiIndexSet getLevelZeroPoints(size_t num_dimensions, BaseRuleLocalPolynomial const *rule){
+    int num_parents = 0;
+    while(rule->getParent(num_parents) == -1) num_parents++;
+    return MultiIndexManipulations::generateFullTensorSet(std::vector<int>(num_dimensions, num_parents));
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianHierarchyManipulations
  * \brief Return the largest subset of \b candidates such that adding it to \b current will result in a connected graph.
  *
  * \endinternal
@@ -156,22 +170,37 @@ inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet co
 inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiIndexSet const &candidates, BaseRuleLocalPolynomial const *rule){
     if (candidates.empty()) return MultiIndexSet();
     auto num_dimensions = candidates.getNumDimensions();
-    MultiIndexSet result; // start with an empty set
-    if (current.empty()){
-        if (candidates.missing(std::vector<int>(num_dimensions, 0))){
-            return MultiIndexSet(); // current is empty, 0-th index is the only thing that can be added
-        }else{
-            result = MultiIndexSet(num_dimensions, std::vector<int>(num_dimensions, 0));
+
+    // always consider the points without parents
+    MultiIndexSet level_zero = getLevelZeroPoints(num_dimensions, rule);
+
+    MultiIndexSet result; // keep track of the cumulative result
+    MultiIndexSet total = current; // forms a working copy of the entire merged graph
+
+    // do not consider the points already included in total, complexity is level_zero.getNumIndexes()
+    if (!total.empty()) level_zero = level_zero.diffSets(total);
+
+    if (level_zero.getNumIndexes() > 0){ // level zero nodes are missing from current
+        Data2D<int> roots(num_dimensions, 0);
+        for(int i=0; i<level_zero.getNumIndexes(); i++){
+            std::vector<int> p(level_zero.getIndex(i), level_zero.getIndex(i) + num_dimensions);
+            if (!candidates.missing(p))
+                roots.appendStrip(p);
         }
+
+        result = MultiIndexSet(roots);
+        if (total.empty()) total = result;
+        else total.addMultiIndexSet(result);
     }
+
+    if (total.empty()) return MultiIndexSet(); // current was empty and no roots could be added
+
     int max_kids      = rule->getMaxNumKids();
     int max_relatives = rule->getMaxNumParents() + max_kids;
-    bool loopon = true;
-    while(loopon){
-        Data2D<int> update(num_dimensions, 0);
+    Data2D<int> update;
+    do{
+        update = Data2D<int>(num_dimensions, 0);
 
-        MultiIndexSet total = current;
-        if (!result.empty()) total.addMultiIndexSet(result);
         for(int i=0; i<total.getNumIndexes(); i++){
             std::vector<int> relative(total.getIndex(i), total.getIndex(i) + num_dimensions);
             for(auto &r : relative){
@@ -185,9 +214,13 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
             }
         }
 
-        loopon = (update.getNumStrips() > 0);
-        if (loopon) result.addMultiIndexSet(MultiIndexSet(update));
-    }
+        if (update.getNumStrips() > 0){
+            MultiIndexSet update_set(update);
+            result.addMultiIndexSet(update_set);
+            total.addMultiIndexSet(update_set);
+        }
+    }while(update.getNumStrips() > 0);
+
     return result;
 }
 
