@@ -90,6 +90,7 @@ public:
         candidates = std::move(new_candidates);
         num_candidates = candidates.size() / num_dimensions;
         num_done = 0;
+        if (num_candidates == 0) return;
 
         sort_candidates();
         status.resize(num_candidates);
@@ -108,7 +109,10 @@ public:
 
         for(auto ip = p.begin(); ip != p.end(); std::advance(ip, num_dimensions)){
             auto i = find(&*ip);
-            status[sorted[i]] = done;
+            // there is a scenario where a point is checked out
+            // then while computing another point is done which changes the surpluses
+            // and then the checked out point is no longer a candidate
+            if (i < num_candidates) status[sorted[i]] = done;
         }
 
         std::vector<bool> searching(num_complete, true);
