@@ -199,8 +199,10 @@ protected:
     }
 
     //! \brief Find the index of the \b point within the \b canidates vector, returns \b num_candidates if not found.
-    size_t find(double const point[]){
-        size_t sstart = 0, send = num_candidates - 1, current = (sstart + send) / 2;
+    size_t find(double const point[]) const{
+        // if the point precedes the entire list, then send will craw back to -1
+        // if send reaches -1 in unsigned arithmetic the method will segfault
+        int sstart = 0, send = (int) num_candidates - 1, current = (sstart + send) / 2;
         while (sstart <= send){
             const double *cp = &candidates[sorted[current]*num_dimensions];
             if (compare(cp, point)){
@@ -208,7 +210,7 @@ protected:
             }else if (compare(point, cp)){
                 send = current - 1;
             }else{
-                return current;
+                return (size_t) current;
             }
             current = (sstart + send) / 2;
         }
