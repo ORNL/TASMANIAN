@@ -591,6 +591,7 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
 void GridLocalPolynomial::loadConstructedPoint(const double x[], int numx, const double y[]){
     Utils::Wrapper2D<const double> wrapx(num_dimensions, x);
     std::vector<std::vector<int>> pnts(numx);
+    #pragma omp parallel for
     for(int i=0; i<numx; i++)
         pnts[i] = getMultiIndex(wrapx.getStrip(i));
 
@@ -608,9 +609,11 @@ void GridLocalPolynomial::loadConstructedPoint(const double x[], int numx, const
     loadConstructedPoints();
 }
 void GridLocalPolynomial::loadConstructedPoints(){
-    Data2D<int> candidates(num_dimensions, 0);
-    for(auto &d : dynamic_values->data)
-        candidates.appendStrip(d.point);
+    Data2D<int> candidates(num_dimensions, (int) std::distance(dynamic_values->data.begin(), dynamic_values->data.end()));
+    for(struct{ int i; std::forward_list<NodeData>::iterator d; } p = {0, dynamic_values->data.begin()};
+        p.d != dynamic_values->data.end(); p.i++, p.d++){
+        std::copy_n(p.d->point.begin(), num_dimensions, candidates.getIStrip(p.i));
+    }
     auto new_points = HierarchyManipulations::getLargestConnected(points, MultiIndexSet(candidates), rule.get());
     if (new_points.empty()) return;
 

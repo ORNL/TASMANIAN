@@ -2152,13 +2152,13 @@ bool ExternalTester::testAllAcceleration() const{
 }
 
 void ExternalTester::debugTest(){
-    cout << "Debug Test" << endl;
-    cout << "Put here testing code and call this with ./tasgrid -test debug" << endl;
+    cout << "Debug Test (callable from the CMake build folder)" << endl;
+    cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 }
 
 void ExternalTester::debugTestII(){
-    cout << "Debug Test II" << endl;
-    cout << "Put here testing code and call this with ./tasgrid -test db" << endl;
+    cout << "Debug Test II (callable from the CMake build folder)" << endl;
+    cout << "Put testing code here and call with ./SparseGrids/gridtester db" << endl;
 }
 
 #endif

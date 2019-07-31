@@ -39,8 +39,7 @@ int main(int argc, char ** argv){
     int threads_available;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &threads_available);
 
-    int me;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
     if (me == 0) cout << "\n";
 
     // --------------- Send/Recv <ascii> ----------------- //

@@ -72,6 +72,31 @@ namespace MultiIndexManipulations{
 /*!
  * \internal
  * \ingroup TasmanianMultiIndexManipulations
+ * \brief Create a full-tensor multi-index set with \b num_entries in each direction.
+ *
+ * \endinternal
+ */
+inline MultiIndexSet generateFullTensorSet(std::vector<int> const &num_entries){
+    size_t num_dimensions = num_entries.size();
+    int num_total = 1;
+    for(auto &l : num_entries) num_total *= l;
+    std::vector<int> indexes(Utils::size_mult(num_dimensions, num_total));
+    auto iter = indexes.rbegin();
+    for(int i=num_total-1; i>=0; i--){
+        int t = i;
+        auto l = num_entries.rbegin();
+        // in order to generate indexes in the correct order, the for loop must go backwards
+        for(size_t j = 0; j<num_dimensions; j++){
+            *iter++ = (t % *l);
+            t /= *l++;
+        }
+    }
+    return MultiIndexSet(num_dimensions, std::move(indexes));
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
  * \brief Generate the multi-index with entries satisfying the \b inside(), assumes that \b inside() defines a lower-complete set.
  * \endinternal
  */

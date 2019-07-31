@@ -131,7 +131,13 @@ void DynamicConstructorDataGlobal::addTensor(const int *tensor, std::function<in
 
 void DynamicConstructorDataGlobal::getNodesIndexes(std::vector<int> &inodes){
     inodes = std::vector<int>();
-    tensors.sort([&](const TensorData &a, const TensorData &b)->bool{ return (a.weight < b.weight); });
+    auto get_weight = [](const TensorData &tensor)->double{
+        if (tensor.weight <= 0.0) return tensor.weight;
+        if (tensor.loaded.empty()) return 0.0; // should not be happening, should have ejected
+        int num_loaded = (int) std::count_if(tensor.loaded.begin(), tensor.loaded.end(), [](bool p)->bool{ return p; });
+        return tensor.weight * ((double(tensor.loaded.size()) - double(num_loaded)) / double(tensor.loaded.size()));
+    };
+    tensors.sort([&](const TensorData &a, const TensorData &b)->bool{ return (get_weight(a) < get_weight(b)); });
     for(auto const &t : tensors){
         if (!t.loaded.empty()){
             for(int i=0; i<t.points.getNumIndexes(); i++){

@@ -51,8 +51,9 @@ template<bool use_binary>
 bool testSendReceive(){
     auto true_grid = TasGrid::makeGlobalGrid(5, 3, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
 
-    int me, tag_size = 0, tag_data = 1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    int tag_size = 0, tag_data = 1;
+    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+
     if (me == 0){
         return (TasGrid::MPIGridSend<use_binary>(true_grid, 1, tag_size, tag_data, MPI_COMM_WORLD) == MPI_SUCCESS);
     }else if (me == 1){
@@ -73,8 +74,8 @@ template<bool use_binary>
 bool testBcast(){
     auto true_grid = TasGrid::makeGlobalGrid(5, 1, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
 
-    int me;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+
     if (me == 1){ // using proc 1 to Bcast the grid
         return (TasGrid::MPIGridBcast<use_binary>(true_grid, 1, MPI_COMM_WORLD) == MPI_SUCCESS);
     }else{
@@ -91,8 +92,8 @@ bool testBcast(){
 template<bool use_binary>
 bool testScatterOutputs(){
     // grid has 7 outputs split between 3 ranks gives (3 2 2)
-    int me;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+
     auto reference_grid = TasGrid::makeGlobalGrid(3, (me == 0) ? 3 : 2, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
 
     loadNeededPoints<false, false>([&](double const x[], double y[], size_t)->void{
@@ -170,8 +171,7 @@ bool testScatterOutputs(){
 
 template<bool use_initial_guess>
 void testMPIconstruct(){
-    int me;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
 
     std::minstd_rand park_miller(99);
     std::uniform_real_distribution<double> unif(-1.0, 1.0);
@@ -185,8 +185,8 @@ void testMPIconstruct(){
         double err = 0.0;
         for(auto ia = resa.begin(), ib = resb.begin(); ia != resa.end(); ia++, ib++)
             err = std::max(err, std::abs(*ia - *ib));
-        constexpr double tolerance = 1.E-1;
-        if (err >= tolerance) std::cout << "error = " << err << std::endl;
+        constexpr double tolerance = 1.E-2;
+        if (err >= tolerance) std::cout << "error = " << err << "  expected " << tolerance << std::endl;
         return (err < tolerance);
     };
 
@@ -205,12 +205,12 @@ void testMPIconstruct(){
 
     auto grid = TasGrid::makeLocalPolynomialGrid(3, 2, 3);
 
-    mpiConstructSurrogate<use_initial_guess>(model, 3, 2, 300, 2, 3, 11, 22, 0, MPI_COMM_WORLD,
+    mpiConstructSurrogate<use_initial_guess>(model, 3, 2, 1000, 2, 3, 11, 22, 0, MPI_COMM_WORLD,
                                              grid, 1.E-5, refine_classic, -1);
 
     if (me == 0){
         auto reference_grid = TasGrid::makeLocalPolynomialGrid(3, 2, 3);
-        constructSurrogate<mode_sequential>(modelt, 300, 0, 1, reference_grid, 1.E-5, refine_classic, -1);
+        constructSurrogate<mode_sequential>(modelt, 1000, 0, 1, reference_grid, 1.E-5, refine_classic, -1);
         if (!match(grid, reference_grid)) throw std::runtime_error("testMPIconstruct() grids mismatch.");
     }
 }
@@ -218,8 +218,7 @@ void testMPIconstruct(){
 // this test must produce grids that match to within numeric precision
 // no matter the order of samples or any other considerations
 void testMPIconstructStrict(){
-    int me;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
 
     auto match = [](TasmanianSparseGrid const &a, TasmanianSparseGrid const &b)->bool{
         if (a.getNumLoaded() != b.getNumLoaded()) return false;
