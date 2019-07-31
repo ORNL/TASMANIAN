@@ -22,8 +22,9 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
           $(patsubst ./Addons/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./Addons/*.hpp))) \
           ./include/TasmanianConfig.hpp ./include/Tasmanian.hpp
 
-ALL_TARGETS = GaussPattersonRule.table TasmanianSG.py example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py \
-              sandbox.py \
+ALL_TARGETS = GaussPattersonRule.table \
+              Tasmanian.py TasmanianSG.py \
+              example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py sandbox.py \
               $(wildcard ./DREAM/Examples/example_dream*.cpp) \
               $(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp) \
               libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a \
@@ -154,6 +155,9 @@ include/tsg%.hpp: ./Addons/tsg%.hpp
 # Python, tables, etc.
 GaussPattersonRule.table: ./SparseGrids/GaussPattersonRule.table
 	cp ./SparseGrids/GaussPattersonRule.table .
+
+Tasmanian.py: ./InterfacePython/Tasmanian.py
+	cp ./InterfacePython/Tasmanian.py .
 
 TasmanianSG.py: ./InterfacePython/TasmanianSG.in.py
 	cp ./InterfacePython/TasmanianSG.in.py TasmanianSG.py
