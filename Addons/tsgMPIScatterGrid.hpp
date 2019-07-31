@@ -77,6 +77,14 @@ public:
     }
 };
 
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsMPIGridSend
+ * \brief Utility to return the rank within the given comm.
+ *
+ * \endinternal
+ */
+inline int getMPIRank(MPI_Comm comm){ int rank; MPI_Comm_rank(comm, &rank); return rank; }
 
 /*!
  * \ingroup TasmanianAddonsMPIGridSend
@@ -217,8 +225,7 @@ int MPIGridRecv(TasmanianSparseGrid &grid, int source, int tag_size, int tag_dat
  */
 template<bool binary = TasGrid::mode_binary>
 int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
-    int me; // my rank within the comm
-    MPI_Comm_rank(comm, &me);
+    int me = getMPIRank(comm); // my rank within the comm
     if (me == root){ // sends the grid
         std::stringstream ss;
         grid.write(ss, binary);
@@ -284,8 +291,7 @@ int MPIGridBcast(TasmanianSparseGrid &grid, int root, MPI_Comm comm){
  */
 template<bool binary = TasGrid::mode_binary>
 int MPIGridScatterOutputs(TasmanianSparseGrid const &source, TasmanianSparseGrid &destination, int root, int tag_size, int tag_data, MPI_Comm comm){
-    int me; // my rank within the comm
-    MPI_Comm_rank(comm, &me);
+    int me = getMPIRank(comm); // my rank within the comm
 
     if (me == root){ // splitting and sending the grid
         int num_ranks; MPI_Comm_size(comm, &num_ranks);

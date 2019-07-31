@@ -78,8 +78,7 @@ void mpiConstructCommon(std::function<void(std::vector<double> const &x, std::ve
     MPI_Comm_size(comm, &num_ranks);
     // force max_num_ranks between 1 and num_ranks
     max_num_ranks = std::max(std::min(max_num_ranks, size_t(num_ranks)), size_t(1));
-    int me; // my rank within the comm
-    MPI_Comm_rank(comm, &me);
+    int me = getMPIRank(comm); // my rank within the comm
 
     std::vector<int> thread_to_rank(num_ranks); // map the thread id to the rank, root is used last
     std::iota(thread_to_rank.begin(), thread_to_rank.begin() + root, 0);
