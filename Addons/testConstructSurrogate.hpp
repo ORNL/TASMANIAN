@@ -60,7 +60,7 @@ inline void compareGrids(double tolerance, TasGrid::TasmanianSparseGrid const &a
         err = std::max(err, std::abs(*ia - *ib));
 
     if (err > tolerance){
-        cout << "difference = " << err << endl;
+        cout << "difference = " << err << " expected = " << tolerance << endl;
         throw std::runtime_error("grids have outputs that differ by more than the tolerance");
     }
 }
@@ -170,8 +170,8 @@ bool testConstructSurrogate(bool verbose){
     reference_grid = grid;
     TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
                                (model_exp, 500, 4, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel, limit points
-    simpleSequentialConstruction(model_exp, 500, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
-    compareGrids(1.E-3, grid, reference_grid, true);
+    simpleSequentialConstruction(model_exp, 500, 4, reference_grid, 1.E-4, TasGrid::refine_classic);
+    compareGrids(5.E-3, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "parallel localp limited budget" << std::setw(10) << "Pass" << endl;
 
     // Sequential test, checks the simpler algorithm, this should be deterministic
@@ -198,9 +198,9 @@ bool testConstructSurrogate(bool verbose){
     grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
     reference_grid = grid;
     TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
-                               (model_aniso, 200, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
-    simpleSequentialConstruction(model_aniso, 200, 2, reference_grid, TasGrid::type_iptotal, 0);
-    compareGrids(1.E-8, grid, reference_grid, false);
+                               (model_aniso, 400, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
+    simpleSequentialConstruction(model_aniso, 400, 2, reference_grid, TasGrid::type_iptotal, 0);
+    compareGrids(7.E-6, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel anisotropic global" << std::setw(10) << "Pass" << endl;
 
     // fix the weights, the computed grid must be very similar to the direct anisotropic make grid
