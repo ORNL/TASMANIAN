@@ -2,6 +2,7 @@ Changelog for version 6.1 (may rename this to 7.0 later)
 --------------
 
 * improved MPI capability, see the updated documentation
+    * fully automated distributed adaptive sparse grid construction
 
 * new module "Tasmanian Addons" consisting of miscellaneous templates
     * use through the master target and header, cannot be used independently
@@ -10,6 +11,10 @@ Changelog for version 6.1 (may rename this to 7.0 later)
     * now available Tasmanian::shared and Tasmanian::static
     * also Tasmanian::Tasmanian will always point to an available target
     * added Tasmanian::tasgrid imported executable target
+
+* new Tasmanian master Python module: `import Tasmanian`
+    * the python changes are backwards compatible, the old module is still there
+    * the sparse grid class can be called with `grid = Tasmanian.SparseGrid()`
 
 * new Tasmanian master header to add all modules: Tasmanian.hpp
 
