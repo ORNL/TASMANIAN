@@ -30,10 +30,13 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-# necessary import for every use of TASMANIAN
+# The sys.path.append() command is necessary only if Tasmanian is
+# not included in the system PYTHONPATH
+# If PYTHONPATH is set (e.g., source TasmanianENVsetup.sh) you can jump
+# straight to import Tasmanian
 import sys
 @Tasmanian_python_example_import@
-import TasmanianSG
+import Tasmanian
 import numpy as np
 
 # imports specifically needed by the examples
@@ -45,17 +48,17 @@ bFastTests = False
 if (len(sys.argv) > 1):
     bFastTests = True
 
-print("TasmanianSG version: {0:s}".format(TasmanianSG.__version__))
-print("TasmanianSG license: {0:s}".format(TasmanianSG.__license__))
+print("Tasmanian version: {0:s}".format(Tasmanian.__version__))
+print("Tasmanian license: {0:s}".format(Tasmanian.__license__))
 
-grid = TasmanianSG.TasmanianSparseGrid()
+grid = Tasmanian.SparseGrid()
 
 iDim = 2
 iLevel = 6
 
 # EXAMPLE 1: integrate: f(x,y) = exp(-x^2) * cos(y) over [-1,1] x [-1,1]
 # using classical Smolyak grid with Clenshaw-Curtis points and weights
-grid = TasmanianSG.TasmanianSparseGrid()
+grid = Tasmanian.SparseGrid()
 
 print("\n-------------------------------------------------------------------------------------------------")
 print("Example 1:  integrate f(x,y) = exp(-x^2) * cos(y), using clenshaw-curtis level nodes")
@@ -148,11 +151,11 @@ print(" precision    points     error    points     error    points     error")
 
 liPrecisions = [9, 13, 17, 21, 25, 29]
 for iPrec in liPrecisions:
-    grid1 = TasmanianSG.TasmanianSparseGrid()
+    grid1 = Tasmanian.TasmanianSparseGrid()
     grid1.makeGlobalGrid(iDim, 0, iPrec, "qptotal", "clenshaw-curtis")
-    grid2 = TasmanianSG.TasmanianSparseGrid()
+    grid2 = Tasmanian.TasmanianSparseGrid()
     grid2.makeGlobalGrid(iDim, 0, iPrec, "qptotal", "gauss-legendre")
-    grid3 = TasmanianSG.TasmanianSparseGrid()
+    grid3 = Tasmanian.TasmanianSparseGrid()
     grid3.makeGlobalGrid(iDim, 0, iPrec, "qptotal", "gauss-patterson")
 
     grid1.setDomainTransform(mRange)

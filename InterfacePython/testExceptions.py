@@ -1,5 +1,5 @@
 import unittest
-import TasmanianSG
+import Tasmanian
 import numpy as np
 
 import testCommon
@@ -18,7 +18,7 @@ class TestTasClass(unittest.TestCase):
         pass
 
     def performExceptionsTest(self):
-        grid = TasmanianSG.TasmanianSparseGrid()
+        grid = Tasmanian.SparseGrid()
 
         # The list llTest contains list-of-lists (could make into tuples)
         # Each sub-list (tuple) has two entries, one is the command that should raise the exception,
@@ -184,21 +184,21 @@ class TestTasClass(unittest.TestCase):
                    ["grid.makeLocalPolynomialGrid(2, 1, 1, 1, 'localp'); grid.beginConstruction(); grid.loadConstructedPoint([[[0.0, 0.0], [1.0, 0.0]],], [[1.0,], [2.0,]]);", "lfX"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-wrong');", "sAccelerationType"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-default');", "notError"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.isAccelerationAvailable('cpu-wrong');", "sAccelerationType"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.isAccelerationAvailable('cpu-blas');", "notError"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUMemory(-1);", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUMemory(1000000);", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUMemory(grid1.getNumGPUs());", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUName(-1);", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUName(1000000);", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.getGPUName(grid1.getNumGPUs());", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.setGPUID(-1);", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.setGPUID(1000000);", "iGPUID"],
-                   ["grid1 = TasmanianSG.TasmanianSparseGrid(); grid1.setGPUID(grid1.getNumGPUs());", "iGPUID"],]
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.isAccelerationAvailable('cpu-wrong');", "sAccelerationType"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.isAccelerationAvailable('cpu-blas');", "notError"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.getGPUMemory(-1);", "iGPUID"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.getGPUMemory(1000000);", "iGPUID"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.getGPUMemory(grid1.getNumGPUs());", "iGPUID"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.getGPUName(-1);", "iGPUID"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.getGPUName(1000000);", "iGPUID"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.getGPUName(grid1.getNumGPUs());", "iGPUID"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(-1);", "iGPUID"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(1000000);", "iGPUID"],
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(grid1.getNumGPUs());", "iGPUID"],]
 
         for lTest in llTests:
             try:
                 exec(lTest[0])
                 self.assertEqual(lTest[1], "notError", "failed to raise exception for invalid '{0:1s}' using test\n '{1:1s}'".format(lTest[1],lTest[0]))
-            except TasmanianSG.TasmanianInputError as TSGError:
+            except Tasmanian.TasmanianInputError as TSGError:
                 self.assertEqual(TSGError.sVariable, lTest[1], "error raising exception for '{0:1s}' using test\n '{1:1s}'\n Error.sVariable = '{2:1s}'".format(lTest[1],lTest[0],TSGError.sVariable))
