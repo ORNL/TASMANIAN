@@ -23,6 +23,7 @@ Tasmanian_addon_sources(PATH .
                               tsgLoadNeededValues.hpp
                               tsgCandidateManager.hpp
                               tsgConstructSurrogate.hpp
+                              tsgMPIConstructGrid.hpp
                               TasmanianAddons.hpp)
 
 if (NOT Tasmanian_ENABLE_OPENMP) # using threading without OpenMP

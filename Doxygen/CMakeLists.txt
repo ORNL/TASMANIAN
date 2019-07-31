@@ -78,10 +78,11 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamLikelihoodCore.hpp
                  DREAM/tsgDreamLikelyGaussian.hpp
                  DREAM/tsgDreamInternalBlas.hpp
-                 Addons/tsgLoadNeededValues.hpp
+                 Addons/tsgMPIConstructGrid.hpp
                  Addons/tsgConstructSurrogate.hpp
                  Addons/tsgCandidateManager.hpp
                  Addons/tsgMPIScatterGrid.hpp
+                 Addons/tsgLoadNeededValues.hpp
                  Addons/tsgAddonsCommon.hpp
                  SparseGrids/Examples/example_sparse_grids.cpp
                  SparseGrids/Examples/example_sparse_grids_01.cpp

@@ -86,6 +86,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
                      TasmanianSparseGrid &grid,
                      std::function<std::vector<double>(TasmanianSparseGrid &)> candidates,
                      std::string const &checkpoint_filename){
+
     num_parallel_jobs   = std::max(size_t(1), num_parallel_jobs);
     max_samples_per_job = std::max(size_t(1), max_samples_per_job);
     size_t num_dimensions = (size_t) grid.getNumDimensions();
@@ -157,6 +158,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         return x;
     };
 
+    // load the initial guess into y (is using initial guess), otherwise set y to the correct size
     auto set_initial_guess = [&](std::vector<double> const &x, std::vector<double> &y)->void{
         if (use_initial_guess){
             if (grid.getNumLoaded()) grid.evaluateBatch(x, y);
@@ -166,28 +168,35 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         }
     };
 
-    if (!grid.isUsingConstruction())
+    if (!grid.isUsingConstruction()) // the procedure assumes dynamic construction
         grid.beginConstruction();
 
     refresh_candidates();
 
-    if (parallel_construction == mode_parallel){
+    if (parallel_construction == mode_parallel){ // parallel version
         // allocate space for all x and y pairs, will be filled by workers and processed by main
         std::vector<std::vector<double>> x(num_parallel_jobs),
                                          y(num_parallel_jobs, std::vector<double>(max_samples_per_job * num_outputs));
 
-        std::vector<size_t> finished_jobs;
-        std::mutex finished_jobs_access;
+        std::vector<int> work_flag(num_parallel_jobs);
+        constexpr int flag_done = 0;
+        constexpr int flag_computing = 1;
+        constexpr int flag_shutdown = 2;
+
+        std::condition_variable until_done;
+        std::mutex access_count_done;
+        int count_done = 0;
 
         // lambda that will handle the work
         auto do_work = [&](size_t thread_id)->void{
-
             model(x[thread_id], y[thread_id], thread_id); // does the model evaluations
 
-            {
-                std::lock_guard<std::mutex> lock(finished_jobs_access);
-                finished_jobs.push_back(thread_id);
+            { // must guarantee sync between work_flag and count_done, use a lock
+                std::lock_guard<std::mutex> lock(access_count_done);
+                work_flag[thread_id] = flag_done;
+                count_done++;
             }
+            until_done.notify_one(); // just finished some work, notify the main thread
         };
 
         // launch initial set of jobs
@@ -197,35 +206,26 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
             if (!x[id].empty()){
                 total_num_launched += x[id].size() / num_dimensions;
                 set_initial_guess(x[id], y[id]);
+                work_flag[id] = flag_computing;
                 workers[id] = std::thread(do_work, id);
+            }else{
+                work_flag[id] = flag_shutdown; // not enough samples, cancel the thread
             }
         }
 
-        while(manager.getNumRunning() > 0){
-            // collect finished jobs
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
-            std::vector<size_t> done; // jobs complete in this iteration
-            {
-                std::lock_guard<std::mutex> lock(finished_jobs_access);
-                std::swap(done, finished_jobs);
-            }
-
-            if (done.empty()){ // nothing to do, keep waiting
-                std::this_thread::yield();
-            }else{ // some threads have finished, process the result
-                for(auto id : done){
+        auto collect_finished = [&]()->bool{
+            bool any_done = false;
+            for(size_t id=0; id<num_parallel_jobs; id++){
+                if (work_flag[id] == flag_done){
                     workers[id].join(); // thread has completed
                     if (!x.empty()){
                         complete.add(x[id], y[id]);
                         manager.complete(x[id]);
+                        any_done = true;
                     }
-                }
+                    if ((grid.getNumLoaded() < 1000) || (double(complete.getNumStored()) / double(grid.getNumLoaded()) > 0.2))
+                        load_complete(); // move from complete into the grid
 
-                if ((grid.getNumLoaded() < 1000) || (double(complete.getNumStored()) / double(grid.getNumLoaded()) > 0.2))
-                    load_complete(); // also does checkpoint save
-
-                // relaunch the threads, if we still need to keep working
-                for(auto id : done){
                     if (total_num_launched < max_num_points){
                         // refresh the candidates if enough of the current candidates have completed
                         if (double(manager.getNumDone()) / double(manager.getNumCandidates()) > 0.2)
@@ -236,16 +236,30 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
                         if (!x[id].empty()){ // if empty, then we have finished all possible candidates (reached tolerance)
                             total_num_launched += x[id].size() / num_dimensions;
                             set_initial_guess(x[id], y[id]);
+                            work_flag[id] = flag_computing;
                             workers[id] = std::thread(do_work, id);
+                        }else{
+                            work_flag[id] = flag_shutdown; // not enough samples, cancel the thread
                         }
+                    }else{
+                        work_flag[id] = flag_shutdown; // reached the budget, shutdown the thread
                     }
-                    checkpoint();
                 }
-
             }
+            return any_done;
+        };
+
+        while(manager.getNumRunning() > 0){ // main loop
+            // lock access to the count_done variable
+            std::unique_lock<std::mutex> lock(access_count_done);
+            // unlock and wait until some else increments the "done" count
+            until_done.wait(lock, [&]()->bool{ return (count_done > 0); });
+            // the lock is back on at this point, process the completed samples, reset the count and go back to waiting
+            count_done = 0;
+            if (collect_finished()) checkpoint(); // if new samples were computed, save the state
         }
 
-        complete.load(grid);
+        complete.load(grid); // flush completed jobs
 
     }else{
         std::vector<double> x(grid.getNumDimensions()), y( grid.getNumOutputs());
@@ -439,7 +453,7 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * \brief Construct a sparse grid surrogate to the model defined by the lambda.
  *
  * Uses anisotropic weights to order the samples by importance,
- * starts with a fully isotropic grid until enough points are loaded to allow to estimate the weightss.
+ * starts with a fully isotropic grid until enough points are loaded to allow to estimate the weights.
  * The procedure uses the anisotropic overload of TasmanianSparseGrid::getCandidateConstructionPoints(),
  * otherwise the function is identical to TasGrid::constructSurrogate().
  *

@@ -40,9 +40,8 @@
  * All addon templates are included with this single header.
  */
 
-#include "tsgMPIScatterGrid.hpp"
 #include "tsgLoadNeededValues.hpp"
-#include "tsgConstructSurrogate.hpp"
+#include "tsgMPIConstructGrid.hpp"
 
 /*!
  * \defgroup TasmanianAddons Additional Capabilities
