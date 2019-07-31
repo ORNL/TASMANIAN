@@ -1,6 +1,6 @@
 # Tasmanian
 
-The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. The code consists of several modules that can be used individually or conjointly.
+The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. This documentation focuses on the libraries and the software API, refer to the PDF document on the project web-page for specifics about the mathematics of the implemented methods.
 
 Visit us at: [http://tasmanian.ornl.gov/](http://tasmanian.ornl.gov/)
 
@@ -50,6 +50,16 @@ Quick Install
 
 See also the detailed [Installation](Doxygen/Installation.md) instructions.
 
+* The CMake way: see the detailed instruction for a full list of options
+```
+  mkdir Build
+  cd Build
+  cmake <options> <path-to-Tasmanian-source>
+  make
+  make test
+  make install
+  make test_install
+```
 * The basic way: using GNU Make, `g++` and optionally `gfortran` and `/usr/bin/python`
 ```
   make
@@ -64,16 +74,6 @@ See also the detailed [Installation](Doxygen/Installation.md) instructions.
 ```
   ./install <install-path> <optional: matlab-work-folder> <extra switches>
   ./install --help  (list all switches)
-```
-* The CMake way: see the detailed instruction for a full list of options
-```
-  mkdir Build
-  cd Build
-  cmake <options> <path-to-Tasmanian-source>
-  make
-  make test
-  make install
-  make test_install
 ```
 * The MS Windows way: use the CMake GUI to set the folders and options then use the command prompt (`cmd.exe`) to enter the build folder
 ```
