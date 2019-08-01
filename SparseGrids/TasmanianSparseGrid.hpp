@@ -349,6 +349,8 @@ private:
     #endif
 };
 
+inline TasmanianSparseGrid makeEmpty(){ return TasmanianSparseGrid(); }
+
 inline TasmanianSparseGrid
 makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
                std::vector<int> const &anisotropic_weights = std::vector<int>(), double alpha = 0.0, double beta = 0.0,
