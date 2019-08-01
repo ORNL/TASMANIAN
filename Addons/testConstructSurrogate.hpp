@@ -81,7 +81,7 @@ void simpleSequentialConstruction(std::function<void(std::vector<double> const &
         for(size_t i=0; i<num_samples; i++){
             std::vector<double> x(&candidates[i*grid.getNumDimensions()], &candidates[i*grid.getNumDimensions()] + grid.getNumDimensions());
             std::vector<double> y(grid.getNumOutputs());
-            model(x, y, 0);
+            model(x, y, i);
             storage.add(x, y);
         }
         storage.load(grid);
@@ -118,6 +118,9 @@ void simpleSequentialConstruction(std::function<void(std::vector<double> const &
 
 //! \brief Tests the templates for automated construction.
 bool testConstructSurrogate(bool verbose){
+    std::atomic_int last;
+    last = -1;
+    constexpr unsigned int delay_on_lock = 2;
     // test the simple loadNeededPoints()
     auto model_trig = [&](double const x[], double y[], size_t)->void{ y[0] = std::sin(x[0]) * std::cos(x[1]); };
     auto model_trig_vec = [&](std::vector<double> const &x, std::vector<double> &y, size_t id)->void{ model_trig(x.data(), y.data(), id); };
@@ -143,10 +146,18 @@ bool testConstructSurrogate(bool verbose){
     if (verbose) cout << std::setw(40) << "simple load values" << std::setw(10) << "Pass" << endl;
 
     // parallel construction is susceptible to order of execution, number of points and which points may change from one run to the next
-    auto model_exp = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + x[1])}; };
-    auto model_exp2 = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{
+    auto model_exp_seq = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + x[1])}; };
+    auto model_exp = [&](std::vector<double> const &x, std::vector<double> &y, size_t id)->void{
+        model_exp_seq(x, y, id);
+        if (last == (int) id) std::this_thread::sleep_for(std::chrono::milliseconds(delay_on_lock));
+        else last = (int) id;
+    };
+    auto model_exp2 = [&](std::vector<double> const &x, std::vector<double> &y, size_t id)->void{
         if (x.size() == 2) y = {std::exp(x[0] + x[1])}; // one sample
-        else y = {std::exp(x[0] + x[1]), std::exp(x[2] + x[3])};}; // two samples
+        else y = {std::exp(x[0] + x[1]), std::exp(x[2] + x[3])}; // two samples
+        if (last == (int) id) std::this_thread::sleep_for(std::chrono::milliseconds(delay_on_lock));
+        else last = (int) id;
+    }; // two samples
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
     reference_grid = grid;
 
@@ -178,13 +189,20 @@ bool testConstructSurrogate(bool verbose){
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
     reference_grid = grid;
     TasGrid::constructSurrogate<TasGrid::mode_sequential, no_initial_guess>
-                               (model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // sequential
+                               (model_exp_seq, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // sequential
     simpleSequentialConstruction(model_exp, 300, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
     compareGrids(1.E-9, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "sequential localp limited budget" << std::setw(10) << "Pass" << endl;
 
     // The construction algorithm is the same, but check if the getCandidateConstructionPoints() lambda works right
-    auto model_aniso = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{ y = {std::exp(x[0] + 0.1 * x[1])}; };
+    auto model_aniso_seq = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{
+        y = {std::exp(x[0] + 0.1 * x[1])};
+    };
+    auto model_aniso = [&](std::vector<double> const &x, std::vector<double> &y, size_t id)->void{
+        model_aniso_seq(x, y, id);
+        if (last == (int) id) std::this_thread::sleep_for(std::chrono::milliseconds(delay_on_lock));
+        else last = (int) id;
+    };
     grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_rleja);
     reference_grid = grid;
     TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
@@ -194,40 +212,32 @@ bool testConstructSurrogate(bool verbose){
     if (verbose) cout << std::setw(40) << "parallel anisotropic rleja" << std::setw(10) << "Pass" << endl;
 
     // additional fluctuation of number of points can happen due to not enough points to complete a tensor
-    // nevertheless the grid accuracy should match
+    // nevertheless the grid accuracy should match reasonably well
     grid = TasGrid::makeGlobalGrid(2, 1, 3, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
     reference_grid = grid;
     TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
                                (model_aniso, 400, 3, 1, grid, TasGrid::type_iptotal, 0); // parallel
     simpleSequentialConstruction(model_aniso, 400, 2, reference_grid, TasGrid::type_iptotal, 0);
-    compareGrids(7.E-6, grid, reference_grid, false);
+    compareGrids(5.E-4, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel anisotropic global" << std::setw(10) << "Pass" << endl;
 
     // fix the weights, the computed grid must be very similar to the direct anisotropic make grid
     // i.e., the "most important" points are defined the same way through the user provided anisotropic weights
     // the atomic trick is used to ensure that no thread lags and holds important samples that affect the estimate for the anisotropy
-    std::atomic_int last;
     last = -1;
-    auto model_atomic = [&](std::vector<double> const &x, std::vector<double> &y, size_t id)->void{
-        y = {std::exp(x[0] + 0.1 * x[1])};
-        if (last == (int) id){
-            std::this_thread::sleep_for(std::chrono::milliseconds(5)); // do not allow any thread to compute more than 2 samples in a row
-        }else{
-            last = (int) id;
-        }
-    };
     std::vector<int> aweights = {1, 2};
     reference_grid = TasGrid::makeSequenceGrid(2, 1, 9, TasGrid::type_level, TasGrid::rule_leja, aweights);
-    loadNeededPoints<mode_sequential>(model_aniso, reference_grid, 0);
+    loadNeededPoints<mode_sequential>(model_aniso_seq, reference_grid, 0);
 
     grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_leja);
     TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
-                               (model_atomic, reference_grid.getNumLoaded(), 4, 1, grid, TasGrid::type_iptotal, aweights); // parallel
-    compareGrids(1.E-7, grid, reference_grid, true);
+                               (model_aniso, reference_grid.getNumLoaded(), 4, 1, grid, TasGrid::type_iptotal, aweights); // parallel
+    compareGrids(5.E-7, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "parallel weighted sequence" << std::setw(10) << "Pass" << endl;
 
     // test checkpoint-restart
-    int num_good = 0;
+    std::atomic_int num_good;
+    num_good = 0;
     auto model_crash = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{
         y = {std::exp(x[0] + 0.1 * x[1])};
         num_good++;
@@ -239,6 +249,8 @@ bool testConstructSurrogate(bool verbose){
         TasGrid::constructSurrogate<TasGrid::mode_sequential, no_initial_guess>
                                    (model_crash, reference_grid.getNumLoaded(),
                                     2, 1, grid, TasGrid::type_iptotal, aweights, {}, "checkpoint");
+        std::cout << "ERROR: testConstructSurrogate() could not simulate a crash." << std::endl;
+        return false;
     }catch(std::runtime_error &){
         //cout << "Error caught!" << endl;
         grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_rleja); // recovery should change the rule

@@ -50,6 +50,9 @@ if (Tasmanian_ENABLE_MPI)
     set_target_properties(Tasmanian_mpitester PROPERTIES OUTPUT_NAME "mpitester")
     target_link_libraries(Tasmanian_mpitester Tasmanian_addons Tasmanian_libdream)
     add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} mpitester ${MPIEXEC_POSTFLAGS})
+    set_tests_properties(MPISparseGridsIO PROPERTIES RUN_SERIAL ON)
+    # cheap models have huge random variation in time-per-sample which can cause tests to fail
+    # make sure other tests are not holding resources and make things even worse
 endif()
 
 # test for non-MPI capabilities
@@ -57,6 +60,7 @@ add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp)
 set_target_properties(Tasmanian_addontester PROPERTIES OUTPUT_NAME "addontester")
 target_link_libraries(Tasmanian_addontester Tasmanian_addons Tasmanian_libdream)
 add_test(AddonTests addontester)
+set_tests_properties(AddonTests PROPERTIES RUN_SERIAL ON) # see MPISparseGridsIO
 
 # install directives
 target_include_directories(Tasmanian_addons INTERFACE $<INSTALL_INTERFACE:include>)
