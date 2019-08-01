@@ -108,8 +108,10 @@ void mpiConstructCommon(std::function<void(std::vector<double> const &x, std::ve
                     }
                     MPI_Send(ss.str().c_str(), (int) (ss.str().size()), MPI_BYTE, rankid, tagx, comm); // send x
                     MPI_Status status;
+                    MPI_Request request;
                     y.resize(Utils::size_mult(num_outputs, x.size() / num_dimensions));
-                    MPI_Recv(y.data(), (int) y.size(), MPI_DOUBLE, rankid, tagy, comm, &status); // receive y
+                    MPI_Irecv(y.data(), (int) y.size(), MPI_DOUBLE, rankid, tagy, comm, &request); // receive y
+                    MPI_Wait(&request, &status); // wait for the result from the model
                 }
             }, max_num_points, max_num_ranks, max_samples_per_job, grid, candidates, checkpoint_filename);
 
