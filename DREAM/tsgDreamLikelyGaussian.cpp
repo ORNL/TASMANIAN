@@ -36,13 +36,12 @@
 
 namespace TasDREAM{
 
-void LikelihoodGaussIsotropic::setData(double variance, const std::vector<double> &data_mean, double num_observe){
+void LikelihoodGaussIsotropic::setData(double variance, const std::vector<double> &data_mean, size_t num_observe){
     if (variance <= 0.0) throw std::runtime_error("ERROR: LikelihoodGaussIsotropic, should have positive varience.");
-    if (num_observe <= 0.0) throw std::runtime_error("ERROR: LikelihoodGaussIsotropic, should have positive number of observations.");
     if (data_mean.empty()) throw std::runtime_error("ERROR: LikelihoodGaussIsotropic, emptry data vector.");
 
     data = data_mean;
-    scale = -0.5 * num_observe / variance;
+    scale = -0.5 * double(num_observe) / variance;
 }
 
 void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const{
@@ -61,6 +60,45 @@ void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, const std::v
     for(auto &l : likely){
         l = scale * (std::inner_product(im, im + num_outputs, im, 0.0) - 2.0 * std::inner_product(im, im + num_outputs, data.data(), 0.0));
         std::advance(im, num_outputs);
+    }
+    #endif
+    if (form == regform) for(auto &l : likely) l = std::exp(l);
+}
+
+void LikelihoodGaussAnisotropic::setData(std::vector<double> const &variance, std::vector<double> const &data_mean, size_t num_observe){
+    if (variance.size() != data_mean.size()) throw std::invalid_argument("ERROR: LikelihoodGaussAnisotropic, should have variance and data with same size.");
+
+    double scale = -0.5 * double(num_observe);
+    noise_variance = std::vector<double>(variance.size());
+    data_by_variance = std::vector<double>(variance.size());
+    for(size_t i=0; i<variance.size(); i++){
+        noise_variance[i] = scale / variance[i];
+        data_by_variance[i] = scale * data_mean[i] / variance[i];
+    }
+}
+
+void LikelihoodGaussAnisotropic::getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const{
+    auto im = model.begin();
+    #ifdef Tasmanian_ENABLE_BLAS
+    int num_outputs = (int) data_by_variance.size();
+    int num_points = (int) (model.size() / data_by_variance.size());
+
+    for(auto &l : likely){
+        l = 0.0;
+        for(auto const &v : noise_variance){
+            l += *im * *im * v;
+            im++;
+        }
+    }
+    TasBLAS::dgemtv(num_outputs, num_points, model.data(), data_by_variance.data(), likely.data(), -2.0, 1.0);
+    #else
+    for(auto &l : likely){
+        l = 0.0;
+        auto id = data_by_variance.begin();
+        for(auto const &v : noise_variance){
+            l += *im * *im * v - 2.0 * *im * *id;
+            im++; id++;
+        }
     }
     #endif
     if (form == regform) for(auto &l : likely) l = std::exp(l);

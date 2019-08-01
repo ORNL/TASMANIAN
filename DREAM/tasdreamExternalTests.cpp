@@ -175,6 +175,31 @@ bool DreamExternalTester::testGaussian3D(){
 
     if (verbose || !pass) reportPassFail(pass, "Gaussian 3D", "with correlated chains");
 
+    // test anisotropic Gaussian likelihood
+    // compute reference samples, compute initial set from the true solution, reinitialize the state
+    genGaussianSamples({1.5, 2.0, 2.5}, {0.5, 1.0, 2.0}, num_samples, tresult, [&]()->double{ return unif(park_miller); });
+    genGaussianSamples({1.5, 2.0, 2.5}, {0.5, 1.0, 2.0}, num_chains, initial_state, [&]()->double{ return unif(park_miller); });
+    state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
+    state.setState(initial_state);
+    LikelihoodGaussAnisotropic likely({0.25, 1.0, 4.0}, {1.5, 2.0, 2.5}, 1.0);
+
+    SampleDREAMPost(num_burnup, num_iterations, likely,
+        [&](const std::vector<double> &candidates, std::vector<double> &values){
+            values = candidates; // the model is identity
+        },
+        uniform_prior,
+        lower, upper, // large domain
+        dist_uniform, 0.2,
+        state,
+        const_percent<50>, // differential proposal is weighted by 50%
+        [&]()->double{ return unif(park_miller); }
+    );
+
+    pass = compareSamples(lower, upper, 5, tresult, state.getHistory()) && (state.getAcceptanceRate() > 0.5);
+    passAll = passAll && pass;
+
+    if (verbose || !pass) reportPassFail(pass, "Gaussian 3D", "with anisotropic likelihood");
+
     reportPassFail(passAll, "Gaussian 3D", "DREAM vs Box-Muller");
 
     return passAll;
