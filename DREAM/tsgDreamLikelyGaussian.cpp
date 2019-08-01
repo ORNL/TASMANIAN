@@ -66,6 +66,46 @@ void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, const std::v
     if (form == regform) for(auto &l : likely) l = std::exp(l);
 }
 
+void LikelihoodGaussAnisotropic::setData(std::vector<double> const &variance, std::vector<double> const &data_mean, double num_observe){
+    if (variance.size() != data_mean.size()) throw std::invalid_argument("ERROR: LikelihoodGaussAnisotropic, should have variance and data with same size.");
+    if (num_observe <= 0.0) throw std::invalid_argument("ERROR: LikelihoodGaussAnisotropic, should have positive number of observations.");
+
+    double scale = -0.5 * num_observe;
+    noise_variance = std::vector<double>(variance.size());
+    data_by_variance = std::vector<double>(variance.size());
+    for(size_t i=0; i<variance.size(); i++){
+        noise_variance[i] = scale / variance[i];
+        data_by_variance[i] = scale * data_mean[i] / variance[i];
+    }
+}
+
+void LikelihoodGaussAnisotropic::getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const{
+    auto im = model.begin();
+    #ifdef Tasmanian_ENABLE_BLAS
+    int num_outputs = (int) data_by_variance.size();
+    int num_points = (int) (model.size() / data_by_variance.size());
+
+    for(auto &l : likely){
+        l = 0.0;
+        for(auto const &v : noise_variance){
+            l += *im * *im * v;
+            im++;
+        }
+    }
+    TasBLAS::dgemtv(num_outputs, num_points, model.data(), data_by_variance.data(), likely.data(), -2.0, 1.0);
+    #else
+    for(auto &l : likely){
+        l = 0.0;
+        auto id = data_by_variance.begin();
+        for(auto const &v : noise_variance){
+            l += *im * *im * v - 2.0 * *im * *id;
+            im++; id++;
+        }
+    }
+    #endif
+    if (form == regform) for(auto &l : likely) l = std::exp(l);
+}
+
 }
 
 #endif

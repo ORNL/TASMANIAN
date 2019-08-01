@@ -82,6 +82,52 @@ private:
     double scale;
 };
 
+/*!
+ * \brief Implements likelihood under the assumption of anisotropic white noise.
+ * \ingroup DREAMLikelihood
+ *
+ * \par Gaussian Likelihood
+ * The general formula for Gaussian likelihood is \f$ L(y | d_1 \cdots d_n) = \exp\left( 0.5 sum_{i=1}^n (y - d_i)^T \Sigma^{-1} (y - d_i) \right)\f$
+ * where the \f$ d_i \f$ are the data observations, \b y is the model output, and \f$ \Sigma \f$ is the noise covariance matrix.
+ *
+ * \par Anisotropic Gaussian
+ * A more advanced version of the Gaussian likelihood associated each model output
+ * with noise of different magnitude. The inversion of the covariance reduces to
+ * division of each input by the corresponding magnitude
+ * (i.e., there is no matrix inversion).
+ * Similarly to the simple case, the sum corresponding to the multiple data samples
+ * can be replaced by scaled operation on the data mean (average).
+ */
+class LikelihoodGaussAnisotropic : public TasmanianLikelihood{
+public:
+    //! \brief Default constructor for convenience, an object constructed with the default cannot be used until \b setData() is called.
+    LikelihoodGaussAnisotropic(){}
+    //! \brief Constructs the class and calls \b setData().
+    LikelihoodGaussAnisotropic(std::vector<double> const &variance, std::vector<double> const &data_mean, double num_observe = 1.0){ setData(variance, data_mean, num_observe); }
+    //! \brief Default destructor.
+    ~LikelihoodGaussAnisotropic(){}
+
+    /*!
+     * \brief Set the noise magnitude (\b varaince) the observed data (\b data_mean) and number of observations (\b num_observe).
+     *
+     * \param varaince is a vector with size equal to the number of model outputs.
+     *      Each entry represents the noise magnitude (variance) associated with that output.
+     * \param data_mean is the average of all available observations of the data.
+     * \param num_observe is the number of observations used to compute the \b data_mean.
+     */
+    void setData(std::vector<double> const &variance, std::vector<double> const &data_mean, double num_observe = 1.0);
+
+    //! \brief Compute the likelihood of a set of model outputs.
+    void getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const;
+
+    //! \brief Returns the size of the \b data_mean vector (for error checking purposes).
+    int getNumOuputs() const{ return (int) noise_variance.size(); }
+
+private:
+    std::vector<double> data_by_variance;
+    std::vector<double> noise_variance;
+};
+
 
 }
 
