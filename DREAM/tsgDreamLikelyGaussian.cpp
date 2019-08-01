@@ -36,13 +36,12 @@
 
 namespace TasDREAM{
 
-void LikelihoodGaussIsotropic::setData(double variance, const std::vector<double> &data_mean, double num_observe){
+void LikelihoodGaussIsotropic::setData(double variance, const std::vector<double> &data_mean, size_t num_observe){
     if (variance <= 0.0) throw std::runtime_error("ERROR: LikelihoodGaussIsotropic, should have positive varience.");
-    if (num_observe <= 0.0) throw std::runtime_error("ERROR: LikelihoodGaussIsotropic, should have positive number of observations.");
     if (data_mean.empty()) throw std::runtime_error("ERROR: LikelihoodGaussIsotropic, emptry data vector.");
 
     data = data_mean;
-    scale = -0.5 * num_observe / variance;
+    scale = -0.5 * double(num_observe) / variance;
 }
 
 void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const{
@@ -66,11 +65,10 @@ void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, const std::v
     if (form == regform) for(auto &l : likely) l = std::exp(l);
 }
 
-void LikelihoodGaussAnisotropic::setData(std::vector<double> const &variance, std::vector<double> const &data_mean, double num_observe){
+void LikelihoodGaussAnisotropic::setData(std::vector<double> const &variance, std::vector<double> const &data_mean, size_t num_observe){
     if (variance.size() != data_mean.size()) throw std::invalid_argument("ERROR: LikelihoodGaussAnisotropic, should have variance and data with same size.");
-    if (num_observe <= 0.0) throw std::invalid_argument("ERROR: LikelihoodGaussAnisotropic, should have positive number of observations.");
 
-    double scale = -0.5 * num_observe;
+    double scale = -0.5 * double(num_observe);
     noise_variance = std::vector<double>(variance.size());
     data_by_variance = std::vector<double>(variance.size());
     for(size_t i=0; i<variance.size(); i++){

@@ -60,16 +60,20 @@ public:
     //! \brief Default constructor for convenience, an object constructed with the default cannot be used until \b setData() is called.
     LikelihoodGaussIsotropic(){}
     //! \brief Constructs the class and calls \b setData().
-    LikelihoodGaussIsotropic(double variance, const std::vector<double> &data_mean, double num_observe = 1.0){ setData(variance, data_mean, num_observe); }
+    LikelihoodGaussIsotropic(double variance, const std::vector<double> &data_mean, size_t num_observe = 1){ setData(variance, data_mean, num_observe); }
     //! \brief Default destructor.
     ~LikelihoodGaussIsotropic(){}
 
-    //! \brief Set the noise magnitude (\b varaince) the observed data (\b data_mean) and number of observations (\b num_observe).
-
-    //! The \b variance must be a positive number, the \b data_mean must have the same size as the number of model outputs.
-    //! The \b num_observe defaults to 1.0 and while it is not restircted to integer values (since it just multiplies by the inverse of the variance),
-    //! \b num_observe must be positive.
-    void setData(double variance, const std::vector<double> &data_mean, double num_observe = 1.0);
+    /*!
+     * \brief Set the noise magnitude (\b varaince) the observed data (\b data_mean) and number of observations (\b num_observe).
+     *
+     * Set the parameters of the likelihood.
+     * \param variance must be a positive number indicating the magnitude of the noise.
+     * \param \b data_mean must have the same size as the number of model outputs and hold
+     *      the average of all measurements.
+     * \param num_observe must be a positive integer indicating the number of samples.
+     */
+    void setData(double variance, const std::vector<double> &data_mean, size_t num_observe = 1);
 
     //! \brief Compute the likelihood of a set of model outputs.
     void getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const;
@@ -103,7 +107,7 @@ public:
     //! \brief Default constructor for convenience, an object constructed with the default cannot be used until \b setData() is called.
     LikelihoodGaussAnisotropic(){}
     //! \brief Constructs the class and calls \b setData().
-    LikelihoodGaussAnisotropic(std::vector<double> const &variance, std::vector<double> const &data_mean, double num_observe = 1.0){ setData(variance, data_mean, num_observe); }
+    LikelihoodGaussAnisotropic(std::vector<double> const &variance, std::vector<double> const &data_mean, size_t num_observe = 1){ setData(variance, data_mean, num_observe); }
     //! \brief Default destructor.
     ~LikelihoodGaussAnisotropic(){}
 
@@ -115,7 +119,7 @@ public:
      * \param data_mean is the average of all available observations of the data.
      * \param num_observe is the number of observations used to compute the \b data_mean.
      */
-    void setData(std::vector<double> const &variance, std::vector<double> const &data_mean, double num_observe = 1.0);
+    void setData(std::vector<double> const &variance, std::vector<double> const &data_mean, size_t num_observe = 1);
 
     //! \brief Compute the likelihood of a set of model outputs.
     void getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const;
