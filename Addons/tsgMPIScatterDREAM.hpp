@@ -64,6 +64,7 @@ namespace TasDREAM{
  * Works with both isotropic and anisotropic Gaussian likelihood
  * object implemented in Tasmanian.
  * The usage is very similar to MPI_Send() and TasGrid::MPIGridSend().
+ * Optionally only some of the outputs can be send over.
  *
  * \tparam Likelihood is a Tasmanian likelihood class, currently
  *                    LikeliTasDREAM::LikelihoodGaussIsotropic and
@@ -73,6 +74,8 @@ namespace TasDREAM{
  * \param destination is the rank of the recipient MPI process.
  * \param tag         is the tag to use for the MPI message.
  * \param comm        is the MPI comm where the source and destination reside.
+ * \param outputs_begin same as in LikelihoodGaussIsotropic::write().
+ * \param outputs_end   same as in LikelihoodGaussIsotropic::write().
  *
  * \return the error code of the MPI_Send() command.
  *
@@ -80,9 +83,9 @@ namespace TasDREAM{
  *          destination process.
  */
 template<class Likelihood>
-int MPILikelihoodSend(Likelihood const &likely, int destination, int tag, MPI_Comm comm){
+int MPILikelihoodSend(Likelihood const &likely, int destination, int tag, MPI_Comm comm, int outputs_begin = 0, int outputs_end = -1){
     std::stringstream ss;
-    likely.write(ss);
+    likely.write(ss, outputs_begin, outputs_end);
     while(ss.str().size() % 16 != 0) ss << " ";
     return MPI_Send(ss.str().c_str(), (int) (ss.str().size() / 16), MPI_LONG_DOUBLE, destination, tag, comm);
 }
@@ -127,6 +130,68 @@ int MPILikelihoodRecv(Likelihood &likely, int source, int tag, MPI_Comm comm, MP
     std::istream is(&data_buffer);
     likely.read(is);
     return result;
+}
+
+/*!
+ * \ingroup TasmanianAddonsMPIDREAMSend
+ * \brief Split the likelihood across the comm where each rank receives an equal portion of the total outputs.
+ *
+ * Splits both the data and the variance across a comm.
+ *
+ * \b Note: this does not use MPI_Scatter(), instead it makes multiple calls to MPILikelihoodSend() and MPILikelihoodRecv().
+ *
+ * \tparam Likelihood is a Tasmanian likelihood class, currently
+ *                    LikeliTasDREAM::LikelihoodGaussIsotropic and
+ *                    LikeliTasDREAM::LikelihoodGaussAnisotropic.
+ *
+ * \param source likelihood located on the \b root rank is to be distributed across,
+ *               for all other ranks the source will not be referenced.
+ * \param destination is the likelihood where the local portion of the scatter will be stored,
+ *                    the existing likelihood will be overwritten.
+ *                    If the \b source outputs are less than the number of \b comm ranks,
+ *                    then some of the destination likelihoods will be empty.
+ * \param root is the rank that will hold the source likelihood.
+ * \param tag  same as in TasGrid::MPILikelihoodSend().
+ * \param comm is the MPI comm of all process that need to share a portion of the grid.
+ *
+ * \b Note: see TasGrid::MPIGridScatterOutputs() for the way the outputs will be distributed.
+ */
+template<class Likelihood>
+int MPILikelihoodScatter(Likelihood const &source, Likelihood &destination, int root, int tag, MPI_Comm comm){
+    int me = TasGrid::getMPIRank(comm); // my rank within the comm
+
+    if (me == root){ // splitting and sending the grid
+        int num_ranks; MPI_Comm_size(comm, &num_ranks);
+        int num_effective_ranks = std::min(num_ranks, source.getNumOutputs());
+
+        int stride = source.getNumOutputs() / num_effective_ranks;
+        int extras = source.getNumOutputs() % num_effective_ranks;
+
+        // return the starting offset for the given rank
+        auto offset = [&](int rank)->int{ return rank * stride + std::min(rank, extras); };
+
+        for(int rank=0; rank<num_effective_ranks; rank++){
+            if (rank == root){ // this is me, take my own copy of the grid
+                std::stringstream ss;
+                source.write(ss, offset(rank), offset(rank+1));
+                destination.read(ss);
+            }else{ // send the grid out
+                auto result = MPILikelihoodSend(source, rank, tag, comm, offset(rank), offset(rank+1));
+                if (result != MPI_SUCCESS) return result;
+            }
+        }
+        for(int rank=num_effective_ranks; rank<num_ranks; rank++){ // if there are any grid remaining, set those to empty
+            if (rank == root){ // this is me, take my own copy of the grid
+                destination = Likelihood();
+            }else{ // send the grid out
+                auto result = MPILikelihoodSend(Likelihood() , rank, tag, comm);
+                if (result != MPI_SUCCESS) return result;
+            }
+        }
+        return MPI_SUCCESS; // if we got here, all was successful
+    }else{ // receiving a grid
+        return MPILikelihoodRecv(destination, root, tag, comm);
+    }
 }
 
 }

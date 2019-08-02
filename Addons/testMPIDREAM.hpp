@@ -63,3 +63,57 @@ inline bool testLikelySendRecv(){
 
     return true;
 }
+
+inline bool testLikelyScatter(){
+    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+    int tag = 11;
+    TasDREAM::LikelihoodGaussIsotropic source(10.0, {1.0, 2.0, 3.0});
+
+    TasDREAM::LikelihoodGaussIsotropic reference;
+    TasDREAM::LikelihoodGaussIsotropic destination;
+    if (me == 0){
+        reference.setData(10.0, {1.0});
+        MPILikelihoodScatter(source, destination, 0, tag, MPI_COMM_WORLD);
+    }else if (me == 1){
+        reference.setData(10.0, {2.0});
+        MPILikelihoodScatter(TasDREAM::LikelihoodGaussIsotropic(), destination, 0, tag, MPI_COMM_WORLD);
+    }else{
+        reference.setData(10.0, {3.0});
+        MPILikelihoodScatter(TasDREAM::LikelihoodGaussIsotropic(), destination, 0, tag, MPI_COMM_WORLD);
+    }
+
+    std::vector<double> model = {1.0}; // full rank matrix to cover all entries
+    std::vector<double> result(1), true_result(1);
+    destination.getLikelihood(TasDREAM::logform, model, result);
+    reference.getLikelihood(TasDREAM::logform, model, true_result);
+    if (std::abs(result[0] - true_result[0]) > TasGrid::Maths::num_tol) return false;
+
+    TasDREAM::LikelihoodGaussAnisotropic asource({14.0, 15.0}, {1.0, 2.0});
+
+    TasDREAM::LikelihoodGaussAnisotropic areference;
+    TasDREAM::LikelihoodGaussAnisotropic adestination;
+    if (me == 0){
+        areference.setData({14.0}, {1.0});
+        MPILikelihoodScatter(asource, adestination, 0, tag, MPI_COMM_WORLD);
+    }else if (me == 1){
+        areference.setData({15.0}, {2.0});
+        MPILikelihoodScatter(TasDREAM::LikelihoodGaussAnisotropic(), adestination, 0, tag, MPI_COMM_WORLD);
+    }else{
+        MPILikelihoodScatter(TasDREAM::LikelihoodGaussAnisotropic(), adestination, 0, tag, MPI_COMM_WORLD);
+    }
+
+    if (me != 2){
+        result = {0.0};
+        true_result = {11.0};
+        adestination.getLikelihood(TasDREAM::logform, model, result);
+        areference.getLikelihood(TasDREAM::logform, model, true_result);
+        if (std::abs(result[0] - true_result[0]) > TasGrid::Maths::num_tol) return false;
+    }else{
+        if (adestination.getNumOutputs() != 0){
+            std::cout << "last rank did not receive empty likelihood." << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
