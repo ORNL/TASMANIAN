@@ -55,6 +55,86 @@
 
 namespace TasDREAM{
 
+template<TypeSamplingForm form = regform>
+class DistributedPosterior{
+public:
+    DistributedPosterior(std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likelihood,
+                         std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)> distributed_model,
+                         std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> prior,
+                         int num_inputs, int num_chains, int mpi_root, MPI_Comm communicator)
+    : likely(likelihood), model(distributed_model), dist_prior(prior),
+      num_dimensions(num_inputs), num_batch(num_chains), root(mpi_root), me(TasGrid::getMPIRank(communicator)), comm(communicator),
+      x(Utils::size_mult(num_dimensions, num_batch) + 1), y((size_t) num_batch){
+
+          if (me != root){ // enter work loop
+              int num_candidates = 1;
+              do{
+                MPI_Bcast(x.data(), num_dimensions*num_batch+1, MPI_DOUBLE, root, comm);
+                num_candidates = (int) x.back(); // the last entry holds the effective number of candidates
+                if (num_candidates > 0){ // if not the shutdown signal
+                    x.resize(Utils::size_mult(num_dimensions, num_candidates)); // set x to the correct size
+                    y.resize((size_t) num_candidates);
+
+                    std::vector<double> model_outs;
+                    model(x, model_outs);
+                    likelihood(form, model_outs, y);
+
+                    MPI_Reduce(y.data(), nullptr, num_candidates, MPI_DOUBLE, ((form == regform) ? MPI_PROD : MPI_SUM), root, comm);
+
+                    x.resize(Utils::size_mult(num_dimensions, num_batch) + 1);
+                }
+              }while(num_candidates > 0);
+          }
+    }
+
+    ~DistributedPosterior(){ clear(); }
+
+    void clear(){
+        if ((me == root) && (!x.empty())){ // send out the shutdown signal
+            x.back() = 0.0;
+            MPI_Bcast(x.data(), num_dimensions*num_batch+1, MPI_DOUBLE, root, comm);
+        }
+    }
+
+    operator DreamPDF(){
+        if (me == root){
+            return [&](const std::vector<double> &candidates, std::vector<double> &values)->void{
+                std::copy_n(candidates.begin(), candidates.size(), x.begin());
+                int num_candidates = (int) candidates.size() / num_dimensions;
+                x.back() = (double) num_candidates;
+                MPI_Bcast(x.data(), num_dimensions*num_batch+1, MPI_DOUBLE, root, comm);
+
+                y.resize((size_t) num_candidates);
+                std::vector<double> model_outs;
+                model(candidates, model_outs);
+                likely(form, model_outs, y);
+
+                MPI_Reduce(y.data(), values.data(), num_candidates, MPI_DOUBLE, ((form == regform) ? MPI_PROD : MPI_SUM), root, comm);
+
+                std::vector<double> prior_vals(values.size());
+                dist_prior(form, candidates, prior_vals);
+
+                auto iv = values.begin();
+                if (form == regform){
+                    for(auto p : prior_vals) *iv++ *= p;
+                }else{
+                    for(auto p : prior_vals) *iv++ += p;
+                }
+            };
+        }else{ // no-op distribution
+            return [](const std::vector<double> &, std::vector<double> &)->void{};
+        }
+    }
+
+private:
+    std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likely;
+    std::function<void(std::vector<double> const &x, std::vector<double> &y)> model;
+    std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> dist_prior;
+    int num_dimensions, num_batch, root, me;
+    MPI_Comm comm;
+    std::vector<double> x, y;
+};
+
 }
 
 #endif // Tasmanian_ENABLE_MPI
