@@ -51,15 +51,15 @@ template<bool use_binary>
 bool testSendReceive(){
     auto true_grid = TasGrid::makeGlobalGrid(5, 3, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
 
-    int tag_size = 0, tag_data = 1;
+    int tag = 1;
     int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
 
     if (me == 0){
-        return (TasGrid::MPIGridSend<use_binary>(true_grid, 1, tag_size, tag_data, MPI_COMM_WORLD) == MPI_SUCCESS);
+        return (TasGrid::MPIGridSend<use_binary>(true_grid, 1, tag, MPI_COMM_WORLD) == MPI_SUCCESS);
     }else if (me == 1){
         MPI_Status status;
         TasGrid::TasmanianSparseGrid grid;
-        auto result = TasGrid::MPIGridRecv<use_binary>(grid, 0, tag_size, tag_data, MPI_COMM_WORLD, &status);
+        auto result = TasGrid::MPIGridRecv<use_binary>(grid, 0, tag, MPI_COMM_WORLD, &status);
         if (result != MPI_SUCCESS) return false;
         return checkPoints(true_grid, grid);
     }else{
@@ -121,9 +121,9 @@ bool testScatterOutputs(){
                                             for(size_t i=0; i<7; i++)
                                                 y[i] = double(i+1) * expval;
                                         }, full_grid, 0);
-        MPIGridScatterOutputs<use_binary>(full_grid, grid, 1, 2, 3, MPI_COMM_WORLD);
+        MPIGridScatterOutputs<use_binary>(full_grid, grid, 1, 2, MPI_COMM_WORLD);
     }else{
-        MPIGridScatterOutputs<use_binary>(TasmanianSparseGrid(), grid, 1, 2, 3, MPI_COMM_WORLD);
+        MPIGridScatterOutputs<use_binary>(TasmanianSparseGrid(), grid, 1, 2, MPI_COMM_WORLD);
     }
 
     std::minstd_rand park_miller(99);
@@ -143,7 +143,7 @@ bool testScatterOutputs(){
 
     if (!match(grid, reference_grid)) throw std::runtime_error("ERROR: first iteration of MPIGridScatterOutputs() failed.");
 
-    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, 3, MPI_COMM_WORLD);
+    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, MPI_COMM_WORLD);
     if (me == 2){
         if (!grid.empty()) throw std::runtime_error("ERROR: second iteration of MPIGridScatterOutputs() failed.");
     }else{
@@ -155,7 +155,7 @@ bool testScatterOutputs(){
         if (!match(grid, reference_grid)) throw std::runtime_error("ERROR: second iteration of MPIGridScatterOutputs() failed.");
     }
 
-    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, 3, MPI_COMM_WORLD);
+    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, MPI_COMM_WORLD);
     if (me == 0){
         reference_grid = TasGrid::makeGlobalGrid(3, 1, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
         loadNeededPoints<false, false>([&](double const x[], double y[], size_t)->void{
