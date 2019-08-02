@@ -59,40 +59,25 @@ namespace TasDREAM{
 
 /*!
  * \ingroup TasmanianAddonsMPIDREAMSend
- * \brief Send a grid to another process in the MPI comm.
+ * \brief Send a likelihood to another process in the MPI comm.
  *
- * Send the grid to the destination rank across an MPI comm.
- * The grid is frist writtein to a stream in either binary or ASCII
- * format and then send with a single MPI_Send() call.
- * Binary results in smaller messages and less computational overhead;
- * thus, ASCII is provided mostly for debugging purposes.
+ * Works with both isotropic and anisotropic Gaussian likelihood
+ * object implemented in Tasmanian.
+ * The usage is very similar to MPI_Send() and TasGrid::MPIGridSend().
  *
- * \tparam binary defines whether to use binary (\b true) or ASCII (\b false) mode.
- *                Recommended use with constexpr constant TasGrid::mode_binary
- *                and TasGrid::mode_ascii.
+ * \tparam Likelihood is a Tasmanian likelihood class, currently
+ *                    LikeliTasDREAM::LikelihoodGaussIsotropic and
+ *                    LikeliTasDREAM::LikelihoodGaussAnisotropic.
  *
- * \param grid        is the grid to send.
+ * \param likely      is the likelihood to send.
  * \param destination is the rank of the recipient MPI process.
  * \param tag         is the tag to use for the MPI message.
  * \param comm        is the MPI comm where the source and destination reside.
  *
  * \return the error code of the MPI_Send() command.
  *
- * \b Note: this call must be mirrored by TasGrid::MPIGridRecv() on the
+ * \b Note: this call must be mirrored by TasDREAM::MPILikelihoodRecv() on the
  *          destination process.
- *
- * Example usage, process 0 creates a grid and sends it to process 1:
- * \code
- *   int me, tag = 0;
- *   MPI_Comm_rank(MPI_COMM_WORLD, &me);
- *   MPI_Status status;
- *   TasGrid::TasmanianSparseGrid grid;
- *   if (me == 0) grid.makeGlobalGrid(3, 4, 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
- *   if (me == 0) MPIGridSend(grid, 1, tag, MPI_COMM_WORLD);
- *   else if (me == 1) MPIGridRecv(grid, 0, tag, MPI_COMM_WORLD, &status);
- *   // at this line, process 1 has a grid equivalent to that of process 0
- *   // processes with rank 2 and above do nothing, i.e., they have an empty grid
- * \endcode
  */
 template<class Likelihood>
 int MPILikelihoodSend(Likelihood const &likely, int destination, int tag, MPI_Comm comm){
@@ -104,23 +89,25 @@ int MPILikelihoodSend(Likelihood const &likely, int destination, int tag, MPI_Co
 
 /*!
  * \ingroup TasmanianAddonsMPIDREAMSend
- * \brief Receive a grid from another process in the MPI comm.
+ * \brief Receive a likelihood from another process in the MPI comm.
  *
- * Receive a grid that has been send with TasGrid::MPIGridSend().
- * This call intercepts both messages and compiles them into a sparse grid object.
+ * Works with both isotropic and anisotropic Gaussian likelihood
+ * object implemented in Tasmanian.
+ * The usage is very similar to MPI_Recv() and TasGrid::MPIGridRecv().
  *
- * \tparam binary defines whether to use binary (\b true) or ASCII (\b false) mode.
- *                Recommended use with constexpr constant TasGrid::mode_binary
- *                and TasGrid::mode_ascii.
+ * \tparam Likelihood is a Tasmanian likelihood class, currently
+ *                    LikeliTasDREAM::LikelihoodGaussIsotropic and
+ *                    LikeliTasDREAM::LikelihoodGaussAnisotropic.
  *
- * \param grid is the output grid, it will be overwritten with grid send by
- *             the source rank similar to TasGrid::TasmanianSparseGrid::read().
+ * \param likely   is the output likelihood, it will be overwritten with the one send.
  * \param source   is the rank of the process in the MPI comm that issued the send command.
  * \param tag      is the tag used in the MPI send command.
  * \param comm     is the MPI comm where the source and destination reside.
- * \param status is the status of the MPI_Recv() command.
+ * \param status   is the status of the MPI_Recv() command.
  *
  * \return the error code of the MPI_Recv() command.
+ *
+ * \b Note: see TasDREAM::MPILikelihoodSend().
  */
 template<class Likelihood>
 int MPILikelihoodRecv(Likelihood &likely, int source, int tag, MPI_Comm comm, MPI_Status *status = MPI_STATUS_IGNORE){
