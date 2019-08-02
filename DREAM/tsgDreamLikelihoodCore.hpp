@@ -78,7 +78,7 @@ public:
     virtual void getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const = 0;
 
     //! \brief Return the number of expected model outputs.
-    virtual int getNumOuputs() const = 0;
+    virtual int getNumOutputs() const = 0;
 };
 
 }

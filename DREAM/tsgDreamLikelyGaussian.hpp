@@ -79,7 +79,37 @@ public:
     void getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const;
 
     //! \brief Returns the size of the \b data_mean vector (for error checking purposes).
-    int getNumOuputs() const{ return (int) data.size(); }
+    int getNumOutputs() const{ return (int) data.size(); }
+
+    /*!
+     * \brief Writes the data for a portion of the outputs into a stream.
+     *
+     * The likelihood object does not store the raw inputs to setData(), instead optimized data-structures are used.
+     * This method writes either entire likelihood or the optimized data for a portion of the outputs.
+     *
+     * \param os is the stream where the data will be written.
+     * \param outputs_begin is the first output to include in the write process.
+     * \param outputs_end is one more than the last output to write,
+     *      use -1 to indicate all outputs after \b output_begin.
+     *
+     * This method is used by the MPI scatter likelihood template.
+     */
+    void write(std::ostream &os, int outputs_begin = 0, int outputs_end = -1) const{
+        if (outputs_end < 0) outputs_end = getNumOutputs();
+        outputs_end = std::min(std::max(outputs_begin + 1, outputs_end), getNumOutputs());
+        int num_entries = outputs_end - outputs_begin;
+        TasGrid::IO::writeNumbers<TasGrid::mode_binary, TasGrid::IO::pad_none>(os, num_entries);
+        TasGrid::IO::writeNumbers<TasGrid::mode_binary, TasGrid::IO::pad_none>(os, scale);
+        os.write((char*) &data[outputs_begin], num_entries * sizeof(double));
+    }
+
+    //! \brief Reads the data from a stream, assumes write() has been used first.
+    void read(std::istream &is){
+        int num_entries = TasGrid::IO::readNumber<TasGrid::mode_binary, int>(is);
+        scale = TasGrid::IO::readNumber<TasGrid::mode_binary, double>(is);
+        data = std::vector<double>((size_t) num_entries);
+        TasGrid::IO::readVector<TasGrid::mode_binary>(is, data);
+    }
 
 private:
     std::vector<double> data;
@@ -125,7 +155,30 @@ public:
     void getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const;
 
     //! \brief Returns the size of the \b data_mean vector (for error checking purposes).
-    int getNumOuputs() const{ return (int) noise_variance.size(); }
+    int getNumOutputs() const{ return (int) noise_variance.size(); }
+
+    /*!
+     * \brief Writes the data for a portion of the outputs into a stream.
+     *
+     * See LikelihoodGaussIsotropic::write().
+     */
+    void write(std::ostream &os, int outputs_begin = 0, int outputs_end = -1) const{
+        if (outputs_end < 0) outputs_end = getNumOutputs();
+        outputs_end = std::min(std::max(outputs_begin + 1, outputs_end), getNumOutputs());
+        int num_entries = outputs_end - outputs_begin;
+        TasGrid::IO::writeNumbers<TasGrid::mode_binary, TasGrid::IO::pad_none>(os, num_entries);
+        os.write((char*) &data_by_variance[outputs_begin], num_entries * sizeof(double));
+        os.write((char*) &noise_variance[outputs_begin], num_entries * sizeof(double));
+    }
+
+    //! \brief Reads the data from a stream, assumes write() has been used first.
+    void read(std::istream &is){
+        int num_entries = TasGrid::IO::readNumber<TasGrid::mode_binary, int>(is);
+        data_by_variance = std::vector<double>((size_t) num_entries);
+        noise_variance   = std::vector<double>((size_t) num_entries);
+        TasGrid::IO::readVector<TasGrid::mode_binary>(is, data_by_variance);
+        TasGrid::IO::readVector<TasGrid::mode_binary>(is, noise_variance);
+    }
 
 private:
     std::vector<double> data_by_variance;
