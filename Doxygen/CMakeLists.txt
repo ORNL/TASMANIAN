@@ -77,9 +77,10 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamLikelyGaussian.hpp
                  DREAM/tsgDreamInternalBlas.hpp
                  Addons/tsgMPIConstructGrid.hpp
+                 Addons/tsgMPISampleDream.hpp
                  Addons/tsgConstructSurrogate.hpp
                  Addons/tsgCandidateManager.hpp
-                 Addons/tsgMPIScatterDREAM.hpp
+                 Addons/tsgMPIScatterDream.hpp
                  Addons/tsgMPIScatterGrid.hpp
                  Addons/tsgLoadNeededValues.hpp
                  Addons/tsgAddonsCommon.hpp

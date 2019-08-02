@@ -33,7 +33,7 @@
 
 /*!
  * \internal
- * \file tsgMPIScatterDREAM.hpp
+ * \file tsgMPIScatterDream.hpp
  * \brief DREAM objects send/receive through MPI.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianAddonsCommon
