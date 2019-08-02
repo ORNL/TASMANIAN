@@ -52,6 +52,8 @@ int main(int argc, char ** argv){
     // --------------- Send/Recv <binary> ----------------- //
     if (!testSendReceive<TasGrid::mode_binary>()) throw std::runtime_error("failed Send/Recv binary");
     MPI_Barrier(MPI_COMM_WORLD);
+    if (!testLikelySendRecv()) throw std::runtime_error("failed Send/Recv DREAM");
+    MPI_Barrier(MPI_COMM_WORLD);
     if (me == 0)
         cout << "    MPI Send/Recv    <binary>    Pass\n";
 

@@ -30,3 +30,36 @@
 
 #include "TasmanianAddons.hpp"
 #include "tasgridCLICommon.hpp"
+
+inline bool testLikelySendRecv(){
+    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+    TasDREAM::LikelihoodGaussIsotropic ref_isolike(10.0, {1.0, 2.0, 3.0});
+
+    if (me == 0){
+        if (TasDREAM::MPILikelihoodSend(ref_isolike, 1, 11, MPI_COMM_WORLD) != MPI_SUCCESS) return false;
+    }else if (me == 1){
+        TasDREAM::LikelihoodGaussIsotropic isolike;
+        if (TasDREAM::MPILikelihoodRecv(isolike, 0, 11, MPI_COMM_WORLD) != MPI_SUCCESS) return false;
+        std::vector<double> model = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}; // full rank matrix to cover all entries
+        std::vector<double> result(3), true_result(3);
+        isolike.getLikelihood(TasDREAM::logform, model, result);
+        ref_isolike.getLikelihood(TasDREAM::logform, model, true_result);
+        for(size_t i=0; i<3; i++) if (std::abs(result[i] - true_result[i]) > TasGrid::Maths::num_tol) return false;
+    }
+
+    TasDREAM::LikelihoodGaussAnisotropic ref_alike({4.0, 5.0, 6.0}, {1.0, 2.0, 3.0});
+
+    if (me == 1){
+        if (TasDREAM::MPILikelihoodSend(ref_alike, 2, 12, MPI_COMM_WORLD) != MPI_SUCCESS) return false;
+    }else if (me == 2){
+        TasDREAM::LikelihoodGaussAnisotropic alike;
+        if (TasDREAM::MPILikelihoodRecv(alike, 1, 12, MPI_COMM_WORLD) != MPI_SUCCESS) return false;
+        std::vector<double> model = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}; // full rank matrix to cover all entries
+        std::vector<double> result(3), true_result(3);
+        alike.getLikelihood(TasDREAM::logform, model, result);
+        ref_alike.getLikelihood(TasDREAM::logform, model, true_result);
+        for(size_t i=0; i<3; i++) if (std::abs(result[i] - true_result[i]) > TasGrid::Maths::num_tol) return false;
+    }
+
+    return true;
+}
