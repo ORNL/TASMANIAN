@@ -70,7 +70,7 @@ makePDFPosterior(TasmanianLikelihood const &likelihood,
                  std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> &model,
                  std::function<void(std::vector<double> const &candidates, std::vector<double> &values)> &prior){
     return [&](const std::vector<double> &candidates, std::vector<double> &values)->void{
-        std::vector<double> model_outs(likelihood.getNumOuputs() * values.size());
+        std::vector<double> model_outs(likelihood.getNumOutputs() * values.size());
         model(candidates, model_outs);
         likelihood.getLikelihood(form, model_outs, values);
 
