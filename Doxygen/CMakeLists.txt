@@ -82,6 +82,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  Addons/tsgMPIConstructGrid.hpp
                  Addons/tsgConstructSurrogate.hpp
                  Addons/tsgCandidateManager.hpp
+                 Addons/tsgMPIScatterDREAM.hpp
                  Addons/tsgMPIScatterGrid.hpp
                  Addons/tsgLoadNeededValues.hpp
                  Addons/tsgAddonsCommon.hpp

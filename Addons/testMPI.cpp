@@ -29,6 +29,7 @@
  */
 
 #include "testMPI.hpp"
+#include "testMPIDREAM.hpp"
 
 using std::cout;
 using std::setw;
