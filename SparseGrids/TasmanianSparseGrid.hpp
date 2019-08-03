@@ -277,6 +277,9 @@ public:
     int evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const;
     void evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const;
 
+    operator std::function<void(std::vector<double> const&, std::vector<double>&)>() const{
+        return [&](std::vector<double> const &x, std::vector<double> &y)->void{ evaluateBatch(x, y); };
+    }
 
     /*!
      * \brief Removes all points from the grid that have relative surplus less than the \b tolerance.
