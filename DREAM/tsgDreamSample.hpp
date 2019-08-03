@@ -97,6 +97,18 @@ inline std::function<bool(std::vector<double> const &x)> makeHypercudabeLambda(s
     return [&](const std::vector<double> &x)->bool{ return inHypercube(lower, upper, x); };
 }
 
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
+ */
+inline std::function<bool(std::vector<double> const &x)> hypercube(std::vector<double> const &lower, std::vector<double> const &upper){
+    return [=](const std::vector<double> &x)->bool{
+        auto il = lower.begin(), iu = upper.begin();
+        for(auto v : x) if ((v < *il++) || (v > *iu++)) return false;
+        return true;
+    };
+}
+
 //! \internal
 //! \brief Dummy function that returns 1.0, used as default for the \b differential_update() in \b SampleDREAM().
 //! \ingroup DREAMAux
