@@ -135,6 +135,33 @@ double const_percent(){ return ((double) weight_percent) / 100.0; }
 //! In practice, this is no-op, since adding zero (in \b logform) or mulitplying by 1 (in \b regform) amounts to nothing.
 inline void uniform_prior(const std::vector<double> &, std::vector<double> &values){ values.clear(); }
 
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief
+ */
+template<TypeSamplingForm form = regform>
+std::function<void(const std::vector<double> &candidates, std::vector<double> &values)>
+posterior(std::function<void(TypeSamplingForm, const std::vector<double> &model, std::vector<double> &likely)> &likelihood,
+          std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> &model,
+          std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> &prior){
+    return [&](const std::vector<double> &candidates, std::vector<double> &values)->void{
+        std::vector<double> model_outs;
+        model(candidates, model_outs);
+        likelihood(form, model_outs, values);
+
+        std::vector<double> prior_vals(values.size());
+        prior(candidates, prior_vals);
+
+        auto iv = values.begin();
+        if (form == regform){
+            for(auto p : prior_vals) *iv++ *= p;
+        }else{
+            for(auto p : prior_vals) *iv++ += p;
+        }
+    };
+}
+
+
 //! \brief Core template for the sampling algorithm, usually called through any of the overloads.
 //! \ingroup DREAMSampleCore
 
