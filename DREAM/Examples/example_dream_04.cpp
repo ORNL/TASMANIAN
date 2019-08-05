@@ -113,8 +113,8 @@ void dream_example_04(){
                                                                  grid, // provide the model
                                                                  TasDREAM::uniform_prior), // assume non-informative prior
                           grid.getDomainInside(),
-                          TasDREAM::dist_gaussian, 0.01, // Gaussian independent update of magnitude 0.01
                           state,
+                          TasDREAM::dist_gaussian, 0.01, // Gaussian independent update of magnitude 0.01
                           TasDREAM::const_percent<100> // use 100% of differential update
                           );
 

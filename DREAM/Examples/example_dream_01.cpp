@@ -59,8 +59,8 @@ void dream_example_01(){
                                              [&](double x)->double{ return std::exp(-x*x); }); // implement the formula
                           },
                           [&](const std::vector<double>&)->bool{ return true; }, // unbound domain
-                          TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
                           state,
+                          TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
                           TasDREAM::const_percent<90> // use 90% of differential update
                          );
 
@@ -87,8 +87,8 @@ void dream_example_01(){
                                              [&](double x)->double{ return -x*x; }); // implement the logarithm of the formula
                           },
                           [&](const std::vector<double>&)->bool{ return true; }, // unbound domain
-                          TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
                           state,
+                          TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
                           TasDREAM::const_percent<90> // use 90% of differential update
                          );
 

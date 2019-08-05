@@ -106,14 +106,14 @@ void dream_example_02(){
     TasDREAM::genUniformSamples(domain_a, domain_b, num_chains, initial_chains);
     state.setState(initial_chains); // use chains distributed uniformly over the domain
 
-    // Ccall to Tasmanian DREAM Sampling algorithm
+    // Call to Tasmanian DREAM Sampling algorithm
     TasDREAM::SampleDREAM<TasDREAM::logform>
                           (num_burnup_iterations, num_sample_iterations,
                            TasDREAM::posterior(grid, TasDREAM::uniform_prior),
                            grid.getDomainInside(),
-                           TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
                            state,
-                           TasDREAM::const_percent<90> // use 90% of differential update
+                           TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
+                           TasDREAM::const_percent<90> // use 90% of the differential update
                            );
 
     std::vector<double> expectation, variance;
@@ -149,8 +149,8 @@ void dream_example_02(){
                          (num_burnup_iterations, num_sample_iterations,
                           TasDREAM::posterior<TasDREAM::logform>(grid, TasDREAM::uniform_prior),
                           grid.getDomainInside(),
-                          TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
                           state,
+                          TasDREAM::dist_uniform, 0.5, // uniform independent update of magnitude 0.5
                           TasDREAM::const_percent<90> // use 90% of differential update
                           );
 
