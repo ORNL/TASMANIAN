@@ -43,15 +43,6 @@
 //! Defines the core MCMC template for sampling from an arbitrarily defined unscaled probability density.
 
 /*!
- * \internal
- * \ingroup TasmanianDREAM
- * \addtogroup DREAMAux Macros and Simall Auxilary functions
- *
- * Several mactos and one-two line function to simplify the work-flow.
- * \endinternal
- */
-
-/*!
  * \ingroup TasmanianDREAM
  * \addtogroup DREAMSampleCore Level 1 DREAM templates, sampling from a user defined distribution
  *
@@ -63,45 +54,16 @@
 namespace TasDREAM{
 
 /*!
- * \internal
- * \brief Checks if vectors with names \b lower and \b upper have the same size as the dimensions in TasmanianDREAM \b state.
- * \ingroup DREAMAux
- *
- * Throws \b runtime_error if the size of vectors \b lower and \b upper does not match \b state.getNumDimensions().
- * \endinternal
+ * \ingroup DREAMSampleCore
+ * \brief Generic test function whether sample belongs in the domain.
  */
-inline void checkLowerUpper(std::vector<double> const &lower, std::vector<double> const &upper, TasmanianDREAM const &state){
-    if (lower.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state.");
-    if (upper.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of upper does not match the dimension in state.");
-}
-
-//! \internal
-//! \brief Returns \b true if the entries in \b x obey the \b lower and \b upper values (sizes must match, does not check).
-//! \ingroup DREAMAux
-
-//! The three vectors \b lower, \b upper and \b x must have the same size,
-//! returns \b true if every entry of \b x lies between the \b lower and \b upper boundaries.
-inline bool inHypercube(const std::vector<double> &lower, const std::vector<double> &upper, const std::vector<double> &x){
-    auto il = lower.begin(), iu = upper.begin();
-    for(auto v : x) if ((v < *il++) || (v > *iu++)) return false;
-    return true;
-}
-
-/*!
- * \internal
- * \ingroup DREAMAux
- * \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
- * \endinternal
- */
-inline std::function<bool(std::vector<double> const &x)> makeHypercudabeLambda(std::vector<double> const &lower, std::vector<double> const &upper){
-    return [&](const std::vector<double> &x)->bool{ return inHypercube(lower, upper, x); };
-}
+using DreamDomain = std::function<bool(std::vector<double> const &x)>;
 
 /*!
  * \ingroup DREAMSampleCore
  * \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
  */
-inline std::function<bool(std::vector<double> const &x)> hypercube(std::vector<double> const &lower, std::vector<double> const &upper){
+inline DreamDomain hypercube(std::vector<double> const &lower, std::vector<double> const &upper){
     return [=](const std::vector<double> &x)->bool{
         auto il = lower.begin(), iu = upper.begin();
         for(auto v : x) if ((v < *il++) || (v > *iu++)) return false;
@@ -111,7 +73,7 @@ inline std::function<bool(std::vector<double> const &x)> hypercube(std::vector<d
 
 //! \internal
 //! \brief Dummy function that returns 1.0, used as default for the \b differential_update() in \b SampleDREAM().
-//! \ingroup DREAMAux
+//! \ingroup DREAMSampleCore
 
 //! Just an inline function that returns 1.0.
 inline double const_one(){ return 1.0; }
@@ -137,17 +99,44 @@ inline void uniform_prior(const std::vector<double> &, std::vector<double> &valu
 
 /*!
  * \ingroup DREAMSampleCore
+ * \brief Generic probability distribution used by Tasmanian.
+ */
+using DreamPDF = std::function<void(const std::vector<double> &candidates, std::vector<double> &values)>;
+
+/*!
+ * \ingroup DREAMSampleCore
  * \brief
  */
 template<TypeSamplingForm form = regform>
-std::function<void(const std::vector<double> &candidates, std::vector<double> &values)>
-posterior(std::function<void(TypeSamplingForm, const std::vector<double> &model, std::vector<double> &likely)> &likelihood,
-          std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> &model,
-          std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> &prior){
-    return [&](const std::vector<double> &candidates, std::vector<double> &values)->void{
+DreamPDF posterior(std::function<void(TypeSamplingForm, const std::vector<double> &model, std::vector<double> &likely)> likelihood,
+          std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> model,
+          std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> prior){
+    return [=](const std::vector<double> &candidates, std::vector<double> &values)->void{
         std::vector<double> model_outs;
         model(candidates, model_outs);
         likelihood(form, model_outs, values);
+
+        std::vector<double> prior_vals(values.size());
+        prior(candidates, prior_vals);
+
+        auto iv = values.begin();
+        if (form == regform){
+            for(auto p : prior_vals) *iv++ *= p;
+        }else{
+            for(auto p : prior_vals) *iv++ += p;
+        }
+    };
+}
+
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief
+ */
+template<TypeSamplingForm form = regform>
+DreamPDF posterior(std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> likelihood_model,
+          std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> prior){
+    return [=](const std::vector<double> &candidates, std::vector<double> &values)->void{
+        likelihood_model(candidates, values);
 
         std::vector<double> prior_vals(values.size());
         prior(candidates, prior_vals);
@@ -195,7 +184,7 @@ posterior(std::function<void(TypeSamplingForm, const std::vector<double> &model,
 //!   by default, Tasmanian will use the C++ \b rand() function (divided by RAND_MAX).
 template<TypeSamplingForm form = regform>
 void SampleDREAM(int num_burnup, int num_collect,
-                 std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> probability_distribution,
+                 DreamPDF probability_distribution,
                  std::function<bool(const std::vector<double> &x)> inside,
                  std::function<void(std::vector<double> &x)> independent_update,
                  TasmanianDREAM &state,
@@ -308,44 +297,6 @@ void SampleDREAM(int num_burnup, int num_collect,
         SampleDREAM<form>(num_burnup, num_collect, probability_distribution, inside,
                          [&](std::vector<double> &x)->void{ applyGaussianUpdate(x, magnitude, get_random01); }, state, differential_update, get_random01);
     }
-}
-
-
-//! \brief Overload of \b SampleDREAM() assuming the domain is a hyperbube with min/max values given by \b lower and \b upper.
-//! \ingroup DREAMSampleCore
-
-//! The two vectors \b lower and \b upper must have the same size as the dimensions of the state
-//! and the lower/upper limits of the internals are stores in the corresponding entries.
-template<TypeSamplingForm form = regform>
-void SampleDREAM(int num_burnup, int num_collect,
-                 std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> probability_distribution,
-                 const std::vector<double> &lower, const std::vector<double> &upper,
-                 std::function<void(std::vector<double> &x)> independent_update,
-                 TasmanianDREAM &state,
-                 std::function<double(void)> differential_update = const_one,
-                 std::function<double(void)> get_random01 = tsgCoreUniform01){
-    checkLowerUpper(lower, upper, state);
-    SampleDREAM<form>(num_burnup, num_collect, probability_distribution, makeHypercudabeLambda(lower, upper), independent_update, state, differential_update, get_random01);
-}
-
-
-//! \brief Overload of \b SampleDREAM() assuming the domain is a hyperbube and independent update is from a known list.
-//! \ingroup DREAMSampleCore
-
-//! The two vectors \b lower and \b upper must have the same size as the dimensions of the state
-//! and the lower/upper limits of the internals are stores in the corresponding entries.
-//!
-//! See other overloads for the \b independent_dist and \b independent_magnitude.
-template<TypeSamplingForm form = regform>
-void SampleDREAM(int num_burnup, int num_collect,
-                 std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> probability_distribution,
-                 const std::vector<double> &lower, const std::vector<double> &upper,
-                 TypeDistribution independent_dist, double independent_magnitude,
-                 TasmanianDREAM &state,
-                 std::function<double(void)> differential_update = const_one,
-                 std::function<double(void)> get_random01 = tsgCoreUniform01){
-    checkLowerUpper(lower, upper, state);
-    SampleDREAM<form>(num_burnup, num_collect, probability_distribution, makeHypercudabeLambda(lower, upper), independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 }

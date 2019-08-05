@@ -81,9 +81,9 @@ public:
     virtual int getNumOutputs() const = 0;
 
     //! \brief Automatically convert the likelihood into input for TasDREAM::posterior().
-    operator std::function<void(TypeSamplingForm, const std::vector<double> &, std::vector<double> &)>() const{
+    virtual operator std::function<void(TypeSamplingForm, const std::vector<double> &, std::vector<double> &)>() const{
         return [&](TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely)->void{
-            return getLikelihood(form, model, likely);
+            getLikelihood(form, model, likely);
         };
     };
 

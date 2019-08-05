@@ -163,7 +163,7 @@ bool DreamExternalTester::testGaussian3D(){
             for(auto &v : values)
                 v = getDensity<dist_gaussian>(*ix++, 2.0, 9.0) * getDensity<dist_gaussian>(*ix++, 2.0, 9.0) * getDensity<dist_gaussian>(*ix++, 2.0, 9.0);
         },
-        lower, upper, // large domain
+        hypercube(lower, upper), // large domain
         dist_uniform, 0.2, // uniform proposal
         state,
         const_percent<50>, // differential proposal is weighted by 50%
@@ -183,12 +183,13 @@ bool DreamExternalTester::testGaussian3D(){
     state.setState(initial_state);
     LikelihoodGaussAnisotropic likely({0.25, 1.0, 4.0}, {1.5, 2.0, 2.5}, 1.0);
 
-    SampleDREAMPost(num_burnup, num_iterations, likely,
-        [&](const std::vector<double> &candidates, std::vector<double> &values){
-            values = candidates; // the model is identity
-        },
-        uniform_prior,
-        lower, upper, // large domain
+    SampleDREAM(num_burnup, num_iterations,
+        posterior(likely,
+            [&](const std::vector<double> &candidates, std::vector<double> &values){
+                values = candidates; // the model is identity
+            },
+            uniform_prior),
+        hypercube(lower, upper), // large domain
         dist_uniform, 0.2,
         state,
         const_percent<50>, // differential proposal is weighted by 50%
@@ -237,7 +238,9 @@ bool DreamExternalTester::testGaussian2D(){
     applyUniformUpdate(initial_set, 1.0, [&]()->double{ return unif(park_miller); });
     state.setState(initial_set);
 
-    SampleDREAMGrid<logform>(num_burnup, num_iterations, grid, uniform_prior,
+    SampleDREAM<logform>(num_burnup, num_iterations,
+        posterior<logform>(grid, uniform_prior),
+        grid.getDomainInside(),
         dist_gaussian, 0.1,
         state,
         const_percent<98>, // correlated chains
@@ -273,8 +276,9 @@ bool DreamExternalTester::testGaussian2D(){
     lower = std::vector<double>(num_dimensions, 0.0); // consider only the first quadrant
     upper = std::vector<double>(num_dimensions, 1.0);
 
-    SampleDREAMGrid<regform>(num_burnup, num_iterations, grid, uniform_prior,
-        lower, upper,
+    SampleDREAM<regform>(num_burnup, num_iterations,
+        posterior<regform>(grid, uniform_prior),
+        hypercube(lower, upper),
         dist_uniform, 0.1,
         state,
         const_percent<98>, // correlated chains
@@ -308,15 +312,16 @@ bool DreamExternalTester::testGaussian2D(){
     initial_set = std::vector<double>(tresult.begin(), tresult.begin() + num_chains * num_dimensions);
     state.setState(initial_set);
 
-    SampleDREAMGrid<regform>(num_burnup, num_iterations, grid,
-        [&](const std::vector<double> &candidates, std::vector<double> &vals)->void{
-            auto ic = candidates.begin();
-            for(auto &v : vals){ // using tighter variance of 0.01
-                ic++; // skip the first dimension in the likelihood
-                v = getDensity<dist_gaussian>(*ic++, 0.3, 0.01);
-            }
-        },
-        lower, upper,
+    SampleDREAM<regform>(num_burnup, num_iterations,
+        posterior<regform>(grid,
+                           [&](const std::vector<double> &candidates, std::vector<double> &vals)->void{
+                               auto ic = candidates.begin();
+                               for(auto &v : vals){ // using tighter variance of 0.01
+                                   ic++; // skip the first dimension in the likelihood
+                                   v = getDensity<dist_gaussian>(*ic++, 0.3, 0.01);
+                               }
+                           }),
+        hypercube(lower, upper),
         dist_uniform, 0.1,
         state,
         const_percent<98>, // correlated chains
@@ -367,9 +372,12 @@ bool DreamExternalTester::testCustomModel(){
     state.setState(initial_state);
 
     LikelihoodGaussIsotropic likely(4.0, {1.5, 2.5});
-    SampleDREAMPost(num_burnup, num_iterations, likely,
+    SampleDREAM(num_burnup, num_iterations,
+                    posterior(likely,
                     [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ // model
+                        size_t num_candidates = candidates.size() / 3;
                         auto ic = candidates.begin();
+                        values.resize(2 * num_candidates);
                         auto iv = values.begin();
                         while(iv != values.end()){ // takes the first and last parameters
                             *iv++ = *ic++;
@@ -383,7 +391,7 @@ bool DreamExternalTester::testCustomModel(){
                             v = getDensity<dist_gaussian>(*ic, 2.0, 9.0);
                             std::advance(ic, num_dimensions);
                         }
-                    },
+                    }),
                     [&](const std::vector<double>&)->bool{ return true; }, // unbounded domain
                     [&](std::vector<double> &x){
                         applyGaussianUpdate(x, 0.5, [&]()->double{ return unif(park_miller); });
@@ -408,8 +416,11 @@ bool DreamExternalTester::testCustomModel(){
 
     likely = LikelihoodGaussIsotropic(0.01, {0.0, 0.0});
 
-    SampleDREAMPost<logform>(num_burnup, num_iterations, likely,
+    SampleDREAM<logform>(num_burnup, num_iterations,
+                             posterior<logform>(likely,
                              [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ // model
+                                 size_t num_candidates = candidates.size() / 3;
+                                 values.resize(2 * num_candidates);
                                  auto ic = candidates.begin();
                                  auto iv = values.begin();
                                  while(iv != values.end()){ // takes the first and last parameters
@@ -418,8 +429,8 @@ bool DreamExternalTester::testCustomModel(){
                                      *iv++ = 1.0 - std::sin(DreamMaths::pi * *ic++);
                                  }
                              },
-                             uniform_prior,
-                             lower, upper,
+                             uniform_prior),
+                             hypercube(lower, upper),
                              dist_gaussian, 0.01,
                              state,
                              const_percent<50>,
@@ -477,7 +488,10 @@ bool DreamExternalTester::testGridModel(){
     LikelihoodGaussIsotropic likely(0.01, data);
 
     // sample using uniform prior
-    SampleDREAMPost<logform>(num_burnup, num_chains, likely, grid, uniform_prior, dist_gaussian, 0.1, state, const_percent<50>, [&]()->double{ return unif(park_miller); });
+    SampleDREAM<logform>(num_burnup, num_chains,
+                         posterior<logform>(likely, grid, uniform_prior),
+                         grid.getDomainInside(),
+                         dist_gaussian, 0.1, state, const_percent<50>, [&]()->double{ return unif(park_miller); });
 
     //printMode(state, "mode");
     std::vector<double> mode;
