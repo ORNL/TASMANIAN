@@ -107,6 +107,11 @@ int main(int argc, char ** argv){
             cout << "\n Skipping MPI construction since this version of MPI\n does not seem to support MPI_THREAD_MULTIPLE\n\n";
     }
 
+    testMPIDream();
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (me == 0)
+        cout << "        MPI Dream  <sampling>    Pass\n";
+
     // --------------- Finalize ------------------------- //
     MPI_Finalize();
 
