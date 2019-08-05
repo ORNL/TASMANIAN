@@ -14,9 +14,6 @@ add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} Tasman
                                                                           tsgDreamState.hpp
                                                                           tsgDreamState.cpp
                                                                           tsgDreamSample.hpp
-                                                                          tsgDreamSampleGrid.hpp
-                                                                          tsgDreamSamplePosterior.hpp
-                                                                          tsgDreamSamplePosteriorGrid.hpp
                                                                           tsgDreamLikelihoodCore.hpp
                                                                           tsgDreamLikelyGaussian.hpp
                                                                           tsgDreamLikelyGaussian.cpp

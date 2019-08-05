@@ -31,7 +31,8 @@
 #ifndef __TASMANIAN_DREAM_HPP
 #define __TASMANIAN_DREAM_HPP
 
-#include "tsgDreamSamplePosteriorGrid.hpp"
+#include "tsgDreamSample.hpp"
+#include "tsgDreamLikelyGaussian.hpp"
 
 //! \file TasmanianDREAM.hpp
 //! \brief DiffeRential Evolution Adaptive Metropolis methods.

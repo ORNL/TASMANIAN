@@ -5,8 +5,7 @@ LADD = -L../ $(CommonLADD)
 LIBS = ../libtasmaniansparsegrid.a $(CommonLIBS)
 
 
-LHEADERS = TasmanianDREAM.hpp tsgDreamState.hpp tsgDreamSample.hpp tsgDreamSampleGrid.hpp \
-           tsgDreamSamplePosterior.hpp tsgDreamSamplePosteriorGrid.hpp tsgDreamLikelihoodCore.hpp \
+LHEADERS = TasmanianDREAM.hpp tsgDreamState.hpp tsgDreamSample.hpp tsgDreamLikelihoodCore.hpp \
            tsgDreamLikelyGaussian.hpp tsgDreamInternalBlas.hpp tsgDreamCoreRandom.hpp \
            tsgDreamCorePDF.hpp tsgDreamEnumerates.hpp
 

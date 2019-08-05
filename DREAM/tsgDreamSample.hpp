@@ -35,131 +35,312 @@
 #include "tsgDreamCoreRandom.hpp"
 #include "tsgDreamCorePDF.hpp"
 
-//! \file tsgDreamSample.hpp
-//! \brief Core sampling templates.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianDREAM
-//!
-//! Defines the core MCMC template for sampling from an arbitrarily defined unscaled probability density.
-
 /*!
- * \internal
+ * \file tsgDreamSample.hpp
+ * \brief Core sampling templates.
+ * \author Miroslav Stoyanov
  * \ingroup TasmanianDREAM
- * \addtogroup DREAMAux Macros and Simall Auxilary functions
  *
- * Several mactos and one-two line function to simplify the work-flow.
- * \endinternal
+ * Defines the core MCMC template for sampling from an arbitrarily defined unscaled probability density.
  */
 
 /*!
  * \ingroup TasmanianDREAM
- * \addtogroup DREAMSampleCore Level 1 DREAM templates, sampling from a user defined distribution
+ * \addtogroup DREAMSampleCore DREAM Sampling Templates
  *
- * Level 1 templates use a custom propability distribution defined wither with a \b lambda.
- * There is no assumption whether the distribution is associated with a Bayesian
- * inference problem or a completely different context.
+ * Templates and auxiliary methods for the DREAM sampling.
+ * The main template is TasDREAM::SampleDREAM() with one overload
+ * and several helper functions.
+ * The helpers provide ways to define the probability distribution:
+ * either custom defined, interpolated with a sparse grid, or product of Bayesian inference problem.
  */
 
 namespace TasDREAM{
 
 /*!
- * \internal
- * \brief Checks if vectors with names \b lower and \b upper have the same size as the dimensions in TasmanianDREAM \b state.
- * \ingroup DREAMAux
- *
- * Throws \b runtime_error if the size of vectors \b lower and \b upper does not match \b state.getNumDimensions().
- * \endinternal
+ * \ingroup DREAMSampleCore
+ * \brief Generic test function whether sample belongs in the domain.
  */
-inline void checkLowerUpper(std::vector<double> const &lower, std::vector<double> const &upper, TasmanianDREAM const &state){
-    if (lower.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of lower does not match the dimension in state.");
-    if (upper.size() != (size_t) state.getNumDimensions()) throw std::runtime_error("ERROR: the size of upper does not match the dimension in state.");
-}
+using DreamDomain = std::function<bool(std::vector<double> const &x)>;
 
-//! \internal
-//! \brief Returns \b true if the entries in \b x obey the \b lower and \b upper values (sizes must match, does not check).
-//! \ingroup DREAMAux
-
-//! The three vectors \b lower, \b upper and \b x must have the same size,
-//! returns \b true if every entry of \b x lies between the \b lower and \b upper boundaries.
-inline bool inHypercube(const std::vector<double> &lower, const std::vector<double> &upper, const std::vector<double> &x){
-    auto il = lower.begin(), iu = upper.begin();
-    for(auto v : x) if ((v < *il++) || (v > *iu++)) return false;
-    return true;
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Make a lambda that matches the \b inside signature in \b SampleDREAM(), test if the vector x is in the hyperbube described by \b lower and \b upper.
+ */
+inline DreamDomain hypercube(std::vector<double> const &lower, std::vector<double> const &upper){
+    return [=](const std::vector<double> &x)->bool{
+        auto il = lower.begin(), iu = upper.begin();
+        for(auto v : x) if ((v < *il++) || (v > *iu++)) return false;
+        return true;
+    };
 }
 
 /*!
  * \internal
- * \ingroup DREAMAux
- * \brief Make a lambda that matches the \b inside signature in \b SampleDREAM() and the vector x is in the hyperbube described by \b lower and \b upper.
+ * \brief Dummy function that does not make any changes to the vector as default for the \b independent_update() in \b SampleDREAM().
+ * \ingroup DREAMSampleCore
+ *
+ * The function is is a no-op.
  * \endinternal
  */
-inline std::function<bool(std::vector<double> const &x)> makeHypercudabeLambda(std::vector<double> const &lower, std::vector<double> const &upper){
-    return [&](const std::vector<double> &x)->bool{ return inHypercube(lower, upper, x); };
-}
+inline void no_update(std::vector<double> &){}
 
-//! \internal
-//! \brief Dummy function that returns 1.0, used as default for the \b differential_update() in \b SampleDREAM().
-//! \ingroup DREAMAux
-
-//! Just an inline function that returns 1.0.
+/*!
+ * \internal
+ * \brief Dummy function that returns 1.0, used as default for the \b differential_update() in \b SampleDREAM().
+ * \ingroup DREAMSampleCore
+ *
+ * Just an inline function that returns 1.0.
+ * \endinternal
+ */
 inline double const_one(){ return 1.0; }
 
-//! \brief Template that returns a constant based on the percentage, i.e., \b weight_percent / 100.0
-//! \ingroup DREAMSampleCore
-
-//! The template simplifies the syntax when calling \b SampleDREAM() with a constant differential update.
-//! For example, setting the update to 0.5 can be done with
-//! \code
-//! TasmanianDREAM state(...);
-//! SampleDREAM(..., state, const_percent<50>);
-//! \endcode
+/*!
+ * \brief Template that returns a constant based on the percentage, i.e., \b weight_percent / 100.0
+ * \ingroup DREAMSampleCore
+ *
+ * The template simplifies the syntax when calling \b SampleDREAM() with a constant differential update.
+ * For example, setting the update to 0.5 can be done with
+ * \code
+ * TasmanianDREAM state(...);
+ * SampleDREAM(..., independent_update, const_percent<50>, state);
+ * \endcode
+ */
 template<int weight_percent>
 double const_percent(){ return ((double) weight_percent) / 100.0; }
 
-//! \brief Uniform prior distribution for both regular and log form.
-//! \ingroup DREAMSampleCore
+/*!
+ * \brief Uniform prior distribution for both regular and log form.
+ * \ingroup DREAMSampleCore
+ *
+ * Applies uniform (non-informative) prior, can be used with any of the Bayesian inference methods.
+ * In practice, this actually does nothing, since adding zero (in \b logform) or mulitplying by 1 (in \b regform) amounts to nothing.
+ */
+inline void uniform_prior(TypeSamplingForm, const std::vector<double> &, std::vector<double> &values){ values.clear(); }
 
-//! Applies uniform (non-informative) prior, can be used with any of the Bayesian inference methods.
-//! In practice, this is no-op, since adding zero (in \b logform) or mulitplying by 1 (in \b regform) amounts to nothing.
-inline void uniform_prior(const std::vector<double> &, std::vector<double> &values){ values.clear(); }
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Generic probability distribution used by Tasmanian.
+ */
+using DreamPDF = std::function<void(const std::vector<double> &candidates, std::vector<double> &values)>;
 
-//! \brief Core template for the sampling algorithm, usually called through any of the overloads.
-//! \ingroup DREAMSampleCore
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Combines the three components of a Bayesian posterior into a single distribution.
+ *
+ * The Bayesian posterior has a model, likelihood function and a prior distribution.
+ * This function combines three function objects into a single probability distribution
+ * that be passed to SampleDREAM, e.g.,
+ * \code
+ * SampleDREAM(num_burnup, num_collect, posterior(likely, model, uniform_prior), ...);
+ * \endcode
+ *
+ * The generality of the approach used here comes at the price of volatility.
+ * There is no builtin error-checking and error-detection on vector sizes.
+ * Specifically, the number of inputs provided by the model must match
+ * the outputs accepted by the likelihood, and the number of dimensions
+ * accepted by the model and prior must be the same.
+ *
+ * \tparam form indicates whether to use the regular or logarithm of the sampling problem;
+ *      Gaussian-types of likelihood functions are often used where the regular
+ *      form can be \f$ \exp( -0.5 x^2 ) \f$ while the log-form is \f$ -0.5 x^2 \f$,
+ *      working with a simple quadratic function can be more stable with respect
+ *      to rounding error.
+ *      The template parameter \b must be the same as in the call to TasDREAM::SampleDREAM().
+ *
+ * \param likelihood accepts a set of model outputs and provides a measure of
+ *      how likely those outputs are given some observed data with some noise.
+ *      Tasmanian provides likelihood functions that can be used here, e.g.,
+ *      TasDREAM::LikelihoodGaussIsotropic and TasDREAM::LikelihoodGaussAnisotropic.
+ *      - The TasDREAM::TypeSamplingForm will always match the template parameter \b form,
+ *        thus, it is sufficient to implement only one sampling from. The Tasmanian likelihood
+ *        classes implement both forms, hence the added flexibility.
+ *      - The \b model_outputs is a vector with size equal to the number of candidates times
+ *        the number of outputs, i.e., must match the output of the \b model.
+ *      - The \b likely will have size equal to the number of candidates and must
+ *        be filled (without resize) with the likelihood for each set of model outputs.
+ *
+ * \param model accepts a set of model inputs and will return the corresponding model values.
+ *      - \b candidates is the same as in the input of \b probability_distribution() in
+ *        the call to TasDREAM::SampleDREAM().
+ *        Logically the candidates will be arranged in strips of size equal to the problem
+ *        dimensions, the vector size will divide evenly by the dimensions and the factor
+ *        is the number of candidates.
+ *      - \b outputs must be resized to match the number of candidates times the number of outputs,
+ *        the behavior must match that of TasmanianSparseGrid::evaluateBatch().
+ *
+ * \param prior provides the values of the prior distribution in either regular or logarithm form.
+ *      The prior will take in the same \b candidates as the model and a vector of the same size as \b likely,
+ *      and must return the values of the corresponding prior distribution in either regular or logarithm form.
+ *
+ * Example usage:
+ * \code
+ *  auto model = TasGrid::read("foo");
+ *  TasDREAM::LikelihoodGaussIsotropic likely(0.1, data);
+ *  TasDREAM::SampleDREAM(..., TasDREAM::posterior(likely, model, TasDREAM::uniform_prior), ...);
+ * \endcode
+ *
+ */
+template<TypeSamplingForm form = regform>
+DreamPDF posterior(std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likelihood,
+          std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)> model,
+          std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> prior){
+    return [=](const std::vector<double> &candidates, std::vector<double> &values)->void{
+        std::vector<double> model_outs;
+        model(candidates, model_outs);
+        likelihood(form, model_outs, values);
 
-//! Evolves the chains of the \b state using the Metropolis algorithm where the updates are comprised of two components, independent and differential.
-//! The independent component relies on independently sampled (pesudo)-random numbers with zero mean and could also be constant zero.
-//! The differential component is based on the difference between two randomly chosen chains, which effectively exchanges information between the chains.
-//!
-//! This is the core algorithm that is oblivious to the source of the probability distribution (i.e., posterior for Bayesian inference based on custom model or sparse grid).
-//! - \b form indicates whether the \b probability_distribution() function return the regular form or the logarithm of the desired pdf.
-//! - \b num_burnup is the number of initial iterations that will not be saved in the history.
-//! - \b num_collect is the number of iterations that will be saved in the \b state history, the total number of collected samples is \b num_collect times \b state.getNumChains().
-//! - \b probability_distribution(candidates, values) accepts \b candidates state that consists of multiple points in num_dimensions that correspond to the candidate samples
-//!   and must return in \b values the probability density at the points;
-//!   the number of points is \b candidates.size() / num_dimensions and will divide evenly, also the the number of points will not exceed the number of chains;
-//!   the structure of \b candidates is the same as the input to \b TasmanianSparseGrid::evaluateBatch();
-//!   the \b values vector will have size matching the number of samples.
-//! - \b inside() accepts a vector of size num_dimensions and returns \b false if the vector is outside of the sampling domain;
-//!   \b inside() is called for every candidate point and failing the test will result in automatic rejection;
-//!   \b probability_distribution() will never be called with a vector for which \b inside() fails.
-//! - \b independent_update() accepts a vector \b x of size num_dimensions and adds a random perturbation to each entry;
-//!   the random perturbation must have zero mean (e.g., standard normal distribution);
-//!   the perturbation could be deterministic zero, but that may lock the chains into a fixed pattern based on the initial state and thus fail to consider the entire domain.
-//! - \b state has initialized state which will be used as the initial iteration, then the state will be evolved num_burnup + num_collect times
-//!   and the history will be saved for the last \b num_collect iterations.
-//! - \b differential_update() returns a random scaling factor for the differential correction, could be a random or deterministic number, e.g., uniform [0,1] or just 1;
-//!   the differential update magnitude defaults to 1.0 and can be set to a constant with the \b const_percent() template;
-//!   negative values are statistically equivalent to the positive ones by symmetry of the selection of the chains;
-//!   values of more than 1.0 may lead to decrease in acceptance rate and poor mixing (i.e., slow statistical convergence);
-//!   setting the update to 0 will result in evolving the chains independently each following the classical Metropolis-Hastings algorithm.
-//! - \b get_random01() is the random number generation engine, must return pseudo-random numbers uniformly distributed over [0, 1];
-//!   by default, Tasmanian will use the C++ \b rand() function (divided by RAND_MAX).
+        std::vector<double> prior_vals(values.size());
+        prior(form, candidates, prior_vals);
+
+        auto iv = values.begin();
+        if (form == regform){
+            for(auto p : prior_vals) *iv++ *= p;
+        }else{
+            for(auto p : prior_vals) *iv++ += p;
+        }
+    };
+}
+
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Overload where the model and likelihood are combined into a single call.
+ *
+ * There are situations where splitting the model and likelihood is undesirable,
+ * e.g., if the model has a huge number of outputs it may be easier to construct
+ * a sparse grid surrogate to the single-output combined model and likelihood.
+ * This is a short hand-template that uses such model-likelihood and combines
+ * it with a prior distribution.
+ */
+template<TypeSamplingForm form = regform>
+DreamPDF posterior(std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> likelihood_model,
+          std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> prior){
+    return [=](const std::vector<double> &candidates, std::vector<double> &values)->void{
+        likelihood_model(candidates, values);
+
+        std::vector<double> prior_vals(values.size());
+        prior(form, candidates, prior_vals);
+
+        auto iv = values.begin();
+        if (form == regform){
+            for(auto p : prior_vals) *iv++ *= p;
+        }else{
+            for(auto p : prior_vals) *iv++ += p;
+        }
+    };
+}
+
+
+/*!
+ * \brief Core template for the sampling algorithm.
+ * \ingroup DREAMSampleCore
+ *
+ * Evolves the chains of the \b state using the Metropolis algorithm where the updates are comprised of two components, independent and differential.
+ * The independent component relies on independently sampled (pesudo)-random numbers with zero mean (could be deterministic constant zero).
+ * The differential component is based on the difference between two randomly chosen chains, which effectively exchanges information between the chains.
+ *
+ * The implementation is very generic using lambda objects to describe most aspects of the problem,
+ * including the probability distribution, domain, etc.
+ * However, the generality comes with some sacrifice in resilience, i.e.,
+ * - each lambda object must respect the problem dimensions, the template will populate the inputs with the correct
+ *   number of entries, but the lambdas have to properly utilize the entries.
+ * - each lambda will have to capture external objects and variables and should avoid capture by value for large
+ *   vectors, e.g., a sparse grid or a large data vector, while objects captured by reference must remain alive
+ *   during the call to the template.
+ * See couple of examples after the variable listing.
+ *
+ * \tparam form indicates whether the \b probability_distribution() function return the regular form or the logarithm of the desired pdf;
+ *      in some cases, taking the exponential of a very large negative number can lead to problems with rounding comparison
+ *      between numbers very close to zero, hence the logarithm from could be more stable from the round-off error perspective.
+ *
+ * \param num_burnup is the number of initial iterations that will not be saved in the history;
+ *      the Metropolis algorithm guarantees convergence to the desired distribution but only in the limit;
+ *      when working with a finite number of samples the results can be contaminated by the initial state
+ *      which can be significantly different from the limit.
+ *      A common practice is to take \b num_burnup to be roughly equal to \b num_collect, but that is only
+ *      a heuristic suggestion.
+ *
+ * \param num_collect is the number of iterations that will be saved in the \b state history,
+ *      the total number of collected samples is \b num_collect times \b state.getNumChains().
+ *
+ * \param probability_distribution must accept a vector of \b candidates locations and return the \b values
+ *      of the unscaled probability distribution at those points.
+ *      The input-output relation is similar to working with TasmanianSparseGrid::evaluateBatch()
+ *      when the grid has a a single output.
+ *      - The \b candidates input will be logically divided into strips of size \b state.getNumDimensions(),
+ *        the total number of strips will be between 1 and \b state.getNumChains() depending
+ *        on the number of proposals that fall within the domain, i.e.,
+ *        the inputs will always satisfy the \b inside() condition.
+ *      - The \b values will have size equal to the number of strips and each entry should be filled
+ *        the corresponding value of the probability density function.
+ *        The \b values vector should not be resized.
+ *      - Any TasGrid::TasmanianSparseGrid object with a single output and non-zero loaded points
+ *        can be passed in as a \b probability_distribution; when using TasDREAM::regform
+ *        the output of the grid must be always non-negative, using TasDREAM::logform has no lower bound requirements.
+ *      - In the context of Bayesian inference, there probability distribution is comprised
+ *        of three components: model, likelihood, and prior. See TasDREAM::posterior().
+ *
+ * \param inside must accept a vector of size equal tot he number of dimensions and return \b true
+ *      if the vector describes a point in the domain and \b false otherwise.
+ *      The function will be called for every proposed sample and unlike the \b probability_distribution
+ *      only one vector will be given as input at a time.
+ *      Each TasGrid::TasmanianSparseGrid object some with a canonical domain that depends on the rule and
+ *      can be optionally transformed, the TasmanianSparseGrid::getDomainInside() method will produce
+ *      a lambda object describing the sparse grid domain.
+ *      See also TasDREAM::hyperbube().
+ *
+ * \param state must be an initialized instance of TasmanianDREAM. The number of chains and dimensions must be set
+ *      to match the lambda objects and TasmanianDREAM::setState() must be called to load the state with
+ *      a valid initial set of vectors.
+ *      The \b state will be evolved in total of \b num_burnup + \b num_collect iterations
+ *      and the last set of \b num_collect iterations will be appended to the state history.
+ *
+ * \param independent_update must accept a vector of size \b state.getNumDimensions() and (without resizing)
+ *      perturb each entry by adding an independent zero-mean random number.
+ *      It is possible to omit the \b independent_update, e.g., pass an object that will not modify
+ *      the input vector x; however, this can lock the chains to a set of values not dense in the domain
+ *      which in turn will break convergence. For example, if the domain is the real line, the initial
+ *      state has integer entries, and the \b differential_update is set to 100%, then all proposals
+ *      will be integers, non-integer values will never be considered.
+ *      TasDREAM::SampleDREAM provides an overload where the independent update is set to
+ *      a distribution from an included list with known magnitude.
+ *
+ * \param differential_update is a random or deterministic number between zero and one,
+ *      indicating the magnitude of the difference between two randomly chosen chains that will be
+ *      added to the next proposal.
+ *      Using deterministic zero will decouple the chains, i.e., the state of one chain will
+ *      never affect any other chain and the algorithm will reduce to the propagation of
+ *      multiple independent chains of the standard Metropolis-Hastings method with
+ *      the selected \b independent_update.
+ *      Using negative values (by symmetry) is equivalent to using a positive value with the same magnitude,
+ *      and values larger than 1 are likely to result in poor mixing and bad convergence rate.
+ *      The default differential update is deterministic one and deterministic percentage
+ *      can be specified with the \b const_percent() template.
+ *
+ * \param get_random01 is the pseudo-random number generator to be used in the sampling procedure.
+ *      By default, Tasmanian will use \b rand() divided by \b RAND_MAX, but this is implementation
+ *      dependent and not always optimal.
+ *
+ * Correct call using a sparse grid object as input:
+ * \code
+ *   auto grid = TasGrid::read("foo"); // create a grid object
+ *   SampleDREAM(..., grid, ...);
+ *   // above, the grid will create a lambda object that will capture grid by reference
+ *   // the lambda object is destroyed at the end of the call and before grid
+ * \endcode
+ * Incorrect call, \b never \b do \b that:
+ * \code
+ * SampleDREAM(..., TasGrid::read("foo"), ...);
+ * // above, read() will create a TasmanianSparseGrid object which will create a lambda
+ * // but the grid will be destroyed before entering the SampleDREAM() and cause a segfault.
+ * \endcode
+ */
 template<TypeSamplingForm form = regform>
 void SampleDREAM(int num_burnup, int num_collect,
-                 std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> probability_distribution,
+                 DreamPDF probability_distribution,
                  std::function<bool(const std::vector<double> &x)> inside,
-                 std::function<void(std::vector<double> &x)> independent_update,
                  TasmanianDREAM &state,
+                 std::function<void(std::vector<double> &x)> independent_update = no_update,
                  std::function<double(void)> differential_update = const_one,
                  std::function<double(void)> get_random01 = tsgCoreUniform01){
 
@@ -249,64 +430,30 @@ void SampleDREAM(int num_burnup, int num_collect,
 }
 
 
-//! \brief Overload of \b SampleDREAM() assuming independent update from a list of internals.
-//! \ingroup DREAMSampleCore
-
-//! Uses independent update is applied uniformly to all dimensions and comes from a list of internal functions, e.g., uniform or Gaussian.
-//! This overload wraps around functions such as \b applyUniformCorrection() and \b applyGaussianCorrection().
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Overload of \b SampleDREAM() assuming independent update from a list of internally implemented options.
+ *
+ * Uses independent update is applied uniformly to all dimensions
+ * and comes from a list of internal functions, e.g., uniform or Gaussian.
+ * This overload wraps around functions such as
+ * \b TasDREAM::applyUniformCorrection() and \b TasDREAM::applyGaussianCorrection().
+ */
 template<TypeSamplingForm form = regform>
 void SampleDREAM(int num_burnup, int num_collect,
                  std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> probability_distribution,
                  std::function<bool(const std::vector<double> &x)> inside,
-                 TypeDistribution dist, double magnitude,
                  TasmanianDREAM &state,
+                 TypeDistribution dist, double magnitude,
                  std::function<double(void)> differential_update = const_one,
                  std::function<double(void)> get_random01 = tsgCoreUniform01){
     if (dist == dist_uniform){
-        SampleDREAM<form>(num_burnup, num_collect, probability_distribution, inside,
-                         [&](std::vector<double> &x)->void{ applyUniformUpdate(x, magnitude, get_random01); }, state, differential_update, get_random01);
+        SampleDREAM<form>(num_burnup, num_collect, probability_distribution, inside, state,
+                         [&](std::vector<double> &x)->void{ applyUniformUpdate(x, magnitude, get_random01); }, differential_update, get_random01);
     }else{ // assuming Gaussian
-        SampleDREAM<form>(num_burnup, num_collect, probability_distribution, inside,
-                         [&](std::vector<double> &x)->void{ applyGaussianUpdate(x, magnitude, get_random01); }, state, differential_update, get_random01);
+        SampleDREAM<form>(num_burnup, num_collect, probability_distribution, inside, state,
+                         [&](std::vector<double> &x)->void{ applyGaussianUpdate(x, magnitude, get_random01); }, differential_update, get_random01);
     }
-}
-
-
-//! \brief Overload of \b SampleDREAM() assuming the domain is a hyperbube with min/max values given by \b lower and \b upper.
-//! \ingroup DREAMSampleCore
-
-//! The two vectors \b lower and \b upper must have the same size as the dimensions of the state
-//! and the lower/upper limits of the internals are stores in the corresponding entries.
-template<TypeSamplingForm form = regform>
-void SampleDREAM(int num_burnup, int num_collect,
-                 std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> probability_distribution,
-                 const std::vector<double> &lower, const std::vector<double> &upper,
-                 std::function<void(std::vector<double> &x)> independent_update,
-                 TasmanianDREAM &state,
-                 std::function<double(void)> differential_update = const_one,
-                 std::function<double(void)> get_random01 = tsgCoreUniform01){
-    checkLowerUpper(lower, upper, state);
-    SampleDREAM<form>(num_burnup, num_collect, probability_distribution, makeHypercudabeLambda(lower, upper), independent_update, state, differential_update, get_random01);
-}
-
-
-//! \brief Overload of \b SampleDREAM() assuming the domain is a hyperbube and independent update is from a known list.
-//! \ingroup DREAMSampleCore
-
-//! The two vectors \b lower and \b upper must have the same size as the dimensions of the state
-//! and the lower/upper limits of the internals are stores in the corresponding entries.
-//!
-//! See other overloads for the \b independent_dist and \b independent_magnitude.
-template<TypeSamplingForm form = regform>
-void SampleDREAM(int num_burnup, int num_collect,
-                 std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> probability_distribution,
-                 const std::vector<double> &lower, const std::vector<double> &upper,
-                 TypeDistribution independent_dist, double independent_magnitude,
-                 TasmanianDREAM &state,
-                 std::function<double(void)> differential_update = const_one,
-                 std::function<double(void)> get_random01 = tsgCoreUniform01){
-    checkLowerUpper(lower, upper, state);
-    SampleDREAM<form>(num_burnup, num_collect, probability_distribution, makeHypercudabeLambda(lower, upper), independent_dist, independent_magnitude, state, differential_update, get_random01);
 }
 
 }

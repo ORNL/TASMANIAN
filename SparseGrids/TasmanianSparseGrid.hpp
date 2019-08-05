@@ -277,6 +277,50 @@ public:
     int evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const;
     void evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const;
 
+    operator std::function<void(std::vector<double> const&, std::vector<double>&)>() const{
+        return [&](std::vector<double> const &x, std::vector<double> &y)->void{ evaluateBatch(x, y); };
+    }
+
+    std::function<bool(std::vector<double> const &)> getDomainInside() const{
+        auto rule = getRule();
+        if ((rule == TasGrid::rule_gausshermite) || (rule == TasGrid::rule_gausshermiteodd)){ // unbounded domain
+            return [](std::vector<double> const &)->bool{ return true; };
+        }else if ((rule == TasGrid::rule_gausslaguerre) || (rule == TasGrid::rule_gausslaguerreodd)){ // bounded from below
+            if (domain_transform_a.empty()){
+                return [](std::vector<double> const &x)->bool{
+                    for(auto const &v : x) if (v < 0.0) return false;
+                    return true;
+                };
+            }else{
+                size_t dims = (size_t) getNumDimensions();
+                return [=](std::vector<double> const &x)->bool{
+                    for(size_t i=0; i<dims; i++) if (x[i] < domain_transform_a[i]) return false;
+                    return true;
+                };
+            }
+        }else{
+            if (domain_transform_a.empty()){
+                if (isFourier()){
+                    return [](std::vector<double> const &x)->bool{
+                        for(auto const &v : x) if ((v < 0.0) || (v > 1.0)) return false;
+                        return true;
+                    };
+                }else{
+                    return [](std::vector<double> const &x)->bool{
+                        for(auto const &v : x) if ((v < -1.0) || (v > 1.0)) return false;
+                        return true;
+                    };
+                }
+            }else{
+                size_t dims = (size_t) getNumDimensions();
+                return [=](std::vector<double> const &x)->bool{
+                    for(size_t i=0; i<dims; i++)
+                        if ((x[i] < domain_transform_a[i]) || (x[i] > domain_transform_b[i])) return false;
+                    return true;
+                };
+            }
+        }
+    }
 
     /*!
      * \brief Removes all points from the grid that have relative surplus less than the \b tolerance.

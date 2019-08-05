@@ -107,15 +107,16 @@ void dream_example_04(){
     state.setState(initial_chains); // use chains distributed uniformly over the domain
 
     // Call to Tasmanian DREAM Sampling algorithm
-    TasDREAM::SampleDREAMPost<TasDREAM::logform>
-                              (num_burnup_iterations, num_sample_iterations,
-                               likely, // provide the likelihood
-                               grid, // provide the model
-                               TasDREAM::uniform_prior, // assume non-informative prior
-                               TasDREAM::dist_gaussian, 0.01, // Gaussian independent update of magnitude 0.01
-                               state,
-                               TasDREAM::const_percent<100> // use 100% of differential update
-                              );
+    TasDREAM::SampleDREAM<TasDREAM::logform>
+                         (num_burnup_iterations, num_sample_iterations,
+                          TasDREAM::posterior<TasDREAM::logform>(likely, // provide the likelihood
+                                                                 grid, // provide the model
+                                                                 TasDREAM::uniform_prior), // assume non-informative prior
+                          grid.getDomainInside(),
+                          state,
+                          TasDREAM::dist_gaussian, 0.01, // Gaussian independent update of magnitude 0.01
+                          TasDREAM::const_percent<100> // use 100% of differential update
+                          );
 
     // get the vector containing the sampling history, could also use "auto history = state.getHistory();"
     const std::vector<double> &history = state.getHistory();

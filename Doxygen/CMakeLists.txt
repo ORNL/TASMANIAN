@@ -71,9 +71,6 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamEnumerates.hpp
                  DREAM/tsgDreamState.hpp
                  DREAM/tsgDreamSample.hpp
-                 DREAM/tsgDreamSampleGrid.hpp
-                 DREAM/tsgDreamSamplePosterior.hpp
-                 DREAM/tsgDreamSamplePosteriorGrid.hpp
                  DREAM/tsgDreamCoreRandom.hpp
                  DREAM/tsgDreamCorePDF.hpp
                  DREAM/tsgDreamLikelihoodCore.hpp
