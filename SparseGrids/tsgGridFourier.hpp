@@ -98,6 +98,16 @@ public:
     void clearRefinement();
     void mergeRefinement();
 
+    void beginConstruction();
+    void writeConstructionData(std::ostream &os, bool) const;
+    void readConstructionData(std::istream &is, bool);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits);
+    std::vector<double> getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits);
+    void loadConstructedPoint(const double x[], const std::vector<double> &y);
+    void loadConstructedPoint(const double x[], int numx, const double y[]);
+    void finishConstruction();
+
     const double* getFourierCoefs() const;
 
 protected:
@@ -110,6 +120,10 @@ protected:
     void acceptUpdatedTensors();
 
     std::vector<std::vector<int>> generateIndexingMap() const;
+
+    void mapIndexesToNodes(const std::vector<int> &indexes, double *x) const;
+    void loadConstructedTensors();
+    std::vector<int> getMultiIndex(const double x[]);
 
     template<typename T, bool interwoven>
     void computeBasis(const MultiIndexSet &work, const T x[], T wreal[], T wimag[]) const{
@@ -205,6 +219,8 @@ private:
     StorageSet values;
 
     std::vector<int> max_power;
+
+    std::unique_ptr<DynamicConstructorDataGlobal> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaFourierData<double>> cuda_cache;

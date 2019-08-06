@@ -266,11 +266,15 @@ void GridFourier::loadNeededPoints(const double *vals){
     max_power = MultiIndexManipulations::getMaxIndexes(points);
 }
 
+void GridFourier::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
+    std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
+}
+
 void GridFourier::getLoadedPoints(double *x) const{
-    std::transform(points.getVector().begin(), points.getVector().end(), x, [&](int i)->double{ return wrapper.getNode(i); });
+    mapIndexesToNodes(points.getVector(), x);
 }
 void GridFourier::getNeededPoints(double *x) const{
-    std::transform(needed.getVector().begin(), needed.getVector().end(), x, [&](int i)->double{ return wrapper.getNode(i); });
+    mapIndexesToNodes(needed.getVector(), x);
 }
 void GridFourier::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -723,6 +727,188 @@ void GridFourier::mergeRefinement(){
     values.setValues(std::vector<double>(Utils::size_mult(num_outputs, num_all_points), 0.0));
     acceptUpdatedTensors();
 }
+
+void GridFourier::beginConstruction(){
+    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(num_dimensions, num_outputs));
+    if (points.empty()){ // if we start dynamic construction from an empty grid
+        for(int i=0; i<tensors.getNumIndexes(); i++){
+            const int *t = tensors.getIndex(i);
+            double weight = -1.0 / (1.0 + (double) std::accumulate(t, t + num_dimensions, 0));
+            dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, weight);
+        }
+        tensors = MultiIndexSet();
+        active_tensors = MultiIndexSet();
+        active_w = std::vector<int>();
+        needed = MultiIndexSet();
+        values.resize(num_outputs, 0);
+    }
+}
+void GridFourier::writeConstructionData(std::ostream &os, bool iomode) const{
+    if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
+}
+void GridFourier::readConstructionData(std::istream &is, bool iomode){
+    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal((size_t) num_dimensions, (size_t) num_outputs));
+    if (iomode == mode_ascii)
+        dynamic_values->read<mode_ascii>(is);
+    else
+        dynamic_values->read<mode_binary>(is);
+    int max_level = dynamic_values->getMaxTensor();
+    if (max_level + 1 > wrapper.getNumLevels())
+        wrapper.load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
+    dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
+}
+std::vector<double> GridFourier::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
+    std::vector<int> weights;
+    if ((type == type_iptotal) || (type == type_ipcurved) || (type == type_qptotal) || (type == type_qpcurved)){
+        int min_needed_points = ((type == type_ipcurved) || (type == type_qpcurved)) ? 4 * num_dimensions : 2 * num_dimensions;
+        if (points.getNumIndexes() > min_needed_points) // if there are enough points to estimate coefficients
+            estimateAnisotropicCoefficients(type, output, weights);
+    }
+    return getCandidateConstructionPoints(type, weights, level_limits);
+}
+std::vector<double> GridFourier::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+    MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);
+
+    // computing the weight for each index requires the cache for the one dimensional indexes
+    // the cache for the one dimensional indexes requires the exactness
+    // exactness can be one of 5 cases based on level/interpolation/quadrature for custom or known rule
+    // the number of required exactness entries is not known until later and we have to be careful not to exceed the levels available for the custom rule
+    // thus, we cache the exactness with a delay
+    std::vector<int> effective_exactness;
+    auto get_exact = [&](int l) -> int{ return effective_exactness[l]; };
+    auto build_exactness = [&](size_t num) ->
+        void{
+            effective_exactness.resize(num);
+            if(OneDimensionalMeta::isExactLevel(type)){
+                for(size_t i=0; i<num; i++) effective_exactness[i] = (int) i;
+            }else if (OneDimensionalMeta::isExactInterpolation(type)){
+                for(size_t i=0; i<num; i++) effective_exactness[i] = OneDimensionalMeta::getIExact((int) i, rule_fourier);
+            }else{ // must be quadrature
+                for(size_t i=0; i<num; i++) effective_exactness[i] = OneDimensionalMeta::getQExact((int) i, rule_fourier);
+            }
+        };
+
+    if (weights.contour == type_level){
+        std::vector<std::vector<int>> cache;
+        return getCandidateConstructionPoints([&](int const *t) -> double{
+            if (cache.empty()){
+                build_exactness((size_t) wrapper.getNumLevels());
+                cache = MultiIndexManipulations::generateLevelWeightsCache<int, type_level, true>(weights, get_exact, wrapper.getNumLevels());
+            }
+
+            return (double) MultiIndexManipulations::getIndexWeight<int, type_level>(t, cache);
+        }, level_limits);
+    }else if (weights.contour == type_curved){
+        std::vector<std::vector<double>> cache;
+        return getCandidateConstructionPoints([&](int const *t) -> double{
+            if (cache.empty()){
+                build_exactness((size_t) wrapper.getNumLevels());
+                cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_curved, true>(weights, get_exact, wrapper.getNumLevels());
+            }
+
+            return MultiIndexManipulations::getIndexWeight<double, type_curved>(t, cache);
+        }, level_limits);
+    }else{
+        std::vector<std::vector<double>> cache;
+        return getCandidateConstructionPoints([&](int const *t) -> double{
+            if (cache.empty()){
+                build_exactness((size_t) wrapper.getNumLevels());
+                cache = MultiIndexManipulations::generateLevelWeightsCache<double, type_hyperbolic, true>(weights, get_exact, wrapper.getNumLevels());
+            }
+
+            return MultiIndexManipulations::getIndexWeight<double, type_hyperbolic>(t, cache);
+        }, level_limits);
+    }
+}
+std::vector<double> GridFourier::getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits){
+    dynamic_values->clearTesnors(); // clear old tensors
+    MultiIndexSet init_tensors = dynamic_values->getInitialTensors(); // get the initial tensors (created with make grid)
+
+    MultiIndexSet new_tensors = (level_limits.empty()) ?
+        MultiIndexManipulations::addExclusiveChildren<false>(tensors, init_tensors, level_limits) :
+        MultiIndexManipulations::addExclusiveChildren<true>(tensors, init_tensors, level_limits);
+
+    if (!new_tensors.empty()){
+        auto max_indexes = MultiIndexManipulations::getMaxIndexes(new_tensors);
+        int max_level = *std::max_element(max_indexes.begin(), max_indexes.end());
+        if (max_level+1 > wrapper.getNumLevels())
+            wrapper.load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
+    }
+
+    std::vector<double> tweights(new_tensors.getNumIndexes());
+    for(int i=0; i<new_tensors.getNumIndexes(); i++)
+        tweights[i] = (double) getTensorWeight(new_tensors.getIndex(i));
+
+    for(int i=0; i<new_tensors.getNumIndexes(); i++){
+        const int *t = new_tensors.getIndex(i);
+        dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
+    }
+    std::vector<int> node_indexes;
+    dynamic_values->getNodesIndexes(node_indexes);
+    std::vector<double> x(node_indexes.size());
+    mapIndexesToNodes(node_indexes, x.data());
+    return x;
+}
+std::vector<int> GridFourier::getMultiIndex(const double x[]){
+    std::vector<int> p(num_dimensions);
+    for(int j=0; j<num_dimensions; j++){
+        int i = 0;
+        while(std::abs(wrapper.getNode(i) - x[j]) > Maths::num_tol){
+            i++; // convert canonical node to index
+            if (i == wrapper.getNumNodes())
+                wrapper.load(CustomTabulated(), wrapper.getNumLevels(), rule_fourier, 0.0, 0.0);
+        }
+        p[j] = i;
+    }
+    return p;
+}
+void GridFourier::loadConstructedPoint(const double x[], const std::vector<double> &y){
+    if (dynamic_values->addNewNode(getMultiIndex(x), y)) // if a new tensor is complete
+        loadConstructedTensors();
+}
+void GridFourier::loadConstructedPoint(const double x[], int numx, const double y[]){
+    Utils::Wrapper2D<const double> wrapx(num_dimensions, x);
+    Utils::Wrapper2D<const double> wrapy(num_outputs, y);
+    for(int i=0; i<numx; i++)
+        dynamic_values->addNewNode(getMultiIndex(wrapx.getStrip(i)), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs));
+    loadConstructedTensors();
+}
+void GridFourier::loadConstructedTensors(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaNodes();
+    clearCudaCoefficients();
+    #endif
+    MultiIndexSet new_tensors, new_points;
+    StorageSet new_values;
+    dynamic_values->ejectCompleteTensor(tensors, new_tensors, new_points, new_values);
+    if (new_tensors.empty()) return; // nothing to do
+
+    if (points.empty()){ // no loaded points yet
+        values = std::move(new_values);
+        points = std::move(new_points);
+    }else{
+        values.addValues(points, new_points, new_values.getValues(0));
+        points.addMultiIndexSet(new_points);
+    }
+
+    tensors.addMultiIndexSet(new_tensors);
+    // recompute the tensor weights
+    auto tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
+    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
+
+    active_w = std::vector<int>();
+    active_w.reserve(active_tensors.getNumIndexes());
+    for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
+
+    max_levels = MultiIndexManipulations::getMaxIndexes(active_tensors);
+    max_power  = MultiIndexManipulations::getMaxIndexes(points);
+
+    calculateFourierCoefficients();
+}
+void GridFourier::finishConstruction(){
+    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>();
+}
+
 
 const double* GridFourier::getFourierCoefs() const{
     return fourier_coefs.getStrip(0);

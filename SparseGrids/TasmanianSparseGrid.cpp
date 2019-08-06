@@ -907,7 +907,7 @@ void TasmanianSparseGrid::mergeRefinement(){
 }
 
 void TasmanianSparseGrid::beginConstruction(){
-    if (isWavelet() || isFourier()) throw std::runtime_error("ERROR: beginConstruction() is not implemented for Wavelet and Fourier grids");
+    if (isWavelet()) throw std::runtime_error("ERROR: beginConstruction() is not implemented for Wavelet grids");
     if (!usingDynamicConstruction){
         if (getNumLoaded() > 0) clearRefinement();
         usingDynamicConstruction = true;
@@ -928,8 +928,10 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDept
     if (!level_limits.empty()) llimits = level_limits;
     if (isGlobal()){
         return getGridGlobal()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
-    }else{
+    }else if (isSequence()){
         return getGridSequence()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
+    }else{ // Fourier
+        return getGridFourier()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
     }
 }
 std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
@@ -944,8 +946,10 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDept
     if (!level_limits.empty()) llimits = level_limits;
     if (isGlobal()){
         return getGridGlobal()->getCandidateConstructionPoints(type, output, llimits);
-    }else{
+    }else if (isSequence()){
         return getGridSequence()->getCandidateConstructionPoints(type, output, llimits);
+    }else{ // Fourier
+        return getGridFourier()->getCandidateConstructionPoints(type, output, llimits);
     }
 }
 std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria,
