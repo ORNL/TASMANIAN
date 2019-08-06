@@ -1,5 +1,5 @@
 
-#include "TasmanianSparseGrid.hpp"
+#include "Tasmanian.hpp"
 
 using namespace std;
 
@@ -42,11 +42,11 @@ void sparse_grids_example_03(){
 //! [SG_Example_03 example]
 #endif
 
-    TasGrid::TasmanianSparseGrid grid1, grid2, grid3;
-
-    cout << "\n-------------------------------------------------------------------------------------------------\n";
+    cout << "\n---------------------------------------------------------------------------------------------------\n";
     cout << std::scientific; cout.precision(2);
-    cout << "Example 3: integrate exp(-x1^2 - x2^2) * cos(x3) * cos(x4) over x1, x2 in [-5,5]; x3, x4 in [-2,3] using different rules\n\n";
+    cout << "Example 3: integrate exp(-x1^2 - x2^2) * cos(x3) * cos(x4)\n"
+         << "           for x1, x2 in [-5,5]; x3, x4 in [-2,3];\n"
+         << "           using different rules and total degree polynomial space\n\n";
 
     int dimensions = 4;
     double exact = 1.861816427518323e+00 * 1.861816427518323e+00; // exact solution
@@ -54,7 +54,8 @@ void sparse_grids_example_03(){
     // creates a grid over the desired domain with specified precision and rule
     auto make_grid = [&](int precision, TasGrid::TypeOneDRule rule)->
         TasGrid::TasmanianSparseGrid{
-            auto grid = TasGrid::makeGlobalGrid(dimensions, 0, precision, TasGrid::type_qptotal, rule);
+            auto grid = TasGrid::makeGlobalGrid(dimensions, 0, precision,
+                                                TasGrid::type_qptotal, rule);
             grid.setDomainTransform({-5.0, -5.0, -2.0, -2.0}, {5.0, 5.0, 3.0, 3.0});
             return grid;
         };
@@ -71,13 +72,16 @@ void sparse_grids_example_03(){
                 double x2 = points[4*i + 1];
                 double x3 = points[4*i + 2];
                 double x4 = points[4*i + 3];
-                integral += weights[i] * std::exp(-x1 * x1 - x2 * x2) * std::cos(x3) * std::cos(x4);
+                integral += weights[i] * std::exp(-x1*x1 - x2*x2) * std::cos(x3) * std::cos(x4);
             }
             cout << setw(10) << grid.getNumPoints() << setw(10) << std::abs(integral - exact);
         };
 
-    cout << setw(10) << " " << setw(20) << "Clenshaw-Curtis" << setw(20) << "Gauss-Legendre" << setw(20) << "Gauss-Patterson\n";
-    cout << setw(10) << "precision" << setw(10) << "points" << setw(10) << "error" << setw(10) << "points" << setw(10) << "error" << setw(10) << "points" << setw(10) << "error\n";
+    cout << setw(10) << " " << setw(20) << "Clenshaw-Curtis"
+         << setw(20) << "Gauss-Legendre" << setw(20) << "Gauss-Patterson\n";
+    cout << setw(10) << "precision" << setw(10) << "points" << setw(10) << "error"
+         << setw(10) << "points" << setw(10) << "error"
+         << setw(10) << "points" << setw(10) << "error\n";
 
     // print the error for different precision
     for(int precision=5; precision<=40; precision += 5){
@@ -88,8 +92,10 @@ void sparse_grids_example_03(){
         cout << "\n";
     }
 
-    cout << "\nAt 70K points the Gauss-Patterson error is O(1.E-4), Clenshaw-Curtis needs 158K points to achieve the same.\n";
-    cout << "At 311K points the Gauss-Legendre error is O(1.E-1), at 320K points the Clenshaw-Curtis error is O(1.E-7)." << endl;
+    cout << "\nAt 311K points the Gauss-Legendre error is O(1.E-1),\n"
+         <<   "                   Clenshaw-Curtis error is O(1.E-7) at 320K points.\n";
+    cout << "At 70K points the Gauss-Patterson error is O(1.E-4),\n"
+         << "                  Clenshaw-Curtis needs 158K points to achieve the same." << endl;
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 //! [SG_Example_03 example]

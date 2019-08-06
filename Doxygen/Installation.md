@@ -80,7 +80,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D Tasmanian_ENABLE_MAGMA:BOOL=<ON/OFF>       (stable)
   -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""       (stable)
   -D Tasmanian_ENABLE_FORTRAN:BOOL=<ON/OFF>     (mostly stable)
-  -D Tasmanian_ENABLE_MPI:BOOL=<ON/OFF>         (experimental)
+  -D Tasmanian_ENABLE_MPI:BOOL=<ON/OFF>         (mostly stable)
   -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (work in progress)
 ```
 * Acceleration options:
@@ -208,7 +208,7 @@ a location inside the user home folder to avoid potential system-wide conflicts.
 
 * Install folder structure:
 ```
-  <install-path>/bin/                       (tagrid and tasdream executables)
+  <install-path>/bin/                       (tagrid executable tool)
   <install-path>/lib/                       (shared and static libraries)
   <install-path>/lib/Tasmanian/             (cmake package-config files)
   <install-path>/lib/pythonX.Y/             (python module)

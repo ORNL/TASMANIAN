@@ -69,7 +69,7 @@ public:
      *
      * Set the parameters of the likelihood.
      * \param variance must be a positive number indicating the magnitude of the noise.
-     * \param \b data_mean must have the same size as the number of model outputs and hold
+     * \param data_mean must have the same size as the number of model outputs and hold
      *      the average of all measurements.
      * \param num_observe must be a positive integer indicating the number of samples.
      */
@@ -142,9 +142,9 @@ public:
     ~LikelihoodGaussAnisotropic(){}
 
     /*!
-     * \brief Set the noise magnitude (\b varaince) the observed data (\b data_mean) and number of observations (\b num_observe).
+     * \brief Set the noise magnitude (\b variance) the observed data (\b data_mean) and number of observations (\b num_observe).
      *
-     * \param varaince is a vector with size equal to the number of model outputs.
+     * \param variance is a vector with size equal to the number of model outputs.
      *      Each entry represents the noise magnitude (variance) associated with that output.
      * \param data_mean is the average of all available observations of the data.
      * \param num_observe is the number of observations used to compute the \b data_mean.

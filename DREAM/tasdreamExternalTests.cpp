@@ -119,16 +119,16 @@ bool DreamExternalTester::testGaussian3D(){
     std::minstd_rand park_miller(42);
     if (usetimeseed) park_miller.seed(getRandomRandomSeed());
     std::uniform_real_distribution<double> unif(0.0, 1.0);
+    auto get_rand = [&]()->double{ return unif(park_miller); };
 
     // compute reference samples, mean 2.0, std 3.0
     std::vector<double> means(num_dimensions, 2.0), deviations(num_dimensions, 3.0);
-    std::vector<double> tresult;
-    genGaussianSamples(means, deviations, num_samples, tresult, [&]()->double{ return unif(park_miller); });
+    std::vector<double> tresult = genGaussianSamples(means, deviations, num_samples, get_rand);
 
     // Use DREAM with zero-weight (i.e., standard Metropolis-Hastings)
     TasmanianDREAM state(num_chains, num_dimensions);
-    std::vector<double> initial_state;
-    genGaussianSamples(means, deviations, num_chains, initial_state, [&]()->double{ return unif(park_miller); }); // initialize with correct mean 2.0, std 3.0
+    // initialize with correct mean 2.0, std 3.0
+    std::vector<double> initial_state = genGaussianSamples(means, deviations, num_chains, get_rand);
     state.setState(initial_state);
 
     SampleDREAM(num_burnup, num_iterations,
@@ -144,7 +144,7 @@ bool DreamExternalTester::testGaussian3D(){
             applyGaussianUpdate(x, 3.0, [&]()->double{ return unif(park_miller); });
         },
         const_percent<0>, // independent chains, no differential proposal
-        [&]()->double{ return unif(park_miller); }
+        get_rand
     );
 
     std::vector<double> upper(num_dimensions, 11.0), lower(num_dimensions, -7.0); // compute over a box of 3 standard deviations
@@ -167,7 +167,7 @@ bool DreamExternalTester::testGaussian3D(){
         state,
         dist_uniform, 0.2, // uniform proposal
         const_percent<50>, // differential proposal is weighted by 50%
-        [&]()->double{ return unif(park_miller); }
+        get_rand
     );
 
     pass = compareSamples(lower, upper, 5, tresult, state.getHistory()) && (state.getAcceptanceRate() > 0.5);
@@ -177,8 +177,8 @@ bool DreamExternalTester::testGaussian3D(){
 
     // test anisotropic Gaussian likelihood
     // compute reference samples, compute initial set from the true solution, reinitialize the state
-    genGaussianSamples({1.5, 2.0, 2.5}, {0.5, 1.0, 2.0}, num_samples, tresult, [&]()->double{ return unif(park_miller); });
-    genGaussianSamples({1.5, 2.0, 2.5}, {0.5, 1.0, 2.0}, num_chains, initial_state, [&]()->double{ return unif(park_miller); });
+    tresult       = genGaussianSamples({1.5, 2.0, 2.5}, {0.5, 1.0, 2.0}, num_samples, get_rand);
+    initial_state = genGaussianSamples({1.5, 2.0, 2.5}, {0.5, 1.0, 2.0}, num_chains, get_rand);
     state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
     state.setState(initial_state);
     LikelihoodGaussAnisotropic likely({0.25, 1.0, 4.0}, {1.5, 2.0, 2.5}, 1.0);
@@ -193,7 +193,7 @@ bool DreamExternalTester::testGaussian3D(){
         state,
         dist_uniform, 0.2,
         const_percent<50>, // differential proposal is weighted by 50%
-        [&]()->double{ return unif(park_miller); }
+        get_rand
     );
 
     pass = compareSamples(lower, upper, 5, tresult, state.getHistory()) && (state.getAcceptanceRate() > 0.5);
@@ -216,10 +216,11 @@ bool DreamExternalTester::testGaussian2D(){
     std::minstd_rand park_miller(42);
     if (usetimeseed) park_miller.seed(getRandomRandomSeed());
     std::uniform_real_distribution<double> unif(0.0, 1.0);
+    auto get_rand = [&]()->double{ return unif(park_miller); };
 
     // compute reference samples, mean 0.3, std 0.15 (3 deviations fit in [-1, 1]^2)
     std::vector<double> tresult(num_dimensions * num_samples, 0.3);
-    applyGaussianUpdate(tresult, 0.15, [&]()->double{ return unif(park_miller); });
+    applyGaussianUpdate(tresult, 0.15, get_rand);
 
     // approximate the pdf in log-form, log-form of the Gaussian pdf is quadratic, the grid gives exact match
     TasGrid::TasmanianSparseGrid grid;
@@ -235,7 +236,7 @@ bool DreamExternalTester::testGaussian2D(){
     // initialize the DREAM state
     TasmanianDREAM state(num_chains, num_dimensions);
     std::vector<double> initial_set(num_chains * num_dimensions, 0.0); // initialize with uniform samples
-    applyUniformUpdate(initial_set, 1.0, [&]()->double{ return unif(park_miller); });
+    applyUniformUpdate(initial_set, 1.0, get_rand);
     state.setState(initial_set);
 
     SampleDREAM<logform>(num_burnup, num_iterations,
@@ -244,7 +245,7 @@ bool DreamExternalTester::testGaussian2D(){
         state,
         dist_gaussian, 0.1,
         const_percent<98>, // correlated chains
-        [&]()->double{ return unif(park_miller); }
+        get_rand
     );
 
     std::vector<double> upper(num_dimensions, 1.0), lower(num_dimensions, -1.0); // compute over a box of over 3 standard deviations
@@ -257,7 +258,7 @@ bool DreamExternalTester::testGaussian2D(){
     // ------------------------------------------------------------ //
     // next test uses a sub-domain of the first quadrant, the standard deviation is smaller
     std::fill(tresult.begin(), tresult.end(), 0.3);
-    applyGaussianUpdate(tresult, 0.1, [&]()->double{ return unif(park_miller); });
+    applyGaussianUpdate(tresult, 0.1, get_rand);
 
     // approximate the pdf in regular form, true approximation
     grid.makeSequenceGrid(2, 1, 24, TasGrid::type_iptotal, TasGrid::rule_rleja); // interpolates exactly all quadratic polynomials
@@ -325,7 +326,7 @@ bool DreamExternalTester::testGaussian2D(){
         state,
         dist_uniform, 0.1,
         const_percent<98>, // correlated chains
-        [&]()->double{ return unif(park_miller); }
+        get_rand
     );
 
     // check if any of the samples fall outside of the domain and if the size of the history is correct
@@ -360,10 +361,10 @@ bool DreamExternalTester::testCustomModel(){
     std::minstd_rand park_miller(42);
     if (usetimeseed) park_miller.seed(getRandomRandomSeed());
     std::uniform_real_distribution<double> unif(0.0, 1.0);
+    auto get_rand = [&]()->double{ return unif(park_miller); };
 
     // compute reference samples, means 1.5, 2.0 and 2.5, variance 4.0, 9.0, 4.0
-    std::vector<double> tresult;
-    genGaussianSamples({1.5, 2.0, 2.5}, {2.0, 3.0, 2.0}, num_samples, tresult, [&]()->double{ return unif(park_miller); });
+    std::vector<double> tresult = genGaussianSamples({1.5, 2.0, 2.5}, {2.0, 3.0, 2.0}, num_samples, get_rand);
 
     // Use DREAM with custom model of identity (all information comes form the prior and likelihood)
     TasmanianDREAM state(num_chains, num_dimensions);
@@ -398,7 +399,7 @@ bool DreamExternalTester::testCustomModel(){
                         applyGaussianUpdate(x, 0.5, [&]()->double{ return unif(park_miller); });
                     },
                     const_percent<65>,
-                    [&]()->double{ return unif(park_miller); }
+                    get_rand
                 );
 
     std::vector<double> upper(num_dimensions, 11.0), lower(num_dimensions, -7.0); // compute over a box of more than 3 standard deviations
@@ -408,8 +409,7 @@ bool DreamExternalTester::testCustomModel(){
     if (verbose || !pass) reportPassFail(pass, "Inference 3D", "with custom model");
 
     state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
-    genUniformSamples({0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, num_chains, initial_state, [&]()->double{ return unif(park_miller); });
-    state.setState(initial_state);
+    state.setState(genUniformSamples({0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, num_chains, get_rand));
 
     lower = std::vector<double>(num_dimensions, 0.0);
     upper = std::vector<double>(num_dimensions, 1.0);
@@ -434,7 +434,7 @@ bool DreamExternalTester::testCustomModel(){
                          state,
                          dist_gaussian, 0.01,
                          const_percent<50>,
-                         [&]()->double{ return unif(park_miller); }
+                         get_rand
                          );
 
     std::vector<double> mode;
@@ -459,6 +459,7 @@ bool DreamExternalTester::testGridModel(){
     std::minstd_rand park_miller(42);
     if (usetimeseed) park_miller.seed(getRandomRandomSeed());
     std::uniform_real_distribution<double> unif(0.0, 1.0);
+    auto get_rand = [&]()->double{ return unif(park_miller); };
 
     // Construct sparse grid approximation to the SinSin model
     std::vector<double> lower = {0.0, 2.0}, upper = {4.0, 6.0};
@@ -478,9 +479,7 @@ bool DreamExternalTester::testGridModel(){
 
     // initialize the state
     TasmanianDREAM state(num_chains, grid);
-    std::vector<double> initial_state;
-    genUniformSamples(lower, upper, num_chains, initial_state, [&]()->double{ return unif(park_miller); });
-    state.setState(initial_state);
+    state.setState(genUniformSamples(lower, upper, num_chains, get_rand));
 
     // initialize the likelihood
     std::vector<double> data(num_outputs);
@@ -492,7 +491,7 @@ bool DreamExternalTester::testGridModel(){
                          posterior<logform>(likely, grid, uniform_prior),
                          grid.getDomainInside(),
                          state,
-                         dist_gaussian, 0.1, const_percent<50>, [&]()->double{ return unif(park_miller); });
+                         dist_gaussian, 0.1, const_percent<50>, get_rand);
 
     //printMode(state, "mode");
     std::vector<double> mode;

@@ -57,5 +57,5 @@ Tasmanian_find_cuda_libraries(NAMES cuda cudart
 
 list(FILTER Tasmanian_cudaruntime EXCLUDE REGEX "-NOTFOUND$")
 
-message(STATUS "Tasmanian found CUDA math libraries: ${Tasmanian_cudamathlibs}")
-message(STATUS "Tasmanian found CUDA runtime libraries: ${Tasmanian_cudaruntime}")
+#message(STATUS "Tasmanian found CUDA math libraries: ${Tasmanian_cudamathlibs}")
+#message(STATUS "Tasmanian found CUDA runtime libraries: ${Tasmanian_cudaruntime}")

@@ -1,5 +1,5 @@
 
-#include "TasmanianSparseGrid.hpp"
+#include "Tasmanian.hpp"
 
 using namespace std;
 
@@ -34,15 +34,17 @@ void sparse_grids_example_02(){
 //! [SG_Example_02 example]
 #endif
 
-    cout << "\n-------------------------------------------------------------------------------------------------\n";
+    cout << "\n---------------------------------------------------------------------------------------------------\n";
     cout << std::scientific; cout.precision(17);
-    cout << "Example 2: integrate f(x,y) = exp(-x^2) * cos(y) over [-5,5] x [-2,3] using  Gauss-Patterson nodes\n";
+    cout << "Example 2: integrate f(x,y) = exp(-x^2) * cos(y) over [-5,5] x [-2,3]\n"
+         << "           using  Gauss-Patterson nodes and total degree polynomial space\n";
 
     int dimension = 2;
     int exactness = 20;
 
     // the type_qptotal will guarantee exact integral for all polynomials with degree 20 or less
-    auto grid = TasGrid::makeGlobalGrid(dimension, 0, exactness, TasGrid::type_qptotal, TasGrid::rule_gausspatterson);
+    auto grid = TasGrid::makeGlobalGrid(dimension, 0, exactness,
+                                        TasGrid::type_qptotal, TasGrid::rule_gausspatterson);
     grid.setDomainTransform({-5.0, -2.0}, {5.0, 3.0}); // set the non-canonical domain
     auto points  = grid.getPoints();
     auto weights = grid.getQuadratureWeights();
@@ -64,7 +66,8 @@ void sparse_grids_example_02(){
 
     exactness = 40;
 
-    grid = TasGrid::makeGlobalGrid(dimension, 0, exactness, TasGrid::type_qptotal, TasGrid::rule_gausspatterson);
+    grid = TasGrid::makeGlobalGrid(dimension, 0, exactness,
+                                   TasGrid::type_qptotal, TasGrid::rule_gausspatterson);
     grid.setDomainTransform({-5.0, -2.0}, {5.0, 3.0}); // set the non-canonical domain
     points  = grid.getPoints();
     weights = grid.getQuadratureWeights();
