@@ -52,6 +52,19 @@
 
 namespace TasDREAM{
 
+/*!
+ * \internal
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMUtils Miscellaneous utility templates, borrowed from TasGrid.
+ *
+ * Several templates borrowed from the Sparse Grids module and included here for easier usage.
+ * \endinternal
+ */
+namespace Utils{
+    //! \brief See TasGrid::Utils::size_mult().
+    using TasGrid::Utils::size_mult;
+}
+
 //! \brief Describes whether sampling should be done with the regular or logarithm form of the probability density.
 //! \ingroup DREAMEnumerates
 

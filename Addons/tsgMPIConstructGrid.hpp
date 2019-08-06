@@ -42,7 +42,7 @@
  * \endinternal
  */
 
-#include "tsgMPIScatterDREAM.hpp"
+#include "tsgMPIScatterDream.hpp"
 #include "tsgConstructSurrogate.hpp"
 
 /*!

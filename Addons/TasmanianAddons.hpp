@@ -41,7 +41,7 @@
  */
 
 #include "tsgLoadNeededValues.hpp"
-#include "tsgMPIConstructGrid.hpp"
+#include "tsgMPISampleDream.hpp"
 
 /*!
  * \defgroup TasmanianAddons Additional Capabilities

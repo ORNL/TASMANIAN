@@ -20,7 +20,8 @@ add_library(Tasmanian_addons INTERFACE)
 Tasmanian_addon_sources(PATH .
                         FILES tsgAddonsCommon.hpp
                               tsgMPIScatterGrid.hpp
-                              tsgMPIScatterDREAM.hpp
+                              tsgMPIScatterDream.hpp
+                              tsgMPISampleDream.hpp
                               tsgLoadNeededValues.hpp
                               tsgCandidateManager.hpp
                               tsgConstructSurrogate.hpp
@@ -47,7 +48,7 @@ if (Tasmanian_ENABLE_MPI)
         set_target_properties(Tasmanian_addons PROPERTIES INTERFACE_LINK_OPTIONS "${MPI_CXX_LINK_FLAGS}")
     endif()
 
-    add_executable(Tasmanian_mpitester testMPI.cpp testMPI.hpp testMPIDREAM.hpp)
+    add_executable(Tasmanian_mpitester testMPI.cpp testMPI.hpp testMPIDream.hpp)
     set_target_properties(Tasmanian_mpitester PROPERTIES OUTPUT_NAME "mpitester")
     target_link_libraries(Tasmanian_mpitester Tasmanian_addons Tasmanian_libdream)
     add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} mpitester ${MPIEXEC_POSTFLAGS})

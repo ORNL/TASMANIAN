@@ -35,6 +35,8 @@
 
 namespace TasDREAM{
 
+TasmanianDREAM::TasmanianDREAM() : num_chains(0), num_dimensions(0), init_state(false), init_values(false), accepted(0){}
+
 TasmanianDREAM::TasmanianDREAM(int cnum_chains, int cnum_dimensions) :
 num_chains(cnum_chains), num_dimensions(cnum_dimensions), init_state(false), init_values(false), accepted(0){
     if (cnum_chains < 1) throw std::invalid_argument("ERROR: num_chains must be positive");

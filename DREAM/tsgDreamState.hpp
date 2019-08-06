@@ -69,6 +69,8 @@ namespace TasDREAM{
 //! several handy queries for inference or optimization problems.
 class TasmanianDREAM{
 public:
+    //! \brief Constructor for a null DREAM state, no chains and no dimensions (used for MPI purposes).
+    TasmanianDREAM();
     //! \brief Constructor for a DREAM state with the number of chains and dimensions.
     TasmanianDREAM(int cnum_chains, int cnum_dimensions);
     //! \brief Constructor for a DREAM state with the number of chains and the dimension of the sparse grid.

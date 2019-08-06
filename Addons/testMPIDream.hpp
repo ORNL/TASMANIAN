@@ -117,3 +117,60 @@ inline bool testLikelyScatter(){
 
     return true;
 }
+
+void testMPIDream(){
+    int num_chains = 10;
+
+    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+    auto full_grid = TasGrid::makeSequenceGrid(2, 7, 2, TasGrid::type_level, TasGrid::rule_rleja);
+    TasGrid::loadNeededPoints<mode_sequential>([&](std::vector<double> const &x, std::vector<double> &y, size_t)->void{
+            y = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
+            for(size_t i=0; i<y.size(); i++)
+                y[i] += 0.1 * x[i%2]; // add perturbation to y
+        }, full_grid, 0);
+    auto grid = TasGrid::makeEmpty();
+
+    TasDREAM::LikelihoodGaussAnisotropic full_likelihood({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7}, {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0});
+    TasDREAM::LikelihoodGaussAnisotropic likely;
+
+    TasDREAM::TasmanianDREAM full_state(num_chains, 2);
+    TasDREAM::TasmanianDREAM state = (me == 0) ? full_state : TasDREAM::TasmanianDREAM();
+
+    TasGrid::MPIGridScatterOutputs(full_grid, grid, 0, 11, MPI_COMM_WORLD);
+    TasDREAM::MPILikelihoodScatter(full_likelihood, likely, 0, 13, MPI_COMM_WORLD);
+
+    std::minstd_rand park_miller_init(42), park_miller1(77), park_miller2(77);
+    std::uniform_real_distribution<double> unif(0.0, 1.0);
+    std::vector<double> initial_state;
+    TasDREAM::genGaussianSamples({0.0, 0.0}, {0.2, 0.2}, num_chains, initial_state, [&]()->double{ return unif(park_miller_init); });
+    if (me == 0) state.setState(initial_state);
+    full_state.setState(initial_state);
+
+    TasDREAM::SampleDREAM(10, 10,
+        TasDREAM::DistributedPosterior<TasDREAM::regform>(likely, grid, TasDREAM::uniform_prior, 2, num_chains, 0, MPI_COMM_WORLD),
+        grid.getDomainInside(),
+        state,
+        TasDREAM::dist_uniform, 0.05,
+        TasDREAM::const_percent<50>,
+        [&]()->double{ return unif(park_miller1); }
+    );
+
+    TasDREAM::SampleDREAM(10, 10,
+        TasDREAM::posterior<TasDREAM::regform>(full_likelihood, full_grid, TasDREAM::uniform_prior),
+        grid.getDomainInside(),
+        full_state,
+        TasDREAM::dist_uniform, 0.05,
+        TasDREAM::const_percent<50>,
+        [&]()->double{ return unif(park_miller2); }
+    );
+
+    if (me == 0){
+        std::vector<double> mean, variance;
+        state.getHistoryMeanVariance(mean, variance);
+        std::vector<double> ref_mean, ref_variance;
+        full_state.getHistoryMeanVariance(ref_mean, ref_variance);
+        if (((std::abs(mean[0] - ref_mean[0]) + std::abs(mean[1] - ref_mean[1])) > 1.E-9) ||
+            ((std::abs(variance[0] - ref_variance[0]) + std::abs(variance[1] - ref_variance[1])) > 1.E-9))
+            throw std::runtime_error("ERROR: mismatch in sampling between reference and computed DREAM.");
+    }
+}

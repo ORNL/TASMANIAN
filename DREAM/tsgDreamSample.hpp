@@ -344,6 +344,11 @@ void SampleDREAM(int num_burnup, int num_collect,
                  std::function<double(void)> differential_update = const_one,
                  std::function<double(void)> get_random01 = tsgCoreUniform01){
 
+    size_t num_chains = (size_t) state.getNumChains(), num_dimensions = (size_t) state.getNumDimensions();
+    double unitlength = (double) num_chains;
+
+    if (num_chains == 0) return; // no sampling with a null state
+
     if (!state.isStateReady()) throw std::runtime_error("ERROR: DREAM sampling requires that the setState() has been called first on the TasmanianDREAM.");
 
     if (!state.isPDFReady()) // initialize probability density (if not initialized already)
@@ -351,9 +356,6 @@ void SampleDREAM(int num_burnup, int num_collect,
 
     if (num_collect > 0) // pre-allocate memory for the new history
         state.expandHistory(num_collect);
-
-    size_t num_chains = (size_t) state.getNumChains(), num_dimensions = (size_t) state.getNumDimensions();
-    double unitlength = (double) num_chains;
 
     int total_iterations = std::max(num_burnup, 0) + std::max(num_collect, 0);
     for(int t = 0; t < total_iterations; t++){
@@ -382,7 +384,8 @@ void SampleDREAM(int num_burnup, int num_collect,
             }
         }
 
-        probability_distribution(candidates, values);
+        if (!candidates.empty()) // block the pathological case of all proposals leaving the domain
+            probability_distribution(candidates, values);
 
         std::vector<double> new_state(num_chains * num_dimensions), new_values(num_chains);
 
