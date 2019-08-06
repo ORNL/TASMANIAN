@@ -1,8 +1,4 @@
-#include <iostream>
-#include <iomanip>
-#include <ctime>
-
-#include "TasmanianDREAM.hpp"
+#include "Tasmanian.hpp"
 
 using namespace std;
 

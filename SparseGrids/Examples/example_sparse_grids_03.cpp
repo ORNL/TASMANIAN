@@ -1,5 +1,5 @@
 
-#include "TasmanianSparseGrid.hpp"
+#include "Tasmanian.hpp"
 
 using namespace std;
 
