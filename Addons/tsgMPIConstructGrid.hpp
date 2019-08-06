@@ -186,7 +186,7 @@ void mpiConstructCommon(std::function<void(std::vector<double> const &x, std::ve
  *          and send that over the communicator. The MPI procedure always runs in parallel mode
  *          hence there is no additional template parameter.
  *
- * \param mode the inputs \b x and outputs \b y of the model are the same as in
+ * \param model the inputs \b x and outputs \b y of the model are the same as in
  *      TasGrid::constructSurrogate(); however, there is no thread_id.
  *      Only one call of the model will be executed on each active rank and thus
  *      the MPI native MPI_Comm_rank() can be used in place of the thread_id.
