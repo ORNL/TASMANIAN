@@ -14,7 +14,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_ENABLE_MAGMA:BOOL=OFF       (stable)
 #    -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""  (stable)
 #    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF     (mostly stable)
-#    -D Tasmanian_ENABLE_MPI:BOOL=OFF         (experimental)
+#    -D Tasmanian_ENABLE_MPI:BOOL=OFF         (mostly stable)
 #
 # Additional options: (if default test behavior is not desired)
 #    -D Tasmanian_TESTS_OMP_NUM_THREADS:INT="sets OpenMP number of threads"
@@ -63,16 +63,16 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    - fail or fallback if find_package() fails for some option
 # 3. Enable testing and set the master config file
 # 4. Add all subdirectories in the correct order
-#    - Interfaces require SparseGirds, but do not depend on each other
-#    - DREAM requires SparseGrids
-#    - SparseGrids does not require other sub-dirs
-# 5. Add the "make test_install" command
-# 6. Install top level files
+#    - SparseGirds, DREAM, Addons
+#    - Interfaces: Python, Fortran, MATLAB
+#    - master target and examples
+# 5. Install top level files
+#    - add the "make test_install" target
 #    - cmake export file
 #    - master config file
 #    - CMakeLists.txt for the examples (include OpenMP hack if needed)
 #    - shell (bash) source file that defines paths
-# 7. Print final messages
+# 6. Print final messages
 ########################################################################
 
 option(USE_XSDK_DEFAULTS            "Enable xSDK compatibility"              OFF)
@@ -83,8 +83,8 @@ option(Tasmanian_ENABLE_PYTHON      "Enable Python interface for Tasmanian (reco
 option(Tasmanian_ENABLE_CUDA        "Enable Nvidia CUDA kernels and libraries within Tasmanian (stable)"    OFF)
 option(Tasmanian_ENABLE_MAGMA       "Enable acceleration using UTK Magma library within Tasmanian (stable)" OFF)
 option(Tasmanian_ENABLE_FORTRAN     "Enable Fortran interface for Tasmanian (mostly stable)" OFF)
-option(Tasmanian_ENABLE_MPI         "Enable MPI support for Tasmanian (experimental)"       OFF)
-option(Tasmanian_ENABLE_DOXYGEN     "Enable Dogygen documentation for Tasmanian (not fully complete)" OFF)
+option(Tasmanian_ENABLE_MPI         "Enable MPI support for Tasmanian (mostly stable)"       OFF)
+option(Tasmanian_ENABLE_DOXYGEN     "Enable Dogygen documentation for Tasmanian (close to complete)" OFF)
 
 # treat those similar to options, but give values other than ON/OFF
 set(Tasmanian_MATLAB_WORK_FOLDER     ""  CACHE PATH   "Enable MATLAB interface and use the path for the MATLAB work folder (stable)")
