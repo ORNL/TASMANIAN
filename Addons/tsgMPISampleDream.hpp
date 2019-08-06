@@ -55,9 +55,81 @@
 
 namespace TasDREAM{
 
+/*!
+ * \ingroup TasmanianAddonsMPIDream
+ * \brief Class that enables distributed DREAM sampling with MPI.
+ *
+ * Models with many outputs are computationally expensive to sample when used in a Bayesian posterior.
+ * Such models can be distributed across ranks of an MPI communicator and the DREAM candidates
+ * can be computed in parallel, i.e., distributing the work.
+ * Of specific interest are posteriors with likelihood functions that can be expressed as a product (or sum)
+ * of one term per model outputs, e.g., constant or diagonal Gaussian likelihoods.
+ * The actual sampling is performed on a single rank while the values of the probability
+ * distribution at the candidate points is computed by all MPI ranks together (each ranks handling a separate set of inputs).
+ * The high-level algorithm can be expressed with two MPI calls, MPI_Bcast() all candidates
+ * to all ranks, then MPI_Reduce() the result.
+ * See TasGrid::MPIGridScatterOutputs() and TasDREAM::MPILikelihoodScatter()
+ * for ways to distribute a sparse grid model and a likelihood function.
+ *
+ * The usage of this class is very similar to the calls to TasDREAM::posterior() template,
+ * the first two inputs are the local portions of the model and likelihood,
+ * followed by the prior which will only be used on the root rank.
+ * The other inputs define parameters of the MPI side of the algorithm.
+ * The constructor can be inlined in a call to TasDREAM::SampleDREAM().
+ *
+ * \par MPI Synchronization
+ * The call to the constructor will block all ranks except the root,
+ * all non-root ranks will enter into a worker cycle waiting for candidates from root.
+ * The root process will send-out the unblock signal to all workers whenever the root object is
+ * destroyed or the clear() method is called.
+ * The class can be passed as the probability distribution to TasDREAM::SampleDREAM(),
+ * but only the root rank can compute valid samples, the other ranks will use a no-op function.
+ * If SampleDREAM() is called with an empty TasmanianDREAM state then sampling will not be performed,
+ * thus the class should be coupled with an empty state on each of the non-root ranks;
+ * which helps mirror the code across all ranks and avoid extraneous if-statements.
+ * Here are some valid calls:
+ *
+ * \code
+ *   int me;
+ *   MPI_Comm_rank(MPI_COMM_WORLD, &me);
+ *   auto full_grid = TasGrid::readGrid("foo");
+ *   TasGrid::TasmanianSparseGrid grid;
+ *   MPIGridScatterOutputs(full_grid, grid, root, 1, MPI_COMM_WORLD); // distribute the grid
+ *   TasDREAM::LikelihoodGaussIsotropic full_likely(...);
+ *   TasDREAM::LikelihoodGaussIsotropic likely;
+ *   MPILikelihoodScatter(full_likely, likely, root, 1, MPI_COMM_WORLD); // distribute the likelihood
+ *   TasDREAM::TasmanianDREAM state = (me == root) ? TasmanianDREAM(...) : TasmanianDREAM();
+ *   TasDREAM::SampleDREAM(..., DistributedPosterior(likely, grid, ..., root, ...), ..., state, ...);
+ * \endcode
+ * Alternatively, the object can also be assigned to a variable:
+ * \code
+ *   TasDREAM::DistributedPosterior post(likely, grid, ..., root, ...);
+ *   if (me == root) TasDREAM::SampleDREAM(..., post, ...); // the state on non-root ranks is irrelevant
+ *   post.clear(); // unblock the non-root ranks
+ * \endcode
+ */
 template<TypeSamplingForm form = regform>
 class DistributedPosterior{
 public:
+    /*!
+     * \brief Constructor that sets the parameters for the distribued posterior.
+     *
+     * Constructs a distributed posterior object from local model and likelihood objects.
+     * See the class description for example usage, details on the parameters follow here:
+     *
+     * \tparam form is the same as in the call to TasDREAM::SampleDREAM() and both \b must match.
+     *
+     * \param likelihood is the local portion of the likelihood. Same as in the call to TasDREAM::posterior().
+     * \param distributed_model is the local portion of the model, the sub-set of the outputs
+     *      must match the set used by the \b likelihood.
+     * \param prior will be used only by the root rank, same as in the call to TasDREAM::posterior().
+     * \param num_inputs must match the dimensions of the state on the root rank,
+     *      since the non-root ranks do not need a valid state this parameter is used to synchronize
+     *      the dimensions across all ranks.
+     * \param num_chains same as the number set by the state, see the \b num_inputs.
+     * \param mpi_root is the root process that will perform the actual sampling.
+     * \param communicator is the communicator where all ranks reside.
+     */
     DistributedPosterior(std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likelihood,
                          std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)> distributed_model,
                          std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> prior,
@@ -87,8 +159,10 @@ public:
           }
     }
 
+    //! \brief Destructor, unblocks the non-root ranks (if still blocked).
     ~DistributedPosterior(){ clear(); }
 
+    //! \brief Unblocks the non-root ranks, the object cannot be used after this calls (can be destroyed only).
     void clear(){
         if ((me == root) && (!x.empty())){ // send out the shutdown signal
             x.back() = 0.0;
@@ -96,6 +170,7 @@ public:
         }
     }
 
+    //! \brief Allows passing the object as an input to TasDREAM::SampleDREAM().
     operator DreamPDF(){
         if (me == root){
             return [&](const std::vector<double> &candidates, std::vector<double> &values)->void{
