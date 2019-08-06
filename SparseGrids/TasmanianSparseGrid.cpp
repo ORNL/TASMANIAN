@@ -926,13 +926,16 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDept
     }
 
     if (!level_limits.empty()) llimits = level_limits;
+    std::vector<double> x;
     if (isGlobal()){
-        return getGridGlobal()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
+        x = getGridGlobal()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
     }else if (isSequence()){
-        return getGridSequence()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
+        x = getGridSequence()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
     }else{ // Fourier
-        return getGridFourier()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
+        x = getGridFourier()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
     }
+    formTransformedPoints((int) x.size() / getNumDimensions(), x.data());
+    return x;
 }
 std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
@@ -944,13 +947,16 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDept
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling getCandidateConstructionPoints() with invalid output");
 
     if (!level_limits.empty()) llimits = level_limits;
+    std::vector<double> x;
     if (isGlobal()){
-        return getGridGlobal()->getCandidateConstructionPoints(type, output, llimits);
+        x = getGridGlobal()->getCandidateConstructionPoints(type, output, llimits);
     }else if (isSequence()){
-        return getGridSequence()->getCandidateConstructionPoints(type, output, llimits);
+        x = getGridSequence()->getCandidateConstructionPoints(type, output, llimits);
     }else{ // Fourier
-        return getGridFourier()->getCandidateConstructionPoints(type, output, llimits);
+        x = getGridFourier()->getCandidateConstructionPoints(type, output, llimits);
     }
+    formTransformedPoints((int) x.size() / getNumDimensions(), x.data());
+    return x;
 }
 std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria,
                                                                         int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
@@ -963,7 +969,9 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(double t
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling getCandidateConstructionPoints() with invalid output");
 
     if (!level_limits.empty()) llimits = level_limits;
-    return getGridLocalPolynomial()->getCandidateConstructionPoints(tolerance, criteria, output, llimits, ((scale_correction.empty()) ? nullptr : scale_correction.data()));
+    auto x = getGridLocalPolynomial()->getCandidateConstructionPoints(tolerance, criteria, output, llimits, ((scale_correction.empty()) ? nullptr : scale_correction.data()));
+    formTransformedPoints((int) x.size() / getNumDimensions(), x.data());
+    return x;
 }
 void TasmanianSparseGrid::loadConstructedPoints(const std::vector<double> &x, const std::vector<double> &y){
     int numx = (int) x.size() / base->getNumDimensions();
