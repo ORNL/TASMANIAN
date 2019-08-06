@@ -51,14 +51,7 @@ add_executable(Tasmanian_dreamtest dreamtest_main.cpp
                                    tasdreamExternalTests.hpp
                                    tasdreamExternalTests.cpp)
 
-add_executable(Tasmanian_example_dream Examples/example_dream_01.cpp
-                                       Examples/example_dream_02.cpp
-                                       Examples/example_dream_03.cpp
-                                       Examples/example_dream_04.cpp
-                                       Examples/example_dream.cpp)
-
 set_target_properties(Tasmanian_dreamtest     PROPERTIES OUTPUT_NAME "dreamtest")
-set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
 
 ########################################################################
 # add the libraries
@@ -78,7 +71,6 @@ else() # if there are not static libs, use shared libs for the executables
 endif()
 
 target_link_libraries(Tasmanian_dreamtest      Tasmanian_libdream)
-target_link_libraries(Tasmanian_example_dream  Tasmanian_libdream)
 
 
 ########################################################################

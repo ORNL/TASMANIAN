@@ -150,6 +150,7 @@ if (Tasmanian_ENABLE_DOXYGEN)
 endif()
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/master_targets.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/all_examples.cmake")
 
 
 ########################################################################

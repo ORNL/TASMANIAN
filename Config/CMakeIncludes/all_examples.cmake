@@ -1,0 +1,27 @@
+add_executable(Tasmanian_example_sparse_grids SparseGrids/Examples/example_sparse_grids_01.cpp
+                                              SparseGrids/Examples/example_sparse_grids_02.cpp
+                                              SparseGrids/Examples/example_sparse_grids_03.cpp
+                                              SparseGrids/Examples/example_sparse_grids.cpp)
+
+set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")
+target_link_libraries(Tasmanian_example_sparse_grids Tasmanian_master)
+
+
+add_executable(Tasmanian_example_dream DREAM/Examples/example_dream_01.cpp
+                                       DREAM/Examples/example_dream_02.cpp
+                                       DREAM/Examples/example_dream_03.cpp
+                                       DREAM/Examples/example_dream_04.cpp
+                                       DREAM/Examples/example_dream.cpp)
+
+set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")
+target_link_libraries(Tasmanian_example_dream  Tasmanian_master)
+
+
+if (Tasmanian_ENABLE_FORTRAN)
+    add_executable(Tasmanian_example_sparse_grids_f90 InterfaceFortran/Examples/example_sparse_grids.f90)
+
+    set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES
+                            OUTPUT_NAME "example_sparse_grids_f90"
+                            LINKER_LANGUAGE Fortran)
+    target_link_libraries(Tasmanian_example_sparse_grids_f90 Tasmanian_master)
+endif()
