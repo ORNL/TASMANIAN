@@ -110,6 +110,17 @@ inline void genUniformSamples(const std::vector<double> &lower, const std::vecto
     }
 }
 
+/*!
+ * \ingroup DREAMPDF
+ * \brief Overload that returns the vector.
+ */
+inline std::vector<double> genUniformSamples(const std::vector<double> &lower, const std::vector<double> &upper,
+                                             int num_samples, std::function<double(void)> get_random01 = tsgCoreUniform01){
+    std::vector<double> x;
+    genUniformSamples(lower, upper, num_samples, x, get_random01);
+    return x;
+}
+
 //! \brief Generate standard normal samples with given \b means and standard \b deviations.
 //! \ingroup DREAMPDF
 

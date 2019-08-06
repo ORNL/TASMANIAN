@@ -32,16 +32,18 @@ void dream_example_04(){
     srand((int) time(nullptr));
 
     // EXAMPLE 4:
-    cout << "\n" << "-------------------------------------------------------------------------------------------------\n";
+    cout << "\n" << "---------------------------------------------------------------------------------------------------\n";
     cout << std::scientific; cout.precision(5);
-    cout << "EXAMPLE 4: similar to Example 3, but data is noisy and the multi-modal posterior comes from symmetry in the model\n";
-    cout << "           set inference problem, identify x_0, x_1, x_2 and x_3 (four) model parameters from noisy data\n";
-    cout << "           model: f(x) = x_0*exp(x_1*t) + x_2*exp(x_3*t),  data: d = exp(t) + 0.4*exp(3*t)\n";
-    cout << "           note the symmetry between x_1 and x_3 which causes bi-modal posterior\n";
-    cout << "           t in [0,1], discretized with 64 equidistant nodes\n";
-    cout << "           likelihood is exp(-64 * (f(x) - d)^2)\n";
-    cout << "           using sparse grid to interpolate the model\n";
-    cout << "     NOTE: 64 corresponds to discretization error in t\n" << endl;
+    cout << "EXAMPLE 4: similar to Example 3, but the data is noisy and the multi-modal posterior comes\n"
+         << "           from a symmetry in the model\n"
+         << "           set inference problem: identify x_0, x_1, x_2 and x_3 (four) model parameters\n"
+         << "                                  from noisy data\n"
+         << "           model: f(x) = x_0*exp(x_1*t) + x_2*exp(x_3*t),  data: d = exp(t) + 0.4*exp(3*t)\n"
+         << "           note the symmetry between x_1 and x_3 which results in a bi-modal posterior\n"
+         << "           t in [0,1], t is discretized with 64 equidistant nodes\n"
+         << "           likelihood is exp(-64 * (f(x) - d)^2)\n"
+         << "           using a sparse grid to interpolate the model\n"
+         << "     NOTE: 64 corresponds to the discretization error and the added noise\n" << endl;
 
     // multi-modal distributions require a lot more chains and samples
     int num_chains = 50;
@@ -50,7 +52,8 @@ void dream_example_04(){
     // the total number of samples is num_chains * num_iterations
     int num_discrete_nodes = 64;
 
-    // create a lambda function that represents the model, normally this would be a call to an external code
+    // create a lambda function that represents the model
+    // normally this would be a call to an external code
     auto model = [&](double x0, double x1, double x2, double x3, std::vector<double> &data)->
         void{
             double dt = 1.0 / ((double) data.size());
@@ -69,22 +72,19 @@ void dream_example_04(){
     // you can adjust the example to consider more/less noise
     TasDREAM::applyGaussianUpdate(data, 1.0 / ((double) num_discrete_nodes));
 
-    TasGrid::TasmanianSparseGrid grid;
-    grid.makeSequenceGrid(4, num_discrete_nodes, 15, TasGrid::type_iptotal, TasGrid::rule_leja); // 15-th order polynomial
-    std::vector<double> domain_a = {0.2, 0.5, 0.2, 0.5}; // set search interval x_0, x_2 in [0.2, 1.2], x_1, x_3 in [0.5, 4.0]
+    auto grid = TasGrid::makeSequenceGrid(4, num_discrete_nodes, 15, // 15-th order polynomial
+                                          TasGrid::type_iptotal, TasGrid::rule_leja);
+    // set search interval x_0, x_2 in [0.2, 1.2], x_1, x_3 in [0.5, 4.0]
+    std::vector<double> domain_a = {0.2, 0.5, 0.2, 0.5};
     std::vector<double> domain_b = {1.2, 4.0, 1.2, 4.0};
     grid.setDomainTransform(domain_a, domain_b);
 
-    std::vector<double> points; // get the sparse grid points
-    grid.getNeededPoints(points);
-    std::vector<double> values; // stores the model values
-
-    for(int i=0; i<grid.getNumNeeded(); i++){ // compute the model for each sparse grid point
-        std::vector<double> model_at_point(num_discrete_nodes);
-        model(points[4*i], points[4*i+1], points[4*i+2], points[4*i+3], model_at_point);
-        values.insert(values.end(), model_at_point.begin(), model_at_point.end()); // append to the total vector
-    }
-    grid.loadNeededPoints(values); // load the values into the grid
+    TasGrid::loadNeededPoints<TasGrid::mode_sequential>(
+        [&](std::vector<double> const &x, std::vector<double> &y, size_t)->
+        void{
+            model(x[0], x[1], x[2], x[3], y);
+        },
+        grid, 1);
 
     // when working with grids with large N, acceleration becomes very useful
     // if BLAS is enabled on compile time, the grid will use BLAS by default
@@ -93,11 +93,11 @@ void dream_example_04(){
     //   grid.setGPUID(0);
 
     // define the likelihood function and load the data
-    // even though the example is noise free, we assume that the "noise" is due to discretization error
-    // using piece-wise constant approximation the discretization error is 1.0 / num_discrete_nodes
+    // the discretization error and noise are both is 1.0 / num_discrete_nodes
+    // the Gaussian formula adds another factor of 0.5 which cancels one
     TasDREAM::LikelihoodGaussIsotropic likely(1.0 / ((double) num_discrete_nodes), data);
 
-    TasDREAM::TasmanianDREAM state(num_chains, grid); // assume the dimensions from the sparse grid
+    TasDREAM::TasmanianDREAM state(num_chains, grid); // get the dimensions from the sparse grid
     std::vector<double> initial_chains;
     TasDREAM::genUniformSamples(domain_a, domain_b, num_chains, initial_chains);
     state.setState(initial_chains); // use chains distributed uniformly over the domain
@@ -105,16 +105,17 @@ void dream_example_04(){
     // Call to Tasmanian DREAM Sampling algorithm
     TasDREAM::SampleDREAM<TasDREAM::logform>
                          (num_burnup_iterations, num_sample_iterations,
-                          TasDREAM::posterior<TasDREAM::logform>(likely, // provide the likelihood
-                                                                 grid, // provide the model
-                                                                 TasDREAM::uniform_prior), // assume non-informative prior
+                          TasDREAM::posterior<TasDREAM::logform>
+                                (likely, // provide the likelihood
+                                 grid, // provide the model
+                                 TasDREAM::uniform_prior), // assume non-informative prior
                           grid.getDomainInside(),
                           state,
-                          TasDREAM::dist_gaussian, 0.01, // Gaussian independent update of magnitude 0.01
+                          TasDREAM::dist_gaussian, 0.01, // independent update of magnitude 0.01
                           TasDREAM::const_percent<100> // use 100% of differential update
                           );
 
-    // get the vector containing the sampling history, could also use "auto history = state.getHistory();"
+    // get the vector containing the sampling history
     const std::vector<double> &history = state.getHistory();
 
     // splitting the bimodal data is tricky,
@@ -142,18 +143,24 @@ void dream_example_04(){
     scale_high /= num_samples;
 
     // High dimensions and multiple modes reduce the acceptance rate,
-    // and tuning sampling parameters such as the differential update magnitude could have both positive and negative effects.
+    // and tuning sampling parameters such as the differential update magnitude
+    // could have either positive or negative effects.
     // Low acceptance rate is undesirable (called poor mixing in literature)
     // and extremely low rate indicates ill-posed or incorrectly implemented problem.
     cout << "Acceptance rate: " << std::fixed << state.getAcceptanceRate() << "\n\n";
-    cout << "High dimensions and multiple modes reduce the acceptance rate, and sampling parameters (e.g., differential update magnitude), aff.\n\n";
-    cout << "Inferred values (noise free case):" << endl;
-    cout << " low   rate:" << setw(12) << std::fixed << rate_low   << "   error:" << setw(12) << std::scientific << std::abs(rate_low - 1.0)   << endl;
-    cout << " low  scale:" << setw(12) << std::fixed << scale_low  << "   error:" << setw(12) << std::scientific << std::abs(scale_low - 1.0)  << "\n" << endl;
-    cout << " high  rate:" << setw(12) << std::fixed << rate_high  << "   error:" << setw(12) << std::scientific << std::abs(rate_high - 3.0)  << endl;
-    cout << " high scale:" << setw(12) << std::fixed << scale_high << "   error:" << setw(12) << std::scientific << std::abs(scale_high - 0.4) << "\n" << endl;
+    cout << "High dimensions and multiple modes reduce the acceptance rate,\n"
+         << "and sampling parameters (e.g., differential update magnitude) can affect it either way.\n\n";
+    cout << "Inferred values (noise free case):\n";
+    cout << " low   rate:" << setw(12) << std::fixed << rate_low
+         << "   error:" << setw(12) << std::scientific << std::abs(rate_low - 1.0)   << "\n";
+    cout << " low  scale:" << setw(12) << std::fixed << scale_low
+         << "   error:" << setw(12) << std::scientific << std::abs(scale_low - 1.0)  << "\n\n";
+    cout << " high  rate:" << setw(12) << std::fixed << rate_high
+         << "   error:" << setw(12) << std::scientific << std::abs(rate_high - 3.0)  << "\n";
+    cout << " high scale:" << setw(12) << std::fixed << scale_high
+         << "   error:" << setw(12) << std::scientific << std::abs(scale_high - 0.4) << "\n\n";
 
-    cout << "\n" << "-------------------------------------------------------------------------------------------------" << endl;
+    cout << "\n" << "---------------------------------------------------------------------------------------------------\n";
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 //! [DREAM_Example_04 example]
