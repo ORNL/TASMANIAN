@@ -32,9 +32,10 @@ void sparse_grids_example_01(){
 //! [SG_Example_01 example]
 #endif
 
-    cout << "\n-------------------------------------------------------------------------------------------------\n";
+    cout << "\n---------------------------------------------------------------------------------------------------\n";
     cout << std::scientific; cout.precision(17);
-    cout << "Example 1:  integrate f(x,y) = exp(-x^2) * cos(y), using clenshaw-curtis level nodes\n";
+    cout << "Example 1:  integrate f(x,y) = exp(-x^2) * cos(y),\n"
+         << "            using clenshaw-curtis nodes and grid of type level\n";
 
     int dimension = 2;
     int level = 6;
