@@ -228,6 +228,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             }else{
                 grid.makeFourierGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, anisotropic);
             }
+            grid.setDomainTransform(std::vector<double>(grid.getNumDimensions(), -1.0), std::vector<double>(grid.getNumDimensions(), 1.0));
         }else{
             if (anisotropic == nullptr){
                 grid = makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, std::vector<int>(), alpha, beta, custom_filename);
@@ -841,10 +842,9 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
     size_t outs = (size_t) grid->getNumOutputs();
     for(size_t itr = 0; grid->getNumLoaded() < np.back(); itr++){
         std::vector<double> points;
-        if (grid->isGlobal() || grid->isSequence()){
+        if (grid->isGlobal() || grid->isSequence() || grid->isFourier()){
             if (itr == 1){
-                std::vector<int> weights;
-                grid->estimateAnisotropicCoefficients(type, 0, weights);
+                auto weights = grid->estimateAnisotropicCoefficients(type, 0);
                 points = grid->getCandidateConstructionPoints(type, weights);
             }else{
                 points = grid->getCandidateConstructionPoints(type, 0);
@@ -853,14 +853,14 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
             points = grid->getCandidateConstructionPoints(tolerance, reftype);
         }
         size_t num_points = points.size() / dims;
-        size_t max_points = (grid->isLocalPolynomial()) ? 123 : 32;
+        size_t max_points = (grid->isLocalPolynomial() || grid->isFourier()) ? 123 : 32;
 
         // do not compute all points from a batch, i.e., we don't want the less important points
         // compute only half the batch, but no more than max_points
         // local grids require more points, hence large max_points to reduce the total iterations
         // local grids do not include completely unimportant points, hence we can compute all points for small batches
         num_points = ((!grid->isLocalPolynomial()) || (num_points > 10)) ? num_points / 2 : num_points;
-        num_points = (num_points <= max_points) ? num_points : max_points;
+        num_points = std::min(num_points, max_points);
 
         std::vector<size_t> pindex(num_points);
         for(size_t i=0; i<num_points; i++) pindex[i] = i;
@@ -894,7 +894,8 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
                 cout << "ERROR: dynamic construction failed at iteration: " << itr << endl;
                 cout << "function: " << f->getDescription() << "  expected = " << np[i] << "  " << errs[i]
                     << "   observed points = " << R.num_points << "  error = " << R.error << std::endl;
-                return false;
+                break;
+                //return false;
             }
         }
 
@@ -1090,10 +1091,10 @@ bool ExternalTester::testAllWavelet() const{
 
 bool ExternalTester::testAllFourier() const{
     bool pass = true;
-    const int depths1[3] = { 5, 5, 5 };
-    const int depths2[3] = { 4, 4, 4 };
+    const int depths1[3] = { 6, 6, 6 };
+    const int depths2[3] = { 5, 5, 5 };
     const double tols1[3] = { 1.E-11, 1.E-06, 1.E-06 };
-    const double tols2[3] = { 1.E-11, 1.E-03, 1.E-03 };
+    const double tols2[3] = { 1.E-11, 5.E-03, 5.E-03 };
     int wfirst = 11, wsecond = 34, wthird = 15;
     if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, depths1, tols1) && testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, depths2, tols2)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
@@ -1438,7 +1439,20 @@ bool ExternalTester::testAllRefinement() const{
     }
     cout << "      Construction              dynamic/local" << setw(15) << ((pass4) ? "Pass" : "FAIL") << endl;
 
-    return (pass && pass2 && pass3 && pass4 && pass5);
+    bool pass6 = true;
+    {
+        const BaseFunction *f = &f21c1c2periodic;
+        std::vector<int> np     = {    5,    21,    51,   189,   297,  1377};
+        std::vector<double> err = {5.E-1, 3.E-2, 1.E-2, 3.E-3, 5.E-4, 1.E-4};
+        grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 2, type_level);
+        grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
+        if (!testDynamicRefinement(f, &grid, type_iphyperbolic, -1.0, refine_none, np, err)){
+            cout << "ERROR: failed dynamic anisotropic refinement using Fourier grid for " << f->getDescription() << endl; pass6 = false;
+        }
+    }
+    cout << "      Construction            dynamic/fourier" << setw(15) << ((pass6) ? "Pass" : "FAIL") << endl;
+
+    return (pass && pass2 && pass3 && pass4 && pass5 && pass6);
 }
 
 bool ExternalTester::testAllDomain() const{
