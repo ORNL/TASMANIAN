@@ -11,6 +11,7 @@ add_executable(Tasmanian_example_dream DREAM/Examples/example_dream_01.cpp
                                        DREAM/Examples/example_dream_02.cpp
                                        DREAM/Examples/example_dream_03.cpp
                                        DREAM/Examples/example_dream_04.cpp
+                                       DREAM/Examples/example_dream_05.cpp
                                        DREAM/Examples/example_dream.cpp)
 
 set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dream")

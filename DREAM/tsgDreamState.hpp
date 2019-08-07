@@ -176,6 +176,13 @@ public:
     //! \brief Return the sample with highest probability, searchers within the history.
     void getApproximateMode(std::vector<double> &mode) const;
 
+    //! \brief Overload that returns the vector.
+    std::vector<double> getApproximateMode() const{
+        std::vector<double> mode;
+        getApproximateMode(mode);
+        return mode;
+    }
+
     //! \brief Clear the stored history (does not touch the state).
     void clearHistory();
 
