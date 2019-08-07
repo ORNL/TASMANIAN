@@ -1091,10 +1091,10 @@ bool ExternalTester::testAllWavelet() const{
 
 bool ExternalTester::testAllFourier() const{
     bool pass = true;
-    const int depths1[3] = { 5, 5, 5 };
-    const int depths2[3] = { 4, 4, 4 };
+    const int depths1[3] = { 6, 6, 6 };
+    const int depths2[3] = { 5, 5, 5 };
     const double tols1[3] = { 1.E-11, 1.E-06, 1.E-06 };
-    const double tols2[3] = { 1.E-11, 1.E-03, 1.E-03 };
+    const double tols2[3] = { 1.E-11, 5.E-03, 5.E-03 };
     int wfirst = 11, wsecond = 34, wthird = 15;
     if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, depths1, tols1) && testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, depths2, tols2)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
