@@ -28,6 +28,7 @@ void dream_example_01();
 void dream_example_02();
 void dream_example_03();
 void dream_example_04();
+void dream_example_05();
 
 int main(int argc, const char**){
 /*
@@ -54,6 +55,7 @@ int main(int argc, const char**){
 
     dream_example_03();
     dream_example_04();
+    dream_example_05();
 
 /*
 {
