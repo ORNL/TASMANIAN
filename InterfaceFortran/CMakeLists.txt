@@ -16,17 +16,11 @@ add_library(${Tasmanian_libfor_target_name} ${Tasmanian_shared_or_static} Tasman
 
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 
+target_link_libraries(${Tasmanian_libfor_target_name} Tasmanian_addons)
 set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran90")
 
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
-
-# setup the name, in MacOSX and Linux static libraries use .a extension and shared libs use .dylib and .so
-# in Windows, shared .dll libs need another file for linking which shares .lib extension with the static libs
-# thus on Windows, we specifically add _static to the name of the lib
-if ((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (${Tasmanian_shared_or_static} STREQUAL STATIC))
-    set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran90_static")
-endif()
 
 install(TARGETS ${Tasmanian_libfor_target_name}
         EXPORT "${Tasmanian_export_name}"
@@ -34,31 +28,36 @@ install(TARGETS ${Tasmanian_libfor_target_name}
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
 
+unset(Tasmanian_libfor_target_name)
 endmacro()
 
 ########################################################################
 # add the fortran tester and examples executables
 ########################################################################
-add_executable(Tasmanian_fortester                fortester.f90)
+add_executable(Tasmanian_fortester  fortester.f90)
 
-set_target_properties(Tasmanian_fortester                PROPERTIES OUTPUT_NAME "fortester" LINKER_LANGUAGE Fortran)
+set_target_properties(Tasmanian_fortester  PROPERTIES OUTPUT_NAME "fortester" LINKER_LANGUAGE Fortran)
 
 ########################################################################
 # add the libraries
 ########################################################################
-if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
-    Tasmanian_macro_add_libdfortran(SHARED)
+foreach(_tsglibtype ${Tasmanian_libs_type})
+    string(TOUPPER ${_tsglibtype} Tasmanian_ltype)
+    Tasmanian_macro_add_libdfortran(${Tasmanian_ltype})
 
-    target_link_libraries(Tasmanian_libfortran90_shared Tasmanian_libsparsegrid_shared)
-endif()
+    target_link_libraries(Tasmanian_libfortran90_${_tsglibtype} Tasmanian_libdream_${_tsglibtype})
+endforeach()
+unset(_tsglibtype)
+unset(Tasmanian_ltype)
 
-if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
-    Tasmanian_macro_add_libdfortran(STATIC)
+target_link_libraries(Tasmanian_fortester  Tasmanian_libfortran90_${Tasmanian_lib_default})
 
-    target_link_libraries(Tasmanian_libfortran90_static      Tasmanian_libsparsegrid_static)
-    target_link_libraries(Tasmanian_fortester                Tasmanian_libfortran90_static)
-else()
-    target_link_libraries(Tasmanian_fortester                Tasmanian_libfortran90_shared)
+
+########################################################################
+# Windows specific support (DLL export/import directives and names)
+########################################################################
+if ((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (TARGET Tasmanian_libfortran90_static))
+    set_target_properties(Tasmanian_libfortran90_static PROPERTIES OUTPUT_NAME "tasmanianfortran90_static")
 endif()
 
 

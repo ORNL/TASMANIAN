@@ -396,11 +396,6 @@ IMPLICIT NONE
   WRITE(*,*)
   DEALLOCATE(res)
 
-! ==================================================================== !
-! Some examples take long time, fast test will exit here
-  IF (iargc() .GT. 0)then
-    STOP 0
-  ENDIF
 
 ! prepare random smaples for future tests
   call random_seed()
@@ -411,70 +406,71 @@ IMPLICIT NONE
 ! EXAMPLE 5:
 ! interpolate: f(x1,x2,x3,x4) = exp(-x1^2) * cos(x2) * exp(-x3^2) * cos(x4)
 ! with Global and Sequence Leja rules
+! Skipping example 5: it takes time and slows down testing, but it dosn't show/test any API not covered in other cases
 
-  dims = 4
-  outs = 1
-  level = 15
-
-  CALL cpu_time(cpuStart)
-  CALL tsgMakeGlobalGrid(grid, dims, outs, level, tsg_level, tsg_leja)
-  CALL cpu_time(cpuEnd)
-  stages(1,1) = cpuEnd - cpuStart
-
-  N = tsgGetNumPoints(grid)
-
-  WRITE(*,*) "-------------------------------------------------------------------------------------------------"
-  WRITE(*,*) "Example 5: interpolate f(x1,x2,x3,x4) = exp(-x1^2) * cos(x2) * exp(-x3^2) * cos(x4)"
-  WRITE(*,*) "           comparign the performance of Global and Sequence grids with leja nodes"
-  WRITE(*,"(A,I4)") "            using polynomials of total degree up to: ", level
-  WRITE(*,"(A,I4,A)") "            the grids have:                          ", N, " points"
-  WRITE(*,*) "           both grids are evaluated at 1000 random points "
-  WRITE(*,*)
-
-  points => tsgGetNeededPoints(grid)
-  ALLOCATE(values(outs,N))
-  DO i = 1, N
-    values(1,i) = exp(-points(1,i)**2) * cos(points(2,i)) * exp(-points(3,i)**2) * cos(points(4,i))
-  END DO
-  DEALLOCATE(points)
-
-  CALL cpu_time(cpuStart)
-  CALL tsgLoadNeededPoints(grid, values)
-  CALL cpu_time(cpuEnd)
-  stages(1,2) = cpuEnd - cpuStart
-
-  ALLOCATE(res2(outs,1000)) ! 2-D result
-
-  CALL cpu_time(cpuStart)
-  CALL tsgEvaluateBatch(grid, randPoints, 1000, res2)
-  CALL cpu_time(cpuEnd)
-  stages(1,3) = cpuEnd - cpuStart
-
-  CALL cpu_time(cpuStart)
-  CALL tsgMakeSequenceGrid(grid, dims, outs, level, tsg_level, tsg_leja)
-  CALL cpu_time(cpuEnd)
-  stages(2,1) = cpuEnd - cpuStart
-
-  ! points are the same, no need to recompue values
-  CALL cpu_time(cpuStart)
-  CALL tsgLoadNeededPoints(grid, values)
-  CALL cpu_time(cpuEnd)
-  stages(2,2) = cpuEnd - cpuStart
-
-  DEALLOCATE(values)
-
-  CALL cpu_time(cpuStart)
-  CALL tsgEvaluateBatch(grid, randPoints, 1000, res2)
-  CALL cpu_time(cpuEnd)
-  stages(2,3) = cpuEnd - cpuStart
-
-  WRITE(*,*) "Stage            Global Grid         Sequence Grid"
-  WRITE(*,"(A,E20.8,E20.8)") " make grid  ", stages(1,1), stages(2,1)
-  WRITE(*,"(A,E20.8,E20.8)") " load needed", stages(1,2), stages(2,2)
-  WRITE(*,"(A,E20.8,E20.8)") " evaluate   ", stages(1,3), stages(2,3)
-
-  CALL tsgDeallocateGrid(grid)
-  DEALLOCATE(res2)
+!  dims = 4
+!  outs = 1
+!  level = 15
+!
+!  CALL cpu_time(cpuStart)
+!  CALL tsgMakeGlobalGrid(grid, dims, outs, level, tsg_level, tsg_leja)
+!  CALL cpu_time(cpuEnd)
+!  stages(1,1) = cpuEnd - cpuStart
+!
+!  N = tsgGetNumPoints(grid)
+!
+!  WRITE(*,*) "-------------------------------------------------------------------------------------------------"
+!  WRITE(*,*) "Example 5: interpolate f(x1,x2,x3,x4) = exp(-x1^2) * cos(x2) * exp(-x3^2) * cos(x4)"
+!  WRITE(*,*) "           comparign the performance of Global and Sequence grids with leja nodes"
+!  WRITE(*,"(A,I4)") "            using polynomials of total degree up to: ", level
+!  WRITE(*,"(A,I4,A)") "            the grids have:                          ", N, " points"
+!  WRITE(*,*) "           both grids are evaluated at 1000 random points "
+!  WRITE(*,*)
+!
+!  points => tsgGetNeededPoints(grid)
+!  ALLOCATE(values(outs,N))
+!  DO i = 1, N
+!    values(1,i) = exp(-points(1,i)**2) * cos(points(2,i)) * exp(-points(3,i)**2) * cos(points(4,i))
+!  END DO
+!  DEALLOCATE(points)
+!
+!  CALL cpu_time(cpuStart)
+!  CALL tsgLoadNeededPoints(grid, values)
+!  CALL cpu_time(cpuEnd)
+!  stages(1,2) = cpuEnd - cpuStart
+!
+!  ALLOCATE(res2(outs,1000)) ! 2-D result
+!
+!  CALL cpu_time(cpuStart)
+!  CALL tsgEvaluateBatch(grid, randPoints, 1000, res2)
+!  CALL cpu_time(cpuEnd)
+!  stages(1,3) = cpuEnd - cpuStart
+!
+!  CALL cpu_time(cpuStart)
+!  CALL tsgMakeSequenceGrid(grid, dims, outs, level, tsg_level, tsg_leja)
+!  CALL cpu_time(cpuEnd)
+!  stages(2,1) = cpuEnd - cpuStart
+!
+!  ! points are the same, no need to recompue values
+!  CALL cpu_time(cpuStart)
+!  CALL tsgLoadNeededPoints(grid, values)
+!  CALL cpu_time(cpuEnd)
+!  stages(2,2) = cpuEnd - cpuStart
+!
+!  DEALLOCATE(values)
+!
+!  CALL cpu_time(cpuStart)
+!  CALL tsgEvaluateBatch(grid, randPoints, 1000, res2)
+!  CALL cpu_time(cpuEnd)
+!  stages(2,3) = cpuEnd - cpuStart
+!
+!  WRITE(*,*) "Stage            Global Grid         Sequence Grid"
+!  WRITE(*,"(A,E20.8,E20.8)") " make grid  ", stages(1,1), stages(2,1)
+!  WRITE(*,"(A,E20.8,E20.8)") " load needed", stages(1,2), stages(2,2)
+!  WRITE(*,"(A,E20.8,E20.8)") " evaluate   ", stages(1,3), stages(2,3)
+!
+!  CALL tsgDeallocateGrid(grid)
+!  DEALLOCATE(res2)
 
 ! ==================================================================== !
 ! EXAMPLE 6:

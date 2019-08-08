@@ -27,7 +27,9 @@ macro(Tasmanian_find_cuda_libraries)
                      HINTS "${Tasmanian_cudalibs_PREFIX}/lib64/${CMAKE_LIBRARY_ARCHITECTURE}")
 
         list(APPEND Tasmanian_${Tasmanian_cudalibs_LIST} ${Tasmanian_${_lib}})
+        unset(Tasmanian_${_lib})
     endforeach()
+    unset(_lib)
 endmacro()
 
 include(FindPackageHandleStandardArgs)

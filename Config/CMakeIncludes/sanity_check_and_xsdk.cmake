@@ -54,11 +54,14 @@ endif()
 # - BUILD_SHARED_LIBS=ON or USE_XSDK_DEFAULTS=ON: build only shared libs
 # - BUILD_SHARED_LIBS=Undefined and USE_XSDK_DEFAULTS=OFF: build both types
 if ((NOT "${BUILD_SHARED_LIBS}" STREQUAL "") AND (NOT BUILD_SHARED_LIBS)) # BUILD_SHARED_LIBS is defined and not an empty string
-    set(Tasmanian_libs_type "STATIC_ONLY")
+    list(APPEND Tasmanian_libs_type "static")
+    set(Tasmanian_lib_default "static") # build static libs and default to static
 elseif (BUILD_SHARED_LIBS OR USE_XSDK_DEFAULTS)
-    set(Tasmanian_libs_type "SHARED_ONLY")
+    list(APPEND Tasmanian_libs_type "shared")
+    set(Tasmanian_lib_default "shared") # build shared libs and default to shared
 else()
-    set(Tasmanian_libs_type "BOTH")
+    list(APPEND Tasmanian_libs_type "static" "shared")
+    set(Tasmanian_lib_default "static") # build both types of libs and default to static
 endif()
 
 # check for Fortran, note that enable_language always gives FATAL_ERROR if the compiler is missing
@@ -94,12 +97,12 @@ if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
 endif()
 
 # Python module requires a shared library
-if (Tasmanian_ENABLE_PYTHON AND ("${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY"))
+if (Tasmanian_ENABLE_PYTHON AND (NOT "shared" IN_LIST Tasmanian_libs_type))
     message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module")
 endif()
 
 # Python setup, look for python
-if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")))
+if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND ("shared" IN_LIST Tasmanian_libs_type)))
     find_package(PythonInterp)
 
     if (PYTHONINTERP_FOUND)
@@ -139,7 +142,7 @@ if (Tasmanian_ENABLE_MAGMA)
 
     if (Tasmanian_MAGMA_FOUND)
         message(STATUS "Tasmanian will use UTK MAGMA libraries (static link): ${Tasmanian_MAGMA_LIBRARIES}")
-        if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY") # requesting shared libraries for Tasmanian
+        if ("shared" IN_LIST Tasmanian_libs_type) # requesting shared libraries for Tasmanian
             message(STATUS "Tasmanian will use UTK MAGMA libraries (shared link): ${Tasmanian_MAGMA_SHARED_LIBRARIES}")
             if (NOT Tasmanian_MAGMA_SHARED_FOUND)
                 message(WARNING "Setting up build with shared libraries for Tasmanian but the UTK MAGMA appears to provide static libraries only \n attempting to link anyway, but this is likely to fail\nif encountering a problem call cmake again with -D BUILD_SHARED_LIBS=OFF")

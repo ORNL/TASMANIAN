@@ -39,6 +39,7 @@ get_target_property(Tasmanian_list Tasmanian_libsparsegrid INTERFACE_LINK_LIBRAR
 foreach(Tasmanian_lib_ ${Tasmanian_list})
     set(Tasmanian_libs "${Tasmanian_libs} ${Tasmanian_lib_}")
 endforeach()
+unset(Tasmanian_lib_)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianMakefile.in" "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianMakefile.in" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianMakefile.in"
         DESTINATION "share/Tasmanian/"
@@ -46,12 +47,12 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianMakefile.in"
 
 # cmake file for the examples, to be used post-install
 set(Tasmanian_components "")
-if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
-    set(Tasmanian_components "${Tasmanian_components} STATIC")
-endif()
-if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
-    set(Tasmanian_components "${Tasmanian_components} SHARED")
-endif()
+foreach(_tsglibtype ${Tasmanian_libs_type})
+    string(TOUPPER ${_tsglibtype} Tasmanian_ltype)
+    set(Tasmanian_components "${Tasmanian_components} ${Tasmanian_ltype}")
+endforeach()
+unset(_tsglibtype)
+unset(Tasmanian_ltype)
 foreach(_comp OPENMP BLAS PYTHON CUDA MAGMA FORTRAN MPI)
     if (Tasmanian_ENABLE_${_comp})
         set(Tasmanian_components "${Tasmanian_components} ${_comp}")

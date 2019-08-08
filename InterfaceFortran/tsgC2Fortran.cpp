@@ -31,7 +31,7 @@
 #ifndef __TSG_C2FORT_CPP
 #define __TSG_C2FORT_CPP
 
-#include "TasmanianSparseGrid.hpp"
+#include "TasmanianAddons.hpp"
 
 using std::cerr;
 using std::endl;
