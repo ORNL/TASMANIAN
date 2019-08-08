@@ -1,8 +1,8 @@
 include ../Config/AltBuildSystems/Makefile.in
 
-IADD = -I../SparseGrids $(CommonIADD)
+IADD = -I../SparseGrids -I../DREAM -I../Addons $(CommonIADD)
 LADD = -L../ $(CommonLADD)
-LIBS = ../libtasmaniansparsegrid.a $(CommonLIBS) -lstdc++
+LIBS = ../libtasmaniansparsegrid.a ../libtasmaniandream.a $(CommonLIBS) -lstdc++
 
 CSOURCE = tsgC2Fortran.cpp
 FSOURCE = TasmanianSG.f90 tsgC2FortranBridge.f90
