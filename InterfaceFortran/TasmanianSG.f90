@@ -776,6 +776,24 @@ subroutine tsgPrintStats(grid)
   call tsgpri(grid%pntr)
 end subroutine tsgPrintStats
 !=======================================================================
+! Addon/MPI methods !
+!=======================================================================
+subroutine tsgMPIGridSend(grid, destination, tag, comm, ierr)
+  type(TasmanianSparseGrid) :: grid
+  integer :: destination, tag, comm, ierr
+  call tsgmpigsend(grid, destination, tag, comm, ierr)
+end subroutine tsgMPIGridSend
+subroutine tsgMPIGridRecv(grid, source, tag, comm, stats, ierr)
+  type(TasmanianSparseGrid) :: grid
+  integer :: source, tag, comm, stats(6), ierr
+  call tsgmpigrecv(grid, source, tag, comm, ierr)
+end subroutine tsgMPIGridRecv
+subroutine tsgMPIGridBcast(grid, root, comm, ierr)
+  type(TasmanianSparseGrid) :: grid
+  integer :: root, comm, ierr
+  call tsgmpigcast(grid, root, comm, ierr)
+end subroutine tsgMPIGridBcast
+!=======================================================================
 ! do NOT call THOSE FUNCTIONS DIRECTLY !
 !=======================================================================
 subroutine tsgReceiveString(l, S)

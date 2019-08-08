@@ -232,6 +232,25 @@ void tsgggi_(TasmanianSparseGrid **grid, int *gpuID){ *gpuID = (*grid)->getGPUID
 void tsggng_(int *gpus){ *gpus = TasmanianSparseGrid::getNumGPUs(); }
 void tsgggm_(int *gpuID, int *mem){ *mem = TasmanianSparseGrid::getGPUMemory(*gpuID); }
 
+// MPI send/recv/bcast
+#ifdef Tasmanian_ENABLE_MPI
+void tsgmpigsend_(TasmanianSparseGrid **grid, int *dest, int *tag, MPI_Fint *comm, int *ierr){
+    *ierr = MPIGridSend(**grid, *dest, *tag, MPI_Comm_f2c(*comm));
+}
+void tsgmpigrecv_(TasmanianSparseGrid **grid, int *src, int *tag, MPI_Fint *comm, MPI_Fint *stat, int *ierr){
+    MPI_Status status;
+    *ierr = MPI_Status_f2c(stat, &status);
+    if (*ierr != MPI_SUCCESS) return;
+    *ierr = MPIGridRecv(**grid, *src, *tag, MPI_Comm_f2c(*comm), &status);
+}
+void tsgmpigcast_(TasmanianSparseGrid **grid, int *root, MPI_Fint *comm, int *ierr){
+    *ierr = MPIGridBcast(**grid, *root, MPI_Comm_f2c(*comm));
+}
+#else
+void tsgmpigsend_(TasmanianSparseGrid**, int*, int*, int*, int*){}
+void tsgmpigrecv_(TasmanianSparseGrid**, int*, int*, int*, int*, int*){}
+void tsgmpigcast_(TasmanianSparseGrid**, int*, int*, int*){}
+#endif
 
 }
 #endif
