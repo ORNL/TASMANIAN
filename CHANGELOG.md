@@ -32,6 +32,12 @@ Changelog for version 6.1 (may rename this to 7.0 later)
     * **broke backward api** affects mostly get points and weights
     * externally allocated raw-pointers are still accepted and used by C/Python/Fortran APIs
 
+* updated the Fortran interface, the library no longer has a global state
+    * replaced the integer grid-ids with a derived type(TasmanianSparseGrid)
+    * grid variables now require tsgAllocateGrid(grid) and tsgDeallocateGrid(grid)
+    * tsgAllocateGrid() is now thread safe (when called on different grid variables)
+    * no other changes appear on the front-end, see the Fortran examples
+
 * improved the `add_subdirectory()` capability
     * can specify the export name used by the Tasmanian install commands
         * `set(Tasmanian_export_name <name> CACHE INTERNAL "")`

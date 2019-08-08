@@ -30,8 +30,9 @@
 PROGRAM TasmanianSGExample
   USE TasmanianSG
 IMPLICIT NONE
-  INTEGER :: gridID, dims, outs, level
-  INTEGER :: gridID1, gridID2, gridID3, N1, N2, N3
+  type(TasmanianSparseGrid) :: grid, grid1, grid2, grid3
+  INTEGER :: dims, outs, level
+  INTEGER :: N1, N2, N3
   INTEGER :: N, i, j, verm, vern
   DOUBLE PRECISION :: err1, err2, err3, err4, exact
   REAL :: cpuStart, cpuEnd, stages(2,3)
@@ -110,14 +111,14 @@ IMPLICIT NONE
   dims = 2
   level = 6
 
-! before you use a grid, you must ask for a new valid grid ID
-  gridID = tsgNewGridID()
+! before you use a grid, you must allocate a new grid
+  call tsgAllocateGrid(grid)
 
-  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, tsg_level, tsg_clenshaw_curtis)
-  points => tsgGetPoints(gridID)
-  weights => tsgGetQuadratureWeights(gridID)
+  CALL tsgMakeGlobalGrid(grid, dims, 0, level, tsg_level, tsg_clenshaw_curtis)
+  points => tsgGetPoints(grid)
+  weights => tsgGetQuadratureWeights(grid)
 
-  N = tsgGetNumPoints(gridID)
+  N = tsgGetNumPoints(grid)
   integ = 0.0
 
   DO i = 1, N
@@ -136,15 +137,15 @@ IMPLICIT NONE
 
   level = 7
 ! no need to ask for a new ID when remaking an existing grid
-  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, tsg_level, tsg_clenshaw_curtis)
+  CALL tsgMakeGlobalGrid(grid, dims, 0, level, tsg_level, tsg_clenshaw_curtis)
 
 ! do not forget to release the memory associated with points and weights
   DEALLOCATE(points)
   DEALLOCATE(weights)
-  points => tsgGetPoints(gridID)
-  weights => tsgGetQuadratureWeights(gridID)
+  points => tsgGetPoints(grid)
+  weights => tsgGetQuadratureWeights(grid)
 
-  N = tsgGetNumPoints(gridID)
+  N = tsgGetNumPoints(grid)
   integ = 0.0
 
   DO i = 1, N
@@ -163,9 +164,9 @@ IMPLICIT NONE
   DEALLOCATE(points)
   DEALLOCATE(weights)
 
-! after calling tsgFreeGridID(), we can no longer use this gridID
-! until we call tsgNewGridID()
-  CALL tsgFreeGridID(gridID)
+! after calling tsgDeallocateGrid(), we can no longer use this grid
+! until we call tsgAllocateGrid() again
+  CALL tsgDeallocateGrid(grid)
 
 ! ==================================================================== !
 ! EXAMPLE 2: integrate: f(x,y) = exp(-x^2) * cos(y)
@@ -186,17 +187,17 @@ IMPLICIT NONE
   transformB(1) =  5.0
   transformB(2) =  3.0
 
-! need new gridID, since we freed this earlier
-  gridID = tsgNewGridID()
+! need new grid, since we freed this earlier
+  call tsgAllocateGrid(grid)
 
 ! gauss-patterson = 7, type_qptotal = 5
-  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, tsg_qptotal, tsg_gauss_patterson)
-  CALL tsgSetDomainTransform(gridID, transformA, transformB)
+  CALL tsgMakeGlobalGrid(grid, dims, 0, level, tsg_qptotal, tsg_gauss_patterson)
+  CALL tsgSetDomainTransform(grid, transformA, transformB)
 
-  points => tsgGetPoints(gridID)
-  weights => tsgGetQuadratureWeights(gridID)
+  points => tsgGetPoints(grid)
+  weights => tsgGetQuadratureWeights(grid)
 
-  N = tsgGetNumPoints(gridID)
+  N = tsgGetNumPoints(grid)
   integ = 0.0
 
   DO i = 1, N
@@ -214,16 +215,16 @@ IMPLICIT NONE
 
   level = 40
 ! no need to ask for a new ID when remaking an existing grid
-  CALL tsgMakeGlobalGrid(gridID, dims, 0, level, tsg_qptotal, tsg_gauss_patterson)
-  CALL tsgSetDomainTransform(gridID, transformA, transformB)
+  CALL tsgMakeGlobalGrid(grid, dims, 0, level, tsg_qptotal, tsg_gauss_patterson)
+  CALL tsgSetDomainTransform(grid, transformA, transformB)
 
 ! do not forget to release the memory associated with points and weights
   DEALLOCATE(points)
   DEALLOCATE(weights)
-  points => tsgGetPoints(gridID)
-  weights => tsgGetQuadratureWeights(gridID)
+  points => tsgGetPoints(grid)
+  weights => tsgGetQuadratureWeights(grid)
 
-  N = tsgGetNumPoints(gridID)
+  N = tsgGetNumPoints(grid)
   integ = 0.0
 
   DO i = 1, N
@@ -242,16 +243,16 @@ IMPLICIT NONE
   DEALLOCATE(points)
   DEALLOCATE(weights)
   ! keep transformA and transformB for the next example
-  CALL tsgFreeGridID(gridID)
+  CALL tsgDeallocateGrid(grid)
 
 ! ==================================================================== !
 ! EXAMPLE 3: integrate: f(x,y) = exp(-x^2) * cos(y)
 !                       over (x,y) in [-5,5] x [-2,3]
 ! using different rules
 
-  gridID1 = tsgNewGridID()
-  gridID2 = tsgNewGridID()
-  gridID3 = tsgNewGridID()
+  call tsgAllocateGrid(grid1)
+  call tsgAllocateGrid(grid2)
+  call tsgAllocateGrid(grid3)
 
   WRITE(*,*) "-------------------------------------------------------------------------------------------------"
   WRITE(*,*) "Example 3: integrate f(x,y) = exp(-x^2) * cos(y) over [-5,5] x [-2,3] using different rules"
@@ -261,16 +262,16 @@ IMPLICIT NONE
   WRITE(*,*) " precision    points     error    points     error    points     error"
 
   DO level = 9, 30, 4
-    CALL tsgMakeGlobalGrid(gridID1, dims, 0, level, tsg_qptotal, tsg_clenshaw_curtis)
-    CALL tsgSetDomainTransform(gridID1, transformA, transformB)
-    CALL tsgMakeGlobalGrid(gridID2, dims, 0, level, tsg_qptotal, tsg_gauss_legendre)
-    CALL tsgSetDomainTransform(gridID2, transformA, transformB)
-    CALL tsgMakeGlobalGrid(gridID3, dims, 0, level, tsg_qptotal, tsg_gauss_patterson)
-    CALL tsgSetDomainTransform(gridID3, transformA, transformB)
+    CALL tsgMakeGlobalGrid(grid1, dims, 0, level, tsg_qptotal, tsg_clenshaw_curtis)
+    CALL tsgSetDomainTransform(grid1, transformA, transformB)
+    CALL tsgMakeGlobalGrid(grid2, dims, 0, level, tsg_qptotal, tsg_gauss_legendre)
+    CALL tsgSetDomainTransform(grid2, transformA, transformB)
+    CALL tsgMakeGlobalGrid(grid3, dims, 0, level, tsg_qptotal, tsg_gauss_patterson)
+    CALL tsgSetDomainTransform(grid3, transformA, transformB)
 
-    points => tsgGetPoints(gridID1)
-    weights => tsgGetQuadratureWeights(gridID1)
-    N1 = tsgGetNumPoints(gridID1)
+    points => tsgGetPoints(grid1)
+    weights => tsgGetQuadratureWeights(grid1)
+    N1 = tsgGetNumPoints(grid1)
     integ = 0.0
     DO i = 1, N1
       x = points(1, i)
@@ -281,9 +282,9 @@ IMPLICIT NONE
     DEALLOCATE(points)
     DEALLOCATE(weights)
 
-    points => tsgGetPoints(gridID2)
-    weights => tsgGetQuadratureWeights(gridID2)
-    N2 = tsgGetNumPoints(gridID2)
+    points => tsgGetPoints(grid2)
+    weights => tsgGetQuadratureWeights(grid2)
+    N2 = tsgGetNumPoints(grid2)
     integ = 0.0
     DO i = 1, N2
       x = points(1, i)
@@ -294,9 +295,9 @@ IMPLICIT NONE
     DEALLOCATE(points)
     DEALLOCATE(weights)
 
-    points => tsgGetPoints(gridID3)
-    weights => tsgGetQuadratureWeights(gridID3)
-    N3 = tsgGetNumPoints(gridID3)
+    points => tsgGetPoints(grid3)
+    weights => tsgGetQuadratureWeights(grid3)
+    N3 = tsgGetNumPoints(grid3)
     integ = 0.0
     DO i = 1, N3
       x = points(1, i)
@@ -312,9 +313,9 @@ IMPLICIT NONE
   END DO
   WRITE(*,*)
 
-  CALL tsgFreeGridID(gridID1)
-  CALL tsgFreeGridID(gridID2)
-  CALL tsgFreeGridID(gridID3)
+  CALL tsgDeallocateGrid(grid1)
+  CALL tsgDeallocateGrid(grid2)
+  CALL tsgDeallocateGrid(grid3)
 
   DEALLOCATE(transformA)
   DEALLOCATE(transformB)
@@ -324,7 +325,7 @@ IMPLICIT NONE
 ! EXAMPLE 4: interpolate: f(x,y) = exp(-x^2) * cos(y)
 ! with a rule that exactly interpolates polynomials of total degree
 
-  gridID = tsgNewGridID()
+  call tsgAllocateGrid(grid)
 
   WRITE(*,*) "-------------------------------------------------------------------------------------------------"
   WRITE(*,*) "Example 4: interpolate f(x,y) = exp(-x^2) * cos(y), using clenshaw-curtis iptotal rule"
@@ -340,10 +341,10 @@ IMPLICIT NONE
   ! desired value
   exact = exp(-desired_x(1)**2) * cos(desired_x(2))
 
-  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
+  CALL tsgMakeGlobalGrid(grid, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
 
-  N = tsgGetNumNeeded(gridID)
-  points => tsgGetNeededPoints(gridID)
+  N = tsgGetNumNeeded(grid)
+  points => tsgGetNeededPoints(grid)
   ALLOCATE(values(outs,N))
 
   DO i = 1, N
@@ -352,12 +353,12 @@ IMPLICIT NONE
     values(1,i) = exp(-x**2) * cos(y)
   END DO
 
-  CALL tsgLoadNeededPoints(gridID, values)
+  CALL tsgLoadNeededPoints(grid, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
   ALLOCATE(res(outs)) ! will DEALLOCATE later
-  CALL tsgEvaluate(gridID, desired_x, res)
+  CALL tsgEvaluate(grid, desired_x, res)
   E = abs(res(1) - exact)
 
   WRITE(*,"(A,I4)")   "  using polynomials of total degree:  ", level
@@ -369,10 +370,10 @@ IMPLICIT NONE
   ! do the same with level = 12
   level = 12
 
-  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
+  CALL tsgMakeGlobalGrid(grid, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
 
-  N = tsgGetNumNeeded(gridID)
-  points => tsgGetNeededPoints(gridID)
+  N = tsgGetNumNeeded(grid)
+  points => tsgGetNeededPoints(grid)
   ALLOCATE(values(outs,N))
 
   DO i = 1, N
@@ -381,11 +382,11 @@ IMPLICIT NONE
     values(1,i) = exp(-x**2) * cos(y)
   END DO
 
-  CALL tsgLoadNeededPoints(gridID, values)
+  CALL tsgLoadNeededPoints(grid, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  CALL tsgEvaluate(gridID, desired_x, res)
+  CALL tsgEvaluate(grid, desired_x, res)
   E = abs(res(1) - exact)
 
   WRITE(*,"(A,I4)")   "  using polynomials of total degree:  ", level
@@ -416,11 +417,11 @@ IMPLICIT NONE
   level = 15
 
   CALL cpu_time(cpuStart)
-  CALL tsgMakeGlobalGrid(gridID, dims, outs, level, tsg_level, tsg_leja)
+  CALL tsgMakeGlobalGrid(grid, dims, outs, level, tsg_level, tsg_leja)
   CALL cpu_time(cpuEnd)
   stages(1,1) = cpuEnd - cpuStart
 
-  N = tsgGetNumPoints(gridID)
+  N = tsgGetNumPoints(grid)
 
   WRITE(*,*) "-------------------------------------------------------------------------------------------------"
   WRITE(*,*) "Example 5: interpolate f(x1,x2,x3,x4) = exp(-x1^2) * cos(x2) * exp(-x3^2) * cos(x4)"
@@ -430,7 +431,7 @@ IMPLICIT NONE
   WRITE(*,*) "           both grids are evaluated at 1000 random points "
   WRITE(*,*)
 
-  points => tsgGetNeededPoints(gridID)
+  points => tsgGetNeededPoints(grid)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = exp(-points(1,i)**2) * cos(points(2,i)) * exp(-points(3,i)**2) * cos(points(4,i))
@@ -438,32 +439,32 @@ IMPLICIT NONE
   DEALLOCATE(points)
 
   CALL cpu_time(cpuStart)
-  CALL tsgLoadNeededPoints(gridID, values)
+  CALL tsgLoadNeededPoints(grid, values)
   CALL cpu_time(cpuEnd)
   stages(1,2) = cpuEnd - cpuStart
 
   ALLOCATE(res2(outs,1000)) ! 2-D result
 
   CALL cpu_time(cpuStart)
-  CALL tsgEvaluateBatch(gridID, randPoints, 1000, res2)
+  CALL tsgEvaluateBatch(grid, randPoints, 1000, res2)
   CALL cpu_time(cpuEnd)
   stages(1,3) = cpuEnd - cpuStart
 
   CALL cpu_time(cpuStart)
-  CALL tsgMakeSequenceGrid(gridID, dims, outs, level, tsg_level, tsg_leja)
+  CALL tsgMakeSequenceGrid(grid, dims, outs, level, tsg_level, tsg_leja)
   CALL cpu_time(cpuEnd)
   stages(2,1) = cpuEnd - cpuStart
 
   ! points are the same, no need to recompue values
   CALL cpu_time(cpuStart)
-  CALL tsgLoadNeededPoints(gridID, values)
+  CALL tsgLoadNeededPoints(grid, values)
   CALL cpu_time(cpuEnd)
   stages(2,2) = cpuEnd - cpuStart
 
   DEALLOCATE(values)
 
   CALL cpu_time(cpuStart)
-  CALL tsgEvaluateBatch(gridID, randPoints, 1000, res2)
+  CALL tsgEvaluateBatch(grid, randPoints, 1000, res2)
   CALL cpu_time(cpuEnd)
   stages(2,3) = cpuEnd - cpuStart
 
@@ -472,7 +473,7 @@ IMPLICIT NONE
   WRITE(*,"(A,E20.8,E20.8)") " load needed", stages(1,2), stages(2,2)
   WRITE(*,"(A,E20.8,E20.8)") " evaluate   ", stages(1,3), stages(2,3)
 
-  CALL tsgFreeGridID(gridID)
+  CALL tsgDeallocateGrid(grid)
   DEALLOCATE(res2)
 
 ! ==================================================================== !
@@ -487,26 +488,26 @@ IMPLICIT NONE
     tvalues(1,i) = exp(-randPoints(1,i)**2) * cos(randPoints(2,i))
   END DO
 
-  gridID1 = tsgNewGridID()
-  gridID2 = tsgNewGridID()
-  gridID3 = tsgNewGridID()
+  call tsgAllocateGrid(grid1)
+  call tsgAllocateGrid(grid2)
+  call tsgAllocateGrid(grid3)
 
   dims = 2
   outs = 1
 
-  CALL tsgMakeGlobalGrid(gridID1, dims, outs, 3, tsg_iptotal, tsg_leja)
-  CALL tsgMakeGlobalGrid(gridID2, dims, outs, 3, tsg_iptotal, tsg_leja)
-  CALL tsgMakeGlobalGrid(gridID3, dims, outs, 3, tsg_iptotal, tsg_leja)
+  CALL tsgMakeGlobalGrid(grid1, dims, outs, 3, tsg_iptotal, tsg_leja)
+  CALL tsgMakeGlobalGrid(grid2, dims, outs, 3, tsg_iptotal, tsg_leja)
+  CALL tsgMakeGlobalGrid(grid3, dims, outs, 3, tsg_iptotal, tsg_leja)
 
-  N = tsgGetNumNeeded(gridID1)
-  points => tsgGetNeededPoints(gridID1)
+  N = tsgGetNumNeeded(grid1)
+  points => tsgGetNeededPoints(grid1)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = exp(-points(1,i)**2) * cos(points(2,i))
   END DO
-  CALL tsgLoadNeededPoints(gridID1, values)
-  CALL tsgLoadNeededPoints(gridID2, values)
-  CALL tsgLoadNeededPoints(gridID3, values)
+  CALL tsgLoadNeededPoints(grid1, values)
+  CALL tsgLoadNeededPoints(grid2, values)
+  CALL tsgLoadNeededPoints(grid3, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
@@ -522,19 +523,19 @@ IMPLICIT NONE
 
   ! iptotal: 3, ipcurved: 4
   DO j = 1, 10
-    CALL tsgSetAnisotropicRefinement(gridID1, tsg_iptotal, 10, 0)
+    CALL tsgSetAnisotropicRefinement(grid1, tsg_iptotal, 10, 0)
 
-    N = tsgGetNumNeeded(gridID1)
-    points => tsgGetNeededPoints(gridID1)
+    N = tsgGetNumNeeded(grid1)
+    points => tsgGetNeededPoints(grid1)
     ALLOCATE(values(outs,N))
     DO i = 1, N
       values(1,i) = exp(-points(1,i)**2) * cos(points(2,i))
     END DO
-    CALL tsgLoadNeededPoints(gridID1, values)
+    CALL tsgLoadNeededPoints(grid1, values)
     DEALLOCATE(values)
     DEALLOCATE(points)
 
-    CALL tsgEvaluateBatch(gridID1, randPoints2, 1000, res2)
+    CALL tsgEvaluateBatch(grid1, randPoints2, 1000, res2)
     err1 = 0.0
     DO i = 1, 1000
       IF(abs(res2(1,i) - tvalues(1,i)) .GT. err1)then
@@ -542,19 +543,19 @@ IMPLICIT NONE
       ENDIF
     END DO
 
-    CALL tsgSetAnisotropicRefinement(gridID2, tsg_ipcurved, 10, 0)
+    CALL tsgSetAnisotropicRefinement(grid2, tsg_ipcurved, 10, 0)
 
-    N = tsgGetNumNeeded(gridID2)
-    points => tsgGetNeededPoints(gridID2)
+    N = tsgGetNumNeeded(grid2)
+    points => tsgGetNeededPoints(grid2)
     ALLOCATE(values(outs,N))
     DO i = 1, N
       values(1,i) = exp(-points(1,i)**2) * cos(points(2,i))
     END DO
-    CALL tsgLoadNeededPoints(gridID2, values)
+    CALL tsgLoadNeededPoints(grid2, values)
     DEALLOCATE(values)
     DEALLOCATE(points)
 
-    CALL tsgEvaluateBatch(gridID2, randPoints2, 1000, res2)
+    CALL tsgEvaluateBatch(grid2, randPoints2, 1000, res2)
     err2 = 0.0
     DO i = 1, 1000
       IF(abs(res2(1,i) - tvalues(1,i)) .GT. err2)then
@@ -562,19 +563,19 @@ IMPLICIT NONE
       ENDIF
     END DO
 
-    CALL tsgSetGlobalSurplusRefinement(gridID3, 1.D-10, 0)
+    CALL tsgSetGlobalSurplusRefinement(grid3, 1.D-10, 0)
 
-    N = tsgGetNumNeeded(gridID3)
-    points => tsgGetNeededPoints(gridID3)
+    N = tsgGetNumNeeded(grid3)
+    points => tsgGetNeededPoints(grid3)
     ALLOCATE(values(outs,N))
     DO i = 1, N
       values(1,i) = exp(-points(1,i)**2) * cos(points(2,i))
     END DO
-    CALL tsgLoadNeededPoints(gridID3, values)
+    CALL tsgLoadNeededPoints(grid3, values)
     DEALLOCATE(values)
     DEALLOCATE(points)
 
-    CALL tsgEvaluateBatch(gridID3, randPoints2, 1000, res2)
+    CALL tsgEvaluateBatch(grid3, randPoints2, 1000, res2)
     err3 = 0.0
     DO i = 1, 1000
       IF(abs(res2(1,i) - tvalues(1,i)) .GT. err3)then
@@ -582,17 +583,17 @@ IMPLICIT NONE
       ENDIF
     END DO
 
-    N1 = tsgGetNumPoints(gridID1)
-    N2 = tsgGetNumPoints(gridID2)
-    N3 = tsgGetNumPoints(gridID3)
+    N1 = tsgGetNumPoints(grid1)
+    N2 = tsgGetNumPoints(grid2)
+    N3 = tsgGetNumPoints(grid3)
 
     WRITE(*,"(I9,I9,E12.4,I9,E12.4,I9,E12.4)") j, N1, err1, N2, err2, N3, err3
 
   END DO
   WRITE(*,*)
-  CALL tsgFreeGridID(gridID1)
-  CALL tsgFreeGridID(gridID2)
-  CALL tsgFreeGridID(gridID3)
+  CALL tsgDeallocateGrid(grid1)
+  CALL tsgDeallocateGrid(grid2)
+  CALL tsgDeallocateGrid(grid3)
 
 ! ==================================================================== !
 ! EXAMPLE 7:
@@ -605,26 +606,26 @@ IMPLICIT NONE
   WRITE(*,*) "       the error is estimated as the maximum from 1000 random points"
   WRITE(*,*)
 
-  gridID1 = tsgNewGridID()
-  gridID2 = tsgNewGridID()
+  call tsgAllocateGrid(grid1)
+  call tsgAllocateGrid(grid2)
 
   dims = 2
   outs = 1
 
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 7, 2, tsg_localp)
-  CALL tsgMakeLocalPolynomialGrid(gridID2, dims, outs, 7, 2, tsg_semi_localp)
+  CALL tsgMakeLocalPolynomialGrid(grid1, dims, outs, 7, 2, tsg_localp)
+  CALL tsgMakeLocalPolynomialGrid(grid2, dims, outs, 7, 2, tsg_semi_localp)
 
-  N = tsgGetNumNeeded(gridID1)
-  points => tsgGetNeededPoints(gridID1)
+  N = tsgGetNumNeeded(grid1)
+  points => tsgGetNeededPoints(grid1)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = exp(-points(1,i)**2) * cos(points(2,i))
   END DO
-  CALL tsgLoadNeededPoints(gridID1, values)
+  CALL tsgLoadNeededPoints(grid1, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  CALL tsgEvaluateBatch(gridID1, randPoints2, 1000, res2)
+  CALL tsgEvaluateBatch(grid1, randPoints2, 1000, res2)
   err1 = 0.0
   DO i = 1, 1000
     IF(abs(res2(1,i) - tvalues(1,i)) .GT. err1)then
@@ -632,16 +633,16 @@ IMPLICIT NONE
     ENDIF
   END DO
 
-  points => tsgGetNeededPoints(gridID2)
+  points => tsgGetNeededPoints(grid2)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = exp(-points(1,i)**2) * cos(points(2,i))
   END DO
-  CALL tsgLoadNeededPoints(gridID2, values)
+  CALL tsgLoadNeededPoints(grid2, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  CALL tsgEvaluateBatch(gridID2, randPoints2, 1000, res2)
+  CALL tsgEvaluateBatch(grid2, randPoints2, 1000, res2)
   err2 = 0.0
   DO i = 1, 1000
     IF(abs(res2(1,i) - tvalues(1,i)) .GT. err2)then
@@ -675,21 +676,21 @@ IMPLICIT NONE
   dims = 2
   outs = 1
 
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 7, 2, tsg_localp)
-  CALL tsgMakeLocalPolynomialGrid(gridID2, dims, outs, 6, 2, tsg_localp_zero)
+  CALL tsgMakeLocalPolynomialGrid(grid1, dims, outs, 7, 2, tsg_localp)
+  CALL tsgMakeLocalPolynomialGrid(grid2, dims, outs, 6, 2, tsg_localp_zero)
 
-  N = tsgGetNumNeeded(gridID1)
-  points => tsgGetNeededPoints(gridID1)
+  N = tsgGetNumNeeded(grid1)
+  points => tsgGetNeededPoints(grid1)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = cos(0.5 * PI * points(1,i)) &
                 * cos(0.5 * PI * points(2,i))
   END DO
-  CALL tsgLoadNeededPoints(gridID1, values)
+  CALL tsgLoadNeededPoints(grid1, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  CALL tsgEvaluateBatch(gridID1, randPoints2, 1000, res2)
+  CALL tsgEvaluateBatch(grid1, randPoints2, 1000, res2)
   err1 = 0.0
   DO i = 1, 1000
     IF(abs(res2(1,i) - tvalues(1,i)) .GT. err1)then
@@ -697,17 +698,17 @@ IMPLICIT NONE
     ENDIF
   END DO
 
-  N = tsgGetNumNeeded(gridID2)
-  points => tsgGetNeededPoints(gridID2)
+  N = tsgGetNumNeeded(grid2)
+  points => tsgGetNeededPoints(grid2)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = cos(0.5 * PI * points(1,i)) * cos(0.5 * PI * points(2,i))
   END DO
-  CALL tsgLoadNeededPoints(gridID2, values)
+  CALL tsgLoadNeededPoints(grid2, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  CALL tsgEvaluateBatch(gridID2, randPoints2, 1000, res2)
+  CALL tsgEvaluateBatch(grid2, randPoints2, 1000, res2)
   err2 = 0.0
   DO i = 1, 1000
     IF(abs(res2(1,i) - tvalues(1,i)) .GT. err2)then
@@ -715,8 +716,8 @@ IMPLICIT NONE
     ENDIF
   END DO
 
-  N1 = tsgGetNumPoints(gridID1)
-  N2 = tsgGetNumPoints(gridID2)
+  N1 = tsgGetNumPoints(grid1)
+  N2 = tsgGetNumPoints(grid2)
 
   WRITE(*,"(A,I5,E12.4)") " For rule_localp   Number of points: ", N1, err1
   WRITE(*,"(A,I5,E12.4)") " For rule_localp0  Number of points: ", N2, err2
@@ -736,17 +737,17 @@ IMPLICIT NONE
   dims = 2
   outs = 1
 
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 2, -1, tsg_localp)
-  CALL tsgMakeLocalPolynomialGrid(gridID2, dims, outs, 2, -1, tsg_localp)
+  CALL tsgMakeLocalPolynomialGrid(grid1, dims, outs, 2, -1, tsg_localp)
+  CALL tsgMakeLocalPolynomialGrid(grid2, dims, outs, 2, -1, tsg_localp)
 
-  N = tsgGetNumNeeded(gridID1)
-  points => tsgGetNeededPoints(gridID1)
+  N = tsgGetNumNeeded(grid1)
+  points => tsgGetNeededPoints(grid1)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = exp(-points(1,i)) / (1.0 + 100.0 * exp(-10.0 * points(2,i)))
   END DO
-  CALL tsgLoadNeededPoints(gridID1, values)
-  CALL tsgLoadNeededPoints(gridID2, values)
+  CALL tsgLoadNeededPoints(grid1, values)
+  CALL tsgLoadNeededPoints(grid2, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
@@ -761,19 +762,19 @@ IMPLICIT NONE
 
   DO j = 1, 7
     ! 1 below corresponds to classic refinement
-    CALL tsgSetLocalSurplusRefinement(gridID1, 1.D-5, tsg_classic)
+    CALL tsgSetLocalSurplusRefinement(grid1, 1.D-5, tsg_classic)
 
-    N = tsgGetNumNeeded(gridID1)
-    points => tsgGetNeededPoints(gridID1)
+    N = tsgGetNumNeeded(grid1)
+    points => tsgGetNeededPoints(grid1)
     ALLOCATE(values(outs,N))
     DO i = 1, N
       values(1,i) = exp(-points(1,i)) / (1.0 + 100.0 * exp(-10.0 * points(2,i)))
     END DO
-    CALL tsgLoadNeededPoints(gridID1, values)
+    CALL tsgLoadNeededPoints(grid1, values)
     DEALLOCATE(values)
     DEALLOCATE(points)
 
-    CALL tsgEvaluateBatch(gridID1, randPoints2, 1000, res2)
+    CALL tsgEvaluateBatch(grid1, randPoints2, 1000, res2)
     err1 = 0.0
     DO i = 1, 1000
       IF(abs(res2(1,i) - tvalues(1,i)) .GT. err1)then
@@ -781,19 +782,19 @@ IMPLICIT NONE
       ENDIF
     END DO
 
-    CALL tsgSetLocalSurplusRefinement(gridID2, 1.D-5, tsg_fds)
+    CALL tsgSetLocalSurplusRefinement(grid2, 1.D-5, tsg_fds)
 
-    N = tsgGetNumNeeded(gridID2)
-    points => tsgGetNeededPoints(gridID2)
+    N = tsgGetNumNeeded(grid2)
+    points => tsgGetNeededPoints(grid2)
     ALLOCATE(values(outs,N))
     DO i = 1, N
       values(1,i) = exp(-points(1,i)) / (1.0 + 100.0 * exp(-10.0 * points(2,i)))
     END DO
-    CALL tsgLoadNeededPoints(gridID2, values)
+    CALL tsgLoadNeededPoints(grid2, values)
     DEALLOCATE(values)
     DEALLOCATE(points)
 
-    CALL tsgEvaluateBatch(gridID2, randPoints2, 1000, res2)
+    CALL tsgEvaluateBatch(grid2, randPoints2, 1000, res2)
     err2 = 0.0
     DO i = 1, 1000
       IF(abs(res2(1,i) - tvalues(1,i)) .GT. err2)then
@@ -801,8 +802,8 @@ IMPLICIT NONE
       ENDIF
     END DO
 
-    N1 = tsgGetNumPoints(gridID1)
-    N2 = tsgGetNumPoints(gridID2)
+    N1 = tsgGetNumPoints(grid1)
+    N2 = tsgGetNumPoints(grid2)
 
     WRITE(*,"(I9,I9,E12.4,I9,E12.4)") j, N1, err1, N2, err2
   END DO
@@ -816,26 +817,26 @@ IMPLICIT NONE
   dims = 2
   outs = 1
 
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, 3, 1, tsg_localp)
-  CALL tsgMakeWaveletGrid(gridID2, dims, outs, 1, 1)
+  CALL tsgMakeLocalPolynomialGrid(grid1, dims, outs, 3, 1, tsg_localp)
+  CALL tsgMakeWaveletGrid(grid2, dims, outs, 1, 1)
 
-  N = tsgGetNumNeeded(gridID1)
-  points => tsgGetNeededPoints(gridID1)
+  N = tsgGetNumNeeded(grid1)
+  points => tsgGetNeededPoints(grid1)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = exp(-points(1,i)) / (1.0 + 100.0 * exp(-10.0 * points(2,i)))
   END DO
-  CALL tsgLoadNeededPoints(gridID1, values)
+  CALL tsgLoadNeededPoints(grid1, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  N = tsgGetNumNeeded(gridID2)
-  points => tsgGetNeededPoints(gridID2)
+  N = tsgGetNumNeeded(grid2)
+  points => tsgGetNeededPoints(grid2)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = exp(-points(1,i)) / (1.0 + 100.0 * exp(-10.0 * points(2,i)))
   END DO
-  CALL tsgLoadNeededPoints(gridID2, values)
+  CALL tsgLoadNeededPoints(grid2, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
@@ -849,19 +850,19 @@ IMPLICIT NONE
   WRITE(*,*) "iteration  points     error     points     error"
 
   DO j = 1, 8
-    CALL tsgSetLocalSurplusRefinement(gridID1, 1.D-5, tsg_fds)
+    CALL tsgSetLocalSurplusRefinement(grid1, 1.D-5, tsg_fds)
 
-    N = tsgGetNumNeeded(gridID1)
-    points => tsgGetNeededPoints(gridID1)
+    N = tsgGetNumNeeded(grid1)
+    points => tsgGetNeededPoints(grid1)
     ALLOCATE(values(outs,N))
     DO i = 1, N
       values(1,i) = exp(-points(1,i)) / (1.0 + 100.0 * exp(-10.0 * points(2,i)))
     END DO
-    CALL tsgLoadNeededPoints(gridID1, values)
+    CALL tsgLoadNeededPoints(grid1, values)
     DEALLOCATE(values)
     DEALLOCATE(points)
 
-    CALL tsgEvaluateBatch(gridID1, randPoints2, 1000, res2)
+    CALL tsgEvaluateBatch(grid1, randPoints2, 1000, res2)
     err1 = 0.0
     DO i = 1, 1000
       IF(abs(res2(1,i) - tvalues(1,i)) .GT. err1)then
@@ -869,19 +870,19 @@ IMPLICIT NONE
       ENDIF
     END DO
 
-    CALL tsgSetLocalSurplusRefinement(gridID2, 1.D-5, tsg_fds)
+    CALL tsgSetLocalSurplusRefinement(grid2, 1.D-5, tsg_fds)
 
-    N = tsgGetNumNeeded(gridID2)
-    points => tsgGetNeededPoints(gridID2)
+    N = tsgGetNumNeeded(grid2)
+    points => tsgGetNeededPoints(grid2)
     ALLOCATE(values(outs,N))
     DO i = 1, N
       values(1,i) = exp(-points(1,i)) / (1.0 + 100.0 * exp(-10.0 * points(2,i)))
     END DO
-    CALL tsgLoadNeededPoints(gridID2, values)
+    CALL tsgLoadNeededPoints(grid2, values)
     DEALLOCATE(values)
     DEALLOCATE(points)
 
-    CALL tsgEvaluateBatch(gridID2, randPoints2, 1000, res2)
+    CALL tsgEvaluateBatch(grid2, randPoints2, 1000, res2)
     err2 = 0.0
     DO i = 1, 1000
       IF(abs(res2(1,i) - tvalues(1,i)) .GT. err2)then
@@ -889,15 +890,15 @@ IMPLICIT NONE
       ENDIF
     END DO
 
-    N1 = tsgGetNumPoints(gridID1)
-    N2 = tsgGetNumPoints(gridID2)
+    N1 = tsgGetNumPoints(grid1)
+    N2 = tsgGetNumPoints(grid2)
 
     WRITE(*,"(I9,I9,E12.4,I9,E12.4)") j, N1, err1, N2, err2
   END DO
   WRITE(*,*)
 
-  CALL tsgFreeGridID(gridID1)
-  CALL tsgFreeGridID(gridID2)
+  CALL tsgDeallocateGrid(grid1)
+  CALL tsgDeallocateGrid(grid2)
 
 ! ==================================================================== !
 ! EXAMPLE 11: interpolate: f(x,y,z) = 1/((1+4x^2)*(1+5y^2)*(1+6z^2))
@@ -924,47 +925,47 @@ IMPLICIT NONE
                           (1.0 + 6.0 * randPoints3(3,i)**2))
   END DO
 
-  gridID1 = tsgNewGridID()
+  call tsgAllocateGrid(grid1)
 
-  CALL tsgMakeGlobalGrid(gridID1, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
+  CALL tsgMakeGlobalGrid(grid1, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
 
-  N = tsgGetNumNeeded(gridID1)
-  points => tsgGetNeededPoints(gridID1)
+  N = tsgGetNumNeeded(grid1)
+  points => tsgGetNeededPoints(grid1)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = 1.0 / ((1.0 + 4.0 * points(1,i)**2) * &
                           (1.0 + 5.0 * points(2,i)**2) * &
                           (1.0 + 6.0 * points(3,i)**2))
   END DO
-  CALL tsgLoadNeededPoints(gridID1, values)
+  CALL tsgLoadNeededPoints(grid1, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  CALL tsgEvaluateBatch(gridID1, randPoints3, 1000, res2)
+  CALL tsgEvaluateBatch(grid1, randPoints3, 1000, res2)
   err1 = 0.0
   DO i = 1, 1000
     IF(abs(res2(1,i) - tvalues(1,i)) .GT. err1)then
       err1 = abs(res2(1,i) - tvalues(1,i))
     ENDIF
   END DO
-  N1 = tsgGetNumPoints(gridID1)
+  N1 = tsgGetNumPoints(grid1)
 
-  CALL tsgMakeGlobalGrid(gridID1, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
-  CALL tsgSetConformalTransformASIN(gridID1, conformal)
+  CALL tsgMakeGlobalGrid(grid1, dims, outs, level, tsg_iptotal, tsg_clenshaw_curtis)
+  CALL tsgSetConformalTransformASIN(grid1, conformal)
 
-  N = tsgGetNumNeeded(gridID1)
-  points => tsgGetNeededPoints(gridID1)
+  N = tsgGetNumNeeded(grid1)
+  points => tsgGetNeededPoints(grid1)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = 1.0 / ((1.0 + 4.0 * points(1,i)**2) * &
                           (1.0 + 5.0 * points(2,i)**2) * &
                           (1.0 + 6.0 * points(3,i)**2))
   END DO
-  CALL tsgLoadNeededPoints(gridID1, values)
+  CALL tsgLoadNeededPoints(grid1, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  CALL tsgEvaluateBatch(gridID1, randPoints3, 1000, res2)
+  CALL tsgEvaluateBatch(grid1, randPoints3, 1000, res2)
   err2 = 0.0
   DO i = 1, 1000
     IF(abs(res2(1,i) - tvalues(1,i)) .GT. err2)then
@@ -972,45 +973,45 @@ IMPLICIT NONE
     ENDIF
   END DO
 
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, level-4, 2, tsg_localp)
+  CALL tsgMakeLocalPolynomialGrid(grid1, dims, outs, level-4, 2, tsg_localp)
 
-  N = tsgGetNumNeeded(gridID1)
-  points => tsgGetNeededPoints(gridID1)
+  N = tsgGetNumNeeded(grid1)
+  points => tsgGetNeededPoints(grid1)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = 1.0 / ((1.0 + 4.0 * points(1,i)**2) * &
                           (1.0 + 5.0 * points(2,i)**2) * &
                           (1.0 + 6.0 * points(3,i)**2))
   END DO
-  CALL tsgLoadNeededPoints(gridID1, values)
+  CALL tsgLoadNeededPoints(grid1, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  CALL tsgEvaluateBatch(gridID1, randPoints3, 1000, res2)
+  CALL tsgEvaluateBatch(grid1, randPoints3, 1000, res2)
   err3 = 0.0
   DO i = 1, 1000
     IF(abs(res2(1,i) - tvalues(1,i)) .GT. err3)then
       err3 = abs(res2(1,i) - tvalues(1,i))
     ENDIF
   END DO
-  N2 = tsgGetNumPoints(gridID1)
+  N2 = tsgGetNumPoints(grid1)
 
-  CALL tsgMakeLocalPolynomialGrid(gridID1, dims, outs, level-4, 2, tsg_localp)
-  CALL tsgSetConformalTransformASIN(gridID1, conformal)
+  CALL tsgMakeLocalPolynomialGrid(grid1, dims, outs, level-4, 2, tsg_localp)
+  CALL tsgSetConformalTransformASIN(grid1, conformal)
 
-  N = tsgGetNumNeeded(gridID1)
-  points => tsgGetNeededPoints(gridID1)
+  N = tsgGetNumNeeded(grid1)
+  points => tsgGetNeededPoints(grid1)
   ALLOCATE(values(outs,N))
   DO i = 1, N
     values(1,i) = 1.0 / ((1.0 + 4.0 * points(1,i)**2) * &
                           (1.0 + 5.0 * points(2,i)**2) * &
                           (1.0 + 6.0 * points(3,i)**2))
   END DO
-  CALL tsgLoadNeededPoints(gridID1, values)
+  CALL tsgLoadNeededPoints(grid1, values)
   DEALLOCATE(values)
   DEALLOCATE(points)
 
-  CALL tsgEvaluateBatch(gridID1, randPoints3, 1000, res2)
+  CALL tsgEvaluateBatch(grid1, randPoints3, 1000, res2)
   err4 = 0.0
   DO i = 1, 1000
     IF(abs(res2(1,i) - tvalues(1,i)) .GT. err4)then
@@ -1026,14 +1027,12 @@ IMPLICIT NONE
   WRITE(*,*) "      the map can accelerate or slow down convergence depending on the problem"
   WRITE(*,*)
 
-  CALL tsgFreeGridID(gridID1)
+  CALL tsgDeallocateGrid(grid1)
 ! ==================================================================== !
 
 ! cleanup
   DEALLOCATE(res2)
   DEALLOCATE(tvalues)
-
-  CALL tsgClearAll()
 
   WRITE(*,*) "-------------------------------------------------------------------------------------------------"
   WRITE(*,*)
