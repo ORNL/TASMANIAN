@@ -7,7 +7,7 @@ using namespace std;
  * \file example_sparse_grids_02.cpp
  * \brief Examples for the Tasmanian Sparse Grid module.
  * \author Miroslav Stoyanov
- * \ingroup TasmanianDREAMExamples
+ * \ingroup TasmanianSGExamples
  *
  * Tasmanian Sparse Grids Example 2.
  */
