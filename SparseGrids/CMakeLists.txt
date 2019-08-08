@@ -69,6 +69,7 @@ install(TARGETS "${Tasmanian_libtsg_target_name}"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
 
+unset(Tasmanian_libtsg_target_name)
 endmacro()
 
 ########################################################################
@@ -151,16 +152,16 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridUnitTests.hpp
                                   tasgridUnitTests.cpp
                                   tasgridTestInterfaceC.cpp)
-add_executable(Tasmanian_benchmarks  Benchmarks/benchCommon.hpp
-                                     tasgridCLICommon.hpp
-                                     Benchmarks/benchMakeGrid.hpp
-                                     Benchmarks/benchLoadNeeded.hpp
-                                     Benchmarks/benchEvaluate.hpp
-                                     Benchmarks/bench_main.cpp)
+add_executable(Tasmanian_gridbenchmarks  Benchmarks/benchCommon.hpp
+                                         tasgridCLICommon.hpp
+                                         Benchmarks/benchMakeGrid.hpp
+                                         Benchmarks/benchLoadNeeded.hpp
+                                         Benchmarks/benchEvaluate.hpp
+                                         Benchmarks/bench_main.cpp)
 
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
 set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")
-set_target_properties(Tasmanian_benchmarks PROPERTIES OUTPUT_NAME "benchmark")
+set_target_properties(Tasmanian_gridbenchmarks PROPERTIES OUTPUT_NAME "benchmark")
 
 if (Tasmanian_ENABLE_OPENMP)
     # the OpenMP libraries are carried transitively from sparse grids library
@@ -172,21 +173,23 @@ endif()
 ########################################################################
 # add the libraries
 ########################################################################
-if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
-    Tasmanian_macro_add_libsparsegrid(SHARED)
-endif()
+foreach(_tsglibtype ${Tasmanian_libs_type})
+    string(TOUPPER ${_tsglibtype} Tasmanian_ltype)
+    Tasmanian_macro_add_libsparsegrid(${Tasmanian_ltype})
+endforeach()
+unset(_tsglibtype)
+unset(Tasmanian_ltype)
 
-if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
-    Tasmanian_macro_add_libsparsegrid(STATIC)
-    add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_static)
-else() # if there are not static libs, use shared libs for the executables
-    add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_shared)
-endif()
+add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_${Tasmanian_lib_default})
 
-target_link_libraries(Tasmanian_tasgrid              Tasmanian_libsparsegrid)
-target_link_libraries(Tasmanian_gridtest             Tasmanian_libsparsegrid)
-target_link_libraries(Tasmanian_benchmarks           Tasmanian_libsparsegrid)
-
+foreach(_tsgtarget tasgrid gridtest gridbenchmarks)
+    target_link_libraries(Tasmanian_${_tsgtarget} Tasmanian_libsparsegrid)
+    if (Tasmanian_ENABLE_OPENMP)
+        # the OpenMP libraries are carried transitively from sparse grids library
+        target_compile_options(Tasmanian_${_tsgtarget} PRIVATE ${OpenMP_CXX_FLAGS})
+    endif()
+endforeach()
+unset(_tsgtarget)
 
 # data file, needed for testing and reference about custom rule definitions
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)

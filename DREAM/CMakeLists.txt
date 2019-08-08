@@ -29,19 +29,13 @@ target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERF
 
 set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream")
 
-########################################################################
-# Option setup
-########################################################################
-if (Tasmanian_ENABLE_BLAS)
-    target_link_libraries(${Tasmanian_libtdr_target_name} ${BLAS_LIBRARIES})
-endif()
-
 install(TARGETS "${Tasmanian_libtdr_target_name}"
         EXPORT  "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
 
+unset(Tasmanian_libtdr_target_name)
 endmacro()
 
 ########################################################################
@@ -51,26 +45,23 @@ add_executable(Tasmanian_dreamtest dreamtest_main.cpp
                                    tasdreamExternalTests.hpp
                                    tasdreamExternalTests.cpp)
 
-set_target_properties(Tasmanian_dreamtest     PROPERTIES OUTPUT_NAME "dreamtest")
+set_target_properties(Tasmanian_dreamtest  PROPERTIES OUTPUT_NAME "dreamtest")
 
 ########################################################################
 # add the libraries
 ########################################################################
-if (NOT "${Tasmanian_libs_type}" STREQUAL "STATIC_ONLY")
-    Tasmanian_macro_add_libdream(SHARED)
-    target_link_libraries(Tasmanian_libdream_shared Tasmanian_libsparsegrid_shared)
-endif()
+foreach(_tsglibtype ${Tasmanian_libs_type})
+    string(TOUPPER ${_tsglibtype} Tasmanian_ltype)
+    Tasmanian_macro_add_libdream(${Tasmanian_ltype})
 
-if (NOT "${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
-    Tasmanian_macro_add_libdream(STATIC)
-    target_link_libraries(Tasmanian_libdream_static  Tasmanian_libsparsegrid_static)
+    target_link_libraries(Tasmanian_libdream_${_tsglibtype} Tasmanian_libsparsegrid_${_tsglibtype})
+endforeach()
+unset(_tsglibtype)
+unset(Tasmanian_ltype)
 
-    add_library(Tasmanian_libdream ALIAS Tasmanian_libdream_static)
-else() # if there are not static libs, use shared libs for the executables
-    add_library(Tasmanian_libdream ALIAS Tasmanian_libdream_shared)
-endif()
+add_library(Tasmanian_libdream ALIAS Tasmanian_libdream_${Tasmanian_lib_default})
 
-target_link_libraries(Tasmanian_dreamtest      Tasmanian_libdream)
+target_link_libraries(Tasmanian_dreamtest  Tasmanian_libdream)
 
 
 ########################################################################
@@ -107,7 +98,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         set_target_properties(Tasmanian_libdream_static PROPERTIES OUTPUT_NAME "tasmaniandream_static")
     endif()
 
-    if ("${Tasmanian_libs_type}" STREQUAL "SHARED_ONLY")
+    if (NOT "static" IN_LIST Tasmanian_libs_type)
         set(Tasmanian_MSVC_PATH_STRING "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release;${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug;$ENV{PATH}")
         string(REPLACE ";" "\\;" Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING}")
         set_tests_properties(DreamAnalytic DreamModel PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
