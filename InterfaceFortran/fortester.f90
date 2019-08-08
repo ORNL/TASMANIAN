@@ -364,32 +364,34 @@ deallocate(pointsb, points, weights)
 
 
 ! test conformal
-allocate( pointsb(2,100), double_2d_a(1,100), double_2d_b(1,100), double_2d_c(1,100), double_2d_d(1,100) )
+allocate( pointsb(2,100), double_2d_a(1,100), double_2d_b(1,100), double_2d_c(1,100) )
 rnd => random(2,100)
 pointsb          = -1.d0 + 2.d0 * rnd
 double_2d_a(1,:) = 1.d0/((1.d0+5.d0*pointsb(1,:)**2)*(1.d0+5.d0*pointsb(2,:)**2))
 do i = 7,8
   call tsgMakeSequenceGrid(grid, 2, 1, i, tsg_iptotal, tsg_rleja)
   points => tsgGetPoints(grid)
+  allocate(double_2d_d(1, tsgGetNumPoints(grid)))
   double_2d_d(1,:) = 1.d0/((1.d0+5.d0*points(1,:)**2)*(1.d0+5.d0*points(2,:)**2))
   call tsgLoadNeededPoints(grid, double_2d_d)
   call tsgEvaluateBatch(grid,pointsb,100,double_2d_b)
-  deallocate(points)
+  deallocate(points, double_2d_d)
 
   call tsgMakeSequenceGrid(grid_II, 2, 1, i, tsg_iptotal, tsg_rleja)
   call tsgSetConformalTransformASIN(grid_II, (/4,4/))
   points => tsgGetPoints(grid_II)
+  allocate(double_2d_d(1, tsgGetNumPoints(grid_II)))
   double_2d_d(1,:) = 1.d0/((1.d0+5.d0*points(1,:)**2)*(1.d0+5.d0*points(2,:)**2))
   call tsgLoadNeededPoints(grid_II, double_2d_d)
   call tsgEvaluateBatch(grid_II,pointsb,100,double_2d_c)
-  deallocate(points)
+  deallocate(points, double_2d_d)
 
   if ( norm2d(double_2d_a-double_2d_b) < norm2d(double_2d_a-double_2d_c) ) then
     write(*,*) "Mismatch in tsgMakeSequenceGrid: conformal map"
     stop 1
   endif
 enddo
-deallocate(rnd, pointsb, double_2d_a, double_2d_b, double_2d_c, double_2d_d)
+deallocate(rnd, pointsb, double_2d_a, double_2d_b, double_2d_c)
 
 
 ! test level limits
@@ -432,32 +434,34 @@ deallocate(points, weights)
 
 
 ! test conformal
-allocate( pointsb(2,100), double_2d_a(1,100), double_2d_b(1,100), double_2d_c(1,100), double_2d_d(1,100) )
+allocate( pointsb(2,100), double_2d_a(1,100), double_2d_b(1,100), double_2d_c(1,100) )
 rnd => random(2,100)
 pointsb          = -1.d0 + 2.d0 * rnd
 double_2d_a(1,:) = 1.d0/((1.d0+5.d0*pointsb(1,:)**2)*(1.d0+5.d0*pointsb(2,:)**2))
 do i = 3,4
   call tsgMakeLocalPolynomialGrid(grid, 2, 1, i, 2, tsg_semi_localp)
   points => tsgGetPoints(grid)
+  allocate(double_2d_d(1, tsgGetNumPoints(grid)))
   double_2d_d(1,:) = 1.d0/((1.d0+5.d0*points(1,:)**2)*(1.d0+5.d0*points(2,:)**2))
   call tsgLoadNeededPoints(grid, double_2d_d)
   call tsgEvaluateBatch(grid,pointsb,100,double_2d_b)
-  deallocate(points)
+  deallocate(points, double_2d_d)
 
   call tsgMakeLocalPolynomialGrid(grid_II, 2, 1, i, 2, tsg_semi_localp)
   call tsgSetConformalTransformASIN(grid_II, (/4,4/))
   points => tsgGetPoints(grid_II)
+  allocate(double_2d_d(1, tsgGetNumPoints(grid_II)))
   double_2d_d(1,:) = 1.d0/((1.d0+5.d0*points(1,:)**2)*(1.d0+5.d0*points(2,:)**2))
   call tsgLoadNeededPoints(grid_II, double_2d_d)
   call tsgEvaluateBatch(grid_II,pointsb,100,double_2d_c)
-  deallocate(points)
+  deallocate(points, double_2d_d)
 
   if ( norm2d(double_2d_a-double_2d_b) < norm2d(double_2d_a-double_2d_c) ) then
     write(*,*) "Mismatch in tsgMakeSequenceGrid: conformal map"
     stop 1
   endif
 enddo
-deallocate(rnd, pointsb, double_2d_a, double_2d_b, double_2d_c, double_2d_d)
+deallocate(rnd, pointsb, double_2d_a, double_2d_b, double_2d_c)
 
 
 ! test level limits
@@ -581,7 +585,7 @@ deallocate(points, weights)
 call tsgMakeFourierGrid(grid, 1, 1, 2, tsg_level)
 allocate(pointsb(1,9))
 pointsb = reshape( (/ 0.d0, 1.0/3.d0, 2.0/3.d0, 1.0/9.d0, 2.0/9.d0, &
-                            4.0/9.d0, 5.0/9.d0, 7.0/9.d0, 8.0/9.d0 /), shape(pointsb) )
+                            4.0/9.d0, 5.0/9.d0, 7.0/9.d0, 8.0/9.d0 /), (/1, 9/) )
 points => tsgGetPoints(grid)
 if ( norm2d(points-pointsb) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgMakeFourierGrid: points "
@@ -619,7 +623,7 @@ write(*,*) "tsgMake* functions:       PASS"
 !=======================================================================
 allocate(pointsb(2,5))
 pointsb = reshape( (/ 0.d0, 0.d0, 0.d0, -1.d0, 0.d0, &
-                      1.d0, -1.d0, 0.d0, 1.d0, 0.d0 /), shape(pointsb))
+                      1.d0, -1.d0, 0.d0, 1.d0, 0.d0 /), (/ 2, 5 /) )
 call tsgMakeGlobalGrid(grid, 2, 1, 1, tsg_level, tsg_clenshaw_curtis)
 
 points => tsgGetPoints(grid)
@@ -650,8 +654,7 @@ if ( norm2d(points-pointsb) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgGetNeededPointsStatic: core case 1"
   stop 1
 endif
-deallocate(points)
-deallocate(pointsb)
+deallocate(points, pointsb)
 
 
 
