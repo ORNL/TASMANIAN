@@ -182,6 +182,7 @@ bool DreamExternalTester::testGaussian3D(){
     state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
     state.setState(initial_state);
     LikelihoodGaussAnisotropic likely({0.25, 1.0, 4.0}, {1.5, 2.0, 2.5}, 1.0);
+    if (likely.getNumOutputs() != 3) throw std::runtime_error("LikelihoodGaussAnisotropic has wrong num outputs");
 
     SampleDREAM(num_burnup, num_iterations,
         posterior(likely,
@@ -197,6 +198,23 @@ bool DreamExternalTester::testGaussian3D(){
     );
 
     pass = compareSamples(lower, upper, 5, tresult, state.getHistory()) && (state.getAcceptanceRate() > 0.5);
+
+    std::vector<double> mean, variance;
+    state.getHistoryMeanVariance(mean, variance);
+    std::vector<double> tmean = {1.5, 2.0, 2.5}, tvar = {0.25, 1.0, 4.0};
+    for(int i=0; i<3; i++) {
+        if (std::abs(mean[i] - tmean[i]) / tmean[i] > 0.3){
+            cout << "error in mean exceeded: " << std::abs(mean[i] - tmean[i]) / tmean[i] << endl;
+            pass = false;
+        }
+        if (std::abs(variance[i] - tvar[i]) / tvar[i] > 0.6){
+            cout << "error in variance exceeded: " << std::abs(variance[i] - tvar[i]) / tvar[i] << endl;
+            pass = false;
+        }
+    }
+    state = TasmanianDREAM(); // reset to empty test
+    if (state.getNumDimensions() != 0) throw std::runtime_error("TasmanianDREAM has wrong num dimensions");
+
     passAll = passAll && pass;
 
     if (verbose || !pass) reportPassFail(pass, "Gaussian 3D", "with anisotropic likelihood");
@@ -373,6 +391,7 @@ bool DreamExternalTester::testCustomModel(){
     state.setState(initial_state);
 
     LikelihoodGaussIsotropic likely(4.0, {1.5, 2.5});
+    if (likely.getNumOutputs() != 2) throw std::runtime_error("LikelihoodGaussAnisotropic has wrong num outputs");
     SampleDREAM(num_burnup, num_iterations,
                     posterior(likely,
                     [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ // model

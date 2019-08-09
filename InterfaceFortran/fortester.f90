@@ -35,6 +35,7 @@ integer,          parameter :: seed = 86456
 double precision, parameter :: pi = 4.0D+0 * atan(1.0D+0)
 
 character, pointer :: licence(:)
+character(14), parameter :: filename = 'fortranio.test'
 
 type(TasmanianSparseGrid) :: grid, grid_II
 
@@ -316,6 +317,55 @@ deallocate(points, pointsb)
 
 
 
+!=======================================================================
+!       tsgRead/Write()
+!=======================================================================
+call tsgMakeFourierGrid(grid, 3, 1, 3, tsg_level, (/1, 2, 3/))
+points  => tsgGetPoints(grid)
+call tsgWrite(grid, filename)
+call tsgDeallocateGrid(grid)
+call tsgAllocateGrid(grid) ! reset the grid
+if (.not. tsgRead(grid, filename)) then
+  write(*,*) "File read failed: 1"
+  stop 1
+end if
+pointsb => tsgGetPoints(grid)
+if ( norm2d(points-pointsb) > 1.0D-11 ) then
+  write(*,*) "Mismatch in tsgMakeGlobal: read/write 1"
+  stop 1
+end if
+deallocate(pointsb)
+
+call tsgWrite(grid, filename, .false.)
+call tsgDeallocateGrid(grid)
+call tsgAllocateGrid(grid) ! reset the grid
+if (.not. tsgRead(grid, filename)) then
+  write(*,*) "File read failed: 2"
+  stop 1
+end if
+pointsb => tsgGetPoints(grid)
+if ( norm2d(points-pointsb) > 1.0D-11 ) then
+  write(*,*) "Mismatch in tsgMakeGlobal: read/write 2"
+  stop 1
+end if
+deallocate(points, pointsb)
+
+call tsgWrite(grid, filename, .false.)
+call tsgDeallocateGrid(grid)
+call tsgAllocateGrid(grid) ! reset the grid
+if (.not. tsgRead(grid, filename)) then
+  write(*,*) "File read failed: 3"
+  stop 1
+end if
+if ( tsgGetRule(grid) /= tsg_fourier ) then
+  write(*,*) "Mismatch in tsgMakeGlobal: read/write 3"
+  stop 1
+end if
+
+if (tsgRead(grid, 'nonafile')) then
+  write(*,*) "File read failed: 4"
+  stop 1
+end if
 
 
 
