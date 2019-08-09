@@ -103,7 +103,7 @@ template<bool iomode> void GridFourier::read(std::istream &is){
         oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
     }
 
-    wrapper.load(CustomTabulated(), oned_max_level, rule_fourier, 0.0, 0.0);
+    wrapper.load(oned_max_level, rule_fourier, 0.0, 0.0);
 
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
@@ -189,7 +189,7 @@ void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
 
     max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
-    wrapper.load(CustomTabulated(), *std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
+    wrapper.load(*std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
 
     std::vector<int> tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
     active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
@@ -212,7 +212,7 @@ void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
 }
 
 void GridFourier::proposeUpdatedTensors(){
-    wrapper.load(CustomTabulated(), updated_tensors.getMaxIndex(), rule_fourier, 0.0, 0.0);
+    wrapper.load(updated_tensors.getMaxIndex(), rule_fourier, 0.0, 0.0);
 
     std::vector<int> updates_tensor_w = MultiIndexManipulations::computeTensorWeights(updated_tensors);
     updated_active_tensors = MultiIndexManipulations::createActiveTensors(updated_tensors, updates_tensor_w);
@@ -754,7 +754,7 @@ void GridFourier::readConstructionData(std::istream &is, bool iomode){
         dynamic_values->read<mode_binary>(is);
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
-        wrapper.load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
+        wrapper.load(max_level, rule_fourier, 0.0, 0.0);
     dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
 std::vector<double> GridFourier::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
@@ -832,7 +832,7 @@ std::vector<double> GridFourier::getCandidateConstructionPoints(std::function<do
         auto max_indexes = MultiIndexManipulations::getMaxIndexes(new_tensors);
         int max_level = *std::max_element(max_indexes.begin(), max_indexes.end());
         if (max_level+1 > wrapper.getNumLevels())
-            wrapper.load(CustomTabulated(), max_level, rule_fourier, 0.0, 0.0);
+            wrapper.load(max_level, rule_fourier, 0.0, 0.0);
     }
 
     std::vector<double> tweights(new_tensors.getNumIndexes());
@@ -856,7 +856,7 @@ std::vector<int> GridFourier::getMultiIndex(const double x[]){
         while(std::abs(wrapper.getNode(i) - x[j]) > Maths::num_tol){
             i++; // convert canonical node to index
             if (i == wrapper.getNumNodes())
-                wrapper.load(CustomTabulated(), wrapper.getNumLevels(), rule_fourier, 0.0, 0.0);
+                wrapper.load(wrapper.getNumLevels(), rule_fourier, 0.0, 0.0);
         }
         p[j] = i;
     }

@@ -69,7 +69,7 @@ namespace Utils{
  * \endinternal
  */
 template<typename IntA, typename IntB>
-inline size_t size_mult(IntA a, IntB b){ return static_cast<size_t>(a) * static_cast<size_t>(b); }
+inline size_t size_mult(IntA a, IntB b){ return ((size_t) a) * ((size_t) b); }
 
 /*!
  * \internal

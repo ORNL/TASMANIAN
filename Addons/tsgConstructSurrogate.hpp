@@ -178,7 +178,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         std::vector<std::vector<double>> x(num_parallel_jobs),
                                          y(num_parallel_jobs, std::vector<double>(max_samples_per_job * num_outputs));
 
-        std::vector<std::atomic_int> work_flag(num_parallel_jobs);
+        std::vector<int> work_flag(num_parallel_jobs);
         constexpr int flag_done = 0;
         constexpr int flag_computing = 1;
         constexpr int flag_shutdown = 2;
@@ -191,7 +191,8 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         // lambda that will handle the work
         auto do_work = [&](size_t thread_id)->void{
 
-            while(work_flag[thread_id] == flag_computing){
+            int my_flag = flag_computing;
+            while(my_flag == flag_computing){
                 model(x[thread_id], y[thread_id], thread_id); // does the model evaluations
 
                 { // must guarantee sync between work_flag and count_done, use a lock
@@ -204,6 +205,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
                 { // wait till the main thread gives us an new piece of work
                     std::unique_lock<std::mutex> lock(access_count_done);
                     until_new_job.wait(lock, [&]()->bool{ return (work_flag[thread_id] != flag_done); });
+                    my_flag = work_flag[thread_id];
                 }
             }
         };
