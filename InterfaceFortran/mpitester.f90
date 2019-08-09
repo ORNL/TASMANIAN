@@ -33,14 +33,70 @@ program MPITESTER
   implicit none
 
 integer :: ierr, me
+integer :: num_points
 
-type(TasmanianSparseGrid) :: grid
+type(TasmanianSparseGrid) :: grid, reference_grid
 
 call MPI_Init(ierr)
 
 call MPI_Comm_rank(MPI_COMM_WORLD, me, ierr)
 
-write(*,*) "HELLO CRUEL WORLD from me: ", me
+if (ierr /= MPI_SUCCESS) then
+  write(*,*) "ERROR: failed to initialize MPI"
+  stop 1
+endif
+
+!write(*,*) "HELLO CRUEL WORLD from me: ", me, MPI_STATUS_SIZE
+
+call tsgAllocateGrid(grid)
+call tsgAllocateGrid(reference_grid)
+
+call tsgMakeSequenceGrid(reference_grid, 3, 1, 3, tsg_level, tsg_rleja)
+
+if (me == 0) then
+  call tsgMPIGridSend(reference_grid, 1, 11, MPI_COMM_WORLD, ierr)
+endif
+if (me == 1) then
+  call tsgMPIGridRecv(grid, 0, 11, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
+  if (tsgGetNumPoints(grid) /= tsgGetNumPoints(reference_grid)) then
+    write(*,*) "ERROR: failed to receive the grid"
+    stop 1
+  endif
+  call tsgDeallocateGrid(grid) ! reset the grid
+  call tsgAllocateGrid(grid)
+endif
+
+if (ierr /= MPI_SUCCESS) then
+  write(*,*) "ERROR: failed at send/recv stage"
+  stop 1
+endif
+
+if (me == 2) then
+    call tsgMPIGridBcast(reference_grid, 2, MPI_COMM_WORLD, ierr)
+    call tsgCopyGrid(grid, reference_grid)
+endif
+if (me /= 2) then
+    call tsgMPIGridBcast(grid, 2, MPI_COMM_WORLD, ierr)
+endif
+
+if (tsgGetNumPoints(grid) /= tsgGetNumPoints(reference_grid)) then
+  write(*,*) "ERROR: failed to receive the grid"
+  stop 1
+endif
+
+if (ierr /= MPI_SUCCESS) then
+  write(*,*) "ERROR: failed at bcast stage"
+  stop 1
+endif
+
+call tsgDeallocateGrid(grid)
+call tsgDeallocateGrid(reference_grid)
+
+if (me == 0) then
+  write(*,*) ""
+  write(*,*) "  MPI Send/Recv/Bcast    Pass"
+  write(*,*) ""
+endif
 
 call MPI_Finalize(ierr)
 
