@@ -35,7 +35,7 @@ PUBLIC ! default include all symbols, list only exceptions as PRIVATE ::
     double complex :: pntr
   end type TasmanianSparseGrid
 
-  integer, parameter :: tsg_clenshaw_curtis      =  1,  tsg_rule_clenshaw_curtis_zero = 2, &
+  integer, parameter :: tsg_clenshaw_curtis      =  1,  tsg_clenshaw_curtis_zero  =  2, &
                         tsg_chebyshev            =  3,  tsg_chebyshev_odd         =  4, &
                         tsg_gauss_legendre       =  5,  tsg_gauss_legendreodd     =  6, &
                         tsg_gauss_patterson      =  7,  tsg_leja                  =  8, &
@@ -55,6 +55,7 @@ PUBLIC ! default include all symbols, list only exceptions as PRIVATE ::
                         tsg_gauss_hermite_odd    = 35,  tsg_custom_tabulated      = 36, &
                         tsg_localp               = 37,  tsg_localp_zero           = 38, &
                         tsg_semi_localp          = 39,  tsg_wavelet               = 40, &
+                        tsg_fourier              = 41,  tsg_localpb               = 42, &
                         tsg_level        =   1,  tsg_curved       =  2, &
                         tsg_iptotal      =   3,  tsg_ipcurved     =  4, &
                         tsg_qptotal      =   5,  tsg_qpcurved     =  6, &
@@ -331,11 +332,7 @@ function tsgRead(grid, filename) result(res)
   end do
   cfilename(N+1) = CHAR(0)
   call tsgrea(grid%pntr, cfilename, flag)
-  if (flag .ne. 0) then
-    res = .true.
-  else
-    res = .false.
-  endif
+  res = (flag .ne. 0)
   deallocate(cfilename)
 end function tsgRead
 !=======================================================================
@@ -359,7 +356,7 @@ subroutine tsgWrite(grid, filename, useBinary)
       ubin = 0
     endif
   else
-    ubin = 0
+    ubin = 1
   endif
   call tsgwri(grid%pntr, cfilename, ubin)
   deallocate(cfilename)
@@ -398,7 +395,7 @@ end function tsgGetNumOutputs
 function tsgGetRule(grid) result(rule)
   type(TasmanianSparseGrid) :: grid
   integer :: rule
-  call tsggor(grid%pntr, rule)
+  call tsggru(grid%pntr, rule)
 end function tsgGetRule
 !=======================================================================
 function tsgGetNumLoaded(grid) result(num)
