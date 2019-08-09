@@ -519,7 +519,7 @@ IMPLICIT NONE
 
   ! iptotal: 3, ipcurved: 4
   DO j = 1, 10
-    CALL tsgSetAnisotropicRefinement(grid1, tsg_iptotal, 10, 0)
+    CALL tsgSetAnisotropicRefinement(grid1, tsg_iptotal, 10, 1)
 
     N = tsgGetNumNeeded(grid1)
     points => tsgGetNeededPoints(grid1)
@@ -539,7 +539,7 @@ IMPLICIT NONE
       ENDIF
     END DO
 
-    CALL tsgSetAnisotropicRefinement(grid2, tsg_ipcurved, 10, 0)
+    CALL tsgSetAnisotropicRefinement(grid2, tsg_ipcurved, 10, 1)
 
     N = tsgGetNumNeeded(grid2)
     points => tsgGetNeededPoints(grid2)
@@ -559,7 +559,7 @@ IMPLICIT NONE
       ENDIF
     END DO
 
-    CALL tsgSetGlobalSurplusRefinement(grid3, 1.D-10, 0)
+    CALL tsgSetGlobalSurplusRefinement(grid3, 1.D-10, 1)
 
     N = tsgGetNumNeeded(grid3)
     points => tsgGetNeededPoints(grid3)
