@@ -61,6 +61,11 @@ public:
     //! transformation parameters.
     void load(const CustomTabulated &custom, int max_level, TypeOneDRule crule, double alpha, double beta);
 
+    //! \brief Overload that skips the custom rule altogether, more convenient in Fourier grids.
+    void load(int max_level, TypeOneDRule crule, double alpha, double beta){
+        load(CustomTabulated(), max_level, crule, alpha, beta);
+    }
+
     //! \brief Get the number of points for the \b level, can only querry loaded levels.
     int getNumPoints(int level) const;
     //! \brief Get the global index of point \b j on \b level (used only by non-nested rules).
