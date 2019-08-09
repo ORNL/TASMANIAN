@@ -51,6 +51,7 @@ void sparse_grids_example_01();
 void sparse_grids_example_02();
 void sparse_grids_example_03();
 void sparse_grids_example_04();
+void sparse_grids_example_05();
 
 int main(int argc, const char**){
 
@@ -63,7 +64,9 @@ int main(int argc, const char**){
     sparse_grids_example_03();
     sparse_grids_example_04();
 
-    if (limit_examples) return 0; // skip more expensive examples
+    if (limit_examples) return 0; // skip the more expensive examples
+
+    sparse_grids_example_05();
 
     return 0;
 }
