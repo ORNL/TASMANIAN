@@ -22,6 +22,22 @@ set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "ta
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
 
+if (Tasmanian_ENABLE_MPI)
+    target_link_libraries(Tasmanian_addons INTERFACE ${MPI_Fortran_LIBRARIES})
+
+    if (DEFINED MPI_Fortran_INCLUDE_PATH)
+        target_include_directories(${Tasmanian_libfor_target_name} INTERFACE "${MPI_Fortran_INCLUDE_PATH}")
+    endif()
+
+    if(DEFINED MPI_Fortran_COMPILE_FLAGS)
+        target_compile_options(${Tasmanian_libfor_target_name} INTERFACE "${MPI_Fortran_COMPILE_FLAGS}")
+    endif()
+
+    if(DEFINED MPI_Fortran_LINK_FLAGS)
+        set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES INTERFACE_LINK_OPTIONS "${MPI_Fortran_LINK_FLAGS}")
+    endif()
+endif()
+
 install(TARGETS ${Tasmanian_libfor_target_name}
         EXPORT "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"
@@ -34,7 +50,7 @@ endmacro()
 ########################################################################
 # add the fortran tester and examples executables
 ########################################################################
-add_executable(Tasmanian_fortester  fortester.f90)
+add_executable(Tasmanian_fortester fortester.f90)
 
 set_target_properties(Tasmanian_fortester  PROPERTIES OUTPUT_NAME "fortester" LINKER_LANGUAGE Fortran)
 
@@ -52,6 +68,13 @@ unset(Tasmanian_ltype)
 
 target_link_libraries(Tasmanian_fortester  Tasmanian_libfortran90_${Tasmanian_lib_default})
 
+if (Tasmanian_ENABLE_MPI)
+    add_executable(Tasmanian_mpif90    mpitester.f90)
+    set_target_properties(Tasmanian_mpif90     PROPERTIES OUTPUT_NAME "mpitester" LINKER_LANGUAGE Fortran)
+    target_link_libraries(Tasmanian_mpif90     Tasmanian_libfortran90_${Tasmanian_lib_default})
+    add_test(MPIFortranGridIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} mpitester ${MPIEXEC_POSTFLAGS})
+    set_tests_properties(MPIFortranGridIO PROPERTIES RUN_SERIAL ON)
+endif()
 
 ########################################################################
 # Windows specific support (DLL export/import directives and names)
