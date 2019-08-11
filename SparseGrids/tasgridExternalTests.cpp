@@ -1438,8 +1438,8 @@ bool ExternalTester::testAllRefinement() const{
         }
     }{
         const BaseFunction *f = &f21aniso;
-        std::vector<int> np     = {   23,    38,    62,   104,   171,   280,   403,   636,   673};
-        std::vector<double> err = {5.E-1, 3.E-1, 2.E-1, 8.E-2, 4.E-2, 8.E-3, 3.E-3, 1.E-3, 7.E-4};
+        std::vector<int> np     = {   23,    38,    62,   104,   171,   280,   403,   506};
+        std::vector<double> err = {5.E-1, 3.E-1, 2.E-1, 8.E-2, 4.E-2, 8.E-3, 3.E-3, 1.E-3};
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_semilocalp);
         if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, 1.E-3, refine_fds, np, err)){
             cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f->getDescription() << endl;  pass4 = false;
