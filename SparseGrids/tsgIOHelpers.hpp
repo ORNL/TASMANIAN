@@ -259,7 +259,8 @@ inline std::map<std::string, TypeRefinement> getStringToRefinementMap(){
         {"classic",   refine_classic},
         {"parents",   refine_parents_first},
         {"direction", refine_direction_selective},
-        {"fds",       refine_fds}};
+        {"fds",       refine_fds},
+        {"stable",    refine_stable}};
 }
 /*!
  * \ingroup TasmanianIO
@@ -277,7 +278,9 @@ inline TypeRefinement getTypeRefinementString(std::string const &name){
  * \brief Map the integer to the enumerate hierarchical refinement strategy, used by Fortran.
  */
 inline TypeRefinement getTypeRefinementInt(int refinement){
-    std::vector<TypeRefinement> imap = {refine_none, refine_classic, refine_parents_first, refine_direction_selective, refine_fds};
+    std::vector<TypeRefinement> imap = {refine_none, refine_classic,
+                                        refine_parents_first, refine_direction_selective,
+                                        refine_fds, refine_stable};
     return ((size_t) refinement < imap.size()) ? imap[(size_t) refinement] : refine_none;
 }
 

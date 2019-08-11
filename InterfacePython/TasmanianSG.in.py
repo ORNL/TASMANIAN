@@ -47,7 +47,7 @@ __git_commit_hash__ = "@Tasmanian_git_hash@"
 lsTsgGlobalRules = ["clenshaw-curtis", "clenshaw-curtis-zero", "chebyshev", "chebyshev-odd", "gauss-legendre", "gauss-legendre-odd", "gauss-patterson", "leja", "leja-odd", "rleja", "rleja-odd", "rleja-double2", "rleja-double4", "rleja-shifted", "rleja-shifted-even", "rleja-shifted-double", "max-lebesgue", "max-lebesgue-odd", "min-lebesgue", "min-lebesgue-odd", "min-delta", "min-delta-odd", "gauss-chebyshev1", "gauss-chebyshev1-odd", "gauss-chebyshev2", "gauss-chebyshev2-odd", "fejer2", "gauss-gegenbauer", "gauss-gegenbauer-odd", "gauss-jacobi", "gauss-jacobi-odd", "gauss-laguerre", "gauss-laguerre-odd", "gauss-hermite", "gauss-hermite-odd", "custom-tabulated"]
 lsTsgGlobalTypes = ["level", "curved", "iptotal", "ipcurved", "qptotal", "qpcurved", "hyperbolic", "iphyperbolic", "qphyperbolic", "tensor", "iptensor", "qptensor"]
 lsTsgCurvedTypes = ["curved", "ipcurved", "qpcurved"]
-lsTsgRefineTypes = ["classic", "parents", "direction", "fds"]
+lsTsgRefineTypes = ["classic", "parents", "direction", "fds", "stable"]
 lsTsgSequenceRules = ["leja", "rleja", "rleja-shifted", "max-lebesgue", "min-lebesgue", "min-delta"]
 lsTsgLocalRules = ["localp", "semi-localp", "localp-zero", "localp-boundary"]
 lsTsgAccelTypes = ["none", "cpu-blas", "gpu-default", "gpu-cublas", "gpu-cuda", "gpu-magma"]
@@ -1497,7 +1497,7 @@ class TasmanianSparseGrid:
                  indicate all outputs
 
         sCriteria: hierarhical and direction refinement strategy
-                   'classic'  'parents'   'direction'   'fds'
+                   'classic'  'parents'   'direction'   'fds'   'stable'
                   applicable only for Local Polynomial and Wavelet grids
 
         llfScaleCorrection: 2-D numpy.ndarray of non-negative numbers
