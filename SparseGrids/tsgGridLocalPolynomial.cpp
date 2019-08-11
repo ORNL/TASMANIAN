@@ -495,7 +495,6 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
 
     // if using stable refinement, ensure the weight of the parents is never less than the children
     if (!new_points.empty() && ((criteria == refine_stable) || (criteria == refine_parents_first) || (criteria == refine_fds))){
-        std::cout << "correction" << std::endl;
         auto rlevels = HierarchyManipulations::computeLevels(new_points, rule.get());
         auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
         for(auto is = split.rbegin(); is != split.rend(); is++){
@@ -514,7 +513,6 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
                 }
             }
         }
-        std::cout << "end correction" << std::endl;
     }
 
     // compute the weights for the initial points

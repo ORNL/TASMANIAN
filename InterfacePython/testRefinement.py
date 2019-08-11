@@ -114,7 +114,7 @@ class TestTasClass(unittest.TestCase):
 
                 gridA.beginConstruction()
                 gridB.beginConstruction()
-                gridA.printStats()
+                #gridA.printStats()
 
                 gridB.write("testSave", bUseBinaryFormat = sFormat)
                 gridB.makeSequenceGrid(1, 1, 0, "level", "rleja") # clean the grid
