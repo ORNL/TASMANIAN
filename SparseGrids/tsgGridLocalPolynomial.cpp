@@ -493,6 +493,30 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
         refine_weights[i] = weight; // those will be inverted
     }
 
+    // if using stable refinement, ensure the weight of the parents is never less than the children
+    if (!new_points.empty() && ((criteria == refine_stable) || (criteria == refine_parents_first) || (criteria == refine_fds))){
+        std::cout << "correction" << std::endl;
+        auto rlevels = HierarchyManipulations::computeLevels(new_points, rule.get());
+        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        for(auto is = split.rbegin(); is != split.rend(); is++){
+            for(int i=0; i<is->getNumStrips(); i++){
+                std::vector<int> parent(is->getStrip(i), is->getStrip(i) + num_dimensions);
+                double correction = refine_weights[new_points.getSlot(parent)]; // will never be missing
+                for(auto &p : parent){
+                    int r = p;
+                    p = rule->getParent(r);
+                    int ip = (p == -1) ? -1 : new_points.getSlot(parent); // if parent is among the refined
+                    if (ip != -1) refine_weights[ip] += correction;
+                    p = rule->getStepParent(r);
+                    ip = (p == -1) ? -1 : new_points.getSlot(parent); // if parent is among the refined
+                    if (ip != -1) refine_weights[ip] += correction;
+                    p = r;
+                }
+            }
+        }
+        std::cout << "end correction" << std::endl;
+    }
+
     // compute the weights for the initial points
     std::vector<int> initial_levels =  HierarchyManipulations::computeLevels(dynamic_values->initial_points, rule.get());
 
@@ -1269,7 +1293,10 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
         }
     }
 
-    return MultiIndexSet(refined);
+    MultiIndexSet result = MultiIndexSet(refined);
+    if (criteria == refine_stable)
+        HierarchyManipulations::completeToLower(points, result, rule.get());
+    return result;
 }
 
 bool GridLocalPolynomial::addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const{

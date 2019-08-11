@@ -136,6 +136,33 @@ std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomia
     return level;
 }
 
+void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined, BaseRuleLocalPolynomial const *rule){
+    size_t num_dimensions = mset.getNumDimensions();
+    size_t num_added = 1; // set to 1 to start the loop
+    while(num_added > 0){
+        Data2D<int> addons(num_dimensions, 0);
+        int num_points = refined.getNumIndexes();
+
+        for(int i=0; i<num_points; i++){
+            std::vector<int> parent(refined.getIndex(i), refined.getIndex(i) + num_dimensions);
+            for(auto &p : parent){
+                int r = p;
+                p = rule->getParent(r);
+                if ((p != -1) && refined.missing(parent) && mset.missing(parent))
+                    addons.appendStrip(parent);
+                p = rule->getStepParent(r);
+                if ((p != -1) && refined.missing(parent) && mset.missing(parent))
+                    addons.appendStrip(parent);
+                p = r;
+            }
+        }
+
+        num_added = addons.getNumStrips();
+        if (num_added > 0)
+            refined.addMultiIndexSet(MultiIndexSet(addons));
+    }
+}
+
 SplitDirections::SplitDirections(const MultiIndexSet &points){
     // split the points into "jobs", where each job represents a batch of
     // points that lay on a line in some direction

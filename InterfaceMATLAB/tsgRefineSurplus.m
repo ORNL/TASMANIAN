@@ -21,7 +21,7 @@ function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOu
 %
 %
 % sRefinementType: (string indicating the refinement type)
-%                  'classic'  'parents'   'direction'   'fds'
+%                  'classic'  'parents'   'direction'   'fds' 'stable'
 %                  only for Local Polynomial and Wavelet grids
 %
 % iOut: (integer giving the output to be used for the refinement)

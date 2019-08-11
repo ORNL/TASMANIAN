@@ -64,6 +64,7 @@ PUBLIC ! default include all symbols, list only exceptions as PRIVATE ::
                         tsg_iptensor     =  11,  tsg_qptensor     = 12, &
                         tsg_classic     = 1,  tsg_parents_first = 2, &
                         tsg_directional = 3,  tsg_fds           = 4, &
+                        tsg_stable      = 5,                         &
                         tsg_acc_none     = 0, tsg_acc_cpu_blas  = 1, tsg_acc_gpu_cublas = 2, &
                         tsg_acc_gpu_cuda = 3, tsg_acc_gpu_magma = 4
 
