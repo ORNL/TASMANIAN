@@ -396,6 +396,8 @@ enum TypeOneDRule{
 //! strategies loop for missing parents and add the parents before adding children, which usually improves stability
 //! when compared to adding only children. The \b direction \b selective and \b fds strategies consider local anisotropy
 //! which can reduce the number of required model evaluations, but can also lead to decrease in stability.
+//! The \b stable refinement is both isotropic and maintains lower-complete structures, i.e., no point has a missing
+//! parent, while most stable, this strategy can lead to significant oversampling.
 //!
 //! Details regarding adaptive hierarchical sparse grids construction and children-parent relations can be found in: \n
 //! M. Stoyanov, <a href="https://link.springer.com/chapter/10.1007/978-3-319-75426-0_8">
@@ -411,6 +413,8 @@ enum TypeRefinement{
     refine_direction_selective,
     //! \brief Anisotropic refinement adding children only if the parents are already included.
     refine_fds,
+    //! \brief Isotropic refinement that ensures the points maintain lower-complete structures.
+    refine_stable,
     //! \brief Null method, should \b never be used as input.
     refine_none
 };
