@@ -181,7 +181,7 @@ bool DreamExternalTester::testGaussian3D(){
     initial_state = genGaussianSamples({1.5, 2.0, 2.5}, {0.5, 1.0, 2.0}, num_chains, get_rand);
     state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
     state.setState(initial_state);
-    LikelihoodGaussAnisotropic likely({0.25, 1.0, 4.0}, {1.5, 2.0, 2.5}, 1.0);
+    LikelihoodGaussAnisotropic likely({0.25, 1.0, 4.0}, {1.5, 2.0, 2.5}, 1);
     if (likely.getNumOutputs() != 3) throw std::runtime_error("LikelihoodGaussAnisotropic has wrong num outputs");
 
     SampleDREAM(num_burnup, num_iterations,
