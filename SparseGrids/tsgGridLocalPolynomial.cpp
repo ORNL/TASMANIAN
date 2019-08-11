@@ -1269,7 +1269,10 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
         }
     }
 
-    return MultiIndexSet(refined);
+    MultiIndexSet result = MultiIndexSet(refined);
+    if (criteria == refine_stable)
+        HierarchyManipulations::completeToLower(points, result, rule.get());
+    return result;
 }
 
 bool GridLocalPolynomial::addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const{

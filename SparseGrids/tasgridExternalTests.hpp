@@ -136,6 +136,7 @@ private:
     TwoTwoSinCos f22sincos;
     TwoOneDivisionAnisotropic f21aniso;
     TwoOne1DCurved f21curved;
+    TwoOneExpm40 f21sharp;
 
     TwoOneConstGC1 f21constGC1;
     TwoOneConstGC2 f21constGC2;

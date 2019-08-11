@@ -110,6 +110,14 @@ std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomia
 
 /*!
  * \internal
+ * \ingroup TasmanianHierarchyManipulations
+ * \brief Complete \b refined so that the union of \b refined and \b mset is lower w.r.t. the \b rule.
+ * \endinternal
+ */
+void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined, BaseRuleLocalPolynomial const *rule);
+
+/*!
+ * \internal
  * \brief Will call \b apply() with the slot index in \b mset of each parent/child of \b point.
  * \ingroup TasmanianHierarchyManipulations
  * \endinternal
