@@ -30,9 +30,6 @@ endif()
 ########################################################################
 # Stage 1: Build folder paths
 ########################################################################
-set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG.py")
-
 set(Tasmanian_string_python_hashbang "${PYTHON_EXECUTABLE}")
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
@@ -44,7 +41,10 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_Debug.py")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testConfigureData.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData_Debug.py")
-    add_custom_target(Tasmanian_python_interface ALL DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData.py")
+    add_custom_target(Tasmanian_python_interface ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_Release.py"
+                                                             "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_Debug.py"
+                                                             "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData_Release.py"
+                                                             "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData_Debug.py")
     add_custom_command(TARGET Tasmanian_python_interface PRE_BUILD
                        COMMAND "${CMAKE_COMMAND}"
                        ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG_$<CONFIG>.py ${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG.py
@@ -53,6 +53,10 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
                        COMMAND "${CMAKE_COMMAND}"
                        ARGS -E copy ${CMAKE_CURRENT_BINARY_DIR}/testConfigureData_$<CONFIG>.py ${CMAKE_CURRENT_BINARY_DIR}/testConfigureData.py
                        COMMENT "Copying Python module for config $<CONFIG>")
+else()
+    set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py"        "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG.py")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testConfigureData.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData.py")
 endif()
 
 set(Tasmanian_python_example_import "sys.path.append(\"${CMAKE_CURRENT_BINARY_DIR}\")\n")
@@ -76,8 +80,6 @@ foreach(Tasmanian_python_testing_file ${Tasmanian_python_test_files})
     list(APPEND Tasmanian_python_testing_files_stage1 "${CMAKE_CURRENT_BINARY_DIR}/${Tasmanian_python_testing_file}")
 endforeach()
 add_custom_target(Tasmanian_python_testing ALL DEPENDS "${Tasmanian_python_testing_files_stage1}")
-
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testConfigureData.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData.py")
 
 
 ########################################################################
