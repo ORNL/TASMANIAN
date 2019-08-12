@@ -104,7 +104,7 @@ inline int pow3(int p){
  * \ingroup TasmanianMaths
  * \brief Returns +1 or -1 with the same sign as \b p.
  */
-inline int sign(double p){ return (p >= 0.0) ? 1.0 : -1.0; }
+inline double sign(double p){ return (p >= 0.0) ? 1.0 : -1.0; }
 
 /*!
  * \internal
