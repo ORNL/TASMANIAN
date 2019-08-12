@@ -396,6 +396,7 @@ IMPLICIT NONE
   WRITE(*,*)
   DEALLOCATE(res)
 
+  CALL tsgDeallocateGrid(grid)
 
 ! prepare random smaples for future tests
   call random_seed()
