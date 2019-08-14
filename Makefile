@@ -23,11 +23,12 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
           ./include/TasmanianConfig.hpp ./include/Tasmanian.hpp
 
 ALL_TARGETS = GaussPattersonRule.table \
-              Tasmanian.py TasmanianSG.py \
+              Tasmanian.py TasmanianSG.py TasmanianAddons.py \
               example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py sandbox.py \
               $(wildcard ./DREAM/Examples/example_dream*.cpp) \
               $(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp) \
               libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a \
+              libtasmaniancaddons.so \
               tasgrid dreamtest gridtest addontester $(HEADERS)
 
 DREAM_EXAMPLES_OBJ = $(patsubst ./DREAM/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./DREAM/Examples/example_dream*.cpp)))
@@ -108,6 +109,12 @@ DREAM/dreamtest: ./DREAM/libtasmaniandream.so libtasmaniansparsegrid.a $(TDR_SOU
 	cd DREAM; make
 
 # Addons
+libtasmaniancaddons.so: ./Addons/libtasmaniancaddons.so
+	cp ./Addons/libtasmaniancaddons.so .
+
+./Addons/libtasmaniancaddons.so: libtasmaniansparsegrid.so libtasmaniandream.so
+	cd Addons; make
+
 addontester: Addons/testAddons.o libtasmaniandream.a libtasmaniansparsegrid.a
 	$(CC) $(OPTL) $(LADD) -L. Addons/testAddons.o -o addontester libtasmaniandream.a libtasmaniansparsegrid.a
 
@@ -166,6 +173,10 @@ TasmanianSG.py: ./InterfacePython/TasmanianSG.in.py
 	sed -i -e 's|@Tasmanian_license@|'BSD\ 3-Clause\ with\ UT-Battelle\ disclaimer'|g' ./TasmanianSG.py
 	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianSG.py
 	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianSG.py
+
+TasmanianAddons.py: ./InterfacePython/TasmanianAddons.in.py
+	cp ./InterfacePython/TasmanianAddons.in.py TasmanianAddons.py
+	sed -i -e 's|@Tasmanian_libcaddons_path@|'`pwd`/libtasmaniancaddons.so'|g' ./TasmanianAddons.py
 
 example_sparse_grids.py: ./InterfacePython/example_sparse_grids.in.py
 	cp ./InterfacePython/example_sparse_grids.in.py example_sparse_grids.py
@@ -266,6 +277,7 @@ clean:
 	rm -fr libtasmaniansparsegrid.a
 	rm -fr libtasmaniandream.so
 	rm -fr libtasmaniandream.a
+	rm -fr libtasmaniancaddons.so
 	rm -fr libtasmanianfortran90.so
 	rm -fr libtasmanianfortran90.a
 	rm -fr tasmaniansg.mod
@@ -274,6 +286,7 @@ clean:
 	rm -fr gridtest
 	rm -fr tasdream
 	rm -fr TasmanianSG.py
+	rm -fr TasmanianAddons.py
 	rm -fr example_sparse_grids.py
 	rm -fr GaussPattersonRule.table
 	rm -fr *.pyc
@@ -295,4 +308,5 @@ clean:
 	rm -fr ./InterfacePython/testConfigureData.py
 	cd SparseGrids; make clean
 	cd DREAM; make clean
+	cd Addons; make clean
 	cd InterfaceFortran; make clean
