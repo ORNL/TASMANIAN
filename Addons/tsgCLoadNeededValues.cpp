@@ -34,8 +34,36 @@
 
 extern "C"{
 
-void tsgLoadNeededPoints(){
-    std::cout << "Hello" << std::endl;
+// x.size(), x.data(), y.size(), y.data(), thread_id
+using tsg_lnp_model = void (*)(int, double const*, int, double*, int);
+
+void tsgLoadNeededPoints(int overwrite, tsg_lnp_model pymodel, void *grid_pntr, int num_threads){
+    TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
+
+    int const num_dimensions = grid.getNumDimensions();
+    int const num_outputs    = grid.getNumOutputs();
+
+    auto cpp_model = [&](double const x[], double y[], size_t thread_id)->
+        void{
+            pymodel(num_dimensions, x, num_outputs, y, (int) thread_id);
+        };
+
+    constexpr bool needed = true;
+    constexpr bool loaded = false;
+
+    if (num_threads > 1){
+        if (overwrite != 0){
+            TasGrid::loadNeededPoints<TasGrid::mode_parallel, needed>(cpp_model, grid, num_threads);
+        }else{
+            TasGrid::loadNeededPoints<TasGrid::mode_parallel, loaded>(cpp_model, grid, num_threads);
+        }
+    }else{
+        if (overwrite != 0){
+            TasGrid::loadNeededPoints<TasGrid::mode_sequential, needed>(cpp_model, grid, 1);
+        }else{
+            TasGrid::loadNeededPoints<TasGrid::mode_sequential, loaded>(cpp_model, grid, 1);
+        }
+    }
 }
 
 } // extern "C"
