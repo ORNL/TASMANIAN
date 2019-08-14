@@ -28,12 +28,13 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-# Python master module that imports all other modules and extras
-from TasmanianSG import *
-from TasmanianSG import __version__
-from TasmanianSG import __license__
-from TasmanianSG import __author__
+from ctypes import c_int, c_double, POINTER, cdll
+import numpy as np
+import sys
 
-SparseGrid = TasmanianSparseGrid
+pLibCTSG = cdll.LoadLibrary("@Tasmanian_libcaddons_path@")
 
-from TasmanianAddons import *
+pLibCTSG.tsgLoadNeededPoints.argtypes = []
+
+def loadNeededPoints():
+    pLibCTSG.tsgLoadNeededPoints()

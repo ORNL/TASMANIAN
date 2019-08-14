@@ -35,6 +35,7 @@
 extern "C"{
 
 void tsgLoadNeededPoints(){
+    std::cout << "Hello" << std::endl;
 }
 
 } // extern "C"

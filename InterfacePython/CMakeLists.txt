@@ -55,8 +55,10 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
                        COMMENT "Copying Python module for config $<CONFIG>")
 else()
     set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(Tasmanian_libcaddons_path    "${CMAKE_CURRENT_BINARY_DIR}/../Addons/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py"        "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG.py")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testConfigureData.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData.py")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianAddons.in.py"    "${CMAKE_CURRENT_BINARY_DIR}/TasmanianAddons.py")
 endif()
 
 set(Tasmanian_python_example_import "sys.path.append(\"${CMAKE_CURRENT_BINARY_DIR}\")\n")
@@ -69,7 +71,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/GaussPattersonRule.ta
 # See the matlab CMakeText.txt on how to copy multiple scripts
 set(Tasmanian_python_test_files Tasmanian.py
                                 testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py
-                                testRefinement.py testUnstructuredData.py testMisc.py)
+                                testRefinement.py testUnstructuredData.py testMisc.py
+                                example_sparse_grids_05.py)
 
 foreach(Tasmanian_python_testing_file ${Tasmanian_python_test_files})
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${Tasmanian_python_testing_file}"
@@ -85,12 +88,14 @@ add_custom_target(Tasmanian_python_testing ALL DEPENDS "${Tasmanian_python_testi
 ########################################################################
 # Stage 2: Install folder paths
 ########################################################################
-set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-# windows puts the .dll files in bin, as opposed to lib
-    set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/bin/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(Tasmanian_shared_lib_destination "lib")
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows") # windows puts the .dll files in bin, as opposed to lib
+    set(Tasmanian_shared_lib_destination "bin")
 endif()
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py")
+set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(Tasmanian_libcaddons_path    "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py"      "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianAddons.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianAddons.py")
 
 set(Tasmanian_python_example_import "sys.path.append(\"${Tasmanian_python_install_path}\")\n")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
@@ -140,7 +145,14 @@ macro(Tasmanian_python_install)
 endmacro(Tasmanian_python_install)
 
 Tasmanian_python_install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py"
+                               "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianAddons.py"
                                "${CMAKE_CURRENT_SOURCE_DIR}/Tasmanian.py")
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
+        DESTINATION "share/Tasmanian/examples/"
+        FILES_MATCHING PATTERN "example_sparse_grids*.py"
+        PATTERN "*.in.*" EXCLUDE
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py"
         DESTINATION "share/Tasmanian/examples/"

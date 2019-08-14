@@ -28,12 +28,12 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-# Python master module that imports all other modules and extras
-from TasmanianSG import *
-from TasmanianSG import __version__
-from TasmanianSG import __license__
-from TasmanianSG import __author__
+import numpy as np
+import Tasmanian
 
-SparseGrid = TasmanianSparseGrid
+def example_05():
+    Tasmanian.loadNeededPoints()
+    pass
 
-from TasmanianAddons import *
+if (__name__ == "__main__"):
+    example_05()
