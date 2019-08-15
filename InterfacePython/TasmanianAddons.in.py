@@ -32,7 +32,10 @@ from ctypes import c_int, c_double, c_void_p, POINTER, CFUNCTYPE, cdll
 import numpy as np
 import sys
 
-pLibCTSG = cdll.LoadLibrary("@Tasmanian_libcaddons_path@")
+import TasmanianConfig
+TasmanianInputError = TasmanianConfig.TasmanianInputError
+
+pLibCTSG = cdll.LoadLibrary(TasmanianConfig.__path_libcaddons__)
 
 type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int)
 

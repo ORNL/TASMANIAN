@@ -1,5 +1,6 @@
 import unittest
-import TasmanianSG
+import Tasmanian
+import TasmanianSG # needed to test all rules
 import numpy as np
 import os, sys
 from ctypes import cdll
@@ -27,21 +28,21 @@ class TestTasClass(unittest.TestCase):
         version number.
         '''
         if (tdata.bEnableSyncTests):
-            grid = TasmanianSG.TasmanianSparseGrid(tdata.sLibPath)
+            grid = Tasmanian.TasmanianSparseGrid(tdata.sLibPath)
             sVersion = grid.getVersion()
-            self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
+            self.assertEqual(sVersion, Tasmanian.__version__, "version mismatch")
 
             pLibTSG = cdll.LoadLibrary(tdata.sLibPath)
-            grid = TasmanianSG.TasmanianSparseGrid(pLibTSG)
+            grid = Tasmanian.TasmanianSparseGrid(pLibTSG)
             sVersion = grid.getVersion()
-            self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
+            self.assertEqual(sVersion, Tasmanian.__version__, "version mismatch")
 
-        grid = TasmanianSG.TasmanianSparseGrid()
+        grid = Tasmanian.TasmanianSparseGrid()
 
         sVersion = grid.getVersion()
-        self.assertEqual(sVersion, TasmanianSG.__version__, "version mismatch")
+        self.assertEqual(sVersion, Tasmanian.__version__, "version mismatch")
         sLicense = grid.getLicense()
-        self.assertEqual(sLicense, TasmanianSG.__license__, "license mismatch")
+        self.assertEqual(sLicense, Tasmanian.__license__, "license mismatch")
 
         iVM = int(sVersion.split('.')[0])
         iVm = int(sVersion.split('.')[1])
@@ -52,7 +53,7 @@ class TestTasClass(unittest.TestCase):
         '''
         Make grids and check against pen-and-paper answers, check weights too.
         '''
-        grid = TasmanianSG.TasmanianSparseGrid()
+        grid = Tasmanian.SparseGrid()
 
         grid.makeGlobalGrid(1, 0, 4, 'level', 'gauss-hermite', [], 2.0)
         aW = grid.getQuadratureWeights()
@@ -168,7 +169,7 @@ class TestTasClass(unittest.TestCase):
         '''
         Check the update and make working together.
         '''
-        grid = TasmanianSG.TasmanianSparseGrid()
+        grid = Tasmanian.SparseGrid()
         for iI in range(2):
             if (iI == 0):
                 sMake = "grid.makeGlobalGrid(2, 1, 2, 'level', 'leja', [2, 1])"
@@ -239,7 +240,7 @@ class TestTasClass(unittest.TestCase):
         Test that default values are set correctly for alpha/beta/order,
         empty returns, empty copy.
         '''
-        grid = TasmanianSG.TasmanianSparseGrid()
+        grid = Tasmanian.SparseGrid()
         for sRule in TasmanianSG.lsTsgLocalRules:
             grid.makeLocalPolynomialGrid(3, 1, 3, 0, sRule)
             self.assertEqual(grid.getAlpha(), 0.0, "failed alpha")
@@ -266,7 +267,7 @@ class TestTasClass(unittest.TestCase):
         try:
             grid.copyGrid([])
             self.assertTrue(False, "failed to raise exception on copy grid")
-        except TasmanianSG.TasmanianInputError as TsgError:
+        except Tasmanian.InputError as TsgError:
             with open(os.devnull, 'w') as devnul:
                 sys.stdout = devnul
                 TsgError.printInfo() # Miro: silence this for a release
@@ -293,7 +294,7 @@ class TestTasClass(unittest.TestCase):
 
         # test empty returns
         dummy_ans = np.empty([0, 0], np.float64)
-        grid_dummy = TasmanianSG.TasmanianSparseGrid()
+        grid_dummy = Tasmanian.SparseGrid()
         aX = np.empty([0,], np.float64)
         np.testing.assert_equal(dummy_ans, grid_dummy.getPoints(), "Empty read", True)
         np.testing.assert_equal(dummy_ans, grid_dummy.getNeededPoints(), "Empty read", True)
@@ -316,7 +317,7 @@ class TestTasClass(unittest.TestCase):
         '''
         Check setting level limits.
         '''
-        grid = TasmanianSG.TasmanianSparseGrid()
+        grid = Tasmanian.SparseGrid()
 
         # Level Limits
         grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis', liLevelLimits = [1, 4])
