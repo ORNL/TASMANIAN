@@ -56,9 +56,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 else()
     set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
     set(Tasmanian_libcaddons_path    "${CMAKE_CURRENT_BINARY_DIR}/../Addons/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py"        "${CMAKE_CURRENT_BINARY_DIR}/TasmanianSG.py")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testConfigureData.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData.py")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianAddons.in.py"    "${CMAKE_CURRENT_BINARY_DIR}/TasmanianAddons.py")
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianConfig.in.py"    "${CMAKE_CURRENT_BINARY_DIR}/TasmanianConfig.py")
 endif()
 
@@ -70,7 +68,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sandbox.py" "${CMAKE_CURRENT_BINARY_
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY) # needed for testing
 
 # See the matlab CMakeText.txt on how to copy multiple scripts
-set(Tasmanian_python_test_files Tasmanian.py
+set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py
                                 testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py
                                 testRefinement.py testUnstructuredData.py testMisc.py
                                 example_sparse_grids_05.py)
@@ -96,8 +94,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows") # windows puts the .dll files in bi
 endif()
 set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(Tasmanian_libcaddons_path    "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.in.py"      "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianAddons.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianAddons.py")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianConfig.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.py")
 
 set(Tasmanian_python_example_import "sys.path.append(\"${Tasmanian_python_install_path}\")\n")
@@ -147,8 +143,8 @@ macro(Tasmanian_python_install)
     endif()
 endmacro(Tasmanian_python_install)
 
-Tasmanian_python_install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianSG.py"
-                               "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianAddons.py"
+Tasmanian_python_install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.py"
+                               "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianAddons.py"
                                "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.py"
                                "${CMAKE_CURRENT_SOURCE_DIR}/Tasmanian.py")
 
