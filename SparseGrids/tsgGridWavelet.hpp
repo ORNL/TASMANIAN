@@ -125,8 +125,6 @@ private:
 
     Data2D<double> coefficients; // a.k.a., surpluses
 
-    StorageSet values;
-
     TasSparse::SparseMatrix inter_matrix;
 
     #ifdef Tasmanian_ENABLE_CUDA

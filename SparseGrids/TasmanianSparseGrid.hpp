@@ -151,6 +151,7 @@ public:
 
     void loadNeededPoints(std::vector<double> const &vals); // checks if vals has size num_outputs X getNumNeeded()
     void loadNeededPoints(const double *vals); // no error checking
+    const double* getLoadedValues() const{ return (empty()) ? nullptr : base->getLoadedValues(); }
 
     void evaluate(std::vector<double> const &x, std::vector<double> &y) const;
     void evaluate(const double x[], double y[]) const; // has size num_dimensions, y has size num_outputs

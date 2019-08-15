@@ -191,8 +191,6 @@ private:
     std::vector<double> nodes;
     std::vector<double> coeff;
 
-    StorageSet values;
-
     std::vector<int> max_levels;
 
     std::unique_ptr<SimpleConstructData> dynamic_values;

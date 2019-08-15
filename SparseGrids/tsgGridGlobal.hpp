@@ -147,8 +147,6 @@ private:
 
     std::vector<int> max_levels; // for evaluation purposes, counts the maximum level in each direction (only counts tensors)
 
-    StorageSet values;
-
     MultiIndexSet updated_tensors;
     MultiIndexSet updated_active_tensors;
     std::vector<int> updated_active_w;

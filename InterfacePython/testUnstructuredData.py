@@ -211,8 +211,27 @@ class TestTasClass(unittest.TestCase):
             fExpected = grid.integrate()
             np.testing.assert_almost_equal(fResult, fExpected[0], 12, 'integrals different by too much')
 
+    def checkValues(self):
+        lTests = ['grid.makeGlobalGrid(2, 2, 3, "level", "clenshaw-curtis")',
+                  'grid.makeSequenceGrid(2, 2, 3, "level", "rleja")',
+                  'grid.makeFourierGrid(2, 2, 2, "level")',
+                  'grid.makeLocalPolynomialGrid(2, 2, 2)',
+                  'grid.makeWaveletGrid(2, 2, 2)']
+
+        for t in lTests:
+            grid = TasmanianSG.TasmanianSparseGrid()
+            aResult = grid.getLoadedValues()
+            self.assertTrue(len(aResult) == 0, "failed to return a empty array")
+            exec(t)
+            iNP = grid.getNumNeeded()
+            iOuts = 2
+            aReferece = np.array([float(i) for i in range(iNP * iOuts)]).reshape(iNP, iOuts)
+            grid.loadNeededPoints(aReferece)
+            aResult = grid.getLoadedValues()
+            np.testing.assert_almost_equal(aResult, aReferece, 14, 'values in getLoadedValues() differ by too much')
 
     def performUnstructuredDataTests(self):
         self.checkAgainstKnown()
         self.checkSetCoeffsMergeRefine()
         self.checkIntegrals()
+        self.checkValues()

@@ -200,6 +200,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetInterpolationWeights.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgLoadNeededPoints.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgGetLoadedValuesStatic.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgEvaluate.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgEvaluateFast.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
         self.pLibTSG.tsgIntegrate.argtypes = [c_void_p, POINTER(c_double)]
@@ -1085,6 +1086,22 @@ class TasmanianSparseGrid:
         iNumPoints = llfVals.shape[0]
         iNumDims = llfVals.shape[1]
         self.pLibTSG.tsgLoadNeededPoints(self.pGrid, np.ctypeslib.as_ctypes(llfVals.reshape([iNumPoints * iNumDims])))
+
+    def getLoadedValues(self):
+        '''
+        Returns the model values as given to Tasmanian by the loadNeededPoints() method.
+        The ordering will match the current internal ordering, e.g., mixing the different
+        model values from different refinement iterations.
+
+        Returns a two dimensional numpy.ndarray with size getNumPoints() by getNumOutputs()
+        '''
+        iNumPoints  = self.getNumPoints()
+        iNumOutputs = self.getNumOutputs()
+        if (iNumPoints == 0 or iNumOutputs == 0):
+            return np.empty([0, 0], np.float64)
+        aVals = np.empty((iNumPoints * iNumOutputs,), np.float64)
+        self.pLibTSG.tsgGetLoadedValuesStatic(self.pGrid, np.ctypeslib.as_ctypes(aVals))
+        return aVals.reshape((iNumPoints, iNumOutputs))
 
     def evaluateThreadSafe(self, lfX):
         '''

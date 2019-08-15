@@ -218,8 +218,6 @@ private:
 
     Data2D<double> fourier_coefs;
 
-    StorageSet values;
-
     std::vector<int> max_power;
 
     std::unique_ptr<DynamicConstructorDataGlobal> dynamic_values;

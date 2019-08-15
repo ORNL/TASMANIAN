@@ -353,7 +353,6 @@ private:
 
     Data2D<double> surpluses;
 
-    StorageSet values;
     Data2D<int> parents;
 
     // tree for evaluation
