@@ -233,6 +233,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_int), POINTER(c_int), POINTER(c_double)]
         self.pLibTSG.tsgGetHierarchicalCoefficientsStatic.argtypes = [c_void_p, POINTER(c_double)]
+        self.pLibTSG.tsgIntegrateHierarchicalFunctionsStatic.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgBeginConstruction.argtypes = [c_void_p]
         self.pLibTSG.tsgIsUsingConstruction.argtypes = [c_void_p]
         self.pLibTSG.tsgGetCandidateConstructionPointsVoidPntr.argtypes = [c_void_p, c_char_p, c_int, POINTER(c_int), POINTER(c_int)]
@@ -1944,6 +1945,22 @@ class TasmanianSparseGrid:
             llfCoefficients = llfCoefficients.reshape([iNumPoints * iNumDims,])
 
         self.pLibTSG.tsgSetHierarchicalCoefficients(self.pGrid, np.ctypeslib.as_ctypes(llfCoefficients))
+
+    def integrateHierarchicalFunctions(self):
+        '''
+        Computes the integrals of the hierarchical basis functions,
+        i.e., the same functions computed by evaluateHierarchicalFunctions().
+
+        returns a one dimensional np.ndarray with size self.getNumPoints()
+        '''
+        iNumPoints = self.getNumPoints()
+        if (iNumPoints == 0):
+            return np.empty([0,], np.float64)
+
+        aIntegrals = np.zeros([iNumPoints,])
+        self.pLibTSG.tsgIntegrateHierarchicalFunctionsStatic(self.pGrid, np.ctypeslib.as_ctypes(aIntegrals))
+
+        return aIntegrals
 
     def getGlobalPolynomialSpace(self, bInterpolation):
         '''

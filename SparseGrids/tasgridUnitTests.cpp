@@ -669,6 +669,10 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
             gridLoadEN2(&grid);
             grid.removePointsByHierarchicalCoefficient(0.1, -1, nullptr); // grid is not localp or wavelet
         },
+        [](void)->void{
+            auto grid = makeEmpty();
+            auto integ = grid.integrateHierarchicalFunctions();
+        },
     };
 }
 

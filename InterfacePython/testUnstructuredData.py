@@ -192,6 +192,27 @@ class TestTasClass(unittest.TestCase):
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         ttc.compareGrids(gridA, gridB)
 
+    def checkIntegrals(self):
+        grid = TasmanianSG.TasmanianSparseGrid()
+
+        lTests = ['grid.makeGlobalGrid(2, 1, 4, "level", "clenshaw-curtis")',
+                  'grid.makeSequenceGrid(2, 1, 4, "level", "rleja")',
+                  'grid.makeFourierGrid(2, 1, 3, "level")',
+                  'grid.makeLocalPolynomialGrid(2, 1, 4)',
+                  'grid.makeWaveletGrid(2, 1, 2)']
+
+        for t in lTests:
+            exec(t)
+            grid.setDomainTransform(np.array([[-3.0, 5.0], [-4.0, 2.0]]))
+            ttc.loadExpN2(grid)
+            aIntegrals = grid.integrateHierarchicalFunctions()
+            aSurps = grid.getHierarchicalCoefficients()
+            fResult = np.real(np.sum(aIntegrals * aSurps.reshape((aSurps.shape[0],))))
+            fExpected = grid.integrate()
+            np.testing.assert_almost_equal(fResult, fExpected[0], 12, 'integrals different by too much')
+
+
     def performUnstructuredDataTests(self):
         self.checkAgainstKnown()
         self.checkSetCoeffsMergeRefine()
+        self.checkIntegrals()

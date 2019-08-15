@@ -393,6 +393,14 @@ void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff){
 void tsgSetHierarchicalCoefficients(void *grid, const double *c){
     ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
 }
+double* tsgIntegrateHierarchicalFunctions(void *grid){
+    double *x = (double*) malloc(((TasmanianSparseGrid*) grid)->getNumPoints() * sizeof(double));
+    ((TasmanianSparseGrid*) grid)->integrateHierarchicalFunctions(x);
+    return x;
+}
+void tsgIntegrateHierarchicalFunctionsStatic(void *grid, double *integrals){
+    ((TasmanianSparseGrid*) grid)->integrateHierarchicalFunctions(integrals);
+}
 
 // to be called from Python only, must later call delete[] on the pointer
 int* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes){

@@ -1125,6 +1125,19 @@ bool ExternalTester::testAllFourier() const{
                 pass = false;
             }
         }
+
+        auto integrals = grid.integrateHierarchicalFunctions();
+        std::vector<double> ref_integral(1);
+        f21expsincos.getIntegral(ref_integral.data());
+        if (std::abs(std::accumulate(integrals.begin() + 1, integrals.end(), 0)) > Maths::num_tol){
+            cout << "Error in zeors for integrateHierarchicalFunctions() (fourier)" << endl;
+            pass = false;
+        }
+        if (std::abs(coeff[0] * integrals[0] - 0.25 * ref_integral[0]) > Maths::num_tol){
+            cout << "Error in value for integrateHierarchicalFunctions() (fourier)" << endl;
+            pass = false;
+        }
+
         delete[] pnts;
         delete[] y;
         delete[] v;
