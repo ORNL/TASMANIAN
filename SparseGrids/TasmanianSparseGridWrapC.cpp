@@ -191,6 +191,17 @@ double* tsgGetInterpolationWeights(void *grid, const double *x){
 
 void tsgLoadNeededPoints(void *grid, const double *vals){ ((TasmanianSparseGrid*) grid)->loadNeededPoints(vals); }
 
+const double* tsgGetLoadedValues(void *grid){
+    return ((TasmanianSparseGrid*) grid)->getLoadedValues();
+}
+void tsgGetLoadedValuesStatic(void *grid, double *values){
+    int num_points = ((TasmanianSparseGrid*) grid)->getNumPoints();
+    int num_outputs = ((TasmanianSparseGrid*) grid)->getNumOutputs();
+    if ((num_points == 0) || (num_outputs == 0)) return;
+    const double *vals = ((TasmanianSparseGrid*) grid)->getLoadedValues();
+    std::copy(vals, vals + Utils::size_mult(num_outputs, num_points), values);
+}
+
 void tsgEvaluate(void *grid, const double *x, double *y){ ((TasmanianSparseGrid*) grid)->evaluate(x, y); }
 void tsgEvaluateFast(void *grid, const double *x, double *y){ ((TasmanianSparseGrid*) grid)->evaluateFast(x, y); }
 void tsgIntegrate(void *grid, double *q){ ((TasmanianSparseGrid*) grid)->integrate(q); }
@@ -392,6 +403,14 @@ void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff){
 }
 void tsgSetHierarchicalCoefficients(void *grid, const double *c){
     ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
+}
+double* tsgIntegrateHierarchicalFunctions(void *grid){
+    double *x = (double*) malloc(((TasmanianSparseGrid*) grid)->getNumPoints() * sizeof(double));
+    ((TasmanianSparseGrid*) grid)->integrateHierarchicalFunctions(x);
+    return x;
+}
+void tsgIntegrateHierarchicalFunctionsStatic(void *grid, double *integrals){
+    ((TasmanianSparseGrid*) grid)->integrateHierarchicalFunctions(integrals);
 }
 
 // to be called from Python only, must later call delete[] on the pointer

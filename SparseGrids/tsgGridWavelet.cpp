@@ -604,6 +604,13 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     evaluateBatch(x.data(), points.getNumIndexes(), values.getValues(0));
 }
 
+void GridWavelet::integrateHierarchicalFunctions(double integrals[]) const{
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int const num_points = work.getNumIndexes();
+    for(int i=0; i<num_points; i++)
+        integrals[i] = evalIntegral(work.getIndex(i));
+}
+
 void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits){
     clearRefinement();
 

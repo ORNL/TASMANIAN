@@ -87,6 +87,7 @@ public:
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
+    void integrateHierarchicalFunctions(double integrals[]) const;
 
     const double* getSurpluses() const;
 
@@ -123,8 +124,6 @@ private:
     int order;
 
     Data2D<double> coefficients; // a.k.a., surpluses
-
-    StorageSet values;
 
     TasSparse::SparseMatrix inter_matrix;
 

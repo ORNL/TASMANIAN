@@ -192,6 +192,46 @@ class TestTasClass(unittest.TestCase):
         gridB.setHierarchicalCoefficients(gridA.getHierarchicalCoefficients())
         ttc.compareGrids(gridA, gridB)
 
+    def checkIntegrals(self):
+        grid = TasmanianSG.TasmanianSparseGrid()
+
+        lTests = ['grid.makeGlobalGrid(2, 1, 4, "level", "clenshaw-curtis")',
+                  'grid.makeSequenceGrid(2, 1, 4, "level", "rleja")',
+                  'grid.makeFourierGrid(2, 1, 3, "level")',
+                  'grid.makeLocalPolynomialGrid(2, 1, 4)',
+                  'grid.makeWaveletGrid(2, 1, 2)']
+
+        for t in lTests:
+            exec(t)
+            grid.setDomainTransform(np.array([[-3.0, 5.0], [-4.0, 2.0]]))
+            ttc.loadExpN2(grid)
+            aIntegrals = grid.integrateHierarchicalFunctions()
+            aSurps = grid.getHierarchicalCoefficients()
+            fResult = np.real(np.sum(aIntegrals * aSurps.reshape((aSurps.shape[0],))))
+            fExpected = grid.integrate()
+            np.testing.assert_almost_equal(fResult, fExpected[0], 12, 'integrals different by too much')
+
+    def checkValues(self):
+        lTests = ['grid.makeGlobalGrid(2, 2, 3, "level", "clenshaw-curtis")',
+                  'grid.makeSequenceGrid(2, 2, 3, "level", "rleja")',
+                  'grid.makeFourierGrid(2, 2, 2, "level")',
+                  'grid.makeLocalPolynomialGrid(2, 2, 2)',
+                  'grid.makeWaveletGrid(2, 2, 2)']
+
+        for t in lTests:
+            grid = TasmanianSG.TasmanianSparseGrid()
+            aResult = grid.getLoadedValues()
+            self.assertTrue(len(aResult) == 0, "failed to return a empty array")
+            exec(t)
+            iNP = grid.getNumNeeded()
+            iOuts = 2
+            aReferece = np.array([float(i) for i in range(iNP * iOuts)]).reshape(iNP, iOuts)
+            grid.loadNeededPoints(aReferece)
+            aResult = grid.getLoadedValues()
+            np.testing.assert_almost_equal(aResult, aReferece, 14, 'values in getLoadedValues() differ by too much')
+
     def performUnstructuredDataTests(self):
         self.checkAgainstKnown()
         self.checkSetCoeffsMergeRefine()
+        self.checkIntegrals()
+        self.checkValues()

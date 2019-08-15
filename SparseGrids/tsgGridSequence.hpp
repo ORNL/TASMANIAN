@@ -104,6 +104,7 @@ public:
     void finishConstruction();
 
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
+    void integrateHierarchicalFunctions(double integrals[]) const;
 
     std::vector<int> getPolynomialSpace(bool interpolation) const;
 
@@ -189,8 +190,6 @@ private:
     Data2D<double> surpluses;
     std::vector<double> nodes;
     std::vector<double> coeff;
-
-    StorageSet values;
 
     std::vector<int> max_levels;
 

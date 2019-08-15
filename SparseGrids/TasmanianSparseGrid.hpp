@@ -151,6 +151,7 @@ public:
 
     void loadNeededPoints(std::vector<double> const &vals); // checks if vals has size num_outputs X getNumNeeded()
     void loadNeededPoints(const double *vals); // no error checking
+    const double* getLoadedValues() const{ return (empty()) ? nullptr : base->getLoadedValues(); }
 
     void evaluate(std::vector<double> const &x, std::vector<double> &y) const;
     void evaluate(const double x[], double y[]) const; // has size num_dimensions, y has size num_outputs
@@ -250,6 +251,17 @@ public:
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
     void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
+
+    std::vector<double> integrateHierarchicalFunctions() const{
+        std::vector<double> integrals;
+        integrateHierarchicalFunctions(integrals);
+        return integrals;
+    }
+    void integrateHierarchicalFunctions(std::vector<double> &integrals) const{
+        integrals.resize(getNumPoints());
+        integrateHierarchicalFunctions(integrals.data());
+    }
+    void integrateHierarchicalFunctions(double integrals[]) const;
 
     std::vector<int> getGlobalPolynomialSpace(bool interpolation) const;
 

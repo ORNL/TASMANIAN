@@ -107,6 +107,7 @@ public:
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
+    void integrateHierarchicalFunctions(double integrals[]) const;
 
     void clearAccelerationData();
 
@@ -145,8 +146,6 @@ private:
     std::vector<std::vector<int>> tensor_refs;
 
     std::vector<int> max_levels; // for evaluation purposes, counts the maximum level in each direction (only counts tensors)
-
-    StorageSet values;
 
     MultiIndexSet updated_tensors;
     MultiIndexSet updated_active_tensors;

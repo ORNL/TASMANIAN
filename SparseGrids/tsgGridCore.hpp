@@ -80,6 +80,7 @@ public:
     virtual void getInterpolationWeights(const double x[], double weights[]) const = 0;
 
     virtual void loadNeededPoints(const double *vals) = 0;
+    const double* getLoadedValues() const{ return (points.empty()) ? nullptr : values.getValues(0); }
 
     virtual void evaluate(const double x[], double y[]) const = 0;
     virtual void integrate(double q[], double *conformal_correction) const = 0;
@@ -109,6 +110,7 @@ public:
 
     virtual void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const = 0; // add acceleration here
     virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) = 0;
+    virtual void integrateHierarchicalFunctions(double integrals[]) const = 0;
 
     virtual void clearAccelerationData() = 0;
 
@@ -116,6 +118,7 @@ protected:
     int num_dimensions, num_outputs;
     MultiIndexSet points;
     MultiIndexSet needed;
+    StorageSet values;
 };
 
 }

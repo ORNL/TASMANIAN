@@ -109,6 +109,7 @@ public:
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
+    void integrateHierarchicalFunctions(double integrals[]) const;
 
     void clearAccelerationData();
     void setFavorSparse(bool favor);
@@ -251,8 +252,6 @@ protected:
     double evalBasisRaw(const int point[], const double x[]) const;
     double evalBasisSupported(const int point[], const double x[], bool &isSupported) const;
 
-    void getBasisIntegrals(double *integrals) const;
-
     std::vector<double> getNormalization() const;
 
     Data2D<int> buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const;
@@ -354,7 +353,6 @@ private:
 
     Data2D<double> surpluses;
 
-    StorageSet values;
     Data2D<int> parents;
 
     // tree for evaluation
