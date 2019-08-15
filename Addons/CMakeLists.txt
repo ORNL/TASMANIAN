@@ -73,6 +73,19 @@ target_link_libraries(Tasmanian_addontester Tasmanian_addons Tasmanian_libdream)
 add_test(AddonTests addontester)
 set_tests_properties(AddonTests PROPERTIES RUN_SERIAL ON) # see MPISparseGridsIO
 
+# Windows specific support (DLL export/import directives and names)
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    if (TARGET Tasmanian_caddons)
+        set_target_properties(Tasmanian_caddons PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    endif()
+    if (NOT "static" IN_LIST Tasmanian_libs_type)
+        set(Tasmanian_MSVC_PATH_STRING "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release;${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug")
+        set(Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING};${CMAKE_CURRENT_BINARY_DIR}/../DREAM/Release;${CMAKE_CURRENT_BINARY_DIR}/../DREAM/Debug;$ENV{PATH}")
+        string(REPLACE ";" "\\;" Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING}")
+        set_tests_properties(AddonTests PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
+    endif()
+endif()
+
 # install directives
 target_include_directories(Tasmanian_addons INTERFACE $<INSTALL_INTERFACE:include>)
 get_target_property(_tsg_sources Tasmanian_addons INTERFACE_SOURCES)
