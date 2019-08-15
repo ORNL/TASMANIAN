@@ -1534,7 +1534,8 @@ class TasmanianSparseGrid:
                             or 1 if iOutput > -1.
         '''
         if (self.isGlobal()):
-            raise TasmanianInputError("setSurplusRefinement", "ERROR: setSurplusRefinement cannot be used with global grids")
+            if (self.getRule() not in lsTsgSequenceRules):
+                raise TasmanianInputError("setSurplusRefinement", "ERROR: setSurplusRefinement cannot be used with global grids with non-sequence rule")
         if (self.getNumLoaded() == 0):
             raise TasmanianInputError("setSurplusRefinement", "ERROR: cannot call setSurplusRefinement for a grid before any points are loaded, i.e., call loadNeededPoints first!")
         if (fTolerance < 0.0):
@@ -1562,7 +1563,7 @@ class TasmanianSparseGrid:
                 pLevelLimits[iI] = liLevelLimits[iI]
 
         if (len(sCriteria) == 0):
-            if (not self.isSequence()):
+            if (not self.isSequence() and not self.isGlobal()):
                 raise TasmanianInputError("sCriteria", "ERROR: sCriteria must be specified")
             self.pLibTSG.tsgSetGlobalSurplusRefinement(self.pGrid, c_double(fTolerance), iOutput, pLevelLimits)
         else:

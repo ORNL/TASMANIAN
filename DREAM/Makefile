@@ -25,7 +25,7 @@ EXECNAME = dreamtest
 all: $(LIBNAME) $(EXECNAME) $(SHAREDNAME)
 
 $(SHAREDNAME): $(LIBOBJ)
-	$(CC) $(OPTL) $(LADD) $(LIBOBJ) -shared -o $(SHAREDNAME) ../libtasmaniansparsegrid.so $(CommonLIBS)
+	$(CC) $(OPTL) $(LADD) $(LIBOBJ) -shared -o $(SHAREDNAME) $(shell pwd)/../libtasmaniansparsegrid.so $(CommonLIBS)
 
 $(LIBNAME): $(LIBOBJ)
 	ar rcs $(LIBNAME) $(LIBOBJ)

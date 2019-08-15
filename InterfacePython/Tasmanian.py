@@ -35,3 +35,5 @@ from TasmanianSG import __license__
 from TasmanianSG import __author__
 
 SparseGrid = TasmanianSparseGrid
+
+from TasmanianAddons import *
