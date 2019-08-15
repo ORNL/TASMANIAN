@@ -607,6 +607,20 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
 //     }
 }
 
+void GridSequence::integrateHierarchicalFunctions(double integrals[]) const{
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int const num_points = work.getNumIndexes();
+    std::vector<double> integ = cacheBasisIntegrals();
+    for(int i=0; i<num_points; i++){
+        const int* p = work.getIndex(i);
+        double w = integ[p[0]];
+        for(int j=1; j<num_dimensions; j++){
+            w *= integ[p[j]];
+        }
+        integrals[i] = w;
+    }
+}
+
 void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000 * Maths::num_tol;
     int num_points = points.getNumIndexes();

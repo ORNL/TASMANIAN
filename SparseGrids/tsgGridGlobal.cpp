@@ -860,6 +860,7 @@ void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration)
     if (!points.empty()) clearRefinement();
     loadNeededPoints(c);
 }
+void GridGlobal::integrateHierarchicalFunctions(double integrals[]) const{ getQuadratureWeights(integrals); }
 
 double GridGlobal::legendre(int n, double x){
     if (n == 0) return 1.0;

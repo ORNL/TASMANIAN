@@ -1136,6 +1136,14 @@ void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> 
     if (c.size() != num_coeffs) throw std::runtime_error("ERROR: setHierarchicalCoefficients() called with wrong size of the coefficients.");
     setHierarchicalCoefficients(c.data());
 }
+void TasmanianSparseGrid::integrateHierarchicalFunctions(double integrals[]) const{
+    if (empty()) throw std::runtime_error("ERROR: cannot compute the integrals for a basis in an empty grid.");
+    base->integrateHierarchicalFunctions(integrals);
+    if (domain_transform_a.size() != 0){
+        double scale = getQuadratureScale(base->getNumDimensions(), base->getRule());
+        for(int i=0; i<getNumPoints(); i++) integrals[i] *= scale;
+    }
+}
 
 std::vector<int> TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation) const{
     if (isGlobal()){

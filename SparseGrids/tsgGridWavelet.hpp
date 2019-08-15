@@ -87,6 +87,7 @@ public:
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
+    void integrateHierarchicalFunctions(double integrals[]) const;
 
     const double* getSurpluses() const;
 

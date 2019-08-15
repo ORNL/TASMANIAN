@@ -86,6 +86,8 @@ public:
     void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
+    void integrateHierarchicalFunctions(double integrals[]) const;
+
     #ifdef Tasmanian_ENABLE_CUDA
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const;
     void evaluateHierarchicalFunctionsInternalGPU(const double gpu_x[], int num_x, CudaVector<double> &wreal, CudaVector<double> &wimag) const;

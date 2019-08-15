@@ -109,6 +109,7 @@ public:
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
+    void integrateHierarchicalFunctions(double integrals[]) const;
 
     void clearAccelerationData();
     void setFavorSparse(bool favor);
@@ -250,8 +251,6 @@ protected:
 
     double evalBasisRaw(const int point[], const double x[]) const;
     double evalBasisSupported(const int point[], const double x[], bool &isSupported) const;
-
-    void getBasisIntegrals(double *integrals) const;
 
     std::vector<double> getNormalization() const;
 

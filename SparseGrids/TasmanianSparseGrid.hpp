@@ -251,6 +251,17 @@ public:
 
     void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
 
+    std::vector<double> integrateHierarchicalFunctions() const{
+        std::vector<double> integrals;
+        integrateHierarchicalFunctions(integrals);
+        return integrals;
+    }
+    void integrateHierarchicalFunctions(std::vector<double> &integrals) const{
+        integrals.resize(getNumPoints());
+        integrateHierarchicalFunctions(integrals.data());
+    }
+    void integrateHierarchicalFunctions(double integrals[]) const;
+
     std::vector<int> getGlobalPolynomialSpace(bool interpolation) const;
 
     void printStats(std::ostream &os = std::cout) const;

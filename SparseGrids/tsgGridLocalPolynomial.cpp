@@ -1019,7 +1019,7 @@ void GridLocalPolynomial::buildTree(){
     std::copy_if(tree.getVector().begin(), tree.getVector().end(), indx.begin(), [](int t)->bool{ return (t > -1); });
 }
 
-void GridLocalPolynomial::getBasisIntegrals(double *integrals) const{
+void GridLocalPolynomial::integrateHierarchicalFunctions(double integrals[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
     int n = 0;
@@ -1040,7 +1040,7 @@ void GridLocalPolynomial::getBasisIntegrals(double *integrals) const{
 }
 void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
-    getBasisIntegrals(weights);
+    integrateHierarchicalFunctions(weights);
 
     std::vector<int> monkey_count(top_level+1);
     std::vector<int> monkey_tail(top_level+1);
@@ -1101,7 +1101,7 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
 
     if (conformal_correction == 0){
         std::vector<double> integrals(num_points);
-        getBasisIntegrals(integrals.data());
+        integrateHierarchicalFunctions(integrals.data());
         for(int i=0; i<num_points; i++){
             const double *s = surpluses.getStrip(i);
             double wi = integrals[i];

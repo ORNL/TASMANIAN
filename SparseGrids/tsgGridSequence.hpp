@@ -104,6 +104,7 @@ public:
     void finishConstruction();
 
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
+    void integrateHierarchicalFunctions(double integrals[]) const;
 
     std::vector<int> getPolynomialSpace(bool interpolation) const;
 

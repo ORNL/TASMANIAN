@@ -613,6 +613,10 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     fourier_coefs.resize(num_outputs, 2 * getNumPoints());
     std::copy_n(c, 2 * ((size_t) num_outputs) * ((size_t) getNumPoints()), fourier_coefs.getStrip(0));
 }
+void GridFourier::integrateHierarchicalFunctions(double integrals[]) const{
+    integrals[0] = 1.0;
+    std::fill(integrals + 1, integrals + getNumPoints(), 0.0);
+}
 
 #ifdef Tasmanian_ENABLE_CUDA
 void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
