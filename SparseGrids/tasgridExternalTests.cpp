@@ -1138,6 +1138,12 @@ bool ExternalTester::testAllFourier() const{
             pass = false;
         }
 
+        grid.updateFourierGrid(5, type_level);
+        if (grid.getNumNeeded() != 756){
+            cout << "Error in num points for updateFourierGrid()" << endl;
+            pass = false;
+        }
+
         delete[] pnts;
         delete[] y;
         delete[] v;

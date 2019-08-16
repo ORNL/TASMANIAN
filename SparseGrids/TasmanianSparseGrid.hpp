@@ -115,6 +115,9 @@ public:
     void updateSequenceGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
     void updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
 
+    void updateFourierGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
+    void updateFourierGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
+
     double getAlpha() const{ return (isGlobal()) ? getGridGlobal()->getAlpha() : 0.0; }
     double getBeta() const{ return (isGlobal()) ? getGridGlobal()->getBeta() : 0.0; }
     int getOrder() const{ return (isLocalPolynomial()) ? getGridLocalPolynomial()->getOrder() : ((isWavelet()) ? getGridWavelet()->getOrder() : -1); }
