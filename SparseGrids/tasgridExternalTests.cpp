@@ -1129,7 +1129,7 @@ bool ExternalTester::testAllFourier() const{
         auto integrals = grid.integrateHierarchicalFunctions();
         std::vector<double> ref_integral(1);
         f21expsincos.getIntegral(ref_integral.data());
-        if (std::abs(std::accumulate(integrals.begin() + 1, integrals.end(), 0)) > Maths::num_tol){
+        if (std::abs(std::accumulate(integrals.begin() + 1, integrals.end(), 0.0)) > Maths::num_tol){
             cout << "Error in zeors for integrateHierarchicalFunctions() (fourier)" << endl;
             pass = false;
         }
