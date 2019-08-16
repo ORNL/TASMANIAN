@@ -225,3 +225,40 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxP
                 type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
                 iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
                 c_char_p(sDepthType), pAnisoWeights, pLevelLimits, pCPFname)
+
+
+def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxPerCall, grid,
+                              fTolerance, sRefinementType, iOutput = -1,
+                              liLevelLimits = [], bUseInitialGuess = False,
+                              sCheckpointFilename = ""):
+    '''
+    Construct a surrogate model to the callableModel using surplus refinement
+    until either the iMaxPoints or the tolerance are reached.
+    '''
+    pLevelLimits = None
+    if (len(liLevelLimits) > 0):
+        if (len(liLevelLimits) != iNumDims):
+            raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to the grid dimension")
+        pLevelLimits = (c_int*iNumDims)()
+        for iI in range(iNumDims):
+            pLevelLimits[iI] = liLevelLimits[iI]
+
+    if (sys.version_info.major == 3):
+        sRefinementType = bytes(sRefinementType, encoding='utf8')
+        if (sCheckpointFilename):
+            sCheckpointFilename = bytes(sCheckpointFilename, encoding='utf8')
+
+    pCPFname = None
+    if (sCheckpointFilename):
+        pCPFname = c_char_p(sCheckpointFilename)
+
+    if (bUseInitialGuess):
+        pLibCTSG.tsgConstructSurrogateWiIGSurplus(
+            type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
+            iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+            fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname)
+    else:
+        pLibCTSG.tsgConstructSurrogateNoIGSurplus(
+            type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
+            iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+            fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname)
