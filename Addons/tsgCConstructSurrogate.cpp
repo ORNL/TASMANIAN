@@ -34,9 +34,234 @@
 
 extern "C"{
 
-// x.size(), x.data(), y.size(), y.data(), thread_id
-//using tsg_lnp_model = void (*)(int, double const*, int, double*, int);
+// num_samples, num_dimensions, x.data(), num_outputs, y.data(), thread_id
+using tsg_scs_model = void (*)(int, int, double const*, int, double*, int);
 
+void tsgConstructSurrogateNoIGSurplus
+           (tsg_scs_model pymodel,
+            int max_num_points, int num_parallel_jobs, int max_samples_per_job,
+            void *grid_pntr,
+            double tolerance, const char* s_criteria, int output,
+            int *llimits, const char *checkpoint_filename){
+
+    TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
+
+    int const num_dimensions = grid.getNumDimensions();
+    int const num_outputs    = grid.getNumOutputs();
+
+    TasGrid::TypeRefinement criteria = TasGrid::IO::getTypeRefinementString(s_criteria);
+
+    std::vector<int> level_limits = TasGrid::Utils::copyArray(llimits, num_dimensions);
+    std::vector<double> scale_correction; // remove later
+    std::string cfname = (checkpoint_filename != nullptr) ? std::string(checkpoint_filename) : std::string();
+
+    auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
+        void{
+            int sample_size = (int) x.size() / num_dimensions;
+            pymodel(sample_size, num_dimensions, x.data(), num_outputs, y.data(), (int) thread_id);
+        };
+
+    if (num_parallel_jobs > 1){
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, tolerance, criteria, output, level_limits, scale_correction, cfname);
+    }else{
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, tolerance, criteria, output, level_limits, scale_correction, cfname);
+    }
+}
+
+void tsgConstructSurrogateNoIGAniso
+           (tsg_scs_model pymodel,
+            int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
+            const char* s_type, int output, int *llimits, const char *checkpoint_filename){
+
+    TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
+
+    int const num_dimensions = grid.getNumDimensions();
+    int const num_outputs    = grid.getNumOutputs();
+
+    TasGrid::TypeDepth dtype = TasGrid::IO::getDepthTypeString(s_type);
+
+    std::vector<int> level_limits = TasGrid::Utils::copyArray(llimits, num_dimensions);
+    std::string cfname = (checkpoint_filename != nullptr) ? std::string(checkpoint_filename) : std::string();
+
+    auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
+        void{
+            int sample_size = (int) x.size() / num_dimensions;
+            pymodel(sample_size, num_dimensions, x.data(), num_outputs, y.data(), (int) thread_id);
+        };
+
+    if (num_parallel_jobs > 1){
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, dtype, output, level_limits, cfname);
+    }else{
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, dtype, output, level_limits, cfname);
+    }
+}
+
+void tsgConstructSurrogateNoIAnisoFixed
+           (tsg_scs_model pymodel,
+            int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
+            const char* s_type, int *aweights, int *llimits, const char *checkpoint_filename){
+
+    TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
+
+    int const num_dimensions = grid.getNumDimensions();
+    int const num_outputs    = grid.getNumOutputs();
+
+    TasGrid::TypeDepth dtype = TasGrid::IO::getDepthTypeString(s_type);
+
+    std::vector<int> anisotropic_weights = TasGrid::Utils::copyArray(aweights, num_dimensions *
+                                        ((TasGrid::OneDimensionalMeta::isTypeCurved(dtype)) ? 2 : 1));
+    std::vector<int> level_limits = TasGrid::Utils::copyArray(llimits, num_dimensions);
+    std::string cfname = (checkpoint_filename != nullptr) ? std::string(checkpoint_filename) : std::string();
+
+    auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
+        void{
+            int sample_size = (int) x.size() / num_dimensions;
+            pymodel(sample_size, num_dimensions, x.data(), num_outputs, y.data(), (int) thread_id);
+        };
+
+    if (num_parallel_jobs > 1){
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, dtype, anisotropic_weights, level_limits, cfname);
+    }else{
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, dtype, anisotropic_weights, level_limits, cfname);
+    }
+}
+
+// num_samples, num_dimensions, x.data(), has_init_guess, num_outputs, y.data(), thread_id
+using tsg_ics_model = void (*)(int, int, double const*, int, int, double*, int);
+
+void tsgConstructSurrogateWiIGSurplus
+           (tsg_ics_model pymodel,
+            int max_num_points, int num_parallel_jobs, int max_samples_per_job,
+            void *grid_pntr,
+            double tolerance, const char* s_criteria, int output,
+            int *llimits, const char *checkpoint_filename){
+
+    TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
+
+    int const num_dimensions = grid.getNumDimensions();
+    int const num_outputs    = grid.getNumOutputs();
+
+    TasGrid::TypeRefinement criteria = TasGrid::IO::getTypeRefinementString(s_criteria);
+
+    std::vector<int> level_limits = TasGrid::Utils::copyArray(llimits, num_dimensions);
+    std::vector<double> scale_correction; // remove later
+    std::string cfname = (checkpoint_filename != nullptr) ? std::string(checkpoint_filename) : std::string();
+
+    auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
+        void{
+            int sample_size = (int) x.size() / num_dimensions;
+
+            int ihas_guess = 1; // assume there is a guess
+            if (y.empty()){
+                ihas_guess = 0; // no guess
+                y.resize(TasGrid::Utils::size_mult(sample_size, num_outputs));
+            }
+
+            pymodel(sample_size, num_dimensions, x.data(), ihas_guess, num_outputs, y.data(), (int) thread_id);
+        };
+
+    if (num_parallel_jobs > 1){
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, tolerance, criteria, output, level_limits, scale_correction, cfname);
+    }else{
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, tolerance, criteria, output, level_limits, scale_correction, cfname);
+    }
+}
+
+void tsgConstructSurrogateWiIGAniso
+           (tsg_ics_model pymodel,
+            int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
+            const char* s_type, int output, int *llimits, const char *checkpoint_filename){
+
+    TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
+
+    int const num_dimensions = grid.getNumDimensions();
+    int const num_outputs    = grid.getNumOutputs();
+
+    TasGrid::TypeDepth dtype = TasGrid::IO::getDepthTypeString(s_type);
+
+    std::vector<int> level_limits = TasGrid::Utils::copyArray(llimits, num_dimensions);
+    std::string cfname = (checkpoint_filename != nullptr) ? std::string(checkpoint_filename) : std::string();
+
+    auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
+        void{
+            int sample_size = (int) x.size() / num_dimensions;
+
+            int ihas_guess = 1; // assume there is a guess
+            if (y.empty()){
+                ihas_guess = 0; // no guess
+                y.resize(TasGrid::Utils::size_mult(sample_size, num_outputs));
+            }
+
+            pymodel(sample_size, num_dimensions, x.data(), ihas_guess, num_outputs, y.data(), (int) thread_id);
+        };
+
+    if (num_parallel_jobs > 1){
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, dtype, output, level_limits, cfname);
+    }else{
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, dtype, output, level_limits, cfname);
+    }
+}
+
+void tsgConstructSurrogateWiIAnisoFixed
+           (tsg_ics_model pymodel,
+            int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
+            const char* s_type, int *aweights, int *llimits, const char *checkpoint_filename){
+
+    TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
+
+    int const num_dimensions = grid.getNumDimensions();
+    int const num_outputs    = grid.getNumOutputs();
+
+    TasGrid::TypeDepth dtype = TasGrid::IO::getDepthTypeString(s_type);
+
+    std::vector<int> anisotropic_weights = TasGrid::Utils::copyArray(aweights, num_dimensions *
+                                        ((TasGrid::OneDimensionalMeta::isTypeCurved(dtype)) ? 2 : 1));
+    std::vector<int> level_limits = TasGrid::Utils::copyArray(llimits, num_dimensions);
+    std::string cfname = (checkpoint_filename != nullptr) ? std::string(checkpoint_filename) : std::string();
+
+    auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
+        void{
+            int sample_size = (int) x.size() / num_dimensions;
+
+            int ihas_guess = 1; // assume there is a guess
+            if (y.empty()){
+                ihas_guess = 0; // no guess
+                y.resize(TasGrid::Utils::size_mult(sample_size, num_outputs));
+            }
+
+            pymodel(sample_size, num_dimensions, x.data(), ihas_guess, num_outputs, y.data(), (int) thread_id);
+        };
+
+    if (num_parallel_jobs > 1){
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, dtype, anisotropic_weights, level_limits, cfname);
+    }else{
+        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+             grid, dtype, anisotropic_weights, level_limits, cfname);
+    }
+}
 
 } // extern "C"
 #endif
