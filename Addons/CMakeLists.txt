@@ -30,7 +30,7 @@ Tasmanian_addon_sources(PATH .
 
 if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
     get_target_property(Tasmanian_addon_sources Tasmanian_addons INTERFACE_SOURCES)
-    add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp)
+    add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp)
     target_link_libraries(Tasmanian_caddons Tasmanian_addons Tasmanian_libdream_shared)
     set_target_properties(Tasmanian_caddons PROPERTIES OUTPUT_NAME "tasmaniancaddons")
 
