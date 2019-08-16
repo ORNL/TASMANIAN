@@ -28,7 +28,7 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from ctypes import c_int, c_double, c_void_p, POINTER, CFUNCTYPE, cdll
+from ctypes import c_int, c_double, c_char_p, c_void_p, POINTER, CFUNCTYPE, cdll
 import numpy as np
 import sys
 
@@ -38,8 +38,14 @@ TasmanianInputError = TasmanianConfig.TasmanianInputError
 pLibCTSG = cdll.LoadLibrary(TasmanianConfig.__path_libcaddons__)
 
 type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int)
+type_scsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int)
+type_icsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, c_int, POINTER(c_double), c_int)
 
 pLibCTSG.tsgLoadNeededPoints.argtypes = [c_int, type_lpnmodel, c_void_p, c_int]
+
+pLibCTSG.tsgConstructSurrogateNoIGSurplus.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_double, c_char_p, c_int, POINTER(c_int), c_char_p]
+pLibCTSG.tsgConstructSurrogateNoIGAniso.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_char_p, c_int, POINTER(c_int), c_char_p]
+pLibCTSG.tsgConstructSurrogateNoIGAnisoFixed.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_char_p, POINTER(c_int), POINTER(c_int), c_char_p]
 
 
 def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID):
@@ -122,3 +128,68 @@ def reloadLoadedPoints(callableModel, grid, iNumThreads = 1):
     pLibCTSG.tsgLoadNeededPoints(iOverwrite,
                                  type_lpnmodel(lambda nx, x, ny, y, tid : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid)),
                                  grid.pGrid, iNumThreads)
+
+###############################################################################
+################### Construct Surrogate #######################################
+###############################################################################
+
+def tsgScsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iNumOuts, pY, iThreadID):
+    '''
+    DO NOT CALL DIRECTLY
+    This is callback from C++, see TasGrid::constructSurrogate()
+    '''
+    aX = np.ctypeslib.as_array(pX, (iNumSamples,iNumDims))
+    aY = np.ctypeslib.as_array(pY, (iNumSamples,iNumOuts))
+    aResult = oUserModel(aX, iThreadID)
+    aY[0:iNumSamples, 0:iNumOuts] = aResult[0:iNumSamples, 0:iNumOuts]
+
+def tsgIcsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iHasGuess, iNumOuts, pY, iThreadID):
+    '''
+    DO NOT CALL DIRECTLY
+    This is callback from C++, see TasGrid::constructSurrogate()
+    '''
+    aX = np.ctypeslib.as_array(pX, (iNumSamples,iNumDims))
+    aY = np.ctypeslib.as_array(pY, (iNumSamples,iNumOuts))
+    if (iHasGuess == 0): # no guess
+        aResult = oUserModel(aX, np.empty([0,0], np.float64), iThreadID)
+    else:
+        aResult = oUserModel(aX, aY, iThreadID)
+    aY[0:iNumSamples, 0:iNumOuts] = aResult[0:iNumSamples, 0:iNumOuts]
+
+def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxPerCall, grid,
+                                  sDepthType, liAnisotropicWeightsOrOutput,
+                                  liLevelLimits = [], bUseInitialGuess = False,
+                                  sCheckpointFilename = ""):
+    '''
+    Construct a surrogate model to the callableModel using
+    anisotropic refinement until the iMaxPoints is reached.
+    '''
+    pLevelLimits = None
+    if (len(liLevelLimits) > 0):
+        if (len(liLevelLimits) != iNumDims):
+            raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to the grid dimension")
+        pLevelLimits = (c_int*iNumDims)()
+        for iI in range(iNumDims):
+            pLevelLimits[iI] = liLevelLimits[iI]
+
+    if (sys.version_info.major == 3):
+        sDepthType = bytes(sDepthType, encoding='utf8')
+        if (sCheckpointFilename):
+            sCheckpointFilename = bytes(sCheckpointFilename, encoding='utf8')
+
+    pCPFname = None
+    if (sCheckpointFilename):
+        pCPFname = c_char_p(sCheckpointFilename)
+
+    if (((sys.version_info.major == 3) and isinstance(liAnisotropicWeightsOrOutput, int))
+            or ((sys.version_info.major == 2) and isinstance(liAnisotropicWeightsOrOutput, (int, long)))):
+        # will call the algorithm to dynamically estimate the weights
+        iOutput = liAnisotropicWeightsOrOutput
+
+        pLibCTSG.tsgConstructSurrogateNoIGAniso(
+            type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
+            iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+            c_char_p(sDepthType), iOutput, pLevelLimits, pCPFname)
+    else:
+        # weights are set by the user
+        pass

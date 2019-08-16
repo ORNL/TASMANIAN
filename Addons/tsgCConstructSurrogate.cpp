@@ -104,7 +104,7 @@ void tsgConstructSurrogateNoIGAniso
     }
 }
 
-void tsgConstructSurrogateNoIAnisoFixed
+void tsgConstructSurrogateNoIGAnisoFixed
            (tsg_scs_model pymodel,
             int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
             const char* s_type, int *aweights, int *llimits, const char *checkpoint_filename){
@@ -222,7 +222,7 @@ void tsgConstructSurrogateWiIGAniso
     }
 }
 
-void tsgConstructSurrogateWiIAnisoFixed
+void tsgConstructSurrogateWiIGAnisoFixed
            (tsg_ics_model pymodel,
             int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
             const char* s_type, int *aweights, int *llimits, const char *checkpoint_filename){
