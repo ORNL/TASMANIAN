@@ -362,15 +362,17 @@ void TasgridWrapper::createQuadrature(){
     }
 }
 bool TasgridWrapper::updateGrid(){
-    if (!(grid.isGlobal() || grid.isSequence())){
+    if (!(grid.isGlobal() || grid.isSequence() || grid.isFourier())){
         cerr << "ERROR: -makeupdate can be called only for Global and Sequence grids" << endl;
         return false;
     }
     auto weights = readAnisotropicFile((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);
     if (grid.isGlobal()){
         grid.updateGlobalGrid(depth, depth_type, weights);
-    }else{
+    }else if (grid.isSequence()){
         grid.updateSequenceGrid(depth, depth_type, weights);
+    }else{
+        grid.updateFourierGrid(depth, depth_type, weights);
     }
     return true;
 }
