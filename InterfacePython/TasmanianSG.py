@@ -157,6 +157,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgMakeFourierGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgUpdateGlobalGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgUpdateSequenceGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
+        self.pLibTSG.tsgUpdateFourierGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
         self.pLibTSG.tsgGetAlpha.argtypes = [c_void_p]
         self.pLibTSG.tsgGetBeta.argtypes = [c_void_p]
         self.pLibTSG.tsgGetOrder.argtypes = [c_void_p]
@@ -781,12 +782,12 @@ class TasmanianSparseGrid:
         adds the points defined by depth, type and anisotropy
         to the existing grid
 
-        basically, the same as calling makeGlobalGrid with sRule,
+        basically, the same as calling makeSequenceGrid() with sRule,
                    of this grid and the new iDepth, sType and
                    liAnisotropicWeights then adding the resulting points
                    to the current grid
 
-        inputs: see help(TasmanianSG.TasmanianSparseGrid.makeGlobalGrid)
+        inputs: see help(Tasmanian.SparseGrid.makeGlobalGrid)
 
         '''
         if (not self.isSequence()):
@@ -824,6 +825,55 @@ class TasmanianSparseGrid:
                 pLevelLimits[iI] = liLevelLimits[iI]
 
         self.pLibTSG.tsgUpdateSequenceGrid(self.pGrid, iDepth, sType, pAnisoWeights, pLevelLimits)
+
+    def updateFourierGrid(self, iDepth, sType, liAnisotropicWeights=[], liLevelLimits=[]):
+        '''
+        adds the points defined by depth, type and anisotropy
+        to the existing grid
+
+        basically, the same as calling makeFourierGrid() with sRule,
+                   of this grid and the new iDepth, sType and
+                   liAnisotropicWeights then adding the resulting points
+                   to the current grid
+
+        inputs: see help(Tasmanian.SparseGrid.makeGlobalGrid)
+
+        '''
+        if (not self.isFourier()):
+            raise TasmanianInputError("updateFourierGrid", "ERROR: calling updateFourierGrid for a grid that is not a Fourier grid")
+
+        if (iDepth < 0):
+            raise TasmanianInputError("iDepth", "ERROR: depth should be a non-negative integer")
+
+        if (sType not in lsTsgGlobalTypes):
+            raise TasmanianInputError("sType", "ERROR: invalid type, see Tasmanian.TasmanianSG.lsTsgGlobalTypes for list of accepted types")
+
+        iDimension = self.getNumDimensions()
+        pAnisoWeights = None
+        if (len(liAnisotropicWeights) > 0):
+            if (sType in lsTsgCurvedTypes):
+                iNumWeights = 2*iDimension
+            else:
+                iNumWeights = iDimension
+            if (len(liAnisotropicWeights) != iNumWeights):
+                raise TasmanianInputError("liAnisotropicWeights", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
+            else:
+                pAnisoWeights = (c_int*iNumWeights)()
+                for iI in range(iNumWeights):
+                    pAnisoWeights[iI] = liAnisotropicWeights[iI]
+
+        if (sys.version_info.major == 3):
+            sType = bytes(sType, encoding='utf8')
+
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
+
+        self.pLibTSG.tsgUpdateFourierGrid(self.pGrid, iDepth, sType, pAnisoWeights, pLevelLimits)
 
     def getAlpha(self):
         '''

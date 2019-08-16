@@ -235,6 +235,11 @@ class TestTasClass(unittest.TestCase):
             aP = grid.getNeededPoints()
             np.testing.assert_equal(aA, aP, "Update Global not equal", True)
 
+        grid.makeFourierGrid(2, 1, 2, "level")
+        ttc.loadExpN2(grid)
+        grid.updateFourierGrid(3, "level")
+        self.assertEqual(grid.getNumNeeded(), 60, "failed at updateFourierGrid()")
+
     def checkDefaults(self):
         '''
         Test that default values are set correctly for alpha/beta/order,
