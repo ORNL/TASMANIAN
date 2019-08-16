@@ -28,16 +28,33 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-# Python master module that imports all other modules and extras
-from TasmanianConfig import __version__
-from TasmanianConfig import __license__
-from TasmanianConfig import __author__
-from TasmanianConfig import __git_commit_hash__
+# Using a single configuration file with all paths and relevant options
+# The rest of the Tasmanian Python modules will not be configured by cmake
 
-from TasmanianConfig import TasmanianInputError
-InputError = TasmanianInputError
+__version__ = "@Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@"
+__license__ = "@Tasmanian_license@"
+__author__ = "Miroslav Stoyanov"
+__git_commit_hash__ = "@Tasmanian_git_hash@"
 
-from TasmanianSG import *
-SparseGrid = TasmanianSparseGrid
+__path_libsparsegrid__ = "@Tasmanian_libsparsegrid_path@"
+__path_libcaddons__    = "@Tasmanian_libcaddons_path@"
 
-from TasmanianAddons import *
+class TasmanianInputError(Exception):
+    '''Exception raised for incorret input to Tasmanian
+
+    Attributes:
+    sVariable -- string containing the variable name with incorrect value
+    sMessage -- message regarding the error
+
+    '''
+    def __init__(self, sVar, sMess):
+        self.sVariable = sVar
+        self.sMessage = sMess
+
+    def printInfo(self):
+        '''
+        prints information for the incorect function or variable
+
+        '''
+        print("Incorrect input for: {0:s}".format(self.sVariable))
+        print(self.sMessage)

@@ -23,7 +23,7 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
           ./include/TasmanianConfig.hpp ./include/Tasmanian.hpp
 
 ALL_TARGETS = GaussPattersonRule.table \
-              Tasmanian.py TasmanianSG.py TasmanianAddons.py \
+              Tasmanian.py TasmanianSG.py TasmanianAddons.py TasmanianConfig.py \
               example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py sandbox.py \
               $(wildcard ./DREAM/Examples/example_dream*.cpp) \
               $(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp) \
@@ -166,17 +166,20 @@ GaussPattersonRule.table: ./SparseGrids/GaussPattersonRule.table
 Tasmanian.py: ./InterfacePython/Tasmanian.py
 	cp ./InterfacePython/Tasmanian.py .
 
-TasmanianSG.py: ./InterfacePython/TasmanianSG.in.py
-	cp ./InterfacePython/TasmanianSG.in.py TasmanianSG.py
-	sed -i -e 's|@Tasmanian_VERSION_MAJOR@|'6'|g' ./TasmanianSG.py
-	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'1'|g' ./TasmanianSG.py
-	sed -i -e 's|@Tasmanian_license@|'BSD\ 3-Clause\ with\ UT-Battelle\ disclaimer'|g' ./TasmanianSG.py
-	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianSG.py
-	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianSG.py
+TasmanianSG.py: ./InterfacePython/TasmanianSG.py
+	cp ./InterfacePython/TasmanianSG.py TasmanianSG.py
 
-TasmanianAddons.py: ./InterfacePython/TasmanianAddons.in.py
-	cp ./InterfacePython/TasmanianAddons.in.py TasmanianAddons.py
-	sed -i -e 's|@Tasmanian_libcaddons_path@|'`pwd`/libtasmaniancaddons.so'|g' ./TasmanianAddons.py
+TasmanianAddons.py: ./InterfacePython/TasmanianAddons.py
+	cp ./InterfacePython/TasmanianAddons.py TasmanianAddons.py
+
+TasmanianConfig.py: ./InterfacePython/TasmanianConfig.in.py
+	cp ./InterfacePython/TasmanianConfig.in.py TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_VERSION_MAJOR@|'6'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'1'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_license@|'BSD\ 3-Clause\ with\ UT-Battelle\ disclaimer'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_libcaddons_path@|'`pwd`/libtasmaniancaddons.so'|g' ./TasmanianConfig.py
 
 example_sparse_grids.py: ./InterfacePython/example_sparse_grids.in.py
 	cp ./InterfacePython/example_sparse_grids.in.py example_sparse_grids.py
