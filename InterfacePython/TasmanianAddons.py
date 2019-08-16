@@ -33,6 +33,7 @@ import numpy as np
 import sys
 
 import TasmanianConfig
+import TasmanianSG
 TasmanianInputError = TasmanianConfig.TasmanianInputError
 
 pLibCTSG = cdll.LoadLibrary(TasmanianConfig.__path_libcaddons__)
@@ -46,6 +47,10 @@ pLibCTSG.tsgLoadNeededPoints.argtypes = [c_int, type_lpnmodel, c_void_p, c_int]
 pLibCTSG.tsgConstructSurrogateNoIGSurplus.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_double, c_char_p, c_int, POINTER(c_int), c_char_p]
 pLibCTSG.tsgConstructSurrogateNoIGAniso.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_char_p, c_int, POINTER(c_int), c_char_p]
 pLibCTSG.tsgConstructSurrogateNoIGAnisoFixed.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_char_p, POINTER(c_int), POINTER(c_int), c_char_p]
+
+pLibCTSG.tsgConstructSurrogateWiIGSurplus.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_double, c_char_p, c_int, POINTER(c_int), c_char_p]
+pLibCTSG.tsgConstructSurrogateWiIGAniso.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_char_p, c_int, POINTER(c_int), c_char_p]
+pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_char_p, POINTER(c_int), POINTER(c_int), c_char_p]
 
 
 def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID):
@@ -186,10 +191,37 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxP
         # will call the algorithm to dynamically estimate the weights
         iOutput = liAnisotropicWeightsOrOutput
 
-        pLibCTSG.tsgConstructSurrogateNoIGAniso(
-            type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
-            iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
-            c_char_p(sDepthType), iOutput, pLevelLimits, pCPFname)
+        if (bUseInitialGuess):
+            pLibCTSG.tsgConstructSurrogateWiIGAniso(
+                type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
+                iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+                c_char_p(sDepthType), iOutput, pLevelLimits, pCPFname)
+        else:
+            pLibCTSG.tsgConstructSurrogateNoIGAniso(
+                type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
+                iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+                c_char_p(sDepthType), iOutput, pLevelLimits, pCPFname)
     else:
         # weights are set by the user
-        pass
+        pAnisoWeights = None
+        if (len(liAnisotropicWeightsOrOutput) > 0):
+            if (sDepthType in TasmanianSG.lsTsgCurvedTypes):
+                iNumWeights = 2*grid.getNumDimensions()
+            else:
+                iNumWeights = grid.getNumDimensions()
+            if (len(liAnisotropicWeightsOrOutput) != iNumWeights):
+                raise TasmanianInputError("liAnisotropicWeightsOrOutput", "ERROR: wrong number of liAnisotropicWeightsOrOutput, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeightsOrOutput) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
+            else:
+                aAWeights = np.array([liAnisotropicWeightsOrOutput[i] for i in range(iNumWeights)], np.int32)
+                pAnisoWeights = np.ctypeslib.as_ctypes(aAWeights)
+
+        if (bUseInitialGuess):
+            pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed(
+                type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
+                iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+                c_char_p(sDepthType), pAnisoWeights, pLevelLimits, pCPFname)
+        else:
+            pLibCTSG.tsgConstructSurrogateNoIGAnisoFixed(
+                type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
+                iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+                c_char_p(sDepthType), pAnisoWeights, pLevelLimits, pCPFname)
