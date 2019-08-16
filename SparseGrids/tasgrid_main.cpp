@@ -405,7 +405,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -makewavelet\t"      << "\t-mw"     << "\t\tmake a grid from a wavelet rule" << endl;
         cout << " -makefourier\t"      << "\t-mf"     << "\t\tmake a grid from a Fourier rule" << endl;
         cout << " -makequadrature"     << "\t-mq"     << "\t\tmake a quadrature" << endl;
-        cout << " -makeupdate\t"       << "\t-mu"     << "\t\tupdates a new global or sequence grid" << endl;
+        cout << " -makeupdate\t"       << "\t-mu"     << "\t\tupdates an existing global/sequence/fourier grid" << endl;
         cout << " -setconformal\t"     << "\t-sc"     << "\t\tset conformal domain transform" << endl;
         cout << " -getquadrature\t"    << "\t-gq"     << "\t\toutput quadrature weights and points" << endl;
         cout << " -getinterweights"    << "\t-gi"     << "\t\toutput the interpolation weights" << endl;

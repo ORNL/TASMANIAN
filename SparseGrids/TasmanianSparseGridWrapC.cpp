@@ -122,6 +122,14 @@ void tsgUpdateSequenceGrid(void *grid, int depth, const char * sType, const int 
     if (depth_type == type_none){ depth_type = type_iptotal; }
     ((TasmanianSparseGrid*) grid)->updateSequenceGrid(depth, depth_type, anisotropic_weights, limit_levels);
 }
+void tsgUpdateFourierGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
+    TypeDepth depth_type = IO::getDepthTypeString(sType);
+    #ifndef NDEBUG
+    if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
+    #endif // NDEBUG
+    if (depth_type == type_none){ depth_type = type_iptotal; }
+    ((TasmanianSparseGrid*) grid)->updateFourierGrid(depth, depth_type, anisotropic_weights, limit_levels);
+}
 
 double tsgGetAlpha(void *grid){ return ((TasmanianSparseGrid*) grid)->getAlpha(); }
 double tsgGetBeta(void *grid){ return ((TasmanianSparseGrid*) grid)->getBeta(); }

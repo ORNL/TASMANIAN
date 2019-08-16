@@ -59,7 +59,7 @@ void sparse_grids_example_06(){
     // the construction signature uses std::vector<double>
     int const num_inputs  = 3;
     int const num_outputs = 1;
-    auto model = [](std::vector<double> const &x, std::vector<double> &y, size_t)->
+    auto model = [&](std::vector<double> const &x, std::vector<double> &y, size_t)->
         void{
             // if no initial guess is used, then y will be guaranteed to have
             // the correct size, i.e., num_outputs
