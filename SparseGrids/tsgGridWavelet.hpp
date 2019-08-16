@@ -84,6 +84,13 @@ public:
     void clearRefinement();
     void mergeRefinement();
 
+    void beginConstruction(){}
+    void writeConstructionData(std::ostream&, bool) const{}
+    void readConstructionData(std::istream&, bool){}
+    void loadConstructedPoint(const double[], const std::vector<double> &){}
+    void loadConstructedPoint(const double[], int, const double[]){}
+    void finishConstruction(){}
+
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);

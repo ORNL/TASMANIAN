@@ -101,12 +101,12 @@ public:
     virtual void clearRefinement() = 0;
     virtual void mergeRefinement() = 0;
 
-    virtual void beginConstruction(){}
-    virtual void writeConstructionData(std::ostream&, bool) const{}
-    virtual void readConstructionData(std::istream&, bool){}
-    virtual void loadConstructedPoint(const double[], const std::vector<double> &){}
-    virtual void loadConstructedPoint(const double[], int, const double[]){}
-    virtual void finishConstruction(){}
+    virtual void beginConstruction() = 0;
+    virtual void writeConstructionData(std::ostream&, bool) const = 0;
+    virtual void readConstructionData(std::istream&, bool) = 0;
+    virtual void loadConstructedPoint(const double[], const std::vector<double> &) = 0;
+    virtual void loadConstructedPoint(const double[], int, const double[]) = 0;
+    virtual void finishConstruction() = 0;
 
     virtual void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const = 0; // add acceleration here
     virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) = 0;
