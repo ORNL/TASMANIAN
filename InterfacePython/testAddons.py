@@ -21,7 +21,22 @@ class TestTasClass(unittest.TestCase):
         '''
         Check the load needed construction procedure.
         '''
-        pass
+        gridA = Tasmanian.SparseGrid()
+        gridB = Tasmanian.SparseGrid()
+
+        for i in range(4):
+            if i < 2:
+                gridA.makeGlobalGrid(2, 1, 3, 'level', 'fejer2')
+                gridB.copyGrid(gridA)
+                Tasmanian.loadNeededPoints(lambda x, i : np.ones((1,)) * np.exp(-np.sum(x**2)), gridA, i)
+            else:
+                gridA.makeLocalPolynomialGrid(2, 1, 2, 2)
+                gridB.copyGrid(gridA)
+                gridA.loadNeededPoints(np.ones((gridA.getNumPoints(), 1)))
+                Tasmanian.reloadLoadedPoints(lambda x, i : np.ones((1,)) * np.exp(-np.sum(x**2)), gridA, i - 2)
+
+            ttc.loadExpN2(gridB)
+            ttc.compareGrids(gridA, gridB)
 
     def performAddonTests(self):
         self.checkLoadNeeded()
