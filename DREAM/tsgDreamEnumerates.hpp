@@ -102,6 +102,19 @@ enum TypeDistribution{
     dist_gamma
 };
 
+/*!
+ * \internal
+ * \ingroup TasmanianDREAM
+ * \addtogroup DREAMUtils Miscellaneous utility methods for IO.
+ *
+ * Similar to TasGrid::IO this holds conversion methods between enums and int/string types.
+ * \endinternal
+ */
+namespace IO{
+    //! \brief Converts an integer to TypeSamplingForm, synced with the Python interface.
+    inline TypeSamplingForm intToForm(int form){ return (form == 0) ? regform : logform; }
+}
+
 namespace DreamMaths{
 /*!
  * \internal

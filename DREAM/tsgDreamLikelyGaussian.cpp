@@ -102,6 +102,20 @@ void LikelihoodGaussAnisotropic::getLikelihood(TypeSamplingForm form, double con
     if (form == regform) for(int i=0; i<num_samples; i++) likely[i] = std::exp(likely[i]);
 }
 
+extern "C"{ // for python purposes
+void *tsgMakeLikelihoodGaussIsotropic(int num_outputs, double variance, double const data[], int num_samples){
+    return (void*) new LikelihoodGaussIsotropic(variance, std::vector<double>(data, data + num_outputs), num_samples);
+}
+void *tsgMakeLikelihoodGaussAnisotropic(int num_outputs, double const variance[], double const data[], int num_samples){
+    return (void*) new LikelihoodGaussAnisotropic(std::vector<double>(variance, variance + num_outputs),
+                                                  std::vector<double>(data, data + num_outputs), num_samples);
+}
+void tsgGetLikelihood(void *likelihood, int form, double const model[], int num_samples, double likely[]){
+    ((TasmanianLikelihood*) likelihood)->getLikelihood(IO::intToForm(form), model, num_samples, likely);
+}
+
+}
+
 }
 
 #endif
