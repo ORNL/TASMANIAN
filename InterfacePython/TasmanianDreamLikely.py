@@ -37,9 +37,99 @@ from TasmanianConfig import TasmanianInputError as InputError
 
 pLibDTSG = cdll.LoadLibrary(__path_libdream__)
 
+pLibDTSG.tsgGetNumOutputs.restype = c_int
+
+pLibDTSG.tsgDeleteLikelihood.argtypes = [c_void_p]
+pLibDTSG.tsgGetNumOutputs.argtypes = [c_void_p]
+pLibDTSG.tsgGetLikelihood.argtypes = [c_void_p, c_int, POINTER(c_double), c_int, POINTER(c_double)]
+
+pLibDTSG.tsgMakeLikelihoodGaussIsotropic.restype = c_void_p
+pLibDTSG.tsgMakeLikelihoodGaussIsotropic.argtypes = [c_int, c_double, POINTER(c_double), c_int]
+
+pLibDTSG.tsgMakeLikelihoodGaussAnisotropic.restype = c_void_p
+pLibDTSG.tsgMakeLikelihoodGaussAnisotropic.argtypes = [c_int, POINTER(c_double), POINTER(c_double), c_int]
+
+typeRegform = 0
+typeLogform = 1
+
 class TasmanianLikelihood:
     '''
     Generic wrapper to TasDREAM::TasmanianLikelihood derived class.
     '''
     def __init__(self):
+        '''
+        The derived classes will have a member pClassPntr, init to nullptr here.
+        '''
         self.pClassPntr = c_void_p(None)
+
+    def __del__(self):
+        '''
+        Delete the grid on exit
+        '''
+        if self.pClassPntr:
+            pLibDTSG.tsgDeleteLikelihood(self.pClassPntr)
+
+    def getNumOutputs(self):
+        '''
+        Returns the number of outputs set in the likelihood.
+        '''
+        return pLibDTSG.tsgGetNumOutputs(self.pClassPntr)
+
+    def getLikelihood(self, typeForm, llfModel):
+        '''
+        Returns the likelihood for the model outputs.
+
+        typeForm: indicates to use the regular or log-form
+                use DREAM.typeRegform or DREAM.typeLogform
+        llfModel: is a two dimensional numpy.ndarray with
+                .shape[0] > 0
+                .shape[1] == getNumOutputs()
+
+        Returns a one dimensional ndarray with size .shape[0]
+
+        '''
+        iNumSamples = llfModel.shape[0]
+        iNumOutputs = llfModel.shape[1]
+        aResult = np.empty((iNumSamples,), np.float64)
+        pLibDTSG.tsgGetLikelihood(self.pClassPntr, typeForm,
+                                  np.ctypeslib.as_ctypes(llfModel.reshape((iNumSamples*iNumOutputs,))),
+                                  iNumSamples, np.ctypeslib.as_ctypes(aResult))
+        return aResult
+
+
+class LikelihoodGaussIsotropic(TasmanianLikelihood):
+    '''
+    Wrapper around TasDREAM::LikelihoodGaussIsotropic
+    '''
+    def __init__(self, fVariance, lfData, iNumSamples = 1):
+        '''
+        Make a new likelihood with the given data.
+
+        fVariance:   float64 is the variance
+        lfData:      one dimensional ndarray with the data
+        iNumSamples: number of samples used for the data
+        '''
+        super().__init__()
+        iNumOutputs = len(lfData)
+        self.pClassPntr = pLibDTSG.tsgMakeLikelihoodGaussIsotropic(
+            iNumOutputs, fVariance, np.ctypeslib.as_ctypes(lfData), iNumSamples)
+
+
+class LikelihoodGaussAnisotropic(TasmanianLikelihood):
+    '''
+    Wrapper around TasDREAM::LikelihoodGaussIsotropic
+    '''
+    def __init__(self, lfVariance, lfData, iNumSamples = 1):
+        '''
+        Make a new likelihood with the given data.
+
+        lfVariance:  one dimensional ndarray with the data variance
+        lfData:      one dimensional ndarray with the data
+        iNumSamples: number of samples used for the data
+        '''
+        super().__init__()
+        if (len(lfVariance) != len(lfData)):
+            raise InputError("lfVariance", "Mismatch in size of variance and data vectors.")
+        iNumOutputs = len(lfData)
+        self.pClassPntr = pLibDTSG.tsgMakeLikelihoodGaussAnisotropic(
+            iNumOutputs, np.ctypeslib.as_ctypes(lfVariance), np.ctypeslib.as_ctypes(lfData), iNumSamples)
