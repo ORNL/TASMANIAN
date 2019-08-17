@@ -225,6 +225,7 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxS
     sCheckpointFilename: filename to use to checkpoint the algorithm so that
         construction can proceed from a saved point in case of a crash.
     '''
+    iNumDims = grid.getNumDimensions()
     pLevelLimits = None
     if (len(liLevelLimits) > 0):
         if (len(liLevelLimits) != iNumDims):
@@ -234,9 +235,11 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxS
             pLevelLimits[iI] = liLevelLimits[iI]
 
     if (sys.version_info.major == 3):
-        sDepthType = bytes(sDepthType, encoding='utf8')
+        sDepthTypeCtypes = bytes(sDepthType, encoding='utf8')
         if (sCheckpointFilename):
             sCheckpointFilename = bytes(sCheckpointFilename, encoding='utf8')
+    else:
+        sDepthTypeCtypes = sDepthType
 
     pCPFname = None
     if (sCheckpointFilename):
@@ -251,12 +254,12 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxS
             pLibCTSG.tsgConstructSurrogateWiIGAniso(
                 type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
                 iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-                c_char_p(sDepthType), iOutput, pLevelLimits, pCPFname)
+                c_char_p(sDepthTypeCtypes), iOutput, pLevelLimits, pCPFname)
         else:
             pLibCTSG.tsgConstructSurrogateNoIGAniso(
                 type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
                 iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-                c_char_p(sDepthType), iOutput, pLevelLimits, pCPFname)
+                c_char_p(sDepthTypeCtypes), iOutput, pLevelLimits, pCPFname)
     else:
         # weights are set by the user
         pAnisoWeights = None
@@ -266,7 +269,7 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxS
             else:
                 iNumWeights = grid.getNumDimensions()
             if (len(liAnisotropicWeightsOrOutput) != iNumWeights):
-                raise TasmanianInputError("liAnisotropicWeightsOrOutput", "ERROR: wrong number of liAnisotropicWeightsOrOutput, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeightsOrOutput) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
+                raise TasmanianInputError("liAnisotropicWeightsOrOutput", "ERROR: wrong number of liAnisotropicWeightsOrOutput, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeightsOrOutput) == {2:1d}".format(sDepthType, iNumWeights, len(liAnisotropicWeightsOrOutput)))
             else:
                 aAWeights = np.array([liAnisotropicWeightsOrOutput[i] for i in range(iNumWeights)], np.int32)
                 pAnisoWeights = np.ctypeslib.as_ctypes(aAWeights)
@@ -275,12 +278,12 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxS
             pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed(
                 type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
                 iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-                c_char_p(sDepthType), pAnisoWeights, pLevelLimits, pCPFname)
+                c_char_p(sDepthTypeCtypes), pAnisoWeights, pLevelLimits, pCPFname)
         else:
             pLibCTSG.tsgConstructSurrogateNoIGAnisoFixed(
                 type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
                 iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-                c_char_p(sDepthType), pAnisoWeights, pLevelLimits, pCPFname)
+                c_char_p(sDepthTypeCtypes), pAnisoWeights, pLevelLimits, pCPFname)
 
 
 def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid,
@@ -297,6 +300,7 @@ def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSampl
     The sRefinementType is the same as in the call to local surplus refinement,
     same with the iOutput.
     '''
+    iNumDims = grid.getNumDimensions()
     pLevelLimits = None
     if (len(liLevelLimits) > 0):
         if (len(liLevelLimits) != iNumDims):
