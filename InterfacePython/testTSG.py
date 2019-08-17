@@ -19,6 +19,7 @@ import testMakeUpdate
 import testRefinement
 import testUnstructuredData
 import testMisc
+import testAddons
 
 grid = TasmanianSG.TasmanianSparseGrid()
 
@@ -63,6 +64,11 @@ class TestTasmanian(unittest.TestCase):
         print("\nTesting plotting and other misc")
         tester = testMisc.TestTasClass()
         tester.performMiscTests()
+
+    def testAddons(self):
+        print("\nTesting addon wrappers")
+        tester = testAddons.TestTasClass()
+        tester.performAddonTests()
 
 
 if __name__ == '__main__':
