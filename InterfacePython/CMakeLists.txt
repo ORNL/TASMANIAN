@@ -133,6 +133,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(Tasmanian_MSVC_PATH_STRING "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release;${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug")
     set(Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING};${CMAKE_CURRENT_BINARY_DIR}/../DREAM/Release;${CMAKE_CURRENT_BINARY_DIR}/../DREAM/Debug")
     set(Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING};${CMAKE_CURRENT_BINARY_DIR}/../Addons/Release;${CMAKE_CURRENT_BINARY_DIR}/../Addons/Debug;$ENV{PATH}")
+    string(REPLACE ";" "\\;" Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING}")
     set_tests_properties(PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc PythonAddons
                          PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
 endif()
