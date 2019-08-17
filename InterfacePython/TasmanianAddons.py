@@ -142,6 +142,21 @@ def tsgScsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iNumOuts, pY, iThr
     '''
     DO NOT CALL DIRECTLY
     This is callback from C++, see TasGrid::constructSurrogate()
+
+    Handles the case of batch models:
+    oUserModel: user defined model that takes a two dimensional
+        array of inputs and returns a two dimensional array
+        of outputs, and a thread ID
+
+    iNumSamples: number of samples in the batch
+    iNumDims:    number of model inputs per sample
+    iNumOuts:    number of model outputs per sample
+
+    pX and pY are 2D arrays of c_doubles with size iNumSamples
+        times iNumDims and iNumOuts respectively
+
+    iThreadID: the id of the running thread
+
     '''
     aX = np.ctypeslib.as_array(pX, (iNumSamples,iNumDims))
     aY = np.ctypeslib.as_array(pY, (iNumSamples,iNumOuts))
@@ -152,6 +167,14 @@ def tsgIcsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iHasGuess, iNumOut
     '''
     DO NOT CALL DIRECTLY
     This is callback from C++, see TasGrid::constructSurrogate()
+
+    See tsgScsModelWrapper(), the only difference is that
+    the user model oUserModel() takes two arrays,
+    one with the inputs and one with the initial guess.
+    The initial guess could be empty.
+
+    iHasGuess is a boolean that determines whether an
+    initial guess has been loaded in pY.
     '''
     aX = np.ctypeslib.as_array(pX, (iNumSamples,iNumDims))
     aY = np.ctypeslib.as_array(pY, (iNumSamples,iNumOuts))
@@ -161,13 +184,46 @@ def tsgIcsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iHasGuess, iNumOut
         aResult = oUserModel(aX, aY, iThreadID)
     aY[0:iNumSamples, 0:iNumOuts] = aResult[0:iNumSamples, 0:iNumOuts]
 
-def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxPerCall, grid,
+def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid,
                                   sDepthType, liAnisotropicWeightsOrOutput,
                                   liLevelLimits = [], bUseInitialGuess = False,
                                   sCheckpointFilename = ""):
     '''
     Construct a surrogate model to the callableModel using
     anisotropic refinement until the iMaxPoints is reached.
+
+    See the documentation for TasGrid::constructSurrogate()
+    This is wrapper around the anisotropic refinement variant.
+
+    callableModel is a function (or lambda) that returns a two dimensional
+        numpy.ndarray of outputs for the model,
+        If bUseInitialGuess is true, the model has to take two inputs,
+        otherwise the model uses one.
+        The first input is a two dimensional numpy.ndarray of inputs
+        similar to TasmanianSparseGrid.evaluateBatch().
+        The second input corresponds to the initial guess, the size will
+        either match the expected output or will be empty, if no
+        guess can be computed.
+
+    iMaxPoints: is a positive integer indicating the maximum number of points
+        that the grid will have.
+    iMaxParallel: is a positive integer indicating the number of simultaneous
+        calls to the user model, i.e., the number of threads.
+    iMaxSamplesPerCall: maximum number of samples that will be given to
+        a single call to the user model.
+    grid: must be an instance of Tasmanian.SparseGrid() with either
+        global, sequence or Fourier grid.
+    sDepthType: the type used for refinement, see TasGrid::constructSurrogate()
+
+    liAnisotropicWeightsOrOutput: is either an output to use to determine
+        the model anisotropy or a list/typle/ndarray of user selected
+        anisotropic weights.
+    liLevelLimits: same as in all other refinement calls, the refinement will
+        never add points below the given level in the diven direction
+        even if the budget has not been reached yet.
+
+    sCheckpointFilename: filename to use to checkpoint the algorithm so that
+        construction can proceed from a saved point in case of a crash.
     '''
     pLevelLimits = None
     if (len(liLevelLimits) > 0):
@@ -194,12 +250,12 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxP
         if (bUseInitialGuess):
             pLibCTSG.tsgConstructSurrogateWiIGAniso(
                 type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
-                iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+                iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
                 c_char_p(sDepthType), iOutput, pLevelLimits, pCPFname)
         else:
             pLibCTSG.tsgConstructSurrogateNoIGAniso(
                 type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
-                iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+                iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
                 c_char_p(sDepthType), iOutput, pLevelLimits, pCPFname)
     else:
         # weights are set by the user
@@ -218,22 +274,28 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxP
         if (bUseInitialGuess):
             pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed(
                 type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
-                iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+                iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
                 c_char_p(sDepthType), pAnisoWeights, pLevelLimits, pCPFname)
         else:
             pLibCTSG.tsgConstructSurrogateNoIGAnisoFixed(
                 type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
-                iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+                iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
                 c_char_p(sDepthType), pAnisoWeights, pLevelLimits, pCPFname)
 
 
-def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxPerCall, grid,
+def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid,
                               fTolerance, sRefinementType, iOutput = -1,
                               liLevelLimits = [], bUseInitialGuess = False,
                               sCheckpointFilename = ""):
     '''
     Construct a surrogate model to the callableModel using surplus refinement
     until either the iMaxPoints or the tolerance are reached.
+
+    See Tasmanian.constructAnisotropicSurrogate() for all matchin inputs,
+    except the grid has to be local polynomial and the refinement proceeds
+    until the budget is exhausted or the fTolerance is reached.
+    The sRefinementType is the same as in the call to local surplus refinement,
+    same with the iOutput.
     '''
     pLevelLimits = None
     if (len(liLevelLimits) > 0):
@@ -255,10 +317,10 @@ def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxPerCa
     if (bUseInitialGuess):
         pLibCTSG.tsgConstructSurrogateWiIGSurplus(
             type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
-            iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+            iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
             fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname)
     else:
         pLibCTSG.tsgConstructSurrogateNoIGSurplus(
             type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
-            iMaxPoints, iMaxParallel, iMaxPerCall, grid.pGrid,
+            iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
             fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname)
