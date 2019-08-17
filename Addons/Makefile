@@ -6,7 +6,7 @@ LIBS = $(shell pwd)/../libtasmaniansparsegrid.so $(shell pwd)/../libtasmaniandre
 
 LHEADERS = $(wildcard ./*.hpp)
 
-LIBOBJ = tsgCLoadNeededValues.o
+LIBOBJ = tsgCLoadNeededValues.o tsgCConstructSurrogate.o
 
 MODULENAME = libtasmaniancaddons.so
 
