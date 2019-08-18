@@ -33,3 +33,4 @@ import numpy as np
 import sys
 
 from TasmanianDreamLikely import *
+from TasmanianDreamState import DreamState as State
