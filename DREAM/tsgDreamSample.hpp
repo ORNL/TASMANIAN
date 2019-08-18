@@ -453,9 +453,11 @@ void SampleDREAM(int num_burnup, int num_collect,
     if (dist == dist_uniform){
         SampleDREAM<form>(num_burnup, num_collect, probability_distribution, inside, state,
                          [&](std::vector<double> &x)->void{ applyUniformUpdate(x, magnitude, get_random01); }, differential_update, get_random01);
-    }else{ // assuming Gaussian
+    }else if (dist == dist_gaussian){
         SampleDREAM<form>(num_burnup, num_collect, probability_distribution, inside, state,
                          [&](std::vector<double> &x)->void{ applyGaussianUpdate(x, magnitude, get_random01); }, differential_update, get_random01);
+    }else{ // assuming none
+        SampleDREAM<form>(num_burnup, num_collect, probability_distribution, inside, state, no_update, differential_update, get_random01);
     }
 }
 

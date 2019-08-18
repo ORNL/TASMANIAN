@@ -35,7 +35,111 @@
 
 namespace TasDREAM{
 
+using tsg_dream_pdf     = void (*)(int, int, const double[], double[]);
+using tsg_dream_domain  =  int (*)(int, const double[]);
+using tsg_dream_iupdate = void (*)(int, double[]);
+using tsg_dream_dupdate = double (*)();
+using tsg_dream_random  = double (*)();
 
+std::function<bool(const std::vector<double> &x)>
+getSpecifiedDomain(int num_dimensions, void *domain_grid, double *domain_lower, double *domain_upper, tsg_dream_domain domain_callback){
+    if (domain_grid != nullptr){
+        return reinterpret_cast<TasGrid::TasmanianSparseGrid*>(domain_grid)->getDomainInside();
+    }else if (domain_upper != nullptr){
+        return hypercube(std::vector<double>(domain_lower, domain_lower + num_dimensions),
+                         std::vector<double>(domain_upper, domain_upper + num_dimensions));
+    }else{
+        return [=](std::vector<double> const &x)->
+        bool{
+            return (domain_callback((int) x.size(), x.data()) != 0);
+        };
+    }
+}
+
+std::function<double(void)>
+getSpecifiedDifferentialUpdate(int dupdate_percent, tsg_dream_dupdate dupdate_callback){
+    if (dupdate_percent >= 0){
+        return [=]()->double{ return double(dupdate_percent) / 100.0; };
+    }else{
+        return [=]()->double{ return dupdate_callback(); };
+    }
+}
+
+
+extern "C"{
+
+void tsgDreamSample(int form,
+                    int num_burnup, int num_collect,
+                    tsg_dream_pdf distribution,
+                    void* state_pntr,
+                    void *domain_grid, double domain_lower[], double dommain_upper[], tsg_dream_domain domain_callback,
+                    const char* iupdate_type, double iupdate_magnitude, tsg_dream_iupdate iupdate_callback,
+                    int dupdate_percent, tsg_dream_dupdate dupdate_callback,
+                    const char* random_type, int random_seed, tsg_dream_random random_callback){
+    TasmanianDREAM& state = *reinterpret_cast<TasmanianDREAM*>(state_pntr);
+
+    int num_dimensions = (int) state.getNumDimensions();
+
+    auto domain = getSpecifiedDomain(num_dimensions, domain_grid, domain_lower, dommain_upper, domain_callback);
+
+    TypeDistribution dist = IO::getDistributionString(iupdate_type);
+
+    auto diff_update = getSpecifiedDifferentialUpdate(dupdate_percent, dupdate_callback);
+
+    std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
+    std::uniform_real_distribution<double> unif(0.0, 1.0);
+    srand((unsigned int) ((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed));
+    std::string rtype(random_type);
+
+    auto randgen = [&]()->
+    std::function<double(void)>{
+        if (rtype == "default"){
+            return [&]()->double{ return tsgCoreUniform01(); };
+        }else if (rtype == "minstd_rand"){
+            return [&]()->double{ return unif(park_miller); };
+        }else{
+            return [&]()->double{ return random_callback(); };
+        }
+    }();
+
+    if (dist == dist_null){
+        if (IO::intToForm(form) == regform){
+            SampleDREAM<regform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
+            void{
+                int num_samples = (int) candidates.size() / num_dimensions;
+                distribution(num_samples, num_dimensions, candidates.data(), values.data());
+            }, domain, state, [&](std::vector<double> &x)->
+            void{
+                iupdate_callback((int) x.size(), x.data());
+            }, diff_update, randgen);
+        }else{
+            SampleDREAM<logform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
+            void{
+                int num_samples = (int) candidates.size() / num_dimensions;
+                distribution(num_samples, num_dimensions, candidates.data(), values.data());
+            }, domain, state, [&](std::vector<double> &x)->
+            void{
+                iupdate_callback((int) x.size(), x.data());
+            }, diff_update, randgen);
+        }
+    }else{
+        if (IO::intToForm(form) == regform){
+            SampleDREAM<regform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
+            void{
+                int num_samples = (int) candidates.size() / num_dimensions;
+                distribution(num_samples, num_dimensions, candidates.data(), values.data());
+            }, domain, state, dist, iupdate_magnitude, diff_update, randgen);
+        }else{
+            SampleDREAM<logform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
+            void{
+                int num_samples = (int) candidates.size() / num_dimensions;
+                distribution(num_samples, num_dimensions, candidates.data(), values.data());
+            }, domain, state, dist, iupdate_magnitude, diff_update, randgen);
+        }
+    }
+}
+
+}
 
 }
 

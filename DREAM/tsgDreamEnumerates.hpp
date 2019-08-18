@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_DREAM_ENUMERATES_HPP
 #define __TASMANIAN_DREAM_ENUMERATES_HPP
 
+#include <random>
+
 #include "TasmanianSparseGrid.hpp"
 
 /*!
@@ -99,7 +101,13 @@ enum TypeDistribution{
     dist_beta,
 
     //! \brief Gamma distribution, corresponds to Gauss-Laguerre sparse grid rule \b TasGrid::rule_gausslaguerre.
-    dist_gamma
+    dist_gamma,
+
+    //! \brief Indicates a no-distribution (no correction).
+    dist_none,
+
+    //! \brief Indicates I/O error or unspecified distribution.
+    dist_null
 };
 
 /*!
@@ -113,6 +121,30 @@ enum TypeDistribution{
 namespace IO{
     //! \brief Converts an integer to TypeSamplingForm, synced with the Python interface.
     inline TypeSamplingForm intToForm(int form){ return (form == 0) ? regform : logform; }
+
+    //! \brief Returns the map from a string to a distribution type.
+    inline std::map<std::string, TypeDistribution> getStringRuleMap(){
+        return std::initializer_list<std::pair<std::string const, TypeDistribution>>{
+            {"null",        dist_null},
+            {"none",        dist_none},
+            {"uniform",     dist_uniform},
+            {"gaussian",    dist_gaussian},
+            {"exponential", dist_exponential},
+            {"beta",        dist_beta},
+            {"gamma",       dist_gamma}};
+    }
+
+    /*!
+    * \ingroup TasmanianIO
+    * \brief Map the string distribution name to the enumerate, used by python.
+    */
+    inline TypeDistribution getDistributionString(std::string const &name){
+        try{
+            return getStringRuleMap().at(name);
+        }catch(std::out_of_range &){
+            return dist_null;
+        }
+    }
 }
 
 namespace DreamMaths{
