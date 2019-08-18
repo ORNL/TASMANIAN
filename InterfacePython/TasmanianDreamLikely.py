@@ -52,7 +52,7 @@ pLibDTSG.tsgMakeLikelihoodGaussAnisotropic.argtypes = [c_int, POINTER(c_double),
 typeRegform = 0
 typeLogform = 1
 
-class TasmanianLikelihood:
+class TasmanianLikelihood(object):
     '''
     Generic wrapper to TasDREAM::TasmanianLikelihood derived class.
     '''
@@ -109,7 +109,7 @@ class LikelihoodGaussIsotropic(TasmanianLikelihood):
         lfData:      one dimensional ndarray with the data
         iNumSamples: number of samples used for the data
         '''
-        super().__init__()
+        super(LikelihoodGaussIsotropic, self).__init__()
         iNumOutputs = len(lfData)
         self.pClassPntr = pLibDTSG.tsgMakeLikelihoodGaussIsotropic(
             iNumOutputs, fVariance, np.ctypeslib.as_ctypes(lfData), iNumSamples)
@@ -127,7 +127,7 @@ class LikelihoodGaussAnisotropic(TasmanianLikelihood):
         lfData:      one dimensional ndarray with the data
         iNumSamples: number of samples used for the data
         '''
-        super().__init__()
+        super(LikelihoodGaussAnisotropic, self).__init__()
         if (len(lfVariance) != len(lfData)):
             raise InputError("lfVariance", "Mismatch in size of variance and data vectors.")
         iNumOutputs = len(lfData)
