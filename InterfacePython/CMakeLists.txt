@@ -76,7 +76,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/GaussPattersonRule.ta
 
 # See the matlab CMakeText.txt on how to copy multiple scripts
 set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py
-                                TasmanianDREAM.py TasmanianDreamLikely.py TasmanianDreamState.py
+                                TasmanianDREAM.py TasmanianDreamLikely.py TasmanianDreamState.py TasmanianDreamSampler.py
                                 testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py
                                 testRefinement.py testUnstructuredData.py testMisc.py testAddons.py
                                 example_sparse_grids_05.py example_sparse_grids_06.py)
@@ -168,6 +168,7 @@ Tasmanian_python_install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.py"
                                "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianDREAM.py"
                                "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianDreamLikely.py"
                                "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianDreamState.py"
+                               "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianDreamSampler.py"
                                "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.py"
                                "${CMAKE_CURRENT_SOURCE_DIR}/Tasmanian.py")
 
