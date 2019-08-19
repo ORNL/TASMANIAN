@@ -38,7 +38,9 @@ target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERF
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Config/>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
-set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid")
+set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
+                                                                 INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
+                                                                 INSTALL_RPATH_USE_LINK_PATH ON)
 
 target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_11)
 
