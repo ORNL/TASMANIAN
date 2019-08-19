@@ -78,7 +78,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/GaussPattersonRule.ta
 set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py
                                 TasmanianDREAM.py TasmanianDreamLikely.py TasmanianDreamState.py TasmanianDreamSampler.py
                                 testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py
-                                testRefinement.py testUnstructuredData.py testMisc.py testAddons.py
+                                testRefinement.py testUnstructuredData.py testMisc.py testAddons.py testDream.py
                                 example_sparse_grids_05.py example_sparse_grids_06.py)
 
 foreach(Tasmanian_python_testing_file ${Tasmanian_python_test_files})
@@ -120,10 +120,11 @@ add_test(NAME PythonRefine       COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT
 add_test(NAME PythonLearning     COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testCUnsructuredData)
 add_test(NAME PythonMisc         COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testZMisc)
 add_test(NAME PythonAddons       COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAddons)
+add_test(NAME PythonDream        COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testDream)
 set_tests_properties(PythonIO PROPERTIES RUN_SERIAL ON) # IO and Refine read/write to potentially the same files
 set_tests_properties(PythonRefine PROPERTIES RUN_SERIAL ON)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc PythonAddons
+    set_tests_properties(PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc PythonAddons PythonDream
         PROPERTIES
         PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
         ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
@@ -137,7 +138,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     set(Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING};${CMAKE_CURRENT_BINARY_DIR}/../DREAM/Release;${CMAKE_CURRENT_BINARY_DIR}/../DREAM/Debug")
     set(Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING};${CMAKE_CURRENT_BINARY_DIR}/../Addons/Release;${CMAKE_CURRENT_BINARY_DIR}/../Addons/Debug;$ENV{PATH}")
     string(REPLACE ";" "\\;" Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING}")
-    set_tests_properties(PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc PythonAddons
+    set_tests_properties(PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc PythonAddons PythonDream
                          PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
 endif()
 

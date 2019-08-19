@@ -68,6 +68,56 @@ getSpecifiedDifferentialUpdate(int dupdate_percent, tsg_dream_dupdate dupdate_ca
 
 extern "C"{
 
+void tsgGenUniformSamples(int num_dimensions, int num_samples, double const lower[], double const upper[],
+                          const char* random_type, int random_seed, tsg_dream_random random_callback, double *samples){
+
+    std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
+    std::uniform_real_distribution<double> unif(0.0, 1.0);
+    srand((unsigned int) ((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed));
+    std::string rtype(random_type);
+
+    auto randgen = [&]()->
+    std::function<double(void)>{
+        if (rtype == "default"){
+            return [&]()->double{ return tsgCoreUniform01(); };
+        }else if (rtype == "minstd_rand"){
+            return [&]()->double{ return unif(park_miller); };
+        }else{
+            return [&]()->double{ return random_callback(); };
+        }
+    }();
+
+    std::vector<double> result = TasDREAM::genUniformSamples(Utils::copyArray(lower, num_dimensions),
+                                                             Utils::copyArray(upper, num_dimensions),
+                                                             num_samples, randgen);
+    std::copy(result.begin(), result.end(), samples);
+}
+
+void tsgGenGaussianSamples(int num_dimensions, int num_samples, double const mean[], double const deviation[],
+                           const char* random_type, int random_seed, tsg_dream_random random_callback, double *samples){
+
+    std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
+    std::uniform_real_distribution<double> unif(0.0, 1.0);
+    srand((unsigned int) ((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed));
+    std::string rtype(random_type);
+
+    auto randgen = [&]()->
+    std::function<double(void)>{
+        if (rtype == "default"){
+            return [&]()->double{ return tsgCoreUniform01(); };
+        }else if (rtype == "minstd_rand"){
+            return [&]()->double{ return unif(park_miller); };
+        }else{
+            return [&]()->double{ return random_callback(); };
+        }
+    }();
+
+    std::vector<double> result = TasDREAM::genGaussianSamples(Utils::copyArray(mean, num_dimensions),
+                                                              Utils::copyArray(deviation, num_dimensions),
+                                                              num_samples, randgen);
+    std::copy(result.begin(), result.end(), samples);
+}
+
 void tsgDreamSample(int form,
                     int num_burnup, int num_collect,
                     tsg_dream_pdf distribution,

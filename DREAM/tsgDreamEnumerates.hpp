@@ -67,6 +67,8 @@ namespace Utils{
     using TasGrid::Utils::size_mult;
     //! \brief See TasGrid::Utils::Wrapper2D.
     using TasGrid::Utils::Wrapper2D;
+    //! \brief See TasGrid::Utils::copyArray().
+    using TasGrid::Utils::copyArray;
 }
 
 //! \brief Describes whether sampling should be done with the regular or logarithm form of the probability density.

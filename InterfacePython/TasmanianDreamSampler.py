@@ -48,6 +48,9 @@ type_dream_random  = CFUNCTYPE(c_double)
 
 pLibDTSG = cdll.LoadLibrary(__path_libdream__)
 
+pLibDTSG.tsgGenUniformSamples.argtypes  = [c_int, c_int, POINTER(c_double), POINTER(c_double), c_char_p, c_int, type_dream_random]
+pLibDTSG.tsgGenGaussianSamples.argtypes = [c_int, c_int, POINTER(c_double), POINTER(c_double), c_char_p, c_int, type_dream_random]
+
 pLibDTSG.tsgDreamSample.argtypes = [c_int, c_int, c_int,
                                     type_dream_pdf, c_void_p,
                                     c_void_p, POINTER(c_double), POINTER(c_double), type_dream_domain,
@@ -135,21 +138,77 @@ class RandomGenerator(object):
         self.pCallable = type_dream_random(callableRNG)
 
 
+def genUniformSamples(lfLower, lfUpper, iNumSamples, random01 = RandomGenerator(sType = "default")):
+    '''
+    Wrapper around TasDREAM::genUniformSamples()
+
+    Using the one dimensional numpy.ndarrays lfLower and lfUpper,
+    which describe the upper and lower bounds of a hypercube,
+    generate iNumSamples from a uniform distribution using
+    the random01 engine.
+    The lengths of lfLower and lfUpper must match.
+
+    Returns a two dimensional numpy.ndarray of shape = (iNumSamples, len(lfLower)),
+    '''
+    if len(lfLower) != len(lfUpper):
+        raise InputError("lfUpper", "The length of lfLower and lfUpper do not match.")
+
+    aLower = np.array(lfLower)
+    aUpper = np.array(lfUpper)
+    iNumDims = len(lfLower)
+
+    aResult = np.empty((iNumDims * iNumSamples,), np.float64)
+
+    pLibDTSG.tsgGenUniformSamples(iNumDims, iNumSamples, np.ctypeslib.as_ctypes(aLower), np.ctypeslib.as_ctypes(aUpper),
+                                  c_char_p(random01.sType), random01.iSeed, random01.pCallable,
+                                  np.ctypeslib.as_ctypes(aResult))
+    return aResult.reshape((iNumSamples, iNumDims))
+
+
+def tsgGenGaussianSamples(lfMean, lfDeviation, iNumSamples, random01 = RandomGenerator(sType = "default")):
+    '''
+    Wrapper around TasDREAM::tsgGenGaussianSamples()
+
+    Using the one dimensional numpy.ndarrays lfMean and lfVariance,
+    which describe the mean and standard deviation of a Gaussian distribution,
+    generate iNumSamples from a normal (Gaussian) distribution using
+    the random01 engine.
+    The lengths of lfMean and lfDeviation must match.
+
+    Returns a two dimensional numpy.ndarray of shape = (iNumSamples, len(lfLower)),
+    '''
+    if len(lfMean) != len(lfDeviation):
+        raise InputError("lfDeviation", "The length of lfMean and lfDeviation do not match.")
+
+    aMean = np.array(lfMean)
+    aDeviation = np.array(lfDeviation)
+    iNumDims = len(lfMean)
+
+    aResult = np.empty((iNumDims * iNumSamples,), np.float64)
+
+    pLibDTSG.tsgGenGaussianSamples(iNumDims, iNumSamples, np.ctypeslib.as_ctypes(aMean), np.ctypeslib.as_ctypes(aDeviation),
+                                   c_char_p(random01.sType), random01.iSeed, random01.pCallable,
+                                   np.ctypeslib.as_ctypes(aResult))
+    return aResult.reshape((iNumSamples, iNumDims))
+
+
 def Sample(iNumBurnup, iNumCollect,
            probability_distibution, domain_description, dream_state,
            independent_update = IndependentUpdate("none"),
            differential_update = DifferentialUpdate(100),
-           random01 = RandomGenerator(),
+           random01 = RandomGenerator(sType = "default"),
            typeForm = typeRegform):
     '''
     Wrapper to TasDREAM::SampleDREAM().
     '''
-    pLibDTSG.tsgDreamSample(typeForm, iNumBurnup, iNumCollect,
+    pLibDTSG.tsgDreamSample(typeForm, c_int(iNumBurnup), c_int(iNumCollect),
                             type_dream_pdf(lambda m, n, x, y : pdfWrapper(probability_distibution, m, n, x, y)), dream_state.pStatePntr,
                             domain_description.pGrid, domain_description.pLower, domain_description.pUpper, domain_description.pCallable,
                             c_char_p(independent_update.sType), independent_update.fMagnitude, independent_update.pCallable,
                             differential_update.iPercent, differential_update.pCallable,
-                            c_char_p(random01.sType), random01.iSeed, random01.pCallable)
+                            c_char_p(random01.sType),
+                            random01.iSeed,
+                            random01.pCallable)
 
 
 
