@@ -141,6 +141,69 @@ class RandomGenerator(object):
         self.iSeed = iSeed
         self.pCallable = type_dream_random(callableRNG)
 
+typePriorCallable = 0
+typePriorUniform  = 1
+
+class Posterior(object):
+    def __init__(self, model, likelihood, prior, typeForm = typeRegform):
+        self.TasmanianPosterior = True
+
+        self.typeForm = typeForm
+        if self.typeForm not in [typeRegform, typeLogform]:
+            raise InputError("typeForm", "unknown sampling form, must use typeRegform or typeLogform")
+
+        self.model = model
+        if hasattr(self.model, "TasmanianSparseGridObject"):
+            self.bUseSparsegrid = True
+        elif callable(self.model):
+            self.bUseSparsegrid = False
+        else:
+            raise InputError("model", "model should be either an instance of Tasmanian.SparseGrid() or a callable object.")
+
+        self.likelihood = likelihood
+        if hasattr(self.likelihood, "TasmanianLikelihood"):
+            self.bUseTasLikely = True
+        elif callable(self.likelihood):
+            self.bUseTasLikely = False
+        else:
+            raise InputError("likelihood", "likelihood should be either derived from TasmanianLikelihood() or a callable object.")
+
+        if prior == "uniform":
+            self.typePrior = typePriorUniform
+        elif callable(prior):
+            self.typePrior = typePriorCallable
+            self.prior = prior
+        else:
+            raise InputError("prior", "prior should be either 'uniform' or a callable object.")
+
+    def doModel(self, aX):
+        if self.bUseSparsegrid:
+            return self.model.evaluateBatch(aX)
+        else:
+            return self.model(aX)
+
+    def doLikelihood(self, aModelValues):
+        if self.bUseTasLikely:
+            return self.likelihood.getLikelihood(self.typeForm, aModelValues)
+        else:
+            return self.likelihood(self.typeForm, aModelValues)
+
+    def doPrior(self, aLikely, aX):
+        if self.typePrior == typePriorUniform:
+            aResult = aLikely
+        else:
+            # reg-form multiplies, log-form adds
+            if self.typeForm == typeRegform:
+                aResult = aLikely * self.prior(aX)
+            else:
+                aResult = aLikely + self.prior(aX)
+        return aResult
+
+    def distribution(self):
+        return lambda x : self.doPrior(self.doLikelihood(self.doModel(x)), x).reshape((x.shape[0],))
+
+def PosteriorEmbeddedLikelihood(model, prior, typeForm = typeRegform):
+    return Posterior(model, lambda t, x : x, prior, typeForm)
 
 def genUniformSamples(lfLower, lfUpper, iNumSamples, random01 = RandomGenerator(sType = "default")):
     '''
@@ -217,17 +280,27 @@ def Sample(iNumBurnup, iNumCollect,
         raise InputError("random01", "domain_description must be an instance of DREAM.RandomGenerator()")
     if typeForm not in [typeRegform, typeLogform]:
         raise InputError("typeForm", "unknown sampling form, must use typeRegform or typeLogform")
-    if not callable(probability_distibution):
-        raise InputError("probability_distibution", "probability_distibution must a callable object that takes a 2D numpy.ndarray and returns a 1D ndarray")
 
-    pLibDTSG.tsgDreamSample(typeForm, c_int(iNumBurnup), c_int(iNumCollect),
-                            type_dream_pdf(lambda m, n, x, y : pdfWrapper(probability_distibution, m, n, x, y)), dream_state.pStatePntr,
-                            domain_description.pGrid, domain_description.pLower, domain_description.pUpper, domain_description.pCallable,
-                            c_char_p(independent_update.sType), independent_update.fMagnitude, independent_update.pCallable,
-                            differential_update.iPercent, differential_update.pCallable,
-                            c_char_p(random01.sType),
-                            random01.iSeed,
-                            random01.pCallable)
+    if hasattr(probability_distibution, "TasmanianPosterior"):
+        pLibDTSG.tsgDreamSample(typeForm, c_int(iNumBurnup), c_int(iNumCollect),
+                                type_dream_pdf(lambda m, n, x, y : pdfWrapper(probability_distibution.distribution(), m, n, x, y)), dream_state.pStatePntr,
+                                domain_description.pGrid, domain_description.pLower, domain_description.pUpper, domain_description.pCallable,
+                                c_char_p(independent_update.sType), independent_update.fMagnitude, independent_update.pCallable,
+                                differential_update.iPercent, differential_update.pCallable,
+                                c_char_p(random01.sType),
+                                random01.iSeed,
+                                random01.pCallable)
+    elif callable(probability_distibution):
+        pLibDTSG.tsgDreamSample(typeForm, c_int(iNumBurnup), c_int(iNumCollect),
+                                type_dream_pdf(lambda m, n, x, y : pdfWrapper(probability_distibution, m, n, x, y)), dream_state.pStatePntr,
+                                domain_description.pGrid, domain_description.pLower, domain_description.pUpper, domain_description.pCallable,
+                                c_char_p(independent_update.sType), independent_update.fMagnitude, independent_update.pCallable,
+                                differential_update.iPercent, differential_update.pCallable,
+                                c_char_p(random01.sType),
+                                random01.iSeed,
+                                random01.pCallable)
+    else:
+        raise InputError("probability_distibution", "probability_distibution must a callable object that takes a 2D numpy.ndarray and returns a 1D ndarray")
 
 
 

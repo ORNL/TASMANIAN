@@ -1,6 +1,6 @@
 import unittest
 import Tasmanian
-from Tasmanian import DREAM
+DREAM = Tasmanian.DREAM
 import os
 import numpy as np
 
@@ -50,7 +50,7 @@ class TestTasClass(unittest.TestCase):
                      DREAM.Domain("unbounded"),
                      state,
                      DREAM.IndependentUpdate("gaussian", 3.0),
-                     DREAM.DifferentialUpdate(0),
+                     DREAM.DifferentialUpdate(97),
                      DREAM.RandomGenerator("minstd_rand", 72),
                      DREAM.typeLogform)
 
@@ -58,13 +58,62 @@ class TestTasClass(unittest.TestCase):
         self.assertTrue(np.max(np.abs(aMean - np.array([1.5, 2.0, 2.5]))) < 0.4, "Failed the mean test for anisotropic Gaussian 3D")
         self.assertTrue(np.max(np.abs(aVar - np.array([0.25, 1.0, 4.0]))) < 1.0, "Failed the variance test for anisotropic Gaussian 3D")
 
+    def checkGrid(self):
+        iNumDimensions = 2
+        iNumSamples = 1000
+        iNumChains = 20
+        iNumIterations = int(iNumSamples / iNumChains) + 2
+        iNumBurnup = iNumIterations
 
-    def checkAnalytic(self):
-        self.checkGaussian3D()
+        grid = Tasmanian.SparseGrid()
+        grid.makeSequenceGrid(2, 1, 24, "level", "rleja")
+        Tasmanian.loadNeededPoints(lambda x, tid : np.ones((1,1)) * np.exp( -0.5 * np.sum((x - 0.3)**2) / 0.01 ), grid, 1)
+
+        state = DREAM.State(iNumChains, iNumDimensions)
+        state.setState(DREAM.tsgGenGaussianSamples([0.3, 0.3], [0.1, 0.1], iNumChains, DREAM.RandomGenerator("minstd_rand", 55)))
+
+        DREAM.Sample(iNumBurnup, iNumSamples,
+                     DREAM.PosteriorEmbeddedLikelihood(grid, "uniform"),
+                     DREAM.Domain("hypercube", np.array((0.0, 0.0)), np.array((1.0, 1.0))),
+                     state,
+                     DREAM.IndependentUpdate("uniform", 0.1),
+                     DREAM.DifferentialUpdate(98),
+                     DREAM.RandomGenerator("minstd_rand", 33))
+
+        aMean, aVar = state.getHistoryMeanVariance()
+        self.assertTrue(np.max(np.abs(aMean - np.array([0.3, 0.3]))) < 0.05, "Failed the mean test for grid likelihood")
+        self.assertTrue(np.max(np.abs(aVar - np.array([0.01, 0.01]))) < 0.005, "Failed the variance test for grid likelihood")
+
+    def checkModel(self):
+        iNumDimensions = 2
+        iNumSamples = 1000
+        iNumChains = 20
+        iNumIterations = int(iNumSamples / iNumChains) + 2
+        iNumBurnup = iNumIterations
+
+        likely = DREAM.LikelihoodGaussIsotropic(0.01, np.array([1.0, 2.0]))
+
+        state = DREAM.State(iNumChains, iNumDimensions)
+        state.setState(DREAM.genUniformSamples([-1.0, -1.0], [1.0, 1.0], iNumChains, DREAM.RandomGenerator("minstd_rand", 67)))
+
+        DREAM.Sample(iNumBurnup, iNumSamples,
+                     DREAM.Posterior(lambda x : np.matmul(np.cos(x), np.array([[1.0, 0.0], [0.0, 2.0]])),
+                                     likely, "uniform", DREAM.typeLogform),
+                     DREAM.Domain("hypercube", np.array((0.0, 0.0)), np.array((1.0, 1.0))),
+                     state,
+                     DREAM.IndependentUpdate("uniform", 0.1),
+                     DREAM.DifferentialUpdate(98),
+                     DREAM.RandomGenerator("minstd_rand", 88),
+                     DREAM.typeLogform)
+
+        aMode = state.getApproximateMode()
+        self.assertTrue(np.max(np.abs(aMode)) < 0.01, "Failed the mode test for custom model and Tasmanian likelihood")
 
     def performDreamTests(self):
-        self.checkAnalytic()
+        self.checkGaussian3D() # analytic model/likelihood
+        self.checkGrid()
+        self.checkModel() # custom model
 
-if (__name__ == "__main__"):
+if __name__ == "__main__":
     tester = TestTasClass()
     tester.performDreamTests()
