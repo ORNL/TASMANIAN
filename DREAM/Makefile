@@ -9,7 +9,7 @@ LHEADERS = TasmanianDREAM.hpp tsgDreamState.hpp tsgDreamSample.hpp tsgDreamLikel
            tsgDreamLikelyGaussian.hpp tsgDreamInternalBlas.hpp tsgDreamCoreRandom.hpp \
            tsgDreamCorePDF.hpp tsgDreamEnumerates.hpp
 
-LIBOBJ = tsgDreamState.o tsgDreamLikelyGaussian.o
+LIBOBJ = tsgDreamState.o tsgDreamLikelyGaussian.o tsgDreamSampleWrapC.o
 
 WROBJ = dreamtest_main.o tasdreamExternalTests.o
 
