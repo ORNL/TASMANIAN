@@ -40,4 +40,6 @@ InputError = TasmanianInputError
 from TasmanianSG import *
 SparseGrid = TasmanianSparseGrid
 
+import TasmanianDREAM as DREAM
+
 from TasmanianAddons import *

@@ -142,6 +142,52 @@ void TasmanianDREAM::clearHistory(){
     accepted = 0;
 }
 
+extern "C"{ // for python purposes
+void* tsgMakeDreamState(int num_chains, int num_dimensions){
+    return (void*) new TasmanianDREAM(num_chains, num_dimensions);
+}
+void tsgDeleteDreamState(void* state){
+    delete reinterpret_cast<TasmanianDREAM*>(state);
+}
+int tsgDreamStateGetDims(void *state){
+    return reinterpret_cast<TasmanianDREAM*>(state)->getNumDimensions();
+}
+int tsgDreamStateGetChains(void *state){
+    return reinterpret_cast<TasmanianDREAM*>(state)->getNumChains();
+}
+int tsgDreamStateGetNumHistory(void *state){
+    return (int) reinterpret_cast<TasmanianDREAM*>(state)->getNumHistory();
+}
+void tsgDreamStateSet(void *state, double const x[]){
+    std::vector<double> vx(x, x + Utils::size_mult(reinterpret_cast<TasmanianDREAM*>(state)->getNumChains(),
+                                                   reinterpret_cast<TasmanianDREAM*>(state)->getNumDimensions()));
+    reinterpret_cast<TasmanianDREAM*>(state)->setState(vx);
+}
+
+void tsgDreamStateGetHistory(void *state, double hist[]){
+    auto h = reinterpret_cast<TasmanianDREAM*>(state)->getHistory();
+    std::copy(h.begin(), h.end(), hist);
+}
+void tsgDreamStateGetHistoryPDF(void *state, double histpdf[]){
+    auto h = reinterpret_cast<TasmanianDREAM*>(state)->getHistoryPDF();
+    std::copy(h.begin(), h.end(), histpdf);
+}
+void tsgDreamStateGetMeanVar(void *state, double mean[], double variance[]){
+    std::vector<double> mn, var;
+    reinterpret_cast<TasmanianDREAM*>(state)->getHistoryMeanVariance(mn, var);
+    std::copy(mn.begin(), mn.end(), mean);
+    std::copy(var.begin(), var.end(), variance);
+}
+void tsgDreamStateGetMode(void *state, double mode[]){
+    auto m = reinterpret_cast<TasmanianDREAM*>(state)->getApproximateMode();
+    std::copy(m.begin(), m.end(), mode);
+}
+double tsgDreamStateGetRate(void *state){
+    return reinterpret_cast<TasmanianDREAM*>(state)->getAcceptanceRate();
+}
+
+}
+
 }
 
 #endif

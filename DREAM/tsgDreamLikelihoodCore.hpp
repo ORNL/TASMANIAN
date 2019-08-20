@@ -77,6 +77,9 @@ public:
     //! Note that model.size() / likely.size() will divide evenly and will equal the number of model realizations.
     virtual void getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const = 0;
 
+    //! \brief Overload for raw-arrays, for interface purposes mostly, never called from C++ directly.
+    virtual void getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const = 0;
+
     //! \brief Return the number of expected model outputs.
     virtual int getNumOutputs() const = 0;
 

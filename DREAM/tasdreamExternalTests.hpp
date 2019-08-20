@@ -31,8 +31,6 @@
 #ifndef __TASMANIAN_TASDREAM_EXTERNAL_TESTS_HPP
 #define __TASMANIAN_TASDREAM_EXTERNAL_TESTS_HPP
 
-#include <random>
-
 #include "TasmanianDREAM.hpp"
 
 using std::cout;

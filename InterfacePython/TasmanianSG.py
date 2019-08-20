@@ -96,6 +96,7 @@ class TasmanianSparseGrid:
                     instance load a sepatare copy of the common library
 
         '''
+        self.TasmanianSparseGridObject = True
         if (isinstance(tasmanian_library, int)):
             self.pLibTSG = cdll.LoadLibrary(TasmanianConfig.__path_libsparsegrid__)
         elif (sys.version_info.major == 3):

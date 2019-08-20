@@ -179,6 +179,7 @@ TasmanianConfig.py: ./InterfacePython/TasmanianConfig.in.py
 	sed -i -e 's|@Tasmanian_license@|'BSD\ 3-Clause\ with\ UT-Battelle\ disclaimer'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_libdream_path@|'`pwd`/libtasmaniandream.so'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_libcaddons_path@|'`pwd`/libtasmaniancaddons.so'|g' ./TasmanianConfig.py
 
 example_sparse_grids.py: ./InterfacePython/example_sparse_grids.in.py

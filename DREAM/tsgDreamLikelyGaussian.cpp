@@ -45,24 +45,21 @@ void LikelihoodGaussIsotropic::setData(double variance, const std::vector<double
 }
 
 void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const{
-    auto im = model.begin();
-    #ifdef Tasmanian_ENABLE_BLAS
+    getLikelihood(form, model.data(), (int) (model.size() / data.size()), likely.data());
+}
+void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const{
     int num_outputs = (int) data.size();
-    int num_points = (int) (model.size() / data.size());
-
-    for(auto &l : likely){
-        l = scale * TasBLAS::dnrm2squared(num_outputs, &*im);
-        std::advance(im, num_outputs);
-    }
-    TasBLAS::dgemtv(num_outputs, num_points, model.data(), data.data(), likely.data(), -2.0 * scale, 1.0);
+    Utils::Wrapper2D<const double> wrapped_model(num_outputs, model);
+    #ifdef Tasmanian_ENABLE_BLAS
+    for(int i=0; i<num_samples; i++)
+        likely[i] = scale * TasBLAS::dnrm2squared(num_outputs, wrapped_model.getStrip(i));
+    TasBLAS::dgemtv(num_outputs, num_samples, model, data.data(), likely, -2.0 * scale, 1.0);
     #else
-    size_t num_outputs = data.size();
-    for(auto &l : likely){
-        l = scale * (std::inner_product(im, im + num_outputs, im, 0.0) - 2.0 * std::inner_product(im, im + num_outputs, data.data(), 0.0));
-        std::advance(im, num_outputs);
-    }
+    for(int i=0; i<num_samples; i++)
+        likely[i] = scale * (std::inner_product(wrapped_model.getStrip(i), wrapped_model.getStrip(i) + num_outputs, wrapped_model.getStrip(i), 0.0)
+                             - 2.0 * std::inner_product(wrapped_model.getStrip(i), wrapped_model.getStrip(i) + num_outputs, data.data(), 0.0));
     #endif
-    if (form == regform) for(auto &l : likely) l = std::exp(l);
+    if (form == regform) for(int i=0; i<num_samples; i++) likely[i] = std::exp(likely[i]);
 }
 
 void LikelihoodGaussAnisotropic::setData(std::vector<double> const &variance, std::vector<double> const &data_mean, size_t num_observe){
@@ -78,30 +75,51 @@ void LikelihoodGaussAnisotropic::setData(std::vector<double> const &variance, st
 }
 
 void LikelihoodGaussAnisotropic::getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const{
-    auto im = model.begin();
-    #ifdef Tasmanian_ENABLE_BLAS
-    int num_outputs = (int) data_by_variance.size();
-    int num_points = (int) (model.size() / data_by_variance.size());
+    getLikelihood(form, model.data(), (int) (model.size() / data_by_variance.size()), likely.data());
+}
 
-    for(auto &l : likely){
-        l = 0.0;
-        for(auto const &v : noise_variance){
-            l += *im * *im * v;
-            im++;
+void LikelihoodGaussAnisotropic::getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const{
+    int num_outputs = (int) data_by_variance.size();
+    Utils::Wrapper2D<const double> wrapped_model(num_outputs, model);
+    #ifdef Tasmanian_ENABLE_BLAS
+    for(int i=0; i<num_samples; i++){
+        const double *sample = wrapped_model.getStrip(i);
+        likely[i] = 0.0;
+        for(int k=0; k<num_outputs; k++){
+            likely[i] += sample[k] * sample[k] * noise_variance[k];
         }
     }
-    TasBLAS::dgemtv(num_outputs, num_points, model.data(), data_by_variance.data(), likely.data(), -2.0, 1.0);
+    TasBLAS::dgemtv(num_outputs, num_samples, model, data_by_variance.data(), likely, -2.0, 1.0);
     #else
-    for(auto &l : likely){
-        l = 0.0;
-        auto id = data_by_variance.begin();
-        for(auto const &v : noise_variance){
-            l += *im * *im * v - 2.0 * *im * *id;
-            im++; id++;
+    for(int i=0; i<num_samples; i++){
+        const double *sample = wrapped_model.getStrip(i);
+        likely[i] = 0.0;
+        for(int k=0; k<num_outputs; k++){
+            likely[i] += sample[k] * sample[k] * noise_variance[k] - 2.0 * sample[k] * data_by_variance[k];
         }
     }
     #endif
-    if (form == regform) for(auto &l : likely) l = std::exp(l);
+    if (form == regform) for(int i=0; i<num_samples; i++) likely[i] = std::exp(likely[i]);
+}
+
+extern "C"{ // for python purposes
+void *tsgMakeLikelihoodGaussIsotropic(int num_outputs, double variance, double const data[], int num_samples){
+    return (void*) new LikelihoodGaussIsotropic(variance, std::vector<double>(data, data + num_outputs), (size_t) num_samples);
+}
+void *tsgMakeLikelihoodGaussAnisotropic(int num_outputs, double const variance[], double const data[], int num_samples){
+    return (void*) new LikelihoodGaussAnisotropic(std::vector<double>(variance, variance + num_outputs),
+                                                  std::vector<double>(data, data + num_outputs), (size_t) num_samples);
+}
+void tsgGetLikelihood(void *likelihood, int form, double const model[], int num_samples, double likely[]){
+    ((TasmanianLikelihood*) likelihood)->getLikelihood(IO::intToForm(form), model, num_samples, likely);
+}
+int tsgGetNumOutputs(void *likelihood){
+    return ((TasmanianLikelihood*) likelihood)->getNumOutputs();
+}
+void tsgDeleteLikelihood(void *likelihood){
+    delete ((TasmanianLikelihood*) likelihood);
+}
+
 }
 
 }

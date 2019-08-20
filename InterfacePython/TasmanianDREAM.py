@@ -28,34 +28,10 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-# Using a single configuration file with all paths and relevant options
-# The rest of the Tasmanian Python modules will not be configured by cmake
+from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, cdll, create_string_buffer
+import numpy as np
+import sys
 
-__version__ = "@Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@"
-__license__ = "@Tasmanian_license@"
-__author__ = "Miroslav Stoyanov"
-__git_commit_hash__ = "@Tasmanian_git_hash@"
-
-__path_libsparsegrid__ = "@Tasmanian_libsparsegrid_path@"
-__path_libdream__      = "@Tasmanian_libdream_path@"
-__path_libcaddons__    = "@Tasmanian_libcaddons_path@"
-
-class TasmanianInputError(Exception):
-    '''Exception raised for incorret input to Tasmanian
-
-    Attributes:
-    sVariable -- string containing the variable name with incorrect value
-    sMessage -- message regarding the error
-
-    '''
-    def __init__(self, sVar, sMess):
-        self.sVariable = sVar
-        self.sMessage = sMess
-
-    def printInfo(self):
-        '''
-        prints information for the incorect function or variable
-
-        '''
-        print("Incorrect input for: {0:s}".format(self.sVariable))
-        print(self.sMessage)
+from TasmanianDreamLikely import *
+from TasmanianDreamSampler import *
+from TasmanianDreamState import DreamState as State
