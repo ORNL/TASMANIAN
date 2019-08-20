@@ -60,6 +60,7 @@ class TasmanianLikelihood(object):
         '''
         The derived classes will have a member pClassPntr, init to nullptr here.
         '''
+        self.TasmanianLikelihood = True
         self.pClassPntr = c_void_p(None)
 
     def __del__(self):

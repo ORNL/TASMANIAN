@@ -76,6 +76,7 @@ class DreamState:
         GridOrIntDimensions: either a positive integer or a non-empty
             Tasmanian.SparseGrid object that gives the dimensions
         '''
+        self.TasmanainDreamState = True
         if (isinstance(GridOrIntDimensions, SparseGrid)):
             self.pStatePntr = pLibDTSG.tsgMakeDreamState(iNumChains, GridOrIntDimensions.getNumDimensions())
         else:
