@@ -494,7 +494,7 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
     }
 
     // if using stable refinement, ensure the weight of the parents is never less than the children
-    if (!new_points.empty() && ((criteria == refine_stable) || (criteria == refine_parents_first) || (criteria == refine_fds))){
+    if (!new_points.empty() && ((criteria == refine_parents_first) || (criteria == refine_fds))){
         auto rlevels = HierarchyManipulations::computeLevels(new_points, rule.get());
         auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
         for(auto is = split.rbegin(); is != split.rend(); is++){
@@ -511,6 +511,19 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
                     if (ip != -1) refine_weights[ip] += correction;
                     p = r;
                 }
+            }
+        }
+    }else if (!new_points.empty() && (criteria == refine_stable)){
+        // stable refinement, ensure that if level[i] < level[j] then weight[i] > weight[j]
+        auto rlevels = HierarchyManipulations::computeLevels(new_points, rule.get());
+        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        double max_weight = 0.0;
+        for(auto is = split.rbegin(); is != split.rend(); is++){ // loop backwards in levels
+            double correction = max_weight;
+            for(int i=0; i<is->getNumStrips(); i++){
+                int idx = new_points.getSlot(std::vector<int>(is->getStrip(i), is->getStrip(i) + num_dimensions));
+                refine_weights[idx] += correction;
+                max_weight = std::max(max_weight, refine_weights[idx]);
             }
         }
     }
