@@ -7,7 +7,7 @@
 ########################################################################
 set(Tasmanian_post_install "--------------------------------------------------------------------------------\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}Tasmanian Install Complete: Installed Version ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}\n\n")
-set(Tasmanian_post_install "${Tasmanian_post_install}executables:\n    tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}executable:\n    tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}\n")
 
 foreach(_tsglibtype ${Tasmanian_libs_type})
     string(TOUPPER ${_tsglibtype} TSGLTYPE)
