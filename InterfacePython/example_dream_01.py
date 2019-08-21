@@ -31,3 +31,58 @@
 ##############################################################################################################################################################################
 
 from Tasmanian import DREAM
+import numpy
+
+def example_01():
+    print("\n---------------------------------------------------------------------------------------------------\n")
+    print("EXAMPLE 1: make your own probability distribution")
+    print("           sample from the Gaussian distribution: f(x) = exp(-x^2)")
+    print("           ignoring scaling constants, using 3000 samples")
+    print("    See the comments in example_dream_01.cpp\n")
+
+    iNumDimensions = 1
+    iNumChains = 30
+    iNumBurnupIterations = 200
+    iNumCollectIterations = 1000 # total samples are iNumChains x iNumCollectIterations
+
+    state = DREAM.State(iNumChains, GridOrIntDimensions = iNumDimensions)
+
+    # initialize with uniform samples on [-2, 2]
+    state.setState(DREAM.genUniformSamples((-2.0,), (2.0,), state.getNumChains()))
+
+    DREAM.Sample(iNumBurnupIterations, iNumCollectIterations,
+                 lambda x : numpy.exp( - x[:,0]**2 ), # Gaussian mean 0.0 variance 0.5
+                 DREAM.Domain("unbounded"),
+                 state,
+                 DREAM.IndependentUpdate("uniform", 0.5),
+                 DREAM.DifferentialUpdate(90))
+
+    aMean, aVariance = state.getHistoryMeanVariance()
+
+    print("Using regular form:")
+    print("mean    {0:13.6f}   error {1:14.6e}".format(aMean[0], numpy.abs(aMean[0])))
+    print("variance{0:13.6f}   error {1:14.6e}".format(aVariance[0], numpy.abs(aVariance[0])))
+
+    # reset the state
+    state = DREAM.State(iNumChains, GridOrIntDimensions = iNumDimensions)
+
+    # initialize with uniform samples on [-2, 2]
+    state.setState(DREAM.genUniformSamples((-2.0,), (2.0,), state.getNumChains()))
+
+    DREAM.Sample(iNumBurnupIterations, iNumCollectIterations,
+                 lambda x : - x[:,0]**2, # Gaussian mean 0.0 variance 0.5
+                 DREAM.Domain("unbounded"),
+                 state,
+                 DREAM.IndependentUpdate("uniform", 0.5),
+                 DREAM.DifferentialUpdate(90),
+                 typeForm = DREAM.typeLogform)
+
+    aMean, aVariance = state.getHistoryMeanVariance()
+
+    print("Using logarithm form:")
+    print("mean    {0:13.6f}   error {1:14.6e}".format(aMean[0], numpy.abs(aMean[0])))
+    print("variance{0:13.6f}   error {1:14.6e}".format(aVariance[0], numpy.abs(aVariance[0] -0.5)))
+
+
+if __name__ == "__main__":
+    example_01()
