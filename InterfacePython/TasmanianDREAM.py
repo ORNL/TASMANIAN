@@ -28,10 +28,6 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, cdll, create_string_buffer
-import numpy as np
-import sys
-
 from TasmanianDreamLikely import *
 from TasmanianDreamSampler import *
 from TasmanianDreamState import DreamState as State
