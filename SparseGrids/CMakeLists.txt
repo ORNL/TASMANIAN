@@ -217,7 +217,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
     if (TARGET Tasmanian_libsparsegrid_static)
         Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_libsparsegrid_static)
-        set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid_static")
+        set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES OUTPUT_NAME "tasmaniansparsegrid_static")
     endif()
 
     Tasmanian_macro_sparsegrids_windows_defines(Tasmanian_tasgrid)
