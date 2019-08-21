@@ -1331,6 +1331,14 @@ bool ExternalTester::testAllRefinement() const{
         if (!testSurplusRefinement(f, &grid, 1.E-4, refine_fds, np, err, 7)){
             cout << "ERROR: failed wavelet fds refinement for " << f->getDescription() << endl;  pass = false;
         }
+    }{
+        const BaseFunction *f = &f21nx2;
+        grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 1, 3);
+        int np[3] = { 65, 161, 369 };
+        double err[3] = { 5.E-03, 5.E-04, 5.E-05 };
+        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_stable, np, err, 3)){
+            cout << "ERROR: failed wavelet stable refinement for " << f->getDescription() << endl;  pass = false;
+        }
     }
 
     cout << "      Refinement                      surplus" << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;

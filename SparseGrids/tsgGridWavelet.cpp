@@ -648,6 +648,36 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
 
     if (refined.getNumStrips() > 0)
         needed = MultiIndexSet(refined);
+
+    if (criteria == refine_stable){ // complete needed to a lower set
+        size_t num_added = 1; // set to 1 to start the loop
+        while(num_added > 0){
+            Data2D<int> addons(num_dimensions, 0);
+            int num_needed = needed.getNumIndexes();
+
+            for(int i=0; i<num_needed; i++){
+                std::vector<int> parent(needed.getIndex(i), needed.getIndex(i) + num_dimensions);
+                for(auto &p : parent){
+                    int r = p;
+                    p = rule1D.getParent(r);
+                    if ((p > -1) && needed.missing(parent) && points.missing(parent))
+                        addons.appendStrip(parent);
+                    if (p == -2){ // all parents on level 0
+                        for(int j=0; j<rule1D.getNumPoints(0); j++){
+                            p = j;
+                            if (needed.missing(parent) && points.missing(parent))
+                                addons.appendStrip(parent);
+                        }
+                    }
+                    p = r;
+                }
+            }
+
+            num_added = addons.getNumStrips();
+            if (num_added > 0)
+                needed.addMultiIndexSet(MultiIndexSet(addons));
+        }
+    }
 }
 
 void GridWavelet::clearAccelerationData(){
