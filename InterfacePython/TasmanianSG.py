@@ -90,10 +90,10 @@ class TasmanianSparseGrid:
                            "opt/Tasmanian/lib/libtasmaniansparsegrid.so"
                           )
 
-        othwerwise: tasmanian_library must be an instance of ctypes.cdll
+        otherwise:  tasmanian_library must be an instance of ctypes.cdll
                     this is useful when creating lots of instances of
                     TasmanianSparseGrid in order to avoid having each
-                    instance load a sepatare copy of the common library
+                    instance load a sepatate copy of the common library
 
         '''
         self.TasmanianSparseGridObject = True
@@ -420,7 +420,7 @@ class TasmanianSparseGrid:
 
         liAnisotropicWeights: list or numpy.ndarray of weights
                               length must be iDimension or 2*iDimension
-                              the first iDimension wegiths
+                              the first iDimension weights
                                                        must be positive
                               see the manual for details
 
@@ -429,7 +429,7 @@ class TasmanianSparseGrid:
                        Hermite and Laguerre rules
               fBeta  : the beta parameter for Jacobi rules
 
-        sCustomRule: string giving the parth to the file with
+        sCustomRule: string giving the path to the file with
                      custom-tabulated rule
 
         '''
@@ -508,7 +508,7 @@ class TasmanianSparseGrid:
 
         liAnisotropicWeights: list or numpy.ndarray of weights
                               length must be iDimension or 2*iDimension
-                              the first iDimension wegiths
+                              the first iDimension weights
                                                        must be positive
                               see the manual for details
 
@@ -570,7 +570,7 @@ class TasmanianSparseGrid:
                  1 means linear, 2 means quadratic, etc.
                  0 means piece-wise constant, it has different hierarchy
                    then the other orders, most notably the 1D rule
-                   tripples the number of points per level (as opposed
+                   triples the number of points per level (as opposed
                    to double for the other cases)
 
         sRule: string (defines the 1-D rule that induces the grid)
@@ -973,7 +973,7 @@ class TasmanianSparseGrid:
         returns the points loaded in the existing interpolant
 
         output: a 2-D numpy.ndarray of size getNumLoaded() X iDimension
-            reach row correspoinds to one point
+            reach row corresponds to one point
             if (getNumLoaded() == 0): returns numpy.empty([0,0])
 
         '''
@@ -991,7 +991,7 @@ class TasmanianSparseGrid:
         level of refinement following a set***Refinement() call
 
         output: 2-D numpy.ndarray of size getNumNeeded() X iDimension
-            reach row correspoinds to one point
+            reach row corresponds to one point
             if (getNumNeeded() == 0): returns numpy.empty([0,0])
 
         '''
@@ -1321,7 +1321,7 @@ class TasmanianSparseGrid:
         '''
         resets the domain to canonical
         loaded values will be kept, however, the values now correspond
-        to canonical points and may be invalid for your applicaiton
+        to canonical points and may be invalid for your application
 
         '''
         self.pLibTSG.tsgClearDomainTransform(self.pGrid)
@@ -1383,7 +1383,7 @@ class TasmanianSparseGrid:
         '''
         resets the conformal domain transform
         loaded values will be kept, however, the values now correspond
-        to canonical points and may be invalid for your applicaiton
+        to canonical points and may be invalid for your application
 
         '''
         self.pLibTSG.tsgClearConformalTransform(self.pGrid)
@@ -1418,7 +1418,7 @@ class TasmanianSparseGrid:
     def getLevelLimits(self):
         '''
         returns the limits set by the last call to make***Grid or refine
-        returns a vector of integers correspoding to the limits for each
+        returns a vector of integers corresponding to the limits for each
         direction, -1 indicates no limit
         '''
         iNumDimensions = self.getNumDimensions()
@@ -1543,7 +1543,7 @@ class TasmanianSparseGrid:
                  sequence and local polynomial grids accept -1 to
                  indicate all outputs
 
-        sCriteria: hierarhical and direction refinement strategy
+        sCriteria: hierarchical and direction refinement strategy
                    'classic'  'parents'   'direction'   'fds'   'stable'
                   applicable only for Local Polynomial and Wavelet grids
 
@@ -2064,7 +2064,6 @@ class TasmanianSparseGrid:
               requires Tasmanian_ENABLE_BLAS switched ON
               if enabled, this is the default mode
 
-          'gpu-fullmem' -> same as gpu_default
           'gpu-default'
               uses CUDA kernels, cuBlas and cuSparse libraries for
               accelerated matrix operations, e.g., cublasDgemm
@@ -2126,7 +2125,7 @@ class TasmanianSparseGrid:
         the GPU for this grid
         NOTE: each instance of the sparse grids class holds a separate
               instance of iGPUID and different grids can be assigned to
-              different GPUs (on multigpu system)
+              different GPUs (on multi-gpu system)
         iGPUID can be changed at any time, however, this will cause
         some of the internal cache to be invalidated and it may lead
         to extraneous data movement

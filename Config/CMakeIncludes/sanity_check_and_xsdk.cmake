@@ -7,7 +7,7 @@ endif()
 
 # XSDK mode:
 #   - Never overwrite user preferences, Tasmanian_ENABLE_RECOMMENDED OFF
-#   - All Tasmanian_ENABLE options are disbaled (by default)
+#   - All Tasmanian_ENABLE options are disabled (by default)
 #   - Options are enabled with XSDK switches, e.g., XSDK_ENABLE_FORTRAN
 if (USE_XSDK_DEFAULTS)
     set(Tasmanian_ENABLE_RECOMMENDED OFF)
@@ -49,7 +49,7 @@ if (USE_XSDK_DEFAULTS)
     endif()
 endif()
 
-# when chosing shared/static libraries, pick the first mode that applies
+# when choosing shared/static libraries, pick the first mode that applies
 # - BUILD_SHARED_LIBS=OFF: build only static libs regardless of USE_XSDK_DEFAULTS
 # - BUILD_SHARED_LIBS=ON or USE_XSDK_DEFAULTS=ON: build only shared libs
 # - BUILD_SHARED_LIBS=Undefined and USE_XSDK_DEFAULTS=OFF: build both types
@@ -98,7 +98,7 @@ endif()
 
 # Python module requires a shared library
 if (Tasmanian_ENABLE_PYTHON AND (NOT "shared" IN_LIST Tasmanian_libs_type))
-    message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libaries are required by the Tasmanian Python module")
+    message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libraries are required by the Tasmanian Python module")
 endif()
 
 # Python setup, look for python
@@ -124,7 +124,7 @@ if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND ("shared" IN_LI
     endif()
 endif()
 
-# Tasmanian_ENABLE_CUDA support for the add_library vs cuda_add_library
+# Tasmanian_ENABLE_CUDA support
 if (Tasmanian_ENABLE_CUDA)
     enable_language(CUDA)
 
@@ -191,7 +191,7 @@ endif()
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git") # this is a git repo
     find_package(Git)
     # do not set the hash if git is missing or
-    # if we are gnerating files for simple GNU Make compatiblity
+    # if we are generating files for simple GNU Make compatibility
     if (Git_FOUND)
         execute_process(COMMAND ${GIT_EXECUTABLE} log --pretty=format:%H -n 1
                         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"

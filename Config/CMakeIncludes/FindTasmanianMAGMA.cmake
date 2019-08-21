@@ -166,7 +166,7 @@ endmacro(Tasmanian_magma_searchinclude)
 set(Tasmanian_MAGMA_ROOT_DIR "" CACHE PATH "The root folder for the MAGMA installation, e.g., containing lib and include folders")
 
 set(Tasmanian_MAGMA_FOUND ON) # assume the user has provided everything good, overwrite if check fails in the macros
-set(Tasmanian_MAGMA_SHARED_FOUND ON) # overwriten in macro, if all libs appear static
+set(Tasmanian_MAGMA_SHARED_FOUND ON) # overwritten in macro, if all libs appear static
 
 if (NOT Tasmanian_MAGMA_LIBRARIES) # user has not provided specific libs, search for the libs
     # use MAGMA_ROOT_DIR if Tasmanian_MAGMA_ROOT_DIR is not defined
