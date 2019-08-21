@@ -39,7 +39,7 @@ void dream_example_01(){
 
     int num_dimensions = 1, num_chains = 30;
     int num_burnup_iterations = 200;
-    int num_collect_iterations = 1000; // 1000 iterations with 30 chains gives 3000 samples
+    int num_collect_iterations = 1000; // 1000 iterations with 30 chains gives 30000 samples
 
     TasDREAM::TasmanianDREAM state(num_chains, num_dimensions);
 
