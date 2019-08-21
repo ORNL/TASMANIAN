@@ -7,11 +7,7 @@
 #
 ########################################################################
 
-if (NOT DEFINED Tasmanian_python_install_path)
-    # calling "make install" invalidates PYTHON_VERSION_MAJOR and PYTHON_VERSION_MINOR
-    # thus, we cache the string on first call of cmake and the user could edit this variable
-    set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages" CACHE INTERNAL "install path for the Python module (version specific)")
-endif()
+set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages" CACHE INTERNAL "install path for the Python module (version specific)")
 
 # CMake has permissive implementation of boolean true, which includes
 # "On", "True" and "Yes" with different cases;
