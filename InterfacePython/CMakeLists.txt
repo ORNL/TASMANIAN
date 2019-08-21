@@ -65,6 +65,7 @@ endif()
 
 set(Tasmanian_python_example_import "sys.path.append(\"${CMAKE_CURRENT_BINARY_DIR}\")\n")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_dream.in.py" "${CMAKE_CURRENT_BINARY_DIR}/example_dream.py") # also uses Tasmanian_string_python_hashbang
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sandbox.py" "${CMAKE_CURRENT_BINARY_DIR}/sandbox.py") # only uses Tasmanian_string_python_hashbang
 
@@ -75,7 +76,8 @@ set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py
                                 TasmanianDREAM.py TasmanianDreamLikely.py TasmanianDreamState.py TasmanianDreamSampler.py
                                 testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py
                                 testRefinement.py testUnstructuredData.py testMisc.py testAddons.py testDream.py
-                                example_sparse_grids_05.py example_sparse_grids_06.py)
+                                example_sparse_grids_05.py example_sparse_grids_06.py
+                                example_dream_01.py)
 
 foreach(Tasmanian_python_testing_file ${Tasmanian_python_test_files})
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${Tasmanian_python_testing_file}"
@@ -102,6 +104,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianConfig.in.py"  "${CMAKE_CUR
 
 set(Tasmanian_python_example_import "sys.path.append(\"${Tasmanian_python_install_path}\")\n")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_dream.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_dream.py") # also uses Tasmanian_string_python_hashbang
 
 set(Tasmanian_PYTHONPATH "${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python/" CACHE PATH "install path for the Python module (version independent)")
 
@@ -171,10 +174,11 @@ Tasmanian_python_install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.py"
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
         DESTINATION "share/Tasmanian/examples/"
-        FILES_MATCHING PATTERN "example_sparse_grids*.py"
+        FILES_MATCHING PATTERN "example_*.py"
         PATTERN "*.in.*" EXCLUDE
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py"
+              "${CMAKE_CURRENT_BINARY_DIR}/configured/example_dream.py"
         DESTINATION "share/Tasmanian/examples/"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
