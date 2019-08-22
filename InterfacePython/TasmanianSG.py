@@ -2275,3 +2275,44 @@ class TasmanianSparseGrid:
         ZZ = ZZ[:,iOutput].reshape((iNumDim0,iNumDim1))
 
         pAxisObject.imshow(ZZ, cmap=sCmap, extent=[fXmin, fXmax, fYmin, fYmax])
+
+
+def makeGlobalGrid(iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], fAlpha=0.0, fBeta=0.0, sCustomFilename="", liLevelLimits=[]):
+    '''
+    Factory method equivalent to TasmanianSparseGrid.makeGlobalGrid().
+    '''
+    grid = TasmanianSparseGrid()
+    grid.makeGlobalGrid(iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights, fAlpha, fBeta, sCustomFilename, liLevelLimits)
+    return grid
+
+def makeSequenceGrid(iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], liLevelLimits=[]):
+    '''
+    Factory method equivalent to TasmanianSparseGrid.makeSequenceGrid().
+    '''
+    grid = TasmanianSparseGrid()
+    grid.makeSequenceGrid(iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights, liLevelLimits)
+    return grid
+
+def makeFourierGrid(iDimension, iOutputs, iDepth, sType, liAnisotropicWeights=[], liLevelLimits=[]):
+    '''
+    Factory method equivalent to TasmanianSparseGrid.makeFourierGrid().
+    '''
+    grid = TasmanianSparseGrid()
+    grid.makeFourierGrid(iDimension, iOutputs, iDepth, sType, liAnisotropicWeights, liLevelLimits)
+    return grid
+
+def makeLocalPolynomialGrid(iDimension, iOutputs, iDepth, iOrder=1, sRule="localp", liLevelLimits=[]):
+    '''
+    Factory method equivalent to TasmanianSparseGrid.makeLocalPolynomialGrid().
+    '''
+    grid = TasmanianSparseGrid()
+    grid.makeLocalPolynomialGrid(iDimension, iOutputs, iDepth, iOrder, sRule, liLevelLimits)
+    return grid
+
+def makeWaveletGrid(iDimension, iOutputs, iDepth, iOrder=1, liLevelLimits=[]):
+    '''
+    Factory method equivalent to TasmanianSparseGrid.makeWaveletGrid().
+    '''
+    grid = TasmanianSparseGrid()
+    grid.makeWaveletGrid(iDimension, iOutputs, iDepth, iOrder, liLevelLimits)
+    return grid

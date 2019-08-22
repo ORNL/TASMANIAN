@@ -161,7 +161,9 @@ add_executable(Tasmanian_gridbenchmarks  Benchmarks/benchCommon.hpp
                                          Benchmarks/benchEvaluate.hpp
                                          Benchmarks/bench_main.cpp)
 
-set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid")
+set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid"
+                                                   INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
+                                                   INSTALL_RPATH_USE_LINK_PATH ON)
 set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")
 set_target_properties(Tasmanian_gridbenchmarks PROPERTIES OUTPUT_NAME "benchmark")
 

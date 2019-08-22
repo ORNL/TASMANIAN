@@ -53,9 +53,7 @@ class TestTasClass(unittest.TestCase):
         '''
         Make grids and check against pen-and-paper answers, check weights too.
         '''
-        grid = Tasmanian.SparseGrid()
-
-        grid.makeGlobalGrid(1, 0, 4, 'level', 'gauss-hermite', [], 2.0)
+        grid = Tasmanian.makeGlobalGrid(1, 0, 4, 'level', 'gauss-hermite', [], 2.0)
         aW = grid.getQuadratureWeights()
         self.assertTrue(np.abs(sum(aW) - 0.5 * np.sqrt(np.pi)) < 1.E-14, "Gauss-Hermite Alpha")
 
@@ -74,12 +72,12 @@ class TestTasClass(unittest.TestCase):
         aP = grid.getPoints()
         np.testing.assert_equal(aA, aP, 'Anisotropy Sequence not equal', True)
 
-        grid.makeSequenceGrid(2, 1, 4, 'ipcurved', 'leja', [20, 10, 0, 7])
+        grid = Tasmanian.makeSequenceGrid(2, 1, 4, 'ipcurved', 'leja', [20, 10, 0, 7])
         aA = np.array([[0.0, 0.0], [0.0, 1.0], [0.0, -1.0], [0.0, np.sqrt(1.0/3.0)], [1.0, 0.0], [1.0, 1.0], [-1.0, 0.0]])
         aP = grid.getPoints()
         np.testing.assert_almost_equal(aA, aP, 12, 'Anisotropy Sequence not equal', True)
 
-        grid.makeFourierGrid(2, 1, 2, 'level', [1, 2])
+        grid = Tasmanian.makeFourierGrid(2, 1, 2, 'level', [1, 2])
         aA = np.array([[0.0, 0.0], [0.0, 1.0/3.0], [0.0, 2.0/3.0], [1.0/3.0, 0.0], [2.0/3.0, 0.0], [1.0/9.0, 0.0], [2.0/9.0, 0.0], [4.0/9.0, 0.0], [5.0/9.0, 0.0], [7.0/9.0, 0.0], [8.0/9.0, 0.0]])
         aP = grid.getPoints()
         np.testing.assert_almost_equal(aA, aP, 12, 'Anisotropy Fourier not equal', True)
@@ -129,7 +127,7 @@ class TestTasClass(unittest.TestCase):
         np.testing.assert_almost_equal(aA, grid.getPoints(), 14, "Original equal", True)
 
         # number of points
-        grid.makeLocalPolynomialGrid(2, 1, 2, 2, "localp")
+        grid = Tasmanian.makeLocalPolynomialGrid(2, 1, 2, 2, "localp")
         iNN = grid.getNumNeeded()
         iNL = grid.getNumLoaded()
         iNP = grid.getNumPoints()
@@ -260,7 +258,7 @@ class TestTasClass(unittest.TestCase):
             self.assertEqual(grid.getBeta(), 0.0, "failed beta")
             self.assertEqual(grid.getOrder(), 2, "failed order")
 
-        grid.makeWaveletGrid(3, 1, 2, 1)
+        grid = Tasmanian.makeWaveletGrid(3, 1, 2, 1)
         self.assertEqual(grid.getAlpha(), 0.0, "failed alpha")
         self.assertEqual(grid.getBeta(), 0.0, "failed beta")
         self.assertEqual(grid.getOrder(), 1, "failed order")
