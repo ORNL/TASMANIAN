@@ -15,6 +15,7 @@ Changelog for version 6.1 (may rename this to 7.0 later)
 * new Tasmanian master Python module: `import Tasmanian`
     * the python changes are backwards compatible, the old module is still there
     * the sparse grid class can be called with `grid = Tasmanian.SparseGrid()`
+    * the DREAM binding is available through `Tasmanian.DREAM`
 
 * new Tasmanian master header to add all modules: Tasmanian.hpp
 
@@ -54,6 +55,7 @@ Changelog for version 6.1 (may rename this to 7.0 later)
     * excessive polymorphism is replaced by lambdas
     * sampling is done by a template
     * can specify arbitrary domain (using lambdas)
+    * the new API is also available though Python
     * Note: the old API is completely obsolete and incompatible
 
 * added Doxygen documentation (CMake option, extra pages, etc.)
