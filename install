@@ -22,7 +22,7 @@ if (( $bShowHelp == 1 )); then
     echo "                       if missing, the script will ask for a folder"
     echo ""
     echo " <matlab work folder>: optional"
-    echo "                       work folder for the matab interface"
+    echo "                       work folder for the matlab interface"
     echo "                       if missing, the MATLAB interface will not be installed"
     echo ""
     echo "            <options>: optionally can overwrite default features"
@@ -33,11 +33,11 @@ if (( $bShowHelp == 1 )); then
     echo "       -python=<path>: provide a path to the python interpreter"
     echo "                       e.g., -python=/usr/bin/python3"
     echo "                -cuda: enable Nvidia CUDA support"
-    echo "                       automatically seach for CUDA installation"
+    echo "                       automatically search for CUDA installation"
     echo "         -cuda=<path>: enable Nvidia CUDA support and specify the path to nvcc"
     echo "                       e.g., -cuda=/usr/local/cuda-9.1/bin/nvcc"
     echo "               -magma: enable UTK MAGMA support"
-    echo "                       automatically seach for MAGMA installation"
+    echo "                       automatically search for MAGMA installation"
     echo "        -magma=<path>: enable UTK MAGMA support and specify path for MAGMA"
     echo "                       e.g., -magma=/usr/local/magma/"
     echo "             -fortran: enable Fortran interface"
@@ -371,7 +371,7 @@ if (( $bSkilBashrc == 0 )); then
     if [ ! $? -eq 0 ] || [ ! -f ./TasmanianENVsetup.sh ]; then
         echo "Very odd! There were no previous errors but cannot find $sInstallPrefix/share/Tasmanian/TasmanianENVsetup.sh"
         echo "This must be a bug!"
-        echo "At any rate, cannot automatically edit .bashrc, thus exising"
+        echo "At any rate, cannot automatically edit .bashrc, thus exiting"
         echo ""
         exit 1;
     fi
@@ -395,10 +395,14 @@ if (( $bFailedTests == 1 )); then
     echo "WARNING: some of the tests failed!"
     echo "         This could be just a fluke in the seed of the random number"
     echo "         generator used by both Sparse Grids and DREAM testers."
+    echo "         It could also be a problem with random thread scheduling"
+    echo "         in the addon module, particularly likely on slower machines."
     echo "         This could also indicate a problem with the installation."
-    echo "         try testing with different seed:"
-    echo "             tasgrid  -test random"
-    echo "             tasdream -test random"
+    echo "         try testing with different seed."
+    echo "         From the Build folder:"
+    echo "             ./SparseGrids/gridtest random"
+    echo "             ./DREAM/dreamtest random"
+    echo "             ./Addons/addontester"
     exit 1;
 fi
 
