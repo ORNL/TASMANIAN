@@ -85,6 +85,7 @@ class TestTasClass(unittest.TestCase):
                 os.remove("cpf_addons")
 
             ttc.loadExpN2(gridB)
+            gridA.finishConstruction()
             ttc.compareGrids(gridA, gridB)
 
     def performAddonTests(self):
