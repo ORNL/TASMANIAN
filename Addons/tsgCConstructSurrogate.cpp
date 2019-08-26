@@ -52,7 +52,6 @@ void tsgConstructSurrogateNoIGSurplus
     TasGrid::TypeRefinement criteria = TasGrid::IO::getTypeRefinementString(s_criteria);
 
     std::vector<int> level_limits = TasGrid::Utils::copyArray(llimits, num_dimensions);
-    std::vector<double> scale_correction; // remove later
     std::string cfname = (checkpoint_filename != nullptr) ? std::string(checkpoint_filename) : std::string();
 
     auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
@@ -64,11 +63,11 @@ void tsgConstructSurrogateNoIGSurplus
     if (num_parallel_jobs > 1){
         TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
             (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, tolerance, criteria, output, level_limits, scale_correction, cfname);
+             grid, tolerance, criteria, output, level_limits, cfname);
     }else{
         TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
             (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, tolerance, criteria, output, level_limits, scale_correction, cfname);
+             grid, tolerance, criteria, output, level_limits, cfname);
     }
 }
 
@@ -156,7 +155,6 @@ void tsgConstructSurrogateWiIGSurplus
     TasGrid::TypeRefinement criteria = TasGrid::IO::getTypeRefinementString(s_criteria);
 
     std::vector<int> level_limits = TasGrid::Utils::copyArray(llimits, num_dimensions);
-    std::vector<double> scale_correction; // remove later
     std::string cfname = (checkpoint_filename != nullptr) ? std::string(checkpoint_filename) : std::string();
 
     auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
@@ -175,11 +173,11 @@ void tsgConstructSurrogateWiIGSurplus
     if (num_parallel_jobs > 1){
         TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
             (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, tolerance, criteria, output, level_limits, scale_correction, cfname);
+             grid, tolerance, criteria, output, level_limits, cfname);
     }else{
         TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
             (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, tolerance, criteria, output, level_limits, scale_correction, cfname);
+             grid, tolerance, criteria, output, level_limits, cfname);
     }
 }
 

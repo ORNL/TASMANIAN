@@ -375,9 +375,6 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  *      identical to TasmanianSparseGrid::setSurplusRefinement().
  *      If level limits are already set in the construction and/or refinement
  *      those weights will be used, this parameter can overwrite them.
- * \param scale_correction defines multiplicative correction term to the
- *      hierarchical coefficients used in the candidate selection procedure.
- *      Identical to TasmanianSparseGrid::setSurplusRefinement().
  * \param checkpoint_filename defines the two filenames to be used in to store the
  *      intermediate constructed grids so that the procedure can be restarted
  *      in case of a system crash.
@@ -426,13 +423,12 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
                         TasmanianSparseGrid &grid,
                         double tolerance, TypeRefinement criteria, int output = -1,
                         std::vector<int> const &level_limits = std::vector<int>(),
-                        std::vector<double> const &scale_correction = std::vector<double>(),
                         std::string const &checkpoint_filename = std::string()){
     if (!grid.isLocalPolynomial()) throw std::runtime_error("ERROR: construction (with tolerance and criteria) called for a grid that is not local polynomial.");
     constructCommon<parallel_construction, initial_guess>
                                           (model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
                                            [&](TasmanianSparseGrid &g)->std::vector<double>{
-                                               return g.getCandidateConstructionPoints(tolerance, criteria, output, level_limits, scale_correction);
+                                               return g.getCandidateConstructionPoints(tolerance, criteria, output, level_limits);
                                            }, checkpoint_filename);
 }
 
