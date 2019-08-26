@@ -302,8 +302,6 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
         }
         complete.load(grid);
     }
-
-    grid.finishConstruction();
 }
 
 /*!
