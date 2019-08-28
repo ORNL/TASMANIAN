@@ -30,17 +30,19 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-# The sys.path.append() command is necessary only if Tasmanian is
-# not included in the system PYTHONPATH
-# If PYTHONPATH is set (e.g., source TasmanianENVsetup.sh) you can jump
-# straight to import Tasmanian
-import sys
-@Tasmanian_python_example_import@
-import Tasmanian
+from Tasmanian import DREAM
+import numpy
 
-import example_dream_01
-import example_dream_02
+def example_02():
+    print("\n---------------------------------------------------------------------------------------------------\n")
+    print("EXAMPLE 2: set the inference problem: identify model parameters x_0 and x_1")
+    print("           from data (noise free example)")
+    print("           model: f(x) = sin(x_0*M_PI*t + x_1),  data: d = sin(M_PI*t + 0.3*M_PI)")
+    print("           t in [0,1], t is discretized with 32 equidistant nodes")
+    print("           the likelihood is exp(- 16 * (f(x) - d)^2)")
+    print("           using a sparse grid to interpolate the likelihood")
+    print("     NOTE: 16 = 32/2 corresponds to the discretization error in t\n")
+
 
 if __name__ == "__main__":
-    example_dream_01.example_01()
-    example_dream_02.example_02()
+    example_02()
