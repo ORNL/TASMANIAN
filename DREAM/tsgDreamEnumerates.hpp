@@ -62,6 +62,14 @@ namespace TasDREAM{
  * Several templates borrowed from the Sparse Grids module and included here for easier usage.
  * \endinternal
  */
+
+/*!
+ * \internal
+ * \ingroup DREAMUtils
+ *
+ * Similar to TasGrid::Utils this holds aliases to size_mult(), TasGrid::Utils::Wrapper2D, and copyArray().
+ * \endinternal
+ */
 namespace Utils{
     //! \brief See TasGrid::Utils::size_mult().
     using TasGrid::Utils::size_mult;
@@ -114,8 +122,7 @@ enum TypeDistribution{
 
 /*!
  * \internal
- * \ingroup TasmanianDREAM
- * \addtogroup DREAMUtils Miscellaneous utility methods for IO.
+ * \ingroup DREAMUtils
  *
  * Similar to TasGrid::IO this holds conversion methods between enums and int/string types.
  * \endinternal

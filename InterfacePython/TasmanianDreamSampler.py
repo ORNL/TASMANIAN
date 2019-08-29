@@ -60,12 +60,35 @@ pLibDTSG.tsgDreamSample.argtypes = [c_int, c_int, c_int,
 
 
 def pdfWrapper(callableProbability, iNumSamples, iNumDims, pX, pY):
+    '''
+    Internal use only.
+
+    Wraps around a user-provided callable method callableProbability
+    to facilitate callback from the C/C++ code.
+    The wrapper corresponds to a single output pdf/likelihood method.
+
+    iNumSamples is the number of samples to process for this call.
+    iNumDims is the number of dimensions of each sample vector
+    pX is a POINTER(double) with size iNumSamples * iNumDims
+    pY is a POINTER(double) with size iNumSamples
+    '''
     aX = np.ctypeslib.as_array(pX, (iNumSamples, iNumDims))
     aY = np.ctypeslib.as_array(pY, (iNumSamples,))
     aResult = callableProbability(aX)
     aY[0:iNumSamples] = aResult[0:iNumSamples]
 
 def domainWrapper(callableDomain, iNumDims, pX):
+    '''
+    Internal use only.
+
+    Wraps around a user-provided callable method callableDomain
+    to facilitate callback from the C/C++ code.
+    The wrapper corresponds to the test of a single point.
+
+    iNumDims is the dimensions of the point
+    pX is a POINTER(double) with size iNumDims
+    returns 1 if callableDomain() returns true and 0 otherwise.
+    '''
     aX = np.ctypeslib.as_array(pX, (iNumDims,))
     if callableDomain(aX):
         return 1;
@@ -73,6 +96,17 @@ def domainWrapper(callableDomain, iNumDims, pX):
         return 0
 
 def iupdateWrapper(callableIUpdate, iNumDims, pX):
+    '''
+    Internal use only.
+
+    Wraps around a user-provided callable method callableIUpdate
+    to facilitate callback from the C/C++ code.
+    The wrapper corresponds to the independent update of a single point.
+
+    iNumDims is the dimensions of the point
+    pX is a POINTER(double) with size iNumDims
+    pX will be overwritten with pX + update
+    '''
     aX = np.ctypeslib.as_array(pX, (iNumDims,))
     aResult = callableIUpdate(aX)
     aX[0:iNumDims] = aResult[0:iNumDims]
