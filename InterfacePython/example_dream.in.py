@@ -39,6 +39,9 @@ import sys
 import Tasmanian
 
 import example_dream_01
+import example_dream_02
 
 if __name__ == "__main__":
     example_dream_01.example_01()
+    example_dream_02.example_02()
+    print("")
