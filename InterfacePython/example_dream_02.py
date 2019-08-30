@@ -31,6 +31,10 @@
 ##############################################################################################################################################################################
 
 from Tasmanian import DREAM
+from Tasmanian import SparseGrid
+from Tasmanian import makeGlobalGrid
+from Tasmanian import makeSequenceGrid
+from Tasmanian import loadNeededPoints
 import numpy
 
 def example_02():
@@ -41,8 +45,76 @@ def example_02():
     print("           t in [0,1], t is discretized with 32 equidistant nodes")
     print("           the likelihood is exp(- 16 * (f(x) - d)^2)")
     print("           using a sparse grid to interpolate the likelihood")
-    print("     NOTE: 16 = 32/2 corresponds to the discretization error in t\n")
+    print("     NOTE: See the comments in the C++ DREAM Example 2\n")
 
+    iNumDimensions = 2;
+    iNumChains = 100;
+    iNumBurnupIterations = 3000;
+    iNumCollectIterations = 100;
+
+    def model(aX):
+        # using 32 nodes in the interior of (0.0, 1.0)
+        t = numpy.linspace(1.0 / 64.0, 1.0 - 1.0 / 64.0, 32)
+        return numpy.sin(numpy.pi * aX[0] * t + aX[1])
+
+    def likelihood(aY, aData):
+        # using log-form likelihood
+        # numpy.ones((1,)) converts the scalar to a 1D numpy array
+        return - 0.5 * len(aData) * numpy.sum((aY - aData)**2) * numpy.ones((1,))
+
+    aData = model([1.0, 0.3 * numpy.pi])
+
+    domain_lower = numpy.array([0.5, -0.1])
+    domain_upper = numpy.array([8.0,  1.7])
+
+    grid = makeGlobalGrid(iNumDimensions, 1, 10, 'iptotal', 'clenshaw-curtis')
+    grid.setDomainTransform(numpy.column_stack([domain_lower, domain_upper]))
+
+    loadNeededPoints(lambda x, tid : likelihood(model(x), aData), grid, iNumThreads = 2)
+
+    state = DREAM.State(iNumChains, grid)
+    state.setState(DREAM.genUniformSamples(domain_lower, domain_upper, state.getNumChains()))
+
+    DREAM.Sample(iNumBurnupIterations, iNumCollectIterations,
+                 lambda x : grid.evaluateBatch(x).reshape((x.shape[0],)), # link to the SparseGrid
+                 DREAM.Domain(grid),
+                 state,
+                 DREAM.IndependentUpdate("uniform", 0.5),
+                 DREAM.DifferentialUpdate(90),
+                 typeForm = DREAM.typeLogform)
+
+    aMean, aVariance = state.getHistoryMeanVariance()
+
+    print("Inferred values (using 10th order polynomial sparse grid):")
+    print("    frequency:{0:13.6f}   error:{1:14.6e}".format(aMean[0],
+                                                             numpy.abs(aMean[0] - 1.0)))
+    print("   correction:{0:13.6f}   error:{1:14.6e}\n".format(aMean[1],
+                                                             numpy.abs(aMean[0] - 0.3 * numpy.pi)))
+
+    # repeat the example using the faster Sequence grid and 30th order polynomials
+    grid = makeSequenceGrid(iNumDimensions, 1, 30, 'iptotal', 'leja')
+    grid.setDomainTransform(numpy.column_stack([domain_lower, domain_upper]))
+
+    loadNeededPoints(lambda x, tid : likelihood(model(x), aData), grid, iNumThreads = 2)
+
+    state = DREAM.State(iNumChains, grid)
+    state.setState(DREAM.genUniformSamples(domain_lower, domain_upper, state.getNumChains()))
+
+    DREAM.Sample(iNumBurnupIterations, iNumCollectIterations,
+                 lambda x : grid.evaluateBatch(x).reshape((x.shape[0],)), # link to the SparseGrid
+                 DREAM.Domain(grid),
+                 state,
+                 DREAM.IndependentUpdate("uniform", 0.5),
+                 DREAM.DifferentialUpdate(90),
+                 typeForm = DREAM.typeLogform)
+
+    aMean, aVariance = state.getHistoryMeanVariance()
+
+    print("Inferred values (using 30th order polynomial sparse grid):")
+    print("    frequency:{0:13.6f}   error:{1:14.6e}".format(aMean[0],
+                                                             numpy.abs(aMean[0] - 1.0)))
+    print("   correction:{0:13.6f}   error:{1:14.6e}".format(aMean[1],
+                                                             numpy.abs(aMean[0] - 0.3 * numpy.pi)))
 
 if __name__ == "__main__":
     example_02()
