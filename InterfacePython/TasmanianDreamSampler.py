@@ -81,8 +81,8 @@ def iupdateWrapper(callableIUpdate, iNumDims, pX):
 class Domain(object):
     def __init__(self, sType, *args):
         self.TasmanianDreamDomain = True
-        if isinstance(sType, SparseGrid):
-            self.pGrid = args[0].pGrid
+        if hasattr(sType, "TasmanianSparseGridObject"):
+            self.pGrid = sType.pGrid
             self.pLower = None
             self.pUpper = None
             self.pCallable = type_dream_domain(lambda : 1)
