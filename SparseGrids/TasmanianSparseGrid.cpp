@@ -1582,7 +1582,6 @@ void TasmanianSparseGrid::setGPUID(int new_gpu_id){
         #endif
     }
 }
-int TasmanianSparseGrid::getGPUID() const{ return gpu_id; }
 
 int TasmanianSparseGrid::getNumGPUs(){
     #ifdef Tasmanian_ENABLE_CUDA

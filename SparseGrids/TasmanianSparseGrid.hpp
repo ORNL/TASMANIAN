@@ -274,8 +274,8 @@ public:
     static bool isAccelerationAvailable(TypeAcceleration acc);
 
     // CUDA management functions
-    void setGPUID(int new_gpuID);
-    int getGPUID() const;
+    void setGPUID(int new_gpu_id);
+    int getGPUID() const{ return gpu_id; }
     static int getNumGPUs();
     static int getGPUMemory(int gpu); // returns the MB of a given GPU
     static std::string getGPUName(int gpu); // returns a null-terminated char array
