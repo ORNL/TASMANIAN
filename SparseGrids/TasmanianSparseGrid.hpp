@@ -118,9 +118,9 @@ public:
     void updateFourierGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
     void updateFourierGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
 
-    double getAlpha() const{ return (isGlobal()) ? getGridGlobal()->getAlpha() : 0.0; }
-    double getBeta() const{ return (isGlobal()) ? getGridGlobal()->getBeta() : 0.0; }
-    int getOrder() const{ return (isLocalPolynomial()) ? getGridLocalPolynomial()->getOrder() : ((isWavelet()) ? getGridWavelet()->getOrder() : -1); }
+    double getAlpha() const{ return (isGlobal()) ? get<GridGlobal>()->getAlpha() : 0.0; }
+    double getBeta() const{ return (isGlobal()) ? get<GridGlobal>()->getBeta() : 0.0; }
+    int getOrder() const{ return (isLocalPolynomial()) ? get<GridLocalPolynomial>()->getOrder() : ((isWavelet()) ? get<GridWavelet>()->getOrder() : -1); }
 
     int getNumDimensions() const{ return (base) ? base->getNumDimensions() : 0; }
     int getNumOutputs() const{ return (base) ? base->getNumOutputs() : 0; }
@@ -356,16 +356,8 @@ public:
     const int* getNeededIndexes() const;
 
     // make these protected for a release
-    inline GridGlobal*          getGridGlobal(){          return (GridGlobal*)          base.get(); }
-    inline GridSequence*        getGridSequence(){        return (GridSequence*)        base.get(); }
-    inline GridLocalPolynomial* getGridLocalPolynomial(){ return (GridLocalPolynomial*) base.get(); }
-    inline GridFourier*         getGridFourier(){         return (GridFourier*)         base.get(); }
-    inline GridWavelet*         getGridWavelet(){         return (GridWavelet*)         base.get(); }
-    inline const GridGlobal*          getGridGlobal() const{          return (const GridGlobal*)          base.get(); }
-    inline const GridSequence*        getGridSequence() const{        return (const GridSequence*)        base.get(); }
-    inline const GridLocalPolynomial* getGridLocalPolynomial() const{ return (const GridLocalPolynomial*) base.get(); }
-    inline const GridFourier*         getGridFourier() const{         return (const GridFourier*)         base.get(); }
-    inline const GridWavelet*         getGridWavelet() const{         return (const GridWavelet*)         base.get(); }
+    template<class T> inline T* get(){ return (T*) base.get(); }
+    template<class T> inline T const* get() const{ return (T*) base.get(); }
 
 protected:
     void clear();
