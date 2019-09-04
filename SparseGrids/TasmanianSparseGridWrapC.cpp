@@ -247,7 +247,14 @@ void tsgClearConformalTransform(void *grid){ ((TasmanianSparseGrid*) grid)->clea
 void tsgGetConformalTransformASIN(void *grid, int truncation[]){ ((TasmanianSparseGrid*) grid)->getConformalTransformASIN(truncation); }
 
 void tsgClearLevelLimits(void *grid){ ((TasmanianSparseGrid*) grid)->clearLevelLimits(); }
-void tsgGetLevelLimits(void *grid, int *limits){ ((TasmanianSparseGrid*) grid)->getLevelLimits(limits); }
+void tsgGetLevelLimits(void *grid, int *limits){
+    auto llimits = ((TasmanianSparseGrid*) grid)->getLevelLimits();
+    if (llimits.empty()){
+        std::fill_n(limits, ((TasmanianSparseGrid*) grid)->getNumDimensions(), -1);
+    }else{
+        std::copy(llimits.begin(), llimits.end(), limits);
+    }
+}
 
 void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth, int output, const int *level_limits){
     TypeDepth depth_type = IO::getDepthTypeString(sType);

@@ -783,20 +783,6 @@ const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, i
 }
 #endif // Tasmanian_ENABLE_CUDA
 
-void TasmanianSparseGrid::clearLevelLimits(){
-    llimits.clear();
-}
-void TasmanianSparseGrid::getLevelLimits(int *limits) const{
-    if (llimits.empty()){
-        if (!empty()) std::fill_n(limits, base->getNumDimensions(), -1);
-    }else{
-        std::copy(llimits.begin(), llimits.end(), limits);
-    }
-}
-void TasmanianSparseGrid::getLevelLimits(std::vector<int> &limits) const{
-    limits = llimits;
-}
-
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
     if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
