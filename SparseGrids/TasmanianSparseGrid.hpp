@@ -118,9 +118,9 @@ public:
     void updateFourierGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
     void updateFourierGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
 
-    double getAlpha() const{ return (isGlobal()) ? getGridGlobal()->getAlpha() : 0.0; }
-    double getBeta() const{ return (isGlobal()) ? getGridGlobal()->getBeta() : 0.0; }
-    int getOrder() const{ return (isLocalPolynomial()) ? getGridLocalPolynomial()->getOrder() : ((isWavelet()) ? getGridWavelet()->getOrder() : -1); }
+    double getAlpha() const{ return (isGlobal()) ? get<GridGlobal>()->getAlpha() : 0.0; }
+    double getBeta() const{ return (isGlobal()) ? get<GridGlobal>()->getBeta() : 0.0; }
+    int getOrder() const{ return (isLocalPolynomial()) ? get<GridLocalPolynomial>()->getOrder() : ((isWavelet()) ? get<GridWavelet>()->getOrder() : -1); }
 
     int getNumDimensions() const{ return (base) ? base->getNumDimensions() : 0; }
     int getNumOutputs() const{ return (base) ? base->getNumOutputs() : 0; }
@@ -186,10 +186,8 @@ public:
     void clearConformalTransform();
     void getConformalTransformASIN(int truncation[]) const;
 
-    void clearLevelLimits(); // level limits will be set anew if non-null vector is given to refine command
-    void getLevelLimits(int *limits) const; // static, assume limits is already allocated with length num_dimensions
-    void getLevelLimits(std::vector<int> &limits) const; // allocates the vector
-    std::vector<int> getLevelLimits() const{ std::vector<int> ll; getLevelLimits(ll); return ll; }
+    void clearLevelLimits(){ llimits.clear(); } // level limits will be set anew if non-null vector is given to refine command
+    std::vector<int> getLevelLimits() const{ return llimits; }
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = nullptr);
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
@@ -276,8 +274,8 @@ public:
     static bool isAccelerationAvailable(TypeAcceleration acc);
 
     // CUDA management functions
-    void setGPUID(int new_gpuID);
-    int getGPUID() const;
+    void setGPUID(int new_gpu_id);
+    int getGPUID() const{ return gpu_id; }
     static int getNumGPUs();
     static int getGPUMemory(int gpu); // returns the MB of a given GPU
     static std::string getGPUName(int gpu); // returns a null-terminated char array
@@ -356,16 +354,8 @@ public:
     const int* getNeededIndexes() const;
 
     // make these protected for a release
-    inline GridGlobal*          getGridGlobal(){          return (GridGlobal*)          base.get(); }
-    inline GridSequence*        getGridSequence(){        return (GridSequence*)        base.get(); }
-    inline GridLocalPolynomial* getGridLocalPolynomial(){ return (GridLocalPolynomial*) base.get(); }
-    inline GridFourier*         getGridFourier(){         return (GridFourier*)         base.get(); }
-    inline GridWavelet*         getGridWavelet(){         return (GridWavelet*)         base.get(); }
-    inline const GridGlobal*          getGridGlobal() const{          return (const GridGlobal*)          base.get(); }
-    inline const GridSequence*        getGridSequence() const{        return (const GridSequence*)        base.get(); }
-    inline const GridLocalPolynomial* getGridLocalPolynomial() const{ return (const GridLocalPolynomial*) base.get(); }
-    inline const GridFourier*         getGridFourier() const{         return (const GridFourier*)         base.get(); }
-    inline const GridWavelet*         getGridWavelet() const{         return (const GridWavelet*)         base.get(); }
+    template<class T> inline T* get(){ return (T*) base.get(); }
+    template<class T> inline T const* get() const{ return (T*) base.get(); }
 
 protected:
     void clear();

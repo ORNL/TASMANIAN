@@ -156,7 +156,7 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     clear();
     llimits = level_limits;
     base = make_unique_ptr<GridGlobal>();
-    getGridGlobal()->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, llimits);
+    get<GridGlobal>()->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, llimits);
 }
 
 void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int *level_limits){
@@ -178,7 +178,7 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     clear();
     llimits = level_limits;
     base = make_unique_ptr<GridSequence>();
-    getGridSequence()->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, llimits);
+    get<GridSequence>()->makeGrid(dimensions, outputs, depth, type, rule, anisotropic_weights, llimits);
 }
 
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
@@ -200,7 +200,7 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
     clear();
     llimits = level_limits;
     base = make_unique_ptr<GridLocalPolynomial>();
-    getGridLocalPolynomial()->makeGrid(dimensions, outputs, depth, order, rule, llimits);
+    get<GridLocalPolynomial>()->makeGrid(dimensions, outputs, depth, order, rule, llimits);
 }
 
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
@@ -218,7 +218,7 @@ void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth
     clear();
     llimits = level_limits;
     base = make_unique_ptr<GridWavelet>();
-    getGridWavelet()->makeGrid(dimensions, outputs, depth, order, llimits);
+    get<GridWavelet>()->makeGrid(dimensions, outputs, depth, order, llimits);
 }
 
 void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){
@@ -235,7 +235,7 @@ void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth
     clear();
     llimits = level_limits;
     base = make_unique_ptr<GridFourier>();
-    getGridFourier()->makeGrid(dimensions, outputs, depth, type, anisotropic_weights, llimits);
+    get<GridFourier>()->makeGrid(dimensions, outputs, depth, type, anisotropic_weights, llimits);
 }
 
 void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source, int outputs_begin, int outputs_end){
@@ -244,19 +244,19 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source, int output
     if (!source->empty()){
         if (source->isGlobal()){
             base = make_unique_ptr<GridGlobal>();
-            getGridGlobal()->copyGrid((GridGlobal*) source->base.get(), outputs_begin, outputs_end);
+            get<GridGlobal>()->copyGrid((GridGlobal*) source->base.get(), outputs_begin, outputs_end);
         }else if (source->isLocalPolynomial()){
             base = make_unique_ptr<GridLocalPolynomial>();
-            getGridLocalPolynomial()->copyGrid((GridLocalPolynomial*) source->base.get(), outputs_begin, outputs_end);
+            get<GridLocalPolynomial>()->copyGrid((GridLocalPolynomial*) source->base.get(), outputs_begin, outputs_end);
         }else if (source->isSequence()){
             base = make_unique_ptr<GridSequence>();
-            getGridSequence()->copyGrid((GridSequence*) source->base.get(), outputs_begin, outputs_end);
+            get<GridSequence>()->copyGrid((GridSequence*) source->base.get(), outputs_begin, outputs_end);
         }else if (source->isFourier()){
             base = make_unique_ptr<GridFourier>();
-            getGridFourier()->copyGrid((GridFourier*) source->base.get(), outputs_begin, outputs_end);
+            get<GridFourier>()->copyGrid((GridFourier*) source->base.get(), outputs_begin, outputs_end);
         }else if (source->isWavelet()){
             base = make_unique_ptr<GridWavelet>();
-            getGridWavelet()->copyGrid((GridWavelet*) source->base.get(), outputs_begin, outputs_end);
+            get<GridWavelet>()->copyGrid((GridWavelet*) source->base.get(), outputs_begin, outputs_end);
         }
     }
     if (source->domain_transform_a.size() > 0){
@@ -282,7 +282,7 @@ void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const std:
 
         if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
 
-        getGridGlobal()->updateGrid(depth, type, anisotropic_weights, llimits);
+        get<GridGlobal>()->updateGrid(depth, type, anisotropic_weights, llimits);
     }else{
         throw std::runtime_error("ERROR: updateGlobalGrid() called, but the grid is not global");
     }
@@ -302,7 +302,7 @@ void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const st
         if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires level_limits with either 0 or dimensions entries");
 
         if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
-        getGridSequence()->updateGrid(depth, type, anisotropic_weights, llimits);
+        get<GridSequence>()->updateGrid(depth, type, anisotropic_weights, llimits);
     }else{
         throw std::runtime_error("ERROR: updateSequenceGrid called, but the grid is not sequence");
     }
@@ -323,11 +323,11 @@ void TasmanianSparseGrid::updateFourierGrid(int depth, TypeDepth type, std::vect
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires level_limits with either 0 or dimensions entries");
 
     if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
-    getGridFourier()->updateGrid(depth, type, anisotropic_weights, llimits);
+    get<GridFourier>()->updateGrid(depth, type, anisotropic_weights, llimits);
 }
 
 TypeOneDRule TasmanianSparseGrid::getRule() const{ return (base) ? base->getRule() : rule_none; }
-const char* TasmanianSparseGrid::getCustomRuleDescription() const{ return (isGlobal()) ? getGridGlobal()->getCustomRuleDescription() : ""; }
+const char* TasmanianSparseGrid::getCustomRuleDescription() const{ return (isGlobal()) ? get<GridGlobal>()->getCustomRuleDescription() : ""; }
 
 void TasmanianSparseGrid::getLoadedPoints(double *x) const{
     base->getLoadedPoints(x);
@@ -582,16 +582,16 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
         (rule == rule_gausschebyshev1odd) || (rule == rule_gausschebyshev2odd) || (rule == rule_gaussgegenbauerodd) || (rule == rule_gaussjacobiodd)){
         double alpha = ((rule == rule_gausschebyshev1) || (rule == rule_gausschebyshev1odd)) ? -0.5 :
                        ((rule == rule_gausschebyshev2) || (rule == rule_gausschebyshev2odd)) ?  0.5 :
-                       getGridGlobal()->getAlpha();
+                       get<GridGlobal>()->getAlpha();
         double beta = ((rule == rule_gausschebyshev1) || (rule == rule_gausschebyshev1odd)) ? -0.5 :
                       ((rule == rule_gausschebyshev2) || (rule == rule_gausschebyshev2odd)) ?  0.5 :
-                      ((rule == rule_gaussgegenbauer) || (rule == rule_gaussgegenbauerodd)) ? getGridGlobal()->getAlpha() :
-                      getGridGlobal()->getBeta();
+                      ((rule == rule_gaussgegenbauer) || (rule == rule_gaussgegenbauerodd)) ? get<GridGlobal>()->getAlpha() :
+                      get<GridGlobal>()->getBeta();
         for(int j=0; j<num_dimensions; j++) scale *= pow(0.5*(domain_transform_b[j] - domain_transform_a[j]), alpha + beta + 1.0);
     }else if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){
-        for(int j=0; j<num_dimensions; j++) scale *= pow(domain_transform_b[j], -(1.0 + getGridGlobal()->getAlpha()));
+        for(int j=0; j<num_dimensions; j++) scale *= pow(domain_transform_b[j], -(1.0 + get<GridGlobal>()->getAlpha()));
     }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){
-        double power = -0.5 * (1.0 + getGridGlobal()->getAlpha());
+        double power = -0.5 * (1.0 + get<GridGlobal>()->getAlpha());
         for(int j=0; j<num_dimensions; j++) scale *= pow(domain_transform_b[j], power);
     }else if (rule == rule_fourier){
         for(int j=0; j<num_dimensions; j++) scale *= (domain_transform_b[j] - domain_transform_a[j]);
@@ -783,20 +783,6 @@ const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, i
 }
 #endif // Tasmanian_ENABLE_CUDA
 
-void TasmanianSparseGrid::clearLevelLimits(){
-    llimits.clear();
-}
-void TasmanianSparseGrid::getLevelLimits(int *limits) const{
-    if (llimits.empty()){
-        if (!empty()) std::fill_n(limits, base->getNumDimensions(), -1);
-    }else{
-        std::copy(llimits.begin(), llimits.end(), limits);
-    }
-}
-void TasmanianSparseGrid::getLevelLimits(std::vector<int> &limits) const{
-    limits = llimits;
-}
-
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
     if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
@@ -815,15 +801,15 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
 
     if (!level_limits.empty()) llimits = level_limits;
     if (isSequence()){
-        getGridSequence()->setAnisotropicRefinement(type, min_growth, output, llimits);
+        get<GridSequence>()->setAnisotropicRefinement(type, min_growth, output, llimits);
     }else if (isGlobal()){
-        if (OneDimensionalMeta::isNonNested(getGridGlobal()->getRule())){
+        if (OneDimensionalMeta::isNonNested(get<GridGlobal>()->getRule())){
             throw std::runtime_error("ERROR: setAnisotropicRefinement() called for a global grid with non-nested rule");
         }else{
-            getGridGlobal()->setAnisotropicRefinement(type, min_growth, output, llimits);
+            get<GridGlobal>()->setAnisotropicRefinement(type, min_growth, output, llimits);
         }
     }else if (isFourier()){
-        getGridFourier()->setAnisotropicRefinement(type, min_growth, output, llimits);
+        get<GridFourier>()->setAnisotropicRefinement(type, min_growth, output, llimits);
     }else{
         throw std::runtime_error("ERROR: setAnisotropicRefinement() called for a grid that is neither Sequence, nor Global with a sequence rule, nor Fourier");
     }
@@ -837,15 +823,15 @@ void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling estimateAnisotropicCoefficients() with invalid output");
 
     if (isSequence()){
-        getGridSequence()->estimateAnisotropicCoefficients(type, output, weights);
+        get<GridSequence>()->estimateAnisotropicCoefficients(type, output, weights);
     }else if (isGlobal()){
-        if (OneDimensionalMeta::isNonNested(getGridGlobal()->getRule())){
+        if (OneDimensionalMeta::isNonNested(get<GridGlobal>()->getRule())){
             throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a Global grid with non-nested rule");
         }else{
-            getGridGlobal()->estimateAnisotropicCoefficients(type, output, weights);
+            get<GridGlobal>()->estimateAnisotropicCoefficients(type, output, weights);
         }
     }else if (isFourier()){
-        getGridFourier()->estimateAnisotropicCoefficients(type, output, weights);
+        get<GridFourier>()->estimateAnisotropicCoefficients(type, output, weights);
     }else{
         throw std::runtime_error("ERROR: estimateAnisotropicCoefficients called for a grid that is neither Sequence nor Global with a sequence rule");
     }
@@ -869,10 +855,10 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
 
     if (!level_limits.empty()) llimits = level_limits;
     if (isSequence()){
-        getGridSequence()->setSurplusRefinement(tolerance, output, llimits);
+        get<GridSequence>()->setSurplusRefinement(tolerance, output, llimits);
     }else if (isGlobal()){
-        if (OneDimensionalMeta::isSequence(getGridGlobal()->getRule())){
-            getGridGlobal()->setSurplusRefinement(tolerance, output, llimits);
+        if (OneDimensionalMeta::isSequence(get<GridGlobal>()->getRule())){
+            get<GridGlobal>()->setSurplusRefinement(tolerance, output, llimits);
         }else{
             throw std::runtime_error("ERROR: setSurplusRefinement called for a Global grid with non-sequence rule");
         }
@@ -897,9 +883,9 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
         llimits = Utils::copyArray(level_limits, dims); // if level_limits is null, we want to keep llimits unchanged
 
     if (isLocalPolynomial()){
-        getGridLocalPolynomial()->setSurplusRefinement(tolerance, criteria, output, llimits, scale_correction);
+        get<GridLocalPolynomial>()->setSurplusRefinement(tolerance, criteria, output, llimits, scale_correction);
     }else{
-        getGridWavelet()->setSurplusRefinement(tolerance, criteria, output, llimits);
+        get<GridWavelet>()->setSurplusRefinement(tolerance, criteria, output, llimits);
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
@@ -946,11 +932,11 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDept
     if (!level_limits.empty()) llimits = level_limits;
     std::vector<double> x;
     if (isGlobal()){
-        x = getGridGlobal()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
+        x = get<GridGlobal>()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
     }else if (isSequence()){
-        x = getGridSequence()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
+        x = get<GridSequence>()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
     }else{ // Fourier
-        x = getGridFourier()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
+        x = get<GridFourier>()->getCandidateConstructionPoints(type, anisotropic_weights, llimits);
     }
     formTransformedPoints((int) x.size() / getNumDimensions(), x.data());
     return x;
@@ -967,11 +953,11 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDept
     if (!level_limits.empty()) llimits = level_limits;
     std::vector<double> x;
     if (isGlobal()){
-        x = getGridGlobal()->getCandidateConstructionPoints(type, output, llimits);
+        x = get<GridGlobal>()->getCandidateConstructionPoints(type, output, llimits);
     }else if (isSequence()){
-        x = getGridSequence()->getCandidateConstructionPoints(type, output, llimits);
+        x = get<GridSequence>()->getCandidateConstructionPoints(type, output, llimits);
     }else{ // Fourier
-        x = getGridFourier()->getCandidateConstructionPoints(type, output, llimits);
+        x = get<GridFourier>()->getCandidateConstructionPoints(type, output, llimits);
     }
     formTransformedPoints((int) x.size() / getNumDimensions(), x.data());
     return x;
@@ -987,7 +973,7 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(double t
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling getCandidateConstructionPoints() with invalid output");
 
     if (!level_limits.empty()) llimits = level_limits;
-    auto x = getGridLocalPolynomial()->getCandidateConstructionPoints(tolerance, criteria, output, llimits, ((scale_correction.empty()) ? nullptr : scale_correction.data()));
+    auto x = get<GridLocalPolynomial>()->getCandidateConstructionPoints(tolerance, criteria, output, llimits, ((scale_correction.empty()) ? nullptr : scale_correction.data()));
     formTransformedPoints((int) x.size() / getNumDimensions(), x.data());
     return x;
 }
@@ -1014,7 +1000,7 @@ void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance
     if (!isLocalPolynomial()){
         throw std::runtime_error("ERROR: removePointsBySurplus() called for a grid that is not Local Polynomial.");
     }else{
-        if (getGridLocalPolynomial()->removePointsByHierarchicalCoefficient(tolerance, output, scale_correction) == 0){
+        if (get<GridLocalPolynomial>()->removePointsByHierarchicalCoefficient(tolerance, output, scale_correction) == 0){
             clear();
         }
     }
@@ -1039,11 +1025,11 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[],
     CudaVector<double> gpu_temp_x;
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
     if (isLocalPolynomial()){
-        getGridLocalPolynomial()->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y);
+        get<GridLocalPolynomial>()->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y);
     }else if (isFourier()){
-        getGridFourier()->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
+        get<GridFourier>()->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
     }else{
-        getGridSequence()->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
+        get<GridSequence>()->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
     }
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const{
@@ -1054,7 +1040,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gp
     const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
     CudaVector<int> vec_pntr, vec_indx;
     CudaVector<double> vec_vals;
-    getGridLocalPolynomial()->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, vec_pntr, vec_indx, vec_vals);
+    get<GridLocalPolynomial>()->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, vec_pntr, vec_indx, vec_vals);
     num_nz = (int) vec_indx.size();
     gpu_pntr = vec_pntr.eject();
     gpu_indx = vec_indx.eject();
@@ -1074,7 +1060,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const std::vector<
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x.data(), x_tmp, num_x);
     if (isLocalPolynomial()){
-        getGridLocalPolynomial()->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
+        get<GridLocalPolynomial>()->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
     }else if (isWavelet()){
         int num_points = base->getNumPoints();
         std::vector<double> dense_vals(((size_t) num_points) * ((size_t) num_x));
@@ -1104,11 +1090,11 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     int num_nz = 0;
     if (isLocalPolynomial()){
-        num_nz = getGridLocalPolynomial()->getSpareBasisMatrixNZ(x_canonical, num_x);
+        num_nz = get<GridLocalPolynomial>()->getSpareBasisMatrixNZ(x_canonical, num_x);
     }else if (isWavelet()){
         int num_points = base->getNumPoints();
         Data2D<double> dense_vals(num_points, num_x);
-        getGridWavelet()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
+        get<GridWavelet>()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;
     }else if (empty()){
         return 0;
@@ -1122,7 +1108,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     if (isLocalPolynomial()){
-        getGridLocalPolynomial()->buildSpareBasisMatrixStatic(x_canonical, num_x, 32, pntr, indx, vals);
+        get<GridLocalPolynomial>()->buildSpareBasisMatrixStatic(x_canonical, num_x, 32, pntr, indx, vals);
     }else if (isWavelet()){
         int num_points = base->getNumPoints();
         Data2D<double> dense_vals(num_points, num_x);
@@ -1165,24 +1151,24 @@ void TasmanianSparseGrid::integrateHierarchicalFunctions(double integrals[]) con
 
 std::vector<int> TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolation) const{
     if (isGlobal()){
-        return getGridGlobal()->getPolynomialSpace(interpolation);
+        return get<GridGlobal>()->getPolynomialSpace(interpolation);
     }else if (isSequence()){
-        return getGridSequence()->getPolynomialSpace(interpolation);
+        return get<GridSequence>()->getPolynomialSpace(interpolation);
     }else{
         throw std::runtime_error("ERROR: getGlobalPolynomialSpace() called for a grid that is neither Global nor Sequence");
     }
 }
 const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
     if (isLocalPolynomial()){
-        return getGridLocalPolynomial()->getSurpluses();
+        return get<GridLocalPolynomial>()->getSurpluses();
     }else if (isWavelet()){
-        return getGridWavelet()->getSurpluses();
+        return get<GridWavelet>()->getSurpluses();
     }else if (isSequence()){
-        return getGridSequence()->getSurpluses();
+        return get<GridSequence>()->getSurpluses();
     }else if (isGlobal()){
-        return getGridGlobal()->getLoadedValues();
+        return get<GridGlobal>()->getLoadedValues();
     }else if (isFourier()){
-        return getGridFourier()->getFourierCoefs();
+        return get<GridFourier>()->getFourierCoefs();
     }else{
         return nullptr;
     }
@@ -1196,7 +1182,7 @@ const int* TasmanianSparseGrid::getPointsIndexes() const{
 }
 const int* TasmanianSparseGrid::getNeededIndexes() const{
     if (isLocalPolynomial()){
-        return getGridLocalPolynomial()->getNeededIndexes();
+        return get<GridLocalPolynomial>()->getNeededIndexes();
     }else{
         throw std::runtime_error("ERROR: getPointIndexes() called for a grid that is not Local Polynomial");
     }
@@ -1543,7 +1529,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     }
 }
 void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
-    if (isLocalPolynomial()) getGridLocalPolynomial()->setFavorSparse(favor);
+    if (isLocalPolynomial()) get<GridLocalPolynomial>()->setFavorSparse(favor);
 }
 TypeAcceleration TasmanianSparseGrid::getAccelerationType() const{
     return acceleration;
@@ -1596,7 +1582,6 @@ void TasmanianSparseGrid::setGPUID(int new_gpu_id){
         #endif
     }
 }
-int TasmanianSparseGrid::getGPUID() const{ return gpu_id; }
 
 int TasmanianSparseGrid::getNumGPUs(){
     #ifdef Tasmanian_ENABLE_CUDA

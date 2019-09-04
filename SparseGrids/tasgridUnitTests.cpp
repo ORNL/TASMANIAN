@@ -233,13 +233,12 @@ bool GridUnitTester::testAPIconsistency(){
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "domain transform" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
 
-    std::vector<int> llimits;
     int allimits[3] = {1, 2, 3};
     grid.makeGlobalGrid(3, 2, 5, type_iptotal, rule_fejer2, 0, 0.0, 0.0, 0, allimits);
-    grid.getLevelLimits(llimits);
+    auto llimits = grid.getLevelLimits();
     pass = pass && doesMatch(llimits, allimits) && (llimits.size() == 3);
     grid.clearLevelLimits();
-    grid.getLevelLimits(llimits);
+    llimits = grid.getLevelLimits();
     if (llimits.size() != 0) pass = false;
 
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "level limits" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
