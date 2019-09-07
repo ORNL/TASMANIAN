@@ -77,7 +77,7 @@ set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py
                                 testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py
                                 testRefinement.py testUnstructuredData.py testMisc.py testAddons.py testDream.py
                                 example_sparse_grids_05.py example_sparse_grids_06.py
-                                example_dream_01.py example_dream_02.py example_dream_03.py)
+                                example_dream_01.py example_dream_02.py example_dream_03.py example_dream_04.py)
 
 foreach(Tasmanian_python_testing_file ${Tasmanian_python_test_files})
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${Tasmanian_python_testing_file}"

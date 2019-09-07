@@ -41,9 +41,11 @@ import Tasmanian
 import example_dream_01
 import example_dream_02
 import example_dream_03
+import example_dream_04
 
 if __name__ == "__main__":
     example_dream_01.example_01()
     example_dream_02.example_02()
     example_dream_03.example_03()
+    example_dream_04.example_04()
     print("")

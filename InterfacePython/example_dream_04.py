@@ -36,39 +36,41 @@ from Tasmanian import makeSequenceGrid
 from Tasmanian import loadNeededPoints
 import numpy
 
-def example_03():
+def example_04():
     print("\n---------------------------------------------------------------------------------------------------\n")
-    print("EXAMPLE 3: set the inference problem: identify x_0 and x_1 model parameters")
-    print("           from data (noise free example)")
-    print("           model: f(x) = sin(x_0*M_PI*t + x_1),")
-    print("           data: d = sin(5*M_PI*t + 0.3*M_PI) + sin(10*M_PI*t + 0.1*M_PI)")
-    print("           compared to Example 2, the data is a superposition of two signals")
-    print("           and the posterior is multi-modal")
-    print("             -- problem setup --")
-    print("           t in [0,1], t is discretized with 32 equidistant nodes")
-    print("           the likelihood is exp(- 16 * (f(x) - d)^2)")
+    print("EXAMPLE 4: similar to Example 3, but the data is noisy and the multi-modal posterior comes")
+    print("           from a symmetry in the model")
+    print("           set inference problem: identify x_0, x_1, x_2 and x_3 (four) model parameters")
+    print("                                  from noisy data")
+    print("           model: f(x) = x_0*exp(x_1*t) + x_2*exp(x_3*t),  data: d = exp(t) + 0.4*exp(3*t)")
+    print("           note the symmetry between x_1 and x_3 which results in a bi-modal posterior")
+    print("           t in [0,1], t is discretized with 64 equidistant nodes")
+    print("           likelihood is exp(-64 * (f(x) - d)^2)")
     print("           using a sparse grid to interpolate the model\n")
 
-    iNumDimensions = 2
-    iNumOutputs = 32
-    iNumChains = 500
-    iNumBurnupIterations = 1000
-    iNumCollectIterations = 300
+    iNumDimensions = 4
+    iNumOutputs = 64
+    iNumChains = 50
+    iNumBurnupIterations  = 1000
+    iNumCollectIterations = 1000
 
     def model(aX):
-        # using 32 nodes in the interior of (0.0, 1.0)
-        t = numpy.linspace(1.0 / 64.0, 1.0 - 1.0 / 64.0, 32)
-        return numpy.sin(numpy.pi * aX[0] * t + aX[1])
+        # using 64 nodes in the interior of (0.0, 1.0)
+        t = numpy.linspace(1.0 / 128.0, 1.0 - 1.0 / 128.0, 64)
+        return aX[0] * numpy.exp(aX[1] * t) + aX[2] * numpy.exp(aX[3] * t)
 
-    aData = model([5.0, 0.3 * numpy.pi]) + model([10.0, 0.1 * numpy.pi])
+    aData = (model([1.0, 1.0, 0.4, 3.0]) # add noise
+        + DREAM.tsgGenGaussianSamples([0.0 for i in range(iNumOutputs)],
+                                      [1.0 / float(iNumOutputs) for i in range(iNumOutputs)]
+                                      , 1).reshape((iNumOutputs,)))
 
-    grid = makeSequenceGrid(iNumDimensions, iNumOutputs, 30, 'iptotal', 'leja')
+    grid = makeSequenceGrid(iNumDimensions, iNumOutputs, 15, 'iptotal', 'leja')
 
-    domain_lower = numpy.array([ 1.0, -0.1])
-    domain_upper = numpy.array([12.0,  1.7])
+    domain_lower = numpy.array([0.2, 0.5, 0.2, 0.5])
+    domain_upper = numpy.array([1.2, 4.0, 1.2, 4.0])
     grid.setDomainTransform(numpy.column_stack([domain_lower, domain_upper]))
 
-    loadNeededPoints(lambda x, tid : model(x), grid, 2)
+    loadNeededPoints(lambda x, tid : model(x), grid, 1)
 
     likely = DREAM.LikelihoodGaussIsotropic(1.0 / float(iNumOutputs), aData)
 
@@ -80,35 +82,38 @@ def example_03():
                  DREAM.Domain(grid),
                  state,
                  DREAM.IndependentUpdate("gaussian", 0.01),
-                 DREAM.DifferentialUpdate(90),
+                 DREAM.DifferentialUpdate(100),
                  typeForm = DREAM.typeLogform)
 
     aSamples = state.getHistory()
 
-    # split the frequencies into low and high for the two modes of the posterior
-    # here 6.5 is the mid-point of the domain
-    low_frequency = numpy.average(numpy.array(
-        [aSamples[i,0] for i in range(aSamples.shape[0]) if aSamples[i,0] < 6.5]
+    low_scale = numpy.average(numpy.array(
+        [aSamples[i,0] if aSamples[i,1] < aSamples[i,3] else aSamples[i,2]
+         for i in range(aSamples.shape[0])]
     ))
-    low_correction = numpy.average(numpy.array(
-        [aSamples[i,1] for i in range(aSamples.shape[0]) if aSamples[i,0] < 6.5]
+    low_rate = numpy.average(numpy.array(
+        [aSamples[i,1] if aSamples[i,1] < aSamples[i,3] else aSamples[i,3]
+         for i in range(aSamples.shape[0])]
     ))
-    high_frequency = numpy.average(numpy.array(
-        [aSamples[i,0] for i in range(aSamples.shape[0]) if aSamples[i,0] >= 6.5]
+    high_scale = numpy.average(numpy.array(
+        [aSamples[i,0] if aSamples[i,1] >= aSamples[i,3] else aSamples[i,2]
+         for i in range(aSamples.shape[0])]
     ))
-    high_correction = numpy.average(numpy.array(
-        [aSamples[i,1] for i in range(aSamples.shape[0]) if aSamples[i,0] >= 6.5]
+    high_rate = numpy.average(numpy.array(
+        [aSamples[i,1] if aSamples[i,1] >= aSamples[i,3] else aSamples[i,3]
+         for i in range(aSamples.shape[0])]
     ))
 
+    print("Acceptance rate: {0:1.3f}".format(state.getAcceptanceRate()))
     print("Inferred values:")
-    print(" low   frequency:{0:13.6f}   error:{1:14.6e}".format(low_frequency,
-                                                     numpy.abs(low_frequency - 5.0)))
-    print(" low  correction:{0:13.6f}   error:{1:14.6e}\n".format(low_correction,
-                                                     numpy.abs(low_correction - 0.3 * numpy.pi)))
-    print(" high  frequency:{0:13.6f}   error:{1:14.6e}".format(high_frequency,
-                                                     numpy.abs(high_frequency - 10.0)))
-    print(" high correction:{0:13.6f}   error:{1:14.6e}".format(high_correction,
-                                                    numpy.abs(high_correction - 0.1 * numpy.pi)))
+    print(" low   rate:{0:13.6f}   error:{1:14.6e}".format(low_rate,
+                                                     numpy.abs(low_rate - 1.0)))
+    print(" low  scale:{0:13.6f}   error:{1:14.6e}\n".format(low_scale,
+                                                     numpy.abs(low_scale - 1.0)))
+    print(" high  rate:{0:13.6f}   error:{1:14.6e}".format(high_rate,
+                                                     numpy.abs(high_rate - 3.0)))
+    print(" high scale:{0:13.6f}   error:{1:14.6e}".format(high_scale,
+                                                    numpy.abs(high_scale - 0.4)))
 
 if __name__ == "__main__":
-    example_03()
+    example_04()
