@@ -241,10 +241,15 @@ int tsgIsSetDomainTransfrom(void *grid){ return (((TasmanianSparseGrid*) grid)->
 void tsgClearDomainTransform(void *grid){ ((TasmanianSparseGrid*) grid)->clearDomainTransform(); }
 void tsgGetDomainTransform(void *grid, double a[], double b[]){ ((TasmanianSparseGrid*) grid)->getDomainTransform(a, b); }
 
-void tsgSetConformalTransformASIN(void *grid, const int truncation[]){ ((TasmanianSparseGrid*) grid)->setConformalTransformASIN(truncation); }
+void tsgSetConformalTransformASIN(void *grid, const int truncation[]){
+    ((TasmanianSparseGrid*) grid)->setConformalTransformASIN(Utils::copyArray(truncation, ((TasmanianSparseGrid*) grid)->getNumDimensions()));
+}
 int tsgIsSetConformalTransformASIN(void *grid){ return (((TasmanianSparseGrid*) grid)->isSetConformalTransformASIN()) ? 1 : 0; }
 void tsgClearConformalTransform(void *grid){ ((TasmanianSparseGrid*) grid)->clearConformalTransform(); }
-void tsgGetConformalTransformASIN(void *grid, int truncation[]){ ((TasmanianSparseGrid*) grid)->getConformalTransformASIN(truncation); }
+void tsgGetConformalTransformASIN(void *grid, int truncation[]){
+    auto truncation_vector = ((TasmanianSparseGrid*) grid)->getConformalTransformASIN();
+    std::copy(truncation_vector.begin(), truncation_vector.end(), truncation);
+}
 
 void tsgClearLevelLimits(void *grid){ ((TasmanianSparseGrid*) grid)->clearLevelLimits(); }
 void tsgGetLevelLimits(void *grid, int *limits){

@@ -1654,7 +1654,7 @@ bool ExternalTester::testAllDomain() const{
     {
         TasmanianSparseGrid gridc;
         const BaseFunction *f = &f21conformal;
-        int asin_conformal[2] = {4, 4};
+        std::vector<int> asin_conformal = {4, 4};
         for(int l=0; l<6; l++){
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
             gridc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
@@ -1694,7 +1694,7 @@ bool ExternalTester::testAllDomain() const{
     }{
         TasmanianSparseGrid gridc;
         const BaseFunction *f = &f21conformal;
-        int asin_conformal[2] = { 4, 4 };
+        std::vector<int> asin_conformal = { 4, 4 };
         for(int l=0; l<1; l++){
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
             gridc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
@@ -1723,7 +1723,7 @@ bool ExternalTester::testAllDomain() const{
     }{
         TasmanianSparseGrid gridc;
         const BaseFunction *f = &f21conformal;
-        int asin_conformal[2] = { 4, 4 };
+        std::vector<int> asin_conformal = { 4, 4 };
         for(int l=0; l<5; l++){
             grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), l+4, 3, TasGrid::rule_localp);
             gridc.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), l+4, 3, TasGrid::rule_localp);

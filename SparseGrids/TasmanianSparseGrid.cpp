@@ -601,21 +601,19 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
     return scale;
 }
 
-void TasmanianSparseGrid::setConformalTransformASIN(const int truncation[]){
+void TasmanianSparseGrid::setConformalTransformASIN(std::vector<int> const &truncation){
     if (empty()) throw std::runtime_error("ERROR: cannot call setConformalTransformASIN on uninitialized grid!");
     clearConformalTransform();
-    int num_dimensions = base->getNumDimensions();
-    conformal_asin_power.resize(num_dimensions);
-    std::copy(truncation, truncation + num_dimensions, conformal_asin_power.data());
+    conformal_asin_power = truncation;
 }
 bool TasmanianSparseGrid::isSetConformalTransformASIN() const{ return (conformal_asin_power.size() != 0); }
 void TasmanianSparseGrid::clearConformalTransform(){
     conformal_asin_power.clear();
 }
-void TasmanianSparseGrid::getConformalTransformASIN(int truncation[]) const{
+std::vector<int> TasmanianSparseGrid::getConformalTransformASIN() const{
     if (empty() || (conformal_asin_power.size() == 0))
         throw std::runtime_error("ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!");
-    std::copy(conformal_asin_power.begin(), conformal_asin_power.end(), truncation);
+    return conformal_asin_power;
 }
 
 void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions, int num_points, double x[]) const{

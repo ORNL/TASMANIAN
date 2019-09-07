@@ -204,10 +204,13 @@ void tsgcre_(TasmanianSparseGrid **grid){ (*grid)->clearRefinement(); }
 void tsgmre_(TasmanianSparseGrid **grid){ (*grid)->mergeRefinement(); }
 
 // set/is/clear/getConformalTransform
-void tsgsca_(TasmanianSparseGrid **grid, int *trunc){ (*grid)->setConformalTransformASIN(trunc); }
+void tsgsca_(TasmanianSparseGrid **grid, int *trunc){ (*grid)->setConformalTransformASIN(Utils::copyArray(trunc, (*grid)->getNumDimensions())); }
 void tsgica_(TasmanianSparseGrid **grid, int *result){ *result = ((*grid)->isSetConformalTransformASIN()) ? 1 : 0; }
 void tsgcct_(TasmanianSparseGrid **grid){ (*grid)->clearConformalTransform(); }
-void tsggca_(TasmanianSparseGrid **grid, int *trunc){ (*grid)->getConformalTransformASIN(trunc); }
+void tsggca_(TasmanianSparseGrid **grid, int *trunc){
+    auto truncation_vector = (*grid)->getConformalTransformASIN();
+    std::copy(truncation_vector.begin(), truncation_vector.end(), trunc);
+}
 
 // isGlobal/Sequence/LocalPolynomial/Wavelet/Fourier
 void tsgisg_(TasmanianSparseGrid **grid, int *status){*status = ((*grid)->isGlobal()) ? 1 : 0;}
