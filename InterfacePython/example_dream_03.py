@@ -30,20 +30,26 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-# The sys.path.append() command is necessary only if Tasmanian is
-# not included in the system PYTHONPATH
-# If PYTHONPATH is set (e.g., source TasmanianENVsetup.sh) you can jump
-# straight to import Tasmanian
-import sys
-@Tasmanian_python_example_import@
-import Tasmanian
+from Tasmanian import DREAM
+from Tasmanian import SparseGrid
+from Tasmanian import makeSequenceGrid
+from Tasmanian import loadNeededPoints
+import numpy
 
-import example_dream_01
-import example_dream_02
-import example_dream_03
+def example_03():
+    print("\n---------------------------------------------------------------------------------------------------\n")
+    print("EXAMPLE 3: set the inference problem: identify x_0 and x_1 model parameters")
+    print("           from data (noise free example)")
+    print("           model: f(x) = sin(x_0*M_PI*t + x_1),")
+    print("           data: d = sin(5*M_PI*t + 0.3*M_PI) + sin(10*M_PI*t + 0.1*M_PI)")
+    print("           compared to Example 2, the data is a superposition of two signals")
+    print("           and the posterior is multi-modal")
+    print("             -- problem setup --")
+    print("           t in [0,1], t is discretized with 32 equidistant nodes")
+    print("           the likelihood is exp(- 16 * (f(x) - d)^2)")
+    print("           using a sparse grid to interpolate the model")
+    print("     NOTE: 16 = 32/2 corresponds to the discretization error in t\n")
+
 
 if __name__ == "__main__":
-    example_dream_01.example_01()
-    example_dream_02.example_02()
-    example_dream_03.example_03()
-    print("")
+    example_03()
