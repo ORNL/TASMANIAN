@@ -1002,15 +1002,13 @@ public:
      *      to keep in each direction. The more terms, the more pronounced the transformation becomes;
      *      however, too many terms can in fact produce a pole even worse than the original.
      */
-    void setConformalTransformASIN(std::vector<int> const &truncation){ setConformalTransformASIN(truncation.data()); }
-    //! \brief Overload that uses a raw-array, the array must have size getNumDimensions().
-    void setConformalTransformASIN(const int truncation[]);
+    void setConformalTransformASIN(std::vector<int> const &truncation);
     //! \brief Returns \b true if conformal transformation has been set.
     bool isSetConformalTransformASIN() const;
     //! \brief Removes any currently set transformation.
     void clearConformalTransform();
     //! \brief Fills the array with the values of the set transformation.
-    void getConformalTransformASIN(int truncation[]) const;
+    std::vector<int> getConformalTransformASIN() const;
 
     /*!
      * \brief Removes the currently set level limits.

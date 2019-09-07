@@ -601,21 +601,19 @@ double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule 
     return scale;
 }
 
-void TasmanianSparseGrid::setConformalTransformASIN(const int truncation[]){
+void TasmanianSparseGrid::setConformalTransformASIN(std::vector<int> const &truncation){
     if (empty()) throw std::runtime_error("ERROR: cannot call setConformalTransformASIN on uninitialized grid!");
     clearConformalTransform();
-    int num_dimensions = base->getNumDimensions();
-    conformal_asin_power.resize(num_dimensions);
-    std::copy(truncation, truncation + num_dimensions, conformal_asin_power.data());
+    conformal_asin_power = truncation;
 }
 bool TasmanianSparseGrid::isSetConformalTransformASIN() const{ return (conformal_asin_power.size() != 0); }
 void TasmanianSparseGrid::clearConformalTransform(){
     conformal_asin_power.clear();
 }
-void TasmanianSparseGrid::getConformalTransformASIN(int truncation[]) const{
+std::vector<int> TasmanianSparseGrid::getConformalTransformASIN() const{
     if (empty() || (conformal_asin_power.size() == 0))
         throw std::runtime_error("ERROR: cannot call getDomainTransform on uninitialized grid or if no transform has been set!");
-    std::copy(conformal_asin_power.begin(), conformal_asin_power.end(), truncation);
+    return conformal_asin_power;
 }
 
 void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions, int num_points, double x[]) const{
@@ -838,7 +836,6 @@ void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int ou
 }
 
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const int *level_limits){
-    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
     setSurplusRefinement(tolerance, output, Utils::copyArray(level_limits, getNumDimensions()));
 }
@@ -889,18 +886,15 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
-    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
     int dims = base->getNumDimensions();
     size_t nscale = (size_t) base->getNumNeeded();
     if (output != -1) nscale *= (size_t) base->getNumOutputs();
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setSurplusRefinement() requires level_limits with either 0 or dimenions entries");
-    if ((!isLocalPolynomial()) && (!isWavelet()))
-        throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
     if ((!scale_correction.empty()) && (scale_correction.size() != nscale)) throw std::invalid_argument("ERROR: setSurplusRefinement() incorrect size for scale_correction");
 
     if (!level_limits.empty()) llimits = level_limits;
-    setSurplusRefinement(tolerance, criteria, output, nullptr, scale_correction.data());
+    setSurplusRefinement(tolerance, criteria, output, nullptr, (scale_correction.empty()) ? nullptr : scale_correction.data());
 }
 
 void TasmanianSparseGrid::clearRefinement(){

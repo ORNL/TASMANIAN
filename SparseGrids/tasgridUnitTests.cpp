@@ -630,8 +630,7 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
         },
         [](void)->void{
             auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
-            std::vector<int> transform(2);
-            grid.getConformalTransformASIN(transform.data());  // transform not initialized
+            auto transform = grid.getConformalTransformASIN();  // transform not initialized
         },
         [](void)->void{
             auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
