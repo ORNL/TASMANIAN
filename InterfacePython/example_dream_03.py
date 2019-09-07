@@ -76,7 +76,7 @@ def example_03():
     state.setState(DREAM.genUniformSamples(domain_lower, domain_upper, state.getNumChains()))
 
     DREAM.Sample(iNumBurnupIterations, iNumCollectIterations,
-                 DREAM.Posterior(grid, likely, prior = "uniform"),
+                 DREAM.Posterior(grid, likely, prior = "uniform", typeForm = DREAM.typeLogform),
                  DREAM.Domain(grid),
                  state,
                  DREAM.IndependentUpdate("gaussian", 0.01),
