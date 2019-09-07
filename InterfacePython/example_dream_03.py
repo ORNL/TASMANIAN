@@ -107,7 +107,7 @@ def example_03():
                                                      numpy.abs(low_correction - 0.3 * numpy.pi)))
     print(" high  frequency:{0:13.6f}   error:{1:14.6e}".format(high_frequency,
                                                      numpy.abs(high_frequency - 10.0)))
-    print(" high correction:{0:13.6f}   error:{1:14.6e}\n".format(high_correction,
+    print(" high correction:{0:13.6f}   error:{1:14.6e}".format(high_correction,
                                                     numpy.abs(high_correction - 0.1 * numpy.pi)))
 
 if __name__ == "__main__":
