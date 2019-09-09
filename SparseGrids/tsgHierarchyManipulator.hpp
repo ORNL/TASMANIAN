@@ -31,7 +31,6 @@
 #ifndef __TSG_HIERARCHY_MANIPULATOR_HPP
 #define __TSG_HIERARCHY_MANIPULATOR_HPP
 
-#include "tsgIndexSets.hpp"
 #include "tsgRuleLocalPolynomial.hpp"
 #include "tsgIndexManipulator.hpp"
 
