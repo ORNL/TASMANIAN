@@ -30,24 +30,17 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-# The sys.path.append() command is necessary only if Tasmanian is
-# not included in the system PYTHONPATH
-# If PYTHONPATH is set (e.g., source TasmanianENVsetup.sh) you can jump
-# straight to import Tasmanian
-import sys
-@Tasmanian_python_example_import@
-import Tasmanian
+from Tasmanian import DREAM
+import numpy
 
-import example_dream_01
-import example_dream_02
-import example_dream_03
-import example_dream_04
-import example_dream_05
+def example_05():
+    print("\n---------------------------------------------------------------------------------------------------\n")
+    print("EXAMPLE 5: infer the frequency and magnitude of two signals from noisy data")
+    print("           the model has 5 parameters: f(x_1 ... x_5) = sum x_k sin(k * pi * t)")
+    print("           data = 2.0 * sin(2 * pi * t) + sin(4 * pi * t) + noise")
+    print("           t in [0, 1], t is discretized using 64 equidistant nodes")
+    print("           using two different likelihood functions, corresponding to l-2 and l-1 norms")
+    print("           looking for the mode of the posterior, i.e., the optimal fit to the data\n")
 
 if __name__ == "__main__":
-    example_dream_01.example_01()
-    example_dream_02.example_02()
-    example_dream_03.example_03()
-    example_dream_04.example_04()
-    example_dream_05.example_05()
-    print("")
+    example_05()
