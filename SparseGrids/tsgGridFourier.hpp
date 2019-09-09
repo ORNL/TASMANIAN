@@ -35,6 +35,7 @@
 
 namespace TasGrid{
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridFourier : public BaseCanonicalGrid {
 public:
     GridFourier();
@@ -226,6 +227,7 @@ private:
     mutable std::unique_ptr<CudaFourierData<double>> cuda_cache;
     #endif
 };
+#endif // __TASMANIAN_DOXYGEN_SKIP
 
 }
 

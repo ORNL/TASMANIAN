@@ -35,6 +35,7 @@
 
 namespace TasGrid{
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridWavelet : public BaseCanonicalGrid{
 public:
     GridWavelet();
@@ -138,6 +139,7 @@ private:
     mutable std::unique_ptr<CudaWaveletData<double>> cuda_cache;
     #endif
 };
+#endif // __TASMANIAN_DOXYGEN_SKIP
 
 }
 

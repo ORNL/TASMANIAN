@@ -37,6 +37,7 @@ namespace TasGrid{
 
 #ifdef Tasmanian_ENABLE_CUDA
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 //! \internal
 //! \brief Wrapper structure for the vectors needed by Sequence grid CUDA methods.
 
@@ -83,6 +84,7 @@ template<typename FP>
 struct CudaWaveletData{
     CudaVector<FP> coefficients;
 };
+#endif // __TASMANIAN_DOXYGEN_SKIP
 
 #endif
 

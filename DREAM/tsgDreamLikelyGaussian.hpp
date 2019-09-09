@@ -31,9 +31,6 @@
 #ifndef __TASMANIAN_DREAM_LIKELY_GAUSS_HPP
 #define __TASMANIAN_DREAM_LIKELY_GAUSS_HPP
 
-#include <numeric>
-#include <stdexcept>
-
 #include "tsgDreamLikelihoodCore.hpp"
 
 //! \file tsgDreamLikelyGaussian.hpp

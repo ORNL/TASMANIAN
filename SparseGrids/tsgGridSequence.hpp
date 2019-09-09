@@ -35,6 +35,7 @@
 
 namespace TasGrid{
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridSequence : public BaseCanonicalGrid{
 public:
     GridSequence();
@@ -199,6 +200,7 @@ private:
     mutable std::unique_ptr<CudaSequenceData<double>> cuda_cache;
     #endif
 };
+#endif // __TASMANIAN_DOXYGEN_SKIP
 
 }
 

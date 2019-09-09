@@ -60,15 +60,23 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/tsgIOHelpers.hpp
                  SparseGrids/tsgHiddenExternals.hpp
                  SparseGrids/tsgAcceleratedDataStructures.hpp
+                 SparseGrids/tsgCudaLoadStructures.hpp
                  SparseGrids/tsgCacheLagrange.hpp
                  SparseGrids/tsgCoreOneDimensional.hpp
-                 SparseGrids/tsgCoreOneDimensional.hpp
                  SparseGrids/tsgOneDimensionalWrapper.hpp
+                 SparseGrids/tsgHardCodedTabulatedRules.hpp
                  SparseGrids/tsgLinearSolvers.hpp
                  SparseGrids/tsgDConstructGridGlobal.hpp
                  SparseGrids/tsgSequenceOptimizer.hpp
                  SparseGrids/tsgSequenceOptimizer.cpp
+                 SparseGrids/tsgRuleWavelet.hpp
+                 SparseGrids/tsgRuleLocalPolynomial.hpp
                  SparseGrids/tsgGridCore.hpp
+                 SparseGrids/tsgGridGlobal.hpp
+                 SparseGrids/tsgGridSequence.hpp
+                 SparseGrids/tsgGridLocalPolynomial.hpp
+                 SparseGrids/tsgGridWavelet.hpp
+                 SparseGrids/tsgGridFourier.hpp
                  DREAM/tsgDreamEnumerates.hpp
                  DREAM/tsgDreamState.hpp
                  DREAM/tsgDreamSample.hpp

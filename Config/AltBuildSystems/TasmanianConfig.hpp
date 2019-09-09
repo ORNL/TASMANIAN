@@ -53,7 +53,4 @@
 /* #undef Tasmanian_ENABLE_MAGMA */
 /* #undef Tasmanian_ENABLE_MPI */
 
-// used mostly to suppress default cerr messages
-/* #undef USE_XSDK_DEFAULTS */
-
 #endif

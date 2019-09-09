@@ -61,7 +61,7 @@ def example_01():
 
     print("Using regular form:")
     print("mean    {0:13.6f}   error {1:14.6e}".format(aMean[0], numpy.abs(aMean[0])))
-    print("variance{0:13.6f}   error {1:14.6e}".format(aVariance[0], numpy.abs(aVariance[0])))
+    print("variance{0:13.6f}   error {1:14.6e}".format(aVariance[0], numpy.abs(aVariance[0] -0.5)))
 
     # reset the state
     state = DREAM.State(iNumChains, GridOrIntDimensions = iNumDimensions)

@@ -35,6 +35,7 @@
 
 namespace TasGrid{
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 class BaseRuleLocalPolynomial{
 public:
     BaseRuleLocalPolynomial() : max_order(0){}
@@ -365,6 +366,7 @@ protected:
         return value;
     }
 };
+#endif // __TASMANIAN_DOXYGEN_SKIP
 
 
 }

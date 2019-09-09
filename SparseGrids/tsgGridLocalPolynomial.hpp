@@ -50,6 +50,7 @@
 
 namespace TasGrid{
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridLocalPolynomial : public BaseCanonicalGrid{
 public:
     GridLocalPolynomial();
@@ -370,7 +371,7 @@ private:
     mutable std::unique_ptr<CudaLocalPolynomialData<double>> cuda_cache;
     #endif
 };
-
+#endif // __TASMANIAN_DOXYGEN_SKIP
 }
 
 #endif

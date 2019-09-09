@@ -33,14 +33,17 @@
 
 #include "tsgLinearSolvers.hpp"
 
-//! \internal
-//! \file tsgCoreOneDimensional.hpp
-//! \brief Algorithms and meta-data for the Gauuss, Chebyshev and custom rules.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianCoreOneDimensional
-//!
-//! Contains core information about one dimensional rules, custom tabulated,
-//! Chebyshev and Gaussian rules. Also, generic I/O data.
+/*!
+ * \internal
+ * \file tsgCoreOneDimensional.hpp
+ * \brief Algorithms and meta-data for the Gauuss, Chebyshev and custom rules.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianCoreOneDimensional
+ *
+ * Contains core information about one dimensional rules, custom tabulated,
+ * Chebyshev and Gaussian rules. Also, generic I/O data.
+ * \endinternal
+ */
 
 /*!
  * \internal
@@ -51,6 +54,7 @@
  * Contains information about all one dimensional rules, number of nodes, exactness, IO meta-data.
  * The CustomTabulated class for managing a user provided rule is also included,
  * as well as methods for generating Gaussian and Chebyshev nodes and weights.
+ * \endinternal
  */
 
 namespace TasGrid{
