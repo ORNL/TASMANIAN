@@ -36,6 +36,7 @@
 namespace TasGrid{
 // These macros are used in accessing coarse and fine level coefficients for the cascade algorithm.
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 class RuleWavelet{
 public:
     RuleWavelet(int order, int iter_depth);
@@ -73,6 +74,7 @@ protected:
     std::vector<std::vector<double>> data;
     std::vector<double> cachexs;
 };
+#endif // __TASMANIAN_DOXYGEN_SKIP
 
 } // namespace TasGrid
 #endif // __TASMANIAN_SPARSE_GRID_WAVELET_RULE_HPP

@@ -36,6 +36,7 @@
 
 namespace TasGrid{
 
+#ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridGlobal : public BaseCanonicalGrid{
 public:
     GridGlobal();
@@ -159,6 +160,7 @@ private:
     mutable CudaVector<double> cuda_values;
     #endif
 };
+#endif // __TASMANIAN_DOXYGEN_SKIP
 
 }
 
