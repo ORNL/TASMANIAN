@@ -636,6 +636,9 @@ void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, d
 void GridGlobal::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
     throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for global grids.");
 }
+void GridGlobal::evaluateHierarchicalFunctionsGPU(const double[], int, double *) const{
+    throw std::runtime_error("ERROR: gpu basis evaluations are not available for global grids.");
+}
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{

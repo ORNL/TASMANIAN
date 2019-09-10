@@ -87,6 +87,7 @@ public:
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateBatchGPU(CudaEngine*, const double[], int, double[]) const;
+    void evaluateHierarchicalFunctionsGPU(const double[], int, double *) const;
     #endif
 
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;

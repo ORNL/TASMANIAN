@@ -272,6 +272,9 @@ void GridWavelet::evaluateCuda(CudaEngine *engine, const double x[], int num_x, 
 void GridWavelet::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
     throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for wavelet grids.");
 }
+void GridWavelet::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
+    throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() is not available for wavelet grids.");
+}
 #endif
 
 void GridWavelet::integrate(double q[], double *conformal_correction) const{
