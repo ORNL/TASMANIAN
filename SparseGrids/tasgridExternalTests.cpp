@@ -1810,7 +1810,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
 
         #ifdef Tasmanian_ENABLE_CUDA
-        if ((grid->getAccelerationType() == accel_gpu_cuda) && (!grid->isGlobal()) && (!grid->isWavelet())){
+        if ((grid->getAccelerationType() == accel_gpu_cuda) && (!grid->isGlobal()) && !(grid->isWavelet() && grid->getOrder() == 3)){
             CudaVector<double> gpu_x(x), gpu_y(outs, num_x);
             grid->evaluateBatchGPU(gpu_x.data(), num_x, gpu_y.data());
             gpu_y.unload(test_y);

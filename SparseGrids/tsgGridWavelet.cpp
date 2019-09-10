@@ -277,8 +277,14 @@ void GridWavelet::evaluateCudaMixed(CudaEngine *engine, const double x[], int nu
     engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.getVector(), y);
 }
 void GridWavelet::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
-void GridWavelet::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
-    throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for wavelet grids.");
+void GridWavelet::evaluateBatchGPU(CudaEngine *engine, const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
+    if (order != 1) throw std::runtime_error("ERROR: GPU evaluations are available only for wavelet grids with order 1");
+    loadCudaCoefficients();
+    int num_points = points.getNumIndexes();
+
+    CudaVector<double> gpu_basis(cpu_num_x, num_points);
+    evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, cuda_cache->coefficients, gpu_basis, 0.0, gpu_y);
 }
 void GridWavelet::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
     loadCudaBasis();
