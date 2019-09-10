@@ -276,7 +276,17 @@ void GridWavelet::evaluateCudaMixed(CudaEngine *engine, const double x[], int nu
 
     engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.getVector(), y);
 }
-void GridWavelet::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
+void GridWavelet::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+    if ((order != 1) || (num_x == 1)){
+        // GPU evaluations are available only for order 1
+        // cannot use GPU to accelerate the evaluation of a single vector
+        evaluateCudaMixed(engine, x, num_x, y);
+        return;
+    }
+    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_result.data());
+    gpu_result.unload(y);
+}
 void GridWavelet::evaluateBatchGPU(CudaEngine *engine, const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
     if (order != 1) throw std::runtime_error("ERROR: GPU evaluations are available only for wavelet grids with order 1");
     loadCudaCoefficients();
