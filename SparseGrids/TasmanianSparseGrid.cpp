@@ -1013,18 +1013,11 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double
 }
 #ifdef Tasmanian_ENABLE_CUDA
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
-    if (isGlobal() || isWavelet()) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() is not available for Wavelet and Global grids.");
+    if (isGlobal()) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() is not available for Wavelet and Global grids.");
     if (!engine) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     engine->setDevice();
     CudaVector<double> gpu_temp_x;
-    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
-    if (isLocalPolynomial()){
-        get<GridLocalPolynomial>()->buildDenseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, gpu_y);
-    }else if (isFourier()){
-        get<GridFourier>()->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
-    }else{
-        get<GridSequence>()->evaluateHierarchicalFunctionsGPU(gpu_canonical_x, cpu_num_x, gpu_y);
-    }
+    base->evaluateHierarchicalFunctionsGPU(formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const{
     if (!isLocalPolynomial()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() is allowed only for local polynomial grid.");

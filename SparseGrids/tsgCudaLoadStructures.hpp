@@ -82,7 +82,7 @@ struct CudaLocalPolynomialData{
 //! The \b coefficients are the hierarchical coefficients and used in the linear algebra (stage 2) of the evaluations.
 template<typename FP>
 struct CudaWaveletData{
-    CudaVector<FP> coefficients;
+    CudaVector<FP> coefficients, nodes, support;
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
 

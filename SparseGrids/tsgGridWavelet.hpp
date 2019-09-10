@@ -79,6 +79,7 @@ public:
     void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const;
     void evaluateCuda(CudaEngine*, const double*, int, double[]) const;
     void evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const;
+    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits);
@@ -124,6 +125,8 @@ protected:
         if (cuda_cache->coefficients.empty()) cuda_cache->coefficients.load(coefficients.getVector());
     }
     void clearCudaCoefficients(){ if (cuda_cache) cuda_cache->coefficients.clear(); }
+    void loadCudaBasis() const;
+    void clearCudaBasis();
     #endif
 
 private:

@@ -123,7 +123,7 @@ public:
     int getSpareBasisMatrixNZ(const double x[], int num_x) const;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void buildDenseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const;
+    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const;
     void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const;
     #endif
 

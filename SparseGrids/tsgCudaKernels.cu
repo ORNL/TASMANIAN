@@ -78,8 +78,10 @@ void TasCUDA::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int
             default:
                     tasgpu_devalpwpoly<double, 1, rule_localpb, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
-    }else{ // rule == rule_semilocalp
+    }else if (rule == rule_semilocalp){
         tasgpu_devalpwpoly<double, 2, rule_semilocalp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+    }else{ // rule == wavelet
+        tasgpu_devalpwpoly<double, 1, rule_wavelet, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }
 }
 
