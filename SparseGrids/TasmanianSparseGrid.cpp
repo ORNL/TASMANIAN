@@ -1013,7 +1013,7 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double
 }
 #ifdef Tasmanian_ENABLE_CUDA
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
-    if (isGlobal() || isWavelet()) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() is not available for Wavelet and Global grids.");
+    if (isGlobal()) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() is not available for Wavelet and Global grids.");
     if (!engine) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     engine->setDevice();
     CudaVector<double> gpu_temp_x;

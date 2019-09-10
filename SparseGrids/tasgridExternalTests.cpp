@@ -1975,18 +1975,27 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     }
 
     // Sequence Grid evaluations of the basis functions
-    {int numx = 2020;
+    for(int t=0; t<2; t++){
+    int numx = 2020;
 
     std::vector<double> cpux(numx * dims);
     setRandomX(numx * dims, cpux.data());
 
-    grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja);
+    if (t == 0){ // compute reference solution
+        grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja);
+    }else if (t == 1){
+        grid.makeWaveletGrid(dims, 0, 3, 1);
+    }
     //cout << "Memory requirements = " << (grid.getNumPoints() * numx * 8) / (1024 * 1024) << "MB" << endl;
     std::vector<double> truey;
     grid.evaluateHierarchicalFunctions(cpux, truey);
 
     for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
-        grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja);
+        if (t == 0){ // run test
+            grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja);
+        }else if (t == 1){
+            grid.makeWaveletGrid(dims, 0, 3, 1);
+        }
         TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
         grid.enableAcceleration(TasGrid::accel_gpu_cuda);
         grid.setGPUID(gpuID);

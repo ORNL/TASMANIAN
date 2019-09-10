@@ -125,6 +125,8 @@ protected:
         if (cuda_cache->coefficients.empty()) cuda_cache->coefficients.load(coefficients.getVector());
     }
     void clearCudaCoefficients(){ if (cuda_cache) cuda_cache->coefficients.clear(); }
+    void loadCudaBasis() const;
+    void clearCudaBasis();
     #endif
 
 private:

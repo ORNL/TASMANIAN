@@ -58,6 +58,7 @@ public:
     void getChildren(int point, int &first, int &second) const; // Given a point, return the children (if any)
     int getParent(int point) const; // Returns the parent of the given node
 
+    void getShiftScale(int point, double &scale, double &shift) const; // encodes for GPU purposes
 protected:
     inline double eval_linear(int pt, double x) const;
     inline double eval_cubic(int pt, double x) const;

@@ -40,6 +40,7 @@ GridWavelet::GridWavelet() : rule1D(1, 10), order(1){}
 GridWavelet::~GridWavelet(){}
 
 void GridWavelet::reset(){
+    clearAccelerationData();
     points = MultiIndexSet();
     needed = MultiIndexSet();
     values = StorageSet();
@@ -198,12 +199,18 @@ void GridWavelet::loadNeededPoints(const double *vals){
     clearCudaCoefficients();
     #endif
     if (points.empty()){
+        #ifdef Tasmanian_ENABLE_CUDA
+        clearCudaBasis();
+        #endif
         values.setValues(vals);
         points = std::move(needed);
         needed = MultiIndexSet();
     }else if (needed.empty()){
         values.setValues(vals);
     }else{
+        #ifdef Tasmanian_ENABLE_CUDA
+        clearCudaBasis();
+        #endif
         values.addValues(points, needed, vals);
         points.addMultiIndexSet(needed);
         needed = MultiIndexSet();
@@ -215,6 +222,7 @@ void GridWavelet::mergeRefinement(){
     if (needed.empty()) return; // nothing to do
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaCoefficients();
+    clearCudaBasis();
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     size_t size_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
@@ -273,7 +281,32 @@ void GridWavelet::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) co
     throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for wavelet grids.");
 }
 void GridWavelet::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
-    throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() is not available for wavelet grids.");
+    loadCudaBasis();
+    TasCUDA::devalpwpoly(order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cache->nodes.data(), cuda_cache->support.data(), gpu_y);
+}
+void GridWavelet::loadCudaBasis() const{
+    if (!cuda_cache) cuda_cache = std::unique_ptr<CudaWaveletData<double>>(new CudaWaveletData<double>);
+    if (!cuda_cache->nodes.empty()) return;
+
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
+    Data2D<double> cpu_scale(num_dimensions, work.getNumIndexes());
+    Data2D<double> cpu_shift(num_dimensions, work.getNumIndexes());
+
+    for(int i=0; i<work.getNumIndexes(); i++){
+        int const *p = work.getIndex(i);
+        double *scale = cpu_scale.getStrip(i);
+        double *shift = cpu_shift.getStrip(i);
+        for(int j=0; j<num_dimensions; j++)
+            rule1D.getShiftScale(p[j], scale[j], shift[j]);
+    }
+    cuda_cache->nodes.load(cpu_scale.getVector());
+    cuda_cache->support.load(cpu_shift.getVector());
+}
+void GridWavelet::clearCudaBasis(){
+    if (cuda_cache){
+        cuda_cache->nodes.clear();
+        cuda_cache->support.clear();
+    }
 }
 #endif
 

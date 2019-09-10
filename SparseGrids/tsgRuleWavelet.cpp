@@ -373,13 +373,31 @@ inline double RuleWavelet::eval_cubic(int point, double x) const{
     return interpolate(&data[4][5*num_data_points], scale * (x + 1.) -1. - shift);
 }
 
+void RuleWavelet::getShiftScale(int point, double &scale, double &shift) const{
+    if (point < 3){
+        scale = getNode(point);
+        shift = -1.0;
+    }else{
+        int l = Maths::intlog2(point - 1);
+        int subindex = (point - 1) % (1 << l);
+        scale = std::pow(2,l-2);
+        if (subindex == 0){
+            shift = -2.0;
+        }else if (subindex == (1 << l) - 1){
+            shift = -3.0;
+        }else{
+            shift = 0.5 * (double (subindex - 1));
+        }
+    }
+}
+
 inline double RuleWavelet::eval_linear(int point, double x) const{
     // Given a wavelet designated by point and a value x, evaluates the wavelet at x.
 
     // Standard Lifted Wavelets
     int l = Maths::intlog2(point - 1);
     int subindex = (point - 1) % (1 << l);
-    double scale = pow(2,l-2);
+    double scale = std::pow(2,l-2);
 
     // Left Boundary
     if (subindex == 0){

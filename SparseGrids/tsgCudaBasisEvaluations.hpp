@@ -81,6 +81,29 @@ __global__ void tasgpu_m11_to_01(int num_points, T *gpu_x){
     }
 }
 
+__device__ inline double linear_boundary_wavelet(double x){
+    if (fabs(x + 0.5) > 0.5) return 0.0;
+    if (x <= -0.75){
+        return 0.75 * (7.0 * x + 6.0);
+    }else if (x <= -0.5){
+        return -0.25 * (11.0 * x + 6.0);
+    }else{
+        return 0.25 * x;
+    }
+}
+__device__ inline double linear_central_wavelet(double x){
+    if (fabs(x + 0.25) > 0.75) return 0.0;
+    if (x <= -0.5){
+        return -0.5 * x - 0.5;
+    }else if (x >= 0.0){
+        return 0.5 * x - 0.25;
+    }else if (x <= -0.25){
+        return 4.0 * x + 1.75;
+    }else{
+        return -4.0 * x - 0.25;
+    }
+}
+
 // evaluates a single basis function
 // syncronize with GridLocalPolynomial::encodeSupportForGPU() for the meaning of negative support
 // in essense, the formula is that feval = 1 - |x - node| / support, or feval = 1 - (x - node)^2 / support^2
@@ -128,7 +151,7 @@ __device__ inline T tasgpu_devalpwpoly_feval(const double x, const double node, 
                 if (v < 0.0) v = 0.0;
             }
         }
-    }else{
+    }else if (rule == rule_semilocalp){
         if (order == 2){
             v = x - node;
             v *= v;
@@ -137,6 +160,18 @@ __device__ inline T tasgpu_devalpwpoly_feval(const double x, const double node, 
             if (support == -1.0) v = 1.0;
             if (support == -4.0) v = 0.5 * x * (x - 1.0);
             if (support == -5.0) v = 0.5 * x * (x + 1.0);
+        }
+    }else{ // wavelet, node = scale, support = shift and encodes the type of wavelet
+        // sync with RuleWavelet::getShiftScale()
+        if (support == -1.0){ // level 0, using basic hat-functions
+            v = 1.0 - fabs(x - node);
+            if (v < 0.0) v = 0.0;
+        }else if (support == -2.0){ // left boundary
+            v = linear_boundary_wavelet(node * (x + 1.0) - 1.0);
+        }else if (support == -3.0){ // right boundary
+            v = linear_boundary_wavelet(node * (1.0 - x) - 1.);
+        }else{
+            v = linear_central_wavelet(node * (x + 1.0) - 1.0 - support);
         }
     }
     //printf(" v = %1.4e   order = %d   x = %1.4e  node = %1.4e  supp = %1.4e \n", v, order, x, node, support);
