@@ -38,6 +38,18 @@ namespace TasGrid{
 #ifdef Tasmanian_ENABLE_CUDA
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
+
+/*!
+ * \internal
+ * \brief Wrapper structure for the vectors needed by Global grid CUDA methods.
+ *
+ * \endinternal
+ */
+template<typename FP>
+struct CudaGlobalData{
+    CudaVector<FP> values;
+};
+
 //! \internal
 //! \brief Wrapper structure for the vectors needed by Sequence grid CUDA methods.
 

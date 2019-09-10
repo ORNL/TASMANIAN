@@ -135,6 +135,11 @@ protected:
     void loadConstructedTensors();
     std::vector<int> getMultiIndex(const double x[]);
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    void loadCudaValues() const;
+    void clearCudaValues() const;
+    #endif
+
 private:
     TypeOneDRule rule;
     double alpha, beta;
@@ -158,7 +163,7 @@ private:
     std::unique_ptr<DynamicConstructorDataGlobal> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    mutable CudaVector<double> cuda_values;
+    mutable std::unique_ptr<CudaGlobalData<double>> cuda_cache;
     #endif
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
