@@ -632,7 +632,11 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
 
     engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->values, weights.getVector(), y);
 }
-void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
+void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_result.data());
+    gpu_result.unload(y);
+}
 void GridGlobal::evaluateBatchGPU(CudaEngine *engine, const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
     loadCudaValues();
     int num_points = points.getNumIndexes();
