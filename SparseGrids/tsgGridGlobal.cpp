@@ -359,6 +359,9 @@ void GridGlobal::acceptUpdatedTensors(){
         points = std::move(needed);
         needed = MultiIndexSet();
     }else if (!needed.empty()){
+        #ifdef Tasmanian_ENABLE_CUDA
+        clearCudaNodes();
+        #endif
         points.addMultiIndexSet(needed);
         needed = MultiIndexSet();
 
@@ -390,6 +393,9 @@ void GridGlobal::loadNeededPoints(const double *vals){
 }
 void GridGlobal::mergeRefinement(){
     if (needed.empty()) return; // nothing to do
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaValues();
+    #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
     values.setValues(std::vector<double>(Utils::size_mult(num_outputs, num_all_points), 0.0));
     acceptUpdatedTensors();
@@ -549,13 +555,15 @@ void GridGlobal::loadConstructedPoint(const double x[], int numx, const double y
     loadConstructedTensors();
 }
 void GridGlobal::loadConstructedTensors(){
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaValues();
-    #endif
     MultiIndexSet new_tensors, new_points;
     StorageSet new_values;
     dynamic_values->ejectCompleteTensor(tensors, new_tensors, new_points, new_values);
     if (new_tensors.empty()) return; // nothing to do
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaNodes();
+    clearCudaValues();
+    #endif
 
     if (points.empty()){ // no loaded points yet
         values = std::move(new_values);
@@ -661,6 +669,7 @@ void GridGlobal::loadCudaValues() const{
 void GridGlobal::clearCudaValues() const{ if (cuda_cache) cuda_cache->values.clear(); }
 void GridGlobal::loadCudaNodes() const{
     if (!cuda_cache) cuda_cache = std::unique_ptr<CudaGlobalData<double>>(new CudaGlobalData<double>);
+    if (!cuda_cache->nodes.empty()) return; // already loaded
     // data for stage 1 (Lagrange caching)
     cuda_cache->nodes.load((OneDimensionalMeta::isNonNested(rule)) ? wrapper.getAllNodes() : wrapper.getUnique());
     cuda_cache->coeff.load(wrapper.getAllCoeff());
