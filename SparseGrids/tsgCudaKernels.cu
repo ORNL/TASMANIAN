@@ -216,6 +216,48 @@ void TasCUDA::devalfor(int dims, int num_x, const std::vector<int> &max_levels, 
     }
 }
 
+void TasCUDA::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
+                       double const *gpu_x, CudaVector<double> const &nodes, CudaVector<double> const &coeff, CudaVector<double> const &tensor_weights,
+                       CudaVector<int> const &nodes_per_level, CudaVector<int> const &offset_per_level, CudaVector<int> const &map_dimension, CudaVector<int> const &map_level,
+                       CudaVector<int> const &active_tensors, CudaVector<int> const &active_num_points, CudaVector<int> const &dim_offsets,
+                       CudaVector<int> const &map_tensor, CudaVector<int> const &map_index, CudaVector<int> const &map_reference, double *gpu_result){
+    CudaVector<double> cache(num_x, num_basis);
+    int num_blocks = (int) map_dimension.size();
+    if (num_blocks >= 65536) num_blocks = 65536;
+
+    if (is_nested){
+        if (is_clenshawcurtis0){
+            tasgpu_dglo_build_cache<double, _MAX_CUDA_THREADS, true, true><<<num_blocks, _MAX_CUDA_THREADS>>>
+                (dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
+                                        nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
+                                        map_dimension.data(), map_level.data(), cache.data());
+        }else{
+            tasgpu_dglo_build_cache<double, _MAX_CUDA_THREADS, true, false><<<num_blocks, _MAX_CUDA_THREADS>>>
+                (dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
+                                        nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
+                                        map_dimension.data(), map_level.data(), cache.data());
+        }
+    }else{
+        tasgpu_dglo_build_cache<double, _MAX_CUDA_THREADS, false, false><<<num_blocks, _MAX_CUDA_THREADS>>>
+            (dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
+                                    nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
+                                    map_dimension.data(), map_level.data(), cache.data());
+    }
+
+    int mat_size = num_x * num_p;
+    num_blocks = num_x / _MAX_CUDA_THREADS + ((mat_size % _MAX_CUDA_THREADS == 0) ? 0 : 1);
+    if (num_blocks >= 65536) num_blocks = 65536;
+    tasgpu_dglo_eval_zero<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(mat_size, gpu_result);
+
+    num_blocks = (int) map_tensor.size();
+    if (num_blocks >= 65536) num_blocks = 65536;
+    tasgpu_dglo_eval_sharedpoints<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
+        (dims, num_x, (int) map_tensor.size(), num_p, cache.data(),
+        tensor_weights.data(), offset_per_level.data(), dim_offsets.data(), active_tensors.data(), active_num_points.data(),
+        map_tensor.data(), map_index.data(), map_reference.data(), gpu_result);
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //       Linear Algebra
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

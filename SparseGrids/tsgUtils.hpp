@@ -86,6 +86,23 @@ std::vector<typename std::remove_const<T>::type> copyArray(T* x, I size){
 
 /*!
  * \internal
+ * \ingroup TasmanianUtils
+ * \brief Takes a vector of vectors and returns a single contiguous vector.
+ *
+ * \endinternal
+ */
+template<typename T>
+std::vector<T> mergeVectors(std::vector<std::vector<T>> const &vec){
+    size_t total_size = 0;
+    for(auto const &v : vec) total_size += v.size();
+    std::vector<T> result;
+    result.reserve(total_size);
+    for(auto const &v : vec) result.insert(result.end(), v.begin(), v.end());
+    return result;
+}
+
+/*!
+ * \internal
  * \brief Wraps around a C-style of an array and mimics 2D data-structure.
  * \ingroup TasmanianUtils
  *

@@ -540,6 +540,114 @@ __global__ void tasgpu_dfor_eval_sharedpoints(int dims, int num_x, int num_point
     }
 }
 
+// borrowed from https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#atomic-functions
+#if __CUDA_ARCH__ < 600
+__device__ inline double atomicAdd(double* address, double val)
+{
+    unsigned long long int* address_as_ull =
+                              (unsigned long long int*)address;
+    unsigned long long int old = *address_as_ull, assumed;
+
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_ull, assumed,
+                        __double_as_longlong(val +
+                               __longlong_as_double(assumed)));
+
+    // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
+    } while (assumed != old);
+
+    return __longlong_as_double(old);
+}
+#endif
+
+// Builds the cache matrix for global basis evals
+template<typename T, int NUM_THREADS, bool nested, bool is_cc0>
+__global__ void tasgpu_dglo_build_cache(int num_dims, int num_x, int cache_lda, T const *gpu_x, T const *nodes, T const *coeff,
+                                        int const *nodes_per_level, int const *offset_per_level, int const *dim_offsets,
+                                        int const *map_dimension, int const *map_level, T *cache){
+    int blkid = blockIdx.x;
+
+    while(blkid < cache_lda){ // loop over all dim-level pairs
+        int idx = threadIdx.x;
+
+        int dim = map_dimension[blkid]; // get the dim for this thread block
+        int lvl = map_level[blkid]; // get the level for the thread block
+        int num_nodes = nodes_per_level[lvl];
+        int opl = offset_per_level[lvl];
+
+        while(idx < num_x){ // loop over all num_x
+            T x = gpu_x[idx * num_dims + dim]; // get the local x
+
+            int cache_offset = (dim_offsets[dim] + opl) * num_x;
+
+            T c = 1.0;
+            cache[cache_offset + idx] = c;
+            for(int j=0; j<num_nodes-1; j++){
+                c *= (nested) ? (x - nodes[j]) : (x - nodes[opl + j]);
+                cache_offset += num_x;
+                cache[cache_offset + idx] = c;
+            }
+
+            c = (is_cc0) ? (x * x - 1.0) : 1.0;
+            cache[cache_offset + idx] *= c * coeff[opl + num_nodes - 1];
+            cache_offset -= num_x;
+            for(int j=num_nodes-1; j>0; j--){
+                c *= (nested) ? (x - nodes[j]) : (x - nodes[opl + j]);
+                cache[cache_offset + idx] *= c * coeff[opl + j - 1];
+                cache_offset -= num_x;
+            }
+
+            idx += NUM_THREADS;
+        }
+
+        blkid += gridDim.x;
+    }
+}
+
+template <typename T, int THREADS>
+__global__ void tasgpu_dglo_eval_zero(int size, T *result){
+    int i = blockIdx.x * THREADS + threadIdx.x;
+    while(i < size){
+        result[i] = 0.0;
+        i += gridDim.x * THREADS;
+    }
+}
+
+template <typename T, int NUM_THREADS>
+__global__ void tasgpu_dglo_eval_sharedpoints(int num_dims, int num_x, int loop_lda, int result_lda, T const *cache,
+                                              T const *tweights,
+                                              int const *offset_per_level, int const *dim_offsets,
+                                              int const *active_tensors, int const *active_num_points,
+                                              int const *map_tensor, int const *map_index, int const *map_reference,
+                                              T *result){
+    int blkid = blockIdx.x;
+
+    while(blkid < loop_lda){ // loop over all dim-level pairs
+        int idx = threadIdx.x;
+
+        int tensor = map_tensor[blkid]; // get the tensor for this thread block
+        int ref    = map_reference[blkid];
+        int toff   = tensor * num_dims;
+
+        while(idx < num_x){ // loop over all num_x
+            int index  = map_index[blkid]; // get the index for the thread block
+
+            T w = 1.0;
+            for(int j=num_dims-1; j>=0; j--){
+                w *= cache[(dim_offsets[j] + offset_per_level[active_tensors[toff + j]] + index % active_num_points[toff + j]) * num_x + idx];
+                index /= active_num_points[toff + j];
+            }
+
+            atomicAdd(&result[idx * result_lda + ref], tweights[tensor] * w);
+
+            idx += NUM_THREADS;
+        }
+
+        blkid += gridDim.x;
+    }
+}
+
 }
 
 #endif

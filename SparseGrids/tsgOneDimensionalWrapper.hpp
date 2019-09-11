@@ -91,6 +91,23 @@ public:
     //! \brief Get the number of cached levels.
     int getNumLevels() const;
 
+    //! \brief Return reference to all unique nodes.
+    const std::vector<double>& getUnique() const{ return unique; }
+    //! \brief Return all nodes concatenated per level.
+    std::vector<double> getAllNodes() const{ return Utils::mergeVectors(nodes); }
+    //! \brief Return all coefficients concatenated per level.
+    std::vector<double> getAllCoeff() const{ return Utils::mergeVectors(coeff); }
+    //! \brief Return reference to the number of nodes per level.
+    const std::vector<int>& getNumNodesPerLevel() const{ return num_points; }
+    //! \brief Return cumulative points per level.
+    std::vector<int> getOffsetNodesPerLevel() const{
+        std::vector<int> offsets(num_points.size());
+        offsets[0] = 0;
+        for(size_t i=1; i<num_points.size(); i++)
+            offsets[i] = offsets[i-1] + num_points[i-1];
+        return offsets;
+    }
+
 private:
     bool isNonNested;
     int num_levels;

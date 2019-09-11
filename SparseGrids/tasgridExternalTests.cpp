@@ -1810,7 +1810,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
 
         #ifdef Tasmanian_ENABLE_CUDA
-        if ((grid->getAccelerationType() == accel_gpu_cuda) && (!grid->isGlobal()) && !(grid->isWavelet() && grid->getOrder() == 3)){
+        if ((grid->getAccelerationType() == accel_gpu_cuda) && !(grid->isWavelet() && grid->getOrder() == 3)){
             CudaVector<double> gpu_x(x), gpu_y(outs, num_x);
             grid->evaluateBatchGPU(gpu_x.data(), num_x, gpu_y.data());
             gpu_y.unload(test_y);
@@ -1975,26 +1975,30 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     }
 
     // Sequence Grid evaluations of the basis functions
-    for(int t=0; t<2; t++){
+    for(int t=0; t<5; t++){
     int numx = 2020;
 
     std::vector<double> cpux(numx * dims);
     setRandomX(numx * dims, cpux.data());
 
-    if (t == 0){ // compute reference solution
-        grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja);
-    }else if (t == 1){
-        grid.makeWaveletGrid(dims, 0, 3, 1);
+    switch(t){
+        case 0: grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja); break;
+        case 1: grid.makeWaveletGrid(dims, 0, 3, 1); break;
+        case 2: grid.makeGlobalGrid(dims, 0, 7, type_level, rule_clenshawcurtis); break;
+        case 3: grid.makeGlobalGrid(dims, 0, 7, type_level, rule_clenshawcurtis0); break;
+        case 4: grid.makeGlobalGrid(dims, 0, 10, type_level, rule_chebyshev); break;
     }
     //cout << "Memory requirements = " << (grid.getNumPoints() * numx * 8) / (1024 * 1024) << "MB" << endl;
     std::vector<double> truey;
     grid.evaluateHierarchicalFunctions(cpux, truey);
 
     for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
-        if (t == 0){ // run test
-            grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja);
-        }else if (t == 1){
-            grid.makeWaveletGrid(dims, 0, 3, 1);
+        switch(t){
+            case 0: grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja); break;
+            case 1: grid.makeWaveletGrid(dims, 0, 3, 1); break;
+            case 2: grid.makeGlobalGrid(dims, 0, 7, type_level, rule_clenshawcurtis); break;
+            case 3: grid.makeGlobalGrid(dims, 0, 7, type_level, rule_clenshawcurtis0); break;
+            case 4: grid.makeGlobalGrid(dims, 0, 10, type_level, rule_chebyshev); break;
         }
         TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
         grid.enableAcceleration(TasGrid::accel_gpu_cuda);

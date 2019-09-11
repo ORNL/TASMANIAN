@@ -60,7 +60,10 @@ Changelog for version 6.1 (may rename this to 7.0 later)
 
 * added Doxygen documentation (CMake option, extra pages, etc.)
 
-* added support for CUDA 10
+* improved CUDA support
+    * added support for CUDA 10
+    * all grids now benefit from all acceleration modes
+    * added `evaluateBatchGPU()` where both `x` and `y` sit on the GPU
 
 * removed the deprecated MS Windows build system with batch scripts
 
