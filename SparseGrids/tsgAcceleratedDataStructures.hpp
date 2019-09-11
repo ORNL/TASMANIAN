@@ -352,6 +352,19 @@ namespace TasCUDA{
     //! The output is two real arrays of size \b num_x by \b num_nodes.size() / \b dims corresponding to the real and complex parts of the basis.
     void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, double *gpu_wreal, double *gpu_wimag);
 
+    /*!
+     * \internal
+     * \ingroup TasmanianAcceleration
+     * \brief Evaluate the basis for Global grid.
+     *
+     * The logic is more complicated due to the more general nature of the grid.
+     * \endinternal
+     */
+    void devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
+                  double const *gpu_x, CudaVector<double> const &nodes, CudaVector<double> const &coeff, CudaVector<double> const &tensor_weights,
+                  CudaVector<int> const &nodes_per_level, CudaVector<int> const &offset_per_level, CudaVector<int> const &map_dimension, CudaVector<int> const &map_level,
+                  CudaVector<int> const &active_tensors, CudaVector<int> const &active_num_points, CudaVector<int> const &dim_offsets,
+                  CudaVector<int> const &map_tensor, CudaVector<int> const &map_index, CudaVector<int> const &map_reference, double *gpu_result);
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
     #ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__

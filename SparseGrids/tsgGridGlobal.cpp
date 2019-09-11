@@ -636,8 +636,14 @@ void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, d
 void GridGlobal::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
     throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for global grids.");
 }
-void GridGlobal::evaluateHierarchicalFunctionsGPU(const double[], int, double *) const{
-    throw std::runtime_error("ERROR: gpu basis evaluations are not available for global grids.");
+void GridGlobal::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
+    loadCudaNodes();
+    TasCUDA::devalglo(!OneDimensionalMeta::isNonNested(rule), (rule == rule_clenshawcurtis0), num_dimensions, cpu_num_x, getNumPoints(),
+                      cuda_cache->num_basis,
+                      gpu_x, cuda_cache->nodes, cuda_cache->coeff, cuda_cache->tensor_weights,
+                      cuda_cache->nodes_per_level, cuda_cache->offset_per_level, cuda_cache->map_dimension, cuda_cache->map_level,
+                      cuda_cache->active_tensors, cuda_cache->active_num_points, cuda_cache->dim_offsets,
+                      cuda_cache->map_tensor, cuda_cache->map_index, cuda_cache->map_reference, gpu_y);
 }
 void GridGlobal::loadCudaValues() const{
     if (!cuda_cache) cuda_cache = std::unique_ptr<CudaGlobalData<double>>(new CudaGlobalData<double>);
