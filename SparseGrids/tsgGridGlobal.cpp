@@ -633,8 +633,13 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
     engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->values, weights.getVector(), y);
 }
 void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{ evaluateCudaMixed(engine, x, num_x, y); }
-void GridGlobal::evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const{
-    throw std::runtime_error("ERROR: gpu-to-gpu evaluations are not available for global grids.");
+void GridGlobal::evaluateBatchGPU(CudaEngine *engine, const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
+    loadCudaValues();
+    int num_points = points.getNumIndexes();
+
+    CudaVector<double> gpu_basis(cpu_num_x, num_points);
+    evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, cuda_cache->values, gpu_basis, 0.0, gpu_y);
 }
 void GridGlobal::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
     loadCudaNodes();
