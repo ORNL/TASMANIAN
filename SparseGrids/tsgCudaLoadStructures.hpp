@@ -48,6 +48,22 @@ namespace TasGrid{
 template<typename FP>
 struct CudaGlobalData{
     CudaVector<FP> values;
+    // cache stage
+    int num_basis; // number of 1d basis functions
+    CudaVector<FP> nodes;
+    CudaVector<FP> coeff;
+    CudaVector<int> nodes_per_level;
+    CudaVector<int> offset_per_level; // non-nested case nodes, always used for coefficients
+    CudaVector<int> map_dimension;
+    CudaVector<int> map_level;
+    // compute stage
+    CudaVector<FP> tensor_weights;
+    CudaVector<int> active_tensors;
+    CudaVector<int> active_num_points;
+    CudaVector<int> dim_offsets; // relates to the cache
+    CudaVector<int> map_tensor;
+    CudaVector<int> map_index;
+    CudaVector<int> map_reference;
 };
 
 //! \internal

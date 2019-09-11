@@ -138,6 +138,8 @@ protected:
     #ifdef Tasmanian_ENABLE_CUDA
     void loadCudaValues() const;
     void clearCudaValues() const;
+    void loadCudaNodes() const;
+    void clearCudaNodes() const;
     #endif
 
 private:

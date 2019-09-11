@@ -644,6 +644,75 @@ void GridGlobal::loadCudaValues() const{
     if (cuda_cache->values.empty()) cuda_cache->values.load(values.getVector());
 }
 void GridGlobal::clearCudaValues() const{ if (cuda_cache) cuda_cache->values.clear(); }
+void GridGlobal::loadCudaNodes() const{
+    if (!cuda_cache) cuda_cache = std::unique_ptr<CudaGlobalData<double>>(new CudaGlobalData<double>);
+    // data for stage 1 (Lagrange caching)
+    cuda_cache->nodes.load((OneDimensionalMeta::isNonNested(rule)) ? wrapper.getAllNodes() : wrapper.getUnique());
+    cuda_cache->coeff.load(wrapper.getAllCoeff());
+    cuda_cache->nodes_per_level.load(wrapper.getNumNodesPerLevel());
+    cuda_cache->offset_per_level.load(wrapper.getOffsetNodesPerLevel());
+
+    std::vector<int> map_dims, map_level, dim_offsets;
+    int num_basis = 0;
+    for(int dim=0; dim<num_dimensions; dim++){
+        dim_offsets.push_back(num_basis);
+        for(int level=0; level <= max_levels[dim]; level++){
+            map_dims.push_back(dim);
+            map_level.push_back(level);
+            num_basis += wrapper.getNumPoints(level);
+        }
+    }
+    cuda_cache->num_basis = num_basis;
+    cuda_cache->map_dimension.load(map_dims);
+    cuda_cache->map_level.load(map_level);
+
+    std::vector<double> tweights(active_w.size());
+    std::transform(active_w.begin(), active_w.end(), tweights.begin(), [](int i)->double{ return static_cast<double>(i); });
+    cuda_cache->tensor_weights.load(tweights);
+
+    cuda_cache->active_tensors.load(active_tensors.getVector());
+
+    std::vector<int> active_num_points(active_tensors.getVector().size());
+    std::transform(active_tensors.getVector().begin(), active_tensors.getVector().end(), active_num_points.begin(), [&](int i)->int{ return wrapper.getNumPoints(i); });
+    cuda_cache->active_num_points.load(active_num_points);
+
+    cuda_cache->dim_offsets.load(dim_offsets);
+
+    std::vector<int> map_tensor, map_index, map_reference;
+    auto inump = active_num_points.begin();
+    for(int n=0; n<active_tensors.getNumIndexes(); n++){
+        int num_tensor_points = *inump++;
+        for(int j=1; j<num_dimensions; j++)
+            num_tensor_points *= *inump++;
+
+        for(int i=0; i<num_tensor_points; i++){
+            map_tensor.push_back(n);
+            map_index.push_back(i);
+            map_reference.push_back(tensor_refs[n][i]);
+        }
+    }
+    cuda_cache->map_tensor.load(map_tensor);
+    cuda_cache->map_index.load(map_index);
+    cuda_cache->map_reference.load(map_reference);
+}
+void GridGlobal::clearCudaNodes() const{
+    if (cuda_cache){
+        cuda_cache->num_basis = 0;
+        cuda_cache->nodes.clear();
+        cuda_cache->coeff.clear();
+        cuda_cache->nodes_per_level.clear();
+        cuda_cache->offset_per_level.clear();
+        cuda_cache->map_dimension.clear();
+        cuda_cache->map_level.clear();
+        cuda_cache->tensor_weights.clear();
+        cuda_cache->active_tensors.clear();
+        cuda_cache->active_num_points.clear();
+        cuda_cache->dim_offsets.clear();
+        cuda_cache->map_tensor.clear();
+        cuda_cache->map_index.clear();
+        cuda_cache->map_reference.clear();
+    }
+}
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
