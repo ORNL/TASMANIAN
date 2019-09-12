@@ -54,6 +54,7 @@ void sparse_grids_example_04();
 void sparse_grids_example_05();
 void sparse_grids_example_06();
 void sparse_grids_example_07();
+void sparse_grids_example_08();
 
 int main(int argc, const char**){
 
@@ -71,6 +72,7 @@ int main(int argc, const char**){
     sparse_grids_example_05();
     sparse_grids_example_06();
     sparse_grids_example_07();
+    sparse_grids_example_08();
 
     return 0;
 }
