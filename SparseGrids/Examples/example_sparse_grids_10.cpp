@@ -105,6 +105,7 @@ void sparse_grids_example_10(){
     // can result in approximation with significantly fewer nodes.
     // However, wavelets have larger Lebesgue constant (especially around the boundary)
     // and thus do not always outperform local polynomials.
+    cout << "\n";
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 //! [SG_Example_10 example]

@@ -128,7 +128,6 @@ void sparse_grids_example_06(){
     // more than one point
     // for fast growing rules, sometime it is simply not possible to build a grid
     // with exactly the given number of points
-    cout << "\n";
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 //! [SG_Example_06 example]
