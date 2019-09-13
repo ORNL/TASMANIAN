@@ -86,12 +86,13 @@ public:
     void clearRefinement();
     void mergeRefinement();
 
-    void beginConstruction(){}
-    void writeConstructionData(std::ostream&, bool) const{}
-    void readConstructionData(std::istream&, bool){}
-    void loadConstructedPoint(const double[], const std::vector<double> &){}
-    void loadConstructedPoint(const double[], int, const double[]){}
-    void finishConstruction(){}
+    void beginConstruction();
+    void writeConstructionData(std::ostream&, bool) const;
+    void readConstructionData(std::istream&, bool);
+    std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits);
+    void loadConstructedPoint(const double[], const std::vector<double> &);
+    void loadConstructedPoint(const double[], int, const double[]);
+    void finishConstruction();
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
 
@@ -112,8 +113,10 @@ protected:
     double evalIntegral(const int p[]) const;
 
     std::vector<double> getNormalization() const;
+    std::vector<int> getMultiIndex(const double x[]);
 
     Data2D<int> buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const;
+    MultiIndexSet getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits) const;
 
     bool addParent(const int point[], int direction, Data2D<int> &destination) const;
     void addChild(const int point[], int direction, Data2D<int> &destination) const;
@@ -137,6 +140,8 @@ private:
     Data2D<double> coefficients; // a.k.a., surpluses
 
     TasSparse::SparseMatrix inter_matrix;
+
+    std::unique_ptr<SimpleConstructData> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaWaveletData<double>> cuda_cache;

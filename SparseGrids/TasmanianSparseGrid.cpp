@@ -905,7 +905,6 @@ void TasmanianSparseGrid::mergeRefinement(){
 }
 
 void TasmanianSparseGrid::beginConstruction(){
-    if (isWavelet()) throw std::runtime_error("ERROR: beginConstruction() is not implemented for Wavelet grids");
     if (!usingDynamicConstruction){
         if (getNumLoaded() > 0) clearRefinement();
         usingDynamicConstruction = true;
@@ -959,7 +958,7 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDept
 std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria,
                                                                         int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
-    if (!isLocalPolynomial()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
+    if (!isLocalPolynomial() && !isWavelet()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() surplus version called for non-local polynomial or wavelet grid");
     size_t dims = (size_t) base->getNumDimensions();
     if ((!level_limits.empty()) && (level_limits.size() != dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
     int outs = base->getNumOutputs();
@@ -967,7 +966,8 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(double t
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling getCandidateConstructionPoints() with invalid output");
 
     if (!level_limits.empty()) llimits = level_limits;
-    auto x = get<GridLocalPolynomial>()->getCandidateConstructionPoints(tolerance, criteria, output, llimits, ((scale_correction.empty()) ? nullptr : scale_correction.data()));
+    auto x = (isWavelet()) ? get<GridWavelet>()->getCandidateConstructionPoints(tolerance, criteria, output, llimits) :
+        get<GridLocalPolynomial>()->getCandidateConstructionPoints(tolerance, criteria, output, llimits, ((scale_correction.empty()) ? nullptr : scale_correction.data()));
     formTransformedPoints((int) x.size() / getNumDimensions(), x.data());
     return x;
 }
