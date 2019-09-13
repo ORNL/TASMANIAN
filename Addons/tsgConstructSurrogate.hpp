@@ -422,7 +422,7 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
                         double tolerance, TypeRefinement criteria, int output = -1,
                         std::vector<int> const &level_limits = std::vector<int>(),
                         std::string const &checkpoint_filename = std::string()){
-    if (!grid.isLocalPolynomial()) throw std::runtime_error("ERROR: construction (with tolerance and criteria) called for a grid that is not local polynomial.");
+    if (!grid.isLocalPolynomial() && !grid.isWavelet()) throw std::runtime_error("ERROR: construction (with tolerance and criteria) called for a grid that is not local polynomial or wavelet.");
     constructCommon<parallel_construction, initial_guess>
                                           (model, max_num_points, num_parallel_jobs, max_samples_per_job, grid,
                                            [&](TasmanianSparseGrid &g)->std::vector<double>{

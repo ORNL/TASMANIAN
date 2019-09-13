@@ -1471,6 +1471,14 @@ bool ExternalTester::testAllRefinement() const{
         if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, 1.E-3, refine_fds, np, err)){
             cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f->getDescription() << endl;  pass4 = false;
         }
+    }{
+        const BaseFunction *f = &f21aniso;
+        std::vector<int> np     = {   23,    38,    64,   120,   171,   280,   403, 500};
+        std::vector<double> err = {5.E-1, 3.E-1, 3.E-1, 2.E-1, 6.E-2, 3.E-2, 2.E-2, 6.E-3};
+        grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1);
+        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, 1.E-3, refine_stable, np, err)){
+            cout << "ERROR: failed dynamic surplus classic refinement using wavelet linear rule " << f->getDescription() << endl;  pass4 = false;
+        }
     }
     cout << "      Construction              dynamic/local" << setw(15) << ((pass4) ? "Pass" : "FAIL") << endl;
 

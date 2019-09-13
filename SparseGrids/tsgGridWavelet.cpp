@@ -46,6 +46,7 @@ void GridWavelet::reset(){
     values = StorageSet();
     inter_matrix = TasSparse::SparseMatrix();
     coefficients.clear();
+    dynamic_values.reset();
 }
 
 template<bool iomode> void GridWavelet::write(std::ostream &os) const{
@@ -612,6 +613,294 @@ const double* GridWavelet::getSurpluses() const{
     return coefficients.getStrip(0);
 }
 
+void GridWavelet::beginConstruction(){
+    dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
+    if (points.empty()){
+        dynamic_values->initial_points = std::move(needed);
+        needed = MultiIndexSet();
+    }
+}
+void GridWavelet::writeConstructionData(std::ostream &os, bool iomode) const{
+    if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
+}
+void GridWavelet::readConstructionData(std::istream &is, bool iomode){
+    if (iomode == mode_ascii) dynamic_values = readSimpleConstructionData<mode_ascii>(num_dimensions, num_outputs, is);
+    else dynamic_values = readSimpleConstructionData<mode_binary>(num_dimensions, num_outputs, is);
+}
+
+namespace WaveManipulations{
+inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet const &mset, RuleWavelet const &rule, std::function<void(int i)> apply){
+    for(auto &v : point){
+        int save = v; // replace one by one each index of p with either parent or kid
+
+        // check the parents
+        v = rule.getParent(save);
+        if (v == -2){ // include everything on level 0
+            for(v = 0; v < rule.getNumPoints(0); v++){
+                int parent_index = mset.getSlot(point);
+                if (parent_index > -1)
+                    apply(parent_index);
+            }
+        }else if (v > -1){
+            int parent_index = mset.getSlot(point);
+            if (parent_index > -1)
+                apply(parent_index);
+        }
+
+        int kid1, kid2;
+        rule.getChildren(save, kid1, kid2);
+        std::vector<int> kids = {kid1, kid2};
+        for(auto k : kids){
+            if (k > -1){
+                v = k;
+                int parent_index = mset.getSlot(point);
+                if (parent_index > -1)
+                    apply(parent_index);
+            }
+        }
+
+        v = save; // restore the original index for the next iteration
+    }
+}
+
+std::vector<int> computeLevels(MultiIndexSet const &mset, RuleWavelet const &rule){
+    size_t num_dimensions = mset.getNumDimensions();
+    int num_points = mset.getNumIndexes();
+    std::vector<int> level((size_t) num_points);
+    #pragma omp parallel for schedule(static)
+    for(int i=0; i<num_points; i++){
+        const int *p = mset.getIndex(i);
+        int current_level = rule.getLevel(p[0]);
+        for(size_t j=1; j<num_dimensions; j++){
+            current_level += rule.getLevel(p[j]);
+        }
+        level[i] = current_level;
+    }
+    return level;
+}
+
+inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiIndexSet const &candidates, RuleWavelet const &rule){
+    if (candidates.empty()) return MultiIndexSet();
+    auto num_dimensions = candidates.getNumDimensions();
+
+    // always consider the points without parents
+    MultiIndexSet level_zero = MultiIndexManipulations::generateFullTensorSet(std::vector<int>(num_dimensions, rule.getNumPoints(0)));
+
+    MultiIndexSet result; // keep track of the cumulative result
+    MultiIndexSet total = current; // forms a working copy of the entire merged graph
+
+    // do not consider the points already included in total, complexity is level_zero.getNumIndexes()
+    if (!total.empty()) level_zero = level_zero.diffSets(total);
+
+    if (level_zero.getNumIndexes() > 0){ // level zero nodes are missing from current
+        Data2D<int> roots(num_dimensions, 0);
+        for(int i=0; i<level_zero.getNumIndexes(); i++){
+            std::vector<int> p(level_zero.getIndex(i), level_zero.getIndex(i) + num_dimensions);
+            if (!candidates.missing(p))
+                roots.appendStrip(p);
+        }
+
+        result = MultiIndexSet(roots);
+        if (total.empty()) total = result;
+        else total.addMultiIndexSet(result);
+    }
+
+    if (total.empty()) return MultiIndexSet(); // current was empty and no roots could be added
+
+    Data2D<int> update;
+    do{
+        update = Data2D<int>(num_dimensions, 0);
+
+        for(int i=0; i<total.getNumIndexes(); i++){
+            std::vector<int> relative(total.getIndex(i), total.getIndex(i) + num_dimensions);
+            for(auto &r : relative){
+                int k = r; // save the value
+
+                std::vector<int> possible_relatives;
+                possible_relatives.reserve((size_t) rule.getNumPoints(0) + 2);
+
+                int kid1, kid2;
+                rule.getChildren(k, kid1, kid2);
+                possible_relatives.push_back(kid1);
+                possible_relatives.push_back(kid2);
+
+                int parent = rule.getParent(k);
+                if (parent == -2){
+                    for(int p=0; p<rule.getNumPoints(0); p++)
+                        possible_relatives.push_back(p);
+                }else{
+                    possible_relatives.push_back(parent);
+                }
+
+                for(auto p : possible_relatives){
+                    if (p > -1){
+                        r = p;
+                        if (!candidates.missing(relative) && total.missing(relative))
+                            update.appendStrip(relative);
+                    }
+                }
+                r = k;
+            }
+        }
+
+        if (update.getNumStrips() > 0){
+            MultiIndexSet update_set(update);
+            result.addMultiIndexSet(update_set);
+            total.addMultiIndexSet(update_set);
+        }
+    }while(update.getNumStrips() > 0);
+
+    return result;
+}
+}
+
+std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits){
+
+    MultiIndexSet refine_candidates = getRefinementCanidates(tolerance, criteria, output, level_limits);
+    MultiIndexSet new_points = (dynamic_values->initial_points.empty()) ? std::move(refine_candidates) : refine_candidates.diffSets(dynamic_values->initial_points);
+
+    // compute the weights for the new_points points
+    std::vector<double> norm = getNormalization();
+
+    auto getDominantSurplus = [&](int i)-> double{
+        double dominant = 0.0;
+        const double *s = coefficients.getStrip(i);
+        if (output == -1){
+            for(int k=0; k<num_outputs; k++) dominant = std::max(dominant, std::abs(s[k]) / norm[k]);
+        }else{
+            dominant = std::abs(s[output]) / norm[output];
+        }
+        return dominant;
+    };
+
+    std::vector<double> refine_weights(new_points.getNumIndexes());
+
+    #pragma omp parallel for
+    for(int i=0; i<new_points.getNumIndexes(); i++){
+        double weight = 0.0;
+        std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // get the point
+
+        WaveManipulations::touchAllImmediateRelatives(p, points, rule1D,
+                                                           [&](int relative)->void{ weight = std::max(weight, getDominantSurplus(relative)); });
+        refine_weights[i] = weight; // those will be inverted
+    }
+
+    // if using stable refinement, ensure the weight of the parents is never less than the children
+    if (!new_points.empty() && ((criteria == refine_parents_first) || (criteria == refine_fds))){
+        auto rlevels = WaveManipulations::computeLevels(new_points, rule1D);
+        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        for(auto is = split.rbegin(); is != split.rend(); is++){
+            for(int i=0; i<is->getNumStrips(); i++){
+                std::vector<int> parent(is->getStrip(i), is->getStrip(i) + num_dimensions);
+                double correction = refine_weights[new_points.getSlot(parent)]; // will never be missing
+                for(auto &p : parent){
+                    int r = p;
+                    p = rule1D.getParent(r);
+                    if (p > -1){
+                        int ip = new_points.getSlot(parent); // if parent is among the refined
+                        if (ip != -1) refine_weights[ip] += correction;
+                    }else if (p == -2){
+                        for(p = 0; p<rule1D.getNumPoints(0); p++){
+                            int ip = new_points.getSlot(parent); // if parent is among the refined
+                            if (ip != -1) refine_weights[ip] += correction;
+                        }
+                    }
+                    p = r;
+                }
+            }
+        }
+    }else if (!new_points.empty() && (criteria == refine_stable)){
+        // stable refinement, ensure that if level[i] < level[j] then weight[i] > weight[j]
+        auto rlevels = WaveManipulations::computeLevels(new_points, rule1D);
+        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        double max_weight = 0.0;
+        for(auto is = split.rbegin(); is != split.rend(); is++){ // loop backwards in levels
+            double correction = max_weight;
+            for(int i=0; i<is->getNumStrips(); i++){
+                int idx = new_points.getSlot(std::vector<int>(is->getStrip(i), is->getStrip(i) + num_dimensions));
+                refine_weights[idx] += correction;
+                max_weight = std::max(max_weight, refine_weights[idx]);
+            }
+        }
+    }
+
+    // compute the weights for the initial points
+    std::vector<int> initial_levels =  WaveManipulations::computeLevels(dynamic_values->initial_points, rule1D);
+
+    std::forward_list<NodeData> weighted_points;
+    for(int i=0; i<dynamic_values->initial_points.getNumIndexes(); i++){
+        std::vector<int> p(dynamic_values->initial_points.getIndex(i), dynamic_values->initial_points.getIndex(i) + num_dimensions); // write the point to vector
+        weighted_points.push_front({p, {-1.0 / ((double) initial_levels[i])}});
+    }
+    for(int i=0; i<new_points.getNumIndexes(); i++){
+        std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // write the point to vector
+        weighted_points.push_front({p, {1.0 / refine_weights[i]}});
+    }
+
+    // sort and return the sorted list
+    weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
+
+    std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    auto ix = x.begin();
+    for(auto t = weighted_points.begin(); t != weighted_points.end(); t++)
+        ix = std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule1D.getNode(i); });
+    return x;
+}
+
+std::vector<int> GridWavelet::getMultiIndex(const double x[]){
+    std::vector<int> p(num_dimensions); // convert x to p, maybe expensive
+    for(int j=0; j<num_dimensions; j++){
+        int i = 0;
+        while(std::abs(rule1D.getNode(i) - x[j]) > Maths::num_tol) i++;
+        p[j] = i;
+    }
+    return p;
+}
+void GridWavelet::loadConstructedPoint(const double x[], const std::vector<double> &y){ loadConstructedPoint(x, 1, y.data()); }
+void GridWavelet::loadConstructedPoint(const double x[], int numx, const double y[]){
+    Utils::Wrapper2D<const double> wrapx(num_dimensions, x);
+    std::vector<std::vector<int>> pnts(numx);
+    #pragma omp parallel for
+    for(int i=0; i<numx; i++)
+        pnts[i] = getMultiIndex(wrapx.getStrip(i));
+
+    if (!dynamic_values->initial_points.empty()){
+        Data2D<int> combined_pnts(num_dimensions, numx);
+        for(int i=0; i<numx; i++)
+            std::copy_n(pnts[i].begin(), num_dimensions, combined_pnts.getIStrip(i));
+        dynamic_values->initial_points = dynamic_values->initial_points.diffSets(MultiIndexSet(combined_pnts));
+    }
+
+    Utils::Wrapper2D<const double> wrapy(num_outputs, y);
+    for(int i=0; i<numx; i++)
+        dynamic_values->data.push_front({std::move(pnts[i]), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs)});
+
+    Data2D<int> candidates(num_dimensions, (int) std::distance(dynamic_values->data.begin(), dynamic_values->data.end()));
+    for(struct{ int i; std::forward_list<NodeData>::iterator d; } p = {0, dynamic_values->data.begin()};
+        p.d != dynamic_values->data.end(); p.i++, p.d++){
+        std::copy_n(p.d->point.begin(), num_dimensions, candidates.getIStrip(p.i));
+    }
+    auto new_points = WaveManipulations::getLargestConnected(points, MultiIndexSet(candidates), rule1D);
+    if (new_points.empty()) return;
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    clearCudaBasis(); // the points will change, clear the cache
+    clearCudaCoefficients();
+    #endif
+
+    auto vals = dynamic_values->extractValues(new_points);
+    if (points.empty()){
+        points = std::move(new_points);
+        values.setValues(std::move(vals));
+    }else{
+        values.addValues(points, new_points, vals.data());
+        points.addMultiIndexSet(new_points);
+    }
+    buildInterpolationMatrix();
+    recomputeCoefficients(); // costly, but the only option under the circumstances
+}
+void GridWavelet::finishConstruction(){ dynamic_values.reset(); }
+
 void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
@@ -663,9 +952,7 @@ void GridWavelet::integrateHierarchicalFunctions(double integrals[]) const{
         integrals[i] = evalIntegral(work.getIndex(i));
 }
 
-void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits){
-    clearRefinement();
-
+MultiIndexSet GridWavelet::getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits) const{
     Data2D<int> pmap = buildUpdateMap(tolerance, criteria, output);
 
     bool useParents = (criteria == refine_fds) || (criteria == refine_parents_first);
@@ -698,26 +985,25 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
         }
     }
 
-    if (refined.getNumStrips() > 0)
-        needed = MultiIndexSet(refined);
+    MultiIndexSet result = (refined.getNumStrips() > 0) ? MultiIndexSet(refined) : MultiIndexSet();
 
     if (criteria == refine_stable){ // complete needed to a lower set
         size_t num_added = 1; // set to 1 to start the loop
         while(num_added > 0){
             Data2D<int> addons(num_dimensions, 0);
-            int num_needed = needed.getNumIndexes();
+            int num_needed = result.getNumIndexes();
 
             for(int i=0; i<num_needed; i++){
-                std::vector<int> parent(needed.getIndex(i), needed.getIndex(i) + num_dimensions);
+                std::vector<int> parent(result.getIndex(i), result.getIndex(i) + num_dimensions);
                 for(auto &p : parent){
                     int r = p;
                     p = rule1D.getParent(r);
-                    if ((p > -1) && needed.missing(parent) && points.missing(parent))
+                    if ((p > -1) && result.missing(parent) && points.missing(parent))
                         addons.appendStrip(parent);
                     if (p == -2){ // all parents on level 0
                         for(int j=0; j<rule1D.getNumPoints(0); j++){
                             p = j;
-                            if (needed.missing(parent) && points.missing(parent))
+                            if (result.missing(parent) && points.missing(parent))
                                 addons.appendStrip(parent);
                         }
                     }
@@ -727,9 +1013,16 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
 
             num_added = addons.getNumStrips();
             if (num_added > 0)
-                needed.addMultiIndexSet(MultiIndexSet(addons));
+                result.addMultiIndexSet(MultiIndexSet(addons));
         }
     }
+
+    return result;
+}
+
+void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits){
+    clearRefinement();
+    needed = getRefinementCanidates(tolerance, criteria, output, level_limits);
 }
 
 void GridWavelet::clearAccelerationData(){
