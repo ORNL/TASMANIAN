@@ -2,7 +2,7 @@
 # Print the configuration options
 ########################################################################
 message(STATUS "")
-message(STATUS "Tasmanian ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR} (development version): summary of build options")
+message(STATUS "Tasmanian ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}${Tasmanian_version_comment}: summary of build options")
 message(STATUS " -D CMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
 message(STATUS " -D CMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}")
 message(STATUS " -D CMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}")

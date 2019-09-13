@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
 cmake_policy(VERSION 3.10)
-project(Tasmanian VERSION 6.1.0 LANGUAGES CXX)
+project(Tasmanian VERSION 7.0.0 LANGUAGES CXX)
+set(Tasmanian_version_comment " (release candidate)") # e.g., " (release candidate)", " (development)", ""
 set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some headers and python modules (only human readable)
 
 ########################################################################

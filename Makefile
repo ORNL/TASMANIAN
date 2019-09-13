@@ -174,8 +174,8 @@ TasmanianAddons.py: ./InterfacePython/TasmanianAddons.py
 
 TasmanianConfig.py: ./InterfacePython/TasmanianConfig.in.py
 	cp ./InterfacePython/TasmanianConfig.in.py TasmanianConfig.py
-	sed -i -e 's|@Tasmanian_VERSION_MAJOR@|'6'|g' ./TasmanianConfig.py
-	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'1'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_VERSION_MAJOR@|'7'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'0'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_license@|'BSD\ 3-Clause\ with\ UT-Battelle\ disclaimer'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianConfig.py
