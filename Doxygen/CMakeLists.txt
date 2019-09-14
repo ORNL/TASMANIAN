@@ -46,6 +46,10 @@ doxygen_add_docs(Tasmanian_doxygen
                  README.md
                  Doxygen/Installation.md
                  Doxygen/InterfacePython.md
+                 Doxygen/InterfaceCLI.md
+                 Doxygen/InterfaceMATLAB.md
+                 Doxygen/InterfaceFortran90.md
+                 Doxygen/CustomRuleFileFormat.md
                  Config/Tasmanian.hpp
                  SparseGrids/TasmanianSparseGrid.hpp
                  DREAM/TasmanianDREAM.hpp
