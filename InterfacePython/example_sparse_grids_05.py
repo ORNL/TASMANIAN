@@ -31,8 +31,6 @@
 import numpy as np
 import Tasmanian
 
-import matplotlib.pyplot as pyplot
-
 def example_05():
 
     print("\n---------------------------------------------------------------------------------------------------\n")

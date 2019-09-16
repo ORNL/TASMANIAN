@@ -33,6 +33,9 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfigVersion.cma
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/Config/Tasmanian.hpp"
         DESTINATION "include"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/Config/Tasmanian.h"
+        DESTINATION "include"
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 # TasmanianMake.in for GNU Make include/link
 get_target_property(Tasmanian_list Tasmanian_libsparsegrid INTERFACE_LINK_LIBRARIES)
