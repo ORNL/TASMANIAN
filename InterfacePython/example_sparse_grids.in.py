@@ -37,6 +37,18 @@
 import sys
 @Tasmanian_python_example_import@
 import Tasmanian
+
+import example_sparse_grids_05
+import example_sparse_grids_06
+
+if __name__ == "__main__":
+    example_sparse_grids_05.example_05()
+    example_sparse_grids_06.example_06()
+    print("")
+
+
+exit(0)
+
 import numpy as np
 
 # imports specifically needed by the examples
