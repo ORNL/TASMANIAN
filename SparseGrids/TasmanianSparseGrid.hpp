@@ -67,6 +67,14 @@ namespace TasGrid{
 
 /*!
  * \ingroup TasmanianSG
+ * \addtogroup TasmanianSGClass Sparse Grid Class
+ *
+ * The sparse grid capabilities of Tasmanian are encapsulated in a single master class
+ * TasGrid::TasmanianSparseGrid.
+ */
+
+/*!
+ * \ingroup TasmanianSGClass
  * \brief The master-class that represents an instance of a Tasmanian sparse grid.
  *
  * \par class TasmanianSparseGrid

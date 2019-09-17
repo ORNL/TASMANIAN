@@ -1,10 +1,11 @@
-Changelog for version 6.1 (may rename this to 7.0 later)
+Changelog for version 7.0
 --------------
 
 * improved MPI capability, see the updated documentation
     * fully automated distributed adaptive sparse grid construction
 
 * new module "Tasmanian Addons" consisting of miscellaneous templates
+    * algorithms for automated sampling from a lambda model
     * use through the master target and header, cannot be used independently
 
 * new Tasmanian CMake master targets that handle all modules
