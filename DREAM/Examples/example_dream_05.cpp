@@ -138,8 +138,8 @@ void dream_example_05(){
     TasDREAM::SampleDREAM<sampling_form>
                          (num_burnup_iterations, num_sample_iterations,
                           TasDREAM::posterior<sampling_form>
-                                (likely, // provide the likelihood
-                                 batch_model, // must use the batch model
+                                (batch_model, // must use the batch model
+                                 likely,      // provide the likelihood
                                  TasDREAM::uniform_prior), // assume non-informative prior
                           TasDREAM::hypercube(lower, upper),
                           state,
