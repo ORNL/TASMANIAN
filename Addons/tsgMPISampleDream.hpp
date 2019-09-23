@@ -119,9 +119,9 @@ public:
      *
      * \tparam form is the same as in the call to TasDREAM::SampleDREAM() and both \b must match.
      *
-     * \param likelihood is the local portion of the likelihood. Same as in the call to TasDREAM::posterior().
      * \param distributed_model is the local portion of the model, the sub-set of the outputs
      *      must match the set used by the \b likelihood.
+     * \param likelihood is the local portion of the likelihood. Same as in the call to TasDREAM::posterior().
      * \param prior will be used only by the root rank, same as in the call to TasDREAM::posterior().
      * \param num_inputs must match the dimensions of the state on the root rank,
      *      since the non-root ranks do not need a valid state this parameter is used to synchronize
@@ -130,11 +130,11 @@ public:
      * \param mpi_root is the root process that will perform the actual sampling.
      * \param communicator is the communicator where all ranks reside.
      */
-    DistributedPosterior(std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likelihood,
-                         std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)> distributed_model,
+    DistributedPosterior(std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)> distributed_model,
+                         std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likelihood,
                          std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> prior,
                          int num_inputs, int num_chains, int mpi_root, MPI_Comm communicator)
-    : likely(likelihood), model(distributed_model), dist_prior(prior),
+    : model(distributed_model), likely(likelihood), dist_prior(prior),
       num_dimensions(num_inputs), num_batch(num_chains), root(mpi_root), me(TasGrid::getMPIRank(communicator)), comm(communicator),
       x(Utils::size_mult(num_dimensions, num_batch) + 1), y((size_t) num_batch){
 
@@ -202,8 +202,8 @@ public:
     }
 
 private:
-    std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likely;
     std::function<void(std::vector<double> const &x, std::vector<double> &y)> model;
+    std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likely;
     std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> dist_prior;
     int num_dimensions, num_batch, root, me;
     MPI_Comm comm;

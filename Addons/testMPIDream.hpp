@@ -147,7 +147,7 @@ void testMPIDream(){
     full_state.setState(initial_state);
 
     TasDREAM::SampleDREAM(10, 10,
-        TasDREAM::DistributedPosterior<TasDREAM::regform>(likely, grid, TasDREAM::uniform_prior, 2, num_chains, 0, MPI_COMM_WORLD),
+        TasDREAM::DistributedPosterior<TasDREAM::regform>(grid, likely, TasDREAM::uniform_prior, 2, num_chains, 0, MPI_COMM_WORLD),
         grid.getDomainInside(),
         state,
         TasDREAM::dist_uniform, 0.05,
@@ -156,7 +156,7 @@ void testMPIDream(){
     );
 
     TasDREAM::SampleDREAM(10, 10,
-        TasDREAM::posterior<TasDREAM::regform>(full_likelihood, full_grid, TasDREAM::uniform_prior),
+        TasDREAM::posterior<TasDREAM::regform>(full_grid, full_likelihood, TasDREAM::uniform_prior),
         grid.getDomainInside(),
         full_state,
         TasDREAM::dist_uniform, 0.05,

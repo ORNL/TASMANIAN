@@ -185,11 +185,11 @@ bool DreamExternalTester::testGaussian3D(){
     if (likely.getNumOutputs() != 3) throw std::runtime_error("LikelihoodGaussAnisotropic has wrong num outputs");
 
     SampleDREAM(num_burnup, num_iterations,
-        posterior(likely,
+        posterior(
             [&](const std::vector<double> &candidates, std::vector<double> &values){
                 values = candidates; // the model is identity
             },
-            uniform_prior),
+            likely, uniform_prior),
         hypercube(lower, upper), // large domain
         state,
         dist_uniform, 0.2,
@@ -393,7 +393,7 @@ bool DreamExternalTester::testCustomModel(){
     LikelihoodGaussIsotropic likely(4.0, {1.5, 2.5});
     if (likely.getNumOutputs() != 2) throw std::runtime_error("LikelihoodGaussAnisotropic has wrong num outputs");
     SampleDREAM(num_burnup, num_iterations,
-                    posterior(likely,
+                    posterior(
                     [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ // model
                         size_t num_candidates = candidates.size() / 3;
                         auto ic = candidates.begin();
@@ -405,6 +405,7 @@ bool DreamExternalTester::testCustomModel(){
                             *iv++ = *ic++;
                         }
                     },
+                    likely,
                     [&](TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)->void{ // prior
                         auto ic = candidates.begin() + 1; // uses the second input entries only
                         for(auto &v : values){
@@ -436,7 +437,7 @@ bool DreamExternalTester::testCustomModel(){
     likely = LikelihoodGaussIsotropic(0.01, {0.0, 0.0});
 
     SampleDREAM<logform>(num_burnup, num_iterations,
-                         posterior<logform>(likely,
+                         posterior<logform>(
                          [&](const std::vector<double> &candidates, std::vector<double> &values)->void{ // model
                              size_t num_candidates = candidates.size() / 3;
                              values.resize(2 * num_candidates);
@@ -448,7 +449,7 @@ bool DreamExternalTester::testCustomModel(){
                                  *iv++ = 1.0 - std::sin(DreamMaths::pi * *ic++);
                              }
                          },
-                         uniform_prior),
+                         likely, uniform_prior),
                          hypercube(lower, upper),
                          state,
                          dist_gaussian, 0.01,
@@ -507,7 +508,7 @@ bool DreamExternalTester::testGridModel(){
 
     // sample using uniform prior
     SampleDREAM<logform>(num_burnup, num_chains,
-                         posterior<logform>(likely, grid, uniform_prior),
+                         posterior<logform>(grid, likely, uniform_prior),
                          grid.getDomainInside(),
                          state,
                          dist_gaussian, 0.1, const_percent<50>, get_rand);

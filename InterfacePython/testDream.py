@@ -26,7 +26,7 @@ class TestTasClass(unittest.TestCase):
         iNumBurnup = iNumIterations
 
         state = DREAM.State(iNumChains, iNumDimensions)
-        state.setState(DREAM.tsgGenGaussianSamples([2.0, 2.0, 2.0], [3.0, 3.0, 3.0], iNumChains, DREAM.RandomGenerator("minstd_rand", 42)))
+        state.setState(DREAM.genGaussianSamples([2.0, 2.0, 2.0], [3.0, 3.0, 3.0], iNumChains, DREAM.RandomGenerator("minstd_rand", 42)))
 
         DREAM.Sample(iNumBurnup, iNumSamples,
                      lambda x : np.exp( -0.5 * np.sum( (x - 2.0)**2, 1 ) / 9.0 ), # Gaussian mean 2.0 variance 9.0
@@ -41,7 +41,7 @@ class TestTasClass(unittest.TestCase):
         self.assertTrue(np.max(np.abs(aVar - 9.0)) < 1.0, "Failed the variance test for Gaussian 3D")
 
         state = DREAM.State(iNumChains, iNumDimensions)
-        state.setState(DREAM.tsgGenGaussianSamples([1.5, 2.0, 2.5], [0.5, 1.0, 2.0], iNumChains, DREAM.RandomGenerator("minstd_rand", 42)))
+        state.setState(DREAM.genGaussianSamples([1.5, 2.0, 2.5], [0.5, 1.0, 2.0], iNumChains, DREAM.RandomGenerator("minstd_rand", 42)))
 
         likely = DREAM.LikelihoodGaussAnisotropic(np.array([0.25, 1.0, 4.0]), np.array([1.5, 2.0, 2.5]), 1)
 
@@ -70,7 +70,7 @@ class TestTasClass(unittest.TestCase):
         Tasmanian.loadNeededPoints(lambda x, tid : np.ones((1,1)) * np.exp( -0.5 * np.sum((x - 0.3)**2) / 0.01 ), grid, 1)
 
         state = DREAM.State(iNumChains, grid)
-        state.setState(DREAM.tsgGenGaussianSamples([0.3, 0.3], [0.1, 0.1], iNumChains, DREAM.RandomGenerator("minstd_rand", 55)))
+        state.setState(DREAM.genGaussianSamples([0.3, 0.3], [0.1, 0.1], iNumChains, DREAM.RandomGenerator("minstd_rand", 55)))
 
         DREAM.Sample(iNumBurnup, iNumSamples,
                      DREAM.PosteriorEmbeddedLikelihood(grid, "uniform"),

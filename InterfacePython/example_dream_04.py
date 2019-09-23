@@ -60,9 +60,9 @@ def example_04():
         return aX[0] * numpy.exp(aX[1] * t) + aX[2] * numpy.exp(aX[3] * t)
 
     aData = (model([1.0, 1.0, 0.4, 3.0]) # add noise
-        + DREAM.tsgGenGaussianSamples([0.0 for i in range(iNumOutputs)],
-                                      [1.0 / float(iNumOutputs) for i in range(iNumOutputs)]
-                                      , 1).reshape((iNumOutputs,)))
+        + DREAM.genGaussianSamples([0.0 for i in range(iNumOutputs)],
+                                   [1.0 / float(iNumOutputs) for i in range(iNumOutputs)],
+                                   1).reshape((iNumOutputs,)))
 
     grid = makeSequenceGrid(iNumDimensions, iNumOutputs, 15, 'iptotal', 'leja')
 

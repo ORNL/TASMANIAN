@@ -148,6 +148,15 @@ using DreamPDF = std::function<void(const std::vector<double> &candidates, std::
  *      to rounding error.
  *      The template parameter \b must be the same as in the call to TasDREAM::SampleDREAM().
  *
+ * \param model accepts a set of model inputs and will return the corresponding model values.
+ *      - \b candidates is the same as in the input of \b probability_distribution() in
+ *        the call to TasDREAM::SampleDREAM().
+ *        Logically the candidates will be arranged in strips of size equal to the problem
+ *        dimensions, the vector size will divide evenly by the dimensions and the factor
+ *        is the number of candidates.
+ *      - \b outputs must be resized to match the number of candidates times the number of outputs,
+ *        the behavior must match that of TasmanianSparseGrid::evaluateBatch().
+ *
  * \param likelihood accepts a set of model outputs and provides a measure of
  *      how likely those outputs are given some observed data with some noise.
  *      Tasmanian provides likelihood functions that can be used here, e.g.,
@@ -159,15 +168,6 @@ using DreamPDF = std::function<void(const std::vector<double> &candidates, std::
  *        the number of outputs, i.e., must match the output of the \b model.
  *      - The \b likely will have size equal to the number of candidates and must
  *        be filled (without resize) with the likelihood for each set of model outputs.
- *
- * \param model accepts a set of model inputs and will return the corresponding model values.
- *      - \b candidates is the same as in the input of \b probability_distribution() in
- *        the call to TasDREAM::SampleDREAM().
- *        Logically the candidates will be arranged in strips of size equal to the problem
- *        dimensions, the vector size will divide evenly by the dimensions and the factor
- *        is the number of candidates.
- *      - \b outputs must be resized to match the number of candidates times the number of outputs,
- *        the behavior must match that of TasmanianSparseGrid::evaluateBatch().
  *
  * \param prior provides the values of the prior distribution in either regular or logarithm form.
  *      The prior will take in the same \b candidates as the model and a vector of the same size as \b likely,
@@ -182,8 +182,8 @@ using DreamPDF = std::function<void(const std::vector<double> &candidates, std::
  *
  */
 template<TypeSamplingForm form = regform>
-DreamPDF posterior(std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likelihood,
-          std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)> model,
+DreamPDF posterior(std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)> model,
+          std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likelihood,
           std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> prior){
     return [=](const std::vector<double> &candidates, std::vector<double> &values)->void{
         std::vector<double> model_outs;

@@ -109,8 +109,8 @@ void dream_example_03(){
     TasDREAM::SampleDREAM<TasDREAM::logform>
                          (num_burnup_iterations, num_sample_iterations,
                           TasDREAM::posterior<TasDREAM::logform>
-                                (likely, // provide the likelihood
-                                 grid,   // provide the surrogate model
+                                (grid,   // provide the surrogate model
+                                 likely, // provide the likelihood
                                  TasDREAM::uniform_prior), // assume non-informative prior
                           grid.getDomainInside(),
                           state,
