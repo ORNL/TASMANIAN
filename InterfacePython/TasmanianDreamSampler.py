@@ -449,7 +449,7 @@ def genUniformSamples(lfLower, lfUpper, iNumSamples, random01 = RandomGenerator(
     return aResult.reshape((iNumSamples, iNumDims))
 
 
-def tsgGenGaussianSamples(lfMean, lfDeviation, iNumSamples, random01 = RandomGenerator(sType = "default")):
+def genGaussianSamples(lfMean, lfDeviation, iNumSamples, random01 = RandomGenerator(sType = "default")):
     '''
     Wrapper around TasDREAM::tsgGenGaussianSamples()
 
