@@ -34,11 +34,12 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
 # the \internal command works for functions and namespaces, but not classes
 # have to exclude the classes manually
     set(DOXYGEN_EXCLUDE_SYMBOLS TasGrid::Data2D TasGrid::MultiIndexSet TasGrid::StorageSet TasGrid::CustomTabulated TasGrid::OneDimensionalWrapper
-        TasGrid::TasSparse::SparseMatrix TasGrid::CudaEngine TasGrid::AccelerationDomainTransform TasGrid::TableGaussPatterson
+        TasGrid::TasSparse::SparseMatrix TasGrid::CudaEngine TasGrid::CudaVector TasGrid::AccelerationDomainTransform TasGrid::TableGaussPatterson
         TasGrid::NodeData TasGrid::TensorData TasGrid::CacheLagrange TasGrid::MultiIndexManipulations::ProperWeights
+        TasGrid::HierarchyManipulations::SplitDirections
         TasGrid::Utils::Wrapper2D TasGrid::SimpleConstructData TasGrid::DynamicConstructorDataGlobal
         TasGrid::Optimizer::CurrentNodes TasGrid::Optimizer::HasDerivative TasGrid::Optimizer::OptimizerResult
-        TasGrid::VectorToStreamBuffer)
+        TasGrid::VectorToStreamBuffer TasGrid::CandidateManager TasGrid::CompleteStorage)
     set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP;__TASMANIAN_DOXYGEN_SKIP_INTERNAL;Tasmanian_ENABLE_BLAS;Tasmanian_ENABLE_CUDA;Tasmanian_ENABLE_MPI")
 endif()
 
