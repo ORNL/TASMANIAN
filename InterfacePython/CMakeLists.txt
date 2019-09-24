@@ -76,7 +76,7 @@ set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py
                                 TasmanianDREAM.py TasmanianDreamLikely.py TasmanianDreamState.py TasmanianDreamSampler.py
                                 testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py
                                 testRefinement.py testUnstructuredData.py testMisc.py testAddons.py testDream.py
-                                example_sparse_grids_01.py
+                                example_sparse_grids_01.py example_sparse_grids_02.py
                                 example_sparse_grids_05.py example_sparse_grids_06.py
                                 example_dream_01.py example_dream_02.py example_dream_03.py example_dream_04.py example_dream_05.py)
 
