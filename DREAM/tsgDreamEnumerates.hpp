@@ -123,15 +123,27 @@ enum TypeDistribution{
 /*!
  * \internal
  * \ingroup DREAMUtils
+ * \brief Similar to TasGrid::IO this holds conversion methods between enums and int/string types.
  *
- * Similar to TasGrid::IO this holds conversion methods between enums and int/string types.
  * \endinternal
  */
 namespace IO{
-    //! \brief Converts an integer to TypeSamplingForm, synced with the Python interface.
+    /*!
+     * \internal
+     * \ingroup TasmanianIO
+     * \brief Converts an integer to TypeSamplingForm, synced with the Python interface.
+     *
+     * \endinternal
+     */
     inline TypeSamplingForm intToForm(int form){ return (form == 0) ? regform : logform; }
 
-    //! \brief Returns the map from a string to a distribution type.
+    /*!
+     * \internal
+     * \ingroup TasmanianIO
+     * \brief Returns the map from a string to a distribution type.
+     *
+     * \endinternal
+     */
     inline std::map<std::string, TypeDistribution> getStringRuleMap(){
         return std::initializer_list<std::pair<std::string const, TypeDistribution>>{
             {"null",        dist_null},
@@ -144,8 +156,11 @@ namespace IO{
     }
 
     /*!
+     * \internal
     * \ingroup TasmanianIO
     * \brief Map the string distribution name to the enumerate, used by python.
+    *
+    * \endinternal
     */
     inline TypeDistribution getDistributionString(std::string const &name){
         try{

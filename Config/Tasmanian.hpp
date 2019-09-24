@@ -43,13 +43,14 @@
 /*!
  * \defgroup Tasmanian Tasmanian
  *
- * \par Sparse Grids
  * The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN
- * consists of several modules that can be used individually by including the
- * corresponding headers, or conjountly using the master header:
+ * consists of several modules that sit together under the master header:
  * \code
  * #include "Tasmanian.hpp"
  * \endcode
+ *
+ * Note that "Tasmanian.h" is also acceptable and will include "Tasmanian.hpp" in a C++ context
+ * and the C interface headers in the C context (in 7.0 only sparse grids have a C interface).
  */
 
 #include "TasmanianAddons.hpp" // includes DREAM and Sparse Grid
