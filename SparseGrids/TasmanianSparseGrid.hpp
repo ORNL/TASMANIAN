@@ -89,7 +89,7 @@ namespace TasGrid{
  * Global, Sequence, Local Polynomial, Wavelet, and Fourier,
  * each using different back-end data structures.
  * The class itself handles the domain transformations,
- * e.g., the translation between canonical [-1, 1] and user provided [a, b],
+ * e.g., the translation between the canonical [-1, 1] and a user provided [a, b],
  * as well as mechanisms to select acceleration back-end, common meta I/O,
  * and error checking.
  *

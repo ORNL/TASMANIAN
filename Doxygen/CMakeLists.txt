@@ -19,8 +19,6 @@ set(DOXYGEN_HTML_COLORSTYLE_SAT    "50")
 set(DOXYGEN_HTML_COLORSTYLE_GAMMA  "90")
 
 
-set(IMAGE_PATH "images")
-
 set(DOXYGEN_FORMULA_FONTSIZE "14")
 
 set(DOXYGEN_PROJECT_NAME   "Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN: ${PROJECT_NAME} v${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
