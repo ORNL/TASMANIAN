@@ -23,7 +23,8 @@ html, body {
 }
 
 #doc-content {
-        height: 100% - 56px
+        height: 100% - 56px;
+        background: #F5F5F5;
 }
 
 html {
@@ -37,10 +38,17 @@ div.headertitle, div.contents, #main-nav, #projectname {
         clear: both;
 }
 
-#side-nav,
-#doc-content,
-#nav-tree {
+div.contents {
+        max-width: 60em;
+}
+
+#side-nav {
         background: #fff;
+        width: 21em;
+}
+
+#nav-tree {
+        background: #F5F5F5;
 }
 
 
@@ -68,6 +76,7 @@ h2 {
 
 #titlearea {
         border-bottom: none;
+        background: #404040
 }
 
 #titlearea table {
@@ -218,7 +227,7 @@ div.navpath {
 
 div.header{
         background-image: none;
-        background: #efefef;
+        background: #dcdcdc;
         border-bottom: none;
         margin-bottom: 1em;
 }
@@ -236,7 +245,8 @@ div.summary a {
 
 .headertitle {
         background-image: none;
-        background: #efefef;
+        background: #dcdcdc;
+        max-width: 60em;
 }
 
 .title {
