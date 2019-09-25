@@ -25,30 +25,33 @@ Optional features:
 * GPU accelerated linear algebra using [UTK MAGMA library](http://icl.cs.utk.edu/magma/)
 * Basic [Python matplotlib](https://matplotlib.org/) support
 * Fully featured [MATLAB/Octave](https://www.gnu.org/software/octave/) interface via wrappers around the command-line tool
-* Fortran 90/95 interface using [gfortran](https://gcc.gnu.org/wiki/GFortran) or [ifort](https://software.intel.com/en-us/intel-compilers)
+* Fortran 90/95 interface using [gfortran](https://gcc.gnu.org/wiki/GFortran) or [ifort](https://software.intel.com/en-us/intel-compilers) or [pgf90](https://www.pgroup.com/index.htm)
 * Addon templates for the [Message Passing Interface (MPI)](https://en.wikipedia.org/wiki/Message_Passing_Interface)
 * [Doxygen](http://www.doxygen.org/) documentation
 
-**Note:** with the exception of the Intel compiler and the MAGMA library, the rest of the software is included in the repositories of most Linux distributions, e.g., [Ubuntu](https://www.ubuntu.com/) or [Fedora](https://getfedora.org/), as well as [Mac OSX Homebrew](https://brew.sh/).
+**Note:** with the exception of the Intel and PGI compilers and the MAGMA library, the rest of the software is included in the repositories of most Linux distributions, e.g., [Ubuntu](https://www.ubuntu.com/) or [Fedora](https://getfedora.org/), as well as [Mac OSX Homebrew](https://brew.sh/).
 
 | Feature | Tested versions     | Recommended      |
 |----|----|----|
-| gcc     | 5, 6, 7, 8          | any              |
-| clang   | 4, 5, 6             | 4 or 5           |
+| gcc     | 5 - 8               | any              |
+| clang   | 4 - 8               | 4 or 5           |
 | icc     | 18.0                | 18.0             |
-| cmake   | 3.10, 3.11, 3.12    | 3.10             |
+| pgi     | 19.4                | 19.4             |
+| cmake   | 3.10 - 3.15         | 3.10             |
 | python  | 2.7, 3.5, 3.6       | 3.5 or 3.6       |
+| anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18, 0.2.20      | 0.2.18 or 0.2.20 |
-| CUDA    | 9.0, 9.1, 9.2, 10.0 | 9.1 or 9.2       |
+| ATLAS   | 3.10                | 3.10             |
+| ESSL    | 6.2                 | 6.2              |
+| CUDA    | 8.0 - 10.2          | 10.2             |
 | libiomp | 5.0                 | 5.0              |
-| MAGMA   | 2.3, 2.4            | 2.4              |
+| MAGMA   | 2.5.1               | 2.5.1            |
 | Doxygen | 1.8.13              | 1.8.13           |
 | MPI     | 2.1, 3.1            | 3.1              |
 
 ### Install using CMake: the preferred way
 
 The preferred way to install Tasmanian is to use the included CMake build script, which requires CMake version 3.10 or newer.
-
 * The commands for an out-of-source CMake build:
 ```
   mkdir Build
@@ -81,7 +84,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""       (stable)
   -D Tasmanian_ENABLE_FORTRAN:BOOL=<ON/OFF>     (mostly stable)
   -D Tasmanian_ENABLE_MPI:BOOL=<ON/OFF>         (mostly stable)
-  -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (work in progress)
+  -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (mostly stable)
 ```
 * Acceleration options:
     * OpenMP allows Tasmanian to use more than one CPU core, which greatly increases the performance
@@ -235,7 +238,7 @@ Additional notes:
 
 Tasmanian will install CMake package-config files in `<install-path>/lib/Tasmanian`, the files will contain all necessary information to import the Tasmanian targets into other CMake projects using the CMake command:
 ```
-  find_package(Tasmanian 6.1 PATHS "<install-path>")
+  find_package(Tasmanian 7.0 PATHS "<install-path>")
 ```
 See the included `CMakeLists.txt` in `<install-path>/share/Tasmanian/examples`.
 
@@ -267,7 +270,7 @@ Requesting components can alter the behavior of `Tasmanian::Tasmanian`,
 help catch errors early in the build process,
 and/or print useful log messages. For example:
 ```
-  find_package(Tasmanian 6.1 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
+  find_package(Tasmanian 7.0 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
 ```
 In the above example:
 * an error will be generated if Tasmanian was build without shared libraries, CUDA or Python support
