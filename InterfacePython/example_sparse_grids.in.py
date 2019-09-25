@@ -45,6 +45,7 @@ import example_sparse_grids_04
 import example_sparse_grids_05
 import example_sparse_grids_06
 import example_sparse_grids_07
+import example_sparse_grids_08
 
 if __name__ == "__main__":
     example_sparse_grids_01.example_01()
@@ -54,6 +55,7 @@ if __name__ == "__main__":
     example_sparse_grids_05.example_05()
     example_sparse_grids_06.example_06()
     example_sparse_grids_07.example_07()
+    example_sparse_grids_08.example_08()
     print("")
 
 
