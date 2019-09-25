@@ -40,10 +40,12 @@ div.headertitle, div.contents, #main-nav, #projectname {
 
 div.contents {
         max-width: 60em;
+        text-align: justify;
+        text-justify: inter-word;
 }
 
 #side-nav {
-        background: #fff;
+        background: #F5F5F5;
         width: 21em;
 }
 
@@ -58,12 +60,11 @@ div.contents {
 
 body, table, div, p, dl {
         font-family: 'Source Sans Pro', sans-serif !important;
-	font-size: 1em;
+        font-size: 1em;
 }
 
 h1, h2, h3, h4, h5, h6 {
         font-family: 'Merriweather Sans', sans-serif !important;
-
 }
 
 h2 {
@@ -132,7 +133,7 @@ h2 {
 
 #MSearchBox .left{
         position: relative;
-    top: 5px;
+        top: 5px;
 }
 
 
