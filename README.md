@@ -4,6 +4,10 @@ The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is 
 
 Visit us at: [http://tasmanian.ornl.gov/](http://tasmanian.ornl.gov/)
 
+[Documentation: v7.0 (latest stable)](http://tasmanian.ornl.gov/documentation/)
+
+[Documentation: development (rolling)](https://ornl.github.io/TASMANIAN/)
+
 Sparse Grids
 --------------
 
