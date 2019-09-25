@@ -29,13 +29,15 @@
  */
 
 /*!
+ * \internal
  * \file TasmanianSparseGrid.hpp
  * \brief Main header for the Sparse Grid module.
  * \author Miroslav Stoyanov
- * \ingroup TasmanianDREAM
+ * \ingroup TasmanianSG
  *
  * The header needed to access the Tasmanian sparse grids module,
  * the TasGrid::TasmanianSparseGrids class is defined here.
+ * \endinternal
  */
 
 #ifndef __TASMANIAN_SPARSE_GRID_HPP

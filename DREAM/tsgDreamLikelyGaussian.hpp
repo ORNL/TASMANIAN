@@ -33,10 +33,14 @@
 
 #include "tsgDreamLikelihoodCore.hpp"
 
-//! \file tsgDreamLikelyGaussian.hpp
-//! \brief Several likelihood implementations based on Gaussian noise.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianDREAM
+/*!
+ * \internal
+ * \file tsgDreamLikelyGaussian.hpp
+ * \brief Several likelihood implementations based on Gaussian noise.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianDREAM
+ * \endinternal
+ */
 
 namespace TasDREAM{
 

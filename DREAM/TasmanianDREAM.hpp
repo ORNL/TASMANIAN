@@ -34,22 +34,49 @@
 #include "tsgDreamSample.hpp"
 #include "tsgDreamLikelyGaussian.hpp"
 
-//! \file TasmanianDREAM.hpp
-//! \brief DiffeRential Evolution Adaptive Metropolis methods.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianDREAM
-//!
-//! The main header required to gain access to the DREAM capabilities of Tasmanian.
-//! The header will include all files needed by the DREAM module including
-//! the TasmanianSparseGrid.hpp header.
+/*!
+ * \internal
+ * \file TasmanianDREAM.hpp
+ * \brief DiffeRential Evolution Adaptive Metropolis methods.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianDREAM
+ *
+ * The main header required to gain access to the DREAM capabilities of Tasmanian.
+ * The header will include all files needed by the DREAM module including
+ * the TasmanianSparseGrid.hpp header.
+ * \endinternal
+ */
 
-//! \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis
-//!
-//! \par DREAM
-//! DiffeRential Evolution Adaptive Metropolis ...
+/*!
+ * \defgroup TasmanianDREAM DREAM: DiffeRential Evolution Adaptive Metropolis
+ *
+ * \par DREAM
+ * The DiffeRential Evolution Adaptive Metropolis is a method to draw samples
+ * from an arbitrary probability distribution defined by an arbitrary non-negative function
+ * (not necessarily normalized to integrate to 1).
+ * In the Tasmanian DREAM module, the samples (and the history) are stored in
+ * a TasDREAM::TasmanianDREAM state object which also defines the number of samples
+ * and the number of dimensions of the input space.
+ * The sampling is performed by the TasDREAM::SampleDREAM() template
+ * that takes an initialized state and several callable objects that describe
+ * the geometry of the domain and the parameters of the sampling, e.g., number of iterations.
+ *
+ * \par Bayesian Inference
+ * One of the most common applications for DREAM is in the context of Bayesian inference,
+ * where the probability distribution is comprised of a model, likelihood and prior.
+ * The three components can be combined together with the TasDREAM::posterior()
+ * template, which returns a callable object that represents the probability distribution.
+ *
+ * \par Examples
+ * See the included examples.
+ */
 
-//! \brief Encapsulates the Tasmanian DREAM module.
-//! \ingroup TasmanianDREAM
+/*!
+ * \ingroup TasmanianDREAM
+ * \brief Encapsulates the Tasmanian DREAM module.
+ *
+ * DREAM related classes and methods sit under the TasDREAM namespace.
+ */
 namespace TasDREAM{}
 
 #endif

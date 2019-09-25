@@ -33,12 +33,16 @@
 
 #include "tsgDreamEnumerates.hpp"
 
-//! \file tsgDreamLikelihoodCore.hpp
-//! \brief The interface mother-class for the likelihood classes.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianDREAM
-//!
-//! Defines the TasmanianLikelihood class which implements the relation between model outputs and measurement data.
+/*!
+ * \internal
+ * \file tsgDreamLikelihoodCore.hpp
+ * \brief The interface mother-class for the likelihood classes.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianDREAM
+ *
+ * Defines the TasmanianLikelihood class which implements the relation between model outputs and measurement data.
+ * \endinternal
+ */
 
 /*!
  * \ingroup TasmanianDREAM

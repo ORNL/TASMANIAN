@@ -4,12 +4,14 @@
 using namespace std;
 
 /*!
+ * \internal
  * \file example_sparse_grids_04.cpp
  * \brief Examples for the Tasmanian Sparse Grid module.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianSGExamples
  *
  * Tasmanian Sparse Grids Example 4.
+ * \endinternal
  */
 
 /*!
