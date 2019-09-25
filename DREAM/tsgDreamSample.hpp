@@ -59,7 +59,7 @@ namespace TasDREAM{
 
 /*!
  * \ingroup DREAMSampleCore
- * \brief Generic test function whether sample belongs in the domain.
+ * \brief Generic test function whether a sample belongs in the domain.
  */
 using DreamDomain = std::function<bool(std::vector<double> const &x)>;
 

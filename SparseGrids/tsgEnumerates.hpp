@@ -190,7 +190,7 @@ enum TypeDepth{
     //! \f$ \left\{ (i_1, i_2, \cdots, i_d) : \sum_{k=1}^d \xi_k i_k \leq L \right\} \f$
     type_level,
 
-    //! \brief Ignoring the polynomial space, use rules with index
+    //! \brief Ignoring the polynomial space, use rules with index \n
     //! \f$ \left\{ (i_1, i_2, \cdots, i_d) : \sum_{k=1}^d \xi_k i_k + \sum_{k=1}^d \eta_k \log(i_k + 1) \leq L \right\} \f$
     type_curved,
 
@@ -198,21 +198,21 @@ enum TypeDepth{
     //! \f$ \left\{ (i_1, i_2, \cdots, i_d) : \prod_{k=1}^d (i_k + 1)^{\xi_k} \leq L \right\} \f$
     type_hyperbolic,
 
-    //! \brief Total degree polynomial space for interpolation, i.e., the span of
+    //! \brief Total degree polynomial space for interpolation, i.e., the span of \n
     //! \f$ \left\{ \prod_{k=1}^d x^{i_k} : \sum_{k=1}^d \xi_k i_k \leq L \right\} \f$
     type_iptotal,
 
     //! \brief Total degree polynomial space for quadrature/integration.
     type_qptotal,
 
-    //! \brief Curved polynomial space for interpolation, i.e., the span of
+    //! \brief Curved polynomial space for interpolation, i.e., the span of \n
     //! \f$ \left\{ \prod_{k=1}^d x^{i_k} : \sum_{k=1}^d \xi_k i_k +  \sum_{k=1}^d \eta_k \log(i_k + 1) \leq L \right\} \f$
     type_ipcurved,
 
     //! \brief Curved polynomial space for quadrature/integration.
     type_qpcurved,
 
-    //! \brief Hyperbolic cross section polynomial space for interpolation, i.e., the span of
+    //! \brief Hyperbolic cross section polynomial space for interpolation, i.e., the span of \n
     //! \f$ \left\{ \prod_{k=1}^d x^{i_k} : \prod_{k=1}^d (i_k + 1)^{\xi_k} \leq L \right\} \f$
     type_iphyperbolic,
 

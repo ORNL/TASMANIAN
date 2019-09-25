@@ -206,7 +206,7 @@ namespace TasGrid{
  * - TasGrid::constructSurrogate()
  * - beginConstruction(), finishConstruction()
  * - getCandidateConstructionPoints()
- * - loadConstructedPoint()
+ * - loadConstructedPoints()
  *
  * \par Using Unstructured Data
  * The standard sparse grid methods assume that model data is available at very
