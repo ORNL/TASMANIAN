@@ -31,13 +31,17 @@
 #ifndef __TASMANIAN_DREAM_CORE_RANDOM_HPP
 #define __TASMANIAN_DREAM_CORE_RANDOM_HPP
 
-//! \file tsgDreamCoreRandom.hpp
-//! \brief Core random sampling methods
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianDREAM
-//! \internal
-//!
-//! Implements several methods for random sampling and defines specific probability density functions.
+/*!
+ * \internal
+ * \file tsgDreamCoreRandom.hpp
+ * \brief Core random sampling methods
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianDREAM
+ * \internal
+ *
+ * Implements several methods for random sampling and defines specific probability density functions.
+ * \endinternal
+ */
 
 /*!
  * \ingroup TasmanianDREAM

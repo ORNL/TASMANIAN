@@ -29,6 +29,7 @@
  */
 
 /*!
+ * \internal
  * \file example_sparse_grids.cpp
  * \brief Examples for the Tasmanian Sparse Grid module.
  * \author Miroslav Stoyanov

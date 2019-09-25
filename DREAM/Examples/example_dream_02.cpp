@@ -2,12 +2,16 @@
 
 using namespace std;
 
-//! \file example_dream_02.cpp
-//! \brief Examples for the Tasmanian DREAM module.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianDREAMExamples
-//!
-//! Tasmanian DREAM Example 2
+/*!
+ * \internal
+ * \file example_dream_02.cpp
+ * \brief Examples for the Tasmanian DREAM module.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianDREAMExamples
+ *
+ * Tasmanian DREAM Example 2
+ * \endinternal
+ */
 
 /*!
  * \ingroup TasmanianDREAMExamples

@@ -32,12 +32,14 @@
 #define __TASMANIAN_ADDONS_HPP
 
 /*!
+ * \internal
  * \file TasmanianAddons.hpp
  * \brief Header to include add addon templates.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianAddons
  *
  * All addon templates are included with this single header.
+ * \endinternal
  */
 
 #include "tsgLoadNeededValues.hpp"

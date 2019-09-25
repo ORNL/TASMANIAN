@@ -36,6 +36,7 @@
 #include "TasmanianSparseGrid.hpp"
 
 /*!
+ * \internal
  * \file tsgDreamEnumerates.hpp
  * \brief The enumerated types used in the DREAM module.
  * \author Miroslav Stoyanov
@@ -43,6 +44,7 @@
  *
  * Defines the enumerated types used throughout the DREAM module.
  * The file is included in every other DREAM header.
+ * \endinternal
  */
 
 /*!

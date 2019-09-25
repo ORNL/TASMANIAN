@@ -36,12 +36,14 @@
 #include "tsgDreamCorePDF.hpp"
 
 /*!
+ * \internal
  * \file tsgDreamSample.hpp
  * \brief Core sampling templates.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianDREAM
  *
  * Defines the core MCMC template for sampling from an arbitrarily defined unscaled probability density.
+ * \endinternal
  */
 
 /*!
