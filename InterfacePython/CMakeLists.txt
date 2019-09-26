@@ -7,7 +7,10 @@
 #
 ########################################################################
 
-set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages" CACHE INTERNAL "install path for the Python module (version specific)")
+if (NOT "${Tasmanian_python_install_path}" STREQUAL "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages")
+    set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages" CACHE INTERNAL "install path for the Python module (version specific)" FORCE)
+    set(Tasmanian_PYTHONPATH "${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python/" CACHE PATH "install path for the Python module (version independent)" FORCE)
+endif()
 
 # CMake has permissive implementation of boolean true, which includes
 # "On", "True" and "Yes" with different cases;
@@ -102,14 +105,14 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows") # windows puts the .dll files in bi
     set(Tasmanian_shared_lib_destination "bin")
 endif()
 set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set(Tasmanian_libcaddons_path    "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(Tasmanian_libdream_path      "${CMAKE_INSTALL_PREFIX}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniandream${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(Tasmanian_libcaddons_path    "${CMAKE_INSTALL_PREFIX}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianConfig.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.py")
 
 set(Tasmanian_python_example_import "sys.path.append(\"${Tasmanian_python_install_path}\")\n")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_dream.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_dream.py") # also uses Tasmanian_string_python_hashbang
 
-set(Tasmanian_PYTHONPATH "${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python/" CACHE PATH "install path for the Python module (version independent)")
 
 ########################################################################
 # Testing

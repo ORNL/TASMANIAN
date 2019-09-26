@@ -180,7 +180,7 @@ if (Tasmanian_ENABLE_RECOMMENDED)
         endif()
     elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         set(CMAKE_CXX_FLAGS_RELEASE "/MD /Ox /DNDEBUG ${OpenMP_CXX_FLAGS}") # cmake overwrites flags a lot, careful how you set those
-        set(CMAKE_CXX_FLAGS_DEBUG "/MD /Ox ${OpenMP_CXX_FLAGS}")
+        set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Ox ${OpenMP_CXX_FLAGS}")
     endif()
 endif()
 
@@ -213,4 +213,14 @@ endif()
 ########################################################################
 if (DEFINED Tasmanian_EXTRA_LINK_DIRS)
     link_directories(${Tasmanian_EXTRA_LINK_DIRS}) # cannot be done per-target
+endif()
+
+
+########################################################################
+# Report build flags based on the compiler and options
+########################################################################
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    set(Tasmanian_cxx_flags "${CMAKE_CXX_FLAGS}")
+else()
+    set(Tasmanian_cxx_flags "${CMAKE_BUILD_TYPE}, ${CMAKE_CXX_FLAGS}")
 endif()
