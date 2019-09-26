@@ -2316,3 +2316,11 @@ def makeWaveletGrid(iDimension, iOutputs, iDepth, iOrder=1, liLevelLimits=[]):
     grid = TasmanianSparseGrid()
     grid.makeWaveletGrid(iDimension, iOutputs, iDepth, iOrder, liLevelLimits)
     return grid
+
+def copyGrid(source, iOutputsBegin = 0, iOutputsEnd = -1):
+    '''
+    Factory method equivalent to TasmanianSparseGrid.copyGrid().
+    '''
+    grid = TasmanianSparseGrid()
+    grid.copyGrid(source, iOutputsBegin, iOutputsEnd)
+    return grid
