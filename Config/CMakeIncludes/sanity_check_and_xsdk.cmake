@@ -214,3 +214,13 @@ endif()
 if (DEFINED Tasmanian_EXTRA_LINK_DIRS)
     link_directories(${Tasmanian_EXTRA_LINK_DIRS}) # cannot be done per-target
 endif()
+
+
+########################################################################
+# Report build flags based on the compiler and options
+########################################################################
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    set(Tasmanian_cxx_flags "${CMAKE_CXX_FLAGS}")
+else()
+    set(Tasmanian_cxx_flags "${CMAKE_BUILD_TYPE}, ${CMAKE_CXX_FLAGS}")
+endif()
