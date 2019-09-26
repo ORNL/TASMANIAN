@@ -94,7 +94,7 @@ int testInterfaceC(){
     tsgEstimateAnisotropicCoefficientsStatic(grid, "ipcurved", 0, tcoeffs);
     int *coeffs = tsgEstimateAnisotropicCoefficients(grid, "ipcurved", 0, &n);
     if (n != 4){ printf("ERROR: mismatch in number of anisotropic coefficients\n"); return 0; }
-    for(i=0; i<n; i++) if (fabs(coeffs[i] - tcoeffs[i]) > 1.E-15){ printf("ERROR: mismatch acoeffs i = %d, expected = %d, actual = %d\n",i,tcoeffs[i],coeffs[i]); return 0; }
+    for(i=0; i<n; i++) if (coeffs[i] != tcoeffs[i]){ printf("ERROR: mismatch acoeffs i = %d, expected = %d, actual = %d\n",i,tcoeffs[i],coeffs[i]); return 0; }
     free(coeffs);
 
     tsgDestructTasmanianSparseGrid(grid);
@@ -155,7 +155,7 @@ int testInterfaceC(){
     int tspace[10] = {0, 0, 0, 1, 0, 2, 1, 0, 2, 0};
     tsgGetGlobalPolynomialSpace(grid, 1, &n, &pspace);
     if (n != 5){ printf("ERROR: mismatch in size of the interpolated polynomial space.\n"); return 0; }
-    for(i=0; i<10; i++) if (fabs(pspace[i] - tspace[i]) > 1.E-15){ printf("ERROR: mismatch in polynomial space i = %d, expected = %d, actual = %d\n",i,tspace[i],pspace[i]); return 0; }
+    for(i=0; i<10; i++) if (pspace[i] != tspace[i]){ printf("ERROR: mismatch in polynomial space i = %d, expected = %d, actual = %d\n",i,tspace[i],pspace[i]); return 0; }
 
     free(pspace);
     tsgDestructTasmanianSparseGrid(grid);

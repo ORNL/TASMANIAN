@@ -142,7 +142,7 @@ protected:
     void makeRule(TypeOneDRule trule);
 
     //! \brief Tuning decision whether to use sparse or dense.
-    bool useDense() const{ return (sparse_affinity == -1) || ((sparse_affinity == 0) && (num_dimensions > 6)); }
+    bool useDense() const{ return (sparse_affinity == -1); }
 
     void buildTree();
 

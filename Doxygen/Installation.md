@@ -36,6 +36,7 @@ Optional features:
 | gcc     | 5 - 8               | any              |
 | clang   | 4 - 8               | 4 or 5           |
 | icc     | 18.0                | 18.0             |
+| xl      | 16.0                | 16.0             |
 | pgi     | 19.4                | 19.4             |
 | cmake   | 3.10 - 3.15         | 3.10             |
 | python  | 2.7, 3.5, 3.6       | 3.5 or 3.6       |
@@ -67,7 +68,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
 ```
   -D CMAKE_INSTALL_PREFIX:PATH=<install-path> (install folder for the make install command)
   -D CMAKE_BUILD_TYPE:STRING=<Debug/Release>  (set debug flags or default optimization flags)
-  -D BUILD_SHARED_LIBS:BOOL=<ON/OFF>          (if defined, build only shared/static libraries, otherwise build both)
+  -D BUILD_SHARED_LIBS:BOOL=<ON/OFF>          (pick shared/static libs, undefined builds both)
   -D CMAKE_CXX_COMPILER:PATH=<path>           (specify the C++ compiler)
   -D CMAKE_CUDA_COMPILER:PATH=<path>          (specify the CUDA nvcc compiler)
   -D CMAKE_CXX_FLAGS:STING=<flags>            (set additional flags)
@@ -153,7 +154,7 @@ with command line switches.
 ```
 * Example call that enables MATLAB/Octave and CUDA
 ```
-  ./install /home/<user>/Tasmanian /home/<user>/Tasmanian/WorkFolder -cuda=/usr/local/cuda-9.2/bin/nvcc
+  ./install /home/me/Tasmanian /home/me/Tasmanian/WorkFolder -cuda=/usr/local/cuda-9.2/bin/nvcc
 ```
 * Additional notes:
     * the script must be called from the main source code folder
