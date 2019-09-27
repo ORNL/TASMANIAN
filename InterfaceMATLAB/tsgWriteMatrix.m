@@ -14,6 +14,8 @@ function tsgWriteMatrix(filename, mat)
 % 9 10 11 12
 %
 
+filename = regexprep(filename, '\\ ', ' ');
+
 if (prod(size(mat)) < 1000) % small matrix, use ascii format
 
     fid = fopen(filename, 'w');

@@ -11,4 +11,7 @@ function [sFiles, sTasGrid] = tsgGetPaths()
 sTasGrid = ['ENTER THE PATH TO tasgrid EXECUTABLE'];
 sFiles = ['ENTER THE PATH TO MATLAB WORK FOLDER'];
 
+sTasGrid = regexprep(sTasGrid, ' ', '\\ ');
+sFiles = regexprep(sFiles, ' ', '\\ ');
+
 end

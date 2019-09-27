@@ -12,6 +12,9 @@ function [mat] = tsgReadMatrix(filename)
 % results in the matrix [1 2 3 4; 5 6 7 8; 9 10 11 12;]
 %
 
+%disp(filename)
+filename = regexprep(filename, '\\ ', ' ');
+%disp(filename)
 fid = fopen(filename);
 
 TSG = fread(fid, [1, 3], '*char');

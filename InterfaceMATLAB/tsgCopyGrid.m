@@ -25,6 +25,8 @@ lNewGrid = lOldGrid;
 lNewGrid.sName = sNewGridName;
 [sFileGNew, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lNewGrid.sName);
 
+sFileG    = regexprep(sFileG, '\\ ', ' ');
+sFileGNew = regexprep(sFileGNew, '\\ ', ' ');
 [status, cmdout] = copyfile(sFileG, sFileGNew);
 
 if (~isempty(cmdout))

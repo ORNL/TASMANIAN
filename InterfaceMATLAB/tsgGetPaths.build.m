@@ -8,7 +8,7 @@ function [sFiles, sTasGrid] = tsgGetPaths()
 %
 % it is recommended to use absolute path
 
-sTasGrid = ['@CMAKE_CURRENT_BINARY_DIR@/../SparseGrids/tasgrid'];
-sFiles = ['@CMAKE_CURRENT_BINARY_DIR@/tempMATLAB/'];
+sTasGrid = ['@Tasmanian_matlab_tasgrid@'];
+sFiles = ['@Tasmanian_matlab_workdir@'];
 
 end

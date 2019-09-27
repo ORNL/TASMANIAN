@@ -21,7 +21,8 @@ function [lGrid] = tsgReloadGrid(sGridName)
 [sFiles, sTasGrid] = tsgGetPaths();
 [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(sGridName);
 
-if (exist(sFileG, 'file') ~= 2)
+sTestFile = regexprep(sFileG, '\\ ', ' ');
+if (exist(sTestFile, 'file') ~= 2)
     error(['There is no grid named: ',sGridName]);
 end
 

@@ -25,6 +25,13 @@ function tsgCleanTempFiles(lGrid, lFiles)
 [sFiles, sTasGrid] = tsgGetPaths();
 [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
 
+sFileX = regexprep(sFileX, '\\ ', ' ');
+sFileV = regexprep(sFileV, '\\ ', ' ');
+sFileO = regexprep(sFileO, '\\ ', ' ');
+sFileW = regexprep(sFileW, '\\ ', ' ');
+sFileC = regexprep(sFileC, '\\ ', ' ');
+sFileL = regexprep(sFileL, '\\ ', ' ');
+
 if (isfield(lFiles, 'all'))
     if (exist(sFileX, 'file') == 2)
         delete(sFileX);

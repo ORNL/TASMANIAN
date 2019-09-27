@@ -61,6 +61,7 @@ else
         [tmp] = tsgReadMatrix(sFileO);
         vals = tmp(:,1:2:end) + i * tmp(:,2:2:end);     % i is unit imaginary
     else
+        sFileO = regexprep(sFileO, '\\ ', ' ');
         fid = fopen(sFileO);
         TSG = fread(fid, [1, 3], '*char');
         if (TSG == 'TSG')
