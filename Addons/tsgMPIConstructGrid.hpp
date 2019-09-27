@@ -59,6 +59,16 @@
 namespace TasGrid{
 
 /*!
+ * \ingroup TasmanianAddonsMPIConstruct
+ * \brief Signature of a model function to be used in the MPI construction procedures.
+ *
+ * The logic is identical to the TasGrid::ModelSignature used in the TasGrid::constructSurrogate()
+ * templates, with the exception of the removal of the thread-id.
+ * In an MPI context, the thread-id is replaced by the MPI rank which can be queried using MPI_Comm_rank().
+ */
+using ModelSignatureMPI = std::function<void(std::vector<double> const &x, std::vector<double> &y)>;
+
+/*!
  * \internal
  * \ingroup TasmanianAddonsMPIConstruct
  * \brief MPI construction algorithm using generic candidates procedure.
@@ -67,7 +77,7 @@ namespace TasGrid{
  * \endinternal
  */
 template<bool use_initial_guess>
-void mpiConstructCommon(std::function<void(std::vector<double> const &x, std::vector<double> &y)> model,
+void mpiConstructCommon(ModelSignatureMPI model,
                         int num_dimensions, int num_outputs,
                         size_t max_num_points, size_t max_samples_per_job,
                         size_t max_num_ranks, int tagx, int tagy, int root, MPI_Comm comm,
@@ -325,7 +335,7 @@ void mpiConstructCommon(std::function<void(std::vector<double> const &x, std::ve
  *  an actual Implementation would differ in details and specifics.
  */
 template<bool use_initial_guess = no_initial_guess>
-void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y)> model,
+void mpiConstructSurrogate(ModelSignatureMPI model,
                            int num_dimensions, int num_outputs,
                            size_t max_num_points, size_t max_samples_per_job,
                            size_t max_num_ranks, int tagx, int tagy, int root, MPI_Comm comm,
@@ -348,11 +358,11 @@ void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std:
  * \brief Construct a sparse grid surrogate to the model defined by the lambda, MPI version.
  *
  * Uses the user provided \b anisotropic_weights to order the samples by importance,
- * see TasmanianSparseGrid::getCandidateConstructionPoints().
+ * see\n TasmanianSparseGrid::getCandidateConstructionPoints().
  * and the overloads to TasGrid::constructSurrogate().
  */
 template<bool use_initial_guess = no_initial_guess>
-void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y)> model,
+void mpiConstructSurrogate(ModelSignatureMPI model,
                            int num_dimensions, int num_outputs,
                            size_t max_num_points, size_t max_samples_per_job,
                            size_t max_num_ranks, int tagx, int tagy, int root, MPI_Comm comm,
@@ -379,7 +389,7 @@ void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std:
  * and the overloads to TasGrid::constructSurrogate().
  */
 template<bool use_initial_guess = no_initial_guess>
-void mpiConstructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y)> model,
+void mpiConstructSurrogate(ModelSignatureMPI model,
                            int num_dimensions, int num_outputs,
                            size_t max_num_points, size_t max_samples_per_job,
                            size_t max_num_ranks, int tagx, int tagy, int root, MPI_Comm comm,
