@@ -60,7 +60,7 @@ include/TasmanianConfig.hpp: ./SparseGrids/TasmanianConfig.hpp
 	mkdir -p ./include
 	cp ./SparseGrids/TasmanianConfig.hpp ./include/
 
-include/Tasmanian.hpp: ./include/Tasmanian.hpp
+include/Tasmanian.hpp: ./Config/Tasmanian.hpp
 	mkdir -p ./include
 	cp ./Config/Tasmanian.hpp ./include/
 
@@ -119,7 +119,7 @@ addontester: Addons/testAddons.o libtasmaniandream.a libtasmaniansparsegrid.a
 	$(CC) $(OPTL) $(LADD) -L. Addons/testAddons.o -o addontester libtasmaniandream.a libtasmaniansparsegrid.a
 
 Addons/testAddons.o: Addons/testAddons.cpp
-	$(CC) $(OPTC) $(IADD) -I./Addons/ -I./SparseGrids/ -c Addons/testAddons.cpp -o Addons/testAddons.o
+	$(CC) $(OPTC) $(IADD) -I./Addons/ -I./DREAM/ -I./SparseGrids/ -c Addons/testAddons.cpp -o Addons/testAddons.o
 
 # Headers
 # many calls to mkdir, consider reducing
