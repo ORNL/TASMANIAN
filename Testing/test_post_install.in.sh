@@ -7,7 +7,7 @@ if (( @Tasmanian_TESTS_OMP_NUM_THREADS@ != -1 )); then
 fi
 
 sPWD=`pwd`
-if [ $sPWD != @CMAKE_CURRENT_BINARY_DIR@ ]; then
+if [ "$sPWD" != "@CMAKE_CURRENT_BINARY_DIR@" ]; then
     echo "NOPE: you must run this inside @CMAKE_CURRENT_BINARY_DIR@"
     exit 1;
 fi
@@ -18,7 +18,7 @@ fi
 cd FinalTest || { echo "ERROR: Could not cd into FinalTest, terminating"; exit 1; }
 
 sPWD=`pwd`
-if [ $sPWD != "@CMAKE_CURRENT_BINARY_DIR@/FinalTest" ]; then
+if [ "$sPWD" != "@CMAKE_CURRENT_BINARY_DIR@/FinalTest" ]; then
     echo "ERROR: somehow we failed to cd into FinalTest"
     exit 1;
 fi
