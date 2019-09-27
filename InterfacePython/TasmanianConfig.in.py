@@ -31,6 +31,11 @@
 # Using a single configuration file with all paths and relevant options
 # The rest of the Tasmanian Python modules will not be configured by cmake
 
+# the transitive library dependencies on Linux/OsX are handled by rpath, Windows needs help
+if "@CMAKE_SYSTEM_NAME@" == "Windows":
+    import os
+    os.environ['PATH'] = "@CMAKE_INSTALL_PREFIX@/bin/" + os.pathsep + os.environ['PATH']
+
 __version__ = "@Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@"
 __license__ = "@Tasmanian_license@"
 __author__ = "Miroslav Stoyanov"
