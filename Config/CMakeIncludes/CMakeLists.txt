@@ -54,5 +54,5 @@ endif()
 set(Tasmanian_post_install "${Tasmanian_post_install}--------------------------------------------------------------------------------\n")
 
 install(CODE "message(\"${Tasmanian_post_install}\")")
-install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log \"${Tasmanian_post_install}\")")
+install(CODE "file(WRITE \"${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log\" \"${Tasmanian_post_install}\")")
 install(CODE "message(\"information stored in: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log\n\")")

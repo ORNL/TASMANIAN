@@ -158,7 +158,7 @@ for sOption in "$@"; do
 done
 
 echo "Looking for cmake ..."
-$sCmake --version || { echo "ERROR: Could not find cmake command, please use option -cmake=<cmake full path>"; exit 1; }
+"$sCmake" --version || { echo "ERROR: Could not find cmake command, please use option -cmake=<cmake full path>"; exit 1; }
 
 echo ""
 echo ""
@@ -208,17 +208,17 @@ echo ""
 # cmake seems to handle relative paths as relative to the build folder
 # the user is likely to interpret relative paths to the location of the install script
 # thus we create the folder here and convert the folder to absolute path
-if [[ ! -z $sMatlabWork ]]; then
-    mkdir -p $sMatlabWork
+if [[ ! -z "$sMatlabWork" ]]; then
+    mkdir -p "$sMatlabWork"
     if [ ! $? == 0 ]; then
         echo "ERROR: could not create folder $sMatlabWork"
         exit 1;
     fi
     # ensure absolute path in $sMatlabWork
     sPWD=`pwd`
-    cd $sMatlabWork
+    cd "$sMatlabWork"
     sMatlabWork=`pwd`
-    cd $sPWD
+    cd "$sPWD"
 fi
 
 
@@ -286,8 +286,8 @@ echo ""
 #######################################
 # here we go!
 #######################################
-if [[ ! $sInstallPrefix == "/"* ]] && [[ ! $sInstallPrefix == "~/"* ]]; then # reinterpret relative paths
-    sInstallPrefix=`pwd`/$sInstallPrefix
+if [[ ! "$sInstallPrefix" == "/"* ]] && [[ ! "$sInstallPrefix" == "~/"* ]]; then # reinterpret relative paths
+    sInstallPrefix=`pwd`/"$sInstallPrefix"
 fi
 
 if (( $bVerbose == 1 )); then
@@ -304,7 +304,7 @@ fi
 
 $sCmake \
   -D CMAKE_BUILD_TYPE=$sBuildType \
-  -D CMAKE_INSTALL_PREFIX=$sInstallPrefix \
+  -D CMAKE_INSTALL_PREFIX="$sInstallPrefix" \
   $sBuildSharedLibs \
   $sCXXcompiler \
   -D Tasmanian_ENABLE_RECOMMENDED:BOOL=ON \
@@ -358,7 +358,7 @@ fi
 
 # write out the build log
 set -x
-cat $sInstallPrefix/share/Tasmanian/Tasmanian.log
+cat "$sInstallPrefix/share/Tasmanian/Tasmanian.log"
 # if you get here, it means things went well
 
 #######################################
@@ -367,7 +367,7 @@ cat $sInstallPrefix/share/Tasmanian/Tasmanian.log
 set +x
 if (( $bSkilBashrc == 0 )); then
 # check if $sInstallPrefix is absolute or relative
-    cd $sInstallPrefix/share/Tasmanian/
+    cd "$sInstallPrefix"/share/Tasmanian/
     if [ ! $? -eq 0 ] || [ ! -f ./TasmanianENVsetup.sh ]; then
         echo "Very odd! There were no previous errors but cannot find $sInstallPrefix/share/Tasmanian/TasmanianENVsetup.sh"
         echo "This must be a bug!"
@@ -385,7 +385,7 @@ if (( $bSkilBashrc == 0 )); then
     echo ""
     read -p "Append the command to ~/.bashrc? (y/N)" sAppend
     if [[ $sAppend == "y" ]] || [[ $sAppend == "Y" ]] || [[ $sAppend == "Yes" ]] || [[ $sAppend == "yes" ]]; then
-        echo "source $sConfigPath/TasmanianENVsetup.sh" >> ~/.bashrc
+        echo "source \"$sConfigPath\"/TasmanianENVsetup.sh" >> ~/.bashrc
     fi
 fi
 

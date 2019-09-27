@@ -9,7 +9,7 @@ function tsgWriteCustomRuleFile(sFilename, lCustomRule)
 %
 % sFilename: the file where the custom rule should be written
 %
-% lCustomRule: 
+% lCustomRule:
 %         the customRule structure that specifies the rule
 %
 % lCustomRule.sDescription:
@@ -25,10 +25,10 @@ function tsgWriteCustomRuleFile(sFilename, lCustomRule)
 % lCustomRule.vPrecision:
 %         a vector of length lCustomRule.iMaxLevel (integers)
 %         defines the precision (in polynomial order) or each level of the
-%         quadrature rule, e.g., for Gauss-Legendre rule 
+%         quadrature rule, e.g., for Gauss-Legendre rule
 %         custom_rule.precision = 2*custom_rule.levels-1
-%         NOTE: grids of type other than ip* and qp* will ignore the 
-%               precision, in which case, precision can be set to a 
+%         NOTE: grids of type other than ip* and qp* will ignore the
+%               precision, in which case, precision can be set to a
 %               vector of zeros
 %
 % lCustomRule.vNodes:
@@ -44,6 +44,7 @@ function tsgWriteCustomRuleFile(sFilename, lCustomRule)
 %         a file is created with the custom rule
 %
 
+sFilename = regexprep(sFilename, '\\ ', ' ');
 fid = fopen(sFilename, 'w');
 
 if (isfield(lCustomRule, 'sDescription'))

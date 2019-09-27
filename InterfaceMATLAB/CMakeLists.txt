@@ -46,7 +46,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
 foreach(Tasmanian_matlab_source_file ${Tasmanian_matlab_source_files})
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/matlab/${Tasmanian_matlab_source_file}"
                        COMMAND "${CMAKE_COMMAND}"
-                       ARGS -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${Tasmanian_matlab_source_file} ${CMAKE_CURRENT_BINARY_DIR}/matlab/${Tasmanian_matlab_source_file}
+                       ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${Tasmanian_matlab_source_file}" "${CMAKE_CURRENT_BINARY_DIR}/matlab/${Tasmanian_matlab_source_file}"
                        DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${Tasmanian_matlab_source_file}"
                        COMMENT "Copying ${CMAKE_CURRENT_SOURCE_DIR}/${Tasmanian_matlab_source_file}")
     list(APPEND Tasmanian_matlab_pre_install_files "${CMAKE_CURRENT_BINARY_DIR}/matlab/${Tasmanian_matlab_source_file}")
@@ -55,9 +55,18 @@ add_custom_target(Tasmanian_matlab_interface ALL DEPENDS "${Tasmanian_matlab_pre
 
 # set MATLAB (tasgrid and temp folder) for the build folder (stage 1)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/") # place for temp files if running matlab from the build location
+set(Tasmanian_matlab_tasgrid "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/tasgrid")
+string(REPLACE " " "\\ " Tasmanian_matlab_tasgrid "${Tasmanian_matlab_tasgrid}")
+set(Tasmanian_matlab_workdir "${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/")
+string(REPLACE " " "\\ " Tasmanian_matlab_workdir "${Tasmanian_matlab_workdir}")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.build.m" "${CMAKE_CURRENT_BINARY_DIR}/matlab/tsgGetPaths.m" @ONLY)
 
 # set MATLAB (tasgrid and temp folder) for the install folder (stage 2)
+set(Tasmanian_matlab_tasgrid "${CMAKE_INSTALL_PREFIX}/bin/tasgrid")
+string(REPLACE " " "\\ " Tasmanian_matlab_tasgrid "${Tasmanian_matlab_tasgrid}")
+message("${Tasmanian_matlab_tasgrid}")
+set(Tasmanian_matlab_workdir "${Tasmanian_MATLAB_WORK_FOLDER}/")
+string(REPLACE " " "\\ " Tasmanian_matlab_workdir "${Tasmanian_matlab_workdir}")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.install.m" "${CMAKE_CURRENT_BINARY_DIR}/configured/tsgGetPaths.m" @ONLY)
 
 # create the MATLAB work-folder on install

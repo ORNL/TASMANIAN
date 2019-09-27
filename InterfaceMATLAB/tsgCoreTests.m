@@ -230,8 +230,9 @@ end
 %%%                     tsgDeleteGrid()                              %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [sFiles, sTasGrid] = tsgGetPaths();
+sFiles = regexprep(sFiles, '\\ ', ' ');
 if (~exist([sFiles,'_tsgcoretests_lgrid_FileG'], 'file'))
-    error('Mismatch in tsgDeleteGrid: cannot file file that should exist');
+    error('Mismatch in tsgDeleteGrid: cannot find a file that should exist');
 end
 tsgDeleteGrid(lGrid);
 if (exist([sFiles,'_tsgcoretests_lgrid_FileG'], 'file'))
@@ -325,8 +326,9 @@ tsgDeleteGrid(lGrid);
 %%%                     tsgDeleteGridByName()                        %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [sFiles, sTasGrid] = tsgGetPaths();
+sFiles = regexprep(sFiles, '\\ ', ' ');
 if (~exist([sFiles,'_tsgcoretests_lgrid2_FileG'], 'file'))
-    error('Mismatch in tsgDeleteGrid: cannot file file that should exist');
+    error('Mismatch in tsgDeleteGrid: cannot find a file that should exist');
 end
 tsgDeleteGridByName('_tsgcoretests_lgrid2');
 if (exist([sFiles,'_tsgcoretests_lgrid2_FileG'], 'file'))
