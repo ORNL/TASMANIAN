@@ -109,79 +109,87 @@ enum TypeIndexRelation{ // internal for IndexSets, unambiguous set comparison
     type_asameb
 };
 
-//! \brief Used by Global Sequence and Fourier grids, indicates the selection criteria.
-//! \ingroup SGEnumerates
-
-//! \par Approximation Error
-//! The approximation error when interpolating or integrating a target model with
-//! a \b Global sparse grid,
-//! is bound by a constant multiplied by the best approximation of the model in the
-//! set of polynomial exactness. The exactness set consists of all polynomials that
-//! can be \a captured exactly (approximated to round-off error) by the sparse grid.
-//! The constant is the
-//! norm of the sparse grid operator (a.k.a., the Lebesgue constant)
-//! and the exactness set is the range.
-//!
-//! \par
-//! The operator norm depends primarily on the underlying one dimensional rule used
-//! to construct the grid, and all rules implemented in Tasmanian have reasonable norms.
-//! Of primary focus is the target model and constructing a grid with range suitable
-//! for either integrating or interpolating the model.
-//!
-//! \par Categories
-//! The types of \b Global grids fall into four categories:
-//! - \b Level selection uses the order of the one dimensional rules as criteria
-//!   and pays no regard to the polynomial exactness. \b Level types are strongly influenced
-//!   by the growth of points in the one dimensional rule and are seldom optimal,
-//!   although such grid can be a good initial guess for an iterative refinement process.
-//! - \b Total degree polynomial space is good for smooth models, i.e., analytic functions
-//!   with convergent Taylors series for every point in the domain.
-//! - \b Curved polynomial space is essentially a \b Total degree space with an
-//!   added logarithmic correction term. The correction can account for rules with slightly
-//!   higher norm growth (e.g., R-Leja rules) or for models with heavily constrained
-//!   region of analyticity, i.e., slightly less smooth.
-//! - \b Hyperbolic cross section space is suitable for models with more irregular behavior, e.g.,
-//!   models with only a finite number of derivatives.
-//!
-//! \par
-//! The four main types can be tuned for either interpolation or quadrature (integration);
-//! the corresponding enumerate will have either \b i or \b q in the name.
-//! In all cases, Tasmanian will construct the grid with minimum number of points
-//! (or fewest basis functions), that will \a capture the corresponding polynomial space.
-//!
-//! \par Anisotropic Weights
-//! All types can be combined with anisotropic weights that adjust the density
-//! of the grid in different directions. Below, we denote the anisotropic weights
-//! with \f$ \xi_1, \xi_2, \cdots, \xi_d \f$ and \f$ \eta_1, \eta_2, \cdots, \eta_d \f$,
-//! where \f$ d \f$ is the number of dimensions in the grid. Note that only curved
-//! types use the \f$ \eta \f$ weights.
-//!
-//! \par
-//! The \b TypeDepth also uses the \b depth parameter to define a cut-off point, the
-//! \b depth is normalized by multiplying it by the smallest of the \f$ \xi \f$ weights.
-//! In the formulas below, \b L stands for the normalized offset.
-//!
-//! Details regarding sparse grids construction and polynomial spaces can be found in\n
-//! M. Stoyanov, C. G. Webster, <a href="https://arxiv.org/pdf/1508.01125.pdf">
-//! A Dynamically Adaptive Sparse Grid Method for Quasi-Optimal
-//! Interpolation of Multidimensional Analytic Functions</a>,\n also published in
-//! <a href="https://www.sciencedirect.com/science/article/pii/S0898122116000031">
-//! Computers and Mathematics with Applications 71 (2016) 2449–2465.</a>
-//!
-//! \par Full Tensor Types
-//! Finally, in addition to the aforementioned types, Tasmanian includes the types for
-//! dense tensor grids. Only in 2-dimensions Gauss quadrature rules with full tensors
-//! are more efficient than a general sparse grid. Performing interpolation or
-//! working with more than 2 dimensions, sparse grids will always result in better
-//! approximation error per number of nodes, i.e., model evaluations; nevertheless,
-//! dense tensor grids naturally fall in the framework and can be useful for testing
-//! purposes.
-//!
-//! \par Fourier Grids
-//! The Fourier grids are very similar to Global grids, with the exception that
-//! polynomial powers are replaced by frequencies of trigonometric functions.
-//! The different selection strategies can be used with frequency exactness in
-//! place of polynomial power.
+/*!
+ * \brief Used by Global Sequence and Fourier grids, indicates the selection criteria.
+ * \ingroup SGEnumerates
+ *
+ * \par Approximation Error
+ * The approximation error when interpolating or integrating a target model with
+ * a \b Global sparse grid,
+ * is bound by a constant multiplied by the best approximation of the model in the
+ * set of polynomial exactness. The exactness set consists of all polynomials that
+ * can be \a captured exactly (approximated to round-off error) by the sparse grid.
+ * The constant is the
+ * norm of the sparse grid operator (a.k.a., the Lebesgue constant)
+ * and the exactness set is the range.
+ *
+ * \par
+ * The operator norm depends primarily on the underlying one dimensional rule used
+ * to construct the grid, and all rules implemented in Tasmanian have reasonable norms.
+ * Of primary focus is the target model and constructing a grid with range suitable
+ * for either integrating or interpolating the model.
+ *
+ * \par Categories
+ * The types of \b Global grids fall into four categories:
+ * - \b Level selection uses the order of the one dimensional rules as criteria
+ *   and pays no regard to the polynomial exactness. \b Level types are strongly influenced
+ *   by the growth of points in the one dimensional rule and are seldom optimal,
+ *   although such grid can be a good initial guess for an iterative refinement process.
+ * - \b Total degree polynomial space is good for smooth models, i.e., analytic functions
+ *   with convergent Taylors series for every point in the domain.
+ * - \b Curved polynomial space is essentially a \b Total degree space with an
+ *   added logarithmic correction term. The correction can account for rules with slightly
+ *   higher norm growth (e.g., R-Leja rules) or for models with heavily constrained
+ *   region of analyticity, i.e., slightly less smooth.
+ * - \b Hyperbolic cross section space is suitable for models with more irregular behavior, e.g.,
+ *   models with only a finite number of derivatives.
+ *
+ * \par
+ * The four main types can be tuned for either interpolation or quadrature (integration);
+ * the corresponding enumerate will have either \b i or \b q in the name.
+ * In all cases, Tasmanian will construct the grid with minimum number of points
+ * (or fewest basis functions), that will \a capture the corresponding polynomial space.
+ *
+ * \par Anisotropic Weights
+ * All types can be combined with anisotropic weights that adjust the density
+ * of the grid in different directions. Below, we denote the anisotropic weights
+ * with \f$ \xi_1, \xi_2, \cdots, \xi_d \f$ and \f$ \eta_1, \eta_2, \cdots, \eta_d \f$,
+ * where \f$ d \f$ is the number of dimensions in the grid. Note that only curved
+ * types use the \f$ \eta \f$ weights.
+ *
+ * \par
+ * The \b TypeDepth also uses the \b depth parameter to define a cut-off point, the
+ * \b depth is normalized by multiplying it by the smallest of the \f$ \xi \f$ weights.
+ * In the formulas below, \b L stands for the normalized offset.
+ *
+ * Details regarding sparse grids construction and polynomial spaces can be found in\n
+ * M. Stoyanov, C. G. Webster, <a style="font-weight:bold" href="https://arxiv.org/pdf/1508.01125.pdf">
+ * A Dynamically Adaptive Sparse Grid Method for Quasi-Optimal
+ * Interpolation of Multidimensional Analytic Functions</a>, arXiv:1508.01125.\n
+ * also published in <a style="font-weight:bold" href="https://www.sciencedirect.com/science/article/pii/S0898122116000031">
+ * Computers and Mathematics with Applications 71 (2016) 2449–2465.</a>
+ *
+ * \par Full Tensor Types
+ * Finally, in addition to the aforementioned types, Tasmanian includes the types for
+ * dense tensor grids. Only in 2-dimensions Gauss quadrature rules with full tensors
+ * are more efficient than a general sparse grid. Performing interpolation or
+ * working with more than 2 dimensions, sparse grids will always result in better
+ * approximation error per number of nodes, i.e., model evaluations; nevertheless,
+ * dense tensor grids naturally fall in the framework and can be useful for testing
+ * purposes.
+ *
+ * \par Fourier Grids
+ * The Fourier grids are very similar to Global grids, with the exception that
+ * polynomial powers are replaced by frequencies of trigonometric functions.
+ * The different selection strategies can be used with frequency exactness in
+ * place of polynomial power.
+ *
+ * The structure of the Fourier spaces, the convergence estimates, and
+ * the refinement strategies are described in\n
+ * Z. Morrow, M. Stoyanov, <a style="font-weight:bold" href="https://arxiv.org/abs/1908.10672">A Method for
+ * Dimensionally Adaptive Sparse Trigonometric Interpolation of Periodic Functions</a>,
+ * arXiv:1908.10672.
+ */
 enum TypeDepth{
     //! \brief Null type, should \b never be used for input, indicates an error of some sort.
     type_none,
@@ -400,10 +408,10 @@ enum TypeOneDRule{
 //! parent, while most stable, this strategy can lead to significant oversampling.
 //!
 //! Details regarding adaptive hierarchical sparse grids construction and children-parent relations can be found in: \n
-//! M. Stoyanov, <a href="https://link.springer.com/chapter/10.1007/978-3-319-75426-0_8">
+//! M. Stoyanov, <a style="font-weight:bold" href="https://link.springer.com/chapter/10.1007/978-3-319-75426-0_8">
 //! Adaptive Sparse Grid Construction in a Context of Local Anisotropy and Multiple Hierarchical Parents</a>,\n
 //! Sparse Grids and Applications - Miami 2016 pp 175-199.\n
-//! Also in: <a href="https://info.ornl.gov/sites/publications/files/Pub45746.pdf">Tech Report ORNL/TM-2013/384.</a>
+//! Also in: <a style="font-weight:bold" href="https://info.ornl.gov/sites/publications/files/Pub45746.pdf">Tech Report ORNL/TM-2013/384.</a>
 enum TypeRefinement{
     //! \brief Isotropic refinement using only the children and disregarding missing parents.
     refine_classic,

@@ -48,6 +48,25 @@ namespace TasGrid{
 
 /*!
  * \ingroup TasmanianAddonsConstruct
+ * \brief Signature of a model function to be used in the construction procedures.
+ *
+ * This types describes an abstract model with inputs, outputs and a specific thread-id.
+ *
+ * \param x is the model inputs, the vector is logically organized in strips each containing a set of model inputs.
+ * \param y is the model outputs, the vector must be logically organized in strips each containing a set of model
+ *      outputs corresponding to a set of inputs (the order must match, first set of inputs to first set outputs and so on).
+ *      In most cases, \b y will have the correct size before the call, the exception is when there is insufficient data
+ *      to compute an initial guess in a context that asks for an initial guess, then \b y will be empty and must be resized.
+ * \param thread_id is a unique identifier of the thread associated with this model call, useful in multi-threaded context
+ *      e.g., to assign a GPU accelerator to the current call.
+ *
+ * The call to TasGrid::constructSurrogate() will control the maximum number of inputs in a single model call,
+ * the total number of threads, and whether \b y will have the correct size and/or contain an initial guess.
+ */
+using ModelSignature = std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)>;
+
+/*!
+ * \ingroup TasmanianAddonsConstruct
  * \brief Allows for expressive calls to TasGrid::constructSurrogate().
  */
 constexpr bool mode_parallel = true;
@@ -81,7 +100,7 @@ constexpr bool no_initial_guess = false;
  * \endinternal
  */
 template<bool parallel_construction, bool use_initial_guess>
-void constructCommon(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+void constructCommon(ModelSignature model,
                      size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                      TasmanianSparseGrid &grid,
                      std::function<std::vector<double>(TasmanianSparseGrid &)> candidates,
@@ -316,6 +335,33 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * If set to parallel mode, the lambda will be called in separate threads concurrently
  * up to the specified maximum number.
  *
+ * Two notable options are the ability to call the model with batches of samples and
+ * the ability to assign an initial guess for each sample.
+ * - In some cases, model evaluations can be performed much more efficiently using batches of
+ * samples, e.g., by allowing the usage of BLAS level 3 methods (as opposed to level 2),
+ * better occupancy on GPU accelerators, or better memory cohesion in sparse linear algebra.
+ * For more details, see the work by:\n
+ * E. Phipps, M. D'Elia, H. Edwards, M. Hoemmen, J. Hu,
+ * <a style="font-weight:bold" href="https://epubs.siam.org/doi/abs/10.1137/15M1044679">Embedded Ensemble Propagation for Improving
+ * Performance, Portability, and Scalability of Uncertainty Quantification on Emerging Computational Architectures</a>,
+ * SIAM Journal on Scientific Computing, vol. 39, num. 2, pp. C162--C193, 2017.\n
+ * M. D'Elia, E. Phipps, A. Rushdi, M. Ebeida,
+ * <a style="font-weight:bold" href="https://arxiv.org/abs/1705.02003">Surrogate-based Ensemble Grouping Strategies for
+ * Embedded Sampling-based Uncertainty Quantification</a>, arXiv:1705.02003.
+ *
+ * - Some models can utilize (or even require) a good initial guess to perform a simulation,
+ * e.g., when using linear or non-linear iterative solvers.
+ * As the sparse grid surrogate becomes closer and closer to the model, increasingly better guess can be
+ * computes, effectively relying on the model to solve only for the correction between the current
+ * sparse grid approximation and the actual model. For more details and examples see the work of:\n
+ * D. Galindo, P. Jantsch, C. G. Webster, and G. Zhang,
+ * <a style="font-weight:bold" href="https://doi.org/10.1137/15M1019568">Accelerating Stochastic Collocation Methods for Partial Differential
+ * Equations with Random Input Data</a>, SIAM/ASA Journal on Uncertainty Quantification, vol. 4, num. 1, pp. 1111--1137, 2016.
+ *
+ * The template can be instantiated in either parallel or single threaded mode, with or without an initial guess feedback,
+ * and sampling can be performed in batches or single point.
+ * The rest of the parameters control the computational budget and the specifics of the refinement scheme.
+ *
  * \tparam parallel_construction defines the use of parallel or sequential mode.
  *      The variable is of type \b bool but the constexpr constants
  *      TasGrid::mode_parallel and TasGrid::mode_sequential can be used to for more
@@ -416,7 +462,7 @@ void constructCommon(std::function<void(std::vector<double> const &x, std::vecto
  * mid-way and samples will not have to be recomputed.
  */
 template<bool parallel_construction = TasGrid::mode_parallel, bool initial_guess = no_initial_guess>
-void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+void constructSurrogate(ModelSignature model,
                         size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         double tolerance, TypeRefinement criteria, int output = -1,
@@ -443,7 +489,7 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * or the level limits are reached (which will produce a full tensor grid).
  */
 template<bool parallel_construction = TasGrid::mode_parallel, bool initial_guess = no_initial_guess>
-void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+void constructSurrogate(ModelSignature model,
                         size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         TypeDepth type, std::vector<int> const &anisotropic_weights = std::vector<int>(),
@@ -470,7 +516,7 @@ void constructSurrogate(std::function<void(std::vector<double> const &x, std::ve
  * or the level limits are reached (which will produce a full tensor grid).
  */
 template<bool parallel_construction = TasGrid::mode_parallel, bool initial_guess = no_initial_guess>
-void constructSurrogate(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+void constructSurrogate(ModelSignature model,
                         size_t max_num_points, size_t num_parallel_jobs, size_t max_samples_per_job,
                         TasmanianSparseGrid &grid,
                         TypeDepth type, int output, std::vector<int> const &level_limits = std::vector<int>(),
