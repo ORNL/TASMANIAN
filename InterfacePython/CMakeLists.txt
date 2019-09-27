@@ -160,12 +160,12 @@ macro(Tasmanian_python_install)
 
         if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
             # Windows does not support sym-link, but it is still beneficial to have a version independent python module
-            install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E copy ${_tsg_py_file} ${Tasmanian_PYTHONPATH}/${_tsg_py_name} )" )
+            install(CODE "execute_process( COMMAND \"${CMAKE_COMMAND}\" -E copy \"${_tsg_py_file}\" \"${Tasmanian_PYTHONPATH}/${_tsg_py_name}\" )" )
         endif()
 
     endforeach()
     if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-        install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${Tasmanian_python_install_path} ${Tasmanian_PYTHONPATH} )" )
+        install(CODE "execute_process( COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${Tasmanian_python_install_path}\" \"${Tasmanian_PYTHONPATH}\" )" )
     endif()
 endmacro(Tasmanian_python_install)
 
