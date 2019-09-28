@@ -130,9 +130,9 @@ public:
      * \param mpi_root is the root process that will perform the actual sampling.
      * \param communicator is the communicator where all ranks reside.
      */
-    DistributedPosterior(std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)> distributed_model,
-                         std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likelihood,
-                         std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> prior,
+    DistributedPosterior(DreamModel distributed_model,
+                         DreamLikelihood likelihood,
+                         DreamPrior prior,
                          int num_inputs, int num_chains, int mpi_root, MPI_Comm communicator)
     : model(distributed_model), likely(likelihood), dist_prior(prior),
       num_dimensions(num_inputs), num_batch(num_chains), root(mpi_root), me(TasGrid::getMPIRank(communicator)), comm(communicator),

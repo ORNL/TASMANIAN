@@ -62,6 +62,9 @@ namespace TasDREAM{
 /*!
  * \ingroup DREAMSampleCore
  * \brief Generic test function whether a sample belongs in the domain.
+ *
+ * The function accepts a single vector with size equal to the number of domain dimensions
+ * and must return \b true if the vector belongs to the domain or \b false otherwise.
  */
 using DreamDomain = std::function<bool(std::vector<double> const &x)>;
 
@@ -123,8 +126,82 @@ inline void uniform_prior(TypeSamplingForm, const std::vector<double> &, std::ve
 /*!
  * \ingroup DREAMSampleCore
  * \brief Generic probability distribution used by Tasmanian.
+ *
+ * The probability distribution must be set to accept multiple candidates and return
+ * the value of the unscaled probability distribution for each point.
+ *
+ * \param candidates is a vector with size that is an even multiple of the dimensions,
+ *      the vector is organized logically into strips of size num-dimensions.
+ *      Each strip represents a test point that is guaranteed to be inside the domain.
+ * \param values is a vector with size equal to the number of strips (samples) in \b candidates.
+ *      The vector should not be resized, instead each value has to be overwritten
+ *      with the corresponding unscaled probability distribution.
+ *
+ * \b Note: the generic probability distribution does not accept a parameter to specify the sampling
+ *      form, e.g., TasDREAM::logform. The returned values \b must corresponding to the sampling
+ *      form set in the TasDREAM::SampleDREAM() template. If logarithm form is used, the values
+ *      can be negative, in regular form the values must be positive, Tasmanian will not throw
+ *      an exception but using negative values with TasDREAM::regform leads to undefined behavior.
  */
 using DreamPDF = std::function<void(const std::vector<double> &candidates, std::vector<double> &values)>;
+
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Generic model signature used by Tasmanian.
+ *
+ * The model is very similar to the TasDREAM::DreamPDF, in fact the input \b candidates is the same.
+ * The differences are two:
+ * - the model may have multiple outputs and the number of returned outputs must match
+ *   the number of outputs used by the likelihood.
+ * - the \b outputs vector will not be set to the correct size, it \b must be resized,
+ *   because Tasmanian does not keep track of the number of outputs.
+ *
+ * \b Note: the \b outputs vector will be fed as input to the TasDREAM::DreamLikelihood.
+ */
+using DreamModel = std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)>;
+
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Generic likelihood signature used by Tasmanian.
+ *
+ * The likelihood assigns a value to how likely the model outputs are given data (i.e., measurements).
+ * Classes that inherit TasmanianLikelihood will automatically convert to a lambda object with
+ * this signature.
+ *
+ * \param form is the sampling type used in the call to TasDREAM::SampleDREAM(), in a custom object
+ *      it is sufficient to implement only one form, Tasmanian likelihood classes implement both
+ *      and thus the parameter specifies which implementation to use.
+ * \param model_outputs is identical to \b outputs parameter in TasDREAM::DreamModel
+ *      except here it is used as an input to compute the likelihood.
+ * \param likely is a vector with size equal to the entries with \b outputs,
+ *      the entries must be overwritten with the corresponding likelihood.
+ */
+using DreamLikelihood = std::function<void(TypeSamplingForm form, const std::vector<double> &model_outputs, std::vector<double> &likely)>;
+
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Generic signature for the prior distributions used by Tasmanian.
+ *
+ * Specifies the prior distribution, the TasDREAM::uniform_prior() satisfies this signature.
+ * \param form is the same as in TasDREAM::DreamLikelihood.
+ * \param candidates is the same as in TasDREAM::DreamModel and TasDREAM::DreamPDF.
+ * \param values are similar to the \b likely in TasDREAM::DreamLikelihood, but instead of the likelihood
+ *      the values define the prior distribution in the specified \b form.
+ */
+using DreamPrior = std::function<void(TypeSamplingForm form, const std::vector<double> &candidates, std::vector<double> &values)>;
+
+/*!
+ * \ingroup DREAMSampleCore
+ * \brief Generic signature for a combination of a likelihood and a model.
+ *
+ * The likelihood and the model are not always separated, e.g., a sparse grid
+ * approximation can be used to interpolated the likelihood which has a single output
+ * and is therefore cheaper than interpolating multi-output model.
+ * The implementation should be equivalent to:
+ * \param candidates is same as in TasDREAM::DreamModel.
+ * \param values is same as in TasDREAM::DreamLikelihood \b likely parameter.
+ */
+using DreamMergedLikelyModel = std::function<void(const std::vector<double> &candidates, std::vector<double> &values)>;
 
 /*!
  * \ingroup DREAMSampleCore
@@ -184,9 +261,9 @@ using DreamPDF = std::function<void(const std::vector<double> &candidates, std::
  *
  */
 template<TypeSamplingForm form = regform>
-DreamPDF posterior(std::function<void(const std::vector<double> &candidates, std::vector<double> &outputs)> model,
-          std::function<void(TypeSamplingForm, const std::vector<double> &model_outputs, std::vector<double> &likely)> likelihood,
-          std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> prior){
+DreamPDF posterior(DreamModel model,
+          DreamLikelihood likelihood,
+          DreamPrior prior){
     return [=](const std::vector<double> &candidates, std::vector<double> &values)->void{
         std::vector<double> model_outs;
         model(candidates, model_outs);
@@ -215,8 +292,8 @@ DreamPDF posterior(std::function<void(const std::vector<double> &candidates, std
  * it with a prior distribution.
  */
 template<TypeSamplingForm form = regform>
-DreamPDF posterior(std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> likelihood_model,
-          std::function<void(TypeSamplingForm, const std::vector<double> &candidates, std::vector<double> &values)> prior){
+DreamPDF posterior(DreamMergedLikelyModel likelihood_model,
+          DreamPrior prior){
     return [=](const std::vector<double> &candidates, std::vector<double> &values)->void{
         likelihood_model(candidates, values);
 
@@ -332,7 +409,7 @@ DreamPDF posterior(std::function<void(const std::vector<double> &candidates, std
  * \endcode
  * Incorrect call, \b never \b do \b that:
  * \code
- * SampleDREAM(..., TasGrid::read("foo"), ...);
+ * SampleDREAM(..., TasGrid::read("foo"), ...); // <- Incorrect
  * // above, read() will create a TasmanianSparseGrid object which will create a lambda
  * // but the grid will be destroyed before entering the SampleDREAM() and cause a segfault.
  * \endcode
@@ -340,7 +417,7 @@ DreamPDF posterior(std::function<void(const std::vector<double> &candidates, std
 template<TypeSamplingForm form = regform>
 void SampleDREAM(int num_burnup, int num_collect,
                  DreamPDF probability_distribution,
-                 std::function<bool(const std::vector<double> &x)> inside,
+                 DreamDomain inside,
                  TasmanianDREAM &state,
                  std::function<void(std::vector<double> &x)> independent_update = no_update,
                  std::function<double(void)> differential_update = const_one,
@@ -446,8 +523,8 @@ void SampleDREAM(int num_burnup, int num_collect,
  */
 template<TypeSamplingForm form = regform>
 void SampleDREAM(int num_burnup, int num_collect,
-                 std::function<void(const std::vector<double> &candidates, std::vector<double> &values)> probability_distribution,
-                 std::function<bool(const std::vector<double> &x)> inside,
+                 DreamPDF probability_distribution,
+                 DreamDomain inside,
                  TasmanianDREAM &state,
                  TypeDistribution dist, double magnitude,
                  std::function<double(void)> differential_update = const_one,
