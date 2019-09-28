@@ -265,7 +265,7 @@ void mpiConstructCommon(ModelSignatureMPI model,
  *  if (me == 0)
  *      grid = TasGrid::makeLocalPolynomialGrid(num_inputs, num_outputs, ...);
  *
- *  mpiConstructSurrogate<TasGrid::with_initial_guess>(
+ *  TasGrid::mpiConstructSurrogate<TasGrid::with_initial_guess>(
  *      [&](std::vector<double> const &x, std::vector<double> &y)
  *      ->void{
  *          auto initial_guess = y; // on input y is the initial guess
