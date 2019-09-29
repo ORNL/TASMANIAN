@@ -38,6 +38,7 @@
 void* tsgConstructTasmanianSparseGrid();
 void tsgDestructTasmanianSparseGrid(void *grid);
 void tsgCopyGrid(void *destination, void *source);
+void tsgCopySubGrid(void *destination, void *source, int outputs_begin, int outputs_end);
 const char* tsgGetVersion();
 const char* tsgGetLicense();
 int tsgGetVersionMajor();
@@ -53,12 +54,14 @@ void tsgMakeWaveletGrid(void *grid, int dimensions, int outputs, int depth, int 
 void tsgMakeFourierGrid(void *grid, int dimensions, int outputs, int depth, const char *sType, const int *anisotropic_weights, const int *limit_levels);
 void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels);
 void tsgUpdateSequenceGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels);
+void tsgUpdateFourierGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels);
 double tsgGetAlpha(void *grid);
 double tsgGetBeta(void *grid);
 int tsgGetOrder(void *grid);
 int tsgGetNumDimensions(void *grid);
 int tsgGetNumOutputs(void *grid);
-const char* tsgGetRule(void *grid);
+char* tsgGetRule(void *grid);
+void tsgCopyRuleChars(void *grid, int buffer_size, char *name, int *num_actual);
 const char* tsgGetCustomRuleDescription(void *grid);
 int tsgGetNumLoaded(void *grid);
 int tsgGetNumNeeded(void *grid);
@@ -74,6 +77,8 @@ double* tsgGetQuadratureWeights(void *grid);
 void tsgGetInterpolationWeightsStatic(void *grid, const double *x, double *weights);
 double* tsgGetInterpolationWeights(void *grid, const double *x);
 void tsgLoadNeededPoints(void *grid, const double *vals);
+const double* tsgGetLoadedValues(void *grid);
+void tsgGetLoadedValuesStatic(void *grid, double *values);
 void tsgEvaluate(void *grid, const double *x, double *y);
 void tsgEvaluateFast(void *grid, const double *x, double *y);
 void tsgIntegrate(void *grid, double *q);
@@ -99,9 +104,20 @@ void tsgSetAnisotropicRefinement(void *grid, const char * sType, int min_growth,
 int* tsgEstimateAnisotropicCoefficients(void *grid, const char * sType, int output, int *num_coefficients);
 void tsgEstimateAnisotropicCoefficientsStatic(void *grid, const char * sType, int output, int *coefficients);
 void tsgSetGlobalSurplusRefinement(void *grid, double tolerance, int output, const int *level_limits);
-void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output, const int *level_limits);
+void tsgSetLocalSurplusRefinement(void *grid, double tolerance, const char * sRefinementType, int output, const int *level_limits, const double *scale_correction);
 void tsgClearRefinement(void *grid);
 void tsgMergeRefinement(void *grid);
+void tsgBeginConstruction(void *grid);
+int tsgIsUsingConstruction(void *grid);
+void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, int output, const int *anisotropic_weights, const int *limit_levels);
+void* tsgGetCandidateConstructionPointsSurplusVoidPntr(void *grid, double tolerance, const char *sRefType, int output, const int *limit_levels, const double *scale_correction);
+void tsgGetCandidateConstructionPoints(void *grid, const char *sType, int output, const int *anisotropic_weights, const int *limit_levels, int *num_points, double **x);
+void tsgGetCandidateConstructionSurplusPoints(void *grid, double tolerance, const char *sRefType, int output, const int *limit_levels, const double *scale_correction, int *num_points, double **x);
+int tsgGetCandidateConstructionPointsPythonGetNP(void *grid, const void *vecx);
+void tsgGetCandidateConstructionPointsPythonStatic(const void *vecx, double *x);
+void tsgGetCandidateConstructionPointsPythonDeleteVect(void *vecx);
+void tsgLoadConstructedPoint(void *grid, const double *x, int numx, const double *y);
+void tsgFinishConstruction(void *grid);
 void tsgRemovePointsByHierarchicalCoefficient(void *grid, double tolerance, int output, const double *scale_correction);
 void tsgEvaluateHierarchicalFunctions(void *grid, const double *x, int num_x, double *y);
 void tsgEvaluateSparseHierarchicalFunctions(void *grid, const double x[], int num_x, int **pntr, int **indx, double **vals);
@@ -110,6 +126,8 @@ void tsgEvaluateSparseHierarchicalFunctionsStatic(void *grid, const double x[], 
 const double* tsgGetHierarchicalCoefficients(void *grid);
 void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff);
 void tsgSetHierarchicalCoefficients(void *grid, const double *c);
+double* tsgIntegrateHierarchicalFunctions(void *grid);
+void tsgIntegrateHierarchicalFunctionsStatic(void *grid, double *integrals);
 // to be called from Python only, must later call delete[] on the pointer
 int* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes);
 // to be used in C, creates a C pointer (requires internal copy of data)
