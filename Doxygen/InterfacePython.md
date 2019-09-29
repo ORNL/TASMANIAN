@@ -74,22 +74,22 @@ accessed with the Python `help()` function, e.g.,
 ```
 * DREAM module and C++ equivalent:
 ```
-    import Tasmanian.DREAM as DREAM
-    DREAM.State (class)                        -> TasDREAM::TasmanianDREAM
-    DREAM.LikelihoodGaussIsotropic (class)     -> TasDREAM::LikelihoodGaussIsotropic (class)
-    DREAM.LikelihoodGaussAnisotropic (class)   -> TasDREAM::LikelihoodGaussAnisotropic (class)
-    DREAM.Posterior (class)                    -> TasDREAM::posterior (method)
-    DREAM.PosteriorEmbeddedLikelihood (method) -> TasDREAM::posterior (method-overload)
-    DREAM.genUniformSamples (method)           -> TasDREAM::genUniformSamples (method)
-    DREAM.genGaussianSamples (method)          -> TasDREAM::genGaussianSamples (method)
-    DREAM.Sample (method)                      -> TasDREAM::SampleDREAM (method)
+         import Tasmanian.DREAM as DREAM
+(class)  DREAM.State                        -> TasDREAM::TasmanianDREAM              (class)
+(class)  DREAM.LikelihoodGaussIsotropic     -> TasDREAM::LikelihoodGaussIsotropic    (class)
+(class)  DREAM.LikelihoodGaussAnisotropic   -> TasDREAM::LikelihoodGaussAnisotropic  (class)
+(class)  DREAM.Posterior                    -> TasDREAM::posterior                  (method)
+(method) DREAM.PosteriorEmbeddedLikelihood  -> TasDREAM::posterior         (method-overload)
+(method) DREAM.genUniformSamples            -> TasDREAM::genUniformSamples          (method)
+(method) DREAM.genGaussianSamples           -> TasDREAM::genGaussianSamples         (method)
+(method) DREAM.Sample                       -> TasDREAM::SampleDREAM                (method)
 ```
-* Addon module and C++ equivalent:
+* Addon module methods and C++ equivalent:
 ```
-    Tasmanian.loadNeededPoints (method)              -> TasGrid::loadNeededPoints (method)
-    Tasmanian.reloadLoadedPoints (method)            -> TasGrid::loadNeededPoints (method)
-    Tasmanian.constructAnisotropicSurrogate (method) -> TasGrid::constructSurrogate (method)
-    Tasmanian.constructSurplusSurrogate (method)     -> TasGrid::constructSurrogate (method)
+    Tasmanian.loadNeededPoints            -> TasGrid::loadNeededPoints <overwrite_loaded=false>
+    Tasmanian.reloadLoadedPoints          -> TasGrid::loadNeededPoints <overwrite_loaded=true>
+    Tasmanian.constructAnisotropicSurrogate -> TasGrid::constructSurrogate (anistropic overload)
+    Tasmanian.constructSurplusSurrogate     -> TasGrid::constructSurrogate (surplus overload)
 ```
 
 
