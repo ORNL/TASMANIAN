@@ -16,7 +16,7 @@ Minimum requirements to use Tasmanian:
 * a C/C++ compiler and either [CMake](https://cmake.org/) or [GNU Make](https://www.gnu.org/software/make/) build engines.
 
 Recommended additional features:
-* [Python](https://www.python.org/) with with [NumPy](http://www.numpy.org/) and [CTypes](https://docs.python.org/3/library/ctypes.html) packages
+* [Python](https://www.python.org/) with with [NumPy](http://www.numpy.org/) 1.10 (or newer) and [CTypes](https://docs.python.org/3/library/ctypes.html) packages
 * [Basic Linear Algebra Subroutine (BLAS)](https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms) implementation
 * [OpenMP](https://en.wikipedia.org/wiki/OpenMP) implementation (usually included with the compiler)
 
