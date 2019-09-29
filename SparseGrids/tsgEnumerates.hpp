@@ -64,25 +64,6 @@
  * \par Enumerated types
  * Enumerations are used as input to many Tasmanian functions
  * in both internal and external API.
- *
- * \internal
- * \par Hardcoded constants
- * Hardcoding constants is a bad coding practice and should be avoided,
- * but numerical algorithms depend on many small tweaking parameters that require
- * meaningful default values.
- * For example, Tasmanian computes the nodes and abscissas of the Gauss-Legendre rule on the fly,
- * which is done with an iterative eigenvalue decomposition method that needs a stopping criteria.
- * Extra input parameters can be added to \b makeGlobalGrid() which will allow the user to
- * choose the numeric tolerance and maximum number of iterations, but this will also
- * add extra variables that the user has to understand and specify.
- * The goal of Tasmanian is to provide a seamless experience where the user
- * focuses on the desired properties of a quadrature/interpolation rule, and not
- * worry about convergence of a hidden iterative schemes.
- * Therefore, we hardcoded such variables with \a reasonable value,
- * i.e., values that will work well for most use cases.
- * In fringe cases, the values can be adjusted here and Tasmanian can be recompiled
- * with new constants.
- * \endinternal
  */
 
 namespace TasGrid{
@@ -136,11 +117,11 @@ enum TypeIndexRelation{ // internal for IndexSets, unambiguous set comparison
  *   by the growth of points in the one dimensional rule and are seldom optimal,
  *   although such grid can be a good initial guess for an iterative refinement process.
  * - \b Total degree polynomial space is good for smooth models, i.e., analytic functions
- *   with convergent Taylors series for every point in the domain.
+ *   with convergent Taylor series for every point in the domain.
  * - \b Curved polynomial space is essentially a \b Total degree space with an
  *   added logarithmic correction term. The correction can account for rules with slightly
  *   higher norm growth (e.g., R-Leja rules) or for models with heavily constrained
- *   region of analyticity, i.e., slightly less smooth.
+ *   region of analytic extension, i.e., slightly less smooth.
  * - \b Hyperbolic cross section space is suitable for models with more irregular behavior, e.g.,
  *   models with only a finite number of derivatives.
  *
@@ -269,7 +250,7 @@ enum TypeDepth{
 //! \par Domain Transformation
 //! Most rules are defined on a canonical interval [-1, 1], which can be transformed to an
 //! arbitrary [a, b] with \b TasmanianSparseGrid::setDomainTransform(), so long as \b a is less than \b b.
-//! Fourier grids use canonical [0, 1] and can be similary transformed to [a, b]. Gauss-Laguerre rule
+//! Fourier grids use canonical [0, 1] and can be similarly transformed to [a, b]. Gauss-Laguerre rule
 //! is set to \f$ [0, \infty) \f$ transformed to \f$ [a, \infty) \f$ with scale parameter \b b (see below).
 //! Gauss-Hermite is set to \f$ (-\infty, \infty) \f$ with scale and shift parameters.
 enum TypeOneDRule{
@@ -374,13 +355,13 @@ enum TypeOneDRule{
 //! \par
 //! The interpolant is expressed as a linear combination of basis functions with coefficients computed so that the
 //! interpolant matches the model values at the sparse gird nodes. The coefficients are thus indicators of the local
-//! approximation error and (in the asymptotic limit) the coefficients decrease when going form parent to children.
+//! approximation error and (in the asymptotic limit) the coefficients decrease when going form a parent to a child.
 //!
 //! \par Convergence Criteria
 //! Using the local error estimator, the sparse grid approximation has reached desired tolerance
 //! when all nodes with missing children
 //! have coefficients with absolute values smaller than the tolerance. This is a necessary and not a sufficient condition
-//! an it  heavily relies on the assumption of monotonic decay of the coefficients; however, in practical situations this is a good
+//! an is heavily reliant on the assumption of monotonic decay of the coefficients; however, in practical situations this is a good
 //! way to construct an adaptive grid that captures the behavior of the target model while minimizing the number of nodes.
 //!
 //! \par Adaptive Refinement
@@ -405,7 +386,7 @@ enum TypeOneDRule{
 //! when compared to adding only children. The \b direction \b selective and \b fds strategies consider local anisotropy
 //! which can reduce the number of required model evaluations, but can also lead to decrease in stability.
 //! The \b stable refinement is both isotropic and maintains lower-complete structures, i.e., no point has a missing
-//! parent, while most stable, this strategy can lead to significant oversampling.
+//! parent. While the most stable, the \b stable strategy can lead to significant oversampling.
 //!
 //! Details regarding adaptive hierarchical sparse grids construction and children-parent relations can be found in: \n
 //! M. Stoyanov, <a style="font-weight:bold" href="https://link.springer.com/chapter/10.1007/978-3-319-75426-0_8">
@@ -477,7 +458,7 @@ enum TypeRefinement{
 //! \par
 //! Local polynomial grids can perform evaluations in either dense or sparse modes. Dense mode has memory requirements
 //! identical to the Global case, but dense evaluations are less efficient when working with fewer grid dimensions
-//! and few grid nodes.
+//! and many grid nodes.
 //! The sparse mode requires two matrices of size \b getNumOutputs() times \b num_x, one matrix of size \b getNumPoints()
 //! times \b getNumOutputs(), and one sparse matrix of size \b getNumPoints() times \b num_x. The actual sparsity
 //! pattern and the exact memory requirements are hard to predict, but can also be controlled through the batch size,

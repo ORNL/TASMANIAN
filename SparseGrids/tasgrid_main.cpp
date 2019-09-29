@@ -63,7 +63,8 @@ int main(int argc, const char ** argv){
     // basic info, i.e., version, license, parallel support
     if (hasInfo(args.front())){
         cout << "Tasmanian Sparse Grids  version: " << TasmanianSparseGrid::getVersion() << endl;
-        if (std::string(TasmanianSparseGrid::getGitCommitHash()).compare("Tasmanian git hash is not available here") != 0){
+        if ((std::string(TasmanianSparseGrid::getGitCommitHash()).compare("Tasmanian git hash is not available here") != 0)
+            && (std::string(TasmanianSparseGrid::getGitCommitHash()).find("Release") != 0)){
             cout << "                git commit hash: " << TasmanianSparseGrid::getGitCommitHash() << endl;
             cout << "                cmake cxx flags: " << TasmanianSparseGrid::getCmakeCxxFlags() << endl;
         }
