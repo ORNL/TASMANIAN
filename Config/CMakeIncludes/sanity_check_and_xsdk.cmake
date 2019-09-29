@@ -188,7 +188,9 @@ endif()
 ########################################################################
 # Check for the git commit hash, if using a git repo
 ########################################################################
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git") # this is a git repo
+if ("${Tasmanian_version_comment}" STREQUAL "")
+    set(Tasmanian_git_hash "Release ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}")
+elseif (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git") # this is a git repo
     find_package(Git)
     # do not set the hash if git is missing or
     # if we are generating files for simple GNU Make compatibility
