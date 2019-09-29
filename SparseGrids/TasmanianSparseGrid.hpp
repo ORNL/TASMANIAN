@@ -708,18 +708,18 @@ public:
      * it is recommended to use loadNeededPoints() and evaluate() methods
      * which have much better performance.
      * However, not all models can be easily represented as vector valued functions,
-     * e.g., the discretization of the operators in for a parametrized partial
-     * differential equation can result in sparse matrices with different fill.
+     * e.g., the discretization of the operators in a parametrized partial
+     * differential equation can result in sparse matrices with very different fill.
      * Therefore, Tasmanian offers the option to compute these weights and leave to the
      * user to compute the corresponding weighted sum,
      * e.g., the matrix for each grid point is stored independently and
      * the action of the parametrized operator onto the vector is approximated
      * as a weighed linear combination of the individual matrix vector results.
      *
-     * \param x A vector of size getNumDimensions() with the coordinates of the point of interest
+     * \param x is a vector of size getNumDimensions() with the coordinates of the point of interest
      * in the transformed domain.
      *
-     * \return A vector of size getNumPoints() with the interpolation weights,
+     * \returns A vector of size getNumPoints() with the interpolation weights,
      * the order of the weights matches the order of the getPoints().
      *
      * Note that using a vector \b x outside of the domain will result in undefined behavior,
@@ -765,7 +765,7 @@ public:
      *
      * \throws std::runtime_error if \b vals has an incorrect size.
      *
-     * \b Note: The needed points can alwasy be cleared with clearRefinement()
+     * \b Note: The needed points can always be cleared with clearRefinement()
      * and new needed points can be assigned with setAnisotropicRefinement() or setSurplusRefinement().
      */
     void loadNeededPoints(std::vector<double> const &vals); // checks if vals has size num_outputs X getNumNeeded()
@@ -791,7 +791,7 @@ public:
      * This is the reference implementation that does not use any acceleration mode even if one is set.
      * As a result, the calls to evaluate() are thread-safe but potentially slow.
      *
-     * \param[in] x indicates the1 coordinates of a point within the domain of the sparse grid,
+     * \param[in] x indicates the coordinate entries of a point within the domain of the sparse grid,
      * the size must be equal to getNumDimensions().
      * \param[out] y will contain the approximated model outputs corresponding to \b x,
      * the vector will be resized to getNumOutputs().
@@ -822,7 +822,7 @@ public:
      * each with length getNumOutputs(), provides the approximated model outputs for each
      * point defined by \b x. The vector will be resized, if the original size is incorrect.
      *
-     * \b Note: this does not check of \b x.size() divides evenly.
+     * \b Note: this does not check if \b x.size() divides evenly.
      *
      * The batch call:
      * \code
@@ -834,7 +834,7 @@ public:
      *      grid.evaluate(&x[i * grid.getNumDimensions()],
      *                    &y[i * grid.getNumOutputs()]);
      * \endcode
-     * However, depending on the acceleration mode, the performance can be dramatically different.
+     * However, depending on the acceleration mode, the performance can be significantly different.
      */
     void evaluateBatch(std::vector<double> const &x, std::vector<double> &y) const;
     /*!
@@ -866,7 +866,8 @@ public:
      *
      * Identical to the raw-array version of evaluateBatch(), but \b gpu_x and \b gpu_y must point
      * to memory allocated on the CUDA device matching getGPUID().
-     * Requires that Tasmanian was compiled with CUDA support.
+     * Requires that Tasmanian was compiled with CUDA support and CUDA
+     * (or MAGAMA) acceleration mode has been enabled.
      *
      * \throws std::runtime_error if Tasmanian was not build with \b -DTasmanian_ENABLE_CUDA=ON.
      */
@@ -938,15 +939,15 @@ public:
      * The linear transformation will shift the interval to an arbitrary [a, b]
      * (or shift and scale for the unbounded case).
      * Different values can be specified for each dimension and the transformation
-     * will be automatically applied to every operation that used points, e.g.,
+     * will be automatically applied to every operation that uses points, e.g.,
      * getPoints() and evaluate() will return/accept only transformed points.
      *
      * Setting or changing the transformation will change the points and weights,
      * therefore, the transformations should be set immediately after calling a make
      * command and before calling get-points or computing model values.
      * Changing the transformation will not throw, but will likely invalidate the loaded data
-     * and should be used with extreme caution (the underlying Mathematics must be
-     * carefully checked by the user).
+     * and should be used with extreme caution (the validity of the underlying Mathematics
+     * is left to the user to analyze).
      *
      * \param a with size getNumDimensions() specifies the \b a transformation parameter
      * for each input
@@ -1010,7 +1011,10 @@ public:
      * Characterizing the functions that would most benefit from conformal maps is an active area of research.
      *
      * The truncated Maclaurin series of the arcsin() work well with functions that have a pole close
-     * to the edges of the domain.
+     * to the edges of the domain. See:\n
+     * P. Jantsch, C. G. Webster, <a style="font-weight:bold" href="https://link.springer.com/chapter/10.1007/978-3-319-75426-0_6">
+     * Sparse Grid Quadrature Rules Based on Conformal Mappings</a>,
+     * Sparse Grids and Applications - Miami 2016 pp 117--134.
      *
      * \param truncation is a vector of size getNumDimensions() that indicates the number of terms
      *      to keep in each direction. The more terms, the more pronounced the transformation becomes;
@@ -1044,8 +1048,8 @@ public:
      * \brief Set refinement using anisotropic estimate for the optimal points.
      *
      * Computes the anisotropic coefficients based on the current set of loaded points,
-     * then use the coefficients to add more points to the grid.
-     * The new points are set to \b needed.
+     * then adds more points to the grid by selecting the points with largest coefficients.
+     * The new points are set to \b needed. See also estimateAnisotropicCoefficients()
      *
      * \param type indicates the type of estimate to use, e.g., total degree or curved;
      *      regardless of the specified rule the interpolation estimate is computed (not quadrature).
@@ -1055,10 +1059,11 @@ public:
      *      The value of \b min_growth can never be less than 1, but the actual number of points
      *      can exceed the \b min_growth depending on the weights and growth of the one dimensional rule.
      *
-     * \param output indicates which output to use to compute the estimate, using -1 indicates to use all outputs.
+     * \param output indicates which output to use to compute the estimate, using -1 indicates to use all outputs
+     *      (possible with Sequence and Fourier grids only, Global grids require a specific output).
      *
      * \param level_limits (if not empty) will be used to overwrite the currently set limits.
-     *      The limits must be eithe rempty or have size getNumDimensions();
+     *      The limits must be either empty or have size getNumDimensions();
      *      if empty, the current set of limits will be used.
      *
      * \throws std::runtime_error if called during dynamic construction, or there are no loaded points,
@@ -1105,7 +1110,7 @@ public:
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
 
     /*!
-     * \brief Refine the grid based on the surplus coefficients, Global, Sequence and Fourier grids.
+     * \brief Refine the grid based on the surplus coefficients, Sequence grids and Global grids with a sequence rule.
      *
      * Using the relative magnitude of the surplus coefficients, add more points to the grid
      * and set them to needed. The approach differs from the local (polynomial or wavelet) case
@@ -1200,13 +1205,13 @@ public:
      * cannot be called until finishConstruction() is issued.
      *
      * \b Note: the construction process can be initiated before any model values have been loaded,
-     * in such case, the initial set of points will always come first.
+     * in such case, the initial set of points will always come first in a call to getCandidateConstructionPoints().
      */
     void beginConstruction();
     /*!
      * \brief Returns \b true if the dynamic construction procedure has been initialized, \b false otherwise.
      *
-     * Simply returns the inside flag.
+     * Simply returns the internal flag.
      */
     bool isUsingConstruction() const{ return usingDynamicConstruction; }
     /*!
@@ -1229,10 +1234,10 @@ public:
      *      the vector must have the correct size, either getNumDimensions() or twice
      *      as much to handle the curved weights.
      * \param level_limits (if not empty) will be used to overwrite the currently set limits.
-     *      The limits must be eithe rempty or have size getNumDimensions();
+     *      The limits must be either empty or have size getNumDimensions();
      *      if empty, the current set of limits will be used.
      *
-     * \returns a vector organized in strips of length getNumDimensions() that indicate
+     * \returns A vector organized in strips of length getNumDimensions() that indicate
      *      the coordinates of the points to use as model inputs, unlike the getPoints()
      *      command, the points here are arranged in decreasing importance.
      *
@@ -1248,13 +1253,13 @@ public:
      * This method is the construction equivalent to setAnisotropicRefinement().
      * One notable difference is that this function will not throw if there are no loaded points,
      * instead isotropic coefficient will be used
-     * until enough points are loaded so that coefficients can be estimated.
+     * until enough points are loaded so that estimates for the coefficients can be computed.
      *
      * \param type sets the formula to use when weighting the potential points, see TasGrid::TypeDepth.
      * \param output indicates which coefficients will be used to estimate the anisotropic decay rate,
      *      when working with Sequence and Fourier grids this can be set to -1 to use all outputs.
      * \param level_limits (if not empty) will be used to overwrite the currently set limits.
-     *      The limits must be eithe rempty or have size getNumDimensions();
+     *      The limits must be either empty or have size getNumDimensions();
      *      if empty, the current set of limits will be used.
      *
      * \returns a vector organized in strips of length getNumDimensions() that indicate
@@ -1282,7 +1287,8 @@ public:
      * \brief Add pairs of points with associated model values.
      *
      * This is the construction equivalent to loadNeededPoints(), the main difference is that any
-     * number of points can be loaded here and the points can be in any arbitrary order (they have to sync with the model values only).
+     * number of points can be loaded here and the points can be in any arbitrary order
+     * (they have to correspond to the model values in this call only).
      *
      * \param x is a vector with strips of size getNumDimensions() indicating the points where the model
      *      values were computed. The points do not have to be in any order; however, every point has to match
@@ -1298,9 +1304,26 @@ public:
      *      the safest option is to make sure the points match the ones returned by getCandidateConstructionPoints().
      */
     void loadConstructedPoints(std::vector<double> const &x, std::vector<double> const &y);
-    //! \brief Same as \b loadConstructedPoint() but using arrays in place of vectors (array size is not checked)
+    /*!
+     * \brief Same as \b loadConstructedPoint() but using arrays in place of vectors (array size is not checked)
+     *
+     * Does not throw on incorrect array size, but will likely segfault.
+     */
     void loadConstructedPoints(const double x[], int numx, const double y[]);
-    //! \brief End the procedure, clears flags and unused constructed points, can go back to using regular refinement
+    /*!
+     * \brief End the procedure, clears flags and unused constructed points, can go back to using regular refinement
+     *
+     * After this call, the construction methods getCandidateConstructionPoints() and loadConstructedPoint()
+     * cannot be used until a new call to beginConstruction().
+     *
+     * \b Note: finalizing the construction process can potentially lead to loss of data.
+     * The constructed points can be loaded in any order, but the points need to satisfy constraints
+     * before being incorporated within a grid. Some grids require that points form a lower complete set,
+     * or the point must form a connected graph, or there must be enough points to complete a tensor
+     * (when the rules grow by more than one point). In such scenarios, the points and values are stored
+     * in a temporary structure until enough data is present to add them to the grid.
+     * Finalizing the construction will delete all data for points that have not been incorporated yet.
+     */
     void finishConstruction();
 
     /*!
@@ -1316,8 +1339,8 @@ public:
      * one basis function. In the case of Fourier grids, the coefficients are complex numbers and
      * (for performance reasons) the real and complex parts are stored separately, i.e.,
      * the first getNumLoaded() strips hold the real parts and there is a second set of getNumLoaded()
-     * strips that hold the complex components. If the grid is empty or there are not outputs or
-     * loaded points, then this returns \b nullptr.
+     * strips that hold the complex components. If the grid is empty or there are no outputs or
+     * no loaded points, then this returns \b nullptr.
      *
      * \b Note: modifying the coefficients through this pointer leads to undefined behavior,
      *      use setHierarchicalCoefficients() instead.
@@ -1351,10 +1374,13 @@ public:
      * \brief Computes the values of the hierarchical function basis at the specified points.
      *
      * The method for getInterpolationWeights() computes the values of the nodal basis function,
-     * e.g., Lagrange polynomials, while this computes the values of the hierarchical functions
+     * e.g., Lagrange polynomials, while this computes the values of the hierarchical functions, e.g.,
      * Newton polynomials. The call is optimized for multiple points at a time.
      * The output consists of strips of size getNumPoints() and one strip corresponds to one
-     * point provided in \b x.
+     * point provided in \b x. Effectively this constructs a matrix in column major format
+     * where each column corresponds to a single input point \b x and each row corresponds
+     * to a single grid point.
+     *
      * When working with Fourier grids, the real and complex part of each basis is interlaced,
      * i.e., the strip size is twice as large; see the array overload.
      *
@@ -1512,10 +1538,13 @@ public:
      * Usually the Local Polynomial grids use sparse data-structures and sparse linear algebra,
      * but if the fill not sufficiently small then dense methods can yield better performance
      * at the expense of higher memory footprint.
-     * Tasmanian provides algorithms for automatic mode selection, but those cannot possibly
-     * be optimized for every possible local structure of the grid (resulting from adaptive
-     * refinement).
-     * Thus, a manual alternative is available.
+     * In TasGrid::accel_cpu_blas mode, the dense algorithm will be used when the fill increases
+     * above the 10% threshold. In CUDA mode, even if the fill is computed, switching modes
+     * incurs a large overhead and thus the sparse algorithm is always favored.
+     * Sparse computations work better on newer GPU architectures (e.g., Pascal and Volta)
+     * and consumer (gaming) cards with reduced double-precision capabilities,
+     * but older devices coupled with small grids may work better with the dense algorithm.
+     * Hence, Tasmanian includes the manual option to select the desired algorithm.
      *
      * \param favor if set to \b true will force the sparse back-end, if set to \b false will
      *      force the dense back-end. If the mode has been forced already, calling the method
@@ -1595,7 +1624,7 @@ public:
      *      the currently set CUDA device.
      *
      * \throws std::runtime_error if the grid is Global or Wavelet or if the currently set acceleration mode
-     *      is not compatibility, i.e., TasGrid::accel_none or TasGrid::accel_cpu_blas.
+     *      is not compatible, i.e., TasGrid::accel_none or TasGrid::accel_cpu_blas.
      *      Also, if CUDA has not been enabled at compile time.
      *
      * \b Note: will not work for LocalPolynomial grids with order bigger than 2.
@@ -1618,24 +1647,27 @@ public:
      *      number of non-zeros.
      *
      * \throws std::runtime_error if the grid is not Local Polynomial or if the currently set acceleration mode
-     *      is not compatibility, i.e., TasGrid::accel_none or TasGrid::accel_cpu_blas.
+     *      is not compatible, i.e., TasGrid::accel_none or TasGrid::accel_cpu_blas.
      *      Also, if CUDA has not been enabled at compile time.
      *
      * \b Note: will not work for LocalPolynomial grids with order bigger than 2.
      */
     void evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const;
 
+    //! \brief Signature compatible with TasDREAM::DreamPDF, TasDREAM::DreamModel amd TasDREAM::DreamMergedLikelyModel.
+    using EvaluateCallable = std::function<void(std::vector<double> const&, std::vector<double>&)>;
+
     /*!
      * \brief Custom conversion to a callable method using the TasDREAM::DreamPDF signature.
      *
      * This conversion allows an instance of TasmanianSparseGrid to be passed as input
-     * to any method that expects TasDREAM::DreamPDF callable or lambda object.
+     * to any method that expects TasDREAM::DreamPDF, TasDREAM::DreamModel or TasDREAM::DreamMergedLikelyModel.
      */
-    operator std::function<void(std::vector<double> const&, std::vector<double>&)>() const{
+    operator EvaluateCallable() const{
         return [&](std::vector<double> const &x, std::vector<double> &y)->void{ evaluateBatch(x, y); };
     }
 
-    //! \brief Signature of the domain inside lambda.
+    //! \brief Signature of the domain inside lambda, identical to TasDREAM::DreamDomain.
     using DomainInsideSignature = std::function<bool(std::vector<double> const &)>; // trick for Doxygen formatting purposes
 
     /*!
