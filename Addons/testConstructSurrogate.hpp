@@ -30,6 +30,7 @@
 
 #include "TasmanianAddons.hpp"
 #include "tasgridCLICommon.hpp"
+#include <limits>
 
 using std::cout;
 using std::setw;
@@ -164,14 +165,14 @@ bool testConstructSurrogate(bool verbose){
     // Basic test, run until grid points are exhausted, number of points can still vary
     // due to child surplus being computed before or after the parent point has completed
     TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
-                               (model_exp, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel
+                               (model_exp, std::numeric_limits<size_t>::max(), 2, 1, grid, 1.E-4, TasGrid::refine_classic); // parallel
     simpleSequentialConstruction(model_exp, 300, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
     compareGrids(5.E-4, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel localp unlimited budget" << std::setw(10) << "Pass" << endl;
 
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
     TasGrid::constructSurrogate<TasGrid::mode_parallel, no_initial_guess>
-                               (model_exp2, -1, 2, 2, grid, 1.E-4, TasGrid::refine_classic); // parallel, batch 2
+                               (model_exp2, std::numeric_limits<size_t>::max(), 2, 2, grid, 1.E-4, TasGrid::refine_classic); // parallel, batch 2
     compareGrids(5.E-4, grid, reference_grid, false);
     if (verbose) cout << std::setw(40) << "parallel localp batch" << std::setw(10) << "Pass" << endl;
 
@@ -189,7 +190,7 @@ bool testConstructSurrogate(bool verbose){
     grid = TasGrid::makeLocalPolynomialGrid(2, 1, 3, 2);
     reference_grid = grid;
     TasGrid::constructSurrogate<TasGrid::mode_sequential, no_initial_guess>
-                               (model_exp_seq, -1, 2, 1, grid, 1.E-4, TasGrid::refine_classic); // sequential
+                               (model_exp_seq, std::numeric_limits<size_t>::max(), 2, 1, grid, 1.E-4, TasGrid::refine_classic); // sequential
     simpleSequentialConstruction(model_exp, 300, 2, reference_grid, 1.E-4, TasGrid::refine_classic);
     compareGrids(1.E-9, grid, reference_grid, true);
     if (verbose) cout << std::setw(40) << "sequential localp limited budget" << std::setw(10) << "Pass" << endl;
