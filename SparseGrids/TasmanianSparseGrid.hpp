@@ -120,6 +120,8 @@ namespace TasGrid{
  * TasGrid::TasmanianSparseGrid includes move and copy constructors
  * and assignment operator= overloads.
  * There is also a default constructor that creates an empty grid.
+ * Note that move will preserve the enabled acceleration mode and the internal
+ * cache data-structures, while copy will reset the acceleration to the default.
  * - TasmanianSparseGrid()
  * - copyGrid()
  *
@@ -140,18 +142,18 @@ namespace TasGrid{
  * The exceptions are the Fourier grids with domain [0, 1], and the
  * Gauss-Hermite and Gauss-Laguerre rules with unbounded domain, see
  * TasGrid::rule_gausshermite and TasGrid::rule_gausslaguerre for details.
- * Tasmanian can automatically apply linear domain transformations shifting
+ * Tasmanian can automatically apply a linear domain transformations shifting
  * the canonical interval to an arbitrary [a, b] or a non-linear (conformal)
  * transformation that may accelerate convergence for some models.
  * Each dimension of the grid can have a different linear and/or non-linear
- * transforms.
+ * transform.
  * - setDomainTransform(), getDomainTransform()
  * - isSetDomainTransfrom(), clearDomainTransform()
  * - setConformalTransformASIN(), getConformalTransformASIN()
  * - isSetConformalTransformASIN(), clearConformalTransform()
  *
  * \par Stream and File I/O
- * Sparse grid objects can be written to and from files and \b std::ostream.
+ * Sparse grid objects can be written to and from files and \b std::ostream objects.
  * Tasmanian supports both binary and ASCII formats; the binary format
  * has lower overhead in both file size and operations required to read/write,
  * the ASCII format is portable without considerations of endians and
@@ -164,7 +166,8 @@ namespace TasGrid{
  * whether the associated model values are already provided by the user.
  * The grid points are also associated with quadrature and interpolation
  * weights, where the computed weights correspond to the loaded points
- * unless all points are labeled as needed.
+ * unless all points are labeled as needed. If the grid is set to work
+ * with zero model outputs, then all points are labeled as "loaded".
  * - getNumLoaded(), getNumNeeded(), getNumPoints()
  * - getLoadedPoints(), getNeededPoints(), getPoints()
  * - getLoadedValues()
@@ -174,22 +177,23 @@ namespace TasGrid{
  * \par Load Model Values or Hierarchical Coefficients
  * In order to construct an interpolant, Tasmanian needed to compute the
  * coefficients of the basis functions. The user can directly provide the
- * coefficients, e.g., computed externally with some sort of a regression,
- * or the user can provide the model values at the needed points.
+ * coefficients, e.g., computed externally with a regression method using
+ * an unstructured set of samples, or the user can provide the model values
+ * at the needed points and let Tasmanian do the computations.
  * - TasGrid::loadNeededPoints()
  * - loadNeededPoints(), getLoadedValues()
  * - setHierarchicalCoefficients()
  *
  * \par Update and Adaptive Refinement
- * The most efficient approximation schemes adapt the grid (and associated
+ * The most efficient approximation schemes adapt the grid (and the associated
  * basis functions) to the target model. Tasmanian provides several adaptive
  * procedures tailored to different types of grids.
  * The refinement requires two-way communication between the model and
  * Tasmanian, i.e., Tasmanian provides an initial set of points, the model
- * provides values, then Tasmanian provides an updated set of points, and so on.
- * This can be done either in batches of point or in dynamic construction
+ * provides the values, then Tasmanian provides an updated set of points, and so on.
+ * This can be done either in batches of point or in dynamic construction setup
  * where values can be given one at a time in an arbitrary order (see next paragraph).
- * See the papers referenced in TasGrid::TypeDepth and TasGrid::TypeRefinement.
+ * See also the papers referenced in TasGrid::TypeDepth and TasGrid::TypeRefinement.
  * - updateGlobalGrid(), updateSequenceGrid(), updateFourierGrid()
  * - setAnisotropicRefinement(), setSurplusRefinement()
  * - clearRefinement()
@@ -211,13 +215,13 @@ namespace TasGrid{
  * - loadConstructedPoints()
  *
  * \par Using Unstructured Data
- * The standard sparse grid methods assume that model data is available at very
+ * The standard sparse grid methods assume that model data is available at the very
  * specific grid points that are chosen according to optimal estimates.
  * However, in some cases, the model inputs cannot be controlled precisely
  * and only randomly samples model data is available.
  * Sparse grids can still produce accurate surrogates using such unstructured
  * data by effectively removing the points and working only with the underlying
- * basis, which is still optimal for the corresponding class of functions.
+ * basis (the basis is still optimal for the corresponding class of functions).
  * The hierarchical basis method allow direct access to the values of
  * the basis functions and the associated coefficients.
  * - evaluateHierarchicalFunctions(), evaluateSparseHierarchicalFunctions()
@@ -239,7 +243,7 @@ namespace TasGrid{
  *
  * \par Acceleration Back-end Selection
  * Allows specifying the acceleration used for evaluation methods and (in some
- * cases) for computing the basis coefficients.
+ * cases) for computing the basis coefficients during loadNeededPoints().
  * For example, methods are provided to check the number of available CUDA
  * devices and to select an active device on a multi-GPU system.
  * - enableAcceleration(), getAccelerationType(), favorSparseAcceleration()
@@ -247,9 +251,9 @@ namespace TasGrid{
  * - isAccelerationAvailable(), getGPUName(), getGPUMemory()
  *
  * \par Get Grid Meta-data
- * Various method that read number of points, grid type, specifics about
+ * Various method that read the number of points, grid type, specifics about
  * the rule and domain transformations and others.
- * Some of the input is in human-readable format for debugging and sanity check.
+ * Some of the output is in human-readable format for debugging and sanity check.
  * - getNumDimensions(), getNumOutputs(), getRule()
  * - getCustomRuleDescription()
  * - getAlpha(), getBeta(), getOrder()
@@ -289,7 +293,7 @@ public:
     static int getVersionMinor();
     //! \brief Return a hard-coded character string with a brief statement of the license.
     static const char* getLicense(); // human readable
-    //! \brief Return the git hash string, will use a placeholder if the git command was not found on compile time or if building from official release.
+    //! \brief Return the git hash string, will use a placeholder if the git command was not found on compile time or if building from an official release.
     static const char* getGitCommitHash();
     //! \brief Return the CMAKE_BUILD_TYPE and CMAKE_CXX_FLAGS used in the configuration.
     static const char* getCmakeCxxFlags();
