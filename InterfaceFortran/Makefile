@@ -10,13 +10,15 @@ FSOURCE = TasmanianSG.f90 tsgC2FortranBridge.f90
 LIBNAME = libtasmanianfortran90.a
 SHAREDNAME = libtasmanianfortran90.so
 
-all: $(LIBNAME) $(SHAREDNAME)
+TESTNAME = fortester90
 
-$(LIBNAME): tsgC2Fortran.o TasmanianSG.o tsgC2FortranBridge.o
-	ar rcs $(LIBNAME) tsgC2Fortran.o TasmanianSG.o tsgC2FortranBridge.o
+all: ../$(LIBNAME) ../$(SHAREDNAME) ../$(TESTNAME)
 
-$(SHAREDNAME): tsgC2Fortran.o TasmanianSG.o tsgC2FortranBridge.o
-	$(FF) $(OPTLFF) $(LADD) tsgC2Fortran.o TasmanianSG.o tsgC2FortranBridge.o -shared -o $(SHAREDNAME) ../libtasmaniansparsegrid.so $(LIBS)
+../$(LIBNAME): tsgC2Fortran.o TasmanianSG.o tsgC2FortranBridge.o
+	ar rcs ../$(LIBNAME) tsgC2Fortran.o TasmanianSG.o tsgC2FortranBridge.o
+
+../$(SHAREDNAME): tsgC2Fortran.o TasmanianSG.o tsgC2FortranBridge.o
+	$(FF) $(OPTLFF) $(LADD) tsgC2Fortran.o TasmanianSG.o tsgC2FortranBridge.o -shared -o ../$(SHAREDNAME) ../libtasmaniansparsegrid.so $(LIBS)
 
 tsgC2Fortran.o: tsgC2Fortran.cpp
 	$(CC) $(OPTC) $(IADD) -c tsgC2Fortran.cpp -o tsgC2Fortran.o
@@ -26,6 +28,10 @@ TasmanianSG.o: TasmanianSG.f90
 
 tsgC2FortranBridge.o: tsgC2FortranBridge.f90
 	$(FF) $(OPTF) $(IADD) -c tsgC2FortranBridge.f90 -o tsgC2FortranBridge.o
+
+../$(TESTNAME): ../$(LIBNAME) tasmaniansg.mod
+	$(FF) $(OPTF) $(IADD) -c fortester.f90 -o fortester90.o
+	$(FF) $(OPTLFF) $(LADD) fortester90.o -o ../$(TESTNAME) ../$(LIBNAME) $(LIBS)
 
 # clean
 .PHONY: clean
