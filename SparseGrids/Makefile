@@ -40,23 +40,19 @@ TESTNAME = gridtest
 %.o: %.cpp $(LHEADERS)
 	$(CC) $(OPTC) $(IADD) -c $< -o $@
 
-all: $(LIBNAME) $(EXECNAME) $(TESTNAME) $(SHAREDNAME)
+all: ../$(LIBNAME) ../$(EXECNAME) ../$(TESTNAME) ../$(SHAREDNAME)
 
-$(SHAREDNAME): $(LIBOBJ)
-	$(CC) $(OPTL) $(LIBOBJ) -shared -o $(SHAREDNAME) $(LIBS)
+../$(SHAREDNAME): $(LIBOBJ) ../$(LIBNAME) ../$(EXECNAME) ../$(TESTNAME)
+	$(CC) $(OPTL) $(LIBOBJ) -shared -o ../$(SHAREDNAME) $(LIBS)
 
-$(LIBNAME): $(LIBOBJ)
-	ar rcs $(LIBNAME) $(LIBOBJ)
+../$(LIBNAME): $(LIBOBJ)
+	ar rcs ../$(LIBNAME) $(LIBOBJ)
 
-$(EXECNAME):  $(LIBNAME) $(WROBJ)
-	$(CC) $(OPTL) $(LADD) -L. $(WROBJ) -o $(EXECNAME) $(LIBNAME) $(LIBS)
+../$(EXECNAME): ../$(LIBNAME) $(WROBJ)
+	$(CC) $(OPTL) $(LADD) -L. $(WROBJ) -o ../$(EXECNAME) ../$(LIBNAME) $(LIBS)
 
-$(TESTNAME):  $(LIBNAME) $(GTONJ)
-	$(CC) $(OPTL) $(LADD) -L. $(GTONJ) -o $(TESTNAME) $(LIBNAME) $(LIBS)
+../$(TESTNAME): ../$(LIBNAME) $(GTONJ)
+	$(CC) $(OPTL) $(LADD) -L. $(GTONJ) -o ../$(TESTNAME) ../$(LIBNAME) $(LIBS)
 
 clean:
 	rm -fr *.o
-	rm -fr $(LIBNAME)
-	rm -fr $(EXECNAME)
-	rm -fr $(TESTNAME)
-	rm -fr $(SHAREDNAME)

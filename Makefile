@@ -23,13 +23,12 @@ HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wi
           ./include/TasmanianConfig.hpp ./include/Tasmanian.hpp
 
 ALL_TARGETS = GaussPattersonRule.table \
-              Tasmanian.py TasmanianSG.py TasmanianAddons.py TasmanianConfig.py \
+              Tasmanian.py TasmanianConfig.py \
               example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py sandbox.py \
               $(wildcard ./DREAM/Examples/example_dream*.cpp) \
               $(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp) \
-              libtasmaniansparsegrid.so libtasmaniansparsegrid.a libtasmaniandream.so libtasmaniandream.a \
-              libtasmaniancaddons.so \
-              tasgrid dreamtest gridtest addontester $(HEADERS)
+              libtasmaniansparsegrid.so libtasmaniandream.so \
+              libtasmaniancaddons.so $(HEADERS)
 
 DREAM_EXAMPLES_OBJ = $(patsubst ./DREAM/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./DREAM/Examples/example_dream*.cpp)))
 SG_EXAMPLES_OBJ = $(patsubst ./SparseGrids/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp)))
@@ -65,71 +64,22 @@ include/Tasmanian.hpp: ./Config/Tasmanian.hpp
 	cp ./Config/Tasmanian.hpp ./include/
 
 # Sparse Grids
-libtasmaniansparsegrid.so: ./SparseGrids/libtasmaniansparsegrid.so
-	cp ./SparseGrids/libtasmaniansparsegrid.so .
-
-SparseGrids/libtasmaniansparsegrid.so: $(TSG_SOURCE) $(CONFIGURED_HEADERS)
-	cd SparseGrids; make
-
-libtasmaniansparsegrid.a: ./SparseGrids/libtasmaniansparsegrid.so ./SparseGrids/libtasmaniansparsegrid.a
-	cp ./SparseGrids/libtasmaniansparsegrid.a .
-
-SparseGrids/libtasmaniansparsegrid.a: ./SparseGrids/libtasmaniansparsegrid.so $(TSG_SOURCE) $(CONFIGURED_HEADERS)
-	cd SparseGrids; make
-
-tasgrid: libtasmaniansparsegrid.a libtasmaniansparsegrid.so ./SparseGrids/tasgrid
-	cp ./SparseGrids/tasgrid .
-
-SparseGrids/tasgrid: ./SparseGrids/libtasmaniansparsegrid.so $(TSG_SOURCE) $(CONFIGURED_HEADERS)
-	cd SparseGrids; make
-
-gridtest: libtasmaniansparsegrid.a libtasmaniansparsegrid.so ./SparseGrids/gridtest
-	cp ./SparseGrids/gridtest .
-
-SparseGrids/gridtest: ./SparseGrids/libtasmaniansparsegrid.so $(TSG_SOURCE) $(CONFIGURED_HEADERS)
+libtasmaniansparsegrid.so: $(TSG_SOURCE) $(CONFIGURED_HEADERS)
 	cd SparseGrids; make
 
 # DREAM
-libtasmaniandream.so: ./DREAM/libtasmaniandream.so
-	cp ./DREAM/libtasmaniandream.so .
-
-DREAM/libtasmaniandream.so: libtasmaniansparsegrid.so $(TDR_SOURCE) libtasmaniansparsegrid.so $(CONFIGURED_HEADERS)
-	cd DREAM; make
-
-libtasmaniandream.a: libtasmaniandream.so ./DREAM/libtasmaniandream.a
-	cp ./DREAM/libtasmaniandream.a .
-
-DREAM/libtasmaniandream.a: ./DREAM/libtasmaniandream.so $(TDR_SOURCE) libtasmaniansparsegrid.a $(CONFIGURED_HEADERS)
-	cd DREAM; make
-
-dreamtest: libtasmaniandream.a libtasmaniandream.so ./DREAM/dreamtest
-	cp ./DREAM/dreamtest .
-
-DREAM/dreamtest: ./DREAM/libtasmaniandream.so libtasmaniansparsegrid.a $(TDR_SOURCE) $(CONFIGURED_HEADERS)
+libtasmaniandream.so: libtasmaniansparsegrid.so $(TDR_SOURCE) $(CONFIGURED_HEADERS)
 	cd DREAM; make
 
 # Addons
-libtasmaniancaddons.so: ./Addons/libtasmaniancaddons.so
-	cp ./Addons/libtasmaniancaddons.so .
-
-./Addons/libtasmaniancaddons.so: libtasmaniansparsegrid.so libtasmaniandream.so
+libtasmaniancaddons.so: libtasmaniandream.so libtasmaniansparsegrid.so
 	cd Addons; make
-
-addontester: Addons/testAddons.o libtasmaniandream.a libtasmaniansparsegrid.a
-	$(CC) $(OPTL) $(LADD) -L. Addons/testAddons.o -o addontester libtasmaniandream.a libtasmaniansparsegrid.a
-
-Addons/testAddons.o: Addons/testAddons.cpp
-	$(CC) $(OPTC) $(IADD) -I./Addons/ -I./DREAM/ -I./SparseGrids/ -c Addons/testAddons.cpp -o Addons/testAddons.o
 
 # Headers
 # many calls to mkdir, consider reducing
 include/TasmanianDREAM.hpp: ./DREAM/TasmanianDREAM.hpp
 	mkdir -p ./include
 	cp ./DREAM/TasmanianDREAM.hpp ./include/
-
-include/tasdream%.hpp: ./DREAM/tasdream%.hpp
-	mkdir -p ./include
-	cp ./$< ./$@
 
 include/tsg%.hpp: ./DREAM/tsg%.hpp
 	mkdir -p ./include
@@ -142,10 +92,6 @@ include/TasmanianSparseGrid.h: ./SparseGrids/TasmanianSparseGrid.h
 include/TasmanianSparseGrid.hpp: ./SparseGrids/TasmanianSparseGrid.hpp
 	mkdir -p ./include
 	cp ./SparseGrids/TasmanianSparseGrid.hpp ./include/
-
-include/tasgrid%.hpp: ./SparseGrids/tasgrid%.hpp
-	mkdir -p ./include
-	cp ./$< ./$@
 
 include/tsg%.hpp: ./SparseGrids/tsg%.hpp
 	mkdir -p ./include
@@ -164,13 +110,7 @@ GaussPattersonRule.table: ./SparseGrids/GaussPattersonRule.table
 	cp ./SparseGrids/GaussPattersonRule.table .
 
 Tasmanian.py: ./InterfacePython/Tasmanian.py
-	cp ./InterfacePython/Tasmanian.py .
-
-TasmanianSG.py: ./InterfacePython/TasmanianSG.py
-	cp ./InterfacePython/TasmanianSG.py TasmanianSG.py
-
-TasmanianAddons.py: ./InterfacePython/TasmanianAddons.py
-	cp ./InterfacePython/TasmanianAddons.py TasmanianAddons.py
+	cp ./InterfacePython/Tasmanian* .
 
 TasmanianConfig.py: ./InterfacePython/TasmanianConfig.in.py
 	cp ./InterfacePython/TasmanianConfig.in.py TasmanianConfig.py
@@ -186,6 +126,11 @@ example_sparse_grids.py: ./InterfacePython/example_sparse_grids.in.py
 	cp ./InterfacePython/example_sparse_grids.in.py example_sparse_grids.py
 	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python'|g' ./example_sparse_grids.py
 	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./example_sparse_grids.py
+	cp ./InterfacePython/example_dream.in.py example_dream.py
+	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python'|g' ./example_dream.py
+	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./example_dream.py
+	cp ./InterfacePython/example_sparse_grids_* .
+	cp ./InterfacePython/example_dream_* .
 
 InterfacePython/testConfigureData.py: ./Config/AltBuildSystems/testConfigureData.py
 	cp ./Config/AltBuildSystems/testConfigureData.py InterfacePython/
@@ -218,40 +163,23 @@ matlab:
 .PHONY: python3
 python3: TasmanianSG.py testTSG.py example_sparse_grids.py
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' example_sparse_grids.py
+	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' example_dream.py
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' testTSG.py
 
 # Fortran
 .PHONY: fortran
-fortran: example_sparse_grids_f90 fortester90 libtasmanianfortran90.a libtasmanianfortran90.so tasmaniansg.mod
+fortran: example_sparse_grids_f90 libtasmanianfortran90.a libtasmanianfortran90.so
 	./fortester90
 
-fortester90: libtasmanianfortran90.a libtasmanianfortran90.so tasmaniansg.mod
-	cp InterfaceFortran/fortester.f90 .
-	$(FF) $(OPTF) $(IADD) -c fortester.f90 -o fortester90.o
-	$(FF) $(OPTLFF) $(LADD) fortester90.o -o fortester90 $(FFLIBS90) -lstdc++
-
-example_sparse_grids_f90: libtasmanianfortran90.a libtasmanianfortran90.so tasmaniansg.mod
+example_sparse_grids_f90: libtasmanianfortran90.so
 	cp ./InterfaceFortran/Examples/example_sparse_grids.f90 .
 	$(FF) $(OPTF) $(IADD) -c example_sparse_grids.f90 -o example_sparse_grids_f90.o
 	$(FF) $(OPTLFF) $(LADD) example_sparse_grids_f90.o -o example_sparse_grids_f90 $(FFLIBS90) -lstdc++
 
-tasmaniansg.mod: InterfaceFortran/tasmaniansg.mod
-	cp InterfaceFortran/tasmaniansg.mod .
-
-InterfaceFortran/tasmaniansg.mod: libtasmanianfortran90.a libtasmanianfortran90.so
+libtasmanianfortran90.so: libtasmaniancaddons.so
 	cd InterfaceFortran/; make
+	cp InterfaceFortran/tasmaniansg.mod ./include/
 
-libtasmanianfortran90.so: InterfaceFortran/libtasmanianfortran90.so
-	cp InterfaceFortran/libtasmanianfortran90.so .
-
-libtasmanianfortran90.a: InterfaceFortran/libtasmanianfortran90.a
-	cp InterfaceFortran/libtasmanianfortran90.a .
-
-InterfaceFortran/libtasmanianfortran90.so: libtasmanianfortran90.a
-	cd InterfaceFortran/; make
-
-InterfaceFortran/libtasmanianfortran90.a:
-	cd InterfaceFortran/; make
 
 # Testing and examples
 .PHONY: test
@@ -260,6 +188,7 @@ test: $(ALL_TARGETS)
 	./dreamtest
 	./addontester
 	PYTHONPATH=$(PYTHONPATH):./InterfacePython ./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
+	./example_sparse_grids.py
 
 .PHONY: examples
 examples: $(ALL_TARGETS) example_dream example_sparse_grids
@@ -288,7 +217,8 @@ clean:
 	rm -fr fortester*
 	rm -fr tasgrid
 	rm -fr gridtest
-	rm -fr tasdream
+	rm -fr dreamtest
+	rm -fr addontester
 	rm -fr TasmanianSG.py
 	rm -fr TasmanianAddons.py
 	rm -fr example_sparse_grids.py
@@ -297,16 +227,16 @@ clean:
 	rm -fr ./InterfacePython/*.pyc
 	rm -fr __pycache__
 	rm -fr ./InterfacePython/__pycache__
-	rm -fr example_sparse_grids
-	rm -fr example_sparse_grids.o
-	rm -fr example_sparse_grids.cpp
+	rm -fr example_sparse_grids*
 	rm -fr example_dream*
-	rm -fr example_sparse_grids.f90
-	rm -fr example_sparse_grids_fortran.o
-	rm -fr example_sparse_grids_fortran
+	rm -fr example_sparse_grids_f90
+	rm -fr example_sparse_grids_f90.o
+	rm -fr refTestFlename.grid
+	rm -fr fortranio.test
 	rm -fr testSave
 	rm -fr testTSG.py
 	rm -fr sandbox.py
+	rm -fr *.py
 	rm -fr include
 	rm -fr ./SparseGrids/TasmanianConfig.hpp
 	rm -fr ./InterfacePython/testConfigureData.py

@@ -22,20 +22,17 @@ EXECNAME = dreamtest
 %.o: %.cpp $(LHEADERS)
 	$(CC) $(OPTC) $(IADD) -c $< -o $@
 
-all: $(LIBNAME) $(EXECNAME) $(SHAREDNAME)
+all: ../$(LIBNAME) ../$(EXECNAME) ../$(SHAREDNAME)
 
-$(SHAREDNAME): $(LIBOBJ)
-	$(CC) $(OPTL) $(LADD) $(LIBOBJ) -shared -o $(SHAREDNAME) $(shell pwd)/../libtasmaniansparsegrid.so $(CommonLIBS)
+../$(SHAREDNAME): $(LIBOBJ) ../$(LIBNAME) ../$(EXECNAME)
+	$(CC) $(OPTL) $(LADD) $(LIBOBJ) -shared -o ../$(SHAREDNAME) $(shell pwd)/../libtasmaniansparsegrid.so $(CommonLIBS)
 
-$(LIBNAME): $(LIBOBJ)
-	ar rcs $(LIBNAME) $(LIBOBJ)
+../$(LIBNAME): $(LIBOBJ)
+	ar rcs ../$(LIBNAME) $(LIBOBJ)
 
-$(EXECNAME):  $(LIBNAME) $(WROBJ)
-	$(CC) $(OPTL) $(LADD) -L. $(WROBJ) -o $(EXECNAME) $(LIBNAME) $(LIBS)
+../$(EXECNAME): ../$(LIBNAME) $(WROBJ)
+	$(CC) $(OPTL) $(LADD) -L. $(WROBJ) -o ../$(EXECNAME) ../$(LIBNAME) $(LIBS)
 
 
 clean:
 	rm -fr *.o
-	rm -fr $(LIBNAME)
-	rm -fr $(EXECNAME)
-	rm -fr $(SHAREDNAME)
