@@ -193,7 +193,7 @@ Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
 ### Install on MS Windows platform
 
-Tasmanian has been tested with MS Visual Studio 2015 and 2017 and CMake 3.11.
+Tasmanian has been tested with MS Visual Studio 2017 and CMake 3.11.
 
 * First use the CMake GUI to set the folders and options
 * Then use the command prompt (`cmd.exe`) to enter the build folder
