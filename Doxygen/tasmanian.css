@@ -312,7 +312,7 @@ tr[class^="separator:"] {
 
 div.fragment {
         border-radius: 5px;
-        padding: 1em;
+        padding: 0.5em;
 }
 
 div.line {

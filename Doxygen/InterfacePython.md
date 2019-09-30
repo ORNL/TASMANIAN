@@ -86,8 +86,8 @@ accessed with the Python `help()` function, e.g.,
 ```
 * Addon module methods and C++ equivalent:
 ```
-    Tasmanian.loadNeededPoints            -> TasGrid::loadNeededPoints <overwrite_loaded=false>
-    Tasmanian.reloadLoadedPoints          -> TasGrid::loadNeededPoints <overwrite_loaded=true>
+    Tasmanian.loadNeededPoints              -> TasGrid::loadNeededPoints <overwrite_loaded=false>
+    Tasmanian.reloadLoadedPoints            -> TasGrid::loadNeededPoints <overwrite_loaded=true>
     Tasmanian.constructAnisotropicSurrogate -> TasGrid::constructSurrogate (anistropic overload)
     Tasmanian.constructSurplusSurrogate     -> TasGrid::constructSurrogate (surplus overload)
 ```
