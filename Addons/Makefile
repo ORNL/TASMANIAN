@@ -2,7 +2,7 @@ include ../Config/AltBuildSystems/Makefile.in
 
 IADD = -I../SparseGrids -I../DREAM $(CommonIADD)
 LADD = -L../ $(CommonLADD)
-LIBS = $(shell pwd)/../libtasmaniansparsegrid.so $(shell pwd)/../libtasmaniandream.so $(CommonLIBS)
+LIBS = ./libtasmaniansparsegrid.so ./libtasmaniandream.so $(CommonLIBS)
 
 LHEADERS = $(wildcard ./*.hpp)
 
@@ -18,7 +18,7 @@ all: $(LIBOBJ) ../$(MODULENAME) ../$(TESTNAME)
 	$(CC) $(OPTC) $(IADD) -c $< -o $@
 
 ../$(MODULENAME): $(LIBOBJ)
-	$(CC) $(OPTL) $(LADD) $(LIBOBJ) -shared -o ../$(MODULENAME) $(LIBS)
+	cd ..; $(CC) $(OPTL) $(LADD) ./Addons/tsg*.o -shared -o $(MODULENAME) $(LIBS)
 
 ../$(TESTNAME): testAddons.o
 	$(CC) $(OPTL) $(LADD) testAddons.o -o ../$(TESTNAME) ../libtasmaniandream.a ../libtasmaniansparsegrid.a

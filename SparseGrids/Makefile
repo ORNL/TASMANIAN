@@ -43,7 +43,7 @@ TESTNAME = gridtest
 all: ../$(LIBNAME) ../$(EXECNAME) ../$(TESTNAME) ../$(SHAREDNAME)
 
 ../$(SHAREDNAME): $(LIBOBJ) ../$(LIBNAME) ../$(EXECNAME) ../$(TESTNAME)
-	$(CC) $(OPTL) $(LIBOBJ) -shared -o ../$(SHAREDNAME) $(LIBS)
+	cd ..; $(CC) $(OPTL) ./SparseGrids/tsg*.o ./SparseGrids/Tasmanian*.o -shared -o $(SHAREDNAME) $(LIBS)
 
 ../$(LIBNAME): $(LIBOBJ)
 	ar rcs ../$(LIBNAME) $(LIBOBJ)
