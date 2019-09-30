@@ -450,8 +450,15 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
             for(int j=num_dimensions-1; j>=0; j--){ // here p is the index of the spacial point in Tasmanian indexing
                 int r = t % num_oned_points[j];
                 int offset = (r*(num_oned_points[j]+1)/2) % num_oned_points[j];     // in order to fetch reduced form of (N+1)*r/(2*N)
-                fftprod *= 2.0 * ( (1.0 - numerator_cache[j][levels[j]] * expcache[levels[j]][offset])
-                            / (1.0 - numerator_cache[j][0] * expcache[levels[j]][r]) ).real() - 1.0;
+
+                if (std::abs(1.0 - (numerator_cache[j][0] * expcache[levels[j]][r]).real()) <  Maths::num_tol){
+                    // we're evaluating the basis functions at a node; take care of zero-divide
+                    fftprod *= num_oned_points[j];
+                }else{
+                    fftprod *= 2.0 * ( (1.0 - numerator_cache[j][levels[j]] * expcache[levels[j]][offset])
+                                / (1.0 - numerator_cache[j][0] * expcache[levels[j]][r]) ).real() - 1.0;
+                }
+
                 p[j] = index_map[levels[j]][r];
                 t /= num_oned_points[j];
             }
