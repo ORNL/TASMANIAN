@@ -1,7 +1,7 @@
 include ../Config/AltBuildSystems/Makefile.in
 
 IADD = -I../SparseGrids $(CommonIADD)
-LADD = -L../ $(CommonLADD)
+LADD = -L../ -L. $(CommonLADD)
 LIBS = ../libtasmaniansparsegrid.a $(CommonLIBS)
 
 
@@ -25,13 +25,13 @@ EXECNAME = dreamtest
 all: ../$(LIBNAME) ../$(EXECNAME) ../$(SHAREDNAME)
 
 ../$(SHAREDNAME): $(LIBOBJ) ../$(LIBNAME) ../$(EXECNAME)
-	$(CC) $(OPTL) $(LADD) $(LIBOBJ) -shared -o ../$(SHAREDNAME) $(shell pwd)/../libtasmaniansparsegrid.so $(CommonLIBS)
+	cd ..; $(CC) $(OPTL) $(LADD) ./DREAM/tsg*.o -shared -o $(SHAREDNAME) ./libtasmaniansparsegrid.so $(CommonLIBS)
 
 ../$(LIBNAME): $(LIBOBJ)
 	ar rcs ../$(LIBNAME) $(LIBOBJ)
 
 ../$(EXECNAME): ../$(LIBNAME) $(WROBJ)
-	$(CC) $(OPTL) $(LADD) -L. $(WROBJ) -o ../$(EXECNAME) ../$(LIBNAME) $(LIBS)
+	$(CC) $(OPTL) $(LADD) $(WROBJ) -o ../$(EXECNAME) ../$(LIBNAME) $(LIBS)
 
 
 clean:
