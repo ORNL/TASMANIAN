@@ -87,6 +87,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D Tasmanian_ENABLE_MPI:BOOL=<ON/OFF>         (mostly stable)
   -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (mostly stable)
 ```
+
 * Acceleration options:
     * OpenMP allows Tasmanian to use more than one CPU core, which greatly increases the performance
     * Basic Linear Algebra Subroutines (BLAS) is a standard with many implementations,
@@ -202,7 +203,7 @@ Tasmanian has been tested with MS Visual Studio 2015 and 2017 and CMake 3.11.
   ctest -C Release
   cmake --build . --config Release --target install
 ```
-* Both Debug and Release are supported config modes above
+* Both Debug and Release are supported config modes, but do not use simultaneously
 
 ### Install folder structure
 
@@ -289,3 +290,22 @@ For example:
   find_package(... REQUIRED SHARED OPTIONAL_COMPONENTS STATIC) # Tasmanian::Tasmanian is static
   find_package(... <no SHARED/STATIC component specified>)     # Tasmanian::Tasmanian is static
 ```
+
+### Known Issues
+
+Several known issues and work-around fixes:
+* The addon tests sometime fail due to thread scheduling
+    * The overhead associated with thread scheduling is much larger than the simple test models used,
+    which leads to unrealistically large fluctuations in sample run-time, which in turn leads to
+    randomness in the results, most notably on machines with few cpu cores.
+    * Rerun the tests and/or installation to see if the problem is persistent
+* The GNU Make script sometimes fails under MacOSX because of security policies related to `rpath`
+    * use either the `install` script or CMake
+    * the CMake GUI works under MaxOSX and Linux the same way as Windows
+* Mixing the GCC and Clang compilers and linkers sometimes fails with an error about the architecture
+    * use shared libraries only, i.e., `-D BUILD_SHARED_LIBS=ON` in CMake
+* The PGI compiler fails when using optimization `-O2` with an error about an empty `free()`
+    * the bug happens when `std::vector<double>::resize()` is called on an empty vector
+    * use the `-O1` instead, this issue needs further investigation
+* Older versions of CUDA do not work with newer versions of some compilers, e.g., gcc
+    * consult the CUDA manual for a list of acceptable compilers
