@@ -29,17 +29,17 @@ class TestTasClass(unittest.TestCase):
         '''
         if (tdata.bEnableSyncTests):
             grid = Tasmanian.TasmanianSparseGrid(tdata.sLibPath)
-            sVersion = grid.getVersion()
+            sVersion = "{0:1d}.{1:1d}".format(grid.getVersionMajor(), grid.getVersionMinor())
             self.assertEqual(sVersion, Tasmanian.__version__, "version mismatch")
 
             pLibTSG = cdll.LoadLibrary(tdata.sLibPath)
             grid = Tasmanian.TasmanianSparseGrid(pLibTSG)
-            sVersion = grid.getVersion()
+            sVersion = "{0:1d}.{1:1d}".format(grid.getVersionMajor(), grid.getVersionMinor())
             self.assertEqual(sVersion, Tasmanian.__version__, "version mismatch")
 
         grid = Tasmanian.TasmanianSparseGrid()
 
-        sVersion = grid.getVersion()
+        sVersion = "{0:1d}.{1:1d}".format(grid.getVersionMajor(), grid.getVersionMinor())
         self.assertEqual(sVersion, Tasmanian.__version__, "version mismatch")
         sLicense = grid.getLicense()
         self.assertEqual(sLicense, Tasmanian.__license__, "license mismatch")
