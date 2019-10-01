@@ -13,7 +13,7 @@ NVCC_OPT =
 
 # Default C++ compiler
 CC = g++
-OPTC = -O3 -std=c++11 $(COMPILE_OPTIONS) -fPIC -Wstrict-aliasing
+OPTC = -O3 -std=c++14 $(COMPILE_OPTIONS) -fPIC -Wstrict-aliasing
 OPTL = $(OPTC)
 
 # Default Fortran compiler
