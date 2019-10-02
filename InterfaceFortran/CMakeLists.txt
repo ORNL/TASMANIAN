@@ -23,6 +23,7 @@ target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTE
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
 
 if (Tasmanian_ENABLE_MPI)
+    # see the comments in the Addons/CMakeLists.txt
     target_link_libraries(${Tasmanian_libfor_target_name} ${MPI_Fortran_LIBRARIES})
 
     if (DEFINED MPI_Fortran_INCLUDE_PATH)
