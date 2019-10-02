@@ -23,19 +23,28 @@ target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTE
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
 
 if (Tasmanian_ENABLE_MPI)
-    target_link_libraries(Tasmanian_addons INTERFACE ${MPI_Fortran_LIBRARIES})
+    # see the comments in the Addons/CMakeLists.txt
+    target_link_libraries(${Tasmanian_libfor_target_name} ${MPI_Fortran_LIBRARIES})
 
     if (DEFINED MPI_Fortran_INCLUDE_PATH)
-        target_include_directories(${Tasmanian_libfor_target_name} INTERFACE "${MPI_Fortran_INCLUDE_PATH}")
+        target_include_directories(${Tasmanian_libfor_target_name} PUBLIC "${MPI_Fortran_INCLUDE_PATH}")
     endif()
 
     if(DEFINED MPI_Fortran_COMPILE_FLAGS)
-        target_compile_options(${Tasmanian_libfor_target_name} INTERFACE "${MPI_Fortran_COMPILE_FLAGS}")
+        string(REPLACE " " ";" _tsg_temp_list ${MPI_Fortran_COMPILE_FLAGS})
+        foreach(_flag ${_tsg_temp_list})
+            target_compile_options(${Tasmanian_libfor_target_name} PUBLIC ${_flag})
+        endforeach()
     endif()
 
     if(DEFINED MPI_Fortran_LINK_FLAGS)
-        set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES INTERFACE_LINK_OPTIONS "${MPI_Fortran_LINK_FLAGS}")
+        string(REPLACE " " ";" _tsg_temp_list ${MPI_Fortran_LINK_FLAGS})
+        foreach(_flag ${_tsg_temp_list})
+            set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES LINK_OPTIONS ${_flag})
+        endforeach()
     endif()
+    unset(_tsg_temp_list)
+    unset(_flag)
 endif()
 
 install(TARGETS ${Tasmanian_libfor_target_name}
