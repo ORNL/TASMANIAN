@@ -62,7 +62,7 @@ string(REPLACE " " "\\ " Tasmanian_matlab_workdir "${Tasmanian_matlab_workdir}")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.build.m" "${CMAKE_CURRENT_BINARY_DIR}/matlab/tsgGetPaths.m" @ONLY)
 
 # set MATLAB (tasgrid and temp folder) for the install folder (stage 2)
-set(Tasmanian_matlab_tasgrid "${CMAKE_INSTALL_PREFIX}/bin/tasgrid")
+set(Tasmanian_matlab_tasgrid "${Tasmanian_final_install_path}/bin/tasgrid")
 string(REPLACE " " "\\ " Tasmanian_matlab_tasgrid "${Tasmanian_matlab_tasgrid}")
 message("${Tasmanian_matlab_tasgrid}")
 set(Tasmanian_matlab_workdir "${Tasmanian_MATLAB_WORK_FOLDER}/")

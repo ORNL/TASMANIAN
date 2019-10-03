@@ -161,6 +161,16 @@ if (Tasmanian_ENABLE_MPI)
     endif()
 endif()
 
+# check if building with Python scikit-build, i.e., pip install
+if (SKBUILD)
+    # scikit build compiles and install in one place, then moves the files to a new location
+    # Tasmanian needs the final install path so scripts can find the libraries and
+    # the libraries can find each-other with rpath without LD_LIBRARY_PATH
+    set(Tasmanian_final_install_path "${Tasmanian_python_pip_final}")
+else()
+    set(Tasmanian_final_install_path "${CMAKE_INSTALL_PREFIX}")
+endif()
+
 
 ########################################################################
 # Needed for TasmanianConfig.cmake and TasmanianConfigVersion.cmake

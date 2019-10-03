@@ -17,13 +17,12 @@ endif()
 # Here we convert boolen true to "ON" so it can
 # be safely passed to Python as a string and interpreted via
 # python_boolean = ("@cmake_boolean@" == "ON")
-if (Tasmanian_ENABLE_BLAS)
-    set(Tasmanian_ENABLE_BLAS "ON")
-endif()
-
-if (Tasmanian_ENABLE_CUDA)
-    set(Tasmanian_ENABLE_CUDA "ON")
-endif()
+foreach(_tsg_opt Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_CUDA)
+    if (${_tsg_opt})
+        set(${_tsg_opt} "ON")
+    endif()
+endforeach()
+unset(_tsg_opt)
 
 
 ########################################################################
@@ -104,10 +103,12 @@ set(Tasmanian_shared_lib_destination "lib")
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows") # windows puts the .dll files in bin, as opposed to lib
     set(Tasmanian_shared_lib_destination "bin")
 endif()
-set(Tasmanian_libsparsegrid_path "${CMAKE_INSTALL_PREFIX}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set(Tasmanian_libdream_path      "${CMAKE_INSTALL_PREFIX}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniandream${CMAKE_SHARED_LIBRARY_SUFFIX}")
-set(Tasmanian_libcaddons_path    "${CMAKE_INSTALL_PREFIX}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
+set(Tasmanian_libsparsegrid_path "${Tasmanian_final_install_path}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(Tasmanian_libdream_path      "${Tasmanian_final_install_path}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniandream${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(Tasmanian_libcaddons_path    "${Tasmanian_final_install_path}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianConfig.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.py")
+
 
 set(Tasmanian_python_example_import "sys.path.append(\"${Tasmanian_python_install_path}\")\n")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang

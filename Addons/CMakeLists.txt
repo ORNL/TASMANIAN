@@ -33,8 +33,7 @@ if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
     add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp)
     target_link_libraries(Tasmanian_caddons Tasmanian_addons Tasmanian_libdream_shared)
     set_target_properties(Tasmanian_caddons PROPERTIES OUTPUT_NAME "tasmaniancaddons"
-                                                       INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
-                                                       INSTALL_RPATH_USE_LINK_PATH ON)
+                                                       INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
 
     install(TARGETS Tasmanian_caddons
             EXPORT  "${Tasmanian_export_name}"
