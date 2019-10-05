@@ -1,4 +1,4 @@
-Tasmanian_include = -I@CMAKE_INSTALL_PREFIX@/include/
-Tasmanian_link = -L@CMAKE_INSTALL_PREFIX@/lib/
+Tasmanian_include = -I@Tasmanian_final_install_path@/include/
+Tasmanian_link = -L@Tasmanian_final_install_path@/lib/
 Tasmanian_libs = -ltasmaniandream -ltasmaniansparsegrid @Tasmanian_libs@
 Tarmanian_fortran_libs = -ltasmanianfortran90 $(Tasmanian_libs) -lstdc++

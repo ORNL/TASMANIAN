@@ -32,7 +32,7 @@ target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_EXTRA_LIBRARIE
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:${Tasmanian_EXTRA_INCLUDE_DIRS}>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${Tasmanian_EXTRA_INCLUDE_DIRS}>)
 
-target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
+target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include>)
 
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Config/>)

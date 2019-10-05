@@ -111,6 +111,9 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianConfig.in.py"  "${CMAKE_CUR
 
 
 set(Tasmanian_python_example_import "sys.path.append(\"${Tasmanian_python_install_path}\")\n")
+if (SKBUILD)
+    set(Tasmanian_python_example_import "") # if installed through pip, no path is needed
+endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_dream.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_dream.py") # also uses Tasmanian_string_python_hashbang
 
@@ -156,18 +159,14 @@ macro(Tasmanian_python_install)
     foreach(_tsg_py_file ${_tsg_py_FILES})
         get_filename_component(_tsg_py_name ${_tsg_py_file} NAME)
 
+        # install in the version specific site-package location
         install(FILES ${_tsg_py_file} DESTINATION "${Tasmanian_python_install_path}"
-                PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+                PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
-        if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-            # Windows does not support sym-link, but it is still beneficial to have a version independent python module
-            install(CODE "execute_process( COMMAND \"${CMAKE_COMMAND}\" -E copy \"${_tsg_py_file}\" \"${Tasmanian_PYTHONPATH}/${_tsg_py_name}\" )" )
-        endif()
-
+        # install in the version independent location (note that pip-install doesn't handle sym-links)
+        install(FILES ${_tsg_py_file} DESTINATION "${Tasmanian_PYTHONPATH}"
+                PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
     endforeach()
-    if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-        install(CODE "execute_process( COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"${Tasmanian_python_install_path}\" \"${Tasmanian_PYTHONPATH}\" )" )
-    endif()
 endmacro(Tasmanian_python_install)
 
 Tasmanian_python_install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSG.py"

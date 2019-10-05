@@ -67,7 +67,7 @@ endif()
 
 # export the python path so other projects can configure python scripts
 if (@Tasmanian_ENABLE_PYTHON@)
-    set_and_check(Tasmanian_PYTHONPATH "@Tasmanian_PYTHONPATH@")
+    set_and_check(Tasmanian_PYTHONPATH "@Tasmanian_final_install_path@/share/Tasmanian/python/")
     set(Tasmanian_PYTHON_FOUND "ON")
 endif()
 
