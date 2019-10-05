@@ -28,6 +28,8 @@ for line in readme_file:
     else:
         long_description += line
 
+final_install_path = os.getenv('VIRTUAL_ENV') if os.getenv('VIRTUAL_ENV') is not None else os.getenv('HOME') + "/.local/"
+
 setup(
     name='Tasmanian',
     version='7.0',
@@ -49,6 +51,7 @@ setup(
         '-DBUILD_SHARED_LIBS=ON',
         '-DTasmanian_ENABLE_RECOMMENDED:BOOL=ON',
         '-DPYTHON_EXECUTABLE:PATH={0:1s}'.format(sys.executable),
-        '-DTasmanian_python_pip_final:PATH={0:1s}/.local/'.format(os.getenv("HOME"))
+        '-DTasmanian_python_pip_final:PATH={0:1s}/'.format(final_install_path),
+        '-DTasmanian_cinfo:STRING="{0:1s}"'.format(sparams),
     ],
 )
