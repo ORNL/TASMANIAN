@@ -43,7 +43,7 @@ __path_libcaddons__    = "@Tasmanian_libcaddons_path@"
 # the transitive library dependencies on Linux/OsX are handled by rpath, Windows needs help
 if "@CMAKE_SYSTEM_NAME@" == "Windows":
     import os
-    os.environ['PATH'] = "@CMAKE_INSTALL_PREFIX@/bin/" + os.pathsep + os.environ['PATH']
+    os.environ['PATH'] = "@Tasmanian_final_install_path@/bin/" + os.pathsep + os.environ['PATH']
 
 class TasmanianInputError(Exception):
     '''Exception raised for incorret input to Tasmanian

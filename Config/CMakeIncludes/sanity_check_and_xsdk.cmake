@@ -113,14 +113,13 @@ if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND ("shared" IN_LI
     endif()
 
     if (NOT "${Tasmanian_python_has_numpy}" STREQUAL "0")
-        if (Tasmanian_ENABLE_RECOMMENDED)
-            set(Tasmanian_ENABLE_PYTHON OFF)
+        if (NOT Tasmanian_ENABLE_PYTHON) # means we are using RECOMMENDED only
             message(STATUS "Tasmanian could not find Python with numpy and ctypes modules, the python interface will not be installed and some tests will be omitted")
         else()
             message(FATAL_ERROR "-D Tasmanian_ENABLE_PYTHON is ON, but either find_package(PythonInterp) failed python executable could not 'import numpy, ctypes'\nuse -D PYTHON_EXECUTABLE:PATH to specify suitable python interpreter")
         endif()
     else()
-        set(Tasmanian_ENABLE_PYTHON ON)
+        set(Tasmanian_ENABLE_PYTHON ON) # just in case we are using RECOMMENDED only
     endif()
 endif()
 

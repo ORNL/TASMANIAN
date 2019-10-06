@@ -7,8 +7,14 @@
 #
 ########################################################################
 
-if (NOT "${Tasmanian_python_install_path}" STREQUAL "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages")
-    set(Tasmanian_python_install_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages" CACHE INTERNAL "install path for the Python module (version specific)" FORCE)
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    set(Tasmanian_python_default_path "${CMAKE_INSTALL_PREFIX}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}/site-packages")
+else()
+    set(Tasmanian_python_default_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages")
+endif()
+
+if (NOT "${Tasmanian_python_install_path}" STREQUAL "${Tasmanian_python_default_path}")
+    set(Tasmanian_python_install_path "${Tasmanian_python_default_path}" CACHE INTERNAL "install path for the Python module (version specific)" FORCE)
     set(Tasmanian_PYTHONPATH "${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python/" CACHE PATH "install path for the Python module (version independent)" FORCE)
 endif()
 
@@ -166,6 +172,12 @@ macro(Tasmanian_python_install)
         # install in the version independent location (note that pip-install doesn't handle sym-links)
         install(FILES ${_tsg_py_file} DESTINATION "${Tasmanian_PYTHONPATH}"
                 PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+
+        if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows" AND Tasmanian_windows_virtual)
+            # windows virtual environments use a different path and naming convention, annoying ...
+            install(FILES ${_tsg_py_file} DESTINATION "${CMAKE_INSTALL_PREFIX}/Lib/site-packages/"
+                    PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+        endif()
     endforeach()
 endmacro(Tasmanian_python_install)
 

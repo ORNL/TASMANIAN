@@ -1,6 +1,6 @@
 # First catch Tasmanian specific options so CUDA and manual selection
 # of the BLAS libraries would be possible
-import sys
+import sys, site
 enable_cuda = False
 cuda_path = ""
 blas_libs = ""
@@ -9,10 +9,12 @@ for opt in sys.argv:
         # remove the option to avoid confusion with the standard options
         sys.argv.remove(opt)
         enable_cuda = True
-        cuda_path = opt.split("=")[1]
+        if len(opt.split("=")) > 1:
+            cuda_path = opt.split("=")[1]
     elif opt.startswith("-blas"):
         sys.argv.remove(opt)
-        blas_libs = opt.split("=")[1]
+        if len(opt.split("=")) > 1:
+            blas_libs = opt.split("=")[1]
 
 
 # do standard skbuild setup
@@ -45,25 +47,42 @@ for line in readme_file:
         long_description += line
 
 
-final_install_path = os.getenv('VIRTUAL_ENV') if os.getenv('VIRTUAL_ENV') is not None else os.getenv('HOME') + "/.local/"
+# find out whether this is avirtual environment, real_prefix is an older test, base_refix is the newer one
+if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+    final_install_path = sys.prefix # sys.prefix points to the virtual environment root
+    isvirtual = True
+else:
+    isvirtual = False
+    try:
+        import site
+        final_install_path = site.getuserbase()
+    except:
+        # some implementations do not provide compatible 'site' package, assume default Linux behavior
+        final_install_path = os.getenv('HOME') + "/.local/"
 
+
+# setup cmake arguments
 cmake_args=[
         '-DCMAKE_BUILD_TYPE=Release',
         '-DBUILD_SHARED_LIBS=ON',
         '-DTasmanian_ENABLE_RECOMMENDED:BOOL=ON',
+        '-DTasmanian_ENABLE_PYTHON:BOOL=ON',
         '-DPYTHON_EXECUTABLE:PATH={0:1s}'.format(sys.executable),
         '-DTasmanian_python_pip_final:PATH={0:1s}/'.format(final_install_path),
-        '-DTasmanian_cinfo:STRING="{0:1s}"'.format('None'),
         '-DTasmanian_ENABLE_CUDA:BOOL={0:1s}'.format('ON' if enable_cuda else 'OFF'),
         ]
 if cuda_path != "":
     cmake_args.append('-DCMAKE_CUDA_COMPILER:PATH={0:1s}'.format(cuda_path))
 if blas_libs != "":
     cmake_args.append('-DBLAS_LIBRARIES={0:1s}'.format(blas_libs))
+if isvirtual:
+    cmake_args.append('-DTasmanian_windows_virtual:BOOL=ON')
 
+
+# call the actual package setup command
 setup(
     name='Tasmanian',
-    version='7.0',
+    version='7.0rc3',
     author='Miroslav Stoyanov',
     author_email='stoyanovmk@ornl.gov',
     description='UQ library for sparse grids and Bayesian inference',
