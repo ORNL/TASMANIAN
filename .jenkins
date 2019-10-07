@@ -1,0 +1,35 @@
+pipeline {
+    agent {
+        label 'DoNotRunAnythingOnMaster'
+    }
+    stages {
+        stage("Deploy documentation") {
+            when {
+                 branch "master"
+            }
+            agent {
+                docker {
+                    image "ubuntu:18.04"
+                    label 'docker'
+                }
+            }
+            environment {
+                GIT_CREDS = credentials('0f170146-bd5e-44c0-a6e0-4f6fac3230fa')
+            }
+            steps {
+                sh 'apt update && apt install --no-install-recommends -y build-essential cmake doxygen git'
+                sh '''rm -rf build_doc && mkdir -p build_doc && cd build_doc &&
+                      cmake -DTasmanian_ENABLE_DOXYGEN=ON -DDOXYGEN_INTERNAL_DOCS=ON .. &&
+                      make Tasmanian_doxygen &&
+                      git fetch origin gh-pages && git branch -D gh-pages &&
+                      git checkout -b gh-pages FETCH_HEAD &&
+                      rm -rf ../rtd && mv Doxygen/html ../rtd && git add --all ../rtd &&
+                      git config http.sslVerify false
+                      git config user.email "noreply@ornl.gov" &&
+                      git config user.name "Jenkins CI" &&
+                      git commit -m "Automated documentation update" &&
+                      git push https://$GIT_CREDS@github.com/ORNL/TASMANIAN.git gh-pages'''
+            }
+        }
+    }
+}
