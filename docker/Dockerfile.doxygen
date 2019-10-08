@@ -4,6 +4,7 @@ RUN apt update && apt install --no-install-recommends -y \
         build-essential \
         cmake \
         doxygen \
+        graphviz \
         git \
         && \
     apt-get clean && \
