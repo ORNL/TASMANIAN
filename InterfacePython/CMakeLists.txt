@@ -177,6 +177,9 @@ macro(Tasmanian_python_install)
             # windows virtual environments use a different path and naming convention, annoying ...
             install(FILES ${_tsg_py_file} DESTINATION "${CMAKE_INSTALL_PREFIX}/Lib/site-packages/"
                     PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+        elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND Tasmanian_osx_framework) # not even sure if this is needed
+            install(FILES ${_tsg_py_file} DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python/site-packages/"
+                    PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
         endif()
     endforeach()
 endmacro(Tasmanian_python_install)

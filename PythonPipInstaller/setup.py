@@ -21,8 +21,7 @@ for opt in sys.argv:
 from packaging.version import LegacyVersion
 from skbuild.exceptions import SKBuildError
 from skbuild.cmaker import get_cmake_version
-
-import os
+from skbuild import setup  # This line replaces 'from setuptools import setup'
 
 # Add CMake as a build requirement if cmake is not installed or too old
 setup_requires = []
@@ -31,9 +30,6 @@ try:
         setup_requires.append('cmake')
 except SKBuildError:
     setup_requires.append('cmake')
-
-
-from skbuild import setup  # This line replaces 'from setuptools import setup'
 
 
 with open('README.md', 'r') as fh:
@@ -54,11 +50,21 @@ if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_pref
 else:
     isvirtual = False
     try:
-        import site
         final_install_path = site.getuserbase()
     except:
+        import os
         # some implementations do not provide compatible 'site' package, assume default Linux behavior
         final_install_path = os.getenv('HOME') + "/.local/"
+
+isosxframework = False
+if sys.platform == 'darwin':
+    try:
+        if 'python/site-packages' in site.getusersitepackages():
+            # appears to be Mac Framework using Library/Python/X.Y/lib/python/site-packages
+            isosxframework = True
+    except:
+        # cannot determine if using Mac Framework
+        pass
 
 
 # setup cmake arguments
@@ -77,12 +83,14 @@ if blas_libs != "":
     cmake_args.append('-DBLAS_LIBRARIES={0:1s}'.format(blas_libs))
 if isvirtual:
     cmake_args.append('-DTasmanian_windows_virtual:BOOL=ON')
+if isosxframework:
+    cmake_args.append('-DTasmanian_osx_framework:BOOL=ON')
 
 
 # call the actual package setup command
 setup(
     name='Tasmanian',
-    version='7.0rc3',
+    version='7.0rc4',
     author='Miroslav Stoyanov',
     author_email='stoyanovmk@ornl.gov',
     description='UQ library for sparse grids and Bayesian inference',
