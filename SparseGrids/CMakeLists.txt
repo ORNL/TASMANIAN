@@ -254,6 +254,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
         FILES_MATCHING PATTERN "*.hpp"
         PATTERN "*.windows.*" EXCLUDE
         PATTERN "Examples" EXCLUDE
+        PATTERN "Benchmarks" EXCLUDE
         PATTERN "tsgHiddenExternals.hpp" EXCLUDE)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.h"
         DESTINATION include

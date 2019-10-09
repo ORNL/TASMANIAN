@@ -197,6 +197,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
         DESTINATION "share/Tasmanian/examples/"
         FILES_MATCHING PATTERN "example_*.py"
         PATTERN "*.in.*" EXCLUDE
+        PATTERN "*PipInstaller*" EXCLUDE
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py"
