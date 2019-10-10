@@ -29,8 +29,7 @@ target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERF
 target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
 set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream"
-                                                                 INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
-                                                                 INSTALL_RPATH_USE_LINK_PATH ON)
+                                                                 INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
 
 install(TARGETS "${Tasmanian_libtdr_target_name}"
         EXPORT  "${Tasmanian_export_name}"

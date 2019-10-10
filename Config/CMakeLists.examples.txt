@@ -3,7 +3,7 @@ cmake_policy(VERSION 3.10)
 project(Tasmanian_Examples)
 
 # if given the Tasmanian install path, find_package() can be used to include the correct version of Tasmanian with all targets
-find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasmanian_VERSION_PATCH@ PATHS "@CMAKE_INSTALL_PREFIX@"
+find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasmanian_VERSION_PATCH@ PATHS "@Tasmanian_final_install_path@"
              REQUIRED @Tasmanian_components@)
 
 # Alternatively, a project can skip PATHS, but "@CMAKE_INSTALL_PREFIX@/lib/" must be included in CMAKE_PREFIX_PATH

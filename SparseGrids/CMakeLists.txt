@@ -32,15 +32,14 @@ target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_EXTRA_LIBRARIE
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:${Tasmanian_EXTRA_INCLUDE_DIRS}>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${Tasmanian_EXTRA_INCLUDE_DIRS}>)
 
-target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
+target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include>)
 
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Config/>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
 set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
-                                                                 INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
-                                                                 INSTALL_RPATH_USE_LINK_PATH ON)
+                                                                 INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
 
 target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_11)
 
@@ -162,8 +161,7 @@ add_executable(Tasmanian_gridbenchmarks  Benchmarks/benchCommon.hpp
                                          Benchmarks/bench_main.cpp)
 
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid"
-                                                   INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
-                                                   INSTALL_RPATH_USE_LINK_PATH ON)
+                                                   INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
 set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")
 set_target_properties(Tasmanian_gridbenchmarks PROPERTIES OUTPUT_NAME "benchmark")
 
@@ -256,6 +254,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
         FILES_MATCHING PATTERN "*.hpp"
         PATTERN "*.windows.*" EXCLUDE
         PATTERN "Examples" EXCLUDE
+        PATTERN "Benchmarks" EXCLUDE
         PATTERN "tsgHiddenExternals.hpp" EXCLUDE)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.h"
         DESTINATION include

@@ -31,11 +31,6 @@
 # Using a single configuration file with all paths and relevant options
 # The rest of the Tasmanian Python modules will not be configured by cmake
 
-# the transitive library dependencies on Linux/OsX are handled by rpath, Windows needs help
-if "@CMAKE_SYSTEM_NAME@" == "Windows":
-    import os
-    os.environ['PATH'] = "@CMAKE_INSTALL_PREFIX@/bin/" + os.pathsep + os.environ['PATH']
-
 __version__ = "@Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@"
 __license__ = "@Tasmanian_license@"
 __author__ = "Miroslav Stoyanov"
@@ -44,6 +39,11 @@ __git_commit_hash__ = "@Tasmanian_git_hash@"
 __path_libsparsegrid__ = "@Tasmanian_libsparsegrid_path@"
 __path_libdream__      = "@Tasmanian_libdream_path@"
 __path_libcaddons__    = "@Tasmanian_libcaddons_path@"
+
+# the transitive library dependencies on Linux/OsX are handled by rpath, Windows needs help
+if "@CMAKE_SYSTEM_NAME@" == "Windows":
+    import os
+    os.environ['PATH'] = "@Tasmanian_final_install_path@/bin/" + os.pathsep + os.environ['PATH']
 
 class TasmanianInputError(Exception):
     '''Exception raised for incorret input to Tasmanian

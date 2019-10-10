@@ -5,10 +5,10 @@ cmake_minimum_required(VERSION 3.10)
 # https://cmake.org/cmake/help/v3.5/module/CMakePackageConfigHelpers.html#module:CMakePackageConfigHelpers
 # seems to indicate that I need to pre-pend PACKAGE_ to the variable names after the @PACKAGE_INIT@ macro
 # but this doesn't seem to work, not sure if this is a "relocatable package" (low concern)
-include("@CMAKE_INSTALL_PREFIX@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
+include("@Tasmanian_final_install_path@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
 
 add_executable(Tasmanian::tasgrid IMPORTED)
-set_property(TARGET Tasmanian::tasgrid PROPERTY IMPORTED_LOCATION "@CMAKE_INSTALL_PREFIX@/bin/tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}")
+set_property(TARGET Tasmanian::tasgrid PROPERTY IMPORTED_LOCATION "@Tasmanian_final_install_path@/bin/tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}")
 
 add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
 
@@ -67,14 +67,14 @@ endif()
 
 # export the python path so other projects can configure python scripts
 if (@Tasmanian_ENABLE_PYTHON@)
-    set_and_check(Tasmanian_PYTHONPATH "@Tasmanian_PYTHONPATH@")
+    set_and_check(Tasmanian_PYTHONPATH "@Tasmanian_final_install_path@/share/Tasmanian/python/")
     set(Tasmanian_PYTHON_FOUND "ON")
 endif()
 
 # export the MATLAB paths so other projects can write files directly to MATLAB
 if (NOT "@Tasmanian_MATLAB_WORK_FOLDER@" STREQUAL "")
     set_and_check(Tasmanian_MATLAB_WORK_FOLDER "@Tasmanian_MATLAB_WORK_FOLDER@")
-    set_and_check(Tasmanian_MATLABPATH "@CMAKE_INSTALL_PREFIX@/share/Tasmanian/matlab/")
+    set_and_check(Tasmanian_MATLABPATH "@Tasmanian_final_install_path@/share/Tasmanian/matlab/")
     set(Tasmanian_MATLAB_FOUND "ON")
 endif()
 

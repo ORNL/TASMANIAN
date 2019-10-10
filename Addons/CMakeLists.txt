@@ -7,7 +7,7 @@ macro(Tasmanian_addon_sources)
     target_include_directories(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${_tsg_sources_PATH}>)
     foreach(_tsg_file ${_tsg_sources_FILES})
         target_sources(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${_tsg_sources_PATH}/${_tsg_file}>
-                                                  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/${_tsg_file}>)
+                                                  $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include/${_tsg_file}>)
     endforeach()
     unset(_tsg_file)
     unset(_tsg_sources_FILES)
@@ -33,8 +33,7 @@ if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
     add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp)
     target_link_libraries(Tasmanian_caddons Tasmanian_addons Tasmanian_libdream_shared)
     set_target_properties(Tasmanian_caddons PROPERTIES OUTPUT_NAME "tasmaniancaddons"
-                                                       INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
-                                                       INSTALL_RPATH_USE_LINK_PATH ON)
+                                                       INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
 
     install(TARGETS Tasmanian_caddons
             EXPORT  "${Tasmanian_export_name}"
