@@ -628,7 +628,7 @@ void GridFourier::integrateHierarchicalFunctions(double integrals[]) const{
 #ifdef Tasmanian_ENABLE_CUDA
 void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
     loadCudaNodes();
-    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_cache->num_nodes, cuda_cache->points, gpu_y, 0);
+    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_cache->num_nodes, cuda_cache->points, gpu_y, nullptr);
 }
 void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const double gpu_x[], int num_x, CudaVector<double> &wreal, CudaVector<double> &wimag) const{
     size_t num_weights = ((size_t) points.getNumIndexes()) * ((size_t) num_x);

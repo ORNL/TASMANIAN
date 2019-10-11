@@ -307,7 +307,9 @@ namespace TasCUDA{
     //! This is called from \b AccelerationDomainTransform::getCanonicalPoints().
     //!
     //! See the implementation of \b AccelerationDomainTransform::load() for more details.
-    void dtrans2can(bool use01, int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b, const double *gpu_x_transformed, double *gpu_x_canonical);
+    template<typename T>
+    void dtrans2can(bool use01, int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b,
+                    const T *gpu_x_transformed, T *gpu_x_canonical);
 
     //! \internal
     //! \brief Evaluate the basis functions for a local polynomial grid using the \b DENSE algorithm.
@@ -321,7 +323,8 @@ namespace TasCUDA{
     //! The grid nodes and the associated support are "encoded" in \b gpu_nodes and \b gpu_support,
     //! where negative support is used to handle special cases such as global support on level 1 (rule semi-localp).
     //! The interpretation of the negative support must be synchronized between the kernel \b tasgpu_devalpwpoly_feval() and \b GridLocalPolynomial::encodeSupportForGPU().
-    void devalpwpoly(int order, TypeOneDRule rule, int num_dimensions, int num_x, int num_basis, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y);
+    template<typename T>
+    void devalpwpoly(int order, TypeOneDRule rule, int num_dimensions, int num_x, int num_basis, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y);
 
     //! \internal
     //! \brief Evaluate the basis functions for a local polynomial grid using the \b SPARSE algorithm.
@@ -334,10 +337,11 @@ namespace TasCUDA{
     //!
     //! The output vectors \b gpu_spntr, \b gpu_sindx and \b gpu_svals form a row compressed matrix,
     //! e.g., in format that can directly interface with Nvidia cusparseDcsrmm2().
-    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x,
-                            const CudaVector<double> &gpu_nodes, const CudaVector<double> &gpu_support,
+    template<typename T>
+    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x,
+                            const CudaVector<T> &gpu_nodes, const CudaVector<T> &gpu_support,
                             const CudaVector<int> &gpu_hpntr, const CudaVector<int> &gpu_hindx, const CudaVector<int> &gpu_hroots,
-                            CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals);
+                            CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<T> &gpu_svals);
 
     //! \internal
     //! \brief Evaluate the basis for a Sequence grid.
@@ -351,8 +355,9 @@ namespace TasCUDA{
     //! The \b ndoes vector has the cached 1D nodes and \b coeffs holds the cached coefficients of the Newton polynomials.
     //!
     //! The output is \b gpu_result which must have dimension \b num_x by \b num_nodes.size() / \b dims.
-    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes,
-                  const CudaVector<int> &points, const CudaVector<double> &nodes, const CudaVector<double> &coeffs, double *gpu_result);
+    template<typename T>
+    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const CudaVector<int> &num_nodes,
+                  const CudaVector<int> &points, const CudaVector<T> &nodes, const CudaVector<T> &coeffs, T *gpu_result);
 
     //! \internal
     //! \brief Evaluate the basis for a Fourier grid.
@@ -360,7 +365,8 @@ namespace TasCUDA{
 
     //! The logic is identical to \b devalseq(), except the Fourier polynomials do not require nodes or coefficients.
     //! The output is two real arrays of size \b num_x by \b num_nodes.size() / \b dims corresponding to the real and complex parts of the basis.
-    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, double *gpu_wreal, double *gpu_wimag);
+    template<typename T>
+    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, T *gpu_wreal, typename CudaVector<T>::value_type *gpu_wimag);
 
     /*!
      * \internal
@@ -370,11 +376,12 @@ namespace TasCUDA{
      * The logic is more complicated due to the more general nature of the grid.
      * \endinternal
      */
+    template<typename T>
     void devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
-                  double const *gpu_x, CudaVector<double> const &nodes, CudaVector<double> const &coeff, CudaVector<double> const &tensor_weights,
+                  T const *gpu_x, CudaVector<T> const &nodes, CudaVector<T> const &coeff, CudaVector<T> const &tensor_weights,
                   CudaVector<int> const &nodes_per_level, CudaVector<int> const &offset_per_level, CudaVector<int> const &map_dimension, CudaVector<int> const &map_level,
                   CudaVector<int> const &active_tensors, CudaVector<int> const &active_num_points, CudaVector<int> const &dim_offsets,
-                  CudaVector<int> const &map_tensor, CudaVector<int> const &map_index, CudaVector<int> const &map_reference, double *gpu_result);
+                  CudaVector<int> const &map_tensor, CudaVector<int> const &map_index, CudaVector<int> const &map_reference, T *gpu_result);
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
     #ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__

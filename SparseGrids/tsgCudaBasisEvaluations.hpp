@@ -35,8 +35,38 @@
 
 #ifdef Tasmanian_ENABLE_CUDA
 
-namespace TasGrid{
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+// Global grids require atomic add
+#include <sm_20_atomic_functions.h>
+#if __CUDA_ARCH__ >= 600
+#include <sm_60_atomic_functions.h> // atomic add for doubles was added in arch 6.0
+#else
+#ifdef __CUDA_ARCH__
+// borrowed from https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#atomic-functions
+// implements less efficient (software) atomic add that works on archs before 6.0
+__device__ inline double atomicAdd(double* address, double val)
+{
+    unsigned long long int* address_as_ull =
+                              (unsigned long long int*)address;
+    unsigned long long int old = *address_as_ull, assumed;
 
+    do {
+        assumed = old;
+        old = atomicCAS(address_as_ull, assumed,
+                        __double_as_longlong(val +
+                               __longlong_as_double(assumed)));
+
+    // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
+    } while (assumed != old);
+
+    return __longlong_as_double(old);
+}
+#endif
+#endif
+
+
+namespace TasGrid{
 // convert a transformed domain to a canonical one
 // gpu_trans_a and gpu_trans_b are the rate and shifts (precomputed on the cpu)
 // size_a is the size of the gpu_trans_a and gpu_trans_b, note that the rates and shifts are repeated in some integer multiple of dims to allow contiguous access
@@ -46,7 +76,7 @@ namespace TasGrid{
 // THREADS can be as high as possible (e.g., 1024), but the algorithm will fail if num_dimensions exceeds THREADS (which is highly unlikely)
 // also see AccelerationDomainTransform::AccelerationDomainTransform(), where gpu_trans_a/b are encoded and size_a is computed
 template<typename T, typename C, int THREADS> // transformed and canonical types
-__global__ void tasgpu_transformed_to_canonical(int dims, int num_x, int size_a, const C *gpu_trans_a, const C *gpu_trans_b, const T *gpu_x_transformed, C *gpu_x_canonical){
+__global__ void tasgpu_transformed_to_canonical(int dims, int num_x, int size_a, const C *gpu_trans_a, const C *gpu_trans_b, const T *gpu_x_transformed, T *gpu_x_canonical){
     extern __shared__ C rate[];
     C *shift = &(rate[size_a]);
 
@@ -62,7 +92,7 @@ __global__ void tasgpu_transformed_to_canonical(int dims, int num_x, int size_a,
     int k_stride = THREADS * gridDim.x;
     i = k % size_a;
     while(k < (dims * num_x)){
-        gpu_x_canonical[k] = ((C) gpu_x_transformed[k]) * rate[i] - shift[i];
+        gpu_x_canonical[k] = ((T) gpu_x_transformed[k]) * rate[i] - shift[i];
         k += k_stride;
         i = k % size_a;
     }
@@ -539,27 +569,6 @@ __global__ void tasgpu_dfor_eval_sharedpoints(int dims, int num_x, int num_point
         __syncthreads();
     }
 }
-
-// borrowed from https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#atomic-functions
-#if __CUDA_ARCH__ < 600
-__device__ inline double atomicAdd(double* address, double val)
-{
-    unsigned long long int* address_as_ull =
-                              (unsigned long long int*)address;
-    unsigned long long int old = *address_as_ull, assumed;
-
-    do {
-        assumed = old;
-        old = atomicCAS(address_as_ull, assumed,
-                        __double_as_longlong(val +
-                               __longlong_as_double(assumed)));
-
-    // Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
-    } while (assumed != old);
-
-    return __longlong_as_double(old);
-}
-#endif
 
 // Builds the cache matrix for global basis evals
 template<typename T, int NUM_THREADS, bool nested, bool is_cc0>

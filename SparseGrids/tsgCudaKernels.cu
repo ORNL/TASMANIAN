@@ -41,15 +41,20 @@ constexpr int _MAX_CUDA_THREADS  = 1024;
 
 namespace TasGrid{
 
-void TasCUDA::dtrans2can(bool use01, int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b, const double *gpu_x_transformed, double *gpu_x_canonical){
+template<typename T>
+void TasCUDA::dtrans2can(bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
     int num_blocks = (num_x * dims) / _MAX_CUDA_THREADS + (((num_x * dims) % _MAX_CUDA_THREADS == 0) ? 0 : 1);
     if (num_blocks >= 65536) num_blocks = 65536;
-    tasgpu_transformed_to_canonical<double, double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS, (2*pad_size) * sizeof(double)>>>(dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
-    if (use01) tasgpu_m11_to_01<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(dims * num_x, gpu_x_canonical);
+    tasgpu_transformed_to_canonical<T, double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS, (2*pad_size) * sizeof(double)>>>(dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
+    if (use01) tasgpu_m11_to_01<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(dims * num_x, gpu_x_canonical);
 }
 
+template void TasCUDA::dtrans2can<double>(bool, int, int, int, double const*, double const*, double const*, double*);
+template void TasCUDA::dtrans2can<float>(bool, int, int, int, double const*, double const*, float const*, float*);
+
 // local polynomial basis functions, DENSE algorithm
-void TasCUDA::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y){
+template<typename T>
+void TasCUDA::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
     // each block thread runs 1024 threads and processes 32 points (or basis functions)
     int num_blocks = (num_points / 32) + ((num_points % 32 == 0) ? 0 : 1);
     // order == 1 is considered "default" so that the compiler doesn't complain about missing default statement
@@ -57,33 +62,36 @@ void TasCUDA::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int
     if (rule == rule_localp){
         switch(order){
             case 0:
-                    tasgpu_devalpwpoly<double, 0, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    tasgpu_devalpwpoly<T, 0, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
-            case 2: tasgpu_devalpwpoly<double, 2, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: tasgpu_devalpwpoly<T, 2, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<double, 1, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    tasgpu_devalpwpoly<T, 1, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_localp0){
         switch(order){
-            case 2: tasgpu_devalpwpoly<double, 2, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: tasgpu_devalpwpoly<T, 2, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<double, 1, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    tasgpu_devalpwpoly<T, 1, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_localpb){
         switch(order){
-            case 2: tasgpu_devalpwpoly<double, 2, rule_localpb, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: tasgpu_devalpwpoly<T, 2, rule_localpb, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<double, 1, rule_localpb, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    tasgpu_devalpwpoly<T, 1, rule_localpb, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_semilocalp){
-        tasgpu_devalpwpoly<double, 2, rule_semilocalp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        tasgpu_devalpwpoly<T, 2, rule_semilocalp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }else{ // rule == wavelet
-        tasgpu_devalpwpoly<double, 1, rule_wavelet, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        tasgpu_devalpwpoly<T, 1, rule_wavelet, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }
 }
+
+template void TasCUDA::devalpwpoly<double>(int, TypeOneDRule, int, int, int, const double*, const double*, const double*, double*);
+template void TasCUDA::devalpwpoly<float>(int, TypeOneDRule, int, int, int, const float*, const float*, const float*, float*);
 
 // there is a switch statement that realizes templates for each combination of rule/order
 // make one function that covers that switch, the rest is passed from devalpwpoly_sparse
@@ -136,13 +144,14 @@ inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule,
 }
 
 // local polynomial basis functions, SPARSE algorithm (2 passes, one pass to compue the non-zeros and one pass to evaluate)
-void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x,
-                                 const CudaVector<double> &gpu_nodes, const CudaVector<double> &gpu_support,
+template<typename T>
+void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x,
+                                 const CudaVector<T> &gpu_nodes, const CudaVector<T> &gpu_support,
                                  const CudaVector<int> &gpu_hpntr, const CudaVector<int> &gpu_hindx, const CudaVector<int> &gpu_hroots,
-                                 CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals){
+                                 CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<T> &gpu_svals){
     gpu_spntr.resize(num_x + 1);
     // call with fill == false to count the non-zeros per row of the matrix
-    devalpwpoly_sparse_realize_rule_order<double, 64, 46, false>
+    devalpwpoly_sparse_realize_rule_order<T, 64, 46, false>
         (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(),
         gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_hroots.size(), gpu_hroots.data(), gpu_spntr.data(), 0, 0);
 
@@ -158,14 +167,21 @@ void TasCUDA::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num
     gpu_sindx.resize(nz);
     gpu_svals.resize(nz);
     // call with fill == true to load the non-zeros
-    devalpwpoly_sparse_realize_rule_order<double, 64, 46, true>
+    devalpwpoly_sparse_realize_rule_order<T, 64, 46, true>
         (order, rule, dims, num_x, num_points, gpu_x, gpu_nodes.data(), gpu_support.data(),
         gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_hroots.size(), gpu_hroots.data(), gpu_spntr.data(), gpu_sindx.data(), gpu_svals.data());
 }
+template void TasCUDA::devalpwpoly_sparse<double>(int, TypeOneDRule, int, int, int, const double*, const CudaVector<double>&, const CudaVector<double>&,
+                                                  const CudaVector<int>&, const CudaVector<int>&, const CudaVector<int>&,
+                                                  CudaVector<int>&, CudaVector<int>&, CudaVector<double>&);
+template void TasCUDA::devalpwpoly_sparse<float>(int, TypeOneDRule, int, int, int, const float*, const CudaVector<float>&, const CudaVector<float>&,
+                                                 const CudaVector<int>&, const CudaVector<int>&, const CudaVector<int>&,
+                                                 CudaVector<int>&, CudaVector<int>&, CudaVector<float>&);
 
 // Sequence Grid basis evaluations
-void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes,
-                       const CudaVector<int> &points, const CudaVector<double> &nodes, const CudaVector<double> &coeffs, double *gpu_result){
+template<typename T>
+void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const CudaVector<int> &num_nodes,
+                       const CudaVector<int> &points, const CudaVector<T> &nodes, const CudaVector<T> &coeffs, T *gpu_result){
     std::vector<int> offsets(dims);
     offsets[0] = 0;
     for(int d=1; d<dims; d++) offsets[d] = offsets[d-1] + num_x * (max_levels[d-1] + 1);
@@ -174,19 +190,26 @@ void TasCUDA::devalseq(int dims, int num_x, const std::vector<int> &max_levels, 
     int maxl = max_levels[0]; for(auto l : max_levels) if (maxl < l) maxl = l;
 
     CudaVector<int> gpu_offsets(offsets);
-    CudaVector<double> cache1D(num_total);
+    CudaVector<T> cache1D(num_total);
     int num_blocks = num_x / _MAX_CUDA_THREADS + ((num_x % _MAX_CUDA_THREADS == 0) ? 0 : 1);
 
-    tasgpu_dseq_build_cache<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
+    tasgpu_dseq_build_cache<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
         (dims, num_x, gpu_x, nodes.data(), coeffs.data(), maxl+1, gpu_offsets.data(), num_nodes.data(), cache1D.data());
 
     num_blocks = num_x / 32 + ((num_x % 32 == 0) ? 0 : 1);
-    tasgpu_dseq_eval_sharedpoints<double, 32><<<num_blocks, 1024>>>
+    tasgpu_dseq_eval_sharedpoints<T, 32><<<num_blocks, 1024>>>
         (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_result);
 }
 
+template void TasCUDA::devalseq<double>(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes,
+                                        const CudaVector<int> &points, const CudaVector<double> &nodes, const CudaVector<double> &coeffs, double *gpu_result);
+template void TasCUDA::devalseq<float>(int dims, int num_x, const std::vector<int> &max_levels, const float *gpu_x, const CudaVector<int> &num_nodes,
+                                       const CudaVector<int> &points, const CudaVector<float> &nodes, const CudaVector<float> &coeffs, float *gpu_result);
+
 // Fourier Grid basis evaluations
-void TasCUDA::devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, double *gpu_wreal, double *gpu_wimag){
+template<typename T>
+void TasCUDA::devalfor(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x,
+                       const CudaVector<int> &num_nodes, const CudaVector<int> &points, T *gpu_wreal, typename CudaVector<T>::value_type *gpu_wimag){
     std::vector<int> max_nodes(dims);
     for(int j=0; j<dims; j++){
         int n = 1;
@@ -200,45 +223,49 @@ void TasCUDA::devalfor(int dims, int num_x, const std::vector<int> &max_levels, 
     size_t num_total = offsets[dims-1] + 2 * num_x * (max_nodes[dims-1] + 1);
 
     CudaVector<int> gpu_offsets(offsets);
-    CudaVector<double> cache1D(num_total);
+    CudaVector<T> cache1D(num_total);
     int num_blocks = num_x / _MAX_CUDA_THREADS + ((num_x % _MAX_CUDA_THREADS == 0) ? 0 : 1);
 
-    tasgpu_dfor_build_cache<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
+    tasgpu_dfor_build_cache<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
         (dims, num_x, gpu_x, gpu_offsets.data(), num_nodes.data(), cache1D.data());
 
     num_blocks = num_x / 32 + ((num_x % 32 == 0) ? 0 : 1);
     if (gpu_wimag == 0){
-        tasgpu_dfor_eval_sharedpoints<double, 32, true><<<num_blocks, 1024>>>
+        tasgpu_dfor_eval_sharedpoints<T, 32, true><<<num_blocks, 1024>>>
             (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, 0);
     }else{
-        tasgpu_dfor_eval_sharedpoints<double, 32, false><<<num_blocks, 1024>>>
+        tasgpu_dfor_eval_sharedpoints<T, 32, false><<<num_blocks, 1024>>>
             (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, gpu_wimag);
     }
 }
 
+template void TasCUDA::devalfor<double>(int, int, const std::vector<int>&, const double*, const CudaVector<int>&, const CudaVector<int>&, double*, double*);
+template void TasCUDA::devalfor<float>(int, int, const std::vector<int>&, const float*, const CudaVector<int>&, const CudaVector<int>&, float*, float*);
+
+template<typename T>
 void TasCUDA::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
-                       double const *gpu_x, CudaVector<double> const &nodes, CudaVector<double> const &coeff, CudaVector<double> const &tensor_weights,
+                       T const *gpu_x, CudaVector<T> const &nodes, CudaVector<T> const &coeff, CudaVector<T> const &tensor_weights,
                        CudaVector<int> const &nodes_per_level, CudaVector<int> const &offset_per_level, CudaVector<int> const &map_dimension, CudaVector<int> const &map_level,
                        CudaVector<int> const &active_tensors, CudaVector<int> const &active_num_points, CudaVector<int> const &dim_offsets,
-                       CudaVector<int> const &map_tensor, CudaVector<int> const &map_index, CudaVector<int> const &map_reference, double *gpu_result){
-    CudaVector<double> cache(num_x, num_basis);
+                       CudaVector<int> const &map_tensor, CudaVector<int> const &map_index, CudaVector<int> const &map_reference, T *gpu_result){
+    CudaVector<T> cache(num_x, num_basis);
     int num_blocks = (int) map_dimension.size();
     if (num_blocks >= 65536) num_blocks = 65536;
 
     if (is_nested){
         if (is_clenshawcurtis0){
-            tasgpu_dglo_build_cache<double, _MAX_CUDA_THREADS, true, true><<<num_blocks, _MAX_CUDA_THREADS>>>
+            tasgpu_dglo_build_cache<T, _MAX_CUDA_THREADS, true, true><<<num_blocks, _MAX_CUDA_THREADS>>>
                 (dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                         nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                         map_dimension.data(), map_level.data(), cache.data());
         }else{
-            tasgpu_dglo_build_cache<double, _MAX_CUDA_THREADS, true, false><<<num_blocks, _MAX_CUDA_THREADS>>>
+            tasgpu_dglo_build_cache<T, _MAX_CUDA_THREADS, true, false><<<num_blocks, _MAX_CUDA_THREADS>>>
                 (dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                         nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                         map_dimension.data(), map_level.data(), cache.data());
         }
     }else{
-        tasgpu_dglo_build_cache<double, _MAX_CUDA_THREADS, false, false><<<num_blocks, _MAX_CUDA_THREADS>>>
+        tasgpu_dglo_build_cache<T, _MAX_CUDA_THREADS, false, false><<<num_blocks, _MAX_CUDA_THREADS>>>
             (dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                     nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                     map_dimension.data(), map_level.data(), cache.data());
@@ -247,16 +274,26 @@ void TasCUDA::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int nu
     int mat_size = num_x * num_p;
     num_blocks = num_x / _MAX_CUDA_THREADS + ((mat_size % _MAX_CUDA_THREADS == 0) ? 0 : 1);
     if (num_blocks >= 65536) num_blocks = 65536;
-    tasgpu_dglo_eval_zero<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(mat_size, gpu_result);
+    tasgpu_dglo_eval_zero<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(mat_size, gpu_result);
 
     num_blocks = (int) map_tensor.size();
     if (num_blocks >= 65536) num_blocks = 65536;
-    tasgpu_dglo_eval_sharedpoints<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
+    tasgpu_dglo_eval_sharedpoints<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
         (dims, num_x, (int) map_tensor.size(), num_p, cache.data(),
         tensor_weights.data(), offset_per_level.data(), dim_offsets.data(), active_tensors.data(), active_num_points.data(),
         map_tensor.data(), map_index.data(), map_reference.data(), gpu_result);
-
 }
+
+template void TasCUDA::devalglo<double>(bool, bool, int, int, int, int,
+                                        double const*, CudaVector<double> const&, CudaVector<double> const&, CudaVector<double> const&,
+                                        CudaVector<int> const&, CudaVector<int> const&, CudaVector<int> const&, CudaVector<int> const&,
+                                        CudaVector<int> const&, CudaVector<int> const&, CudaVector<int> const&,
+                                        CudaVector<int> const&, CudaVector<int> const&, CudaVector<int> const&, double*);
+template void TasCUDA::devalglo<float>(bool, bool, int, int, int, int,
+                                       float const*, CudaVector<float> const&, CudaVector<float> const&, CudaVector<float> const&,
+                                       CudaVector<int> const&, CudaVector<int> const&, CudaVector<int> const&, CudaVector<int> const&,
+                                       CudaVector<int> const&, CudaVector<int> const&, CudaVector<int> const&,
+                                       CudaVector<int> const&, CudaVector<int> const&, CudaVector<int> const&, float*);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //       Linear Algebra
