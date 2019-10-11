@@ -161,6 +161,9 @@ public:
         return external;
     }
 
+    //! \brief The data-type of the vector entries.
+    using value_type = T;
+
 private:
     size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
     T *gpu_data; // the CUDA array
@@ -190,11 +193,15 @@ public:
     //! Automatically calls CUDA or MAGMA libraries at the back-end.
     //!
     //! Assumes that all vectors have the correct order.
-    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, double C[]);
+    template<typename T>
+    void denseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
+                       const CudaVector<T> &B, typename CudaVector<T>::value_type beta, T C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
-    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const std::vector<double> &B, double C[]){
-        CudaVector<double> gpuB(B), gpuC(M, N);
+    template<typename T>
+    void denseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha,
+                       const CudaVector<T> &A, const std::vector<T> &B, T C[]){
+        CudaVector<T> gpuB(B), gpuC(M, N);
         denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC.data());
         gpuC.unload(C);
     }
@@ -207,14 +214,17 @@ public:
     //! Automatically calls CUDA or MAGMA libraries at the back-end.
     //!
     //! Assumes that all vectors have the correct size.
-    void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                        const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, double C[]);
+    template<typename T>
+    void sparseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
+                        const CudaVector<int> &pntr, const CudaVector<int> &indx,
+                        const CudaVector<T> &vals, typename CudaVector<T>::value_type beta, T C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
-    void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                        const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<double> &vals, double C[]){
+    template<typename T>
+    void sparseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
+                        const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<T> &vals, T C[]){
         CudaVector<int> gpu_pntr(pntr), gpu_indx(indx);
-        CudaVector<double> gpu_vals(vals), gpu_c(M, N);
+        CudaVector<T> gpu_vals(vals), gpu_c(M, N);
         sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, 0.0, gpu_c.data());
         gpu_c.unload(C);
     }

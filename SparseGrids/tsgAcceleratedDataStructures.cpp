@@ -79,6 +79,11 @@ template void CudaVector<double>::clear();
 template void CudaVector<double>::load(size_t, const double*);
 template void CudaVector<double>::unload(double*) const;
 
+template void CudaVector<float>::resize(size_t);
+template void CudaVector<float>::clear();
+template void CudaVector<float>::load(size_t, const float*);
+template void CudaVector<float>::unload(float*) const;
+
 template void CudaVector<int>::resize(size_t);
 template void CudaVector<int>::clear();
 template void CudaVector<int>::load(size_t, const int*);
@@ -127,14 +132,51 @@ void CudaEngine::magmaPrepare(){
     }
     #endif
 }
-void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, double C[]){
+#ifdef Tasmanian_ENABLE_MAGMA
+inline void magma_gemm(magma_trans_t transa, magma_trans_t transb, int M, int N, int K, double alpha, double const A[], int lda,
+                       double const B[], int ldb, double beta, double C[], int ldc, magma_queue_t mqueue){
+    magma_dgemm(transa, transb, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, mqueue);
+}
+inline void magma_gemm(magma_trans_t transa, magma_trans_t transb, int M, int N, int K, float alpha, float const A[], int lda,
+                       float const B[], int ldb, float beta, float C[], int ldc, magma_queue_t mqueue){
+    magma_sgemm(transa, transb, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, mqueue);
+}
+inline void magma_gemv(magma_trans_t transa, int M, int N, double alpha, double const A[], int lda,
+                       double const x[], int incx, double beta, double y[], int incy, magma_queue_t mqueue){
+    magma_dgemv(transa, M, N, alpha, A, lda, x, incx, beta, y, incy, mqueue);
+}
+inline void magma_gemv(magma_trans_t transa, int M, int N, float alpha, float const A[], int lda,
+                       float const x[], int incx, float beta, float y[], int incy, magma_queue_t mqueue){
+    magma_sgemv(transa, M, N, alpha, A, lda, x, incx, beta, y, incy, mqueue);
+}
+#endif
+cublasStatus_t cublasgemm(cublasHandle_t handle, cublasOperation_t transa, cublasOperation_t transb, int M, int N, int K,
+                          double const *alpha, const double A[], int lda, const double B[], int ldb, double const *beta, double C[], int ldc){
+    return cublasDgemm(handle, transa, transb, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+}
+cublasStatus_t cublasgemm(cublasHandle_t handle, cublasOperation_t transa, cublasOperation_t transb, int M, int N, int K,
+                          float const *alpha, const float A[], int lda, const float B[], int ldb, float const *beta, float C[], int ldc){
+    return cublasSgemm(handle, transa, transb, M, N, K, alpha, A, lda, B, ldb, beta, C, ldc);
+}
+cublasStatus_t cublasgemv(cublasHandle_t handle, cublasOperation_t transa, int M, int N,
+                          double const *alpha, const double A[], int lda, const double x[], int incx, double const *beta, double y[], int incy){
+    return cublasDgemv(handle, transa, M, N, alpha, A, lda, x, incx, beta, y, incy);
+}
+cublasStatus_t cublasgemv(cublasHandle_t handle, cublasOperation_t transa, int M, int N,
+                          float const *alpha, const float A[], int lda, const float x[], int incx, float const *beta, float y[], int incy){
+    return cublasSgemv(handle, transa, M, N, alpha, A, lda, x, incx, beta, y, incy);
+}
+
+template<typename T>
+void CudaEngine::denseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha,
+                               const CudaVector<T> &A, const CudaVector<T> &B, typename CudaVector<T>::value_type beta, T C[]){
     #ifdef Tasmanian_ENABLE_MAGMA
     if (magma){
         magmaPrepare();
         if (M > 1){
             if (N > 1){ // matrix mode
-                magma_dgemm(MagmaNoTrans, MagmaNoTrans, M, N, K,
-                            alpha, A.data(), M, B.data(), K, beta, C, M, (magma_queue_t) magmaCudaQueue);
+                magma_gemm(MagmaNoTrans, MagmaNoTrans, M, N, K,
+                           alpha, A.data(), M, B.data(), K, beta, C, M, (magma_queue_t) magmaCudaQueue);
             }else{ // matrix vector, A * v = C
                 magma_dgemv(MagmaNoTrans, M, K,
                             alpha, A.data(), M, B.data(), 1, beta, C, 1, (magma_queue_t) magmaCudaQueue);
@@ -150,20 +192,25 @@ void CudaEngine::denseMultiply(int M, int N, int K, double alpha, const CudaVect
     cuBlasPrepare();
     if (M > 1){
         if (N > 1){ // matrix mode
-            stat = cublasDgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K,
-                                &alpha, A.data(), M, B.data(), K, &beta, C, M);
+            stat = cublasgemm((cublasHandle_t) cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K,
+                               &alpha, A.data(), M, B.data(), K, &beta, C, M);
         }else{ // matrix vector, A * v = C
-            stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, M, K,
-                            &alpha, A.data(), M, B.data(), 1, &beta, C, 1);
+            stat= cublasgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_N, M, K,
+                              &alpha, A.data(), M, B.data(), 1, &beta, C, 1);
         }
     }else{ // matrix vector B^T * v = C
-        stat= cublasDgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_T, K, N,
-                            &alpha, B.data(), K, A.data(), 1, &beta, C, 1);
+        stat= cublasgemv((cublasHandle_t) cublasHandle, CUBLAS_OP_T, K, N,
+                          &alpha, B.data(), K, A.data(), 1, &beta, C, 1);
     }
     AccelerationMeta::cublasCheckError((void*) &stat, "while calling CudaEngine::denseMultiply()");
 }
-void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                                const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, double C[]){
+template void CudaEngine::denseMultiply<double>(int M, int N, int K, typename CudaVector<double>::value_type alpha,
+                                                const CudaVector<double> &A, const CudaVector<double> &B,
+                                                typename CudaVector<double>::value_type beta, double C[]);
+template<typename T>
+void CudaEngine::sparseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
+                                const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<T> &vals,
+                                typename CudaVector<T>::value_type beta, T C[]){
     #ifdef Tasmanian_ENABLE_MAGMA
     //if (magma){ // TODO: Enable more MAGMA sparse capabilities
     //    return;
@@ -225,6 +272,9 @@ void CudaEngine::sparseMultiply(int M, int N, int K, double alpha, const CudaVec
         AccelerationMeta::cusparseCheckError((void*) &sparse_stat, "cusparseDgemvi() in CudaEngine::sparseMultiply()");
     }
 }
+template void CudaEngine::sparseMultiply<double>(int M, int N, int K, typename CudaVector<double>::value_type alpha, const CudaVector<double> &A,
+                                                 const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals,
+                                                 typename CudaVector<double>::value_type beta, double C[]);
 void CudaEngine::setDevice() const{ cudaSetDevice(gpu); }
 #endif
 
@@ -436,9 +486,11 @@ template<typename T> void AccelerationMeta::delCudaArray(T *x){
 }
 
 template void AccelerationMeta::recvCudaArray<double>(size_t num_entries, const double*, std::vector<double>&);
+template void AccelerationMeta::recvCudaArray<float>(size_t num_entries, const float*, std::vector<float>&);
 template void AccelerationMeta::recvCudaArray<int>(size_t num_entries, const int*, std::vector<int>&);
 
 template void AccelerationMeta::delCudaArray<double>(double*);
+template void AccelerationMeta::delCudaArray<float>(float*);
 template void AccelerationMeta::delCudaArray<int>(int*);
 
 
