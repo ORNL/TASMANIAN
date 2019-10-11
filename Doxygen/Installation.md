@@ -184,11 +184,28 @@ In the basic mode, the source folder will become the installation folder, i.e.,
 the libraries, executables and Python modules will be build in the source folder `./`
 and the headers and Fortran module will be copied to the `./include` folder.
 
+### Install with Python Pip
+
+Tasmanian is included in the Python Pip index: [https://pypi.org/project/Tasmanian/](https://pypi.org/project/Tasmanian/)
+```
+  python3 -m pip install scikit-build packaging numpy --user (required dependencies)
+  python3 -m pip install Tasmanian --user                    (user installation)
+  python3 -m pip install Tasmanian                           (virtual env installation)
+```
+The Tasmanian module is not a regular Python-only project but a wrapper around a C++ library, hence some limitations apply:
+* The `scikit-build`, `packaging` and `numpy` dependencies have to be manually installed first
+* Only user installations are supported, installation for all users is possible with CMake.
+* Python virtual environments are supported, as well as Linux, Mac and Windows operating systems.
+
+The pip installer will enable only the recommended options, if the required libraries are found automatically by CMake.
+CUDA acceleration is not available through Pip and there is currently no way to manually specify the BLAS libraries.
+Only the C++ and Python interfaces can be installed through Pip.
+
 ### Install with Spack
 
 Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 ```
-  spack install tasmanian@develop+blas+python+cuda
+ spack install tasmanian@7.0+openmp+blas+cuda+magma+python+fortran
 ```
 
 ### Install on MS Windows platform
@@ -299,9 +316,6 @@ Several known issues and work-around fixes:
     which leads to unrealistically large fluctuations in sample run-time, which in turn leads to
     randomness in the results, most notably on machines with few cpu cores.
     * Rerun the tests and/or installation to see if the problem is persistent
-* The GNU Make script sometimes fails under MacOSX because of security policies related to `rpath`
-    * use either the `install` script or CMake
-    * the CMake GUI works under MaxOSX and Linux the same way as Windows
 * Mixing the GCC and Clang compilers and linkers sometimes fails with an error about the architecture
     * use shared libraries only, i.e., `-D BUILD_SHARED_LIBS=ON` in CMake
 * The PGI compiler fails when using optimization `-O2` with an error about an empty `free()`
