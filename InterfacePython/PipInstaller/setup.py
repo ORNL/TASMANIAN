@@ -42,6 +42,7 @@ for line in readme_file:
     else:
         long_description += line
 
+long_description += "### Quick Install\n Tasmanian supports `--user` install only, see the on-line documentation for details.\n"
 
 # find out whether this is avirtual environment, real_prefix is an older test, base_refix is the newer one
 if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
@@ -90,7 +91,7 @@ if isosxframework:
 # call the actual package setup command
 setup(
     name='Tasmanian',
-    version='7.0rc4',
+    version='7.0',
     author='Miroslav Stoyanov',
     author_email='stoyanovmk@ornl.gov',
     description='UQ library for sparse grids and Bayesian inference',
