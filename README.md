@@ -2,9 +2,10 @@
 
 The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. This documentation focuses on the libraries and the software API, refer to the PDF document on the project web-page for specifics about the mathematics of the implemented methods.
 
-Visit us at: [http://tasmanian.ornl.gov/](http://tasmanian.ornl.gov/)
+Visit us at: [https://tasmanian.ornl.gov/](https://tasmanian.ornl.gov/) and 
+[https://github.com/ORNL/Tasmanian](https://github.com/ORNL/Tasmanian)
 
-[Documentation: v7.0 (latest stable)](http://tasmanian.ornl.gov/documentation/)
+[Documentation: v7.0 (latest stable)](https://tasmanian.ornl.gov/documentation/)
 
 [Documentation: development (rolling)](https://ornl.github.io/TASMANIAN/)
 
@@ -86,6 +87,11 @@ See also the detailed [Installation](Doxygen/Installation.md) instructions.
   ctest -C Release
   cmake --build . --config Release --target install
   # both Debug and Release are the supported config modes above
+```
+* Tasmanian is also available through Python PIP (make sure you have the latest `setuptools` and `wheel`)
+```
+python3 -m pip install scikit-build packaging numpy --user
+python3 -m pip install Tasmanian --user
 ```
 * Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
