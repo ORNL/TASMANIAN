@@ -4,3 +4,4 @@
 .git export-ignore
 /docker export-ignore
  _config.yml export-ignore
+.jenkins export-ignore
