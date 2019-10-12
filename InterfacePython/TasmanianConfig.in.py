@@ -39,6 +39,7 @@ __git_commit_hash__ = "@Tasmanian_git_hash@"
 __path_libsparsegrid__ = "@Tasmanian_libsparsegrid_path@"
 __path_libdream__      = "@Tasmanian_libdream_path@"
 __path_libcaddons__    = "@Tasmanian_libcaddons_path@"
+__path_logfile__       = "@Tasmanian_final_install_path@/share/Tasmanian/Tasmanian.log"
 
 # the transitive library dependencies on Linux/OsX are handled by rpath, Windows needs help
 if "@CMAKE_SYSTEM_NAME@" == "Windows":

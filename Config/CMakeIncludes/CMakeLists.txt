@@ -5,7 +5,7 @@
 #
 # Do not put any other code here, this is for human readability only
 ########################################################################
-set(Tasmanian_post_install "--------------------------------------------------------------------------------\n")
+set(Tasmanian_post_install "--------------------------------------------------------------------------------\n\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}Tasmanian Install Complete: Installed Version ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}${Tasmanian_version_comment}\n\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}executable:\n    tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}\n")
 
@@ -24,9 +24,9 @@ endforeach()
 unset(TSGLTYPE)
 unset(_tsglibtype)
 
-set(Tasmanian_post_install "${Tasmanian_post_install}\nsee the examples:\n    ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/examples/\n\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}\nsee the examples:\n    ${Tasmanian_final_install_path}/share/Tasmanian/examples/\n\n")
 
-set(Tasmanian_post_install "${Tasmanian_post_install}bash environment setup:\n    source ${CMAKE_INSTALL_PREFIX}/config/TasmanianENVsetup.sh\n\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}bash environment setup:\n    source ${Tasmanian_final_install_path}/config/TasmanianENVsetup.sh\n\n")
 
 set(Tasmanian_post_install "${Tasmanian_post_install}cmake package config:\n    find_package(Tasmanian ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}.${Tasmanian_VERSION_PATCH} PATHS \\\"${CMAKE_INSTALL_PREFIX}/lib/\\\")\n\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}    targets: Tasmanian::tasgrid    (executable)\n")
@@ -39,7 +39,7 @@ unset(_tsglibtype)
 set(Tasmanian_post_install "${Tasmanian_post_install}             Tasmanian::Tasmanian  (alias to static/shared)\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}\n")
 
-if (Tasmanian_ENABLE_PYTHON)
+if (Tasmanian_ENABLE_PYTHON AND ("${Tasmanian_final_install_path}" STREQUAL "${CMAKE_INSTALL_PREFIX}"))
     set(Tasmanian_post_install "${Tasmanian_post_install}python module and the sym-link alternative:\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}    ${Tasmanian_python_install_path}/Tasmanian.py\n    ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/python/Tasmanian.py\n\n")
     set(Tasmanian_post_install "${Tasmanian_post_install}    import sys\n")
@@ -48,8 +48,8 @@ if (Tasmanian_ENABLE_PYTHON)
 endif()
 
 if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
-    set(Tasmanian_post_install "${Tasmanian_post_install}matlab scripts location:\n    ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/matlab/\n\n")
-    set(Tasmanian_post_install "${Tasmanian_post_install}    addpath('${CMAKE_INSTALL_PREFIX}/share/Tasmanian/matlab/')\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}matlab scripts location:\n    ${Tasmanian_final_install_path}/share/Tasmanian/matlab/\n\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}    addpath('${Tasmanian_final_install_path}/share/Tasmanian/matlab/')\n")
 endif()
 set(Tasmanian_post_install "${Tasmanian_post_install}--------------------------------------------------------------------------------\n")
 

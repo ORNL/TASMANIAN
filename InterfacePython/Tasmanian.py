@@ -43,3 +43,10 @@ SparseGrid = TasmanianSparseGrid
 import TasmanianDREAM as DREAM
 
 from TasmanianAddons import *
+
+if __name__ == "__main__":
+    with open(TasmanianConfig.__path_logfile__, 'r') as logfile:
+        print("")
+        print(logfile.read())
+    # this is a test for creating a simple grid
+    grid = makeLocalPolynomialGrid(2, 1, 1, 1, "localp")
