@@ -3,9 +3,114 @@ pipeline {
         label 'DoNotRunAnythingOnMaster'
     }
     stages {
-        stage("Deploy documentation") {
+        stage('Automated testing') {
+            parallel {
+                stage('Clang50-Python3') {
+                    agent {
+                        dockerfile {
+                            filename 'Dockerfile_stack'
+                            dir 'docker'
+                            additionalBuildArgs '--pull'
+                            label 'nvidia-docker'
+                        }
+                    }
+                    steps {
+                        sh '''rm -rf build && mkdir -p build && cd build &&
+cmake \
+  -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
+  -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic" \
+  -D CMAKE_CXX_COMPILER=clang++ \
+  -D Tasmanian_ENABLE_PYTHON=ON \
+  -D PYTHON_EXECUTABLE=/usr/bin/python3 \
+  -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
+.. &&
+                              make -j4 &&
+                              ctest -j4 -V --no-compress-output -T Test &&
+                              make install &&
+                              make test_install
+                        '''
+                    }
+                    post {
+                        always {
+                            xunit([CTest(deleteOutputFiles: true, failIfNotNew: true, pattern: 'build/Testing/**/Test.xml', skipNoTestFiles: false, stopProcessingIfError: true)])
+                        }
+                    }
+                }
+                stage('GCC73-Python2-MPI') {
+                    agent {
+                        dockerfile {
+                            filename 'Dockerfile_stack'
+                            dir 'docker'
+                            additionalBuildArgs '--pull'
+                            label 'docker'
+                        }
+                    }
+                    steps {
+                        sh '''rm -rf build && mkdir -p build && cd build &&
+cmake \
+  -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
+  -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow -pedantic" \
+  -D CMAKE_CXX_COMPILER=g++ \
+  -D Tasmanian_ENABLE_RECOMMENDED=ON \
+  -D Tasmanian_ENABLE_MPI=ON \
+  -D MPIEXEC_PREFLAGS="--allow-run-as-root" \
+  -D Tasmanian_ENABLE_FORTRAN=ON \
+  -D PYTHON_EXECUTABLE=/usr/bin/python2 \
+  -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
+.. &&
+                              make -j4 &&
+                              ctest -j4 -V --no-compress-output -T Test &&
+                              make install &&
+                              make test_install
+                        '''
+                    }
+                    post {
+                        always {
+                            xunit([CTest(deleteOutputFiles: true, failIfNotNew: true, pattern: 'build/Testing/**/Test.xml', skipNoTestFiles: false, stopProcessingIfError: true)])
+                        }
+                    }
+                }
+                stage('GCC54-CUDA90') {
+                    agent {
+                        dockerfile {
+                            filename 'Dockerfile_nvidia-cuda9.0-ubuntu16.04'
+                            dir 'docker'
+                            additionalBuildArgs '--pull'
+                            label 'nvidia-docker'
+                        }
+                    }
+                    steps {
+                        sh '''rm -rf build && mkdir -p build && cd build &&
+cmake \
+  -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
+  -D CMAKE_BUILD_TYPE=Release \
+  -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow" \
+  -D Tasmanian_ENABLE_OPENMP=ON \
+  -D Tasmanian_ENABLE_BLAS=ON \
+  -D Tasmanian_ENABLE_CUDA=ON \
+  -D Tasmanian_ENABLE_MAGMA=OFF \
+  -D Tasmanian_ENABLE_PYTHON=ON \
+  -D Tasmanian_ENABLE_MPI=OFF \
+  -D Tasmanian_ENABLE_FORTRAN=ON \
+  -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
+.. &&
+                              make -j4 &&
+                              ctest -j4 -V --no-compress-output -T Test &&
+                              make install &&
+                              make test_install
+                        '''
+                    }
+                    post {
+                        always {
+                            xunit([CTest(deleteOutputFiles: true, failIfNotNew: true, pattern: 'build/Testing/**/Test.xml', skipNoTestFiles: false, stopProcessingIfError: true)])
+                        }
+                    }
+                }
+            }
+        }
+        stage('Deploy documentation') {
             when {
-                 branch "master"
+                 branch 'master'
             }
             agent {
                 dockerfile {
@@ -20,7 +125,7 @@ pipeline {
             }
             steps {
                 sh '''rm -rf build_doc && mkdir -p build_doc && cd build_doc &&
-                      cmake -DTasmanian_ENABLE_DOXYGEN=ON -DDOXYGEN_INTERNAL_DOCS=ON .. &&
+                      cmake -DTasmanian_ENABLE_DOXYGEN=ON -DDOXYGEN_INTERNAL_DOCS=YES .. &&
                       make Tasmanian_doxygen &&
                       git fetch origin gh-pages && git branch -D gh-pages &&
                       git checkout -b gh-pages FETCH_HEAD &&
