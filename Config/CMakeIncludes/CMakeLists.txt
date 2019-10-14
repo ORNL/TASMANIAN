@@ -26,7 +26,7 @@ unset(_tsglibtype)
 
 set(Tasmanian_post_install "${Tasmanian_post_install}\nsee the examples:\n    ${Tasmanian_final_install_path}/share/Tasmanian/examples/\n\n")
 
-set(Tasmanian_post_install "${Tasmanian_post_install}bash environment setup:\n    source ${Tasmanian_final_install_path}/config/TasmanianENVsetup.sh\n\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}bash environment setup:\n    source ${Tasmanian_final_install_path}/share/Tasmanian/TasmanianENVsetup.sh\n\n")
 
 set(Tasmanian_post_install "${Tasmanian_post_install}cmake package config:\n    find_package(Tasmanian ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}.${Tasmanian_VERSION_PATCH} PATHS \\\"${Tasmanian_final_install_path}/lib/\\\")\n\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}    targets: Tasmanian::tasgrid    (executable)\n")
