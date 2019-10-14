@@ -53,6 +53,12 @@ if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
 endif()
 set(Tasmanian_post_install "${Tasmanian_post_install}--------------------------------------------------------------------------------\n")
 
+string(REPLACE "\\\"" "\"" _tsg_message "${Tasmanian_post_install}")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Tasmanian.log" "${_tsg_message}")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Tasmanian.log"
+        DESTINATION "share/Tasmanian/"
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+unset(_tsg_message)
+
 install(CODE "message(\"${Tasmanian_post_install}\")")
-install(CODE "file(WRITE \"${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log\" \"${Tasmanian_post_install}\")")
 install(CODE "message(\"information stored in: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log\n\")")
