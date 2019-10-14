@@ -3,9 +3,9 @@ pipeline {
         label 'DoNotRunAnythingOnMaster'
     }
     stages {
-        stage("Deploy documentation") {
+        stage('Deploy documentation') {
             when {
-                 branch "master"
+                 branch 'master'
             }
             agent {
                 dockerfile {
