@@ -29,7 +29,8 @@ target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERF
 target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
 set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream"
-                                                                 INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
+                                                                 INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
+                                                                 CXX_EXTENSIONS OFF)
 
 install(TARGETS "${Tasmanian_libtdr_target_name}"
         EXPORT  "${Tasmanian_export_name}"
@@ -47,7 +48,7 @@ add_executable(Tasmanian_dreamtest dreamtest_main.cpp
                                    tasdreamExternalTests.hpp
                                    tasdreamExternalTests.cpp)
 
-set_target_properties(Tasmanian_dreamtest  PROPERTIES OUTPUT_NAME "dreamtest")
+set_target_properties(Tasmanian_dreamtest  PROPERTIES OUTPUT_NAME "dreamtest" CXX_EXTENSIONS OFF)
 
 ########################################################################
 # add the libraries

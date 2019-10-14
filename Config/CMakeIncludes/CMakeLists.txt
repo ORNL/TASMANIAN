@@ -6,7 +6,7 @@
 # Do not put any other code here, this is for human readability only
 ########################################################################
 set(Tasmanian_post_install "--------------------------------------------------------------------------------\n")
-set(Tasmanian_post_install "${Tasmanian_post_install}Tasmanian Install Complete: Installed Version ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}\n\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}Tasmanian Install Complete: Installed Version ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}${Tasmanian_version_comment}\n\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}executable:\n    tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}\n")
 
 foreach(_tsglibtype ${Tasmanian_libs_type})

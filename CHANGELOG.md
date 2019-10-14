@@ -1,3 +1,9 @@
+Changelog for version 7.1
+--------------
+
+* C++ 2014 standard is required now
+
+
 Changelog for version 7.0
 --------------
 

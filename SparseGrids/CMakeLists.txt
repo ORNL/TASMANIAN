@@ -39,9 +39,10 @@ target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERF
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
 set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
-                                                                 INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
+                                                                 INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
+                                                                 CXX_EXTENSIONS OFF)
 
-target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_11)
+target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_14)
 
 # as MAGMA potentially depends on OpenMP, BLAS, and CuBLAS, it should be set first
 if (Tasmanian_ENABLE_MAGMA)
@@ -161,9 +162,10 @@ add_executable(Tasmanian_gridbenchmarks  Benchmarks/benchCommon.hpp
                                          Benchmarks/bench_main.cpp)
 
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid"
-                                                   INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
-set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest")
-set_target_properties(Tasmanian_gridbenchmarks PROPERTIES OUTPUT_NAME "benchmark")
+                                                   INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
+                                                   CXX_EXTENSIONS OFF)
+set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest" CXX_EXTENSIONS OFF)
+set_target_properties(Tasmanian_gridbenchmarks PROPERTIES OUTPUT_NAME "benchmark" CXX_EXTENSIONS OFF)
 
 if (Tasmanian_ENABLE_OPENMP)
     # the OpenMP libraries are carried transitively from sparse grids library
