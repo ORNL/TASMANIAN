@@ -26,9 +26,9 @@ unset(_tsglibtype)
 
 set(Tasmanian_post_install "${Tasmanian_post_install}\nsee the examples:\n    ${Tasmanian_final_install_path}/share/Tasmanian/examples/\n\n")
 
-set(Tasmanian_post_install "${Tasmanian_post_install}bash environment setup:\n    source ${Tasmanian_final_install_path}/config/TasmanianENVsetup.sh\n\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}bash environment setup:\n    source ${Tasmanian_final_install_path}/share/Tasmanian/TasmanianENVsetup.sh\n\n")
 
-set(Tasmanian_post_install "${Tasmanian_post_install}cmake package config:\n    find_package(Tasmanian ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}.${Tasmanian_VERSION_PATCH} PATHS \\\"${CMAKE_INSTALL_PREFIX}/lib/\\\")\n\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}cmake package config:\n    find_package(Tasmanian ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}.${Tasmanian_VERSION_PATCH} PATHS \\\"${Tasmanian_final_install_path}/lib/\\\")\n\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}    targets: Tasmanian::tasgrid    (executable)\n")
 
 foreach(_tsglibtype ${Tasmanian_libs_type})
@@ -53,6 +53,12 @@ if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
 endif()
 set(Tasmanian_post_install "${Tasmanian_post_install}--------------------------------------------------------------------------------\n")
 
+string(REPLACE "\\\"" "\"" _tsg_message "${Tasmanian_post_install}")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/Tasmanian.log" "${_tsg_message}")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Tasmanian.log"
+        DESTINATION "share/Tasmanian/"
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+unset(_tsg_message)
+
 install(CODE "message(\"${Tasmanian_post_install}\")")
-install(CODE "file(WRITE \"${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log\" \"${Tasmanian_post_install}\")")
 install(CODE "message(\"information stored in: ${CMAKE_INSTALL_PREFIX}/share/Tasmanian/Tasmanian.log\n\")")
