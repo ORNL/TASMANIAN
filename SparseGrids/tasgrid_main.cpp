@@ -30,6 +30,7 @@
 
 #include "tasgridExternalTests.hpp"
 #include "tasgridWrapper.hpp"
+#include "tasgridLogs.hpp"
 
 using namespace std;
 using namespace TasGrid;
@@ -57,6 +58,16 @@ int main(int argc, const char ** argv){
     // basic help
     if (hasHelp(args.front())){
         printHelp();
+        return 0;
+    }
+
+    // print log files
+    if(args.front() == "-log"){
+        show_log();
+        return 0;
+    }
+    if(args.front() == "-cmakelog"){
+        show_cmake_log();
         return 0;
     }
 

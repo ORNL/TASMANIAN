@@ -33,7 +33,7 @@ ALL_TARGETS = GaussPattersonRule.table \
 DREAM_EXAMPLES_OBJ = $(patsubst ./DREAM/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./DREAM/Examples/example_dream*.cpp)))
 SG_EXAMPLES_OBJ = $(patsubst ./SparseGrids/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp)))
 
-CONFIGURED_HEADERS = ./SparseGrids/TasmanianConfig.hpp
+CONFIGURED_HEADERS = ./SparseGrids/TasmanianConfig.hpp ./SparseGrids/tasgridLogs.hpp
 
 # all target
 .PHONY: all
@@ -58,6 +58,9 @@ SparseGrids/TasmanianConfig.hpp: ./Config/AltBuildSystems/TasmanianConfig.hpp
 include/TasmanianConfig.hpp: ./SparseGrids/TasmanianConfig.hpp
 	mkdir -p ./include
 	cp ./SparseGrids/TasmanianConfig.hpp ./include/
+
+./SparseGrids/tasgridLogs.hpp: ./Config/AltBuildSystems/tasgridLogs.hpp
+	cp ./Config/AltBuildSystems/tasgridLogs.hpp ./SparseGrids/tasgridLogs.hpp
 
 include/Tasmanian.hpp: ./Config/Tasmanian.hpp
 	mkdir -p ./include
@@ -239,6 +242,7 @@ clean:
 	rm -fr *.py
 	rm -fr include
 	rm -fr ./SparseGrids/TasmanianConfig.hpp
+	rm -fr ./SparseGrids/tasgridLogs.hpp
 	rm -fr ./InterfacePython/testConfigureData.py
 	cd SparseGrids; make clean
 	cd DREAM; make clean
