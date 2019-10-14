@@ -129,7 +129,7 @@ cmake \
                       make Tasmanian_doxygen &&
                       git config http.sslVerify false
                       git fetch origin gh-pages &&
-                      git checkout -b gh-pages FETCH_HEAD &&
+                      git checkout -B gh-pages FETCH_HEAD &&
                       rm -rf ../rolling && mv Doxygen/html ../rolling && git add --all ../rolling &&
                       git config user.email "noreply@ornl.gov" &&
                       git config user.name "Jenkins CI" &&
