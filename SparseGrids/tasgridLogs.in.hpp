@@ -37,42 +37,45 @@ void show_log(){
 }
 
 void show_cmake_log(){
-    std::cout << "\n--------------------------------------------------------------------------------\nCMake parameters:\n"
-    << "CMAKE_COMMAND                      @CMAKE_COMMAND@\n"
-    << "CMAKE_BUILD_TYPE                   @CMAKE_BUILD_TYPE@\n"
-    << "CMAKE_INSTALL_PREFIX               @CMAKE_INSTALL_PREFIX@\n"
-    << "CMAKE_CXX_FLAGS                    @CMAKE_CXX_FLAGS@\n"
-    << "CMAKE_CXX_FLAGS_DEBUG              @CMAKE_CXX_FLAGS_DEBUG@\n"
-    << "CMAKE_CXX_FLAGS_RELEASE            @CMAKE_CXX_FLAGS_RELEASE@\n"
-    << "CMAKE_CXX_COMPILER                 @CMAKE_CXX_COMPILER@\n"
-    << "CMAKE_CUDA_COMPILER                @CMAKE_CUDA_COMPILER@\n"
-    << "CMAKE_CUDA_FLAGS                   @CMAKE_CUDA_FLAGS@\n"
-    << "CMAKE_CUDA_FLAGS_DEBUG             @CMAKE_CUDA_FLAGS_DEBUG@\n"
-    << "CMAKE_CUDA_FLAGS_RELEASE           @CMAKE_CUDA_FLAGS_RELEASE@\n"
-    << "PYTHON_EXECUTABLE                  @PYTHON_EXECUTABLE@\n"
-    << "BUILD_SHARED_LIBS                  @BUILD_SHARED_LIBS@\n"
-    << "BLAS_LIBRARIES                     @BLAS_LIBRARIES@\n"
-    << "CMAKE_THREAD_LIBS_INIT             @CMAKE_THREAD_LIBS_INIT@\n"
-    << "OpenMP_CXX_LIBRARIES               @OpenMP_CXX_LIBRARIES@\n"
-    << "OpenMP_CXX_FLAGS                   @OpenMP_CXX_FLAGS@\n"
-    << "MPI_CXX_LIBRARIES                  @MPI_CXX_LIBRARIES@\n"
-    << "MPI_CXX_INCLUDE_PATH               @MPI_CXX_INCLUDE_PATH@\n"
-    << "MPI_CXX_COMPILE_FLAGS              @MPI_CXX_COMPILE_FLAGS@\n"
-    << "MPI_CXX_LINK_FLAGS                 @MPI_CXX_LINK_FLAGS@\n"
-    << "MPIEXEC_EXECUTABLE                 @MPIEXEC_EXECUTABLE@\n"
-    << "Tasmanian_ENABLE_RECOMMENDED       @Tasmanian_ENABLE_RECOMMENDED@\n"
-    << "Tasmanian_ENABLE_OPENMP            @Tasmanian_ENABLE_OPENMP@\n"
-    << "Tasmanian_ENABLE_BLAS              @Tasmanian_ENABLE_BLAS@\n"
-    << "Tasmanian_ENABLE_PYTHON            @Tasmanian_ENABLE_PYTHON@\n"
-    << "Tasmanian_ENABLE_CUDA              @Tasmanian_ENABLE_CUDA@\n"
-    << "Tasmanian_ENABLE_FORTRAN           @Tasmanian_ENABLE_FORTRAN@\n"
-    << "Tasmanian_ENABLE_MPI               @Tasmanian_ENABLE_MPI@\n"
-    << "Tasmanian_ENABLE_MAGMA             @Tasmanian_ENABLE_MAGMA@\n"
-    << "Tasmanian_MATLAB_WORK_FOLDER       @Tasmanian_MATLAB_WORK_FOLDER@\n"
-    << "Tasmanian_ENABLE_DOXYGEN           @Tasmanian_ENABLE_DOXYGEN@\n"
-    << "DOXYGEN_INTERNAL_DOCS              @DOXYGEN_INTERNAL_DOCS@\n"
-    << "Tasmanian_PYTHONPATH               @Tasmanian_PYTHONPATH@\n"
-    << "Tasmanian_final_install_path       @Tasmanian_final_install_path@\n"
-    << "--------------------------------------------------------------------------------\n"
+    std::cout << "\nCMake parameters:\n--------------------------------------------------------------------------------"
+    << R"CMAKEVARS(
+CMAKE_COMMAND                      @CMAKE_COMMAND@
+CMAKE_BUILD_TYPE                   @CMAKE_BUILD_TYPE@
+CMAKE_INSTALL_PREFIX               @CMAKE_INSTALL_PREFIX@
+CMAKE_CXX_FLAGS                    @CMAKE_CXX_FLAGS@
+CMAKE_CXX_FLAGS_DEBUG              @CMAKE_CXX_FLAGS_DEBUG@
+CMAKE_CXX_FLAGS_RELEASE            @CMAKE_CXX_FLAGS_RELEASE@
+CMAKE_CXX_COMPILER                 @CMAKE_CXX_COMPILER@
+CMAKE_CUDA_COMPILER                @CMAKE_CUDA_COMPILER@
+CMAKE_CUDA_FLAGS                   @CMAKE_CUDA_FLAGS@
+CMAKE_CUDA_FLAGS_DEBUG             @CMAKE_CUDA_FLAGS_DEBUG@
+CMAKE_CUDA_FLAGS_RELEASE           @CMAKE_CUDA_FLAGS_RELEASE@
+Tasmanian_cudamathlibs             @Tasmanian_cudamathlibs@
+Tasmanian_cudaruntime              @Tasmanian_cudaruntime@
+PYTHON_EXECUTABLE                  @PYTHON_EXECUTABLE@
+BUILD_SHARED_LIBS                  @BUILD_SHARED_LIBS@
+BLAS_LIBRARIES                     @BLAS_LIBRARIES@
+CMAKE_THREAD_LIBS_INIT             @CMAKE_THREAD_LIBS_INIT@
+OpenMP_CXX_LIBRARIES               @OpenMP_CXX_LIBRARIES@
+OpenMP_CXX_FLAGS                   @OpenMP_CXX_FLAGS@
+MPI_CXX_LIBRARIES                  @MPI_CXX_LIBRARIES@
+MPI_CXX_INCLUDE_PATH               @MPI_CXX_INCLUDE_PATH@
+MPI_CXX_COMPILE_FLAGS              @MPI_CXX_COMPILE_FLAGS@
+MPI_CXX_LINK_FLAGS                 @MPI_CXX_LINK_FLAGS@
+MPIEXEC_EXECUTABLE                 @MPIEXEC_EXECUTABLE@
+Tasmanian_ENABLE_RECOMMENDED       @Tasmanian_ENABLE_RECOMMENDED@
+Tasmanian_ENABLE_OPENMP            @Tasmanian_ENABLE_OPENMP@
+Tasmanian_ENABLE_BLAS              @Tasmanian_ENABLE_BLAS@
+Tasmanian_ENABLE_PYTHON            @Tasmanian_ENABLE_PYTHON@
+Tasmanian_ENABLE_CUDA              @Tasmanian_ENABLE_CUDA@
+Tasmanian_ENABLE_FORTRAN           @Tasmanian_ENABLE_FORTRAN@
+Tasmanian_ENABLE_MPI               @Tasmanian_ENABLE_MPI@
+Tasmanian_ENABLE_MAGMA             @Tasmanian_ENABLE_MAGMA@
+Tasmanian_MATLAB_WORK_FOLDER       @Tasmanian_MATLAB_WORK_FOLDER@
+Tasmanian_ENABLE_DOXYGEN           @Tasmanian_ENABLE_DOXYGEN@
+DOXYGEN_INTERNAL_DOCS              @DOXYGEN_INTERNAL_DOCS@
+Tasmanian_PYTHONPATH               @Tasmanian_PYTHONPATH@
+Tasmanian_final_install_path       @Tasmanian_final_install_path@)CMAKEVARS"
+    << "\n--------------------------------------------------------------------------------\n"
     << std::endl;
 }
