@@ -1617,6 +1617,8 @@ public:
      * \brief Computes the values of the hierarchical function basis at the specified points (CUDA version).
      *
      * Equivalent to evaluateHierarchicalFunctions() but using arrays allocated on the CUDA device.
+     * \tparam FloatType must be either float or double to indicate the precision used by the CUDA kernels.
+     *
      * \param gpu_x must have size getNumDimensions() times \b cpu_num_x and must be allocated on
      *      the currently set CUDA device.
      * \param cpu_num_x is an integer (located on the CPU memory) indicating the number of points.
@@ -1629,11 +1631,14 @@ public:
      *
      * \b Note: will not work for LocalPolynomial grids with order bigger than 2.
      */
-    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
+    template<typename FloatType>
+    void evaluateHierarchicalFunctionsGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const;
     /*!
      * \brief Computes the values of the hierarchical function basis at the specified points (sparse/CUDA version).
      *
      * Equivalent to evaluateSparseHierarchicalFunctions() but using arrays allocated on the CUDA device.
+     * \tparam FloatType must be either float or double to indicate the precision used by the CUDA kernels.
+     *
      * \param[in] gpu_x must have size getNumDimensions() times \b cpu_num_x and must be allocated on
      *      the currently set CUDA device.
      * \param[in] cpu_num_x is an integer (located on the CPU memory) indicating the number of points.
@@ -1652,7 +1657,8 @@ public:
      *
      * \b Note: will not work for LocalPolynomial grids with order bigger than 2.
      */
-    void evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const;
+    template<typename FloatType>
+    void evaluateSparseHierarchicalFunctionsGPU(const FloatType gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, FloatType* &gpu_vals, int &num_nz) const;
 
     //! \brief Signature compatible with TasDREAM::DreamPDF, TasDREAM::DreamModel amd TasDREAM::DreamMergedLikelyModel.
     using EvaluateCallable = std::function<void(std::vector<double> const&, std::vector<double>&)>;
@@ -1868,10 +1874,11 @@ protected:
      * \brief Returns a CUDA raw-array with the canonical points, linear transform only.
      *
      * Similar to formCanonicalPoints() except the input and output arrays/vectors are
-     * allocated on the current CUDA device.
+     * allocated on the current CUDA device. Works with single and double precision \b T.
      * \endinternal
      */
-    const double* formCanonicalPointsGPU(const double *gpu_x, int num_x, CudaVector<double> &gpu_x_temp) const;
+    template<typename T>
+    const T* formCanonicalPointsGPU(const T *gpu_x, int num_x, CudaVector<T> &gpu_x_temp) const;
     #endif
     /*!
      * \internal

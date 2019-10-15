@@ -139,6 +139,19 @@ public:
 
     //! Makes a call to the other overload with \b cpu_data.size() as \b count. See the overload.
     void load(const std::vector<T> &cpu_data){ load(cpu_data.size(), cpu_data.data()); }
+
+    /*!
+     * \brief Takes a vector with entries of different precision, converts and loads.
+     *
+     * Used when the CPU vectors are stored in double-precision format while the GPU entries are prepared to work with single-precision.
+     */
+    template<typename U, std::enable_if_t<!std::is_same<U, T>::value>* = nullptr>
+    void load(const std::vector<U> &cpu_data){
+        std::vector<T> converted(cpu_data.size());
+        std::transform(cpu_data.begin(), cpu_data.end(), converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
+        load(converted);
+    }
+
     //! \brief Copy the first \b count entries of \b cpu_data to the CUDA device, all pre-existing data is deleted and the vector is resized to match \b count.
 
     //! If \b count does not match the current size, the current array will be deleted and new array will be allocated (even if \b size() exceeds \b count).
@@ -149,6 +162,12 @@ public:
     void unload(std::vector<T> &cpu_data) const{
         cpu_data.resize(num_entries);
         unload(cpu_data.data());
+    }
+    //! \brief Return a CPU vector holding the data of the GPU.
+    std::vector<T> unload() const{
+        std::vector<T> y;
+        unload(y);
+        return y;
     }
     //! \brief Copy the data from the CUDA array to the \b cpu_data buffer, assumes that the buffer is sufficiently large.
     void unload(T* cpu_data) const;

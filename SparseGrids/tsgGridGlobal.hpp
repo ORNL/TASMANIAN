@@ -88,6 +88,8 @@ public:
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateBatchGPU(CudaEngine*, const double[], int, double[]) const;
     void evaluateHierarchicalFunctionsGPU(const double[], int, double *) const;
+    void evaluateHierarchicalFunctionsGPU(const float[], int, float *) const;
+    template<typename T> void evaluateHierarchicalFunctionsGPUtempl(T const[], int, T *) const;
     #endif
 
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
@@ -136,9 +138,11 @@ protected:
     std::vector<int> getMultiIndex(const double x[]);
 
     #ifdef Tasmanian_ENABLE_CUDA
+    std::unique_ptr<CudaGlobalData<double>>& getCudaCache(double) const{ return cuda_cache; }
+    std::unique_ptr<CudaGlobalData<float>>& getCudaCache(float) const{ return cuda_cachef; }
     void loadCudaValues() const;
     void clearCudaValues() const;
-    void loadCudaNodes() const;
+    template<typename T> void loadCudaNodes() const;
     void clearCudaNodes() const;
     #endif
 
@@ -166,6 +170,7 @@ private:
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaGlobalData<double>> cuda_cache;
+    mutable std::unique_ptr<CudaGlobalData<float>> cuda_cachef;
     #endif
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP

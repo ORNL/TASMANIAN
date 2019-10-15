@@ -512,6 +512,24 @@ void GridSequence::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], in
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
     engine->denseMultiply(num_outputs, cpu_num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_y);
 }
+void GridSequence::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
+    loadCudaNodes<double>();
+    TasCUDA::devalseq(num_dimensions, num_x, max_levels, gpu_x, cuda_cache->num_nodes, cuda_cache->points, cuda_cache->nodes, cuda_cache->coeff, gpu_y);
+}
+void GridSequence::evaluateCudaMixed(CudaEngine*, const float*, int, float[]) const{
+}
+void GridSequence::evaluateCuda(CudaEngine*, const float*, int, float[]) const{
+}
+void GridSequence::evaluateBatchGPU(CudaEngine* , const float [], int , float []) const{
+}
+void GridSequence::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const{
+    loadCudaNodes<float>();
+    TasCUDA::devalseq(num_dimensions, num_x, max_levels, gpu_x, cuda_cachef->num_nodes, cuda_cachef->points, cuda_cachef->nodes, cuda_cachef->coeff, gpu_y);
+}
+void GridSequence::clearCudaNodes(){
+    if (cuda_cache) cuda_cache->clearNodes();
+    if (cuda_cachef) cuda_cachef->clearNodes();
+}
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridSequence::integrate(double q[], double *conformal_correction) const{
@@ -569,12 +587,6 @@ void GridSequence::evalHierarchicalFunctions(const double x[], double fvalues[])
         }
     }
 }
-#ifdef Tasmanian_ENABLE_CUDA
-void GridSequence::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
-    loadCudaNodes();
-    TasCUDA::devalseq(num_dimensions, num_x, max_levels, gpu_x, cuda_cache->num_nodes, cuda_cache->points, cuda_cache->nodes, cuda_cache->coeff, gpu_y);
-}
-#endif
 void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaSurpluses(); // points have not changed, just clear surpluses
@@ -968,7 +980,8 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
 
 void GridSequence::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
-    if (cuda_cache) cuda_cache.reset();
+    cuda_cache.reset();
+    cuda_cachef.reset();
     #endif
 }
 

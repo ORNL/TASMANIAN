@@ -80,6 +80,7 @@ public:
     void evaluateCuda(CudaEngine*, const double*, int, double[]) const;
     void evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const;
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const;
+    void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits);
@@ -123,12 +124,14 @@ protected:
     void addChildLimited(const int point[], int direction, const std::vector<int> &level_limits, Data2D<int> &destination) const;
 
     #ifdef Tasmanian_ENABLE_CUDA
+    std::unique_ptr<CudaWaveletData<double>>& getCudaCache(double) const{ return cuda_cache; }
+    std::unique_ptr<CudaWaveletData<float>>& getCudaCache(float) const{ return cuda_cachef; }
     void loadCudaCoefficients() const{
         if (!cuda_cache) cuda_cache = std::unique_ptr<CudaWaveletData<double>>(new CudaWaveletData<double>);
         if (cuda_cache->coefficients.empty()) cuda_cache->coefficients.load(coefficients.getVector());
     }
     void clearCudaCoefficients(){ if (cuda_cache) cuda_cache->coefficients.clear(); }
-    void loadCudaBasis() const;
+    template<typename T> void loadCudaBasis() const;
     void clearCudaBasis();
     #endif
 
@@ -145,6 +148,7 @@ private:
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaWaveletData<double>> cuda_cache;
+    mutable std::unique_ptr<CudaWaveletData<float>> cuda_cachef;
     #endif
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP

@@ -34,7 +34,82 @@
 
 #include "tasgridExternalTests.hpp"
 
+template<typename VectorLike1, typename VectorLike2>
+double err1(size_t num, VectorLike1 const &x, VectorLike2 const &y){
+    if ((x.size() < num) || (y.size() < num)) throw std::runtime_error("vector size is insufficient");
+    double err = 0.0;
+    for(size_t i=0; i<num; i++) err = std::max(err, std::abs(x[i] - y[i]));
+    return err;
+}
+template<typename VectorLike1, typename VectorLike2>
+double err1(VectorLike1 const &x, VectorLike2 const &y){
+    if (x.size() != y.size()) throw std::runtime_error("vector size mismatch");
+    return err1(x.size(), x, y);
+}
+
+template<typename VectorLike1, typename VectorLike2>
+double err1_sparse(std::vector<int> const &xpntr, std::vector<int> const &xindx, VectorLike1 const &xvals,
+                   std::vector<int> const &ypntr, std::vector<int> const &yindx, VectorLike2 const &yvals){
+    if (xpntr.size() != ypntr.size()) throw std::runtime_error("mismatch in number of sparse rows");
+    double err = 0.0;
+    for(size_t i=1; i<xpntr.size(); i++){
+        int xj = xpntr[i-1], yj = ypntr[i-1];
+        while((xj < xpntr[i]) || (yj < ypntr[i])){
+            double xv, yv;
+            if (xj >= xpntr[i]){ // x reached the end
+                xv = 0.0;
+                yv = yvals[yj++];
+            }else if (yj >= ypntr[i]){ // y reached the end
+                xv = xvals[xj++];
+                yv = 0.0;
+            }else if (xindx[xj] == yindx[xj]){ // same index
+                xv = xvals[xj++];
+                yv = yvals[yj++];
+            }else if (xindx[xj] < yindx[yj]){ // y is skipping an index
+                xv = xvals[xj++];
+                yv = 0.0;
+            }else{ // must be that x is skipping an index
+                xv = 0.0;
+                yv = yvals[yj++];
+            }
+            err = std::max(err, std::abs(xv - yv));
+        }
+    }
+    return err;
+}
+
+
+
+bool testPass(double err, double tol, std::string message, TasmanianSparseGrid const &grid = TasmanianSparseGrid()){
+    if (err > tol){
+        cout << std::scientific; cout.precision(16);
+        cout << "ERROR: " << message << "\n  observed: " << err << "  expected: " << tol << "\n";
+        if (!grid.empty()) grid.printStats();
+        return false;
+    }else{
+        return true;
+    }
+}
+
 std::minstd_rand park_miller(10);
+std::vector<double> genRandom(int num_samples, std::vector<double> const &lower, std::vector<double> const &upper){
+    if (lower.size() != upper.size()) throw std::runtime_error("Lower/Upper dimension mismatch in genRandom()");
+    std::vector<double> x(Utils::size_mult(num_samples, lower.size()));
+    Utils::Wrapper2D<double> wrapp((int) lower.size(), x.data());
+    for(int i=0; i<num_samples; i++){
+        double *p = wrapp.getStrip(i);
+        for(size_t j=0; j<lower.size(); j++){
+            p[j] = std::uniform_real_distribution<double>(lower[j], upper[j])(park_miller);
+        }
+    }
+    return x;
+}
+std::vector<double> genRandom(int num_samples, int num_dimensions){
+    std::vector<double> x(Utils::size_mult(num_samples, num_dimensions));
+    std::uniform_real_distribution<double> unif(-1.0, 1.0);
+    for(auto &v : x) v = unif(park_miller);
+    return x;
+}
 
 void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
     int num_dimensions = grid.getNumDimensions();
@@ -1866,6 +1941,43 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     return pass;
 }
 
+#ifdef Tasmanian_ENABLE_CUDA
+template<typename T>
+bool testHBasisGPU(std::vector<double> const &x, std::vector<double> const &y, int numx, double tolerance, TasmanianSparseGrid const &grid, std::string message){
+    CudaVector<T> gpux;
+    gpux.load(x);
+    CudaVector<T> gpuy(((grid.isFourier()) ? 2 : 1) * numx, grid.getNumPoints());
+    grid.evaluateHierarchicalFunctionsGPU(gpux.data(), numx, gpuy.data());
+    auto cpuy = gpuy.unload();
+//     for(auto v : y) cout << v << "\n";
+//     for(auto v : cpuy) cout << v << "\n";
+    return testPass(err1(cpuy, y), tolerance, message, grid);
+}
+template<typename T>
+bool testHBasisGPUSparse(std::vector<double> const &x,
+                         std::vector<int> const &pntr, std::vector<int> const &indx, std::vector<double> const &vals,
+                         double tolerance, TasmanianSparseGrid const &grid, std::string message){
+    CudaVector<T> gpux;
+    gpux.load(x);
+
+    int nump = (int) x.size() / grid.getNumDimensions();
+    int *gpu_indx = 0, *gpu_pntr = 0, num_nz = 0;
+    T *gpu_vals = 0;
+
+    grid.evaluateSparseHierarchicalFunctionsGPU(gpux.data(), nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
+
+    std::vector<int> cpntr; AccelerationMeta::recvCudaArray(nump + 1, gpu_pntr, cpntr);
+    std::vector<int> cindx; AccelerationMeta::recvCudaArray(num_nz, gpu_indx, cindx);
+    std::vector<T> cvals;   AccelerationMeta::recvCudaArray(num_nz, gpu_vals, cvals);
+
+    AccelerationMeta::delCudaArray(gpu_pntr);
+    AccelerationMeta::delCudaArray(gpu_indx);
+    AccelerationMeta::delCudaArray(gpu_vals);
+
+    return testPass(err1_sparse(pntr, indx, vals, cpntr, cindx, cvals), tolerance, message, grid);
+}
+#endif
+
 bool ExternalTester::testGPU2GPUevaluations() const{
     #ifdef Tasmanian_ENABLE_CUDA
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
@@ -1888,15 +2000,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         grid.enableAcceleration(TasGrid::accel_none);
 
         int nump = 2000;
-        double *x = new double[dims*nump];
-        std::vector<double> xt(dims * nump);
-        setRandomX(dims*nump, x);
-        for(int i=0; i<nump; i++){
-            for(int j=0; j<dims; j++){
-                xt[dims*i + j] = 0.5 * (b[j] - a[j]) * x[dims*i+j] + 0.5 * (b[j] + a[j]);
-            }
-        }
-        delete[] x;
+        std::vector<double> xt = genRandom(nump, a, b);
 
         // Dense version:
         std::vector<double> y_true_dense;
@@ -1909,138 +2013,71 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         grid.evaluateSparseHierarchicalFunctions(xt, pntr, indx, vals);
 
         for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
+            // Dense test
             bool dense_pass = true;
-
-            TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
-            CudaVector<double> gpux(xt);
-            CudaVector<double> gpuy(grid.getNumPoints(), nump);
-
             grid.enableAcceleration(TasGrid::accel_gpu_cuda);
             grid.setGPUID(gpuID);
-            grid.evaluateHierarchicalFunctionsGPU(gpux.data(), nump, gpuy.data());
+            TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
 
-            std::vector<double> y;
-            gpuy.unload(y);
+            if (!testHBasisGPU<double>(xt, y_true_dense, nump, Maths::num_tol, grid, "GPU basis<double> evaluations"))
+                dense_pass = false;
+            if (!testHBasisGPU<float>(xt, y_true_dense, nump, (order[t] == 2) ? 1.E-4 : 5.E-5, grid, "GPU basis<float> evaluations"))
+                dense_pass = false;
 
-            auto iy = y.begin();
-            for(auto y_true : y_true_dense) if (std::abs(*iy++ - y_true) > 1.E-11) dense_pass = false;
-
-            if (!dense_pass){
-                cout << "Failed evaluateHierarchicalFunctionsGPU() when using grid: " << endl;
-                grid.printStats();
-            }
             pass = pass && dense_pass;
 
-            // Sparse version:
+            // Sparse test
             bool sparse_pass = true;
-            int *gpu_indx = 0, *gpu_pntr = 0, num_nz = 0;
-            double *gpu_vals = 0;
             grid.enableAcceleration(TasGrid::accel_gpu_cuda);
             grid.setGPUID(gpuID);
-            grid.evaluateSparseHierarchicalFunctionsGPU(gpux.data(), nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
-
-            std::vector<int> cpntr; AccelerationMeta::recvCudaArray(nump + 1, gpu_pntr, cpntr);
-            std::vector<int> cindx; AccelerationMeta::recvCudaArray(num_nz, gpu_indx, cindx);
-            std::vector<double> cvals; AccelerationMeta::recvCudaArray(num_nz, gpu_vals, cvals);
-
-            for(int i=1; i<=nump; i++){
-                int cj = cpntr[i-1], gj = pntr[i-1];
-                while((cj < cpntr[i]) || (gj < pntr[i])){
-                    double cv, gv;
-                    if (cj >= cpntr[i]){
-                        cv = 0.0;
-                        gv = vals[gj++];
-                    }else if (gj >= pntr[i]){
-                        cv = cvals[cj++];
-                        gv = 0.0;
-                    }else if (cindx[cj] == indx[gj]){
-                        cv = cvals[cj++];
-                        gv = vals[gj++];
-                    }else if (cindx[cj] < indx[gj]){
-                        cv = cvals[cj++];
-                        gv = 0.0;
-                    }else{
-                        cv = 0.0;
-                        gv = vals[gj++];
-                    }
-                    if (std::abs(cv - gv) > 1.E-12){
-                        cout << "ERROR: difference in sparse matrix: " << std::abs(cv - gv) << endl;
-                        sparse_pass = false;
-                    }
-                }
-            }
-            if (!sparse_pass){
-                cout << "Failed evaluateSparseHierarchicalFunctionsGPU() when using grid: " << endl;
-                grid.printStats();
-            }
+            if (!testHBasisGPUSparse<double>(xt, pntr, indx, vals, Maths::num_tol, grid, "GPU sparse basis<double> evaluations"))
+                sparse_pass = false;
+            if (!testHBasisGPUSparse<float>(xt, pntr, indx, vals, (order[t] == 2) ? 1.E-4 : 5.E-5, grid, "GPU sparse basis<float> evaluations"))
+                sparse_pass = false;
 
             pass = pass && sparse_pass;
-
-            AccelerationMeta::delCudaArray<int>(gpu_pntr);
-            AccelerationMeta::delCudaArray<int>(gpu_indx);
-            AccelerationMeta::delCudaArray<double>(gpu_vals);
         }
     }
 
-    // Sequence Grid evaluations of the basis functions
+    // Sequence, Global, Wavelet Grid evaluations of the basis functions
     for(int t=0; t<5; t++){
     int numx = 2020;
 
     std::vector<double> cpux(numx * dims);
     setRandomX(numx * dims, cpux.data());
 
-    switch(t){
-        case 0: grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja); break;
-        case 1: grid.makeWaveletGrid(dims, 0, 3, 1); break;
-        case 2: grid.makeGlobalGrid(dims, 0, 7, type_level, rule_clenshawcurtis); break;
-        case 3: grid.makeGlobalGrid(dims, 0, 7, type_level, rule_clenshawcurtis0); break;
-        case 4: grid.makeGlobalGrid(dims, 0, 10, type_level, rule_chebyshev); break;
-    }
+    auto reset_grid = [&]()->void{
+        switch(t){
+            case 0: grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja); break;
+            case 1: grid.makeWaveletGrid(dims, 0, 3, 1); break;
+            case 2: grid.makeGlobalGrid(dims, 0, 6, type_level, rule_clenshawcurtis); break;
+            case 3: grid.makeGlobalGrid(dims, 0, 5, type_level, rule_clenshawcurtis0); break;
+            case 4: grid.makeGlobalGrid(dims, 0, 10, type_level, rule_chebyshev); break;
+        }
+    };
+    reset_grid();
+
     //cout << "Memory requirements = " << (grid.getNumPoints() * numx * 8) / (1024 * 1024) << "MB" << endl;
     std::vector<double> truey;
     grid.evaluateHierarchicalFunctions(cpux, truey);
 
     for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
-        switch(t){
-            case 0: grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja); break;
-            case 1: grid.makeWaveletGrid(dims, 0, 3, 1); break;
-            case 2: grid.makeGlobalGrid(dims, 0, 7, type_level, rule_clenshawcurtis); break;
-            case 3: grid.makeGlobalGrid(dims, 0, 7, type_level, rule_clenshawcurtis0); break;
-            case 4: grid.makeGlobalGrid(dims, 0, 10, type_level, rule_chebyshev); break;
-        }
+        reset_grid();
         TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
         grid.enableAcceleration(TasGrid::accel_gpu_cuda);
         grid.setGPUID(gpuID);
 
-        CudaVector<double> gpux(cpux);
-        CudaVector<double> gpuy(numx, grid.getNumPoints());
-
-        grid.evaluateHierarchicalFunctionsGPU(gpux.data(), numx, gpuy.data());
-        std::vector<double> cpuy;
-        gpuy.unload(cpuy);
-
-        double err = 0.0;
-        for(size_t i=0; i<cpuy.size(); i++){
-            //cout << cpuy[i] << "  " << truey[i] << "  " << std::abs(cpuy[i] - truey[i]) << endl;
-            if (err < std::abs(cpuy[i] - truey[i])) err = std::abs(cpuy[i] - truey[i]);
-        }
-        if ((err > Maths::num_tol) || (cpuy.size() != (size_t) numx * grid.getNumPoints())){
-            cout << "ERROR: failed Sequence grid GPU basis evaluations with error: " << err << endl;
-            grid.printStats();
+        if (!testHBasisGPU<double>(cpux, truey, numx, Maths::num_tol, grid, "GPU basis<double> evaluations"))
             pass = false;
-        }
+
+        if (!testHBasisGPU<float>(cpux, truey, numx, 5.E-5, grid, "GPU basis<float> evaluations"))
+            pass = false;
     }}
 
     // Fourier Grid evaluations of the basis functions
     {int numx = 2020;
 
-    std::vector<double> cpux(numx * dims);
-    setRandomX(numx * dims, cpux.data());
-    for(int i=0; i<numx; i++){
-        for(int j=0; j<dims; j++){
-            cpux[dims*i + j] = cpux[dims*i + j] * (b[j] - a[j]) + a[j];
-        }
-    }
+    std::vector<double> cpux = genRandom(numx, a, b);
 
     grid.makeFourierGrid(dims, 0, 5, type_level); //cout << grid.getNumPoints() << endl;
     grid.setDomainTransform(a, b);
@@ -2055,22 +2092,11 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         grid.enableAcceleration(TasGrid::accel_gpu_cuda);
         grid.setGPUID(gpuID);
 
-        CudaVector<double> gpux(cpux), gpuy(2 * numx, grid.getNumPoints());
-
-        grid.evaluateHierarchicalFunctionsGPU(gpux.data(), numx, gpuy.data());
-        std::vector<double> cpuy;
-        gpuy.unload(cpuy);
-
-        double err = 0.0;
-        for(size_t i=0; i<truey.size(); i++){
-            //cout << cpuy[i] << "  " << truey[i] << "  " << std::abs(cpuy[i] - truey[i]) << endl;
-            if (err < std::abs(cpuy[i] - truey[i])) err = std::abs(cpuy[i] - truey[i]);
-        }
-        if (err > Maths::num_tol){
-            cout << "ERROR: failed Sequence grid GPU basis evaluations with error: " << err << endl;
-            grid.printStats();
+        if (!testHBasisGPU<double>(cpux, truey, numx, Maths::num_tol, grid, "GPU basis<double> evaluations"))
             pass = false;
-        }
+
+        if (!testHBasisGPU<float>(cpux, truey, numx, 2.E-4, grid, "GPU basis<float> evaluations"))
+            pass = false;
     }}
 
     return pass;

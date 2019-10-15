@@ -64,6 +64,22 @@ struct CudaGlobalData{
     CudaVector<int> map_tensor;
     CudaVector<int> map_index;
     CudaVector<int> map_reference;
+    void clearNodes(){
+        num_basis = 0;
+        nodes.clear();
+        coeff.clear();
+        nodes_per_level.clear();
+        offset_per_level.clear();
+        map_dimension.clear();
+        map_level.clear();
+        tensor_weights.clear();
+        active_tensors.clear();
+        active_num_points.clear();
+        dim_offsets.clear();
+        map_tensor.clear();
+        map_index.clear();
+        map_reference.clear();
+    }
 };
 
 //! \internal
@@ -78,6 +94,12 @@ template<typename FP>
 struct CudaSequenceData{
     CudaVector<FP> surpluses, nodes, coeff;
     CudaVector<int> num_nodes, points;
+    void clearNodes(){
+        nodes.clear();
+        coeff.clear();
+        num_nodes.clear();
+        points.clear();
+    }
 };
 
 //! \internal
@@ -102,6 +124,13 @@ template<typename FP>
 struct CudaLocalPolynomialData{
     CudaVector<FP> surpluses, nodes, support;
     CudaVector<int> hpntr, hindx, hroots;
+    void clearBasisHierarchy(){
+        nodes.clear();
+        support.clear();
+        hpntr.clear();
+        hindx.clear();
+        hroots.clear();
+    }
 };
 
 //! \internal
@@ -111,6 +140,10 @@ struct CudaLocalPolynomialData{
 template<typename FP>
 struct CudaWaveletData{
     CudaVector<FP> coefficients, nodes, support;
+    void clearNodes(){
+        nodes.clear();
+        support.clear();
+    }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
 

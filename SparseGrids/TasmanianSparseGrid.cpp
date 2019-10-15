@@ -769,10 +769,11 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
-const double* TasmanianSparseGrid::formCanonicalPointsGPU(const double *gpu_x, int num_x, CudaVector<double> &gpu_x_temp) const{
+template<typename T>
+const T* TasmanianSparseGrid::formCanonicalPointsGPU(const T *gpu_x, int num_x, CudaVector<T> &gpu_x_temp) const{
     if (!domain_transform_a.empty()){
         if (!acc_domain)
-            acc_domain = std::unique_ptr<AccelerationDomainTransform>(new AccelerationDomainTransform(domain_transform_a, domain_transform_b));
+            acc_domain = std::make_unique<AccelerationDomainTransform>(domain_transform_a, domain_transform_b);
         acc_domain->getCanonicalPoints(isFourier(), gpu_x, num_x, gpu_x_temp);
         return gpu_x_temp.data();
     }else{
@@ -1012,20 +1013,22 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double
     evaluateHierarchicalFunctions(x.data(), (int) num_x, y.data());
 }
 #ifdef Tasmanian_ENABLE_CUDA
-void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+template<typename T>
+void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     if (!engine) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     engine->setDevice();
-    CudaVector<double> gpu_temp_x;
+    CudaVector<T> gpu_temp_x;
     base->evaluateHierarchicalFunctionsGPU(formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
 }
-void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, double* &gpu_vals, int &num_nz) const{
+template<typename T>
+void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, T* &gpu_vals, int &num_nz) const{
     if (!isLocalPolynomial()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() is allowed only for local polynomial grid.");
     if (!engine) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     engine->setDevice();
-    CudaVector<double> gpu_temp_x;
-    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
+    CudaVector<T> gpu_temp_x;
+    const T *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
     CudaVector<int> vec_pntr, vec_indx;
-    CudaVector<double> vec_vals;
+    CudaVector<T> vec_vals;
     get<GridLocalPolynomial>()->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, vec_pntr, vec_indx, vec_vals);
     num_nz = (int) vec_indx.size();
     gpu_pntr = vec_pntr.eject();
@@ -1033,13 +1036,19 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double gp
     gpu_vals = vec_vals.eject();
 }
 #else
-void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const double*, int, double*) const{
+template<typename T>
+void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(T const gpu_x[], int cpu_num_x, T gpu_y[]) const{
     throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
 }
-void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const double*, int, int*&, int*&, double*&, int&) const{
+template<typename T>
+void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T*, int, int*&, int*&, T*&, int&) const{
     throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
 }
 #endif
+template void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU<float>(float const gpu_x[], int cpu_num_x, float gpu_y[]) const;
+template void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU<double>(double const gpu_x[], int cpu_num_x, double gpu_y[]) const;
+template void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU<float>(const float[], int, int*&, int*&, float*&, int&) const;
+template void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU<double>(const double[], int, int*&, int*&, double*&, int&) const;
 
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const{
     int num_x = ((int) x.size()) / getNumDimensions();

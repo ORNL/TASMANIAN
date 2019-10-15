@@ -298,12 +298,17 @@ void GridWavelet::evaluateBatchGPU(CudaEngine *engine, const double *gpu_x, int 
     engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, cuda_cache->coefficients, gpu_basis, 0.0, gpu_y);
 }
 void GridWavelet::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
-    loadCudaBasis();
+    loadCudaBasis<double>();
     TasCUDA::devalpwpoly(order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cache->nodes.data(), cuda_cache->support.data(), gpu_y);
 }
-void GridWavelet::loadCudaBasis() const{
-    if (!cuda_cache) cuda_cache = std::unique_ptr<CudaWaveletData<double>>(new CudaWaveletData<double>);
-    if (!cuda_cache->nodes.empty()) return;
+void GridWavelet::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const{
+    loadCudaBasis<float>();
+    TasCUDA::devalpwpoly(order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cachef->nodes.data(), cuda_cachef->support.data(), gpu_y);
+}
+template<typename T> void GridWavelet::loadCudaBasis() const{
+    auto &ccache = getCudaCache(static_cast<T>(0.0));
+    if (!ccache) ccache = std::make_unique<CudaWaveletData<T>>();
+    if (!ccache->nodes.empty()) return;
 
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     Data2D<double> cpu_scale(num_dimensions, work.getNumIndexes());
@@ -316,14 +321,12 @@ void GridWavelet::loadCudaBasis() const{
         for(int j=0; j<num_dimensions; j++)
             rule1D.getShiftScale(p[j], scale[j], shift[j]);
     }
-    cuda_cache->nodes.load(cpu_scale.getVector());
-    cuda_cache->support.load(cpu_shift.getVector());
+    ccache->nodes.load(cpu_scale.getVector());
+    ccache->support.load(cpu_shift.getVector());
 }
 void GridWavelet::clearCudaBasis(){
-    if (cuda_cache){
-        cuda_cache->nodes.clear();
-        cuda_cache->support.clear();
-    }
+    if (cuda_cache) cuda_cache->clearNodes();
+    if (cuda_cachef) cuda_cachef->clearNodes();
 }
 #endif
 
@@ -1027,7 +1030,8 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
 
 void GridWavelet::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
-    if (cuda_cache) cuda_cache.reset();
+    cuda_cache.reset();
+    cuda_cachef.reset();
     #endif
 }
 
