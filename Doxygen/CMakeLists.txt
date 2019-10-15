@@ -24,8 +24,6 @@ set(DOXYGEN_FORMULA_FONTSIZE "14")
 set(DOXYGEN_PROJECT_NAME   "Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN: ${PROJECT_NAME} v${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}${Tasmanian_version_comment}")
 set(DOXYGEN_PROJECT_NUMBER "") # if project number is given, the rendered font is too small
 
-set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "README.md")
-
 set(DOXYGEN_EXAMPLE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../") # finding the examples for all modules requires the use of the root dir
 
 if (NOT DOXYGEN_INTERNAL_DOCS)
@@ -42,8 +40,14 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
     set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP;__TASMANIAN_DOXYGEN_SKIP_INTERNAL;Tasmanian_ENABLE_BLAS;Tasmanian_ENABLE_CUDA;Tasmanian_ENABLE_MPI")
 endif()
 
+### Add the git-hash to the main page, suppress at release (the stable page needs no hash)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../README.md" Tasmanian_readme)
+string(REPLACE "# Tasmanian" "# Tasmanian\n    * *Generated from git commit ${Tasmanian_git_hash}*" Tasmanian_readme ${Tasmanian_readme})
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/README.md" "${Tasmanian_readme}")
+set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_BINARY_DIR}/README.md")
+
 doxygen_add_docs(Tasmanian_doxygen
-                 README.md
+                 ${CMAKE_CURRENT_BINARY_DIR}/README.md
                  Doxygen/Installation.md
                  Doxygen/InterfacePython.md
                  Doxygen/InterfaceCLI.md
