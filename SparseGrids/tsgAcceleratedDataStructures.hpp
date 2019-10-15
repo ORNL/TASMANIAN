@@ -279,7 +279,8 @@ public:
     //! Takes the user provided \b gpu_transformed_x points of dimension matching the grid num_dimensions and total number \b num_x.
     //! The \b gpu_canonical_x is resized to match \b gpu_transformed_x and it loaded with the corresponding canonical points.
     //! The \b use01 flag indicates whether to use canonical domain (0, 1) (Fourier grids), or (-1, 1) (almost everything else).
-    void getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, CudaVector<double> &gpu_canonical_x);
+    template<typename T>
+    void getCanonicalPoints(bool use01, T const gpu_transformed_x[], int num_x, CudaVector<T> &gpu_canonical_x);
 
 private:
     // these actually store the rate and shift and not the hard upper/lower limits
