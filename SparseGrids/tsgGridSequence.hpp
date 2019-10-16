@@ -85,6 +85,7 @@ public:
     void evaluateCudaMixed(CudaEngine*, const float*, int, float[]) const;
     void evaluateCuda(CudaEngine*, const float*, int, float[]) const;
     void evaluateBatchGPU(CudaEngine* engine, const float gpu_x[], int cpu_num_x, float gpy_y[]) const;
+    template<typename T> void evaluateBatchGPUtempl(CudaEngine* engine, const T gpu_x[], int cpu_num_x, T gpy_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const;
     #endif
 
@@ -179,11 +180,12 @@ protected:
         ccache->points.load(transpoints.getVector());
     }
     void clearCudaNodes();
-    void loadCudaSurpluses() const{
-        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaSequenceData<double>>(new CudaSequenceData<double>);
-        if (cuda_cache->surpluses.empty()) cuda_cache->surpluses.load(surpluses.getVector());
+    template<typename T> void loadCudaSurpluses() const{
+        auto& ccache = getCudaCache(static_cast<T>(0.0));
+        if (!ccache) ccache = std::make_unique<CudaSequenceData<T>>();
+        if (ccache->surpluses.empty()) ccache->surpluses.load(surpluses.getVector());
     }
-    void clearCudaSurpluses(){ if (cuda_cache) cuda_cache->surpluses.clear(); }
+    void clearCudaSurpluses();
     #endif
 
 private:

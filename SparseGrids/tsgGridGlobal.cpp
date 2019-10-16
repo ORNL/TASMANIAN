@@ -632,7 +632,7 @@ void GridGlobal::loadNeededPointsCuda(CudaEngine *, const double *vals){
     loadNeededPoints(vals);
 }
 void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    loadCudaValues();
+    loadCudaValues<double>();
 
     int num_points = points.getNumIndexes();
     Data2D<double> weights(num_points, num_x);
@@ -645,13 +645,19 @@ void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, d
     evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_result.data());
     gpu_result.unload(y);
 }
-void GridGlobal::evaluateBatchGPU(CudaEngine *engine, const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
-    loadCudaValues();
+template<typename T> void GridGlobal::evaluateBatchGPUtempl(CudaEngine *engine, T const gpu_x[], int cpu_num_x, T gpu_y[]) const{
+    loadCudaValues<T>();
     int num_points = points.getNumIndexes();
 
-    CudaVector<double> gpu_basis(cpu_num_x, num_points);
+    CudaVector<T> gpu_basis(cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
-    engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, cuda_cache->values, gpu_basis, 0.0, gpu_y);
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getCudaCache(static_cast<T>(0.0))->values, gpu_basis, 0.0, gpu_y);
+}
+void GridGlobal::evaluateBatchGPU(CudaEngine *engine, const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
+    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+}
+void GridGlobal::evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
+    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
 }
 template<typename T> void GridGlobal::evaluateHierarchicalFunctionsGPUtempl(T const gpu_x[], int cpu_num_x, T *gpu_y) const{
     auto& ccache = getCudaCache(static_cast<T>(0.0));
@@ -669,9 +675,10 @@ void GridGlobal::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_
 void GridGlobal::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const{
     evaluateHierarchicalFunctionsGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
-void GridGlobal::loadCudaValues() const{
-    if (!cuda_cache) cuda_cache = std::unique_ptr<CudaGlobalData<double>>(new CudaGlobalData<double>);
-    if (cuda_cache->values.empty()) cuda_cache->values.load(values.getVector());
+template<typename T> void GridGlobal::loadCudaValues() const{
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    if (!ccache) ccache = std::make_unique<CudaGlobalData<T>>();
+    if (ccache->values.empty()) ccache->values.load(values.getVector());
 }
 void GridGlobal::clearCudaValues() const{ if (cuda_cache) cuda_cache->values.clear(); }
 template<typename T> void GridGlobal::loadCudaNodes() const{

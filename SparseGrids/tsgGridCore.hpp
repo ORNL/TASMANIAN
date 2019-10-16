@@ -104,7 +104,7 @@ public:
     //virtual void evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]){};
     virtual void evaluateCudaMixed(CudaEngine *, const float [], int , float []) const{};
     virtual void evaluateCuda(CudaEngine *, const float [], int , float []) const{};
-    virtual void evaluateBatchGPU(CudaEngine *, const float [], int , float []) const{};
+    virtual void evaluateBatchGPU(CudaEngine *, const float [], int , float []) const = 0;
     virtual void evaluateHierarchicalFunctionsGPU(const float [], int , float []) const = 0;
     #endif
 

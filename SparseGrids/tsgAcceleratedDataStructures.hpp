@@ -158,6 +158,17 @@ public:
     //! If the currently stored array has been assigned with \b wrap(), the alias is released.
     //! However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
     void load(size_t count, const T* cpu_data);
+    /*!
+     * \brief Takes a vector with entries of different precision, converts and loads.
+     *
+     * Used when the CPU data is stored in double-precision format while the GPU entries are prepared to work with single-precision.
+     */
+    template<typename U, std::enable_if_t<!std::is_same<U, T>::value>* = nullptr>
+    void load(size_t count, const U* cpu_data){
+        std::vector<T> converted(count);
+        std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
+        load(converted);
+    }
     //! \brief Copy the data from the CUDA array to \b cpu_data, the \b cpu_data will be resized and overwritten, the new size will match the \b size().
     void unload(std::vector<T> &cpu_data) const{
         cpu_data.resize(num_entries);

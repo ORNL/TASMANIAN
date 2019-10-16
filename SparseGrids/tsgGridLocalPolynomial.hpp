@@ -93,6 +93,8 @@ public:
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
+    void evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const;
+    template<typename T> void evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const;
     void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const;
@@ -295,12 +297,8 @@ protected:
     template<typename T> void loadCudaBasis() const;
     template<typename T> void loadCudaHierarchy() const;
     void clearCudaBasisHierarchy();
-    void loadCudaSurpluses() const{
-        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaLocalPolynomialData<double>>(new CudaLocalPolynomialData<double>);
-        if (cuda_cache->surpluses.size() != 0) return;
-        cuda_cache->surpluses.load(surpluses.getVector());
-    }
-    void clearCudaSurpluses(){ if (cuda_cache) cuda_cache->surpluses.clear(); }
+    template<typename T> void loadCudaSurpluses() const;
+    void clearCudaSurpluses();
     #endif
 
 private:

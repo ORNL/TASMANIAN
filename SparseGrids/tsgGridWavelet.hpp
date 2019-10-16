@@ -79,6 +79,8 @@ public:
     void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const;
     void evaluateCuda(CudaEngine*, const double*, int, double[]) const;
     void evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const;
+    void evaluateBatchGPU(CudaEngine*, const float*, int, float[]) const;
+    template<typename T> void evaluateBatchGPUtempl(CudaEngine*, const T*, int, T[]) const;
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const;
     #endif
@@ -126,11 +128,8 @@ protected:
     #ifdef Tasmanian_ENABLE_CUDA
     std::unique_ptr<CudaWaveletData<double>>& getCudaCache(double) const{ return cuda_cache; }
     std::unique_ptr<CudaWaveletData<float>>& getCudaCache(float) const{ return cuda_cachef; }
-    void loadCudaCoefficients() const{
-        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaWaveletData<double>>(new CudaWaveletData<double>);
-        if (cuda_cache->coefficients.empty()) cuda_cache->coefficients.load(coefficients.getVector());
-    }
-    void clearCudaCoefficients(){ if (cuda_cache) cuda_cache->coefficients.clear(); }
+    template<typename T> void loadCudaCoefficients() const;
+    void clearCudaCoefficients();
     template<typename T> void loadCudaBasis() const;
     void clearCudaBasis();
     #endif

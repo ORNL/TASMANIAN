@@ -412,20 +412,19 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
     base->evaluateBatch(x_canonical, num_x, y);
 }
 #ifdef Tasmanian_ENABLE_CUDA
-void TasmanianSparseGrid::evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const{
     if (!engine) throw std::runtime_error("ERROR: evaluateBatchGPU() requires that a cuda gpu acceleration is enabled.");
-    CudaVector<double> gpu_temp_x;
-    const double *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
-    if (engine){
-        engine->setDevice();
-        base->evaluateBatchGPU(engine.get(), gpu_canonical_x, cpu_num_x, gpu_y);
-    }
+    engine->setDevice();
+    CudaVector<FloatType> gpu_temp_x;
+    base->evaluateBatchGPU(engine.get(), formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
 }
 #else
-void TasmanianSparseGrid::evaluateBatchGPU(const double[], int, double[]) const{
+template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType[], int, FloatType[]) const{
     throw std::runtime_error("ERROR: batch evaluations GPU to GPU require Tasmanian_ENABLE_CUDA");
 }
 #endif
+template void TasmanianSparseGrid::evaluateBatchGPU<float>(const float[], int, float[]) const;
+template void TasmanianSparseGrid::evaluateBatchGPU<double>(const double[], int, double[]) const;
 
 void TasmanianSparseGrid::integrate(double q[]) const{
     if (conformal_asin_power.size() != 0){

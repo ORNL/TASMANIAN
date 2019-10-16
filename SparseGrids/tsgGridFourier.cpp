@@ -536,7 +536,7 @@ void GridFourier::loadNeededPointsCuda(CudaEngine *, const double *vals){
     loadNeededPoints(vals);
 }
 void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    loadCudaCoefficients();
+    loadCudaCoefficients<double>();
     Data2D<double> wreal;
     Data2D<double> wimag;
     evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
@@ -552,15 +552,22 @@ void GridFourier::evaluateCuda(CudaEngine *engine, const double x[], int num_x, 
     evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_y.data());
     gpu_y.unload(y);
 }
-void GridFourier::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
-    loadCudaCoefficients();
+template<typename T> void GridFourier::evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
+    loadCudaCoefficients<T>();
 
-    CudaVector<double> gpu_real, gpu_imag;
+    CudaVector<T> gpu_real, gpu_imag;
     evaluateHierarchicalFunctionsInternalGPU(gpu_x, cpu_num_x, gpu_real, gpu_imag);
 
     int num_points = points.getNumIndexes();
-    engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
-    engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, ccache->real, gpu_real, 0.0, gpu_y);
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, ccache->imag, gpu_imag, 1.0, gpu_y);
+}
+void GridFourier::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+}
+void GridFourier::evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
+    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
 }
 void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
     loadCudaNodes<double>();
@@ -604,6 +611,25 @@ void GridFourier::clearCudaNodes(){
     if (cuda_cachef){
         cuda_cachef->num_nodes.clear();
         cuda_cachef->points.clear();
+    }
+}
+template<typename T> void GridFourier::loadCudaCoefficients() const{
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    if (!ccache) ccache = std::make_unique<CudaFourierData<T>>();
+    if (!ccache->real.empty()) return;
+    int num_points = points.getNumIndexes();
+    size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
+    ccache->real.load(num_coeff, fourier_coefs.getStrip(0));
+    ccache->imag.load(num_coeff, fourier_coefs.getStrip(num_points));
+}
+void GridFourier::clearCudaCoefficients(){
+    if (cuda_cache){
+        cuda_cache->real.clear();
+        cuda_cache->imag.clear();
+    }
+    if (cuda_cachef){
+        cuda_cachef->real.clear();
+        cuda_cachef->imag.clear();
     }
 }
 #endif

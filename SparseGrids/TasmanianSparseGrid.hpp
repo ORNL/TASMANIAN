@@ -871,7 +871,7 @@ public:
      *
      * \throws std::runtime_error if Tasmanian was not build with \b -DTasmanian_ENABLE_CUDA=ON.
      */
-    void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
+    template<typename FloatType> void evaluateBatchGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const;
     /*!
      * \brief Equivalent to evaluate() with enabled acceleration or evaluateBatch() with a batch of one point.
      *

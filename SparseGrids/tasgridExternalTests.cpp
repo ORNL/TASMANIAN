@@ -33,63 +33,7 @@
 #define __TASGRID_TESTER_CPP
 
 #include "tasgridExternalTests.hpp"
-
-template<typename VectorLike1, typename VectorLike2>
-double err1(size_t num, VectorLike1 const &x, VectorLike2 const &y){
-    if ((x.size() < num) || (y.size() < num)) throw std::runtime_error("vector size is insufficient");
-    double err = 0.0;
-    for(size_t i=0; i<num; i++) err = std::max(err, std::abs(x[i] - y[i]));
-    return err;
-}
-template<typename VectorLike1, typename VectorLike2>
-double err1(VectorLike1 const &x, VectorLike2 const &y){
-    if (x.size() != y.size()) throw std::runtime_error("vector size mismatch");
-    return err1(x.size(), x, y);
-}
-
-template<typename VectorLike1, typename VectorLike2>
-double err1_sparse(std::vector<int> const &xpntr, std::vector<int> const &xindx, VectorLike1 const &xvals,
-                   std::vector<int> const &ypntr, std::vector<int> const &yindx, VectorLike2 const &yvals){
-    if (xpntr.size() != ypntr.size()) throw std::runtime_error("mismatch in number of sparse rows");
-    double err = 0.0;
-    for(size_t i=1; i<xpntr.size(); i++){
-        int xj = xpntr[i-1], yj = ypntr[i-1];
-        while((xj < xpntr[i]) || (yj < ypntr[i])){
-            double xv, yv;
-            if (xj >= xpntr[i]){ // x reached the end
-                xv = 0.0;
-                yv = yvals[yj++];
-            }else if (yj >= ypntr[i]){ // y reached the end
-                xv = xvals[xj++];
-                yv = 0.0;
-            }else if (xindx[xj] == yindx[xj]){ // same index
-                xv = xvals[xj++];
-                yv = yvals[yj++];
-            }else if (xindx[xj] < yindx[yj]){ // y is skipping an index
-                xv = xvals[xj++];
-                yv = 0.0;
-            }else{ // must be that x is skipping an index
-                xv = 0.0;
-                yv = yvals[yj++];
-            }
-            err = std::max(err, std::abs(xv - yv));
-        }
-    }
-    return err;
-}
-
-
-
-bool testPass(double err, double tol, std::string message, TasmanianSparseGrid const &grid = TasmanianSparseGrid()){
-    if (err > tol){
-        cout << std::scientific; cout.precision(16);
-        cout << "ERROR: " << message << "\n  observed: " << err << "  expected: " << tol << "\n";
-        if (!grid.empty()) grid.printStats();
-        return false;
-    }else{
-        return true;
-    }
-}
+#include "tasgridTestHelpers.hpp"
 
 std::minstd_rand park_miller(10);
 std::vector<double> genRandom(int num_samples, std::vector<double> const &lower, std::vector<double> const &upper){
@@ -1839,43 +1783,39 @@ bool ExternalTester::testAllDomain() const{
     return (pass1 && pass2 && pass3);
 }
 
-bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid *grid) const{
+bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid &grid) const{
     int dims = f->getNumInputs();
     int outs = f->getNumOutputs();
-    if (grid->getNumNeeded() > 0){
-        std::vector<double> points, vals(outs * grid->getNumPoints());
-        grid->getNeededPoints(points);
+    if (grid.getNumNeeded() > 0){
+        std::vector<double> points = grid.getNeededPoints();
+        std::vector<double> vals(Utils::size_mult(grid.getNumOutputs(), grid.getNumNeeded()));
 
-        for(int i=0; i<grid->getNumPoints(); i++){
+        for(int i=0; i<grid.getNumNeeded(); i++)
             f->eval(&(points[i*dims]), &(vals[i*outs]));
-        }
-        grid->loadNeededPoints(vals);
+        grid.loadNeededPoints(vals);
     }
 
     int num_x = 256; // for batched evaluations
     int num_fast = 16; // for fast evaluations, must be <= num_x
-    std::vector<double> x(num_x * dims);
-    setRandomX(num_x * dims, x.data());
+    std::vector<double> x = genRandom(num_x, dims);
 
     std::vector<double> test_y, baseline_y(outs * num_x);
-    for(int i=0; i<num_x; i++) grid->evaluate(&(x[i*dims]), &(baseline_y[i*outs]));
+    for(int i=0; i<num_x; i++) grid.evaluate(&(x[i*dims]), &(baseline_y[i*outs]));
 
     bool pass = true;
-    TypeAcceleration acc[5] = {accel_none, accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma};
+    std::vector<TypeAcceleration> acc = {accel_none, accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma};
     int testGpuID = (gpuid == -1) ? 0 : gpuid;
-    int c = 0;
-    while(c < 5){
-        grid->enableAcceleration(acc[c]);
-        if (c > 1){ // gpu test
-            grid->setGPUID(testGpuID);
-        }
+    size_t c = 0;
+    while(c < acc.size()){
+        grid.enableAcceleration(acc[c]);
+        if (c > 1) grid.setGPUID(testGpuID); // gpu test
         //grid->printStats();
         //cout << "Testing Batch evaluations" << endl;
 
         test_y.resize(1); // makes sure that evaluate sets the right dimension
 
         //grid->favorSparseAcceleration(false); // switch between explicit test for the dense and sparse algorithms
-        grid->evaluateBatch(x, test_y);
+        grid.evaluateBatch(x, test_y);
 
         double err = 0.0;
         for(int i=0; i<outs*num_x; i++) if (std::abs(test_y[i] - baseline_y[i]) > err) err = std::abs(test_y[i] - baseline_y[i]);
@@ -1888,28 +1828,24 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             pass = false;
             cout << "Failed Batch evaluation for acceleration c = " << c << " gpuID = " << testGpuID << endl;
             cout << "Observed error: " << err << " for function: " << f->getDescription() << endl;
-            grid->printStats();
+            grid.printStats();
             exit(1);
         }
 
         #ifdef Tasmanian_ENABLE_CUDA
-        if ((grid->getAccelerationType() == accel_gpu_cuda) && !(grid->isWavelet() && grid->getOrder() == 3)){
-            CudaVector<double> gpu_x(x), gpu_y(outs, num_x);
-            grid->evaluateBatchGPU(gpu_x.data(), num_x, gpu_y.data());
-            gpu_y.unload(test_y);
-            err = 0.0;
-            for(int i=0; i<outs*num_x; i++) if (std::abs(test_y[i] - baseline_y[i]) > err) err = std::abs(test_y[i] - baseline_y[i]);
-            if (err > 1.E-11){
-                cout << "Failed GPU to GPU evaluation." << endl;
-                grid->printStats();
-            }
+        if ((grid.getAccelerationType() == accel_gpu_cuda) && !(grid.isWavelet() && grid.getOrder() == 3)){
+            if (!testDenseGPU<double, GridMethodEvalBatchGPU>(x, baseline_y, num_x, Maths::num_tol, grid, "GPU evaluate<double>"))
+                pass = false;
+
+            if (!testDenseGPU<float, GridMethodEvalBatchGPU>(x, baseline_y, num_x, 5.E-5, grid, "GPU evaluate<float>"))
+                pass = false;
         }
         #endif
 
         //cout << "Testing Fast evaluations" << endl;
-        grid->evaluateFast(x, test_y);
+        grid.evaluateFast(x, test_y);
         for(int i= 1; i<num_fast; i++){
-            grid->evaluateFast(&(x[i*dims]), &(test_y[i*outs]));
+            grid.evaluateFast(&(x[i*dims]), &(test_y[i*outs]));
         }
 
         err = 0.0;
@@ -1919,13 +1855,13 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             pass = false;
             cout << "Failed Fast evaluation for acceleration c = " << c << " gpuID = " << testGpuID << endl;
             cout << "Observed error: " << err << " for function: " << f->getDescription() << endl;
-            grid->printStats();
+            grid.printStats();
         }
 
         if (c > 1){ // gpu test
             if (gpuid == -1){ // gpuid is not set, then cycle trough all GPUs
                 testGpuID++;
-                if (testGpuID >= grid->getNumGPUs()){
+                if (testGpuID >= grid.getNumGPUs()){
                     testGpuID = 0;
                     c++;
                 }
@@ -1940,43 +1876,6 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     //cout << "End of acceleration test." << endl;
     return pass;
 }
-
-#ifdef Tasmanian_ENABLE_CUDA
-template<typename T>
-bool testHBasisGPU(std::vector<double> const &x, std::vector<double> const &y, int numx, double tolerance, TasmanianSparseGrid const &grid, std::string message){
-    CudaVector<T> gpux;
-    gpux.load(x);
-    CudaVector<T> gpuy(((grid.isFourier()) ? 2 : 1) * numx, grid.getNumPoints());
-    grid.evaluateHierarchicalFunctionsGPU(gpux.data(), numx, gpuy.data());
-    auto cpuy = gpuy.unload();
-//     for(auto v : y) cout << v << "\n";
-//     for(auto v : cpuy) cout << v << "\n";
-    return testPass(err1(cpuy, y), tolerance, message, grid);
-}
-template<typename T>
-bool testHBasisGPUSparse(std::vector<double> const &x,
-                         std::vector<int> const &pntr, std::vector<int> const &indx, std::vector<double> const &vals,
-                         double tolerance, TasmanianSparseGrid const &grid, std::string message){
-    CudaVector<T> gpux;
-    gpux.load(x);
-
-    int nump = (int) x.size() / grid.getNumDimensions();
-    int *gpu_indx = 0, *gpu_pntr = 0, num_nz = 0;
-    T *gpu_vals = 0;
-
-    grid.evaluateSparseHierarchicalFunctionsGPU(gpux.data(), nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
-
-    std::vector<int> cpntr; AccelerationMeta::recvCudaArray(nump + 1, gpu_pntr, cpntr);
-    std::vector<int> cindx; AccelerationMeta::recvCudaArray(num_nz, gpu_indx, cindx);
-    std::vector<T> cvals;   AccelerationMeta::recvCudaArray(num_nz, gpu_vals, cvals);
-
-    AccelerationMeta::delCudaArray(gpu_pntr);
-    AccelerationMeta::delCudaArray(gpu_indx);
-    AccelerationMeta::delCudaArray(gpu_vals);
-
-    return testPass(err1_sparse(pntr, indx, vals, cpntr, cindx, cvals), tolerance, message, grid);
-}
-#endif
 
 bool ExternalTester::testGPU2GPUevaluations() const{
     #ifdef Tasmanian_ENABLE_CUDA
@@ -2019,9 +1918,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             grid.setGPUID(gpuID);
             TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
 
-            if (!testHBasisGPU<double>(xt, y_true_dense, nump, Maths::num_tol, grid, "GPU basis<double> evaluations"))
+            if (!testDenseGPU<double, GridMethodHierBasisGPU>(xt, y_true_dense, nump, Maths::num_tol, grid, "GPU basis<double> evaluations"))
                 dense_pass = false;
-            if (!testHBasisGPU<float>(xt, y_true_dense, nump, (order[t] == 2) ? 1.E-4 : 5.E-5, grid, "GPU basis<float> evaluations"))
+            if (!testDenseGPU<float, GridMethodHierBasisGPU>(xt, y_true_dense, nump, (order[t] == 2) ? 1.E-4 : 5.E-5, grid, "GPU basis<float> evaluations"))
                 dense_pass = false;
 
             pass = pass && dense_pass;
@@ -2067,10 +1966,10 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         grid.enableAcceleration(TasGrid::accel_gpu_cuda);
         grid.setGPUID(gpuID);
 
-        if (!testHBasisGPU<double>(cpux, truey, numx, Maths::num_tol, grid, "GPU basis<double> evaluations"))
+        if (!testDenseGPU<double, GridMethodHierBasisGPU>(cpux, truey, numx, Maths::num_tol, grid, "GPU basis<double> evaluations"))
             pass = false;
 
-        if (!testHBasisGPU<float>(cpux, truey, numx, 5.E-5, grid, "GPU basis<float> evaluations"))
+        if (!testDenseGPU<float, GridMethodHierBasisGPU>(cpux, truey, numx, 5.E-5, grid, "GPU basis<float> evaluations"))
             pass = false;
     }}
 
@@ -2092,10 +1991,10 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         grid.enableAcceleration(TasGrid::accel_gpu_cuda);
         grid.setGPUID(gpuID);
 
-        if (!testHBasisGPU<double>(cpux, truey, numx, Maths::num_tol, grid, "GPU basis<double> evaluations"))
+        if (!testDenseGPU<double, GridMethodHierBasisGPU>(cpux, truey, numx, Maths::num_tol, grid, "GPU basis<double> evaluations"))
             pass = false;
 
-        if (!testHBasisGPU<float>(cpux, truey, numx, 2.E-4, grid, "GPU basis<float> evaluations"))
+        if (!testDenseGPU<float, GridMethodHierBasisGPU>(cpux, truey, numx, 2.E-4, grid, "GPU basis<float> evaluations"))
             pass = false;
     }}
 
@@ -2160,9 +2059,9 @@ bool ExternalTester::testAllAcceleration() const{
     int wsecond = 28, wthird = 15;
 
     grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
-    pass = pass && testAcceleration(f, &grid);
+    pass = pass && testAcceleration(f, grid);
     grid.makeGlobalGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
-    pass = pass && testAcceleration(f1out, &grid);
+    pass = pass && testAcceleration(f1out, grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "global" << setw(wthird) << "Pass" << endl;
     }else{
@@ -2170,9 +2069,9 @@ bool ExternalTester::testAllAcceleration() const{
     }
 
     grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_leja);
-    pass = pass && testAcceleration(f, &grid);
+    pass = pass && testAcceleration(f, grid);
     grid.makeSequenceGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_leja);
-    pass = pass && testAcceleration(f1out, &grid);
+    pass = pass && testAcceleration(f1out, grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "sequence" << setw(wthird) << "Pass" << endl;
     }else{
@@ -2184,15 +2083,15 @@ bool ExternalTester::testAllAcceleration() const{
     TasGrid::TypeOneDRule pwp_rule[4] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb};
     for(int t=0; t<12; t++){
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 4 == 0) ? 5 : 6), (t / 4), pwp_rule[t % 4]);
-        pass = pass && testAcceleration(f, &grid);
+        pass = pass && testAcceleration(f, grid);
     }
     // test cusparse sparse mat times dense vec used in accel_type cuda, also try both sparse and dense flavors
     grid.makeLocalPolynomialGrid(f21nx2.getNumInputs(), f21nx2.getNumOutputs(), 5, 1, TasGrid::rule_localp);
     grid.favorSparseAcceleration(true);
-    pass = pass && testAcceleration(&f21nx2, &grid);
+    pass = pass && testAcceleration(&f21nx2, grid);
     grid.makeLocalPolynomialGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, 2, TasGrid::rule_semilocalp);
     grid.favorSparseAcceleration(false);
-    pass = pass && testAcceleration(f1out, &grid);
+    pass = pass && testAcceleration(f1out, grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "local polynomial" << setw(wthird) << "Pass" << endl;
     }else{
@@ -2200,9 +2099,9 @@ bool ExternalTester::testAllAcceleration() const{
     }
 
     grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 4, TasGrid::type_level);
-    pass = pass && testAcceleration(f, &grid);
+    pass = pass && testAcceleration(f, grid);
     grid.makeFourierGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, TasGrid::type_level);
-    pass = pass && testAcceleration(f1out, &grid);
+    pass = pass && testAcceleration(f1out, grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
     }else{
@@ -2210,9 +2109,9 @@ bool ExternalTester::testAllAcceleration() const{
     }
 
     grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 3);
-    pass = pass && testAcceleration(f, &grid);
+    pass = pass && testAcceleration(f, grid);
     grid.makeWaveletGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, 1);
-    pass = pass && testAcceleration(f1out, &grid);
+    pass = pass && testAcceleration(f1out, grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
     }else{

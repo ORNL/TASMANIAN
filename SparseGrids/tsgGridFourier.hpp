@@ -79,6 +79,8 @@ public:
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
+    void evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const;
+    template<typename T> void evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const;
     template<typename T>
@@ -169,20 +171,8 @@ protected:
     std::unique_ptr<CudaFourierData<float>>& getCudaCache(float) const{ return cuda_cachef; }
     template<typename T> void loadCudaNodes() const;
     void clearCudaNodes();
-    void loadCudaCoefficients() const{
-        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaFourierData<double>>(new CudaFourierData<double>);
-        if (!cuda_cache->real.empty()) return;
-        int num_points = points.getNumIndexes();
-        size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
-        cuda_cache->real.load(num_coeff, fourier_coefs.getStrip(0));
-        cuda_cache->imag.load(num_coeff, fourier_coefs.getStrip(num_points));
-    }
-    void clearCudaCoefficients(){
-        if (cuda_cache){
-            cuda_cache->real.clear();
-            cuda_cache->imag.clear();
-        }
-    }
+    template<typename T> void loadCudaCoefficients() const;
+    void clearCudaCoefficients();
     #endif
 
 private:

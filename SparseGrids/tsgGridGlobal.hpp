@@ -87,6 +87,8 @@ public:
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateBatchGPU(CudaEngine*, const double[], int, double[]) const;
+    void evaluateBatchGPU(CudaEngine*, const float[], int, float[]) const;
+    template<typename T> void evaluateBatchGPUtempl(CudaEngine*, T const[], int, T *) const;
     void evaluateHierarchicalFunctionsGPU(const double[], int, double *) const;
     void evaluateHierarchicalFunctionsGPU(const float[], int, float *) const;
     template<typename T> void evaluateHierarchicalFunctionsGPUtempl(T const[], int, T *) const;
@@ -140,7 +142,7 @@ protected:
     #ifdef Tasmanian_ENABLE_CUDA
     std::unique_ptr<CudaGlobalData<double>>& getCudaCache(double) const{ return cuda_cache; }
     std::unique_ptr<CudaGlobalData<float>>& getCudaCache(float) const{ return cuda_cachef; }
-    void loadCudaValues() const;
+    template<typename T> void loadCudaValues() const;
     void clearCudaValues() const;
     template<typename T> void loadCudaNodes() const;
     void clearCudaNodes() const;
