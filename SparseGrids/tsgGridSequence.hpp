@@ -83,7 +83,6 @@ public:
     void evaluateBatchGPU(CudaEngine* engine, const double gpu_x[], int cpu_num_x, double gpy_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const double x[], int num_x, double y[]) const;
     void evaluateCudaMixed(CudaEngine*, const float*, int, float[]) const;
-    void evaluateCuda(CudaEngine*, const float*, int, float[]) const;
     void evaluateBatchGPU(CudaEngine* engine, const float gpu_x[], int cpu_num_x, float gpy_y[]) const;
     template<typename T> void evaluateBatchGPUtempl(CudaEngine* engine, const T gpu_x[], int cpu_num_x, T gpy_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const;

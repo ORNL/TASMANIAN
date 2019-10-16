@@ -815,6 +815,8 @@ public:
      * Identical to calling evaluate() for each point defined by \b x, but uses the specified
      * acceleration mode and is potentially much faster, see TasGrid::TypeAcceleration for details.
      *
+     * \tparam FloatType is either \b float or \b double indicating the precision to use.
+     *
      * \param[in] x is logically divided into strips of size getNumDimensions() defining
      * the coordinates of points within the sparse grid domain, see also evaluate().
      *
@@ -822,7 +824,10 @@ public:
      * each with length getNumOutputs(), provides the approximated model outputs for each
      * point defined by \b x. The vector will be resized, if the original size is incorrect.
      *
-     * \b Note: this does not check if \b x.size() divides evenly.
+     * \throws std::runtime_error if instantiated with \b float and the current acceleration
+     *      mode is neither CUDA nor MAGMA, see TasGrid::TypeAcceleration.
+     *
+     * \b Notes: this does not check if \b x.size() divides evenly.
      *
      * The batch call:
      * \code
@@ -836,7 +841,7 @@ public:
      * \endcode
      * However, depending on the acceleration mode, the performance can be significantly different.
      */
-    void evaluateBatch(std::vector<double> const &x, std::vector<double> &y) const;
+    template<typename FloatType> void evaluateBatch(std::vector<FloatType> const &x, std::vector<FloatType> &y) const;
     /*!
      * \brief Overload that uses raw-arrays.
      *
@@ -862,6 +867,19 @@ public:
      */
     void evaluateBatch(const double x[], int num_x, double y[]) const;
     /*!
+     * \brief Overload using single precision and GPU/CUDA acceleration.
+     *
+     * Works identical to the other raw-array overload but works only with CUDA and MAGMA acceleration modes.
+     *
+     * \param[in] x see the double precision array overload
+     * \param[in] num_x see the double precision array overload
+     * \param[in] y see the double precision array overload
+     *
+     * \throws std::runtime_error if the acceleration mode is not CUDA or MAGMA, see TasGrid::TypeAcceleration.
+     * \throws std::runtime_error from failed calls to evaluateBatchGPU().
+     */
+    void evaluateBatch(const float x[], int num_x, float y[]) const;
+    /*!
      * \brief Overload that uses GPU raw-arrays.
      *
      * Identical to the raw-array version of evaluateBatch(), but \b gpu_x and \b gpu_y must point
@@ -870,6 +888,8 @@ public:
      * (or MAGAMA) acceleration mode has been enabled.
      *
      * \throws std::runtime_error if Tasmanian was not build with \b -DTasmanian_ENABLE_CUDA=ON.
+     * \throws std::runtime_error if calling for a grid type that doesn't have appropriate CUDA kernels,
+     *      e.g., local polynomial or wavelet grids with order more than 2.
      */
     template<typename FloatType> void evaluateBatchGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const;
     /*!
@@ -885,13 +905,13 @@ public:
      * mode depending on \b x.size() and \b num_x.
      * Thus, this method is now an alias to evaluateBatch().
      */
-    void evaluateFast(const double x[], double y[]) const{ evaluateBatch(x, 1, y); };
+    template<typename FloatType> void evaluateFast(const FloatType x[], FloatType y[]) const{ evaluateBatch(x, 1, y); }
     /*!
      * \brief Alias to evaluateBatch().
      *
      * Provided for consistency and backwards compatibility.
      */
-    void evaluateFast(std::vector<double> const &x, std::vector<double> &y) const{ evaluateBatch(x, y); }
+    template<typename FloatType> void evaluateFast(std::vector<FloatType> const &x, std::vector<FloatType> &y) const{ evaluateBatch(x, y); }
     /*!
      * \brief Computes the integral of each model output over the sparse grid domain.
      *
@@ -1557,7 +1577,7 @@ public:
      * Returns the acceleration mode that will be used, i.e., the one selected internally
      * based on the request made in enableAcceleration().
      */
-    TypeAcceleration getAccelerationType() const;
+    TypeAcceleration getAccelerationType() const{ return acceleration; }
     /*!
      * \brief Returns whether a specific mode can be enabled.
      *
@@ -1821,7 +1841,7 @@ protected:
      * Similar to mapCanonicalToTransformed(), uses the inverse transform.
      * \endinternal
      */
-    void mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
+    template<typename FloatType> void mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, FloatType x[]) const;
     /*!
      * \internal
      * \brief Returns the quadrature scale factor associated with the linear transform.
@@ -1847,7 +1867,7 @@ protected:
      * Using the set conformal transform (private variables), applies the inverse non-linear transform.
      * \endinternal
      */
-    void mapConformalTransformedToCanonical(int num_dimensions, int num_points, Data2D<double> &x) const;
+    template<typename FloatType> void mapConformalTransformedToCanonical(int num_dimensions, int num_points, Data2D<FloatType> &x) const;
     /*!
      * \internal
      * \brief Computes the quadrature weight correction for the conformal map.
@@ -1867,7 +1887,7 @@ protected:
      * This method applies both linear and non-linear transforms.
      * \endinternal
      */
-    const double* formCanonicalPoints(const double *x, Data2D<double> &x_temp, int num_x) const;
+    template<typename FloatType> const FloatType* formCanonicalPoints(const FloatType *x, Data2D<FloatType> &x_temp, int num_x) const;
     #ifdef Tasmanian_ENABLE_CUDA
     /*!
      * \internal

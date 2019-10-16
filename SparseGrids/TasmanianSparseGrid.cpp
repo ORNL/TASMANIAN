@@ -389,9 +389,17 @@ void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
     base->evaluate(formCanonicalPoints(x, x_tmp, 1), y);
 }
 
+template<typename FloatType> void TasmanianSparseGrid::evaluateBatch(const std::vector<FloatType> &x, std::vector<FloatType> &y) const{
+    int num_outputs = getNumOutputs();
+    size_t num_x = x.size() / getNumDimensions();
+    y.resize(num_outputs * num_x);
+    evaluateBatch(x.data(), (int) num_x, y.data());
+}
+template void TasmanianSparseGrid::evaluateBatch<float>(const std::vector<float> &x, std::vector<float> &y) const;
+template void TasmanianSparseGrid::evaluateBatch<double>(const std::vector<double> &x, std::vector<double> &y) const;
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
     Data2D<double> x_tmp;
-    const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
+    double const *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     #ifdef Tasmanian_ENABLE_CUDA
     if (engine){
         engine->setDevice();
@@ -411,7 +419,18 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
     #endif
     base->evaluateBatch(x_canonical, num_x, y);
 }
+
 #ifdef Tasmanian_ENABLE_CUDA
+void TasmanianSparseGrid::evaluateBatch(const float x[], int num_x, float y[]) const{
+    if (!( (getAccelerationType() == accel_gpu_cuda) || (getAccelerationType() == accel_gpu_magma) ))
+        throw std::runtime_error("ERROR: batch evaluations in single precision require CUDA or MAGMA acceleration to be enabled");
+    Data2D<float> x_tmp;
+    float const *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
+    engine->setDevice();
+    CudaVector<float> gpu_x(getNumDimensions(), num_x, x_canonical), gpu_result(num_x, getNumOutputs());
+    base->evaluateBatchGPU(engine.get(), gpu_x.data(), num_x, gpu_result.data());
+    gpu_result.unload(y);
+}
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const{
     if (!engine) throw std::runtime_error("ERROR: evaluateBatchGPU() requires that a cuda gpu acceleration is enabled.");
     engine->setDevice();
@@ -421,6 +440,9 @@ template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const Fl
 #else
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType[], int, FloatType[]) const{
     throw std::runtime_error("ERROR: batch evaluations GPU to GPU require Tasmanian_ENABLE_CUDA");
+}
+void TasmanianSparseGrid::evaluateBatch(const float[], int, float[]) const{
+    throw std::runtime_error("ERROR: batch evaluations in single precision require Tasmanian_ENABLE_CUDA");
 }
 #endif
 template void TasmanianSparseGrid::evaluateBatchGPU<float>(const float[], int, float[]) const;
@@ -445,12 +467,6 @@ void TasmanianSparseGrid::evaluate(const std::vector<double> &x, std::vector<dou
     if (x.size() != (size_t) getNumDimensions()) throw std::runtime_error("ERROR: in evaluate() x must match getNumDimensions()");
     y.resize((size_t) getNumOutputs());
     evaluate(x.data(), y.data());
-}
-void TasmanianSparseGrid::evaluateBatch(const std::vector<double> &x, std::vector<double> &y) const{
-    int num_outputs = getNumOutputs();
-    size_t num_x = x.size() / getNumDimensions();
-    y.resize(num_outputs * num_x);
-    evaluateBatch(x.data(), (int) num_x, y.data());
 }
 void TasmanianSparseGrid::integrate(std::vector<double> &q) const{
     size_t num_outputs = getNumOutputs();
@@ -537,26 +553,26 @@ void TasmanianSparseGrid::mapCanonicalToTransformed(int num_dimensions, int num_
         }
     }
 }
-void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const{
+template<typename FloatType> void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_points, TypeOneDRule rule, FloatType x[]) const{
     if ((rule == rule_gausslaguerre) || (rule == rule_gausslaguerreodd)){ // canonical (0, +infty)
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
-            x[i] -= domain_transform_a[j];
-            x[i] *= domain_transform_b[j];
+            x[i] -= (FloatType) domain_transform_a[j];
+            x[i] *= (FloatType) domain_transform_b[j];
         }
     }else if ((rule == rule_gausshermite) || (rule == rule_gausshermiteodd)){ // (-infty, +infty)
         std::vector<double> sqrt_b(num_dimensions);
         for(int j=0; j<num_dimensions; j++) sqrt_b[j] = std::sqrt(domain_transform_b[j]);
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
-            x[i] -= domain_transform_a[j];
-            x[i] *= sqrt_b[j];
+            x[i] -= (FloatType) domain_transform_a[j];
+            x[i] *= (FloatType) sqrt_b[j];
         }
     }else if (rule == rule_fourier){   // map to [0,1]^d
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
-            x[i] -= domain_transform_a[j];
-            x[i] /= domain_transform_b[j]-domain_transform_a[j];
+            x[i] -= (FloatType) domain_transform_a[j];
+            x[i] /= (FloatType) (domain_transform_b[j]-domain_transform_a[j]);
         }
     }else{ // canonical [-1,1]
         std::vector<double> rate(num_dimensions);
@@ -567,11 +583,14 @@ void TasmanianSparseGrid::mapTransformedToCanonical(int num_dimensions, int num_
         }
         for(int i=0; i<num_points * num_dimensions; i++){
             int j = i % num_dimensions;
-            x[i] *= rate[j];
-            x[i] -= shift[j];
+            x[i] *= (FloatType) rate[j];
+            x[i] -= (FloatType) shift[j];
         }
     }
 }
+template void TasmanianSparseGrid::mapTransformedToCanonical<float>(int num_dimensions, int num_points, TypeOneDRule rule, float x[]) const;
+template void TasmanianSparseGrid::mapTransformedToCanonical<double>(int num_dimensions, int num_points, TypeOneDRule rule, double x[]) const;
+
 double TasmanianSparseGrid::getQuadratureScale(int num_dimensions, TypeOneDRule rule) const{
     double scale = 1.0;
     // gauss- (chebyshev1, chebyshev2, gegenbauer) are special case of jacobi
@@ -651,7 +670,7 @@ void TasmanianSparseGrid::mapConformalCanonicalToTransformed(int num_dimensions,
         }
     }
 }
-void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions, int num_points, Data2D<double> &x) const{
+template<typename FloatType> void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions, int num_points, Data2D<FloatType> &x) const{
     if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
         std::vector<std::vector<double>> c(num_dimensions), p(num_dimensions), dc(num_dimensions), dp(num_dimensions);
@@ -675,11 +694,11 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
             }
         }
         for(int i=0; i<num_points; i++){
-            double *this_x = x.getStrip(i);
+            FloatType *this_x = x.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 if (this_x[j] != 0.0){ // zero maps to zero and makes the log unstable
                     double sign = (this_x[j] > 0.0) ? 1.0 : -1.0;
-                    this_x[j] = std::abs(this_x[j]);
+                    this_x[j] = (FloatType) std::abs(this_x[j]);
                     double b = this_x[j];
                     double logx = log(this_x[j]);
                     double r = this_x[j];
@@ -691,7 +710,7 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
                     r /= cm[j];
                     r -= b; // transformed_x -b = 0
                     while(std::abs(r) > Maths::num_tol){
-                        this_x[j] -= r * cm[j] / dr;
+                        this_x[j] -= (FloatType) (r * cm[j] / dr);
 
                         logx = std::log(std::abs(this_x[j]));
                         r = this_x[j];
@@ -703,12 +722,15 @@ void TasmanianSparseGrid::mapConformalTransformedToCanonical(int num_dimensions,
                         r /= cm[j];
                         r -= b;
                    }
-                    this_x[j] *= sign;
+                    this_x[j] *= (FloatType) sign;
                 }
             }
         }
     }
 }
+template void TasmanianSparseGrid::mapConformalTransformedToCanonical<float>(int num_dimensions, int num_points, Data2D<float> &x) const;
+template void TasmanianSparseGrid::mapConformalTransformedToCanonical<double>(int num_dimensions, int num_points, Data2D<double> &x) const;
+
 void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points, double weights[]) const{
     if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
@@ -749,7 +771,7 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
     }
 }
 
-const double* TasmanianSparseGrid::formCanonicalPoints(const double *x, Data2D<double> &x_temp, int num_x) const{
+template<typename FloatType> const FloatType* TasmanianSparseGrid::formCanonicalPoints(const FloatType *x, Data2D<FloatType> &x_temp, int num_x) const{
     if ((domain_transform_a.size() != 0) || (conformal_asin_power.size() != 0)){
         int num_dimensions = base->getNumDimensions();
         x_temp.resize(num_dimensions, num_x); std::copy(x, x + ((size_t) num_dimensions) * ((size_t) num_x), x_temp.getStrip(0));
@@ -760,6 +782,9 @@ const double* TasmanianSparseGrid::formCanonicalPoints(const double *x, Data2D<d
         return x;
     }
 }
+template const float* TasmanianSparseGrid::formCanonicalPoints(const float *x, Data2D<float> &x_temp, int num_x) const;
+template const double* TasmanianSparseGrid::formCanonicalPoints<double>(const double *x, Data2D<double> &x_temp, int num_x) const;
+
 void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) const{
     mapConformalCanonicalToTransformed(base->getNumDimensions(), num_points, x); // internally switch based on the conformal transform
     if (domain_transform_a.size() != 0){ // check the basic domain
@@ -1036,7 +1061,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T gpu_x[]
 }
 #else
 template<typename T>
-void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(T const gpu_x[], int cpu_num_x, T gpu_y[]) const{
+void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(T const[], int, T[]) const{
     throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
 }
 template<typename T>
@@ -1524,9 +1549,6 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
 }
 void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
     if (isLocalPolynomial()) get<GridLocalPolynomial>()->setFavorSparse(favor);
-}
-TypeAcceleration TasmanianSparseGrid::getAccelerationType() const{
-    return acceleration;
 }
 bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
     switch (acc){

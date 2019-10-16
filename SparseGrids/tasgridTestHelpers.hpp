@@ -93,6 +93,38 @@ bool testPass(double err, double tol, std::string message, TasmanianSparseGrid c
     }
 }
 
+std::vector<double> const& getVector(std::vector<double> const &x, std::vector<double>&, size_t){ return x; }
+std::vector<float> const& getVector(std::vector<double> const &x, std::vector<float> &t, size_t num){
+    t = std::vector<float>(num);
+    std::transform(x.begin(), x.begin() + num, t.begin(), [](double const&v)->float{ return static_cast<float>(v); });
+    return t;
+}
+
+struct GridMethodBatch{};
+struct GridMethodFast{};
+template<typename T, typename EvalMethod>
+bool testAccEval(std::vector<double> const &x, std::vector<double> const &y, int numx, double tolerance, TasmanianSparseGrid const &grid, std::string message){
+    std::vector<T> test_y, temp_x;
+    std::vector<T> const &test_x = getVector(x, temp_x, Utils::size_mult(grid.getNumDimensions(), numx));
+
+    if (std::is_same<EvalMethod, GridMethodBatch>::value){
+        grid.evaluateBatch(test_x, test_y);
+    }else if (std::is_same<EvalMethod, GridMethodFast>::value){
+        test_y = std::vector<T>(Utils::size_mult(numx, grid.getNumOutputs()));
+        Utils::Wrapper2D<T const> wx(grid.getNumDimensions(), test_x.data());
+        Utils::Wrapper2D<T> wy(grid.getNumOutputs(), test_y.data());
+        for(int i=0; i<numx; i++)
+            grid.evaluateFast(wx.getStrip(i), wy.getStrip(i));
+    }
+    return testPass(err1(Utils::size_mult(numx, grid.getNumOutputs()), test_y, y), tolerance, message, grid);
+}
+
+bool canUseCudaKernels(TasmanianSparseGrid const &grid){
+    if (!(grid.getAccelerationType() == accel_gpu_cuda || grid.getAccelerationType() == accel_gpu_magma)) return false;
+    if (grid.isLocalPolynomial() && (grid.getOrder() > 2 || grid.getOrder() == -1)) return false;
+    if (grid.isWavelet() && grid.getOrder() == 3) return false;
+    return true;
+}
 
 #ifdef Tasmanian_ENABLE_CUDA
 struct GridMethodHierBasisGPU{};

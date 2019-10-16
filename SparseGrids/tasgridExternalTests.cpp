@@ -1796,7 +1796,6 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     }
 
     int num_x = 256; // for batched evaluations
-    int num_fast = 16; // for fast evaluations, must be <= num_x
     std::vector<double> x = genRandom(num_x, dims);
 
     std::vector<double> test_y, baseline_y(outs * num_x);
@@ -1812,25 +1811,13 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         //grid->printStats();
         //cout << "Testing Batch evaluations" << endl;
 
-        test_y.resize(1); // makes sure that evaluate sets the right dimension
-
-        //grid->favorSparseAcceleration(false); // switch between explicit test for the dense and sparse algorithms
-        grid.evaluateBatch(x, test_y);
-
-        double err = 0.0;
-        for(int i=0; i<outs*num_x; i++) if (std::abs(test_y[i] - baseline_y[i]) > err) err = std::abs(test_y[i] - baseline_y[i]);
-
-        if (err > 1.E-11){
-            int tm = 0; err = 0.0;
-            for(int i=0; i<outs*num_x; i++){ if (std::abs(test_y[i] - baseline_y[i]) > err){ err = std::abs(test_y[i] - baseline_y[i]); tm = i; }}
-            cout << tm << "  " << test_y[tm] << "    " << baseline_y[tm] << endl;
-
+        if (!testAccEval<double, GridMethodBatch>(x, baseline_y, num_x, Maths::num_tol, grid, "accelerated batch<double>"))
             pass = false;
-            cout << "Failed Batch evaluation for acceleration c = " << c << " gpuID = " << testGpuID << endl;
-            cout << "Observed error: " << err << " for function: " << f->getDescription() << endl;
-            grid.printStats();
-            exit(1);
-        }
+
+        // skips grids that don't have CUDA kernels
+        if (canUseCudaKernels(grid))
+            if (!testAccEval<float, GridMethodBatch>(x, baseline_y, num_x, 5.E-5, grid, "accelerated batch<float>"))
+                pass = false;
 
         #ifdef Tasmanian_ENABLE_CUDA
         if ((grid.getAccelerationType() == accel_gpu_cuda) && !(grid.isWavelet() && grid.getOrder() == 3)){
@@ -1842,20 +1829,16 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
         #endif
 
-        //cout << "Testing Fast evaluations" << endl;
-        grid.evaluateFast(x, test_y);
-        for(int i= 1; i<num_fast; i++){
-            grid.evaluateFast(&(x[i*dims]), &(test_y[i*outs]));
-        }
-
-        err = 0.0;
-        for(int i=0; i<outs*num_fast; i++) if (std::abs(test_y[i] - baseline_y[i]) > err) err = std::abs(test_y[i] - baseline_y[i]);
-
-        if (err > 1.E-11){
+        if (!testAccEval<double, GridMethodFast>(x, baseline_y, 16, Maths::num_tol, grid, "accelerated fast<double>"))
             pass = false;
-            cout << "Failed Fast evaluation for acceleration c = " << c << " gpuID = " << testGpuID << endl;
-            cout << "Observed error: " << err << " for function: " << f->getDescription() << endl;
-            grid.printStats();
+
+        if (canUseCudaKernels(grid))
+            if (!testAccEval<float, GridMethodFast>(x, baseline_y, 16, 5.E-5, grid, "accelerated fast<float>"))
+                pass = false;
+
+        if (!pass){
+            cout << "Failed Batch/Fast evaluation for acceleration c = " << c << " gpuID = " << testGpuID << endl;
+            cout << " -- for function: " << f->getDescription() << endl;
         }
 
         if (c > 1){ // gpu test
@@ -1873,7 +1856,6 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
     }
 
-    //cout << "End of acceleration test." << endl;
     return pass;
 }
 
