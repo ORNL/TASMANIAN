@@ -116,10 +116,6 @@ public:
 
     static const char* findGaussPattersonTable();
 
-protected:
-
-    void setRandomX(int n, double x[]) const;
-
 private:
     int num_mc;
     bool verbose;

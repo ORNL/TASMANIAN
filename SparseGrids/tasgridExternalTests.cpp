@@ -73,11 +73,6 @@ void ExternalTester::resetRandomSeed(){ park_miller.seed(static_cast<long unsign
 void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
 void ExternalTester::setGPUID(int gpu_id){ gpuid = gpu_id; }
 
-void ExternalTester::setRandomX(int n, double x[]) const{
-    std::uniform_real_distribution<double> unif(-1.0, 1.0);
-    for(int i=0; i<n; i++)
-        x[i] = unif(park_miller);
-}
 
 const char* ExternalTester::findGaussPattersonTable(){
     std::ifstream ftest("GaussPattersonRule.table");
@@ -184,10 +179,9 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         std::vector<double> err(num_outputs, 0.0); // absolute error
         std::vector<double> nrm(num_outputs, 0.0); // norm, needed to compute relative error
 
-        std::vector<double> test_x(num_mc * num_dimensions);
+        std::vector<double> test_x = genRandom(num_mc, num_dimensions);
         std::vector<double> result_tasm(num_mc * num_outputs);
         std::vector<double> result_true(num_mc * num_outputs);
-        setRandomX(num_dimensions * num_mc, test_x.data());
 
         #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
         for(int i=0; i<num_mc; i++){
@@ -222,8 +216,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     int num_global_tests = (interpolation) ? 3 : 1;
     TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
     TasGrid::TypeDepth type = (rule == rule_fourier ? TasGrid::type_level : TasGrid::type_iptotal);
-    std::vector<double> x(f->getNumInputs());
-    setRandomX(f->getNumInputs(), x.data());
+    std::vector<double> x = genRandom(f->getNumInputs());
     if (rule == rule_fourier){ for(int i=0; i<f->getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
     bool bPass = true;
     const char *custom_filename = (rule == rule_customtabulated) ? findGaussPattersonTable() : 0;
@@ -936,8 +929,8 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
     grid2.finishConstruction();
 
     if (grid->getNumLoaded() != grid2.getNumLoaded()){ cout << "ERROR: did not load a batch of points." << endl; return false; }
-    std::vector<double> xpnts(grid->getNumDimensions() * 10), res1, res2;
-    setRandomX((int) xpnts.size(), xpnts.data());
+    std::vector<double> res1, res2;
+    std::vector<double> xpnts = genRandom(10, grid->getNumDimensions());
     grid->evaluateBatch(xpnts, res1);
     grid2.evaluateBatch(xpnts, res2);
     double err = std::inner_product(res1.begin(), res1.end(), res2.begin(), 0.0,
@@ -986,7 +979,7 @@ bool ExternalTester::testAllPWLocal() const{
     { TasGrid::TasmanianSparseGrid grid; grid.makeLocalPolynomialGrid(2, 1, 4, 1);
         std::vector<int> indx, pntr;
         std::vector<double> vals;
-        std::vector<double> pnts(20); setRandomX((int) pnts.size(), pnts.data());
+        std::vector<double> pnts = genRandom(10, 2);
         grid.evaluateSparseHierarchicalFunctions(pnts, pntr, indx, vals);
         getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
         const double *coeff = grid.getHierarchicalCoefficients();
@@ -1054,7 +1047,8 @@ bool ExternalTester::testAllWavelet() const{
     }{ TasGrid::TasmanianSparseGrid grid;
         grid.makeWaveletGrid(2, 1, 2, 1);
         std::vector<int> indx, pntr;
-        std::vector<double> vals, pnts(20); setRandomX((int) pnts.size(), pnts.data());
+        std::vector<double> vals;
+        std::vector<double> pnts = genRandom(10, 2);
         grid.evaluateSparseHierarchicalFunctions(pnts, pntr, indx, vals);
         getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
         const double *coeff = grid.getHierarchicalCoefficients();
@@ -1896,8 +1890,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     for(int t=0; t<5; t++){
     int numx = 2020;
 
-    std::vector<double> cpux(numx * dims);
-    setRandomX(numx * dims, cpux.data());
+    std::vector<double> cpux = genRandom(numx, dims);
 
     auto reset_grid = [&]()->void{
         switch(t){
