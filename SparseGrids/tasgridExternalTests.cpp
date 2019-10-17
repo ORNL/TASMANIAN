@@ -48,7 +48,7 @@ std::vector<double> genRandom(int num_samples, std::vector<double> const &lower,
     }
     return x;
 }
-std::vector<double> genRandom(int num_samples, int num_dimensions){
+std::vector<double> genRandom(int num_samples, int num_dimensions = 1){
     std::vector<double> x(Utils::size_mult(num_samples, num_dimensions));
     std::uniform_real_distribution<double> unif(-1.0, 1.0);
     for(auto &v : x) v = unif(park_miller);
@@ -150,14 +150,14 @@ bool ExternalTester::Test(TestList test) const{
     return pass;
 }
 
-TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid *grid, TestType type, const double *x) const{
+TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid *grid, TestType type, std::vector<double> const &x) const{
     TestResults R;
     int num_dimensions = f->getNumInputs();
     int num_outputs = f->getNumOutputs();
     int num_points = grid->getNumPoints();
     if ((type == type_integration) || (type == type_nodal_interpolation)){
         auto points = grid->getPoints();
-        auto weights = (type == type_integration) ? grid->getQuadratureWeights() : grid->getInterpolationWeights(Utils::copyArray(x, f->getNumInputs()));
+        auto weights = (type == type_integration) ? grid->getQuadratureWeights() : grid->getInterpolationWeights(x);
 
         std::vector<double> y(num_outputs);
         std::vector<double> r(num_outputs, 0.0);
@@ -171,7 +171,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         if (type == type_integration){
             f->getIntegral(y.data());
         }else{
-            f->eval(x, y.data());
+            f->eval(x.data(), y.data());
         }
         for(int j=0; j<num_outputs; j++){
             err += std::abs(y[j] - r[j]);
@@ -242,7 +242,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
                 grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             }
         }
-        R = getError(f, &grid, ((interpolation) ? tests[i] : type_integration), x.data());
+        R = getError(f, &grid, ((interpolation) ? tests[i] : type_integration), x);
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << IO::getRuleString(rule);
@@ -266,7 +266,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         for(int i=0; i<num_global_tests; i++){
             grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             grid_copy = grid;
-            R = getError(f, &grid_copy, ((interpolation) ? tests[i] : type_integration), x.data());
+            R = getError(f, &grid_copy, ((interpolation) ? tests[i] : type_integration), x);
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << IO::getRuleString(rule);
@@ -292,7 +292,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             if (interpolation){
                 grid = makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule,
                                         (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f->getNumInputs()) : std::vector<int>());
-                R = getError(f, &grid, tests[i], x.data());
+                R = getError(f, &grid, tests[i], x);
             }else{
                 grid.makeSequenceGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic);
                 R = getError(f, &grid, type_integration);
@@ -771,7 +771,7 @@ bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::Typ
     TestResults R;
     TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
     int orders[6] = { 0, 1, 2, 3, 4, -1 };
-    double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
+    std::vector<double> x = genRandom(f->getNumInputs());
     bool bPass = true;
     for(int i=0; i<18; i++){
         grid = makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3], rule);
@@ -794,7 +794,6 @@ bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::Typ
             cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
         }
     }
-    delete[] x;
     return bPass;
 }
 
@@ -1018,7 +1017,7 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
     TestResults R;
     TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
     int orders[2] = { 1, 3 };
-    double *x = new double[f->getNumInputs()]; setRandomX(f->getNumInputs(),x);
+    std::vector<double> x = genRandom(f->getNumInputs());
     bool bPass = true;
     for(int i=0; i<6; i++){
         auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3]);
@@ -1041,7 +1040,6 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
             cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
         }
     }
-    delete[] x;
     return bPass;
 }
 bool ExternalTester::testAllWavelet() const{
@@ -1109,16 +1107,14 @@ bool ExternalTester::testAllFourier() const{
     }{ TasGrid::TasmanianSparseGrid grid;
         grid.makeFourierGrid(2, 1, 4, TasGrid::type_level);
         int num_eval = 10;
-        double *pnts = new double[2*num_eval]; setRandomX(2*num_eval, pnts);
-        for(int i=0; i<2*num_eval; i++) pnts[i] = 0.5*(pnts[i]+1.0);    // map to [0,1]^d canonical Fourier domain
+        std::vector<double> pnts = genRandom(num_eval, std::vector<double>(2, 0.0), std::vector<double>(2, 1.0)); // generate 2D point in [0, 1]
 
         int num_points = grid.getNumPoints();
-        double *y = new double[num_eval];
-        double *v = new double[2 * num_eval * num_points];
+        std::vector<double> y, v;
         getError(&f21expsincos, &grid, type_internal_interpolation);
         const double *coeff = grid.getHierarchicalCoefficients();    // coeff = [fourier_coeff_1.real(), fourier_coeff_1.imag(), fourier_coeff_2.real(), ...]
-        grid.evaluateHierarchicalFunctions(pnts, num_eval, v);
-        grid.evaluateBatch(pnts, num_eval, y);
+        grid.evaluateHierarchicalFunctions(pnts, v);
+        grid.evaluateBatch(pnts, y);
         for(int i=0; i<num_eval; i++){
             for(int j=0; j<grid.getNumPoints(); j++){
                 y[i] -= (coeff[j] * v[2*(i*num_points+j)] - coeff[j+num_points] * v[2*(i*num_points+j)+1]);
@@ -1149,10 +1145,6 @@ bool ExternalTester::testAllFourier() const{
             cout << "Error in num points for updateFourierGrid()" << endl;
             pass = false;
         }
-
-        delete[] pnts;
-        delete[] y;
-        delete[] v;
     }
     return pass;
 }
@@ -1578,7 +1570,7 @@ bool ExternalTester::testAllDomain() const{
                 cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
-            double test_x[2] = {3.314, -1.71732};
+            std::vector<double> test_x = {3.314, -1.71732};
             R = getError(f, &grid, type_nodal_interpolation, test_x);
             if (R.error > errs2[i]){
                 cout << "Using leja rule" << endl;

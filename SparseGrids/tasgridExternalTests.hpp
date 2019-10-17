@@ -99,7 +99,7 @@ public:
     bool testGPU2GPUevaluations() const;
     bool testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const;
 
-    TestResults getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid *grid, TestType type, const double *x = 0) const;
+    TestResults getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid *grid, TestType type, std::vector<double> const &x = std::vector<double>()) const;
 
     bool testAllGlobal() const;
     bool testAllPWLocal() const;
