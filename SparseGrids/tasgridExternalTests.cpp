@@ -56,16 +56,13 @@ std::vector<double> genRandom(int num_samples, int num_dimensions){
 }
 
 void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
-    int num_dimensions = grid.getNumDimensions();
-    int num_outputs    = grid.getNumOutputs();
     int num_needed     = grid.getNumNeeded();
     if (num_needed > 0){
-        std::vector<double> points;
-        grid.getNeededPoints(points);
-        std::vector<double> values(num_outputs * num_needed);
+        Data2D<double> points(grid.getNumDimensions(), num_needed, grid.getNeededPoints());
+        Data2D<double> values(grid.getNumOutputs(), num_needed);
         for(int i=0; i<num_needed; i++)
-            f->eval(&points[i*num_dimensions], &values[i*num_outputs]);
-        grid.loadNeededPoints(values);
+            f->eval(points.getStrip(i), values.getStrip(i));
+        grid.loadNeededPoints(values.getVector());
     }
 }
 
@@ -182,17 +179,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         R.error = err;
     }else if (type == type_internal_interpolation){
         // load needed points
-        int num_needed_points = grid->getNumNeeded();
-        if (num_needed_points > 0){
-            std::vector<double> values(num_outputs * num_needed_points), needed_points;
-            grid->getNeededPoints(needed_points);
-
-            for(int i=0; i<num_needed_points; i++){
-                f->eval(&(needed_points[i*num_dimensions]), &(values[i*num_outputs]));
-            }
-
-            grid->loadNeededPoints(values);
-        }
+        loadValues(f, *grid);
 
         std::vector<double> err(num_outputs, 0.0); // absolute error
         std::vector<double> nrm(num_outputs, 0.0); // norm, needed to compute relative error
@@ -1786,14 +1773,7 @@ bool ExternalTester::testAllDomain() const{
 bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid &grid) const{
     int dims = f->getNumInputs();
     int outs = f->getNumOutputs();
-    if (grid.getNumNeeded() > 0){
-        std::vector<double> points = grid.getNeededPoints();
-        std::vector<double> vals(Utils::size_mult(grid.getNumOutputs(), grid.getNumNeeded()));
-
-        for(int i=0; i<grid.getNumNeeded(); i++)
-            f->eval(&(points[i*dims]), &(vals[i*outs]));
-        grid.loadNeededPoints(vals);
-    }
+    loadValues(f, grid);
 
     int num_x = 256; // for batched evaluations
     std::vector<double> x = genRandom(num_x, dims);
