@@ -145,14 +145,14 @@ bool ExternalTester::Test(TestList test) const{
     return pass;
 }
 
-TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid *grid, TestType type, std::vector<double> const &x) const{
+TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid &grid, TestType type, std::vector<double> const &x) const{
     TestResults R;
     int num_dimensions = f->getNumInputs();
     int num_outputs = f->getNumOutputs();
-    int num_points = grid->getNumPoints();
+    int num_points = grid.getNumPoints();
     if ((type == type_integration) || (type == type_nodal_interpolation)){
-        auto points = grid->getPoints();
-        auto weights = (type == type_integration) ? grid->getQuadratureWeights() : grid->getInterpolationWeights(x);
+        auto points = grid.getPoints();
+        auto weights = (type == type_integration) ? grid.getQuadratureWeights() : grid.getInterpolationWeights(x);
 
         std::vector<double> y(num_outputs);
         std::vector<double> r(num_outputs, 0.0);
@@ -174,7 +174,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         R.error = err;
     }else if (type == type_internal_interpolation){
         // load needed points
-        loadValues(f, *grid);
+        loadValues(f, grid);
 
         std::vector<double> err(num_outputs, 0.0); // absolute error
         std::vector<double> nrm(num_outputs, 0.0); // norm, needed to compute relative error
@@ -185,7 +185,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
         #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
         for(int i=0; i<num_mc; i++){
-            grid->evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_outputs]));
+            grid.evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_outputs]));
             f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_outputs]));
         }
 
@@ -206,7 +206,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
         R.error = rel_err;
     }
-    R.num_points = grid->getNumPoints();
+    R.num_points = grid.getNumPoints();
     return R;
 }
 
@@ -235,7 +235,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
                 grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             }
         }
-        R = getError(f, &grid, ((interpolation) ? tests[i] : type_integration), x);
+        R = getError(f, grid, ((interpolation) ? tests[i] : type_integration), x);
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << IO::getRuleString(rule);
@@ -259,7 +259,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         for(int i=0; i<num_global_tests; i++){
             grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             grid_copy = grid;
-            R = getError(f, &grid_copy, ((interpolation) ? tests[i] : type_integration), x);
+            R = getError(f, grid_copy, ((interpolation) ? tests[i] : type_integration), x);
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << IO::getRuleString(rule);
@@ -285,10 +285,10 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             if (interpolation){
                 grid = makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule,
                                         (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f->getNumInputs()) : std::vector<int>());
-                R = getError(f, &grid, tests[i], x);
+                R = getError(f, grid, tests[i], x);
             }else{
                 grid.makeSequenceGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic);
-                R = getError(f, &grid, type_integration);
+                R = getError(f, grid, type_integration);
             }
             if (R.error > tols[i]){
                 bPass = false;
@@ -768,7 +768,7 @@ bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::Typ
     bool bPass = true;
     for(int i=0; i<18; i++){
         grid = makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3], rule);
-        R = getError(f, &grid, tests[i%3], x);
+        R = getError(f, grid, tests[i%3], x);
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED ";
@@ -790,7 +790,7 @@ bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::Typ
     return bPass;
 }
 
-bool ExternalTester::testSurplusRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const{
+bool ExternalTester::testSurplusRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const{
     for(int itr=0; itr<max_iter; itr++){
         TestResults R = getError(f, grid, type_internal_interpolation);
         if ( (R.num_points != np[itr]) || (R.error > errs[itr]) ){
@@ -798,24 +798,24 @@ bool ExternalTester::testSurplusRefinement(const BaseFunction *f, TasmanianSpars
             cout << " expected: " << np[itr] << "  " << errs[itr] << "   computed: " << R.num_points << "  " << R.error << endl;
             return false;
         }
-        if (grid->isGlobal()){
-            grid->setSurplusRefinement(tol, 0);
-        }else if (grid->isSequence()){
-            grid->setSurplusRefinement(tol, -1);
-            TasmanianSparseGrid grid_copy(*grid); // test the copy-constructor
-            grid->makeGlobalGrid(1, 1, 1, type_level, rule_rleja);
-            grid->copyGrid(&grid_copy);
+        if (grid.isGlobal()){
+            grid.setSurplusRefinement(tol, 0);
+        }else if (grid.isSequence()){
+            grid.setSurplusRefinement(tol, -1);
+            TasmanianSparseGrid grid_copy(grid); // test the copy-constructor
+            grid.makeGlobalGrid(1, 1, 1, type_level, rule_rleja);
+            grid.copyGrid(&grid_copy);
         }else{
             if (itr == 1){ // tests the array and vector overloads
-                grid->setSurplusRefinement(tol, rtype, -1, std::vector<int>());
+                grid.setSurplusRefinement(tol, rtype, -1, std::vector<int>());
             }else{
-                grid->setSurplusRefinement(tol, rtype);
+                grid.setSurplusRefinement(tol, rtype);
             }
         }
     }
     return true;
 }
-bool ExternalTester::testAnisotropicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const{
+bool ExternalTester::testAnisotropicRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const{
     for(int itr=0; itr<max_iter; itr++){
         TestResults R = getError(f, grid, type_internal_interpolation);
         if ( (R.num_points != np[itr]) || (R.error > errs[itr]) ){
@@ -823,41 +823,37 @@ bool ExternalTester::testAnisotropicRefinement(const BaseFunction *f, TasmanianS
             cout << " expected: " << np[itr] << "  " << errs[itr] << "   computed: " << R.num_points << "  " << R.error << endl;
             return false;
         }
-        if (grid->isGlobal()){
-            grid->setAnisotropicRefinement(type, min_growth, 0);
-        }else{
-            grid->setAnisotropicRefinement(type, min_growth, -1);
-        }
+        grid.setAnisotropicRefinement(type, min_growth, (grid.isGlobal()) ? 0 : -1);
     }
     return true;
 }
 
-bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid *grid, TypeDepth type, double tolerance, TypeRefinement reftype, const std::vector<int> &np, const std::vector<double> &errs) const{
-    if (grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction initialized for no reason." << endl; return false; }
-    grid->beginConstruction();
-    if (!grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to initialize." << endl; return false; }
-    size_t dims = (size_t) grid->getNumDimensions();
-    size_t outs = (size_t) grid->getNumOutputs();
-    for(size_t itr = 0; grid->getNumLoaded() < np.back(); itr++){
+bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, TypeDepth type, double tolerance, TypeRefinement reftype, const std::vector<int> &np, const std::vector<double> &errs) const{
+    if (grid.isUsingConstruction()){ cout << "ERROR: Dynamic construction initialized for no reason." << endl; return false; }
+    grid.beginConstruction();
+    if (!grid.isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to initialize." << endl; return false; }
+    size_t dims = (size_t) grid.getNumDimensions();
+    size_t outs = (size_t) grid.getNumOutputs();
+    for(size_t itr = 0; grid.getNumLoaded() < np.back(); itr++){
         std::vector<double> points;
-        if (grid->isGlobal() || grid->isSequence() || grid->isFourier()){
+        if (grid.isGlobal() || grid.isSequence() || grid.isFourier()){
             if (itr == 1){
-                auto weights = grid->estimateAnisotropicCoefficients(type, 0);
-                points = grid->getCandidateConstructionPoints(type, weights);
+                auto weights = grid.estimateAnisotropicCoefficients(type, 0);
+                points = grid.getCandidateConstructionPoints(type, weights);
             }else{
-                points = grid->getCandidateConstructionPoints(type, 0);
+                points = grid.getCandidateConstructionPoints(type, 0);
             }
         }else{
-            points = grid->getCandidateConstructionPoints(tolerance, reftype);
+            points = grid.getCandidateConstructionPoints(tolerance, reftype);
         }
         size_t num_points = points.size() / dims;
-        size_t max_points = (grid->isLocalPolynomial() || grid->isFourier()) ? 123 : 32;
+        size_t max_points = (grid.isLocalPolynomial() || grid.isFourier()) ? 123 : 32;
 
         // do not compute all points from a batch, i.e., we don't want the less important points
         // compute only half the batch, but no more than max_points
         // local grids require more points, hence large max_points to reduce the total iterations
         // local grids do not include completely unimportant points, hence we can compute all points for small batches
-        num_points = ((!grid->isLocalPolynomial()) || (num_points > 10)) ? num_points / 2 : num_points;
+        num_points = ((!grid.isLocalPolynomial()) || (num_points > 10)) ? num_points / 2 : num_points;
         num_points = std::min(num_points, max_points);
 
         std::vector<size_t> pindex(num_points);
@@ -869,18 +865,18 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
             std::vector<double> y(outs);
             f->eval(x.data(), y.data());
             if (i % 3 == 0){ // every third point uses the array interface for testing purpose
-                grid->loadConstructedPoints(x.data(), 1, y.data());
+                grid.loadConstructedPoints(x.data(), 1, y.data());
             }else{
-                grid->loadConstructedPoints(x, y);
+                grid.loadConstructedPoints(x, y);
             }
         }
 
         // make sure that getError() does not load values but only does evaluations
-        if (grid->getNumNeeded() != 0){
+        if (grid.getNumNeeded() != 0){
             cout << "ERROR: dynamic construction did not clear the needed points at iteration: " << itr << endl;
             return false;
         }
-        if (grid->getNumLoaded() == 0){
+        if (grid.getNumLoaded() == 0){
             cout << "ERROR: dynamic construction failed to load any tensors at iteration: " << itr << endl;
             return false;
         }
@@ -898,40 +894,40 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
         }
 
         if (itr % 3 == 2){
-            grid->finishConstruction();
-            grid->beginConstruction();
+            grid.finishConstruction();
+            grid.beginConstruction();
         }
     }
-    grid->finishConstruction();
-    if (grid->isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to finalize." << endl; return false; }
+    grid.finishConstruction();
+    if (grid.isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to finalize." << endl; return false; }
 
     TasmanianSparseGrid grid2;
-    if (grid->isGlobal()){
+    if (grid.isGlobal()){
         // the goal here is to create a new grid by using only the points and values from the old grid
         // since we don't have the tensor data here, we create a global grid that is much larger (superset) of the current one
         // then the points will be loaded with a single command and only the loaded points will be used
-        grid2 = makeGlobalGrid(grid->getNumDimensions(), grid->getNumOutputs(),
-                               (grid->getRule() == rule_rlejadouble4) ? 30 : 9,
-                               type_level, grid->getRule());
-    }else if (grid->isSequence()){
-        grid2 = makeSequenceGrid(grid->getNumDimensions(), grid->getNumOutputs(), 0, type_level, grid->getRule());
-    }else if (grid->isLocalPolynomial()){
-        grid2 = makeLocalPolynomialGrid(grid->getNumDimensions(), grid->getNumOutputs(), 0, grid->getOrder(), grid->getRule());
+        grid2 = makeGlobalGrid(grid.getNumDimensions(), grid.getNumOutputs(),
+                               (grid.getRule() == rule_rlejadouble4) ? 30 : 9,
+                               type_level, grid.getRule());
+    }else if (grid.isSequence()){
+        grid2 = makeSequenceGrid(grid.getNumDimensions(), grid.getNumOutputs(), 0, type_level, grid.getRule());
+    }else if (grid.isLocalPolynomial()){
+        grid2 = makeLocalPolynomialGrid(grid.getNumDimensions(), grid.getNumOutputs(), 0, grid.getOrder(), grid.getRule());
     }else{
         return true;
     }
 
     grid2.beginConstruction();
-    auto pnts = grid->getPoints();
+    auto pnts = grid.getPoints();
     std::vector<double> vals;
-    grid->evaluateBatch(pnts, vals);
+    grid.evaluateBatch(pnts, vals);
     grid2.loadConstructedPoints(pnts, vals);
     grid2.finishConstruction();
 
-    if (grid->getNumLoaded() != grid2.getNumLoaded()){ cout << "ERROR: did not load a batch of points." << endl; return false; }
+    if (grid.getNumLoaded() != grid2.getNumLoaded()){ cout << "ERROR: did not load a batch of points." << endl; return false; }
     std::vector<double> res1, res2;
-    std::vector<double> xpnts = genRandom(10, grid->getNumDimensions());
-    grid->evaluateBatch(xpnts, res1);
+    std::vector<double> xpnts = genRandom(10, grid.getNumDimensions());
+    grid.evaluateBatch(xpnts, res1);
     grid2.evaluateBatch(xpnts, res2);
     double err = std::inner_product(res1.begin(), res1.end(), res2.begin(), 0.0,
                                    [](double a, double b)->double{ return std::max(a, b); },
@@ -976,12 +972,12 @@ bool ExternalTester::testAllPWLocal() const{
     }else{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
     }}
-    { TasGrid::TasmanianSparseGrid grid; grid.makeLocalPolynomialGrid(2, 1, 4, 1);
+    { TasGrid::TasmanianSparseGrid grid = makeLocalPolynomialGrid(2, 1, 4, 1);
         std::vector<int> indx, pntr;
         std::vector<double> vals;
         std::vector<double> pnts = genRandom(10, 2);
         grid.evaluateSparseHierarchicalFunctions(pnts, pntr, indx, vals);
-        getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
+        getError(&f21nx2, grid, type_internal_interpolation); // this is done to load the values
         const double *coeff = grid.getHierarchicalCoefficients();
         std::vector<double> y(10);
         grid.evaluateBatch(pnts.data(), 10, y.data());
@@ -1014,7 +1010,7 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
     bool bPass = true;
     for(int i=0; i<6; i++){
         auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3]);
-        R = getError(f, &grid, tests[i%3], x);
+        R = getError(f, grid, tests[i%3], x);
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED";
@@ -1050,7 +1046,7 @@ bool ExternalTester::testAllWavelet() const{
         std::vector<double> vals;
         std::vector<double> pnts = genRandom(10, 2);
         grid.evaluateSparseHierarchicalFunctions(pnts, pntr, indx, vals);
-        getError(&f21nx2, &grid, type_internal_interpolation); // this is done to load the values
+        getError(&f21nx2, grid, type_internal_interpolation); // this is done to load the values
         const double *coeff = grid.getHierarchicalCoefficients();
         std::vector<double> y(10);
         grid.evaluateBatch(pnts.data(), 10, y.data());
@@ -1067,7 +1063,7 @@ bool ExternalTester::testAllWavelet() const{
             }
         }
         std::vector<double> v(10 * grid.getNumPoints());
-        getError(&f21nx2, &grid, type_internal_interpolation);
+        getError(&f21nx2, grid, type_internal_interpolation);
         grid.evaluateHierarchicalFunctions(pnts, v);
         coeff = grid.getHierarchicalCoefficients();
         grid.evaluateBatch(pnts.data(), 10, y.data());
@@ -1105,7 +1101,7 @@ bool ExternalTester::testAllFourier() const{
 
         int num_points = grid.getNumPoints();
         std::vector<double> y, v;
-        getError(&f21expsincos, &grid, type_internal_interpolation);
+        getError(&f21expsincos, grid, type_internal_interpolation);
         const double *coeff = grid.getHierarchicalCoefficients();    // coeff = [fourier_coeff_1.real(), fourier_coeff_1.imag(), fourier_coeff_2.real(), ...]
         grid.evaluateHierarchicalFunctions(pnts, v);
         grid.evaluateBatch(pnts, y);
@@ -1151,7 +1147,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
         int np[13] = { 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 118, 130 };
         double err[13] = { 2, 2.E-1, 5.E-1, 2.E-2, 4.E-2, 2.E-3, 4.E-3, 2.E-4, 2.E-4, 2.E-5, 2.E-5, 8.E-7, 8.E-7 };
-        if (!testSurplusRefinement(f, &grid, 1.E-6, refine_classic, np, err, 13)){
+        if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 13)){
             cout << "ERROR: failed leja surplus refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1159,7 +1155,7 @@ bool ExternalTester::testAllRefinement() const{
         int np[9] = {    21,    24,    30,    39,    49,    60,    72,    79,    85 };
         double err[9] = { 2.E-1, 7.E-3, 2.E-2, 3.E-4, 6.E-4, 4.E-6, 9.E-6, 5.E-7, 5.E-7 };
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 5, type_iptotal, rule_rleja);
-        if (!testSurplusRefinement(f, &grid, 1.E-6, refine_classic, np, err, 9)){
+        if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 9)){
             cout << "ERROR: failed rleja global surplus refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1167,7 +1163,7 @@ bool ExternalTester::testAllRefinement() const{
         int np[9] = {    21,    24,    30,    39,    49,    60,    72,    79,    85 };
         double err[9] = { 2.E-1, 7.E-3, 2.E-2, 3.E-4, 6.E-4, 4.E-6, 9.E-6, 5.E-7, 5.E-7 };
         grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 5, type_iptotal, rule_rleja);
-        if (!testSurplusRefinement(f, &grid, 1.E-6, refine_classic, np, err, 9)){
+        if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 9)){
             cout << "ERROR: failed rleja sequence surplus refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1175,7 +1171,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_semilocalp);
         int np[8] = { 29, 65, 145, 321, 705, 1521, 2753, 3569 };
         double err[8] = { 4.E-2, 1.E-2, 1.E-3, 2.E-4, 4.E-5, 5.E-6, 1.E-6, 5.E-7 };
-        if (!testSurplusRefinement(f, &grid, 1.E-6, refine_classic, np, err, 8)){
+        if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 8)){
             cout << "ERROR: failed semi-local classic refinement for " << f->getDescription() << endl;  pass = false;
         }
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_semilocalp);
@@ -1184,7 +1180,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_semilocalp);
         int np[8] = { 29, 65, 145, 321, 705, 1521, 2753, 3569 };
         double err[8] = { 4.E-2, 1.E-2, 1.E-3, 2.E-4, 4.E-5, 5.E-6, 1.E-6, 5.E-7 };
-        if (!testSurplusRefinement(f, &grid, 1.E-6, refine_parents_first, np, err, 8)){
+        if (!testSurplusRefinement(f, grid, 1.E-6, refine_parents_first, np, err, 8)){
             cout << "ERROR: failed semi-local parents refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1192,7 +1188,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 2, rule_semilocalp);
         int np[6] = { 13, 29, 65, 145, 321, 545 };
         double err[6] = { 8.E-02, 5.E-02, 7.E-03, 2.E-03, 3.E-04, 6.E-05 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_direction_selective, np, err, 6)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_direction_selective, np, err, 6)){
             cout << "ERROR: failed semi-local direction refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1200,7 +1196,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 2, rule_semilocalp);
         int np[6] = { 13, 29, 65, 145, 321, 545 };
         double err[6] = { 8.E-02, 5.E-02, 7.E-03, 2.E-03, 3.E-04, 6.E-05 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_fds, np, err, 6)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 6)){
             cout << "ERROR: failed semi-local fds refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1208,7 +1204,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localp);
         int np[10] = { 29, 65, 145, 321, 705, 1537, 3321, 6981, 13517, 19113 };
         double err[10] = { 4.E-2, 2.E-2, 6.E-3, 2.E-3, 6.E-4, 2.E-4, 6.E-5, 2.E-5, 6.E-6, 2.E-6 };
-        if (!testSurplusRefinement(f, &grid, 1.E-6, refine_classic, np, err, 10)){
+        if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 10)){
             cout << "ERROR: failed localp classic refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1216,7 +1212,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localp);
         int np[10] = { 29, 65, 145, 321, 705, 1537, 3321, 6981, 13517, 19113 };
         double err[10] = { 4.E-2, 2.E-2, 6.E-3, 2.E-3, 6.E-4, 2.E-4, 6.E-5, 2.E-5, 6.E-6, 2.E-6 };
-        if (!testSurplusRefinement(f, &grid, 1.E-6, refine_parents_first, np, err, 10)){
+        if (!testSurplusRefinement(f, grid, 1.E-6, refine_parents_first, np, err, 10)){
             cout << "ERROR: failed localp parents refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1224,7 +1220,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1, rule_localp);
         int np[8] = { 13, 29, 65, 145, 321, 673, 1233, 1433 };
         double err[8] = { 1.E-01, 5.E-02, 2.E-02, 5.E-03, 2.E-03, 6.E-04, 2.E-04, 1.E-04 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_direction_selective, np, err, 8)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_direction_selective, np, err, 8)){
             cout << "ERROR: failed localp direction refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1232,7 +1228,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1, rule_localp);
         int np[8] = { 13, 29, 65, 145, 321, 673, 1233, 1433 };
         double err[8] = { 1.E-01, 5.E-02, 2.E-02, 5.E-03, 2.E-03, 6.E-04, 2.E-04, 1.E-04 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_fds, np, err, 8)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 8)){
             cout << "ERROR: failed localp fds refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1240,7 +1236,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localpb);
         int np[7] = { 37, 77, 157, 317, 637, 1277, 2317 };
         double err[7] = { 3.E-01, 5.E-02, 2.E-02, 4.E-03, 7.E-04, 3.E-04, 1.E-04 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_classic, np, err, 7)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_classic, np, err, 7)){
             cout << "ERROR: failed localp-boundary fds refinement for " << f->getDescription() << endl;
         }
     }{
@@ -1248,7 +1244,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 5, 2, rule_localp);
         int np[9] =     {   145,   277,   493,   977,  1813,  2773,  4085,  6013,  8549 };
         double err[9] = { 8.E-1, 7.E-1, 6.E-1, 5.E-1, 2.E-1, 5.E-2, 3.E-2, 5.E-3, 8.E-4 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_stable, np, err, 9)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_stable, np, err, 9)){
             cout << "ERROR: failed localp stable refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1256,7 +1252,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_localp0);
         int np[6] = { 49, 129, 321, 769, 1761, 2209 };
         double err[6] = { 2.E-3, 3.E-4, 5.E-5, 7.E-6, 8.E-7, 5.E-7 };
-        if (!testSurplusRefinement(f, &grid, 1.E-6, refine_classic, np, err, 6)){
+        if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 6)){
             cout << "ERROR: failed localp-zero classic refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1264,7 +1260,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_localp0);
         int np[6] = { 49, 129, 321, 769, 1761, 2209 };
         double err[6] = { 2.E-3, 3.E-4, 5.E-5, 7.E-6, 8.E-7, 5.E-7 };
-        if (!testSurplusRefinement(f, &grid, 1.E-6, refine_parents_first, np, err, 6)){
+        if (!testSurplusRefinement(f, grid, 1.E-6, refine_parents_first, np, err, 6)){
             cout << "ERROR: failed localp-zero parents refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1272,7 +1268,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 2, rule_localp0);
         int np[4] = { 17, 49, 129, 305 };
         double err[4] = { 7.E-03, 2.E-03, 4.E-04, 4.E-05 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_direction_selective, np, err, 4)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_direction_selective, np, err, 4)){
             cout << "ERROR: failed localp-zero direction refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1280,7 +1276,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 2, rule_localp0);
         int np[4] = { 17, 49, 129, 305 };
         double err[4] = { 7.E-03, 2.E-03, 4.E-04, 4.E-05 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_fds, np, err, 4)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 4)){
             cout << "ERROR: failed localp-zero fds refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1288,7 +1284,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 0, rule_localp);
         int np[5] =     {    21,    81,   297, 1053,  3637 };
         double err[5] = { 3.E-1, 2.E-1, 6.E-2, 3E-2, 8.5E-3 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_fds, np, err, 5)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 5)){
             cout << "ERROR: failed pwc fds refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1296,7 +1292,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
         int np[7] = { 49, 81, 193, 449, 993, 1921, 1937 };
         double err[7] = { 6.E-02, 3.E-02, 6.E-03, 3.E-03, 6.E-04, 3.E-04, 2.E-04 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_classic, np, err, 7)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_classic, np, err, 7)){
             cout << "ERROR: failed wavelet classic refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1304,7 +1300,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
         int np[7] = { 49, 81, 193, 449, 993, 1921, 1937 };
         double err[7] = { 6.E-02, 3.E-02, 6.E-03, 3.E-03, 6.E-04, 3.E-04, 2.E-04 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_parents_first, np, err, 7)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_parents_first, np, err, 7)){
             cout << "ERROR: failed wavelet parents refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1312,7 +1308,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
         int np[6] = { 49, 113, 257, 561, 1113, 1481 };
         double err[6] = { 6.E-02, 1.E-02, 5.E-03, 1.E-03, 5.E-04, 1.E-04 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_direction_selective, np, err, 6)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_direction_selective, np, err, 6)){
             cout << "ERROR: failed wavelet direction refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1320,7 +1316,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
         int np[7] = { 49, 81, 161, 385, 889, 1737, 1769 };
         double err[7] = { 6.E-02, 3.E-02, 6.E-03, 3.E-03, 6.E-04, 3.E-04, 2.E-04 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_fds, np, err, 7)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 7)){
             cout << "ERROR: failed wavelet fds refinement for " << f->getDescription() << endl;  pass = false;
         }
     }{
@@ -1328,7 +1324,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 1, 3);
         int np[3] = { 65, 161, 369 };
         double err[3] = { 5.E-03, 5.E-04, 5.E-05 };
-        if (!testSurplusRefinement(f, &grid, 1.E-4, refine_stable, np, err, 3)){
+        if (!testSurplusRefinement(f, grid, 1.E-4, refine_stable, np, err, 3)){
             cout << "ERROR: failed wavelet stable refinement for " << f->getDescription() << endl;  pass = false;
         }
     }
@@ -1341,7 +1337,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
         int np[40] = { 10, 15, 21, 28, 29, 30, 31, 32, 34, 35, 37, 40, 41, 45, 49, 54, 59, 64, 70, 77, 84, 92, 100, 108, 117, 126, 135, 145, 155, 165, 176, 187, 198, 210, 212, 224, 237, 248, 251, 263 };
         double errs[40] = { 9.04e-01, 4.24e-01, 5.73e-01, 2.78e-01, 3.15e-01, 2.49e-01, 3.00e-01, 8.85e-02, 9.30e-02, 9.67e-02, 2.06e-01, 3.03e-01, 5.24e-02, 4.63e-02, 5.85e-02, 5.11e-02, 9.80e-03, 2.71e-02, 5.42e-03, 7.85e-03, 6.21e-03, 5.41e-03, 2.56e-03, 3.32e-03, 5.18e-04, 6.14e-04, 3.66e-04, 4.87e-04, 8.19e-05, 2.58e-04, 5.76e-05, 5.54e-05, 5.22e-05, 4.89e-05, 4.68e-05, 8.92e-06, 2.20e-05, 5.56e-06, 5.14e-06, 5.79e-06 };
-        if (!testAnisotropicRefinement(f, &grid, type_iptotal, 1, np, errs, 40)){
+        if (!testAnisotropicRefinement(f, grid, type_iptotal, 1, np, errs, 40)){
             cout << "ERROR: failed anisotropic refinement using leja iptotal nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }{
@@ -1349,7 +1345,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
         int np[10] = { 10, 12, 17, 24, 32, 34, 41, 42, 57, 59 };
         double errs[10] = { 9.48e-03, 9.50e-03, 6.85e-03, 5.11e-04, 6.26e-05, 7.11e-06, 5.07e-06, 5.19e-06, 1.17e-08, 1.86e-08 };
-        if (!testAnisotropicRefinement(f, &grid, type_ipcurved, 1, np, errs, 7)){
+        if (!testAnisotropicRefinement(f, grid, type_ipcurved, 1, np, errs, 7)){
             cout << "ERROR: failed anisotropic refinement using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }{
@@ -1357,7 +1353,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_clenshawcurtis);
         int np[3] = { 13, 21, 29 };
         double errs[3] = { 6.12e-04, 6.05e-04, 1.33e-08 };
-        if (!testAnisotropicRefinement(f, &grid, type_ipcurved, 1, np, errs, 3)){
+        if (!testAnisotropicRefinement(f, grid, type_ipcurved, 1, np, errs, 3)){
             cout << "ERROR: failed anisotropic refinement using clenshaw-curtis ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }{
@@ -1365,7 +1361,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
         int np[10] = { 10, 12, 17, 24, 32, 34, 41, 42, 57, 59 };
         double errs[10] = { 9.48e-03, 9.50e-03, 6.85e-03, 5.11e-04, 6.26e-05, 7.11e-06, 5.07e-06, 5.19e-06, 1.17e-08, 1.86e-08 };
-        if (!testAnisotropicRefinement(f, &grid, type_ipcurved, 1, np, errs, 7)){
+        if (!testAnisotropicRefinement(f, grid, type_ipcurved, 1, np, errs, 7)){
             cout << "ERROR: failed anisotropic refinement using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }{
@@ -1374,7 +1370,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
         int np[5] = { 17, 35, 111, 273, 759 };
         double errs[5] = { 1.28e-2, 2.80e-3, 1.97e-4, 6.78e-5, 5.65e-5 };
-        if (!testAnisotropicRefinement(f, &grid, type_hyperbolic, 1, np, errs, 5)){
+        if (!testAnisotropicRefinement(f, grid, type_hyperbolic, 1, np, errs, 5)){
             cout << "ERROR: failed anisotropic refinement using Fourier hyperbolic nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }{
@@ -1383,7 +1379,7 @@ bool ExternalTester::testAllRefinement() const{
         grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
         int np[5] = { 81, 135, 297, 783, 2295 };
         double errs[5] = { 1.32e-3, 1.92e-4, 6.75e-5, 5.67e-5, 2.11e-6 };
-        if (!testAnisotropicRefinement(f, &grid, type_hyperbolic, 1, np, errs, 5)){
+        if (!testAnisotropicRefinement(f, grid, type_hyperbolic, 1, np, errs, 5)){
             cout << "ERROR: failed anisotropic refinement using Fourier level nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }
@@ -1416,7 +1412,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = {  29,   45,    65,   129,    193,    241,   289,   321,    417};
         std::vector<double> err = {0.06, 0.02, 0.008, 0.002, 0.0015, 0.0009, 3.E-4, 5.E-5,  1.E-5};
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_level, rule_clenshawcurtis);
-        if (!testDynamicRefinement(f, &grid, type_iptotal, -1.0, refine_none, np, err)){
+        if (!testDynamicRefinement(f, grid, type_iptotal, -1.0, refine_none, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using iptotal and clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
         }
     }{
@@ -1424,7 +1420,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = {  29,   45,   97,   129,   321,   385,   417,   449};
         std::vector<double> err = {0.06, 0.02, 0.01, 0.001, 3.E-4, 3.E-4, 3.E-5, 3.E-5};
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_level, rule_clenshawcurtis);
-        if (!testDynamicRefinement(f, &grid, type_ipcurved, -1.0, refine_none, np, err)){
+        if (!testDynamicRefinement(f, grid, type_ipcurved, -1.0, refine_none, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using ipcurved and clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
         }
     }{
@@ -1432,7 +1428,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = { 32,    71,   105,   115,   168,   226,   291,   354,   473,   505};
         std::vector<double> err = {0.5, 2.E-2, 1.E-2, 9.E-3, 5.E-3, 2.E-3, 8.E-4, 3.E-4, 1.E-4, 5.E-5};
         grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 20, type_iphyperbolic, rule_rlejadouble4);
-        if (!testDynamicRefinement(f, &grid, type_iphyperbolic, -1.0, refine_none, np, err)){
+        if (!testDynamicRefinement(f, grid, type_iphyperbolic, -1.0, refine_none, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using iphyperbolic and rule_rlejadouble4 nodes for " << f->getDescription() << endl;
         }
     }{
@@ -1440,7 +1436,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = {   27,    35,    39,    47,    55,    71,    87,   137,   162,   204,   228,   297};
         std::vector<double> err = {5.E-1, 3.E-1, 1.E-1, 8.E-2, 4.E-2, 2.E-2, 4.E-3, 5.E-4, 2.E-4, 4.E-5, 1.E-5, 3.E-6};
         grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 7, type_level, rule_leja);
-        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, -1.0, refine_none, np, err)){
+        if (!testDynamicRefinement(&f21aniso, grid, type_iptotal, -1.0, refine_none, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using iptotal and leja nodes for " << f->getDescription() << endl;  pass3 = false;
         }
     }
@@ -1452,7 +1448,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = {   23,    38,    62,   104,   171,   280,   403,   645,   685};
         std::vector<double> err = {5.E-1, 3.E-1, 2.E-1, 8.E-2, 4.E-2, 8.E-3, 3.E-3, 1.E-3, 7.E-4};
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localp);
-        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, 1.E-3, refine_classic, np, err)){
+        if (!testDynamicRefinement(&f21aniso, grid, type_iptotal, 1.E-3, refine_classic, np, err)){
             cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f->getDescription() << endl;  pass4 = false;
         }
     }{
@@ -1460,7 +1456,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = {   23,    38,    62,   104,   171,   280,   403,   506};
         std::vector<double> err = {5.E-1, 3.E-1, 2.E-1, 8.E-2, 4.E-2, 8.E-3, 3.E-3, 1.E-3};
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_semilocalp);
-        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, 1.E-3, refine_fds, np, err)){
+        if (!testDynamicRefinement(&f21aniso, grid, type_iptotal, 1.E-3, refine_fds, np, err)){
             cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f->getDescription() << endl;  pass4 = false;
         }
     }{
@@ -1468,7 +1464,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<int> np     = {   23,    38,    64,   120,   171,   280,   403, 500};
         std::vector<double> err = {5.E-1, 3.E-1, 3.E-1, 2.E-1, 6.E-2, 3.E-2, 2.E-2, 6.E-3};
         grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1);
-        if (!testDynamicRefinement(&f21aniso, &grid, type_iptotal, 1.E-3, refine_stable, np, err)){
+        if (!testDynamicRefinement(&f21aniso, grid, type_iptotal, 1.E-3, refine_stable, np, err)){
             cout << "ERROR: failed dynamic surplus classic refinement using wavelet linear rule " << f->getDescription() << endl;  pass4 = false;
         }
     }
@@ -1481,7 +1477,7 @@ bool ExternalTester::testAllRefinement() const{
         std::vector<double> err = {5.E-1, 3.E-2, 1.E-2, 3.E-3, 5.E-4, 1.E-4};
         grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 2, type_level);
         grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
-        if (!testDynamicRefinement(f, &grid, type_iphyperbolic, -1.0, refine_none, np, err)){
+        if (!testDynamicRefinement(f, grid, type_iphyperbolic, -1.0, refine_none, np, err)){
             cout << "ERROR: failed dynamic anisotropic refinement using Fourier grid for " << f->getDescription() << endl; pass6 = false;
         }
     }
@@ -1502,7 +1498,7 @@ bool ExternalTester::testAllDomain() const{
         int aiso_weights[2] = { 2, 1 };
         for(int i=0; i<5; i++){
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), i, TasGrid::type_level, TasGrid::rule_clenshawcurtis, aiso_weights);
-            TestResults R = getError(f, &grid, type_internal_interpolation);
+            TestResults R = getError(f, grid, type_internal_interpolation);
             if ((R.num_points != np[i]) || (R.error>errs[i])){
                 cout << "Using clenshaw-curtis rule" << endl;
                 cout << "Failed anisotropic grid test for " << f->getDescription() << "  number of points = " << R.num_points << "  expacted: " << np[i]
@@ -1517,7 +1513,7 @@ bool ExternalTester::testAllDomain() const{
         int aiso_weights[2] = {2, 1};
         for(int i=0; i<5; i++){
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), i+2, TasGrid::type_level, TasGrid::rule_gausslegendre, aiso_weights);
-            TestResults R = getError(f, &grid, type_integration);
+            TestResults R = getError(f, grid, type_integration);
             if ((R.num_points != np[i]) || (R.error>errs[i])){
                 cout << "Using gauss-legendre rule" << endl;
                 cout << "Failed anisotropic grid test for " << f->getDescription() << "  number of points = " << R.num_points << "  expacted: " << np[i]
@@ -1532,7 +1528,7 @@ bool ExternalTester::testAllDomain() const{
         int aiso_weights[2] = { 2, 1 };
         for(int i=0; i<5; i++){
             grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), i+10, TasGrid::type_level, TasGrid::rule_leja, aiso_weights);
-            TestResults R = getError(f, &grid, type_internal_interpolation);
+            TestResults R = getError(f, grid, type_internal_interpolation);
             if ((R.num_points != np[i]) || (R.error>errs[i])){
                 cout << "Using leja rule" << endl;
                 cout << "Failed anisotropic grid test for " << f->getDescription() << "  number of points = " << R.num_points << "  expacted: " << np[i]
@@ -1558,20 +1554,20 @@ bool ExternalTester::testAllDomain() const{
             grid.setDomainTransform(transform_a, transform_b);
             auto needed_points = grid.getNeededPoints();
             int num_needed = grid.getNumNeeded();
-            TestResults R = getError(f, &grid, type_integration);
+            TestResults R = getError(f, grid, type_integration);
             if (R.error > errs[i]){
                 cout << "Using leja rule" << endl;
                 cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
             std::vector<double> test_x = {3.314, -1.71732};
-            R = getError(f, &grid, type_nodal_interpolation, test_x);
+            R = getError(f, grid, type_nodal_interpolation, test_x);
             if (R.error > errs2[i]){
                 cout << "Using leja rule" << endl;
                 cout << "Failed domain transform test interpolation for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
-            R = getError(f, &grid, type_internal_interpolation, test_x);
+            R = getError(f, grid, type_internal_interpolation, test_x);
             if (R.error > errs3[i]){
                 cout << "Using leja rule" << endl;
                 cout << "Failed domain transform test interpolation for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
@@ -1593,7 +1589,7 @@ bool ExternalTester::testAllDomain() const{
         for(int i=0; i<5; i++){
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), i, TasGrid::type_iptotal, TasGrid::rule_clenshawcurtis);
             grid.setDomainTransform(transform_a, transform_b);
-            TestResults R = getError(f, &grid, type_integration);
+            TestResults R = getError(f, grid, type_integration);
             if (R.error>errs[i]){
                 cout << "Using clenshaw-curtis rule" << endl;
                 cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
@@ -1608,7 +1604,7 @@ bool ExternalTester::testAllDomain() const{
         for(int i=0; i<5; i++){
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), i, TasGrid::type_iptotal, TasGrid::rule_gausslegendre);
             grid.setDomainTransform(transform_a, transform_b);
-            TestResults R = getError(f, &grid, type_integration);
+            TestResults R = getError(f, grid, type_integration);
             if (R.error>errs[i]){
                 cout << "Using gauss-legendre rule" << endl;
                 cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
@@ -1623,7 +1619,7 @@ bool ExternalTester::testAllDomain() const{
         for(int i=0; i<5; i++){
             grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), i, 2, TasGrid::rule_localp);
             grid.setDomainTransform(transform_a, transform_b);
-            TestResults R = getError(f, &grid, type_integration);
+            TestResults R = getError(f, grid, type_integration);
             if (R.error>errs[i]){
                 cout << "Using localp rule" << endl;
                 cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
@@ -1638,7 +1634,7 @@ bool ExternalTester::testAllDomain() const{
         for(int i=0; i<3; i++){     // keeping depth low until we implement an FFT algorithm
             grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), i+3, TasGrid::type_level);
             grid.setDomainTransform(transform_a, transform_b);
-            TestResults R = getError(f, &grid, type_integration);
+            TestResults R = getError(f, grid, type_integration);
             if (R.error>errs[i]){
                 cout << "Using fourier rule" << endl;
                 cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
@@ -1661,8 +1657,8 @@ bool ExternalTester::testAllDomain() const{
             gridc.setConformalTransformASIN(asin_conformal);
             auto needed_points = grid.getNeededPoints();
             int num_needed = grid.getNumNeeded();
-            TestResults R1 = getError(f, &grid, type_internal_interpolation);
-            TestResults R2 = getError(f, &gridc, type_internal_interpolation);
+            TestResults R1 = getError(f, grid, type_internal_interpolation);
+            TestResults R2 = getError(f, gridc, type_internal_interpolation);
             if (R1.num_points != R2.num_points){
                 cout << "Failed in number of points for conformal mapping and clenshaw-curtis rule" << endl;
                 pass3 = false;
@@ -1699,8 +1695,8 @@ bool ExternalTester::testAllDomain() const{
             grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
             gridc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
             gridc.setConformalTransformASIN(asin_conformal);
-            TestResults R1 = getError(f, &grid, type_integration);
-            TestResults R2 = getError(f, &gridc, type_integration);
+            TestResults R1 = getError(f, grid, type_integration);
+            TestResults R2 = getError(f, gridc, type_integration);
             if (R1.num_points != R2.num_points){
                 cout << "Failed in number of points for conformal mapping and gauss-patterson rule" << endl;
                 pass3 = false;
@@ -1711,8 +1707,8 @@ bool ExternalTester::testAllDomain() const{
                 cout << " conformal error = " << R2.error << endl;
                 pass3 = false;
             }
-            R1 = getError(f, &grid, type_integration);
-            R2 = getError(f, &gridc, type_integration);
+            R1 = getError(f, grid, type_integration);
+            R2 = getError(f, gridc, type_integration);
             if (R1.error < R2.error){
                 cout << "Failed in error for conformal mapping and gauss-patterson rule (integration)" << endl;
                 cout << "  standard error = " << R1.error << endl;
@@ -1728,8 +1724,8 @@ bool ExternalTester::testAllDomain() const{
             grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), l+4, 3, TasGrid::rule_localp);
             gridc.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), l+4, 3, TasGrid::rule_localp);
             gridc.setConformalTransformASIN(asin_conformal);
-            TestResults R1 = getError(f, &grid, type_internal_interpolation);
-            TestResults R2 = getError(f, &gridc, type_internal_interpolation);
+            TestResults R1 = getError(f, grid, type_internal_interpolation);
+            TestResults R2 = getError(f, gridc, type_internal_interpolation);
             if (R1.num_points != R2.num_points){
                 cout << "Failed in number of points for conformal mapping and local polynomial rule" << endl;
                 pass3 = false;
@@ -1740,8 +1736,8 @@ bool ExternalTester::testAllDomain() const{
                 cout << " conformal error = " << R2.error << endl;
                 pass3 = false;
             }
-            R1 = getError(f, &grid, type_integration);
-            R2 = getError(f, &gridc, type_integration);
+            R1 = getError(f, grid, type_integration);
+            R2 = getError(f, gridc, type_integration);
             if (R1.error < R2.error){
                 cout << "Failed in error for conformal mapping and local polynomial rule (integration)" << endl;
                 cout << "  standard error = " << R1.error << endl;
