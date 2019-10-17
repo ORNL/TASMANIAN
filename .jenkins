@@ -4,6 +4,11 @@ pipeline {
     }
     stages {
         stage('Automated testing') {
+            when {
+                not {
+                    branch 'master'
+                }
+            }
             parallel {
                 stage('Clang50-Python3') {
                     agent {
