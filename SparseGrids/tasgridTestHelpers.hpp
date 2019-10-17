@@ -38,6 +38,14 @@ using std::endl;
 
 using namespace TasGrid;
 
+template<typename T> struct wrap_array{
+    template<typename U> wrap_array(T *in_raw, U in_num) : raw(in_raw), num(size_t(in_num)){}
+    T *raw;
+    size_t num;
+    size_t size() const{ return num; }
+    T const& operator[](size_t i) const{ return raw[i]; }
+};
+
 template<typename VectorLike1, typename VectorLike2>
 double err1(size_t num, VectorLike1 const &x, VectorLike2 const &y){
     if ((x.size() < num) || (y.size() < num)) throw std::runtime_error("vector size is insufficient");

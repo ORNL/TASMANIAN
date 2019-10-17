@@ -312,7 +312,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     return bPass;
 }
 
-bool ExternalTester::performGLobalTest(TasGrid::TypeOneDRule rule) const{
+bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
     double alpha = 0.3, beta = 0.7;
     bool pass = true;
     int wfirst = 10, wsecond = 35, wthird = 15;
@@ -706,8 +706,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
 
 bool ExternalTester::testAllGlobal() const{
     bool pass = true;
-    const int nrules = 36; // sync with below
-    TasGrid::TypeOneDRule rules[nrules] = {
+    std::vector<TypeOneDRule> rules = {
                     TasGrid::rule_chebyshev,
                     TasGrid::rule_chebyshevodd,
                     TasGrid::rule_clenshawcurtis,
@@ -745,8 +744,8 @@ bool ExternalTester::testAllGlobal() const{
                     TasGrid::rule_gausshermiteodd,
                     TasGrid::rule_customtabulated   };
 
-    for(int i=0; i<nrules; i++){
-        if (!performGLobalTest(rules[i])){
+    for(size_t i=0; i<rules.size(); i++){
+        if (!performGlobalTest(rules[i])){
             pass = false;
         }
     }
@@ -1882,64 +1881,45 @@ bool ExternalTester::testGPU2GPUevaluations() const{
         }
     }
 
-    // Sequence, Global, Wavelet Grid evaluations of the basis functions
-    for(int t=0; t<5; t++){
-    int numx = 2020;
+    // Sequence, Global, Wavelet, Fourier Grid evaluations of the basis functions
+    for(int t=0; t<6; t++){
+        int numx = 2020;
 
-    std::vector<double> cpux = genRandom(numx, dims);
-
-    auto reset_grid = [&]()->void{
-        switch(t){
-            case 0: grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja); break;
-            case 1: grid.makeWaveletGrid(dims, 0, 3, 1); break;
-            case 2: grid.makeGlobalGrid(dims, 0, 6, type_level, rule_clenshawcurtis); break;
-            case 3: grid.makeGlobalGrid(dims, 0, 5, type_level, rule_clenshawcurtis0); break;
-            case 4: grid.makeGlobalGrid(dims, 0, 10, type_level, rule_chebyshev); break;
-        }
-    };
-    reset_grid();
-
-    //cout << "Memory requirements = " << (grid.getNumPoints() * numx * 8) / (1024 * 1024) << "MB" << endl;
-    std::vector<double> truey;
-    grid.evaluateHierarchicalFunctions(cpux, truey);
-
-    for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
+        auto reset_grid = [&]()->void{
+            switch(t){
+                case 0: grid.makeSequenceGrid(dims, 0, 20, type_level, rule_rleja); break;
+                case 1: grid.makeWaveletGrid(dims, 0, 3, 1); break;
+                case 2: grid.makeGlobalGrid(dims, 0, 6, type_level, rule_clenshawcurtis); break;
+                case 3: grid.makeGlobalGrid(dims, 0, 5, type_level, rule_clenshawcurtis0); break;
+                case 4: grid.makeGlobalGrid(dims, 0, 10, type_level, rule_chebyshev); break;
+                case 5: grid.makeFourierGrid(dims, 0, 5, type_level);
+                        grid.setDomainTransform(a, b);
+                        break;
+            }
+        };
         reset_grid();
-        TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
-        grid.enableAcceleration(TasGrid::accel_gpu_cuda);
-        grid.setGPUID(gpuID);
 
-        if (!testDenseGPU<double, GridMethodHierBasisGPU>(cpux, truey, numx, Maths::num_tol, grid, "GPU basis<double> evaluations"))
-            pass = false;
+        // Fourier grids use a domain transform to test the non-standard [0,1] -> [a,b] cuda transform
+        // the standard [-1, 1] -> [a, b] is covered in the local polynomial case
+        std::vector<double> cpux = (grid.isFourier()) ? genRandom(numx, a, b) : genRandom(numx, dims);
 
-        if (!testDenseGPU<float, GridMethodHierBasisGPU>(cpux, truey, numx, 5.E-5, grid, "GPU basis<float> evaluations"))
-            pass = false;
-    }}
+        //cout << "Memory requirements = " << (grid.getNumPoints() * numx * 8) / (1024 * 1024) << "MB" << endl;
+        std::vector<double> truey;
+        grid.evaluateHierarchicalFunctions(cpux, truey);
 
-    // Fourier Grid evaluations of the basis functions
-    {int numx = 2020;
+        for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
+            reset_grid();
+            TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
+            grid.enableAcceleration(TasGrid::accel_gpu_cuda);
+            grid.setGPUID(gpuID);
 
-    std::vector<double> cpux = genRandom(numx, a, b);
+            if (!testDenseGPU<double, GridMethodHierBasisGPU>(cpux, truey, numx, Maths::num_tol, grid, "GPU basis<double> evaluations"))
+                pass = false;
 
-    grid.makeFourierGrid(dims, 0, 5, type_level); //cout << grid.getNumPoints() << endl;
-    grid.setDomainTransform(a, b);
-    //cout << "Memory requirements = " << (grid.getNumPoints() * numx * 16) / (1024 * 1024) << "MB" << endl;
-    std::vector<double> truey;
-    grid.evaluateHierarchicalFunctions(cpux, truey);
-
-    for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
-        grid.makeFourierGrid(dims, 0, 5, type_level);
-        grid.setDomainTransform(a, b);
-        TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
-        grid.enableAcceleration(TasGrid::accel_gpu_cuda);
-        grid.setGPUID(gpuID);
-
-        if (!testDenseGPU<double, GridMethodHierBasisGPU>(cpux, truey, numx, Maths::num_tol, grid, "GPU basis<double> evaluations"))
-            pass = false;
-
-        if (!testDenseGPU<float, GridMethodHierBasisGPU>(cpux, truey, numx, 2.E-4, grid, "GPU basis<float> evaluations"))
-            pass = false;
-    }}
+            if (!testDenseGPU<float, GridMethodHierBasisGPU>(cpux, truey, numx, (grid.isFourier()) ? 2.E-4 : 5.E-5, grid, "GPU basis<float> evaluations"))
+                pass = false;
+        }
+    }
 
     return pass;
 
@@ -1981,12 +1961,10 @@ bool ExternalTester::testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const
             cout << "ERROR: accelerated loadNeededPoints() loaded wrong number of points." << endl;
             return false;
         }
-        double const *coeff_acc = grid_acc.getHierarchicalCoefficients();
-        double const *coeff_ref = grid_ref.getHierarchicalCoefficients();
-        double err = 0.0;
-        for(int i=0; i<num_coeffs; i++) err = std::max(err, std::abs(coeff_acc[i] - coeff_ref[i]));
-        if (err >= Maths::num_tol){
-            cout << "ERROR: accelerated loadNeededPoints() failed for rule: " << OneDimensionalMeta::getHumanString(rule) << " at gpu: " << g << " with error: " << err << endl;
+        if (!testPass(err1(wrap_array<double const>(grid_acc.getHierarchicalCoefficients(), num_coeffs),
+                           wrap_array<double const>(grid_ref.getHierarchicalCoefficients(), num_coeffs)),
+                      Maths::num_tol, "accelerated loadNeededPoints()")){
+            cout << "Failed for " << OneDimensionalMeta::getHumanString(rule) << " at gpu: " << g << endl;
             pass = false;
         }
     }
