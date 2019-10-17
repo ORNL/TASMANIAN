@@ -86,6 +86,7 @@ public:
     virtual void integrate(double q[], double *conformal_correction) const = 0;
 
     virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
+    virtual void evaluateBatch(const float[], int, float[]) const{}
 
     #ifdef Tasmanian_ENABLE_BLAS
     virtual void evaluateBlas(const double x[], int num_x, double y[]) const = 0;
@@ -93,10 +94,13 @@ public:
 
     #ifdef Tasmanian_ENABLE_CUDA
     virtual void loadNeededPointsCuda(CudaEngine *engine, const double *vals) = 0;
+
     virtual void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
     virtual void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const = 0;
     virtual void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const = 0;
+    virtual void evaluateBatchGPU(CudaEngine *, const float [], int , float []) const = 0;
+    virtual void evaluateHierarchicalFunctionsGPU(const float [], int , float []) const = 0;
     #endif
 
     virtual void clearRefinement() = 0;

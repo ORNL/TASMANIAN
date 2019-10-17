@@ -81,12 +81,14 @@ public:
     void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const;
     void evaluateCuda(CudaEngine*, const double*, int, double[]) const;
     void evaluateBatchGPU(CudaEngine* engine, const double gpu_x[], int cpu_num_x, double gpy_y[]) const;
+    void evaluateHierarchicalFunctionsGPU(const double x[], int num_x, double y[]) const;
+    void evaluateCudaMixed(CudaEngine*, const float*, int, float[]) const;
+    void evaluateBatchGPU(CudaEngine* engine, const float gpu_x[], int cpu_num_x, float gpy_y[]) const;
+    template<typename T> void evaluateBatchGPUtempl(CudaEngine* engine, const T gpu_x[], int cpu_num_x, T gpy_y[]) const;
+    void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const;
     #endif
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
-    #ifdef Tasmanian_ENABLE_CUDA
-    void evaluateHierarchicalFunctionsGPU(const double x[], int num_x, double y[]) const;
-    #endif
 
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
@@ -150,15 +152,21 @@ protected:
     double evalBasis(const int f[], const int p[]) const; // evaluate function corresponding to f at p
 
     #ifdef Tasmanian_ENABLE_CUDA
+    // specialize below for the float case
+    std::unique_ptr<CudaSequenceData<double>>& getCudaCache(double) const{ return cuda_cache; }
+    std::unique_ptr<CudaSequenceData<float>>& getCudaCache(float) const{ return cuda_cachef; }
+    template<typename T>
     void loadCudaNodes() const{
-        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaSequenceData<double>>(new CudaSequenceData<double>);
-        if (!cuda_cache->num_nodes.empty()) return;
-        cuda_cache->nodes.load(nodes);
-        cuda_cache->coeff.load(coeff);
+        auto& ccache = getCudaCache(static_cast<T>(0.0));
+        if (!ccache) ccache = std::make_unique<CudaSequenceData<T>>();
+        if (!ccache->num_nodes.empty()) return;
+
+        ccache->nodes.load(nodes);
+        ccache->coeff.load(coeff);
 
         std::vector<int> num_nodes(num_dimensions);
         std::transform(max_levels.begin(), max_levels.end(), num_nodes.begin(), [](int i)->int{ return i+1; });
-        cuda_cache->num_nodes.load(num_nodes);
+        ccache->num_nodes.load(num_nodes);
 
         const MultiIndexSet *work = (points.empty()) ? &needed : &points;
         int num_points = work->getNumIndexes();
@@ -168,21 +176,15 @@ protected:
                 transpoints.getStrip(j)[i] = work->getIndex(i)[j];
             }
         }
-        cuda_cache->points.load(transpoints.getVector());
+        ccache->points.load(transpoints.getVector());
     }
-    void clearCudaNodes(){
-        if (cuda_cache){
-            cuda_cache->nodes.clear();
-            cuda_cache->coeff.clear();
-            cuda_cache->num_nodes.clear();
-            cuda_cache->points.clear();
-        }
+    void clearCudaNodes();
+    template<typename T> void loadCudaSurpluses() const{
+        auto& ccache = getCudaCache(static_cast<T>(0.0));
+        if (!ccache) ccache = std::make_unique<CudaSequenceData<T>>();
+        if (ccache->surpluses.empty()) ccache->surpluses.load(surpluses.getVector());
     }
-    void loadCudaSurpluses() const{
-        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaSequenceData<double>>(new CudaSequenceData<double>);
-        if (cuda_cache->surpluses.empty()) cuda_cache->surpluses.load(surpluses.getVector());
-    }
-    void clearCudaSurpluses(){ if (cuda_cache) cuda_cache->surpluses.clear(); }
+    void clearCudaSurpluses();
     #endif
 
 private:
@@ -198,6 +200,7 @@ private:
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaSequenceData<double>> cuda_cache;
+    mutable std::unique_ptr<CudaSequenceData<float>> cuda_cachef;
     #endif
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP

@@ -79,6 +79,12 @@ public:
     void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
     void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
+    void evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const;
+    template<typename T> void evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
+    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const;
+    void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const;
+    template<typename T>
+    void evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, CudaVector<T> &wreal, CudaVector<T> &wimag) const;
     #endif
 
     void integrate(double q[], double *conformal_correction) const;
@@ -88,11 +94,6 @@ public:
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
 
     void integrateHierarchicalFunctions(double integrals[]) const;
-
-    #ifdef Tasmanian_ENABLE_CUDA
-    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const;
-    void evaluateHierarchicalFunctionsInternalGPU(const double gpu_x[], int num_x, CudaVector<double> &wreal, CudaVector<double> &wimag) const;
-    #endif
 
     void clearAccelerationData();
 
@@ -166,42 +167,12 @@ protected:
     }
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void loadCudaNodes() const{
-        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaFourierData<double>>(new CudaFourierData<double>);
-        if (!cuda_cache->num_nodes.empty()) return;
-
-        std::vector<int> num_nodes(num_dimensions);
-        std::transform(max_levels.begin(), max_levels.end(), num_nodes.begin(), [](int l)->int{ return OneDimensionalMeta::getNumPoints(l, rule_fourier); });
-        cuda_cache->num_nodes.load(num_nodes);
-
-        const MultiIndexSet &work = (points.empty()) ? needed : points;
-        int num_points = work.getNumIndexes();
-        Data2D<int> transpoints(work.getNumIndexes(), num_dimensions);
-        for(int i=0; i<num_points; i++)
-            for(int j=0; j<num_dimensions; j++)
-                transpoints.getStrip(j)[i] = work.getIndex(i)[j];
-        cuda_cache->points.load(transpoints.getVector());
-    }
-    void clearCudaNodes(){
-        if (cuda_cache){
-            cuda_cache->num_nodes.clear();
-            cuda_cache->points.clear();
-        }
-    }
-    void loadCudaCoefficients() const{
-        if (!cuda_cache) cuda_cache = std::unique_ptr<CudaFourierData<double>>(new CudaFourierData<double>);
-        if (!cuda_cache->real.empty()) return;
-        int num_points = points.getNumIndexes();
-        size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
-        cuda_cache->real.load(num_coeff, fourier_coefs.getStrip(0));
-        cuda_cache->imag.load(num_coeff, fourier_coefs.getStrip(num_points));
-    }
-    void clearCudaCoefficients(){
-        if (cuda_cache){
-            cuda_cache->real.clear();
-            cuda_cache->imag.clear();
-        }
-    }
+    std::unique_ptr<CudaFourierData<double>>& getCudaCache(double) const{ return cuda_cache; }
+    std::unique_ptr<CudaFourierData<float>>& getCudaCache(float) const{ return cuda_cachef; }
+    template<typename T> void loadCudaNodes() const;
+    void clearCudaNodes();
+    template<typename T> void loadCudaCoefficients() const;
+    void clearCudaCoefficients();
     #endif
 
 private:
@@ -225,6 +196,7 @@ private:
 
     #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<CudaFourierData<double>> cuda_cache;
+    mutable std::unique_ptr<CudaFourierData<float>> cuda_cachef;
     #endif
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP

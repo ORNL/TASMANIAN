@@ -140,6 +140,7 @@ add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  tasgridCLICommon.hpp
                                  tasgridExternalTests.hpp
                                  tasgridExternalTests.cpp
+                                 tasgridTestHelpers.hpp
                                  tasgridTestFunctions.hpp
                                  tasgridTestFunctions.cpp
                                  tasgridWrapper.hpp
@@ -149,6 +150,7 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridCLICommon.hpp
                                   tasgridExternalTests.hpp
                                   tasgridExternalTests.cpp
+                                  tasgridTestHelpers.hpp
                                   tasgridTestFunctions.hpp
                                   tasgridTestFunctions.cpp
                                   tasgridUnitTests.hpp

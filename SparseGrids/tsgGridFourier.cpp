@@ -536,7 +536,7 @@ void GridFourier::loadNeededPointsCuda(CudaEngine *, const double *vals){
     loadNeededPoints(vals);
 }
 void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    loadCudaCoefficients();
+    loadCudaCoefficients<double>();
     Data2D<double> wreal;
     Data2D<double> wimag;
     evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
@@ -552,15 +552,85 @@ void GridFourier::evaluateCuda(CudaEngine *engine, const double x[], int num_x, 
     evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_y.data());
     gpu_y.unload(y);
 }
-void GridFourier::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
-    loadCudaCoefficients();
+template<typename T> void GridFourier::evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
+    loadCudaCoefficients<T>();
 
-    CudaVector<double> gpu_real, gpu_imag;
+    CudaVector<T> gpu_real, gpu_imag;
     evaluateHierarchicalFunctionsInternalGPU(gpu_x, cpu_num_x, gpu_real, gpu_imag);
 
     int num_points = points.getNumIndexes();
-    engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y);
-    engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y);
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, ccache->real, gpu_real, 0.0, gpu_y);
+    engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, ccache->imag, gpu_imag, 1.0, gpu_y);
+}
+void GridFourier::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+}
+void GridFourier::evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
+    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+}
+void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
+    loadCudaNodes<double>();
+    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_cache->num_nodes, cuda_cache->points, gpu_y, nullptr);
+}
+void GridFourier::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const{
+    loadCudaNodes<float>();
+    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_cachef->num_nodes, cuda_cachef->points, gpu_y, nullptr);
+}
+template<typename T>
+void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, CudaVector<T> &wreal, CudaVector<T> &wimag) const{
+    size_t num_weights = ((size_t) points.getNumIndexes()) * ((size_t) num_x);
+    if (wreal.size() != num_weights) wreal.resize(num_weights);
+    if (wimag.size() != num_weights) wimag.resize(num_weights);
+    loadCudaNodes<T>();
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, ccache->num_nodes, ccache->points, wreal.data(), wimag.data());
+}
+template<typename T> void GridFourier::loadCudaNodes() const{
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    if (!ccache) ccache = std::make_unique<CudaFourierData<T>>();
+    if (!ccache->num_nodes.empty()) return;
+
+    std::vector<int> num_nodes(num_dimensions);
+    std::transform(max_levels.begin(), max_levels.end(), num_nodes.begin(), [](int l)->int{ return OneDimensionalMeta::getNumPoints(l, rule_fourier); });
+    ccache->num_nodes.load(num_nodes);
+
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
+    int num_points = work.getNumIndexes();
+    Data2D<int> transpoints(work.getNumIndexes(), num_dimensions);
+    for(int i=0; i<num_points; i++)
+        for(int j=0; j<num_dimensions; j++)
+            transpoints.getStrip(j)[i] = work.getIndex(i)[j];
+    ccache->points.load(transpoints.getVector());
+}
+void GridFourier::clearCudaNodes(){
+    if (cuda_cache){
+        cuda_cache->num_nodes.clear();
+        cuda_cache->points.clear();
+    }
+    if (cuda_cachef){
+        cuda_cachef->num_nodes.clear();
+        cuda_cachef->points.clear();
+    }
+}
+template<typename T> void GridFourier::loadCudaCoefficients() const{
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    if (!ccache) ccache = std::make_unique<CudaFourierData<T>>();
+    if (!ccache->real.empty()) return;
+    int num_points = points.getNumIndexes();
+    size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
+    ccache->real.load(num_coeff, fourier_coefs.getStrip(0));
+    ccache->imag.load(num_coeff, fourier_coefs.getStrip(num_points));
+}
+void GridFourier::clearCudaCoefficients(){
+    if (cuda_cache){
+        cuda_cache->real.clear();
+        cuda_cache->imag.clear();
+    }
+    if (cuda_cachef){
+        cuda_cachef->real.clear();
+        cuda_cachef->imag.clear();
+    }
 }
 #endif
 
@@ -625,23 +695,10 @@ void GridFourier::integrateHierarchicalFunctions(double integrals[]) const{
     std::fill(integrals + 1, integrals + getNumPoints(), 0.0);
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
-void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
-    loadCudaNodes();
-    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_cache->num_nodes, cuda_cache->points, gpu_y, 0);
-}
-void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const double gpu_x[], int num_x, CudaVector<double> &wreal, CudaVector<double> &wimag) const{
-    size_t num_weights = ((size_t) points.getNumIndexes()) * ((size_t) num_x);
-    if (wreal.size() != num_weights) wreal.resize(num_weights);
-    if (wimag.size() != num_weights) wimag.resize(num_weights);
-    loadCudaNodes();
-    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_cache->num_nodes, cuda_cache->points, wreal.data(), wimag.data());
-}
-#endif
-
 void GridFourier::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_cache.reset();
+    cuda_cachef.reset();
     #endif
 }
 

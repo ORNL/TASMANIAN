@@ -139,16 +139,46 @@ public:
 
     //! Makes a call to the other overload with \b cpu_data.size() as \b count. See the overload.
     void load(const std::vector<T> &cpu_data){ load(cpu_data.size(), cpu_data.data()); }
+
+    /*!
+     * \brief Takes a vector with entries of different precision, converts and loads.
+     *
+     * Used when the CPU vectors are stored in double-precision format while the GPU entries are prepared to work with single-precision.
+     */
+    template<typename U, std::enable_if_t<!std::is_same<U, T>::value>* = nullptr>
+    void load(const std::vector<U> &cpu_data){
+        std::vector<T> converted(cpu_data.size());
+        std::transform(cpu_data.begin(), cpu_data.end(), converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
+        load(converted);
+    }
+
     //! \brief Copy the first \b count entries of \b cpu_data to the CUDA device, all pre-existing data is deleted and the vector is resized to match \b count.
 
     //! If \b count does not match the current size, the current array will be deleted and new array will be allocated (even if \b size() exceeds \b count).
     //! If the currently stored array has been assigned with \b wrap(), the alias is released.
     //! However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
     void load(size_t count, const T* cpu_data);
+    /*!
+     * \brief Takes a vector with entries of different precision, converts and loads.
+     *
+     * Used when the CPU data is stored in double-precision format while the GPU entries are prepared to work with single-precision.
+     */
+    template<typename U, std::enable_if_t<!std::is_same<U, T>::value>* = nullptr>
+    void load(size_t count, const U* cpu_data){
+        std::vector<T> converted(count);
+        std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
+        load(converted);
+    }
     //! \brief Copy the data from the CUDA array to \b cpu_data, the \b cpu_data will be resized and overwritten, the new size will match the \b size().
     void unload(std::vector<T> &cpu_data) const{
         cpu_data.resize(num_entries);
         unload(cpu_data.data());
+    }
+    //! \brief Return a CPU vector holding the data of the GPU.
+    std::vector<T> unload() const{
+        std::vector<T> y;
+        unload(y);
+        return y;
     }
     //! \brief Copy the data from the CUDA array to the \b cpu_data buffer, assumes that the buffer is sufficiently large.
     void unload(T* cpu_data) const;
@@ -160,6 +190,9 @@ public:
         num_entries = 0;
         return external;
     }
+
+    //! \brief The data-type of the vector entries.
+    using value_type = T;
 
 private:
     size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
@@ -190,11 +223,15 @@ public:
     //! Automatically calls CUDA or MAGMA libraries at the back-end.
     //!
     //! Assumes that all vectors have the correct order.
-    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const CudaVector<double> &B, double beta, double C[]);
+    template<typename T>
+    void denseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
+                       const CudaVector<T> &B, typename CudaVector<T>::value_type beta, T C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
-    void denseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A, const std::vector<double> &B, double C[]){
-        CudaVector<double> gpuB(B), gpuC(M, N);
+    template<typename T>
+    void denseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha,
+                       const CudaVector<T> &A, const std::vector<T> &B, T C[]){
+        CudaVector<T> gpuB(B), gpuC(M, N);
         denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC.data());
         gpuC.unload(C);
     }
@@ -207,14 +244,17 @@ public:
     //! Automatically calls CUDA or MAGMA libraries at the back-end.
     //!
     //! Assumes that all vectors have the correct size.
-    void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                        const CudaVector<int> &pntr, const CudaVector<int> &indx, const CudaVector<double> &vals, double beta, double C[]);
+    template<typename T>
+    void sparseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
+                        const CudaVector<int> &pntr, const CudaVector<int> &indx,
+                        const CudaVector<T> &vals, typename CudaVector<T>::value_type beta, T C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
-    void sparseMultiply(int M, int N, int K, double alpha, const CudaVector<double> &A,
-                        const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<double> &vals, double C[]){
+    template<typename T>
+    void sparseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
+                        const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<T> &vals, T C[]){
         CudaVector<int> gpu_pntr(pntr), gpu_indx(indx);
-        CudaVector<double> gpu_vals(vals), gpu_c(M, N);
+        CudaVector<T> gpu_vals(vals), gpu_c(M, N);
         sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, 0.0, gpu_c.data());
         gpu_c.unload(C);
     }
@@ -269,7 +309,8 @@ public:
     //! Takes the user provided \b gpu_transformed_x points of dimension matching the grid num_dimensions and total number \b num_x.
     //! The \b gpu_canonical_x is resized to match \b gpu_transformed_x and it loaded with the corresponding canonical points.
     //! The \b use01 flag indicates whether to use canonical domain (0, 1) (Fourier grids), or (-1, 1) (almost everything else).
-    void getCanonicalPoints(bool use01, const double *gpu_transformed_x, int num_x, CudaVector<double> &gpu_canonical_x);
+    template<typename T>
+    void getCanonicalPoints(bool use01, T const gpu_transformed_x[], int num_x, CudaVector<T> &gpu_canonical_x);
 
 private:
     // these actually store the rate and shift and not the hard upper/lower limits
@@ -297,7 +338,9 @@ namespace TasCUDA{
     //! This is called from \b AccelerationDomainTransform::getCanonicalPoints().
     //!
     //! See the implementation of \b AccelerationDomainTransform::load() for more details.
-    void dtrans2can(bool use01, int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b, const double *gpu_x_transformed, double *gpu_x_canonical);
+    template<typename T>
+    void dtrans2can(bool use01, int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b,
+                    const T *gpu_x_transformed, T *gpu_x_canonical);
 
     //! \internal
     //! \brief Evaluate the basis functions for a local polynomial grid using the \b DENSE algorithm.
@@ -311,7 +354,8 @@ namespace TasCUDA{
     //! The grid nodes and the associated support are "encoded" in \b gpu_nodes and \b gpu_support,
     //! where negative support is used to handle special cases such as global support on level 1 (rule semi-localp).
     //! The interpretation of the negative support must be synchronized between the kernel \b tasgpu_devalpwpoly_feval() and \b GridLocalPolynomial::encodeSupportForGPU().
-    void devalpwpoly(int order, TypeOneDRule rule, int num_dimensions, int num_x, int num_basis, const double *gpu_x, const double *gpu_nodes, const double *gpu_support, double *gpu_y);
+    template<typename T>
+    void devalpwpoly(int order, TypeOneDRule rule, int num_dimensions, int num_x, int num_basis, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y);
 
     //! \internal
     //! \brief Evaluate the basis functions for a local polynomial grid using the \b SPARSE algorithm.
@@ -324,10 +368,11 @@ namespace TasCUDA{
     //!
     //! The output vectors \b gpu_spntr, \b gpu_sindx and \b gpu_svals form a row compressed matrix,
     //! e.g., in format that can directly interface with Nvidia cusparseDcsrmm2().
-    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const double *gpu_x,
-                            const CudaVector<double> &gpu_nodes, const CudaVector<double> &gpu_support,
+    template<typename T>
+    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x,
+                            const CudaVector<T> &gpu_nodes, const CudaVector<T> &gpu_support,
                             const CudaVector<int> &gpu_hpntr, const CudaVector<int> &gpu_hindx, const CudaVector<int> &gpu_hroots,
-                            CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals);
+                            CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<T> &gpu_svals);
 
     //! \internal
     //! \brief Evaluate the basis for a Sequence grid.
@@ -341,8 +386,9 @@ namespace TasCUDA{
     //! The \b ndoes vector has the cached 1D nodes and \b coeffs holds the cached coefficients of the Newton polynomials.
     //!
     //! The output is \b gpu_result which must have dimension \b num_x by \b num_nodes.size() / \b dims.
-    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes,
-                  const CudaVector<int> &points, const CudaVector<double> &nodes, const CudaVector<double> &coeffs, double *gpu_result);
+    template<typename T>
+    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const CudaVector<int> &num_nodes,
+                  const CudaVector<int> &points, const CudaVector<T> &nodes, const CudaVector<T> &coeffs, T *gpu_result);
 
     //! \internal
     //! \brief Evaluate the basis for a Fourier grid.
@@ -350,7 +396,8 @@ namespace TasCUDA{
 
     //! The logic is identical to \b devalseq(), except the Fourier polynomials do not require nodes or coefficients.
     //! The output is two real arrays of size \b num_x by \b num_nodes.size() / \b dims corresponding to the real and complex parts of the basis.
-    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, double *gpu_wreal, double *gpu_wimag);
+    template<typename T>
+    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, T *gpu_wreal, typename CudaVector<T>::value_type *gpu_wimag);
 
     /*!
      * \internal
@@ -360,11 +407,12 @@ namespace TasCUDA{
      * The logic is more complicated due to the more general nature of the grid.
      * \endinternal
      */
+    template<typename T>
     void devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
-                  double const *gpu_x, CudaVector<double> const &nodes, CudaVector<double> const &coeff, CudaVector<double> const &tensor_weights,
+                  T const *gpu_x, CudaVector<T> const &nodes, CudaVector<T> const &coeff, CudaVector<T> const &tensor_weights,
                   CudaVector<int> const &nodes_per_level, CudaVector<int> const &offset_per_level, CudaVector<int> const &map_dimension, CudaVector<int> const &map_level,
                   CudaVector<int> const &active_tensors, CudaVector<int> const &active_num_points, CudaVector<int> const &dim_offsets,
-                  CudaVector<int> const &map_tensor, CudaVector<int> const &map_index, CudaVector<int> const &map_reference, double *gpu_result);
+                  CudaVector<int> const &map_tensor, CudaVector<int> const &map_index, CudaVector<int> const &map_reference, T *gpu_result);
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
     #ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__

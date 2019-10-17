@@ -346,7 +346,7 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
     surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::move(cumulative_surpluses.getVector()));
 }
 void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    loadCudaSurpluses();
+    loadCudaSurpluses<double>();
 
     std::vector<int> sindx, spntr;
     std::vector<double> svals;
@@ -369,25 +369,113 @@ void GridLocalPolynomial::evaluateCuda(CudaEngine *engine, const double x[], int
     evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_result.data());
     gpu_result.unload(y);
 }
-void GridLocalPolynomial::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+template<typename T> void GridLocalPolynomial::evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     if ((order == -1) || (order > 2)) throw std::runtime_error("ERROR: GPU evaluations are availabe only for local polynomial grid with order 0, 1, and 2");
-    loadCudaSurpluses();
+    loadCudaSurpluses<T>();
     int num_points = points.getNumIndexes();
 
     if (useDense()){
-        CudaVector<double> gpu_basis(cpu_num_x, num_points);
+        CudaVector<T> gpu_basis(cpu_num_x, num_points);
         evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
 
-        engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, cuda_cache->surpluses, gpu_basis, 0.0, gpu_y);
+        engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getCudaCache(static_cast<T>(0.0))->surpluses, gpu_basis, 0.0, gpu_y);
     }else{
         CudaVector<int> gpu_spntr, gpu_sindx;
-        CudaVector<double> gpu_svals;
+        CudaVector<T> gpu_svals;
         buildSparseBasisMatrixGPU(gpu_x, cpu_num_x, gpu_spntr, gpu_sindx, gpu_svals);
 
-        engine->sparseMultiply(num_outputs, cpu_num_x, num_points, 1.0, cuda_cache->surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_y);
+        engine->sparseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getCudaCache(static_cast<T>(0.0))->surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_y);
     }
 }
+void GridLocalPolynomial::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+}
+void GridLocalPolynomial::evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
+    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+}
+void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
+    loadCudaBasis<double>();
+    int num_points = getNumPoints();
+    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, cuda_cache->nodes.data(), cuda_cache->support.data(), gpu_y);
+}
+void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const{
+    loadCudaBasis<double>();
+    loadCudaHierarchy<double>();
+    TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cache->nodes, cuda_cache->support,
+                                cuda_cache->hpntr, cuda_cache->hindx, cuda_cache->hroots, gpu_spntr, gpu_sindx, gpu_svals);
+}
+void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const{
+    loadCudaBasis<float>();
+    int num_points = getNumPoints();
+    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, cuda_cachef->nodes.data(), cuda_cachef->support.data(), gpu_y);
+}
+void GridLocalPolynomial::buildSparseBasisMatrixGPU(const float gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<float> &gpu_svals) const{
+    loadCudaBasis<float>();
+    loadCudaHierarchy<float>();
+    TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cachef->nodes, cuda_cachef->support,
+                                cuda_cachef->hpntr, cuda_cachef->hindx, cuda_cachef->hroots, gpu_spntr, gpu_sindx, gpu_svals);
+}
+template<typename T> void GridLocalPolynomial::loadCudaBasis() const{
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    if (!ccache) ccache = std::make_unique<CudaLocalPolynomialData<T>>();
+    if (!ccache->nodes.empty()) return;
+
+    Data2D<double> cpu_nodes(num_dimensions, getNumPoints());
+    getPoints(cpu_nodes.getStrip(0));
+    ccache->nodes.load(cpu_nodes.getVector());
+
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
+    ccache->support.load(
+        [&](void)->Data2D<T>{
+            if (rule->getType() == rule_localp){
+                switch(order){
+                case 0: return encodeSupportForGPU<0, rule_localp, T>(work);
+                case 2: return encodeSupportForGPU<2, rule_localp, T>(work);
+                default:
+                    return encodeSupportForGPU<1, rule_localp, T>(work);
+                }
+            }else if (rule->getType() == rule_semilocalp){
+                return encodeSupportForGPU<2, rule_semilocalp, T>(work);
+            }else if (rule->getType() == rule_localpb){
+                switch(order){
+                case 2: return encodeSupportForGPU<2, rule_localpb, T>(work);
+                default:
+                    return encodeSupportForGPU<1, rule_localpb, T>(work);
+                }
+            }else{
+                switch(order){
+                case 2: return encodeSupportForGPU<2, rule_localp0, T>(work);
+                default:
+                    return encodeSupportForGPU<1, rule_localp0, T>(work);
+                }
+            }
+        }().getVector());
+}
+void GridLocalPolynomial::clearCudaBasisHierarchy(){
+    if (cuda_cache) cuda_cache->clearBasisHierarchy();
+    if (cuda_cachef) cuda_cachef->clearBasisHierarchy();
+}
+template<typename T> void GridLocalPolynomial::loadCudaHierarchy() const{
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    if (!ccache) ccache = std::make_unique<CudaLocalPolynomialData<T>>();
+    if (!ccache->hpntr.empty()) return;
+
+    ccache->hpntr.load(pntr);
+    ccache->hindx.load(indx);
+    ccache->hroots.load(roots);
+}
+template<typename T> void GridLocalPolynomial::loadCudaSurpluses() const{
+    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    if (!ccache) ccache = std::make_unique<CudaLocalPolynomialData<T>>();
+    if (ccache->surpluses.size() != 0) return;
+    ccache->surpluses.load(surpluses.getVector());
+}
+void GridLocalPolynomial::clearCudaSurpluses(){
+    if (cuda_cache) cuda_cache->surpluses.clear();
+    if (cuda_cachef) cuda_cachef->surpluses.clear();
+}
 #endif
+
 
 void GridLocalPolynomial::updateValues(double const *vals){
     #ifdef Tasmanian_ENABLE_CUDA
@@ -950,20 +1038,6 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
     }
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
-void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
-    loadCudaBasis();
-    int num_points = getNumPoints();
-    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, cuda_cache->nodes.data(), cuda_cache->support.data(), gpu_y);
-}
-void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const{
-    loadCudaBasis();
-    loadCudaHierarchy();
-    TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cache->nodes, cuda_cache->support,
-                                cuda_cache->hpntr, cuda_cache->hindx, cuda_cache->hroots, gpu_spntr, gpu_sindx, gpu_svals);
-}
-#endif // Tasmanian_ENABLE_CUDA
-
 void GridLocalPolynomial::buildTree(){
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
@@ -1450,6 +1524,7 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[], TypeAcce
 void GridLocalPolynomial::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
     cuda_cache.reset();
+    cuda_cachef.reset();
     #endif
 }
 
