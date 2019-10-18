@@ -14,7 +14,7 @@ pipeline {
                             filename 'Dockerfile_stack'
                             dir 'docker'
                             additionalBuildArgs '--pull'
-                            label 'nvidia-docker'
+                            label 'docker'
                         }
                     }
                     steps {
