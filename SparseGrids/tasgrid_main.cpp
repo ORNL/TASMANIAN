@@ -836,7 +836,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << "              leja              rleja     rleja-shifted" << endl;
         cout << "      max-lebesgue       min-lebesgue         min-delta " << endl << endl;
         cout << "List of local polynomial grids rules:" << endl;
-        cout << "      localp    localp-zero    semi-localp" << endl << endl;
+        cout << "      localp    localp-zero    semi-localp   localp-boundary\n\n";
         cout << "List of local wavelet grids rules:" << endl;
         cout << "      wavelet" << endl << endl;
         cout << "List of local polynomial and wavelet refinement types:" << endl;

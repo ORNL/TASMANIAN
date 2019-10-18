@@ -237,8 +237,7 @@ namespace TasGrid{
  * libraries such as BLAS, cuBLAS and MAGAMA.
  * See the documentation for TasGrid::TypeAcceleration for details.
  * - evaluate()
- * - evaluateBatch()
- * - evaluateFast()
+ * - evaluateBatch(), evaluateBatchGPU(), evaluateFast()
  * - integrate()
  *
  * \par Acceleration Back-end Selection

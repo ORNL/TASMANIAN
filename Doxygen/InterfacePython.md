@@ -19,6 +19,9 @@ Tasmanian uses the following modules:
 * **required** `numpy`
 * **optional** `matplotlib.pyplot`
 
+Tasmanian is also available through PIP: [https://pypi.org/project/Tasmanian/](https://pypi.org/project/Tasmanian/);
+however, the PIP installation comes with additional requirements for facilitating the CMake build process.
+See the PIP section on the installation instructions page.
 
 ### Module
 

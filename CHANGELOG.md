@@ -1,6 +1,9 @@
 Changelog for version 7.1
 --------------
 
+* added mixed-precision templates for
+    * `evaluateBatchGPU()` and `evaluateHierarchicalFunctionsGPU()`
+    * `evaluateBatch()` when the acceleration mode is cuda or magma
 * C++ 2014 standard is required now
 
 
