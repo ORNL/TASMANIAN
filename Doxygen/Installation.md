@@ -5,10 +5,12 @@
 * Install using CMake: the preferred way
 * Install with the `install` script-wrapper around CMake
 * Install with (basic) GNU Make
+* Install with Python Pip
 * Install with Spack
 * Install on MS Windows platform
 * Install folder structure
 * Linking to Tasmanian: CMake Package Config
+* Known issues
 
 ### Requirements
 
@@ -53,6 +55,7 @@ Optional features:
 ### Install using CMake: the preferred way
 
 The preferred way to install Tasmanian is to use the included CMake build script, which requires CMake version 3.10 or newer.
+
 * The commands for an out-of-source CMake build:
 ```
   mkdir Build
@@ -66,12 +69,12 @@ The preferred way to install Tasmanian is to use the included CMake build script
 
 * Standard CMake options are accepted:
 ```
-  -D CMAKE_INSTALL_PREFIX:PATH=<install-path> (install folder for the make install command)
-  -D CMAKE_BUILD_TYPE:STRING=<Debug/Release>  (set debug flags or default optimization flags)
-  -D BUILD_SHARED_LIBS:BOOL=<ON/OFF>          (pick shared/static libs, undefined builds both)
-  -D CMAKE_CXX_COMPILER:PATH=<path>           (specify the C++ compiler)
-  -D CMAKE_CUDA_COMPILER:PATH=<path>          (specify the CUDA nvcc compiler)
-  -D CMAKE_CXX_FLAGS:STING=<flags>            (set additional flags)
+  -D CMAKE_INSTALL_PREFIX:PATH=<install-prefix> (install folder for the make install command)
+  -D CMAKE_BUILD_TYPE:STRING=<Debug/Release>    (set debug flags or default optimization flags)
+  -D BUILD_SHARED_LIBS:BOOL=<ON/OFF>            (pick shared/static libs, undefined builds both)
+  -D CMAKE_CXX_COMPILER:PATH=<path>             (specify the C++ compiler)
+  -D CMAKE_CUDA_COMPILER:PATH=<path>            (specify the CUDA nvcc compiler)
+  -D CMAKE_CXX_FLAGS:STING=<flags>              (set additional flags)
 ```
 
 * List of Tasmanian specific CMake options (all default to **OFF**):
@@ -83,9 +86,9 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D Tasmanian_ENABLE_CUDA:BOOL=<ON/OFF>        (stable)
   -D Tasmanian_ENABLE_MAGMA:BOOL=<ON/OFF>       (stable)
   -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""       (stable)
+  -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (stable)
   -D Tasmanian_ENABLE_FORTRAN:BOOL=<ON/OFF>     (mostly stable)
   -D Tasmanian_ENABLE_MPI:BOOL=<ON/OFF>         (mostly stable)
-  -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (mostly stable)
 ```
 
 * Acceleration options:
@@ -113,10 +116,10 @@ The preferred way to install Tasmanian is to use the included CMake build script
 
 * Additional commands to guide the CMake `find_package()` modules:
 ```
-  -D PYTHON_EXECUTABLE:PATH         (specify path to Python)
-  -D CMAKE_CUDA_COMPILER:PATH       (specify path to the CUDA nvcc compiler)
-  -D CMAKE_Fortran_COMPILER:PATH    (specify Fortran compiler)
-  -D Tasmanian_MAGMA_ROOT_DIR:PATH  (specify path to MAGMA installation)
+  -D PYTHON_EXECUTABLE:PATH         (specify the Python interpreter)
+  -D CMAKE_CUDA_COMPILER:PATH       (specify the CUDA nvcc compiler)
+  -D CMAKE_Fortran_COMPILER:PATH    (specify the Fortran compiler)
+  -D Tasmanian_MAGMA_ROOT_DIR:PATH  (specify the path to the MAGMA installation)
 ```
 
 * Alternatives allowing to directly specify libraries and bypass `find_package()` altogether:
@@ -137,9 +140,9 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D Tasmanian_EXTRA_LINK_DIRS:PATH     (appends more link paths to search for libraries)
 ```
 
-* Options to be used only by Tasmanian developers:
+* Options helpful to Tasmanian developers:
 ```
-  -D DOXYGEN_INTERNAL_DOCS=YES          (include documentation of the Tasmanian internals)
+  -D DOXYGEN_INTERNAL_DOCS=YES  (include the documentation of the Tasmanian internals)
 ```
 
 ### Install with the `install` script-wrapper around CMake
@@ -181,8 +184,8 @@ by manually editing `Config/AltBuildSystems/Makefile.in` configuration file.
   make clean
 ```
 In the basic mode, the source folder will become the installation folder, i.e.,
-the libraries, executables and Python modules will be build in the source folder `./`
-and the headers and Fortran module will be copied to the `./include` folder.
+the libraries, executables and Python modules will be build in the source folder
+and the headers and the Fortran module will be copied to the `include` folder.
 
 ### Install with Python Pip
 
@@ -192,9 +195,9 @@ Tasmanian is included in the Python Pip index: [https://pypi.org/project/Tasmani
   python3 -m pip install Tasmanian --user                    (user installation)
   python3 -m pip install Tasmanian                           (virtual env installation)
 ```
-The Tasmanian module is not a regular Python-only project but a wrapper around a C++ library, hence some limitations apply:
-* The `scikit-build`, `packaging` and `numpy` dependencies have to be manually installed first
-* Only user installations are supported, installation for all users is possible with CMake.
+The Tasmanian module is not a regular Python-only project but a wrapper around C++ libraries, hence some limitations apply:
+* The `scikit-build`, `packaging` and `numpy` dependencies have to be manually installed first.
+* Only user installations are supported, installation for all users is possible with CMake but not Pip.
 * Python virtual environments are supported, as well as Linux, Mac and Windows operating systems.
 
 The pip installer will enable only the recommended options, if the required libraries are found automatically by CMake.
@@ -220,7 +223,8 @@ Tasmanian has been tested with MS Visual Studio 2017 and CMake 3.11.
   ctest -C Release
   cmake --build . --config Release --target install
 ```
-* Both Debug and Release are supported config modes, but do not use simultaneously
+* Both Debug and Release are supported config modes, but do not use them simultaneously,
+  pick only one Release or Debug.
 
 ### Install folder structure
 
@@ -238,7 +242,7 @@ a location inside the user home folder to avoid potential system-wide conflicts.
   <install-path>/share/Tasmanian            (bash env scripts, install log, table)
   <install-path>/share/Tasmanian/examples/  (reference examples)
   <install-path>/share/Tasmanian/matlab/    (matlab scripts)
-  <install-path>/share/Tasmanian/python/    (sym-link to <install-path>/lib/pythonX.Y)
+  <install-path>/share/Tasmanian/python/    (copy of <install-path>/lib/pythonX.Y)
 ```
 
 Additional notes:
@@ -246,12 +250,18 @@ Additional notes:
 ```
   <install-path>/share/Tasmanian/Tasmanian.log
 ```
+* The log file can be displayed with wither command:
+```
+  <install-path>/bin/tasgrid -log  (using the command line tool)
+  python -m Tasmanian              (only if Python is enabled)
+```
 * The executable and library paths, as well as the Python path can be set in `bash` by sourcing
 ```
-  <install-path>/share/Tasmanian/TasmanianENVsetup.sh
+  source <install-path>/share/Tasmanian/TasmanianENVsetup.sh
 ```
-* The Python module is version independent, i.e., the files work with all tested Python versions, the version independent symbolic-link `share/Tasmanian/python` allows to use the Python interface regardless of the version of Python used during the install.
-* Under MS Windows the shared library (e.g., the .dll files) are installed in `bin` and symbolic-links are replaced by a hard copy.
+* When using pip, the python module location may be different depending on the OS and the Python virtual environment.
+* The Python module is version independent, i.e., the files work with all tested Python versions; the `share/Tasmanian/python` copy allows for easy and version independent access to the Tasmanian modules.
+* Under MS Windows the shared libraries (e.g., the .dll files) are installed in `bin`.
 
 ### Linking to Tasmanian: CMake Package Config
 
@@ -263,6 +273,7 @@ See the included `CMakeLists.txt` in `<install-path>/share/Tasmanian/examples`.
 
 Note that the `PATHS` do not have to be specified explicitly
 if the `TasmanianENVsetup.sh` is sourced or if the `Tasmanian_ROOT` environment variable is set.
+The correct `find_package()` command is displayed in the log (see the previous section).
 
 The imported targets will be named:
 ```
@@ -286,7 +297,7 @@ The modules correspond to shared and static libraries and the cmake options used
 
 All available components will be included even if the component is not explicitly requested.
 Requesting components can alter the behavior of `Tasmanian::Tasmanian`,
-help catch errors early in the build process,
+and help catch errors early in the build process,
 and/or print useful log messages. For example:
 ```
   find_package(Tasmanian 7.0 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
@@ -321,5 +332,5 @@ Several known issues and work-around fixes:
 * The PGI compiler fails when using optimization `-O2` with an error about an empty `free()`
     * the bug happens when `std::vector<double>::resize()` is called on an empty vector
     * use the `-O1` instead, this issue needs further investigation
-* Older versions of CUDA do not work with newer versions of some compilers, e.g., gcc
+* Older versions of CUDA do not work with newer versions of some compilers, e.g., `gcc`
     * consult the CUDA manual for a list of acceptable compilers
