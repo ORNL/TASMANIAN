@@ -10,12 +10,14 @@ enum BenchFuction{
     bench_make,
     bench_loadneeded,
     bench_evaluate,
+    bench_evaluate_mixed,
     bench_iweights
 };
 
 BenchFuction getTest(std::string const &s){
     std::map<std::string, BenchFuction> str_to_test = {
         {"evaluate", bench_evaluate},
+        {"evaluate-mixed", bench_evaluate_mixed},
         {"loadneeded", bench_loadneeded},
         {"makegrid", bench_make},
         {"iweights", bench_iweights}
@@ -136,12 +138,21 @@ getLambdaMakeGrid(GridFamily grid_family, int const &num_dimensions, const int &
     }
 }
 
-std::vector<double> getRandomVector(int dim1, int dim2, long int seed){
-    std::vector<double> x(Utils::size_mult(dim1, dim2));
+template<typename T = double>
+std::vector<T> getRandomVector(int dim1, int dim2, long int seed){
+    std::vector<T> x(Utils::size_mult(dim1, dim2));
     std::minstd_rand park_miller(seed);
-    std::uniform_real_distribution<double> unif(-1.0, 1.0);
+    std::uniform_real_distribution<T> unif(-1.0, 1.0);
     for(auto &v : x) v = unif(park_miller);
     return x;
+}
+
+template<typename T>
+std::vector<std::vector<T>> getRandomVectors(int num_vectors, int dim1, int dim2){
+    std::vector<std::vector<T>> result((size_t) num_vectors);
+    long int seed = 44;
+    for(auto &r : result) r = getRandomVector<T>(dim1, dim2, seed++);
+    return result;
 }
 
 std::vector<double> getGenericModel(size_t num_dimensions, size_t num_outputs,
@@ -170,6 +181,21 @@ void loadGenericModel(TasmanianSparseGrid &grid){
                                   grid.getNeededPoints());
 
     grid.loadNeededPoints(values);
+}
+
+struct DryRun{};
+struct NoDryRun{};
+template<typename use_dry_run = NoDryRun>
+int testMethod(int iteratons, std::function<void(int)> test){
+    if (std::is_same<use_dry_run, DryRun>::value)
+        test(iteratons-1);
+
+    auto time_start = std::chrono::system_clock::now();
+    for(int i=0; i<iteratons; i++) test(i);
+    auto time_end = std::chrono::system_clock::now();
+
+    long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
+    return int( 0.5 + double(elapsed) / double(iteratons) );
 }
 
 #endif
