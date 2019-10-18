@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label 'DoNotRunAnythingOnMaster'
-    }
+    agent none
     stages {
         stage('Automated testing') {
             when {
