@@ -134,12 +134,12 @@ cmake \
                       make Tasmanian_doxygen &&
                       git config http.sslVerify false
                       git fetch origin gh-pages &&
-                      git checkout -B gh-pages FETCH_HEAD &&
+                      git checkout -B gh-pages FETCH_HEAD^ &&
                       rm -rf ../rolling && mv Doxygen/html ../rolling && git add --all ../rolling &&
                       git config user.email "noreply@ornl.gov" &&
                       git config user.name "Jenkins CI" &&
                       git commit -m "Automated documentation update" &&
-                      git push https://$GIT_CREDS@github.com/ORNL/TASMANIAN.git gh-pages'''
+                      git push -f https://$GIT_CREDS@github.com/ORNL/TASMANIAN.git gh-pages'''
             }
         }
     }
