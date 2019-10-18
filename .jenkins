@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label 'DoNotRunAnythingOnMaster'
-    }
+    agent none
     stages {
         stage('Automated testing') {
             when {
@@ -16,7 +14,7 @@ pipeline {
                             filename 'Dockerfile_stack'
                             dir 'docker'
                             additionalBuildArgs '--pull'
-                            label 'nvidia-docker'
+                            label 'docker'
                         }
                     }
                     steps {
