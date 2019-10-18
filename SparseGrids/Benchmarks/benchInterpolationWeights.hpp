@@ -28,29 +28,16 @@ bool benchmark_iweights(std::deque<std::string> &args){
 
     cout << setw(20) << "points" << setw(20) << "milliseconds" << endl;
 
-    std::vector<std::vector<double>> inputs((size_t) iteratons);
-    int seed = 44;
-    for(auto &inp : inputs) inp = getRandomVector(num_dimensions, 1, seed++);
+    std::vector<std::vector<double>> inputs = getRandomVectors<double>(iteratons, num_dimensions, 1);
 
     for(int jump = 0; jump < num_jumps; jump++){
         auto grid = make_grid();
-
-        loadGenericModel(grid);
         //grid.printStats(); // uncomment to make sure the right grid is constructed
 
         std::vector<double> weights(grid.getNumPoints());
-
-        auto time_start = std::chrono::system_clock::now();
-
-        for(int i=0; i < iteratons; i++)
-            grid.getInterpolationWeights(inputs[i], weights);
-
-        auto time_end = std::chrono::system_clock::now();
-
-        long long elapsed = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count();
-        double normalized = (double) (int( double(elapsed) / double(iteratons) ))/1000.0;
-
-        cout << setw(20) << grid.getNumPoints() << setw(20) << normalized << endl;
+        cout << setw(20) << grid.getNumPoints() << setw(20)
+             << testMethod(iteratons, [&](int i)->void{ grid.getInterpolationWeights(inputs[i], weights); })
+             << endl;
         num_depth += 1;
     }
 

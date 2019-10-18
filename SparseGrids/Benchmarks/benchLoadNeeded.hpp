@@ -26,6 +26,8 @@ bool benchmark_loadneeded(std::deque<std::string> &args){
 
     for(int jump = 0; jump < num_jumps; jump++){
         auto grid = make_grid();
+        //grid.printStats(); // uncomment to make sure the right grid is constructed
+
         if (jump == 0) cout << " (points: " << grid.getNumPoints() << ")" << endl;
         grid.enableAcceleration(acc);
         if (AccelerationMeta::isAccTypeGPU(acc)) grid.setGPUID(device);
@@ -33,18 +35,8 @@ bool benchmark_loadneeded(std::deque<std::string> &args){
         auto values = getGenericModel((size_t) grid.getNumDimensions(),
                                       (size_t) grid.getNumOutputs(),
                                       grid.getNeededPoints());
-        grid.loadNeededPoints(values); // dry-run
-        //grid.printStats(); // uncomment to make sure the right grid is constructed
 
-        auto time_start = std::chrono::system_clock::now();
-        for(size_t i=0; i < (size_t) iteratons; i++)
-            grid.loadNeededPoints(values);
-        auto time_end = std::chrono::system_clock::now();
-
-        long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
-        int normalized = int( double(elapsed) / double(iteratons) );
-
-        cout << setw(7) << normalized << endl;
+        cout << setw(7) << testMethod<DryRun>(iteratons, [&](int)->void{ grid.loadNeededPoints(values); }) << endl;
         num_outputs *= 2;
     }
 
