@@ -32,15 +32,9 @@ bool benchmark_makegrid(std::deque<std::string> &args){
         auto grid = make_grid();
         //grid.printStats(); // uncomment to make sure the right grid is constructed
 
-        auto time_start = std::chrono::system_clock::now();
-        for(int i=0; i < iteratons; i++)
-            auto grid_temp = make_grid();
-        auto time_end = std::chrono::system_clock::now();
-
-        long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
-        int normalized = int( double(elapsed) / double(iteratons) );
-
-        cout << setw(12) << grid.getNumPoints() << setw(12) << normalized << endl;
+        cout << setw(12) << grid.getNumPoints() << setw(12)
+             << testMethod(iteratons, [&](int)->void{ auto grid_temp = make_grid(); })
+             << endl;
         num_depth += 1;
     }
 

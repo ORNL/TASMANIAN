@@ -28,8 +28,8 @@ int main(int argc, const char** argv){
         pass = benchmark_makegrid(args);
     if (test == bench_loadneeded)
         pass = benchmark_loadneeded(args);
-    if (test == bench_evaluate)
-        pass = benchmark_evaluate(args);
+    if (test == bench_evaluate || test == bench_evaluate_mixed)
+        pass = benchmark_evaluate(args, (test == bench_evaluate_mixed));
     if (test == bench_iweights)
         pass = benchmark_iweights(args);
 
@@ -42,7 +42,7 @@ int main(int argc, const char** argv){
 void printHelp(BenchFuction test){
     if (test == bench_none){
         cout << "\nusage: ./benchmark <function> <parameters>\n\n";
-        cout << "functions: makegrid, loadneeded, evaluate, iweights\n";
+        cout << "functions: makegrid, loadneeded, evaluate(-mixed), iweights\n";
         cout << "\n see: ./benchmark <function> help\n";
     }else if (test == bench_make){
         cout << "\nusage: ./benchmark makegrid <grid> <dims> <depth> <type> <rule> <iters> <jumps> <aniso>\n\n";
@@ -70,7 +70,7 @@ void printHelp(BenchFuction test){
         cout << "gpu   : cuda device ID; ignored for cpu acceleration\n";
         cout << "aniso : (optional) list of anisotropic weights and level limits\n";
         cout << "      : anisotropic weights come first (if used by the grid), then level limits\n";
-    }else if (test == bench_evaluate){
+    }else if (test == bench_evaluate || test == bench_evaluate_mixed){
         cout << "\nusage: ./benchmark evaluate <grid> <dims> <outs> <depth> <type> <rule> <order> <batch> <iters> <jumps> <acc> <gpu> <aniso>\n\n";
         cout << "grid  : global, sequence, localp, wavelet, fourier\n";
         cout << "dims  : number of dimensions\n";

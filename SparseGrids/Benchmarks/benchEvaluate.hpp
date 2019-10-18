@@ -3,7 +3,7 @@
 
 #include "benchCommon.hpp"
 
-bool benchmark_evaluate(std::deque<std::string> &args){
+bool benchmark_evaluate(std::deque<std::string> &args, bool use_mixed){
     if (args.size() < 12) return false;
 
     // report the test parameters to reference later
@@ -25,9 +25,9 @@ bool benchmark_evaluate(std::deque<std::string> &args){
     auto make_grid = getLambdaMakeGrid(grid_family, num_dimensions, num_outputs, num_depth, dtype, rule, order, extra);
 
     num_jumps = std::max(num_jumps, 1); // make at least one test
-    std::vector<std::vector<double>> inputs((size_t) iteratons);
-    int seed = 44;
-    for(auto &inp : inputs) inp = getRandomVector(num_dimensions, num_batch, seed++);
+
+    std::vector<std::vector<double>> inputs = getRandomVectors<double>(iteratons, num_dimensions, num_batch);
+    std::vector<std::vector<float>> inputsf = getRandomVectors<float>((use_mixed) ? iteratons : 0, num_dimensions, num_batch);
 
     for(int jump = 0; jump < num_jumps; jump++){
         auto grid = make_grid();
@@ -39,18 +39,13 @@ bool benchmark_evaluate(std::deque<std::string> &args){
 
         // make one dry-run
         std::vector<double> result;
-        grid.evaluateBatch(inputs.back(), result);
-        //grid.printStats(); // uncomment to make sure the right grid is constructed
+        cout << setw(7) << testMethod<DryRun>(iteratons, [&](int i)->void{ grid.evaluateBatch(inputs[i], result); });
 
-        auto time_start = std::chrono::system_clock::now();
-        for(size_t i=0; i < (size_t) iteratons; i++)
-            grid.evaluateBatch(inputs[i], result);
-        auto time_end = std::chrono::system_clock::now();
-
-        long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
-        int normalized = int( double(elapsed) / double(iteratons) );
-
-        cout << setw(7) << normalized << endl;
+        if (use_mixed){
+            std::vector<float> resultf;
+            cout << setw(7) << testMethod<DryRun>(iteratons, [&](int i)->void{ grid.evaluateBatch(inputsf[i], resultf); });
+        }
+        cout << endl;
         num_outputs *= 2;
     }
 
