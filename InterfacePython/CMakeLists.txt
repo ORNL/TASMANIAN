@@ -43,6 +43,8 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
         set(Tasmanian_libsparsegrid_path "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/${_tsg_configtype}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
         set(Tasmanian_libdream_path      "${CMAKE_CURRENT_BINARY_DIR}/../DREAM/${_tsg_configtype}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniandream${CMAKE_SHARED_LIBRARY_SUFFIX}")
         set(Tasmanian_libcaddons_path    "${CMAKE_CURRENT_BINARY_DIR}/../Addons/${_tsg_configtype}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
+        # all libraries that are needed transitively must be included here, currently on the sparse grid library is needed
+        set(Tasmanian_libpaths           "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/${_tsg_configtype}/")
 
         configure_file("${CMAKE_CURRENT_SOURCE_DIR}/testConfigureData.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/testConfigureData${_tsg_configtype}.py")
         configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianConfig.in.py"    "${CMAKE_CURRENT_BINARY_DIR}/TasmanianConfig${_tsg_configtype}.py")
@@ -113,6 +115,7 @@ endif()
 set(Tasmanian_libsparsegrid_path "${Tasmanian_final_install_path}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniansparsegrid${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(Tasmanian_libdream_path      "${Tasmanian_final_install_path}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniandream${CMAKE_SHARED_LIBRARY_SUFFIX}")
 set(Tasmanian_libcaddons_path    "${Tasmanian_final_install_path}/${Tasmanian_shared_lib_destination}/${CMAKE_SHARED_LIBRARY_PREFIX}tasmaniancaddons${CMAKE_SHARED_LIBRARY_SUFFIX}")
+set(Tasmanian_libpaths           "${Tasmanian_final_install_path}/bin/")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/TasmanianConfig.in.py"  "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.py")
 
 

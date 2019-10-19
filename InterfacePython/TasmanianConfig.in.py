@@ -44,7 +44,7 @@ __path_logfile__       = "@Tasmanian_final_install_path@/share/Tasmanian/Tasmani
 # the transitive library dependencies on Linux/OsX are handled by rpath, Windows needs help
 if "@CMAKE_SYSTEM_NAME@" == "Windows":
     import os
-    os.environ['PATH'] = "@Tasmanian_final_install_path@/bin/" + os.pathsep + os.environ['PATH']
+    os.environ['PATH'] = "@Tasmanian_libpaths@" + os.pathsep + os.environ['PATH']
 
 class TasmanianInputError(Exception):
     '''Exception raised for incorret input to Tasmanian
