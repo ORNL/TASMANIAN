@@ -1107,7 +1107,7 @@ void GridLocalPolynomial::integrateHierarchicalFunctions(double integrals[]) con
     std::vector<double> w, x;
 
     if ((rule->getMaxOrder() == -1) || (rule->getMaxOrder() > 3) ){
-        n = top_level / 2 + 1;
+        n = ((rule->getMaxOrder() == -1) ? top_level : rule->getMaxOrder()) / 2 + 1;
         OneDimensionalNodes::getGaussLegendre(n, w, x);
     }
 
