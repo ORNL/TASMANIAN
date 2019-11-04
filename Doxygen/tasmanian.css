@@ -136,6 +136,19 @@ h2 {
         top: 5px;
 }
 
+#MSearchBox .left,
+#MSearchBox .left #MSearchField {
+        width:100%
+}
+
+#MSearchResultsWindow {
+        left: 50% !important;
+        transform: translate(-50%, 4%);
+}
+
+
+
+
 
 /******************************************************************************
 3.3 - MAIN MENU (TOP)
