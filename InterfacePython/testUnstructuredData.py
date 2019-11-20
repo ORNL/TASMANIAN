@@ -213,7 +213,7 @@ class TestTasClass(unittest.TestCase):
 
         # check support
         grid.makeLocalPolynomialGrid(1, 1, 3)
-        aSup = grid.getSupport()
+        aSup = grid.getHierarchicalSupport()
         aResult = (1.0, 1.0, 1.0, 0.5, 0.5, 0.25, 0.25, 0.25, 0.25)
         np.testing.assert_almost_equal(aSup, np.array(aResult).reshape((9, 1)), 12, 'support different by too much')
 

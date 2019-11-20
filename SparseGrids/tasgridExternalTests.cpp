@@ -1762,7 +1762,7 @@ bool ExternalTester::testAllDomain() const{
             std::vector<double> xrand = genRandom(num_samples, lower, upper);
 
             std::vector<double> points  = grid.getPoints();
-            std::vector<double> support = grid.getSupport();
+            std::vector<double> support = grid.getHierarchicalSupport();
             std::vector<double> basis   = grid.evaluateHierarchicalFunctions(xrand);
 
             // check if points fall outside of the support, then the corresponding basis must be zero

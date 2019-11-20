@@ -1151,7 +1151,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
     }
 }
 
-std::vector<double> TasmanianSparseGrid::getSupport() const{
+std::vector<double> TasmanianSparseGrid::getHierarchicalSupport() const{
     std::vector<double> support = (empty()) ? std::vector<double>() : base->getSupport();
 
     if (!domain_transform_a.empty()){
