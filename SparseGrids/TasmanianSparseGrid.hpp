@@ -1468,6 +1468,11 @@ public:
     void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
 
     /*!
+     * \brief Returns the support of the hierarchical functions.
+     */
+    std::vector<double> getSupport() const;
+
+    /*!
      * \brief Returns the integrals of the hierarchical basis functions.
      *
      * Returns a vector of size getNumPoints() that holds the integral of each

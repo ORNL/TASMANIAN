@@ -98,6 +98,7 @@ public:
     void finishConstruction();
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
+    std::vector<double> getSupport() const override final;
 
     void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
     void integrateHierarchicalFunctions(double integrals[]) const;

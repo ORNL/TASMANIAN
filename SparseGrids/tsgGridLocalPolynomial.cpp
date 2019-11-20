@@ -1426,6 +1426,14 @@ const double* GridLocalPolynomial::getSurpluses() const{
 const int* GridLocalPolynomial::getNeededIndexes() const{
     return (needed.empty()) ? 0 : needed.getIndex(0);
 }
+std::vector<double> GridLocalPolynomial::getSupport() const{
+    MultiIndexSet const &work = (points.empty()) ? needed : points;
+
+    std::vector<double> support(Utils::size_mult(work.getNumIndexes(), work.getNumDimensions()));
+    std::transform(work.getIndex(0), work.getIndex(0) + support.size(), support.begin(), [&](int p)->double{ return rule->getSupport(p); });
+    return support;
+}
+
 void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction){
     clearRefinement();
 
