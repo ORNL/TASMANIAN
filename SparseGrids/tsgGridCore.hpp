@@ -114,6 +114,7 @@ public:
     virtual void finishConstruction() = 0;
 
     virtual void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const = 0; // add acceleration here
+    virtual std::vector<double> getSupport() const{ return std::vector<double>(Utils::size_mult(getNumPoints(), getNumDimensions()), 2.0); }
     virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) = 0;
     virtual void integrateHierarchicalFunctions(double integrals[]) const = 0;
 

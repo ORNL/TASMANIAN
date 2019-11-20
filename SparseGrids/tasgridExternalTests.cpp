@@ -1748,7 +1748,44 @@ bool ExternalTester::testAllDomain() const{
 
     cout << "      Domain                        conformal" << setw(15) << ((pass3) ? "Pass" : "FAIL") << endl;
 
-    return (pass1 && pass2 && pass3);
+    bool pass4 = true;
+    {
+        std::vector<double> lower{-2.0, -0.5}, upper{3.0, 1.5};
+        int const num_samples = 1000;
+
+        for(int t=0; t<3; t++){
+            if (t == 0) grid.makeLocalPolynomialGrid(2, 1, 6, 1, rule_localp);
+            if (t == 1) grid.makeWaveletGrid(2, 1, 4, 1);
+            if (t == 2) grid.makeWaveletGrid(2, 1, 4, 3);
+
+            grid.setDomainTransform(lower, upper);
+            std::vector<double> xrand = genRandom(num_samples, lower, upper);
+
+            std::vector<double> points  = grid.getPoints();
+            std::vector<double> support = grid.getHierarchicalSupport();
+            std::vector<double> basis   = grid.evaluateHierarchicalFunctions(xrand);
+
+            // check if points fall outside of the support, then the corresponding basis must be zero
+            for(int s=0; s<num_samples; s++){
+                for(int i=0; i<grid.getNumPoints(); i++){
+                    if ((std::abs( points[2*i] - xrand[2*s] ) > support[2*i])
+                        || (std::abs( points[2*i+1] - xrand[2*s+1] ) > support[2*i+1])){
+                        if (std::abs(basis[s * grid.getNumPoints() + i]) > Maths::num_tol){
+                            cout << " Failed support test: point (" << points[2*i] << ", " << points[2*i+1]
+                                 << "), support = (" << support[2*i] << ", " << support[2*i+1]
+                                 << "), test_point = (" << xrand[2*s] << ", " << xrand[2*s+1]
+                                 << "), basis = " << basis[s * grid.getNumPoints() + i] << "\n";
+                            pass4 = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    cout << "      Domain                          support" << setw(15) << ((pass4) ? "Pass" : "FAIL") << endl;
+
+    return (pass1 && pass2 && pass3 && pass4);
 }
 
 bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid &grid) const{

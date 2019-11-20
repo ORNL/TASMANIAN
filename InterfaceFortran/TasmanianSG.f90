@@ -637,6 +637,13 @@ subroutine tsgSetHierarchicalCoefficients(grid,c)
   call tsgshc(grid%pntr, c)
 end subroutine tsgSetHierarchicalCoefficients
 !=======================================================================
+function tsgGetHierarchicalSupport(grid) result(c)
+  type(TasmanianSparseGrid) :: grid
+  double precision, pointer :: c(:)
+  allocate(c(tsgGetNumDimensions(grid) * tsgGetNumPoints(grid)))
+  call tsghsu(grid%pntr, c)
+end function tsgGetHierarchicalSupport
+!=======================================================================
 subroutine tsgIntegrate(grid, q)
   type(TasmanianSparseGrid) :: grid
   double precision :: q(:)

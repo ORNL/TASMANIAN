@@ -211,6 +211,12 @@ class TestTasClass(unittest.TestCase):
             fExpected = grid.integrate()
             np.testing.assert_almost_equal(fResult, fExpected[0], 12, 'integrals different by too much')
 
+        # check support
+        grid.makeLocalPolynomialGrid(1, 1, 3)
+        aSup = grid.getHierarchicalSupport()
+        aResult = (1.0, 1.0, 1.0, 0.5, 0.5, 0.25, 0.25, 0.25, 0.25)
+        np.testing.assert_almost_equal(aSup, np.array(aResult).reshape((9, 1)), 12, 'support different by too much')
+
     def checkValues(self):
         lTests = ['grid.makeGlobalGrid(2, 2, 3, "level", "clenshaw-curtis")',
                   'grid.makeSequenceGrid(2, 2, 3, "level", "rleja")',

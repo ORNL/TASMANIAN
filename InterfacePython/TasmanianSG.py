@@ -210,6 +210,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgMergeRefinement.argtypes = [c_void_p]
         self.pLibTSG.tsgRemovePointsByHierarchicalCoefficient.argtypes = [c_void_p, c_double, c_int, POINTER(c_double)]
         self.pLibTSG.tsgEvaluateHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
+        self.pLibTSG.tsgGetHierarchicalSupportStatic.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgSetHierarchicalCoefficients.argtypes = [c_void_p, POINTER(c_double)]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsGetNZ.argtypes = [c_void_p, POINTER(c_double), c_int]
         self.pLibTSG.tsgEvaluateSparseHierarchicalFunctionsStatic.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_int), POINTER(c_int), POINTER(c_double)]
@@ -1902,6 +1903,27 @@ class TasmanianSparseGrid:
             aResult = aResult[0::2] + 1j * aResult[1::2]
 
         return aResult.reshape([iNumX, self.getNumPoints()])
+
+    def getHierarchicalSupport(self):
+        '''
+        returns the support of the hierarchical basis in a 2-D numpy.ndarray
+
+        - only local-polynomial and wavelet grids have restricted support
+        - the support of all basis is restricted to the domain even
+          if the support includes additional ares
+
+        output: shape == [getNumPoints(), getNumDimensions()]
+                the support entries correspond to the output of getPoints()
+                if x represents a point in the domain and
+                if abs( x[j] - getPoints()[i, j] ) > getSupport()[i, j]
+                then the i-th entry in evaluateHierarchicalFunctions(x)
+                corresponding to x is guaranteed to be zero
+        '''
+        if (self.getNumPoints() == 0):
+            return np.empty([0,0], np.float64)
+        aResult = np.empty((self.getNumPoints() * self.getNumDimensions()), np.float64)
+        self.pLibTSG.tsgGetHierarchicalSupportStatic(self.pGrid, np.ctypeslib.as_ctypes(aResult))
+        return aResult.reshape((self.getNumPoints(), self.getNumDimensions()))
 
     def evaluateSparseHierarchicalFunctions(self, llfX):
         '''

@@ -390,6 +390,16 @@ void RuleWavelet::getShiftScale(int point, double &scale, double &shift) const{
         }
     }
 }
+double RuleWavelet::getSupport(int point) const{
+    if (order == 1){
+        if (point <= 2) return 1.0; // linear-polynomial points
+        return 3.0  / ( 4.0 * std::pow(2.0, Maths::intlog2(point - 1) - 2) );
+    }else{
+        if (point <= 8) return 2.0; // cubic-polynomial points and level 1 have global support
+        // the strange 4.2 compensates for numerical errors in computing the cubic-cascade
+        return 4.2 / (3.0 * std::pow(2.0, Maths::intlog2(point - 1) - 3));
+    }
+}
 
 inline double RuleWavelet::eval_linear(int point, double x) const{
     // Given a wavelet designated by point and a value x, evaluates the wavelet at x.

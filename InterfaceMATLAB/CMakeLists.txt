@@ -12,6 +12,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgEvaluate.m
                                   tsgExample.m
                                   tsgGetHCoefficients.m
+                                  tsgGetHSupport.m
                                   tsgGetInterpolationWeights.m
                                   tsgGetNeededIndexes.m
                                   tsgGetNeededPoints.m

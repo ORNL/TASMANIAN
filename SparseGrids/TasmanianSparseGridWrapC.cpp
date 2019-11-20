@@ -411,6 +411,10 @@ int tsgEvaluateSparseHierarchicalFunctionsGetNZ(void *grid, const double x[], in
 void tsgEvaluateSparseHierarchicalFunctionsStatic(void *grid, const double x[], int num_x, int *pntr, int *indx, double *vals){
     ((TasmanianSparseGrid*) grid)->evaluateSparseHierarchicalFunctionsStatic(x, num_x, pntr, indx, vals);
 }
+void tsgGetHierarchicalSupportStatic(void *grid, double support[]){
+    std::vector<double> sup = ((TasmanianSparseGrid*) grid)->getHierarchicalSupport();
+    std::copy(sup.begin(), sup.end(), support);
+}
 const double* tsgGetHierarchicalCoefficients(void *grid){
     return ((TasmanianSparseGrid*) grid)->getHierarchicalCoefficients();
 }

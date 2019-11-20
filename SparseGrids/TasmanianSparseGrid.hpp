@@ -228,6 +228,7 @@ namespace TasGrid{
  * - evaluateHierarchicalFunctionsGPU(), evaluateSparseHierarchicalFunctionsGPU()
  * - setHierarchicalCoefficients(), getHierarchicalCoefficients()
  * - integrateHierarchicalFunctions()
+ * - getHierarchicalSupport()
  *
  * \par Evaluate Methods
  * The evaluate methods compute the sparse grid approximation to the model for
@@ -1466,6 +1467,25 @@ public:
      *      the indexes in \b indx.
      */
     void evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const;
+
+    /*!
+     * \brief Returns the support of the hierarchical functions.
+     *
+     * The Global, Sequence and Fourier grids rely on basis functions with support over the entire domain.
+     * However, local-polynomial and wavelet grids have basis that is restricted to a hypercube centered
+     * at the corresponding point and with equal support in each direction.
+     * This method returns the length for each basis function and direction.
+     *
+     * \returns either an empty vector (for an empty grid), or a vector of size getNumDimensions() times
+     *      getNumPoints() organized in strips of length getNumDimensions().
+     *      Each strip corresponds to a basis function and if (in a some direction for some basis function)
+     *      an x-point falls away from the corresponding grid point at a distance larger than the support,
+     *      then the basis will evaluate to zero.
+     *
+     * \b Note: the support of all basis functions is logically restricted to the grid domain,
+     *      i.e., the effective support equals the intersection of the hypercube and the domain.
+     */
+    std::vector<double> getHierarchicalSupport() const;
 
     /*!
      * \brief Returns the integrals of the hierarchical basis functions.

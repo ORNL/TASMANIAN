@@ -1151,6 +1151,22 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
     }
 }
 
+std::vector<double> TasmanianSparseGrid::getHierarchicalSupport() const{
+    std::vector<double> support = (empty()) ? std::vector<double>() : base->getSupport();
+
+    if (!domain_transform_a.empty()){
+        std::vector<double> correction(domain_transform_a.size());
+        std::transform(domain_transform_a.begin(), domain_transform_a.end(), domain_transform_b.begin(),
+                       correction.begin(), [](double a, double b)->double{ return 0.5 * (b - a); });
+
+        for(auto is = support.begin(); is < support.end(); ){
+            for(auto c : correction) *is++ *= c;
+        }
+    }
+
+    return support;
+}
+
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
     base->setHierarchicalCoefficients(c, acceleration);
 }

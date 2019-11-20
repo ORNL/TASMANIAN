@@ -178,6 +178,10 @@ void tsgghc_(TasmanianSparseGrid **grid, double *c){
                                      : std::copy(cc, cc + (*grid)->getNumPoints() * (*grid)->getNumOutputs(), c);
 }
 void tsgshc_(TasmanianSparseGrid **grid, double *c){(*grid)->setHierarchicalCoefficients(c);}
+void tsghsu_(TasmanianSparseGrid **grid, double *c){
+    std::vector<double> sup = (*grid)->getHierarchicalSupport();
+    std::copy(sup.begin(), sup.end(), c);
+}
 
 // setAnisotropic/Surplus/Refinement
 void tsgsar_(TasmanianSparseGrid **grid, int *type, int *min_growth, int *output, int *opt_flags, const int *llimits){

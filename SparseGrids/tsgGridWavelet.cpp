@@ -939,6 +939,13 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
         }
     }
 }
+std::vector<double> GridWavelet::getSupport() const{
+    MultiIndexSet const &work = (points.empty()) ? needed : points;
+
+    std::vector<double> support(Utils::size_mult(work.getNumIndexes(), work.getNumDimensions()));
+    std::transform(work.getIndex(0), work.getIndex(0) + support.size(), support.begin(), [&](int p)->double{ return rule1D.getSupport(p); });
+    return support;
+}
 
 void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration){
     #ifdef Tasmanian_ENABLE_CUDA
