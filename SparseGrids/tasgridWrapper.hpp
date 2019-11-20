@@ -71,6 +71,7 @@ enum TypeCommand{
     command_setcoefficients, // ML section
     command_evalhierarchical_sparse, // ML section
     command_evalhierarchical_dense, // ML section
+    command_gethsupport, // ML section
 
     command_getpointsindex,
     command_getneededindex
@@ -138,6 +139,7 @@ protected:
     void outputPoints(bool useNeeded) const;
     void outputQuadrature() const;
     void outputHierarchicalCoefficients() const;
+    void outputHierachicalSupport() const;
 
     bool setConformalTransformation();
 

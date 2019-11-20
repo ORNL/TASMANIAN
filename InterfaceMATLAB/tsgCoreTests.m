@@ -735,6 +735,16 @@ end
 tsgDeleteGrid(lGridA);
 tsgDeleteGrid(lGridB);
 
+% this tests the hierarchical support
+[lGrid, p] = tsgMakeWavelet('_tsgcoretests_ml', 1, 1, 2, 1);
+[res] = tsgGetHSupport(lGrid);
+tres = [1.0, 1.0, 1.0, 1.5, 1.5, 0.75, 0.75, 0.75, 0.75]';
+if (norm(tres - res) > 1.E-11)
+    error(['Mismatch in tsgGetHSupport: wavelet support']);
+end
+
+tsgDeleteGrid(lGrid);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgIntegrate()                               %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

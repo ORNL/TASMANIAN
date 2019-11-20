@@ -60,6 +60,7 @@ TypeCommand TasgridWrapper::hasCommand(std::string const &s){
             {"-integrate",  command_integrate},  {"-i",  command_integrate},
             {"-evalhierarchyd", command_evalhierarchical_dense},  {"-ehd", command_evalhierarchical_dense},
             {"-evalhierarchys", command_evalhierarchical_sparse}, {"-ehs", command_evalhierarchical_sparse},
+            {"-gethsupport", command_gethsupport}, {"-ghsup", command_gethsupport},
             {"-getanisotropy", command_getanisocoeff}, {"-ga", command_getanisocoeff},
             {"-refinesurp",    command_refine_surp},   {"-rs", command_refine_surp},
             {"-refineaniso",   command_refine_aniso},  {"-ra", command_refine_aniso},
@@ -225,8 +226,8 @@ bool TasgridWrapper::checkSane() const{
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (conformal == conformal_none){  cerr << "ERROR: must specify valid -conformaltype" << endl; pass = false;  }
         if (conformalfilename.empty()){ cerr << "ERROR: must specify valid -conformalfile" << endl; pass = false; }
-    }else if ((command == command_getquadrature) || (command == command_getpoints) || (command == command_getneeded) ||
-              (command == command_getcoefficients)){
+    }else if ((command == command_getquadrature)   || (command == command_getpoints) || (command == command_getneeded) ||
+              (command == command_getcoefficients) || (command == command_gethsupport)){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (outfilename.empty() && (printCout == false)){
             cerr << "ERROR: no means of output are specified, you should specify -outfile or -print" << endl; pass = false;
@@ -444,6 +445,11 @@ void TasgridWrapper::outputHierarchicalCoefficients() const{
         writeMatrix(outfilename, num_pnts, num_outs, coeff);
         printMatrix(num_pnts, num_outs, coeff);
     }
+}
+void TasgridWrapper::outputHierachicalSupport() const{
+    std::vector<double> supp = grid.getHierarchicalSupport();
+    writeMatrix(outfilename, grid.getNumPoints(), grid.getNumDimensions(), supp.data());
+    printMatrix(grid.getNumPoints(), grid.getNumDimensions(), supp.data());
 }
 bool TasgridWrapper::setConformalTransformation(){
     if (conformal == conformal_asin){
@@ -1008,6 +1014,8 @@ bool TasgridWrapper::executeCommand(){
         outputPoints(false);
     }else if (command == command_getneeded){
         outputPoints(true);
+    }else if (command == command_gethsupport){
+        outputHierachicalSupport();
     }else if (command == command_loadvalues){
         if (loadValues()){
             writeGrid();

@@ -427,6 +427,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -evaluate\t"     << "\t-e"      << "\t\tevaluates the interpolant" << endl;
         cout << " -evalhierarchyd"     << "\t-ehd"      << "\t\tevaluates the hierarchical basis (dense output)" << endl;
         cout << " -evalhierarchys"     << "\t-ehs"      << "\t\tevaluates the hierarchical basis (sparse output)" << endl;
+        cout << " -gethsupport\t"       << "\t-ghsup"     << "\t\tget the hierarchical support" << endl;
         cout << " -integrate\t"    << "\t-i"      << "\t\toutput the integral" << endl;
         cout << " -getanisotropy\t"    << "\t-ga"     << "\t\testimates the anisotropic coefficients" << endl;
         cout << " -refineaniso\t"      << "\t-ra"     << "\t\trefines the grid" << endl;
@@ -726,6 +727,15 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
             cout << "Note: -outputfile or -print output values of the hierarchical basis functions in the xfile" << endl;
+            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output" << endl << endl;
+        }else if (com == command_gethsupport){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
+            cout << " -gethsupport\t"       << "\t-ghsup"      << "\t\tget the hierarchical support" << endl << endl;
+            cout << "Accepted options:"  << endl;
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
+            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file" << endl;
+            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
+            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
             cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output" << endl << endl;
         }else if (com == command_integrate){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
