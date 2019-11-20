@@ -49,17 +49,18 @@ inline bool checkPoints(TasGrid::TasmanianSparseGrid const &gridA, TasGrid::Tasm
  */
 template<bool use_binary>
 bool testSendReceive(){
+    MPI_Comm comm = MPI_COMM_WORLD;
     auto true_grid = TasGrid::makeGlobalGrid(5, 3, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
 
     int tag = 1;
-    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+    int const me = TasGrid::getMPIRank(comm);
 
     if (me == 0){
-        return (TasGrid::MPIGridSend<use_binary>(true_grid, 1, tag, MPI_COMM_WORLD) == MPI_SUCCESS);
+        return (TasGrid::MPIGridSend<use_binary>(true_grid, 1, tag, comm) == MPI_SUCCESS);
     }else if (me == 1){
         MPI_Status status;
         TasGrid::TasmanianSparseGrid grid;
-        auto result = TasGrid::MPIGridRecv<use_binary>(grid, 0, tag, MPI_COMM_WORLD, &status);
+        auto result = TasGrid::MPIGridRecv<use_binary>(grid, 0, tag, comm, &status);
         if (result != MPI_SUCCESS) return false;
         return checkPoints(true_grid, grid);
     }else{
@@ -72,15 +73,16 @@ bool testSendReceive(){
  */
 template<bool use_binary>
 bool testBcast(){
+    MPI_Comm comm = MPI_COMM_WORLD;
     auto true_grid = TasGrid::makeGlobalGrid(5, 1, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
 
-    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+    int const me = TasGrid::getMPIRank(comm);
 
     if (me == 1){ // using proc 1 to Bcast the grid
-        return (TasGrid::MPIGridBcast<use_binary>(true_grid, 1, MPI_COMM_WORLD) == MPI_SUCCESS);
+        return (TasGrid::MPIGridBcast<use_binary>(true_grid, 1, comm) == MPI_SUCCESS);
     }else{
         TasGrid::TasmanianSparseGrid grid;
-        auto result = TasGrid::MPIGridBcast<use_binary>(grid, 1, MPI_COMM_WORLD);
+        auto result = TasGrid::MPIGridBcast<use_binary>(grid, 1, comm);
         if (result != MPI_SUCCESS) return false;
         return checkPoints(true_grid, grid);
     }
@@ -92,7 +94,8 @@ bool testBcast(){
 template<bool use_binary>
 bool testScatterOutputs(){
     // grid has 7 outputs split between 3 ranks gives (3 2 2)
-    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int const me = TasGrid::getMPIRank(comm);
 
     auto reference_grid = TasGrid::makeGlobalGrid(3, (me == 0) ? 3 : 2, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
 
@@ -121,9 +124,9 @@ bool testScatterOutputs(){
                                             for(size_t i=0; i<7; i++)
                                                 y[i] = double(i+1) * expval;
                                         }, full_grid, 0);
-        MPIGridScatterOutputs<use_binary>(full_grid, grid, 1, 2, MPI_COMM_WORLD);
+        MPIGridScatterOutputs<use_binary>(full_grid, grid, 1, 2, comm);
     }else{
-        MPIGridScatterOutputs<use_binary>(TasmanianSparseGrid(), grid, 1, 2, MPI_COMM_WORLD);
+        MPIGridScatterOutputs<use_binary>(TasmanianSparseGrid(), grid, 1, 2, comm);
     }
 
     std::minstd_rand park_miller(99);
@@ -143,7 +146,7 @@ bool testScatterOutputs(){
 
     if (!match(grid, reference_grid)) throw std::runtime_error("ERROR: first iteration of MPIGridScatterOutputs() failed.");
 
-    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, MPI_COMM_WORLD);
+    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, comm);
     if (me == 2){
         if (!grid.empty()) throw std::runtime_error("ERROR: second iteration of MPIGridScatterOutputs() failed.");
     }else{
@@ -155,7 +158,7 @@ bool testScatterOutputs(){
         if (!match(grid, reference_grid)) throw std::runtime_error("ERROR: second iteration of MPIGridScatterOutputs() failed.");
     }
 
-    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, MPI_COMM_WORLD);
+    MPIGridScatterOutputs<use_binary>(copyGrid(grid), grid, 1, 2, comm);
     if (me == 0){
         reference_grid = TasGrid::makeGlobalGrid(3, 1, 4, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
         loadNeededPoints<false, false>([&](double const x[], double y[], size_t)->void{
@@ -171,7 +174,8 @@ bool testScatterOutputs(){
 
 template<bool use_initial_guess>
 void testMPIconstruct(){
-    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int const me = TasGrid::getMPIRank(comm);
 
     std::minstd_rand park_miller(99);
     std::uniform_real_distribution<double> unif(-1.0, 1.0);
@@ -205,8 +209,12 @@ void testMPIconstruct(){
 
     auto grid = TasGrid::makeLocalPolynomialGrid(3, 2, 3);
 
-    mpiConstructSurrogate<use_initial_guess>(model, 3, 2, 1000, 2, 3, 11, 22, 0, MPI_COMM_WORLD,
-                                             grid, 1.E-5, refine_classic, -1);
+    if (me == 0){
+        mpiConstructSurrogate<use_initial_guess>(model, 3, 2, 1000, 2, 3, 11, 22, 0, comm,
+                                                 grid, 1.E-5, refine_classic, -1);
+    }else{
+        mpiConstructWorker<use_initial_guess>(model, 3, 2, 2, 3, 11, 22, 0, comm);
+    }
 
     if (me == 0){
         auto reference_grid = TasGrid::makeLocalPolynomialGrid(3, 2, 3);
@@ -218,7 +226,8 @@ void testMPIconstruct(){
 // this test must produce grids that match to within numeric precision
 // no matter the order of samples or any other considerations
 void testMPIconstructStrict(){
-    int me = TasGrid::getMPIRank(MPI_COMM_WORLD);
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int const me = TasGrid::getMPIRank(comm);
 
     auto match = [](TasmanianSparseGrid const &a, TasmanianSparseGrid const &b)->bool{
         if (a.getNumLoaded() != b.getNumLoaded()) return false;
@@ -249,7 +258,7 @@ void testMPIconstructStrict(){
     loadNeededPoints<mode_sequential>(modelt, reference_grid, 0);
 
     mpiConstructSurrogate<no_initial_guess>
-        (model, 2, 1, reference_grid.getNumLoaded(), 1, 2, 11, 22, 0, MPI_COMM_WORLD, grid, TasGrid::type_iptotal, aweights);
+        (model, 2, 1, reference_grid.getNumLoaded(), 1, 2, 11, 22, 0, comm, grid, TasGrid::type_iptotal, aweights);
 
     if (me == 0){
         if (!match(grid, reference_grid)) throw std::runtime_error("ERROR: CV construction failed.");

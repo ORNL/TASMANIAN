@@ -88,14 +88,12 @@ void mpiConstructCommon(ModelSignatureMPI model,
     MPI_Comm_size(comm, &num_ranks);
     // force max_num_ranks between 1 and num_ranks
     max_num_ranks = std::max(std::min(max_num_ranks, size_t(num_ranks)), size_t(1));
-    int me = getMPIRank(comm); // my rank within the comm
+    int const me = getMPIRank(comm); // my rank within the comm
 
     std::vector<int> thread_to_rank(num_ranks); // map the thread id to the rank, root is used last
     std::iota(thread_to_rank.begin(), thread_to_rank.begin() + root, 0);
     std::iota(thread_to_rank.begin() + root, thread_to_rank.end(), root + 1);
     thread_to_rank.back() = root;
-
-    std::mutex seq_threads;
 
     size_t max_message = sizeof(double) * Utils::size_mult(num_dimensions, max_samples_per_job) + sizeof(size_t);
     if (use_initial_guess == with_initial_guess)
@@ -403,6 +401,31 @@ void mpiConstructSurrogate(ModelSignatureMPI model,
                                                return g.getCandidateConstructionPoints(type, output, level_limits);
                                            },
                                           checkpoint_filename);
+}
+
+/*!
+ * \ingroup TasmanianAddonsMPIConstruct
+ * \brief Executes the worker (i.e., non-root) portion of the MPI sampling.
+ *
+ * Using any of the TasGrid::mpiConstructSurrogate() overloads, the grid, the budget and the refinement
+ * parameters are accessed only by the root rank, the rest is not used by the workers.
+ * This template can be instantiated for the non-root rank with only the relevant inputs.
+ *
+ * - The call to this method \b must be paired with a call to TasGrid::mpiConstructSurrogate() on the root rank.
+ * - The inputs (including the template parameter) \b must match the ones in the call to TasGrid::mpiConstructSurrogate().
+ *
+ */
+template<bool use_initial_guess = no_initial_guess>
+void mpiConstructWorker(ModelSignatureMPI model,
+                        int num_dimensions, int num_outputs, size_t max_samples_per_job,
+                        size_t max_num_ranks, int tagx, int tagy, int root, MPI_Comm comm){
+
+    TasmanianSparseGrid grid; // workers use an empty grid
+    mpiConstructCommon<use_initial_guess>(model, num_dimensions, num_outputs, 0, max_samples_per_job,
+                                          max_num_ranks, tagx, tagy, root, comm, grid,
+                                          [&](TasmanianSparseGrid&)->std::vector<double>{
+                                               return std::vector<double>();
+                                          }, std::string());
 }
 
 }
