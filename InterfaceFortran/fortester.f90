@@ -1114,13 +1114,14 @@ deallocate(points,pointsb,double_2d_a,double_2d_b,double_2d_c,double_2d_d,double
 
 
 call tsgMakeWaveletGrid(grid, 1, 1, 1, 3)
-double_1d_a = tsgGetHierarchicalSupport(grid)
-double_1d_b = (/ 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, 1.d4, 1.d4, 1.d4, 1.d4, 1.d4, 1.d4, 1.d4, 1.d4 /)
-if ( norm1d(double_1d_a - double_1d_b) > 1.d-11 ) then
+points => tsgGetHierarchicalSupport(grid)
+double_2d_b = reshape( (/ 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, 2.d0, &
+                          1.d4, 1.d4, 1.d4, 1.d4, 1.d4, 1.d4, 1.d4, 1.d4 /), shape(points) )
+if ( norm2d(points - double_2d_b) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgGetHierarchicalSupport: wavelet grid"
   stop 1
 endif
-deallocate(double_1d_a, double_1d_b)
+deallocate(points, double_2d_b)
 
 
 
