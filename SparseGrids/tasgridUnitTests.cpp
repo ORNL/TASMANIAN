@@ -195,6 +195,19 @@ bool GridUnitTester::testAPIconsistency(){
     passAll = pass && passAll;
 
     pass = true;
+
+    grid.makeGlobalGrid(2, 1, 1, type_iptotal, rule_rleja);
+    std::vector<int> pindexes(grid.getPointsIndexes(), grid.getPointsIndexes() + 6);
+    std::vector<int> refindexes = {0, 0, 0, 1, 1, 0};
+    pass = doesMatch(refindexes, pindexes.data());
+
+    if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "getPointsIndexes()" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
+    passAll = pass && passAll;
+
+    pass = true;
+    grid.makeGlobalGrid(2, 1, 4, type_iptotal, rule_clenshawcurtis);
+    gridLoadEN2(&grid);
+
     std::vector<double> vy, x = {0.333, -0.333};
     double *ay = new double[2];
 
