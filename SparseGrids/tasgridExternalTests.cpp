@@ -1781,6 +1781,13 @@ bool ExternalTester::testAllDomain() const{
                 }
             }
         }
+
+        grid.makeGlobalGrid(2, 1, 0, type_level, rule_fejer2);
+        std::vector<double> support = grid.getHierarchicalSupport();
+        if ((support.size() != 2) || (support[0] != 2.0) || (support[1] != 2.0)){
+            cout << "Failed support test for Global grids.\n";
+            pass4 = false;
+        }
     }
 
     cout << "      Domain                          support" << setw(15) << ((pass4) ? "Pass" : "FAIL") << endl;

@@ -86,7 +86,6 @@ public:
     virtual void integrate(double q[], double *conformal_correction) const = 0;
 
     virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
-    virtual void evaluateBatch(const float[], int, float[]) const{}
 
     #ifdef Tasmanian_ENABLE_BLAS
     virtual void evaluateBlas(const double x[], int num_x, double y[]) const = 0;
