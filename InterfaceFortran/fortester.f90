@@ -200,7 +200,8 @@ deallocate(points, weights)
 ! test alpha/beta
 call tsgMakeGlobalGrid(grid, 1, 0, 4, tsg_level, tsg_gauss_hermite, alpha=2.0D+0)
 weights => tsgGetQuadratureWeights(grid)
-if ( (abs(sum(weights)-0.5d0*sqrt(pi)) > 1.D-11) .OR. (abs(tsgGetBeta(grid)) > 1.D-11) ) then
+if ( (abs(sum(weights)-0.5d0*sqrt(pi)) > 1.D-11) .OR. (abs(tsgGetBeta(grid)) > 1.D-11) &
+      .OR. (abs(tsgGetAlpha(grid) - 2.0D+0) > 1.D-11) .OR. (tsgGetOrder(grid) /= -1)) then
   write(*,*) "Mismatch in tsgMakeGlobal: alpha/beta", sum(weights), tsgGetBeta(grid)
   stop 1
 endif
@@ -397,7 +398,26 @@ if ( (abs(sum(weights)-58.d0) > 1.d-11) .or.  &
   write(*,*) "Mismatch in tsgMakeSequenceGrid: transform "
   stop 1
 endif
-deallocate(points, weights)
+
+allocate(double_1d_a(3), double_1d_b(3))
+call tsgGetDomainTransform(grid, double_1d_a, double_1d_b)
+if ( (norm1d(double_1d_a - (/ 3.0d0, -7.0d0, -12.0d0 /)) > 1.d-11) .or. &
+     (norm1d(double_1d_b - (/ 5.0d0, -6.0d0,  17.0d0 /)) > 1.d-11) ) then
+    write(*,*) "Mismatch in tsgGetDomainTransform "
+  stop 1
+endif
+deallocate(points, weights, double_1d_a, double_1d_b)
+
+call tsgClearDomainTransform(grid)
+points  => tsgGetPoints(grid)
+if ( tsgIsSetDomainTransform(grid) .or.  &
+     (abs(maxval(points(1,:))-1.d0) > 1.d-11) .or. (abs(minval(points(1,:))+1.d0) > 1.d-11) .or. &
+     (abs(maxval(points(2,:))-1.d0) > 1.d-11) .or. (abs(minval(points(2,:))+1.d0) > 1.d-11) .or. &
+     (abs(maxval(points(3,:))-1.d0) > 1.d-11) .or. (abs(minval(points(3,:))+1.d0) > 1.d-11) ) then
+  write(*,*) "Mismatch in tsgMakeSequenceGrid: cleared transform "
+  stop 1
+endif
+deallocate(points)
 
 
 ! test anisotropy
@@ -771,7 +791,7 @@ double_2d_b(3,:) = points(1,:)**2 + points(2,:)**2 + points(1,:)*points(2,:)
 double_2d_b(4,:) = points(1,:)**3 + points(2,:)**3 + points(1,:)*(points(2,:)**2)
 call tsgLoadNeededPoints(grid, double_2d_b)
 call tsgEvaluate(grid,reshape(pointsb(:,1),(/2/)),double_1d_a)
-call tsgEvaluate(grid,reshape(pointsb(:,2),(/2/)),double_1d_b)
+call tsgEvaluateFast(grid,reshape(pointsb(:,2),(/2/)),double_1d_b)
 call tsgEvaluateBatch(grid,pointsb,2,double_2d_c)
 do i=1,2
   if ( ( norm1d(double_2d_a(i,:)-double_2d_c(i,:)) > 1.d-11 ) .or. &
