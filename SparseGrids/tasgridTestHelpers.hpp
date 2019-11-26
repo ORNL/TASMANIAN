@@ -121,12 +121,7 @@ bool testAccEval(std::vector<double> const &x, std::vector<double> const &y, int
         test_y = std::vector<T>(Utils::size_mult(numx, grid.getNumOutputs()));
         Utils::Wrapper2D<T const> wx(grid.getNumDimensions(), test_x.data());
         Utils::Wrapper2D<T> wy(grid.getNumOutputs(), test_y.data());
-        for(int i=0; i<numx/2; i++)
-            grid.evaluateFast(wx.getStrip(i), wy.getStrip(i));
-        TypeAcceleration acc = grid.getAccelerationType();
-        grid.enableAcceleration(accel_cpu_blas);
-        grid.enableAcceleration(acc); // forces the cuda internal structs to reset
-        for(int i=numx/2; i<numx; i++)
+        for(int i=0; i<numx; i++)
             grid.evaluateFast(wx.getStrip(i), wy.getStrip(i));
     }
     return testPass(err1(Utils::size_mult(numx, grid.getNumOutputs()), test_y, y), tolerance, message, grid);
