@@ -83,7 +83,8 @@ call tsgAllocateGrid(grid_II)
 !=======================================================================
 ! test type of grid
 call tsgMakeGlobalGrid(grid, 2, 0, 1, tsg_level, tsg_clenshaw_curtis)
-if ( .not. tsgIsGlobal(grid) ) then
+if ( (.not. tsgIsGlobal(grid)) .or. tsgIsSequence(grid) .or. tsgIsLocalPolynomial(grid) &
+     .or. tsgIsFourier(grid) .or. tsgIsWavelet(grid) ) then
   write(*,*) "Mismatch in tsgIsGlobal"
   stop 1
 endif
@@ -93,7 +94,8 @@ if ( .not. tsgIsSequence(grid) ) then
   stop 1
 endif
 call tsgMakeLocalPolynomialGrid(grid, 3, 1, 2, 2, tsg_localp)
-if ( .not. tsgIsLocalPolynomial(grid) ) then
+if ( (.not. tsgIsLocalPolynomial(grid)) .or. tsgIsSequence(grid) .or. tsgIsGlobal(grid) &
+     .or. tsgIsFourier(grid) .or. tsgIsWavelet(grid) ) then
   write(*,*) "Mismatch in tsgIsLocalPolynomial"
   stop 1
 endif
@@ -351,7 +353,7 @@ if ( norm2d(points-pointsb) > 1.0D-11 ) then
 end if
 deallocate(points, pointsb)
 
-call tsgWrite(grid, filename, .false.)
+call tsgWrite(grid, filename, .true.)
 call tsgDeallocateGrid(grid)
 call tsgAllocateGrid(grid) ! reset the grid
 if (.not. tsgRead(grid, filename)) then
@@ -398,6 +400,14 @@ if ( (abs(sum(weights)-58.d0) > 1.d-11) .or.  &
   write(*,*) "Mismatch in tsgMakeSequenceGrid: transform "
   stop 1
 endif
+
+allocate( double_1d_a(tsgGetNumPoints(grid)) )
+call tsgGetQuadratureWeightsStatic(grid, double_1d_a)
+if ( (abs(sum(weights)-58.d0) > 1.d-11) ) then
+    write(*,*) "Mismatch in tsgGetQuadratureWeightsStatic"
+  stop 1
+endif
+deallocate( double_1d_a )
 
 allocate(double_1d_a(3), double_1d_b(3))
 call tsgGetDomainTransform(grid, double_1d_a, double_1d_b)
@@ -1012,7 +1022,14 @@ if ( norm1d(double_1d_b-double_2d_b(1,:)) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgEvaluateHierarchicalFunctions: local grid test"
   stop 1
 endif
-deallocate(points,double_2d_a,double_2d_b,double_2d_c,weights,double_1d_b,rnd,pointsb)
+allocate( double_1d_a(tsgGetNumPoints(grid)) )
+call tsgGetHierarchicalCoefficientsStatic(grid, double_1d_a)
+double_1d_b = matmul( double_1d_a, double_2d_c )
+if ( norm1d(double_1d_b-double_2d_b(1,:)) > 1.d-11 ) then
+  write(*,*) "Mismatch in tsgGetHierarchicalCoefficientsStatic: local grid test"
+  stop 1
+endif
+deallocate(points,double_1d_a,double_2d_a,double_2d_b,double_2d_c,weights,double_1d_b,rnd,pointsb)
 
 
 call tsgMakeLocalPolynomialGrid(grid, 2, 1, 4, 1, tsg_localp)
@@ -1201,6 +1218,16 @@ do i = 1,i_a
   double_pnt_1d_a  => tsgGetInterpolationWeights(grid_II, pointsb(:,i))
   double_2d_c(:,i) =  matmul(double_2d_a,double_pnt_1d_a)
   deallocate(double_pnt_1d_a)
+enddo
+if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
+  write(*,*) "Mismatch in tsgGetInterpolationWeights: global case"
+  stop 1
+endif
+do i = 1,i_a
+  allocate( double_1d_a(tsgGetNumPoints(grid)) )
+  call tsgGetInterpolationWeightsStatic(grid, pointsb(:,i), double_1d_a)
+  double_2d_c(:,i) =  matmul(double_2d_a,double_1d_a)
+  deallocate(double_1d_a)
 enddo
 if ( norm2d(double_2d_b - double_2d_c) > 1.d-11 ) then
   write(*,*) "Mismatch in tsgGetInterpolationWeights: global case"
