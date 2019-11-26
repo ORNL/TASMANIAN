@@ -174,7 +174,7 @@ void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, T
         }else if ((rule == rule_mindelta) || (rule == rule_mindeltaodd)){
             unique = Optimizer::getGreedyNodes<rule_mindelta>(OneDimensionalMeta::getNumPoints(max_level, rule));
         }else{ // if (rule==rule_fourier)
-            OneDimensionalNodes::getFourierNodes(max_level, unique);
+            unique = OneDimensionalNodes::getFourierNodes(max_level);
         }
 
         for(int l=0; l<num_levels; l++){

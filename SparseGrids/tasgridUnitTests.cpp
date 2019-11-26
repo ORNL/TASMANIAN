@@ -40,18 +40,16 @@ void gridLoadEN2(TasmanianSparseGrid *grid){ // load points using model exp( - \
     int dims = grid->getNumDimensions();
     int outs = grid->getNumOutputs();
     int nump = grid->getNumNeeded();
-    std::vector<double> vals(((size_t) nump) * ((size_t) outs));
-    auto iter_x = points.begin();
-    auto iter_y = vals.begin();
-    while(iter_x < points.end()){
+    std::vector<double> vals(Utils::size_mult(nump, outs));
+
+    for(int i=0; i<nump; i++){
         double nrm = 0.0;
-        for(int i=0; i<dims; i++){
-            nrm += *iter_x * *iter_x;
-            iter_x++;
-        }
+        for(int j=0; j<dims; j++)
+            nrm += points[i * dims + j] * points[i * dims + j];
         nrm = std::exp(-nrm);
-        for(int i=0; i<outs; i++) *iter_y++ = nrm;
+        std::fill_n(vals.begin() + i * outs, outs, nrm);
     }
+
     grid->loadNeededPoints(vals);
 }
 
