@@ -145,11 +145,9 @@ public:
      *
      * Used when the CPU vectors are stored in double-precision format while the GPU entries are prepared to work with single-precision.
      */
-    template<typename U, std::enable_if_t<!std::is_same<U, T>::value>* = nullptr>
-    void load(const std::vector<U> &cpu_data){
-        std::vector<T> converted(cpu_data.size());
-        std::transform(cpu_data.begin(), cpu_data.end(), converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
-        load(converted);
+    template<typename U>
+    std::enable_if_t<!std::is_same<U, T>::value> load(const std::vector<U> &cpu_data){
+        load(cpu_data.size(), cpu_data.data());
     }
 
     //! \brief Copy the first \b count entries of \b cpu_data to the CUDA device, all pre-existing data is deleted and the vector is resized to match \b count.
@@ -163,8 +161,8 @@ public:
      *
      * Used when the CPU data is stored in double-precision format while the GPU entries are prepared to work with single-precision.
      */
-    template<typename U, std::enable_if_t<!std::is_same<U, T>::value>* = nullptr>
-    void load(size_t count, const U* cpu_data){
+    template<typename U>
+    std::enable_if_t<!std::is_same<U, T>::value> load(size_t count, const U* cpu_data){
         std::vector<T> converted(count);
         std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
         load(converted);
