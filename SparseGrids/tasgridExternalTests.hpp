@@ -96,6 +96,7 @@ public:
     bool testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, TypeDepth type, double tolerance, TypeRefinement reftype,
                                const std::vector<int> &np, const std::vector<double> &errs) const;
     bool testAcceleration(const BaseFunction *f, TasmanianSparseGrid &grid) const;
+    bool testCudaCaching() const;
     bool testGPU2GPUevaluations() const;
     bool testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const;
 

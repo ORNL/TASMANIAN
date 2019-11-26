@@ -152,6 +152,11 @@ void GridFourier::copyGrid(const GridFourier *fourier, int ibegin, int iend){
     values        = (num_outputs == fourier->num_outputs) ? fourier->values : fourier->values.splitValues(ibegin, iend);
 
     max_power = fourier->max_power;
+
+    if (fourier->dynamic_values){
+        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(*fourier->dynamic_values);
+        if (num_outputs != fourier->num_outputs) dynamic_values->restrictData(ibegin, iend);
+    }
 }
 
 void GridFourier::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){

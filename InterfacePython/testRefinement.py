@@ -102,7 +102,9 @@ class TestTasClass(unittest.TestCase):
         '''
         llTest = ["gridA.makeGlobalGrid(3, 2, 2, 'level', 'clenshaw-curtis'); gridB.makeGlobalGrid(3, 2, 2, 'level', 'clenshaw-curtis')",
                   "gridA.makeSequenceGrid(3, 2, 4, 'level', 'leja'); gridB.makeSequenceGrid(3, 2, 4, 'level', 'leja')",
-                  "gridA.makeLocalPolynomialGrid(3, 2, 2); gridB.makeLocalPolynomialGrid(3, 2, 2)"]
+                  "gridA.makeLocalPolynomialGrid(3, 2, 2); gridB.makeLocalPolynomialGrid(3, 2, 2)",
+                  "gridA.makeWaveletGrid(3, 2, 2); gridB.makeWaveletGrid(3, 2, 2)",
+                  "gridA.makeFourierGrid(3, 2, 2, 'level'); gridB.makeFourierGrid(3, 2, 2, 'level')",]
 
         for sMakeGrids in llTest:
             for sFormat in [False, True]: # test binary and ascii format
@@ -124,7 +126,7 @@ class TestTasClass(unittest.TestCase):
                 ttc.compareGrids(gridA, gridC)
 
                 for t in range(5): # use 5 iterations
-                    if (gridA.isLocalPolynomial()):
+                    if (gridA.isLocalPolynomial() or gridA.isWavelet()):
                         aPointsA = gridA.getCandidateConstructionPointsSurplus(1.E-4, "fds")
                         aPointsB = gridB.getCandidateConstructionPointsSurplus(1.E-4, "fds")
                         aPointsC = gridC.getCandidateConstructionPointsSurplus(1.E-4, "fds")

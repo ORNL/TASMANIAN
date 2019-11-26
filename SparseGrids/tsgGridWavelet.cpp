@@ -133,6 +133,11 @@ void GridWavelet::copyGrid(const GridWavelet *wav, int ibegin, int iend){
     values       = (num_outputs == wav->num_outputs) ? wav->values : wav->values.splitValues(ibegin, iend);
 
     inter_matrix = wav->inter_matrix;
+
+    if (wav->dynamic_values){
+        dynamic_values = std::make_unique<SimpleConstructData>(*wav->dynamic_values);
+        if (num_outputs != wav->num_outputs) dynamic_values->restrictData(ibegin, iend); // handle when copy a subset of the outputs
+    }
 }
 
 void GridWavelet::setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder){

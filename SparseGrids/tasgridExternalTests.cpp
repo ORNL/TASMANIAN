@@ -1864,6 +1864,59 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     return pass;
 }
 
+bool ExternalTester::testCudaCaching() const{
+    bool pass = true;
+    #ifdef Tasmanian_ENABLE_CUDA
+    int const num_samples = 30;
+    std::vector<double> refx = genRandom(num_samples, 2); // using only 30 samples
+
+    int gpu_id_first = (gpuid == -1) ? 0 : gpuid;
+    int gpu_id_last  = (gpuid == -1) ? TasmanianSparseGrid::getNumGPUs() : gpuid + 1;
+
+    for(int gpu = gpu_id_first; gpu < gpu_id_last; gpu++){ // test each active CUDA device
+        for(int t=0; t<5; t++){ // test each grid type
+            TasmanianSparseGrid grid = [&]()->TasmanianSparseGrid{
+                switch(t){
+                    default:
+                    case 0: return makeGlobalGrid(2, 1, 3, type_level, rule_clenshawcurtis);
+                    case 1: return makeSequenceGrid(2, 1, 5, type_level, rule_leja);
+                    case 2: return makeFourierGrid(2, 1, 2, type_level);
+                    case 3: return makeLocalPolynomialGrid(2, 1, 3, 1, rule_localp);
+                    case 4: return makeWaveletGrid(2, 1, 2, 1);
+                }
+            }();
+            if (grid.isFourier()) grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
+
+            grid.setGPUID(gpu);
+            TasGrid::AccelerationMeta::setDefaultCudaDevice(gpu);
+
+            for(int run : std::vector<int>{0, 1}){ // do two runs switching devices and grids in-between
+                loadValues(&f21nx2, grid);
+                grid.enableAcceleration(accel_none);
+                std::vector<double> refy;
+                grid.evaluateBatch(refx, refy);
+                grid.enableAcceleration(accel_gpu_cuda);
+
+                if (!testAccEval<double, GridMethodBatch>(refx, refy, num_samples, Maths::num_tol, grid, "caching batch<double>"))
+                    pass = false;
+                if (!testAccEval<float, GridMethodBatch>(refx, refy, num_samples, 5.E-5, grid, "caching batch<float>"))
+                    pass = false;
+
+                if (run == 0){
+                    // setting refinement will change the grid forcing the cache data-structures
+                    // to reset when the new values are loaded
+                    if (grid.isLocalPolynomial() || grid.isWavelet())
+                        grid.setSurplusRefinement(1.E-4, refine_classic, -1);
+                    else
+                        grid.setAnisotropicRefinement(type_iptotal, 5, -1);
+                }
+            }
+        }
+    }
+    #endif
+    return pass;
+}
+
 bool ExternalTester::testGPU2GPUevaluations() const{
     #ifdef Tasmanian_ENABLE_CUDA
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
@@ -2081,6 +2134,13 @@ bool ExternalTester::testAllAcceleration() const{
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
     }else{
         cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "FAIL" << endl;
+    }
+
+    pass = pass && testCudaCaching();
+    if (pass){
+        if (verbose) cout << "      Accelerated" << setw(wsecond) << "caching" << setw(wthird) << "Pass" << endl;
+    }else{
+        cout << "      Accelerated" << setw(wsecond) << "caching" << setw(wthird) << "FAIL" << endl;
     }
 
     #ifdef Tasmanian_ENABLE_CUDA
