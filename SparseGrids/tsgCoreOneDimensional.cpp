@@ -691,20 +691,20 @@ void OneDimensionalNodes::getRLejaShifted(int n, std::vector<double> &nodes){
     }
 }
 
-void OneDimensionalNodes::getFourierNodes(int level, std::vector<double> &nodes) {
+std::vector<double> OneDimensionalNodes::getFourierNodes(int level) {
     int n = OneDimensionalMeta::getNumPoints(level, rule_fourier);
-    nodes.resize(n);
-    nodes[0]=0.0;
+    std::vector<double> nodes(n, 0.0);
     if(level > 0){ nodes[1] = 1.0/3.0; nodes[2] = 2.0/3.0; }
-    auto node = nodes.begin();
-    std::advance(node, 3);
+    size_t c = 3;
     for(int l=2; l<=level; l++) {
         n = OneDimensionalMeta::getNumPoints(l, rule_fourier);
         for(int i=1; i<n; i+=3) {
-            *node++ = (double) i / (double) n;
-            *node++ = (double) (i+1) / (double) n;
+            nodes[c]   = (double) i / (double) n;
+            nodes[c+1] = (double) (i+1) / (double) n;
+            c += 2;
         }
     }
+    return nodes;
 }
 
 }

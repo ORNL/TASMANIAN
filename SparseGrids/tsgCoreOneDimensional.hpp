@@ -225,7 +225,7 @@ namespace OneDimensionalNodes{
     void getRLejaShifted(int n, std::vector<double> &nodes);
 
     //! \brief Generate the Fourier \b nodes for the given \b level, uniformly distributed points with right-most point omitted due to periodicity.
-    void getFourierNodes(int level, std::vector<double> &nodes);
+    std::vector<double> getFourierNodes(int level);
 }
 
 }
