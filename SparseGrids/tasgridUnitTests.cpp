@@ -271,6 +271,15 @@ bool GridUnitTester::testAPIconsistency(){
         }
     }
 
+    // misc tests
+    pass = true;
+    if (makeEmpty().evaluateSparseHierarchicalFunctionsGetNZ(std::vector<double>(10, 0.33).data(), 10) != 0){
+        cout << "ERROR: did not evaluate sparse nnz to zero." << endl; pass = false;
+    }
+    if (makeEmpty().getHierarchicalCoefficients() != nullptr){
+        cout << "ERROR: the hierarchical coefficients of empty should be zero." << endl; pass = false;
+    }
+
     cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
     return passAll;
 }
