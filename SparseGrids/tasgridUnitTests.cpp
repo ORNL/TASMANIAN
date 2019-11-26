@@ -525,6 +525,12 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
             grid.loadNeededPoints({0.33, 0.22});  // wrong size of loaded data (when overwriting)
         },
         [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 1, type_level, rule_clenshawcurtis);
+            grid.loadNeededPoints({0.33, 0.22, 0.22, 0.22, 0.33});
+            std::vector<float> y, x = {0.44, 0.44};
+            grid.evaluateBatch(x, y); // either CUDA not enabled or not available at all
+        },
+        [](void)->void{
             auto grid = makeGlobalGrid(2, 1, 0, type_level, rule_fejer2);
             double a[2], b[2];
             grid.getDomainTransform(a, b); // cannot call getDomainTransform(array overload) without transform
@@ -683,6 +689,29 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
         [](void)->void{
             auto grid = makeEmpty();
             auto integ = grid.integrateHierarchicalFunctions();
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 0, type_level, rule_clenshawcurtis);
+            std::vector<double> x = {0.33, 0.33};
+            grid.evaluateSparseHierarchicalFunctionsGetNZ(x.data(), 1); // cannot call for Global grid
+        },
+        [](void)->void{
+            auto grid = makeGlobalGrid(2, 1, 0, type_level, rule_clenshawcurtis);
+            std::vector<double> vals(5), x = {0.33, 0.33};
+            std::vector<int> pntr(5), indx(5);
+            grid.evaluateSparseHierarchicalFunctionsStatic(x.data(), 1, pntr.data(), indx.data(), vals.data()); // cannot call for Global grid
+        },
+        [](void)->void{
+            auto grid = makeSequenceGrid(2, 1, 1, type_level, rule_leja);
+            grid.setHierarchicalCoefficients({1.0, 2.0}); // not enough coefficients
+        },
+        [](void)->void{
+            auto grid = makeLocalPolynomialGrid(2, 1, 1, rule_localp);
+            std::vector<int> s = grid.getGlobalPolynomialSpace(true); // only available for global, sequence and Fourier
+        },
+        [](void)->void{
+            auto grid = makeEmpty();
+            grid.getPointsIndexes(); // cannot call on empty
         },
     };
 }
