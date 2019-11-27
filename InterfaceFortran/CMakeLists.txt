@@ -27,18 +27,18 @@ if (Tasmanian_ENABLE_MPI)
     # see the comments in the Addons/CMakeLists.txt
     target_link_libraries(${Tasmanian_libfor_target_name} ${MPI_Fortran_LIBRARIES})
 
-    if (DEFINED MPI_Fortran_INCLUDE_PATH)
+    if (NOT "${MPI_Fortran_INCLUDE_PATH}" STREQUAL "")
         target_include_directories(${Tasmanian_libfor_target_name} PUBLIC "${MPI_Fortran_INCLUDE_PATH}")
     endif()
 
-    if(DEFINED MPI_Fortran_COMPILE_FLAGS)
+    if (NOT "${MPI_Fortran_COMPILE_FLAGS}" STREQUAL "")
         string(REPLACE " " ";" _tsg_temp_list ${MPI_Fortran_COMPILE_FLAGS})
         foreach(_flag ${_tsg_temp_list})
             target_compile_options(${Tasmanian_libfor_target_name} PUBLIC ${_flag})
         endforeach()
     endif()
 
-    if(DEFINED MPI_Fortran_LINK_FLAGS)
+    if (NOT "${MPI_Fortran_LINK_FLAGS}" STREQUAL "")
         string(REPLACE " " ";" _tsg_temp_list ${MPI_Fortran_LINK_FLAGS})
         foreach(_flag ${_tsg_temp_list})
             set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES LINK_OPTIONS ${_flag})

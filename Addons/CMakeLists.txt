@@ -55,18 +55,18 @@ if (Tasmanian_ENABLE_MPI)
     # hence converting strings to lists and appending one entry at a time
     target_link_libraries(Tasmanian_addons INTERFACE ${MPI_CXX_LIBRARIES})
 
-    if (DEFINED MPI_CXX_INCLUDE_PATH)
+    if (NOT "${MPI_CXX_INCLUDE_PATH}" STREQUAL "")
         target_include_directories(Tasmanian_addons INTERFACE ${MPI_CXX_INCLUDE_PATH})
     endif()
 
-    if(DEFINED MPI_CXX_COMPILE_FLAGS)
+    if (NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
         string(REPLACE " " ";" _tsg_temp_list ${MPI_CXX_COMPILE_FLAGS})
         foreach(_flag ${_tsg_temp_list})
             target_compile_options(Tasmanian_addons INTERFACE ${_flag})
         endforeach()
     endif()
 
-    if(DEFINED MPI_CXX_LINK_FLAGS)
+    if (NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
         string(REPLACE " " ";" _tsg_temp_list ${MPI_CXX_LINK_FLAGS})
         foreach(_flag ${_tsg_temp_list})
             set_target_properties(Tasmanian_addons PROPERTIES INTERFACE_LINK_OPTIONS ${_flag})
