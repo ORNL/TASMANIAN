@@ -90,21 +90,21 @@ template void CudaVector<int>::load(size_t, const int*);
 template void CudaVector<int>::unload(int*) const;
 
 CudaEngine::~CudaEngine(){
-    if (cublasHandle != nullptr){
+    if (own_cublas_handle && cublasHandle != nullptr){
         cublasDestroy((cublasHandle_t) cublasHandle);
         cublasHandle = nullptr;
     }
-    if (cusparseHandle != nullptr){
+    if (own_cusparse_handle && cusparseHandle != nullptr){
         cusparseDestroy((cusparseHandle_t) cusparseHandle);
         cusparseHandle = nullptr;
     }
     #ifdef Tasmanian_ENABLE_MAGMA
-    if (magmaCudaQueue != nullptr){
+    if (own_magma_queue && magmaCudaQueue != nullptr){
         magma_queue_destroy((magma_queue*) magmaCudaQueue);
         magmaCudaQueue = nullptr;
         magma_finalize();
     }
-    if (magmaCudaStream != nullptr) cudaStreamDestroy((cudaStream_t) magmaCudaStream);
+    if (magmaCudaStream != nullptr) cudaStreamDestroy((cudaStream_t) magmaCudaStream); // always owned, created only with owned magma queue
     magmaCudaStream = nullptr;
     #endif
 }
@@ -113,6 +113,7 @@ void CudaEngine::cuBlasPrepare(){
         cublasHandle_t cbh;
         cublasCreate(&cbh);
         cublasHandle = (void*) cbh;
+        own_cublas_handle = true;
     }
 }
 void CudaEngine::cuSparsePrepare(){
@@ -120,6 +121,7 @@ void CudaEngine::cuSparsePrepare(){
         cusparseHandle_t csh;
         cusparseCreate(&csh);
         cusparseHandle = (void*) csh;
+        own_cusparse_handle = true;
     }
 }
 void CudaEngine::magmaPrepare(){
@@ -129,6 +131,7 @@ void CudaEngine::magmaPrepare(){
         cuBlasPrepare();
         cuSparsePrepare();
         magma_queue_create_from_cuda(gpu, (cudaStream_t) magmaCudaStream, (cublasHandle_t) cublasHandle, (cusparseHandle_t) cusparseHandle, ((magma_queue**) &magmaCudaQueue));
+        own_magma_queue = true;
     }
     #endif
 }

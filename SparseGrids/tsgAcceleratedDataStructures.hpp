@@ -204,12 +204,19 @@ private:
 class CudaEngine{
 public:
     //! \brief Construct a new engine associated with the given device, default to cuBlas/cuSparse backend, see \b backendMAGMA().
-    CudaEngine(int deviceID) : gpu(deviceID), magma(false), cublasHandle(nullptr), cusparseHandle(nullptr){
+    CudaEngine(int device) : gpu(device), magma(false), cublasHandle(nullptr), own_cublas_handle(false), cusparseHandle(nullptr), own_cusparse_handle(false)
         #ifdef Tasmanian_ENABLE_MAGMA
-        magmaCudaQueue = nullptr;
-        magmaCudaStream = nullptr;
+        , magmaCudaStream(nullptr), magmaCudaQueue(nullptr), own_magma_queue(false)
         #endif
-    }
+        {}
+    //! \brief Construct a new engine with the given device and magma mode, use the provided handles for magma/cublas and cusparse.
+    CudaEngine(int device, bool use_magma, void *handle_magma_cublas, void *handle_cusparse)
+        : gpu(device), magma(use_magma), cublasHandle((use_magma) ? nullptr : handle_magma_cublas), own_cublas_handle(nullptr),
+          cusparseHandle(handle_cusparse), own_cusparse_handle(nullptr)
+        #ifdef Tasmanian_ENABLE_MAGMA
+        , magmaCudaStream(nullptr), magmaCudaQueue((use_magma) ? handle_magma_cublas : nullptr), own_magma_queue(false)
+        #endif
+        {}
     //! \brief Destructor, clear all handles and queues.
     ~CudaEngine();
 
@@ -279,11 +286,14 @@ private:
     bool magma; // use cuBlas/cuSparse or MAGMA
 
     void *cublasHandle;
+    bool own_cublas_handle; // indicates whether to delete the handle on exit
     void *cusparseHandle;
+    bool own_cusparse_handle; // indicates whether to delete the handle on exit
 
     #ifdef Tasmanian_ENABLE_MAGMA
     void *magmaCudaStream;
     void *magmaCudaQueue;
+    bool own_magma_queue;
     #endif
 };
 
