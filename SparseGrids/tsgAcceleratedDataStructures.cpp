@@ -552,6 +552,15 @@ template<typename T> void AccelerationMeta::delCudaArray(T *x){
     AccelerationMeta::cudaCheckError((void*) &cudaStat, "AccelerationMeta::delCudaArray(), call to cudaFree()");
 }
 
+void* AccelerationMeta::createCublasHandle(){
+    cublasHandle_t handle;
+    cublasCreate(&handle);
+    return (void*) handle;
+}
+void AccelerationMeta::deleteCublasHandle(void *handle){
+    cublasDestroy((cublasHandle_t) handle);
+}
+
 template void AccelerationMeta::recvCudaArray<double>(size_t num_entries, const double*, std::vector<double>&);
 template void AccelerationMeta::recvCudaArray<float>(size_t num_entries, const float*, std::vector<float>&);
 template void AccelerationMeta::recvCudaArray<int>(size_t num_entries, const int*, std::vector<int>&);

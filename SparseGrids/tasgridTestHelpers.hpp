@@ -90,7 +90,7 @@ double err1_sparse(std::vector<int> const &xpntr, std::vector<int> const &xindx,
     return err;
 }
 
-bool testPass(double err, double tol, std::string message, TasmanianSparseGrid const &grid = TasmanianSparseGrid()){
+inline bool testPass(double err, double tol, std::string message, TasmanianSparseGrid const &grid = TasmanianSparseGrid()){
     if (err > tol){
         cout << std::scientific; cout.precision(16);
         cout << "ERROR: " << message << "\n  observed: " << err << "  expected: " << tol << "\n";
@@ -101,8 +101,8 @@ bool testPass(double err, double tol, std::string message, TasmanianSparseGrid c
     }
 }
 
-std::vector<double> const& getVector(std::vector<double> const &x, std::vector<double>&, size_t){ return x; }
-std::vector<float> const& getVector(std::vector<double> const &x, std::vector<float> &t, size_t num){
+inline std::vector<double> const& getVector(std::vector<double> const &x, std::vector<double>&, size_t){ return x; }
+inline std::vector<float> const& getVector(std::vector<double> const &x, std::vector<float> &t, size_t num){
     t = std::vector<float>(num);
     std::transform(x.begin(), x.begin() + num, t.begin(), [](double const&v)->float{ return static_cast<float>(v); });
     return t;
@@ -127,7 +127,7 @@ bool testAccEval(std::vector<double> const &x, std::vector<double> const &y, int
     return testPass(err1(Utils::size_mult(numx, grid.getNumOutputs()), test_y, y), tolerance, message, grid);
 }
 
-bool canUseCudaKernels(TasmanianSparseGrid const &grid){
+inline bool canUseCudaKernels(TasmanianSparseGrid const &grid){
     if (!(grid.getAccelerationType() == accel_gpu_cuda || grid.getAccelerationType() == accel_gpu_magma)) return false;
     if (grid.isLocalPolynomial() && (grid.getOrder() > 2 || grid.getOrder() == -1)) return false;
     if (grid.isWavelet() && grid.getOrder() == 3) return false;

@@ -525,6 +525,17 @@ namespace AccelerationMeta{
     //! \ingroup TasmanianAcceleration
     template<typename T> void delCudaArray(T *x);
 
+    /*!
+     * \ingroup TasmanianAcceleration
+     * \brief Creates a new cuBlas handle, used in unit-testing only.
+     */
+    void *createCublasHandle();
+    /*!
+     * \ingroup TasmanianAcceleration
+     * \brief Destroys the cuBlas handle, used in unit-testing only.
+     */
+    void deleteCublasHandle(void *);
+
     //! \internal
     //! \brief Takes \b cudaStatus which is of type \b cudaError_t (see Nvidia documentation), throws with message \b info if the status is not success.
     //! \ingroup TasmanianAcceleration

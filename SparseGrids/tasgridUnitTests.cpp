@@ -33,6 +33,7 @@
 
 #include "tasgridUnitTests.hpp"
 #include "tasgridExternalTests.hpp"
+#include "tasgridTestHelpers.hpp"
 
 void gridLoadEN2(TasmanianSparseGrid *grid){ // load points using model exp( - \| x \|^2 )
     std::vector<double> points;
@@ -275,8 +276,22 @@ bool GridUnitTester::testAPIconsistency(){
         cout << "ERROR: did not evaluate sparse nnz to zero." << endl; pass = false;
     }
     if (makeEmpty().getHierarchicalCoefficients() != nullptr){
-        cout << "ERROR: the hierarchical coefficients of empty should be zero." << endl; pass = false;
+        cout << "ERROR: the hierarchical coefficients of empty should be null." << endl; pass = false;
     }
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    grid = makeGlobalGrid(2, 1, 4, type_iptotal, rule_clenshawcurtis); // resets the acceleration mode
+    gridLoadEN2(&grid);
+    std::vector<double> baseline_y, test_x = {0.33, 0.33, -0.33, -0.33, -0.66, 0.66};
+    grid.evaluateBatch(test_x, baseline_y);
+    TasGrid::AccelerationMeta::setDefaultCudaDevice(0);
+    auto manual_handle = TasGrid::AccelerationMeta::createCublasHandle();
+    grid.enableAcceleration(accel_gpu_cuda, 0, manual_handle, nullptr);
+    if (!testDenseGPU<double, GridMethodEvalBatchGPU>(test_x, baseline_y, 3, Maths::num_tol, grid, "GPU evaluate with manual handle"))
+        pass = false;
+    TasGrid::AccelerationMeta::deleteCublasHandle(manual_handle);
+    #endif
+    passAll = pass && passAll;
 
     cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
     return passAll;
