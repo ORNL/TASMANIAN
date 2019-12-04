@@ -1811,8 +1811,12 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     int testGpuID = (gpuid == -1) ? 0 : gpuid;
     size_t c = 0;
     while(c < acc.size()){
-        grid.enableAcceleration(acc[c]);
-        if (c > 1) grid.setGPUID(testGpuID); // gpu test
+
+        if (c > 1)
+            grid.enableAcceleration(acc[c], testGpuID); // gpu test
+        else
+            grid.enableAcceleration(acc[c]);
+
         //grid->printStats();
         //cout << "Testing Batch evaluations" << endl;
 

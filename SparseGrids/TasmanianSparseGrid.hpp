@@ -1572,6 +1572,39 @@ public:
      */
     void enableAcceleration(TypeAcceleration acc);
     /*!
+     * \brief Combines calls the enableAcceleration(), getGPUID() and allows for user provided handles.
+     *
+     * The purpose of this method is to allow for one-show setup of the acceleration mode and gpu_id.
+     * In addition, the method allows the user to specify the handles and queues that Tasmanian
+     * should use in calls to cuBlas, cuSparse, and MAGMA.
+     * Every call to accelerated linear-algebra backend libraries requires appropriate handles/queues,
+     * refer to the corresponding library documentation for details regarding the initialization of
+     * handles and queues.
+     * This method allows the user to provide an externally initialized handle/queue and Tasmanian
+     * will take a non-owning reference to that object, the user has the responsibility to ensure
+     * that the provided handle is not destroyed before the sparse grid object, or alternatively,
+     * the acceleration mode is reset and/or new handles are provided with another call to
+     * enableAcceleration().
+     * If the handles are set to the default nullptr, then Tasmanian object will create handles internally
+     * and keep ownership until the acceleration mode is reset or the object is destroyed.
+     *
+     * \param acc is a new acceleration mode, see TasGrid::TypeAcceleration.
+     * \param new_gpu_id is the new device id to use for acceleration, the number must be between 0 and getNumGPUs() - 1.
+     * \param backend_handle is either cublasHandle_t or magmaCudaQueue depending on the acceleration mode \b acc,
+     *      it can be nullptr in which case Tasmanian will create the appropriate handle/queue internally.
+     * \param cusparse_handle is either cusparseHandle_t or a nullptr.
+     *
+     * Notes:
+     * - If the mode is not TasGrid::accel_gpu_cublas, TasGrid::accel_gpu_cuda, or TasGrid::accel_gpu_magma,
+     *  then the new_gpu_id and the handles will be ignored.
+     * - Local polynomial grids use both cuBlas and cuSparse handles regardless of whether MAGMA is enabled,
+     *  hence \b backend_handle must be either nullptr or cublasHandle_t even if \b acc is set to
+     *  TasGrid::accel_gpu_magma.
+     * - All other grid types ignore \b cusparse_handle and the \b backend_handle must be either
+     *  a magmaCudaQueue if \b acc is TasGrid::accel_gpu_magma or cublasHandle_t otherwise (or nullptr in any case).
+     */
+    void enableAcceleration(TypeAcceleration acc, int new_gpu_id, void *backend_handle = nullptr, void *cusparse_handle = nullptr);
+    /*!
      * \brief Set the preferred back-end algorithm for Local Polynomial grids.
      *
      * Usually the Local Polynomial grids use sparse data-structures and sparse linear algebra,

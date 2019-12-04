@@ -190,6 +190,8 @@ class TestTasClass(unittest.TestCase):
                    ["grid.makeLocalPolynomialGrid(2, 1, 1, 1, 'localp'); grid.beginConstruction(); grid.loadConstructedPoint([[[0.0, 0.0], [1.0, 0.0]],], [[1.0,], [2.0,]]);", "lfX"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-wrong');", "sAccelerationType"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-default');", "notError"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-default', 0 if grid.isAccelerationAvailable('gpu-cuda') else None);", "notError"],
+                   ["grid.makeSequenceGrid(2, 1, 2, 'level', 'leja'); grid.enableAcceleration('gpu-default', -11);", "iGPUID"],
                    ["grid1 = Tasmanian.SparseGrid(); grid1.isAccelerationAvailable('cpu-wrong');", "sAccelerationType"],
                    ["grid1 = Tasmanian.SparseGrid(); grid1.isAccelerationAvailable('cpu-blas');", "notError"],
                    ["grid1 = Tasmanian.SparseGrid(); grid1.getGPUMemory(-1);", "iGPUID"],

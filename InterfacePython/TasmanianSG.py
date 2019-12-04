@@ -227,6 +227,7 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgFinishConstruction.argtypes = [c_void_p]
         self.pLibTSG.tsgPrintStats.argtypes = [c_void_p]
         self.pLibTSG.tsgEnableAcceleration.argtypes = [c_void_p, c_char_p]
+        self.pLibTSG.tsgEnableAccelerationGPU.argtypes = [c_void_p, c_char_p, c_int]
         self.pLibTSG.tsgGetAccelerationType.argtypes = [c_void_p]
         self.pLibTSG.tsgIsAccelerationAvailable.argtypes = [c_char_p]
         self.pLibTSG.tsgSetGPUID.argtypes = [c_void_p, c_int]
@@ -2063,60 +2064,57 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgDeleteInts(pIndexes)
         return lliPolynomials
 
-    def enableAcceleration(self, sAccelerationType):
+    def enableAcceleration(self, sAccelerationType, iGPUID = None):
         '''
-        enables the use of acceleration, for example GPU
-        must specify acceleration type and perhaps additional
-        parameters, if needed by the acceleration type
-        currently, acceleration pertains primarily to batch evaluations
-        of global interpolants
-        to use acceleration, you must compile using cmake and enable
-        a corresponding flag
+        Enables the use of accelerated backend libraries and extensions,
+        such as BLAS and CUDA.
+        Each acceleration type requires corresponding CMake compile
+        options, otherwise the backend will fallback to the closest
+        available options.
 
         sAccelerationType: string
 
           'none'
-              fallback mode, relies on sequential implementation
+              core fallback mode, relies on sequential implementation
               if compiled with Tasmanian_ENABLE_OPENMP this will use
-              simple "omp parallel for" to take advantage of multicore
+              simple "omp parallel for" to take advantage of multiple cpu cores
 
           'cpu-blas'
-              uses BLAS dgemm function for acceleration of batch
+              uses BLAS level 2 and 3 functions for acceleration of batch
               evaluations
-              requires Tasmanian_ENABLE_BLAS switched ON
-              if enabled, this is the default mode
+              requires Tasmanian_ENABLE_BLAS=ON
+              this is the default mode, if available
 
           'gpu-default'
-              uses CUDA kernels, cuBlas and cuSparse libraries for
+              uses CUDA kernels, cuBlas, cuSparse and MAGMA libraries for
               accelerated matrix operations, e.g., cublasDgemm
-              selects the first available gpu acceleration in the
-              following order:
-              1. gpu_cublas, 2. gpu_cuda
-              this mode assumes that all data structures will fit in
-              GPU memory, mainly the matrix of loaded values,
-              the matrix of interpolation weights, and the result matrix
-              total storage (in doubles) =
-                  getNumOutputs() * getNumPoints()
-                + getNumPoints() * num_x
-                + getNumOutputs() * num_x
-              where num_x is the size of the batch
-              may have to split the batch into smaller units to work
-              around memory constraints
+              refer to TasGrid::TypeAcceleration for more details
 
           'gpu_cublas'
               uses the Nvidia cuBlas and cuSparse libraries
-              (see 'gpu-default' for memory constraints)
 
           'gpu-cuda'
-              uses custom CUDA kernels, usually slower but more memory
-              convervarive than 'gpu-cublas'
-              (see 'gpu-default' for memory constraints)
+              uses custom CUDA kernels in addition to the accelerated
+              linear algebra libraries
+
+           'gpu-magma'
+              uses the custom CUDA kernels and the MAGMA library in place
+              of the default Nvidia libraries
+
+        iGPU: integer
+              indicates the GPU device to use, if set to None then device
+              zero will be used first or the device set with setGPUID()
         '''
         if (sAccelerationType not in lsTsgAccelTypes):
             raise TasmanianInputError("sAccelerationType", "ERROR: invalid acceleration type")
         if (sys.version_info.major == 3):
             sAccelerationType = bytes(sAccelerationType, encoding='utf8')
-        self.pLibTSG.tsgEnableAcceleration(self.pGrid, c_char_p(sAccelerationType))
+        if (iGPUID is None):
+            self.pLibTSG.tsgEnableAcceleration(self.pGrid, c_char_p(sAccelerationType))
+        else:
+            if ((iGPUID < 0) or (iGPUID >= self.getNumGPUs())):
+                raise TasmanianInputError("iGPUID", "ERROR: invalid GPU ID number")
+            self.pLibTSG.tsgEnableAcceleration(self.pGrid, c_char_p(sAccelerationType), iGPUID)
 
     def getAccelerationType(self):
         '''

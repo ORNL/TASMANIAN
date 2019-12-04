@@ -1563,6 +1563,29 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
         #endif
     }
 }
+#ifdef Tasmanian_ENABLE_CUDA
+void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
+#else
+void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int, void*, void*){
+#endif
+    TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
+    acceleration = effective_acc;
+    #ifdef Tasmanian_ENABLE_CUDA
+    engine.reset();
+    if ((new_gpu_id != gpu_id) && (!empty())){
+        base->clearAccelerationData();
+        acc_domain.reset();
+    }
+    if (AccelerationMeta::isAccTypeGPU(acceleration)){
+        // create a new engine
+        if ((new_gpu_id < 0) || (new_gpu_id >= AccelerationMeta::getNumCudaDevices()))
+            throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
+        gpu_id = new_gpu_id;
+        bool use_magma = !isLocalPolynomial() && (acceleration == accel_gpu_magma);
+        engine = std::make_unique<CudaEngine>(gpu_id, use_magma, backend_handle, cusparse_handle);
+    }
+    #endif
+}
 void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
     if (isLocalPolynomial()) get<GridLocalPolynomial>()->setFavorSparse(favor);
 }
