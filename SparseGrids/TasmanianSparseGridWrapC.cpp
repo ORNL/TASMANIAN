@@ -458,6 +458,7 @@ void tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes
 void tsgPrintStats(void *grid){ ((TasmanianSparseGrid*) grid)->printStats(); }
 
 void tsgEnableAcceleration(void *grid, const char *accel){ ((TasmanianSparseGrid*) grid)->enableAcceleration(AccelerationMeta::getIOAccelerationString(accel)); }
+void tsgEnableAccelerationGPU(void *grid, const char *accel, int gpu){ ((TasmanianSparseGrid*) grid)->enableAcceleration(AccelerationMeta::getIOAccelerationString(accel), gpu); }
 //int tsgGetAccelerationTypeInt(void *grid){ return AccelerationMeta::getIOAccelerationInt(((TasmanianSparseGrid*) grid)->getAccelerationType()); } // int to acceleration type
 const char* tsgGetAccelerationType(void *grid){ return AccelerationMeta::getIOAccelerationString(((TasmanianSparseGrid*) grid)->getAccelerationType()); }
 
