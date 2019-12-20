@@ -271,6 +271,7 @@ class TestTasClass(unittest.TestCase):
                 exec(lTest[0])
                 self.assertEqual(lTest[1], "notError", "failed to raise exception for invalid '{0:1s}' using test\n '{1:1s}'".format(lTest[1],lTest[0]))
             except Tasmanian.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, lTest[1], "error raising exception for '{0:1s}' using test\n '{1:1s}'\n Error.sVariable = '{2:1s}'".format(lTest[1],lTest[0],TSGError.sVariable))
 
     def performExceptionsTest(self):

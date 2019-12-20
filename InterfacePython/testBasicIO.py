@@ -115,9 +115,11 @@ class TestTasClass(unittest.TestCase):
             ttc.compareGrids(gridA, gridB)
 
         # test an error message from wrong read
-        print("Attempting a bogus read to see if error would be properly registered")
-        self.assertFalse(gridB.read("testSaveBlah"), "Failed to flag a fake read")
-        print("GOOD: error was registered")
+        try:
+            gridB.read("Test_If_Bogus_Filename_Produces_an_Error")
+        except TasmanianSG.TasmanianInputError as TSGError:
+            TSGError.bShowOnExit = False
+            self.assertEqual(TSGError.sVariable, "sFilename", "Reading a bogus file properly failed, but the error information is wrong.")
 
         # custom rule test
         gridA = TasmanianSG.TasmanianSparseGrid()
