@@ -79,11 +79,13 @@ class TestTasClass(unittest.TestCase):
                 grid.plotPoints2D()
                 self.assertTrue(False, "failed to flag plot exception when when using a grid with other than 2D")
             except TasmanianSG.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, "plotPoints2D", "error raising exception for plotPoints2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
             try:
                 grid.plotResponse2D()
                 self.assertTrue(False, "failed to flag plot exception when when using a grid with other than 2D")
             except TasmanianSG.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, "plotResponse2D", "error raising exception for plotResponse2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
 
             grid.makeGlobalGrid(2, 2, 2, 'level', 'leja')
@@ -91,21 +93,25 @@ class TestTasClass(unittest.TestCase):
                 grid.plotResponse2D(iOutput = -1)
                 self.assertTrue(False, "failed to flag plot exception when when using wrong output")
             except TasmanianSG.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, "iOutput", "error raising exception for plotResponse2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
             try:
                 grid.plotResponse2D(iOutput = 3)
                 self.assertTrue(False, "failed to flag plot exception when when using wrong output")
             except TasmanianSG.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, "iOutput", "error raising exception for plotResponse2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
             try:
                 grid.plotResponse2D(iNumDim0 = -1)
                 self.assertTrue(False, "failed to flag plot exception when when using wrong output")
             except TasmanianSG.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, "iNumDim0", "error raising exception for plotResponse2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
             try:
                 grid.plotResponse2D(iNumDim1 = -1)
                 self.assertTrue(False, "failed to flag plot exception when when using wrong output")
             except TasmanianSG.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, "iNumDim1", "error raising exception for plotResponse2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
         else:
             grid.makeGlobalGrid(2, 1, 3, 'level', 'leja')
@@ -114,11 +120,13 @@ class TestTasClass(unittest.TestCase):
                 grid.plotResponse2D()
                 self.assertTrue(False, "failed to flag plotexception  when missing matplotlib")
             except TasmanianSG.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, "plotResponse2D", "error raising exception for plotResponse2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
             try:
                 grid.plotPoints2D()
                 self.assertTrue(False, "failed to flag plot exception when missing matplotlib")
             except TasmanianSG.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, "plotPoints2D", "error raising exception for plotPoints2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
 
     def performMiscTests(self):

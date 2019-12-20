@@ -1,5 +1,6 @@
 import unittest
 import Tasmanian
+DREAM = Tasmanian.DREAM
 import numpy as np
 
 import testCommon
@@ -17,14 +18,12 @@ class TestTasClass(unittest.TestCase):
     def testNothing(self):
         pass
 
-    def performExceptionsTest(self):
-        grid = Tasmanian.SparseGrid()
-
+    def getSparseGridTests(self):
         # The list llTest contains list-of-lists (could make into tuples)
         # Each sub-list (tuple) has two entries, one is the command that should raise the exception,
         # the second is the "sError" variable in the exception class.
         # notError tests here are needed to ensure that the multi-statement commands fail for the correct function.
-        llTests = [["grid.makeGlobalGrid(-1, 1,  4, 'level', 'clenshaw-curtis')", "iDimension"],
+        return    [["grid.makeGlobalGrid(-1, 1,  4, 'level', 'clenshaw-curtis')", "iDimension"],
                    ["grid.makeGlobalGrid(2, -1,  4, 'level', 'clenshaw-curtis')", "iOutputs"],
                    ["grid.makeGlobalGrid(2,  1, -4, 'level', 'clenshaw-curtis')", "iDepth"],
                    ["grid.makeGlobalGrid(2,  1,  4, 'wrong', 'clenshaw-curtis')", "sType"],
@@ -204,9 +203,77 @@ class TestTasClass(unittest.TestCase):
                    ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(1000000);", "iGPUID"],
                    ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(grid1.getNumGPUs());", "iGPUID"],]
 
+    def getDreamTests(self):
+        # see getSparseGridTests() for comments about the format
+        return [["DREAM.Domain('incorrect')", "Domain"],
+                ["DREAM.IndependentUpdate(1)", "sType"],
+                ["DREAM.DifferentialUpdate(0.0)", "callableOrMagnitude"],
+                ["DREAM.RandomGenerator('incorrect')", "sType"],
+                ["DREAM.RandomGenerator(callableRNG = 0.0)", "callableRNG"],
+                ["DREAM.Posterior(lambda x: x, lambda y: y, lambda x: 1, typeForm = 'incorrect')", "typeForm"],
+                ["DREAM.Posterior('incorrect', lambda y: y, lambda x: 1)", "model"],
+                ["DREAM.Posterior(lambda x: x, 'incorrect', lambda x: 1)", "likelihood"],
+                ["DREAM.Posterior(lambda x: x, lambda y: y, 'prior')", "prior"],
+                ["DREAM.genUniformSamples([0, 0], [1], 20)", "lfUpper"],
+                ["DREAM.genGaussianSamples([0, 0], [1], 20)", "lfDeviation"],
+                ["DREAM.State(3, 2).setState(np.array([[0.1, 0.1],[0.1, 0.2],[0.1, 0.3],]))", "notError"],
+                ["DREAM.State(3, 2).setState(np.array([[0.1, 0.1],[0.1, 0.2],]))", "llfNewState"],
+                ["DREAM.State(3, 2).setState(np.array([[0.1,],[0.1,],[0.1,],]))", "llfNewState"],
+                ["""DREAM.Sample(5, 5, lambda x : np.exp( -0.5 * np.sum( (x - 2.0)**2, 1 ) / 9.0 ),
+                    DREAM.Domain('unbounded'),
+                    state,
+                    DREAM.IndependentUpdate('gaussian', 3.0),
+                    DREAM.DifferentialUpdate(0))""", "notError"],
+                ["""DREAM.Sample(5, 5, DREAM.Domain('unbounded'),
+                    DREAM.Domain('unbounded'),
+                    state,
+                    DREAM.IndependentUpdate('gaussian', 3.0),
+                    DREAM.DifferentialUpdate(0))""", "probability_distibution"],
+                ["""DREAM.Sample(5, 5, lambda x : np.exp( -0.5 * np.sum( (x - 2.0)**2, 1 ) / 9.0 ),
+                    (-1.0, 1.0),
+                    state,
+                    DREAM.IndependentUpdate('gaussian', 3.0),
+                    DREAM.DifferentialUpdate(0))""", "domain_description"],
+                ["""DREAM.Sample(5, 5, lambda x : np.exp( -0.5 * np.sum( (x - 2.0)**2, 1 ) / 9.0 ),
+                    DREAM.Domain('unbounded'),
+                    grid,
+                    DREAM.IndependentUpdate('gaussian', 3.0),
+                    DREAM.DifferentialUpdate(0))""", "dream_state"],
+                ["""DREAM.Sample(5, 5, lambda x : np.exp( -0.5 * np.sum( (x - 2.0)**2, 1 ) / 9.0 ),
+                    DREAM.Domain('unbounded'),
+                    state,
+                    DREAM.DifferentialUpdate(0),
+                    DREAM.DifferentialUpdate(0))""", "independent_update"],
+                ["""DREAM.Sample(5, 5, lambda x : np.exp( -0.5 * np.sum( (x - 2.0)**2, 1 ) / 9.0 ),
+                    DREAM.Domain('unbounded'),
+                    state,
+                    DREAM.IndependentUpdate('gaussian', 3.0),
+                    DREAM.IndependentUpdate('gaussian', 3.0))""", "differential_update"],
+                ["""DREAM.Sample(5, 5, lambda x : np.exp( -0.5 * np.sum( (x - 2.0)**2, 1 ) / 9.0 ),
+                    DREAM.Domain('unbounded'),
+                    state,
+                    DREAM.IndependentUpdate('gaussian', 3.0),
+                    DREAM.DifferentialUpdate(0), lambda : 0.5)""", "random01"],
+                ["""DREAM.Sample(5, 5, lambda x : np.exp( -0.5 * np.sum( (x - 2.0)**2, 1 ) / 9.0 ),
+                    DREAM.Domain('unbounded'),
+                    state,
+                    DREAM.IndependentUpdate('gaussian', 3.0),
+                    DREAM.DifferentialUpdate(0), typeForm = 'alpha')""", "typeForm"],
+                ]
+
+    def testListedExceptions(self, llTests):
+        grid = Tasmanian.SparseGrid()
+        state = DREAM.State(10, 2)
+        state.setState(DREAM.genGaussianSamples([-1.0, -1.0], [1.0, 1.0], 10, DREAM.RandomGenerator("minstd_rand", 42)))
+
         for lTest in llTests:
             try:
                 exec(lTest[0])
                 self.assertEqual(lTest[1], "notError", "failed to raise exception for invalid '{0:1s}' using test\n '{1:1s}'".format(lTest[1],lTest[0]))
             except Tasmanian.TasmanianInputError as TSGError:
+                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, lTest[1], "error raising exception for '{0:1s}' using test\n '{1:1s}'\n Error.sVariable = '{2:1s}'".format(lTest[1],lTest[0],TSGError.sVariable))
+
+    def performExceptionsTest(self):
+        self.testListedExceptions(self.getSparseGridTests())
+        self.testListedExceptions(self.getDreamTests())

@@ -50,13 +50,19 @@ class TasmanianInputError(Exception):
     '''Exception raised for incorret input to Tasmanian
 
     Attributes:
-    sVariable -- string containing the variable name with incorrect value
-    sMessage -- message regarding the error
+    sVariable   -- string containing the variable name with incorrect value
+    sMessage    -- message regarding the error
+    bShowOnExit -- boolean indicates whether to call printInfo() form the destructor
 
     '''
     def __init__(self, sVar, sMess):
         self.sVariable = sVar
         self.sMessage = sMess
+        self.bShowOnExit = True
+
+    def __del__(self):
+        if self.bShowOnExit:
+            self.printInfo()
 
     def printInfo(self):
         '''

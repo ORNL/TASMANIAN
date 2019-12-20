@@ -271,10 +271,7 @@ class TestTasClass(unittest.TestCase):
             grid.copyGrid([])
             self.assertTrue(False, "failed to raise exception on copy grid")
         except Tasmanian.InputError as TsgError:
-            with open(os.devnull, 'w') as devnul:
-                sys.stdout = devnul
-                TsgError.printInfo() # Miro: silence this for a release
-                sys.stdout = sys.__stdout__
+            TsgError.bShowOnExit = False
 
         # default alpha/beta and order
         grid.makeGlobalGrid(2, 0, 2, 'level', 'leja', [2, 1])

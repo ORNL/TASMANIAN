@@ -319,9 +319,9 @@ class TasmanianSparseGrid:
                        check the CLI output for an error message
 
         '''
-        if (sys.version_info.major == 3):
-            sFilename = bytes(sFilename, encoding='utf8')
-        return (self.pLibTSG.tsgRead(self.pGrid, c_char_p(sFilename)) != 0)
+        effective_filename = bytes(sFilename, encoding='utf8') if sys.version_info.major == 3 else sFilename
+        if self.pLibTSG.tsgRead(self.pGrid, c_char_p(effective_filename)) == 0:
+            raise TasmanianInputError("sFilename", "ERROR: {0:1s} does not appear to be a valid Tasmanian file.".format(sFilename))
 
     def write(self, sFilename, bUseBinaryFormat = True):
         '''
