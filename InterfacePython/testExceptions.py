@@ -216,6 +216,9 @@ class TestTasClass(unittest.TestCase):
                 ["DREAM.Posterior(lambda x: x, lambda y: y, 'prior')", "prior"],
                 ["DREAM.genUniformSamples([0, 0], [1], 20)", "lfUpper"],
                 ["DREAM.genGaussianSamples([0, 0], [1], 20)", "lfDeviation"],
+                ["DREAM.State(3, 2).setState(np.array([[0.1, 0.1],[0.1, 0.2],[0.1, 0.3],]))", "notError"],
+                ["DREAM.State(3, 2).setState(np.array([[0.1, 0.1],[0.1, 0.2],]))", "llfNewState"],
+                ["DREAM.State(3, 2).setState(np.array([[0.1,],[0.1,],[0.1,],]))", "llfNewState"],
                 ["""DREAM.Sample(5, 5, lambda x : np.exp( -0.5 * np.sum( (x - 2.0)**2, 1 ) / 9.0 ),
                     DREAM.Domain('unbounded'),
                     state,
@@ -269,7 +272,6 @@ class TestTasClass(unittest.TestCase):
                 self.assertEqual(lTest[1], "notError", "failed to raise exception for invalid '{0:1s}' using test\n '{1:1s}'".format(lTest[1],lTest[0]))
             except Tasmanian.TasmanianInputError as TSGError:
                 self.assertEqual(TSGError.sVariable, lTest[1], "error raising exception for '{0:1s}' using test\n '{1:1s}'\n Error.sVariable = '{2:1s}'".format(lTest[1],lTest[0],TSGError.sVariable))
-                TSGError.bShowMessage = False
 
     def performExceptionsTest(self):
         self.testListedExceptions(self.getSparseGridTests())
