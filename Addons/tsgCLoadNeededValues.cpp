@@ -35,35 +35,41 @@
 extern "C"{
 
 // x.size(), x.data(), y.size(), y.data(), thread_id
-using tsg_lnp_model = void (*)(int, double const*, int, double*, int);
+using tsg_lnp_model = void (*)(int, double const*, int, double*, int, int*);
 
-void tsgLoadNeededPoints(int overwrite, tsg_lnp_model pymodel, void *grid_pntr, int num_threads){
-    TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
+void tsgLoadNeededPoints(int overwrite, tsg_lnp_model pymodel, void *grid_pntr, int num_threads, int *err){
+    *err = 1; // produce an error code, if not ended early
+    try{
+        TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
 
-    int const num_dimensions = grid.getNumDimensions();
-    int const num_outputs    = grid.getNumOutputs();
+        int const num_dimensions = grid.getNumDimensions();
+        int const num_outputs    = grid.getNumOutputs();
 
-    auto cpp_model = [&](double const x[], double y[], size_t thread_id)->
-        void{
-            pymodel(num_dimensions, x, num_outputs, y, (int) thread_id);
-        };
+        auto cpp_model = [&](double const x[], double y[], size_t thread_id)->
+            void{
+                int error_code = 0;
+                pymodel(num_dimensions, x, num_outputs, y, (int) thread_id, &error_code);
+                if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgLoadNeededPoints()");
+            };
 
-    constexpr bool needed = true;
-    constexpr bool loaded = false;
+        constexpr bool needed = true;
+        constexpr bool loaded = false;
 
-    if (num_threads > 1){
-        if (overwrite != 0){
-            TasGrid::loadNeededPoints<TasGrid::mode_parallel, needed>(cpp_model, grid, num_threads);
+        if (num_threads > 1){
+            if (overwrite != 0){
+                TasGrid::loadNeededPoints<TasGrid::mode_parallel, needed>(cpp_model, grid, num_threads);
+            }else{
+                TasGrid::loadNeededPoints<TasGrid::mode_parallel, loaded>(cpp_model, grid, num_threads);
+            }
         }else{
-            TasGrid::loadNeededPoints<TasGrid::mode_parallel, loaded>(cpp_model, grid, num_threads);
+            if (overwrite != 0){
+                TasGrid::loadNeededPoints<TasGrid::mode_sequential, needed>(cpp_model, grid, 1);
+            }else{
+                TasGrid::loadNeededPoints<TasGrid::mode_sequential, loaded>(cpp_model, grid, 1);
+            }
         }
-    }else{
-        if (overwrite != 0){
-            TasGrid::loadNeededPoints<TasGrid::mode_sequential, needed>(cpp_model, grid, 1);
-        }else{
-            TasGrid::loadNeededPoints<TasGrid::mode_sequential, loaded>(cpp_model, grid, 1);
-        }
-    }
+        *err = 0; // got here, no exceptions were encountered
+    }catch(std::runtime_error &){} // keep *err set to 1
 }
 
 } // extern "C"

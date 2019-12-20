@@ -41,13 +41,15 @@ __path_libdream__      = "@Tasmanian_libdream_path@"
 __path_libcaddons__    = "@Tasmanian_libcaddons_path@"
 __path_logfile__       = "@Tasmanian_final_install_path@/share/Tasmanian/Tasmanian.log"
 
+enableVerboseErrors = True
+
 # the transitive library dependencies on Linux/OsX are handled by rpath, Windows needs help
 if "@CMAKE_SYSTEM_NAME@" == "Windows":
     import os
     os.environ['PATH'] = "@Tasmanian_libpaths@" + os.pathsep + os.environ['PATH']
 
 class TasmanianInputError(Exception):
-    '''Exception raised for incorret input to Tasmanian
+    '''Exception raised for incorrect input to Tasmanian
 
     Attributes:
     sVariable   -- string containing the variable name with incorrect value
@@ -58,7 +60,7 @@ class TasmanianInputError(Exception):
     def __init__(self, sVar, sMess):
         self.sVariable = sVar
         self.sMessage = sMess
-        self.bShowOnExit = True
+        self.bShowOnExit = enableVerboseErrors
 
     def __del__(self):
         if self.bShowOnExit:

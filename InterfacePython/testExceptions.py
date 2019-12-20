@@ -7,6 +7,10 @@ import testCommon
 
 ttc = testCommon.TestTasCommon()
 
+# tests should pass when errors are raised, thus suppress the verbose error messages
+# to avoid confusing a verbose message with a real error (i.e., failed test)
+Tasmanian.useVerboseErrors(False)
+
 class TestTasClass(unittest.TestCase):
     '''
     Test the python exceptions, create a bunch of incorrect faults and
@@ -201,7 +205,10 @@ class TestTasClass(unittest.TestCase):
                    ["grid1 = Tasmanian.SparseGrid(); grid1.getGPUName(grid1.getNumGPUs());", "iGPUID"],
                    ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(-1);", "iGPUID"],
                    ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(1000000);", "iGPUID"],
-                   ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(grid1.getNumGPUs());", "iGPUID"],]
+                   ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(grid1.getNumGPUs());", "iGPUID"],
+                   ["grid.makeLocalPolynomialGrid(1, 1, 1, 1, 'localp'); Tasmanian.loadNeededPoints(lambda x, tid : x, grid, 1);", "notError"],
+                   ["grid.makeLocalPolynomialGrid(1, 1, 1, 1, 'localp'); Tasmanian.loadNeededPoints(lambda x, tid : np.ones((2,)) * x, grid, 1);", "loadNeededPoints"],
+                   ]
 
     def getDreamTests(self):
         # see getSparseGridTests() for comments about the format
@@ -271,7 +278,6 @@ class TestTasClass(unittest.TestCase):
                 exec(lTest[0])
                 self.assertEqual(lTest[1], "notError", "failed to raise exception for invalid '{0:1s}' using test\n '{1:1s}'".format(lTest[1],lTest[0]))
             except Tasmanian.TasmanianInputError as TSGError:
-                TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, lTest[1], "error raising exception for '{0:1s}' using test\n '{1:1s}'\n Error.sVariable = '{2:1s}'".format(lTest[1],lTest[0],TSGError.sVariable))
 
     def performExceptionsTest(self):

@@ -38,11 +38,11 @@ TasmanianInputError = TasmanianConfig.TasmanianInputError
 
 pLibCTSG = cdll.LoadLibrary(TasmanianConfig.__path_libcaddons__)
 
-type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int)
+type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int, POINTER(c_int))
 type_scsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int)
 type_icsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, c_int, POINTER(c_double), c_int)
 
-pLibCTSG.tsgLoadNeededPoints.argtypes = [c_int, type_lpnmodel, c_void_p, c_int]
+pLibCTSG.tsgLoadNeededPoints.argtypes = [c_int, type_lpnmodel, c_void_p, c_int, POINTER(c_int)]
 
 pLibCTSG.tsgConstructSurrogateNoIGSurplus.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_double, c_char_p, c_int, POINTER(c_int), c_char_p]
 pLibCTSG.tsgConstructSurrogateNoIGAniso.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_char_p, c_int, POINTER(c_int), c_char_p]
@@ -53,7 +53,7 @@ pLibCTSG.tsgConstructSurrogateWiIGAniso.argtypes = [type_icsmodel, c_int, c_int,
 pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_char_p, POINTER(c_int), POINTER(c_int), c_char_p]
 
 
-def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID):
+def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID, pErrInfo):
     '''
     DO NOT CALL DIRECTLY
     This is callback from C++, see TasGrid::loadNeededPoints()
@@ -75,12 +75,16 @@ def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID):
 
     iThreadID: the id of the running thread
     '''
+    pErrInfo[0] = 1
     aX = np.ctypeslib.as_array(pX, (iSizeX,))
     aY = np.ctypeslib.as_array(pY, (iSizeY,))
     aResult = oUserModel(aX, iThreadID)
     if aResult.shape != (iSizeY,):
-        raise TasmanianInputError("(re)loadNeededPoints()", "incorrect model output dimensions, should be (iNumOutputs,)")
+        if TasmanianConfig.enableVerboseErrors:
+            print("ERROR: incorrect model output dimensions, should be (iNumOutputs,)")
+        return
     aY[0:iSizeY] = aResult[0:iSizeY]
+    pErrInfo[0] = 0
 
 
 def loadNeededPoints(callableModel, grid, iNumThreads = 1):
@@ -117,9 +121,12 @@ def loadNeededPoints(callableModel, grid, iNumThreads = 1):
 
     '''
     iOverwrite = 0 # do not overwrite
+    pErrorCode = (c_int * 1)()
     pLibCTSG.tsgLoadNeededPoints(iOverwrite,
-                                 type_lpnmodel(lambda nx, x, ny, y, tid : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid)),
-                                 grid.pGrid, iNumThreads)
+                                 type_lpnmodel(lambda nx, x, ny, y, tid, err : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid, err)),
+                                 grid.pGrid, iNumThreads, pErrorCode)
+    if pErrorCode[0] != 0:
+        raise TasmanianInputError("loadNeededPoints", "An error occurred during the call to Tasmanian.")
 
 def reloadLoadedPoints(callableModel, grid, iNumThreads = 1):
     '''
@@ -132,9 +139,12 @@ def reloadLoadedPoints(callableModel, grid, iNumThreads = 1):
 
     '''
     iOverwrite = 1 # do overwrite
+    pErrorCode = (c_int * 1)()
     pLibCTSG.tsgLoadNeededPoints(iOverwrite,
-                                 type_lpnmodel(lambda nx, x, ny, y, tid : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid)),
-                                 grid.pGrid, iNumThreads)
+                                 type_lpnmodel(lambda nx, x, ny, y, tid, err : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid, err)),
+                                 grid.pGrid, iNumThreads, pErrorCode)
+    if pErrorCode[0] != 0:
+        raise TasmanianInputError("reloadLoadedPoints()", "An error occurred during the call to Tasmanian.")
 
 ###############################################################################
 ################### Construct Surrogate #######################################

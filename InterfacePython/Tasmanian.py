@@ -44,6 +44,19 @@ import TasmanianDREAM as DREAM
 
 from TasmanianAddons import *
 
+def useVerboseErrors(bVerbose):
+    '''
+    Defines whether exceptions raised by Tasmanian should (by default)
+    call printInfo() on exit.
+    The info is useful for debugging, but extraneous during testing
+    and when catching exceptions.
+
+    Note that a caught Tasmanian exception will have a member boolean
+    bShowOnExit which defined whether to printInfo(), this method
+    sets the default for the boolean.
+    '''
+    TasmanianConfig.enableVerboseErrors = False
+
 if __name__ == "__main__":
     with open(TasmanianConfig.__path_logfile__, 'r') as logfile:
         print("")
