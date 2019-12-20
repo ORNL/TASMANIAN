@@ -75,6 +75,8 @@ def pdfWrapper(callableProbability, iNumSamples, iNumDims, pX, pY):
     aX = np.ctypeslib.as_array(pX, (iNumSamples, iNumDims))
     aY = np.ctypeslib.as_array(pY, (iNumSamples,))
     aResult = callableProbability(aX)
+    if aResult.shape != (iNumSamples,):
+        raise InputError("probability_distibution", "incorrect output from the probability distribution, should be (iNumSamples,)")
     aY[0:iNumSamples] = aResult[0:iNumSamples]
 
 def domainWrapper(callableDomain, iNumDims, pX):
@@ -109,6 +111,8 @@ def iupdateWrapper(callableIUpdate, iNumDims, pX):
     '''
     aX = np.ctypeslib.as_array(pX, (iNumDims,))
     aResult = callableIUpdate(aX)
+    if aResult.shape != (iNumDims,):
+        raise InputError("independent_update", "incorrect output from the independent update, should be (iNumDimensions,)")
     aX[0:iNumDims] = aResult[0:iNumDims]
 
 

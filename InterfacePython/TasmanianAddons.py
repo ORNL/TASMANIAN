@@ -78,6 +78,8 @@ def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID):
     aX = np.ctypeslib.as_array(pX, (iSizeX,))
     aY = np.ctypeslib.as_array(pY, (iSizeY,))
     aResult = oUserModel(aX, iThreadID)
+    if aResult.shape != (iSizeY,):
+        raise TasmanianInputError("(re)loadNeededPoints()", "incorrect model output dimensions, should be (iNumOutputs,)")
     aY[0:iSizeY] = aResult[0:iSizeY]
 
 
@@ -161,6 +163,8 @@ def tsgScsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iNumOuts, pY, iThr
     aX = np.ctypeslib.as_array(pX, (iNumSamples,iNumDims))
     aY = np.ctypeslib.as_array(pY, (iNumSamples,iNumOuts))
     aResult = oUserModel(aX, iThreadID)
+    if aResult.shape != (iNumSamples, iNumOuts):
+        raise TasmanianInputError("constructSurrogate()", "incorrect model output dimensions, should be (iNumSamples, iNumOutputs)")
     aY[0:iNumSamples, 0:iNumOuts] = aResult[0:iNumSamples, 0:iNumOuts]
 
 def tsgIcsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iHasGuess, iNumOuts, pY, iThreadID):
@@ -182,6 +186,8 @@ def tsgIcsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iHasGuess, iNumOut
         aResult = oUserModel(aX, np.empty([0,0], np.float64), iThreadID)
     else:
         aResult = oUserModel(aX, aY, iThreadID)
+    if aResult.shape != (iNumSamples, iNumOuts):
+        raise TasmanianInputError("constructSurrogate()", "incorrect model output dimensions, should be (iNumSamples, iNumOutputs)")
     aY[0:iNumSamples, 0:iNumOuts] = aResult[0:iNumSamples, 0:iNumOuts]
 
 def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid,
