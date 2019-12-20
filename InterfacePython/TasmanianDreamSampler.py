@@ -169,7 +169,7 @@ class Domain(object):
             self.pUpper = None
             self.pCallable = type_dream_domain(lambda n, x : domainWrapper(args[0], n, x))
         else:
-            raise InputError("Domain", "unknown domain type")
+            raise InputError("Domain", "DREAM.Domain() was given an unknown domain type")
 
 
 class IndependentUpdate(object):
@@ -201,6 +201,8 @@ class IndependentUpdate(object):
         self.TasmanianDreamIndependentUpdate = True
         if not ((sys.version_info.major == 3 and isinstance(sType, str))
            or (sys.version_info.major == 2 and isinstance(sType, basestring))):
+            if not callable(sType):
+                raise InputError("sType", "DREAM.IndependentUpdate() the sType must be either a string or a callable object")
             self.sType = "null"
             self.pCallable = type_dream_iupdate(lambda n, x, : iupdateWrapper(sType, n, x))
         else:
@@ -246,6 +248,8 @@ class DifferentialUpdate(object):
             self.iPercent = callableOrMagnitude
             self.pCallable = type_dream_dupdate(lambda : 1)
         else:
+            if not callable(callableOrMagnitude):
+                raise InputError("callableOrMagnitude", "DREAM.DifferentialUpdate() the callableOrMagnitude must be either an integer or a callable object")
             self.iPercent = -1
             self.pCallable = type_dream_dupdate(callableOrMagnitude)
 
@@ -282,6 +286,10 @@ class RandomGenerator(object):
 
         See help(Tasmanian.DREAM.RandomGenerator)
         '''
+        if sType not in ["default", "minstd_rand"]:
+            raise InputError("sType", "DREAM.RandomGenerator() the sType is invalid")
+        if not callable(callableRNG):
+            raise InputError("callableRNG", "DREAM.RandomGenerator() the callableRNG must be a callable object")
         self.TasmanianDreamRandomGenerator = True
         self.sType = sType
         if (sys.version_info.major == 3):
@@ -540,11 +548,11 @@ def Sample(iNumBurnup, iNumCollect,
     if not hasattr(dream_state, "TasmanainDreamState"):
         raise InputError("dream_state", "dream_state must be an instance of DREAM.State()")
     if not hasattr(independent_update, "TasmanianDreamIndependentUpdate"):
-        raise InputError("independent_update", "domain_description must be an instance of DREAM.IndependentUpdate()")
+        raise InputError("independent_update", "independent_update must be an instance of DREAM.IndependentUpdate()")
     if not hasattr(differential_update, "TasmanianDreamDifferentialUpdate"):
-        raise InputError("differential_update", "domain_description must be an instance of DREAM.DifferentialUpdate()")
+        raise InputError("differential_update", "differential_update must be an instance of DREAM.DifferentialUpdate()")
     if not hasattr(random01, "TasmanianDreamRandomGenerator"):
-        raise InputError("random01", "domain_description must be an instance of DREAM.RandomGenerator()")
+        raise InputError("random01", "random01 must be an instance of DREAM.RandomGenerator()")
     if typeForm not in [typeRegform, typeLogform]:
         raise InputError("typeForm", "unknown sampling form, must use typeRegform or typeLogform")
 
@@ -567,7 +575,7 @@ def Sample(iNumBurnup, iNumCollect,
                                 random01.iSeed,
                                 random01.pCallable)
     else:
-        raise InputError("probability_distibution", "probability_distibution must a callable object that takes a 2D numpy.ndarray and returns a 1D ndarray")
+        raise InputError("probability_distibution", "probability_distibution must be a callable object that takes a 2D numpy.ndarray and returns a 1D ndarray")
 
 
 
