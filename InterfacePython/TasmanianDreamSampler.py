@@ -40,9 +40,9 @@ from TasmanianSG import TasmanianSparseGrid as SparseGrid
 from TasmanianDreamLikely import *
 from TasmanianDreamState import DreamState as State
 
-type_dream_pdf     = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), POINTER(c_double))
+type_dream_pdf     = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), POINTER(c_double), POINTER(c_int))
 type_dream_domain  = CFUNCTYPE(c_int, c_int, POINTER(c_double))
-type_dream_iupdate = CFUNCTYPE(None, c_int, POINTER(c_double))
+type_dream_iupdate = CFUNCTYPE(None, c_int, POINTER(c_double), POINTER(c_int))
 type_dream_dupdate = CFUNCTYPE(c_double)
 type_dream_random  = CFUNCTYPE(c_double)
 
@@ -56,10 +56,10 @@ pLibDTSG.tsgDreamSample.argtypes = [c_int, c_int, c_int,
                                     c_void_p, POINTER(c_double), POINTER(c_double), type_dream_domain,
                                     c_char_p, c_double, type_dream_iupdate,
                                     c_int, type_dream_dupdate,
-                                    c_char_p, c_int, type_dream_random]
+                                    c_char_p, c_int, type_dream_random, POINTER(c_int)]
 
 
-def pdfWrapper(callableProbability, iNumSamples, iNumDims, pX, pY):
+def pdfWrapper(callableProbability, iNumSamples, iNumDims, pX, pY, pErrInfo):
     '''
     Internal use only.
 
@@ -72,12 +72,16 @@ def pdfWrapper(callableProbability, iNumSamples, iNumDims, pX, pY):
     pX is a POINTER(double) with size iNumSamples * iNumDims
     pY is a POINTER(double) with size iNumSamples
     '''
+    pErrInfo[0] = 1
     aX = np.ctypeslib.as_array(pX, (iNumSamples, iNumDims))
     aY = np.ctypeslib.as_array(pY, (iNumSamples,))
     aResult = callableProbability(aX)
     if aResult.shape != (iNumSamples,):
-        raise InputError("probability_distibution", "incorrect output from the probability distribution, should be (iNumSamples,)")
+        if TasmanianConfig.enableVerboseErrors:
+            print("ERROR: incorrect output from the probability distribution, should be (iNumSamples,)")
+        return
     aY[0:iNumSamples] = aResult[0:iNumSamples]
+    pErrInfo[0] = 0
 
 def domainWrapper(callableDomain, iNumDims, pX):
     '''
@@ -97,7 +101,7 @@ def domainWrapper(callableDomain, iNumDims, pX):
     else:
         return 0
 
-def iupdateWrapper(callableIUpdate, iNumDims, pX):
+def iupdateWrapper(callableIUpdate, iNumDims, pX, pErrInfo):
     '''
     Internal use only.
 
@@ -109,11 +113,15 @@ def iupdateWrapper(callableIUpdate, iNumDims, pX):
     pX is a POINTER(double) with size iNumDims
     pX will be overwritten with pX + update
     '''
+    pErrInfo[0] = 1
     aX = np.ctypeslib.as_array(pX, (iNumDims,))
     aResult = callableIUpdate(aX)
     if aResult.shape != (iNumDims,):
-        raise InputError("independent_update", "incorrect output from the independent update, should be (iNumDimensions,)")
+        if TasmanianConfig.enableVerboseErrors:
+            print("ERROR: incorrect output from the independent update, should be (iNumDimensions,)")
+        return
     aX[0:iNumDims] = aResult[0:iNumDims]
+    pErrInfo[0] = 0
 
 
 class Domain(object):
@@ -208,7 +216,8 @@ class IndependentUpdate(object):
             if not callable(sType):
                 raise InputError("sType", "DREAM.IndependentUpdate() the sType must be either a string or a callable object")
             self.sType = "null"
-            self.pCallable = type_dream_iupdate(lambda n, x, : iupdateWrapper(sType, n, x))
+            self.fMagnitude = 0.0
+            self.pCallable = type_dream_iupdate(lambda n, x, err : iupdateWrapper(sType, n, x, err))
         else:
             self.sType = sType
             self.fMagnitude = callableOrMagnitude
@@ -560,26 +569,32 @@ def Sample(iNumBurnup, iNumCollect,
     if typeForm not in [typeRegform, typeLogform]:
         raise InputError("typeForm", "unknown sampling form, must use typeRegform or typeLogform")
 
+    pErrorCode = (c_int * 1)()
+
     if hasattr(probability_distibution, "TasmanianPosterior"):
         pLibDTSG.tsgDreamSample(typeForm, c_int(iNumBurnup), c_int(iNumCollect),
-                                type_dream_pdf(lambda m, n, x, y : pdfWrapper(probability_distibution.distribution(), m, n, x, y)), dream_state.pStatePntr,
+                                type_dream_pdf(lambda m, n, x, y, err : pdfWrapper(probability_distibution.distribution(), m, n, x, y, err)),
+                                dream_state.pStatePntr,
                                 domain_description.pGrid, domain_description.pLower, domain_description.pUpper, domain_description.pCallable,
                                 c_char_p(independent_update.sType), independent_update.fMagnitude, independent_update.pCallable,
                                 differential_update.iPercent, differential_update.pCallable,
                                 c_char_p(random01.sType),
                                 random01.iSeed,
-                                random01.pCallable)
+                                random01.pCallable,
+                                pErrorCode)
     elif callable(probability_distibution):
         pLibDTSG.tsgDreamSample(typeForm, c_int(iNumBurnup), c_int(iNumCollect),
-                                type_dream_pdf(lambda m, n, x, y : pdfWrapper(probability_distibution, m, n, x, y)), dream_state.pStatePntr,
+                                type_dream_pdf(lambda m, n, x, y, err : pdfWrapper(probability_distibution, m, n, x, y, err)), dream_state.pStatePntr,
                                 domain_description.pGrid, domain_description.pLower, domain_description.pUpper, domain_description.pCallable,
                                 c_char_p(independent_update.sType), independent_update.fMagnitude, independent_update.pCallable,
                                 differential_update.iPercent, differential_update.pCallable,
                                 c_char_p(random01.sType),
                                 random01.iSeed,
-                                random01.pCallable)
+                                random01.pCallable,
+                                pErrorCode)
     else:
         raise InputError("probability_distibution", "probability_distibution must be a callable object that takes a 2D numpy.ndarray and returns a 1D ndarray")
 
-
+    if pErrorCode[0] != 0:
+        raise InputError("Sample", "An error occurred during the call to Tasmanian.")
 
