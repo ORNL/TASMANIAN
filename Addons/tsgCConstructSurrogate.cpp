@@ -34,16 +34,17 @@
 
 extern "C"{
 
-// num_samples, num_dimensions, x.data(), num_outputs, y.data(), thread_id
-using tsg_scs_model = void (*)(int, int, double const*, int, double*, int);
+// num_samples, num_dimensions, x.data(), num_outputs, y.data(), thread_id, error_code
+using tsg_scs_model = void (*)(int, int, double const*, int, double*, int, int*);
 
 void tsgConstructSurrogateNoIGSurplus
            (tsg_scs_model pymodel,
             int max_num_points, int num_parallel_jobs, int max_samples_per_job,
             void *grid_pntr,
             double tolerance, const char* s_criteria, int output,
-            int *llimits, const char *checkpoint_filename){
+            int *llimits, const char *checkpoint_filename, int *err){
 
+    *err = 1;
     TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
 
     int const num_dimensions = grid.getNumDimensions();
@@ -57,25 +58,31 @@ void tsgConstructSurrogateNoIGSurplus
     auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
         void{
             int sample_size = (int) x.size() / num_dimensions;
-            pymodel(sample_size, num_dimensions, x.data(), num_outputs, y.data(), (int) thread_id);
+            int error_code = 0;
+            pymodel(sample_size, num_dimensions, x.data(), num_outputs, y.data(), (int) thread_id, &error_code);
+            if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgConstructSurrogateNoIGSurplus()");
         };
 
-    if (num_parallel_jobs > 1){
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, tolerance, criteria, output, level_limits, cfname);
-    }else{
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, tolerance, criteria, output, level_limits, cfname);
-    }
+    try{
+        if (num_parallel_jobs > 1){
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, tolerance, criteria, output, level_limits, cfname);
+        }else{
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, tolerance, criteria, output, level_limits, cfname);
+        }
+        *err = 0; // success
+    }catch(std::runtime_error &){} // *err will remain 1
 }
 
 void tsgConstructSurrogateNoIGAniso
            (tsg_scs_model pymodel,
             int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
-            const char* s_type, int output, int *llimits, const char *checkpoint_filename){
+            const char* s_type, int output, int *llimits, const char *checkpoint_filename, int *err){
 
+    *err = 1;
     TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
 
     int const num_dimensions = grid.getNumDimensions();
@@ -89,25 +96,31 @@ void tsgConstructSurrogateNoIGAniso
     auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
         void{
             int sample_size = (int) x.size() / num_dimensions;
-            pymodel(sample_size, num_dimensions, x.data(), num_outputs, y.data(), (int) thread_id);
+            int error_code = 0;
+            pymodel(sample_size, num_dimensions, x.data(), num_outputs, y.data(), (int) thread_id, &error_code);
+            if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgConstructSurrogateNoIGAniso()");
         };
 
-    if (num_parallel_jobs > 1){
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, dtype, output, level_limits, cfname);
-    }else{
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, dtype, output, level_limits, cfname);
-    }
+    try{
+        if (num_parallel_jobs > 1){
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, dtype, output, level_limits, cfname);
+        }else{
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, dtype, output, level_limits, cfname);
+        }
+        *err = 0; // success
+    }catch(std::runtime_error &){} // *err will remain 1
 }
 
 void tsgConstructSurrogateNoIGAnisoFixed
            (tsg_scs_model pymodel,
             int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
-            const char* s_type, int *aweights, int *llimits, const char *checkpoint_filename){
+            const char* s_type, int *aweights, int *llimits, const char *checkpoint_filename, int *err){
 
+    *err = 1;
     TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
 
     int const num_dimensions = grid.getNumDimensions();
@@ -123,30 +136,36 @@ void tsgConstructSurrogateNoIGAnisoFixed
     auto cpp_model = [&](std::vector<double> const &x, std::vector<double> &y, size_t thread_id)->
         void{
             int sample_size = (int) x.size() / num_dimensions;
-            pymodel(sample_size, num_dimensions, x.data(), num_outputs, y.data(), (int) thread_id);
+            int error_code = 0;
+            pymodel(sample_size, num_dimensions, x.data(), num_outputs, y.data(), (int) thread_id, &error_code);
+            if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgConstructSurrogateNoIGAnisoFixed()");
         };
 
-    if (num_parallel_jobs > 1){
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, dtype, anisotropic_weights, level_limits, cfname);
-    }else{
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, dtype, anisotropic_weights, level_limits, cfname);
-    }
+    try{
+        if (num_parallel_jobs > 1){
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, dtype, anisotropic_weights, level_limits, cfname);
+        }else{
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, dtype, anisotropic_weights, level_limits, cfname);
+        }
+        *err = 0; // success
+    }catch(std::runtime_error &){} // *err will remain 1
 }
 
-// num_samples, num_dimensions, x.data(), has_init_guess, num_outputs, y.data(), thread_id
-using tsg_ics_model = void (*)(int, int, double const*, int, int, double*, int);
+// num_samples, num_dimensions, x.data(), has_init_guess, num_outputs, y.data(), thread_id, error_code
+using tsg_ics_model = void (*)(int, int, double const*, int, int, double*, int, int*);
 
 void tsgConstructSurrogateWiIGSurplus
            (tsg_ics_model pymodel,
             int max_num_points, int num_parallel_jobs, int max_samples_per_job,
             void *grid_pntr,
             double tolerance, const char* s_criteria, int output,
-            int *llimits, const char *checkpoint_filename){
+            int *llimits, const char *checkpoint_filename, int *err){
 
+    *err = 1;
     TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
 
     int const num_dimensions = grid.getNumDimensions();
@@ -167,25 +186,31 @@ void tsgConstructSurrogateWiIGSurplus
                 y.resize(TasGrid::Utils::size_mult(sample_size, num_outputs));
             }
 
-            pymodel(sample_size, num_dimensions, x.data(), ihas_guess, num_outputs, y.data(), (int) thread_id);
+            int error_code = 0;
+            pymodel(sample_size, num_dimensions, x.data(), ihas_guess, num_outputs, y.data(), (int) thread_id, &error_code);
+            if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgConstructSurrogateWiIGSurplus()");
         };
 
-    if (num_parallel_jobs > 1){
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, tolerance, criteria, output, level_limits, cfname);
-    }else{
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, tolerance, criteria, output, level_limits, cfname);
-    }
+    try{
+        if (num_parallel_jobs > 1){
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, tolerance, criteria, output, level_limits, cfname);
+        }else{
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, tolerance, criteria, output, level_limits, cfname);
+        }
+        *err = 0; // success
+    }catch(std::runtime_error &){} // *err will remain 1
 }
 
 void tsgConstructSurrogateWiIGAniso
            (tsg_ics_model pymodel,
             int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
-            const char* s_type, int output, int *llimits, const char *checkpoint_filename){
+            const char* s_type, int output, int *llimits, const char *checkpoint_filename, int *err){
 
+    *err = 1;
     TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
 
     int const num_dimensions = grid.getNumDimensions();
@@ -206,25 +231,31 @@ void tsgConstructSurrogateWiIGAniso
                 y.resize(TasGrid::Utils::size_mult(sample_size, num_outputs));
             }
 
-            pymodel(sample_size, num_dimensions, x.data(), ihas_guess, num_outputs, y.data(), (int) thread_id);
+            int error_code = 0;
+            pymodel(sample_size, num_dimensions, x.data(), ihas_guess, num_outputs, y.data(), (int) thread_id, &error_code);
+            if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgConstructSurrogateWiIGAniso()");
         };
 
-    if (num_parallel_jobs > 1){
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, dtype, output, level_limits, cfname);
-    }else{
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, dtype, output, level_limits, cfname);
-    }
+    try{
+        if (num_parallel_jobs > 1){
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, dtype, output, level_limits, cfname);
+        }else{
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, dtype, output, level_limits, cfname);
+        }
+        *err = 0; // success
+    }catch(std::runtime_error &){} // *err will remain 1
 }
 
 void tsgConstructSurrogateWiIGAnisoFixed
            (tsg_ics_model pymodel,
             int max_num_points, int num_parallel_jobs, int max_samples_per_job, void *grid_pntr,
-            const char* s_type, int *aweights, int *llimits, const char *checkpoint_filename){
+            const char* s_type, int *aweights, int *llimits, const char *checkpoint_filename, int *err){
 
+    *err = 1;
     TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
 
     int const num_dimensions = grid.getNumDimensions();
@@ -247,18 +278,23 @@ void tsgConstructSurrogateWiIGAnisoFixed
                 y.resize(TasGrid::Utils::size_mult(sample_size, num_outputs));
             }
 
-            pymodel(sample_size, num_dimensions, x.data(), ihas_guess, num_outputs, y.data(), (int) thread_id);
+            int error_code = 0;
+            pymodel(sample_size, num_dimensions, x.data(), ihas_guess, num_outputs, y.data(), (int) thread_id, &error_code);
+            if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgConstructSurrogateWiIGAnisoFixed()");
         };
 
-    if (num_parallel_jobs > 1){
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, dtype, anisotropic_weights, level_limits, cfname);
-    }else{
-        TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
-            (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
-             grid, dtype, anisotropic_weights, level_limits, cfname);
-    }
+    try{
+        if (num_parallel_jobs > 1){
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, dtype, anisotropic_weights, level_limits, cfname);
+        }else{
+            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+                (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
+                grid, dtype, anisotropic_weights, level_limits, cfname);
+        }
+        *err = 0; // success
+    }catch(std::runtime_error &){} // *err will remain 1
 }
 
 } // extern "C"
