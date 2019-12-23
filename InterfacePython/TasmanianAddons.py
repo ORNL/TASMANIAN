@@ -38,22 +38,26 @@ TasmanianInputError = TasmanianConfig.TasmanianInputError
 
 pLibCTSG = cdll.LoadLibrary(TasmanianConfig.__path_libcaddons__)
 
-type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int)
-type_scsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int)
-type_icsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, c_int, POINTER(c_double), c_int)
+type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int, POINTER(c_int))
+type_scsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int, POINTER(c_int))
+type_icsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, c_int, POINTER(c_double), c_int, POINTER(c_int))
 
-pLibCTSG.tsgLoadNeededPoints.argtypes = [c_int, type_lpnmodel, c_void_p, c_int]
+pLibCTSG.tsgLoadNeededPoints.argtypes = [c_int, type_lpnmodel, c_void_p, c_int, POINTER(c_int)]
 
-pLibCTSG.tsgConstructSurrogateNoIGSurplus.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_double, c_char_p, c_int, POINTER(c_int), c_char_p]
-pLibCTSG.tsgConstructSurrogateNoIGAniso.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_char_p, c_int, POINTER(c_int), c_char_p]
-pLibCTSG.tsgConstructSurrogateNoIGAnisoFixed.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_char_p, POINTER(c_int), POINTER(c_int), c_char_p]
+pLibCTSG.tsgConstructSurrogateNoIGSurplus.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_double, c_char_p,
+                                                      c_int, POINTER(c_int), c_char_p, POINTER(c_int)]
+pLibCTSG.tsgConstructSurrogateNoIGAniso.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_char_p, c_int, POINTER(c_int), c_char_p, POINTER(c_int)]
+pLibCTSG.tsgConstructSurrogateNoIGAnisoFixed.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_char_p,
+                                                         POINTER(c_int), POINTER(c_int), c_char_p, POINTER(c_int)]
 
-pLibCTSG.tsgConstructSurrogateWiIGSurplus.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_double, c_char_p, c_int, POINTER(c_int), c_char_p]
-pLibCTSG.tsgConstructSurrogateWiIGAniso.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_char_p, c_int, POINTER(c_int), c_char_p]
-pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_char_p, POINTER(c_int), POINTER(c_int), c_char_p]
+pLibCTSG.tsgConstructSurrogateWiIGSurplus.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_double, c_char_p,
+                                                      c_int, POINTER(c_int), c_char_p, POINTER(c_int)]
+pLibCTSG.tsgConstructSurrogateWiIGAniso.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_char_p, c_int, POINTER(c_int), c_char_p, POINTER(c_int)]
+pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_char_p,
+                                                         POINTER(c_int), POINTER(c_int), c_char_p, POINTER(c_int)]
 
 
-def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID):
+def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID, pErrInfo):
     '''
     DO NOT CALL DIRECTLY
     This is callback from C++, see TasGrid::loadNeededPoints()
@@ -75,12 +79,16 @@ def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID):
 
     iThreadID: the id of the running thread
     '''
+    pErrInfo[0] = 1
     aX = np.ctypeslib.as_array(pX, (iSizeX,))
     aY = np.ctypeslib.as_array(pY, (iSizeY,))
     aResult = oUserModel(aX, iThreadID)
     if aResult.shape != (iSizeY,):
-        raise TasmanianInputError("(re)loadNeededPoints()", "incorrect model output dimensions, should be (iNumOutputs,)")
+        if TasmanianConfig.enableVerboseErrors:
+            print("ERROR: incorrect model output dimensions, should be (iNumOutputs,)")
+        return
     aY[0:iSizeY] = aResult[0:iSizeY]
+    pErrInfo[0] = 0
 
 
 def loadNeededPoints(callableModel, grid, iNumThreads = 1):
@@ -117,9 +125,12 @@ def loadNeededPoints(callableModel, grid, iNumThreads = 1):
 
     '''
     iOverwrite = 0 # do not overwrite
+    pErrorCode = (c_int * 1)()
     pLibCTSG.tsgLoadNeededPoints(iOverwrite,
-                                 type_lpnmodel(lambda nx, x, ny, y, tid : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid)),
-                                 grid.pGrid, iNumThreads)
+                                 type_lpnmodel(lambda nx, x, ny, y, tid, err : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid, err)),
+                                 grid.pGrid, iNumThreads, pErrorCode)
+    if pErrorCode[0] != 0:
+        raise TasmanianInputError("loadNeededPoints", "An error occurred during the call to Tasmanian.")
 
 def reloadLoadedPoints(callableModel, grid, iNumThreads = 1):
     '''
@@ -132,15 +143,18 @@ def reloadLoadedPoints(callableModel, grid, iNumThreads = 1):
 
     '''
     iOverwrite = 1 # do overwrite
+    pErrorCode = (c_int * 1)()
     pLibCTSG.tsgLoadNeededPoints(iOverwrite,
-                                 type_lpnmodel(lambda nx, x, ny, y, tid : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid)),
-                                 grid.pGrid, iNumThreads)
+                                 type_lpnmodel(lambda nx, x, ny, y, tid, err : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid, err)),
+                                 grid.pGrid, iNumThreads, pErrorCode)
+    if pErrorCode[0] != 0:
+        raise TasmanianInputError("reloadLoadedPoints()", "An error occurred during the call to Tasmanian.")
 
 ###############################################################################
 ################### Construct Surrogate #######################################
 ###############################################################################
 
-def tsgScsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iNumOuts, pY, iThreadID):
+def tsgScsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iNumOuts, pY, iThreadID, pErrInfo):
     '''
     DO NOT CALL DIRECTLY
     This is callback from C++, see TasGrid::constructSurrogate()
@@ -160,14 +174,18 @@ def tsgScsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iNumOuts, pY, iThr
     iThreadID: the id of the running thread
 
     '''
+    pErrInfo[0] = 1
     aX = np.ctypeslib.as_array(pX, (iNumSamples,iNumDims))
     aY = np.ctypeslib.as_array(pY, (iNumSamples,iNumOuts))
     aResult = oUserModel(aX, iThreadID)
     if aResult.shape != (iNumSamples, iNumOuts):
-        raise TasmanianInputError("constructSurrogate()", "incorrect model output dimensions, should be (iNumSamples, iNumOutputs)")
+        if TasmanianConfig.enableVerboseErrors:
+            print("ERROR: incorrect model output dimensions, should be (iNumSamples, iNumOutputs)")
+        return
     aY[0:iNumSamples, 0:iNumOuts] = aResult[0:iNumSamples, 0:iNumOuts]
+    pErrInfo[0] = 0
 
-def tsgIcsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iHasGuess, iNumOuts, pY, iThreadID):
+def tsgIcsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iHasGuess, iNumOuts, pY, iThreadID, pErrInfo):
     '''
     DO NOT CALL DIRECTLY
     This is callback from C++, see TasGrid::constructSurrogate()
@@ -180,6 +198,7 @@ def tsgIcsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iHasGuess, iNumOut
     iHasGuess is a boolean that determines whether an
     initial guess has been loaded in pY.
     '''
+    pErrInfo[0] = 1
     aX = np.ctypeslib.as_array(pX, (iNumSamples,iNumDims))
     aY = np.ctypeslib.as_array(pY, (iNumSamples,iNumOuts))
     if (iHasGuess == 0): # no guess
@@ -187,8 +206,11 @@ def tsgIcsModelWrapper(oUserModel, iNumSamples, iNumDims, pX, iHasGuess, iNumOut
     else:
         aResult = oUserModel(aX, aY, iThreadID)
     if aResult.shape != (iNumSamples, iNumOuts):
-        raise TasmanianInputError("constructSurrogate()", "incorrect model output dimensions, should be (iNumSamples, iNumOutputs)")
+        if TasmanianConfig.enableVerboseErrors:
+            print("ERROR: incorrect model output dimensions, should be (iNumSamples, iNumOutputs)")
+        return
     aY[0:iNumSamples, 0:iNumOuts] = aResult[0:iNumSamples, 0:iNumOuts]
+    pErrInfo[0] = 0
 
 def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid,
                                   sDepthType, liAnisotropicWeightsOrOutput,
@@ -251,6 +273,8 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxS
     if (sCheckpointFilename):
         pCPFname = c_char_p(sCheckpointFilename)
 
+    pErrorCode = (c_int * 1)()
+
     if (((sys.version_info.major == 3) and isinstance(liAnisotropicWeightsOrOutput, int))
             or ((sys.version_info.major == 2) and isinstance(liAnisotropicWeightsOrOutput, (int, long)))):
         # will call the algorithm to dynamically estimate the weights
@@ -258,14 +282,14 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxS
 
         if (bUseInitialGuess):
             pLibCTSG.tsgConstructSurrogateWiIGAniso(
-                type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
+                type_icsmodel(lambda nx, nd, x, f, ny, y, tid, err : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid, err)),
                 iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-                c_char_p(sDepthTypeCtypes), iOutput, pLevelLimits, pCPFname)
+                c_char_p(sDepthTypeCtypes), iOutput, pLevelLimits, pCPFname, pErrorCode)
         else:
             pLibCTSG.tsgConstructSurrogateNoIGAniso(
-                type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
+                type_scsmodel(lambda nx, nd, x, ny, y, tid, err : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid, err)),
                 iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-                c_char_p(sDepthTypeCtypes), iOutput, pLevelLimits, pCPFname)
+                c_char_p(sDepthTypeCtypes), iOutput, pLevelLimits, pCPFname, pErrorCode)
     else:
         # weights are set by the user
         pAnisoWeights = None
@@ -282,14 +306,17 @@ def constructAnisotropicSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxS
 
         if (bUseInitialGuess):
             pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed(
-                type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
+                type_icsmodel(lambda nx, nd, x, f, ny, y, tid, err : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid, err)),
                 iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-                c_char_p(sDepthTypeCtypes), pAnisoWeights, pLevelLimits, pCPFname)
+                c_char_p(sDepthTypeCtypes), pAnisoWeights, pLevelLimits, pCPFname, pErrorCode)
         else:
             pLibCTSG.tsgConstructSurrogateNoIGAnisoFixed(
-                type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
+                type_scsmodel(lambda nx, nd, x, ny, y, tid, err : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid, err)),
                 iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-                c_char_p(sDepthTypeCtypes), pAnisoWeights, pLevelLimits, pCPFname)
+                c_char_p(sDepthTypeCtypes), pAnisoWeights, pLevelLimits, pCPFname, pErrorCode)
+
+    if pErrorCode[0] != 0:
+        raise TasmanianInputError("constructSurplusSurrogate", "An error occurred during the call to Tasmanian.")
 
 
 def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid,
@@ -324,13 +351,18 @@ def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSampl
     if (sCheckpointFilename):
         pCPFname = c_char_p(sCheckpointFilename)
 
+    pErrorCode = (c_int * 1)()
+
     if (bUseInitialGuess):
         pLibCTSG.tsgConstructSurrogateWiIGSurplus(
-            type_icsmodel(lambda nx, nd, x, f, ny, y, tid : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid)),
+            type_icsmodel(lambda nx, nd, x, f, ny, y, tid, err : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid, err)),
             iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-            fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname)
+            fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname, pErrorCode)
     else:
         pLibCTSG.tsgConstructSurrogateNoIGSurplus(
-            type_scsmodel(lambda nx, nd, x, ny, y, tid : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid)),
+            type_scsmodel(lambda nx, nd, x, ny, y, tid, err : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid, err)),
             iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-            fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname)
+            fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname, pErrorCode)
+
+    if pErrorCode[0] != 0:
+        raise TasmanianInputError("constructSurplusSurrogate", "An error occurred during the call to Tasmanian.")

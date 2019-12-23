@@ -35,9 +35,9 @@
 
 namespace TasDREAM{
 
-using tsg_dream_pdf     = void (*)(int, int, const double[], double[]);
+using tsg_dream_pdf     = void (*)(int, int, const double[], double[], int*);
 using tsg_dream_domain  =  int (*)(int, const double[]);
-using tsg_dream_iupdate = void (*)(int, double[]);
+using tsg_dream_iupdate = void (*)(int, double[], int*);
 using tsg_dream_dupdate = double (*)();
 using tsg_dream_random  = double (*)();
 
@@ -125,7 +125,8 @@ void tsgDreamSample(int form,
                     void *domain_grid, double domain_lower[], double dommain_upper[], tsg_dream_domain domain_callback,
                     const char* iupdate_type, double iupdate_magnitude, tsg_dream_iupdate iupdate_callback,
                     int dupdate_percent, tsg_dream_dupdate dupdate_callback,
-                    const char* random_type, int random_seed, tsg_dream_random random_callback){
+                    const char* random_type, int random_seed, tsg_dream_random random_callback, int *err){
+    *err = 1;
     TasmanianDREAM& state = *reinterpret_cast<TasmanianDREAM*>(state_pntr);
 
     int num_dimensions = (int) state.getNumDimensions();
@@ -152,41 +153,56 @@ void tsgDreamSample(int form,
         }
     }();
 
-    if (dist == dist_null){
-        if (IO::intToForm(form) == regform){
-            SampleDREAM<regform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
-            void{
-                int num_samples = (int) candidates.size() / num_dimensions;
-                distribution(num_samples, num_dimensions, candidates.data(), values.data());
-            }, domain, state, [&](std::vector<double> &x)->
-            void{
-                iupdate_callback((int) x.size(), x.data());
-            }, diff_update, randgen);
+    try{
+        if (dist == dist_null){
+            if (IO::intToForm(form) == regform){
+                SampleDREAM<regform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
+                void{
+                    int num_samples = (int) candidates.size() / num_dimensions;
+                    int error_code = 0;
+                    distribution(num_samples, num_dimensions, candidates.data(), values.data(), &error_code);
+                    if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgDreamSample()");
+                }, domain, state, [&](std::vector<double> &x)->
+                void{
+                    int error_code = 0;
+                    iupdate_callback((int) x.size(), x.data(), &error_code);
+                    if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgDreamSample()");
+                }, diff_update, randgen);
+            }else{
+                SampleDREAM<logform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
+                void{
+                    int num_samples = (int) candidates.size() / num_dimensions;
+                    int error_code = 0;
+                    distribution(num_samples, num_dimensions, candidates.data(), values.data(), &error_code);
+                    if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgDreamSample()");
+                }, domain, state, [&](std::vector<double> &x)->
+                void{
+                    int error_code = 0;
+                    iupdate_callback((int) x.size(), x.data(), &error_code);
+                    if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgDreamSample()");
+                }, diff_update, randgen);
+            }
         }else{
-            SampleDREAM<logform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
-            void{
-                int num_samples = (int) candidates.size() / num_dimensions;
-                distribution(num_samples, num_dimensions, candidates.data(), values.data());
-            }, domain, state, [&](std::vector<double> &x)->
-            void{
-                iupdate_callback((int) x.size(), x.data());
-            }, diff_update, randgen);
+            if (IO::intToForm(form) == regform){
+                SampleDREAM<regform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
+                void{
+                    int num_samples = (int) candidates.size() / num_dimensions;
+                    int error_code = 0;
+                    distribution(num_samples, num_dimensions, candidates.data(), values.data(), &error_code);
+                    if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgDreamSample()");
+                }, domain, state, dist, iupdate_magnitude, diff_update, randgen);
+            }else{
+                SampleDREAM<logform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
+                void{
+                    int num_samples = (int) candidates.size() / num_dimensions;
+                    int error_code = 0;
+                    distribution(num_samples, num_dimensions, candidates.data(), values.data(), &error_code);
+                    if (error_code != 0) throw std::runtime_error("The Python callback returned an error in analysis()");
+                }, domain, state, dist, iupdate_magnitude, diff_update, randgen);
+            }
         }
-    }else{
-        if (IO::intToForm(form) == regform){
-            SampleDREAM<regform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
-            void{
-                int num_samples = (int) candidates.size() / num_dimensions;
-                distribution(num_samples, num_dimensions, candidates.data(), values.data());
-            }, domain, state, dist, iupdate_magnitude, diff_update, randgen);
-        }else{
-            SampleDREAM<logform>(num_burnup, num_collect, [&](const std::vector<double> &candidates, std::vector<double> &values)->
-            void{
-                int num_samples = (int) candidates.size() / num_dimensions;
-                distribution(num_samples, num_dimensions, candidates.data(), values.data());
-            }, domain, state, dist, iupdate_magnitude, diff_update, randgen);
-        }
-    }
+        *err = 0; // success
+    }catch(std::runtime_error &){} // *err will remain 1
 }
 
 }
