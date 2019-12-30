@@ -43,6 +43,7 @@ public:
         if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
         else read<mode_binary>(is);
     }
+    GridFourier(const GridFourier *fourier, int ibegin, int iend);
     ~GridFourier(){}
 
     bool isFourier() const{ return true; }
@@ -54,7 +55,6 @@ public:
     template<bool iomode> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
-    void copyGrid(const GridFourier *fourier, int ibegin, int iend);
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
 
     void setTensors(MultiIndexSet &&tset, int cnum_outputs);

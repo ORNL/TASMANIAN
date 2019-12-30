@@ -43,6 +43,7 @@ public:
         if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
         else read<mode_binary>(is);
     }
+    GridWavelet(const GridWavelet *wav, int ibegin, int iend);
     ~GridWavelet(){}
 
     bool isWavelet() const{ return true; }
@@ -54,7 +55,6 @@ public:
     template<bool iomode> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
-    void copyGrid(const GridWavelet *wav, int ibegin, int iend);
     void setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder); // for FDS purposes
 
     TypeOneDRule getRule() const{ return rule_wavelet; }

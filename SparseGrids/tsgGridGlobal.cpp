@@ -181,7 +181,7 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits),
                cnum_outputs, crule, calpha, cbeta);
 }
-void GridGlobal::copyGrid(const GridGlobal *global, int ibegin, int iend){
+GridGlobal::GridGlobal(const GridGlobal *global, int ibegin, int iend){
     custom = CustomTabulated();
     if (global->rule == rule_customtabulated) custom = global->custom;
 

@@ -117,7 +117,7 @@ void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int
 
     buildInterpolationMatrix();
 }
-void GridWavelet::copyGrid(const GridWavelet *wav, int ibegin, int iend){
+GridWavelet::GridWavelet(const GridWavelet *wav, int ibegin, int iend) : GridWavelet(){
     num_dimensions = wav->num_dimensions;
     num_outputs    = iend - ibegin;
     points = wav->points;

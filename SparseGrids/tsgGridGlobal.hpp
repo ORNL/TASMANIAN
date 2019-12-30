@@ -44,6 +44,7 @@ public:
         if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
         else read<mode_binary>(is);
     }
+    GridGlobal(const GridGlobal *global, int ibegin, int iend);
     ~GridGlobal(){}
 
     bool isGlobal() const{ return true; }
@@ -55,7 +56,6 @@ public:
     template<bool iomode> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits);
-    void copyGrid(const GridGlobal *global, int ibegin, int iend);
 
     void setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta);
 

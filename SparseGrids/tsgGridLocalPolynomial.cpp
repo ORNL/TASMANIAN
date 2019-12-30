@@ -166,7 +166,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     }
 }
 
-void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly, int ibegin, int iend){
+GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend){
     num_dimensions = pwpoly->num_dimensions;
     num_outputs    = iend - ibegin;
     points = pwpoly->points;

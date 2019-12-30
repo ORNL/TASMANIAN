@@ -128,7 +128,7 @@ void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Typ
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, level_limits), cnum_outputs);
 }
 
-void GridFourier::copyGrid(const GridFourier *fourier, int ibegin, int iend){
+GridFourier::GridFourier(const GridFourier *fourier, int ibegin, int iend){
     num_dimensions = fourier->num_dimensions;
     num_outputs    = iend - ibegin;
     points = fourier->points;

@@ -97,7 +97,7 @@ void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Ty
 
     setPoints(pset, cnum_outputs, crule);
 }
-void GridSequence::copyGrid(const GridSequence *seq, int ibegin, int iend){
+GridSequence::GridSequence(const GridSequence *seq, int ibegin, int iend){
     num_dimensions = seq->num_dimensions;
     num_outputs    = iend - ibegin;
     points = seq->points;
