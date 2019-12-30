@@ -1539,7 +1539,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
         acceleration = effective_acc;
         #ifdef Tasmanian_ENABLE_CUDA
         if (AccelerationMeta::isAccTypeGPU(acceleration)){ // using CUDA
-            if (!engine) engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpu_id));
+            if (!engine) engine = std::make_unique<CudaEngine>(gpu_id);
             engine->setBackendMAGMA((acceleration == accel_gpu_magma));
         }else{ // using not CUDA, clear any loaded data
             if (engine) engine.reset();
@@ -1617,7 +1617,7 @@ void TasmanianSparseGrid::setGPUID(int new_gpu_id){
         gpu_id = new_gpu_id;
         if (engine){
             bool use_magma = engine->backendMAGMA();
-            engine = std::unique_ptr<CudaEngine>(new CudaEngine(gpu_id));
+            engine = std::make_unique<CudaEngine>(gpu_id);
             engine->setBackendMAGMA(use_magma);
         }
         #endif
