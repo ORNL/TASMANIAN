@@ -44,6 +44,7 @@ public:
         else read<mode_binary>(is);
     }
     GridSequence(const GridSequence *seq, int ibegin, int iend);
+    GridSequence(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     ~GridSequence(){}
 
     bool isSequence() const{ return true; }
@@ -54,7 +55,6 @@ public:
     template<bool iomode> void write(std::ostream &os) const;
     template<bool iomode> void read(std::istream &is);
 
-    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule crule);
 
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);

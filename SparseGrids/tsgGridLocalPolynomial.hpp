@@ -59,6 +59,7 @@ public:
         else read<mode_binary>(is);
     }
     GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend);
+    GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     ~GridLocalPolynomial(){}
 
     bool isLocalPolynomial() const{ return true; }
@@ -68,8 +69,6 @@ public:
 
     template<bool iomode> void write(std::ostream &os) const;
     template<bool iomode> void read(std::istream &is);
-
-    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
 
     TypeOneDRule getRule() const{ return rule->getType(); }
     int getOrder() const{ return order; }

@@ -85,7 +85,7 @@ void GridSequence::reset(){
 }
 void GridSequence::clearRefinement(){ needed = MultiIndexSet(); }
 
-void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule,
+GridSequence::GridSequence(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule,
                             const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
 
     MultiIndexSet pset = (OneDimensionalMeta::isExactQuadrature(type)) ?

@@ -92,7 +92,7 @@ template void GridWavelet::write<mode_binary>(std::ostream &) const;
 template void GridWavelet::read<mode_ascii>(std::istream &);
 template void GridWavelet::read<mode_binary>(std::istream &);
 
-void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits){
+GridWavelet::GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits) : GridWavelet(){
     reset();
     num_dimensions = cnum_dimensions;
     num_outputs = cnum_outputs;
