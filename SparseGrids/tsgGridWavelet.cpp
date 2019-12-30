@@ -36,9 +36,6 @@
 
 namespace TasGrid{
 
-GridWavelet::GridWavelet() : rule1D(1, 10), order(1){}
-GridWavelet::~GridWavelet(){}
-
 void GridWavelet::reset(){
     clearAccelerationData();
     points = MultiIndexSet();

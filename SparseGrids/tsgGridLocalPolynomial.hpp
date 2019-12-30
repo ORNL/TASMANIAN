@@ -53,8 +53,12 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridLocalPolynomial : public BaseCanonicalGrid{
 public:
-    GridLocalPolynomial();
-    ~GridLocalPolynomial();
+    GridLocalPolynomial() : order(1){}
+    template<typename iomode> GridLocalPolynomial(std::istream &is, iomode const){
+        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
+        else read<mode_binary>(is);
+    }
+    ~GridLocalPolynomial(){}
 
     bool isLocalPolynomial() const{ return true; }
 

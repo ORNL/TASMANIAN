@@ -38,8 +38,12 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridWavelet : public BaseCanonicalGrid{
 public:
-    GridWavelet();
-    ~GridWavelet();
+    GridWavelet() : rule1D(1, 10), order(1){}
+    template<typename iomode> GridWavelet(std::istream &is, iomode const) : GridWavelet(){
+        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
+        else read<mode_binary>(is);
+    }
+    ~GridWavelet(){}
 
     bool isWavelet() const{ return true; }
 

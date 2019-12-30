@@ -36,9 +36,6 @@
 
 namespace TasGrid{
 
-GridGlobal::GridGlobal() : alpha(0.0), beta(0.0){}
-GridGlobal::~GridGlobal(){}
-
 template<bool iomode> void GridGlobal::write(std::ostream &os) const{
     if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
     IO::writeNumbers<iomode, IO::pad_rspace>(os, num_dimensions, num_outputs);

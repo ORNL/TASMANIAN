@@ -39,8 +39,12 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridGlobal : public BaseCanonicalGrid{
 public:
-    GridGlobal();
-    ~GridGlobal();
+    GridGlobal(){}
+    template<typename iomode> GridGlobal(std::istream &is, iomode const){
+        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
+        else read<mode_binary>(is);
+    }
+    ~GridGlobal(){}
 
     bool isGlobal() const{ return true; }
 

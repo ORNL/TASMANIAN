@@ -1407,19 +1407,18 @@ void TasmanianSparseGrid::readAscii(std::istream &ifs){
     ifs >> T;
     clear();
     if (T.compare("global") == 0){
-        base = make_unique_ptr<GridGlobal>();
+        base = std::make_unique<GridGlobal>(ifs, IO::mode_ascii_type());
     }else if (T.compare("sequence") == 0){
-        base = make_unique_ptr<GridSequence>();
+        base = std::make_unique<GridSequence>(ifs, IO::mode_ascii_type());
     }else if (T.compare("localpolynomial") == 0){
-        base = make_unique_ptr<GridLocalPolynomial>();
+        base = std::make_unique<GridLocalPolynomial>(ifs, IO::mode_ascii_type());
     }else if (T.compare("wavelet") == 0){
-        base = make_unique_ptr<GridWavelet>();
+        base = std::make_unique<GridWavelet>(ifs, IO::mode_ascii_type());
     }else if (T.compare("fourier") == 0){
-        base = make_unique_ptr<GridFourier>();
+        base = std::make_unique<GridFourier>(ifs, IO::mode_ascii_type());
     }else if (T.compare("empty") != 0){
         throw std::runtime_error("ERROR: wrong file format, unknown grid type (or corrupt file)");
     }
-    if (!empty()) base->read(ifs, mode_ascii);
     getline(ifs, T); // read an empty line
     getline(ifs, T);
     bool reached_eof = false;
@@ -1493,19 +1492,18 @@ void TasmanianSparseGrid::readBinary(std::istream &ifs){
     ifs.read(TSG.data(), sizeof(char)); // what type of grid is it?
     clear();
     if (TSG[0] == 'g'){
-        base = make_unique_ptr<GridGlobal>();
+        base = std::make_unique<GridGlobal>(ifs, IO::mode_binary_type());
     }else if (TSG[0] == 's'){
-        base = make_unique_ptr<GridSequence>();
+        base = std::make_unique<GridSequence>(ifs, IO::mode_binary_type());
     }else if (TSG[0] == 'p'){
-        base = make_unique_ptr<GridLocalPolynomial>();
+        base = std::make_unique<GridLocalPolynomial>(ifs, IO::mode_binary_type());
     }else if (TSG[0] == 'w'){
-        base = make_unique_ptr<GridWavelet>();
+        base = std::make_unique<GridWavelet>(ifs, IO::mode_binary_type());
     }else if (TSG[0] == 'f'){
-        base = make_unique_ptr<GridFourier>();
+        base = std::make_unique<GridFourier>(ifs, IO::mode_binary_type());
     }else if (TSG[0] != 'e'){
         throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
     }
-    if (!empty()) base->read(ifs, mode_binary);
     ifs.read(TSG.data(), sizeof(char)); // linear domain transform?
     if (TSG[0] == 'y'){
         domain_transform_a.resize(base->getNumDimensions());

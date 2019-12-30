@@ -38,8 +38,12 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridFourier : public BaseCanonicalGrid {
 public:
-    GridFourier();
-    ~GridFourier();
+    GridFourier(){}
+    template<typename iomode> GridFourier(std::istream &is, iomode const){
+        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
+        else read<mode_binary>(is);
+    }
+    ~GridFourier(){}
 
     bool isFourier() const{ return true; }
 

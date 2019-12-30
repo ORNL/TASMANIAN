@@ -36,9 +36,6 @@
 
 namespace TasGrid{
 
-GridFourier::GridFourier() : max_levels(0){}
-GridFourier::~GridFourier(){}
-
 template<bool iomode> void GridFourier::write(std::ostream &os) const{
     if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
     IO::writeNumbers<iomode, IO::pad_line>(os, num_dimensions, num_outputs);

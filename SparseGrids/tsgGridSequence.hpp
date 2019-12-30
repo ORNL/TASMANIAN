@@ -38,8 +38,12 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridSequence : public BaseCanonicalGrid{
 public:
-    GridSequence();
-    ~GridSequence();
+    GridSequence(){}
+    template<typename iomode> GridSequence(std::istream &is, iomode const){
+        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
+        else read<mode_binary>(is);
+    }
+    ~GridSequence(){}
 
     bool isSequence() const{ return true; }
 
