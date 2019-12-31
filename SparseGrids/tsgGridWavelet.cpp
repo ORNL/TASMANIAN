@@ -634,7 +634,7 @@ const double* GridWavelet::getSurpluses() const{
 }
 
 void GridWavelet::beginConstruction(){
-    dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
+    dynamic_values = std::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
         needed = MultiIndexSet();

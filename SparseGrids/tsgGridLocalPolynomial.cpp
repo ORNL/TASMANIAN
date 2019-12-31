@@ -187,7 +187,7 @@ GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int 
     sparse_affinity = pwpoly->sparse_affinity;
 
     if (pwpoly->dynamic_values){
-        dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData(*pwpoly->dynamic_values));
+        dynamic_values = std::make_unique<SimpleConstructData>(*pwpoly->dynamic_values);
         if (num_outputs != pwpoly->num_outputs) dynamic_values->restrictData(ibegin, iend);
     }
 }
@@ -520,7 +520,7 @@ void GridLocalPolynomial::mergeRefinement(){
 }
 
 void GridLocalPolynomial::beginConstruction(){
-    dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
+    dynamic_values = std::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
         needed = MultiIndexSet();

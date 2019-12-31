@@ -114,7 +114,7 @@ GridSequence::GridSequence(const GridSequence *seq, int ibegin, int iend){
     max_levels = seq->max_levels;
 
     if (seq->dynamic_values){
-        dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData(*seq->dynamic_values));
+        dynamic_values = std::make_unique<SimpleConstructData>(*seq->dynamic_values);
         if (num_outputs != seq->num_outputs) dynamic_values->restrictData(ibegin, iend);
     }
 }
@@ -244,7 +244,7 @@ void GridSequence::mergeRefinement(){
 }
 
 void GridSequence::beginConstruction(){
-    dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
+    dynamic_values = std::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
         needed = MultiIndexSet();
