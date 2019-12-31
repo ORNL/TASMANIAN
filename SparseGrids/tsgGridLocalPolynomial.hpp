@@ -53,8 +53,14 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridLocalPolynomial : public BaseCanonicalGrid{
 public:
-    GridLocalPolynomial();
-    ~GridLocalPolynomial();
+    GridLocalPolynomial() : order(1){}
+    template<typename iomode> GridLocalPolynomial(std::istream &is, iomode const){
+        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
+        else read<mode_binary>(is);
+    }
+    GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend);
+    GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
+    ~GridLocalPolynomial(){}
 
     bool isLocalPolynomial() const{ return true; }
 
@@ -63,9 +69,6 @@ public:
 
     template<bool iomode> void write(std::ostream &os) const;
     template<bool iomode> void read(std::istream &is);
-
-    void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
-    void copyGrid(const GridLocalPolynomial *pwpoly, int ibegin, int iend);
 
     TypeOneDRule getRule() const{ return rule->getType(); }
     int getOrder() const{ return order; }

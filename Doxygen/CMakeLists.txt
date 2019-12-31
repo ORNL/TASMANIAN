@@ -36,6 +36,7 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
         TasGrid::Utils::Wrapper2D TasGrid::SimpleConstructData TasGrid::DynamicConstructorDataGlobal
         TasGrid::Optimizer::CurrentNodes TasGrid::Optimizer::HasDerivative TasGrid::Optimizer::OptimizerResult
         TasGrid::VectorToStreamBuffer TasGrid::CandidateManager TasGrid::CompleteStorage
+        TasGrid::IO::mode_ascii_type TasGrid::IO::mode_binary_type
         TasDREAM::IO TasDREAM::Utils)
     set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP;__TASMANIAN_DOXYGEN_SKIP_INTERNAL;Tasmanian_ENABLE_BLAS;Tasmanian_ENABLE_CUDA;Tasmanian_ENABLE_MPI")
 endif()

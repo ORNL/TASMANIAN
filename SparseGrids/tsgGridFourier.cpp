@@ -36,9 +36,6 @@
 
 namespace TasGrid{
 
-GridFourier::GridFourier() : max_levels(0){}
-GridFourier::~GridFourier(){}
-
 template<bool iomode> void GridFourier::write(std::ostream &os) const{
     if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
     IO::writeNumbers<iomode, IO::pad_line>(os, num_dimensions, num_outputs);
@@ -131,7 +128,7 @@ void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Typ
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, level_limits), cnum_outputs);
 }
 
-void GridFourier::copyGrid(const GridFourier *fourier, int ibegin, int iend){
+GridFourier::GridFourier(const GridFourier *fourier, int ibegin, int iend){
     num_dimensions = fourier->num_dimensions;
     num_outputs    = iend - ibegin;
     points = fourier->points;
@@ -802,7 +799,7 @@ void GridFourier::mergeRefinement(){
 }
 
 void GridFourier::beginConstruction(){
-    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(num_dimensions, num_outputs));
+    dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(num_dimensions, num_outputs);
     if (points.empty()){ // if we start dynamic construction from an empty grid
         for(int i=0; i<tensors.getNumIndexes(); i++){
             const int *t = tensors.getIndex(i);
@@ -820,7 +817,7 @@ void GridFourier::writeConstructionData(std::ostream &os, bool iomode) const{
     if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
 }
 void GridFourier::readConstructionData(std::istream &is, bool iomode){
-    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal((size_t) num_dimensions, (size_t) num_outputs));
+    dynamic_values = std::make_unique<DynamicConstructorDataGlobal>((size_t) num_dimensions, (size_t) num_outputs);
     if (iomode == mode_ascii)
         dynamic_values->read<mode_ascii>(is);
     else

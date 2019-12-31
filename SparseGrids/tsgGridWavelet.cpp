@@ -36,9 +36,6 @@
 
 namespace TasGrid{
 
-GridWavelet::GridWavelet() : rule1D(1, 10), order(1){}
-GridWavelet::~GridWavelet(){}
-
 void GridWavelet::reset(){
     clearAccelerationData();
     points = MultiIndexSet();
@@ -95,7 +92,7 @@ template void GridWavelet::write<mode_binary>(std::ostream &) const;
 template void GridWavelet::read<mode_ascii>(std::istream &);
 template void GridWavelet::read<mode_binary>(std::istream &);
 
-void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits){
+GridWavelet::GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits) : GridWavelet(){
     reset();
     num_dimensions = cnum_dimensions;
     num_outputs = cnum_outputs;
@@ -120,7 +117,7 @@ void GridWavelet::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int
 
     buildInterpolationMatrix();
 }
-void GridWavelet::copyGrid(const GridWavelet *wav, int ibegin, int iend){
+GridWavelet::GridWavelet(const GridWavelet *wav, int ibegin, int iend) : GridWavelet(){
     num_dimensions = wav->num_dimensions;
     num_outputs    = iend - ibegin;
     points = wav->points;
@@ -637,7 +634,7 @@ const double* GridWavelet::getSurpluses() const{
 }
 
 void GridWavelet::beginConstruction(){
-    dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
+    dynamic_values = std::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
         needed = MultiIndexSet();

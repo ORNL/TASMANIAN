@@ -75,6 +75,18 @@ constexpr bool mode_binary = true;
 namespace IO{
 
 /*!
+ * \ingroup TasmanianIO
+ * \brief Type indicating ascii I/O mode.
+ */
+struct mode_ascii_type{};
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Type indicating binary I/O mode.
+ */
+struct mode_binary_type{};
+
+/*!
  * \internal
  * \ingroup TasmanianIO
  * \brief Indicate the type of padding to use, none, space, new-line, etc.

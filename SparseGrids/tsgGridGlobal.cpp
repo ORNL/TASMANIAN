@@ -36,9 +36,6 @@
 
 namespace TasGrid{
 
-GridGlobal::GridGlobal() : alpha(0.0), beta(0.0){}
-GridGlobal::~GridGlobal(){}
-
 template<bool iomode> void GridGlobal::write(std::ostream &os) const{
     if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
     IO::writeNumbers<iomode, IO::pad_rspace>(os, num_dimensions, num_outputs);
@@ -184,7 +181,7 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits),
                cnum_outputs, crule, calpha, cbeta);
 }
-void GridGlobal::copyGrid(const GridGlobal *global, int ibegin, int iend){
+GridGlobal::GridGlobal(const GridGlobal *global, int ibegin, int iend){
     custom = CustomTabulated();
     if (global->rule == rule_customtabulated) custom = global->custom;
 
@@ -212,7 +209,7 @@ void GridGlobal::copyGrid(const GridGlobal *global, int ibegin, int iend){
     updated_active_w       = global->updated_active_w;
 
     if (global->dynamic_values){
-        dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(*global->dynamic_values));
+        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(*global->dynamic_values);
         if (num_outputs != global->num_outputs) dynamic_values->restrictData(ibegin, iend);
     }
 }
@@ -402,7 +399,7 @@ void GridGlobal::mergeRefinement(){
 }
 
 void GridGlobal::beginConstruction(){
-    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal(num_dimensions, num_outputs));
+    dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(num_dimensions, num_outputs);
     if (points.empty()){ // if we start dynamic construction from an empty grid
         for(int i=0; i<tensors.getNumIndexes(); i++){
             const int *t = tensors.getIndex(i);
@@ -420,7 +417,7 @@ void GridGlobal::writeConstructionData(std::ostream &os, bool iomode) const{
     if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
 }
 void GridGlobal::readConstructionData(std::istream &is, bool iomode){
-    dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>(new DynamicConstructorDataGlobal((size_t) num_dimensions, (size_t) num_outputs));
+    dynamic_values = std::make_unique<DynamicConstructorDataGlobal>((size_t) num_dimensions, (size_t) num_outputs);
     if (iomode == mode_ascii)
         dynamic_values->read<mode_ascii>(is);
     else

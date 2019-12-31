@@ -36,9 +36,6 @@
 
 namespace TasGrid{
 
-GridLocalPolynomial::GridLocalPolynomial() : order(1), top_level(0), sparse_affinity(0)  {}
-GridLocalPolynomial::~GridLocalPolynomial(){}
-
 void GridLocalPolynomial::reset(bool clear_rule){
     clearAccelerationData();
     num_dimensions = num_outputs = top_level = 0;
@@ -50,19 +47,18 @@ void GridLocalPolynomial::reset(bool clear_rule){
     sparse_affinity = 0;
     surpluses.clear();
 }
-template<class T> std::unique_ptr<T> make_unique_ptr(){ return std::unique_ptr<T>(new T()); } // in C++14 this is called std::make_unique()
 void GridLocalPolynomial::makeRule(TypeOneDRule crule){
     if (crule == rule_localp){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localp, false>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_localp, false>>();
     }else if (crule == rule_semilocalp){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_semilocalp, false>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_semilocalp, false>>();
     }else if (crule == rule_localp0){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localp0, false>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_localp0, false>>();
     }else if (crule == rule_localpb){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localpb, false>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_localpb, false>>();
     }
     if (order == 0){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localp, true>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_localp, true>>();
     }
     rule->setMaxOrder(order);
 }
@@ -142,7 +138,7 @@ template void GridLocalPolynomial::write<mode_binary>(std::ostream &) const;
 template void GridLocalPolynomial::read<mode_ascii>(std::istream &);
 template void GridLocalPolynomial::read<mode_binary>(std::istream &);
 
-void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits){
+GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits){
     reset();
     num_dimensions = cnum_dimensions;
     num_outputs = cnum_outputs;
@@ -169,7 +165,7 @@ void GridLocalPolynomial::makeGrid(int cnum_dimensions, int cnum_outputs, int de
     }
 }
 
-void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly, int ibegin, int iend){
+GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend){
     num_dimensions = pwpoly->num_dimensions;
     num_outputs    = iend - ibegin;
     points = pwpoly->points;
@@ -191,7 +187,7 @@ void GridLocalPolynomial::copyGrid(const GridLocalPolynomial *pwpoly, int ibegin
     sparse_affinity = pwpoly->sparse_affinity;
 
     if (pwpoly->dynamic_values){
-        dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData(*pwpoly->dynamic_values));
+        dynamic_values = std::make_unique<SimpleConstructData>(*pwpoly->dynamic_values);
         if (num_outputs != pwpoly->num_outputs) dynamic_values->restrictData(ibegin, iend);
     }
 }
@@ -524,7 +520,7 @@ void GridLocalPolynomial::mergeRefinement(){
 }
 
 void GridLocalPolynomial::beginConstruction(){
-    dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
+    dynamic_values = std::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
         needed = MultiIndexSet();

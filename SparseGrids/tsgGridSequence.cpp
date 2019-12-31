@@ -36,9 +36,6 @@
 
 namespace TasGrid{
 
-GridSequence::GridSequence(){}
-GridSequence::~GridSequence(){}
-
 template<bool iomode> void GridSequence::write(std::ostream &os) const{
     if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
     IO::writeNumbers<iomode, IO::pad_rspace>(os, num_dimensions, num_outputs);
@@ -88,7 +85,7 @@ void GridSequence::reset(){
 }
 void GridSequence::clearRefinement(){ needed = MultiIndexSet(); }
 
-void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule,
+GridSequence::GridSequence(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule,
                             const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
 
     MultiIndexSet pset = (OneDimensionalMeta::isExactQuadrature(type)) ?
@@ -100,7 +97,7 @@ void GridSequence::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Ty
 
     setPoints(pset, cnum_outputs, crule);
 }
-void GridSequence::copyGrid(const GridSequence *seq, int ibegin, int iend){
+GridSequence::GridSequence(const GridSequence *seq, int ibegin, int iend){
     num_dimensions = seq->num_dimensions;
     num_outputs    = iend - ibegin;
     points = seq->points;
@@ -117,7 +114,7 @@ void GridSequence::copyGrid(const GridSequence *seq, int ibegin, int iend){
     max_levels = seq->max_levels;
 
     if (seq->dynamic_values){
-        dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData(*seq->dynamic_values));
+        dynamic_values = std::make_unique<SimpleConstructData>(*seq->dynamic_values);
         if (num_outputs != seq->num_outputs) dynamic_values->restrictData(ibegin, iend);
     }
 }
@@ -247,7 +244,7 @@ void GridSequence::mergeRefinement(){
 }
 
 void GridSequence::beginConstruction(){
-    dynamic_values = std::unique_ptr<SimpleConstructData>(new SimpleConstructData);
+    dynamic_values = std::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
         needed = MultiIndexSet();

@@ -38,8 +38,16 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridFourier : public BaseCanonicalGrid {
 public:
-    GridFourier();
-    ~GridFourier();
+    GridFourier(){}
+    template<typename iomode> GridFourier(std::istream &is, iomode const){
+        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
+        else read<mode_binary>(is);
+    }
+    GridFourier(const GridFourier *fourier, int ibegin, int iend);
+    GridFourier(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+        makeGrid(cnum_dimensions, cnum_outputs, depth, type, anisotropic_weights, level_limits);
+    }
+    ~GridFourier(){}
 
     bool isFourier() const{ return true; }
 
@@ -50,7 +58,6 @@ public:
     template<bool iomode> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
-    void copyGrid(const GridFourier *fourier, int ibegin, int iend);
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
 
     void setTensors(MultiIndexSet &&tset, int cnum_outputs);
