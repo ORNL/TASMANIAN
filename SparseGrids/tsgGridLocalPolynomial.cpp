@@ -47,19 +47,18 @@ void GridLocalPolynomial::reset(bool clear_rule){
     sparse_affinity = 0;
     surpluses.clear();
 }
-template<class T> std::unique_ptr<T> make_unique_ptr(){ return std::unique_ptr<T>(new T()); } // in C++14 this is called std::make_unique()
 void GridLocalPolynomial::makeRule(TypeOneDRule crule){
     if (crule == rule_localp){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localp, false>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_localp, false>>();
     }else if (crule == rule_semilocalp){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_semilocalp, false>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_semilocalp, false>>();
     }else if (crule == rule_localp0){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localp0, false>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_localp0, false>>();
     }else if (crule == rule_localpb){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localpb, false>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_localpb, false>>();
     }
     if (order == 0){
-        rule = make_unique_ptr<templRuleLocalPolynomial<rule_localp, true>>();
+        rule = std::make_unique<templRuleLocalPolynomial<rule_localp, true>>();
     }
     rule->setMaxOrder(order);
 }
