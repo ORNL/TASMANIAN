@@ -49,10 +49,10 @@ public:
     }
     ~GridFourier(){}
 
-    bool isFourier() const{ return true; }
+    bool isFourier() const override{ return true; }
 
-    void write(std::ostream &os, bool iomode) const{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
-    void read(std::istream &is, bool iomode){ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
+    void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
+    void read(std::istream &is, bool iomode) override{ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
 
     template<bool iomode> void write(std::ostream &os) const;
     template<bool iomode> void read(std::istream &is);
@@ -62,62 +62,62 @@ public:
 
     void setTensors(MultiIndexSet &&tset, int cnum_outputs);
 
-    TypeOneDRule getRule() const{ return rule_fourier; }
+    TypeOneDRule getRule() const override{ return rule_fourier; }
 
-    void loadNeededPoints(const double *vals);
+    void loadNeededPoints(const double *vals) override;
 
-    void getLoadedPoints(double *x) const;
-    void getNeededPoints(double *x) const;
-    void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
+    void getLoadedPoints(double *x) const override;
+    void getNeededPoints(double *x) const override;
+    void getPoints(double *x) const override; // returns the loaded points unless no points are loaded, then returns the needed points
 
-    void getInterpolationWeights(const double x[], double weights[]) const;
+    void getInterpolationWeights(const double x[], double weights[]) const override;
 
-    void getQuadratureWeights(double weights[]) const;
+    void getQuadratureWeights(double weights[]) const override;
 
-    void evaluate(const double x[], double y[]) const;
-    void evaluateBatch(const double x[], int num_x, double y[]) const;
+    void evaluate(const double x[], double y[]) const override;
+    void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
     #ifdef Tasmanian_ENABLE_BLAS
-    void evaluateBlas(const double x[], int num_x, double y[]) const;
+    void evaluateBlas(const double x[], int num_x, double y[]) const override;
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
-    void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
-    void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
-    void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const;
-    void evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const;
+    void loadNeededPointsCuda(CudaEngine *engine, const double *vals) override;
+    void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const override;
+    void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const override;
+    void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
+    void evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const override;
     template<typename T> void evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
-    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const;
-    void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const;
+    void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const override;
+    void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const override;
     template<typename T>
     void evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, CudaVector<T> &wreal, CudaVector<T> &wimag) const;
     #endif
 
-    void integrate(double q[], double *conformal_correction) const;
+    void integrate(double q[], double *conformal_correction) const override;
 
-    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
+    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const override;
     void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const;
-    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
+    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) override;
 
-    void integrateHierarchicalFunctions(double integrals[]) const;
+    void integrateHierarchicalFunctions(double integrals[]) const override;
 
-    void clearAccelerationData();
+    void clearAccelerationData() override;
 
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
-    void clearRefinement();
-    void mergeRefinement();
+    void clearRefinement() override;
+    void mergeRefinement() override;
 
-    void beginConstruction();
-    void writeConstructionData(std::ostream &os, bool) const;
-    void readConstructionData(std::istream &is, bool);
+    void beginConstruction() override;
+    void writeConstructionData(std::ostream &os, bool) const override;
+    void readConstructionData(std::istream &is, bool) override;
     std::vector<double> getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, const std::vector<int> &level_limits);
     std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits);
     std::vector<double> getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits);
-    void loadConstructedPoint(const double x[], const std::vector<double> &y);
-    void loadConstructedPoint(const double x[], int numx, const double y[]);
-    void finishConstruction();
+    void loadConstructedPoint(const double x[], const std::vector<double> &y) override;
+    void loadConstructedPoint(const double x[], int numx, const double y[]) override;
+    void finishConstruction() override;
 
     const double* getFourierCoefs() const;
 

@@ -50,10 +50,10 @@ public:
     }
     ~GridGlobal(){}
 
-    bool isGlobal() const{ return true; }
+    bool isGlobal() const override{ return true; }
 
-    void write(std::ostream &os, bool iomode) const{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
-    void read(std::istream &is, bool iomode){ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
+    void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
+    void read(std::istream &is, bool iomode) override{ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
 
     template<bool iomode> void write(std::ostream &os) const;
     template<bool iomode> void read(std::istream &is);
@@ -64,40 +64,39 @@ public:
 
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
 
-    TypeOneDRule getRule() const{ return rule; }
+    TypeOneDRule getRule() const override{ return rule; }
     const char* getCustomRuleDescription() const{ return (custom.getNumLevels() > 0) ? custom.getDescription() : "";  }
 
     double getAlpha() const{ return alpha; }
     double getBeta() const{ return beta; }
 
-    void getLoadedPoints(double *x) const;
-    void getNeededPoints(double *x) const;
-    void getPoints(double *x) const; // returns the loaded points unless no points are loaded, then returns the needed points
+    void getLoadedPoints(double *x) const override;
+    void getNeededPoints(double *x) const override;
+    void getPoints(double *x) const override; // returns the loaded points unless no points are loaded, then returns the needed points
 
-    void getQuadratureWeights(double weights[]) const;
-    void getInterpolationWeights(const double x[], double weights[]) const;
+    void getQuadratureWeights(double weights[]) const override;
+    void getInterpolationWeights(const double x[], double weights[]) const override;
 
-    void loadNeededPoints(const double *vals);
-    const double* getLoadedValues() const;
+    void loadNeededPoints(const double *vals) override;
 
-    void evaluate(const double x[], double y[]) const;
-    void integrate(double q[], double *conformal_correction) const;
+    void evaluate(const double x[], double y[]) const override;
+    void integrate(double q[], double *conformal_correction) const override;
 
-    void evaluateBatch(const double x[], int num_x, double y[]) const;
+    void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
     #ifdef Tasmanian_ENABLE_BLAS
-    void evaluateBlas(const double x[], int num_x, double y[]) const;
+    void evaluateBlas(const double x[], int num_x, double y[]) const override;
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void loadNeededPointsCuda(CudaEngine *engine, const double *vals);
-    void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const;
-    void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const;
-    void evaluateBatchGPU(CudaEngine*, const double[], int, double[]) const;
-    void evaluateBatchGPU(CudaEngine*, const float[], int, float[]) const;
+    void loadNeededPointsCuda(CudaEngine *engine, const double *vals) override;
+    void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const override;
+    void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const override;
+    void evaluateBatchGPU(CudaEngine*, const double[], int, double[]) const override;
+    void evaluateBatchGPU(CudaEngine*, const float[], int, float[]) const override;
     template<typename T> void evaluateBatchGPUtempl(CudaEngine*, T const[], int, T *) const;
-    void evaluateHierarchicalFunctionsGPU(const double[], int, double *) const;
-    void evaluateHierarchicalFunctionsGPU(const float[], int, float *) const;
+    void evaluateHierarchicalFunctionsGPU(const double[], int, double *) const override;
+    void evaluateHierarchicalFunctionsGPU(const float[], int, float *) const override;
     template<typename T> void evaluateHierarchicalFunctionsGPUtempl(T const[], int, T *) const;
     #endif
 
@@ -105,24 +104,24 @@ public:
 
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);
     void setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits);
-    void clearRefinement();
-    void mergeRefinement();
+    void clearRefinement() override;
+    void mergeRefinement() override;
 
-    void beginConstruction();
-    void writeConstructionData(std::ostream &os, bool) const;
-    void readConstructionData(std::istream &is, bool);
+    void beginConstruction() override;
+    void writeConstructionData(std::ostream &os, bool) const override;
+    void readConstructionData(std::istream &is, bool) override;
     std::vector<double> getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &weights, const std::vector<int> &level_limits);
     std::vector<double> getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits);
     std::vector<double> getCandidateConstructionPoints(std::function<double(const int *)> getTensorWeight, const std::vector<int> &level_limits);
-    void loadConstructedPoint(const double x[], const std::vector<double> &y);
-    void loadConstructedPoint(const double x[], int numx, const double y[]);
-    void finishConstruction();
+    void loadConstructedPoint(const double x[], const std::vector<double> &y) override;
+    void loadConstructedPoint(const double x[], int numx, const double y[]) override;
+    void finishConstruction() override;
 
-    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const;
-    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc);
-    void integrateHierarchicalFunctions(double integrals[]) const;
+    void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const override;
+    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) override;
+    void integrateHierarchicalFunctions(double integrals[]) const override;
 
-    void clearAccelerationData();
+    void clearAccelerationData() override;
 
     std::vector<int> getPolynomialSpace(bool interpolation) const;
 

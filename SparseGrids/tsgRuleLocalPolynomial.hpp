@@ -77,12 +77,12 @@ public:
     templRuleLocalPolynomial(){}
     ~templRuleLocalPolynomial(){}
 
-    int getMaxOrder() const{ return max_order; }
-    void setMaxOrder(int order){ max_order = order; }
+    int getMaxOrder() const override{ return max_order; }
+    void setMaxOrder(int order) override{ max_order = order; }
 
-    TypeOneDRule getType() const{ return rule; }
+    TypeOneDRule getType() const override{ return rule; }
 
-    int getNumPoints(int level) const{
+    int getNumPoints(int level) const override{
         if (isZeroOrder){
             int n = 1;
             while (level-- > 0) n *= 3;
@@ -98,7 +98,7 @@ public:
         }
     }
 
-    double getNode(int point) const{
+    double getNode(int point) const override{
         if (isZeroOrder){
             return -2.0 + (1.0 / ((double) Maths::int3log3(point))) * (3*point + 2 - point % 2);
         }else{
@@ -118,7 +118,7 @@ public:
         }
     }
 
-    int getLevel(int point) const{
+    int getLevel(int point) const override{
         if (isZeroOrder){
             int level = 0;
             while(point >= 1){ point /= 3; level += 1; }
@@ -133,7 +133,7 @@ public:
             }
         }
     }
-    double getSupport(int point) const{
+    double getSupport(int point) const override{
         if (isZeroOrder){
             return 1.0 / (double) Maths::int3log3(point);
         }else{
@@ -147,10 +147,10 @@ public:
         }
     }
 
-    int getMaxNumKids() const{ return (isZeroOrder) ? 4 : 2; }
-    int getMaxNumParents() const{ return ((isZeroOrder || (rule == rule_semilocalp) || (rule == rule_localpb)) ? 2 : 1); }
+    int getMaxNumKids() const override{ return (isZeroOrder) ? 4 : 2; }
+    int getMaxNumParents() const override{ return ((isZeroOrder || (rule == rule_semilocalp) || (rule == rule_localpb)) ? 2 : 1); }
 
-    int getParent(int point) const{
+    int getParent(int point) const override{
         if (isZeroOrder){
             return (point == 0) ? -1 : point / 3;
         }else{
@@ -167,7 +167,7 @@ public:
         }
     }
 
-    int getStepParent(int point) const{
+    int getStepParent(int point) const override{
         if (isZeroOrder){
             int i3l3 = Maths::int3log3(point);
             if (point == i3l3/3) return -1;
@@ -186,7 +186,7 @@ public:
         }
     }
 
-    int getKid(int point, int kid_number) const{
+    int getKid(int point, int kid_number) const override{
         if (isZeroOrder){
             if (point == 0) return (kid_number == 0) ? 1 : (kid_number==1) ? 2 : -1;
             if (kid_number == 3){
@@ -215,7 +215,7 @@ public:
         }
     }
 
-    double evalRaw(int point, double x) const{
+    double evalRaw(int point, double x) const override{
         if (isZeroOrder){
             if (std::abs(x - getNode(point)) > getSupport(point)) return 0.0; // maybe can speed this up
             return 1.0;
@@ -235,7 +235,7 @@ public:
         }
     }
 
-    double evalSupport(int point, double x, bool &isSupported) const{
+    double evalSupport(int point, double x, bool &isSupported) const override{
         if (isZeroOrder){
             double distance = std::abs(x - getNode(point)), support = getSupport(point); // can speed this up, see above
             isSupported = (distance <= (2.0) * support);
@@ -261,7 +261,7 @@ public:
             }
         }
     }
-    double getArea(int point, int n, const double w[], const double x[]) const{
+    double getArea(int point, int n, const double w[], const double x[]) const override{
         if (isZeroOrder){
             return 2.0 * getSupport(point);
         }else{
