@@ -193,8 +193,6 @@ bool GridUnitTester::testAPIconsistency(){
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "getPoints()" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
 
-    pass = true;
-
     grid.makeGlobalGrid(2, 1, 1, type_iptotal, rule_rleja);
     std::vector<int> pindexes(grid.getPointsIndexes(), grid.getPointsIndexes() + 6);
     std::vector<int> refindexes = {0, 0, 0, 1, 1, 0};
@@ -203,7 +201,6 @@ bool GridUnitTester::testAPIconsistency(){
     if (verbose) cout << setw(wfirst) << "API variation" << setw(wsecond) << "getPointsIndexes()" << setw(wthird) << ((pass) ? "Pass" : "FAIL") << endl;
     passAll = pass && passAll;
 
-    pass = true;
     grid.makeGlobalGrid(2, 1, 4, type_iptotal, rule_clenshawcurtis);
     gridLoadEN2(&grid);
 
@@ -269,6 +266,7 @@ bool GridUnitTester::testAPIconsistency(){
             pass = false;
         }
     }
+    passAll = pass && passAll;
 
     // misc tests
     pass = true;
@@ -656,6 +654,10 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
             auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_chebyshev);
             gridLoadEN2(&grid);
             grid.setSurplusRefinement(0.01, refine_classic, 0, 0);  // rule non-local
+        },
+        [](void)->void{
+            auto grid = makeEmpty();
+            grid.beginConstruction(); // cannot init construct on empty
         },
         [](void)->void{
             TasmanianSparseGrid grid;
