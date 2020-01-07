@@ -33,6 +33,7 @@ import numpy as np
 import sys
 
 from TasmanianConfig import __path_libdream__
+from TasmanianConfig import enableVerboseErrors
 from TasmanianConfig import TasmanianInputError as InputError
 
 from TasmanianSG import TasmanianSparseGrid as SparseGrid
@@ -76,9 +77,8 @@ def pdfWrapper(callableProbability, iNumSamples, iNumDims, pX, pY, pErrInfo):
     aX = np.ctypeslib.as_array(pX, (iNumSamples, iNumDims))
     aY = np.ctypeslib.as_array(pY, (iNumSamples,))
     aResult = callableProbability(aX)
-    if aResult.shape != (iNumSamples,):
-        if TasmanianConfig.enableVerboseErrors:
-            print("ERROR: incorrect output from the probability distribution, should be (iNumSamples,)")
+    if aResult.shape != (iNumSamples,) and enableVerboseErrors:
+        print("ERROR: incorrect output from the probability distribution, should be (iNumSamples,)")
         return
     aY[0:iNumSamples] = aResult[0:iNumSamples]
     pErrInfo[0] = 0
@@ -115,10 +115,9 @@ def iupdateWrapper(callableIUpdate, iNumDims, pX, pErrInfo):
     '''
     pErrInfo[0] = 1
     aX = np.ctypeslib.as_array(pX, (iNumDims,))
-    aResult = callableIUpdate(aX)
-    if aResult.shape != (iNumDims,):
-        if TasmanianConfig.enableVerboseErrors:
-            print("ERROR: incorrect output from the independent update, should be (iNumDimensions,)")
+    aResult = callableIUpdate()
+    if aResult.shape != (iNumDims,) and enableVerboseErrors:
+        print("ERROR: incorrect output from the independent update, should be (iNumDimensions,)")
         return
     aX[0:iNumDims] = aResult[0:iNumDims]
     pErrInfo[0] = 0
