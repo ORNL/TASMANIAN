@@ -157,6 +157,7 @@ template<typename T>
 bool testHBasisGPUSparse(std::vector<double> const &x,
                          std::vector<int> const &pntr, std::vector<int> const &indx, std::vector<double> const &vals,
                          double tolerance, TasmanianSparseGrid const &grid, std::string message){
+    if (grid.empty()){ cout << "ERROR: cannot test an empty grid\n"; return false; }
     CudaVector<T> gpux;
     gpux.load(x);
 
