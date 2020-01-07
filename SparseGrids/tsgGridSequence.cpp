@@ -75,7 +75,6 @@ template void GridSequence::read<mode_ascii>(std::istream &);
 template void GridSequence::read<mode_binary>(std::istream &);
 
 void GridSequence::reset(){
-    clearAccelerationData();
     points = MultiIndexSet();
     needed = MultiIndexSet();
     values = StorageSet();
