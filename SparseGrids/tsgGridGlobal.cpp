@@ -587,11 +587,6 @@ void GridGlobal::finishConstruction(){
     dynamic_values = std::unique_ptr<DynamicConstructorDataGlobal>();
 }
 
-const double* GridGlobal::getLoadedValues() const{
-    if (getNumLoaded() == 0) return 0;
-    return values.getValues(0);
-}
-
 void GridGlobal::evaluate(const double x[], double y[]) const{
     std::vector<double> w(points.getNumIndexes());
     getInterpolationWeights(x, w.data());

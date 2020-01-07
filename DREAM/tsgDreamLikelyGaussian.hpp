@@ -77,13 +77,13 @@ public:
     void setData(double variance, const std::vector<double> &data_mean, size_t num_observe = 1);
 
     //! \brief Compute the likelihood of a set of model outputs.
-    void getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const;
+    void getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const override;
 
     //! \brief Overload for raw-arrays, for interface purposes mostly, e.g., python.
-    void getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const;
+    void getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const override;
 
     //! \brief Returns the size of the \b data_mean vector (for error checking purposes).
-    int getNumOutputs() const{ return (int) data.size(); }
+    int getNumOutputs() const override{ return (int) data.size(); }
 
     /*!
      * \brief Writes the data for a portion of the outputs into a stream.
@@ -156,13 +156,13 @@ public:
     void setData(std::vector<double> const &variance, std::vector<double> const &data_mean, size_t num_observe = 1);
 
     //! \brief Compute the likelihood of a set of model outputs.
-    void getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const;
+    void getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const override;
 
     //! \brief Overload for raw-arrays, for interface purposes mostly, e.g., python.
-    void getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const;
+    void getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const override;
 
     //! \brief Returns the size of the \b data_mean vector (for error checking purposes).
-    int getNumOutputs() const{ return (int) noise_variance.size(); }
+    int getNumOutputs() const override{ return (int) noise_variance.size(); }
 
     /*!
      * \brief Writes the data for a portion of the outputs into a stream.

@@ -516,8 +516,6 @@ void GridSequence::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int nu
     loadCudaNodes<double>();
     TasCUDA::devalseq(num_dimensions, num_x, max_levels, gpu_x, cuda_cache->num_nodes, cuda_cache->points, cuda_cache->nodes, cuda_cache->coeff, gpu_y);
 }
-void GridSequence::evaluateCudaMixed(CudaEngine*, const float*, int, float[]) const{
-}
 void GridSequence::evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
     evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
 }
