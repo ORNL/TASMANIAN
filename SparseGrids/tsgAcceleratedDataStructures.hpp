@@ -211,8 +211,8 @@ public:
         {}
     //! \brief Construct a new engine with the given device and magma mode, use the provided handles for magma/cublas and cusparse.
     CudaEngine(int device, bool use_magma, void *handle_magma_cublas, void *handle_cusparse)
-        : gpu(device), magma(use_magma), cublasHandle((use_magma) ? nullptr : handle_magma_cublas), own_cublas_handle(nullptr),
-          cusparseHandle(handle_cusparse), own_cusparse_handle(nullptr)
+        : gpu(device), magma(use_magma), cublasHandle((use_magma) ? nullptr : handle_magma_cublas), own_cublas_handle(false),
+          cusparseHandle(handle_cusparse), own_cusparse_handle(false)
         #ifdef Tasmanian_ENABLE_MAGMA
         , magmaCudaStream(nullptr), magmaCudaQueue((use_magma) ? handle_magma_cublas : nullptr), own_magma_queue(false)
         #endif

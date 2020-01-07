@@ -378,6 +378,7 @@ void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
 }
 
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatch(const std::vector<FloatType> &x, std::vector<FloatType> &y) const{
+    if (empty()) return; // should probably throw
     int num_outputs = getNumOutputs();
     size_t num_x = x.size() / getNumDimensions();
     y.resize(num_outputs * num_x);
@@ -918,6 +919,7 @@ void TasmanianSparseGrid::mergeRefinement(){
 }
 
 void TasmanianSparseGrid::beginConstruction(){
+    if (empty()) throw std::runtime_error("ERROR: cannot start construction for an empty grid.");
     if (!usingDynamicConstruction){
         if (getNumLoaded() > 0) clearRefinement();
         usingDynamicConstruction = true;
@@ -1018,6 +1020,7 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int nu
     base->evaluateHierarchicalFunctions(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
 }
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> &x, std::vector<double> &y) const{
+    if (empty()) throw std::runtime_error("ERROR: cannot call evaluateHierarchicalFunctions() on an empty grid");
     int num_points = getNumPoints();
     size_t num_x = x.size() / getNumDimensions();
     size_t expected_size = num_points * num_x * (isFourier() ? 2 : 1);
@@ -1063,12 +1066,13 @@ template void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU<float>
 template void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU<double>(const double[], int, int*&, int*&, double*&, int&) const;
 
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const std::vector<double> &x, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) const{
+    if (!isLocalPolynomial() && !isWavelet()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctions() called for a grid that is neither local polynomial not wavelet");
     int num_x = ((int) x.size()) / getNumDimensions();
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x.data(), x_tmp, num_x);
     if (isLocalPolynomial()){
         get<GridLocalPolynomial>()->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
-    }else if (isWavelet()){
+    }else{
         int num_points = base->getNumPoints();
         std::vector<double> dense_vals(((size_t) num_points) * ((size_t) num_x));
         base->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.data());
@@ -1088,8 +1092,6 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const std::vector<
             }
         }
         pntr[num_x] = num_nz;
-    }else{
-        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctions() called for a grid that is neither local polynomial not wavelet");
     }
 }
 int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const{

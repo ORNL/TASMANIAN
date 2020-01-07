@@ -108,6 +108,7 @@ void TasmanianDREAM::getHistoryMeanVariance(std::vector<double> &mean, std::vect
     var.resize(num_dimensions);
     std::fill(mean.begin(), mean.end(), 0.0);
     std::fill(var.begin(), var.end(), 0.0);
+    if (num_dimensions == 0) return;
 
     auto ih = history.begin();
     while(ih != history.end()){

@@ -139,7 +139,6 @@ template void GridLocalPolynomial::read<mode_ascii>(std::istream &);
 template void GridLocalPolynomial::read<mode_binary>(std::istream &);
 
 GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits){
-    reset();
     num_dimensions = cnum_dimensions;
     num_outputs = cnum_outputs;
     order = corder;
