@@ -310,6 +310,9 @@ class StorageSet{
 public:
     //! \brief Default constructor, makes an empty set.
     StorageSet();
+    //! \brief Move constructor from a known vector.
+    StorageSet(int cnum_outputs, int cnum_values, std::vector<double> &&vals) :
+        num_outputs(cnum_outputs), num_values(cnum_values), values(std::forward<std::vector<double>>(vals)){}
     //! \brief Default destructor.
     ~StorageSet();
 
