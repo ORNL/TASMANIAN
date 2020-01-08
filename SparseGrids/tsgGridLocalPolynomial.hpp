@@ -141,11 +141,6 @@ protected:
     //! \brief Used as part of the loadNeededPoints() algorithm, updates the values and cuda cache, but does not touch the surpluses.
     void updateValues(double const *vals);
 
-    //! \internal
-    //! \brief makes the unique pointer associated with this rule, assuming that **order** is already set
-    //! \ingroup TasmanianLocalPolynomialGrids
-    void makeRule(TypeOneDRule trule);
-
     //! \brief Tuning decision whether to use sparse or dense.
     bool useDense() const{ return (sparse_affinity == -1); }
 

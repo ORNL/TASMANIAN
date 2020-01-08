@@ -47,21 +47,6 @@ void GridLocalPolynomial::reset(bool clear_rule){
     sparse_affinity = 0;
     surpluses.clear();
 }
-void GridLocalPolynomial::makeRule(TypeOneDRule crule){
-    if (crule == rule_localp){
-        rule = std::make_unique<templRuleLocalPolynomial<rule_localp, false>>();
-    }else if (crule == rule_semilocalp){
-        rule = std::make_unique<templRuleLocalPolynomial<rule_semilocalp, false>>();
-    }else if (crule == rule_localp0){
-        rule = std::make_unique<templRuleLocalPolynomial<rule_localp0, false>>();
-    }else if (crule == rule_localpb){
-        rule = std::make_unique<templRuleLocalPolynomial<rule_localpb, false>>();
-    }
-    if (order == 0){
-        rule = std::make_unique<templRuleLocalPolynomial<rule_localp, true>>();
-    }
-    rule->setMaxOrder(order);
-}
 
 template<bool iomode> void GridLocalPolynomial::write(std::ostream &os) const{
     if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
@@ -100,7 +85,7 @@ template<bool iomode> void GridLocalPolynomial::read(std::istream &is){
     order = IO::readNumber<iomode, int>(is);
     top_level = IO::readNumber<iomode, int>(is);
     TypeOneDRule crule = IO::readRule<iomode>(is);
-    makeRule(crule);
+    rule = makeRuleLocalPolynomial(crule, order);
 
     if (IO::readFlag<iomode>(is)) points.read<iomode>(is);
     if (iomode == mode_ascii){ // backwards compatible: surpluses and needed, or needed and surpluses
@@ -139,15 +124,10 @@ template void GridLocalPolynomial::read<mode_ascii>(std::istream &);
 template void GridLocalPolynomial::read<mode_binary>(std::istream &);
 
 GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits)
-    : order(corder), sparse_affinity(0){
-    num_dimensions = cnum_dimensions;
-    num_outputs = cnum_outputs;
-
-    TypeOneDRule effective_rule = ((crule == rule_semilocalp) && ((order == -1) || (order > 1))) ? rule_semilocalp : rule_localp; // semi-localp of order 1 is identical to localp
-    if (crule == rule_localp0) effective_rule = rule_localp0;
-    if (crule == rule_localpb) effective_rule = rule_localpb;
-
-    makeRule(effective_rule);
+    : BaseCanonicalGrid(cnum_dimensions, cnum_outputs, MultiIndexSet(), MultiIndexSet(), StorageSet()),
+      order(corder),
+      rule(makeRuleLocalPolynomial(((crule == rule_semilocalp) && (order < 2)) ? rule_localp : crule, corder)),
+      sparse_affinity(0){
 
     MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [&](int i) -> int{ return i; }, std::vector<int>(), level_limits);
 
@@ -165,23 +145,17 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
 }
 
 GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend)
-    : order(pwpoly->order), top_level(pwpoly->top_level), sparse_affinity(0){
-    num_dimensions = pwpoly->num_dimensions;
-    num_outputs    = iend - ibegin;
-    points = pwpoly->points;
-    needed = pwpoly->needed;
-
-    surpluses = (num_outputs == pwpoly->num_outputs) ? pwpoly->surpluses : pwpoly->surpluses.splitData(ibegin, iend);
-    values    = (num_outputs == pwpoly->num_outputs) ? pwpoly->values : pwpoly->values.splitValues(ibegin, iend);
-    parents   = pwpoly->parents;
-
-    roots = pwpoly->roots;
-    pntr  = pwpoly->pntr;
-    indx  = pwpoly->indx;
-
-    makeRule(pwpoly->rule->getType());
-
-    sparse_affinity = pwpoly->sparse_affinity;
+    : BaseCanonicalGrid(pwpoly->num_dimensions, iend-ibegin, MultiIndexSet(pwpoly->points), MultiIndexSet(pwpoly->needed),
+                        (iend - ibegin == pwpoly->num_outputs) ? StorageSet(pwpoly->values) : pwpoly->values.splitValues(ibegin, iend)),
+    order(pwpoly->order),
+    top_level(pwpoly->top_level),
+    surpluses((num_outputs == pwpoly->num_outputs) ? pwpoly->surpluses : pwpoly->surpluses.splitData(ibegin, iend)),
+    parents(pwpoly->parents),
+    roots(pwpoly->roots),
+    pntr(pwpoly->pntr),
+    indx(pwpoly->indx),
+    rule(makeRuleLocalPolynomial(pwpoly->rule->getType(), pwpoly->order)),
+    sparse_affinity(pwpoly->sparse_affinity){
 
     if (pwpoly->dynamic_values){
         dynamic_values = std::make_unique<SimpleConstructData>(*pwpoly->dynamic_values);
@@ -190,18 +164,13 @@ GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int 
 }
 
 GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule,
-                                         std::vector<int> &&pnts, std::vector<double> &&vals, std::vector<double> &&surps) :
-                                         order(corder), sparse_affinity(0){
-
-    num_dimensions = cnum_dimensions;
-    num_outputs = cnum_outputs;
-
-    makeRule(crule);
-
-    points = MultiIndexSet(num_dimensions, std::move(pnts));
-    values.resize(num_outputs, points.getNumIndexes());
-    values.setValues(std::move(vals));
-    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::move(surps));
+                                         std::vector<int> &&pnts, std::vector<double> &&vals, std::vector<double> &&surps)
+    : BaseCanonicalGrid(cnum_dimensions, cnum_outputs, MultiIndexSet(cnum_dimensions, std::move(pnts)), MultiIndexSet(),
+                        StorageSet(cnum_outputs, vals.size() / cnum_outputs, std::move(vals))),
+    order(corder),
+    surpluses(Data2D<double>(cnum_outputs, points.getNumIndexes(), std::move(surps))),
+    rule(makeRuleLocalPolynomial(crule, corder)),
+    sparse_affinity(0){
 
     buildTree();
 }
