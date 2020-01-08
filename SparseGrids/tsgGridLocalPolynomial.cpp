@@ -138,10 +138,10 @@ template void GridLocalPolynomial::write<mode_binary>(std::ostream &) const;
 template void GridLocalPolynomial::read<mode_ascii>(std::istream &);
 template void GridLocalPolynomial::read<mode_binary>(std::istream &);
 
-GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits){
+GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits)
+    : order(corder), sparse_affinity(0){
     num_dimensions = cnum_dimensions;
     num_outputs = cnum_outputs;
-    order = corder;
 
     TypeOneDRule effective_rule = ((crule == rule_semilocalp) && ((order == -1) || (order > 1))) ? rule_semilocalp : rule_localp; // semi-localp of order 1 is identical to localp
     if (crule == rule_localp0) effective_rule = rule_localp0;
@@ -164,14 +164,12 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
     }
 }
 
-GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend){
+GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend)
+    : order(pwpoly->order), top_level(pwpoly->top_level), sparse_affinity(0){
     num_dimensions = pwpoly->num_dimensions;
     num_outputs    = iend - ibegin;
     points = pwpoly->points;
     needed = pwpoly->needed;
-
-    order     = pwpoly->order;
-    top_level = pwpoly->top_level;
 
     surpluses = (num_outputs == pwpoly->num_outputs) ? pwpoly->surpluses : pwpoly->surpluses.splitData(ibegin, iend);
     values    = (num_outputs == pwpoly->num_outputs) ? pwpoly->values : pwpoly->values.splitValues(ibegin, iend);
