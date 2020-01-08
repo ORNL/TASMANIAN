@@ -198,10 +198,10 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
 
     makeRule(crule);
 
-    points = MultiIndexSet(num_dimensions, std::vector<int>(pnts));
+    points = MultiIndexSet(num_dimensions, std::move(pnts));
     values.resize(num_outputs, points.getNumIndexes());
-    values.setValues(std::vector<double>(vals));
-    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::vector<double>(surps));
+    values.setValues(std::move(vals));
+    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::move(surps));
 
     buildTree();
 }
