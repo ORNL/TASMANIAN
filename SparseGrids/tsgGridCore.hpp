@@ -52,6 +52,10 @@ namespace TasGrid{
 class BaseCanonicalGrid{
 public:
     BaseCanonicalGrid(){}
+    BaseCanonicalGrid(int cnum_dimensions, int cnum_outputs, MultiIndexSet &&cpoints, MultiIndexSet &&cneeded, StorageSet &&cvalues)
+        : num_dimensions(cnum_dimensions), num_outputs(cnum_outputs),
+          points(std::forward<MultiIndexSet>(cpoints)), needed(std::forward<MultiIndexSet>(cneeded)),
+          values(std::forward<StorageSet>(cvalues)){}
     virtual ~BaseCanonicalGrid(){}
 
     virtual bool isGlobal() const{ return false; }
