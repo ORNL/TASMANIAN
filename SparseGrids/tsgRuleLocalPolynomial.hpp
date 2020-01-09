@@ -366,6 +366,27 @@ protected:
         return value;
     }
 };
+
+inline std::unique_ptr<BaseRuleLocalPolynomial> makeRuleLocalPolynomial(TypeOneDRule rule, int order){
+    if (order == 0){
+        return std::make_unique<templRuleLocalPolynomial<rule_localp, true>>();
+    }else{
+        std::unique_ptr<BaseRuleLocalPolynomial> rule_pntr = [=]()->std::unique_ptr<BaseRuleLocalPolynomial>{
+            if (rule == rule_localp){
+                return std::make_unique<templRuleLocalPolynomial<rule_localp, false>>();
+            }else if (rule == rule_semilocalp){
+                return std::make_unique<templRuleLocalPolynomial<rule_semilocalp, false>>();
+            }else if (rule == rule_localp0){
+                return std::make_unique<templRuleLocalPolynomial<rule_localp0, false>>();
+            }else{ // must be (rule == rule_localpb)
+                return std::make_unique<templRuleLocalPolynomial<rule_localpb, false>>();
+            }
+        }();
+        rule_pntr->setMaxOrder(order);
+        return rule_pntr;
+    }
+}
+
 #endif // __TASMANIAN_DOXYGEN_SKIP
 
 

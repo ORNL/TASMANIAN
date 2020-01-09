@@ -36,16 +36,6 @@
 
 namespace TasGrid{
 
-void GridWavelet::reset(){
-    clearAccelerationData();
-    points = MultiIndexSet();
-    needed = MultiIndexSet();
-    values = StorageSet();
-    inter_matrix = TasSparse::SparseMatrix();
-    coefficients.clear();
-    dynamic_values.reset();
-}
-
 template<bool iomode> void GridWavelet::write(std::ostream &os) const{
     if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
     IO::writeNumbers<iomode, IO::pad_line>(os, num_dimensions, num_outputs, order);
@@ -66,7 +56,6 @@ template<bool iomode> void GridWavelet::write(std::ostream &os) const{
     if (num_outputs > 0) values.write<iomode>(os);
 }
 template<bool iomode> void GridWavelet::read(std::istream &is){
-    reset();
     num_dimensions = IO::readNumber<iomode, int>(is);
     num_outputs = IO::readNumber<iomode, int>(is);
     order = IO::readNumber<iomode, int>(is);
@@ -92,21 +81,19 @@ template void GridWavelet::write<mode_binary>(std::ostream &) const;
 template void GridWavelet::read<mode_ascii>(std::istream &);
 template void GridWavelet::read<mode_binary>(std::istream &);
 
-GridWavelet::GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits) : GridWavelet(){
-    reset();
-    num_dimensions = cnum_dimensions;
-    num_outputs = cnum_outputs;
-    order = corder;
-
-    rule1D.updateOrder(order);
-
-    MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [](int i) -> int{ return i; }, std::vector<int>(), level_limits);
-
-    if (order == 1){
-        needed = MultiIndexManipulations::generateNestedPoints(tensors, [](int l)->int{ return (1 << (l + 1)) + 1; });
-    }else{
-        needed = MultiIndexManipulations::generateNestedPoints(tensors, [](int l)->int{ return (1 << (l + 2)) + 1; });
-    }
+GridWavelet::GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits) :
+    BaseCanonicalGrid(cnum_dimensions, cnum_outputs, MultiIndexSet(),
+                      (corder == 1) ? MultiIndexManipulations::generateNestedPoints(
+                          MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type_level,
+                                                                 [](int i) -> int{ return i; }, std::vector<int>(), level_limits),
+                          [](int l)->int{ return (1 << (l + 1)) + 1; })
+                      : MultiIndexManipulations::generateNestedPoints(
+                          MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type_level,
+                                                                 [](int i) -> int{ return i; }, std::vector<int>(), level_limits),
+                          [](int l)->int{ return (1 << (l + 2)) + 1; }),
+                      StorageSet()),
+    rule1D(corder, 10),
+    order(corder){
 
     if (num_outputs == 0){
         points = std::move(needed);
@@ -117,19 +104,12 @@ GridWavelet::GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int c
 
     buildInterpolationMatrix();
 }
-GridWavelet::GridWavelet(const GridWavelet *wav, int ibegin, int iend) : GridWavelet(){
-    num_dimensions = wav->num_dimensions;
-    num_outputs    = iend - ibegin;
-    points = wav->points;
-    needed = wav->needed;
-
-    rule1D = wav->rule1D;
-    order  = wav->order;
-
-    coefficients = (num_outputs == wav->num_outputs) ? wav->coefficients : wav->coefficients.splitData(ibegin, iend);
-    values       = (num_outputs == wav->num_outputs) ? wav->values : wav->values.splitValues(ibegin, iend);
-
-    inter_matrix = wav->inter_matrix;
+GridWavelet::GridWavelet(GridWavelet const *wav, int ibegin, int iend) :
+    BaseCanonicalGrid(*wav, ibegin, iend),
+    rule1D(wav->rule1D),
+    order(wav->order),
+    coefficients((num_outputs == wav->num_outputs) ? wav->coefficients : wav->coefficients.splitData(ibegin, iend)),
+    inter_matrix(wav->inter_matrix){
 
     if (wav->dynamic_values){
         dynamic_values = std::make_unique<SimpleConstructData>(*wav->dynamic_values);
@@ -137,22 +117,19 @@ GridWavelet::GridWavelet(const GridWavelet *wav, int ibegin, int iend) : GridWav
     }
 }
 
-void GridWavelet::setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder){
-    reset();
-    num_dimensions = (int) nodes.getNumDimensions();
-    num_outputs = cnum_outputs;
-    order = corder;
-
-    rule1D.updateOrder(order);
-
-    if (num_outputs == 0){
-        points = std::move(nodes);
-    }else{
-        needed = std::move(nodes);
-        values.resize(num_outputs, needed.getNumIndexes());
-    }
+GridWavelet::GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals) :
+    BaseCanonicalGrid(pset.getNumDimensions(), cnum_outputs, std::forward<MultiIndexSet>(pset),
+                      MultiIndexSet(), StorageSet()),
+    rule1D(corder, 10),
+    order(corder)
+{
 
     buildInterpolationMatrix();
+
+    if (num_outputs > 0){
+        values = StorageSet(num_outputs, points.getNumIndexes(), std::move(vals.getVector()));
+        recomputeCoefficients();
+    }
 }
 
 void GridWavelet::getLoadedPoints(double *x) const{
@@ -552,11 +529,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 std::copy(p, p + num_dimensions, indexes.getStrip(i));
             }
 
-            MultiIndexSet pointset(num_dimensions, std::move(indexes.getVector()));
-
-            GridWavelet direction_grid;
-            direction_grid.setNodes(pointset, active_outputs, order);
-            direction_grid.loadNeededPoints(vals.getStrip(0));
+            GridWavelet direction_grid({(size_t) num_dimensions, std::move(indexes.getVector())}, active_outputs, order, std::move(vals));
 
             for(int i=0; i<nump; i++){
                 bool small = true;

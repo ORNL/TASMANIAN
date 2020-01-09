@@ -126,8 +126,6 @@ public:
     std::vector<int> getPolynomialSpace(bool interpolation) const;
 
 protected:
-    void reset(bool includeCustom);
-
     std::vector<double> computeSurpluses(int output, bool normalize) const; // only for sequence rules, select the output to compute the surpluses
 
     static double legendre(int n, double x);

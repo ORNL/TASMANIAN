@@ -264,10 +264,6 @@ void StorageSet::setValues(const double vals[]){
     values.resize(num_outputs * num_values);
     std::copy_n(vals, num_values * num_outputs, values.data());
 }
-void StorageSet::setValues(std::vector<double> &&vals){
-    num_values = vals.size() / num_outputs;
-    values = std::vector<double>(vals); // move assignment
-}
 
 void StorageSet::addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]){
     int num_old = old_set.getNumIndexes();

@@ -112,7 +112,8 @@ public:
     //! \brief Create data-structure with given \b stride and number of \b strips and initializes with \b val.
     Data2D(int new_stride, int new_num_strips, T val) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips, val){}
     //! \brief Create data-structure with given \b stride and number of \b strips and moves \b data into the internal vector.
-    Data2D(int new_stride, int new_num_strips, std::vector<T> &&data) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(data){}
+    Data2D(int new_stride, int new_num_strips, std::vector<T> &&data) : stride((size_t) new_stride), num_strips((size_t) new_num_strips),
+        vec(std::forward<std::vector<T>>(data)){}
     //! \brief Default destructor.
     ~Data2D(){}
 
@@ -219,7 +220,8 @@ public:
     MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
     //! \brief Constructor, makes a set by \b moving out of the vector, the vector must be already sorted.
     MultiIndexSet(size_t cnum_dimensions, std::vector<int> &&new_indexes) :
-        num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)), indexes(new_indexes){}
+        num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)),
+        indexes(std::forward<std::vector<int>>(new_indexes)){}
     //! \brief Copy a collection of unsorted indexes into a sorted multi-index set, sorts during the copy.
     MultiIndexSet(Data2D<int> &data) : num_dimensions((size_t) data.getStride()), cache_num_indexes(0){ setData2D(data); }
     //! \brief Default destructor.
@@ -308,6 +310,9 @@ class StorageSet{
 public:
     //! \brief Default constructor, makes an empty set.
     StorageSet();
+    //! \brief Move constructor from a known vector.
+    StorageSet(int cnum_outputs, int cnum_values, std::vector<double> &&vals) :
+        num_outputs(cnum_outputs), num_values(cnum_values), values(std::forward<std::vector<double>>(vals)){}
     //! \brief Default destructor.
     ~StorageSet();
 
@@ -337,7 +342,10 @@ public:
     //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
     void setValues(const double vals[]);
     //! \brief Replace the existing values with \b vals using move semantics, the size of \b vals must be \b num_outputs times \b num_values
-    void setValues(std::vector<double> &&vals);
+    void setValues(std::vector<double> &&vals){
+        num_values = vals.size() / num_outputs;
+        values = std::move(vals); // move assignment
+    }
 
     //! \brief Return a StorageSet with values between \b ibegin and \b iend.
     StorageSet splitValues(int ibegin, int iend) const{

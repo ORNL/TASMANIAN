@@ -67,7 +67,6 @@ template<bool iomode> void GridGlobal::write(std::ostream &os) const{
 }
 
 template<bool iomode> void GridGlobal::read(std::istream &is){
-    reset(true); // true deletes any custom rule
     num_dimensions = IO::readNumber<iomode, int>(is);
     num_outputs = IO::readNumber<iomode, int>(is);
     alpha = IO::readNumber<iomode, double>(is);
@@ -100,7 +99,7 @@ template<bool iomode> void GridGlobal::read(std::istream &is){
         oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
     }
 
-    wrapper.load(custom, oned_max_level, rule, alpha, beta);
+    wrapper = OneDimensionalWrapper(custom, oned_max_level, rule, alpha, beta);
 
     recomputeTensorRefs((points.empty()) ? needed : points);
 }
@@ -109,23 +108,6 @@ template void GridGlobal::write<mode_ascii>(std::ostream &) const;
 template void GridGlobal::write<mode_binary>(std::ostream &) const;
 template void GridGlobal::read<mode_ascii>(std::istream &);
 template void GridGlobal::read<mode_binary>(std::istream &);
-
-void GridGlobal::reset(bool includeCustom){
-    clearAccelerationData();
-    tensor_refs = std::vector<std::vector<int>>();
-    wrapper = OneDimensionalWrapper();
-    tensors = MultiIndexSet();
-    active_tensors = MultiIndexSet();
-    active_w = std::vector<int>();
-    points = MultiIndexSet();
-    needed = MultiIndexSet();
-    values = StorageSet();
-    updated_tensors = MultiIndexSet();
-    updated_active_tensors = MultiIndexSet();
-    updated_active_w = std::vector<int>();
-    if (includeCustom) custom = CustomTabulated();
-    num_dimensions = num_outputs = 0;
-}
 
 void GridGlobal::clearRefinement(){
     needed = MultiIndexSet();
@@ -181,32 +163,21 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits),
                cnum_outputs, crule, calpha, cbeta);
 }
-GridGlobal::GridGlobal(const GridGlobal *global, int ibegin, int iend){
-    custom = CustomTabulated();
-    if (global->rule == rule_customtabulated) custom = global->custom;
-
-    num_dimensions = global->num_dimensions;
-    num_outputs    = iend - ibegin;
-    points = global->points;
-    needed = global->needed;
-
-    rule  = global->rule;
-    alpha = global->alpha;
-    beta  = global->beta;
-    wrapper = global->wrapper;
-
-    tensors        = global->tensors;
-    active_tensors = global->active_tensors;
-    active_w       = global->active_w;
-
-    tensor_refs = global->tensor_refs;
-    max_levels  = global->max_levels;
-
-    values = (num_outputs == global->num_outputs) ? global->values : global->values.splitValues(ibegin, iend);
-
-    updated_tensors        = global->updated_tensors;
-    updated_active_tensors = global->updated_active_tensors;
-    updated_active_w       = global->updated_active_w;
+GridGlobal::GridGlobal(GridGlobal const *global, int ibegin, int iend) :
+    BaseCanonicalGrid(*global, ibegin, iend),
+    rule(global->rule),
+    alpha(global->alpha),
+    beta(global->beta),
+    wrapper(global->wrapper),
+    tensors(global->tensors),
+    active_tensors(global->active_tensors),
+    active_w(global->active_w),
+    tensor_refs(global->tensor_refs),
+    max_levels(global->max_levels),
+    updated_tensors(global->updated_tensors),
+    updated_active_tensors(global->updated_active_tensors),
+    updated_active_w(global->updated_active_w),
+    custom((global->rule == rule_customtabulated) ? global->custom : CustomTabulated()){
 
     if (global->dynamic_values){
         dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(*global->dynamic_values);
@@ -215,7 +186,14 @@ GridGlobal::GridGlobal(const GridGlobal *global, int ibegin, int iend){
 }
 
 void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){
-    reset(false);
+    clearAccelerationData();
+    tensor_refs = std::vector<std::vector<int>>();
+    points = MultiIndexSet();
+    values = StorageSet();
+    updated_tensors = MultiIndexSet();
+    updated_active_tensors = MultiIndexSet();
+    updated_active_w = std::vector<int>();
+
     tensors = std::move(tset);
 
     num_dimensions = (int) tensors.getNumDimensions();
@@ -225,7 +203,7 @@ void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule
 
     max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
-    wrapper.load(custom, *std::max_element(max_levels.begin(), max_levels.end()), rule, alpha, beta);
+    wrapper = OneDimensionalWrapper(custom, *std::max_element(max_levels.begin(), max_levels.end()), rule, alpha, beta);
 
     std::vector<int> tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
     active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
@@ -250,8 +228,7 @@ void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule
 }
 
 void GridGlobal::proposeUpdatedTensors(){
-    int max_level = updated_tensors.getMaxIndex();
-    wrapper.load(custom, max_level, rule, alpha, beta);
+    wrapper = OneDimensionalWrapper(custom, updated_tensors.getMaxIndex(), rule, alpha, beta);
 
     std::vector<int> updates_tensor_w = MultiIndexManipulations::computeTensorWeights(updated_tensors);
     updated_active_tensors = MultiIndexManipulations::createActiveTensors(updated_tensors, updates_tensor_w);
@@ -424,7 +401,7 @@ void GridGlobal::readConstructionData(std::istream &is, bool iomode){
         dynamic_values->read<mode_binary>(is);
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
-        wrapper.load(custom, max_level, rule, alpha, beta);
+        wrapper = OneDimensionalWrapper(custom, max_level, rule, alpha, beta);
     dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
 std::vector<double> GridGlobal::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
@@ -510,7 +487,7 @@ std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<dou
         auto max_indexes = MultiIndexManipulations::getMaxIndexes(new_tensors);
         int max_level = *std::max_element(max_indexes.begin(), max_indexes.end());
         if (max_level+1 > wrapper.getNumLevels())
-            wrapper.load(custom, max_level, rule, alpha, beta);
+            wrapper = OneDimensionalWrapper(custom, max_level, rule, alpha, beta);
     }
 
     std::vector<double> tweights(new_tensors.getNumIndexes());
@@ -534,7 +511,7 @@ std::vector<int> GridGlobal::getMultiIndex(const double x[]){
         while(std::abs(wrapper.getNode(i) - x[j]) > Maths::num_tol){
             i++; // convert canonical node to index
             if (i == wrapper.getNumNodes())
-                wrapper.load(custom, wrapper.getNumLevels(), wrapper.getType(), alpha, beta);
+                wrapper = OneDimensionalWrapper(custom, wrapper.getNumLevels(), wrapper.getType(), alpha, beta);
         }
         p[j] = i;
     }
@@ -766,9 +743,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
             if (std::abs(surp[i]) > max_surp) max_surp = std::abs(surp[i]);
         }
 
-        GridSequence seq; // there is an extra copy here, but the sequence grid does the surplus computation automatically
-        MultiIndexSet spoints = points;
-        seq.setPoints(spoints, 1, rule);
+        GridSequence seq(MultiIndexSet(points), 1, rule); // there is an extra copy here, but the sequence grid does the surplus computation automatically
 
         seq.loadNeededPoints(surp.data());
 

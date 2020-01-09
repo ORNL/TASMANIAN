@@ -174,7 +174,8 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = std::make_unique<GridSequence>(dimensions, outputs, depth, type, rule, anisotropic_weights, llimits);
+    base = (outputs == 0) ? std::make_unique<GridSequence>(dimensions, depth, type, rule, anisotropic_weights, llimits) :
+                            std::make_unique<GridSequence>(dimensions, outputs, depth, type, rule, anisotropic_weights, llimits);
 }
 
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){

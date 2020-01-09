@@ -59,12 +59,11 @@ public:
     //! custom tabulated, then \b custom is not used (could be empty).
     //! Similarly, \b alpha and \b beta are used only by rules that use the corresponding
     //! transformation parameters.
-    void load(const CustomTabulated &custom, int max_level, TypeOneDRule crule, double alpha, double beta);
+    OneDimensionalWrapper(const CustomTabulated &custom, int max_level, TypeOneDRule crule, double alpha, double beta);
 
     //! \brief Overload that skips the custom rule altogether, more convenient in Fourier grids.
-    void load(int max_level, TypeOneDRule crule, double alpha, double beta){
-        load(CustomTabulated(), max_level, crule, alpha, beta);
-    }
+    OneDimensionalWrapper(int max_level, TypeOneDRule crule, double alpha, double beta) :
+        OneDimensionalWrapper(CustomTabulated(), max_level, crule, alpha, beta){}
 
     //! \brief Get the number of points for the \b level, can only querry loaded levels.
     int getNumPoints(int level) const;

@@ -122,7 +122,6 @@ public:
     const double* getFourierCoefs() const;
 
 protected:
-    void reset();
     void calculateFourierCoefficients();
 
     MultiIndexSet selectTensors(size_t dims, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights,

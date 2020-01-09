@@ -45,6 +45,7 @@ public:
     }
     GridWavelet(const GridWavelet *wav, int ibegin, int iend);
     GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
+    GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals);
     ~GridWavelet(){}
 
     bool isWavelet() const override{ return true; }
@@ -54,8 +55,6 @@ public:
 
     template<bool iomode> void write(std::ostream &os) const;
     template<bool iomode> void read(std::istream &is);
-
-    void setNodes(MultiIndexSet &nodes, int cnum_outputs, int corder); // for FDS purposes
 
     TypeOneDRule getRule() const override{ return rule_wavelet; }
     int getOrder() const{ return order; }
@@ -112,8 +111,6 @@ public:
     void clearAccelerationData() override;
 
 protected:
-    void reset();
-
     double evalBasis(const int p[], const double x[]) const;
     void buildInterpolationMatrix();
     void recomputeCoefficients();

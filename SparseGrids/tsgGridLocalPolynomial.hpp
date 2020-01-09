@@ -133,18 +133,11 @@ public:
     int getSpareBasisMatrixNZ(const double x[], int num_x) const;
 
 protected:
-    void reset(bool clear_rule = true);
-
     //! \brief Create a new grid with given parameters and moving the data out of the vectors and sets.
     GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule, std::vector<int> &&pnts, std::vector<double> &&vals, std::vector<double> &&surps);
 
     //! \brief Used as part of the loadNeededPoints() algorithm, updates the values and cuda cache, but does not touch the surpluses.
     void updateValues(double const *vals);
-
-    //! \internal
-    //! \brief makes the unique pointer associated with this rule, assuming that **order** is already set
-    //! \ingroup TasmanianLocalPolynomialGrids
-    void makeRule(TypeOneDRule trule);
 
     //! \brief Tuning decision whether to use sparse or dense.
     bool useDense() const{ return (sparse_affinity == -1); }
