@@ -117,19 +117,12 @@ GridWavelet::GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int c
 
     buildInterpolationMatrix();
 }
-GridWavelet::GridWavelet(const GridWavelet *wav, int ibegin, int iend) : GridWavelet(){
-    num_dimensions = wav->num_dimensions;
-    num_outputs    = iend - ibegin;
-    points = wav->points;
-    needed = wav->needed;
-
-    rule1D = wav->rule1D;
-    order  = wav->order;
-
-    coefficients = (num_outputs == wav->num_outputs) ? wav->coefficients : wav->coefficients.splitData(ibegin, iend);
-    values       = (num_outputs == wav->num_outputs) ? wav->values : wav->values.splitValues(ibegin, iend);
-
-    inter_matrix = wav->inter_matrix;
+GridWavelet::GridWavelet(GridWavelet const *wav, int ibegin, int iend) :
+    BaseCanonicalGrid(*wav, ibegin, iend),
+    rule1D(wav->rule1D),
+    order(wav->order),
+    coefficients((num_outputs == wav->num_outputs) ? wav->coefficients : wav->coefficients.splitData(ibegin, iend)),
+    inter_matrix(wav->inter_matrix){
 
     if (wav->dynamic_values){
         dynamic_values = std::make_unique<SimpleConstructData>(*wav->dynamic_values);

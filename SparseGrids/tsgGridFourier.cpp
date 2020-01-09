@@ -128,27 +128,18 @@ void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Typ
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, level_limits), cnum_outputs);
 }
 
-GridFourier::GridFourier(const GridFourier *fourier, int ibegin, int iend){
-    num_dimensions = fourier->num_dimensions;
-    num_outputs    = iend - ibegin;
-    points = fourier->points;
-    needed = fourier->needed;
-
-    wrapper = fourier->wrapper;
-
-    tensors        = fourier->tensors;
-    active_tensors = fourier->active_tensors;
-    active_w       = fourier->active_w;
-
-    updated_tensors        = fourier->updated_tensors;
-    updated_active_tensors = fourier->updated_active_tensors;
-    updated_active_w       = fourier->updated_active_w;
-
-    max_levels    = fourier->max_levels;
-    fourier_coefs = (num_outputs == fourier->num_outputs) ? fourier->fourier_coefs : fourier->fourier_coefs.splitData(ibegin, iend);
-    values        = (num_outputs == fourier->num_outputs) ? fourier->values : fourier->values.splitValues(ibegin, iend);
-
-    max_power = fourier->max_power;
+GridFourier::GridFourier(GridFourier const *fourier, int ibegin, int iend) :
+    BaseCanonicalGrid(*fourier, ibegin, iend),
+    wrapper(fourier->wrapper),
+    tensors       (fourier->tensors),
+    active_tensors(fourier->active_tensors),
+    active_w      (fourier->active_w),
+    updated_tensors       (fourier->updated_tensors),
+    updated_active_tensors(fourier->updated_active_tensors),
+    updated_active_w      (fourier->updated_active_w),
+    max_levels(fourier->max_levels),
+    fourier_coefs((num_outputs == fourier->num_outputs) ? fourier->fourier_coefs : fourier->fourier_coefs.splitData(ibegin, iend)),
+    max_power(fourier->max_power){
 
     if (fourier->dynamic_values){
         dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(*fourier->dynamic_values);

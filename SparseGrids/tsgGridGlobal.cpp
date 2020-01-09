@@ -181,9 +181,8 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits),
                cnum_outputs, crule, calpha, cbeta);
 }
-GridGlobal::GridGlobal(const GridGlobal *global, int ibegin, int iend)
-    : BaseCanonicalGrid(global->num_dimensions, iend-ibegin, MultiIndexSet(global->points), MultiIndexSet(global->needed),
-                        (iend - ibegin == global->num_outputs) ? StorageSet(global->values) : global->values.splitValues(ibegin, iend)),
+GridGlobal::GridGlobal(GridGlobal const *global, int ibegin, int iend) :
+    BaseCanonicalGrid(*global, ibegin, iend),
     rule(global->rule),
     alpha(global->alpha),
     beta(global->beta),

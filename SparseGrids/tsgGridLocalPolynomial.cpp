@@ -144,9 +144,8 @@ GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, 
     }
 }
 
-GridLocalPolynomial::GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend)
-    : BaseCanonicalGrid(pwpoly->num_dimensions, iend-ibegin, MultiIndexSet(pwpoly->points), MultiIndexSet(pwpoly->needed),
-                        (iend - ibegin == pwpoly->num_outputs) ? StorageSet(pwpoly->values) : pwpoly->values.splitValues(ibegin, iend)),
+GridLocalPolynomial::GridLocalPolynomial(GridLocalPolynomial const *pwpoly, int ibegin, int iend) :
+    BaseCanonicalGrid(*pwpoly, ibegin, iend),
     order(pwpoly->order),
     top_level(pwpoly->top_level),
     surpluses((num_outputs == pwpoly->num_outputs) ? pwpoly->surpluses : pwpoly->surpluses.splitData(ibegin, iend)),

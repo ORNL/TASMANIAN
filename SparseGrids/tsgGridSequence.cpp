@@ -112,21 +112,13 @@ GridSequence::GridSequence(MultiIndexSet &&pset, int cnum_outputs, TypeOneDRule 
     prepareSequence(0);
 }
 
-GridSequence::GridSequence(const GridSequence *seq, int ibegin, int iend){
-    num_dimensions = seq->num_dimensions;
-    num_outputs    = iend - ibegin;
-    points = seq->points;
-    needed = seq->needed;
-
-    rule = seq->rule;
-
-    surpluses = (num_outputs == seq->num_outputs) ? seq->surpluses : seq->surpluses.splitData(ibegin, iend);
-    nodes = seq->nodes;
-    coeff = seq->coeff;
-
-    values = (num_outputs == seq->num_outputs) ? seq->values : seq->values.splitValues(ibegin, iend);
-
-    max_levels = seq->max_levels;
+GridSequence::GridSequence(GridSequence const *seq, int ibegin, int iend) :
+    BaseCanonicalGrid(*seq, ibegin, iend),
+    rule(seq->rule),
+    surpluses((num_outputs == seq->num_outputs) ? seq->surpluses : seq->surpluses.splitData(ibegin, iend)),
+    nodes(seq->nodes),
+    coeff(seq->coeff),
+    max_levels(seq->max_levels){
 
     if (seq->dynamic_values){
         dynamic_values = std::make_unique<SimpleConstructData>(*seq->dynamic_values);
