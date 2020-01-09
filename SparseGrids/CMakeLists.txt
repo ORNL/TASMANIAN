@@ -116,7 +116,6 @@ set(Tasmanian_source_libsparsegrid
         tsgLinearSolvers.hpp
         tsgLinearSolvers.cpp
         tsgOneDimensionalWrapper.hpp
-        tsgOneDimensionalWrapper.cpp
         tsgRuleLocalPolynomial.hpp
         tsgRuleWavelet.hpp
         tsgRuleWavelet.cpp

@@ -71,7 +71,7 @@ public:
     //! \brief Return the number of hard-coded levels.
     static int getNumLevels(){ return 9; }
     //! \brief Returns the nodes for the \b level, note that the nodes are nested.
-    void getNodes(int level, std::vector<double> &x) const;
+    std::vector<double> getNodes(int level) const;
     //! \brief Return the quadrature weight for \b level and given \b point.
     double getWeight(int level, int point) const;
 

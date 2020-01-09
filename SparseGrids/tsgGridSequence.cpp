@@ -826,9 +826,9 @@ void GridSequence::prepareSequence(int num_external){
         }else if (rule == rule_mindelta){
             nodes = Optimizer::getGreedyNodes<rule_mindelta>(max_level);
         }else if (rule == rule_rleja){
-            OneDimensionalNodes::getRLeja(max_level, nodes);
+            nodes = OneDimensionalNodes::getRLeja(max_level);
         }else if (rule == rule_rlejashifted){
-            OneDimensionalNodes::getRLejaShifted(max_level, nodes);
+            nodes = OneDimensionalNodes::getRLejaShifted(max_level);
         }
     }
     coeff.resize((size_t) max_level);

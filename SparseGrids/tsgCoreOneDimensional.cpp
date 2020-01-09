@@ -539,10 +539,9 @@ void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::v
 }
 
 // Clenshaw-Curtis
-void OneDimensionalNodes::getClenshawCurtisNodes(int level, std::vector<double> &nodes){
+std::vector<double> OneDimensionalNodes::getClenshawCurtisNodes(int level){
     int n = OneDimensionalMeta::getNumPoints(level, rule_clenshawcurtis);
-    nodes.resize(n);
-    nodes[0] = 0.0;
+    std::vector<double> nodes(n, 0.0);
     if (level > 0){
         nodes[1] = -1.0; nodes[2] = 1.0;
         int count = 3;
@@ -553,6 +552,7 @@ void OneDimensionalNodes::getClenshawCurtisNodes(int level, std::vector<double> 
             }
         }
     }
+    return nodes;
 }
 double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     int ieffective, n = OneDimensionalMeta::getNumPoints(level, rule_clenshawcurtis);
@@ -582,10 +582,9 @@ double OneDimensionalNodes::getClenshawCurtisWeight(int level, int point){
     return weight;
 }
 // Clenshaw-Curtis-Zero
-void OneDimensionalNodes::getClenshawCurtisNodesZero(int level, std::vector<double> &nodes){
+std::vector<double> OneDimensionalNodes::getClenshawCurtisNodesZero(int level){
     int n = OneDimensionalMeta::getNumPoints(level+1, rule_clenshawcurtis);
-    nodes.resize(n-2);
-    nodes[0] = 0.0;
+    std::vector<double> nodes(n-2, 0.0);
     if (level > 0){
         int count = 1;
         for(int l=2; l<=level+1; l++){
@@ -595,6 +594,7 @@ void OneDimensionalNodes::getClenshawCurtisNodesZero(int level, std::vector<doub
             }
         }
     }
+    return nodes;
 }
 double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     // this should be equivalent to  return getClenshawCurtisWeight(level + 1, ((point == 0) ? 0 : point +2));
@@ -620,10 +620,9 @@ double OneDimensionalNodes::getClenshawCurtisWeightZero(int level, int point){
     return weight;
 }
 // Fejer-2
-void OneDimensionalNodes::getFejer2Nodes(int level, std::vector<double> &nodes){
+std::vector<double> OneDimensionalNodes::getFejer2Nodes(int level){
     int n = OneDimensionalMeta::getNumPoints(level, rule_fejer2);
-    nodes.resize(n);
-    nodes[0] = 0.0;
+    std::vector<double> nodes(n, 0.0);
     if (level > 0){
         int count = 1;
         for(int l=2; l<=level+1; l++){
@@ -633,6 +632,7 @@ void OneDimensionalNodes::getFejer2Nodes(int level, std::vector<double> &nodes){
             }
         }
     }
+    return nodes;
 }
 double OneDimensionalNodes::getFejer2Weight(int level, int point){
     if (level == 0){ return 2.0; }
@@ -657,9 +657,8 @@ double OneDimensionalNodes::getFejer2Weight(int level, int point){
     return weight;
 }
 
-void OneDimensionalNodes::getRLeja(int n, std::vector<double> &nodes){
-    nodes.resize(n);
-    nodes[0] = 0.0;
+std::vector<double> OneDimensionalNodes::getRLeja(int n){
+    std::vector<double> nodes(n, 0.0);
     if (n > 1){ nodes[1] = Maths::pi; }
     if (n > 2){ nodes[2] = 0.5 * Maths::pi; }
     for(int i=3; i<n; i++){
@@ -671,16 +670,17 @@ void OneDimensionalNodes::getRLeja(int n, std::vector<double> &nodes){
     }
     for(int i=0; i<n; i++){  nodes[i] = std::cos(nodes[i]);  }
     if (n > 2){ nodes[2] = 0.0; } // not sure which version is better, starting at 0 or starting at 1
+    return nodes;
 }
-void OneDimensionalNodes::getRLejaCentered(int n, std::vector<double> &nodes){
-    getRLeja(n, nodes);
+std::vector<double> OneDimensionalNodes::getRLejaCentered(int n){
+    std::vector<double> nodes = getRLeja(n);
     nodes[0] = 0.0;
     if (n > 1){ nodes[1] = 1.0; }
     if (n > 2){ nodes[2] = -1.0; }
+    return nodes;
 }
-void OneDimensionalNodes::getRLejaShifted(int n, std::vector<double> &nodes){
-    nodes.resize(n);
-    nodes[0] = -0.5;
+std::vector<double> OneDimensionalNodes::getRLejaShifted(int n){
+    std::vector<double> nodes(n, -0.5);
     if (n > 1){ nodes[1] = 0.5; }
     for(int i=2; i<n; i++){
         if (i % 2 == 0){
@@ -689,6 +689,7 @@ void OneDimensionalNodes::getRLejaShifted(int n, std::vector<double> &nodes){
             nodes[i] = -nodes[i-1];
         }
     }
+    return nodes;
 }
 
 std::vector<double> OneDimensionalNodes::getFourierNodes(int level) {
