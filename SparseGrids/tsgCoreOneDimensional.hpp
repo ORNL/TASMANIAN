@@ -203,26 +203,26 @@ namespace OneDimensionalNodes{
 
     // nested rules
     //! \brief Generate Clenshaw-Curtis \b nodes for the \b level.
-    void getClenshawCurtisNodes(int level, std::vector<double> &nodes);
+    std::vector<double> getClenshawCurtisNodes(int level);
     //! \brief Return the Clenshaw-Curtis weight for the \b level and node indexed by \b point.
     double getClenshawCurtisWeight(int level, int point);
 
     //! \brief Generate Clenshaw-Curtis zero-boundary condition \b nodes for the \b level.
-    void getClenshawCurtisNodesZero(int level, std::vector<double> &nodes); // assuming zero boundary
+    std::vector<double> getClenshawCurtisNodesZero(int level); // assuming zero boundary
     //! \brief Return the Clenshaw-Curtis zero-boundary condition weight for the \b level and node indexed by \b point.
     double getClenshawCurtisWeightZero(int level, int point); // assuming zero boundary
 
     //! \brief Generate Fejer type 2 \b nodes for the \b level.
-    void getFejer2Nodes(int level, std::vector<double> &nodes);
+    std::vector<double> getFejer2Nodes(int level);
     //! \brief Return the Fejer type 2 weight for the \b level and node indexed by \b point.
     double getFejer2Weight(int level, int point);
 
     //! \brief Generate the first \b n R-Leja \b nodes, starting with 1, -1, 0, ...
-    void getRLeja(int n, std::vector<double> &nodes);
+    std::vector<double> getRLeja(int n);
     //! \brief Generate the first \b n R-Leja \b nodes, starting with 0, 1, -1, ...
-    void getRLejaCentered(int n, std::vector<double> &nodes);
+    std::vector<double> getRLejaCentered(int n);
     //! \brief Generate the first \b n R-Leja \b nodes, starting with -0.5, 0.5, ...
-    void getRLejaShifted(int n, std::vector<double> &nodes);
+    std::vector<double> getRLejaShifted(int n);
 
     //! \brief Generate the Fourier \b nodes for the given \b level, uniformly distributed points with right-most point omitted due to periodicity.
     std::vector<double> getFourierNodes(int level);

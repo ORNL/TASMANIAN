@@ -16,7 +16,7 @@ LHEADERS = tsgIndexSets.hpp tsgCoreOneDimensional.hpp tsgIndexManipulator.hpp ts
            tasgridTestFunctions.hpp tasgridExternalTests.hpp tasgridWrapper.hpp tasgridUnitTests.hpp \
            TasmanianSparseGrid.hpp
 
-LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlobal.o tsgSequenceOptimizer.o tsgOneDimensionalWrapper.o \
+LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlobal.o tsgSequenceOptimizer.o \
          tsgLinearSolvers.o tsgGridSequence.o tsgHardCodedTabulatedRules.o tsgHierarchyManipulator.o\
          tsgGridLocalPolynomial.o tsgRuleWavelet.o tsgGridWavelet.o tsgGridFourier.o \
          tsgDConstructGridGlobal.o \

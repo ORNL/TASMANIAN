@@ -46,10 +46,10 @@ TableGaussPatterson::TableGaussPatterson(){
     loadWeights();
 }
 
-void TableGaussPatterson::getNodes(int level, std::vector<double> &x) const{
+std::vector<double> TableGaussPatterson::getNodes(int level) const{
     int num_points = OneDimensionalMeta::getNumPoints(level, rule_gausspatterson);
-    x.resize(num_points);
-    std::copy(nodes.begin(), nodes.begin() + num_points, x.data());
+    std::vector<double> x(nodes.begin(), nodes.begin() + num_points);
+    return x;
 }
 
 double TableGaussPatterson::getWeight(int level, int point) const{
