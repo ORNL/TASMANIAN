@@ -133,8 +133,6 @@ public:
     int getSpareBasisMatrixNZ(const double x[], int num_x) const;
 
 protected:
-    void reset(bool clear_rule = true);
-
     //! \brief Create a new grid with given parameters and moving the data out of the vectors and sets.
     GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule, std::vector<int> &&pnts, std::vector<double> &&vals, std::vector<double> &&surps);
 

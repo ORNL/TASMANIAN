@@ -36,18 +36,6 @@
 
 namespace TasGrid{
 
-void GridLocalPolynomial::reset(bool clear_rule){
-    clearAccelerationData();
-    num_dimensions = num_outputs = top_level = 0;
-    points = MultiIndexSet();
-    needed = MultiIndexSet();
-    values = StorageSet();
-    if (clear_rule){ rule = std::unique_ptr<BaseRuleLocalPolynomial>(); order = 1; }
-    parents = Data2D<int>();
-    sparse_affinity = 0;
-    surpluses.clear();
-}
-
 template<bool iomode> void GridLocalPolynomial::write(std::ostream &os) const{
     if (iomode == mode_ascii){ os << std::scientific; os.precision(17); }
     IO::writeNumbers<iomode, IO::pad_line>(os, num_dimensions, num_outputs, order, top_level);
@@ -79,7 +67,6 @@ template<bool iomode> void GridLocalPolynomial::write(std::ostream &os) const{
 }
 
 template<bool iomode> void GridLocalPolynomial::read(std::istream &is){
-    reset();
     num_dimensions = IO::readNumber<iomode, int>(is);
     num_outputs = IO::readNumber<iomode, int>(is);
     order = IO::readNumber<iomode, int>(is);
@@ -1451,12 +1438,16 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
         }
     }
 
-    int dims = num_dimensions, outs = num_outputs;
+    // reset the grid
+    needed = MultiIndexSet();
 
-    reset(false);
-    num_dimensions = dims;
-    num_outputs = outs;
-    if (num_kept == 0) return 0; // trivial case, remove all
+    if (num_kept == 0){ // trivial case, remove all
+        points = MultiIndexSet();
+        values = StorageSet();
+        parents = Data2D<int>();
+        surpluses.clear();
+        return 0;
+    }
 
     points = MultiIndexSet(point_kept);
 

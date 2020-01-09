@@ -66,7 +66,6 @@ template<bool iomode> void GridFourier::write(std::ostream &os) const{
     }
 }
 template<bool iomode> void GridFourier::read(std::istream &is){
-    reset();
     num_dimensions = IO::readNumber<iomode, int>(is);
     num_outputs = IO::readNumber<iomode, int>(is);
 
@@ -100,7 +99,7 @@ template<bool iomode> void GridFourier::read(std::istream &is){
         oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
     }
 
-    wrapper.load(oned_max_level, rule_fourier, 0.0, 0.0);
+    wrapper = OneDimensionalWrapper(oned_max_level, rule_fourier, 0.0, 0.0);
 
     max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
 }
@@ -109,20 +108,6 @@ template void GridFourier::write<mode_ascii>(std::ostream &) const;
 template void GridFourier::write<mode_binary>(std::ostream &) const;
 template void GridFourier::read<mode_ascii>(std::istream &);
 template void GridFourier::read<mode_binary>(std::istream &);
-
-void GridFourier::reset(){
-    clearAccelerationData();
-    wrapper = OneDimensionalWrapper();
-    tensors = MultiIndexSet();
-    active_tensors = MultiIndexSet();
-    points = MultiIndexSet();
-    needed = MultiIndexSet();
-    values = StorageSet();
-    active_w.clear();
-    fourier_coefs.clear();
-    num_dimensions = 0;
-    num_outputs = 0;
-}
 
 void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, level_limits), cnum_outputs);
@@ -174,7 +159,12 @@ MultiIndexSet GridFourier::selectTensors(size_t dims, int depth, TypeDepth type,
 }
 
 void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
-    reset();
+    clearAccelerationData();
+    points = MultiIndexSet();
+    values = StorageSet();
+    active_w.clear();
+    fourier_coefs.clear();
+
     tensors = std::move(tset);
 
     num_dimensions = (int) tensors.getNumDimensions();
@@ -182,7 +172,7 @@ void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
 
     max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
-    wrapper.load(*std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
+    wrapper = OneDimensionalWrapper(*std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
 
     std::vector<int> tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
     active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
@@ -205,7 +195,7 @@ void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
 }
 
 void GridFourier::proposeUpdatedTensors(){
-    wrapper.load(updated_tensors.getMaxIndex(), rule_fourier, 0.0, 0.0);
+    wrapper = OneDimensionalWrapper(updated_tensors.getMaxIndex(), rule_fourier, 0.0, 0.0);
 
     std::vector<int> updates_tensor_w = MultiIndexManipulations::computeTensorWeights(updated_tensors);
     updated_active_tensors = MultiIndexManipulations::createActiveTensors(updated_tensors, updates_tensor_w);
@@ -815,7 +805,7 @@ void GridFourier::readConstructionData(std::istream &is, bool iomode){
         dynamic_values->read<mode_binary>(is);
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
-        wrapper.load(max_level, rule_fourier, 0.0, 0.0);
+        wrapper = OneDimensionalWrapper(max_level, rule_fourier, 0.0, 0.0);
     dynamic_values->reloadPoints([&](int l)->int{ return wrapper.getNumPoints(l); });
 }
 std::vector<double> GridFourier::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
@@ -893,7 +883,7 @@ std::vector<double> GridFourier::getCandidateConstructionPoints(std::function<do
         auto max_indexes = MultiIndexManipulations::getMaxIndexes(new_tensors);
         int max_level = *std::max_element(max_indexes.begin(), max_indexes.end());
         if (max_level+1 > wrapper.getNumLevels())
-            wrapper.load(max_level, rule_fourier, 0.0, 0.0);
+            wrapper = OneDimensionalWrapper(max_level, rule_fourier, 0.0, 0.0);
     }
 
     std::vector<double> tweights(new_tensors.getNumIndexes());
@@ -917,7 +907,7 @@ std::vector<int> GridFourier::getMultiIndex(const double x[]){
         while(std::abs(wrapper.getNode(i) - x[j]) > Maths::num_tol){
             i++; // convert canonical node to index
             if (i == wrapper.getNumNodes())
-                wrapper.load(wrapper.getNumLevels(), rule_fourier, 0.0, 0.0);
+                wrapper = OneDimensionalWrapper(wrapper.getNumLevels(), rule_fourier, 0.0, 0.0);
         }
         p[j] = i;
     }

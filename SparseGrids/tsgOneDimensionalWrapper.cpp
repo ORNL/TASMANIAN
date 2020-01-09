@@ -37,7 +37,16 @@ namespace TasGrid{
 
 OneDimensionalWrapper::OneDimensionalWrapper() : num_levels(0), rule(rule_none){}
 
-void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, TypeOneDRule crule, double alpha, double beta){
+OneDimensionalWrapper::OneDimensionalWrapper(const CustomTabulated &custom, int max_level, TypeOneDRule crule, double alpha, double beta) :
+    isNonNested(OneDimensionalMeta::isNonNested(crule)),
+    num_levels(max_level + 1),
+    rule(crule),
+    num_points(num_levels),
+    pntr(num_levels + 1, 0), // the first entry must be set to zero
+    weights(num_levels),
+    nodes(num_levels),
+    coeff(num_levels)
+{
     if (crule == rule_customtabulated){
         if (max_level + 1 > custom.getNumLevels()){
             std::string message = "ERROR: custom-tabulated rule needed with levels ";
@@ -48,14 +57,7 @@ void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, T
             throw std::runtime_error(message);
         }
     }
-
-    num_levels = max_level + 1;
-    rule = crule;
-
     // find the points per level and the cumulative pointers
-    isNonNested = OneDimensionalMeta::isNonNested(rule);
-    num_points.resize(num_levels);
-    pntr.resize(num_levels+1); pntr[0] = 0;
     if (rule != rule_customtabulated){
         for(int l=0; l<num_levels; l++){
             num_points[l] = OneDimensionalMeta::getNumPoints(l, rule);
@@ -68,10 +70,6 @@ void OneDimensionalWrapper::load(const CustomTabulated &custom, int max_level, T
         }
     }
     int num_total = pntr[num_levels];
-
-    weights.resize(num_levels);
-    nodes.resize(num_levels);
-    coeff.resize(num_levels);
 
     if (isNonNested){
         indx.reserve(num_total);
