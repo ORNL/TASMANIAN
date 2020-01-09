@@ -53,7 +53,6 @@ template<bool iomode> void GridSequence::write(std::ostream &os) const{
 }
 
 template<bool iomode> void GridSequence::read(std::istream &is){
-    reset();
     num_dimensions = IO::readNumber<iomode, int>(is);
     num_outputs = IO::readNumber<iomode, int>(is);
     rule = IO::readRule<iomode>(is);
@@ -74,28 +73,45 @@ template void GridSequence::write<mode_binary>(std::ostream &) const;
 template void GridSequence::read<mode_ascii>(std::istream &);
 template void GridSequence::read<mode_binary>(std::istream &);
 
-void GridSequence::reset(){
-    points = MultiIndexSet();
-    needed = MultiIndexSet();
-    values = StorageSet();
-    nodes.clear();
-    coeff.clear();
-    surpluses = Data2D<double>();
-}
 void GridSequence::clearRefinement(){ needed = MultiIndexSet(); }
 
-GridSequence::GridSequence(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule,
-                            const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-
-    MultiIndexSet pset = (OneDimensionalMeta::isExactQuadrature(type)) ?
+inline MultiIndexSet makeSequenceSet(int cnum_dimensions, int depth, TypeDepth type, TypeOneDRule crule,
+                                     const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+    return (OneDimensionalMeta::isExactQuadrature(type)) ?
         MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
                                                [&](int i) -> int{ return OneDimensionalMeta::getQExact(i, crule); },
                                                anisotropic_weights, level_limits) :
         MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type,
                                                [&](int i) -> int{ return i; }, anisotropic_weights, level_limits);
-
-    setPoints(pset, cnum_outputs, crule);
 }
+
+GridSequence::GridSequence(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule,
+                            const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits)
+    : BaseCanonicalGrid(cnum_dimensions, cnum_outputs, MultiIndexSet(),
+                        makeSequenceSet(cnum_dimensions, depth, type, crule, anisotropic_weights, level_limits),
+                        StorageSet()),
+      rule(crule){
+    values.resize(num_outputs, needed.getNumIndexes());
+    prepareSequence(0);
+}
+GridSequence::GridSequence(int cnum_dimensions, int depth, TypeDepth type, TypeOneDRule crule,
+                            const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits)
+    : BaseCanonicalGrid(cnum_dimensions, 0, makeSequenceSet(cnum_dimensions, depth, type, crule, anisotropic_weights, level_limits),
+                        MultiIndexSet(), StorageSet()),
+      rule(crule){
+    prepareSequence(0);
+}
+GridSequence::GridSequence(MultiIndexSet &&pset, int cnum_outputs, TypeOneDRule crule)
+    : BaseCanonicalGrid(pset.getNumDimensions(), cnum_outputs,
+                        (cnum_outputs == 0) ? std::move(pset) : MultiIndexSet(),
+                        (cnum_outputs == 0) ? MultiIndexSet() : std::move(pset),
+                        StorageSet()),
+    rule(crule)
+{
+    if (num_outputs > 0) values.resize(num_outputs, needed.getNumIndexes());
+    prepareSequence(0);
+}
+
 GridSequence::GridSequence(const GridSequence *seq, int ibegin, int iend){
     num_dimensions = seq->num_dimensions;
     num_outputs    = iend - ibegin;
@@ -118,39 +134,27 @@ GridSequence::GridSequence(const GridSequence *seq, int ibegin, int iend){
     }
 }
 
-void GridSequence::setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule crule){
-    reset();
-    num_dimensions = (int) pset.getNumDimensions();
-    num_outputs = cnum_outputs;
-    rule = crule;
-
-    if (num_outputs == 0){
-        points = std::move(pset);
-    }else{
-        needed = std::move(pset);
-        values.resize(num_outputs, needed.getNumIndexes());
-    }
-    prepareSequence(0);
-}
-
 void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-    MultiIndexSet pset = (OneDimensionalMeta::isExactQuadrature(type)) ?
-        MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type,
-                                               [&](int i) -> int{ return OneDimensionalMeta::getQExact(i, rule); },
-                                               anisotropic_weights, level_limits) :
-        MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type,
-                                               [&](int i) -> int{ return i; }, anisotropic_weights, level_limits);
-
-    updateGrid(pset);
-}
-
-void GridSequence::updateGrid(MultiIndexSet &update){
     clearRefinement();
+
+    MultiIndexSet pset = makeSequenceSet(num_dimensions, depth, type, rule, anisotropic_weights, level_limits);
+
     if ((num_outputs == 0) || (points.empty())){
-        setPoints(update, num_outputs, rule);
+        if (num_outputs == 0){
+            points = std::move(pset);
+            needed = MultiIndexSet();
+        }else{
+            points = MultiIndexSet();
+            needed = std::move(pset);
+            values.resize(num_outputs, needed.getNumIndexes());
+        }
+        nodes.clear();
+        coeff.clear();
+        surpluses = Data2D<double>();
+        prepareSequence(0);
     }else{
-        update.addSortedIndexes(points.getVector());
-        needed = update.diffSets(points);
+        pset.addSortedIndexes(points.getVector());
+        needed = pset.diffSets(points);
 
         if (!needed.empty()) prepareSequence(0);
     }

@@ -756,9 +756,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
             if (std::abs(surp[i]) > max_surp) max_surp = std::abs(surp[i]);
         }
 
-        GridSequence seq; // there is an extra copy here, but the sequence grid does the surplus computation automatically
-        MultiIndexSet spoints = points;
-        seq.setPoints(spoints, 1, rule);
+        GridSequence seq(MultiIndexSet(points), 1, rule); // there is an extra copy here, but the sequence grid does the surplus computation automatically
 
         seq.loadNeededPoints(surp.data());
 

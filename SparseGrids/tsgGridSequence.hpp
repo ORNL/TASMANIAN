@@ -45,6 +45,8 @@ public:
     }
     GridSequence(const GridSequence *seq, int ibegin, int iend);
     GridSequence(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
+    GridSequence(int cnum_dimensions, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
+    GridSequence(MultiIndexSet &&pset, int cnum_outputs, TypeOneDRule crule);
     ~GridSequence(){}
 
     bool isSequence() const override{ return true; }
@@ -55,10 +57,7 @@ public:
     template<bool iomode> void write(std::ostream &os) const;
     template<bool iomode> void read(std::istream &is);
 
-    void setPoints(MultiIndexSet &pset, int cnum_outputs, TypeOneDRule crule);
-
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
-    void updateGrid(MultiIndexSet &update);
 
     TypeOneDRule getRule() const override{ return rule; }
 
@@ -119,8 +118,6 @@ public:
     void clearAccelerationData() override;
 
 protected:
-    void reset();
-
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 
     //! \brief Cache the nodes and polynomial coefficients, cache is determined by the largest index in \b points and \b needed, or \b num_external (pass zero if not using dy-construction).
