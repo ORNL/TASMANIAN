@@ -181,32 +181,22 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits),
                cnum_outputs, crule, calpha, cbeta);
 }
-GridGlobal::GridGlobal(const GridGlobal *global, int ibegin, int iend){
-    custom = CustomTabulated();
-    if (global->rule == rule_customtabulated) custom = global->custom;
-
-    num_dimensions = global->num_dimensions;
-    num_outputs    = iend - ibegin;
-    points = global->points;
-    needed = global->needed;
-
-    rule  = global->rule;
-    alpha = global->alpha;
-    beta  = global->beta;
-    wrapper = global->wrapper;
-
-    tensors        = global->tensors;
-    active_tensors = global->active_tensors;
-    active_w       = global->active_w;
-
-    tensor_refs = global->tensor_refs;
-    max_levels  = global->max_levels;
-
-    values = (num_outputs == global->num_outputs) ? global->values : global->values.splitValues(ibegin, iend);
-
-    updated_tensors        = global->updated_tensors;
-    updated_active_tensors = global->updated_active_tensors;
-    updated_active_w       = global->updated_active_w;
+GridGlobal::GridGlobal(const GridGlobal *global, int ibegin, int iend)
+    : BaseCanonicalGrid(global->num_dimensions, iend-ibegin, MultiIndexSet(global->points), MultiIndexSet(global->needed),
+                        (iend - ibegin == global->num_outputs) ? StorageSet(global->values) : global->values.splitValues(ibegin, iend)),
+    rule(global->rule),
+    alpha(global->alpha),
+    beta(global->beta),
+    wrapper(global->wrapper),
+    tensors(global->tensors),
+    active_tensors(global->active_tensors),
+    active_w(global->active_w),
+    tensor_refs(global->tensor_refs),
+    max_levels(global->max_levels),
+    updated_tensors(global->updated_tensors),
+    updated_active_tensors(global->updated_active_tensors),
+    updated_active_w(global->updated_active_w),
+    custom((global->rule == rule_customtabulated) ? global->custom : CustomTabulated()){
 
     if (global->dynamic_values){
         dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(*global->dynamic_values);
