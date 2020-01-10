@@ -80,6 +80,7 @@ if (Tasmanian_ENABLE_MPI)
     target_link_libraries(Tasmanian_mpitester Tasmanian_addons Tasmanian_libdream)
     add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} mpitester ${MPIEXEC_POSTFLAGS})
     set_tests_properties(MPISparseGridsIO PROPERTIES RUN_SERIAL ON)
+    set(Tasmanian_addon_mpi_test MPISparseGridsIO)
     # cheap models have huge random variation in time-per-sample which can cause tests to fail
     # make sure other tests are not holding resources and making things even worse
 endif()
@@ -90,6 +91,15 @@ set_target_properties(Tasmanian_addontester PROPERTIES OUTPUT_NAME "addontester"
 target_link_libraries(Tasmanian_addontester Tasmanian_addons Tasmanian_libdream)
 add_test(AddonTests addontester)
 set_tests_properties(AddonTests PROPERTIES RUN_SERIAL ON) # see MPISparseGridsIO
+
+# set the OpenMP number of threads for the addon tests, note that the addons use C++ threads in addition to OpenMP
+if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
+    set_tests_properties(AddonTests ${Tasmanian_addon_mpi_test}
+        PROPERTIES
+        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
+        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
+endif()
+unset(Tasmanian_addon_mpi_test)
 
 # Windows specific support (DLL export/import directives and names)
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
