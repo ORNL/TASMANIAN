@@ -65,49 +65,9 @@ template<bool iomode> void GridFourier::write(std::ostream &os) const{
         IO::writeVector<iomode, IO::pad_line>(updated_active_w, os);
     }
 }
-template<bool iomode> void GridFourier::read(std::istream &is){
-    num_dimensions = IO::readNumber<iomode, int>(is);
-    num_outputs = IO::readNumber<iomode, int>(is);
-
-    tensors.read<iomode>(is);
-    active_tensors.read<iomode>(is);
-    active_w.resize((size_t) active_tensors.getNumIndexes());
-    IO::readVector<iomode>(is, active_w);
-
-    if (IO::readFlag<iomode>(is)) points.read<iomode>(is);
-    if (IO::readFlag<iomode>(is)) needed.read<iomode>(is);
-
-    max_levels.resize((size_t) num_dimensions);
-    IO::readVector<iomode>(is, max_levels);
-
-    if (num_outputs > 0){
-        values.read<iomode>(is);
-        if (IO::readFlag<iomode>(is))
-            fourier_coefs = IO::readData2D<iomode, double>(is, num_outputs, 2 * points.getNumIndexes());
-    }
-
-    int oned_max_level;
-    if (IO::readFlag<iomode>(is)){
-        updated_tensors.read<iomode>(is);
-        oned_max_level = updated_tensors.getMaxIndex();
-
-        updated_active_tensors.read<iomode>(is);
-
-        updated_active_w.resize((size_t) updated_active_tensors.getNumIndexes());
-        IO::readVector<iomode>(is, updated_active_w);
-    }else{
-        oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
-    }
-
-    wrapper = OneDimensionalWrapper(oned_max_level, rule_fourier, 0.0, 0.0);
-
-    max_power = MultiIndexManipulations::getMaxIndexes(((points.empty()) ? needed : points));
-}
 
 template void GridFourier::write<mode_ascii>(std::ostream &) const;
 template void GridFourier::write<mode_binary>(std::ostream &) const;
-template void GridFourier::read<mode_ascii>(std::istream &);
-template void GridFourier::read<mode_binary>(std::istream &);
 
 void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, level_limits), cnum_outputs);
@@ -798,11 +758,10 @@ void GridFourier::writeConstructionData(std::ostream &os, bool iomode) const{
     if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
 }
 void GridFourier::readConstructionData(std::istream &is, bool iomode){
-    dynamic_values = std::make_unique<DynamicConstructorDataGlobal>((size_t) num_dimensions, (size_t) num_outputs);
     if (iomode == mode_ascii)
-        dynamic_values->read<mode_ascii>(is);
+        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
     else
-        dynamic_values->read<mode_binary>(is);
+        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(is, num_dimensions, num_outputs, IO::mode_binary_type());
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
         wrapper = OneDimensionalWrapper(max_level, rule_fourier, 0.0, 0.0);

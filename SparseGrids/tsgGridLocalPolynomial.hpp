@@ -54,10 +54,7 @@ namespace TasGrid{
 class GridLocalPolynomial : public BaseCanonicalGrid{
 public:
     GridLocalPolynomial() : order(1){}
-    template<typename iomode> GridLocalPolynomial(std::istream &is, iomode const){
-        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
-        else read<mode_binary>(is);
-    }
+    friend struct GridReaderVersion5<GridLocalPolynomial>;
     GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend);
     GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     ~GridLocalPolynomial(){}
@@ -65,10 +62,8 @@ public:
     bool isLocalPolynomial() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
-    void read(std::istream &is, bool iomode) override{ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
 
     template<bool iomode> void write(std::ostream &os) const;
-    template<bool iomode> void read(std::istream &is);
 
     TypeOneDRule getRule() const override{ return rule->getType(); }
     int getOrder() const{ return order; }
@@ -320,6 +315,49 @@ private:
     mutable std::unique_ptr<CudaLocalPolynomialData<double>> cuda_cache;
     mutable std::unique_ptr<CudaLocalPolynomialData<float>> cuda_cachef;
     #endif
+};
+
+// Old version reader
+template<> struct GridReaderVersion5<GridLocalPolynomial>{
+    template<typename iomode> static auto read(std::istream &is){
+        std::unique_ptr<GridLocalPolynomial> grid = std::make_unique<GridLocalPolynomial>();
+
+            grid->num_dimensions = IO::readNumber<iomode, int>(is);
+            grid->num_outputs = IO::readNumber<iomode, int>(is);
+            grid->order = IO::readNumber<iomode, int>(is);
+            grid->top_level = IO::readNumber<iomode, int>(is);
+            TypeOneDRule rule = IO::readRule<iomode>(is);
+            grid->rule = makeRuleLocalPolynomial(rule, grid->order);
+
+            if (IO::readFlag<iomode>(is)) grid->points = MultiIndexSet(is, iomode());
+            if (std::is_same<iomode, IO::mode_ascii_type>::value){ // backwards compatible: surpluses and needed, or needed and surpluses
+                if (IO::readFlag<iomode>(is))
+                    grid->surpluses = IO::readData2D<iomode, double>(is, grid->num_outputs, grid->points.getNumIndexes());
+                if (IO::readFlag<iomode>(is)) grid->needed = MultiIndexSet(is, iomode());
+            }else{
+                if (IO::readFlag<iomode>(is)) grid->needed = MultiIndexSet(is, iomode());
+                if (IO::readFlag<iomode>(is))
+                    grid->surpluses = IO::readData2D<iomode, double>(is, grid->num_outputs, grid->points.getNumIndexes());
+            }
+            if (IO::readFlag<iomode>(is))
+                grid->parents = IO::readData2D<iomode, int>(is, grid->rule->getMaxNumParents() * grid->num_dimensions, grid->points.getNumIndexes());
+
+            size_t num_points = (size_t) ((grid->points.empty()) ? grid->needed.getNumIndexes() : grid->points.getNumIndexes());
+            grid->roots = std::vector<int>((size_t) IO::readNumber<iomode, int>(is));
+            if (grid->roots.size() > 0){
+                IO::readVector<iomode>(is, grid->roots);
+                grid->pntr = IO::readVector<iomode, int>(is, num_points + 1);
+                if (grid->pntr[num_points] > 0){
+                    grid->indx = IO::readVector<iomode, int>(is, grid->pntr[num_points]);
+                }else{
+                    grid->indx = IO::readVector<iomode, int>(is, 1);
+                }
+            }
+
+            if (grid->num_outputs > 0) grid->values = StorageSet(is, iomode());
+
+        return grid;
+    }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
 }

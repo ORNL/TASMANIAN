@@ -198,6 +198,10 @@ namespace IO{
         readVector<useAscii>(is, data.getVector());
         return data;
     }
+    template<typename iomode, typename DataType, typename IndexStride, typename IndexNumStrips>
+    Data2D<DataType> readData2D(std::istream &is, IndexStride stride, IndexNumStrips num_strips){
+        return Data2D<DataType>(stride, num_strips, readVector<iomode, DataType>(is, Utils::size_mult(stride, num_strips)));
+    }
 }
 
 /*!
@@ -224,6 +228,11 @@ public:
         indexes(std::forward<std::vector<int>>(new_indexes)){}
     //! \brief Copy a collection of unsorted indexes into a sorted multi-index set, sorts during the copy.
     MultiIndexSet(Data2D<int> &data) : num_dimensions((size_t) data.getStride()), cache_num_indexes(0){ setData2D(data); }
+    template<typename iomode> MultiIndexSet(std::istream &is, iomode) :
+        num_dimensions((size_t) IO::readNumber<iomode, int>(is)),
+        cache_num_indexes(IO::readNumber<iomode, int>(is)),
+        indexes(IO::readVector<iomode, int>(is, Utils::size_mult(num_dimensions, cache_num_indexes)))
+        {}
     //! \brief Default destructor.
     ~MultiIndexSet(){}
 
@@ -232,11 +241,6 @@ public:
     //! The format consists of two `int` values corresponding to the number of dimensions and number of indexes,
     //! followed by all the entries of the array on a single line separated by a space, or dump of a single write command.
     template<bool useAscii> void write(std::ostream &os) const;
-
-    //! \brief Read the from the stream, must know whether to use ASCII or binary format.
-
-    //! Uses the same format as \b write<bool>
-    template<bool useAscii> void read(std::istream &os);
 
     //! \brief Returns **true** if there are no multi-indexes in the set, **false** otherwise
     inline bool empty() const{ return indexes.empty(); }
@@ -313,6 +317,11 @@ public:
     //! \brief Move constructor from a known vector.
     StorageSet(int cnum_outputs, int cnum_values, std::vector<double> &&vals) :
         num_outputs(cnum_outputs), num_values(cnum_values), values(std::forward<std::vector<double>>(vals)){}
+    template<typename iomode> StorageSet(std::istream &is, iomode) :
+        num_outputs((size_t) IO::readNumber<iomode, int>(is)),
+        num_values((size_t) IO::readNumber<iomode, int>(is)),
+        values((IO::readFlag<iomode>(is)) ? IO::readVector<iomode, double>(is, Utils::size_mult(num_outputs, num_values)) : std::vector<double>())
+    {}
     //! \brief Default destructor.
     ~StorageSet();
 
@@ -323,9 +332,6 @@ public:
      * followed by all the entries of the array on a single line separated by a space, or dump of a single write command.
      */
     template<bool useAscii> void write(std::ostream &os) const;
-
-    //! \brief Read the from the stream, must know whether to use ASCII or binary format.
-    template<bool useAscii> void read(std::istream &os);
 
     //! \brief Clear the existing values and assigns new dimensions, does not allocate memory for the new values.
     void resize(int cnum_outputs, int cnum_values);

@@ -66,49 +66,8 @@ template<bool iomode> void GridLocalPolynomial::write(std::ostream &os) const{
     if (num_outputs > 0) values.write<iomode>(os);
 }
 
-template<bool iomode> void GridLocalPolynomial::read(std::istream &is){
-    num_dimensions = IO::readNumber<iomode, int>(is);
-    num_outputs = IO::readNumber<iomode, int>(is);
-    order = IO::readNumber<iomode, int>(is);
-    top_level = IO::readNumber<iomode, int>(is);
-    TypeOneDRule crule = IO::readRule<iomode>(is);
-    rule = makeRuleLocalPolynomial(crule, order);
-
-    if (IO::readFlag<iomode>(is)) points.read<iomode>(is);
-    if (iomode == mode_ascii){ // backwards compatible: surpluses and needed, or needed and surpluses
-        if (IO::readFlag<iomode>(is))
-            surpluses = IO::readData2D<iomode, double>(is, num_outputs, points.getNumIndexes());
-        if (IO::readFlag<iomode>(is)) needed.read<iomode>(is);
-    }else{
-        if (IO::readFlag<iomode>(is)) needed.read<iomode>(is);
-        if (IO::readFlag<iomode>(is))
-            surpluses = IO::readData2D<iomode, double>(is, num_outputs, points.getNumIndexes());
-    }
-    if (IO::readFlag<iomode>(is))
-        parents = IO::readData2D<iomode, int>(is, rule->getMaxNumParents() * num_dimensions, points.getNumIndexes());
-
-    size_t num_points = (size_t) ((points.empty()) ? needed.getNumIndexes() : points.getNumIndexes());
-    roots.resize((size_t) IO::readNumber<iomode, int>(is));
-    if (roots.size() > 0){
-        IO::readVector<iomode>(is, roots);
-        pntr.resize(num_points + 1);
-        IO::readVector<iomode>(is, pntr);
-        if (pntr[num_points] > 0){
-            indx.resize((size_t) pntr[num_points]);
-            IO::readVector<iomode>(is, indx);
-        }else{
-            indx.resize(1);
-            indx[0] = IO::readNumber<iomode, int>(is); // there is a special case when the grid has only one point without any children
-        }
-    }
-
-    if (num_outputs > 0) values.read<iomode>(is);
-}
-
 template void GridLocalPolynomial::write<mode_ascii>(std::ostream &) const;
 template void GridLocalPolynomial::write<mode_binary>(std::ostream &) const;
-template void GridLocalPolynomial::read<mode_ascii>(std::istream &);
-template void GridLocalPolynomial::read<mode_binary>(std::istream &);
 
 GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits)
     : BaseCanonicalGrid(cnum_dimensions, cnum_outputs, MultiIndexSet(), MultiIndexSet(), StorageSet()),
@@ -485,8 +444,10 @@ void GridLocalPolynomial::writeConstructionData(std::ostream &os, bool iomode) c
     if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
 }
 void GridLocalPolynomial::readConstructionData(std::istream &is, bool iomode){
-    if (iomode == mode_ascii) dynamic_values = readSimpleConstructionData<mode_ascii>(num_dimensions, num_outputs, is);
-    else dynamic_values = readSimpleConstructionData<mode_binary>(num_dimensions, num_outputs, is);
+    if (iomode == mode_ascii)
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
+    else
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_binary_type());
 }
 std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
                                                                         std::vector<int> const &level_limits, double const *scale_correction){

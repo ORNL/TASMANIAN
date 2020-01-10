@@ -246,6 +246,7 @@ bool testConstructSurrogate(bool verbose){
     };
 
     grid = TasGrid::makeSequenceGrid(2, 1, 1, TasGrid::type_level, TasGrid::rule_leja);
+    std::remove("checkpoint"); // make sure the checkpoint filename is not present (e.g., left after an earlier crash)
     try{
         TasGrid::constructSurrogate<TasGrid::mode_sequential, no_initial_guess>
                                    (model_crash, reference_grid.getNumLoaded(),

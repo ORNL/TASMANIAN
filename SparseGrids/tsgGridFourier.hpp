@@ -39,10 +39,7 @@ namespace TasGrid{
 class GridFourier : public BaseCanonicalGrid {
 public:
     GridFourier(){}
-    template<typename iomode> GridFourier(std::istream &is, iomode const){
-        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
-        else read<mode_binary>(is);
-    }
+    friend struct GridReaderVersion5<GridFourier>;
     GridFourier(const GridFourier *fourier, int ibegin, int iend);
     GridFourier(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
         makeGrid(cnum_dimensions, cnum_outputs, depth, type, anisotropic_weights, level_limits);
@@ -52,10 +49,8 @@ public:
     bool isFourier() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
-    void read(std::istream &is, bool iomode) override{ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
 
     template<bool iomode> void write(std::ostream &os) const;
-    template<bool iomode> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
@@ -204,6 +199,49 @@ private:
     mutable std::unique_ptr<CudaFourierData<double>> cuda_cache;
     mutable std::unique_ptr<CudaFourierData<float>> cuda_cachef;
     #endif
+};
+
+// Old version reader
+template<> struct GridReaderVersion5<GridFourier>{
+    template<typename iomode> static auto read(std::istream &is){
+        std::unique_ptr<GridFourier> grid = std::make_unique<GridFourier>();
+
+        grid->num_dimensions = IO::readNumber<iomode, int>(is);
+        grid->num_outputs = IO::readNumber<iomode, int>(is);
+
+        grid->tensors = MultiIndexSet(is, iomode());
+        grid->active_tensors = MultiIndexSet(is, iomode());
+        grid->active_w = IO::readVector<iomode, int>(is, grid->active_tensors.getNumIndexes());
+
+        if (IO::readFlag<iomode>(is)) grid->points = MultiIndexSet(is, iomode());
+        if (IO::readFlag<iomode>(is)) grid->needed = MultiIndexSet(is, iomode());
+
+        grid->max_levels = IO::readVector<iomode, int>(is, grid->num_dimensions);
+
+        if (grid->num_outputs > 0){
+            grid->values = StorageSet(is, iomode());
+            if (IO::readFlag<iomode>(is))
+                grid->fourier_coefs = IO::readData2D<iomode, double>(is, grid->num_outputs, 2 * grid->points.getNumIndexes());
+        }
+
+        int oned_max_level;
+        if (IO::readFlag<iomode>(is)){
+            grid->updated_tensors = MultiIndexSet(is, iomode());
+            oned_max_level = grid->updated_tensors.getMaxIndex();
+
+            grid->updated_active_tensors = MultiIndexSet(is, iomode());
+
+            grid->updated_active_w = IO::readVector<iomode, int>(is, grid->updated_active_tensors.getNumIndexes());
+        }else{
+            oned_max_level = *std::max_element(grid->max_levels.begin(), grid->max_levels.end());
+        }
+
+        grid->wrapper = OneDimensionalWrapper(oned_max_level, rule_fourier, 0.0, 0.0);
+
+        grid->max_power = MultiIndexManipulations::getMaxIndexes(((grid->points.empty()) ? grid->needed : grid->points));
+
+        return grid;
+    }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
 

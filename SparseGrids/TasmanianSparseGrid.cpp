@@ -1216,10 +1216,9 @@ const int* TasmanianSparseGrid::getNeededIndexes() const{
 
 void TasmanianSparseGrid::printStats(std::ostream &os) const{
     using std::setw;
-    using std::endl;
 
     const int L1 = 20;
-    os << endl;
+    os << '\n';
     os << setw(L1) << "Grid Type:" << "  ";
     if (isGlobal()) os << "Global";
     if (isSequence()) os << "Sequence";
@@ -1227,153 +1226,144 @@ void TasmanianSparseGrid::printStats(std::ostream &os) const{
     if (isWavelet()) os << "Wavelets";
     if (isFourier()) os << "Fourier";
     if (!(isGlobal() || isSequence() || isLocalPolynomial() || isWavelet() || isFourier())) os << "none";
-    os << endl;
+    os << '\n';
 
-    os << setw(L1) << "Dimensions:" << "   " << getNumDimensions() << endl;
-    os << setw(L1) << "Outputs:" << "   " << getNumOutputs() << endl;
+    os << setw(L1) << "Dimensions:" << "   " << getNumDimensions() << '\n';
+    os << setw(L1) << "Outputs:" << "   " << getNumOutputs() << '\n';
     if (getNumOutputs() == 0){
-        os << setw(L1) << "Nodes:" << "   " << getNumPoints() << endl;
+        os << setw(L1) << "Nodes:" << "   " << getNumPoints() << '\n';
     }else{
-        os << setw(L1) << "Loaded nodes:" << "   " << getNumLoaded() << endl;
-        os << setw(L1) << "Needed nodes:" << "   " << getNumNeeded() << endl;
+        os << setw(L1) << "Loaded nodes:" << "   " << getNumLoaded() << '\n';
+        os << setw(L1) << "Needed nodes:" << "   " << getNumNeeded() << '\n';
     }
-    os << setw(L1) << "Rule:" << "  " << OneDimensionalMeta::getHumanString(getRule()) << endl;
+    os << setw(L1) << "Rule:" << "  " << OneDimensionalMeta::getHumanString(getRule()) << '\n';
     if (getRule() == rule_customtabulated){
-        os << setw(L1) << "Description:" << "  " << getCustomRuleDescription() << endl;
+        os << setw(L1) << "Description:" << "  " << getCustomRuleDescription() << '\n';
     }
     if (isSetDomainTransfrom()){
-        os << setw(L1) << "Domain:" << "  Custom" << endl;
+        os << setw(L1) << "Domain:" << "  Custom" << '\n';
     }else{
-        os << setw(L1) << "Domain:" << "  Canonical" << endl;
+        os << setw(L1) << "Domain:" << "  Canonical" << '\n';
     }
 
     if (isGlobal()){
         TypeOneDRule rr = getRule();
         if ((rr == rule_gaussgegenbauer) || (rr == rule_gausslaguerre) || (rr == rule_gausshermite) || (rr == rule_gaussgegenbauerodd) || (rr == rule_gausshermiteodd) ){
-            os << setw(L1) << "Alpha:" << "   " << getAlpha() << endl;
+            os << setw(L1) << "Alpha:" << "   " << getAlpha() << '\n';
         }
         if (rr == rule_gaussjacobi){
-            os << setw(L1) << "Alpha:" << "   " << getAlpha() << endl;
-            os << setw(L1) << "Beta:" << "   " << getBeta() << endl;
+            os << setw(L1) << "Alpha:" << "   " << getAlpha() << '\n';
+            os << setw(L1) << "Beta:" << "   " << getBeta() << '\n';
         }
     }else if (isSequence()){
         // sequence rules are simple, nothing to specify here
     }else if (isLocalPolynomial()){
-        os << setw(L1) << "Order:" << "   " << getOrder() << endl;
+        os << setw(L1) << "Order:" << "   " << getOrder() << '\n';
     }else if (isWavelet()){
-        os << setw(L1) << "Order:" << "   " << getOrder() << endl;
+        os << setw(L1) << "Order:" << "   " << getOrder() << '\n';
     }else{
         // empty grid, show nothing, just like the sequence grid
     }
-    os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration) << endl;
+    os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration) << '\n';
     if (AccelerationMeta::isAccTypeGPU(acceleration)){
-        os << setw(L1) << "GPU:" << "  " << getGPUID() << endl;
+        os << setw(L1) << "GPU:" << "  " << getGPUID() << '\n';
     }
 
-    os << endl;
+    os << std::endl;
 }
 
 void TasmanianSparseGrid::writeAscii(std::ostream &ofs) const{
-    using std::endl;
-
-    ofs << "TASMANIAN SG " << getVersion() << endl;
-    ofs << "WARNING: do not edit this manually" << endl;
+    ofs << "TASMANIAN SG " << getVersion() << '\n';
+    ofs << "WARNING: do not edit this manually\n";
     if (isGlobal()){
-        ofs << "global" << endl;
+        ofs << "global\n";
     }else if (isSequence()){
-        ofs << "sequence" << endl;
+        ofs << "sequence\n";
     }else if (isLocalPolynomial()){
-        ofs << "localpolynomial" << endl;
+        ofs << "localpolynomial\n";
     }else if (isWavelet()){
-        ofs << "wavelet" << endl;
+        ofs << "wavelet\n";
     }else if (isFourier()){
-        ofs << "fourier" << endl;
+        ofs << "fourier\n";
     }else{
-        ofs << "empty" << endl;
+        ofs << "empty\n";
     }
     if (!empty()) base->write(ofs, mode_ascii);
     if (domain_transform_a.size() != 0){
-        ofs << "custom" << endl;
+        ofs << "custom\n";
         ofs << std::scientific; ofs.precision(17);
         for(int j=0; j<base->getNumDimensions(); j++){
-            ofs << domain_transform_a[j] << " " << domain_transform_b[j] << endl;
+            ofs << domain_transform_a[j] << " " << domain_transform_b[j] << '\n';
        }
     }else{
-        ofs << "canonical" << endl;
+        ofs << "canonical\n";
     }
     if (conformal_asin_power.size() != 0){
-        ofs << "asinconformal" << endl;
-        ofs << conformal_asin_power[0];
-        for(int j=1; j<base->getNumDimensions(); j++){
-            ofs << " " << conformal_asin_power[j];
-       }
-        ofs << endl;
+        ofs << "asinconformal\n";
+        IO::writeVector<mode_ascii, IO::pad_line>(conformal_asin_power, ofs);
     }else{
-        ofs << "nonconformal" << endl;
+        ofs << "nonconformal\n";
     }
     if (!llimits.empty()){
-        ofs << "limited" << endl;
-        ofs << llimits[0];
-        for(int j=1; j<base->getNumDimensions(); j++) ofs << " " << llimits[j];
-        ofs << endl;
+        ofs << "limited\n";
+        IO::writeVector<mode_ascii, IO::pad_line>(llimits, ofs);
     }else{
-        ofs << "unlimited" << endl;
+        ofs << "unlimited\n";
     }
     if (usingDynamicConstruction){
-        ofs << "constructing" << endl;
+        ofs << "constructing\n";
         base->writeConstructionData(ofs, mode_ascii);
     }else{
-        ofs << "static" << endl;
+        ofs << "static\n";
     }
-    ofs << "TASMANIAN SG end" << endl;
+    ofs << "TASMANIAN SG end" << std::endl;
 }
 void TasmanianSparseGrid::writeBinary(std::ostream &ofs) const{
     const char *TSG = "TSG5"; // last char indicates version (update only if necessary, no need to sync with getVersionMajor())
     ofs.write(TSG, 4 * sizeof(char)); // mark Tasmanian files
-    char flag;
     // use Integers to indicate grid types, empty 'e', global 'g', sequence 's', pwpoly 'p', wavelet 'w', Fourier 'f'
     if (isGlobal()){
-        flag = 'g'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'g');
     }else if (isSequence()){
-        flag = 's'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 's');
     }else if (isLocalPolynomial()){
-        flag = 'p'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'p');
     }else if (isWavelet()){
-        flag = 'w'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'w');
     }else if (isFourier()){
-        flag = 'f'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'f');
     }else{
-        flag = 'e'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'e');
     }
     if (!empty()) base->write(ofs, mode_binary);
     // domain transform: custom 'y', canonical: 'n'
     if (domain_transform_a.size() != 0){
-        flag = 'y'; ofs.write(&flag, sizeof(char));
-        ofs.write((char*) domain_transform_a.data(), base->getNumDimensions() * sizeof(double));
-        ofs.write((char*) domain_transform_b.data(), base->getNumDimensions() * sizeof(double));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'y');
+        IO::writeVector<mode_binary, IO::pad_none>(domain_transform_a, ofs);
+        IO::writeVector<mode_binary, IO::pad_none>(domain_transform_b, ofs);
     }else{
-        flag = 'n'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'n');
     }
     // conformal transforms: none 'n', asin 'a'
     if (conformal_asin_power.size() != 0){
-        flag = 'a'; ofs.write(&flag, sizeof(char));
-        ofs.write((char*) conformal_asin_power.data(), base->getNumDimensions() * sizeof(int));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'a');
+        IO::writeVector<mode_binary, IO::pad_none>(conformal_asin_power, ofs);
     }else{
-        flag = 'n'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'n');
     }
     if (!llimits.empty()){
-        flag = 'y'; ofs.write(&flag, sizeof(char));
-        ofs.write((char*) llimits.data(), base->getNumDimensions() * sizeof(int));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'y');
+        IO::writeVector<mode_binary, IO::pad_none>(llimits, ofs);
     }else{
-        flag = 'n'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'n');
     }
     if (usingDynamicConstruction){
-        flag = 'c'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'c');
         base->writeConstructionData(ofs, mode_binary);
     }else{
-        flag = 's'; ofs.write(&flag, sizeof(char));
+        IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 's');
     }
-    flag = 'e'; ofs.write(&flag, sizeof(char)); // E stands for END
+    IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'e'); // E stands for END
 }
 void TasmanianSparseGrid::readAscii(std::istream &ifs){
     std::string T;
@@ -1398,15 +1388,15 @@ void TasmanianSparseGrid::readAscii(std::istream &ifs){
     ifs >> T;
     clear();
     if (T.compare("global") == 0){
-        base = std::make_unique<GridGlobal>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridGlobal>(ifs, IO::mode_ascii_type());
     }else if (T.compare("sequence") == 0){
-        base = std::make_unique<GridSequence>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridSequence>(ifs, IO::mode_ascii_type());
     }else if (T.compare("localpolynomial") == 0){
-        base = std::make_unique<GridLocalPolynomial>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridLocalPolynomial>(ifs, IO::mode_ascii_type());
     }else if (T.compare("wavelet") == 0){
-        base = std::make_unique<GridWavelet>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridWavelet>(ifs, IO::mode_ascii_type());
     }else if (T.compare("fourier") == 0){
-        base = std::make_unique<GridFourier>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridFourier>(ifs, IO::mode_ascii_type());
     }else if (T.compare("empty") != 0){
         throw std::runtime_error("ERROR: wrong file format, unknown grid type (or corrupt file)");
     }
@@ -1428,8 +1418,7 @@ void TasmanianSparseGrid::readAscii(std::istream &ifs){
     if (!reached_eof){ // handle conformal maps, added in version 5.0
         getline(ifs, T);
         if (T.compare("asinconformal") == 0){
-            conformal_asin_power.resize(base->getNumDimensions());
-            for(auto & a : conformal_asin_power) ifs >> a;
+            conformal_asin_power = IO::readVector<IO::mode_ascii_type, int>(ifs, base->getNumDimensions());
             getline(ifs, T);
         }else if (T.compare("TASMANIAN SG end") == 0){
             // for compatibility with version 4.0/4.1 and the missing conformal maps
@@ -1441,11 +1430,10 @@ void TasmanianSparseGrid::readAscii(std::istream &ifs){
     if (!reached_eof){ // handle level limits, added in version 5.1
         getline(ifs, T);
         if (T.compare("limited") == 0){
-            llimits.resize(base->getNumDimensions());
-            for(auto &l : llimits) ifs >> l;
+            llimits = IO::readVector<IO::mode_ascii_type, int>(ifs, base->getNumDimensions());
             getline(ifs, T);
         }else if (T.compare("unlimited") == 0){
-            llimits.clear();
+            llimits = std::vector<int>();
         }else if (T.compare("TASMANIAN SG end") == 0){
             reached_eof = true;
         }else{
@@ -1480,57 +1468,55 @@ void TasmanianSparseGrid::readBinary(std::istream &ifs){
     if (TSG[3] != '5'){
         throw std::runtime_error("ERROR: wrong binary file format, version number is not '5'");
     }
-    ifs.read(TSG.data(), sizeof(char)); // what type of grid is it?
     clear();
-    if (TSG[0] == 'g'){
-        base = std::make_unique<GridGlobal>(ifs, IO::mode_binary_type());
-    }else if (TSG[0] == 's'){
-        base = std::make_unique<GridSequence>(ifs, IO::mode_binary_type());
-    }else if (TSG[0] == 'p'){
-        base = std::make_unique<GridLocalPolynomial>(ifs, IO::mode_binary_type());
-    }else if (TSG[0] == 'w'){
-        base = std::make_unique<GridWavelet>(ifs, IO::mode_binary_type());
-    }else if (TSG[0] == 'f'){
-        base = std::make_unique<GridFourier>(ifs, IO::mode_binary_type());
-    }else if (TSG[0] != 'e'){
-        throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
-    }
-    ifs.read(TSG.data(), sizeof(char)); // linear domain transform?
-    if (TSG[0] == 'y'){
-        domain_transform_a.resize(base->getNumDimensions());
-        domain_transform_b.resize(base->getNumDimensions());
-        ifs.read((char*) domain_transform_a.data(), base->getNumDimensions() * sizeof(double));
-        ifs.read((char*) domain_transform_b.data(), base->getNumDimensions() * sizeof(double));
-    }else if (TSG[0] != 'n'){
+    base = [&](char grid_type)->std::unique_ptr<BaseCanonicalGrid>{
+        switch (grid_type){
+            case 'g': return readGridVersion5<GridGlobal>(ifs, IO::mode_binary_type());
+            case 's': return readGridVersion5<GridSequence>(ifs, IO::mode_binary_type());
+            case 'p': return readGridVersion5<GridLocalPolynomial>(ifs, IO::mode_binary_type());
+            case 'w': return readGridVersion5<GridWavelet>(ifs, IO::mode_binary_type());
+            case 'f': return readGridVersion5<GridFourier>(ifs, IO::mode_binary_type());
+            case 'e': return std::unique_ptr<BaseCanonicalGrid>();
+            default:
+                throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
+        };
+    }(IO::readNumber<IO::mode_binary_type, char>(ifs));
+
+    char flag = IO::readNumber<IO::mode_binary_type, char>(ifs);
+    if (flag == 'y'){
+        domain_transform_a = IO::readVector<IO::mode_binary_type, double>(ifs, base->getNumDimensions());
+        domain_transform_b = IO::readVector<IO::mode_binary_type, double>(ifs, base->getNumDimensions());
+    }else if (flag != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong domain type");
     }
-    ifs.read(TSG.data(), sizeof(char)); // conformal domain transform?
-    if (TSG[0] == 'a'){
-        conformal_asin_power.resize(base->getNumDimensions());
-        ifs.read((char*) conformal_asin_power.data(), base->getNumDimensions() * sizeof(int));
-    }else if (TSG[0] != 'n'){
+
+    flag = IO::readNumber<IO::mode_binary_type, char>(ifs); // conformal domain transform?
+    if (flag == 'a'){
+        conformal_asin_power = IO::readVector<IO::mode_binary_type, int>(ifs, base->getNumDimensions());
+    }else if (flag != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong conformal transform type");
     }
-    ifs.read(TSG.data(), sizeof(char)); // limits
-    if (TSG[0] == 'y'){
-        llimits.resize(base->getNumDimensions());
-        ifs.read((char*) llimits.data(), base->getNumDimensions() * sizeof(int));
-    }else if (TSG[0] != 'n'){
+
+    flag = IO::readNumber<IO::mode_binary_type, char>(ifs); // limits
+    if (flag == 'y'){
+        llimits = IO::readVector<IO::mode_binary_type, int>(ifs, base->getNumDimensions());
+    }else if (flag != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong level limits");
     }
+
     bool reached_eof = false;
-    ifs.read(TSG.data(), sizeof(char));
-    if (TSG[0] == 'c'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
+    flag = IO::readNumber<IO::mode_binary_type, char>(ifs); // construction data
+    if (flag == 'c'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
         usingDynamicConstruction = true;
         base->readConstructionData(ifs, mode_binary);
-    }else if (TSG[0] == 'e'){
+    }else if (flag == 'e'){
         reached_eof = true;
-    }else if (TSG[0] != 's'){
+    }else if (flag != 's'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong construction method specified");
     }
+
     if (!reached_eof){
-        ifs.read(TSG.data(), sizeof(char));
-        if (TSG[0] != 'e'){
+        if (IO::readNumber<IO::mode_binary_type, char>(ifs) != 'e'){
             throw std::runtime_error("ERROR: wrong binary file format, did not reach correct end of Tasmanian block");
         }
     }

@@ -145,11 +145,11 @@ void mpiConstructCommon(ModelSignatureMPI model,
                 // unpack the message
                 VectorToStreamBuffer data_buffer(message_buffer); // do not modify buff after this point
                 std::istream is(&data_buffer);
-                x.resize(IO::readNumber<mode_binary, size_t>(is));
-                IO::readVector<mode_binary>(is, x);
+
+                x = IO::readVector<IO::mode_binary_type, double>(is, IO::readNumber<IO::mode_binary_type, size_t>(is));
+
                 if (use_initial_guess == with_initial_guess){ // unpack y, if necessary
-                    y.resize(IO::readNumber<mode_binary, size_t>(is));
-                    IO::readVector<mode_binary>(is, y);
+                    y = IO::readVector<IO::mode_binary_type, double>(is, IO::readNumber<IO::mode_binary_type, size_t>(is));
                 }else{
                     y.resize(Utils::size_mult(num_outputs, x.size() / num_dimensions));
                 }

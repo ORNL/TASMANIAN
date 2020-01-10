@@ -83,6 +83,8 @@ void static_assertions(){ // does nothing but a bunch of static asserts
     assert_copy_move<CustomTabulated>();
     assert_copy_move<RuleWavelet>();
     assert_copy_move<TasSparse::SparseMatrix>();
+    assert_copy_move<SimpleConstructData>();
+    assert_copy_move<DynamicConstructorDataGlobal>();
 }
 
 ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1) {}

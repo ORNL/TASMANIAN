@@ -40,10 +40,7 @@ namespace TasGrid{
 class GridGlobal : public BaseCanonicalGrid{
 public:
     GridGlobal(){}
-    template<typename iomode> GridGlobal(std::istream &is, iomode const){
-        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
-        else read<mode_binary>(is);
-    }
+    friend struct GridReaderVersion5<GridGlobal>;
     GridGlobal(const GridGlobal *global, int ibegin, int iend);
     GridGlobal(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits){
         makeGrid(cnum_dimensions, cnum_outputs, depth, type, crule, anisotropic_weights, calpha, cbeta, custom_filename, level_limits);
@@ -53,10 +50,8 @@ public:
     bool isGlobal() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
-    void read(std::istream &is, bool iomode) override{ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
 
     template<bool iomode> void write(std::ostream &os) const;
-    template<bool iomode> void read(std::istream &is);
 
     void makeGrid(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits);
 
@@ -179,6 +174,49 @@ private:
     mutable std::unique_ptr<CudaGlobalData<float>> cuda_cachef;
     #endif
 };
+
+// Old version reader
+template<> struct GridReaderVersion5<GridGlobal>{
+    template<typename iomode> static auto read(std::istream &is){
+        std::unique_ptr<GridGlobal> grid = std::make_unique<GridGlobal>();
+
+        grid->num_dimensions = IO::readNumber<iomode, int>(is);
+        grid->num_outputs = IO::readNumber<iomode, int>(is);
+        grid->alpha = IO::readNumber<iomode, double>(is);
+        grid->beta = IO::readNumber<iomode, double>(is);
+        grid->rule = IO::readRule<iomode>(is);
+        if (grid->rule == rule_customtabulated) grid->custom = CustomTabulated(is, iomode());
+        grid->tensors = MultiIndexSet(is, iomode());
+        grid->active_tensors = MultiIndexSet(is, iomode());
+        grid->active_w = IO::readVector<iomode, int>(is, grid->active_tensors.getNumIndexes());
+
+        if (IO::readFlag<iomode>(is)) grid->points = MultiIndexSet(is, iomode());
+        if (IO::readFlag<iomode>(is)) grid->needed = MultiIndexSet(is, iomode());
+
+        grid->max_levels = IO::readVector<iomode, int>(is, grid->num_dimensions);
+
+        if (grid->num_outputs > 0) grid->values = StorageSet(is, iomode());
+
+        int oned_max_level;
+        if (IO::readFlag<iomode>(is)){
+            grid->updated_tensors = MultiIndexSet(is, iomode());
+            oned_max_level = grid->updated_tensors.getMaxIndex();
+
+            grid->updated_active_tensors = MultiIndexSet(is, iomode());
+
+            grid->updated_active_w = IO::readVector<iomode, int>(is, grid->updated_active_tensors.getNumIndexes());
+        }else{
+            oned_max_level = *std::max_element(grid->max_levels.begin(), grid->max_levels.end());
+        }
+
+        grid->wrapper = OneDimensionalWrapper(grid->custom, oned_max_level, grid->rule, grid->alpha, grid->beta);
+
+        grid->recomputeTensorRefs((grid->points.empty()) ? grid->needed : grid->points);
+
+        return grid;
+    }
+};
+
 #endif // __TASMANIAN_DOXYGEN_SKIP
 
 }

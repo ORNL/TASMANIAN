@@ -45,18 +45,8 @@ void MultiIndexSet::write(std::ostream &os) const{
     }
 }
 
-template<bool iomode>
-void MultiIndexSet::read(std::istream &is){
-    num_dimensions = (size_t) IO::readNumber<iomode, int>(is);
-    cache_num_indexes = IO::readNumber<iomode, int>(is);
-    indexes.resize(num_dimensions * ((size_t) cache_num_indexes));
-    IO::readVector<iomode>(is, indexes);
-}
-
 template void MultiIndexSet::write<mode_ascii>(std::ostream &) const; // instantiate for faster build
 template void MultiIndexSet::write<mode_binary>(std::ostream &) const;
-template void MultiIndexSet::read<mode_ascii>(std::istream &);
-template void MultiIndexSet::read<mode_binary>(std::istream &);
 
 void MultiIndexSet::addSortedIndexes(const std::vector<int> &addition){
     if (indexes.empty()){
@@ -236,20 +226,9 @@ void StorageSet::write(std::ostream &os) const{
     if (values.size() != 0)
         IO::writeVector<iomode, IO::pad_line>(values, os);
 }
-template<bool iomode>
-void StorageSet::read(std::istream &is){
-    num_outputs = (size_t) IO::readNumber<iomode, int>(is);
-    num_values = (size_t) IO::readNumber<iomode, int>(is);
-    if (IO::readFlag<iomode>(is)){
-        values.resize(num_outputs * num_values);
-        IO::readVector<iomode>(is, values);
-    }
-}
 
 template void StorageSet::write<mode_ascii>(std::ostream &) const;
 template void StorageSet::write<mode_binary>(std::ostream &) const;
-template void StorageSet::read<mode_ascii>(std::istream &);
-template void StorageSet::read<mode_binary>(std::istream &);
 
 void StorageSet::resize(int cnum_outputs, int cnum_values){
     values = std::vector<double>();
