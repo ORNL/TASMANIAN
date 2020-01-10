@@ -242,11 +242,6 @@ public:
     //! followed by all the entries of the array on a single line separated by a space, or dump of a single write command.
     template<bool useAscii> void write(std::ostream &os) const;
 
-    //! \brief Read the from the stream, must know whether to use ASCII or binary format.
-
-    //! Uses the same format as \b write<bool>
-    template<bool useAscii> void read(std::istream &os);
-
     //! \brief Returns **true** if there are no multi-indexes in the set, **false** otherwise
     inline bool empty() const{ return indexes.empty(); }
 
@@ -337,9 +332,6 @@ public:
      * followed by all the entries of the array on a single line separated by a space, or dump of a single write command.
      */
     template<bool useAscii> void write(std::ostream &os) const;
-
-    //! \brief Read the from the stream, must know whether to use ASCII or binary format.
-    template<bool useAscii> void read(std::istream &os);
 
     //! \brief Clear the existing values and assigns new dimensions, does not allocate memory for the new values.
     void resize(int cnum_outputs, int cnum_values);

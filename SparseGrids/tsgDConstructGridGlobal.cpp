@@ -51,26 +51,8 @@ template<bool use_ascii> void DynamicConstructorDataGlobal::write(std::ostream &
     writeNodeDataList<use_ascii>(data, os);
 }
 
-template<bool use_ascii> void DynamicConstructorDataGlobal::read(std::istream &is){
-    int num_entries = IO::readNumber<use_ascii, int>(is);
-
-    for(int i=0; i<num_entries; i++){
-        tensors.emplace_front(TensorData{
-                              std::vector<int>(num_dimensions), // tensor
-                              MultiIndexSet(), // points, will be set later
-                              std::vector<bool>(), // loaded, will be set later
-                              IO::readNumber<use_ascii, double>(is) // weight
-                              });
-        IO::readVector<use_ascii>(is, tensors.front().tensor);
-    }
-
-    data = readNodeDataList<use_ascii>(num_dimensions, num_outputs, is);
-}
-
 template void DynamicConstructorDataGlobal::write<mode_ascii>(std::ostream &) const; // instantiate for faster build
 template void DynamicConstructorDataGlobal::write<mode_binary>(std::ostream &) const;
-template void DynamicConstructorDataGlobal::read<mode_ascii>(std::istream &);
-template void DynamicConstructorDataGlobal::read<mode_binary>(std::istream &);
 
 int DynamicConstructorDataGlobal::getMaxTensor() const{
     int max_tensor = 0;
@@ -116,10 +98,10 @@ MultiIndexSet DynamicConstructorDataGlobal::getInitialTensors() const{
 
 void DynamicConstructorDataGlobal::addTensor(const int *tensor, std::function<int(int)> getNumPoints, double weight){
     tensors.emplace_front(TensorData{
+                          weight,
                           std::vector<int>(tensor, tensor + num_dimensions),
                           MultiIndexManipulations::generateNestedPoints(MultiIndexSet(num_dimensions, std::vector<int>(tensor, tensor + num_dimensions)), getNumPoints),
                           std::vector<bool>(),
-                          weight
                           });
 
     tensors.front().loaded = std::vector<bool>((size_t) tensors.front().points.getNumIndexes(), false);

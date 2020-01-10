@@ -354,11 +354,10 @@ void GridGlobal::writeConstructionData(std::ostream &os, bool iomode) const{
     if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
 }
 void GridGlobal::readConstructionData(std::istream &is, bool iomode){
-    dynamic_values = std::make_unique<DynamicConstructorDataGlobal>((size_t) num_dimensions, (size_t) num_outputs);
     if (iomode == mode_ascii)
-        dynamic_values->read<mode_ascii>(is);
+        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
     else
-        dynamic_values->read<mode_binary>(is);
+        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(is, num_dimensions, num_outputs, IO::mode_binary_type());
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
         wrapper = OneDimensionalWrapper(custom, max_level, rule, alpha, beta);

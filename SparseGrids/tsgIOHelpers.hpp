@@ -316,24 +316,12 @@ void writeFlag(bool flag, std::ostream &os){
  * \ingroup TasmanianIO
  * \brief Read a flag, ascii uses 0 and 1, binary uses characters y and n (counter intuitive, I know).
  */
-template<bool iomode>
-bool readFlag(std::istream &os){
-    if (iomode == mode_ascii){
-        int flag;
-        os >> flag;
-        return (flag == 1);
-    }else{
-        char cflag;
-        os.read(&cflag, sizeof(char));
-        return (cflag == 'y');
-    }
-}
 template<typename iomode>
 bool readFlag(std::istream &os){
     if (std::is_same<iomode, mode_ascii_type>::value){
         int flag;
         os >> flag;
-        return (flag == 1);
+        return (flag != 0);
     }else{
         char cflag;
         os.read(&cflag, sizeof(char));
@@ -366,14 +354,6 @@ void writeVector(const std::vector<VecType> &x, std::ostream &os){
  * \ingroup TasmanianIO
  * \brief Read the vector from the stream, the size must already be set.
  */
-template<bool iomode, typename VecType>
-void readVector(std::istream &os, std::vector<VecType> &x){
-    if (iomode == mode_ascii){
-        for(auto &i : x) os >> i;
-    }else{
-        os.read((char*) x.data(), x.size() * sizeof(VecType));
-    }
-}
 template<typename iomode, typename VecType>
 void readVector(std::istream &is, std::vector<VecType> &x){
     if (std::is_same<iomode, mode_ascii_type>::value){
@@ -387,12 +367,6 @@ void readVector(std::istream &is, std::vector<VecType> &x){
  * \ingroup TasmanianIO
  * \brief Read the vector with the specified size.
  */
-template<bool iomode, typename VecType, typename SizeType>
-std::vector<VecType> readVector(std::istream &is, SizeType num_entries){
-    std::vector<VecType> x((size_t) num_entries);
-    readVector<iomode, VecType>(is, x);
-    return x;
-}
 template<typename iomode, typename VecType, typename SizeType>
 std::vector<VecType> readVector(std::istream &is, SizeType num_entries){
     std::vector<VecType> x((size_t) num_entries);
@@ -414,16 +388,6 @@ void writeNumbers(std::ostream &os, Vals... vals){
  * \ingroup TasmanianIO
  * \brief Read a single number, used to read ints (and potentially cast to size_t) or read a double.
  */
-template<bool iomode, typename Val>
-Val readNumber(std::istream &os){
-    Val v;
-    if (iomode == mode_ascii){
-        os >> v;
-    }else{
-        os.read((char*) &v, sizeof(Val));
-    }
-    return v;
-}
 template<typename iomode, typename Val>
 Val readNumber(std::istream &is){
     Val v;
@@ -453,16 +417,6 @@ void writeRule(TypeOneDRule rule, std::ostream &os){
  * \ingroup TasmanianIO
  * \brief Read a rule.
  */
-template<bool iomode>
-TypeOneDRule readRule(std::istream &is){
-    if (iomode == mode_ascii){
-        std::string T;
-        is >> T;
-        return getRuleString(T);
-    }else{
-        return getRuleInt(readNumber<mode_binary, int>(is));
-    }
-}
 template<typename iomode>
 TypeOneDRule readRule(std::istream &is){
     if (std::is_same<iomode, mode_ascii_type>::value){
@@ -470,7 +424,7 @@ TypeOneDRule readRule(std::istream &is){
         is >> T;
         return getRuleString(T);
     }else{
-        return getRuleInt(readNumber<mode_binary, int>(is));
+        return getRuleInt(readNumber<mode_binary_type, int>(is));
     }
 }
 

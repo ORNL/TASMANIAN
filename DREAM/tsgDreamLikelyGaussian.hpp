@@ -109,10 +109,10 @@ public:
 
     //! \brief Reads the data from a stream, assumes write() has been used first.
     void read(std::istream &is){
-        int num_entries = TasGrid::IO::readNumber<TasGrid::mode_binary, int>(is);
-        scale = TasGrid::IO::readNumber<TasGrid::mode_binary, double>(is);
+        int num_entries = TasGrid::IO::readNumber<TasGrid::IO::mode_binary_type, int>(is);
+        scale = TasGrid::IO::readNumber<TasGrid::IO::mode_binary_type, double>(is);
         data = std::vector<double>((size_t) num_entries);
-        TasGrid::IO::readVector<TasGrid::mode_binary>(is, data);
+        TasGrid::IO::readVector<TasGrid::IO::mode_binary_type>(is, data);
     }
 
 private:
@@ -180,11 +180,11 @@ public:
 
     //! \brief Reads the data from a stream, assumes write() has been used first.
     void read(std::istream &is){
-        int num_entries = TasGrid::IO::readNumber<TasGrid::mode_binary, int>(is);
+        int num_entries = TasGrid::IO::readNumber<TasGrid::IO::mode_binary_type, int>(is);
         data_by_variance = std::vector<double>((size_t) num_entries);
         noise_variance   = std::vector<double>((size_t) num_entries);
-        TasGrid::IO::readVector<TasGrid::mode_binary>(is, data_by_variance);
-        TasGrid::IO::readVector<TasGrid::mode_binary>(is, noise_variance);
+        TasGrid::IO::readVector<TasGrid::IO::mode_binary_type>(is, data_by_variance);
+        TasGrid::IO::readVector<TasGrid::IO::mode_binary_type>(is, noise_variance);
     }
 
 private:

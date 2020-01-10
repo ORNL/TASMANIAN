@@ -231,8 +231,10 @@ void GridSequence::writeConstructionData(std::ostream &os, bool iomode) const{
     if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
 }
 void GridSequence::readConstructionData(std::istream &is, bool iomode){
-    if (iomode == mode_ascii) dynamic_values = readSimpleConstructionData<mode_ascii>(num_dimensions, num_outputs, is);
-    else dynamic_values = readSimpleConstructionData<mode_binary>(num_dimensions, num_outputs, is);
+    if (iomode == mode_ascii)
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
+    else
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_binary_type());
 }
 std::vector<double> GridSequence::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     MultiIndexManipulations::ProperWeights weights((size_t) num_dimensions, type, anisotropic_weights);

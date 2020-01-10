@@ -881,7 +881,7 @@ std::vector<int> TasgridWrapper::readLevelLimits(int num_weights) const{
     return llimits;
 }
 
-template<bool iomode>
+template<typename iomode>
 Data2D<double> readMatrixFromOpen(std::istream &is){
     int rows = IO::readNumber<iomode, int>(is);
     int cols = IO::readNumber<iomode, int>(is);
@@ -904,11 +904,11 @@ Data2D<double> TasgridWrapper::readMatrix(std::string const &filename){
     char tsg[3] = {'A', 'A', 'A'};
     ifs.read(tsg, 3*sizeof(char));
     if ((tsg[0] == 'T') && (tsg[1] == 'S') && (tsg[2] == 'G')){
-        matrix = readMatrixFromOpen<mode_binary>(ifs);
+        matrix = readMatrixFromOpen<IO::mode_binary_type>(ifs);
     }else{ // not a binary file
         ifs.close();
         ifs.open(filename);
-        matrix = readMatrixFromOpen<mode_ascii>(ifs);
+        matrix = readMatrixFromOpen<IO::mode_ascii_type>(ifs);
     }
     if (matrix.empty())
         cerr << "WARNING: empty file " << filename << endl;

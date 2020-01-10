@@ -444,8 +444,10 @@ void GridLocalPolynomial::writeConstructionData(std::ostream &os, bool iomode) c
     if (iomode == mode_ascii) dynamic_values->write<mode_ascii>(os); else dynamic_values->write<mode_binary>(os);
 }
 void GridLocalPolynomial::readConstructionData(std::istream &is, bool iomode){
-    if (iomode == mode_ascii) dynamic_values = readSimpleConstructionData<mode_ascii>(num_dimensions, num_outputs, is);
-    else dynamic_values = readSimpleConstructionData<mode_binary>(num_dimensions, num_outputs, is);
+    if (iomode == mode_ascii)
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
+    else
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_binary_type());
 }
 std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
                                                                         std::vector<int> const &level_limits, double const *scale_correction){

@@ -97,14 +97,14 @@ struct NodeData{
  * \endinternal
  */
 struct TensorData{
+    //! \brief The weight indicates the relative importance of the tensor.
+    double weight;
     //! \brief Multi-index of the tensor.
     std::vector<int> tensor;
     //! \brief The points associated with the surplus operator, the tensor can be included only when all points are available.
     MultiIndexSet points;
     //! \brief For each point \b false if the model data is not yet available for the point, true otherwise.
     std::vector<bool> loaded;
-    //! \brief The weight indicates the relative importance of the tensor.
-    double weight;
 };
 
 /*!
@@ -148,21 +148,42 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, std::ostream &os
  * \brief Reads a NodeData std::forward_list from a file using either binary or ascii format.
  * \endinternal
  */
-template<bool use_ascii>
-std::forward_list<NodeData> readNodeDataList(size_t num_dimensions, size_t num_outputs, std::istream &is){
+template<typename iomode>
+std::forward_list<NodeData> readNodeDataList(std::istream &is, size_t num_dimensions, size_t num_outputs){
     std::forward_list<NodeData> data;
-    int num_nodes = IO::readNumber<use_ascii, int>(is);
+    int num_nodes = IO::readNumber<iomode, int>(is);
 
     for(int i=0; i<num_nodes; i++){
         data.emplace_front(NodeData{
-                            std::vector<int>(num_dimensions), // point
-                            std::vector<double>(num_outputs)  // value
+                            IO::readVector<iomode, int>(is, num_dimensions), // point
+                            IO::readVector<iomode, double>(is, num_outputs)  // value
                            });
-        IO::readVector<use_ascii>(is, data.front().point);
-        IO::readVector<use_ascii>(is, data.front().value);
     }
 
     return data;
+}
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Reads a TensorData std::forward_list from a file using either binary or ascii format.
+ *
+ * \endinternal
+ */
+template<typename iomode>
+std::forward_list<TensorData> readTensorDataList(std::istream &is, size_t num_dimensions){
+    std::forward_list<TensorData> tensors;
+    int num_entries = IO::readNumber<iomode, int>(is);
+
+    for(int i=0; i<num_entries; i++){
+        tensors.emplace_front(TensorData{
+                              IO::readNumber<iomode, double>(is), // weight
+                              IO::readVector<iomode, int>(is, num_dimensions), // tensor
+                              MultiIndexSet(), // points, will be set later
+                              std::vector<bool>() // loaded, will be set later
+                              });
+    }
+
+    return tensors;
 }
 
 /*!
@@ -178,17 +199,21 @@ std::forward_list<NodeData> readNodeDataList(size_t num_dimensions, size_t num_o
  */
 class DynamicConstructorDataGlobal{
 public:
-    //! \brief The only constructor, requires that the dimension and the number of model outputs is specified.
+    //! \brief Constructor, requires that the dimension and the number of model outputs is specified.
     DynamicConstructorDataGlobal(size_t cnum_dimensions, size_t cnum_outputs);
-    //! \brief Default copy constructor.
-    DynamicConstructorDataGlobal(DynamicConstructorDataGlobal const &) = default;
+    //! \brief Read constructor.
+    template<typename iomode>
+    DynamicConstructorDataGlobal(std::istream &is, size_t cnum_dimensions, size_t cnum_outputs, iomode) :
+        num_dimensions(cnum_dimensions),
+        num_outputs(cnum_outputs),
+        tensors(readTensorDataList<iomode>(is, num_dimensions)),
+        data(readNodeDataList<iomode>(is, num_dimensions, num_outputs))
+        {}
     //! \brief Default destructor, release all used memory and erase all stored data.
     ~DynamicConstructorDataGlobal();
 
     //! \brief Write the data to a stream using ascii or binary format.
     template<bool use_ascii> void write(std::ostream &os) const;
-    //! \brief Read the data from a stream using ascii or binary format.
-    template<bool use_ascii> void read(std::istream &is);
 
     //! \brief Restrict data between \b ibegin and \b iend entries.
     void restrictData(int ibegin, int iend){ for(auto &d : data) d.value = std::vector<double>(d.value.begin() + ibegin, d.value.begin() + iend); }
@@ -219,8 +244,8 @@ public:
 
 private:
     size_t num_dimensions, num_outputs;
-    std::forward_list<NodeData> data;
     std::forward_list<TensorData> tensors;
+    std::forward_list<NodeData> data;
 };
 
 /*!
@@ -236,10 +261,16 @@ private:
  * \endinternal
  */
 struct SimpleConstructData{
-    //! \brief A list of pair indicating point and model output values.
-    std::forward_list<NodeData> data;
+    SimpleConstructData() = default;
+    template<typename iomode>
+    SimpleConstructData(std::istream &is, int num_dimensions, int num_outputs, iomode) :
+        initial_points(MultiIndexSet(is, iomode())),
+        data(readNodeDataList<iomode>(is, num_dimensions, num_outputs))
+        {}
     //! \brief Keeps track of the initial point set, so those can be computed first.
     MultiIndexSet initial_points;
+    //! \brief A list of pair indicating point and model output values.
+    std::forward_list<NodeData> data;
     //! \brief Save to a file in either ascii or binary format.
     template<bool use_ascii>
     void write(std::ostream &os) const{
@@ -270,21 +301,6 @@ struct SimpleConstructData{
         return result.getVector();
     }
 };
-
-/*!
- * \internal
- * \ingroup TasmanianRefinement
- * \brief Creates a unique_ptr holding a \b SimpleConstructData that has be read form the stream.
- *
- * \endinternal
- */
-template<bool use_ascii>
-std::unique_ptr<SimpleConstructData> readSimpleConstructionData(size_t num_dimensions, size_t num_outputs, std::istream &is){
-    std::unique_ptr<SimpleConstructData> dynamic_values = std::make_unique<SimpleConstructData>();
-    dynamic_values->initial_points.read<use_ascii>(is);
-    dynamic_values->data = readNodeDataList<use_ascii>(num_dimensions, num_outputs, is);
-    return dynamic_values;
-}
 
 }
 

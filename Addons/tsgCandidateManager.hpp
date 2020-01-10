@@ -253,10 +253,10 @@ public:
 
     //! \brief Read the stored samples from the stream
     void read(std::istream &is){
-        points.resize(IO::readNumber<mode_binary, size_t>(is));
-        values.resize(IO::readNumber<mode_binary, size_t>(is));
-        IO::readVector<mode_binary>(is, points);
-        IO::readVector<mode_binary>(is, values);
+        points.resize(IO::readNumber<IO::mode_binary_type, size_t>(is));
+        values.resize(IO::readNumber<IO::mode_binary_type, size_t>(is));
+        IO::readVector<IO::mode_binary_type>(is, points);
+        IO::readVector<IO::mode_binary_type>(is, values);
     }
 
     //! \brief Add a point to the stored list.
