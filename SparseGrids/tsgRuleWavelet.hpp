@@ -39,8 +39,10 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class RuleWavelet{
 public:
-    RuleWavelet(int order, int iter_depth);
-    ~RuleWavelet();
+    RuleWavelet(int corder, int iter_depth) : order(0), iteration_depth(iter_depth), num_data_points((1 << iteration_depth) + 1){
+        updateOrder(corder);
+    }
+    ~RuleWavelet() = default;
 
     // Interface to Extend
     int getNumPoints(int level) const; // get the number of points associated with level (also the index of the first point on the level+1)

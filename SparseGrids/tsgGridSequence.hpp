@@ -38,13 +38,13 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridSequence : public BaseCanonicalGrid{
 public:
-    GridSequence(){}
+    GridSequence() : rule(rule_none){}
     friend struct GridReaderVersion5<GridSequence>;
     GridSequence(const GridSequence *seq, int ibegin, int iend);
     GridSequence(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     GridSequence(int cnum_dimensions, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     GridSequence(MultiIndexSet &&pset, int cnum_outputs, TypeOneDRule crule);
-    ~GridSequence(){}
+    ~GridSequence() = default;
 
     bool isSequence() const override{ return true; }
 

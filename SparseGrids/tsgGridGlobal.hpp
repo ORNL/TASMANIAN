@@ -39,13 +39,13 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridGlobal : public BaseCanonicalGrid{
 public:
-    GridGlobal(){}
+    GridGlobal() : rule(rule_none), alpha(0.0), beta(0.0){}
     friend struct GridReaderVersion5<GridGlobal>;
     GridGlobal(const GridGlobal *global, int ibegin, int iend);
     GridGlobal(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits){
         makeGrid(cnum_dimensions, cnum_outputs, depth, type, crule, anisotropic_weights, calpha, cbeta, custom_filename, level_limits);
     }
-    ~GridGlobal(){}
+    ~GridGlobal() = default;
 
     bool isGlobal() const override{ return true; }
 

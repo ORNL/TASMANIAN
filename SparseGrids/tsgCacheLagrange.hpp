@@ -80,7 +80,7 @@ public:
         }
     }
     //! \brief Destructor, clear all used data.
-    ~CacheLagrange(){}
+    ~CacheLagrange() = default;
 
     //! \brief Computes the values of all Lagrange polynomials for the given level at the given x
     static void cacheLevel(int level, double x, const OneDimensionalWrapper &rule, T *cache){

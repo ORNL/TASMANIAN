@@ -216,9 +216,6 @@ void MultiIndexSet::removeIndex(const std::vector<int> &p){
     }
 }
 
-StorageSet::StorageSet() : num_outputs(0), num_values(0){}
-StorageSet::~StorageSet(){}
-
 template<bool iomode>
 void StorageSet::write(std::ostream &os) const{
     IO::writeNumbers<iomode, IO::pad_rspace>(os, (int) num_outputs, (int) num_values);

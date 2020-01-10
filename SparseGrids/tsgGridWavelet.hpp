@@ -43,7 +43,7 @@ public:
     GridWavelet(const GridWavelet *wav, int ibegin, int iend);
     GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
     GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals);
-    ~GridWavelet(){}
+    ~GridWavelet() = default;
 
     bool isWavelet() const override{ return true; }
 

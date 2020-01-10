@@ -66,7 +66,7 @@ public:
     //! \brief Constructor, loads the nodes into the internal data structures.
     TableGaussPatterson();
     //! \brief Destrutor, cleans all memory.
-    ~TableGaussPatterson(){}
+    ~TableGaussPatterson() = default;
 
     //! \brief Return the number of hard-coded levels.
     static int getNumLevels(){ return 9; }

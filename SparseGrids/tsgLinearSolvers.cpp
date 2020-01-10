@@ -303,9 +303,6 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
 
 namespace TasSparse{
 
-SparseMatrix::SparseMatrix() : tol(Maths::num_tol), num_rows(0){}
-SparseMatrix::~SparseMatrix(){}
-
 void SparseMatrix::load(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals){
     num_rows = (int) lpntr.size();
 
