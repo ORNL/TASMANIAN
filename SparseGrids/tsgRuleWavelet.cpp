@@ -35,15 +35,6 @@ namespace TasGrid{
 inline int ACCESS_FINE(int i, int level, int depth){ return ((1 << (depth - level - 1)) * (2 * i + 1)); }
 inline int ACCESS_COARSE(int i, int level, int depth){ return i * (1 << (depth - level)); }
 
-RuleWavelet::RuleWavelet(int ord, int iter_depth){
-    // Initializes the wavelet rule of the specified order.
-    // Note: Only orders 1 & 3 wavelets are currently implemented.
-    iteration_depth = iter_depth;
-    num_data_points = (1 << iteration_depth) + 1;
-    order = 0;
-    updateOrder(ord);
-}
-
 void RuleWavelet::updateOrder(int ord){
     // Changes the order of the rule to the specified order. If order other than 1 is
     // specified, then the approximation to the wavelets will be recalculated.
@@ -201,8 +192,6 @@ void RuleWavelet::cubic_cascade(double *y, int starting_level, int in_iteration_
         }
     }
 }
-
-RuleWavelet::~RuleWavelet(){}
 
 int RuleWavelet::getOrder() const{
     return order;

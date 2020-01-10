@@ -596,7 +596,6 @@ AccelerationDomainTransform::AccelerationDomainTransform(std::vector<double> con
     gpu_trans_a.load(rate);
     gpu_trans_b.load(shift);
 }
-AccelerationDomainTransform::~AccelerationDomainTransform(){}
 
 template<typename T>
 void AccelerationDomainTransform::getCanonicalPoints(bool use01, const T *gpu_transformed_x, int num_x, CudaVector<T> &gpu_canonical_x){

@@ -63,9 +63,6 @@ TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : ac
     acceleration = accel_cpu_blas;
 #endif // Tasmanian_ENABLE_BLAS
 }
-TasmanianSparseGrid::~TasmanianSparseGrid(){
-    clear();
-}
 
 TasmanianSparseGrid& TasmanianSparseGrid::operator=(TasmanianSparseGrid const &source){
     copyGrid(&source);

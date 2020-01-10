@@ -36,11 +36,6 @@
 
 namespace TasGrid{
 
-CustomTabulated::CustomTabulated() : num_levels(0){}
-CustomTabulated::~CustomTabulated(){}
-
-void CustomTabulated::reset(){ num_levels = 0; }
-
 template<bool iomode> void CustomTabulated::write(std::ostream &ofs) const{
     if (iomode == mode_ascii){ // format is messy here
         ofs << "description: " << description.c_str() << std::endl;
@@ -68,7 +63,6 @@ template<bool iomode> void CustomTabulated::write(std::ostream &ofs) const{
 }
 
 template<bool iomode> void CustomTabulated::read(std::istream &is){
-    reset();
     if (iomode == mode_ascii){ // messy format chosen for better human readability, hard to template and generalize
         std::string T;
         char dummy;

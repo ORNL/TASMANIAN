@@ -310,7 +310,7 @@ public:
     //! \brief Constructor, load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
     AccelerationDomainTransform(std::vector<double> const &transform_a, std::vector<double> const &transform_b);
     //! \brief Destructor, clear all loaded data.
-    ~AccelerationDomainTransform();
+    ~AccelerationDomainTransform() = default;
 
     //! \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
 

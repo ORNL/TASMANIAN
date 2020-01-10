@@ -53,11 +53,11 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridLocalPolynomial : public BaseCanonicalGrid{
 public:
-    GridLocalPolynomial() : order(1){}
+    GridLocalPolynomial() : order(1), top_level(0), sparse_affinity(0){}
     friend struct GridReaderVersion5<GridLocalPolynomial>;
     GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend);
     GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
-    ~GridLocalPolynomial(){}
+    ~GridLocalPolynomial() = default;
 
     bool isLocalPolynomial() const override{ return true; }
 

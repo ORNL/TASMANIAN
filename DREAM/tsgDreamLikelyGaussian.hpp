@@ -59,11 +59,11 @@ namespace TasDREAM{
 class LikelihoodGaussIsotropic : public TasmanianLikelihood{
 public:
     //! \brief Default constructor for convenience, an object constructed with the default cannot be used until \b setData() is called.
-    LikelihoodGaussIsotropic(){}
+    LikelihoodGaussIsotropic() : scale(0.0){}
     //! \brief Constructs the class and calls \b setData().
     LikelihoodGaussIsotropic(double variance, const std::vector<double> &data_mean, size_t num_observe = 1){ setData(variance, data_mean, num_observe); }
     //! \brief Default destructor.
-    ~LikelihoodGaussIsotropic(){}
+    ~LikelihoodGaussIsotropic() = default;
 
     /*!
      * \brief Set the noise magnitude (\b varaince) the observed data (\b data_mean) and number of observations (\b num_observe).
@@ -77,10 +77,10 @@ public:
     void setData(double variance, const std::vector<double> &data_mean, size_t num_observe = 1);
 
     //! \brief Compute the likelihood of a set of model outputs.
-    void getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const override;
+    void getLikelihood(TypeSamplingForm form, const std::vector<double> &model, std::vector<double> &likely) const override final;
 
     //! \brief Overload for raw-arrays, for interface purposes mostly, e.g., python.
-    void getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const override;
+    void getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const override final;
 
     //! \brief Returns the size of the \b data_mean vector (for error checking purposes).
     int getNumOutputs() const override{ return (int) data.size(); }
@@ -139,11 +139,11 @@ private:
 class LikelihoodGaussAnisotropic : public TasmanianLikelihood{
 public:
     //! \brief Default constructor for convenience, an object constructed with the default cannot be used until \b setData() is called.
-    LikelihoodGaussAnisotropic(){}
+    LikelihoodGaussAnisotropic() = default;
     //! \brief Constructs the class and calls \b setData().
     LikelihoodGaussAnisotropic(std::vector<double> const &variance, std::vector<double> const &data_mean, size_t num_observe = 1){ setData(variance, data_mean, num_observe); }
     //! \brief Default destructor.
-    ~LikelihoodGaussAnisotropic(){}
+    ~LikelihoodGaussAnisotropic() = default;
 
     /*!
      * \brief Set the noise magnitude (\b variance) the observed data (\b data_mean) and number of observations (\b num_observe).
@@ -156,10 +156,10 @@ public:
     void setData(std::vector<double> const &variance, std::vector<double> const &data_mean, size_t num_observe = 1);
 
     //! \brief Compute the likelihood of a set of model outputs.
-    void getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const override;
+    void getLikelihood(TypeSamplingForm form, std::vector<double> const &model, std::vector<double> &likely) const override final;
 
     //! \brief Overload for raw-arrays, for interface purposes mostly, e.g., python.
-    void getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const override;
+    void getLikelihood(TypeSamplingForm form, double const model[], int num_samples, double likely[]) const override final;
 
     //! \brief Returns the size of the \b data_mean vector (for error checking purposes).
     int getNumOutputs() const override{ return (int) noise_variance.size(); }

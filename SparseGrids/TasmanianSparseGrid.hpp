@@ -278,7 +278,7 @@ public:
     //! \brief Move constructor, the selected acceleration mode is also carried over.
     TasmanianSparseGrid(TasmanianSparseGrid &&source) = default;
     //! \brief Destructor, releases all resources.
-    ~TasmanianSparseGrid();
+    ~TasmanianSparseGrid() = default;
 
     //! \brief Copy assignment, note that the selected acceleration mode is not copied, acceleration is reset to the default.
     TasmanianSparseGrid& operator=(TasmanianSparseGrid const &source);

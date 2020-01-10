@@ -38,13 +38,13 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridFourier : public BaseCanonicalGrid {
 public:
-    GridFourier(){}
+    GridFourier() = default;
     friend struct GridReaderVersion5<GridFourier>;
     GridFourier(const GridFourier *fourier, int ibegin, int iend);
     GridFourier(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
         makeGrid(cnum_dimensions, cnum_outputs, depth, type, anisotropic_weights, level_limits);
     }
-    ~GridFourier(){}
+    ~GridFourier() = default;
 
     bool isFourier() const override{ return true; }
 

@@ -39,7 +39,7 @@ namespace TasGrid{
 class BaseRuleLocalPolynomial{
 public:
     BaseRuleLocalPolynomial() : max_order(0){}
-    virtual ~BaseRuleLocalPolynomial(){}
+    virtual ~BaseRuleLocalPolynomial() = default;
 
     virtual int getMaxOrder() const = 0;
     virtual void setMaxOrder(int order) = 0;
@@ -74,8 +74,8 @@ protected:
 template<TypeOneDRule rule, bool isZeroOrder>
 class templRuleLocalPolynomial : public BaseRuleLocalPolynomial{
 public:
-    templRuleLocalPolynomial(){}
-    ~templRuleLocalPolynomial(){}
+    templRuleLocalPolynomial() = default;
+    ~templRuleLocalPolynomial() = default;
 
     int getMaxOrder() const override{ return max_order; }
     void setMaxOrder(int order) override{ max_order = order; }

@@ -35,10 +35,6 @@
 
 namespace TasGrid{
 
-DynamicConstructorDataGlobal::DynamicConstructorDataGlobal(size_t cnum_dimensions, size_t cnum_outputs)
-    : num_dimensions(cnum_dimensions), num_outputs(cnum_outputs){}
-DynamicConstructorDataGlobal::~DynamicConstructorDataGlobal(){}
-
 template<bool use_ascii> void DynamicConstructorDataGlobal::write(std::ostream &os) const{
     if (use_ascii == mode_ascii){ os << std::scientific; os.precision(17); }
     auto tensor_refs =  makeReverseReferenceVector(tensors);

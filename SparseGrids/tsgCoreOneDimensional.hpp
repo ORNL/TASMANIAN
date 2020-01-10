@@ -65,14 +65,14 @@ namespace TasGrid{
 class CustomTabulated{
 public:
     //! \brief Default constructor, create an empty table, need to read from file before any other data can be accessed.
-    CustomTabulated();
+    CustomTabulated() : num_levels(0){}
     //! \brief Read-constructor.
     template<typename iomode> CustomTabulated(std::istream &is, iomode) : CustomTabulated(){
         if (std::is_same<iomode, IO::mode_ascii_type>::value)
             read<mode_ascii>(is); else read<mode_binary>(is);
     }
     //! \brief Destructor, clear the rule.
-    ~CustomTabulated();
+    ~CustomTabulated() = default;
 
     //! \brief Write to an already open ASCII/binary file, used in conjunction with \b GlobalGrid::write()
     template<bool useAscii> void write(std::ostream &os) const;
@@ -95,10 +95,6 @@ public:
     void getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const;
     //! \brief Returns the user provided human readable description string.
     const char* getDescription() const;
-
-protected:
-    //! \brief Clear the number of levels.
-    void reset();
 
 private:
     int num_levels;

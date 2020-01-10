@@ -106,16 +106,19 @@ public:
     //! \brief Default constructor makes an empty data-structure.
     Data2D() : stride(0), num_strips(0){}
     //! \brief Create data-structure with given \b stride and number of \b strips.
-    Data2D(int new_stride, int new_num_strips) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips){}
-    //! \brief Create data-structure with given \b stride and number of \b strips.
-    Data2D(size_t new_stride, int new_num_strips) : stride(new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips){}
+    template<typename IntTypeA, typename IntTypeB>
+    Data2D(IntTypeA new_stride, IntTypeB new_num_strips) : stride((size_t) new_stride), num_strips((size_t) new_num_strips),
+                                                           vec(Utils::size_mult(stride, num_strips)){}
     //! \brief Create data-structure with given \b stride and number of \b strips and initializes with \b val.
-    Data2D(int new_stride, int new_num_strips, T val) : stride((size_t) new_stride), num_strips((size_t) new_num_strips), vec(stride * num_strips, val){}
+    template<typename IntTypeA, typename IntTypeB>
+    Data2D(IntTypeA new_stride, IntTypeB new_num_strips, T val) : stride((size_t) new_stride), num_strips((size_t) new_num_strips),
+                                                                  vec(Utils::size_mult(stride, num_strips), val){}
     //! \brief Create data-structure with given \b stride and number of \b strips and moves \b data into the internal vector.
-    Data2D(int new_stride, int new_num_strips, std::vector<T> &&data) : stride((size_t) new_stride), num_strips((size_t) new_num_strips),
+    template<typename IntTypeA, typename IntTypeB>
+    Data2D(IntTypeA new_stride, IntTypeB new_num_strips, std::vector<T> &&data) : stride((size_t) new_stride), num_strips((size_t) new_num_strips),
         vec(std::forward<std::vector<T>>(data)){}
     //! \brief Default destructor.
-    ~Data2D(){}
+    ~Data2D() = default;
 
     //! \brief Returns \b true if the number of strips is zero.
     bool empty() const{ return (num_strips == 0); }
@@ -234,7 +237,7 @@ public:
         indexes(IO::readVector<iomode, int>(is, Utils::size_mult(num_dimensions, cache_num_indexes)))
         {}
     //! \brief Default destructor.
-    ~MultiIndexSet(){}
+    ~MultiIndexSet() = default;
 
     //! \brief Write the set to ASCII or binary stream, use with std::ofstream and std::ifstream.
 
@@ -313,7 +316,7 @@ private:
 class StorageSet{
 public:
     //! \brief Default constructor, makes an empty set.
-    StorageSet();
+    StorageSet() : num_outputs(0), num_values(0){}
     //! \brief Move constructor from a known vector.
     StorageSet(int cnum_outputs, int cnum_values, std::vector<double> &&vals) :
         num_outputs(cnum_outputs), num_values(cnum_values), values(std::forward<std::vector<double>>(vals)){}
@@ -323,7 +326,7 @@ public:
         values((IO::readFlag<iomode>(is)) ? IO::readVector<iomode, double>(is, Utils::size_mult(num_outputs, num_values)) : std::vector<double>())
     {}
     //! \brief Default destructor.
-    ~StorageSet();
+    ~StorageSet() = default;
 
     /*!
      * \brief Write the set to ASCII or binary stream, use with std::ofstream and std::ifstream.

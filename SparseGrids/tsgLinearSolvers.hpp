@@ -119,9 +119,9 @@ namespace TasSparse{
 class SparseMatrix{
 public:
     //! \brief Default constructor, create an empty matrix.
-    SparseMatrix();
+    SparseMatrix() : tol(Maths::num_tol), num_rows(0){}
     //! \brief Default destructor.
-    ~SparseMatrix();
+    ~SparseMatrix() = default;
 
     //! \brief Load the sparse matrix in row-compressed form.
     void load(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);

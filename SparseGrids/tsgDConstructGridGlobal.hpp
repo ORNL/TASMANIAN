@@ -200,7 +200,7 @@ std::forward_list<TensorData> readTensorDataList(std::istream &is, size_t num_di
 class DynamicConstructorDataGlobal{
 public:
     //! \brief Constructor, requires that the dimension and the number of model outputs is specified.
-    DynamicConstructorDataGlobal(size_t cnum_dimensions, size_t cnum_outputs);
+    DynamicConstructorDataGlobal(size_t cnum_dimensions, size_t cnum_outputs) : num_dimensions(cnum_dimensions), num_outputs(cnum_outputs){}
     //! \brief Read constructor.
     template<typename iomode>
     DynamicConstructorDataGlobal(std::istream &is, size_t cnum_dimensions, size_t cnum_outputs, iomode) :
@@ -210,7 +210,7 @@ public:
         data(readNodeDataList<iomode>(is, num_dimensions, num_outputs))
         {}
     //! \brief Default destructor, release all used memory and erase all stored data.
-    ~DynamicConstructorDataGlobal();
+    ~DynamicConstructorDataGlobal() = default;
 
     //! \brief Write the data to a stream using ascii or binary format.
     template<bool use_ascii> void write(std::ostream &os) const;
@@ -261,7 +261,9 @@ private:
  * \endinternal
  */
 struct SimpleConstructData{
+    //! \brief Default empty constructor.
     SimpleConstructData() = default;
+    //! \brief Read constructor, requires the number of dimensions and outputs.
     template<typename iomode>
     SimpleConstructData(std::istream &is, int num_dimensions, int num_outputs, iomode) :
         initial_points(MultiIndexSet(is, iomode())),
