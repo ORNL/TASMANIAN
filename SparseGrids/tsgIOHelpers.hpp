@@ -328,6 +328,18 @@ bool readFlag(std::istream &os){
         return (cflag == 'y');
     }
 }
+template<typename iomode>
+bool readFlag(std::istream &os){
+    if (std::is_same<iomode, mode_ascii_type>::value){
+        int flag;
+        os >> flag;
+        return (flag == 1);
+    }else{
+        char cflag;
+        os.read(&cflag, sizeof(char));
+        return (cflag == 'y');
+    }
+}
 
 /*!
  * \ingroup TasmanianIO
@@ -352,7 +364,7 @@ void writeVector(const std::vector<VecType> &x, std::ostream &os){
 
 /*!
  * \ingroup TasmanianIO
- * \brief Read the vector from the stream.
+ * \brief Read the vector from the stream, the size must already be set.
  */
 template<bool iomode, typename VecType>
 void readVector(std::istream &os, std::vector<VecType> &x){
@@ -361,6 +373,31 @@ void readVector(std::istream &os, std::vector<VecType> &x){
     }else{
         os.read((char*) x.data(), x.size() * sizeof(VecType));
     }
+}
+template<typename iomode, typename VecType>
+void readVector(std::istream &is, std::vector<VecType> &x){
+    if (std::is_same<iomode, mode_ascii_type>::value){
+        for(auto &i : x) is >> i;
+    }else{
+        is.read((char*) x.data(), x.size() * sizeof(VecType));
+    }
+}
+
+/*!
+ * \ingroup TasmanianIO
+ * \brief Read the vector with the specified size.
+ */
+template<bool iomode, typename VecType, typename SizeType>
+std::vector<VecType> readVector(std::istream &is, SizeType num_entries){
+    std::vector<VecType> x((size_t) num_entries);
+    readVector<iomode, VecType>(is, x);
+    return x;
+}
+template<typename iomode, typename VecType, typename SizeType>
+std::vector<VecType> readVector(std::istream &is, SizeType num_entries){
+    std::vector<VecType> x((size_t) num_entries);
+    readVector<iomode, VecType>(is, x);
+    return x;
 }
 
 /*!
@@ -387,6 +424,16 @@ Val readNumber(std::istream &os){
     }
     return v;
 }
+template<typename iomode, typename Val>
+Val readNumber(std::istream &is){
+    Val v;
+    if (std::is_same<iomode, mode_ascii_type>::value){
+        is >> v;
+    }else{
+        is.read((char*) &v, sizeof(Val));
+    }
+    return v;
+}
 
 /*!
  * \ingroup TasmanianIO
@@ -409,6 +456,16 @@ void writeRule(TypeOneDRule rule, std::ostream &os){
 template<bool iomode>
 TypeOneDRule readRule(std::istream &is){
     if (iomode == mode_ascii){
+        std::string T;
+        is >> T;
+        return getRuleString(T);
+    }else{
+        return getRuleInt(readNumber<mode_binary, int>(is));
+    }
+}
+template<typename iomode>
+TypeOneDRule readRule(std::istream &is){
+    if (std::is_same<iomode, mode_ascii_type>::value){
         std::string T;
         is >> T;
         return getRuleString(T);

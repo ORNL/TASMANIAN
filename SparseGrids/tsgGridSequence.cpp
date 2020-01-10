@@ -52,26 +52,8 @@ template<bool iomode> void GridSequence::write(std::ostream &os) const{
     if (num_outputs > 0) values.write<iomode>(os);
 }
 
-template<bool iomode> void GridSequence::read(std::istream &is){
-    num_dimensions = IO::readNumber<iomode, int>(is);
-    num_outputs = IO::readNumber<iomode, int>(is);
-    rule = IO::readRule<iomode>(is);
-
-    if (IO::readFlag<iomode>(is)) points.read<iomode>(is);
-    if (IO::readFlag<iomode>(is)) needed.read<iomode>(is);
-
-    if (IO::readFlag<iomode>(is))
-        surpluses = IO::readData2D<iomode, double>(is, num_outputs, points.getNumIndexes());
-
-    if (num_outputs > 0) values.read<iomode>(is);
-
-    prepareSequence(0);
-}
-
 template void GridSequence::write<mode_ascii>(std::ostream &) const;
 template void GridSequence::write<mode_binary>(std::ostream &) const;
-template void GridSequence::read<mode_ascii>(std::istream &);
-template void GridSequence::read<mode_binary>(std::istream &);
 
 void GridSequence::clearRefinement(){ needed = MultiIndexSet(); }
 

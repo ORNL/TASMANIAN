@@ -39,10 +39,7 @@ namespace TasGrid{
 class GridWavelet : public BaseCanonicalGrid{
 public:
     GridWavelet() : rule1D(1, 10), order(1){}
-    template<typename iomode> GridWavelet(std::istream &is, iomode const) : GridWavelet(){
-        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
-        else read<mode_binary>(is);
-    }
+    friend struct GridReaderVersion5<GridWavelet>;
     GridWavelet(const GridWavelet *wav, int ibegin, int iend);
     GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
     GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals);
@@ -51,10 +48,8 @@ public:
     bool isWavelet() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
-    void read(std::istream &is, bool iomode) override{ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
 
     template<bool iomode> void write(std::ostream &os) const;
-    template<bool iomode> void read(std::istream &is);
 
     TypeOneDRule getRule() const override{ return rule_wavelet; }
     int getOrder() const{ return order; }
@@ -151,6 +146,34 @@ private:
     mutable std::unique_ptr<CudaWaveletData<double>> cuda_cache;
     mutable std::unique_ptr<CudaWaveletData<float>> cuda_cachef;
     #endif
+};
+
+// Old version reader
+template<> struct GridReaderVersion5<GridWavelet>{
+    template<typename iomode> static auto read(std::istream &is){
+        std::unique_ptr<GridWavelet> grid = std::make_unique<GridWavelet>();
+
+        grid->num_dimensions = IO::readNumber<iomode, int>(is);
+        grid->num_outputs = IO::readNumber<iomode, int>(is);
+        grid->order = IO::readNumber<iomode, int>(is);
+        grid->rule1D.updateOrder(grid->order);
+
+        if (IO::readFlag<iomode>(is)) grid->points = MultiIndexSet(is, iomode());
+        if (std::is_same<iomode, IO::mode_ascii_type>::value){ // backwards compatible: surpluses and needed, or needed and surpluses
+            if (IO::readFlag<iomode>(is))
+                grid->coefficients = IO::readData2D<iomode, double>(is, grid->num_outputs, grid->points.getNumIndexes());
+            if (IO::readFlag<iomode>(is)) grid->needed = MultiIndexSet(is, iomode());
+        }else{
+            if (IO::readFlag<iomode>(is)) grid->needed = MultiIndexSet(is, iomode());
+            if (IO::readFlag<iomode>(is))
+                grid->coefficients = IO::readData2D<iomode, double>(is, grid->num_outputs, grid->points.getNumIndexes());
+        }
+
+        if (grid->num_outputs > 0) grid->values = StorageSet(is, iomode());
+        grid->buildInterpolationMatrix();
+
+        return grid;
+    }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
 

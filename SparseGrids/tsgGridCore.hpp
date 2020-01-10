@@ -79,7 +79,6 @@ public:
     const int* getPointIndexes() const{ return ((points.empty()) ? needed.getIndex(0) : points.getIndex(0)); }
 
     virtual void write(std::ostream&, bool) const = 0;
-    virtual void read(std::istream&, bool) = 0;
 
     virtual void getLoadedPoints(double *x) const = 0;
     virtual void getNeededPoints(double *x) const = 0;
@@ -134,6 +133,19 @@ protected:
     MultiIndexSet needed;
     StorageSet values;
 };
+
+// For purposes of reading grids with older file formats
+// Specialize the reader class for each grid type
+// Befriend the reader class and each grid type
+template<class GridType>
+struct GridReaderVersion5{ // 5 refers to the file format version, not the Tasmanian version
+    template<typename iomode> static std::unique_ptr<BaseCanonicalGrid> read(std::istream &){ return std::unique_ptr<BaseCanonicalGrid>(); }
+};
+
+// Factory reader method that instantiates the GridReaderVersion5 class
+template<class GridType, typename iomode> auto readGridVersion5(std::istream &is, iomode){
+    return GridReaderVersion5<GridType>::template read<iomode>(is);
+}
 
 }
 #endif

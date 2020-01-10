@@ -1398,15 +1398,15 @@ void TasmanianSparseGrid::readAscii(std::istream &ifs){
     ifs >> T;
     clear();
     if (T.compare("global") == 0){
-        base = std::make_unique<GridGlobal>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridGlobal>(ifs, IO::mode_ascii_type());
     }else if (T.compare("sequence") == 0){
-        base = std::make_unique<GridSequence>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridSequence>(ifs, IO::mode_ascii_type());
     }else if (T.compare("localpolynomial") == 0){
-        base = std::make_unique<GridLocalPolynomial>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridLocalPolynomial>(ifs, IO::mode_ascii_type());
     }else if (T.compare("wavelet") == 0){
-        base = std::make_unique<GridWavelet>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridWavelet>(ifs, IO::mode_ascii_type());
     }else if (T.compare("fourier") == 0){
-        base = std::make_unique<GridFourier>(ifs, IO::mode_ascii_type());
+        base = readGridVersion5<GridFourier>(ifs, IO::mode_ascii_type());
     }else if (T.compare("empty") != 0){
         throw std::runtime_error("ERROR: wrong file format, unknown grid type (or corrupt file)");
     }
@@ -1483,15 +1483,15 @@ void TasmanianSparseGrid::readBinary(std::istream &ifs){
     ifs.read(TSG.data(), sizeof(char)); // what type of grid is it?
     clear();
     if (TSG[0] == 'g'){
-        base = std::make_unique<GridGlobal>(ifs, IO::mode_binary_type());
+        base = readGridVersion5<GridGlobal>(ifs, IO::mode_binary_type());
     }else if (TSG[0] == 's'){
-        base = std::make_unique<GridSequence>(ifs, IO::mode_binary_type());
+        base = readGridVersion5<GridSequence>(ifs, IO::mode_binary_type());
     }else if (TSG[0] == 'p'){
-        base = std::make_unique<GridLocalPolynomial>(ifs, IO::mode_binary_type());
+        base = readGridVersion5<GridLocalPolynomial>(ifs, IO::mode_binary_type());
     }else if (TSG[0] == 'w'){
-        base = std::make_unique<GridWavelet>(ifs, IO::mode_binary_type());
+        base = readGridVersion5<GridWavelet>(ifs, IO::mode_binary_type());
     }else if (TSG[0] == 'f'){
-        base = std::make_unique<GridFourier>(ifs, IO::mode_binary_type());
+        base = readGridVersion5<GridFourier>(ifs, IO::mode_binary_type());
     }else if (TSG[0] != 'e'){
         throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
     }

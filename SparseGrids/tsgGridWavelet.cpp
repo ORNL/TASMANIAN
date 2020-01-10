@@ -55,31 +55,9 @@ template<bool iomode> void GridWavelet::write(std::ostream &os) const{
 
     if (num_outputs > 0) values.write<iomode>(os);
 }
-template<bool iomode> void GridWavelet::read(std::istream &is){
-    num_dimensions = IO::readNumber<iomode, int>(is);
-    num_outputs = IO::readNumber<iomode, int>(is);
-    order = IO::readNumber<iomode, int>(is);
-    rule1D.updateOrder(order);
-
-    if (IO::readFlag<iomode>(is)) points.read<iomode>(is);
-    if (iomode == mode_ascii){ // backwards compatible: surpluses and needed, or needed and surpluses
-        if (IO::readFlag<iomode>(is))
-            coefficients = IO::readData2D<iomode, double>(is, num_outputs, points.getNumIndexes());
-        if (IO::readFlag<iomode>(is)) needed.read<iomode>(is);
-    }else{
-        if (IO::readFlag<iomode>(is)) needed.read<iomode>(is);
-        if (IO::readFlag<iomode>(is))
-            coefficients = IO::readData2D<iomode, double>(is, num_outputs, points.getNumIndexes());
-    }
-
-    if (num_outputs > 0) values.read<iomode>(is);
-    buildInterpolationMatrix();
-}
 
 template void GridWavelet::write<mode_ascii>(std::ostream &) const;
 template void GridWavelet::write<mode_binary>(std::ostream &) const;
-template void GridWavelet::read<mode_ascii>(std::istream &);
-template void GridWavelet::read<mode_binary>(std::istream &);
 
 GridWavelet::GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits) :
     BaseCanonicalGrid(cnum_dimensions, cnum_outputs, MultiIndexSet(),

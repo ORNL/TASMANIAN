@@ -66,48 +66,8 @@ template<bool iomode> void GridGlobal::write(std::ostream &os) const{
     }
 }
 
-template<bool iomode> void GridGlobal::read(std::istream &is){
-    num_dimensions = IO::readNumber<iomode, int>(is);
-    num_outputs = IO::readNumber<iomode, int>(is);
-    alpha = IO::readNumber<iomode, double>(is);
-    beta = IO::readNumber<iomode, double>(is);
-    rule = IO::readRule<iomode>(is);
-    if (rule == rule_customtabulated) custom.read<iomode>(is);
-    tensors.read<iomode>(is);
-    active_tensors.read<iomode>(is);
-    active_w.resize((size_t) active_tensors.getNumIndexes());
-    IO::readVector<iomode>(is, active_w);
-
-    if (IO::readFlag<iomode>(is)) points.read<iomode>(is);
-    if (IO::readFlag<iomode>(is)) needed.read<iomode>(is);
-
-    max_levels.resize((size_t) num_dimensions);
-    IO::readVector<iomode>(is, max_levels);
-
-    if (num_outputs > 0) values.read<iomode>(is);
-
-    int oned_max_level;
-    if (IO::readFlag<iomode>(is)){
-        updated_tensors.read<iomode>(is);
-        oned_max_level = updated_tensors.getMaxIndex();
-
-        updated_active_tensors.read<iomode>(is);
-
-        updated_active_w.resize((size_t) updated_active_tensors.getNumIndexes());
-        IO::readVector<iomode>(is, updated_active_w);
-    }else{
-        oned_max_level = *std::max_element(max_levels.begin(), max_levels.end());
-    }
-
-    wrapper = OneDimensionalWrapper(custom, oned_max_level, rule, alpha, beta);
-
-    recomputeTensorRefs((points.empty()) ? needed : points);
-}
-
 template void GridGlobal::write<mode_ascii>(std::ostream &) const;
 template void GridGlobal::write<mode_binary>(std::ostream &) const;
-template void GridGlobal::read<mode_ascii>(std::istream &);
-template void GridGlobal::read<mode_binary>(std::istream &);
 
 void GridGlobal::clearRefinement(){
     needed = MultiIndexSet();

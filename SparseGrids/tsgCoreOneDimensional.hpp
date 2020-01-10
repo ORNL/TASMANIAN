@@ -31,6 +31,7 @@
 #ifndef __TSG_CORE_ONE_DIMENSIONAL_HPP
 #define __TSG_CORE_ONE_DIMENSIONAL_HPP
 
+#include "tsgIOHelpers.hpp"
 #include "tsgLinearSolvers.hpp"
 
 /*!
@@ -65,6 +66,11 @@ class CustomTabulated{
 public:
     //! \brief Default constructor, create an empty table, need to read from file before any other data can be accessed.
     CustomTabulated();
+    //! \brief Read-constructor.
+    template<typename iomode> CustomTabulated(std::istream &is, iomode) : CustomTabulated(){
+        if (std::is_same<iomode, IO::mode_ascii_type>::value)
+            read<mode_ascii>(is); else read<mode_binary>(is);
+    }
     //! \brief Destructor, clear the rule.
     ~CustomTabulated();
 

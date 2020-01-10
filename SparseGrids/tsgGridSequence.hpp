@@ -39,10 +39,7 @@ namespace TasGrid{
 class GridSequence : public BaseCanonicalGrid{
 public:
     GridSequence(){}
-    template<typename iomode> GridSequence(std::istream &is, iomode const){
-        if (std::is_same<iomode, IO::mode_ascii_type>::value) read<mode_ascii>(is);
-        else read<mode_binary>(is);
-    }
+    friend struct GridReaderVersion5<GridSequence>;
     GridSequence(const GridSequence *seq, int ibegin, int iend);
     GridSequence(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
     GridSequence(int cnum_dimensions, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
@@ -52,10 +49,8 @@ public:
     bool isSequence() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
-    void read(std::istream &is, bool iomode) override{ if (iomode == mode_ascii) read<mode_ascii>(is); else read<mode_binary>(is); }
 
     template<bool iomode> void write(std::ostream &os) const;
-    template<bool iomode> void read(std::istream &is);
 
     void updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
 
@@ -202,6 +197,29 @@ private:
     mutable std::unique_ptr<CudaSequenceData<double>> cuda_cache;
     mutable std::unique_ptr<CudaSequenceData<float>> cuda_cachef;
     #endif
+};
+
+// Old version reader
+template<> struct GridReaderVersion5<GridSequence>{
+    template<typename iomode> static auto read(std::istream &is){
+        std::unique_ptr<GridSequence> grid = std::make_unique<GridSequence>();
+
+        grid->num_dimensions = IO::readNumber<iomode, int>(is);
+        grid->num_outputs = IO::readNumber<iomode, int>(is);
+        grid->rule = IO::readRule<iomode>(is);
+
+        if (IO::readFlag<iomode>(is)) grid->points = MultiIndexSet(is, iomode());
+        if (IO::readFlag<iomode>(is)) grid->needed = MultiIndexSet(is, iomode());
+
+        if (IO::readFlag<iomode>(is))
+            grid->surpluses = IO::readData2D<iomode, double>(is, grid->num_outputs, grid->points.getNumIndexes());
+
+        if (grid->num_outputs > 0) grid->values = StorageSet(is, iomode());
+
+        grid->prepareSequence(0);
+
+        return grid;
+    }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
 
