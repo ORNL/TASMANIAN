@@ -34,7 +34,9 @@ if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
     target_link_libraries(Tasmanian_caddons Tasmanian_addons Tasmanian_libdream_shared)
     set_target_properties(Tasmanian_caddons PROPERTIES OUTPUT_NAME "tasmaniancaddons"
                                                        INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
-                                                       CXX_EXTENSIONS OFF)
+                                                       CXX_EXTENSIONS OFF
+                                                       SOVERSION ${Tasmanian_VERSION_MAJOR}
+                                                       VERSION   ${Tasmanian_version_string})
 
     install(TARGETS Tasmanian_caddons
             EXPORT  "${Tasmanian_export_name}"
