@@ -23,14 +23,13 @@ add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} Tasman
                                                                           tsgDreamCorePDF.hpp
                                                                           tsgDreamEnumerates.hpp)
 
-target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
-
 target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
-target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
 set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream"
                                                                  INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
-                                                                 CXX_EXTENSIONS OFF)
+                                                                 CXX_EXTENSIONS OFF
+                                                                 SOVERSION ${Tasmanian_VERSION_MAJOR}
+                                                                 VERSION   ${Tasmanian_version_string})
 
 install(TARGETS "${Tasmanian_libtdr_target_name}"
         EXPORT  "${Tasmanian_export_name}"

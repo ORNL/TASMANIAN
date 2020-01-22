@@ -14,13 +14,12 @@ add_library(${Tasmanian_libfor_target_name} ${Tasmanian_shared_or_static} Tasman
                                                                           tsgC2FortranBridge.f90
                                                                           tsgC2Fortran.cpp)
 
-target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
-
 target_link_libraries(${Tasmanian_libfor_target_name} Tasmanian_addons)
 set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran90"
-                                                                 INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
+                                                                 INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
+                                                                 SOVERSION ${Tasmanian_VERSION_MAJOR}
+                                                                 VERSION   ${Tasmanian_version_string})
 
-target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<INSTALL_INTERFACE:include>)
 target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
 
 if (Tasmanian_ENABLE_MPI)
