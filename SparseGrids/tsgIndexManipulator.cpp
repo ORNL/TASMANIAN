@@ -386,7 +386,7 @@ MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDim
         for(auto &l : num_entries) num_total *= l;
 
         Data2D<int> raw_points(num_dimensions, num_total);
-        auto iter = raw_points.getVector().rbegin();
+        auto iter = raw_points.rbegin();
         for(int i=num_total-1; i>=0; i--){
             int d = i;
             auto l = num_entries.rbegin();

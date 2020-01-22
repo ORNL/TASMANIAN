@@ -44,17 +44,17 @@ template<bool iomode> void GridLocalPolynomial::write(std::ostream &os) const{
     if (!points.empty()) points.write<iomode>(os);
     if (iomode == mode_ascii){ // backwards compatible: surpluses and needed, or needed and surpluses
         IO::writeFlag<iomode, IO::pad_auto>((surpluses.getNumStrips() != 0), os);
-        if (surpluses.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(surpluses.getVector(), os);
+        if (!surpluses.empty()) surpluses.writeVector<iomode, IO::pad_line>(os);
         IO::writeFlag<iomode, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<iomode>(os);
     }else{
         IO::writeFlag<iomode, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<iomode>(os);
         IO::writeFlag<iomode, IO::pad_auto>((surpluses.getNumStrips() != 0), os);
-        if (surpluses.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(surpluses.getVector(), os);
+        if (!surpluses.empty()) surpluses.writeVector<iomode, IO::pad_line>(os);
     }
     IO::writeFlag<iomode, IO::pad_auto>((parents.getNumStrips() != 0), os);
-    if (parents.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(parents.getVector(), os);
+    if (!parents.empty()) parents.writeVector<iomode, IO::pad_line>(os);
 
     IO::writeNumbers<iomode, IO::pad_rspace>(os, (int) roots.size());
     if (roots.size() > 0){ // the tree is empty, can happend when using dynamic construction
@@ -212,19 +212,17 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
     std::vector<Data2D<double>> lvals = HierarchyManipulations::splitByLevels(values, levels);
 
     Data2D<double> allx(num_dimensions, points.getNumIndexes());
-    getPoints(allx.getVector().data());
+    getPoints(allx.data());
 
     std::vector<Data2D<double>> lx = HierarchyManipulations::splitByLevels(allx, levels);
 
-    MultiIndexSet cumulative_poitns((size_t) num_dimensions, std::move(lpnts[0].getVector()));
+    MultiIndexSet cumulative_poitns((size_t) num_dimensions, lpnts[0].eject());
 
-    StorageSet cumulative_surpluses;
-    cumulative_surpluses.resize(num_outputs, cumulative_poitns.getNumIndexes());
-    cumulative_surpluses.setValues(std::move(lvals[0].getVector()));
+    StorageSet cumulative_surpluses = StorageSet(num_outputs, cumulative_poitns.getNumIndexes(), lvals[0].eject());
 
     for(size_t l = 1; l < lpnts.size(); l++){ // loop over the levels
         // note that level_points.getNumIndexes() == lx[l].getNumStrips() == lvals[l].getNumStrips()
-        MultiIndexSet level_points(num_dimensions, std::move(lpnts[l].getVector()));
+        MultiIndexSet level_points(num_dimensions, lpnts[l].eject());
 
         GridLocalPolynomial upper_grid(num_dimensions, num_outputs, order, getRule(),
                                        std::vector<int>(cumulative_poitns.begin(), cumulative_poitns.end()), // copy cumulative_poitns
@@ -244,7 +242,7 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
 
         double *level_surps = lvals[l].getStrip(0); // maybe use BLAS here
         const double *uv = upper_evaluate.getStrip(0);
-        for(size_t i=0, s = upper_evaluate.getVector().size(); i < s; i++) level_surps[i] -= uv[i];
+        for(size_t i=0, s = upper_evaluate.getTotalEntries(); i < s; i++) level_surps[i] -= uv[i];
 
         cumulative_surpluses.addValues(cumulative_poitns, level_points, level_surps);
         cumulative_poitns.addMultiIndexSet(level_points);
@@ -329,11 +327,10 @@ template<typename T> void GridLocalPolynomial::loadCudaBasis() const{
 
     Data2D<double> cpu_nodes(num_dimensions, getNumPoints());
     getPoints(cpu_nodes.getStrip(0));
-    ccache->nodes.load(cpu_nodes.getVector());
+    ccache->nodes.load(cpu_nodes.begin(), cpu_nodes.end());
 
-    const MultiIndexSet &work = (points.empty()) ? needed : points;
-    ccache->support.load(
-        [&](void)->Data2D<T>{
+    Data2D<T> cpu_support = [&](void)->Data2D<T>{
+            const MultiIndexSet &work = (points.empty()) ? needed : points;
             if (rule->getType() == rule_localp){
                 switch(order){
                 case 0: return encodeSupportForGPU<0, rule_localp, T>(work);
@@ -356,7 +353,8 @@ template<typename T> void GridLocalPolynomial::loadCudaBasis() const{
                     return encodeSupportForGPU<1, rule_localp0, T>(work);
                 }
             }
-        }().getVector());
+        }();
+    ccache->support.load(cpu_support.begin(), cpu_support.end());
 }
 void GridLocalPolynomial::clearCudaBasisHierarchy(){
     if (cuda_cache) cuda_cache->clearBasisHierarchy();
@@ -375,7 +373,7 @@ template<typename T> void GridLocalPolynomial::loadCudaSurpluses() const{
     auto& ccache = getCudaCache(static_cast<T>(0.0));
     if (!ccache) ccache = std::make_unique<CudaLocalPolynomialData<T>>();
     if (ccache->surpluses.size() != 0) return;
-    ccache->surpluses.load(surpluses.getVector());
+    ccache->surpluses.load(surpluses.begin(), surpluses.end());
 }
 void GridLocalPolynomial::clearCudaSurpluses(){
     if (cuda_cache) cuda_cache->surpluses.clear();
@@ -577,10 +575,8 @@ void GridLocalPolynomial::loadConstructedPoint(const double x[], const std::vect
 void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::vector<double> &value){
     if (points.empty()){ // only one point
         points = MultiIndexSet((size_t) num_dimensions, std::vector<int>(point));
-        values.resize(num_outputs, 1);
-        values.setValues(std::vector<double>(value));
-        surpluses.resize(num_outputs, 1);
-        surpluses.getVector() = value; // the surplus of one point is the value itself
+        values = StorageSet(num_outputs, 1, std::vector<double>(value));
+        surpluses = Data2D<double>(num_outputs, 1, std::vector<double>(value)); // one value is its own surplus
     }else{ // merge with existing points
         // compute the surplus for the point
         std::vector<double> xnode(num_dimensions), approximation(num_outputs), surp(num_outputs);
@@ -1005,7 +1001,7 @@ void GridLocalPolynomial::buildTree(){
         pntr[i+1] = pntr[i] + (int) std::count_if(tree.getIStrip(i), tree.getIStrip(i) + max_kids, [](int k)->bool{ return (k > -1); });
 
     indx = std::vector<int>((size_t) ((pntr[num_points] > 0) ? pntr[num_points] : 1));
-    std::copy_if(tree.getVector().begin(), tree.getVector().end(), indx.begin(), [](int t)->bool{ return (t > -1); });
+    std::copy_if(tree.begin(), tree.end(), indx.begin(), [](int t)->bool{ return (t > -1); });
 }
 
 void GridLocalPolynomial::integrateHierarchicalFunctions(double integrals[]) const{
@@ -1329,7 +1325,7 @@ void GridLocalPolynomial::addChildLimited(const int point[], int direction, cons
 
 void GridLocalPolynomial::clearRefinement(){ needed = MultiIndexSet(); }
 const double* GridLocalPolynomial::getSurpluses() const{
-    return surpluses.getVector().data();
+    return surpluses.data();
 }
 const int* GridLocalPolynomial::getNeededIndexes() const{
     return (needed.empty()) ? 0 : needed.getIndex(0);

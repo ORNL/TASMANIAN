@@ -565,7 +565,7 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
     Data2D<double> weights(num_points, num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->values, weights.getVector(), y);
+    engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->values, weights.data(), y);
 }
 void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);

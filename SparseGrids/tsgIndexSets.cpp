@@ -108,7 +108,7 @@ void MultiIndexSet::setData2D(Data2D<int> const &data){
     if (num == 0) return; // nothing to do
 
     std::vector<std::vector<int>::const_iterator> index_refs(num);
-    auto iadd = data.getVector().begin();
+    auto iadd = data.begin();
     for(auto &i : index_refs){
         i = iadd;
         std::advance(iadd, num_dimensions);

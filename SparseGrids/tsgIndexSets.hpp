@@ -120,6 +120,10 @@ public:
     //! \brief Default destructor.
     ~Data2D() = default;
 
+    //! \brief Write the internal vector to a stream.
+    template<bool iomode, IO::IOPad pad>
+    void writeVector(std::ostream &os) const{ IO::writeVector<iomode, pad, T>(vec, os); }
+
     //! \brief Returns \b true if the number of strips is zero.
     bool empty() const{ return (num_strips == 0); }
 
@@ -127,7 +131,7 @@ public:
     void resize(int new_stride, int new_num_strips){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
-        vec.resize(stride * num_strips);
+        vec = std::vector<T>(stride * num_strips);
     }
 
     //! \brief Get the data between \b ibegin and \b iend of each strip.
@@ -144,8 +148,6 @@ public:
     T const* getStrip(int i) const{ return &(vec[i*stride]); }
     //! \brief Return iterator set at the \b i-th strip.
     typename std::vector<T>::iterator getIStrip(int i){ return vec.begin() + Utils::size_mult(stride, i); }
-    //! \brief Return const_iterator set at the \b i-th strip.
-    typename std::vector<T>::const_iterator getIStrip(int i) const{ return vec.cbegin() + Utils::size_mult(stride, i); }
     //! \brief Returns the stride.
     size_t getStride() const{ return stride; }
     //! \brief Returns the number of strips.
@@ -153,9 +155,9 @@ public:
     //! \brief Returns the total number of entries, stride times number of trips.
     size_t getTotalEntries() const{ return vec.size(); }
     //! \brief Returns a reference to the internal data.
-    std::vector<T>& getVector(){ return vec; }
+    T* data(){ return vec.data(); }
     //! \brief Returns a const reference to the internal data.
-    const std::vector<T>& getVector() const{ return vec; }
+    T const* data() const{ return vec.data(); }
     //! \brief Clear all used data.
     void clear(){
         stride = 0;
@@ -163,10 +165,16 @@ public:
         vec = std::vector<double>();
     }
 
+    //! \brief Moves the data vector out of the class, this method invalidates the object.
+    inline typename std::vector<T> eject(){ return std::move(vec); }
+
     //! \brief Returns a const iterator to the beginning of the internal data
     inline typename std::vector<T>::const_iterator begin() const{ return vec.cbegin(); }
     //! \brief Returns a const iterator to the end of the internal data
     inline typename std::vector<T>::const_iterator end() const{ return vec.cend(); }
+
+    //! \brief Returns a reverse iterator to the end of the internal data
+    inline typename std::vector<T>::reverse_iterator rbegin(){ return vec.rbegin(); }
 
     //! \brief Uses std::vector::insert to append the data.
     void appendStrip(typename std::vector<T>::const_iterator const &x){
@@ -198,14 +206,9 @@ namespace IO{
     * \internal
     * \ingroup TasmanianIO
     * \brief Read the Data2D structure from the stream, assumes the given number of strips and stride.
+    *
     * \endinternal
     */
-    template<bool useAscii, typename DataType, typename IndexStride, typename IndexNumStrips>
-    Data2D<DataType> readData2D(std::istream &is, IndexStride stride, IndexNumStrips num_strips){
-        Data2D<DataType> data(stride, num_strips);
-        readVector<useAscii>(is, data.getVector());
-        return data;
-    }
     template<typename iomode, typename DataType, typename IndexStride, typename IndexNumStrips>
     Data2D<DataType> readData2D(std::istream &is, IndexStride stride, IndexNumStrips num_strips){
         return Data2D<DataType>(stride, num_strips, readVector<iomode, DataType>(is, Utils::size_mult(stride, num_strips)));

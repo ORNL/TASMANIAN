@@ -43,14 +43,14 @@ template<bool iomode> void GridWavelet::write(std::ostream &os) const{
     if (!points.empty()) points.write<iomode>(os);
     if (iomode == mode_ascii){ // backwards compatible: surpluses and needed, or needed and surpluses
         IO::writeFlag<iomode, IO::pad_auto>((coefficients.getNumStrips() != 0), os);
-        if (coefficients.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(coefficients.getVector(), os);
+        if (!coefficients.empty()) coefficients.writeVector<iomode, IO::pad_line>(os);
         IO::writeFlag<iomode, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<iomode>(os);
     }else{
         IO::writeFlag<iomode, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<iomode>(os);
         IO::writeFlag<iomode, IO::pad_auto>((coefficients.getNumStrips() != 0), os);
-        if (coefficients.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(coefficients.getVector(), os);
+        if (!coefficients.empty()) coefficients.writeVector<iomode, IO::pad_line>(os);
     }
 
     if (num_outputs > 0) values.write<iomode>(os);
@@ -105,7 +105,7 @@ GridWavelet::GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Dat
     buildInterpolationMatrix();
 
     if (num_outputs > 0){
-        values = StorageSet(num_outputs, points.getNumIndexes(), std::move(vals.getVector()));
+        values = StorageSet(num_outputs, points.getNumIndexes(), vals.eject());
         recomputeCoefficients();
     }
 }
@@ -232,7 +232,7 @@ void GridWavelet::evaluateCudaMixed(CudaEngine *engine, const double x[], int nu
     Data2D<double> weights(points.getNumIndexes(), num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.getVector(), y);
+    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.data(), y);
 }
 void GridWavelet::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     if ((order != 1) || (num_x == 1)){
@@ -284,8 +284,8 @@ template<typename T> void GridWavelet::loadCudaBasis() const{
         for(int j=0; j<num_dimensions; j++)
             rule1D.getShiftScale(p[j], scale[j], shift[j]);
     }
-    ccache->nodes.load(cpu_scale.getVector());
-    ccache->support.load(cpu_shift.getVector());
+    ccache->nodes.load(cpu_scale.begin(), cpu_scale.end());
+    ccache->support.load(cpu_shift.begin(), cpu_shift.end());
 }
 void GridWavelet::clearCudaBasis(){
     if (cuda_cache) cuda_cache->clearNodes();
@@ -294,7 +294,7 @@ void GridWavelet::clearCudaBasis(){
 template<typename T> void GridWavelet::loadCudaCoefficients() const{
     auto &ccache = getCudaCache(static_cast<T>(0.0));
     if (!ccache) ccache = std::make_unique<CudaWaveletData<T>>();
-    if (ccache->coefficients.empty()) ccache->coefficients.load(coefficients.getVector());
+    if (ccache->coefficients.empty()) ccache->coefficients.load(coefficients.begin(), coefficients.end());
 }
 void GridWavelet::clearCudaCoefficients(){
     if (cuda_cache) cuda_cache->coefficients.clear();
@@ -490,10 +490,8 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
 
             int active_outputs = (output == -1) ? num_outputs : 1;
 
-            Data2D<double> vals;
-            vals.resize(active_outputs, nump);
-            Data2D<int> indexes;
-            indexes.resize(num_dimensions, nump);
+            Data2D<double> vals(active_outputs, nump);
+            Data2D<int> indexes(num_dimensions, nump);
 
             for(int i=0; i<nump; i++){
                 const double* v = values.getValues(pnts[i]);
@@ -507,7 +505,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 std::copy(p, p + num_dimensions, indexes.getStrip(i));
             }
 
-            GridWavelet direction_grid({(size_t) num_dimensions, std::move(indexes.getVector())}, active_outputs, order, std::move(vals));
+            GridWavelet direction_grid({(size_t) num_dimensions, indexes.eject()}, active_outputs, order, std::move(vals));
 
             for(int i=0; i<nump; i++){
                 bool small = true;

@@ -47,7 +47,7 @@ template<bool iomode> void GridSequence::write(std::ostream &os) const{
     if (!needed.empty()) needed.write<iomode>(os);
 
     IO::writeFlag<iomode, IO::pad_auto>(!surpluses.empty(), os);
-    if (!surpluses.empty()) IO::writeVector<iomode, IO::pad_line>(surpluses.getVector(), os);
+    if (!surpluses.empty()) surpluses.writeVector<iomode, IO::pad_line>(os);
 
     if (num_outputs > 0) values.write<iomode>(os);
 }
@@ -383,10 +383,8 @@ void GridSequence::loadConstructedPoint(const double x[], int numx, const double
 void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
     if (points.empty()){ // only one point
         points = MultiIndexSet((size_t) num_dimensions, std::vector<int>(point));
-        values.resize(num_outputs, 1);
-        values.setValues(std::vector<double>(value));
-        surpluses.resize(num_outputs, 1);
-        surpluses.getVector() = value; // the surplus of one point is the value itself
+        values = StorageSet(num_outputs, 1, std::vector<double>(value));
+        surpluses = Data2D<double>(num_outputs, 1, std::vector<double>(value.begin(), value.end())); // the surplus of one point is the value itself
     }else{ // merge with existing points
         MultiIndexSet temp(num_dimensions, std::vector<int>(point));
         values.addValues(points, temp, value.data());
@@ -471,10 +469,10 @@ void GridSequence::loadNeededPointsCuda(CudaEngine *, const double *vals){
 void GridSequence::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses<double>();
 
-    Data2D<double> hweights; hweights.resize(points.getNumIndexes(), num_x);
-    evaluateHierarchicalFunctions(x, num_x, hweights.getStrip(0));
+    Data2D<double> hweights(points.getNumIndexes(), num_x);
+    evaluateHierarchicalFunctions(x, num_x, hweights.data());
 
-    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, hweights.getVector(), y);
+    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, hweights.data(), y);
 }
 void GridSequence::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_outputs, num_x);
@@ -766,7 +764,7 @@ std::vector<int> GridSequence::getPolynomialSpace(bool interpolation) const{
     }
 }
 const double* GridSequence::getSurpluses() const{
-    return surpluses.getVector().data();
+    return surpluses.data();
 }
 
 void GridSequence::prepareSequence(int num_external){

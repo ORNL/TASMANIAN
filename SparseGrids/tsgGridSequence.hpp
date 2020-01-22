@@ -171,13 +171,13 @@ protected:
                 transpoints.getStrip(j)[i] = work->getIndex(i)[j];
             }
         }
-        ccache->points.load(transpoints.getVector());
+        ccache->points.load(transpoints.begin(), transpoints.end());
     }
     void clearCudaNodes();
     template<typename T> void loadCudaSurpluses() const{
         auto& ccache = getCudaCache(static_cast<T>(0.0));
         if (!ccache) ccache = std::make_unique<CudaSequenceData<T>>();
-        if (ccache->surpluses.empty()) ccache->surpluses.load(surpluses.getVector());
+        if (ccache->surpluses.empty()) ccache->surpluses.load(surpluses.begin(), surpluses.end());
     }
     void clearCudaSurpluses();
     #endif

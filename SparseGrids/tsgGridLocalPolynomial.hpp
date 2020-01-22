@@ -257,7 +257,7 @@ protected:
 
     #ifdef Tasmanian_ENABLE_CUDA
     // synchronize with tasgpu_devalpwpoly_feval
-    template<int order, TypeOneDRule crule, typename T>
+    template<int ord, TypeOneDRule crule, typename T>
     Data2D<T> encodeSupportForGPU(const MultiIndexSet &work) const{
         Data2D<T> cpu_support(num_dimensions, work.getNumIndexes());
         for(int i=0; i<work.getNumIndexes(); i++){
@@ -265,18 +265,18 @@ protected:
             T *s = cpu_support.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
                 s[j] = static_cast<T>(rule->getSupport(p[j]));
-                if (order != 0){
-                    if (order == 2) s[j] *= s[j];
+                if (ord != 0){
+                    if (ord == 2) s[j] *= s[j];
                     if ((crule == rule_localp) || (crule == rule_semilocalp)) if (p[j] == 0) s[j] = static_cast<T>(-1.0); // constant function
-                    if ((crule == rule_localp) && (order == 2)){
+                    if ((crule == rule_localp) && (ord == 2)){
                         if (p[j] == 1) s[j] = static_cast<T>(-2.0);
                         else if (p[j] == 2) s[j] = static_cast<T>(-3.0);
                     }
-                    if ((crule == rule_semilocalp) && (order == 2)){
+                    if ((crule == rule_semilocalp) && (ord == 2)){
                         if (p[j] == 1) s[j] = static_cast<T>(-4.0);
                         else if (p[j] == 2) s[j] = static_cast<T>(-5.0);
                     }
-                    if ((crule == rule_localpb) && (order == 2)){
+                    if ((crule == rule_localpb) && (ord == 2)){
                         if (p[j] < 2) s[j] = static_cast<T>(-2.0); // linear functions on level 0
                     }
                 }

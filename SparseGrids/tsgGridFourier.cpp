@@ -55,7 +55,7 @@ template<bool iomode> void GridFourier::write(std::ostream &os) const{
     if (num_outputs > 0){
         values.write<iomode>(os);
         IO::writeFlag<iomode, IO::pad_auto>((fourier_coefs.getNumStrips() != 0), os);
-        if (fourier_coefs.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(fourier_coefs.getVector(), os);
+        if (!fourier_coefs.empty()) fourier_coefs.writeVector<iomode, IO::pad_line>(os);
     }
 
     IO::writeFlag<iomode, IO::pad_line>(!updated_tensors.empty(), os);
@@ -485,7 +485,7 @@ void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int nu
     evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
 
     int num_points = points.getNumIndexes();
-    CudaVector<double> gpu_real(wreal.getVector()), gpu_imag(wimag.getVector()), gpu_y(num_outputs, num_x);
+    CudaVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
     engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y.data());
     engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y.data());
     gpu_y.unload(y);
@@ -544,7 +544,7 @@ template<typename T> void GridFourier::loadCudaNodes() const{
     for(int i=0; i<num_points; i++)
         for(int j=0; j<num_dimensions; j++)
             transpoints.getStrip(j)[i] = work.getIndex(i)[j];
-    ccache->points.load(transpoints.getVector());
+    ccache->points.load(transpoints.begin(), transpoints.end());
 }
 void GridFourier::clearCudaNodes(){
     if (cuda_cache){

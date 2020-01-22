@@ -300,7 +300,7 @@ struct SimpleConstructData{
                 d++;
             }
         }
-        return result.getVector();
+        return result.eject();
     }
 };
 

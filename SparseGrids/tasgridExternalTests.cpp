@@ -62,7 +62,7 @@ void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
         Data2D<double> values(grid.getNumOutputs(), num_needed);
         for(int i=0; i<num_needed; i++)
             f->eval(points.getStrip(i), values.getStrip(i));
-        grid.loadNeededPoints(values.getVector());
+        grid.loadNeededPoints(values.data());
     }
 }
 
