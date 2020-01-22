@@ -263,10 +263,11 @@ public:
 
     //! \brief Add more indexes to a non-empty set, \b addition must be sorted and the set must be initialized.
     void addSortedIndexes(std::vector<int> const &addition);
-    //! \brief If empty, copy \b addition, otherwise merge the indexes of \b addition into this set.
-    inline void addMultiIndexSet(MultiIndexSet const  &addition){
+    //! \brief If empty, copy \b addition, otherwise merge the indexes of \b addition into this set, i.e., set union.
+    inline MultiIndexSet& operator += (MultiIndexSet const &addition){
         num_dimensions = addition.getNumDimensions();
         addSortedIndexes(addition.indexes);
+        return *this;
     }
 
     //! \brief Returns a const iterator to the beginning of the internal data

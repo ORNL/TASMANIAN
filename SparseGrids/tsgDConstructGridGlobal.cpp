@@ -185,7 +185,7 @@ void DynamicConstructorDataGlobal::ejectCompleteTensor(MultiIndexSet const &curr
             }
 
             vals.addValues(new_points, t->points, wvals.getStrip(0));
-            new_points.addMultiIndexSet(t->points);
+            new_points += t->points;
             tensors.erase_after(p);
             t = p;
             t++;

@@ -449,7 +449,7 @@ inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiInd
         Data2D<int> update(num_dimensions, 0);
 
         MultiIndexSet total = current;
-        if (!result.empty()) total.addMultiIndexSet(result);
+        if (!result.empty()) total += result;
         for(int i=0; i<total.getNumIndexes(); i++){
             std::vector<int> kid(total.getIndex(i), total.getIndex(i) + num_dimensions);
             for(auto &k : kid){
@@ -461,7 +461,7 @@ inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiInd
         }
 
         loopon = (update.getNumStrips() > 0);
-        if (loopon) result.addMultiIndexSet(MultiIndexSet(update));
+        if (loopon) result += update;
     }
     return result;
 }

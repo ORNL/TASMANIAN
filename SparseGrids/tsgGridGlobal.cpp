@@ -214,7 +214,7 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
         MultiIndexSet new_tensors = updated_tensors.diffSets(tensors);
 
         if (!new_tensors.empty()){
-            updated_tensors.addMultiIndexSet(tensors);
+            updated_tensors += tensors;
             proposeUpdatedTensors();
         }
     }
@@ -296,7 +296,7 @@ void GridGlobal::acceptUpdatedTensors(){
         #ifdef Tasmanian_ENABLE_CUDA
         clearCudaNodes();
         #endif
-        points.addMultiIndexSet(needed);
+        points += needed;
         needed = MultiIndexSet();
 
         tensors = std::move(updated_tensors);
@@ -502,10 +502,10 @@ void GridGlobal::loadConstructedTensors(){
         points = std::move(new_points);
     }else{
         values.addValues(points, new_points, new_values.getValues(0));
-        points.addMultiIndexSet(new_points);
+        points += new_points;
     }
 
-    tensors.addMultiIndexSet(new_tensors);
+    tensors += new_tensors;
     // recompute the tensor weights
     auto tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
     active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
@@ -873,7 +873,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
     MultiIndexSet kids = MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits);
 
     if (kids.getNumIndexes() > 0){
-        kids.addMultiIndexSet(points);
+        kids += points;
         MultiIndexManipulations::completeSetToLower(kids);
 
         updated_tensors = std::move(kids);

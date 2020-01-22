@@ -103,7 +103,7 @@ void GridFourier::updateGrid(int depth, TypeDepth type, const std::vector<int> &
         MultiIndexSet new_tensors = updated_tensors.diffSets(tensors);
 
         if (!new_tensors.empty()){
-            updated_tensors.addMultiIndexSet(tensors);
+            updated_tensors += tensors;
             proposeUpdatedTensors();
         }
     }
@@ -177,7 +177,7 @@ void GridFourier::acceptUpdatedTensors(){
         points = std::move(needed);
         needed = MultiIndexSet();
     }else if (!needed.empty()){
-        points.addMultiIndexSet(needed);
+        points += needed;
         needed = MultiIndexSet();
 
         tensors = std::move(updated_tensors);
@@ -906,10 +906,10 @@ void GridFourier::loadConstructedTensors(){
         points = std::move(new_points);
     }else{
         values.addValues(points, new_points, new_values.getValues(0));
-        points.addMultiIndexSet(new_points);
+        points += new_points;
     }
 
-    tensors.addMultiIndexSet(new_tensors);
+    tensors += new_tensors;
     // recompute the tensor weights
     auto tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
     active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);

@@ -127,7 +127,7 @@ void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> 
         surpluses = Data2D<double>();
         prepareSequence(0);
     }else{
-        pset.addMultiIndexSet(points);
+        pset += points;
         needed = pset.diffSets(points);
 
         if (!needed.empty()) prepareSequence(0);
@@ -190,7 +190,7 @@ void GridSequence::loadNeededPoints(const double *vals){
             needed = MultiIndexSet();
         }else{ // merge needed and points
             values.addValues(points, needed, vals);
-            points.addMultiIndexSet(needed);
+            points += needed;
             needed = MultiIndexSet();
             prepareSequence(0);
         }
@@ -212,7 +212,7 @@ void GridSequence::mergeRefinement(){
         #ifdef Tasmanian_ENABLE_CUDA
         clearCudaNodes(); // the points will change, clear cache
         #endif
-        points.addMultiIndexSet(needed);
+        points += needed;
         needed = MultiIndexSet();
         prepareSequence(0);
     }
@@ -412,7 +412,7 @@ void GridSequence::loadConstructedPoints(){
         values.setValues(std::move(vals));
     }else{
         values.addValues(points, new_points, vals.data());
-        points.addMultiIndexSet(new_points);
+        points += new_points;
     }
     prepareSequence(0); // update the directional max_levels, will not shrink the number of nodes
     recomputeSurpluses(); // costly, but the only option under the circumstances
@@ -745,7 +745,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
 
     MultiIndexSet kids = MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits);
     if (kids.getNumIndexes() > 0){
-        kids.addMultiIndexSet(points);
+        kids += points;
         MultiIndexManipulations::completeSetToLower(kids);
 
         needed = kids.diffSets(points);

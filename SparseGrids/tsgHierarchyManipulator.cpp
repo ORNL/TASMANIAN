@@ -158,8 +158,7 @@ void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined, BaseRule
         }
 
         num_added = addons.getNumStrips();
-        if (num_added > 0)
-            refined.addMultiIndexSet(MultiIndexSet(addons));
+        if (num_added > 0) refined += addons;
     }
 }
 

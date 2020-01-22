@@ -196,8 +196,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
         }
 
         result = MultiIndexSet(roots);
-        if (total.empty()) total = result;
-        else total.addMultiIndexSet(result);
+        total += result;
     }
 
     if (total.empty()) return MultiIndexSet(); // current was empty and no roots could be added
@@ -223,8 +222,8 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
 
         if (update.getNumStrips() > 0){
             MultiIndexSet update_set(update);
-            result.addMultiIndexSet(update_set);
-            total.addMultiIndexSet(update_set);
+            result += update_set;
+            total  += update_set;
         }
     }while(update.getNumStrips() > 0);
 

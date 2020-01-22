@@ -170,7 +170,7 @@ void GridWavelet::loadNeededPoints(const double *vals){
         clearCudaBasis();
         #endif
         values.addValues(points, needed, vals);
-        points.addMultiIndexSet(needed);
+        points += needed;
         needed = MultiIndexSet();
         buildInterpolationMatrix();
     }
@@ -188,7 +188,7 @@ void GridWavelet::mergeRefinement(){
     if (points.empty()){
         points = std::move(needed);
     }else{
-        points.addMultiIndexSet(needed);
+        points += needed;
         buildInterpolationMatrix();
     }
     needed = MultiIndexSet();
@@ -672,8 +672,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
         }
 
         result = MultiIndexSet(roots);
-        if (total.empty()) total = result;
-        else total.addMultiIndexSet(result);
+        total += result;
     }
 
     if (total.empty()) return MultiIndexSet(); // current was empty and no roots could be added
@@ -716,8 +715,8 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
 
         if (update.getNumStrips() > 0){
             MultiIndexSet update_set(update);
-            result.addMultiIndexSet(update_set);
-            total.addMultiIndexSet(update_set);
+            result += update_set;
+            total  += update_set;
         }
     }while(update.getNumStrips() > 0);
 
@@ -865,7 +864,7 @@ void GridWavelet::loadConstructedPoint(const double x[], int numx, const double 
         values.setValues(std::move(vals));
     }else{
         values.addValues(points, new_points, vals.data());
-        points.addMultiIndexSet(new_points);
+        points += new_points;
     }
     buildInterpolationMatrix();
     recomputeCoefficients(); // costly, but the only option under the circumstances
@@ -990,7 +989,7 @@ MultiIndexSet GridWavelet::getRefinementCanidates(double tolerance, TypeRefineme
 
             num_added = addons.getNumStrips();
             if (num_added > 0)
-                result.addMultiIndexSet(MultiIndexSet(addons));
+                result += addons;
         }
     }
 

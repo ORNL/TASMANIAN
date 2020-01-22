@@ -245,7 +245,7 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
         for(size_t i=0, s = upper_evaluate.getTotalEntries(); i < s; i++) level_surps[i] -= uv[i];
 
         cumulative_surpluses.addValues(cumulative_poitns, level_points, level_surps);
-        cumulative_poitns.addMultiIndexSet(level_points);
+        cumulative_poitns += level_points;
     }
 
     surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), cumulative_surpluses.eject());
@@ -398,7 +398,7 @@ void GridLocalPolynomial::updateValues(double const *vals){
             needed = MultiIndexSet();
         }else{ // merge needed and points
             values.addValues(points, needed, vals);
-            points.addMultiIndexSet(needed);
+            points += needed;
             needed = MultiIndexSet();
             buildTree();
         }
@@ -420,7 +420,7 @@ void GridLocalPolynomial::mergeRefinement(){
         points = std::move(needed);
         needed = MultiIndexSet();
     }else{
-        points.addMultiIndexSet(needed);
+        points += needed;
         needed = MultiIndexSet();
         buildTree();
     }
@@ -650,7 +650,7 @@ void GridLocalPolynomial::loadConstructedPoints(){
         values.setValues(std::move(vals));
     }else{
         values.addValues(points, new_points, vals.data());
-        points.addMultiIndexSet(new_points);
+        points += new_points;
     }
     buildTree();
     recomputeSurpluses(); // costly, but the only option under the circumstances
