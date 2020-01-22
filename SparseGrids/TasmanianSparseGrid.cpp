@@ -1095,20 +1095,18 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const std::vector<
 int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x[], int num_x) const{
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
-    int num_nz = 0;
     if (isLocalPolynomial()){
-        num_nz = get<GridLocalPolynomial>()->getSpareBasisMatrixNZ(x_canonical, num_x);
+        return get<GridLocalPolynomial>()->getSpareBasisMatrixNZ(x_canonical, num_x);
     }else if (isWavelet()){
         int num_points = base->getNumPoints();
         Data2D<double> dense_vals(num_points, num_x);
-        get<GridWavelet>()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
-        for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;
+        get<GridWavelet>()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.data());
+        return dense_vals.getTotalEntries() - std::count(dense_vals.begin(), dense_vals.end(), 0.0);
     }else if (empty()){
         return 0;
     }else{
         throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGetNZ() called for a grid that is neither local polynomial not wavelet");
     }
-    return num_nz;
 }
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double x[], int num_x, int pntr[], int indx[], double vals[]) const{
     if (empty()) return;
@@ -1121,15 +1119,14 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
         Data2D<double> dense_vals(num_points, num_x);
         base->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
         int num_nz = 0;
-        for(auto v : dense_vals.getVector()) if (v != 0.0) num_nz++;
-        num_nz = 0;
         for(int i=0; i<num_x; i++){
             pntr[i] = num_nz;
             const double *v = dense_vals.getStrip(i);
             for(int j=0; j<num_points; j++){
-                if (v[j] != 0){
+                if (v[j] != 0.0){
                     indx[num_nz] = j;
-                    vals[num_nz++] = v[j];
+                    vals[num_nz] = v[j];
+                    num_nz++;
                 }
             }
         }

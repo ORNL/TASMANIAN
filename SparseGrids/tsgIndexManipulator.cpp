@@ -84,7 +84,7 @@ inline MultiIndexSet unionSets(std::vector<MultiIndexSet> &level_sets){
         size_t stride = num_levels / 2 + (((num_levels % 2) > 0) ? 1 : 0);
         for(size_t i=0; i<stride; i++)
             if (i + stride < num_levels)
-                level_sets[i].addMultiIndexSet(level_sets[i + stride]);
+                level_sets[i] += level_sets[i + stride];
         num_levels = stride;
     }
     return std::move(level_sets[0]);
@@ -111,7 +111,7 @@ void completeSetToLower(MultiIndexSet &set){
 
         repeatAddIndexes<true>([&](std::vector<int> const &p) -> bool{ return set.missing(p); }, level_sets);
 
-        set.addMultiIndexSet(unionSets(level_sets));
+        set += unionSets(level_sets);
     }
 }
 
@@ -386,7 +386,7 @@ MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDim
         for(auto &l : num_entries) num_total *= l;
 
         Data2D<int> raw_points(num_dimensions, num_total);
-        auto iter = raw_points.getVector().rbegin();
+        auto iter = raw_points.rbegin();
         for(int i=num_total-1; i>=0; i--){
             int d = i;
             auto l = num_entries.rbegin();

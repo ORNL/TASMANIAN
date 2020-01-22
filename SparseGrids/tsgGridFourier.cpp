@@ -55,7 +55,7 @@ template<bool iomode> void GridFourier::write(std::ostream &os) const{
     if (num_outputs > 0){
         values.write<iomode>(os);
         IO::writeFlag<iomode, IO::pad_auto>((fourier_coefs.getNumStrips() != 0), os);
-        if (fourier_coefs.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(fourier_coefs.getVector(), os);
+        if (!fourier_coefs.empty()) fourier_coefs.writeVector<iomode, IO::pad_line>(os);
     }
 
     IO::writeFlag<iomode, IO::pad_line>(!updated_tensors.empty(), os);
@@ -100,10 +100,10 @@ void GridFourier::updateGrid(int depth, TypeDepth type, const std::vector<int> &
 
         updated_tensors = selectTensors((size_t) num_dimensions, depth, type, anisotropic_weights, level_limits);
 
-        MultiIndexSet new_tensors = updated_tensors.diffSets(tensors);
+        MultiIndexSet new_tensors = updated_tensors - tensors;
 
         if (!new_tensors.empty()){
-            updated_tensors.addMultiIndexSet(tensors);
+            updated_tensors += tensors;
             proposeUpdatedTensors();
         }
     }
@@ -166,7 +166,7 @@ void GridFourier::proposeUpdatedTensors(){
     MultiIndexSet new_points = MultiIndexManipulations::generateNestedPoints(updated_tensors,
                                 [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
-    needed = new_points.diffSets(points);
+    needed = new_points - points;
 }
 
 void GridFourier::acceptUpdatedTensors(){
@@ -177,7 +177,7 @@ void GridFourier::acceptUpdatedTensors(){
         points = std::move(needed);
         needed = MultiIndexSet();
     }else if (!needed.empty()){
-        points.addMultiIndexSet(needed);
+        points += needed;
         needed = MultiIndexSet();
 
         tensors = std::move(updated_tensors);
@@ -209,15 +209,15 @@ void GridFourier::loadNeededPoints(const double *vals){
     max_power = MultiIndexManipulations::getMaxIndexes(points);
 }
 
-void GridFourier::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
+void GridFourier::mapIndexesToNodes(MultiIndexSet const &indexes, double *x) const{
     std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
 }
 
 void GridFourier::getLoadedPoints(double *x) const{
-    mapIndexesToNodes(points.getVector(), x);
+    mapIndexesToNodes(points, x);
 }
 void GridFourier::getNeededPoints(double *x) const{
-    mapIndexesToNodes(needed.getVector(), x);
+    mapIndexesToNodes(needed, x);
 }
 void GridFourier::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -485,7 +485,7 @@ void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int nu
     evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
 
     int num_points = points.getNumIndexes();
-    CudaVector<double> gpu_real(wreal.getVector()), gpu_imag(wimag.getVector()), gpu_y(num_outputs, num_x);
+    CudaVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
     engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y.data());
     engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y.data());
     gpu_y.unload(y);
@@ -544,7 +544,7 @@ template<typename T> void GridFourier::loadCudaNodes() const{
     for(int i=0; i<num_points; i++)
         for(int j=0; j<num_dimensions; j++)
             transpoints.getStrip(j)[i] = work.getIndex(i)[j];
-    ccache->points.load(transpoints.getVector());
+    ccache->points.load(transpoints.begin(), transpoints.end());
 }
 void GridFourier::clearCudaNodes(){
     if (cuda_cache){
@@ -630,8 +630,17 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     }else{
         clearRefinement();
     }
-    fourier_coefs.resize(num_outputs, 2 * getNumPoints());
-    std::copy_n(c, 2 * ((size_t) num_outputs) * ((size_t) getNumPoints()), fourier_coefs.getStrip(0));
+    auto num_points = points.getNumIndexes();
+    fourier_coefs = Data2D<double>(num_outputs, 2 * num_points, std::vector<double>(c, c + Utils::size_mult(num_outputs, 2 * num_points)));
+
+    std::vector<double> x(Utils::size_mult(num_dimensions, num_points));
+    std::vector<double> y(Utils::size_mult(num_outputs,    num_points));
+
+    getPoints(x.data());
+    evaluateBatch(x.data(), points.getNumIndexes(), y.data()); // speed this up later
+
+    values = StorageSet(num_outputs, num_points, std::move(y));
+
 }
 void GridFourier::integrateHierarchicalFunctions(double integrals[]) const{
     integrals[0] = 1.0;
@@ -853,9 +862,8 @@ std::vector<double> GridFourier::getCandidateConstructionPoints(std::function<do
         const int *t = new_tensors.getIndex(i);
         dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
     }
-    std::vector<int> node_indexes;
-    dynamic_values->getNodesIndexes(node_indexes);
-    std::vector<double> x(node_indexes.size());
+    MultiIndexSet node_indexes = dynamic_values->getNodesIndexes();
+    std::vector<double> x(node_indexes.totalSize());
     mapIndexesToNodes(node_indexes, x.data());
     return x;
 }
@@ -898,10 +906,10 @@ void GridFourier::loadConstructedTensors(){
         points = std::move(new_points);
     }else{
         values.addValues(points, new_points, new_values.getValues(0));
-        points.addMultiIndexSet(new_points);
+        points += new_points;
     }
 
-    tensors.addMultiIndexSet(new_tensors);
+    tensors += new_tensors;
     // recompute the tensor weights
     auto tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
     active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);

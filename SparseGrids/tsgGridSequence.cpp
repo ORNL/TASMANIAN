@@ -47,7 +47,7 @@ template<bool iomode> void GridSequence::write(std::ostream &os) const{
     if (!needed.empty()) needed.write<iomode>(os);
 
     IO::writeFlag<iomode, IO::pad_auto>(!surpluses.empty(), os);
-    if (!surpluses.empty()) IO::writeVector<iomode, IO::pad_line>(surpluses.getVector(), os);
+    if (!surpluses.empty()) surpluses.writeVector<iomode, IO::pad_line>(os);
 
     if (num_outputs > 0) values.write<iomode>(os);
 }
@@ -127,18 +127,18 @@ void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> 
         surpluses = Data2D<double>();
         prepareSequence(0);
     }else{
-        pset.addSortedIndexes(points.getVector());
-        needed = pset.diffSets(points);
+        pset += points;
+        needed = pset - points;
 
         if (!needed.empty()) prepareSequence(0);
     }
 }
 
 void GridSequence::getLoadedPoints(double *x) const{
-    std::transform(points.getVector().begin(), points.getVector().end(), x, [&](int i)->double{ return nodes[i]; });
+    std::transform(points.begin(), points.end(), x, [&](int i)->double{ return nodes[i]; });
 }
 void GridSequence::getNeededPoints(double *x) const{
-    std::transform(needed.getVector().begin(), needed.getVector().end(), x, [&](int i)->double{ return nodes[i]; });
+    std::transform(needed.begin(), needed.end(), x, [&](int i)->double{ return nodes[i]; });
 }
 void GridSequence::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); }
@@ -190,7 +190,7 @@ void GridSequence::loadNeededPoints(const double *vals){
             needed = MultiIndexSet();
         }else{ // merge needed and points
             values.addValues(points, needed, vals);
-            points.addSortedIndexes(needed.getVector());
+            points += needed;
             needed = MultiIndexSet();
             prepareSequence(0);
         }
@@ -212,7 +212,7 @@ void GridSequence::mergeRefinement(){
         #ifdef Tasmanian_ENABLE_CUDA
         clearCudaNodes(); // the points will change, clear cache
         #endif
-        points.addMultiIndexSet(needed);
+        points += needed;
         needed = MultiIndexSet();
         prepareSequence(0);
     }
@@ -321,7 +321,7 @@ std::vector<double> GridSequence::getCandidateConstructionPoints(std::function<d
 
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    std::vector<double> x(dynamic_values->initial_points.totalSize() + new_points.totalSize());
     auto t = weighted_points.begin();
     auto ix = x.begin();
     while(t != weighted_points.end()){
@@ -372,7 +372,7 @@ void GridSequence::loadConstructedPoint(const double x[], int numx, const double
         Data2D<int> combined_pnts(num_dimensions, numx);
         for(int i=0; i<numx; i++)
             std::copy_n(pnts[i].begin(), num_dimensions, combined_pnts.getIStrip(i));
-        dynamic_values->initial_points = dynamic_values->initial_points.diffSets(MultiIndexSet(combined_pnts));
+        dynamic_values->initial_points = dynamic_values->initial_points - combined_pnts;
     }
 
     Utils::Wrapper2D<const double> wrapy(num_outputs, y);
@@ -383,10 +383,8 @@ void GridSequence::loadConstructedPoint(const double x[], int numx, const double
 void GridSequence::expandGrid(const std::vector<int> &point, const std::vector<double> &value, const std::vector<double> &surplus){
     if (points.empty()){ // only one point
         points = MultiIndexSet((size_t) num_dimensions, std::vector<int>(point));
-        values.resize(num_outputs, 1);
-        values.setValues(std::vector<double>(value));
-        surpluses.resize(num_outputs, 1);
-        surpluses.getVector() = value; // the surplus of one point is the value itself
+        values = StorageSet(num_outputs, 1, std::vector<double>(value));
+        surpluses = Data2D<double>(num_outputs, 1, std::vector<double>(value.begin(), value.end())); // the surplus of one point is the value itself
     }else{ // merge with existing points
         MultiIndexSet temp(num_dimensions, std::vector<int>(point));
         values.addValues(points, temp, value.data());
@@ -414,7 +412,7 @@ void GridSequence::loadConstructedPoints(){
         values.setValues(std::move(vals));
     }else{
         values.addValues(points, new_points, vals.data());
-        points.addMultiIndexSet(new_points);
+        points += new_points;
     }
     prepareSequence(0); // update the directional max_levels, will not shrink the number of nodes
     recomputeSurpluses(); // costly, but the only option under the circumstances
@@ -471,10 +469,10 @@ void GridSequence::loadNeededPointsCuda(CudaEngine *, const double *vals){
 void GridSequence::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses<double>();
 
-    Data2D<double> hweights; hweights.resize(points.getNumIndexes(), num_x);
-    evaluateHierarchicalFunctions(x, num_x, hweights.getStrip(0));
+    Data2D<double> hweights(points.getNumIndexes(), num_x);
+    evaluateHierarchicalFunctions(x, num_x, hweights.data());
 
-    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, hweights.getVector(), y);
+    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->surpluses, hweights.data(), y);
 }
 void GridSequence::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_outputs, num_x);
@@ -571,32 +569,22 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaSurpluses(); // points have not changed, just clear surpluses
     #endif
-    int num_ponits = getNumPoints();
-    size_t num_vals = ((size_t) num_ponits) * ((size_t) num_outputs);
     if (!points.empty()){
         clearRefinement();
     }else{
         points = std::move(needed);
         needed = MultiIndexSet();
     }
-    std::vector<double> &vals = values.getVector();
-    vals.resize(num_vals);
-    surpluses.resize(num_outputs, num_ponits);
-    std::copy_n(c, num_vals, surpluses.getVector().data());
-    std::vector<double> x(((size_t) num_ponits) * ((size_t) num_dimensions));
+    auto num_points = points.getNumIndexes();
+    surpluses = Data2D<double>(num_outputs, num_points, std::vector<double>(c, c + Utils::size_mult(num_outputs, num_points)));
+
+    std::vector<double> x(Utils::size_mult(num_dimensions, num_points));
+    std::vector<double> y(Utils::size_mult(num_outputs,    num_points));
+
     getPoints(x.data());
-    evaluateBatch(x.data(), points.getNumIndexes(), vals.data()); // speed this up later
-//     switch(acc){
-//         #ifdef Tasmanian_ENABLE_BLAS
-//         case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals.data()); break;
-//         #endif
-//         #ifdef Tasmanian_ENABLE_CUDA
-//         case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals.data()); break;
-//         case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals.data()); break;
-//         #endif
-//         default:
-//             evaluateBatch(x.data(), points.getNumIndexes(), vals.data());
-//     }
+    evaluateBatch(x.data(), points.getNumIndexes(), y.data()); // speed this up later
+
+    values = StorageSet(num_outputs, num_points, std::move(y));
 }
 
 void GridSequence::integrateHierarchicalFunctions(double integrals[]) const{
@@ -757,26 +745,26 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
 
     MultiIndexSet kids = MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits);
     if (kids.getNumIndexes() > 0){
-        kids.addMultiIndexSet(points);
+        kids += points;
         MultiIndexManipulations::completeSetToLower(kids);
 
-        needed = kids.diffSets(points);
+        needed = kids - points;
         if (!needed.empty()) prepareSequence(0);
     }
 }
 
 std::vector<int> GridSequence::getPolynomialSpace(bool interpolation) const{
     if (interpolation){
-        return (points.empty()) ? needed.getVector() : points.getVector(); // copy
+        return (points.empty()) ? std::vector<int>(needed.begin(), needed.end()) : std::vector<int>(points.begin(), points.end()); // copy
     }else{
         MultiIndexSet polynomial_set = MultiIndexManipulations::createPolynomialSpace(
             (points.empty()) ? needed : points,
             [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); });
-        return std::move(polynomial_set.getVector());
+        return polynomial_set.eject();
     }
 }
 const double* GridSequence::getSurpluses() const{
-    return surpluses.getVector().data();
+    return surpluses.data();
 }
 
 void GridSequence::prepareSequence(int num_external){
@@ -860,8 +848,7 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 
 void GridSequence::recomputeSurpluses(){
     int num_points = points.getNumIndexes();
-    surpluses.resize(num_outputs, num_points);
-    surpluses.getVector() = values.getVector();
+    surpluses = Data2D<double>(num_outputs, num_points, std::vector<double>(values.begin(), values.end()));
 
     std::vector<int> level = MultiIndexManipulations::computeLevels(points);
     int top_level = *std::max_element(level.begin(), level.end());

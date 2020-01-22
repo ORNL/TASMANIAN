@@ -462,8 +462,8 @@ bool TasgridWrapper::setConformalTransformation(){
             cerr << "ERROR: the conformal file for asin should contain " << grid.getNumDimensions() << " columns, instead it has " << mat.getStride() << endl;
             return false;
         }
-        std::vector<int> coeff(mat.getVector().size());
-        std::transform(mat.getVector().begin(), mat.getVector().end(), coeff.begin(), [](double x)->int{ return static_cast<int>(x); });
+        std::vector<int> coeff(mat.getTotalEntries());
+        std::transform(mat.begin(), mat.end(), coeff.begin(), [](double x)->int{ return static_cast<int>(x); });
 
         grid.setConformalTransformASIN(coeff);
         return true;
@@ -489,7 +489,7 @@ bool TasgridWrapper::loadValues(){
         cerr << "ERROR: grid is set for " << grid.getNumOutputs() << " outputs, but " << valsfilename << " specifies " << vals.getStride() << endl;
         return false;
     }
-    grid.loadNeededPoints(vals.getVector());
+    grid.loadNeededPoints(vals.data());
     return true;
 }
 bool TasgridWrapper::getInterWeights(){
@@ -544,11 +544,12 @@ bool TasgridWrapper::getEvaluate(){
         }
     }
 
+    int num_points = x.getNumStrips();
     std::vector<double> result;
-    grid.evaluateBatch(x.getVector(), result);
+    grid.evaluateBatch(x.eject(), result);
 
-    writeMatrix(outfilename, x.getNumStrips(), (int) num_out, result.data());
-    printMatrix(x.getNumStrips(), (int) num_out, result.data());
+    writeMatrix(outfilename, num_points, (int) num_out, result.data());
+    printMatrix(num_points, (int) num_out, result.data());
 
     return true;
 }
@@ -682,7 +683,7 @@ bool TasgridWrapper::refineGrid(){
                     return false;
                 }
             }
-            grid.setSurplusRefinement(tolerance, tref, ref_output, llimits, scale.getVector());
+            grid.setSurplusRefinement(tolerance, tref, ref_output, llimits, scale.eject());
         }else if (grid.isSequence()){
             grid.setSurplusRefinement(tolerance, ref_output, llimits);
         }else{
@@ -740,10 +741,11 @@ bool TasgridWrapper::getEvalHierarchyDense(){
         return false;
     }
     int num_p = grid.getNumPoints();
-    auto result = grid.evaluateHierarchicalFunctions(x.getVector());
+    int num_x = x.getNumStrips();
+    auto result = grid.evaluateHierarchicalFunctions(x.eject());
 
-    writeMatrix(outfilename, x.getNumStrips(), ((grid.isFourier()) ? 2 * num_p : num_p), result.data());
-    printMatrix(x.getNumStrips(), (int) num_p, result.data(), grid.isFourier());
+    writeMatrix(outfilename, num_x, ((grid.isFourier()) ? 2 * num_p : num_p), result.data());
+    printMatrix(num_x, (int) num_p, result.data(), grid.isFourier());
 
     return true;
 }
@@ -768,7 +770,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
     }
     std::vector<int> pntr , indx;
     std::vector<double> vals;
-    grid.evaluateSparseHierarchicalFunctions(x.getVector(), pntr, indx, vals);
+    grid.evaluateSparseHierarchicalFunctions(x.eject(), pntr, indx, vals);
     int num_p = grid.getNumPoints();
     if (!outfilename.empty()){
         if (useASCII){
@@ -804,7 +806,7 @@ bool TasgridWrapper::setHierarchy(){
         cerr << "ERROR: fourier grid is set for " << grid.getNumOutputs() << " outputs, but " << valsfilename << " specifies " << (vals.getStride() / 2) << endl;
         return false;
     }
-    grid.setHierarchicalCoefficients(vals.getVector());
+    grid.setHierarchicalCoefficients(vals.eject());
     return true;
 }
 
@@ -843,8 +845,8 @@ std::vector<int> TasgridWrapper::readAnisotropicFile(int num_weights) const{
         throw std::runtime_error("ERROR: anisotropy file has wrong number of entries");
     }
 
-    std::vector<int> weights(mat.getVector().size());
-    std::transform(mat.getVector().begin(), mat.getVector().end(), weights.begin(), [](double x)->int{ return static_cast<int>(x); });
+    std::vector<int> weights(mat.getTotalEntries());
+    std::transform(mat.begin(), mat.end(), weights.begin(), [](double x)->int{ return static_cast<int>(x); });
     return weights;
 }
 std::pair<std::vector<double>, std::vector<double>> TasgridWrapper::readTransform() const{
@@ -876,8 +878,8 @@ std::vector<int> TasgridWrapper::readLevelLimits(int num_weights) const{
         throw std::runtime_error("ERROR: level limits file has incorrect format.");
     }
 
-    std::vector<int> llimits(mat.getVector().size());
-    std::transform(mat.getVector().begin(), mat.getVector().end(), llimits.begin(), [](double x)->int{ return static_cast<int>(x); });
+    std::vector<int> llimits(mat.getTotalEntries());
+    std::transform(mat.begin(), mat.end(), llimits.begin(), [](double x)->int{ return static_cast<int>(x); });
     return llimits;
 }
 
@@ -885,10 +887,7 @@ template<typename iomode>
 Data2D<double> readMatrixFromOpen(std::istream &is){
     int rows = IO::readNumber<iomode, int>(is);
     int cols = IO::readNumber<iomode, int>(is);
-    Data2D<double> matrix(cols, rows);
-    if (!matrix.empty())
-        IO::readVector<iomode>(is, matrix.getVector());
-    return matrix;
+    return Data2D<double>(cols, rows, IO::readVector<iomode, double>(is, Utils::size_mult(cols, rows)));
 }
 
 Data2D<double> TasgridWrapper::readMatrix(std::string const &filename){

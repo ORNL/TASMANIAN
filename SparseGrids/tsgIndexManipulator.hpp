@@ -386,7 +386,7 @@ inline MultiIndexSet createActiveTensors(const MultiIndexSet &mset, const std::v
     std::vector<int> indexes(nz_weights * num_dimensions);
     nz_weights = 0;
     auto iter = indexes.begin();
-    auto iset = mset.getVector().begin();
+    auto iset = mset.begin();
     for(auto w: weights){
         if (w != 0){
             std::copy_n(iset, num_dimensions, iter);
@@ -449,7 +449,7 @@ inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiInd
         Data2D<int> update(num_dimensions, 0);
 
         MultiIndexSet total = current;
-        if (!result.empty()) total.addMultiIndexSet(result);
+        if (!result.empty()) total += result;
         for(int i=0; i<total.getNumIndexes(); i++){
             std::vector<int> kid(total.getIndex(i), total.getIndex(i) + num_dimensions);
             for(auto &k : kid){
@@ -461,7 +461,7 @@ inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiInd
         }
 
         loopon = (update.getNumStrips() > 0);
-        if (loopon) result.addMultiIndexSet(MultiIndexSet(update));
+        if (loopon) result += update;
     }
     return result;
 }

@@ -103,12 +103,12 @@ void MultiIndexSet::addSortedIndexes(const std::vector<int> &addition){
     cache_num_indexes = (int) (indexes.size() / num_dimensions);
 }
 
-void MultiIndexSet::setData2D(Data2D<int> const &data){
+MultiIndexSet::MultiIndexSet(Data2D<int> const &data) : num_dimensions((size_t) data.getStride()), cache_num_indexes(0){
     size_t num = (size_t) data.getNumStrips();
     if (num == 0) return; // nothing to do
 
     std::vector<std::vector<int>::const_iterator> index_refs(num);
-    auto iadd = data.getVector().begin();
+    auto iadd = data.begin();
     for(auto &i : index_refs){
         i = iadd;
         std::advance(iadd, num_dimensions);
@@ -164,20 +164,20 @@ int MultiIndexSet::getSlot(const int *p) const{
     return -1;
 }
 
-MultiIndexSet MultiIndexSet::diffSets(const MultiIndexSet &substract){
-    std::vector<std::vector<int>::iterator> kept_indexes;
+MultiIndexSet MultiIndexSet::operator -(const MultiIndexSet &substract) const{
+    std::vector<std::vector<int>::const_iterator> kept_indexes;
 
     auto ithis = indexes.begin();
     auto endthis = indexes.end();
-    auto iother = substract.getVector().begin();
-    auto endother = substract.getVector().end();
+    auto iother = substract.begin();
+    auto endother = substract.end();
 
     while(ithis != endthis){
         if (iother == endother){
             kept_indexes.push_back(ithis);
             std::advance(ithis, num_dimensions);
         }else{
-            TypeIndexRelation t = [&](std::vector<int>::iterator ia, std::vector<int>::const_iterator ib) ->
+            TypeIndexRelation t = [&](std::vector<int>::const_iterator ia, std::vector<int>::const_iterator ib) ->
                                         TypeIndexRelation{
                                             for(size_t j=0; j<num_dimensions; j++){
                                                 if (*ia   < *ib)   return type_abeforeb;
@@ -226,20 +226,6 @@ void StorageSet::write(std::ostream &os) const{
 
 template void StorageSet::write<mode_ascii>(std::ostream &) const;
 template void StorageSet::write<mode_binary>(std::ostream &) const;
-
-void StorageSet::resize(int cnum_outputs, int cnum_values){
-    values = std::vector<double>();
-    num_outputs = cnum_outputs;
-    num_values = cnum_values;
-}
-
-const double* StorageSet::getValues(int i) const{ return &(values[i*num_outputs]); }
-double* StorageSet::getValues(int i){ return &(values[i*num_outputs]); }
-
-void StorageSet::setValues(const double vals[]){
-    values.resize(num_outputs * num_values);
-    std::copy_n(vals, num_values * num_outputs, values.data());
-}
 
 void StorageSet::addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]){
     int num_old = old_set.getNumIndexes();

@@ -120,6 +120,10 @@ public:
     //! \brief Default destructor.
     ~Data2D() = default;
 
+    //! \brief Write the internal vector to a stream.
+    template<bool iomode, IO::IOPad pad>
+    void writeVector(std::ostream &os) const{ IO::writeVector<iomode, pad, T>(vec, os); }
+
     //! \brief Returns \b true if the number of strips is zero.
     bool empty() const{ return (num_strips == 0); }
 
@@ -127,7 +131,7 @@ public:
     void resize(int new_stride, int new_num_strips){
         stride = (size_t) new_stride;
         num_strips = (size_t) new_num_strips;
-        vec.resize(stride * num_strips);
+        vec = std::vector<T>(stride * num_strips);
     }
 
     //! \brief Get the data between \b ibegin and \b iend of each strip.
@@ -144,8 +148,6 @@ public:
     T const* getStrip(int i) const{ return &(vec[i*stride]); }
     //! \brief Return iterator set at the \b i-th strip.
     typename std::vector<T>::iterator getIStrip(int i){ return vec.begin() + Utils::size_mult(stride, i); }
-    //! \brief Return const_iterator set at the \b i-th strip.
-    typename std::vector<T>::const_iterator getIStrip(int i) const{ return vec.cbegin() + Utils::size_mult(stride, i); }
     //! \brief Returns the stride.
     size_t getStride() const{ return stride; }
     //! \brief Returns the number of strips.
@@ -153,15 +155,26 @@ public:
     //! \brief Returns the total number of entries, stride times number of trips.
     size_t getTotalEntries() const{ return vec.size(); }
     //! \brief Returns a reference to the internal data.
-    std::vector<T>& getVector(){ return vec; }
+    T* data(){ return vec.data(); }
     //! \brief Returns a const reference to the internal data.
-    const std::vector<T>& getVector() const{ return vec; }
+    T const* data() const{ return vec.data(); }
     //! \brief Clear all used data.
     void clear(){
         stride = 0;
         num_strips = 0;
         vec = std::vector<double>();
     }
+
+    //! \brief Moves the data vector out of the class, this method invalidates the object.
+    inline typename std::vector<T> eject(){ return std::move(vec); }
+
+    //! \brief Returns a const iterator to the beginning of the internal data
+    inline typename std::vector<T>::const_iterator begin() const{ return vec.cbegin(); }
+    //! \brief Returns a const iterator to the end of the internal data
+    inline typename std::vector<T>::const_iterator end() const{ return vec.cend(); }
+
+    //! \brief Returns a reverse iterator to the end of the internal data
+    inline typename std::vector<T>::reverse_iterator rbegin(){ return vec.rbegin(); }
 
     //! \brief Uses std::vector::insert to append the data.
     void appendStrip(typename std::vector<T>::const_iterator const &x){
@@ -193,14 +206,9 @@ namespace IO{
     * \internal
     * \ingroup TasmanianIO
     * \brief Read the Data2D structure from the stream, assumes the given number of strips and stride.
+    *
     * \endinternal
     */
-    template<bool useAscii, typename DataType, typename IndexStride, typename IndexNumStrips>
-    Data2D<DataType> readData2D(std::istream &is, IndexStride stride, IndexNumStrips num_strips){
-        Data2D<DataType> data(stride, num_strips);
-        readVector<useAscii>(is, data.getVector());
-        return data;
-    }
     template<typename iomode, typename DataType, typename IndexStride, typename IndexNumStrips>
     Data2D<DataType> readData2D(std::istream &is, IndexStride stride, IndexNumStrips num_strips){
         return Data2D<DataType>(stride, num_strips, readVector<iomode, DataType>(is, Utils::size_mult(stride, num_strips)));
@@ -230,7 +238,8 @@ public:
         num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)),
         indexes(std::forward<std::vector<int>>(new_indexes)){}
     //! \brief Copy a collection of unsorted indexes into a sorted multi-index set, sorts during the copy.
-    MultiIndexSet(Data2D<int> &data) : num_dimensions((size_t) data.getStride()), cache_num_indexes(0){ setData2D(data); }
+    MultiIndexSet(Data2D<int> const &data);
+    //! \brief Read from stream constructor.
     template<typename iomode> MultiIndexSet(std::istream &is, iomode) :
         num_dimensions((size_t) IO::readNumber<iomode, int>(is)),
         cache_num_indexes(IO::readNumber<iomode, int>(is)),
@@ -255,16 +264,22 @@ public:
 
     //! \brief Add more indexes to a non-empty set, \b addition must be sorted and the set must be initialized.
     void addSortedIndexes(std::vector<int> const &addition);
-    //! \brief If empty, copy \b addition, otherwise merge the indexes of \b addition into this set.
-    inline void addMultiIndexSet(MultiIndexSet const  &addition){
+    //! \brief If empty, copy \b addition, otherwise merge the indexes of \b addition into this set, i.e., set union.
+    inline MultiIndexSet& operator += (MultiIndexSet const &addition){
         num_dimensions = addition.getNumDimensions();
-        addSortedIndexes(addition.getVector());
+        addSortedIndexes(addition.indexes);
+        return *this;
     }
 
-    //! \brief Returns a const reference to the internal data
-    inline const std::vector<int>& getVector() const{ return indexes; }
-    //! \brief Returns a reference to the internal data, must not modify the lexicographical order or the size of the vector
-    inline std::vector<int>& getVector(){ return indexes; } // used for remapping during tensor generic points
+    //! \brief Returns a const iterator to the beginning of the internal data
+    inline std::vector<int>::const_iterator begin() const{ return indexes.cbegin(); }
+    //! \brief Returns a const iterator to the end of the internal data
+    inline std::vector<int>::const_iterator end() const{ return indexes.cend(); }
+    //! \brief Returns the number of dimensions times the number of indexes.
+    inline size_t totalSize() const{ return indexes.size(); }
+
+    //! \brief Moves the index vector out of the class, this method invalidates the object.
+    inline std::vector<int> eject(){ return std::move(indexes); }
 
     //! \brief Returns the slot containing index **p**, returns `-1` if not found
     int getSlot(const int *p) const;
@@ -282,17 +297,13 @@ public:
      * The implementation uses an algorithm similar to merge with complexity linear in the number of multi-indexes of the two sets,
      * i.e., does not use \b missing() which would add a logarithmic factor.
      */
-    MultiIndexSet diffSets(const MultiIndexSet &substract);
+    MultiIndexSet operator -(const MultiIndexSet &substract) const;
 
     //! \brief Removes \b p from the set (if exists).
     void removeIndex(const std::vector<int> &p);
 
     //! \brief Returns the maximum single index in the set.
     int getMaxIndex() const{ return (empty()) ? 0 : *std::max_element(indexes.begin(), indexes.end()); }
-
-protected:
-    //! \brief Copy and sort the indexes from the \b data, called only from the constructor.
-    void setData2D(Data2D<int> const &data);
 
 private:
     size_t num_dimensions;
@@ -337,19 +348,22 @@ public:
     template<bool useAscii> void write(std::ostream &os) const;
 
     //! \brief Clear the existing values and assigns new dimensions, does not allocate memory for the new values.
-    void resize(int cnum_outputs, int cnum_values);
+    void resize(int cnum_outputs, int cnum_values){
+        num_outputs = (size_t) cnum_outputs;
+        num_values  = (size_t) cnum_values;
+        values = std::vector<double>();
+    }
+
+    //! \brief Returns the number of outputs.
+    size_t getNumOutputs() const{ return num_outputs; }
 
     //! \brief Returns const reference to the \b i-th value.
-    const double* getValues(int i) const;
+    double const* getValues(int i) const{ return &(values[i*num_outputs]); }
     //! \brief Returns reference to the \b i-th value.
-    double* getValues(int i);
-    //! \brief Returns reference to the internal data vector.
-    std::vector<double>& getVector(){ return values; }
-    //! \brief Returns const reference to the internal data vector.
-    const std::vector<double>& getVector() const{ return values; }
+    double* getValues(int i){ return &(values[i*num_outputs]); }
 
     //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
-    void setValues(const double vals[]);
+    void setValues(const double vals[]){ values = std::vector<double>(vals, vals + num_outputs * num_values); }
     //! \brief Replace the existing values with \b vals using move semantics, the size of \b vals must be \b num_outputs times \b num_values
     void setValues(std::vector<double> &&vals){
         num_values = vals.size() / num_outputs;
@@ -358,12 +372,16 @@ public:
 
     //! \brief Return a StorageSet with values between \b ibegin and \b iend.
     StorageSet splitValues(int ibegin, int iend) const{
-        StorageSet result;
-        result.num_values = num_values;
-        result.num_outputs = (size_t) (iend - ibegin);
-        result.values = spltVector2D(values, num_outputs, ibegin, iend);
-        return result;
+        return {iend - ibegin, (int) num_values, spltVector2D(values, num_outputs, ibegin, iend)};
     }
+
+    //! \brief Returns a const iterator to the beginning of the internal data
+    inline std::vector<double>::const_iterator begin() const{ return values.cbegin(); }
+    //! \brief Returns a const iterator to the end of the internal data
+    inline std::vector<double>::const_iterator end() const{ return values.cend(); }
+
+    //! \brief Moves the values vector out of the class, this method invalidates the object.
+    inline std::vector<double> eject(){ return std::move(values); }
 
     /*!
      * \brief Add more values to the set, the \b old_set and \b new_set are the associated multi-index sets required to maintain order.

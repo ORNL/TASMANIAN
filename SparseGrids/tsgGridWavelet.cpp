@@ -43,14 +43,14 @@ template<bool iomode> void GridWavelet::write(std::ostream &os) const{
     if (!points.empty()) points.write<iomode>(os);
     if (iomode == mode_ascii){ // backwards compatible: surpluses and needed, or needed and surpluses
         IO::writeFlag<iomode, IO::pad_auto>((coefficients.getNumStrips() != 0), os);
-        if (coefficients.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(coefficients.getVector(), os);
+        if (!coefficients.empty()) coefficients.writeVector<iomode, IO::pad_line>(os);
         IO::writeFlag<iomode, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<iomode>(os);
     }else{
         IO::writeFlag<iomode, IO::pad_auto>(!needed.empty(), os);
         if (!needed.empty()) needed.write<iomode>(os);
         IO::writeFlag<iomode, IO::pad_auto>((coefficients.getNumStrips() != 0), os);
-        if (coefficients.getNumStrips() != 0) IO::writeVector<iomode, IO::pad_line>(coefficients.getVector(), os);
+        if (!coefficients.empty()) coefficients.writeVector<iomode, IO::pad_line>(os);
     }
 
     if (num_outputs > 0) values.write<iomode>(os);
@@ -105,7 +105,7 @@ GridWavelet::GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Dat
     buildInterpolationMatrix();
 
     if (num_outputs > 0){
-        values = StorageSet(num_outputs, points.getNumIndexes(), std::move(vals.getVector()));
+        values = StorageSet(num_outputs, points.getNumIndexes(), vals.eject());
         recomputeCoefficients();
     }
 }
@@ -170,7 +170,7 @@ void GridWavelet::loadNeededPoints(const double *vals){
         clearCudaBasis();
         #endif
         values.addValues(points, needed, vals);
-        points.addMultiIndexSet(needed);
+        points += needed;
         needed = MultiIndexSet();
         buildInterpolationMatrix();
     }
@@ -188,7 +188,7 @@ void GridWavelet::mergeRefinement(){
     if (points.empty()){
         points = std::move(needed);
     }else{
-        points.addMultiIndexSet(needed);
+        points += needed;
         buildInterpolationMatrix();
     }
     needed = MultiIndexSet();
@@ -232,7 +232,7 @@ void GridWavelet::evaluateCudaMixed(CudaEngine *engine, const double x[], int nu
     Data2D<double> weights(points.getNumIndexes(), num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.getVector(), y);
+    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.data(), y);
 }
 void GridWavelet::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     if ((order != 1) || (num_x == 1)){
@@ -284,8 +284,8 @@ template<typename T> void GridWavelet::loadCudaBasis() const{
         for(int j=0; j<num_dimensions; j++)
             rule1D.getShiftScale(p[j], scale[j], shift[j]);
     }
-    ccache->nodes.load(cpu_scale.getVector());
-    ccache->support.load(cpu_shift.getVector());
+    ccache->nodes.load(cpu_scale.begin(), cpu_scale.end());
+    ccache->support.load(cpu_shift.begin(), cpu_shift.end());
 }
 void GridWavelet::clearCudaBasis(){
     if (cuda_cache) cuda_cache->clearNodes();
@@ -294,7 +294,7 @@ void GridWavelet::clearCudaBasis(){
 template<typename T> void GridWavelet::loadCudaCoefficients() const{
     auto &ccache = getCudaCache(static_cast<T>(0.0));
     if (!ccache) ccache = std::make_unique<CudaWaveletData<T>>();
-    if (ccache->coefficients.empty()) ccache->coefficients.load(coefficients.getVector());
+    if (ccache->coefficients.empty()) ccache->coefficients.load(coefficients.begin(), coefficients.end());
 }
 void GridWavelet::clearCudaCoefficients(){
     if (cuda_cache) cuda_cache->coefficients.clear();
@@ -490,10 +490,8 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
 
             int active_outputs = (output == -1) ? num_outputs : 1;
 
-            Data2D<double> vals;
-            vals.resize(active_outputs, nump);
-            Data2D<int> indexes;
-            indexes.resize(num_dimensions, nump);
+            Data2D<double> vals(active_outputs, nump);
+            Data2D<int> indexes(num_dimensions, nump);
 
             for(int i=0; i<nump; i++){
                 const double* v = values.getValues(pnts[i]);
@@ -507,7 +505,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 std::copy(p, p + num_dimensions, indexes.getStrip(i));
             }
 
-            GridWavelet direction_grid({(size_t) num_dimensions, std::move(indexes.getVector())}, active_outputs, order, std::move(vals));
+            GridWavelet direction_grid({(size_t) num_dimensions, indexes.eject()}, active_outputs, order, std::move(vals));
 
             for(int i=0; i<nump; i++){
                 bool small = true;
@@ -663,7 +661,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
     MultiIndexSet total = current; // forms a working copy of the entire merged graph
 
     // do not consider the points already included in total, complexity is level_zero.getNumIndexes()
-    if (!total.empty()) level_zero = level_zero.diffSets(total);
+    if (!total.empty()) level_zero = level_zero - total;
 
     if (level_zero.getNumIndexes() > 0){ // level zero nodes are missing from current
         Data2D<int> roots(num_dimensions, 0);
@@ -674,8 +672,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
         }
 
         result = MultiIndexSet(roots);
-        if (total.empty()) total = result;
-        else total.addMultiIndexSet(result);
+        total += result;
     }
 
     if (total.empty()) return MultiIndexSet(); // current was empty and no roots could be added
@@ -718,8 +715,8 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
 
         if (update.getNumStrips() > 0){
             MultiIndexSet update_set(update);
-            result.addMultiIndexSet(update_set);
-            total.addMultiIndexSet(update_set);
+            result += update_set;
+            total  += update_set;
         }
     }while(update.getNumStrips() > 0);
 
@@ -730,7 +727,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
 std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits){
 
     MultiIndexSet refine_candidates = getRefinementCanidates(tolerance, criteria, output, level_limits);
-    MultiIndexSet new_points = (dynamic_values->initial_points.empty()) ? std::move(refine_candidates) : refine_candidates.diffSets(dynamic_values->initial_points);
+    MultiIndexSet new_points = (dynamic_values->initial_points.empty()) ? std::move(refine_candidates) : refine_candidates - dynamic_values->initial_points;
 
     // compute the weights for the new_points points
     std::vector<double> norm = getNormalization();
@@ -761,7 +758,7 @@ std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance
     // if using stable refinement, ensure the weight of the parents is never less than the children
     if (!new_points.empty() && ((criteria == refine_parents_first) || (criteria == refine_fds))){
         auto rlevels = WaveManipulations::computeLevels(new_points, rule1D);
-        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        auto split = HierarchyManipulations::splitByLevels(new_points, rlevels);
         for(auto is = split.rbegin(); is != split.rend(); is++){
             for(int i=0; i<is->getNumStrips(); i++){
                 std::vector<int> parent(is->getStrip(i), is->getStrip(i) + num_dimensions);
@@ -785,7 +782,7 @@ std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance
     }else if (!new_points.empty() && (criteria == refine_stable)){
         // stable refinement, ensure that if level[i] < level[j] then weight[i] > weight[j]
         auto rlevels = WaveManipulations::computeLevels(new_points, rule1D);
-        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        auto split = HierarchyManipulations::splitByLevels(new_points, rlevels);
         double max_weight = 0.0;
         for(auto is = split.rbegin(); is != split.rend(); is++){ // loop backwards in levels
             double correction = max_weight;
@@ -813,7 +810,7 @@ std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance
     // sort and return the sorted list
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    std::vector<double> x(dynamic_values->initial_points.totalSize() + new_points.totalSize());
     auto ix = x.begin();
     for(auto t = weighted_points.begin(); t != weighted_points.end(); t++)
         ix = std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule1D.getNode(i); });
@@ -841,7 +838,7 @@ void GridWavelet::loadConstructedPoint(const double x[], int numx, const double 
         Data2D<int> combined_pnts(num_dimensions, numx);
         for(int i=0; i<numx; i++)
             std::copy_n(pnts[i].begin(), num_dimensions, combined_pnts.getIStrip(i));
-        dynamic_values->initial_points = dynamic_values->initial_points.diffSets(MultiIndexSet(combined_pnts));
+        dynamic_values->initial_points = dynamic_values->initial_points - combined_pnts;
     }
 
     Utils::Wrapper2D<const double> wrapy(num_outputs, y);
@@ -867,7 +864,7 @@ void GridWavelet::loadConstructedPoint(const double x[], int numx, const double 
         values.setValues(std::move(vals));
     }else{
         values.addValues(points, new_points, vals.data());
-        points.addMultiIndexSet(new_points);
+        points += new_points;
     }
     buildInterpolationMatrix();
     recomputeCoefficients(); // costly, but the only option under the circumstances
@@ -906,23 +903,22 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaCoefficients();
     #endif
-    int num_points = getNumPoints();
-    size_t size_coeff = ((size_t) num_points) * ((size_t) num_outputs);
     if (!points.empty()){
         clearRefinement();
     }else{
         points = std::move(needed);
         needed = MultiIndexSet();
     }
-    coefficients.resize(num_outputs, num_points);
-    std::copy_n(c, size_coeff, coefficients.getStrip(0));
+    auto num_points = points.getNumIndexes();
+    coefficients = Data2D<double>(num_outputs, num_points, std::vector<double>(c, c + Utils::size_mult(num_outputs, num_points)));
 
-    values.resize(num_outputs, num_points);
-    values.getVector().resize(size_coeff);
+    std::vector<double> y(Utils::size_mult(num_outputs,    num_points));
+    std::vector<double> x(Utils::size_mult(num_dimensions, num_points));
 
-    std::vector<double> x(((size_t) num_points) * ((size_t) num_dimensions));
     getPoints(x.data());
-    evaluateBatch(x.data(), points.getNumIndexes(), values.getValues(0));
+    evaluateBatch(x.data(), points.getNumIndexes(), y.data());
+
+    values = StorageSet(num_outputs, num_points, std::move(y));
 }
 
 void GridWavelet::integrateHierarchicalFunctions(double integrals[]) const{
@@ -993,7 +989,7 @@ MultiIndexSet GridWavelet::getRefinementCanidates(double tolerance, TypeRefineme
 
             num_added = addons.getNumStrips();
             if (num_added > 0)
-                result.addMultiIndexSet(MultiIndexSet(addons));
+                result += addons;
         }
     }
 

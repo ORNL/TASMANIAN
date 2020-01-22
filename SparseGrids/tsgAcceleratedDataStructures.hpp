@@ -118,6 +118,8 @@ public:
     CudaVector(const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(cpu_data); }
     //! \brief Construct a vector and load with date provided on to the cpu.
     CudaVector(int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(Utils::size_mult(dim1, dim2), cpu_data); }
+    //! \brief Construct a vector by loading from a given range.
+    template<typename IteratorLike> CudaVector(IteratorLike ibegin, IteratorLike iend) : CudaVector(){ load(ibegin, iend); }
     //! \brief Destructor, release all allocated memory.
     ~CudaVector(){ clear(); }
 
@@ -139,6 +141,12 @@ public:
 
     //! Makes a call to the other overload with \b cpu_data.size() as \b count. See the overload.
     void load(const std::vector<T> &cpu_data){ load(cpu_data.size(), cpu_data.data()); }
+
+    //! \brief Load from a range defined by the begin and end, converts if necessary.
+    template<typename IteratorLike>
+    void load(IteratorLike ibegin, IteratorLike iend){
+        load(std::distance(ibegin, iend), &*ibegin);
+    }
 
     /*!
      * \brief Takes a vector with entries of different precision, converts and loads.
@@ -235,8 +243,8 @@ public:
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
     template<typename T>
     void denseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha,
-                       const CudaVector<T> &A, const std::vector<T> &B, T C[]){
-        CudaVector<T> gpuB(B), gpuC(M, N);
+                       const CudaVector<T> &A, T const B[], T C[]){
+        CudaVector<T> gpuB(K, N, B), gpuC(M, N);
         denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC.data());
         gpuC.unload(C);
     }

@@ -200,7 +200,7 @@ void GridGlobal::proposeUpdatedTensors(){
             MultiIndexManipulations::generateNonNestedPoints(updated_active_tensors, wrapper) :
             MultiIndexManipulations::generateNestedPoints(updated_tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
-    needed = new_points.diffSets(points);
+    needed = new_points - points;
 }
 
 void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
@@ -211,24 +211,22 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
 
         updated_tensors = selectTensors((size_t) num_dimensions, depth, type, anisotropic_weights, rule, level_limits);
 
-        MultiIndexSet new_tensors = updated_tensors.diffSets(tensors);
-
-        if (!new_tensors.empty()){
-            updated_tensors.addMultiIndexSet(tensors);
+        if (!(updated_tensors - tensors).empty()){
+            updated_tensors += tensors;
             proposeUpdatedTensors();
         }
     }
 }
 
-void GridGlobal::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
+void GridGlobal::mapIndexesToNodes(MultiIndexSet const &indexes, double *x) const{
     std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
 }
 
 void GridGlobal::getLoadedPoints(double *x) const{
-    mapIndexesToNodes(points.getVector(), x);
+    mapIndexesToNodes(points, x);
 }
 void GridGlobal::getNeededPoints(double *x) const{
-    mapIndexesToNodes(needed.getVector(), x);
+    mapIndexesToNodes(needed, x);
 }
 void GridGlobal::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -296,7 +294,7 @@ void GridGlobal::acceptUpdatedTensors(){
         #ifdef Tasmanian_ENABLE_CUDA
         clearCudaNodes();
         #endif
-        points.addMultiIndexSet(needed);
+        points += needed;
         needed = MultiIndexSet();
 
         tensors = std::move(updated_tensors);
@@ -457,9 +455,8 @@ std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<dou
         const int *t = new_tensors.getIndex(i);
         dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
     }
-    std::vector<int> node_indexes;
-    dynamic_values->getNodesIndexes(node_indexes);
-    std::vector<double> x(node_indexes.size());
+    MultiIndexSet node_indexes = dynamic_values->getNodesIndexes();
+    std::vector<double> x(node_indexes.totalSize());
     mapIndexesToNodes(node_indexes, x.data());
     return x;
 }
@@ -503,10 +500,10 @@ void GridGlobal::loadConstructedTensors(){
         points = std::move(new_points);
     }else{
         values.addValues(points, new_points, new_values.getValues(0));
-        points.addMultiIndexSet(new_points);
+        points += new_points;
     }
 
-    tensors.addMultiIndexSet(new_tensors);
+    tensors += new_tensors;
     // recompute the tensor weights
     auto tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
     active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
@@ -566,7 +563,7 @@ void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num
     Data2D<double> weights(num_points, num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->values, weights.getVector(), y);
+    engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->values, weights.data(), y);
 }
 void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
@@ -606,7 +603,7 @@ void GridGlobal::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_n
 template<typename T> void GridGlobal::loadCudaValues() const{
     auto& ccache = getCudaCache(static_cast<T>(0.0));
     if (!ccache) ccache = std::make_unique<CudaGlobalData<T>>();
-    if (ccache->values.empty()) ccache->values.load(values.getVector());
+    if (ccache->values.empty()) ccache->values.load(values.begin(), values.end());
 }
 void GridGlobal::clearCudaValues() const{ if (cuda_cache) cuda_cache->values.clear(); }
 template<typename T> void GridGlobal::loadCudaNodes() const{
@@ -637,10 +634,10 @@ template<typename T> void GridGlobal::loadCudaNodes() const{
     std::transform(active_w.begin(), active_w.end(), tweights.begin(), [](int i)->double{ return static_cast<double>(i); });
     ccache->tensor_weights.load(tweights);
 
-    ccache->active_tensors.load(active_tensors.getVector());
+    ccache->active_tensors.load(active_tensors.begin(), active_tensors.end());
 
-    std::vector<int> active_num_points(active_tensors.getVector().size());
-    std::transform(active_tensors.getVector().begin(), active_tensors.getVector().end(), active_num_points.begin(), [&](int i)->int{ return wrapper.getNumPoints(i); });
+    std::vector<int> active_num_points(active_tensors.totalSize());
+    std::transform(active_tensors.begin(), active_tensors.end(), active_num_points.begin(), [&](int i)->int{ return wrapper.getNumPoints(i); });
     ccache->active_num_points.load(active_num_points);
 
     ccache->dim_offsets.load(dim_offsets);
@@ -874,7 +871,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
     MultiIndexSet kids = MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits);
 
     if (kids.getNumIndexes() > 0){
-        kids.addMultiIndexSet(points);
+        kids += points;
         MultiIndexManipulations::completeSetToLower(kids);
 
         updated_tensors = std::move(kids);
@@ -926,7 +923,8 @@ MultiIndexSet GridGlobal::getPolynomialSpaceSet(bool interpolation) const{
 }
 
 std::vector<int> GridGlobal::getPolynomialSpace(bool interpolation) const{
-    return std::move(getPolynomialSpaceSet(interpolation).getVector());
+    MultiIndexSet pset = getPolynomialSpaceSet(interpolation);
+    return pset.eject();
 }
 
 }
