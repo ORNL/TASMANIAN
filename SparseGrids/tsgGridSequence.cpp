@@ -571,32 +571,22 @@ void GridSequence::setHierarchicalCoefficients(const double c[], TypeAcceleratio
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaSurpluses(); // points have not changed, just clear surpluses
     #endif
-    int num_ponits = getNumPoints();
-    size_t num_vals = ((size_t) num_ponits) * ((size_t) num_outputs);
     if (!points.empty()){
         clearRefinement();
     }else{
         points = std::move(needed);
         needed = MultiIndexSet();
     }
-    std::vector<double> &vals = values.getVector();
-    vals.resize(num_vals);
-    surpluses.resize(num_outputs, num_ponits);
-    std::copy_n(c, num_vals, surpluses.getVector().data());
-    std::vector<double> x(((size_t) num_ponits) * ((size_t) num_dimensions));
+    auto num_points = points.getNumIndexes();
+    surpluses = Data2D<double>(num_outputs, num_points, std::vector<double>(c, c + Utils::size_mult(num_outputs, num_points)));
+
+    std::vector<double> x(Utils::size_mult(num_dimensions, num_points));
+    std::vector<double> y(Utils::size_mult(num_outputs,    num_points));
+
     getPoints(x.data());
-    evaluateBatch(x.data(), points.getNumIndexes(), vals.data()); // speed this up later
-//     switch(acc){
-//         #ifdef Tasmanian_ENABLE_BLAS
-//         case accel_cpu_blas: evaluateBatchCPUblas(x.data(), points.getNumIndexes(), vals.data()); break;
-//         #endif
-//         #ifdef Tasmanian_ENABLE_CUDA
-//         case accel_gpu_cublas: evaluateBatchGPUcublas(x.data(), points.getNumIndexes(), vals.data()); break;
-//         case accel_gpu_cuda:   evaluateBatchGPUcuda(x.data(), points.getNumIndexes(), vals.data()); break;
-//         #endif
-//         default:
-//             evaluateBatch(x.data(), points.getNumIndexes(), vals.data());
-//     }
+    evaluateBatch(x.data(), points.getNumIndexes(), y.data()); // speed this up later
+
+    values = StorageSet(num_outputs, num_points, std::move(y));
 }
 
 void GridSequence::integrateHierarchicalFunctions(double integrals[]) const{
@@ -860,8 +850,7 @@ double GridSequence::evalBasis(const int f[], const int p[]) const{
 
 void GridSequence::recomputeSurpluses(){
     int num_points = points.getNumIndexes();
-    surpluses.resize(num_outputs, num_points);
-    surpluses.getVector() = values.getVector();
+    surpluses = Data2D<double>(num_outputs, num_points, std::vector<double>(values.begin(), values.end()));
 
     std::vector<int> level = MultiIndexManipulations::computeLevels(points);
     int top_level = *std::max_element(level.begin(), level.end());

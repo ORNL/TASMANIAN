@@ -906,23 +906,22 @@ void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaCoefficients();
     #endif
-    int num_points = getNumPoints();
-    size_t size_coeff = ((size_t) num_points) * ((size_t) num_outputs);
     if (!points.empty()){
         clearRefinement();
     }else{
         points = std::move(needed);
         needed = MultiIndexSet();
     }
-    coefficients.resize(num_outputs, num_points);
-    std::copy_n(c, size_coeff, coefficients.getStrip(0));
+    auto num_points = points.getNumIndexes();
+    coefficients = Data2D<double>(num_outputs, num_points, std::vector<double>(c, c + Utils::size_mult(num_outputs, num_points)));
 
-    values.resize(num_outputs, num_points);
-    values.getVector().resize(size_coeff);
+    std::vector<double> y(Utils::size_mult(num_outputs,    num_points));
+    std::vector<double> x(Utils::size_mult(num_dimensions, num_points));
 
-    std::vector<double> x(((size_t) num_points) * ((size_t) num_dimensions));
     getPoints(x.data());
-    evaluateBatch(x.data(), points.getNumIndexes(), values.getValues(0));
+    evaluateBatch(x.data(), points.getNumIndexes(), y.data());
+
+    values = StorageSet(num_outputs, num_points, std::move(y));
 }
 
 void GridWavelet::integrateHierarchicalFunctions(double integrals[]) const{

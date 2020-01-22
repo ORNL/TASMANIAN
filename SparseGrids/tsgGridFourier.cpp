@@ -630,8 +630,17 @@ void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration
     }else{
         clearRefinement();
     }
-    fourier_coefs.resize(num_outputs, 2 * getNumPoints());
-    std::copy_n(c, 2 * ((size_t) num_outputs) * ((size_t) getNumPoints()), fourier_coefs.getStrip(0));
+    auto num_points = points.getNumIndexes();
+    fourier_coefs = Data2D<double>(num_outputs, 2 * num_points, std::vector<double>(c, c + Utils::size_mult(num_outputs, 2 * num_points)));
+
+    std::vector<double> x(Utils::size_mult(num_dimensions, num_points));
+    std::vector<double> y(Utils::size_mult(num_outputs,    num_points));
+
+    getPoints(x.data());
+    evaluateBatch(x.data(), points.getNumIndexes(), y.data()); // speed this up later
+
+    values = StorageSet(num_outputs, num_points, std::move(y));
+
 }
 void GridFourier::integrateHierarchicalFunctions(double integrals[]) const{
     integrals[0] = 1.0;

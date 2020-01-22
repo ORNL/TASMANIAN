@@ -356,10 +356,6 @@ public:
     const double* getValues(int i) const;
     //! \brief Returns reference to the \b i-th value.
     double* getValues(int i);
-    //! \brief Returns reference to the internal data vector.
-    std::vector<double>& getVector(){ return values; }
-    //! \brief Returns const reference to the internal data vector.
-    const std::vector<double>& getVector() const{ return values; }
 
     //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
     void setValues(const double vals[]);
@@ -382,6 +378,9 @@ public:
     inline std::vector<double>::const_iterator begin() const{ return values.cbegin(); }
     //! \brief Returns a const iterator to the end of the internal data
     inline std::vector<double>::const_iterator end() const{ return values.cend(); }
+
+    //! \brief Moves the values vector out of the class, this method invalidates the object.
+    inline std::vector<double> eject(){ return std::move(values); }
 
     /*!
      * \brief Add more values to the set, the \b old_set and \b new_set are the associated multi-index sets required to maintain order.

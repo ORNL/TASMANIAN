@@ -605,7 +605,7 @@ void GridGlobal::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_n
 template<typename T> void GridGlobal::loadCudaValues() const{
     auto& ccache = getCudaCache(static_cast<T>(0.0));
     if (!ccache) ccache = std::make_unique<CudaGlobalData<T>>();
-    if (ccache->values.empty()) ccache->values.load(values.getVector());
+    if (ccache->values.empty()) ccache->values.load(values.begin(), values.end());
 }
 void GridGlobal::clearCudaValues() const{ if (cuda_cache) cuda_cache->values.clear(); }
 template<typename T> void GridGlobal::loadCudaNodes() const{
