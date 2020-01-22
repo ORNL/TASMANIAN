@@ -220,15 +220,15 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
     }
 }
 
-void GridGlobal::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
+void GridGlobal::mapIndexesToNodes(MultiIndexSet const &indexes, double *x) const{
     std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
 }
 
 void GridGlobal::getLoadedPoints(double *x) const{
-    mapIndexesToNodes(points.getVector(), x);
+    mapIndexesToNodes(points, x);
 }
 void GridGlobal::getNeededPoints(double *x) const{
-    mapIndexesToNodes(needed.getVector(), x);
+    mapIndexesToNodes(needed, x);
 }
 void GridGlobal::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -457,9 +457,8 @@ std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<dou
         const int *t = new_tensors.getIndex(i);
         dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
     }
-    std::vector<int> node_indexes;
-    dynamic_values->getNodesIndexes(node_indexes);
-    std::vector<double> x(node_indexes.size());
+    MultiIndexSet node_indexes = dynamic_values->getNodesIndexes();
+    std::vector<double> x(node_indexes.totalSize());
     mapIndexesToNodes(node_indexes, x.data());
     return x;
 }
@@ -637,10 +636,10 @@ template<typename T> void GridGlobal::loadCudaNodes() const{
     std::transform(active_w.begin(), active_w.end(), tweights.begin(), [](int i)->double{ return static_cast<double>(i); });
     ccache->tensor_weights.load(tweights);
 
-    ccache->active_tensors.load(active_tensors.getVector());
+    ccache->active_tensors.load(active_tensors.begin(), active_tensors.end());
 
-    std::vector<int> active_num_points(active_tensors.getVector().size());
-    std::transform(active_tensors.getVector().begin(), active_tensors.getVector().end(), active_num_points.begin(), [&](int i)->int{ return wrapper.getNumPoints(i); });
+    std::vector<int> active_num_points(active_tensors.totalSize());
+    std::transform(active_tensors.begin(), active_tensors.end(), active_num_points.begin(), [&](int i)->int{ return wrapper.getNumPoints(i); });
     ccache->active_num_points.load(active_num_points);
 
     ccache->dim_offsets.load(dim_offsets);
@@ -926,7 +925,8 @@ MultiIndexSet GridGlobal::getPolynomialSpaceSet(bool interpolation) const{
 }
 
 std::vector<int> GridGlobal::getPolynomialSpace(bool interpolation) const{
-    return std::move(getPolynomialSpaceSet(interpolation).getVector());
+    MultiIndexSet pset = getPolynomialSpaceSet(interpolation);
+    return pset.eject();
 }
 
 }

@@ -234,22 +234,47 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
 /*!
  * \internal
  * \ingroup TasmanianHierarchyManipulations
- * \brief Split the \b data into strips with given \b stride and returns \b Data2D structures grouped by \b levels, preserves the order.
+ * \brief Split the range between \b ibegin and \b iend into strips of \b stride and orders those by levels according to the level index in \b ilevels.
  *
  * \endinternal
  */
 template<typename T>
-std::vector<Data2D<T>> splitByLevels(size_t stride, std::vector<T> const &data, std::vector<int> const &levels){
-    size_t top_level = (size_t) *std::max_element(levels.begin(), levels.end());
+std::vector<Data2D<T>> splitByLevels(size_t stride, typename std::vector<T>::const_iterator ibegin, typename std::vector<T>::const_iterator iend, std::vector<int>::const_iterator ilevels){
+    size_t top_level = (size_t) *std::max_element(ilevels, ilevels + std::distance(ibegin, iend) / stride);
 
     std::vector<Data2D<T>> split(top_level + 1, Data2D<T>(stride, 0));
 
-    for( struct {int i; typename std::vector<T>::const_iterator idata;} v = {0, data.begin()};
-         v.idata != data.end();
-         v.i++, std::advance(v.idata, stride))
-        split[levels[v.i]].appendStrip(v.idata);
+    for( struct { std::vector<int>::const_iterator il; typename std::vector<T>::const_iterator idata;} v = {ilevels, ibegin};
+         v.idata != iend;
+         v.il++, std::advance(v.idata, stride))
+        split[*v.il].appendStrip(v.idata);
 
     return split;
+}
+
+/*!
+ * \ingroup TasmanianHierarchyManipulations
+ * \brief Overload that operates on an entire multi-index set.
+ */
+inline std::vector<Data2D<int>> splitByLevels(MultiIndexSet const &mset, std::vector<int> const &levels){
+    return splitByLevels<int>(mset.getNumDimensions(), mset.begin(), mset.end(), levels.begin());
+}
+
+/*!
+ * \ingroup TasmanianHierarchyManipulations
+ * \brief Overload that operates on an entire Data2D structure set.
+ */
+template<typename T>
+inline std::vector<Data2D<T>> splitByLevels(Data2D<T> const &data, std::vector<int> const &levels){
+    return splitByLevels<T>(data.getStride(), data.begin(), data.end(), levels.begin());
+}
+
+/*!
+ * \ingroup TasmanianHierarchyManipulations
+ * \brief Overload that operates on an entire StorageSet structure set.
+ */
+inline std::vector<Data2D<double>> splitByLevels(StorageSet const &stortage, std::vector<int> const &levels){
+    return splitByLevels<double>(stortage.getNumOutputs(), stortage.begin(), stortage.end(), levels.begin());
 }
 
 /*!

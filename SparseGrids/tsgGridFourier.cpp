@@ -209,15 +209,15 @@ void GridFourier::loadNeededPoints(const double *vals){
     max_power = MultiIndexManipulations::getMaxIndexes(points);
 }
 
-void GridFourier::mapIndexesToNodes(const std::vector<int> &indexes, double *x) const{
+void GridFourier::mapIndexesToNodes(MultiIndexSet const &indexes, double *x) const{
     std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
 }
 
 void GridFourier::getLoadedPoints(double *x) const{
-    mapIndexesToNodes(points.getVector(), x);
+    mapIndexesToNodes(points, x);
 }
 void GridFourier::getNeededPoints(double *x) const{
-    mapIndexesToNodes(needed.getVector(), x);
+    mapIndexesToNodes(needed, x);
 }
 void GridFourier::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -853,9 +853,8 @@ std::vector<double> GridFourier::getCandidateConstructionPoints(std::function<do
         const int *t = new_tensors.getIndex(i);
         dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
     }
-    std::vector<int> node_indexes;
-    dynamic_values->getNodesIndexes(node_indexes);
-    std::vector<double> x(node_indexes.size());
+    MultiIndexSet node_indexes = dynamic_values->getNodesIndexes();
+    std::vector<double> x(node_indexes.totalSize());
     mapIndexesToNodes(node_indexes, x.data());
     return x;
 }

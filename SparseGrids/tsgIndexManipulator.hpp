@@ -386,7 +386,7 @@ inline MultiIndexSet createActiveTensors(const MultiIndexSet &mset, const std::v
     std::vector<int> indexes(nz_weights * num_dimensions);
     nz_weights = 0;
     auto iter = indexes.begin();
-    auto iset = mset.getVector().begin();
+    auto iset = mset.begin();
     for(auto w: weights){
         if (w != 0){
             std::copy_n(iset, num_dimensions, iter);

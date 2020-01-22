@@ -169,8 +169,8 @@ MultiIndexSet MultiIndexSet::diffSets(const MultiIndexSet &substract){
 
     auto ithis = indexes.begin();
     auto endthis = indexes.end();
-    auto iother = substract.getVector().begin();
-    auto endother = substract.getVector().end();
+    auto iother = substract.begin();
+    auto endother = substract.end();
 
     while(ithis != endthis){
         if (iother == endother){

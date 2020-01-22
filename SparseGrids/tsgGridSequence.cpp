@@ -127,7 +127,7 @@ void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> 
         surpluses = Data2D<double>();
         prepareSequence(0);
     }else{
-        pset.addSortedIndexes(points.getVector());
+        pset.addMultiIndexSet(points);
         needed = pset.diffSets(points);
 
         if (!needed.empty()) prepareSequence(0);
@@ -135,10 +135,10 @@ void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> 
 }
 
 void GridSequence::getLoadedPoints(double *x) const{
-    std::transform(points.getVector().begin(), points.getVector().end(), x, [&](int i)->double{ return nodes[i]; });
+    std::transform(points.begin(), points.end(), x, [&](int i)->double{ return nodes[i]; });
 }
 void GridSequence::getNeededPoints(double *x) const{
-    std::transform(needed.getVector().begin(), needed.getVector().end(), x, [&](int i)->double{ return nodes[i]; });
+    std::transform(needed.begin(), needed.end(), x, [&](int i)->double{ return nodes[i]; });
 }
 void GridSequence::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); }
@@ -190,7 +190,7 @@ void GridSequence::loadNeededPoints(const double *vals){
             needed = MultiIndexSet();
         }else{ // merge needed and points
             values.addValues(points, needed, vals);
-            points.addSortedIndexes(needed.getVector());
+            points.addMultiIndexSet(needed);
             needed = MultiIndexSet();
             prepareSequence(0);
         }
@@ -321,7 +321,7 @@ std::vector<double> GridSequence::getCandidateConstructionPoints(std::function<d
 
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    std::vector<double> x(dynamic_values->initial_points.totalSize() + new_points.totalSize());
     auto t = weighted_points.begin();
     auto ix = x.begin();
     while(t != weighted_points.end()){
@@ -767,12 +767,12 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
 
 std::vector<int> GridSequence::getPolynomialSpace(bool interpolation) const{
     if (interpolation){
-        return (points.empty()) ? needed.getVector() : points.getVector(); // copy
+        return (points.empty()) ? std::vector<int>(needed.begin(), needed.end()) : std::vector<int>(points.begin(), points.end()); // copy
     }else{
         MultiIndexSet polynomial_set = MultiIndexManipulations::createPolynomialSpace(
             (points.empty()) ? needed : points,
             [&](int l) -> int{ return OneDimensionalMeta::getQExact(l, rule); });
-        return std::move(polynomial_set.getVector());
+        return polynomial_set.eject();
     }
 }
 const double* GridSequence::getSurpluses() const{

@@ -163,6 +163,11 @@ public:
         vec = std::vector<double>();
     }
 
+    //! \brief Returns a const iterator to the beginning of the internal data
+    inline typename std::vector<T>::const_iterator begin() const{ return vec.cbegin(); }
+    //! \brief Returns a const iterator to the end of the internal data
+    inline typename std::vector<T>::const_iterator end() const{ return vec.cend(); }
+
     //! \brief Uses std::vector::insert to append the data.
     void appendStrip(typename std::vector<T>::const_iterator const &x){
         vec.insert(vec.end(), x, x + stride);
@@ -258,13 +263,18 @@ public:
     //! \brief If empty, copy \b addition, otherwise merge the indexes of \b addition into this set.
     inline void addMultiIndexSet(MultiIndexSet const  &addition){
         num_dimensions = addition.getNumDimensions();
-        addSortedIndexes(addition.getVector());
+        addSortedIndexes(addition.indexes);
     }
 
-    //! \brief Returns a const reference to the internal data
-    inline const std::vector<int>& getVector() const{ return indexes; }
-    //! \brief Returns a reference to the internal data, must not modify the lexicographical order or the size of the vector
-    inline std::vector<int>& getVector(){ return indexes; } // used for remapping during tensor generic points
+    //! \brief Returns a const iterator to the beginning of the internal data
+    inline std::vector<int>::const_iterator begin() const{ return indexes.cbegin(); }
+    //! \brief Returns a const iterator to the end of the internal data
+    inline std::vector<int>::const_iterator end() const{ return indexes.cend(); }
+    //! \brief Returns the number of dimensions times the number of indexes.
+    inline size_t totalSize() const{ return indexes.size(); }
+
+    //! \brief Moves the index vector out of the class, this method invalidates the object.
+    inline std::vector<int> eject(){ return std::move(indexes); }
 
     //! \brief Returns the slot containing index **p**, returns `-1` if not found
     int getSlot(const int *p) const;
@@ -339,6 +349,9 @@ public:
     //! \brief Clear the existing values and assigns new dimensions, does not allocate memory for the new values.
     void resize(int cnum_outputs, int cnum_values);
 
+    //! \brief Returns the number of outputs.
+    size_t getNumOutputs() const{ return num_outputs; }
+
     //! \brief Returns const reference to the \b i-th value.
     const double* getValues(int i) const;
     //! \brief Returns reference to the \b i-th value.
@@ -364,6 +377,11 @@ public:
         result.values = spltVector2D(values, num_outputs, ibegin, iend);
         return result;
     }
+
+    //! \brief Returns a const iterator to the beginning of the internal data
+    inline std::vector<double>::const_iterator begin() const{ return values.cbegin(); }
+    //! \brief Returns a const iterator to the end of the internal data
+    inline std::vector<double>::const_iterator end() const{ return values.cend(); }
 
     /*!
      * \brief Add more values to the set, the \b old_set and \b new_set are the associated multi-index sets required to maintain order.

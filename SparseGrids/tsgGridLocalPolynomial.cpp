@@ -208,13 +208,13 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
 
     std::vector<int> levels = HierarchyManipulations::computeLevels(points, rule.get());
 
-    std::vector<Data2D<int>> lpnts = HierarchyManipulations::splitByLevels((size_t) num_dimensions, points.getVector(), levels);
-    std::vector<Data2D<double>> lvals = HierarchyManipulations::splitByLevels((size_t) num_outputs, values.getVector(), levels);
+    std::vector<Data2D<int>> lpnts = HierarchyManipulations::splitByLevels(points, levels);
+    std::vector<Data2D<double>> lvals = HierarchyManipulations::splitByLevels(values, levels);
 
     Data2D<double> allx(num_dimensions, points.getNumIndexes());
     getPoints(allx.getVector().data());
 
-    std::vector<Data2D<double>> lx = HierarchyManipulations::splitByLevels((size_t) num_dimensions, allx.getVector(), levels);
+    std::vector<Data2D<double>> lx = HierarchyManipulations::splitByLevels(allx, levels);
 
     MultiIndexSet cumulative_poitns((size_t) num_dimensions, std::move(lpnts[0].getVector()));
 
@@ -227,7 +227,7 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
         MultiIndexSet level_points(num_dimensions, std::move(lpnts[l].getVector()));
 
         GridLocalPolynomial upper_grid(num_dimensions, num_outputs, order, getRule(),
-                                       std::vector<int>(cumulative_poitns.getVector()), // copy cumulative_poitns
+                                       std::vector<int>(cumulative_poitns.begin(), cumulative_poitns.end()), // copy cumulative_poitns
                                        std::vector<double>(Utils::size_mult(num_outputs, cumulative_poitns.getNumIndexes())),  // dummy values, will not be read or used
                                        std::vector<double>(cumulative_surpluses.getVector())); // copy the cumulative_surpluses
         upper_grid.sparse_affinity = sparse_affinity;
@@ -400,7 +400,7 @@ void GridLocalPolynomial::updateValues(double const *vals){
             needed = MultiIndexSet();
         }else{ // merge needed and points
             values.addValues(points, needed, vals);
-            points.addSortedIndexes(needed.getVector());
+            points.addMultiIndexSet(needed);
             needed = MultiIndexSet();
             buildTree();
         }
@@ -493,7 +493,7 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
     // if using stable refinement, ensure the weight of the parents is never less than the children
     if (!new_points.empty() && ((criteria == refine_parents_first) || (criteria == refine_fds))){
         auto rlevels = HierarchyManipulations::computeLevels(new_points, rule.get());
-        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        auto split = HierarchyManipulations::splitByLevels(new_points, rlevels);
         for(auto is = split.rbegin(); is != split.rend(); is++){
             for(int i=0; i<is->getNumStrips(); i++){
                 std::vector<int> parent(is->getStrip(i), is->getStrip(i) + num_dimensions);
@@ -513,7 +513,7 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
     }else if (!new_points.empty() && (criteria == refine_stable)){
         // stable refinement, ensure that if level[i] < level[j] then weight[i] > weight[j]
         auto rlevels = HierarchyManipulations::computeLevels(new_points, rule.get());
-        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        auto split = HierarchyManipulations::splitByLevels(new_points, rlevels);
         double max_weight = 0.0;
         for(auto is = split.rbegin(); is != split.rend(); is++){ // loop backwards in levels
             double correction = max_weight;
@@ -541,7 +541,7 @@ std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double t
     // sort and return the sorted list
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    std::vector<double> x(dynamic_values->initial_points.totalSize() + new_points.totalSize());
     auto ix = x.begin();
     for(auto t = weighted_points.begin(); t != weighted_points.end(); t++)
         ix = std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule->getNode(i); });

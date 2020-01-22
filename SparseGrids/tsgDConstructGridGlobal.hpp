@@ -234,7 +234,7 @@ public:
     void addTensor(const int *tensor, std::function<int(int)> getNumPoints, double weight);
 
     //! \brief Get the node indexes of the points associated with the candidate tensors, the order is the same as the tensors sorted by ascending weight.
-    void getNodesIndexes(std::vector<int> &inodes);
+    MultiIndexSet getNodesIndexes();
 
     //! \brief Add a new data point with the index and the value, returns \b true if there is enough data to complete a tensor.
     bool addNewNode(const std::vector<int> &point, const std::vector<double> &value); // returns whether a tensor is complete

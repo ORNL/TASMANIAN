@@ -107,8 +107,8 @@ void DynamicConstructorDataGlobal::addTensor(const int *tensor, std::function<in
     }
 }
 
-void DynamicConstructorDataGlobal::getNodesIndexes(std::vector<int> &inodes){
-    inodes = std::vector<int>();
+MultiIndexSet DynamicConstructorDataGlobal::getNodesIndexes(){
+    std::vector<int> inodes;
     auto get_weight = [](const TensorData &tensor)->double{
         if (tensor.weight <= 0.0) return tensor.weight;
         if (tensor.loaded.empty()) return 0.0; // should not be happening, should have ejected
@@ -124,6 +124,7 @@ void DynamicConstructorDataGlobal::getNodesIndexes(std::vector<int> &inodes){
             }
         }
     }
+    return MultiIndexSet(num_dimensions, std::move(inodes));
 }
 
 bool DynamicConstructorDataGlobal::addNewNode(const std::vector<int> &point, const std::vector<double> &value){

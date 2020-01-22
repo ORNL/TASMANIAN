@@ -761,7 +761,7 @@ std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance
     // if using stable refinement, ensure the weight of the parents is never less than the children
     if (!new_points.empty() && ((criteria == refine_parents_first) || (criteria == refine_fds))){
         auto rlevels = WaveManipulations::computeLevels(new_points, rule1D);
-        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        auto split = HierarchyManipulations::splitByLevels(new_points, rlevels);
         for(auto is = split.rbegin(); is != split.rend(); is++){
             for(int i=0; i<is->getNumStrips(); i++){
                 std::vector<int> parent(is->getStrip(i), is->getStrip(i) + num_dimensions);
@@ -785,7 +785,7 @@ std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance
     }else if (!new_points.empty() && (criteria == refine_stable)){
         // stable refinement, ensure that if level[i] < level[j] then weight[i] > weight[j]
         auto rlevels = WaveManipulations::computeLevels(new_points, rule1D);
-        auto split = HierarchyManipulations::splitByLevels((size_t) num_dimensions, new_points.getVector(), rlevels);
+        auto split = HierarchyManipulations::splitByLevels(new_points, rlevels);
         double max_weight = 0.0;
         for(auto is = split.rbegin(); is != split.rend(); is++){ // loop backwards in levels
             double correction = max_weight;
@@ -813,7 +813,7 @@ std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance
     // sort and return the sorted list
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    std::vector<double> x(dynamic_values->initial_points.getVector().size() + new_points.getVector().size());
+    std::vector<double> x(dynamic_values->initial_points.totalSize() + new_points.totalSize());
     auto ix = x.begin();
     for(auto t = weighted_points.begin(); t != weighted_points.end(); t++)
         ix = std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule1D.getNode(i); });

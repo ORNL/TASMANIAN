@@ -140,6 +140,11 @@ public:
     //! Makes a call to the other overload with \b cpu_data.size() as \b count. See the overload.
     void load(const std::vector<T> &cpu_data){ load(cpu_data.size(), cpu_data.data()); }
 
+    //! \brief Load from a range defined by the begin and end.
+    void load(typename std::vector<T>::const_iterator ibegin, typename std::vector<T>::const_iterator iend){
+        load(std::distance(ibegin, iend), &*ibegin);
+    }
+
     /*!
      * \brief Takes a vector with entries of different precision, converts and loads.
      *
