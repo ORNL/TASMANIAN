@@ -185,7 +185,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
     MultiIndexSet total = current; // forms a working copy of the entire merged graph
 
     // do not consider the points already included in total, complexity is level_zero.getNumIndexes()
-    if (!total.empty()) level_zero = level_zero.diffSets(total);
+    if (!total.empty()) level_zero = level_zero - total;
 
     if (level_zero.getNumIndexes() > 0){ // level zero nodes are missing from current
         Data2D<int> roots(num_dimensions, 0);

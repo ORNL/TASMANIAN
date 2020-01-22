@@ -100,7 +100,7 @@ void GridFourier::updateGrid(int depth, TypeDepth type, const std::vector<int> &
 
         updated_tensors = selectTensors((size_t) num_dimensions, depth, type, anisotropic_weights, level_limits);
 
-        MultiIndexSet new_tensors = updated_tensors.diffSets(tensors);
+        MultiIndexSet new_tensors = updated_tensors - tensors;
 
         if (!new_tensors.empty()){
             updated_tensors += tensors;
@@ -166,7 +166,7 @@ void GridFourier::proposeUpdatedTensors(){
     MultiIndexSet new_points = MultiIndexManipulations::generateNestedPoints(updated_tensors,
                                 [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
-    needed = new_points.diffSets(points);
+    needed = new_points - points;
 }
 
 void GridFourier::acceptUpdatedTensors(){

@@ -128,7 +128,7 @@ void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> 
         prepareSequence(0);
     }else{
         pset += points;
-        needed = pset.diffSets(points);
+        needed = pset - points;
 
         if (!needed.empty()) prepareSequence(0);
     }
@@ -372,7 +372,7 @@ void GridSequence::loadConstructedPoint(const double x[], int numx, const double
         Data2D<int> combined_pnts(num_dimensions, numx);
         for(int i=0; i<numx; i++)
             std::copy_n(pnts[i].begin(), num_dimensions, combined_pnts.getIStrip(i));
-        dynamic_values->initial_points = dynamic_values->initial_points.diffSets(MultiIndexSet(combined_pnts));
+        dynamic_values->initial_points = dynamic_values->initial_points - combined_pnts;
     }
 
     Utils::Wrapper2D<const double> wrapy(num_outputs, y);
@@ -748,7 +748,7 @@ void GridSequence::setSurplusRefinement(double tolerance, int output, const std:
         kids += points;
         MultiIndexManipulations::completeSetToLower(kids);
 
-        needed = kids.diffSets(points);
+        needed = kids - points;
         if (!needed.empty()) prepareSequence(0);
     }
 }

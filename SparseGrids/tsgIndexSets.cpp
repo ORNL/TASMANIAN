@@ -164,8 +164,8 @@ int MultiIndexSet::getSlot(const int *p) const{
     return -1;
 }
 
-MultiIndexSet MultiIndexSet::diffSets(const MultiIndexSet &substract){
-    std::vector<std::vector<int>::iterator> kept_indexes;
+MultiIndexSet MultiIndexSet::operator -(const MultiIndexSet &substract) const{
+    std::vector<std::vector<int>::const_iterator> kept_indexes;
 
     auto ithis = indexes.begin();
     auto endthis = indexes.end();
@@ -177,7 +177,7 @@ MultiIndexSet MultiIndexSet::diffSets(const MultiIndexSet &substract){
             kept_indexes.push_back(ithis);
             std::advance(ithis, num_dimensions);
         }else{
-            TypeIndexRelation t = [&](std::vector<int>::iterator ia, std::vector<int>::const_iterator ib) ->
+            TypeIndexRelation t = [&](std::vector<int>::const_iterator ia, std::vector<int>::const_iterator ib) ->
                                         TypeIndexRelation{
                                             for(size_t j=0; j<num_dimensions; j++){
                                                 if (*ia   < *ib)   return type_abeforeb;

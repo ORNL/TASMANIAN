@@ -661,7 +661,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
     MultiIndexSet total = current; // forms a working copy of the entire merged graph
 
     // do not consider the points already included in total, complexity is level_zero.getNumIndexes()
-    if (!total.empty()) level_zero = level_zero.diffSets(total);
+    if (!total.empty()) level_zero = level_zero - total;
 
     if (level_zero.getNumIndexes() > 0){ // level zero nodes are missing from current
         Data2D<int> roots(num_dimensions, 0);
@@ -727,7 +727,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
 std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits){
 
     MultiIndexSet refine_candidates = getRefinementCanidates(tolerance, criteria, output, level_limits);
-    MultiIndexSet new_points = (dynamic_values->initial_points.empty()) ? std::move(refine_candidates) : refine_candidates.diffSets(dynamic_values->initial_points);
+    MultiIndexSet new_points = (dynamic_values->initial_points.empty()) ? std::move(refine_candidates) : refine_candidates - dynamic_values->initial_points;
 
     // compute the weights for the new_points points
     std::vector<double> norm = getNormalization();
@@ -838,7 +838,7 @@ void GridWavelet::loadConstructedPoint(const double x[], int numx, const double 
         Data2D<int> combined_pnts(num_dimensions, numx);
         for(int i=0; i<numx; i++)
             std::copy_n(pnts[i].begin(), num_dimensions, combined_pnts.getIStrip(i));
-        dynamic_values->initial_points = dynamic_values->initial_points.diffSets(MultiIndexSet(combined_pnts));
+        dynamic_values->initial_points = dynamic_values->initial_points - combined_pnts;
     }
 
     Utils::Wrapper2D<const double> wrapy(num_outputs, y);

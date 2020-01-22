@@ -296,7 +296,7 @@ public:
      * The implementation uses an algorithm similar to merge with complexity linear in the number of multi-indexes of the two sets,
      * i.e., does not use \b missing() which would add a logarithmic factor.
      */
-    MultiIndexSet diffSets(const MultiIndexSet &substract);
+    MultiIndexSet operator -(const MultiIndexSet &substract) const;
 
     //! \brief Removes \b p from the set (if exists).
     void removeIndex(const std::vector<int> &p);

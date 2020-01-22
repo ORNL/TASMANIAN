@@ -200,7 +200,7 @@ void GridGlobal::proposeUpdatedTensors(){
             MultiIndexManipulations::generateNonNestedPoints(updated_active_tensors, wrapper) :
             MultiIndexManipulations::generateNestedPoints(updated_tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
-    needed = new_points.diffSets(points);
+    needed = new_points - points;
 }
 
 void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
@@ -211,9 +211,7 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
 
         updated_tensors = selectTensors((size_t) num_dimensions, depth, type, anisotropic_weights, rule, level_limits);
 
-        MultiIndexSet new_tensors = updated_tensors.diffSets(tensors);
-
-        if (!new_tensors.empty()){
+        if (!(updated_tensors - tensors).empty()){
             updated_tensors += tensors;
             proposeUpdatedTensors();
         }
