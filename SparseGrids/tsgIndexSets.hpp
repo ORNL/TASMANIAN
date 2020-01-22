@@ -238,7 +238,8 @@ public:
         num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)),
         indexes(std::forward<std::vector<int>>(new_indexes)){}
     //! \brief Copy a collection of unsorted indexes into a sorted multi-index set, sorts during the copy.
-    MultiIndexSet(Data2D<int> &data) : num_dimensions((size_t) data.getStride()), cache_num_indexes(0){ setData2D(data); }
+    MultiIndexSet(Data2D<int> const &data);
+    //! \brief Read from stream constructor.
     template<typename iomode> MultiIndexSet(std::istream &is, iomode) :
         num_dimensions((size_t) IO::readNumber<iomode, int>(is)),
         cache_num_indexes(IO::readNumber<iomode, int>(is)),
@@ -304,10 +305,6 @@ public:
     //! \brief Returns the maximum single index in the set.
     int getMaxIndex() const{ return (empty()) ? 0 : *std::max_element(indexes.begin(), indexes.end()); }
 
-protected:
-    //! \brief Copy and sort the indexes from the \b data, called only from the constructor.
-    void setData2D(Data2D<int> const &data);
-
 private:
     size_t num_dimensions;
     int cache_num_indexes;
@@ -351,18 +348,22 @@ public:
     template<bool useAscii> void write(std::ostream &os) const;
 
     //! \brief Clear the existing values and assigns new dimensions, does not allocate memory for the new values.
-    void resize(int cnum_outputs, int cnum_values);
+    void resize(int cnum_outputs, int cnum_values){
+        num_outputs = (size_t) cnum_outputs;
+        num_values  = (size_t) cnum_values;
+        values = std::vector<double>();
+    }
 
     //! \brief Returns the number of outputs.
     size_t getNumOutputs() const{ return num_outputs; }
 
     //! \brief Returns const reference to the \b i-th value.
-    const double* getValues(int i) const;
+    double const* getValues(int i) const{ return &(values[i*num_outputs]); }
     //! \brief Returns reference to the \b i-th value.
-    double* getValues(int i);
+    double* getValues(int i){ return &(values[i*num_outputs]); }
 
     //! \brief Replace the existing values with a copy of **vals**, the size must be at least **num_outputs** times **num_values**
-    void setValues(const double vals[]);
+    void setValues(const double vals[]){ values = std::vector<double>(vals, vals + num_outputs * num_values); }
     //! \brief Replace the existing values with \b vals using move semantics, the size of \b vals must be \b num_outputs times \b num_values
     void setValues(std::vector<double> &&vals){
         num_values = vals.size() / num_outputs;
@@ -371,11 +372,7 @@ public:
 
     //! \brief Return a StorageSet with values between \b ibegin and \b iend.
     StorageSet splitValues(int ibegin, int iend) const{
-        StorageSet result;
-        result.num_values = num_values;
-        result.num_outputs = (size_t) (iend - ibegin);
-        result.values = spltVector2D(values, num_outputs, ibegin, iend);
-        return result;
+        return {iend - ibegin, (int) num_values, spltVector2D(values, num_outputs, ibegin, iend)};
     }
 
     //! \brief Returns a const iterator to the beginning of the internal data
