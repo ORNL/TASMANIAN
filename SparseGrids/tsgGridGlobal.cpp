@@ -107,11 +107,11 @@ void GridGlobal::recomputeTensorRefs(const MultiIndexSet &work){
     if (OneDimensionalMeta::isNonNested(rule)){
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<nz_weights; i++)
-            MultiIndexManipulations::referencePoints<false>(active_tensors.getIndex(i), wrapper, work, tensor_refs[i]);
+            tensor_refs[i] = MultiIndexManipulations::referencePoints<false>(active_tensors.getIndex(i), wrapper, work);
     }else{
         #pragma omp parallel for schedule(dynamic)
         for(int i=0; i<nz_weights; i++)
-            MultiIndexManipulations::referencePoints<true>(active_tensors.getIndex(i), wrapper, work, tensor_refs[i]);
+            tensor_refs[i] = MultiIndexManipulations::referencePoints<true>(active_tensors.getIndex(i), wrapper, work);
     }
 }
 
@@ -165,17 +165,11 @@ void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule
 
     wrapper = OneDimensionalWrapper(custom, *std::max_element(max_levels.begin(), max_levels.end()), rule, alpha, beta);
 
-    std::vector<int> tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
-    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
+    MultiIndexManipulations::computeActiveTensorsWeights(tensors, active_tensors, active_w);
 
-    active_w.reserve(active_tensors.getNumIndexes());
-    for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
-
-    if (OneDimensionalMeta::isNonNested(rule)){
-        needed = MultiIndexManipulations::generateNonNestedPoints(active_tensors, wrapper);
-    }else{
-        needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
-    }
+    needed = (OneDimensionalMeta::isNonNested(rule)) ?
+                MultiIndexManipulations::generateNonNestedPoints(active_tensors, wrapper) :
+                MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
     recomputeTensorRefs(needed);
 
@@ -190,17 +184,13 @@ void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule
 void GridGlobal::proposeUpdatedTensors(){
     wrapper = OneDimensionalWrapper(custom, updated_tensors.getMaxIndex(), rule, alpha, beta);
 
-    std::vector<int> updates_tensor_w = MultiIndexManipulations::computeTensorWeights(updated_tensors);
-    updated_active_tensors = MultiIndexManipulations::createActiveTensors(updated_tensors, updates_tensor_w);
+    MultiIndexManipulations::computeActiveTensorsWeights(updated_tensors, updated_active_tensors, updated_active_w);
 
-    updated_active_w.reserve(updated_active_tensors.getNumIndexes());
-    for(auto w : updates_tensor_w) if (w != 0) updated_active_w.push_back(w);
-
-    MultiIndexSet new_points = (OneDimensionalMeta::isNonNested(rule)) ?
-            MultiIndexManipulations::generateNonNestedPoints(updated_active_tensors, wrapper) :
-            MultiIndexManipulations::generateNestedPoints(updated_tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
-
-    needed = new_points - points;
+    // the new needed points are the points associated with the updated_active_tensors without the existing set of loaded points
+    needed = ((OneDimensionalMeta::isNonNested(rule)) ?
+                MultiIndexManipulations::generateNonNestedPoints(updated_active_tensors, wrapper) :
+                MultiIndexManipulations::generateNestedPoints(updated_tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); }))
+             - points;
 }
 
 void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
@@ -504,13 +494,7 @@ void GridGlobal::loadConstructedTensors(){
     }
 
     tensors += new_tensors;
-    // recompute the tensor weights
-    auto tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
-    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
-
-    active_w = std::vector<int>();
-    active_w.reserve(active_tensors.getNumIndexes());
-    for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
+    MultiIndexManipulations::computeActiveTensorsWeights(tensors, active_tensors, active_w);
 
     max_levels = MultiIndexManipulations::getMaxIndexes(active_tensors);
 
@@ -870,7 +854,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
 
     MultiIndexSet kids = MultiIndexManipulations::selectFlaggedChildren(points, flagged, level_limits);
 
-    if (kids.getNumIndexes() > 0){
+    if (!kids.empty()){
         kids += points;
         MultiIndexManipulations::completeSetToLower(kids);
 
@@ -923,8 +907,7 @@ MultiIndexSet GridGlobal::getPolynomialSpaceSet(bool interpolation) const{
 }
 
 std::vector<int> GridGlobal::getPolynomialSpace(bool interpolation) const{
-    MultiIndexSet pset = getPolynomialSpaceSet(interpolation);
-    return pset.eject();
+    return getPolynomialSpaceSet(interpolation).eject();
 }
 
 }

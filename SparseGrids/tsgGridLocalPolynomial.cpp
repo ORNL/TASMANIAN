@@ -414,8 +414,7 @@ void GridLocalPolynomial::mergeRefinement(){
     clearCudaSurpluses();
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
-    size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    values.setValues(std::vector<double>(num_vals, 0.0));
+    values.setValues(std::vector<double>(Utils::size_mult(num_all_points, num_outputs), 0.0));
     if (points.empty()){
         points = std::move(needed);
         needed = MultiIndexSet();
@@ -604,8 +603,8 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
             std::copy_n(values.getValues(g), num_outputs, surpluses.getStrip(g)); // reset the surpluses to the values (will be updated)
         }
 
-        Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
-        updateSurpluses(points, top_level + 1, levels, dagUp); // compute the current DAG and update the surplused for the descendants
+        // compute the current DAG and update the surplused for the descendants
+        updateSurpluses(points, top_level + 1, levels, HierarchyManipulations::computeDAGup(points, rule.get()));
     }
     buildTree(); // the tree is needed for evaluate(), must be rebuild every time the points set is updated
 }
@@ -704,9 +703,9 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     for(auto i : active_points) weights[i] = *ibasis++;
 
     // apply the transpose of the surplus transformation
-    Data2D<int> lparents;
-    if (parents.getNumStrips() != work.getNumIndexes()) // if the current dag loaded in parents does not reflect the indexes in work
-        lparents = HierarchyManipulations::computeDAGup(work, rule.get());
+    Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ? // if the current dag loaded in parents does not reflect the indexes in work
+                            HierarchyManipulations::computeDAGup(work, rule.get()) :
+                            Data2D<int>();
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -1104,7 +1103,6 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
 
 std::vector<double> GridLocalPolynomial::getNormalization() const{
     std::vector<double> norms(num_outputs);
-    std::fill(norms.begin(), norms.end(), 0.0);
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
         for(int j=0; j<num_outputs; j++){
@@ -1272,7 +1270,7 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
         }
     }
 
-    MultiIndexSet result = MultiIndexSet(refined);
+    MultiIndexSet result(refined);
     if (criteria == refine_stable)
         HierarchyManipulations::completeToLower(points, result, rule.get());
     return result;

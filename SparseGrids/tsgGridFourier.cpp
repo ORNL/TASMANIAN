@@ -134,13 +134,7 @@ void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
 
     wrapper = OneDimensionalWrapper(*std::max_element(max_levels.begin(), max_levels.end()), rule_fourier, 0.0, 0.0);
 
-    std::vector<int> tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
-    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
-
-    int nz_weights = active_tensors.getNumIndexes();
-
-    active_w.reserve(nz_weights);
-    for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
+    MultiIndexManipulations::computeActiveTensorsWeights(tensors, active_tensors, active_w);
 
     needed = MultiIndexManipulations::generateNestedPoints(tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); });
 
@@ -157,16 +151,10 @@ void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
 void GridFourier::proposeUpdatedTensors(){
     wrapper = OneDimensionalWrapper(updated_tensors.getMaxIndex(), rule_fourier, 0.0, 0.0);
 
-    std::vector<int> updates_tensor_w = MultiIndexManipulations::computeTensorWeights(updated_tensors);
-    updated_active_tensors = MultiIndexManipulations::createActiveTensors(updated_tensors, updates_tensor_w);
+    MultiIndexManipulations::computeActiveTensorsWeights(updated_tensors, updated_active_tensors, updated_active_w);
 
-    updated_active_w.reserve(updated_active_tensors.getNumIndexes());
-    for(auto w : updates_tensor_w) if (w != 0) updated_active_w.push_back(w);
-
-    MultiIndexSet new_points = MultiIndexManipulations::generateNestedPoints(updated_tensors,
-                                [&](int l) -> int{ return wrapper.getNumPoints(l); });
-
-    needed = new_points - points;
+    needed = MultiIndexManipulations::generateNestedPoints(updated_tensors, [&](int l) -> int{ return wrapper.getNumPoints(l); })
+             - points;
 }
 
 void GridFourier::acceptUpdatedTensors(){
@@ -424,8 +412,7 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
         for(int j=0; j<num_dimensions; j++){
             num_tensor_points *= wrapper.getNumPoints(levels[j]);
         }
-        std::vector<int> refs;
-        MultiIndexManipulations::referencePoints<true>(levels, wrapper, work, refs);
+        std::vector<int> refs = MultiIndexManipulations::referencePoints<true>(levels, wrapper, work);
 
         double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
         for(int i=0; i<num_tensor_points; i++){
@@ -560,7 +547,7 @@ template<typename T> void GridFourier::loadCudaCoefficients() const{
     if (!ccache) ccache = std::make_unique<CudaFourierData<T>>();
     if (!ccache->real.empty()) return;
     int num_points = points.getNumIndexes();
-    size_t num_coeff = ((size_t) num_outputs) * ((size_t) num_points);
+    size_t num_coeff = Utils::size_mult(num_outputs, num_points);
     ccache->real.load(num_coeff, fourier_coefs.getStrip(0));
     ccache->imag.load(num_coeff, fourier_coefs.getStrip(num_points));
 }
@@ -703,7 +690,7 @@ void GridFourier::estimateAnisotropicCoefficients(TypeDepth type, int output, st
         if (max_fcoef[c] > tol){
             for(int j=0; j<num_dimensions; j++) A.getStrip(j)[count] = (ishyperbolic) ? log((double) ((indx[j]+1)/2 + 1)) : ((double) ((indx[j]+1)/2));
             A.getStrip(num_dimensions)[count] = 1.0;
-            b[count++] = -log(max_fcoef[c]);
+            b[count++] = -std::log(max_fcoef[c]);
         }
     }
 
@@ -909,13 +896,7 @@ void GridFourier::loadConstructedTensors(){
     }
 
     tensors += new_tensors;
-    // recompute the tensor weights
-    auto tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
-    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
-
-    active_w = std::vector<int>();
-    active_w.reserve(active_tensors.getNumIndexes());
-    for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
+    MultiIndexManipulations::computeActiveTensorsWeights(tensors, active_tensors, active_w);
 
     max_levels = MultiIndexManipulations::getMaxIndexes(active_tensors);
     max_power  = MultiIndexManipulations::getMaxIndexes(points);

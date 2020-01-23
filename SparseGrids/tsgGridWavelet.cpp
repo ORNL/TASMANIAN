@@ -183,8 +183,7 @@ void GridWavelet::mergeRefinement(){
     clearCudaBasis();
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
-    size_t size_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    values.setValues(std::vector<double>(size_vals, 0.0));
+    values.setValues(std::vector<double>(Utils::size_mult(num_all_points, num_outputs), 0.0));
     if (points.empty()){
         points = std::move(needed);
     }else{
@@ -544,8 +543,7 @@ bool GridWavelet::addParent(const int point[], int direction, Data2D<int> &desti
     return added;
 }
 void GridWavelet::addChild(const int point[], int direction, Data2D<int> &destination) const{
-    std::vector<int> kid(num_dimensions);
-    std::copy_n(point, num_dimensions, kid.data());
+    std::vector<int> kid(point, point + num_dimensions);
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
     if ((kid[direction] != -1) && points.missing(kid)){
@@ -557,8 +555,7 @@ void GridWavelet::addChild(const int point[], int direction, Data2D<int> &destin
 }
 }
 void GridWavelet::addChildLimited(const int point[], int direction, const std::vector<int> &level_limits, Data2D<int> &destination) const{
-    std::vector<int> kid(num_dimensions);
-    std::copy_n(point, num_dimensions, kid.data());
+    std::vector<int> kid(point, point + num_dimensions);
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
     if ((kid[direction] != -1)
