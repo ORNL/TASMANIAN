@@ -127,13 +127,6 @@ public:
     //! \brief Returns \b true if the number of strips is zero.
     bool empty() const{ return (num_strips == 0); }
 
-    //! \brief Clear any existing data and allocate a new data-structure with given \b stride and number of \b strips.
-    void resize(int new_stride, int new_num_strips){
-        stride = (size_t) new_stride;
-        num_strips = (size_t) new_num_strips;
-        vec = std::vector<T>(stride * num_strips);
-    }
-
     //! \brief Get the data between \b ibegin and \b iend of each strip.
     Data2D<T> splitData(int ibegin, int iend) const{
         Data2D<T> result(iend - ibegin, 0);
@@ -192,9 +185,6 @@ public:
         vec.insert(vec.begin() + (((size_t) pos) * stride), x.begin(), x.end());
         num_strips++;
     }
-
-    //! \brief Fill the entire vector with the specified \b value.
-    void fill(T value){ std::fill(vec.begin(), vec.end(), value); }
 
 private:
     size_t stride, num_strips;

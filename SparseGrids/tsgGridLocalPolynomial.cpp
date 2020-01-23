@@ -424,8 +424,7 @@ void GridLocalPolynomial::mergeRefinement(){
         needed = MultiIndexSet();
         buildTree();
     }
-    surpluses.resize(num_outputs, num_all_points);
-    surpluses.fill(0.0);
+    surpluses = Data2D<double>(num_outputs, num_all_points);
 }
 
 void GridLocalPolynomial::beginConstruction(){
@@ -1117,13 +1116,11 @@ std::vector<double> GridLocalPolynomial::getNormalization() const{
 
 Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const{
     int num_points = points.getNumIndexes();
-    Data2D<int> map2(num_dimensions, num_points);
-    if (tolerance == 0.0){
-        map2.fill(1); // if tolerance is 0, refine everything
-        return map2;
-    }else{
-        map2.fill(0);
-    }
+    Data2D<int> pmap(num_dimensions, num_points,
+                     std::vector<int>(Utils::size_mult(num_dimensions, num_points),
+                                      (tolerance == 0.0) ? 1 : 0) // tolerance 0 means "refine everything"
+                    );
+    if (tolerance == 0.0) return pmap;
 
     std::vector<double> norm = getNormalization();
 
@@ -1147,7 +1144,7 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
                 small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance);
             }
             if (!small){
-                int *m = map2.getStrip(i);
+                int *m = pmap.getStrip(i);
                 std::fill(m, m + num_dimensions, 1);
             }
         }
@@ -1170,8 +1167,7 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
 
             int max_level = 0;
 
-            Data2D<double> vals;
-            vals.resize(active_outputs, nump);
+            Data2D<double> vals(active_outputs, nump);
 
             for(int i=0; i<nump; i++){
                 const double* v = values.getValues(pnts[i]);
@@ -1237,11 +1233,11 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
                 }else{
                     small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance) || ((c[0] * std::abs(v[0]) / norm[output]) <= tolerance);
                 }
-                map2.getStrip(pnts[i])[d] = (small) ? 0 : 1;;
+                pmap.getStrip(pnts[i])[d] = (small) ? 0 : 1;;
             }
         }
     }
-    return map2;
+    return pmap;
 }
 MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const{
     Data2D<int> pmap = buildUpdateMap(tolerance, criteria, output, scale_correction);

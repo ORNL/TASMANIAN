@@ -192,8 +192,7 @@ void GridWavelet::mergeRefinement(){
         buildInterpolationMatrix();
     }
     needed = MultiIndexSet();
-    coefficients.resize(num_outputs, num_all_points);
-    coefficients.fill(0.0);
+    coefficients = Data2D<double>(num_outputs, num_all_points);
 }
 void GridWavelet::evaluate(const double x[], double y[]) const{
     std::fill(y, y + num_outputs, 0.0);
@@ -400,7 +399,7 @@ void GridWavelet::recomputeCoefficients(){
     //  Make sure buildInterpolationMatrix has been called since the list was updated.
 
     int num_points = points.getNumIndexes();
-    coefficients.resize(num_outputs, num_points);
+    coefficients = Data2D<double>(num_outputs, num_points);
 
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
 
@@ -452,13 +451,11 @@ std::vector<double> GridWavelet::getNormalization() const{
 }
 Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const{
     int num_points = points.getNumIndexes();
-    Data2D<int> pmap(num_dimensions, num_points);
-    if (tolerance == 0.0){
-        pmap.fill(1); // if tolerance is 0, refine everything
-        return pmap;
-    }else{
-        pmap.fill(0);
-    }
+    Data2D<int> pmap(num_dimensions, num_points,
+                     std::vector<int>(Utils::size_mult(num_dimensions, num_points),
+                                      (tolerance == 0.0) ? 1 : 0) // tolerance 0 means "refine everything"
+                    );
+    if (tolerance == 0.0) return pmap;
 
     std::vector<double> norm = getNormalization();
 

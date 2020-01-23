@@ -787,7 +787,7 @@ void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std
 
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
         m = 2*num_dimensions + 1;
-        A.resize(n, m);
+        A = Data2D<double>(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
@@ -805,7 +805,7 @@ void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std
         }
     }else{
         m = num_dimensions + 1;
-        A.resize(n, m);
+        A = Data2D<double>(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){

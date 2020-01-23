@@ -216,8 +216,7 @@ void GridSequence::mergeRefinement(){
         needed = MultiIndexSet();
         prepareSequence(0);
     }
-    surpluses.resize(num_outputs, num_all_points);
-    surpluses.fill(0.0);
+    surpluses = Data2D<double>(num_outputs, num_all_points);
 }
 
 void GridSequence::beginConstruction(){
@@ -452,13 +451,13 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
 #ifdef Tasmanian_ENABLE_BLAS
 void GridSequence::evaluateBlas(const double x[], int num_x, double y[]) const{
     int num_points = points.getNumIndexes();
-    Data2D<double> weights; weights.resize(num_points, num_x);
+    Data2D<double> weights(num_points, num_x);
     if (num_x > 1){
-        evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+        evaluateHierarchicalFunctions(x, num_x, weights.data());
     }else{ // workaround small OpenMP penalty
-        evalHierarchicalFunctions(x, weights.getStrip(0));
+        evalHierarchicalFunctions(x, weights.data());
     }
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.getStrip(0), weights.getStrip(0), 0.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.data(), 0.0, y);
 }
 #endif // Tasmanian_ENABLE_BLAS
 
@@ -641,7 +640,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
 
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
         m = 2*num_dimensions + 1;
-        A.resize(n, m);
+        A = Data2D<double>(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
@@ -659,7 +658,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
         }
     }else{
         m = num_dimensions + 1;
-        A.resize(n, m);
+        A = Data2D<double>(n, m);
 
         int count = 0;
         for(int c=0; c<num_points; c++){
@@ -675,7 +674,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
     }
 
     std::vector<double> x(m);
-    TasmanianDenseSolver::solveLeastSquares(n, m, A.getStrip(0), b.data(), 1.E-5, x.data());
+    TasmanianDenseSolver::solveLeastSquares(n, m, A.data(), b.data(), 1.E-5, x.data());
 
     weights.resize(--m);
     for(int j=0; j<m; j++){

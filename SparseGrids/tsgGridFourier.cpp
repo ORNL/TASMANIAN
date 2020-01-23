@@ -267,8 +267,7 @@ void GridFourier::calculateFourierCoefficients(){
     MultiIndexSet &work = (points.empty()) ? needed : points;
     std::vector<std::vector<int>> index_map = generateIndexingMap();
 
-    fourier_coefs.resize(num_outputs, 2 * num_points);
-    fourier_coefs.fill(0.0);
+    fourier_coefs = Data2D<double>(num_outputs, 2 * num_points);
 
     for(int n=0; n<active_tensors.getNumIndexes(); n++){
         const int* levels = active_tensors.getIndex(n);
@@ -465,12 +464,12 @@ void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
     if (num_x > 1){
         evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
     }else{ // work-around small OpenMP penalty
-        wreal.resize(num_points, 1);
-        wimag.resize(num_points, 1);
-        computeBasis<double, false>(points, x, wreal.getStrip(0), wimag.getStrip(0));
+        wreal = Data2D<double>(num_points, 1);
+        wimag = Data2D<double>(num_points, 1);
+        computeBasis<double, false>(points, x, wreal.data(), wimag.data());
     }
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getStrip(0), wreal.getStrip(0), 0.0, y);
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getStrip(num_points), wimag.getStrip(0), 1.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getStrip(0), wreal.data(), 0.0, y);
+    TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getStrip(num_points), wimag.data(), 1.0, y);
 }
 #endif
 
@@ -611,8 +610,8 @@ void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int nu
     // thus only two real gemm() operations can be used (as opposed to one complex gemm)
     int num_points = getNumPoints();
     Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
-    wreal.resize(num_points, num_x);
-    wimag.resize(num_points, num_x);
+    wreal = Data2D<double>(num_points, num_x);
+    wimag = Data2D<double>(num_points, num_x);
     #pragma omp parallel for
     for(int i=0; i<num_x; i++){
         computeBasis<double, false>(((points.empty()) ? needed : points), xwrap.getStrip(i), wreal.getStrip(i), wimag.getStrip(i));
