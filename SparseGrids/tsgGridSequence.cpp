@@ -122,8 +122,8 @@ void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> 
             needed = std::move(pset);
             values.resize(num_outputs, needed.getNumIndexes());
         }
-        nodes.clear();
-        coeff.clear();
+        nodes = std::vector<double>();
+        coeff = std::vector<double>();
         surpluses = Data2D<double>();
         prepareSequence(0);
     }else{
@@ -135,10 +135,10 @@ void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> 
 }
 
 void GridSequence::getLoadedPoints(double *x) const{
-    std::transform(points.begin(), points.end(), x, [&](int i)->double{ return nodes[i]; });
+    MultiIndexManipulations::indexesToNodes(points, *this, x);
 }
 void GridSequence::getNeededPoints(double *x) const{
-    std::transform(needed.begin(), needed.end(), x, [&](int i)->double{ return nodes[i]; });
+    MultiIndexManipulations::indexesToNodes(needed, *this, x);
 }
 void GridSequence::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); }
@@ -310,25 +310,17 @@ std::vector<double> GridSequence::getCandidateConstructionPoints(std::function<d
 
     std::forward_list<NodeData> weighted_points; // use the values as the weight
     for(int i=0; i<dynamic_values->initial_points.getNumIndexes(); i++){
-        std::vector<int> p(dynamic_values->initial_points.getIndex(i), dynamic_values->initial_points.getIndex(i) + num_dimensions); // write the point to vector
+        std::vector<int> p = dynamic_values->initial_points.copyIndex(i);
         weighted_points.push_front({p, {-1.0 / ((double) std::accumulate(p.begin(), p.end(), 0))}});
     }
     for(int i=0; i<new_points.getNumIndexes(); i++){
-        std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // write the point to vector
+        std::vector<int> p = new_points.copyIndex(i);
         weighted_points.push_front({p, {getTensorWeight(p.data())}});
     }
 
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    std::vector<double> x(dynamic_values->initial_points.totalSize() + new_points.totalSize());
-    auto t = weighted_points.begin();
-    auto ix = x.begin();
-    while(t != weighted_points.end()){
-        std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return nodes[i]; });
-        std::advance(ix, num_dimensions);
-        t++;
-    }
-    return x;
+    return listToNodes(weighted_points, num_dimensions, *this);
 }
 std::vector<int> GridSequence::getMultiIndex(const double x[]){
     std::vector<int> p(num_dimensions);

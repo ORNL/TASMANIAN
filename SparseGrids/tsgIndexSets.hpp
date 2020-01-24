@@ -281,6 +281,11 @@ public:
     //! \brief Returns the **i**-th index of the set, useful to loop over all indexes or to cross reference with values
     inline const int *getIndex(int i) const{ return &(indexes[((size_t) i) * num_dimensions]); }
 
+    //! \brief Returns a copy of the \b i-th index of the set.
+    inline std::vector<int> copyIndex(int i) const{
+        return std::vector<int>(&indexes[((size_t) i) * num_dimensions], &indexes[((size_t) i) * num_dimensions] + num_dimensions);
+    }
+
     /*! \brief Return a new multi-index set that holds the indexed present in this set, but missing in \b substract.
      *
      * Assumes that \b substract has the same dimension as this set.
@@ -321,6 +326,7 @@ public:
     //! \brief Move constructor from a known vector.
     StorageSet(int cnum_outputs, int cnum_values, std::vector<double> &&vals) :
         num_outputs(cnum_outputs), num_values(cnum_values), values(std::forward<std::vector<double>>(vals)){}
+    //! \brief Read constructor.
     template<typename iomode> StorageSet(std::istream &is, iomode) :
         num_outputs((size_t) IO::readNumber<iomode, int>(is)),
         num_values((size_t) IO::readNumber<iomode, int>(is)),

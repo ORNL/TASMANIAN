@@ -112,6 +112,8 @@ public:
 
     void clearAccelerationData() override;
 
+    double getNode(int i) const{ return nodes[i]; }
+
 protected:
     void evalHierarchicalFunctions(const double x[], double fvalues[]) const;
 

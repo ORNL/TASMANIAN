@@ -112,23 +112,17 @@ GridWavelet::GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Dat
 
 void GridWavelet::getLoadedPoints(double *x) const{
     int num_points = points.getNumIndexes();
+    Utils::Wrapper2D<double> split(num_dimensions, x);
     #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = points.getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule1D.getNode(p[j]);
-        }
-    }
+    for(int i=0; i<num_points; i++)
+        MultiIndexManipulations::indexesToNodes(points.getIndex(i), num_dimensions, rule1D, split.getStrip(i));
 }
 void GridWavelet::getNeededPoints(double *x) const{
     int num_points = needed.getNumIndexes();
+    Utils::Wrapper2D<double> split(num_dimensions, x);
     #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_points; i++){
-        const int *p = needed.getIndex(i);
-        for(int j=0; j<num_dimensions; j++){
-            x[i*num_dimensions + j] = rule1D.getNode(p[j]);
-        }
-    }
+    for(int i=0; i<num_points; i++)
+        MultiIndexManipulations::indexesToNodes(needed.getIndex(i), num_dimensions, rule1D, split.getStrip(i));
 }
 void GridWavelet::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); }
@@ -364,10 +358,7 @@ void GridWavelet::buildInterpolationMatrix(){
     for(int b=0; b<num_blocks; b++){
         int block_end = (b < num_blocks - 1) ? (b+1) * num_chunk : num_points;
         for(int i=b * num_chunk; i < block_end; i++){
-            const int *p = work.getIndex(i);
-            std::vector<double> xi(num_dimensions);
-            for(int j = 0; j<num_dimensions; j++) // get the node
-                xi[j] = rule1D.getNode(p[j]);
+            std::vector<double> xi = MultiIndexManipulations::indexesToNodes(work.getIndex(i), (size_t) num_dimensions, rule1D);
 
             // loop over the basis functions to see if supported
             int numpntr = 0;
@@ -497,8 +488,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 }else{
                     vls[0] = v[output];
                 }
-                const int *p = points.getIndex(pnts[i]);
-                std::copy(p, p + num_dimensions, indexes.getStrip(i));
+                std::copy_n(points.getIndex(pnts[i]), num_dimensions, indexes.getStrip(i));
             }
 
             GridWavelet direction_grid({(size_t) num_dimensions, indexes.eject()}, active_outputs, order, std::move(vals));
@@ -660,7 +650,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
     if (level_zero.getNumIndexes() > 0){ // level zero nodes are missing from current
         Data2D<int> roots(num_dimensions, 0);
         for(int i=0; i<level_zero.getNumIndexes(); i++){
-            std::vector<int> p(level_zero.getIndex(i), level_zero.getIndex(i) + num_dimensions);
+            std::vector<int> p = level_zero.copyIndex(i);
             if (!candidates.missing(p))
                 roots.appendStrip(p);
         }
@@ -676,7 +666,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
         update = Data2D<int>(num_dimensions, 0);
 
         for(int i=0; i<total.getNumIndexes(); i++){
-            std::vector<int> relative(total.getIndex(i), total.getIndex(i) + num_dimensions);
+            std::vector<int> relative = total.copyIndex(i);
             for(auto &r : relative){
                 int k = r; // save the value
 
@@ -742,7 +732,7 @@ std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance
     #pragma omp parallel for
     for(int i=0; i<new_points.getNumIndexes(); i++){
         double weight = 0.0;
-        std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // get the point
+        std::vector<int> p = new_points.copyIndex(i);
 
         WaveManipulations::touchAllImmediateRelatives(p, points, rule1D,
                                                            [&](int relative)->void{ weight = std::max(weight, getDominantSurplus(relative)); });
@@ -789,26 +779,18 @@ std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance
     }
 
     // compute the weights for the initial points
-    std::vector<int> initial_levels =  WaveManipulations::computeLevels(dynamic_values->initial_points, rule1D);
+    std::vector<int> initial_levels = WaveManipulations::computeLevels(dynamic_values->initial_points, rule1D);
 
     std::forward_list<NodeData> weighted_points;
-    for(int i=0; i<dynamic_values->initial_points.getNumIndexes(); i++){
-        std::vector<int> p(dynamic_values->initial_points.getIndex(i), dynamic_values->initial_points.getIndex(i) + num_dimensions); // write the point to vector
-        weighted_points.push_front({p, {-1.0 / ((double) initial_levels[i])}});
-    }
-    for(int i=0; i<new_points.getNumIndexes(); i++){
-        std::vector<int> p(new_points.getIndex(i), new_points.getIndex(i) + num_dimensions); // write the point to vector
-        weighted_points.push_front({p, {1.0 / refine_weights[i]}});
-    }
+    for(int i=0; i<dynamic_values->initial_points.getNumIndexes(); i++)
+        weighted_points.push_front({dynamic_values->initial_points.copyIndex(i), {-1.0 / ((double) initial_levels[i])}});
+    for(int i=0; i<new_points.getNumIndexes(); i++)
+        weighted_points.push_front({new_points.copyIndex(i), {1.0 / refine_weights[i]}});
 
     // sort and return the sorted list
     weighted_points.sort([&](const NodeData &a, const NodeData &b)->bool{ return (a.value[0] < b.value[0]); });
 
-    std::vector<double> x(dynamic_values->initial_points.totalSize() + new_points.totalSize());
-    auto ix = x.begin();
-    for(auto t = weighted_points.begin(); t != weighted_points.end(); t++)
-        ix = std::transform(t->point.begin(), t->point.end(), ix, [&](int i)->double{ return rule1D.getNode(i); });
-    return x;
+    return listToNodes(weighted_points, num_dimensions, rule1D);
 }
 
 std::vector<int> GridWavelet::getMultiIndex(const double x[]){
@@ -889,7 +871,7 @@ std::vector<double> GridWavelet::getSupport() const{
     MultiIndexSet const &work = (points.empty()) ? needed : points;
 
     std::vector<double> support(Utils::size_mult(work.getNumIndexes(), work.getNumDimensions()));
-    std::transform(work.getIndex(0), work.getIndex(0) + support.size(), support.begin(), [&](int p)->double{ return rule1D.getSupport(p); });
+    std::transform(work.begin(), work.end(), support.begin(), [&](int p)->double{ return rule1D.getSupport(p); });
     return support;
 }
 
@@ -964,7 +946,7 @@ MultiIndexSet GridWavelet::getRefinementCanidates(double tolerance, TypeRefineme
             int num_needed = result.getNumIndexes();
 
             for(int i=0; i<num_needed; i++){
-                std::vector<int> parent(result.getIndex(i), result.getIndex(i) + num_dimensions);
+                std::vector<int> parent = result.copyIndex(i);
                 for(auto &p : parent){
                     int r = p;
                     p = rule1D.getParent(r);
