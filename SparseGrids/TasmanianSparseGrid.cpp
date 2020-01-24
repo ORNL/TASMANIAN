@@ -761,7 +761,7 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
 template<typename FloatType> const FloatType* TasmanianSparseGrid::formCanonicalPoints(const FloatType *x, Data2D<FloatType> &x_temp, int num_x) const{
     if ((domain_transform_a.size() != 0) || (conformal_asin_power.size() != 0)){
         int num_dimensions = base->getNumDimensions();
-        x_temp.resize(num_dimensions, num_x); std::copy(x, x + ((size_t) num_dimensions) * ((size_t) num_x), x_temp.getStrip(0));
+        x_temp = Data2D<FloatType>(num_dimensions, num_x, std::vector<FloatType>(x, x + Utils::size_mult(num_dimensions, num_x)));
         mapConformalTransformedToCanonical(num_dimensions, num_x, x_temp);
         if (domain_transform_a.size() != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_temp.getStrip(0));
         return x_temp.getStrip(0);

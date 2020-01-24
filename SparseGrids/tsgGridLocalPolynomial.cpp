@@ -414,8 +414,7 @@ void GridLocalPolynomial::mergeRefinement(){
     clearCudaSurpluses();
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
-    size_t num_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    values.setValues(std::vector<double>(num_vals, 0.0));
+    values.setValues(std::vector<double>(Utils::size_mult(num_all_points, num_outputs), 0.0));
     if (points.empty()){
         points = std::move(needed);
         needed = MultiIndexSet();
@@ -424,8 +423,7 @@ void GridLocalPolynomial::mergeRefinement(){
         needed = MultiIndexSet();
         buildTree();
     }
-    surpluses.resize(num_outputs, num_all_points);
-    surpluses.fill(0.0);
+    surpluses = Data2D<double>(num_outputs, num_all_points);
 }
 
 void GridLocalPolynomial::beginConstruction(){
@@ -605,8 +603,8 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
             std::copy_n(values.getValues(g), num_outputs, surpluses.getStrip(g)); // reset the surpluses to the values (will be updated)
         }
 
-        Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
-        updateSurpluses(points, top_level + 1, levels, dagUp); // compute the current DAG and update the surplused for the descendants
+        // compute the current DAG and update the surplused for the descendants
+        updateSurpluses(points, top_level + 1, levels, HierarchyManipulations::computeDAGup(points, rule.get()));
     }
     buildTree(); // the tree is needed for evaluate(), must be rebuild every time the points set is updated
 }
@@ -705,9 +703,9 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     for(auto i : active_points) weights[i] = *ibasis++;
 
     // apply the transpose of the surplus transformation
-    Data2D<int> lparents;
-    if (parents.getNumStrips() != work.getNumIndexes()) // if the current dag loaded in parents does not reflect the indexes in work
-        lparents = HierarchyManipulations::computeDAGup(work, rule.get());
+    Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ? // if the current dag loaded in parents does not reflect the indexes in work
+                            HierarchyManipulations::computeDAGup(work, rule.get()) :
+                            Data2D<int>();
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -1105,7 +1103,6 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
 
 std::vector<double> GridLocalPolynomial::getNormalization() const{
     std::vector<double> norms(num_outputs);
-    std::fill(norms.begin(), norms.end(), 0.0);
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
         for(int j=0; j<num_outputs; j++){
@@ -1117,13 +1114,11 @@ std::vector<double> GridLocalPolynomial::getNormalization() const{
 
 Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const{
     int num_points = points.getNumIndexes();
-    Data2D<int> map2(num_dimensions, num_points);
-    if (tolerance == 0.0){
-        map2.fill(1); // if tolerance is 0, refine everything
-        return map2;
-    }else{
-        map2.fill(0);
-    }
+    Data2D<int> pmap(num_dimensions, num_points,
+                     std::vector<int>(Utils::size_mult(num_dimensions, num_points),
+                                      (tolerance == 0.0) ? 1 : 0) // tolerance 0 means "refine everything"
+                    );
+    if (tolerance == 0.0) return pmap;
 
     std::vector<double> norm = getNormalization();
 
@@ -1147,7 +1142,7 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
                 small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance);
             }
             if (!small){
-                int *m = map2.getStrip(i);
+                int *m = pmap.getStrip(i);
                 std::fill(m, m + num_dimensions, 1);
             }
         }
@@ -1170,8 +1165,7 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
 
             int max_level = 0;
 
-            Data2D<double> vals;
-            vals.resize(active_outputs, nump);
+            Data2D<double> vals(active_outputs, nump);
 
             for(int i=0; i<nump; i++){
                 const double* v = values.getValues(pnts[i]);
@@ -1237,11 +1231,11 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
                 }else{
                     small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance) || ((c[0] * std::abs(v[0]) / norm[output]) <= tolerance);
                 }
-                map2.getStrip(pnts[i])[d] = (small) ? 0 : 1;;
+                pmap.getStrip(pnts[i])[d] = (small) ? 0 : 1;;
             }
         }
     }
-    return map2;
+    return pmap;
 }
 MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const{
     Data2D<int> pmap = buildUpdateMap(tolerance, criteria, output, scale_correction);
@@ -1276,7 +1270,7 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
         }
     }
 
-    MultiIndexSet result = MultiIndexSet(refined);
+    MultiIndexSet result(refined);
     if (criteria == refine_stable)
         HierarchyManipulations::completeToLower(points, result, rule.get());
     return result;

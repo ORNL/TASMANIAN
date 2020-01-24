@@ -341,14 +341,14 @@ MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDim
  * e.g., when computing interpolation and quadrature weights.
  */
 template<bool nested>
-void referencePoints(const int levels[], const OneDimensionalWrapper &wrapper, const MultiIndexSet &points, std::vector<int> &refs){
+std::vector<int> referencePoints(const int levels[], const OneDimensionalWrapper &wrapper, const MultiIndexSet &points){
     size_t num_dimensions = (size_t) points.getNumDimensions();
     std::vector<int> num_points(num_dimensions);
     int num_total = 1; // this will be a subset of all points, no danger of overflow
     for(size_t j=0; j<num_dimensions; j++) num_points[j] = wrapper.getNumPoints(levels[j]);
     for(auto n : num_points) num_total *= n;
 
-    refs.resize(num_total);
+    std::vector<int> refs(num_total);
     std::vector<int> p(num_dimensions);
 
     for(int i=0; i<num_total; i++){
@@ -360,6 +360,7 @@ void referencePoints(const int levels[], const OneDimensionalWrapper &wrapper, c
         }
         refs[i] = points.getSlot(p);
     }
+    return refs;
 }
 
 /*!
@@ -396,6 +397,19 @@ inline MultiIndexSet createActiveTensors(const MultiIndexSet &mset, const std::v
     }
 
     return MultiIndexSet(num_dimensions, std::move(indexes));
+}
+
+/*!
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Uses the computeTensorWeights() and createActiveTensors() to extract the active tensors and the active (non-zero) weights.
+ */
+inline void computeActiveTensorsWeights(MultiIndexSet const &tensors, MultiIndexSet &active_tensors, std::vector<int> &active_w){
+    std::vector<int> tensors_w = MultiIndexManipulations::computeTensorWeights(tensors);
+    active_tensors = MultiIndexManipulations::createActiveTensors(tensors, tensors_w);
+
+    active_w = std::vector<int>();
+    active_w.reserve(active_tensors.getNumIndexes());
+    for(auto w : tensors_w) if (w != 0) active_w.push_back(w);
 }
 
 /*!

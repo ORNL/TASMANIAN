@@ -183,8 +183,7 @@ void GridWavelet::mergeRefinement(){
     clearCudaBasis();
     #endif
     int num_all_points = getNumLoaded() + getNumNeeded();
-    size_t size_vals = ((size_t) num_all_points) * ((size_t) num_outputs);
-    values.setValues(std::vector<double>(size_vals, 0.0));
+    values.setValues(std::vector<double>(Utils::size_mult(num_all_points, num_outputs), 0.0));
     if (points.empty()){
         points = std::move(needed);
     }else{
@@ -192,8 +191,7 @@ void GridWavelet::mergeRefinement(){
         buildInterpolationMatrix();
     }
     needed = MultiIndexSet();
-    coefficients.resize(num_outputs, num_all_points);
-    coefficients.fill(0.0);
+    coefficients = Data2D<double>(num_outputs, num_all_points);
 }
 void GridWavelet::evaluate(const double x[], double y[]) const{
     std::fill(y, y + num_outputs, 0.0);
@@ -400,7 +398,7 @@ void GridWavelet::recomputeCoefficients(){
     //  Make sure buildInterpolationMatrix has been called since the list was updated.
 
     int num_points = points.getNumIndexes();
-    coefficients.resize(num_outputs, num_points);
+    coefficients = Data2D<double>(num_outputs, num_points);
 
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
 
@@ -452,13 +450,11 @@ std::vector<double> GridWavelet::getNormalization() const{
 }
 Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteria, int output) const{
     int num_points = points.getNumIndexes();
-    Data2D<int> pmap(num_dimensions, num_points);
-    if (tolerance == 0.0){
-        pmap.fill(1); // if tolerance is 0, refine everything
-        return pmap;
-    }else{
-        pmap.fill(0);
-    }
+    Data2D<int> pmap(num_dimensions, num_points,
+                     std::vector<int>(Utils::size_mult(num_dimensions, num_points),
+                                      (tolerance == 0.0) ? 1 : 0) // tolerance 0 means "refine everything"
+                    );
+    if (tolerance == 0.0) return pmap;
 
     std::vector<double> norm = getNormalization();
 
@@ -547,8 +543,7 @@ bool GridWavelet::addParent(const int point[], int direction, Data2D<int> &desti
     return added;
 }
 void GridWavelet::addChild(const int point[], int direction, Data2D<int> &destination) const{
-    std::vector<int> kid(num_dimensions);
-    std::copy_n(point, num_dimensions, kid.data());
+    std::vector<int> kid(point, point + num_dimensions);
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
     if ((kid[direction] != -1) && points.missing(kid)){
@@ -560,8 +555,7 @@ void GridWavelet::addChild(const int point[], int direction, Data2D<int> &destin
 }
 }
 void GridWavelet::addChildLimited(const int point[], int direction, const std::vector<int> &level_limits, Data2D<int> &destination) const{
-    std::vector<int> kid(num_dimensions);
-    std::copy_n(point, num_dimensions, kid.data());
+    std::vector<int> kid(point, point + num_dimensions);
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
     if ((kid[direction] != -1)
