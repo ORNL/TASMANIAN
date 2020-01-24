@@ -63,7 +63,7 @@ public:
     virtual double evalRaw(int point, double x) const = 0; // normalizes x (i.e., (x-node) / support), but it does not check the support
     virtual double evalSupport(int point, double x, bool &isSupported) const = 0; // // normalizes x (i.e., (x-node) / support) and checks if x is within the support
 
-    virtual double getArea(int point, int n, const double w[], const double x[]) const = 0;
+    virtual double getArea(int point, std::vector<double> const &w, std::vector<double> const &x) const = 0;
     // integrate the function associated with the point, constant to cubic are known analytically, higher order need a 1-D quadrature rule
 
 protected:
@@ -261,7 +261,7 @@ public:
             }
         }
     }
-    double getArea(int point, int n, const double w[], const double x[]) const override{
+    double getArea(int point, std::vector<double> const &w, std::vector<double> const &x) const override{
         if (isZeroOrder){
             return 2.0 * getSupport(point);
         }else{
@@ -283,7 +283,7 @@ public:
                 if ((max_order == 2) || (max_order == 3) || (point <= 2))  return (4.0/3.0) * getSupport(point);
             }
             double sum = 0.0;
-            for(int i=0; i<n; i++) sum += w[i] * evalPWPower(point, x[i]);
+            for(size_t i=0; i<w.size(); i++) sum += w[i] * evalPWPower(point, x[i]);
             return sum * getSupport(point);
         }
     }

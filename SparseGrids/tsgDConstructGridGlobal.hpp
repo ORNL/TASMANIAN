@@ -189,6 +189,22 @@ std::forward_list<TensorData> readTensorDataList(std::istream &is, size_t num_di
 /*!
  * \internal
  * \ingroup TasmanianRefinement
+ * \brief Using MultiIndexManipulations::indexesToNodes() convert the \b node_list to actual points according to the rule.
+ *
+ * \endinternal
+ */
+template<class RuleLike>
+std::vector<double> listToNodes(std::forward_list<NodeData> const &node_list, size_t num_dimensions, RuleLike const &rule){
+    std::vector<double> result(Utils::size_mult(std::distance(node_list.begin(), node_list.end()), num_dimensions));
+    auto ix = result.begin();
+    for(auto const &t : node_list)
+        ix = MultiIndexManipulations::indexesToNodes(t.point, rule, ix);
+    return result;
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
  * \brief Helper class that stores data from dynamic construction of a Global grid.
  *
  * The class stores candidate tensors with corresponding weights

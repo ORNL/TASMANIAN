@@ -517,6 +517,67 @@ MultiIndexSet addExclusiveChildren(const MultiIndexSet &tensors, const MultiInde
     return MultiIndexSet(tens);
 }
 
+/*!
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Converts int-indexes to double-valued abscissas using the provided rule.
+ *
+ * Nodes of the sparse grid are stored as multi-indexes in either vectors or MultiIndexSet classes.
+ * The nodes are converted to double precision numbers according to a specified one-dimensional rule.
+ *
+ * \tparam IndexList is either a MultiIndexSet or a std::vector<int>, both of which have a begin and end methods,
+ *                   the begin and end must allow iteration over a range of integers.
+ * \tparam RuleLike is either a OneDimensionalWrapper, derived from BaseRuleLocalPolynomial, or RuleWavelet,
+ *                  or any other class with getNode method that converts an int to a double;
+ *                  GridSequence class provides the getNode() method too.
+ * \tparam OutputIteratorLike indicates where the write the output, e.g., an iterator or an array,
+ *                            the output matches with OutputIteratorLike as defined by std::transform.
+ *
+ * \param list defines a range of integers to be converted to double precision numbers.
+ * \param rule is a class with getNode method that defines the conversion.
+ * \param nodes marks the beginning of the output range.
+ *
+ * \returns OutputIteratorLike at the end of the range that has been written.
+ *
+ * Overloads are provided that work with an \b ibegin iterator and a number of \b entries in place of the \b list,
+ * as well as returning the result in a std::vector<double> as opposed to writing to a \b nodes iterator.
+ * See the brief descriptions at the top of the page.
+ */
+template<class IndexList, class RuleLike, class OutputIteratorLike>
+OutputIteratorLike indexesToNodes(IndexList const &list, RuleLike const &rule, OutputIteratorLike nodes){
+    return std::transform(list.begin(), list.end(), nodes, [&](int i)->double{ return rule.getNode(i); });
+}
+
+/*!
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Overload that uses a begin and a number of entries.
+ */
+template<class IteratorLike, class RuleLike, class OutputIteratorLike>
+OutputIteratorLike indexesToNodes(IteratorLike ibegin, size_t num_entries, RuleLike const &rule, OutputIteratorLike nodes){
+    return std::transform(ibegin, ibegin + num_entries, nodes, [&](int i)->double{ return rule.getNode(i); });
+}
+
+/*!
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Overload that returns the result in a vector.
+ */
+template<class IndexList, class RuleLike>
+std::vector<double> indexesToNodes(IndexList const &list, RuleLike const &rule){
+    std::vector<double> result(std::distance(list.begin(), list.end()));
+    indexesToNodes(list, rule, result.begin());
+    return result;
+}
+
+/*!
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Overload that returns the result in a vector.
+ */
+template<class IteratorLike, class RuleLike>
+std::vector<double> indexesToNodes(IteratorLike ibegin, size_t num_entries, RuleLike const &rule){
+    std::vector<double> result(num_entries);
+    indexesToNodes(ibegin, num_entries, rule, result.begin());
+    return result;
+}
+
 }
 
 }

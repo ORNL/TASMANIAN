@@ -197,15 +197,11 @@ void GridFourier::loadNeededPoints(const double *vals){
     max_power = MultiIndexManipulations::getMaxIndexes(points);
 }
 
-void GridFourier::mapIndexesToNodes(MultiIndexSet const &indexes, double *x) const{
-    std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
-}
-
 void GridFourier::getLoadedPoints(double *x) const{
-    mapIndexesToNodes(points, x);
+    MultiIndexManipulations::indexesToNodes(points, wrapper, x);
 }
 void GridFourier::getNeededPoints(double *x) const{
-    mapIndexesToNodes(needed, x);
+    MultiIndexManipulations::indexesToNodes(needed, wrapper, x);
 }
 void GridFourier::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -279,9 +275,8 @@ void GridFourier::calculateFourierCoefficients(){
                 t /= num_oned_points[j];
             }
             //refs[i] = ; // refs[i] is the index of Tasmanian (index set) corresponding to real index "i"
-            const double *v = values.getValues(work.getSlot(p));
-            tensor_data[i].resize(num_outputs);
-            std::copy(v, v + num_outputs, tensor_data[i].data());
+            double const *v = values.getValues(work.getSlot(p));
+            tensor_data[i] = std::vector<std::complex<double>>(v, v + num_outputs);
         }
 
         TasmanianFourierTransform::fast_fourier_transform(tensor_data, num_oned_points);
@@ -336,7 +331,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     std::vector<std::vector<int>> index_map = generateIndexingMap();
 
-    std::fill(weights, weights + getNumPoints(), 0.0);
+    std::fill_n(weights, work.getNumIndexes(), 0.0);
 
     // compute what we need for e^{-2 \pi i m / N}
     int maxl = active_tensors.getMaxIndex() + 1;
@@ -403,8 +398,7 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
     // coeff for e^0 (sum of the data divided by number of points)
 
     const MultiIndexSet &work = (points.empty()) ? needed : points;
-    int num_points = work.getNumIndexes();
-    std::fill(weights, weights + num_points, 0.0);
+    std::fill_n(weights, work.getNumIndexes(), 0.0);
 
     for(int n=0; n<active_tensors.getNumIndexes(); n++){
         const int *levels = active_tensors.getIndex(n);
@@ -564,12 +558,12 @@ void GridFourier::clearCudaCoefficients(){
 #endif
 
 void GridFourier::integrate(double q[], double *conformal_correction) const{
-    std::fill(q, q+num_outputs, 0.0);
     if (conformal_correction == 0){
         // everything vanishes except the Fourier coeff of e^0
-        std::copy(fourier_coefs.getStrip(0), fourier_coefs.getStrip(0) + num_outputs, q);
+        std::copy_n(fourier_coefs.getStrip(0), num_outputs, q);
     }else{
         // Do the expensive computation if we have a conformal map
+        std::fill_n(q, num_outputs, 0.0);
         std::vector<double> w(getNumPoints());
         getQuadratureWeights(w.data());
         for(int i=0; i<points.getNumIndexes(); i++){
@@ -834,8 +828,7 @@ std::vector<double> GridFourier::getCandidateConstructionPoints(std::function<do
         MultiIndexManipulations::addExclusiveChildren<true>(tensors, init_tensors, level_limits);
 
     if (!new_tensors.empty()){
-        auto max_indexes = MultiIndexManipulations::getMaxIndexes(new_tensors);
-        int max_level = *std::max_element(max_indexes.begin(), max_indexes.end());
+        int max_level = new_tensors.getMaxIndex();
         if (max_level+1 > wrapper.getNumLevels())
             wrapper = OneDimensionalWrapper(max_level, rule_fourier, 0.0, 0.0);
     }
@@ -844,14 +837,10 @@ std::vector<double> GridFourier::getCandidateConstructionPoints(std::function<do
     for(int i=0; i<new_tensors.getNumIndexes(); i++)
         tweights[i] = (double) getTensorWeight(new_tensors.getIndex(i));
 
-    for(int i=0; i<new_tensors.getNumIndexes(); i++){
-        const int *t = new_tensors.getIndex(i);
-        dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
-    }
-    MultiIndexSet node_indexes = dynamic_values->getNodesIndexes();
-    std::vector<double> x(node_indexes.totalSize());
-    mapIndexesToNodes(node_indexes, x.data());
-    return x;
+    for(int i=0; i<new_tensors.getNumIndexes(); i++)
+        dynamic_values->addTensor(new_tensors.getIndex(i), [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
+
+    return MultiIndexManipulations::indexesToNodes(dynamic_values->getNodesIndexes(), wrapper);
 }
 std::vector<int> GridFourier::getMultiIndex(const double x[]){
     std::vector<int> p(num_dimensions);

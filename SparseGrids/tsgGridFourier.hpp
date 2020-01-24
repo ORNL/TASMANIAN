@@ -126,7 +126,6 @@ protected:
 
     std::vector<std::vector<int>> generateIndexingMap() const;
 
-    void mapIndexesToNodes(MultiIndexSet const &indexes, double *x) const;
     void loadConstructedTensors();
     std::vector<int> getMultiIndex(const double x[]);
 

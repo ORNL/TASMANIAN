@@ -208,15 +208,11 @@ void GridGlobal::updateGrid(int depth, TypeDepth type, const std::vector<int> &a
     }
 }
 
-void GridGlobal::mapIndexesToNodes(MultiIndexSet const &indexes, double *x) const{
-    std::transform(indexes.begin(), indexes.end(), x, [&](int i)->double{ return wrapper.getNode(i); });
-}
-
 void GridGlobal::getLoadedPoints(double *x) const{
-    mapIndexesToNodes(points, x);
+    MultiIndexManipulations::indexesToNodes(points, wrapper, x);
 }
 void GridGlobal::getNeededPoints(double *x) const{
-    mapIndexesToNodes(needed, x);
+    MultiIndexManipulations::indexesToNodes(needed, wrapper, x);
 }
 void GridGlobal::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); };
@@ -441,14 +437,10 @@ std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<dou
     for(int i=0; i<new_tensors.getNumIndexes(); i++)
         tweights[i] = (double) getTensorWeight(new_tensors.getIndex(i));
 
-    for(int i=0; i<new_tensors.getNumIndexes(); i++){
-        const int *t = new_tensors.getIndex(i);
-        dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
-    }
-    MultiIndexSet node_indexes = dynamic_values->getNodesIndexes();
-    std::vector<double> x(node_indexes.totalSize());
-    mapIndexesToNodes(node_indexes, x.data());
-    return x;
+    for(int i=0; i<new_tensors.getNumIndexes(); i++)
+        dynamic_values->addTensor(new_tensors.getIndex(i), [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
+
+    return MultiIndexManipulations::indexesToNodes(dynamic_values->getNodesIndexes(), wrapper);
 }
 std::vector<int> GridGlobal::getMultiIndex(const double x[]){
     std::vector<int> p(num_dimensions);
@@ -657,8 +649,7 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
     #pragma omp parallel for schedule(static)
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<points.getNumIndexes(); i++){
-            const double *v = values.getValues(i);
-            q[k] += w[i] * v[k];
+            q[k] += w[i] * values.getValues(i)[k];
         }
     }
 }
@@ -701,10 +692,8 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
                     return !polynomial_set.missing(qindex);
                 });
 
-        int getMaxQuadLevel = quadrature_tensors.getMaxIndex();
-
         GridGlobal QuadGrid;
-        if (getMaxQuadLevel < TableGaussPatterson::getNumLevels()-1){
+        if (quadrature_tensors.getMaxIndex() < TableGaussPatterson::getNumLevels()-1){
             QuadGrid.setTensors(std::move(quadrature_tensors), 0, rule_gausspatterson, 0.0, 0.0);
         }else{
             quadrature_tensors =
