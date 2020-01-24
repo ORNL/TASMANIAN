@@ -437,10 +437,9 @@ std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<dou
     for(int i=0; i<new_tensors.getNumIndexes(); i++)
         tweights[i] = (double) getTensorWeight(new_tensors.getIndex(i));
 
-    for(int i=0; i<new_tensors.getNumIndexes(); i++){
-        const int *t = new_tensors.getIndex(i);
-        dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
-    }
+    for(int i=0; i<new_tensors.getNumIndexes(); i++)
+        dynamic_values->addTensor(new_tensors.getIndex(i), [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
+
     return MultiIndexManipulations::indexesToNodes(dynamic_values->getNodesIndexes(), wrapper);
 }
 std::vector<int> GridGlobal::getMultiIndex(const double x[]){
@@ -650,8 +649,7 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
     #pragma omp parallel for schedule(static)
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<points.getNumIndexes(); i++){
-            const double *v = values.getValues(i);
-            q[k] += w[i] * v[k];
+            q[k] += w[i] * values.getValues(i)[k];
         }
     }
 }
@@ -694,10 +692,8 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
                     return !polynomial_set.missing(qindex);
                 });
 
-        int getMaxQuadLevel = quadrature_tensors.getMaxIndex();
-
         GridGlobal QuadGrid;
-        if (getMaxQuadLevel < TableGaussPatterson::getNumLevels()-1){
+        if (quadrature_tensors.getMaxIndex() < TableGaussPatterson::getNumLevels()-1){
             QuadGrid.setTensors(std::move(quadrature_tensors), 0, rule_gausspatterson, 0.0, 0.0);
         }else{
             quadrature_tensors =

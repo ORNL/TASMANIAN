@@ -290,8 +290,7 @@ void GridLocalPolynomial::evaluateBatchGPU(CudaEngine *engine, const float gpu_x
 }
 void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
     loadCudaBasis<double>();
-    int num_points = getNumPoints();
-    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, cuda_cache->nodes.data(), cuda_cache->support.data(), gpu_y);
+    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cache->nodes.data(), cuda_cache->support.data(), gpu_y);
 }
 void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const{
     loadCudaBasis<double>();
@@ -301,8 +300,7 @@ void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cp
 }
 void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const{
     loadCudaBasis<float>();
-    int num_points = getNumPoints();
-    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, num_points, gpu_x, cuda_cachef->nodes.data(), cuda_cachef->support.data(), gpu_y);
+    TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cachef->nodes.data(), cuda_cachef->support.data(), gpu_y);
 }
 void GridLocalPolynomial::buildSparseBasisMatrixGPU(const float gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<float> &gpu_svals) const{
     loadCudaBasis<float>();
@@ -566,8 +564,7 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
 
         std::vector<int> graph = getSubGraph(point); // get the descendant nodes that must be updated later
 
-        MultiIndexSet temp(num_dimensions, std::vector<int>(point));
-        values.addValues(points, temp, value.data()); // added the value
+        values.addValues(points, MultiIndexSet(num_dimensions, std::vector<int>(point)), value.data()); // added the value
 
         points.addSortedIndexes(point); // add the point
         int newindex = points.getSlot(point);
@@ -759,9 +756,7 @@ void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int nu
 }
 
 void GridLocalPolynomial::recomputeSurpluses(){
-    int num_points = points.getNumIndexes();
-
-    surpluses = Data2D<double>(num_outputs, num_points, std::vector<double>(values.begin(), values.end()));
+    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::vector<double>(values.begin(), values.end()));
 
     Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
 
@@ -983,20 +978,15 @@ void GridLocalPolynomial::buildTree(){
 void GridLocalPolynomial::integrateHierarchicalFunctions(double integrals[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
-    int n = 0;
     std::vector<double> w, x;
-
-    if ((rule->getMaxOrder() == -1) || (rule->getMaxOrder() > 3) ){
-        n = ((rule->getMaxOrder() == -1) ? top_level : rule->getMaxOrder()) / 2 + 1;
-        OneDimensionalNodes::getGaussLegendre(n, w, x);
-    }
+    if ((rule->getMaxOrder() == -1) || (rule->getMaxOrder() > 3) )
+        OneDimensionalNodes::getGaussLegendre(((rule->getMaxOrder() == -1) ? top_level : rule->getMaxOrder()) / 2 + 1, w, x);
 
     for(int i=0; i<work.getNumIndexes(); i++){
         const int* p = work.getIndex(i);
-        integrals[i] = rule->getArea(p[0], n, w.data(), x.data());
-        for(int j=1; j<num_dimensions; j++){
-            integrals[i] *= rule->getArea(p[j], n, w.data(), x.data());
-        }
+        integrals[i] = rule->getArea(p[0], w, x);
+        for(int j=1; j<num_dimensions; j++)
+            integrals[i] *= rule->getArea(p[j], w, x);
     }
 }
 void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
@@ -1117,10 +1107,8 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
             }else{
                 small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance);
             }
-            if (!small){
-                int *m = pmap.getStrip(i);
-                std::fill(m, m + num_dimensions, 1);
-            }
+            if (!small)
+                std::fill_n(pmap.getStrip(i), num_dimensions, 1);
         }
     }else{
         // construct a series of 1D interpolants and use a refinement criteria that is a combination of the two hierarchical coefficients
@@ -1252,8 +1240,7 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
 }
 
 bool GridLocalPolynomial::addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const{
-    std::vector<int> dad(num_dimensions);
-    std::copy_n(point, num_dimensions, dad.data());
+    std::vector<int> dad(point, point + num_dimensions);
     bool added = false;
     dad[direction] = rule->getParent(point[direction]);
     if ((dad[direction] != -1) && exclude.missing(dad)){
@@ -1268,8 +1255,7 @@ bool GridLocalPolynomial::addParent(const int point[], int direction, const Mult
     return added;
 }
 void GridLocalPolynomial::addChild(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const{
-    std::vector<int> kid(num_dimensions);
-    std::copy_n(point, num_dimensions, kid.data());
+    std::vector<int> kid(point, point + num_dimensions);
     int max_1d_kids = rule->getMaxNumKids();
     for(int i=0; i<max_1d_kids; i++){
         kid[direction] = rule->getKid(point[direction], i);
@@ -1279,8 +1265,7 @@ void GridLocalPolynomial::addChild(const int point[], int direction, const Multi
     }
 }
 void GridLocalPolynomial::addChildLimited(const int point[], int direction, const MultiIndexSet &exclude, const std::vector<int> &level_limits, Data2D<int> &destination) const{
-    std::vector<int> kid(num_dimensions);
-    std::copy_n(point, num_dimensions, kid.data());
+    std::vector<int> kid(point, point + num_dimensions);
     int max_1d_kids = rule->getMaxNumKids();
     for(int i=0; i<max_1d_kids; i++){
         kid[direction] = rule->getKid(point[direction], i);

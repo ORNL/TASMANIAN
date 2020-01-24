@@ -296,18 +296,16 @@ void GridWavelet::clearCudaCoefficients(){
 
 void GridWavelet::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();
+    std::fill_n(q, num_outputs, 0.0);
 
     if (conformal_correction == 0){
-        std::fill_n(q, num_outputs, 0.0);
         for(int i=0; i<num_points; i++){
             double basis_integrals = evalIntegral(points.getIndex(i));
             const double *coeff = coefficients.getStrip(i);
             for(int j=0; j<num_outputs; j++)
                 q[j] += basis_integrals * coeff[j];
         }
-
     }else{
-        std::fill(q, q + num_outputs, 0.0);
         std::vector<double> w(num_points);
         getQuadratureWeights(w.data());
         for(int i=0; i<num_points; i++){
@@ -419,18 +417,11 @@ void GridWavelet::solveTransposed(double w[]) const{
     // Solves the system A^T * w = y. Used to calculate interpolation and integration
     // weights. RHS values should be passed in through w. At exit, w will contain the
     // required weights.
-    int num_points = inter_matrix.getNumRows();
-
-    std::vector<double> y(num_points);
-
-    std::copy(w, w + num_points, y.data());
-
-    inter_matrix.solve(y.data(), w, true);
+    inter_matrix.solve(std::vector<double>(w, w + inter_matrix.getNumRows()).data(), w, true);
 }
 
 std::vector<double> GridWavelet::getNormalization() const{
-    std::vector<double> norm(num_outputs);
-    std::fill(norm.begin(), norm.end(), 0.0);
+    std::vector<double> norm(num_outputs, 0.0);
     for(int i=0; i<points.getNumIndexes(); i++){
         const double *v = values.getValues(i);
         for(int j=0; j<num_outputs; j++){
@@ -512,8 +503,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
 }
 
 bool GridWavelet::addParent(const int point[], int direction, Data2D<int> &destination) const{
-    std::vector<int> dad(num_dimensions);
-    std::copy_n(point, num_dimensions, dad.data());
+    std::vector<int> dad(point, point + num_dimensions);
     bool added = false;
     dad[direction] = rule1D.getParent(point[direction]);
     if (dad[direction] == -2){
@@ -584,7 +574,7 @@ void GridWavelet::readConstructionData(std::istream &is, bool iomode){
 }
 
 namespace WaveManipulations{
-inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet const &mset, RuleWavelet const &rule, std::function<void(int i)> apply){
+inline void touchAllImmediateRelatives(std::vector<int> &&point, MultiIndexSet const &mset, RuleWavelet const &rule, std::function<void(int i)> apply){
     for(auto &v : point){
         int save = v; // replace one by one each index of p with either parent or kid
 
@@ -732,10 +722,9 @@ std::vector<double> GridWavelet::getCandidateConstructionPoints(double tolerance
     #pragma omp parallel for
     for(int i=0; i<new_points.getNumIndexes(); i++){
         double weight = 0.0;
-        std::vector<int> p = new_points.copyIndex(i);
 
-        WaveManipulations::touchAllImmediateRelatives(p, points, rule1D,
-                                                           [&](int relative)->void{ weight = std::max(weight, getDominantSurplus(relative)); });
+        WaveManipulations::touchAllImmediateRelatives(new_points.copyIndex(i), points, rule1D,
+                                                      [&](int relative)->void{ weight = std::max(weight, getDominantSurplus(relative)); });
         refine_weights[i] = weight; // those will be inverted
     }
 
