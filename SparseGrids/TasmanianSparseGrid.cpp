@@ -926,7 +926,7 @@ void TasmanianSparseGrid::beginConstruction(){
 }
 std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
-    if (isLocalPolynomial()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
+    if (isLocalPolynomial() || isWavelet()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
     size_t dims = (size_t) base->getNumDimensions();
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
@@ -949,7 +949,7 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDept
 }
 std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
     if (!usingDynamicConstruction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
-    if (isLocalPolynomial()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
+    if (isLocalPolynomial() || isWavelet()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
     size_t dims = (size_t) base->getNumDimensions();
     if ((!level_limits.empty()) && (level_limits.size() != dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
     int outs = base->getNumOutputs();
