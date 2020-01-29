@@ -16,7 +16,7 @@ endif()
 if (DEFINED BUILD_SHARED_LIBS)
     message(STATUS " -D BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
 else()
-    message(STATUS " -D BUILD_SHARED_LIBS=Undefined")
+    message(STATUS " -D BUILD_SHARED_LIBS=Undefined (builds both shared and static)")
 endif()
 foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS
                          Tasmanian_ENABLE_MPI     Tasmanian_ENABLE_PYTHON
