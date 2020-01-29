@@ -38,6 +38,8 @@ unset(_tsglibtype)
 
 set(Tasmanian_post_install "${Tasmanian_post_install}             Tasmanian::Tasmanian  (alias to static/shared)\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}    see also:\n        ${Tasmanian_final_install_path}/share/Tasmanian/examples/CMakeLists.txt\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}\n")
 
 if (Tasmanian_ENABLE_PYTHON AND ("${Tasmanian_final_install_path}" STREQUAL "${CMAKE_INSTALL_PREFIX}"))
     set(Tasmanian_post_install "${Tasmanian_post_install}python module and the sym-link alternative:\n")
