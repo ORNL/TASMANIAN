@@ -896,7 +896,7 @@ MultiIndexSet GridGlobal::getPolynomialSpaceSet(bool interpolation) const{
 }
 
 std::vector<int> GridGlobal::getPolynomialSpace(bool interpolation) const{
-    return getPolynomialSpaceSet(interpolation).eject();
+    return getPolynomialSpaceSet(interpolation).release();
 }
 
 }

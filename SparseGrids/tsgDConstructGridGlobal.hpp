@@ -316,7 +316,7 @@ struct SimpleConstructData{
                 d++;
             }
         }
-        return result.eject();
+        return result.release();
     }
 };
 

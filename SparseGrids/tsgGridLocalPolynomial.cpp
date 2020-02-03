@@ -206,13 +206,13 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
 
     std::vector<Data2D<double>> lx = HierarchyManipulations::splitByLevels(allx, levels);
 
-    MultiIndexSet cumulative_poitns((size_t) num_dimensions, lpnts[0].eject());
+    MultiIndexSet cumulative_poitns((size_t) num_dimensions, lpnts[0].release());
 
-    StorageSet cumulative_surpluses = StorageSet(num_outputs, cumulative_poitns.getNumIndexes(), lvals[0].eject());
+    StorageSet cumulative_surpluses = StorageSet(num_outputs, cumulative_poitns.getNumIndexes(), lvals[0].release());
 
     for(size_t l = 1; l < lpnts.size(); l++){ // loop over the levels
         // note that level_points.getNumIndexes() == lx[l].getNumStrips() == lvals[l].getNumStrips()
-        MultiIndexSet level_points(num_dimensions, lpnts[l].eject());
+        MultiIndexSet level_points(num_dimensions, lpnts[l].release());
 
         GridLocalPolynomial upper_grid(num_dimensions, num_outputs, order, getRule(),
                                        std::vector<int>(cumulative_poitns.begin(), cumulative_poitns.end()), // copy cumulative_poitns
@@ -238,7 +238,7 @@ void GridLocalPolynomial::loadNeededPointsCuda(CudaEngine *engine, const double 
         cumulative_poitns += level_points;
     }
 
-    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), cumulative_surpluses.eject());
+    surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), cumulative_surpluses.release());
 }
 void GridLocalPolynomial::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
     loadCudaSurpluses<double>();

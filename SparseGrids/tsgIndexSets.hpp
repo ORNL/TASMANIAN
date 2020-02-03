@@ -159,7 +159,7 @@ public:
     }
 
     //! \brief Moves the data vector out of the class, this method invalidates the object.
-    inline typename std::vector<T> eject(){ return std::move(vec); }
+    inline typename std::vector<T> release(){ return std::move(vec); }
 
     //! \brief Returns a const iterator to the beginning of the internal data
     inline typename std::vector<T>::const_iterator begin() const{ return vec.cbegin(); }
@@ -269,7 +269,7 @@ public:
     inline size_t totalSize() const{ return indexes.size(); }
 
     //! \brief Moves the index vector out of the class, this method invalidates the object.
-    inline std::vector<int> eject(){ return std::move(indexes); }
+    inline std::vector<int> release(){ return std::move(indexes); }
 
     //! \brief Returns the slot containing index **p**, returns `-1` if not found
     int getSlot(const int *p) const;
@@ -377,7 +377,7 @@ public:
     inline std::vector<double>::const_iterator end() const{ return values.cend(); }
 
     //! \brief Moves the values vector out of the class, this method invalidates the object.
-    inline std::vector<double> eject(){ return std::move(values); }
+    inline std::vector<double> release(){ return std::move(values); }
 
     /*!
      * \brief Add more values to the set, the \b old_set and \b new_set are the associated multi-index sets required to maintain order.

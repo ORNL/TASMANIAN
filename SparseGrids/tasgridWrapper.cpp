@@ -546,7 +546,7 @@ bool TasgridWrapper::getEvaluate(){
 
     int num_points = x.getNumStrips();
     std::vector<double> result;
-    grid.evaluateBatch(x.eject(), result);
+    grid.evaluateBatch(x.release(), result);
 
     writeMatrix(outfilename, num_points, (int) num_out, result.data());
     printMatrix(num_points, (int) num_out, result.data());
@@ -683,7 +683,7 @@ bool TasgridWrapper::refineGrid(){
                     return false;
                 }
             }
-            grid.setSurplusRefinement(tolerance, tref, ref_output, llimits, scale.eject());
+            grid.setSurplusRefinement(tolerance, tref, ref_output, llimits, scale.release());
         }else if (grid.isSequence()){
             grid.setSurplusRefinement(tolerance, ref_output, llimits);
         }else{
@@ -742,7 +742,7 @@ bool TasgridWrapper::getEvalHierarchyDense(){
     }
     int num_p = grid.getNumPoints();
     int num_x = x.getNumStrips();
-    auto result = grid.evaluateHierarchicalFunctions(x.eject());
+    auto result = grid.evaluateHierarchicalFunctions(x.release());
 
     writeMatrix(outfilename, num_x, ((grid.isFourier()) ? 2 * num_p : num_p), result.data());
     printMatrix(num_x, (int) num_p, result.data(), grid.isFourier());
@@ -770,7 +770,7 @@ bool TasgridWrapper::getEvalHierarchySparse(){
     }
     std::vector<int> pntr , indx;
     std::vector<double> vals;
-    grid.evaluateSparseHierarchicalFunctions(x.eject(), pntr, indx, vals);
+    grid.evaluateSparseHierarchicalFunctions(x.release(), pntr, indx, vals);
     int num_p = grid.getNumPoints();
     if (!outfilename.empty()){
         if (useASCII){
@@ -806,7 +806,7 @@ bool TasgridWrapper::setHierarchy(){
         cerr << "ERROR: fourier grid is set for " << grid.getNumOutputs() << " outputs, but " << valsfilename << " specifies " << (vals.getStride() / 2) << endl;
         return false;
     }
-    grid.setHierarchicalCoefficients(vals.eject());
+    grid.setHierarchicalCoefficients(vals.release());
     return true;
 }
 

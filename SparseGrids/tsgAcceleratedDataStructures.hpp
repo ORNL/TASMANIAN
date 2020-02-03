@@ -84,11 +84,11 @@ namespace TasGrid{
  * \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector.
  *
  * \par Wraps Around a CUDA Array
- * The class can be instantiated with either \b int or \b double (other types are not currently available through the external API).
+ * The class can be instantiated with either \b int, \b float or \b double (other types are not currently available through the external API).
  * The class can either allocate (and deallocate with the descructor) a CUDA array of desired size,
  * and load/unload data to a CPU std::vector with the same type.
  *
- * Note that the class does not provide single entry access and it is not copiable or movable.
+ * Note that the class does not provide single entry access and it is not copyable, only movable in assignment and constructor.
  */
 template<typename T>
 class CudaVector{
@@ -97,6 +97,16 @@ public:
     CudaVector(CudaVector<T> const &) = delete;
     //! \brief Delete the copy-assignment.
     CudaVector<T>& operator =(CudaVector<T> const &) = delete;
+
+    //! \brief Allow for move-construction.
+    CudaVector(CudaVector<T> &&other) : num_entries(std::exchange(other.num_entries, 0)), gpu_data(std::exchange(other.gpu_data, nullptr)){}
+    //! \brief Allow for move-assignment.
+    CudaVector<T>& operator =(CudaVector<T> &&other){
+        CudaVector<T> temp(std::move(other));
+        std::swap(num_entries, other.num_entries);
+        std::swap(gpu_data, other.gpu_data);
+        return *this;
+    }
 
     //! \brief Default constructor, creates an empty (null) array.
     CudaVector() : num_entries(0), gpu_data(nullptr){}
@@ -228,6 +238,38 @@ public:
     //! \brief Destructor, clear all handles and queues.
     ~CudaEngine();
 
+    //! \brief Move construct the engine.
+    CudaEngine(CudaEngine &&other) :
+        gpu(std::exchange(other.gpu, 0)),
+        magma(std::exchange(other.magma, false)),
+        cublasHandle(std::exchange(other.cublasHandle, nullptr)),
+        own_cublas_handle(std::exchange(other.own_cublas_handle, false)),
+        cusparseHandle(std::exchange(other.cusparseHandle, nullptr)),
+        own_cusparse_handle(std::exchange(other.own_cusparse_handle, false))
+        #ifdef Tasmanian_ENABLE_MAGMA
+        , magmaCudaStream(std::exchange(other.magmaCudaStream, nullptr)),
+        magmaCudaQueue(std::exchange(other.magmaCudaQueue, nullptr)),
+        own_magma_queue(std::exchange(other.own_magma_queue, false))
+        #endif
+        {}
+
+    //! \brief Move assign the engine.
+    CudaEngine& operator= (CudaEngine &&other){
+        CudaEngine temp(std::move(other));
+        std::swap(gpu, temp.gpu);
+        std::swap(magma, temp.magma);
+        std::swap(cublasHandle, temp.cublasHandle);
+        std::swap(own_cublas_handle, temp.own_cublas_handle);
+        std::swap(cusparseHandle, temp.cusparseHandle);
+        std::swap(own_cusparse_handle, temp.own_cusparse_handle);
+        #ifdef Tasmanian_ENABLE_MAGMA
+        std::swap(magmaCudaStream, temp.magmaCudaStream);
+        std::swap(magmaCudaQueue, temp.magmaCudaQueue);
+        std::swap(own_magma_queue, temp.own_magma_queue);
+        #endif
+        return *this;
+    }
+
     //! \brief Encompassing dense matrix-matrix or matrix-vector multiplication.
 
     //! The raw operation is \f$ C = \alpha A B + \beta C \f$ where \b A is M by K, \b B is K by N, and \b C is M by N.
@@ -319,6 +361,11 @@ public:
     AccelerationDomainTransform(std::vector<double> const &transform_a, std::vector<double> const &transform_b);
     //! \brief Destructor, clear all loaded data.
     ~AccelerationDomainTransform() = default;
+
+    //! \brief The class is move constructable, due to the CudaVector.
+    AccelerationDomainTransform(AccelerationDomainTransform &&) = default;
+    //! \brief The class is move assignable, due to the CudaVector.
+    AccelerationDomainTransform& operator =(AccelerationDomainTransform &&) = default;
 
     //! \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
 
