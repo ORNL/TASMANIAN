@@ -329,6 +329,11 @@ public:
     //! \brief Destructor, clear all loaded data.
     ~AccelerationDomainTransform() = default;
 
+    //! \brief The class is move constructable, due to the CudaVector.
+    AccelerationDomainTransform(AccelerationDomainTransform &&) = default;
+    //! \brief The class is move assignable, due to the CudaVector.
+    AccelerationDomainTransform& operator =(AccelerationDomainTransform &&) = default;
+
     //! \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
 
     //! Takes the user provided \b gpu_transformed_x points of dimension matching the grid num_dimensions and total number \b num_x.

@@ -88,6 +88,8 @@ void static_assertions(){ // does nothing but a bunch of static asserts
     #ifdef Tasmanian_ENABLE_CUDA
     static_assert(std::is_move_constructible<CudaVector<double>>::value, "lost the cuda vector move constructor");
     static_assert(std::is_move_assignable<CudaVector<double>>::value, "lost the cuda vector move =");
+    static_assert(std::is_move_constructible<AccelerationDomainTransform>::value, "lost the cuda domain move constructor");
+    static_assert(std::is_move_assignable<AccelerationDomainTransform>::value, "lost the cuda domain move =");
     #endif
 }
 
