@@ -105,6 +105,7 @@ public:
         CudaVector<T> temp(std::move(other));
         std::swap(num_entries, other.num_entries);
         std::swap(gpu_data, other.gpu_data);
+        return *this;
     }
 
     //! \brief Default constructor, creates an empty (null) array.
@@ -236,6 +237,38 @@ public:
         {}
     //! \brief Destructor, clear all handles and queues.
     ~CudaEngine();
+
+    //! \brief Move construct the engine.
+    CudaEngine(CudaEngine &&other) :
+        gpu(std::exchange(other.gpu, 0)),
+        magma(std::exchange(other.magma, false)),
+        cublasHandle(std::exchange(other.cublasHandle, nullptr)),
+        own_cublas_handle(std::exchange(other.own_cublas_handle, false)),
+        cusparseHandle(std::exchange(other.cusparseHandle, nullptr)),
+        own_cusparse_handle(std::exchange(other.own_cusparse_handle, false))
+        #ifdef Tasmanian_ENABLE_MAGMA
+        , magmaCudaStream(std::exchange(other.magmaCudaStream, nullptr)),
+        magmaCudaQueue(std::exchange(other.magmaCudaQueue, nullptr)),
+        own_magma_queue(std::exchange(other.own_magma_queue, false))
+        #endif
+        {}
+
+    //! \brief Move assign the engine.
+    CudaEngine& operator= (CudaEngine &&other){
+        CudaEngine temp(std::move(other));
+        std::swap(gpu, temp.gpu);
+        std::swap(magma, temp.magma);
+        std::swap(cublasHandle, temp.cublasHandle);
+        std::swap(own_cublas_handle, temp.own_cublas_handle);
+        std::swap(cusparseHandle, temp.cusparseHandle);
+        std::swap(own_cusparse_handle, temp.own_cusparse_handle);
+        #ifdef Tasmanian_ENABLE_MAGMA
+        std::swap(magmaCudaStream, temp.magmaCudaStream);
+        std::swap(magmaCudaQueue, temp.magmaCudaQueue);
+        std::swap(own_magma_queue, temp.own_magma_queue);
+        #endif
+        return *this;
+    }
 
     //! \brief Encompassing dense matrix-matrix or matrix-vector multiplication.
 

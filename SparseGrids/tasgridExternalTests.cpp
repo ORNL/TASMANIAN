@@ -73,6 +73,13 @@ template<typename T> void assert_copy_move(){
     static_assert(std::is_move_assignable<T>::value, "lost the move =");
 }
 
+template<typename T> void assert_move_not_copy(){
+    static_assert(!std::is_copy_constructible<T>::value, "got a leaking copy constructor");
+    static_assert(std::is_move_constructible<T>::value, "lost the move constructor");
+    static_assert(!std::is_copy_assignable<T>::value, "got a leaking bad copy =");
+    static_assert(std::is_move_assignable<T>::value, "lost the move =");
+}
+
 void static_assertions(){ // does nothing but a bunch of static asserts
     assert_copy_move<TasmanianSparseGrid>();
     assert_copy_move<MultiIndexSet>();
@@ -86,10 +93,9 @@ void static_assertions(){ // does nothing but a bunch of static asserts
     assert_copy_move<SimpleConstructData>();
     assert_copy_move<DynamicConstructorDataGlobal>();
     #ifdef Tasmanian_ENABLE_CUDA
-    static_assert(std::is_move_constructible<CudaVector<double>>::value, "lost the cuda vector move constructor");
-    static_assert(std::is_move_assignable<CudaVector<double>>::value, "lost the cuda vector move =");
-    static_assert(std::is_move_constructible<AccelerationDomainTransform>::value, "lost the cuda domain move constructor");
-    static_assert(std::is_move_assignable<AccelerationDomainTransform>::value, "lost the cuda domain move =");
+    assert_move_not_copy<CudaVector<double>>();
+    assert_move_not_copy<AccelerationDomainTransform>();
+    assert_move_not_copy<CudaEngine>();
     #endif
 }
 
