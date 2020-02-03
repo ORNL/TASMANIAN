@@ -105,7 +105,7 @@ GridWavelet::GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Dat
     buildInterpolationMatrix();
 
     if (num_outputs > 0){
-        values = StorageSet(num_outputs, points.getNumIndexes(), vals.eject());
+        values = StorageSet(num_outputs, points.getNumIndexes(), vals.release());
         recomputeCoefficients();
     }
 }
@@ -482,7 +482,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 std::copy_n(points.getIndex(pnts[i]), num_dimensions, indexes.getStrip(i));
             }
 
-            GridWavelet direction_grid({(size_t) num_dimensions, indexes.eject()}, active_outputs, order, std::move(vals));
+            GridWavelet direction_grid({(size_t) num_dimensions, indexes.release()}, active_outputs, order, std::move(vals));
 
             for(int i=0; i<nump; i++){
                 bool small = true;
