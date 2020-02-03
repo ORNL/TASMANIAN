@@ -85,6 +85,10 @@ void static_assertions(){ // does nothing but a bunch of static asserts
     assert_copy_move<TasSparse::SparseMatrix>();
     assert_copy_move<SimpleConstructData>();
     assert_copy_move<DynamicConstructorDataGlobal>();
+    #ifdef Tasmanian_ENABLE_CUDA
+    static_assert(std::is_move_constructible<CudaVector<double>>::value, "lost the cuda vector move constructor");
+    static_assert(std::is_move_assignable<CudaVector<double>>::value, "lost the cuda vector move =");
+    #endif
 }
 
 ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1) {}
