@@ -65,6 +65,10 @@ unset(_comp)
 if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
     set(Tasmanian_components "${Tasmanian_components} MATLAB")
 endif()
+set(Tasmanian_langs "CXX")
+if (Tasmanian_ENABLE_FORTRAN)
+    set(Tasmanian_langs "${Tasmanian_langs} Fortran")
+endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.txt" "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt"
         DESTINATION "share/Tasmanian/examples/"

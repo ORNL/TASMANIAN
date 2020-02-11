@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 cmake_policy(VERSION 3.10)
-project(Tasmanian_Examples)
+project(Tasmanian_Examples VERSION @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasmanian_VERSION_PATCH@ LANGUAGES @Tasmanian_langs@)
 
 # the following find_package() command will help us locate an existing Tasmanian installation.
 find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasmanian_VERSION_PATCH@ PATHS "@Tasmanian_final_install_path@"
@@ -57,7 +57,6 @@ target_link_libraries(example_dream         Tasmanian::Tasmanian)
 
 # if Fortran was enabled on compile time
 if (Tasmanian_FORTRAN_FOUND)
-    enable_language(Fortran)
     add_executable(example_sparse_grids_f90  example_sparse_grids.f90)
     target_link_libraries(example_sparse_grids_f90  Tasmanian::Tasmanian)
     # also available is the Tasmanian::Fortran target
