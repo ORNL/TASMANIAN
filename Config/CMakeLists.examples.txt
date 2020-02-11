@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.10)
-cmake_policy(VERSION 3.10)
+cmake_minimum_required(VERSION @CMAKE_MAJOR_VERSION@.@CMAKE_MINOR_VERSION@)
+cmake_policy(VERSION @CMAKE_MAJOR_VERSION@.@CMAKE_MINOR_VERSION@)
 project(Tasmanian_Examples VERSION @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasmanian_VERSION_PATCH@ LANGUAGES @Tasmanian_langs@)
 
 # the following find_package() command will help us locate an existing Tasmanian installation.
@@ -16,16 +16,18 @@ find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasm
 #                    for example using -DCMAKE_PREFIX_PATH="@CMAKE_INSTALL_PREFIX@/lib/"
 #  Tasmanian_DIR or Tasmanian_ROOT environment variables (depending on the version of CMake)
 
-# Tasmanian::Tasmanian will be the name of the IMPORTED master target.
-# The master target includes all of the Tasmanian C++ and Fortran libraries.
+# Tasmanian::Tasmanian will be the name of the IMPORTED master C++ target.
 # Tasmanian::Tasmanian will point to the shared libraries if the static libraries are not available
 #                      or if the SHARED component is requested without the STATIC one.
 # Tasmanian::Tasmanian will point to the static libraries in all other cases.
+# Tasmanian::Fortran will follow the same logic as Tasmanian::Tasmanian but use Fortran instead
 
 # Additional targets:
 #  Tasmanian::shared will point to the shared libraries, if those are available
 #  Tasmanian::static will point to the static libraries, if those are available
 #  Tasmanian::tasgrid will point to the executable ./tasgrid@CMAKE_EXECUTABLE_SUFFIX_CXX@
+#  Tasmanian::Fortran::shared will point to the shared Fortran libraries
+#  Tasmanian::Fortran::static will point to the static Fortran libraries
 
 # Additional variables (if the corresponding options have been enabled):
 #  Tasmanian_PYTHONPATH is the path to the python scripts
@@ -55,14 +57,15 @@ add_executable(example_dream         example_dream_01.cpp
 target_link_libraries(example_sparse_grids  Tasmanian::Tasmanian)
 target_link_libraries(example_dream         Tasmanian::Tasmanian)
 
-# if Fortran was enabled on compile time
+# if the Fortran component was found
+# can also use "if (TARGET Tasmanian::Fortran)"
 if (Tasmanian_FORTRAN_FOUND)
     add_executable(example_sparse_grids_f90  example_sparse_grids.f90)
-    target_link_libraries(example_sparse_grids_f90  Tasmanian::Tasmanian)
-    # also available is the Tasmanian::Fortran target
-    # Tasmanian::Fortran is equivalent to Tasmanian::Tasmanian but has more expressive name
+    target_link_libraries(example_sparse_grids_f90  Tasmanian::Fortran)
+    # note that as of 7.1 Tasmanian::Fortran is not equivalent to Tasmanian::Tasmanian
     set_property(TARGET example_sparse_grids_f90 PROPERTY LINKER_LANGUAGE Fortran)
     # the LINKER_LANGUAGE property is required by some compilers, e.g., Intel ifort
 endif()
 
+# Tasmanian also includes the executable target Tasmanian::tasgrid
 add_custom_command(TARGET example_sparse_grids PRE_BUILD COMMAND Tasmanian::tasgrid -v)

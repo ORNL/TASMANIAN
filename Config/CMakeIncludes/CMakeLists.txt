@@ -24,20 +24,35 @@ endforeach()
 unset(TSGLTYPE)
 unset(_tsglibtype)
 
+if (Tasmanian_ENABLE_FORTRAN)
+    set(Tasmanian_post_install "${Tasmanian_post_install}Fortran module:\n")
+    set(Tasmanian_post_install "${Tasmanian_post_install}    tasmaniansg.mod\n")
+endif()
+
 set(Tasmanian_post_install "${Tasmanian_post_install}\nsee the examples:\n    ${Tasmanian_final_install_path}/share/Tasmanian/examples/\n\n")
 
 set(Tasmanian_post_install "${Tasmanian_post_install}bash environment setup:\n    source ${Tasmanian_final_install_path}/share/Tasmanian/TasmanianENVsetup.sh\n\n")
 
 set(Tasmanian_post_install "${Tasmanian_post_install}cmake package config:\n    find_package(Tasmanian ${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}.${Tasmanian_VERSION_PATCH} PATHS \\\"${Tasmanian_final_install_path}/lib/\\\")\n\n")
-set(Tasmanian_post_install "${Tasmanian_post_install}    targets: Tasmanian::tasgrid    (executable)\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}    CXX targets:\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}             Tasmanian::tasgrid    (executable)\n")
 
 foreach(_tsglibtype ${Tasmanian_libs_type})
     set(Tasmanian_post_install "${Tasmanian_post_install}             Tasmanian::${_tsglibtype}     (${_tsglibtype} libraries)\n")
 endforeach()
 unset(_tsglibtype)
+set(Tasmanian_post_install "${Tasmanian_post_install}             Tasmanian::Tasmanian  (alias to static/shared)\n\n")
 
-set(Tasmanian_post_install "${Tasmanian_post_install}             Tasmanian::Tasmanian  (alias to static/shared)\n")
-set(Tasmanian_post_install "${Tasmanian_post_install}\n")
+set(Tasmanian_post_install "${Tasmanian_post_install}    Fortran targets:\n")
+if (Tasmanian_ENABLE_FORTRAN)
+    foreach(_tsglibtype ${Tasmanian_libs_type})
+        set(Tasmanian_post_install "${Tasmanian_post_install}             Tasmanian::Fortran::${_tsglibtype}   (${_tsglibtype} libraries)\n")
+    endforeach()
+    unset(_tsglibtype)
+
+    set(Tasmanian_post_install "${Tasmanian_post_install}             Tasmanian::Fortran           (alias to static/shared)\n\n")
+endif()
+
 set(Tasmanian_post_install "${Tasmanian_post_install}    see also:\n        ${Tasmanian_final_install_path}/share/Tasmanian/examples/CMakeLists.txt\n")
 set(Tasmanian_post_install "${Tasmanian_post_install}\n")
 
