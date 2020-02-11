@@ -1,6 +1,8 @@
 Changelog for version 7.1
 --------------
 
+* split the Tasmanian::Tasmanian and Tasmanian::Fortran targets
+    * also added Tasmanian::Fortran::shared and Tasmanian::Fortran::static
 * added mixed-precision templates for
     * `evaluateBatchGPU()` and `evaluateHierarchicalFunctionsGPU()`
     * `evaluateBatch()` when the acceleration mode is cuda or magma
