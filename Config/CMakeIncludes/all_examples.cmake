@@ -31,5 +31,5 @@ if (Tasmanian_ENABLE_FORTRAN)
     set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES
                             OUTPUT_NAME "example_sparse_grids_f90"
                             LINKER_LANGUAGE Fortran)
-    target_link_libraries(Tasmanian_example_sparse_grids_f90 Tasmanian_master)
+    target_link_libraries(Tasmanian_example_sparse_grids_f90 Tasmanian_libfortran90_${Tasmanian_lib_default})
 endif()

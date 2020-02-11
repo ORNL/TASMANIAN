@@ -281,7 +281,12 @@ The imported targets will be named:
   Tasmanian::static     (link to all static libraries, if static libraries were build)
   Tasmanian::Tasmanian  (always available and equivalent to either static or shared)
   Tasmanian::tasgrid    (imported executable pointing to the command line tool)
+  Tasmanian::Fortran::shared   (shared libraries for Fortran)
+  Tasmanian::Fortran::static   (static libraries for Fortran)
+  Tasmanian::Fortran           (equivalent to Tasmanian::Tasmanian but using Fortran)
 ```
+Note that the `Tasmanian::Tasmanian` and `Tasmanian::Fortran` targets are no longer equivalent (as of 7.1).
+
 In addition, the following variables will be set:
 ```
   Tasmanian_PYTHONPATH         (path to the Python module, if Python was enabled)

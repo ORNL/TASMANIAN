@@ -20,7 +20,8 @@ foreach(_tsglibtype ${Tasmanian_libs_type})
         set_target_properties(Tasmanian::${_tsglibtype} PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_${_tsglibtype})
     endif()
     if (TARGET Tasmanian_libfortran90_${_tsglibtype})
-        target_link_libraries(Tasmanian_${_tsglibtype} INTERFACE Tasmanian_libfortran90_${_tsglibtype})
+        add_library(Tasmanian::Fortran::${_tsglibtype} INTERFACE IMPORTED GLOBAL)
+        target_link_libraries(Tasmanian::Fortran::${_tsglibtype} INTERFACE Tasmanian_libfortran90_${_tsglibtype})
     endif()
 endforeach()
 unset(_tsglibtype)
@@ -31,7 +32,7 @@ install(TARGETS Tasmanian_master EXPORT "${Tasmanian_export_name}")
 
 if (Tasmanian_ENABLE_FORTRAN)
     add_library(Tasmanian::Fortran INTERFACE IMPORTED GLOBAL)
-    set_target_properties(Tasmanian::Fortran PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian::Tasmania)
+    set_target_properties(Tasmanian::Fortran PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_libfortran90_${Tasmanian_lib_default})
 endif()
 
 # add executable that has the sole purpose of testing the master target
