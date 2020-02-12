@@ -91,7 +91,13 @@ set(Tasmanian_OPENMP_FOUND "@Tasmanian_ENABLE_OPENMP@")
 set(Tasmanian_BLAS_FOUND   "@Tasmanian_ENABLE_BLAS@")
 set(Tasmanian_MPI_FOUND    "@Tasmanian_ENABLE_MPI@")
 set(Tasmanian_CUDA_FOUND   "@Tasmanian_ENABLE_CUDA@")
+set(Tasmanian_HIP_FOUND    "@Tasmanian_ENABLE_HIP@")
 set(Tasmanian_MAGMA_FOUND  "@Tasmanian_ENABLE_MAGMA@")
+
+# component GPU uses either GPU backend (CUDA or HIP)
+if (Tasmanian_CUDA_FOUND OR Tasmanian_HIP_FOUND)
+    set(Tasmanian_GPU_FOUND "ON")
+endif()
 
 # write component info
 foreach(_tsg_comp ${Tasmanian_FIND_COMPONENTS})

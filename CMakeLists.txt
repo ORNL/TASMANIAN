@@ -17,6 +17,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""  (stable)
 #    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF     (mostly stable)
 #    -D Tasmanian_ENABLE_MPI:BOOL=OFF         (mostly stable)
+#    -D Tasmanian_ENABLE_HIP:BOOL=OFF         (placeholder only, do not use)
 #
 # Additional options: (if default test behavior is not desired)
 #    -D Tasmanian_TESTS_OMP_NUM_THREADS:INT="sets OpenMP number of threads"
@@ -83,6 +84,7 @@ option(Tasmanian_ENABLE_CUDA        "Enable Nvidia CUDA kernels and libraries wi
 option(Tasmanian_ENABLE_MAGMA       "Enable acceleration using UTK Magma library within Tasmanian (stable)" OFF)
 option(Tasmanian_ENABLE_FORTRAN     "Enable Fortran interface for Tasmanian (mostly stable)" OFF)
 option(Tasmanian_ENABLE_MPI         "Enable MPI support for Tasmanian (mostly stable)"       OFF)
+option(Tasmanian_ENABLE_HIP         "<placeholder only, do not use ... yet>"    OFF)
 option(Tasmanian_ENABLE_DOXYGEN     "Enable Dogygen documentation for Tasmanian (close to complete)" OFF)
 
 # treat those similar to options, but give values other than ON/OFF

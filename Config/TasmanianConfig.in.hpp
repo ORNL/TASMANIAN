@@ -42,6 +42,7 @@
 // cmake options propagated to the source code
 #cmakedefine Tasmanian_ENABLE_BLAS
 #cmakedefine Tasmanian_ENABLE_CUDA
+#cmakedefine Tasmanian_ENABLE_HIP
 #cmakedefine Tasmanian_ENABLE_MAGMA
 #cmakedefine Tasmanian_ENABLE_MPI
 
