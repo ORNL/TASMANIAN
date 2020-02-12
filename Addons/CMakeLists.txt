@@ -55,27 +55,7 @@ if (Tasmanian_ENABLE_MPI)
     # this creates a potential issue on a system with multiple MPI versions and communicating the version used on build
     # adding the flags and libraries directly works, but the flags are strings while the target options accept lists
     # hence converting strings to lists and appending one entry at a time
-    target_link_libraries(Tasmanian_addons INTERFACE ${MPI_CXX_LIBRARIES})
-
-    if (NOT "${MPI_CXX_INCLUDE_PATH}" STREQUAL "")
-        target_include_directories(Tasmanian_addons INTERFACE ${MPI_CXX_INCLUDE_PATH})
-    endif()
-
-    if (NOT "${MPI_CXX_COMPILE_FLAGS}" STREQUAL "")
-        string(REPLACE " " ";" _tsg_temp_list ${MPI_CXX_COMPILE_FLAGS})
-        foreach(_flag ${_tsg_temp_list})
-            target_compile_options(Tasmanian_addons INTERFACE ${_flag})
-        endforeach()
-    endif()
-
-    if (NOT "${MPI_CXX_LINK_FLAGS}" STREQUAL "")
-        string(REPLACE " " ";" _tsg_temp_list ${MPI_CXX_LINK_FLAGS})
-        foreach(_flag ${_tsg_temp_list})
-            set_target_properties(Tasmanian_addons PROPERTIES INTERFACE_LINK_OPTIONS ${_flag})
-        endforeach()
-    endif()
-    unset(_tsg_temp_list)
-    unset(_flag)
+    target_link_libraries(Tasmanian_addons INTERFACE MPI::MPI_CXX)
 
     add_executable(Tasmanian_mpitester testMPI.cpp testMPI.hpp testMPIDream.hpp)
     set_target_properties(Tasmanian_mpitester PROPERTIES OUTPUT_NAME "mpitester" CXX_EXTENSIONS OFF)

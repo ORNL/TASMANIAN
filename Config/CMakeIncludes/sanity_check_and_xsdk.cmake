@@ -155,9 +155,7 @@ endif()
 
 # check for MPI
 if (Tasmanian_ENABLE_MPI)
-    if (NOT DEFINED MPI_CXX_LIBRARIES) # user defined MPI libraries is XSDK requirement
-        find_package(MPI REQUIRED)
-    endif()
+    find_package(MPI REQUIRED)
 endif()
 
 # check if building with Python scikit-build, i.e., pip install

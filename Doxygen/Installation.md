@@ -118,6 +118,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
 ```
   -D PYTHON_EXECUTABLE:PATH         (specify the Python interpreter)
   -D CMAKE_CUDA_COMPILER:PATH       (specify the CUDA nvcc compiler)
+  -D MPI_CXX_COMPILER:PATH=<path>   (specify the MPI compiler wrapper)
   -D CMAKE_Fortran_COMPILER:PATH    (specify the Fortran compiler)
   -D Tasmanian_MAGMA_ROOT_DIR:PATH  (specify the path to the MAGMA installation)
 ```
@@ -127,10 +128,6 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D BLAS_LIBRARIES
   -D Tasmanian_MAGMA_LIBRARIES
   -D Tasmanian_MAGMA_INCLUDE_DIRS
-  -D MPI_CXX_LIBRARIES
-  -D MPI_CXX_INCLUDE_PATH
-  -D MPI_COMPILE_FLAGS
-  -D MPI_LINK_FLAGS
 ```
 
 * Extra options are available in case CMake fails to find a required dependency, e.g., `find_package()` sometimes fails to acknowledge that the ACML implementation of BLAS depends on both `libgfortran` and `libgomp`; the manual options below should not be necessary in the majority of cases:

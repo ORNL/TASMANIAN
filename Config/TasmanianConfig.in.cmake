@@ -7,6 +7,11 @@ cmake_minimum_required(VERSION 3.10)
 # but this doesn't seem to work, not sure if this is a "relocatable package" (low concern)
 include("@Tasmanian_final_install_path@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
 
+if ("@Tasmanian_ENABLE_MPI@" AND NOT TARGET MPI::MPI_CXX)
+    set(MPI_CXX_COMPILER "@MPI_CXX_COMPILER@")
+    find_package(MPI REQUIRED)
+endif()
+
 add_executable(Tasmanian::tasgrid IMPORTED)
 set_property(TARGET Tasmanian::tasgrid PROPERTY IMPORTED_LOCATION "@Tasmanian_final_install_path@/bin/tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}")
 
