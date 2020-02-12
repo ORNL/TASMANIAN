@@ -501,6 +501,17 @@ enum TypeAcceleration{
     accel_gpu_magma
 };
 
+/*!
+ * \ingroup SGEnumerates
+ * \brief At the front API, the HIP and CUDA options are equivalent, see TasGrid::TypeAcceleration.
+ */
+constexpr TypeAcceleration accel_gpu_hip = accel_gpu_cuda;
+/*!
+ * \ingroup SGEnumerates
+ * \brief At the front API, the HIP and CUDA options are equivalent, see TasGrid::TypeAcceleration.
+ */
+constexpr TypeAcceleration accel_gpu_rocblas = accel_gpu_cublas;
+
 }
 
 #endif

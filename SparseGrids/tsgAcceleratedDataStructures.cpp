@@ -352,6 +352,8 @@ std::map<std::string, TypeAcceleration> AccelerationMeta::getStringToAcceleratio
         {"gpu-default", accel_gpu_default},
         {"gpu-cublas",  accel_gpu_cublas},
         {"gpu-cuda",    accel_gpu_cuda},
+        {"gpu-rocblas", accel_gpu_rocblas},
+        {"gpu-hip",     accel_gpu_hip},
         {"gpu-magma",   accel_gpu_magma}};
 }
 
