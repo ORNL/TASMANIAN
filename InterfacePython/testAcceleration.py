@@ -48,6 +48,16 @@ class TestTasClass(unittest.TestCase):
                 bTest = ((accel not in sA) or (sA not in accel))
                 self.assertFalse(bTest, "set/get Acceleration")
 
+            lsAvailableAcc = []
+            if (tdata.bHasCuBlas): lsAvailableAcc.append(("gpu-rocblas", "gpu-cublas"))
+            if (tdata.bHasCuda): lsAvailableAcc.append(("gpu-hip", "gpu-cuda"))
+            for accel in lsAvailableAcc:
+                grid.enableAcceleration(accel[0])
+                sA = grid.getAccelerationType()
+                bTest = ((accel[1] not in sA) or (sA not in accel[1]))
+                self.assertFalse(bTest, "set/get Acceleration with HIP - CUDA aliases")
+
+
     def checkMultiGPU(self):
         '''
         Check setting and resetting the GPU ID and reading the device names.

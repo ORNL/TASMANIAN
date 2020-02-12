@@ -50,6 +50,7 @@
 
 /* #undef Tasmanian_ENABLE_BLAS */
 /* #undef Tasmanian_ENABLE_CUDA */
+/* #undef Tasmanian_ENABLE_HIP */
 /* #undef Tasmanian_ENABLE_MAGMA */
 /* #undef Tasmanian_ENABLE_MPI */
 

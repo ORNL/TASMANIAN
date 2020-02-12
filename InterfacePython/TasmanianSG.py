@@ -48,7 +48,7 @@ lsTsgCurvedTypes = ["curved", "ipcurved", "qpcurved"]
 lsTsgRefineTypes = ["classic", "parents", "direction", "fds", "stable"]
 lsTsgSequenceRules = ["leja", "rleja", "rleja-shifted", "max-lebesgue", "min-lebesgue", "min-delta"]
 lsTsgLocalRules = ["localp", "semi-localp", "localp-zero", "localp-boundary"]
-lsTsgAccelTypes = ["none", "cpu-blas", "gpu-default", "gpu-cublas", "gpu-cuda", "gpu-magma"]
+lsTsgAccelTypes = ["none", "cpu-blas", "gpu-default", "gpu-cublas", "gpu-cuda", "gpu-rocblas", "gpu-hip", "gpu-magma"]
 
 class TasmanianSimpleSparseMatrix:
     def __init__(self):

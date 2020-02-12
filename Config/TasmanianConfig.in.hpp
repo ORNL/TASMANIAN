@@ -42,8 +42,13 @@
 // cmake options propagated to the source code
 #cmakedefine Tasmanian_ENABLE_BLAS
 #cmakedefine Tasmanian_ENABLE_CUDA
+#cmakedefine Tasmanian_ENABLE_HIP
 #cmakedefine Tasmanian_ENABLE_MAGMA
 #cmakedefine Tasmanian_ENABLE_MPI
+
+#if defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_HIP)
+#define Tasmanian_ENABLE_GPU // One GPU definition
+#endif
 
 // used mostly to suppress default cerr messages
 #cmakedefine USE_XSDK_DEFAULTS
