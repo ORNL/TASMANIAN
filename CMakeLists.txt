@@ -42,6 +42,8 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #     -D CMAKE_CUDA_COMPILER:PATH
 #     -D Tasmanian_MAGMA_ROOT_DIR:PATH (or just MAGMA_ROOT_DIR)
 #     -D MPI_CXX_COMPILER
+#     -D MPI_Fortran_COMPILER (must be compatible with the MPI_CXX_COMPILER)
+#     -D MPIEXEC_EXECUTABLE   (must be compatible with the MPI_CXX_COMPILER)
 #
 # Directly specifying libraries and bypassing find_package()
 #     -D BLAS_LIBRARIES
