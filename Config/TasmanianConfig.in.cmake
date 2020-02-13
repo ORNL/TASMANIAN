@@ -8,7 +8,12 @@ cmake_minimum_required(VERSION 3.10)
 include("@Tasmanian_final_install_path@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
 
 if ("@Tasmanian_ENABLE_MPI@" AND NOT TARGET MPI::MPI_CXX)
-    set(MPI_CXX_COMPILER "@MPI_CXX_COMPILER@")
+    if (NOT MPI_CXX_COMPILER)
+        set(MPI_CXX_COMPILER "@MPI_CXX_COMPILER@")
+    endif()
+    if ("@Tasmanian_ENABLE_FORTRAN@" AND NOT MPI_Fortran_COMPILER)
+        set(MPI_Fortran_COMPILER "@MPI_Fortran_COMPILER@")
+    endif()
     find_package(MPI REQUIRED)
 endif()
 
