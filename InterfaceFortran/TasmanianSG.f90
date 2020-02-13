@@ -791,7 +791,7 @@ subroutine tsgMPIGridSend(grid, destination, tag, comm, ierr)
 end subroutine tsgMPIGridSend
 subroutine tsgMPIGridRecv(grid, source, tag, comm, stats, ierr)
   type(TasmanianSparseGrid) :: grid
-  integer :: source, tag, comm, stats(6), ierr
+  integer :: source, tag, comm, stats(:), ierr
   call tsgmpigrecv(grid, source, tag, comm, ierr)
 end subroutine tsgMPIGridRecv
 subroutine tsgMPIGridBcast(grid, root, comm, ierr)

@@ -60,7 +60,7 @@ if (Tasmanian_ENABLE_MPI)
     add_executable(Tasmanian_mpitester testMPI.cpp testMPI.hpp testMPIDream.hpp)
     set_target_properties(Tasmanian_mpitester PROPERTIES OUTPUT_NAME "mpitester" CXX_EXTENSIONS OFF)
     target_link_libraries(Tasmanian_mpitester Tasmanian_addons Tasmanian_libdream)
-    add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} mpitester ${MPIEXEC_POSTFLAGS})
+    add_test(MPISparseGridsIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/mpitester ${MPIEXEC_POSTFLAGS})
     set_tests_properties(MPISparseGridsIO PROPERTIES RUN_SERIAL ON)
     set(Tasmanian_addon_mpi_test MPISparseGridsIO)
     # cheap models have huge random variation in time-per-sample which can cause tests to fail

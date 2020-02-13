@@ -61,7 +61,7 @@ if (Tasmanian_ENABLE_MPI)
     add_executable(Tasmanian_mpif90    mpitester.f90)
     set_target_properties(Tasmanian_mpif90     PROPERTIES OUTPUT_NAME "mpitester" LINKER_LANGUAGE Fortran)
     target_link_libraries(Tasmanian_mpif90     Tasmanian_libfortran90_${Tasmanian_lib_default})
-    add_test(MPIFortranGridIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} mpitester ${MPIEXEC_POSTFLAGS})
+    add_test(MPIFortranGridIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/mpitester ${MPIEXEC_POSTFLAGS})
     set_tests_properties(MPIFortranGridIO PROPERTIES RUN_SERIAL ON)
 endif()
 
