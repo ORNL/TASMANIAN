@@ -16,7 +16,7 @@ if (Tasmanian_ENABLE_CUDA)
     # Beware that the nvcc compiler seems to struggle with some STL algorithms, transitive inclusion of <cuda.h> must be minimized.
     set_source_files_properties(${Tasmanian_source_lisparsegrid_cuda} tsgAcceleratedDataStructures.cpp PROPERTIES LANGUAGE CUDA)
     add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
-    set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CUDA_STANDARD 11)
+    set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CUDA_STANDARD 14)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_cudamathlibs}) # add the math libraries
 else()
     add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid})
@@ -38,13 +38,13 @@ target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERF
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Config/>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
+target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_14)
 set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
                                                                  INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
+                                                                 INTERFACE_COMPILE_FEATURES cxx_std_14
                                                                  CXX_EXTENSIONS OFF
                                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                                  VERSION   ${Tasmanian_version_string})
-
-target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_14)
 
 # as MAGMA potentially depends on OpenMP, BLAS, and CuBLAS, it should be set first
 if (Tasmanian_ENABLE_MAGMA)
@@ -157,24 +157,12 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   tasgridUnitTests.hpp
                                   tasgridUnitTests.cpp
                                   tasgridTestInterfaceC.cpp)
-add_executable(Tasmanian_gridbenchmarks  Benchmarks/benchCommon.hpp
+add_executable(Tasmanian_benchmarksgrid  Benchmarks/benchCommon.hpp
                                          tasgridCLICommon.hpp
                                          Benchmarks/benchMakeGrid.hpp
                                          Benchmarks/benchLoadNeeded.hpp
                                          Benchmarks/benchEvaluate.hpp
                                          Benchmarks/bench_main.cpp)
-
-set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid"
-                                                   INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
-                                                   CXX_EXTENSIONS OFF)
-set_target_properties(Tasmanian_gridtest PROPERTIES OUTPUT_NAME "gridtest" CXX_EXTENSIONS OFF)
-set_target_properties(Tasmanian_gridbenchmarks PROPERTIES OUTPUT_NAME "benchmark" CXX_EXTENSIONS OFF)
-
-if (Tasmanian_ENABLE_OPENMP)
-    # the OpenMP libraries are carried transitively from sparse grids library
-    target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
-    target_compile_options(Tasmanian_gridtest PRIVATE ${OpenMP_CXX_FLAGS})
-endif()
 
 
 ########################################################################
@@ -189,14 +177,16 @@ unset(Tasmanian_ltype)
 
 add_library(Tasmanian_libsparsegrid ALIAS Tasmanian_libsparsegrid_${Tasmanian_lib_default})
 
-foreach(_tsgtarget tasgrid gridtest gridbenchmarks)
-    target_link_libraries(Tasmanian_${_tsgtarget} Tasmanian_libsparsegrid)
+foreach(_tsgtarget tasgrid gridtest benchmarksgrid)
+    target_link_libraries(Tasmanian_${_tsgtarget} Tasmanian_libsparsegrid_${Tasmanian_lib_default})
+    set_target_properties(Tasmanian_${_tsgtarget} PROPERTIES OUTPUT_NAME "${_tsgtarget}" CXX_EXTENSIONS OFF)
     if (Tasmanian_ENABLE_OPENMP)
         # the OpenMP libraries are carried transitively from sparse grids library
         target_compile_options(Tasmanian_${_tsgtarget} PRIVATE ${OpenMP_CXX_FLAGS})
     endif()
 endforeach()
 unset(_tsgtarget)
+set_target_properties(Tasmanian_tasgrid PROPERTIES INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
 
 # data file, needed for testing and reference about custom rule definitions
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
