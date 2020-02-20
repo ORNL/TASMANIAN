@@ -61,5 +61,6 @@
  * Wrapped files
  * ------------------------------------------------------------------------- */
 
+%include "tsgEnumerates.i"
 %include "TasmanianSparseGrid.i"
 

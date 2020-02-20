@@ -589,6 +589,9 @@ SWIGINTERN double &std_vector_Sl_double_Sg__get_ref(std::vector< double > *self,
       return (*self)[index];
     }
 
+#include "tsgEnumerates.hpp"
+
+
 #include "TasmanianSparseGrid.hpp"
 
 extern "C" {
@@ -1431,61 +1434,57 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_read__SWIG_2(SwigClassWrapper *farg1, 
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10, SwigClassWrapper *farg11) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10, SwigClassWrapper *farg11) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   std::vector< int > *arg7 = 0 ;
   double arg8 ;
   double arg9 ;
   char *arg10 = (char *) 0 ;
   std::vector< int > *arg11 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
   arg7 = (std::vector< int > *)farg7->cptr;
   arg8 = (double)(*farg8);
   arg9 = (double)(*farg9);
   arg10 = (char *)(farg10->data);
-  SWIG_check_nonnull(farg11->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg11->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
   arg11 = (std::vector< int > *)farg11->cptr;
   (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7,arg8,arg9,(char const *)arg10,(std::vector< int > const &)*arg11);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   std::vector< int > *arg7 = 0 ;
   double arg8 ;
   double arg9 ;
   char *arg10 = (char *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *)", return );
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *)", return );
   arg7 = (std::vector< int > *)farg7->cptr;
   arg8 = (double)(*farg8);
   arg9 = (double)(*farg9);
@@ -1494,27 +1493,25 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_1(SwigClassWrappe
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7, double const *farg8, double const *farg9) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, double const *farg8, double const *farg9) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   std::vector< int > *arg7 = 0 ;
   double arg8 ;
   double arg9 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double)", return );
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double)", return );
   arg7 = (std::vector< int > *)farg7->cptr;
   arg8 = (double)(*farg8);
   arg9 = (double)(*farg9);
@@ -1522,78 +1519,72 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_2(SwigClassWrappe
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7, double const *farg8) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, double const *farg8) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   std::vector< int > *arg7 = 0 ;
   double arg8 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double)", return );
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double)", return );
   arg7 = (std::vector< int > *)farg7->cptr;
   arg8 = (double)(*farg8);
   (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7,arg8);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   std::vector< int > *arg7 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return );
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
   arg7 = (std::vector< int > *)farg7->cptr;
   (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_5(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, int *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10, int *farg11) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_5(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, int *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10, int *farg11) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   int *arg7 = (int *) 0 ;
   double arg8 ;
   double arg9 ;
   char *arg10 = (char *) 0 ;
   int *arg11 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double,double,char const *,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,int const *,double,double,char const *,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double,double,char const *,int const *)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double,double,char const *,int const *)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   arg7 = (int *)(farg7);
   arg8 = (double)(*farg8);
   arg9 = (double)(*farg9);
@@ -1603,27 +1594,25 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_5(SwigClassWrappe
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_6(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, int *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_6(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, int *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   int *arg7 = (int *) 0 ;
   double arg8 ;
   double arg9 ;
   char *arg10 = (char *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double,double,char const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,int const *,double,double,char const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double,double,char const *)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double,double,char const *)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   arg7 = (int *)(farg7);
   arg8 = (double)(*farg8);
   arg9 = (double)(*farg9);
@@ -1632,26 +1621,24 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_6(SwigClassWrappe
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_7(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, int *farg7, double const *farg8, double const *farg9) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_7(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, int *farg7, double const *farg8, double const *farg9) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   int *arg7 = (int *) 0 ;
   double arg8 ;
   double arg9 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double,double)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,int const *,double,double)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double,double)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double,double)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   arg7 = (int *)(farg7);
   arg8 = (double)(*farg8);
   arg9 = (double)(*farg9);
@@ -1659,256 +1646,237 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_7(SwigClassWrappe
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_8(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, int *farg7, double const *farg8) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_8(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, int *farg7, double const *farg8) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   int *arg7 = (int *) 0 ;
   double arg8 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,int const *,double)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,double)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   arg7 = (int *)(farg7);
   arg8 = (double)(*farg8);
   (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(int const *)arg7,arg8);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_9(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, int *farg7) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_9(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, int *farg7) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   int *arg7 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,int const *)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   arg7 = (int *)(farg7);
   (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(int const *)arg7);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_10(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_10(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7, SwigClassWrapper *farg8) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, SwigClassWrapper *farg8) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   std::vector< int > *arg7 = 0 ;
   std::vector< int > *arg8 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
   arg7 = (std::vector< int > *)farg7->cptr;
-  SWIG_check_nonnull(farg8->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg8->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
   arg8 = (std::vector< int > *)farg8->cptr;
   (arg1)->makeSequenceGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7,(std::vector< int > const &)*arg8);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   std::vector< int > *arg7 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return );
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
   arg7 = (std::vector< int > *)farg7->cptr;
   (arg1)->makeSequenceGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, int *farg7, int *farg8) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, int *farg7, int *farg8) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   int *arg7 = (int *) 0 ;
   int *arg8 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,int const *,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,int const *)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,int const *,int const *)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   arg7 = (int *)(farg7);
   arg8 = (int *)(farg8);
   (arg1)->makeSequenceGrid(arg2,arg3,arg4,arg5,arg6,(int const *)arg7,(int const *)arg8);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, int *farg7) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, int *farg7) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   int *arg7 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,int const *)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,int const *)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   arg7 = (int *)(farg7);
   (arg1)->makeSequenceGrid(arg2,arg3,arg4,arg5,arg6,(int const *)arg7);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeDepth arg5 ;
+  TasGrid::TypeOneDRule arg6 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   (arg1)->makeSequenceGrid(arg2,arg3,arg4,arg5,arg6);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
   int arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeOneDRule arg6 ;
   std::vector< int > *arg7 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
   arg5 = (int)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule,std::vector< int > const &)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule,std::vector< int > const &)", return );
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
   arg7 = (std::vector< int > *)farg7->cptr;
   (arg1)->makeLocalPolynomialGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, int *farg7) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, int *farg7) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
   int arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeOneDRule arg6 ;
   int *arg7 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TasGrid::TypeOneDRule,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
   arg5 = (int)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule,int const *)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   arg7 = (int *)(farg7);
   (arg1)->makeLocalPolynomialGrid(arg2,arg3,arg4,arg5,arg6,(int const *)arg7);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
   int arg5 ;
-  TypeOneDRule arg6 ;
+  TasGrid::TypeOneDRule arg6 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TasGrid::TypeOneDRule)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
   arg5 = (int)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule)", return );
-  arg6 = *((TypeOneDRule *)(farg6->cptr));
+  arg6 = (TasGrid::TypeOneDRule)(*farg6);
   (arg1)->makeLocalPolynomialGrid(arg2,arg3,arg4,arg5,arg6);
 }
 
@@ -2016,107 +1984,102 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeWaveletGrid__SWIG_3(SwigClassWrapp
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
+  TasGrid::TypeDepth arg5 ;
   std::vector< int > *arg6 = 0 ;
   std::vector< int > *arg7 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg6 = (std::vector< int > *)farg6->cptr;
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg7 = (std::vector< int > *)farg7->cptr;
   (arg1)->makeFourierGrid(arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,(std::vector< int > const &)*arg7);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
+  TasGrid::TypeDepth arg5 ;
   std::vector< int > *arg6 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &)", return );
+  arg5 = (TasGrid::TypeDepth)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &)", return );
   arg6 = (std::vector< int > *)farg6->cptr;
   (arg1)->makeFourierGrid(arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, int *farg6, int *farg7) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int *farg6, int *farg7) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
+  TasGrid::TypeDepth arg5 ;
   int *arg6 = (int *) 0 ;
   int *arg7 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,int const *,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,int const *,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,int const *,int const *)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
   arg6 = (int *)(farg6);
   arg7 = (int *)(farg7);
   (arg1)->makeFourierGrid(arg2,arg3,arg4,arg5,(int const *)arg6,(int const *)arg7);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, int *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
+  TasGrid::TypeDepth arg5 ;
   int *arg6 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth,int const *)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
   arg6 = (int *)(farg6);
   (arg1)->makeFourierGrid(arg2,arg3,arg4,arg5,(int const *)arg6);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeDepth arg5 ;
+  TasGrid::TypeDepth arg5 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TypeDepth)", return );
-  arg5 = *((TypeDepth *)(farg5->cptr));
+  arg5 = (TasGrid::TypeDepth)(*farg5);
   (arg1)->makeFourierGrid(arg2,arg3,arg4,arg5);
 }
 
@@ -2160,257 +2123,242 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_copyGrid__SWIG_2(SwigClassWrapper *far
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   std::vector< int > *arg4 = 0 ;
   std::vector< int > *arg5 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  arg3 = (TasGrid::TypeDepth)(*farg3);
+  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg4 = (std::vector< int > *)farg4->cptr;
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg5 = (std::vector< int > *)farg5->cptr;
   (arg1)->updateGlobalGrid(arg2,arg3,(std::vector< int > const &)*arg4,(std::vector< int > const &)*arg5);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   std::vector< int > *arg4 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,std::vector< int > const &)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,std::vector< int > const &)", return );
+  arg3 = (TasGrid::TypeDepth)(*farg3);
+  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
   arg4 = (std::vector< int > *)farg4->cptr;
   (arg1)->updateGlobalGrid(arg2,arg3,(std::vector< int > const &)*arg4);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, int *farg4, int *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int *farg4, int *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   int *arg4 = (int *) 0 ;
   int *arg5 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,int const *,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,int const *,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,int const *,int const *)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
+  arg3 = (TasGrid::TypeDepth)(*farg3);
   arg4 = (int *)(farg4);
   arg5 = (int *)(farg5);
   (arg1)->updateGlobalGrid(arg2,arg3,(int const *)arg4,(int const *)arg5);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, int *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   int *arg4 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth,int const *)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
+  arg3 = (TasGrid::TypeDepth)(*farg3);
   arg4 = (int *)(farg4);
   (arg1)->updateGlobalGrid(arg2,arg3,(int const *)arg4);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TypeDepth)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
+  arg3 = (TasGrid::TypeDepth)(*farg3);
   (arg1)->updateGlobalGrid(arg2,arg3);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   std::vector< int > *arg4 = 0 ;
   std::vector< int > *arg5 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  arg3 = (TasGrid::TypeDepth)(*farg3);
+  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg4 = (std::vector< int > *)farg4->cptr;
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg5 = (std::vector< int > *)farg5->cptr;
   (arg1)->updateSequenceGrid(arg2,arg3,(std::vector< int > const &)*arg4,(std::vector< int > const &)*arg5);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   std::vector< int > *arg4 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,std::vector< int > const &)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,std::vector< int > const &)", return );
+  arg3 = (TasGrid::TypeDepth)(*farg3);
+  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
   arg4 = (std::vector< int > *)farg4->cptr;
   (arg1)->updateSequenceGrid(arg2,arg3,(std::vector< int > const &)*arg4);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, int *farg4, int *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int *farg4, int *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   int *arg4 = (int *) 0 ;
   int *arg5 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,int const *,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,int const *,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,int const *,int const *)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
+  arg3 = (TasGrid::TypeDepth)(*farg3);
   arg4 = (int *)(farg4);
   arg5 = (int *)(farg5);
   (arg1)->updateSequenceGrid(arg2,arg3,(int const *)arg4,(int const *)arg5);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, int *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   int *arg4 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth,int const *)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
+  arg3 = (TasGrid::TypeDepth)(*farg3);
   arg4 = (int *)(farg4);
   (arg1)->updateSequenceGrid(arg2,arg3,(int const *)arg4);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TypeDepth)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
+  arg3 = (TasGrid::TypeDepth)(*farg3);
   (arg1)->updateSequenceGrid(arg2,arg3);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   std::vector< int > *arg4 = 0 ;
   std::vector< int > *arg5 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  arg3 = (TasGrid::TypeDepth)(*farg3);
+  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg4 = (std::vector< int > *)farg4->cptr;
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
   arg5 = (std::vector< int > *)farg5->cptr;
   (arg1)->updateFourierGrid(arg2,arg3,(std::vector< int > const &)*arg4,(std::vector< int > const &)*arg5);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   std::vector< int > *arg4 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,std::vector< int > const &)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,std::vector< int > const &)", return );
+  arg3 = (TasGrid::TypeDepth)(*farg3);
+  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
   arg4 = (std::vector< int > *)farg4->cptr;
   (arg1)->updateFourierGrid(arg2,arg3,(std::vector< int > const &)*arg4);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, int *farg4, int *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int *farg4, int *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   int *arg4 = (int *) 0 ;
   int *arg5 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,int const *,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,int const *,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,int const *,int const *)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
+  arg3 = (TasGrid::TypeDepth)(*farg3);
   arg4 = (int *)(farg4);
   arg5 = (int *)(farg5);
   (arg1)->updateFourierGrid(arg2,arg3,(int const *)arg4,(int const *)arg5);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, int *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   int *arg4 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth,int const *)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
+  arg3 = (TasGrid::TypeDepth)(*farg3);
   arg4 = (int *)(farg4);
   (arg1)->updateFourierGrid(arg2,arg3,(int const *)arg4);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
-  TypeDepth arg3 ;
+  TasGrid::TypeDepth arg3 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (int)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TypeDepth)", return );
-  arg3 = *((TypeDepth *)(farg3->cptr));
+  arg3 = (TasGrid::TypeDepth)(*farg3);
   (arg1)->updateFourierGrid(arg2,arg3);
 }
 
@@ -2480,16 +2428,15 @@ SWIGEXPORT int _wrap_TasmanianSparseGrid_getNumOutputs(SwigClassWrapper *farg1) 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getRule(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
+SWIGEXPORT int _wrap_TasmanianSparseGrid_getRule(SwigClassWrapper *farg1) {
+  int fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeOneDRule result;
+  TasGrid::TypeOneDRule result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getRule() const", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getRule() const", return 0);
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getRule();
-  fresult.cptr = new (TypeOneDRule)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
+  result = (TasGrid::TypeOneDRule)((TasGrid::TasmanianSparseGrid const *)arg1)->getRule();
+  fresult = (int)(result);
   return fresult;
 }
 
@@ -2994,36 +2941,34 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getLevelLimits(SwigClassWr
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeDepth arg2 ;
+  TasGrid::TypeDepth arg2 ;
   int arg3 ;
   int arg4 ;
   std::vector< int > *arg5 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth,int,int,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TasGrid::TypeDepth,int,int,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth,int,int,std::vector< int > const &)", return );
-  arg2 = *((TypeDepth *)(farg2->cptr));
+  arg2 = (TasGrid::TypeDepth)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth,int,int,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TasGrid::TypeDepth,int,int,std::vector< int > const &)", return );
   arg5 = (std::vector< int > *)farg5->cptr;
   (arg1)->setAnisotropicRefinement(arg2,arg3,arg4,(std::vector< int > const &)*arg5);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_1(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3, int const *farg4, int *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeDepth arg2 ;
+  TasGrid::TypeDepth arg2 ;
   int arg3 ;
   int arg4 ;
   int *arg5 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth,int,int,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TasGrid::TypeDepth,int,int,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth,int,int,int const *)", return );
-  arg2 = *((TypeDepth *)(farg2->cptr));
+  arg2 = (TasGrid::TypeDepth)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
   arg5 = (int *)(farg5);
@@ -3031,33 +2976,31 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_1(SwigC
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3, int const *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeDepth arg2 ;
+  TasGrid::TypeDepth arg2 ;
   int arg3 ;
   int arg4 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth,int,int)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TasGrid::TypeDepth,int,int)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth,int,int)", return );
-  arg2 = *((TypeDepth *)(farg2->cptr));
+  arg2 = (TasGrid::TypeDepth)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
   (arg1)->setAnisotropicRefinement(arg2,arg3,arg4);
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_estimateAnisotropicCoefficients__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_estimateAnisotropicCoefficients__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeDepth arg2 ;
+  TasGrid::TypeDepth arg2 ;
   int arg3 ;
   std::vector< int > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth,int) const", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::estimateAnisotropicCoefficients(TasGrid::TypeDepth,int) const", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth,int) const", return SwigClassWrapper_uninitialized());
-  arg2 = *((TypeDepth *)(farg2->cptr));
+  arg2 = (TasGrid::TypeDepth)(*farg2);
   arg3 = (int)(*farg3);
   result = ((TasGrid::TasmanianSparseGrid const *)arg1)->estimateAnisotropicCoefficients(arg2,arg3);
   fresult.cptr = new (std::vector< int >)(result);
@@ -3110,60 +3053,57 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_2(SwigClass
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_3(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_3(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   int arg4 ;
   std::vector< int > *arg5 = 0 ;
   std::vector< double > *arg6 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
   arg5 = (std::vector< int > *)farg5->cptr;
-  SWIG_check_nonnull(farg6->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
+  SWIG_check_nonnull(farg6->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
   arg6 = (std::vector< double > *)farg6->cptr;
   (arg1)->setSurplusRefinement(arg2,arg3,arg4,(std::vector< int > const &)*arg5,(std::vector< double > const &)*arg6);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_4(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3, int const *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_4(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   int arg4 ;
   std::vector< int > *arg5 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,std::vector< int > const &)", return );
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,std::vector< int > const &)", return );
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &)", return );
   arg5 = (std::vector< int > *)farg5->cptr;
   (arg1)->setSurplusRefinement(arg2,arg3,arg4,(std::vector< int > const &)*arg5);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3, int const *farg4, int *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, int *farg5, SwigClassWrapper *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   int arg4 ;
   int *arg5 = (int *) 0 ;
   double *arg6 = (double *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,int const *,double const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,int const *,double const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,int const *,double const *)", return );
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   arg4 = (int)(*farg4);
   arg5 = (int *)(farg5);
   arg6 = (double *)farg6->cptr;
@@ -3171,50 +3111,47 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(SwigClass
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3, int const *farg4, int *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, int *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   int arg4 ;
   int *arg5 = (int *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,int const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,int const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int,int const *)", return );
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   arg4 = (int)(*farg4);
   arg5 = (int *)(farg5);
   (arg1)->setSurplusRefinement(arg2,arg3,arg4,(int const *)arg5);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_7(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3, int const *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_7(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   int arg4 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement,int)", return );
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   arg4 = (int)(*farg4);
   (arg1)->setSurplusRefinement(arg2,arg3,arg4);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_8(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_8(SwigClassWrapper *farg1, double const *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TypeRefinement)", return );
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   (arg1)->setSurplusRefinement(arg2,arg3);
 }
 
@@ -3259,21 +3196,20 @@ SWIGEXPORT int _wrap_TasmanianSparseGrid_isUsingConstruction(SwigClassWrapper *f
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_0(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeDepth arg2 ;
+  TasGrid::TypeDepth arg2 ;
   std::vector< int > *arg3 = 0 ;
   std::vector< int > *arg4 = 0 ;
   std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg2 = *((TypeDepth *)(farg2->cptr));
-  SWIG_check_nonnull(farg3->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  arg2 = (TasGrid::TypeDepth)(*farg2);
+  SWIG_check_nonnull(farg3->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg3 = (std::vector< int > *)farg3->cptr;
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg4 = (std::vector< int > *)farg4->cptr;
   result = (arg1)->getCandidateConstructionPoints(arg2,(std::vector< int > const &)*arg3,(std::vector< int > const &)*arg4);
   fresult.cptr = new (std::vector< double >)(result);
@@ -3282,18 +3218,17 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPo
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_1(SwigClassWrapper *farg1, SwigClassWrapper *farg2, SwigClassWrapper *farg3) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_1(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeDepth arg2 ;
+  TasGrid::TypeDepth arg2 ;
   std::vector< int > *arg3 = 0 ;
   std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg2 = *((TypeDepth *)(farg2->cptr));
-  SWIG_check_nonnull(farg3->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  arg2 = (TasGrid::TypeDepth)(*farg2);
+  SWIG_check_nonnull(farg3->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg3 = (std::vector< int > *)farg3->cptr;
   result = (arg1)->getCandidateConstructionPoints(arg2,(std::vector< int > const &)*arg3);
   fresult.cptr = new (std::vector< double >)(result);
@@ -3302,16 +3237,15 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPo
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_2(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_2(SwigClassWrapper *farg1, int const *farg2) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeDepth arg2 ;
+  TasGrid::TypeDepth arg2 ;
   std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth)", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth)", return SwigClassWrapper_uninitialized());
-  arg2 = *((TypeDepth *)(farg2->cptr));
+  arg2 = (TasGrid::TypeDepth)(*farg2);
   result = (arg1)->getCandidateConstructionPoints(arg2);
   fresult.cptr = new (std::vector< double >)(result);
   fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
@@ -3319,20 +3253,19 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPo
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_3(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3, SwigClassWrapper *farg4) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeDepth arg2 ;
+  TasGrid::TypeDepth arg2 ;
   int arg3 ;
   std::vector< int > *arg4 = 0 ;
   std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg2 = *((TypeDepth *)(farg2->cptr));
+  arg2 = (TasGrid::TypeDepth)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg4 = (std::vector< int > *)farg4->cptr;
   result = (arg1)->getCandidateConstructionPoints(arg2,arg3,(std::vector< int > const &)*arg4);
   fresult.cptr = new (std::vector< double >)(result);
@@ -3341,17 +3274,16 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPo
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_4(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeDepth arg2 ;
+  TasGrid::TypeDepth arg2 ;
   int arg3 ;
   std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,int)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,int)", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth,int)", return SwigClassWrapper_uninitialized());
-  arg2 = *((TypeDepth *)(farg2->cptr));
+  arg2 = (TasGrid::TypeDepth)(*farg2);
   arg3 = (int)(*farg3);
   result = (arg1)->getCandidateConstructionPoints(arg2,arg3);
   fresult.cptr = new (std::vector< double >)(result);
@@ -3360,25 +3292,24 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPo
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_5(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_5(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   int arg4 ;
   std::vector< int > *arg5 = 0 ;
   std::vector< double > *arg6 = 0 ;
   std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
   arg5 = (std::vector< int > *)farg5->cptr;
-  SWIG_check_nonnull(farg6->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg6->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< double > *)farg6->cptr;
   result = (arg1)->getCandidateConstructionPoints(arg2,arg3,arg4,(std::vector< int > const &)*arg5,(std::vector< double > const &)*arg6);
   fresult.cptr = new (std::vector< double >)(result);
@@ -3387,22 +3318,21 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPo
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_6(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3, int const *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_6(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   int arg4 ;
   std::vector< int > *arg5 = 0 ;
   std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg5 = (std::vector< int > *)farg5->cptr;
   result = (arg1)->getCandidateConstructionPoints(arg2,arg3,arg4,(std::vector< int > const &)*arg5);
   fresult.cptr = new (std::vector< double >)(result);
@@ -3411,19 +3341,18 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPo
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_7(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3, int const *farg4) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_7(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   int arg4 ;
   std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement,int)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int)", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement,int)", return SwigClassWrapper_uninitialized());
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   arg4 = (int)(*farg4);
   result = (arg1)->getCandidateConstructionPoints(arg2,arg3,arg4);
   fresult.cptr = new (std::vector< double >)(result);
@@ -3432,18 +3361,17 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPo
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_8(SwigClassWrapper *farg1, double const *farg2, SwigClassWrapper *farg3) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_8(SwigClassWrapper *farg1, double const *farg2, int const *farg3) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
-  TypeRefinement arg3 ;
+  TasGrid::TypeRefinement arg3 ;
   std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement)", return SwigClassWrapper_uninitialized());
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "TypeRefinement", "SWIGTYPE_p_TypeRefinement", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TypeRefinement)", return SwigClassWrapper_uninitialized());
-  arg3 = *((TypeRefinement *)(farg3->cptr));
+  arg3 = (TasGrid::TypeRefinement)(*farg3);
   result = (arg1)->getCandidateConstructionPoints(arg2,arg3);
   fresult.cptr = new (std::vector< double >)(result);
   fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
@@ -3643,29 +3571,27 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_printStats__SWIG_1(SwigClassWrapper *f
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_0(SwigClassWrapper *farg1, int const *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeAcceleration arg2 ;
+  TasGrid::TypeAcceleration arg2 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TypeAcceleration)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TasGrid::TypeAcceleration)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeAcceleration", "SWIGTYPE_p_TypeAcceleration", "TasGrid::TasmanianSparseGrid::enableAcceleration(TypeAcceleration)", return );
-  arg2 = *((TypeAcceleration *)(farg2->cptr));
+  arg2 = (TasGrid::TypeAcceleration)(*farg2);
   (arg1)->enableAcceleration(arg2);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_1(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3, void const **farg4, void const **farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, void const **farg4, void const **farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeAcceleration arg2 ;
+  TasGrid::TypeAcceleration arg2 ;
   int arg3 ;
   void *arg4 = (void *) 0 ;
   void *arg5 = (void *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TypeAcceleration,int,void *,void *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TasGrid::TypeAcceleration,int,void *,void *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeAcceleration", "SWIGTYPE_p_TypeAcceleration", "TasGrid::TasmanianSparseGrid::enableAcceleration(TypeAcceleration,int,void *,void *)", return );
-  arg2 = *((TypeAcceleration *)(farg2->cptr));
+  arg2 = (TasGrid::TypeAcceleration)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (void *)(*farg4);
   arg5 = (void *)(*farg5);
@@ -3673,31 +3599,29 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_1(SwigClassWr
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_2(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3, void const **farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, void const **farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeAcceleration arg2 ;
+  TasGrid::TypeAcceleration arg2 ;
   int arg3 ;
   void *arg4 = (void *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TypeAcceleration,int,void *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TasGrid::TypeAcceleration,int,void *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeAcceleration", "SWIGTYPE_p_TypeAcceleration", "TasGrid::TasmanianSparseGrid::enableAcceleration(TypeAcceleration,int,void *)", return );
-  arg2 = *((TypeAcceleration *)(farg2->cptr));
+  arg2 = (TasGrid::TypeAcceleration)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (void *)(*farg4);
   (arg1)->enableAcceleration(arg2,arg3,arg4);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_3(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeAcceleration arg2 ;
+  TasGrid::TypeAcceleration arg2 ;
   int arg3 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TypeAcceleration,int)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TasGrid::TypeAcceleration,int)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "TypeAcceleration", "SWIGTYPE_p_TypeAcceleration", "TasGrid::TasmanianSparseGrid::enableAcceleration(TypeAcceleration,int)", return );
-  arg2 = *((TypeAcceleration *)(farg2->cptr));
+  arg2 = (TasGrid::TypeAcceleration)(*farg2);
   arg3 = (int)(*farg3);
   (arg1)->enableAcceleration(arg2,arg3);
 }
@@ -3714,27 +3638,25 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_favorSparseAcceleration(SwigClassWrapp
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getAccelerationType(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
+SWIGEXPORT int _wrap_TasmanianSparseGrid_getAccelerationType(SwigClassWrapper *farg1) {
+  int fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TypeAcceleration result;
+  TasGrid::TypeAcceleration result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getAccelerationType() const", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getAccelerationType() const", return 0);
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getAccelerationType();
-  fresult.cptr = new (TypeAcceleration)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
+  result = (TasGrid::TypeAcceleration)((TasGrid::TasmanianSparseGrid const *)arg1)->getAccelerationType();
+  fresult = (int)(result);
   return fresult;
 }
 
 
-SWIGEXPORT int _wrap_TasmanianSparseGrid_isAccelerationAvailable(SwigClassWrapper *farg1) {
+SWIGEXPORT int _wrap_TasmanianSparseGrid_isAccelerationAvailable(int const *farg1) {
   int fresult ;
-  TypeAcceleration arg1 ;
+  TasGrid::TypeAcceleration arg1 ;
   bool result;
   
-  SWIG_check_nonnull(farg1->cptr, "TypeAcceleration", "SWIGTYPE_p_TypeAcceleration", "TasGrid::TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration)", return 0);
-  arg1 = *((TypeAcceleration *)(farg1->cptr));
+  arg1 = (TasGrid::TypeAcceleration)(*farg1);
   result = (bool)TasGrid::TasmanianSparseGrid::isAccelerationAvailable(arg1);
   fresult = (result ? 1 : 0);
   return fresult;
@@ -3942,13 +3864,13 @@ SWIGEXPORT SwigClassWrapper _wrap_makeEmpty() {
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, double const *farg7, double const *farg8, SwigArrayWrapper *farg9, SwigClassWrapper *farg10) {
+SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, double const *farg7, double const *farg8, SwigArrayWrapper *farg9, SwigClassWrapper *farg10) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeDepth arg4 ;
+  TasGrid::TypeOneDRule arg5 ;
   std::vector< int > *arg6 = 0 ;
   double arg7 ;
   double arg8 ;
@@ -3959,16 +3881,14 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_0(int const *farg1, int c
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< int > *)farg6->cptr;
   arg7 = (double)(*farg7);
   arg8 = (double)(*farg8);
   arg9 = (char *)(farg9->data);
-  SWIG_check_nonnull(farg10->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg10->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg10 = (std::vector< int > *)farg10->cptr;
   result = TasGrid::makeGlobalGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,arg7,arg8,(char const *)arg9,(std::vector< int > const &)*arg10);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
@@ -3977,13 +3897,13 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_0(int const *farg1, int c
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, double const *farg7, double const *farg8, SwigArrayWrapper *farg9) {
+SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, double const *farg7, double const *farg8, SwigArrayWrapper *farg9) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeDepth arg4 ;
+  TasGrid::TypeOneDRule arg5 ;
   std::vector< int > *arg6 = 0 ;
   double arg7 ;
   double arg8 ;
@@ -3993,11 +3913,9 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_1(int const *farg1, int c
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double,char const *)", return SwigClassWrapper_uninitialized());
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< int > *)farg6->cptr;
   arg7 = (double)(*farg7);
   arg8 = (double)(*farg8);
@@ -4009,13 +3927,13 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_1(int const *farg1, int c
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, double const *farg7, double const *farg8) {
+SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, double const *farg7, double const *farg8) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeDepth arg4 ;
+  TasGrid::TypeOneDRule arg5 ;
   std::vector< int > *arg6 = 0 ;
   double arg7 ;
   double arg8 ;
@@ -4024,11 +3942,9 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_2(int const *farg1, int c
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double,double)", return SwigClassWrapper_uninitialized());
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< int > *)farg6->cptr;
   arg7 = (double)(*farg7);
   arg8 = (double)(*farg8);
@@ -4039,13 +3955,13 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_2(int const *farg1, int c
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_3(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, double const *farg7) {
+SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_3(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, double const *farg7) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeDepth arg4 ;
+  TasGrid::TypeOneDRule arg5 ;
   std::vector< int > *arg6 = 0 ;
   double arg7 ;
   TasGrid::TasmanianSparseGrid result;
@@ -4053,11 +3969,9 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_3(int const *farg1, int c
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,double)", return SwigClassWrapper_uninitialized());
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< int > *)farg6->cptr;
   arg7 = (double)(*farg7);
   result = TasGrid::makeGlobalGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,arg7);
@@ -4067,24 +3981,22 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_3(int const *farg1, int c
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_4(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_4(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeDepth arg4 ;
+  TasGrid::TypeOneDRule arg5 ;
   std::vector< int > *arg6 = 0 ;
   TasGrid::TasmanianSparseGrid result;
   
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< int > *)farg6->cptr;
   result = TasGrid::makeGlobalGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
@@ -4093,22 +4005,20 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_4(int const *farg1, int c
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_5(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_5(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeDepth arg4 ;
+  TasGrid::TypeOneDRule arg5 ;
   TasGrid::TasmanianSparseGrid result;
   
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeGlobalGrid(int,int,int,TypeDepth,TypeOneDRule)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
   result = TasGrid::makeGlobalGrid(arg1,arg2,arg3,arg4,arg5);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
   fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
@@ -4116,13 +4026,13 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_5(int const *farg1, int c
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7) {
+SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeDepth arg4 ;
+  TasGrid::TypeOneDRule arg5 ;
   std::vector< int > *arg6 = 0 ;
   std::vector< int > *arg7 = 0 ;
   TasGrid::TasmanianSparseGrid result;
@@ -4130,13 +4040,11 @@ SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_0(int const *farg1, int
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< int > *)farg6->cptr;
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg7 = (std::vector< int > *)farg7->cptr;
   result = TasGrid::makeSequenceGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,(std::vector< int > const &)*arg7);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
@@ -4145,24 +4053,22 @@ SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_0(int const *farg1, int
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeDepth arg4 ;
+  TasGrid::TypeOneDRule arg5 ;
   std::vector< int > *arg6 = 0 ;
   TasGrid::TasmanianSparseGrid result;
   
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< int > *)farg6->cptr;
   result = TasGrid::makeSequenceGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
@@ -4171,22 +4077,20 @@ SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_1(int const *farg1, int
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeDepth arg4 ;
+  TasGrid::TypeOneDRule arg5 ;
   TasGrid::TasmanianSparseGrid result;
   
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeSequenceGrid(int,int,int,TypeDepth,TypeOneDRule)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
   result = TasGrid::makeSequenceGrid(arg1,arg2,arg3,arg4,arg5);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
   fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
@@ -4194,13 +4098,13 @@ SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_2(int const *farg1, int
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeOneDRule arg5 ;
   std::vector< int > *arg6 = 0 ;
   TasGrid::TasmanianSparseGrid result;
   
@@ -4208,9 +4112,8 @@ SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_0(int const *far
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeLocalPolynomialGrid(int,int,int,int,TasGrid::TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< int > *)farg6->cptr;
   result = TasGrid::makeLocalPolynomialGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
@@ -4219,21 +4122,20 @@ SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_0(int const *far
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
   int arg4 ;
-  TypeOneDRule arg5 ;
+  TasGrid::TypeOneDRule arg5 ;
   TasGrid::TasmanianSparseGrid result;
   
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "TypeOneDRule", "SWIGTYPE_p_TypeOneDRule", "TasGrid::makeLocalPolynomialGrid(int,int,int,int,TypeOneDRule)", return SwigClassWrapper_uninitialized());
-  arg5 = *((TypeOneDRule *)(farg5->cptr));
+  arg5 = (TasGrid::TypeOneDRule)(*farg5);
   result = TasGrid::makeLocalPolynomialGrid(arg1,arg2,arg3,arg4,arg5);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
   fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
@@ -4335,12 +4237,12 @@ SWIGEXPORT SwigClassWrapper _wrap_makeWaveletGrid__SWIG_2(int const *farg1, int 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
+  TasGrid::TypeDepth arg4 ;
   std::vector< int > *arg5 = 0 ;
   std::vector< int > *arg6 = 0 ;
   TasGrid::TasmanianSparseGrid result;
@@ -4348,11 +4250,10 @@ SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_0(int const *farg1, int 
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg5 = (std::vector< int > *)farg5->cptr;
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg6 = (std::vector< int > *)farg6->cptr;
   result = TasGrid::makeFourierGrid(arg1,arg2,arg3,arg4,(std::vector< int > const &)*arg5,(std::vector< int > const &)*arg6);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
@@ -4361,21 +4262,20 @@ SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_0(int const *farg1, int 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
+  TasGrid::TypeDepth arg4 ;
   std::vector< int > *arg5 = 0 ;
   TasGrid::TasmanianSparseGrid result;
   
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeFourierGrid(int,int,int,TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
+  arg4 = (TasGrid::TypeDepth)(*farg4);
+  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
   arg5 = (std::vector< int > *)farg5->cptr;
   result = TasGrid::makeFourierGrid(arg1,arg2,arg3,arg4,(std::vector< int > const &)*arg5);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
@@ -4384,19 +4284,18 @@ SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_1(int const *farg1, int 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4) {
+SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
   int arg3 ;
-  TypeDepth arg4 ;
+  TasGrid::TypeDepth arg4 ;
   TasGrid::TasmanianSparseGrid result;
   
   arg1 = (int)(*farg1);
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "TypeDepth", "SWIGTYPE_p_TypeDepth", "TasGrid::makeFourierGrid(int,int,int,TypeDepth)", return SwigClassWrapper_uninitialized());
-  arg4 = *((TypeDepth *)(farg4->cptr));
+  arg4 = (TasGrid::TypeDepth)(*farg4);
   result = TasGrid::makeFourierGrid(arg1,arg2,arg3,arg4);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
   fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
