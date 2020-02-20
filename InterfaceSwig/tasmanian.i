@@ -49,13 +49,11 @@
 // Note: stdint.i inserts #include <stdint.h>
 %include <stdint.i>
 
-// Support std::vector
-%include <std_vector.i>
-%template(VecInt) std::vector<int>;
-%template(VecDbl) std::vector<double>;
-
 // Support std::string
 %include <std_string.i>
+
+// Unless otherwise specified, ignore functions that use unknown types
+%fortranonlywrapped;
 
 /* -------------------------------------------------------------------------
  * Wrapped files

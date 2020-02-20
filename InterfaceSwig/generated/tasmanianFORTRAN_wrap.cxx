@@ -228,13 +228,6 @@ enum SwigMemFlags {
   }
 
 
-#define SWIG_check_range(INDEX, SIZE, FUNCNAME, RETURNNULL) \
-  if (!(INDEX < SIZE)) { \
-    SWIG_exception_impl(FUNCNAME, SWIG_IndexError, \
-                        "index out of range", RETURNNULL); \
-  }
-
-
 namespace swig {
 enum AssignmentType {
   ASSIGNMENT_DEFAULT,
@@ -243,8 +236,6 @@ enum AssignmentType {
 };
 }
 
-#define SWIGPOLICY_std_vector_Sl_int_Sg_ swig::ASSIGNMENT_DEFAULT
-#define SWIGPOLICY_std_vector_Sl_double_Sg_ swig::ASSIGNMENT_DEFAULT
 #define SWIGPOLICY_TasGrid_TasmanianSparseGrid swig::ASSIGNMENT_DEFAULT
 
 #include <stdexcept>
@@ -365,7 +356,10 @@ SWIGEXPORT void SWIG_store_exception(const char *decl,
 #include <stdint.h>
 
 
-#include <vector>
+#include "tsgEnumerates.hpp"
+
+
+#include "TasmanianSparseGrid.hpp"
 
 
 struct SwigClassWrapper {
@@ -381,51 +375,6 @@ SWIGINTERN SwigClassWrapper SwigClassWrapper_uninitialized() {
     return result;
 }
 
-SWIGINTERN void std_vector_Sl_int_Sg__set(std::vector< int > *self,std::vector< int >::size_type index,int const &v){
-        SWIG_check_range(index, self->size(),
-                         "std::vector<""int" ">::set",
-                         return);
-        (*self)[index] = v;
-      }
-SWIGINTERN int const &std_vector_Sl_int_Sg__get(std::vector< int > *self,std::vector< int >::size_type index){
-        SWIG_check_range(index, self->size(),
-                         "std::vector<""int" ">::get",
-                         return self->front());
-        return (*self)[index];
-      }
-SWIGINTERN void std_vector_Sl_int_Sg__insert(std::vector< int > *self,std::vector< int >::size_type index,int const &v){
-        SWIG_check_range(index, self->size() + 1,
-                         "std::vector<""int" ">::insert",
-                         return);
-        self->insert(self->begin() + index, v);
-      }
-SWIGINTERN void std_vector_Sl_int_Sg__erase__SWIG_0(std::vector< int > *self,std::vector< int >::size_type index){
-        SWIG_check_range(index, self->size(),
-                         "std::vector<""int" ">::remove",
-                         return);
-        self->erase(self->begin() + index);
-      }
-SWIGINTERN void std_vector_Sl_int_Sg__erase__SWIG_1(std::vector< int > *self,std::vector< int >::size_type start_index,std::vector< int >::size_type stop_index){
-        SWIG_check_range(start_index, stop_index + 1,
-                         "std::vector<""int" ">::remove_range",
-                         return);
-        SWIG_check_range(stop_index, self->size() + 1,
-                         "std::vector<""int" ">::remove_range",
-                         return);
-        self->erase(self->begin() + start_index, self->begin() + stop_index);
-      }
-SWIGINTERN int &std_vector_Sl_int_Sg__front_ref(std::vector< int > *self){
-      return (*self).front();
-    }
-SWIGINTERN int &std_vector_Sl_int_Sg__back_ref(std::vector< int > *self){
-      return (*self).back();
-    }
-SWIGINTERN int &std_vector_Sl_int_Sg__get_ref(std::vector< int > *self,std::vector< int >::size_type index){
-      SWIG_check_range(index, self->size(),
-                       "std::vector<""int" ">::get_ref",
-                       return self->front());
-      return (*self)[index];
-    }
 
 namespace swig {
 
@@ -543,57 +492,6 @@ SWIGINTERN void SWIG_free_rvalue(SwigClassWrapper other) {
 }
 
 
-SWIGINTERN void std_vector_Sl_double_Sg__set(std::vector< double > *self,std::vector< double >::size_type index,double const &v){
-        SWIG_check_range(index, self->size(),
-                         "std::vector<""double" ">::set",
-                         return);
-        (*self)[index] = v;
-      }
-SWIGINTERN double const &std_vector_Sl_double_Sg__get(std::vector< double > *self,std::vector< double >::size_type index){
-        SWIG_check_range(index, self->size(),
-                         "std::vector<""double" ">::get",
-                         return self->front());
-        return (*self)[index];
-      }
-SWIGINTERN void std_vector_Sl_double_Sg__insert(std::vector< double > *self,std::vector< double >::size_type index,double const &v){
-        SWIG_check_range(index, self->size() + 1,
-                         "std::vector<""double" ">::insert",
-                         return);
-        self->insert(self->begin() + index, v);
-      }
-SWIGINTERN void std_vector_Sl_double_Sg__erase__SWIG_0(std::vector< double > *self,std::vector< double >::size_type index){
-        SWIG_check_range(index, self->size(),
-                         "std::vector<""double" ">::remove",
-                         return);
-        self->erase(self->begin() + index);
-      }
-SWIGINTERN void std_vector_Sl_double_Sg__erase__SWIG_1(std::vector< double > *self,std::vector< double >::size_type start_index,std::vector< double >::size_type stop_index){
-        SWIG_check_range(start_index, stop_index + 1,
-                         "std::vector<""double" ">::remove_range",
-                         return);
-        SWIG_check_range(stop_index, self->size() + 1,
-                         "std::vector<""double" ">::remove_range",
-                         return);
-        self->erase(self->begin() + start_index, self->begin() + stop_index);
-      }
-SWIGINTERN double &std_vector_Sl_double_Sg__front_ref(std::vector< double > *self){
-      return (*self).front();
-    }
-SWIGINTERN double &std_vector_Sl_double_Sg__back_ref(std::vector< double > *self){
-      return (*self).back();
-    }
-SWIGINTERN double &std_vector_Sl_double_Sg__get_ref(std::vector< double > *self,std::vector< double >::size_type index){
-      SWIG_check_range(index, self->size(),
-                       "std::vector<""double" ">::get_ref",
-                       return self->front());
-      return (*self)[index];
-    }
-
-#include "tsgEnumerates.hpp"
-
-
-#include "TasmanianSparseGrid.hpp"
-
 extern "C" {
 SWIGEXPORT SwigArrayWrapper _wrap_get_serr() {
   SwigArrayWrapper fresult ;
@@ -603,640 +501,6 @@ SWIGEXPORT SwigArrayWrapper _wrap_get_serr() {
   fresult.size = strlen((char*)(result));
   fresult.data = const_cast< char * >(result);
   return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_new_VecInt__SWIG_0() {
-  SwigClassWrapper fresult ;
-  std::vector< int > *result = 0 ;
-  
-  result = (std::vector< int > *)new std::vector< int >();
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (1 ? SWIG_MEM_OWN : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_new_VecInt__SWIG_1(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  std::vector< int > *arg1 = 0 ;
-  std::vector< int > *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > const &", "VecInt", "std::vector< int >::vector(std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg1 = (std::vector< int > *)farg1->cptr;
-  result = (std::vector< int > *)new std::vector< int >((std::vector< int > const &)*arg1);
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (1 ? SWIG_MEM_OWN : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_new_VecInt__SWIG_2(long const *farg1) {
-  SwigClassWrapper fresult ;
-  std::vector< int >::size_type arg1 ;
-  std::vector< int > *result = 0 ;
-  
-  arg1 = (std::vector< int >::size_type)(*farg1);
-  result = (std::vector< int > *)new std::vector< int >(arg1);
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (1 ? SWIG_MEM_OWN : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_new_VecInt__SWIG_3(long const *farg1, int const *farg2) {
-  SwigClassWrapper fresult ;
-  std::vector< int >::size_type arg1 ;
-  int *arg2 = 0 ;
-  int temp2 ;
-  std::vector< int > *result = 0 ;
-  
-  arg1 = (std::vector< int >::size_type)(*farg1);
-  temp2 = (int)(*farg2);
-  arg2 = &temp2;
-  result = (std::vector< int > *)new std::vector< int >(arg1,(int const &)*arg2);
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (1 ? SWIG_MEM_OWN : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT long _wrap_VecInt_size(SwigClassWrapper *farg1) {
-  long fresult ;
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type result;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > const *", "VecInt", "std::vector< int >::size() const", return 0);
-  arg1 = (std::vector< int > *)farg1->cptr;
-  result = (std::vector< int >::size_type)((std::vector< int > const *)arg1)->size();
-  fresult = (std::vector< int >::size_type)(result);
-  return fresult;
-}
-
-
-SWIGEXPORT long _wrap_VecInt_capacity(SwigClassWrapper *farg1) {
-  long fresult ;
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type result;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > const *", "VecInt", "std::vector< int >::capacity() const", return 0);
-  arg1 = (std::vector< int > *)farg1->cptr;
-  result = (std::vector< int >::size_type)((std::vector< int > const *)arg1)->capacity();
-  fresult = (std::vector< int >::size_type)(result);
-  return fresult;
-}
-
-
-SWIGEXPORT int _wrap_VecInt_empty(SwigClassWrapper *farg1) {
-  int fresult ;
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  bool result;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > const *", "VecInt", "std::vector< int >::empty() const", return 0);
-  arg1 = (std::vector< int > *)farg1->cptr;
-  result = (bool)((std::vector< int > const *)arg1)->empty();
-  fresult = (result ? 1 : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT int _wrap_VecInt_front(SwigClassWrapper *farg1) {
-  int fresult ;
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  int *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > const *", "VecInt", "std::vector< int >::front() const", return 0);
-  arg1 = (std::vector< int > *)farg1->cptr;
-  result = (int *) &((std::vector< int > const *)arg1)->front();
-  fresult = *result;
-  return fresult;
-}
-
-
-SWIGEXPORT int _wrap_VecInt_back(SwigClassWrapper *farg1) {
-  int fresult ;
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  int *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > const *", "VecInt", "std::vector< int >::back() const", return 0);
-  arg1 = (std::vector< int > *)farg1->cptr;
-  result = (int *) &((std::vector< int > const *)arg1)->back();
-  fresult = *result;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_VecInt_reserve(SwigClassWrapper *farg1, long const *farg2) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type arg2 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::reserve(std::vector< int >::size_type)", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  arg2 = (std::vector< int >::size_type)(*farg2);
-  (arg1)->reserve(arg2);
-}
-
-
-SWIGEXPORT void _wrap_VecInt_resize__SWIG_0(SwigClassWrapper *farg1, long const *farg2) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type arg2 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::resize(std::vector< int >::size_type)", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  arg2 = (std::vector< int >::size_type)(*farg2);
-  (arg1)->resize(arg2);
-}
-
-
-SWIGEXPORT void _wrap_VecInt_resize__SWIG_1(SwigClassWrapper *farg1, long const *farg2, int const *farg3) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type arg2 ;
-  int *arg3 = 0 ;
-  int temp3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::resize(std::vector< int >::size_type,int const &)", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  arg2 = (std::vector< int >::size_type)(*farg2);
-  temp3 = (int)(*farg3);
-  arg3 = &temp3;
-  (arg1)->resize(arg2,(int const &)*arg3);
-}
-
-
-SWIGEXPORT void _wrap_VecInt_push_back(SwigClassWrapper *farg1, int const *farg2) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  int *arg2 = 0 ;
-  int temp2 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::push_back(int const &)", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  temp2 = (int)(*farg2);
-  arg2 = &temp2;
-  (arg1)->push_back((int const &)*arg2);
-}
-
-
-SWIGEXPORT void _wrap_VecInt_pop_back(SwigClassWrapper *farg1) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::pop_back()", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  (arg1)->pop_back();
-}
-
-
-SWIGEXPORT void _wrap_VecInt_clear(SwigClassWrapper *farg1) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::clear()", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  (arg1)->clear();
-}
-
-
-SWIGEXPORT void _wrap_VecInt_set(SwigClassWrapper *farg1, long const *farg2, int const *farg3) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type arg2 ;
-  int *arg3 = 0 ;
-  int temp3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::set(std::vector< int >::size_type,int const &)", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  temp3 = (int)(*farg3);
-  arg3 = &temp3;
-  std_vector_Sl_int_Sg__set(arg1,arg2,(int const &)*arg3);
-}
-
-
-SWIGEXPORT int _wrap_VecInt_get(SwigClassWrapper *farg1, long const *farg2) {
-  int fresult ;
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type arg2 ;
-  int *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::get(std::vector< int >::size_type)", return 0);
-  arg1 = (std::vector< int > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  result = (int *) &std_vector_Sl_int_Sg__get(arg1,arg2);
-  fresult = *result;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_VecInt_insert(SwigClassWrapper *farg1, long const *farg2, int const *farg3) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type arg2 ;
-  int *arg3 = 0 ;
-  int temp3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::insert(std::vector< int >::size_type,int const &)", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  temp3 = (int)(*farg3);
-  arg3 = &temp3;
-  std_vector_Sl_int_Sg__insert(arg1,arg2,(int const &)*arg3);
-}
-
-
-SWIGEXPORT void _wrap_VecInt_erase__SWIG_0(SwigClassWrapper *farg1, long const *farg2) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type arg2 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::erase(std::vector< int >::size_type)", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  std_vector_Sl_int_Sg__erase__SWIG_0(arg1,arg2);
-}
-
-
-SWIGEXPORT void _wrap_VecInt_erase__SWIG_1(SwigClassWrapper *farg1, long const *farg2, long const *farg3) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type arg2 ;
-  std::vector< int >::size_type arg3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::erase(std::vector< int >::size_type,std::vector< int >::size_type)", return );
-  arg1 = (std::vector< int > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  arg3 = *farg3 - 1;
-  std_vector_Sl_int_Sg__erase__SWIG_1(arg1,arg2,arg3);
-}
-
-
-SWIGEXPORT int * _wrap_VecInt_front_ref(SwigClassWrapper *farg1) {
-  int * fresult ;
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  int *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::front_ref()", return 0);
-  arg1 = (std::vector< int > *)farg1->cptr;
-  result = (int *) &std_vector_Sl_int_Sg__front_ref(arg1);
-  fresult = result;
-  return fresult;
-}
-
-
-SWIGEXPORT int * _wrap_VecInt_back_ref(SwigClassWrapper *farg1) {
-  int * fresult ;
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  int *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::back_ref()", return 0);
-  arg1 = (std::vector< int > *)farg1->cptr;
-  result = (int *) &std_vector_Sl_int_Sg__back_ref(arg1);
-  fresult = result;
-  return fresult;
-}
-
-
-SWIGEXPORT int * _wrap_VecInt_get_ref(SwigClassWrapper *farg1, long const *farg2) {
-  int * fresult ;
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int >::size_type arg2 ;
-  int *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< int > *", "VecInt", "std::vector< int >::get_ref(std::vector< int >::size_type)", return 0);
-  arg1 = (std::vector< int > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  result = (int *) &std_vector_Sl_int_Sg__get_ref(arg1,arg2);
-  fresult = result;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_delete_VecInt(SwigClassWrapper *farg1) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  
-  arg1 = (std::vector< int > *)farg1->cptr;
-  delete arg1;
-}
-
-
-SWIGEXPORT void _wrap_VecInt_op_assign__(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
-  std::vector< int > *arg1 = (std::vector< int > *) 0 ;
-  std::vector< int > *arg2 = 0 ;
-  
-  (void)sizeof(arg1);
-  (void)sizeof(arg2);
-  SWIG_assign<std::vector< int >, SWIGPOLICY_std_vector_Sl_int_Sg_>(farg1, *farg2);
-  
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_new_VecDbl__SWIG_0() {
-  SwigClassWrapper fresult ;
-  std::vector< double > *result = 0 ;
-  
-  result = (std::vector< double > *)new std::vector< double >();
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (1 ? SWIG_MEM_OWN : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_new_VecDbl__SWIG_1(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  std::vector< double > *arg1 = 0 ;
-  std::vector< double > *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > const &", "VecDbl", "std::vector< double >::vector(std::vector< double > const &)", return SwigClassWrapper_uninitialized());
-  arg1 = (std::vector< double > *)farg1->cptr;
-  result = (std::vector< double > *)new std::vector< double >((std::vector< double > const &)*arg1);
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (1 ? SWIG_MEM_OWN : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_new_VecDbl__SWIG_2(long const *farg1) {
-  SwigClassWrapper fresult ;
-  std::vector< double >::size_type arg1 ;
-  std::vector< double > *result = 0 ;
-  
-  arg1 = (std::vector< double >::size_type)(*farg1);
-  result = (std::vector< double > *)new std::vector< double >(arg1);
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (1 ? SWIG_MEM_OWN : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_new_VecDbl__SWIG_3(long const *farg1, double const *farg2) {
-  SwigClassWrapper fresult ;
-  std::vector< double >::size_type arg1 ;
-  double *arg2 = 0 ;
-  double temp2 ;
-  std::vector< double > *result = 0 ;
-  
-  arg1 = (std::vector< double >::size_type)(*farg1);
-  temp2 = (double)(*farg2);
-  arg2 = &temp2;
-  result = (std::vector< double > *)new std::vector< double >(arg1,(double const &)*arg2);
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (1 ? SWIG_MEM_OWN : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT long _wrap_VecDbl_size(SwigClassWrapper *farg1) {
-  long fresult ;
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type result;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > const *", "VecDbl", "std::vector< double >::size() const", return 0);
-  arg1 = (std::vector< double > *)farg1->cptr;
-  result = (std::vector< double >::size_type)((std::vector< double > const *)arg1)->size();
-  fresult = (std::vector< double >::size_type)(result);
-  return fresult;
-}
-
-
-SWIGEXPORT long _wrap_VecDbl_capacity(SwigClassWrapper *farg1) {
-  long fresult ;
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type result;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > const *", "VecDbl", "std::vector< double >::capacity() const", return 0);
-  arg1 = (std::vector< double > *)farg1->cptr;
-  result = (std::vector< double >::size_type)((std::vector< double > const *)arg1)->capacity();
-  fresult = (std::vector< double >::size_type)(result);
-  return fresult;
-}
-
-
-SWIGEXPORT int _wrap_VecDbl_empty(SwigClassWrapper *farg1) {
-  int fresult ;
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  bool result;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > const *", "VecDbl", "std::vector< double >::empty() const", return 0);
-  arg1 = (std::vector< double > *)farg1->cptr;
-  result = (bool)((std::vector< double > const *)arg1)->empty();
-  fresult = (result ? 1 : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT double _wrap_VecDbl_front(SwigClassWrapper *farg1) {
-  double fresult ;
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  double *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > const *", "VecDbl", "std::vector< double >::front() const", return 0);
-  arg1 = (std::vector< double > *)farg1->cptr;
-  result = (double *) &((std::vector< double > const *)arg1)->front();
-  fresult = *result;
-  return fresult;
-}
-
-
-SWIGEXPORT double _wrap_VecDbl_back(SwigClassWrapper *farg1) {
-  double fresult ;
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  double *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > const *", "VecDbl", "std::vector< double >::back() const", return 0);
-  arg1 = (std::vector< double > *)farg1->cptr;
-  result = (double *) &((std::vector< double > const *)arg1)->back();
-  fresult = *result;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_reserve(SwigClassWrapper *farg1, long const *farg2) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type arg2 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::reserve(std::vector< double >::size_type)", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  arg2 = (std::vector< double >::size_type)(*farg2);
-  (arg1)->reserve(arg2);
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_resize__SWIG_0(SwigClassWrapper *farg1, long const *farg2) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type arg2 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::resize(std::vector< double >::size_type)", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  arg2 = (std::vector< double >::size_type)(*farg2);
-  (arg1)->resize(arg2);
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_resize__SWIG_1(SwigClassWrapper *farg1, long const *farg2, double const *farg3) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type arg2 ;
-  double *arg3 = 0 ;
-  double temp3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::resize(std::vector< double >::size_type,double const &)", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  arg2 = (std::vector< double >::size_type)(*farg2);
-  temp3 = (double)(*farg3);
-  arg3 = &temp3;
-  (arg1)->resize(arg2,(double const &)*arg3);
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_push_back(SwigClassWrapper *farg1, double const *farg2) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  double *arg2 = 0 ;
-  double temp2 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::push_back(double const &)", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  temp2 = (double)(*farg2);
-  arg2 = &temp2;
-  (arg1)->push_back((double const &)*arg2);
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_pop_back(SwigClassWrapper *farg1) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::pop_back()", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  (arg1)->pop_back();
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_clear(SwigClassWrapper *farg1) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::clear()", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  (arg1)->clear();
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_set(SwigClassWrapper *farg1, long const *farg2, double const *farg3) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type arg2 ;
-  double *arg3 = 0 ;
-  double temp3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::set(std::vector< double >::size_type,double const &)", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  temp3 = (double)(*farg3);
-  arg3 = &temp3;
-  std_vector_Sl_double_Sg__set(arg1,arg2,(double const &)*arg3);
-}
-
-
-SWIGEXPORT double _wrap_VecDbl_get(SwigClassWrapper *farg1, long const *farg2) {
-  double fresult ;
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type arg2 ;
-  double *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::get(std::vector< double >::size_type)", return 0);
-  arg1 = (std::vector< double > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  result = (double *) &std_vector_Sl_double_Sg__get(arg1,arg2);
-  fresult = *result;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_insert(SwigClassWrapper *farg1, long const *farg2, double const *farg3) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type arg2 ;
-  double *arg3 = 0 ;
-  double temp3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::insert(std::vector< double >::size_type,double const &)", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  temp3 = (double)(*farg3);
-  arg3 = &temp3;
-  std_vector_Sl_double_Sg__insert(arg1,arg2,(double const &)*arg3);
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_erase__SWIG_0(SwigClassWrapper *farg1, long const *farg2) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type arg2 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::erase(std::vector< double >::size_type)", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  std_vector_Sl_double_Sg__erase__SWIG_0(arg1,arg2);
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_erase__SWIG_1(SwigClassWrapper *farg1, long const *farg2, long const *farg3) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type arg2 ;
-  std::vector< double >::size_type arg3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::erase(std::vector< double >::size_type,std::vector< double >::size_type)", return );
-  arg1 = (std::vector< double > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  arg3 = *farg3 - 1;
-  std_vector_Sl_double_Sg__erase__SWIG_1(arg1,arg2,arg3);
-}
-
-
-SWIGEXPORT double * _wrap_VecDbl_front_ref(SwigClassWrapper *farg1) {
-  double * fresult ;
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  double *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::front_ref()", return 0);
-  arg1 = (std::vector< double > *)farg1->cptr;
-  result = (double *) &std_vector_Sl_double_Sg__front_ref(arg1);
-  fresult = result;
-  return fresult;
-}
-
-
-SWIGEXPORT double * _wrap_VecDbl_back_ref(SwigClassWrapper *farg1) {
-  double * fresult ;
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  double *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::back_ref()", return 0);
-  arg1 = (std::vector< double > *)farg1->cptr;
-  result = (double *) &std_vector_Sl_double_Sg__back_ref(arg1);
-  fresult = result;
-  return fresult;
-}
-
-
-SWIGEXPORT double * _wrap_VecDbl_get_ref(SwigClassWrapper *farg1, long const *farg2) {
-  double * fresult ;
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double >::size_type arg2 ;
-  double *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "std::vector< double > *", "VecDbl", "std::vector< double >::get_ref(std::vector< double >::size_type)", return 0);
-  arg1 = (std::vector< double > *)farg1->cptr;
-  arg2 = *farg2 - 1;
-  result = (double *) &std_vector_Sl_double_Sg__get_ref(arg1,arg2);
-  fresult = result;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_delete_VecDbl(SwigClassWrapper *farg1) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  
-  arg1 = (std::vector< double > *)farg1->cptr;
-  delete arg1;
-}
-
-
-SWIGEXPORT void _wrap_VecDbl_op_assign__(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
-  std::vector< double > *arg1 = (std::vector< double > *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  
-  (void)sizeof(arg1);
-  (void)sizeof(arg2);
-  SWIG_assign<std::vector< double >, SWIGPOLICY_std_vector_Sl_double_Sg_>(farg1, *farg2);
-  
 }
 
 
@@ -1379,189 +643,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_read__SWIG_0(SwigClassWrapper *farg1, 
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (char *)(farg2->data);
   (arg1)->read((char const *)arg2);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_write__SWIG_2(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::ostream *arg2 = 0 ;
-  bool arg3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::write(std::ostream &,bool) const", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::ostream &", "SWIGTYPE_p_std__ostream", "TasGrid::TasmanianSparseGrid::write(std::ostream &,bool) const", return );
-  arg2 = (std::ostream *)farg2->cptr;
-  arg3 = (*farg3 ? true : false);
-  ((TasGrid::TasmanianSparseGrid const *)arg1)->write(*arg2,arg3);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_write__SWIG_3(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::ostream *arg2 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::write(std::ostream &) const", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::ostream &", "SWIGTYPE_p_std__ostream", "TasGrid::TasmanianSparseGrid::write(std::ostream &) const", return );
-  arg2 = (std::ostream *)farg2->cptr;
-  ((TasGrid::TasmanianSparseGrid const *)arg1)->write(*arg2);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_read__SWIG_1(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::istream *arg2 = 0 ;
-  bool arg3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::read(std::istream &,bool)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::istream &", "SWIGTYPE_p_std__istream", "TasGrid::TasmanianSparseGrid::read(std::istream &,bool)", return );
-  arg2 = (std::istream *)farg2->cptr;
-  arg3 = (*farg3 ? true : false);
-  (arg1)->read(*arg2,arg3);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_read__SWIG_2(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::istream *arg2 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::read(std::istream &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::istream &", "SWIGTYPE_p_std__istream", "TasGrid::TasmanianSparseGrid::read(std::istream &)", return );
-  arg2 = (std::istream *)farg2->cptr;
-  (arg1)->read(*arg2);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10, SwigClassWrapper *farg11) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeDepth arg5 ;
-  TasGrid::TypeOneDRule arg6 ;
-  std::vector< int > *arg7 = 0 ;
-  double arg8 ;
-  double arg9 ;
-  char *arg10 = (char *) 0 ;
-  std::vector< int > *arg11 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeDepth)(*farg5);
-  arg6 = (TasGrid::TypeOneDRule)(*farg6);
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
-  arg7 = (std::vector< int > *)farg7->cptr;
-  arg8 = (double)(*farg8);
-  arg9 = (double)(*farg9);
-  arg10 = (char *)(farg10->data);
-  SWIG_check_nonnull(farg11->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return );
-  arg11 = (std::vector< int > *)farg11->cptr;
-  (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7,arg8,arg9,(char const *)arg10,(std::vector< int > const &)*arg11);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, double const *farg8, double const *farg9, SwigArrayWrapper *farg10) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeDepth arg5 ;
-  TasGrid::TypeOneDRule arg6 ;
-  std::vector< int > *arg7 = 0 ;
-  double arg8 ;
-  double arg9 ;
-  char *arg10 = (char *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeDepth)(*farg5);
-  arg6 = (TasGrid::TypeOneDRule)(*farg6);
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *)", return );
-  arg7 = (std::vector< int > *)farg7->cptr;
-  arg8 = (double)(*farg8);
-  arg9 = (double)(*farg9);
-  arg10 = (char *)(farg10->data);
-  (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7,arg8,arg9,(char const *)arg10);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, double const *farg8, double const *farg9) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeDepth arg5 ;
-  TasGrid::TypeOneDRule arg6 ;
-  std::vector< int > *arg7 = 0 ;
-  double arg8 ;
-  double arg9 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeDepth)(*farg5);
-  arg6 = (TasGrid::TypeOneDRule)(*farg6);
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double)", return );
-  arg7 = (std::vector< int > *)farg7->cptr;
-  arg8 = (double)(*farg8);
-  arg9 = (double)(*farg9);
-  (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7,arg8,arg9);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, double const *farg8) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeDepth arg5 ;
-  TasGrid::TypeOneDRule arg6 ;
-  std::vector< int > *arg7 = 0 ;
-  double arg8 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeDepth)(*farg5);
-  arg6 = (TasGrid::TypeOneDRule)(*farg6);
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double)", return );
-  arg7 = (std::vector< int > *)farg7->cptr;
-  arg8 = (double)(*farg8);
-  (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7,arg8);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeDepth arg5 ;
-  TasGrid::TypeOneDRule arg6 ;
-  std::vector< int > *arg7 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeDepth)(*farg5);
-  arg6 = (TasGrid::TypeOneDRule)(*farg6);
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
-  arg7 = (std::vector< int > *)farg7->cptr;
-  (arg1)->makeGlobalGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7);
 }
 
 
@@ -1709,53 +790,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeGlobalGrid__SWIG_10(SwigClassWrapp
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7, SwigClassWrapper *farg8) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeDepth arg5 ;
-  TasGrid::TypeOneDRule arg6 ;
-  std::vector< int > *arg7 = 0 ;
-  std::vector< int > *arg8 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeDepth)(*farg5);
-  arg6 = (TasGrid::TypeOneDRule)(*farg6);
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
-  arg7 = (std::vector< int > *)farg7->cptr;
-  SWIG_check_nonnull(farg8->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return );
-  arg8 = (std::vector< int > *)farg8->cptr;
-  (arg1)->makeSequenceGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7,(std::vector< int > const &)*arg8);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeDepth arg5 ;
-  TasGrid::TypeOneDRule arg6 ;
-  std::vector< int > *arg7 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeDepth)(*farg5);
-  arg6 = (TasGrid::TypeOneDRule)(*farg6);
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
-  arg7 = (std::vector< int > *)farg7->cptr;
-  (arg1)->makeSequenceGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7);
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, int *farg7, int *farg8) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
@@ -1816,28 +850,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeSequenceGrid__SWIG_4(SwigClassWrap
   arg5 = (TasGrid::TypeDepth)(*farg5);
   arg6 = (TasGrid::TypeOneDRule)(*farg6);
   (arg1)->makeSequenceGrid(arg2,arg3,arg4,arg5,arg6);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int const *farg6, SwigClassWrapper *farg7) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  int arg5 ;
-  TasGrid::TypeOneDRule arg6 ;
-  std::vector< int > *arg7 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (int)(*farg5);
-  arg6 = (TasGrid::TypeOneDRule)(*farg6);
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeLocalPolynomialGrid(int,int,int,int,TasGrid::TypeOneDRule,std::vector< int > const &)", return );
-  arg7 = (std::vector< int > *)farg7->cptr;
-  (arg1)->makeLocalPolynomialGrid(arg2,arg3,arg4,arg5,arg6,(std::vector< int > const &)*arg7);
 }
 
 
@@ -1913,26 +925,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_4(SwigCl
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeWaveletGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  int arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeWaveletGrid(int,int,int,int,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (int)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeWaveletGrid(int,int,int,int,std::vector< int > const &)", return );
-  arg6 = (std::vector< int > *)farg6->cptr;
-  (arg1)->makeWaveletGrid(arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6);
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_makeWaveletGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, int *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
@@ -1981,49 +973,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeWaveletGrid__SWIG_3(SwigClassWrapp
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
   (arg1)->makeWaveletGrid(arg2,arg3,arg4);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeDepth arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  std::vector< int > *arg7 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeDepth)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg6 = (std::vector< int > *)farg6->cptr;
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg7 = (std::vector< int > *)farg7->cptr;
-  (arg1)->makeFourierGrid(arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,(std::vector< int > const &)*arg7);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeDepth arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeDepth)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &)", return );
-  arg6 = (std::vector< int > *)farg6->cptr;
-  (arg1)->makeFourierGrid(arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6);
 }
 
 
@@ -2123,41 +1072,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_copyGrid__SWIG_2(SwigClassWrapper *far
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  TasGrid::TypeDepth arg3 ;
-  std::vector< int > *arg4 = 0 ;
-  std::vector< int > *arg5 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (TasGrid::TypeDepth)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg4 = (std::vector< int > *)farg4->cptr;
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg5 = (std::vector< int > *)farg5->cptr;
-  (arg1)->updateGlobalGrid(arg2,arg3,(std::vector< int > const &)*arg4,(std::vector< int > const &)*arg5);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  TasGrid::TypeDepth arg3 ;
-  std::vector< int > *arg4 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (TasGrid::TypeDepth)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateGlobalGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
-  arg4 = (std::vector< int > *)farg4->cptr;
-  (arg1)->updateGlobalGrid(arg2,arg3,(std::vector< int > const &)*arg4);
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int *farg4, int *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
@@ -2203,41 +1117,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_updateGlobalGrid__SWIG_4(SwigClassWrap
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  TasGrid::TypeDepth arg3 ;
-  std::vector< int > *arg4 = 0 ;
-  std::vector< int > *arg5 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (TasGrid::TypeDepth)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg4 = (std::vector< int > *)farg4->cptr;
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg5 = (std::vector< int > *)farg5->cptr;
-  (arg1)->updateSequenceGrid(arg2,arg3,(std::vector< int > const &)*arg4,(std::vector< int > const &)*arg5);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  TasGrid::TypeDepth arg3 ;
-  std::vector< int > *arg4 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (TasGrid::TypeDepth)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateSequenceGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
-  arg4 = (std::vector< int > *)farg4->cptr;
-  (arg1)->updateSequenceGrid(arg2,arg3,(std::vector< int > const &)*arg4);
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int *farg4, int *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int arg2 ;
@@ -2280,41 +1159,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_updateSequenceGrid__SWIG_4(SwigClassWr
   arg2 = (int)(*farg2);
   arg3 = (TasGrid::TypeDepth)(*farg3);
   (arg1)->updateSequenceGrid(arg2,arg3);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  TasGrid::TypeDepth arg3 ;
-  std::vector< int > *arg4 = 0 ;
-  std::vector< int > *arg5 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (TasGrid::TypeDepth)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg4 = (std::vector< int > *)farg4->cptr;
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return );
-  arg5 = (std::vector< int > *)farg5->cptr;
-  (arg1)->updateFourierGrid(arg2,arg3,(std::vector< int > const &)*arg4,(std::vector< int > const &)*arg5);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_updateFourierGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int arg2 ;
-  TasGrid::TypeDepth arg3 ;
-  std::vector< int > *arg4 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (int)(*farg2);
-  arg3 = (TasGrid::TypeDepth)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::updateFourierGrid(int,TasGrid::TypeDepth,std::vector< int > const &)", return );
-  arg4 = (std::vector< int > *)farg4->cptr;
-  (arg1)->updateFourierGrid(arg2,arg3,(std::vector< int > const &)*arg4);
 }
 
 
@@ -2494,104 +1338,60 @@ SWIGEXPORT int _wrap_TasmanianSparseGrid_getNumPoints(SwigClassWrapper *farg1) {
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getLoadedPoints__SWIG_0(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getLoadedPoints() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getLoadedPoints();
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getNeededPoints__SWIG_0(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getNeededPoints() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getNeededPoints();
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getPoints__SWIG_0(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getPoints() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getPoints();
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getQuadratureWeights__SWIG_0(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getQuadratureWeights() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getQuadratureWeights();
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getInterpolationWeights__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getInterpolationWeights(std::vector< double > const &) const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::getInterpolationWeights(std::vector< double > const &) const", return SwigClassWrapper_uninitialized());
-  arg2 = (std::vector< double > *)farg2->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getInterpolationWeights((std::vector< double > const &)*arg2);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getInterpolationWeights__SWIG_1(SwigClassWrapper *farg1, double *farg2) {
-  SwigClassWrapper fresult ;
+SWIGEXPORT void _wrap_TasmanianSparseGrid_getLoadedPoints__SWIG_2(SwigClassWrapper *farg1, double *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double *arg2 ;
-  std::vector< double > result;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getInterpolationWeights(double const []) const", return SwigClassWrapper_uninitialized());
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getLoadedPoints(double []) const", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double *)(farg2);
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getInterpolationWeights((double const (*))arg2);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->getLoadedPoints(arg2);
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_loadNeededPoints__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_getNeededPoints__SWIG_2(SwigClassWrapper *farg1, double *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
+  double *arg2 = (double *) 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::loadNeededPoints(std::vector< double > const &)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getNeededPoints(double *) const", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::loadNeededPoints(std::vector< double > const &)", return );
-  arg2 = (std::vector< double > *)farg2->cptr;
-  (arg1)->loadNeededPoints((std::vector< double > const &)*arg2);
+  arg2 = (double *)(farg2);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->getNeededPoints(arg2);
+}
+
+
+SWIGEXPORT void _wrap_TasmanianSparseGrid_getPoints__SWIG_2(SwigClassWrapper *farg1, double *farg2) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  double *arg2 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getPoints(double []) const", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (double *)(farg2);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->getPoints(arg2);
+}
+
+
+SWIGEXPORT void _wrap_TasmanianSparseGrid_getQuadratureWeights__SWIG_2(SwigClassWrapper *farg1, double *farg2) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  double *arg2 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getQuadratureWeights(double []) const", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (double *)(farg2);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->getQuadratureWeights(arg2);
+}
+
+
+SWIGEXPORT void _wrap_TasmanianSparseGrid_getInterpolationWeights__SWIG_3(SwigClassWrapper *farg1, double *farg2, double *farg3) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  double *arg2 ;
+  double *arg3 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getInterpolationWeights(double const [],double []) const", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (double *)(farg2);
+  arg3 = (double *)(farg3);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->getInterpolationWeights((double const (*))arg2,arg3);
 }
 
 
@@ -2603,21 +1403,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_loadNeededPoints__SWIG_1(SwigClassWrap
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double *)(farg2);
   (arg1)->loadNeededPoints((double const *)arg2);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluate__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2, SwigClassWrapper *farg3) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  std::vector< double > *arg3 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::evaluate(std::vector< double > const &,std::vector< double > &) const", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::evaluate(std::vector< double > const &,std::vector< double > &) const", return );
-  arg2 = (std::vector< double > *)farg2->cptr;
-  SWIG_check_nonnull(farg3->cptr, "std::vector< double > &", "VecDbl", "TasGrid::TasmanianSparseGrid::evaluate(std::vector< double > const &,std::vector< double > &) const", return );
-  arg3 = (std::vector< double > *)farg3->cptr;
-  ((TasGrid::TasmanianSparseGrid const *)arg1)->evaluate((std::vector< double > const &)*arg2,*arg3);
 }
 
 
@@ -2661,18 +1446,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateBatch__SWIG_2(SwigClassWrapper
   arg3 = (int)(*farg3);
   arg4 = (float *)(farg4);
   ((TasGrid::TasmanianSparseGrid const *)arg1)->evaluateBatch((float const (*))arg2,arg3,arg4);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_integrate__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::integrate(std::vector< double > &) const", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > &", "VecDbl", "TasGrid::TasmanianSparseGrid::integrate(std::vector< double > &) const", return );
-  arg2 = (std::vector< double > *)farg2->cptr;
-  ((TasGrid::TasmanianSparseGrid const *)arg1)->integrate(*arg2);
 }
 
 
@@ -2778,21 +1551,6 @@ SWIGEXPORT int _wrap_TasmanianSparseGrid_empty(SwigClassWrapper *farg1) {
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setDomainTransform__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2, SwigClassWrapper *farg3) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  std::vector< double > *arg3 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setDomainTransform(std::vector< double > const &,std::vector< double > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::setDomainTransform(std::vector< double > const &,std::vector< double > const &)", return );
-  arg2 = (std::vector< double > *)farg2->cptr;
-  SWIG_check_nonnull(farg3->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::setDomainTransform(std::vector< double > const &,std::vector< double > const &)", return );
-  arg3 = (std::vector< double > *)farg3->cptr;
-  (arg1)->setDomainTransform((std::vector< double > const &)*arg2,(std::vector< double > const &)*arg3);
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_setDomainTransform__SWIG_1(SwigClassWrapper *farg1, double *farg2, double *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double *arg2 ;
@@ -2828,21 +1586,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_clearDomainTransform(SwigClassWrapper 
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_getDomainTransform__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2, SwigClassWrapper *farg3) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  std::vector< double > *arg3 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getDomainTransform(std::vector< double > &,std::vector< double > &) const", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > &", "VecDbl", "TasGrid::TasmanianSparseGrid::getDomainTransform(std::vector< double > &,std::vector< double > &) const", return );
-  arg2 = (std::vector< double > *)farg2->cptr;
-  SWIG_check_nonnull(farg3->cptr, "std::vector< double > &", "VecDbl", "TasGrid::TasmanianSparseGrid::getDomainTransform(std::vector< double > &,std::vector< double > &) const", return );
-  arg3 = (std::vector< double > *)farg3->cptr;
-  ((TasGrid::TasmanianSparseGrid const *)arg1)->getDomainTransform(*arg2,*arg3);
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_getDomainTransform__SWIG_1(SwigClassWrapper *farg1, double *farg2, double *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double *arg2 ;
@@ -2853,18 +1596,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_getDomainTransform__SWIG_1(SwigClassWr
   arg2 = (double *)(farg2);
   arg3 = (double *)(farg3);
   ((TasGrid::TasmanianSparseGrid const *)arg1)->getDomainTransform(arg2,arg3);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setConformalTransformASIN(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< int > *arg2 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setConformalTransformASIN(std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setConformalTransformASIN(std::vector< int > const &)", return );
-  arg2 = (std::vector< int > *)farg2->cptr;
-  (arg1)->setConformalTransformASIN((std::vector< int > const &)*arg2);
 }
 
 
@@ -2890,58 +1621,12 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_clearConformalTransform(SwigClassWrapp
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getConformalTransformASIN(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< int > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getConformalTransformASIN() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getConformalTransformASIN();
-  fresult.cptr = new (std::vector< int >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_clearLevelLimits(SwigClassWrapper *farg1) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   
   SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::clearLevelLimits()", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   (arg1)->clearLevelLimits();
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getLevelLimits(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< int > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getLevelLimits() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getLevelLimits();
-  fresult.cptr = new (std::vector< int >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TypeDepth arg2 ;
-  int arg3 ;
-  int arg4 ;
-  std::vector< int > *arg5 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TasGrid::TypeDepth,int,int,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (TasGrid::TypeDepth)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setAnisotropicRefinement(TasGrid::TypeDepth,int,int,std::vector< int > const &)", return );
-  arg5 = (std::vector< int > *)farg5->cptr;
-  (arg1)->setAnisotropicRefinement(arg2,arg3,arg4,(std::vector< int > const &)*arg5);
 }
 
 
@@ -2977,40 +1662,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2(SwigC
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_estimateAnisotropicCoefficients__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TypeDepth arg2 ;
-  int arg3 ;
-  std::vector< int > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::estimateAnisotropicCoefficients(TasGrid::TypeDepth,int) const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (TasGrid::TypeDepth)(*farg2);
-  arg3 = (int)(*farg3);
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->estimateAnisotropicCoefficients(arg2,arg3);
-  fresult.cptr = new (std::vector< int >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_0(SwigClassWrapper *farg1, double const *farg2, int const *farg3, SwigClassWrapper *farg4) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double arg2 ;
-  int arg3 ;
-  std::vector< int > *arg4 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,int,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double)(*farg2);
-  arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,int,std::vector< int > const &)", return );
-  arg4 = (std::vector< int > *)farg4->cptr;
-  (arg1)->setSurplusRefinement(arg2,arg3,(std::vector< int > const &)*arg4);
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_1(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
@@ -3036,45 +1687,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_2(SwigClass
   arg2 = (double)(*farg2);
   arg3 = (int)(*farg3);
   (arg1)->setSurplusRefinement(arg2,arg3);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_3(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double arg2 ;
-  TasGrid::TypeRefinement arg3 ;
-  int arg4 ;
-  std::vector< int > *arg5 = 0 ;
-  std::vector< double > *arg6 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double)(*farg2);
-  arg3 = (TasGrid::TypeRefinement)(*farg3);
-  arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
-  arg5 = (std::vector< int > *)farg5->cptr;
-  SWIG_check_nonnull(farg6->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return );
-  arg6 = (std::vector< double > *)farg6->cptr;
-  (arg1)->setSurplusRefinement(arg2,arg3,arg4,(std::vector< int > const &)*arg5,(std::vector< double > const &)*arg6);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_4(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double arg2 ;
-  TasGrid::TypeRefinement arg3 ;
-  int arg4 ;
-  std::vector< int > *arg5 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double)(*farg2);
-  arg3 = (TasGrid::TypeRefinement)(*farg3);
-  arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,TasGrid::TypeRefinement,int,std::vector< int > const &)", return );
-  arg5 = (std::vector< int > *)farg5->cptr;
-  (arg1)->setSurplusRefinement(arg2,arg3,arg4,(std::vector< int > const &)*arg5);
 }
 
 
@@ -3182,204 +1794,6 @@ SWIGEXPORT int _wrap_TasmanianSparseGrid_isUsingConstruction(SwigClassWrapper *f
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_0(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TypeDepth arg2 ;
-  std::vector< int > *arg3 = 0 ;
-  std::vector< int > *arg4 = 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (TasGrid::TypeDepth)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg3 = (std::vector< int > *)farg3->cptr;
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg4 = (std::vector< int > *)farg4->cptr;
-  result = (arg1)->getCandidateConstructionPoints(arg2,(std::vector< int > const &)*arg3,(std::vector< int > const &)*arg4);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_1(SwigClassWrapper *farg1, int const *farg2, SwigClassWrapper *farg3) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TypeDepth arg2 ;
-  std::vector< int > *arg3 = 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (TasGrid::TypeDepth)(*farg2);
-  SWIG_check_nonnull(farg3->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg3 = (std::vector< int > *)farg3->cptr;
-  result = (arg1)->getCandidateConstructionPoints(arg2,(std::vector< int > const &)*arg3);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_2(SwigClassWrapper *farg1, int const *farg2) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TypeDepth arg2 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth)", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (TasGrid::TypeDepth)(*farg2);
-  result = (arg1)->getCandidateConstructionPoints(arg2);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, SwigClassWrapper *farg4) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TypeDepth arg2 ;
-  int arg3 ;
-  std::vector< int > *arg4 = 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (TasGrid::TypeDepth)(*farg2);
-  arg3 = (int)(*farg3);
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg4 = (std::vector< int > *)farg4->cptr;
-  result = (arg1)->getCandidateConstructionPoints(arg2,arg3,(std::vector< int > const &)*arg4);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TypeDepth arg2 ;
-  int arg3 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(TasGrid::TypeDepth,int)", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (TasGrid::TypeDepth)(*farg2);
-  arg3 = (int)(*farg3);
-  result = (arg1)->getCandidateConstructionPoints(arg2,arg3);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_5(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double arg2 ;
-  TasGrid::TypeRefinement arg3 ;
-  int arg4 ;
-  std::vector< int > *arg5 = 0 ;
-  std::vector< double > *arg6 = 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double)(*farg2);
-  arg3 = (TasGrid::TypeRefinement)(*farg3);
-  arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = (std::vector< int > *)farg5->cptr;
-  SWIG_check_nonnull(farg6->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &,std::vector< double > const &)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< double > *)farg6->cptr;
-  result = (arg1)->getCandidateConstructionPoints(arg2,arg3,arg4,(std::vector< int > const &)*arg5,(std::vector< double > const &)*arg6);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_6(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double arg2 ;
-  TasGrid::TypeRefinement arg3 ;
-  int arg4 ;
-  std::vector< int > *arg5 = 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double)(*farg2);
-  arg3 = (TasGrid::TypeRefinement)(*farg3);
-  arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = (std::vector< int > *)farg5->cptr;
-  result = (arg1)->getCandidateConstructionPoints(arg2,arg3,arg4,(std::vector< int > const &)*arg5);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_7(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double arg2 ;
-  TasGrid::TypeRefinement arg3 ;
-  int arg4 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement,int)", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double)(*farg2);
-  arg3 = (TasGrid::TypeRefinement)(*farg3);
-  arg4 = (int)(*farg4);
-  result = (arg1)->getCandidateConstructionPoints(arg2,arg3,arg4);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getCandidateConstructionPoints__SWIG_8(SwigClassWrapper *farg1, double const *farg2, int const *farg3) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double arg2 ;
-  TasGrid::TypeRefinement arg3 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getCandidateConstructionPoints(double,TasGrid::TypeRefinement)", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double)(*farg2);
-  arg3 = (TasGrid::TypeRefinement)(*farg3);
-  result = (arg1)->getCandidateConstructionPoints(arg2,arg3);
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_loadConstructedPoints__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2, SwigClassWrapper *farg3) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  std::vector< double > *arg3 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::loadConstructedPoints(std::vector< double > const &,std::vector< double > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::loadConstructedPoints(std::vector< double > const &,std::vector< double > const &)", return );
-  arg2 = (std::vector< double > *)farg2->cptr;
-  SWIG_check_nonnull(farg3->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::loadConstructedPoints(std::vector< double > const &,std::vector< double > const &)", return );
-  arg3 = (std::vector< double > *)farg3->cptr;
-  (arg1)->loadConstructedPoints((std::vector< double > const &)*arg2,(std::vector< double > const &)*arg3);
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_loadConstructedPoints__SWIG_1(SwigClassWrapper *farg1, double *farg2, int const *farg3, double *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double *arg2 ;
@@ -3404,18 +1818,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_finishConstruction(SwigClassWrapper *f
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setHierarchicalCoefficients(std::vector< double > const &)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::setHierarchicalCoefficients(std::vector< double > const &)", return );
-  arg2 = (std::vector< double > *)farg2->cptr;
-  (arg1)->setHierarchicalCoefficients((std::vector< double > const &)*arg2);
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1(SwigClassWrapper *farg1, double *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double *arg2 ;
@@ -3424,21 +1826,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1(Sw
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double *)(farg2);
   (arg1)->setHierarchicalCoefficients((double const (*))arg2);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateHierarchicalFunctions__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2, SwigClassWrapper *farg3) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  std::vector< double > *arg3 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::evaluateHierarchicalFunctions(std::vector< double > const &,std::vector< double > &) const", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::evaluateHierarchicalFunctions(std::vector< double > const &,std::vector< double > &) const", return );
-  arg2 = (std::vector< double > *)farg2->cptr;
-  SWIG_check_nonnull(farg3->cptr, "std::vector< double > &", "VecDbl", "TasGrid::TasmanianSparseGrid::evaluateHierarchicalFunctions(std::vector< double > const &,std::vector< double > &) const", return );
-  arg3 = (std::vector< double > *)farg3->cptr;
-  ((TasGrid::TasmanianSparseGrid const *)arg1)->evaluateHierarchicalFunctions((std::vector< double > const &)*arg2,*arg3);
 }
 
 
@@ -3457,80 +1844,14 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateHierarchicalFunctions__SWIG_2(
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateSparseHierarchicalFunctions(SwigClassWrapper *farg1, SwigClassWrapper *farg2, SwigClassWrapper *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_integrateHierarchicalFunctions__SWIG_2(SwigClassWrapper *farg1, double *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > *arg2 = 0 ;
-  std::vector< int > *arg3 = 0 ;
-  std::vector< int > *arg4 = 0 ;
-  std::vector< double > *arg5 = 0 ;
+  double *arg2 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(std::vector< double > const &,std::vector< int > &,std::vector< int > &,std::vector< double > &) const", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::integrateHierarchicalFunctions(double []) const", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::vector< double > const &", "VecDbl", "TasGrid::TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(std::vector< double > const &,std::vector< int > &,std::vector< int > &,std::vector< double > &) const", return );
-  arg2 = (std::vector< double > *)farg2->cptr;
-  SWIG_check_nonnull(farg3->cptr, "std::vector< int > &", "VecInt", "TasGrid::TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(std::vector< double > const &,std::vector< int > &,std::vector< int > &,std::vector< double > &) const", return );
-  arg3 = (std::vector< int > *)farg3->cptr;
-  SWIG_check_nonnull(farg4->cptr, "std::vector< int > &", "VecInt", "TasGrid::TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(std::vector< double > const &,std::vector< int > &,std::vector< int > &,std::vector< double > &) const", return );
-  arg4 = (std::vector< int > *)farg4->cptr;
-  SWIG_check_nonnull(farg5->cptr, "std::vector< double > &", "VecDbl", "TasGrid::TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(std::vector< double > const &,std::vector< int > &,std::vector< int > &,std::vector< double > &) const", return );
-  arg5 = (std::vector< double > *)farg5->cptr;
-  ((TasGrid::TasmanianSparseGrid const *)arg1)->evaluateSparseHierarchicalFunctions((std::vector< double > const &)*arg2,*arg3,*arg4,*arg5);
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getHierarchicalSupport(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getHierarchicalSupport() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getHierarchicalSupport();
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_integrateHierarchicalFunctions__SWIG_0(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::vector< double > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::integrateHierarchicalFunctions() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->integrateHierarchicalFunctions();
-  fresult.cptr = new (std::vector< double >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getGlobalPolynomialSpace(SwigClassWrapper *farg1, int const *farg2) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  bool arg2 ;
-  std::vector< int > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getGlobalPolynomialSpace(bool) const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (*farg2 ? true : false);
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getGlobalPolynomialSpace(arg2);
-  fresult.cptr = new (std::vector< int >)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_printStats__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  std::ostream *arg2 = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::printStats(std::ostream &) const", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  SWIG_check_nonnull(farg2->cptr, "std::ostream &", "SWIGTYPE_p_std__ostream", "TasGrid::TasmanianSparseGrid::printStats(std::ostream &) const", return );
-  arg2 = (std::ostream *)farg2->cptr;
-  ((TasGrid::TasmanianSparseGrid const *)arg1)->printStats(*arg2);
+  arg2 = (double *)(farg2);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->integrateHierarchicalFunctions(arg2);
 }
 
 
@@ -3699,20 +2020,6 @@ SWIGEXPORT SwigArrayWrapper _wrap_TasmanianSparseGrid_getGPUName(int const *farg
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getDomainInside(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  SwigValueWrapper< std::function< bool (std::vector< double > const &) > > result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getDomainInside() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = ((TasGrid::TasmanianSparseGrid const *)arg1)->getDomainInside();
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid::DomainInsideSignature)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient__SWIG_0(SwigClassWrapper *farg1, double const *farg2, int const *farg3, double *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
@@ -3836,147 +2143,6 @@ SWIGEXPORT SwigClassWrapper _wrap_makeEmpty() {
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, double const *farg7, double const *farg8, SwigArrayWrapper *farg9, SwigClassWrapper *farg10) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  TasGrid::TypeDepth arg4 ;
-  TasGrid::TypeOneDRule arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  double arg7 ;
-  double arg8 ;
-  char *arg9 = (char *) 0 ;
-  std::vector< int > *arg10 = 0 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (TasGrid::TypeDepth)(*farg4);
-  arg5 = (TasGrid::TypeOneDRule)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< int > *)farg6->cptr;
-  arg7 = (double)(*farg7);
-  arg8 = (double)(*farg8);
-  arg9 = (char *)(farg9->data);
-  SWIG_check_nonnull(farg10->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg10 = (std::vector< int > *)farg10->cptr;
-  result = TasGrid::makeGlobalGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,arg7,arg8,(char const *)arg9,(std::vector< int > const &)*arg10);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, double const *farg7, double const *farg8, SwigArrayWrapper *farg9) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  TasGrid::TypeDepth arg4 ;
-  TasGrid::TypeOneDRule arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  double arg7 ;
-  double arg8 ;
-  char *arg9 = (char *) 0 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (TasGrid::TypeDepth)(*farg4);
-  arg5 = (TasGrid::TypeOneDRule)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double,char const *)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< int > *)farg6->cptr;
-  arg7 = (double)(*farg7);
-  arg8 = (double)(*farg8);
-  arg9 = (char *)(farg9->data);
-  result = TasGrid::makeGlobalGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,arg7,arg8,(char const *)arg9);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, double const *farg7, double const *farg8) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  TasGrid::TypeDepth arg4 ;
-  TasGrid::TypeOneDRule arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  double arg7 ;
-  double arg8 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (TasGrid::TypeDepth)(*farg4);
-  arg5 = (TasGrid::TypeOneDRule)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double,double)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< int > *)farg6->cptr;
-  arg7 = (double)(*farg7);
-  arg8 = (double)(*farg8);
-  result = TasGrid::makeGlobalGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,arg7,arg8);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_3(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, double const *farg7) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  TasGrid::TypeDepth arg4 ;
-  TasGrid::TypeOneDRule arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  double arg7 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (TasGrid::TypeDepth)(*farg4);
-  arg5 = (TasGrid::TypeOneDRule)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,double)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< int > *)farg6->cptr;
-  arg7 = (double)(*farg7);
-  result = TasGrid::makeGlobalGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,arg7);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_4(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  TasGrid::TypeDepth arg4 ;
-  TasGrid::TypeOneDRule arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (TasGrid::TypeDepth)(*farg4);
-  arg5 = (TasGrid::TypeOneDRule)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeGlobalGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< int > *)farg6->cptr;
-  result = TasGrid::makeGlobalGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
 SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_5(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
   SwigClassWrapper fresult ;
   int arg1 ;
@@ -3998,57 +2164,6 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_5(int const *farg1, int c
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6, SwigClassWrapper *farg7) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  TasGrid::TypeDepth arg4 ;
-  TasGrid::TypeOneDRule arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  std::vector< int > *arg7 = 0 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (TasGrid::TypeDepth)(*farg4);
-  arg5 = (TasGrid::TypeOneDRule)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< int > *)farg6->cptr;
-  SWIG_check_nonnull(farg7->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg7 = (std::vector< int > *)farg7->cptr;
-  result = TasGrid::makeSequenceGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6,(std::vector< int > const &)*arg7);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  TasGrid::TypeDepth arg4 ;
-  TasGrid::TypeOneDRule arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (TasGrid::TypeDepth)(*farg4);
-  arg5 = (TasGrid::TypeOneDRule)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeSequenceGrid(int,int,int,TasGrid::TypeDepth,TasGrid::TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< int > *)farg6->cptr;
-  result = TasGrid::makeSequenceGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
 SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
   SwigClassWrapper fresult ;
   int arg1 ;
@@ -4064,30 +2179,6 @@ SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_2(int const *farg1, int
   arg4 = (TasGrid::TypeDepth)(*farg4);
   arg5 = (TasGrid::TypeOneDRule)(*farg5);
   result = TasGrid::makeSequenceGrid(arg1,arg2,arg3,arg4,arg5);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5, SwigClassWrapper *farg6) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  TasGrid::TypeOneDRule arg5 ;
-  std::vector< int > *arg6 = 0 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  arg5 = (TasGrid::TypeOneDRule)(*farg5);
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeLocalPolynomialGrid(int,int,int,int,TasGrid::TypeOneDRule,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< int > *)farg6->cptr;
-  result = TasGrid::makeLocalPolynomialGrid(arg1,arg2,arg3,arg4,arg5,(std::vector< int > const &)*arg6);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
   fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
   return fresult;
@@ -4151,28 +2242,6 @@ SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_3(int const *far
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeWaveletGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  int arg4 ;
-  std::vector< int > *arg5 = 0 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeWaveletGrid(int,int,int,int,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = (std::vector< int > *)farg5->cptr;
-  result = TasGrid::makeWaveletGrid(arg1,arg2,arg3,arg4,(std::vector< int > const &)*arg5);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
 SWIGEXPORT SwigClassWrapper _wrap_makeWaveletGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4) {
   SwigClassWrapper fresult ;
   int arg1 ;
@@ -4203,53 +2272,6 @@ SWIGEXPORT SwigClassWrapper _wrap_makeWaveletGrid__SWIG_2(int const *farg1, int 
   arg2 = (int)(*farg2);
   arg3 = (int)(*farg3);
   result = TasGrid::makeWaveletGrid(arg1,arg2,arg3);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_0(int const *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5, SwigClassWrapper *farg6) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  TasGrid::TypeDepth arg4 ;
-  std::vector< int > *arg5 = 0 ;
-  std::vector< int > *arg6 = 0 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (TasGrid::TypeDepth)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = (std::vector< int > *)farg5->cptr;
-  SWIG_check_nonnull(farg6->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg6 = (std::vector< int > *)farg6->cptr;
-  result = TasGrid::makeFourierGrid(arg1,arg2,arg3,arg4,(std::vector< int > const &)*arg5,(std::vector< int > const &)*arg6);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, SwigClassWrapper *farg5) {
-  SwigClassWrapper fresult ;
-  int arg1 ;
-  int arg2 ;
-  int arg3 ;
-  TasGrid::TypeDepth arg4 ;
-  std::vector< int > *arg5 = 0 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  arg1 = (int)(*farg1);
-  arg2 = (int)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (TasGrid::TypeDepth)(*farg4);
-  SWIG_check_nonnull(farg5->cptr, "std::vector< int > const &", "VecInt", "TasGrid::makeFourierGrid(int,int,int,TasGrid::TypeDepth,std::vector< int > const &)", return SwigClassWrapper_uninitialized());
-  arg5 = (std::vector< int > *)farg5->cptr;
-  result = TasGrid::makeFourierGrid(arg1,arg2,arg3,arg4,(std::vector< int > const &)*arg5);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
   fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
   return fresult;
