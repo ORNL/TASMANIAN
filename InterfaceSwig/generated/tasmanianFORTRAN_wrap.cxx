@@ -2595,28 +2595,14 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_loadNeededPoints__SWIG_0(SwigClassWrap
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_loadNeededPoints__SWIG_1(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_loadNeededPoints__SWIG_1(SwigClassWrapper *farg1, double *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double *arg2 = (double *) 0 ;
   
   SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::loadNeededPoints(double const *)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double *)farg2->cptr;
+  arg2 = (double *)(farg2);
   (arg1)->loadNeededPoints((double const *)arg2);
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getLoadedValues(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getLoadedValues() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = (double *)((TasGrid::TasmanianSparseGrid const *)arg1)->getLoadedValues();
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (0 ? SWIG_MEM_OWN : 0);
-  return fresult;
 }
 
 
@@ -2663,7 +2649,7 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateBatch__SWIG_1(SwigClassWrapper
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateBatch__SWIG_2(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3, SwigClassWrapper *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateBatch__SWIG_2(SwigClassWrapper *farg1, float *farg2, int const *farg3, float *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   float *arg2 ;
   int arg3 ;
@@ -2671,9 +2657,9 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateBatch__SWIG_2(SwigClassWrapper
   
   SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::evaluateBatch(float const [],int,float []) const", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (float *)farg2->cptr;
+  arg2 = (float *)(farg2);
   arg3 = (int)(*farg3);
-  arg4 = (float *)farg4->cptr;
+  arg4 = (float *)(farg4);
   ((TasGrid::TasmanianSparseGrid const *)arg1)->evaluateBatch((float const (*))arg2,arg3,arg4);
 }
 
@@ -3092,7 +3078,7 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_4(SwigClass
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, int *farg5, SwigClassWrapper *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, int *farg5, double *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
   TasGrid::TypeRefinement arg3 ;
@@ -3106,7 +3092,7 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(SwigClass
   arg3 = (TasGrid::TypeRefinement)(*farg3);
   arg4 = (int)(*farg4);
   arg5 = (int *)(farg5);
-  arg6 = (double *)farg6->cptr;
+  arg6 = (double *)(farg6);
   (arg1)->setSurplusRefinement(arg2,arg3,arg4,(int const *)arg5,(double const *)arg6);
 }
 
@@ -3415,20 +3401,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_finishConstruction(SwigClassWrapper *f
   SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::finishConstruction()", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   (arg1)->finishConstruction();
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getHierarchicalCoefficients(SwigClassWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getHierarchicalCoefficients() const", return SwigClassWrapper_uninitialized());
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = (double *)((TasGrid::TasmanianSparseGrid const *)arg1)->getHierarchicalCoefficients();
-  fresult.cptr = (void*)result;
-  fresult.cmemflags = SWIG_MEM_RVALUE | (0 ? SWIG_MEM_OWN : 0);
-  return fresult;
 }
 
 
@@ -3741,7 +3713,7 @@ SWIGEXPORT SwigClassWrapper _wrap_TasmanianSparseGrid_getDomainInside(SwigClassW
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient__SWIG_0(SwigClassWrapper *farg1, double const *farg2, int const *farg3, SwigClassWrapper *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient__SWIG_0(SwigClassWrapper *farg1, double const *farg2, int const *farg3, double *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
   int arg3 ;
@@ -3751,7 +3723,7 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient_
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double)(*farg2);
   arg3 = (int)(*farg3);
-  arg4 = (double *)farg4->cptr;
+  arg4 = (double *)(farg4);
   (arg1)->removePointsByHierarchicalCoefficient(arg2,arg3,(double const *)arg4);
 }
 
@@ -3797,7 +3769,7 @@ SWIGEXPORT int _wrap_TasmanianSparseGrid_evaluateSparseHierarchicalFunctionsGetN
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateSparseHierarchicalFunctionsStatic(SwigClassWrapper *farg1, double *farg2, int const *farg3, SwigClassWrapper *farg4, SwigClassWrapper *farg5, double *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateSparseHierarchicalFunctionsStatic(SwigClassWrapper *farg1, double *farg2, int const *farg3, int *farg4, int *farg5, double *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double *arg2 ;
   int arg3 ;
@@ -3809,8 +3781,8 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateSparseHierarchicalFunctionsSta
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
   arg2 = (double *)(farg2);
   arg3 = (int)(*farg3);
-  arg4 = (int *)farg4->cptr;
-  arg5 = (int *)farg5->cptr;
+  arg4 = (int *)(farg4);
+  arg5 = (int *)(farg5);
   arg6 = (double *)(farg6);
   ((TasGrid::TasmanianSparseGrid const *)arg1)->evaluateSparseHierarchicalFunctionsStatic((double const (*))arg2,arg3,arg4,arg5,arg6);
 }
