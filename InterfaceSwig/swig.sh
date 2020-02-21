@@ -6,5 +6,6 @@ if [ "$HOSTNAME" == "vostok" ]; then
 fi
 
 exec swig -fortran -c++ -I../SparseGrids \
+  -fext f03 \
   -outdir generated -o generated/tasmanianFORTRAN_wrap.cxx \
   tasmanian.i
