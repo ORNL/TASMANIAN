@@ -36,107 +36,112 @@ module tasmanian
  integer(C_INT), parameter, public :: SWIG_NullReferenceError = -13_C_INT
  ! enum TasGrid::TypeIndexRelation
  enum, bind(c)
-  enumerator :: type_abeforeb
-  enumerator :: type_bbeforea
-  enumerator :: type_asameb
+  enumerator :: tsg_type_abeforeb
+  enumerator :: tsg_type_bbeforea
+  enumerator :: tsg_type_asameb
  end enum
- integer, parameter, public :: TypeIndexRelation = kind(type_abeforeb)
- public :: type_abeforeb, type_bbeforea, type_asameb
+ integer, parameter, public :: tsg_TypeIndexRelation = kind(tsg_type_abeforeb)
+ public :: tsg_type_abeforeb, tsg_type_bbeforea, tsg_type_asameb
  ! enum TasGrid::TypeDepth
  enum, bind(c)
-  enumerator :: type_none
-  enumerator :: type_level
-  enumerator :: type_curved
-  enumerator :: type_hyperbolic
-  enumerator :: type_iptotal
-  enumerator :: type_qptotal
-  enumerator :: type_ipcurved
-  enumerator :: type_qpcurved
-  enumerator :: type_iphyperbolic
-  enumerator :: type_qphyperbolic
-  enumerator :: type_tensor
-  enumerator :: type_iptensor
-  enumerator :: type_qptensor
+  enumerator :: tsg_type_none
+  enumerator :: tsg_type_level
+  enumerator :: tsg_type_curved
+  enumerator :: tsg_type_hyperbolic
+  enumerator :: tsg_type_iptotal
+  enumerator :: tsg_type_qptotal
+  enumerator :: tsg_type_ipcurved
+  enumerator :: tsg_type_qpcurved
+  enumerator :: tsg_type_iphyperbolic
+  enumerator :: tsg_type_qphyperbolic
+  enumerator :: tsg_type_tensor
+  enumerator :: tsg_type_iptensor
+  enumerator :: tsg_type_qptensor
  end enum
- integer, parameter, public :: TypeDepth = kind(type_none)
- public :: type_none, type_level, type_curved, type_hyperbolic, type_iptotal, type_qptotal, type_ipcurved, type_qpcurved, &
-    type_iphyperbolic, type_qphyperbolic, type_tensor, type_iptensor, type_qptensor
+ integer, parameter, public :: tsg_TypeDepth = kind(tsg_type_none)
+ public :: tsg_type_none, tsg_type_level, tsg_type_curved, tsg_type_hyperbolic, tsg_type_iptotal, tsg_type_qptotal, &
+    tsg_type_ipcurved, tsg_type_qpcurved, tsg_type_iphyperbolic, tsg_type_qphyperbolic, tsg_type_tensor, tsg_type_iptensor, &
+    tsg_type_qptensor
  ! enum TasGrid::TypeOneDRule
  enum, bind(c)
-  enumerator :: rule_none
-  enumerator :: rule_clenshawcurtis
-  enumerator :: rule_clenshawcurtis0
-  enumerator :: rule_fejer2
-  enumerator :: rule_chebyshev
-  enumerator :: rule_chebyshevodd
-  enumerator :: rule_leja
-  enumerator :: rule_lejaodd
-  enumerator :: rule_rleja
-  enumerator :: rule_rlejadouble2
-  enumerator :: rule_rlejadouble4
-  enumerator :: rule_rlejaodd
-  enumerator :: rule_rlejashifted
-  enumerator :: rule_rlejashiftedeven
-  enumerator :: rule_rlejashifteddouble
-  enumerator :: rule_maxlebesgue
-  enumerator :: rule_maxlebesgueodd
-  enumerator :: rule_minlebesgue
-  enumerator :: rule_minlebesgueodd
-  enumerator :: rule_mindelta
-  enumerator :: rule_mindeltaodd
-  enumerator :: rule_gausslegendre
-  enumerator :: rule_gausslegendreodd
-  enumerator :: rule_gausspatterson
-  enumerator :: rule_gausschebyshev1
-  enumerator :: rule_gausschebyshev1odd
-  enumerator :: rule_gausschebyshev2
-  enumerator :: rule_gausschebyshev2odd
-  enumerator :: rule_gaussgegenbauer
-  enumerator :: rule_gaussgegenbauerodd
-  enumerator :: rule_gaussjacobi
-  enumerator :: rule_gaussjacobiodd
-  enumerator :: rule_gausslaguerre
-  enumerator :: rule_gausslaguerreodd
-  enumerator :: rule_gausshermite
-  enumerator :: rule_gausshermiteodd
-  enumerator :: rule_customtabulated
-  enumerator :: rule_localp
-  enumerator :: rule_localp0
-  enumerator :: rule_semilocalp
-  enumerator :: rule_localpb
-  enumerator :: rule_wavelet
-  enumerator :: rule_fourier
+  enumerator :: tsg_rule_none
+  enumerator :: tsg_rule_clenshawcurtis
+  enumerator :: tsg_rule_clenshawcurtis0
+  enumerator :: tsg_rule_fejer2
+  enumerator :: tsg_rule_chebyshev
+  enumerator :: tsg_rule_chebyshevodd
+  enumerator :: tsg_rule_leja
+  enumerator :: tsg_rule_lejaodd
+  enumerator :: tsg_rule_rleja
+  enumerator :: tsg_rule_rlejadouble2
+  enumerator :: tsg_rule_rlejadouble4
+  enumerator :: tsg_rule_rlejaodd
+  enumerator :: tsg_rule_rlejashifted
+  enumerator :: tsg_rule_rlejashiftedeven
+  enumerator :: tsg_rule_rlejashifteddouble
+  enumerator :: tsg_rule_maxlebesgue
+  enumerator :: tsg_rule_maxlebesgueodd
+  enumerator :: tsg_rule_minlebesgue
+  enumerator :: tsg_rule_minlebesgueodd
+  enumerator :: tsg_rule_mindelta
+  enumerator :: tsg_rule_mindeltaodd
+  enumerator :: tsg_rule_gausslegendre
+  enumerator :: tsg_rule_gausslegendreodd
+  enumerator :: tsg_rule_gausspatterson
+  enumerator :: tsg_rule_gausschebyshev1
+  enumerator :: tsg_rule_gausschebyshev1odd
+  enumerator :: tsg_rule_gausschebyshev2
+  enumerator :: tsg_rule_gausschebyshev2odd
+  enumerator :: tsg_rule_gaussgegenbauer
+  enumerator :: tsg_rule_gaussgegenbauerodd
+  enumerator :: tsg_rule_gaussjacobi
+  enumerator :: tsg_rule_gaussjacobiodd
+  enumerator :: tsg_rule_gausslaguerre
+  enumerator :: tsg_rule_gausslaguerreodd
+  enumerator :: tsg_rule_gausshermite
+  enumerator :: tsg_rule_gausshermiteodd
+  enumerator :: tsg_rule_customtabulated
+  enumerator :: tsg_rule_localp
+  enumerator :: tsg_rule_localp0
+  enumerator :: tsg_rule_semilocalp
+  enumerator :: tsg_rule_localpb
+  enumerator :: tsg_rule_wavelet
+  enumerator :: tsg_rule_fourier
  end enum
- integer, parameter, public :: TypeOneDRule = kind(rule_none)
- public :: rule_none, rule_clenshawcurtis, rule_clenshawcurtis0, rule_fejer2, rule_chebyshev, rule_chebyshevodd, rule_leja, &
-    rule_lejaodd, rule_rleja, rule_rlejadouble2, rule_rlejadouble4, rule_rlejaodd, rule_rlejashifted, rule_rlejashiftedeven, &
-    rule_rlejashifteddouble, rule_maxlebesgue, rule_maxlebesgueodd, rule_minlebesgue, rule_minlebesgueodd, rule_mindelta, &
-    rule_mindeltaodd, rule_gausslegendre, rule_gausslegendreodd, rule_gausspatterson, rule_gausschebyshev1, &
-    rule_gausschebyshev1odd, rule_gausschebyshev2, rule_gausschebyshev2odd, rule_gaussgegenbauer, rule_gaussgegenbauerodd, &
-    rule_gaussjacobi, rule_gaussjacobiodd, rule_gausslaguerre, rule_gausslaguerreodd, rule_gausshermite, rule_gausshermiteodd, &
-    rule_customtabulated, rule_localp, rule_localp0, rule_semilocalp, rule_localpb, rule_wavelet, rule_fourier
+ integer, parameter, public :: tsg_TypeOneDRule = kind(tsg_rule_none)
+ public :: tsg_rule_none, tsg_rule_clenshawcurtis, tsg_rule_clenshawcurtis0, tsg_rule_fejer2, tsg_rule_chebyshev, &
+    tsg_rule_chebyshevodd, tsg_rule_leja, tsg_rule_lejaodd, tsg_rule_rleja, tsg_rule_rlejadouble2, tsg_rule_rlejadouble4, &
+    tsg_rule_rlejaodd, tsg_rule_rlejashifted, tsg_rule_rlejashiftedeven, tsg_rule_rlejashifteddouble, tsg_rule_maxlebesgue, &
+    tsg_rule_maxlebesgueodd, tsg_rule_minlebesgue, tsg_rule_minlebesgueodd, tsg_rule_mindelta, tsg_rule_mindeltaodd, &
+    tsg_rule_gausslegendre, tsg_rule_gausslegendreodd, tsg_rule_gausspatterson, tsg_rule_gausschebyshev1, &
+    tsg_rule_gausschebyshev1odd, tsg_rule_gausschebyshev2, tsg_rule_gausschebyshev2odd, tsg_rule_gaussgegenbauer, &
+    tsg_rule_gaussgegenbauerodd, tsg_rule_gaussjacobi, tsg_rule_gaussjacobiodd, tsg_rule_gausslaguerre, &
+    tsg_rule_gausslaguerreodd, tsg_rule_gausshermite, tsg_rule_gausshermiteodd, tsg_rule_customtabulated, tsg_rule_localp, &
+    tsg_rule_localp0, tsg_rule_semilocalp, tsg_rule_localpb, tsg_rule_wavelet, tsg_rule_fourier
  ! enum TasGrid::TypeRefinement
  enum, bind(c)
-  enumerator :: refine_classic
-  enumerator :: refine_parents_first
-  enumerator :: refine_direction_selective
-  enumerator :: refine_fds
-  enumerator :: refine_stable
-  enumerator :: refine_none
+  enumerator :: tsg_refine_classic
+  enumerator :: tsg_refine_parents_first
+  enumerator :: tsg_refine_direction_selective
+  enumerator :: tsg_refine_fds
+  enumerator :: tsg_refine_stable
+  enumerator :: tsg_refine_none
  end enum
- integer, parameter, public :: TypeRefinement = kind(refine_classic)
- public :: refine_classic, refine_parents_first, refine_direction_selective, refine_fds, refine_stable, refine_none
+ integer, parameter, public :: tsg_TypeRefinement = kind(tsg_refine_classic)
+ public :: tsg_refine_classic, tsg_refine_parents_first, tsg_refine_direction_selective, tsg_refine_fds, tsg_refine_stable, &
+    tsg_refine_none
  ! enum TasGrid::TypeAcceleration
  enum, bind(c)
-  enumerator :: accel_none
-  enumerator :: accel_cpu_blas
-  enumerator :: accel_gpu_default
-  enumerator :: accel_gpu_cublas
-  enumerator :: accel_gpu_cuda
-  enumerator :: accel_gpu_magma
+  enumerator :: tsg_accel_none
+  enumerator :: tsg_accel_cpu_blas
+  enumerator :: tsg_accel_gpu_default
+  enumerator :: tsg_accel_gpu_cublas
+  enumerator :: tsg_accel_gpu_cuda
+  enumerator :: tsg_accel_gpu_magma
  end enum
- integer, parameter, public :: TypeAcceleration = kind(accel_none)
- public :: accel_none, accel_cpu_blas, accel_gpu_default, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma
+ integer, parameter, public :: tsg_TypeAcceleration = kind(tsg_accel_none)
+ public :: tsg_accel_none, tsg_accel_cpu_blas, tsg_accel_gpu_default, tsg_accel_gpu_cublas, tsg_accel_gpu_cuda, &
+    tsg_accel_gpu_magma
 
  integer, parameter :: swig_cmem_own_bit = 0
  integer, parameter :: swig_cmem_rvalue_bit = 1
@@ -315,10 +320,6 @@ module tasmanian
     swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1, swigf_TasmanianSparseGrid_enableAcceleration__SWIG_2, &
     swigf_TasmanianSparseGrid_enableAcceleration__SWIG_3
  end type TasmanianSparseGrid
- interface TasmanianSparseGrid
-  module procedure swigf_new_TasmanianSparseGrid__SWIG_0
-  module procedure swigf_new_TasmanianSparseGrid__SWIG_1
- end interface
  public :: makeEmpty
  interface makeLocalPolynomialGrid
   module procedure swigf_makeLocalPolynomialGrid__SWIG_1, swigf_makeLocalPolynomialGrid__SWIG_2, &
@@ -329,9 +330,10 @@ module tasmanian
   module procedure swigf_makeGlobalGrid__SWIG_5
  end interface
  public :: makeGlobalGrid
- interface swigf_create_TasmanianSparseGrid
+ interface TasmanianSparseGrid
   module procedure swigf_new_TasmanianSparseGrid__SWIG_0, swigf_new_TasmanianSparseGrid__SWIG_1
  end interface
+ public :: TasmanianSparseGrid
  interface readGrid
   module procedure swigf_readGrid__SWIG_0, swigf_readGrid__SWIG_1
  end interface
@@ -1862,8 +1864,8 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 integer(C_INT), dimension(*), target :: anisotropic_weights
 real(C_DOUBLE), intent(in) :: alpha
 real(C_DOUBLE), intent(in) :: beta
@@ -1904,8 +1906,8 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 integer(C_INT), dimension(*), target :: anisotropic_weights
 real(C_DOUBLE), intent(in) :: alpha
 real(C_DOUBLE), intent(in) :: beta
@@ -1942,8 +1944,8 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 integer(C_INT), dimension(*), target :: anisotropic_weights
 real(C_DOUBLE), intent(in) :: alpha
 real(C_DOUBLE), intent(in) :: beta
@@ -1976,8 +1978,8 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 integer(C_INT), dimension(*), target :: anisotropic_weights
 real(C_DOUBLE), intent(in) :: alpha
 type(SwigClassWrapper) :: farg1 
@@ -2006,8 +2008,8 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 integer(C_INT), dimension(*), target :: anisotropic_weights
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
@@ -2033,8 +2035,8 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
 integer(C_INT) :: farg3 
@@ -2058,8 +2060,8 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 integer(C_INT), dimension(*), target :: anisotropic_weights
 integer(C_INT), dimension(*), target :: level_limits
 type(SwigClassWrapper) :: farg1 
@@ -2089,8 +2091,8 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 integer(C_INT), dimension(*), target :: anisotropic_weights
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
@@ -2116,8 +2118,8 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
 integer(C_INT) :: farg3 
@@ -2142,7 +2144,7 @@ integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
 integer(C_INT), intent(in) :: order
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeOneDRule), intent(in) :: rule
 integer(C_INT), dimension(*), target :: level_limits
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
@@ -2169,7 +2171,7 @@ integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
 integer(C_INT), intent(in) :: order
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeOneDRule), intent(in) :: rule
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
 integer(C_INT) :: farg3 
@@ -2295,7 +2297,7 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), dimension(*), target :: anisotropic_weights
 integer(C_INT), dimension(*), target :: level_limits
 type(SwigClassWrapper) :: farg1 
@@ -2322,7 +2324,7 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), dimension(*), target :: anisotropic_weights
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
@@ -2346,7 +2348,7 @@ class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
 integer(C_INT) :: farg3 
@@ -2410,7 +2412,7 @@ subroutine swigf_TasmanianSparseGrid_updateGlobalGrid__SWIG_2(self, depth, type,
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), dimension(*), target :: anisotropic_weights
 integer(C_INT), dimension(*), target :: level_limits
 type(SwigClassWrapper) :: farg1 
@@ -2431,7 +2433,7 @@ subroutine swigf_TasmanianSparseGrid_updateGlobalGrid__SWIG_3(self, depth, type,
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), dimension(*), target :: anisotropic_weights
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
@@ -2449,7 +2451,7 @@ subroutine swigf_TasmanianSparseGrid_updateGlobalGrid__SWIG_4(self, depth, type)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
 integer(C_INT) :: farg3 
@@ -2464,7 +2466,7 @@ subroutine swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_2(self, depth, typ
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), dimension(*), target :: anisotropic_weights
 integer(C_INT), dimension(*), target :: level_limits
 type(SwigClassWrapper) :: farg1 
@@ -2485,7 +2487,7 @@ subroutine swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_3(self, depth, typ
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), dimension(*), target :: anisotropic_weights
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
@@ -2503,7 +2505,7 @@ subroutine swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_4(self, depth, typ
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
 integer(C_INT) :: farg3 
@@ -2518,7 +2520,7 @@ subroutine swigf_TasmanianSparseGrid_updateFourierGrid__SWIG_2(self, depth, type
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), dimension(*), target :: anisotropic_weights
 integer(C_INT), dimension(*), target :: level_limits
 type(SwigClassWrapper) :: farg1 
@@ -2539,7 +2541,7 @@ subroutine swigf_TasmanianSparseGrid_updateFourierGrid__SWIG_3(self, depth, type
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), dimension(*), target :: anisotropic_weights
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
@@ -2557,7 +2559,7 @@ subroutine swigf_TasmanianSparseGrid_updateFourierGrid__SWIG_4(self, depth, type
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
 integer(C_INT) :: farg3 
@@ -2636,7 +2638,7 @@ end function
 function swigf_TasmanianSparseGrid_getRule(self) &
 result(swig_result)
 use, intrinsic :: ISO_C_BINDING
-integer(TypeOneDRule) :: swig_result
+integer(tsg_TypeOneDRule) :: swig_result
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT) :: fresult 
 type(SwigClassWrapper) :: farg1 
@@ -3014,7 +3016,7 @@ end subroutine
 subroutine swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_1(self, type, min_growth, output, level_limits)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), intent(in) :: min_growth
 integer(C_INT), intent(in) :: output
 integer(C_INT), dimension(*), target :: level_limits
@@ -3035,7 +3037,7 @@ end subroutine
 subroutine swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2(self, type, min_growth, output)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 integer(C_INT), intent(in) :: min_growth
 integer(C_INT), intent(in) :: output
 type(SwigClassWrapper) :: farg1 
@@ -3088,7 +3090,7 @@ subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(self, toleranc
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 real(C_DOUBLE), intent(in) :: tolerance
-integer(TypeRefinement), intent(in) :: criteria
+integer(tsg_TypeRefinement), intent(in) :: criteria
 integer(C_INT), intent(in) :: output
 integer(C_INT), dimension(*), target :: level_limits
 real(C_DOUBLE), dimension(*), target :: scale_correction
@@ -3112,7 +3114,7 @@ subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(self, toleranc
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 real(C_DOUBLE), intent(in) :: tolerance
-integer(TypeRefinement), intent(in) :: criteria
+integer(tsg_TypeRefinement), intent(in) :: criteria
 integer(C_INT), intent(in) :: output
 integer(C_INT), dimension(*), target :: level_limits
 type(SwigClassWrapper) :: farg1 
@@ -3133,7 +3135,7 @@ subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_7(self, toleranc
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 real(C_DOUBLE), intent(in) :: tolerance
-integer(TypeRefinement), intent(in) :: criteria
+integer(tsg_TypeRefinement), intent(in) :: criteria
 integer(C_INT), intent(in) :: output
 type(SwigClassWrapper) :: farg1 
 real(C_DOUBLE) :: farg2 
@@ -3151,7 +3153,7 @@ subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_8(self, toleranc
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 real(C_DOUBLE), intent(in) :: tolerance
-integer(TypeRefinement), intent(in) :: criteria
+integer(tsg_TypeRefinement), intent(in) :: criteria
 type(SwigClassWrapper) :: farg1 
 real(C_DOUBLE) :: farg2 
 integer(C_INT) :: farg3 
@@ -3283,7 +3285,7 @@ end subroutine
 subroutine swigf_TasmanianSparseGrid_enableAcceleration__SWIG_0(self, acc)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
-integer(TypeAcceleration), intent(in) :: acc
+integer(tsg_TypeAcceleration), intent(in) :: acc
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
 
@@ -3295,7 +3297,7 @@ end subroutine
 subroutine swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1(self, acc, new_gpu_id, backend_handle, cusparse_handle)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
-integer(TypeAcceleration), intent(in) :: acc
+integer(tsg_TypeAcceleration), intent(in) :: acc
 integer(C_INT), intent(in) :: new_gpu_id
 type(C_PTR), intent(in) :: backend_handle
 type(C_PTR), intent(in) :: cusparse_handle
@@ -3316,7 +3318,7 @@ end subroutine
 subroutine swigf_TasmanianSparseGrid_enableAcceleration__SWIG_2(self, acc, new_gpu_id, backend_handle)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
-integer(TypeAcceleration), intent(in) :: acc
+integer(tsg_TypeAcceleration), intent(in) :: acc
 integer(C_INT), intent(in) :: new_gpu_id
 type(C_PTR), intent(in) :: backend_handle
 type(SwigClassWrapper) :: farg1 
@@ -3334,7 +3336,7 @@ end subroutine
 subroutine swigf_TasmanianSparseGrid_enableAcceleration__SWIG_3(self, acc, new_gpu_id)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
-integer(TypeAcceleration), intent(in) :: acc
+integer(tsg_TypeAcceleration), intent(in) :: acc
 integer(C_INT), intent(in) :: new_gpu_id
 type(SwigClassWrapper) :: farg1 
 integer(C_INT) :: farg2 
@@ -3361,7 +3363,7 @@ end subroutine
 function swigf_TasmanianSparseGrid_getAccelerationType(self) &
 result(swig_result)
 use, intrinsic :: ISO_C_BINDING
-integer(TypeAcceleration) :: swig_result
+integer(tsg_TypeAcceleration) :: swig_result
 class(TasmanianSparseGrid), intent(in) :: self
 integer(C_INT) :: fresult 
 type(SwigClassWrapper) :: farg1 
@@ -3375,7 +3377,7 @@ function swigf_TasmanianSparseGrid_isAccelerationAvailable(acc) &
 result(swig_result)
 use, intrinsic :: ISO_C_BINDING
 logical :: swig_result
-integer(TypeAcceleration), intent(in) :: acc
+integer(tsg_TypeAcceleration), intent(in) :: acc
 integer(C_INT) :: fresult 
 integer(C_INT) :: farg1 
 
@@ -3594,8 +3596,8 @@ type(TasmanianSparseGrid) :: swig_result
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 type(SwigClassWrapper) :: fresult 
 integer(C_INT) :: farg1 
 integer(C_INT) :: farg2 
@@ -3619,8 +3621,8 @@ type(TasmanianSparseGrid) :: swig_result
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeDepth), intent(in) :: type
+integer(tsg_TypeOneDRule), intent(in) :: rule
 type(SwigClassWrapper) :: fresult 
 integer(C_INT) :: farg1 
 integer(C_INT) :: farg2 
@@ -3645,7 +3647,7 @@ integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
 integer(C_INT), intent(in) :: order
-integer(TypeOneDRule), intent(in) :: rule
+integer(tsg_TypeOneDRule), intent(in) :: rule
 type(SwigClassWrapper) :: fresult 
 integer(C_INT) :: farg1 
 integer(C_INT) :: farg2 
@@ -3751,7 +3753,7 @@ type(TasmanianSparseGrid) :: swig_result
 integer(C_INT), intent(in) :: dimensions
 integer(C_INT), intent(in) :: outputs
 integer(C_INT), intent(in) :: depth
-integer(TypeDepth), intent(in) :: type
+integer(tsg_TypeDepth), intent(in) :: type
 type(SwigClassWrapper) :: fresult 
 integer(C_INT) :: farg1 
 integer(C_INT) :: farg2 

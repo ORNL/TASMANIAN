@@ -55,6 +55,11 @@
 // Unless otherwise specified, ignore functions that use unknown types
 %fortranonlywrapped;
 
+// Prefix all enums with "tsg"
+%rename("tsg_%s",%$isenumitem) "";
+%rename("tsg_%s",%$isenum) "";
+
+
 /* -------------------------------------------------------------------------
  * Wrapped files
  * ------------------------------------------------------------------------- */
