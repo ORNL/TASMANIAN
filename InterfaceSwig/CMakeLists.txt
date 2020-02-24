@@ -49,7 +49,7 @@ endfunction()
 
 set(Tasmanian_libfor_target_name tasmanian)
 tasmanian_add_swig_module(${Tasmanian_libfor_target_name})
-target_link_libraries(${Tasmanian_libfor_target_name} Tasmanian_addons)
+target_link_libraries(${Tasmanian_libfor_target_name} Tasmanian_addons Tasmanian_libdream_${Tasmanian_lib_default})
 set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
                                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                                  VERSION   ${Tasmanian_version_string})
