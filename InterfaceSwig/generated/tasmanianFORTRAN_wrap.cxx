@@ -199,21 +199,6 @@ template <typename T> T SwigValueInit() {
 
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-SWIGEXPORT void SWIG_check_unhandled_exception_impl(const char* decl);
-SWIGEXPORT void SWIG_store_exception(const char* decl, int errcode, const char *msg);
-#ifdef __cplusplus
-}
-#endif
-
-
-#undef SWIG_exception_impl
-#define SWIG_exception_impl(DECL, CODE, MSG, RETURNNULL) \
-    SWIG_store_exception(DECL, CODE, MSG); RETURNNULL;
-
-
 enum SwigMemFlags {
     SWIG_MEM_OWN = 0x01,
     SWIG_MEM_RVALUE = 0x02,
@@ -258,13 +243,34 @@ enum AssignmentType {
 #define SWIG_as_voidptrptr(a) ((void)SWIG_as_voidptr(*a),reinterpret_cast< void** >(a)) 
 
 
+#include <typeinfo>
+#include <stdexcept>
 
-extern "C" {
 
-int tasmanian_ierr = 0;
+#include <stdint.h>		// Use the C99 official header
 
+
+#include <string>
+
+
+#include "tsgEnumerates.hpp"
+
+
+#include "TasmanianSparseGrid.hpp"
+
+
+struct SwigClassWrapper {
+    void* cptr;
+    int cmemflags;
+};
+
+
+SWIGINTERN SwigClassWrapper SwigClassWrapper_uninitialized() {
+    SwigClassWrapper result;
+    result.cptr = NULL;
+    result.cmemflags = 0;
+    return result;
 }
-
 
 
 #include <stdlib.h>
@@ -293,87 +299,6 @@ SWIGINTERN SwigArrayWrapper SwigArrayWrapper_uninitialized() {
 
 
 #include <string.h>
-
-
-// Stored exception message
-SWIGINTERN const char* swig_last_exception_cstr = NULL;
-// Retrieve error message
-SWIGEXPORT const char* tasmanian_get_serr() {
-  if (!swig_last_exception_cstr) {
-    SWIG_store_exception("UNKNOWN", SWIG_RuntimeError,
-                         "no error string was present");
-  }
-  return swig_last_exception_cstr;
-}
-
-
-#include <string>
-
-
-#include <cctype>
-
-
-extern "C" {
-// Call this function before any new action
-SWIGEXPORT void SWIG_check_unhandled_exception_impl(const char* decl) {
-  if (tasmanian_ierr != 0) {
-    // Construct message; calling the error string function ensures that
-    // the string is allocated if the user did something goofy like
-    // manually setting the integer. Since this function is not expected to
-    // be wrapped by a catch statement, it will probably terminate the
-    // program.
-    std::string msg("An unhandled exception occurred before a call to ");
-    msg += decl;
-    msg += "; ";
-    std::string prev_msg = tasmanian_get_serr();
-    prev_msg[0] = std::tolower(prev_msg[0]);
-    msg += prev_msg;
-    throw std::runtime_error(msg);
-  }
-}
-
-// Save an exception to the fortran error code and string
-SWIGEXPORT void SWIG_store_exception(const char *decl,
-                                     int errcode,
-                                     const char *msg) {
-  ::tasmanian_ierr = errcode;
-
-  static std::string last_exception_msg;
-  // Save the message to a std::string first
-  last_exception_msg = "In ";
-  last_exception_msg += decl;
-  last_exception_msg += ": ";
-  last_exception_msg += msg;
-  swig_last_exception_cstr = last_exception_msg.c_str();
-}
-}
-
-
-#include <typeinfo>
-#include <stdexcept>
-
-
-#include <stdint.h>
-
-
-#include "tsgEnumerates.hpp"
-
-
-#include "TasmanianSparseGrid.hpp"
-
-
-struct SwigClassWrapper {
-    void* cptr;
-    int cmemflags;
-};
-
-
-SWIGINTERN SwigClassWrapper SwigClassWrapper_uninitialized() {
-    SwigClassWrapper result;
-    result.cptr = NULL;
-    result.cmemflags = 0;
-    return result;
-}
 
 
 namespace swig {
@@ -493,17 +418,6 @@ SWIGINTERN void SWIG_free_rvalue(SwigClassWrapper other) {
 
 
 extern "C" {
-SWIGEXPORT SwigArrayWrapper _wrap_get_serr() {
-  SwigArrayWrapper fresult ;
-  char *result = 0 ;
-  
-  result = (char *)tasmanian_get_serr();
-  fresult.size = strlen((char*)(result));
-  fresult.data = const_cast< char * >(result);
-  return fresult;
-}
-
-
 SWIGEXPORT SwigClassWrapper _wrap_new_TasmanianSparseGrid__SWIG_0() {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *result = 0 ;
