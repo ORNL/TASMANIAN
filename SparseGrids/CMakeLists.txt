@@ -29,8 +29,11 @@ endif()
 # NOTE: adding Tasmanian_EXTRA_LIBRARIES to SparseGrids will propagate to all other targets
 # same holds for Tasmanian_EXTRA_INCLUDE_DIRS
 target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_EXTRA_LIBRARIES})
-target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:${Tasmanian_EXTRA_INCLUDE_DIRS}>)
-target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${Tasmanian_EXTRA_INCLUDE_DIRS}>)
+
+foreach(_tsg_include ${Tasmanian_EXTRA_INCLUDE_DIRS})
+    target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${_tsg_include}>)
+    target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:${_tsg_include}>)
+endforeach()
 
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include>)
 
