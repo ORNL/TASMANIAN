@@ -63,14 +63,15 @@ macro(Tasmanian_macro_add_libdfortran03 Tasmanian_shared_or_static)
     endif()
 
     add_library(${Tasmanian_libfor_target_name} ${Tasmanian_shared_or_static}
-                                                    "${Tasmanian_GENERATE_DIR}/tasmanian.f03"
+                                                    "${Tasmanian_GENERATE_DIR}/tasmanian.f90"
                                                     "${Tasmanian_GENERATE_DIR}/tasmanianFORTRAN_wrap.cxx")
 
     target_link_libraries(${Tasmanian_libfor_target_name} Tasmanian_addons)
     set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran"
                                                                     INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
                                                                     SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                                    VERSION   ${Tasmanian_version_string})
+                                                                    VERSION   ${Tasmanian_version_string}
+                                                                    LINKER_LANGUAGE Fortran)
 
     target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
 
@@ -101,7 +102,7 @@ else()
         string(TOUPPER ${_tsglibtype} Tasmanian_ltype)
         Tasmanian_macro_add_libdfortran03(${Tasmanian_ltype})
 
-        set_source_files_properties("${Tasmanian_GENERATE_DIR}/tasmanian.f03" PROPERTIES LANGUAGE Fortran)
+        set_source_files_properties("${Tasmanian_GENERATE_DIR}/tasmanian.f90" PROPERTIES LANGUAGE Fortran)
         target_link_libraries(Tasmanian_libfortran03_${_tsglibtype} Tasmanian_libdream_${_tsglibtype})
     endforeach()
     unset(_tsglibtype)
