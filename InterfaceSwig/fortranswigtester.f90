@@ -41,15 +41,19 @@ write(*,*)
 
 contains
 subroutine test_make_global_grid()
+    use, intrinsic :: iso_c_binding
     type(TasmanianSparseGrid) :: grid
-    double precision, dimension(:,:), allocatable :: points, ref_points
+    real(C_DOUBLE), dimension(:,:), allocatable :: points, ref_points
+    real(C_DOUBLE), dimension(:), allocatable :: temp_points
     integer :: i, j
 
     grid = TasmanianSparseGrid()
     call grid%makeGlobalGrid(2, 1, 1, tsg_type_level, tsg_rule_clenshawcurtis)
     allocate(points(grid%getNumDimensions(), grid%getNumPoints()))
+    allocate(temp_points(size(points)))
 
-    call grid%getPoints(reshape(points, [size(points)]))
+    call grid%getPoints(temp_points)
+    points = reshape(temp_points, shape(points))
 
     ! correct set of points, the generated set above must match the ref_points
     ref_points = reshape((/ 0.0D-0, 0.0D-0, 0.0D-0, -1.0D-0, 0.0D-0, 1.0D-0, -1.0D-0, 0.0D-0, 1.0D-0, 0.0D-0 /), (/ 2, 5 /) )
