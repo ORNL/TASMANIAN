@@ -93,9 +93,15 @@ endmacro()
 # Fortran librareis and command line tools
 ########################################################################
 
+add_executable(Tasmanian_fortran_swig_tester fortranswigtester.f90)
+set_target_properties(Tasmanian_fortran_swig_tester PROPERTIES OUTPUT_NAME "forswigtester"
+                                                               LINKER_LANGUAGE Fortran)
+
 if (Tasmanian_ENABLE_SWIG)
     # generate the interface
     tasmanian_add_swig_module(tasmanian)
+
+    target_link_libraries(Tasmanian_fortran_swig_tester  tasmanian)
 else()
     # build the currently generated interface
     foreach(_tsglibtype ${Tasmanian_libs_type})
@@ -107,6 +113,16 @@ else()
     endforeach()
     unset(_tsglibtype)
     unset(Tasmanian_ltype)
+
+    target_link_libraries(Tasmanian_fortran_swig_tester  Tasmanian_libfortran03_${Tasmanian_lib_default})
+endif()
+
+add_test(Fortran2003 forswigtester)
+if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
+    set_tests_properties(Fortran2003
+        PROPERTIES
+        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
+        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
 endif()
 
 ########################################################################
