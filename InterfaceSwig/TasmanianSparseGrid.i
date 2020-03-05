@@ -24,5 +24,13 @@
 %ignore TasGrid::TasmanianSparseGrid::getHierarchicalCoefficients;
 %ignore TasGrid::TasmanianSparseGrid::getLoadedValues;
 
+%ignore TasGrid::TasmanianSparseGrid::setSurplusRefinement(double, int);
+%ignore TasGrid::TasmanianSparseGrid::setSurplusRefinement(double, int, int const*);
+
+%ignore TasGrid::TasmanianSparseGrid::getPointsIndexes;
+%ignore TasGrid::TasmanianSparseGrid::getNeededIndexes;
+
+%ignore TasGrid::readGrid(std::string const&);
+
 // Wrap clases/methods found in this file
 %include "TasmanianSparseGrid.hpp"

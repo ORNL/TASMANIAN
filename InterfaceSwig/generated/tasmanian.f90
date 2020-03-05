@@ -215,12 +215,10 @@ module tasmanian
   procedure :: clearLevelLimits => swigf_TasmanianSparseGrid_clearLevelLimits
   procedure, private :: swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_1
   procedure, private :: swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2
-  procedure, private :: swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_1
-  procedure, private :: swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_2
+  procedure, private :: swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_3
+  procedure, private :: swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_4
   procedure, private :: swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_5
   procedure, private :: swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_6
-  procedure, private :: swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_7
-  procedure, private :: swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_8
   procedure :: clearRefinement => swigf_TasmanianSparseGrid_clearRefinement
   procedure :: mergeRefinement => swigf_TasmanianSparseGrid_mergeRefinement
   procedure :: beginConstruction => swigf_TasmanianSparseGrid_beginConstruction
@@ -248,17 +246,14 @@ module tasmanian
   procedure, private :: swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_2
   procedure :: evaluateSparseHierarchicalFunctionsGetNZ => swigf_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1CQM1I
   procedure :: evaluateSparseHierarchicalFunctionsStatic => swigf_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1HRJEE
-  procedure :: getPointsIndexes => swigf_TasmanianSparseGrid_getPointsIndexes
-  procedure :: getNeededIndexes => swigf_TasmanianSparseGrid_getNeededIndexes
   procedure, private :: swigf_TasmanianSparseGrid_op_assign__
   generic :: setDomainTransform => swigf_TasmanianSparseGrid_setDomainTransform__SWIG_1
   generic :: getDomainTransform => swigf_TasmanianSparseGrid_getDomainTransform__SWIG_1
   generic :: setAnisotropicRefinement => swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_1, &
     swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2
-  generic :: setSurplusRefinement => swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_1, &
-    swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_2, swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_5, &
-    swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_6, swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_7, &
-    swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_8
+  generic :: setSurplusRefinement => swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_3, &
+    swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_4, swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_5, &
+    swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_6
   generic :: updateSequenceGrid => swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_2, &
     swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_3, swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_4
   generic :: makeSequenceGrid => swigf_TasmanianSparseGrid_makeSequenceGrid__SWIG_2, &
@@ -305,6 +300,7 @@ module tasmanian
     swigf_TasmanianSparseGrid_enableAcceleration__SWIG_3
  end type TasmanianSparseGrid
  public :: makeEmpty
+ public :: readGrid
  interface makeLocalPolynomialGrid
   module procedure swigf_makeLocalPolynomialGrid__SWIG_1, swigf_makeLocalPolynomialGrid__SWIG_2, &
     swigf_makeLocalPolynomialGrid__SWIG_3
@@ -317,10 +313,6 @@ module tasmanian
  interface TasmanianSparseGrid
   module procedure swigf_new_TasmanianSparseGrid__SWIG_0, swigf_new_TasmanianSparseGrid__SWIG_1
  end interface
- interface readGrid
-  module procedure swigf_readGrid__SWIG_0, swigf_readGrid__SWIG_1
- end interface
- public :: readGrid
  interface makeFourierGrid
   module procedure swigf_makeFourierGrid__SWIG_2
  end interface
@@ -1130,27 +1122,8 @@ integer(C_INT), intent(in) :: farg3
 integer(C_INT), intent(in) :: farg4
 end subroutine
 
-subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_1(farg1, farg2, farg3, farg4) &
-bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_1")
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-type(SwigClassWrapper), intent(in) :: farg1
-real(C_DOUBLE), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-type(C_PTR), value :: farg4
-end subroutine
-
-subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_2(farg1, farg2, farg3) &
-bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_2")
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-type(SwigClassWrapper), intent(in) :: farg1
-real(C_DOUBLE), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-end subroutine
-
-subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(farg1, farg2, farg3, farg4, farg5, farg6) &
-bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5")
+subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_3(farg1, farg2, farg3, farg4, farg5, farg6) &
+bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_3")
 use, intrinsic :: ISO_C_BINDING
 import :: swigclasswrapper
 type(SwigClassWrapper), intent(in) :: farg1
@@ -1161,8 +1134,8 @@ type(C_PTR), value :: farg5
 type(C_PTR), value :: farg6
 end subroutine
 
-subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(farg1, farg2, farg3, farg4, farg5) &
-bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_6")
+subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_4(farg1, farg2, farg3, farg4, farg5) &
+bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_4")
 use, intrinsic :: ISO_C_BINDING
 import :: swigclasswrapper
 type(SwigClassWrapper), intent(in) :: farg1
@@ -1172,8 +1145,8 @@ integer(C_INT), intent(in) :: farg4
 type(C_PTR), value :: farg5
 end subroutine
 
-subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_7(farg1, farg2, farg3, farg4) &
-bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_7")
+subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(farg1, farg2, farg3, farg4) &
+bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5")
 use, intrinsic :: ISO_C_BINDING
 import :: swigclasswrapper
 type(SwigClassWrapper), intent(in) :: farg1
@@ -1182,8 +1155,8 @@ integer(C_INT), intent(in) :: farg3
 integer(C_INT), intent(in) :: farg4
 end subroutine
 
-subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_8(farg1, farg2, farg3) &
-bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_8")
+subroutine swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(farg1, farg2, farg3) &
+bind(C, name="_wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_6")
 use, intrinsic :: ISO_C_BINDING
 import :: swigclasswrapper
 type(SwigClassWrapper), intent(in) :: farg1
@@ -1425,24 +1398,6 @@ type(C_PTR), value :: farg5
 type(C_PTR), value :: farg6
 end subroutine
 
-function swigc_TasmanianSparseGrid_getPointsIndexes(farg1) &
-bind(C, name="_wrap_TasmanianSparseGrid_getPointsIndexes") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-type(SwigClassWrapper), intent(in) :: farg1
-type(C_PTR) :: fresult
-end function
-
-function swigc_TasmanianSparseGrid_getNeededIndexes(farg1) &
-bind(C, name="_wrap_TasmanianSparseGrid_getNeededIndexes") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-type(SwigClassWrapper), intent(in) :: farg1
-type(C_PTR) :: fresult
-end function
-
 subroutine swigc_TasmanianSparseGrid_op_assign__(farg1, farg2) &
 bind(C, name="_wrap_TasmanianSparseGrid_op_assign__")
 use, intrinsic :: ISO_C_BINDING
@@ -1556,18 +1511,8 @@ integer(C_INT), intent(in) :: farg4
 type(SwigClassWrapper) :: fresult
 end function
 
-function swigc_readGrid__SWIG_0(farg1) &
-bind(C, name="_wrap_readGrid__SWIG_0") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-import :: swigarraywrapper
-type(SwigArrayWrapper) :: farg1
-type(SwigClassWrapper) :: fresult
-end function
-
-function swigc_readGrid__SWIG_1(farg1) &
-bind(C, name="_wrap_readGrid__SWIG_1") &
+function swigc_readGrid(farg1) &
+bind(C, name="_wrap_readGrid") &
 result(fresult)
 use, intrinsic :: ISO_C_BINDING
 import :: swigclasswrapper
@@ -3016,40 +2961,7 @@ farg4 = output
 call swigc_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2(farg1, farg2, farg3, farg4)
 end subroutine
 
-subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_1(self, tolerance, output, level_limits)
-use, intrinsic :: ISO_C_BINDING
-class(TasmanianSparseGrid), intent(in) :: self
-real(C_DOUBLE), intent(in) :: tolerance
-integer(C_INT), intent(in) :: output
-integer(C_INT), dimension(*), target :: level_limits
-type(SwigClassWrapper) :: farg1 
-real(C_DOUBLE) :: farg2 
-integer(C_INT) :: farg3 
-type(C_PTR) :: farg4 
-
-farg1 = self%swigdata
-farg2 = tolerance
-farg3 = output
-farg4 = c_loc(level_limits)
-call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_1(farg1, farg2, farg3, farg4)
-end subroutine
-
-subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_2(self, tolerance, output)
-use, intrinsic :: ISO_C_BINDING
-class(TasmanianSparseGrid), intent(in) :: self
-real(C_DOUBLE), intent(in) :: tolerance
-integer(C_INT), intent(in) :: output
-type(SwigClassWrapper) :: farg1 
-real(C_DOUBLE) :: farg2 
-integer(C_INT) :: farg3 
-
-farg1 = self%swigdata
-farg2 = tolerance
-farg3 = output
-call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_2(farg1, farg2, farg3)
-end subroutine
-
-subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(self, tolerance, criteria, output, level_limits, &
+subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_3(self, tolerance, criteria, output, level_limits, &
   scale_correction)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
@@ -3071,10 +2983,10 @@ farg3 = criteria
 farg4 = output
 farg5 = c_loc(level_limits)
 farg6 = c_loc(scale_correction)
-call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(farg1, farg2, farg3, farg4, farg5, farg6)
+call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_3(farg1, farg2, farg3, farg4, farg5, farg6)
 end subroutine
 
-subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(self, tolerance, criteria, output, level_limits)
+subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_4(self, tolerance, criteria, output, level_limits)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 real(C_DOUBLE), intent(in) :: tolerance
@@ -3092,10 +3004,10 @@ farg2 = tolerance
 farg3 = criteria
 farg4 = output
 farg5 = c_loc(level_limits)
-call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(farg1, farg2, farg3, farg4, farg5)
+call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_4(farg1, farg2, farg3, farg4, farg5)
 end subroutine
 
-subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_7(self, tolerance, criteria, output)
+subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(self, tolerance, criteria, output)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 real(C_DOUBLE), intent(in) :: tolerance
@@ -3110,10 +3022,10 @@ farg1 = self%swigdata
 farg2 = tolerance
 farg3 = criteria
 farg4 = output
-call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_7(farg1, farg2, farg3, farg4)
+call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(farg1, farg2, farg3, farg4)
 end subroutine
 
-subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_8(self, tolerance, criteria)
+subroutine swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(self, tolerance, criteria)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 real(C_DOUBLE), intent(in) :: tolerance
@@ -3125,7 +3037,7 @@ integer(C_INT) :: farg3
 farg1 = self%swigdata
 farg2 = tolerance
 farg3 = criteria
-call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_8(farg1, farg2, farg3)
+call swigc_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(farg1, farg2, farg3)
 end subroutine
 
 subroutine swigf_TasmanianSparseGrid_clearRefinement(self)
@@ -3500,36 +3412,6 @@ farg6 = c_loc(vals)
 call swigc_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1HRJEE(farg1, farg2, farg3, farg4, farg5, farg6)
 end subroutine
 
-function swigf_TasmanianSparseGrid_getPointsIndexes(self) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-integer(C_INT), dimension(getPointsIndexes*) :: swig_result
-class(TasmanianSparseGrid), intent(in) :: self
-type(C_PTR) :: fresult 
-type(SwigClassWrapper) :: farg1 
-integer(C_INT), dimension(:), pointer :: fresult_temp 
-
-farg1 = self%swigdata
-fresult = swigc_TasmanianSparseGrid_getPointsIndexes(farg1)
-call c_f_pointer(fresult, fresult_temp, [fresult_dim0])
-swig_result = fresult_temp
-end function
-
-function swigf_TasmanianSparseGrid_getNeededIndexes(self) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-integer(C_INT), dimension(getNeededIndexes*) :: swig_result
-class(TasmanianSparseGrid), intent(in) :: self
-type(C_PTR) :: fresult 
-type(SwigClassWrapper) :: farg1 
-integer(C_INT), dimension(:), pointer :: fresult_temp 
-
-farg1 = self%swigdata
-fresult = swigc_TasmanianSparseGrid_getNeededIndexes(farg1)
-call c_f_pointer(fresult, fresult_temp, [fresult_dim0])
-swig_result = fresult_temp
-end function
-
 subroutine swigf_TasmanianSparseGrid_op_assign__(self, other)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(inout) :: self
@@ -3732,7 +3614,7 @@ fresult = swigc_makeFourierGrid__SWIG_2(farg1, farg2, farg3, farg4)
 swig_result%swigdata = fresult
 end function
 
-function swigf_readGrid__SWIG_0(filename) &
+function readGrid(filename) &
 result(swig_result)
 use, intrinsic :: ISO_C_BINDING
 type(TasmanianSparseGrid) :: swig_result
@@ -3742,21 +3624,7 @@ character(kind=C_CHAR), dimension(:), allocatable, target :: farg1_temp
 type(SwigArrayWrapper) :: farg1 
 
 call SWIGTM_fin_char_Sm_(filename, farg1, farg1_temp)
-fresult = swigc_readGrid__SWIG_0(farg1)
-swig_result%swigdata = fresult
-end function
-
-function swigf_readGrid__SWIG_1(filename) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-character(len=*), target :: filename
-type(SwigClassWrapper) :: fresult 
-character(kind=C_CHAR), dimension(:), allocatable, target :: farg1_temp 
-type(SwigArrayWrapper) :: farg1 
-
-call SWIGTM_fin_char_Sm_(filename, farg1, farg1_temp)
-fresult = swigc_readGrid__SWIG_1(farg1)
+fresult = swigc_readGrid(farg1)
 swig_result%swigdata = fresult
 end function
 

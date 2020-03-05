@@ -1576,35 +1576,7 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2(SwigC
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_1(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int *farg4) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double arg2 ;
-  int arg3 ;
-  int *arg4 = (int *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,int,int const *)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (int *)(farg4);
-  (arg1)->setSurplusRefinement(arg2,arg3,(int const *)arg4);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_2(SwigClassWrapper *farg1, double const *farg2, int const *farg3) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double arg2 ;
-  int arg3 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setSurplusRefinement(double,int)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double)(*farg2);
-  arg3 = (int)(*farg3);
-  (arg1)->setSurplusRefinement(arg2,arg3);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, int *farg5, double *farg6) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_3(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, int *farg5, double *farg6) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
   TasGrid::TypeRefinement arg3 ;
@@ -1623,7 +1595,7 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(SwigClass
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, int *farg5) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_4(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4, int *farg5) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
   TasGrid::TypeRefinement arg3 ;
@@ -1640,7 +1612,7 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(SwigClass
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_7(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_5(SwigClassWrapper *farg1, double const *farg2, int const *farg3, int const *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
   TasGrid::TypeRefinement arg3 ;
@@ -1655,7 +1627,7 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_7(SwigClass
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_8(SwigClassWrapper *farg1, double const *farg2, int const *farg3) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setSurplusRefinement__SWIG_6(SwigClassWrapper *farg1, double const *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double arg2 ;
   TasGrid::TypeRefinement arg3 ;
@@ -2009,32 +1981,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateSparseHierarchicalFunctionsSta
 }
 
 
-SWIGEXPORT int * _wrap_TasmanianSparseGrid_getPointsIndexes(SwigClassWrapper *farg1) {
-  int * fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getPointsIndexes() const", return 0);
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = (int *)((TasGrid::TasmanianSparseGrid const *)arg1)->getPointsIndexes();
-  fresult = result;
-  return fresult;
-}
-
-
-SWIGEXPORT int * _wrap_TasmanianSparseGrid_getNeededIndexes(SwigClassWrapper *farg1) {
-  int * fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  int *result = 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getNeededIndexes() const", return 0);
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = (int *)((TasGrid::TasmanianSparseGrid const *)arg1)->getNeededIndexes();
-  fresult = result;
-  return fresult;
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_op_assign__(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   TasGrid::TasmanianSparseGrid *arg2 = 0 ;
@@ -2211,28 +2157,13 @@ SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_2(int const *farg1, int 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_readGrid__SWIG_0(SwigArrayWrapper *farg1) {
+SWIGEXPORT SwigClassWrapper _wrap_readGrid(SwigArrayWrapper *farg1) {
   SwigClassWrapper fresult ;
   char *arg1 = (char *) 0 ;
   TasGrid::TasmanianSparseGrid result;
   
   arg1 = (char *)(farg1->data);
   result = TasGrid::readGrid((char const *)arg1);
-  fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
-  fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
-  return fresult;
-}
-
-
-SWIGEXPORT SwigClassWrapper _wrap_readGrid__SWIG_1(SwigArrayWrapper *farg1) {
-  SwigClassWrapper fresult ;
-  std::string *arg1 = 0 ;
-  std::string tempstr1 ;
-  TasGrid::TasmanianSparseGrid result;
-  
-  tempstr1 = std::string(static_cast<char *>(farg1->data), farg1->size);
-  arg1 = &tempstr1;
-  result = TasGrid::readGrid((std::string const &)*arg1);
   fresult.cptr = new (TasGrid::TasmanianSparseGrid)(result);
   fresult.cmemflags = SWIG_MEM_RVALUE | SWIG_MEM_OWN;
   return fresult;
