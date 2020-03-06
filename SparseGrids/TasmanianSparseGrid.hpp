@@ -1164,6 +1164,9 @@ public:
      * can manifest even in globally isotropic cases. See TasGrid::TypeRefinement
      * for details.
      *
+     * If this method is called on a Global or a Sequence grid, the \b criteria will be ignored
+     * and the method will use the Global/Sequence variant.
+     *
      * \param tolerance indicates the cutoff threshold for refinement, points will not be
      *      included once the magnitude of the relative surplus drops below the tolerance.
      * \param criteria indicates how to prioritize the hierarchy and/or local anisotropy.
