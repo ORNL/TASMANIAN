@@ -794,12 +794,12 @@ const T* TasmanianSparseGrid::formCanonicalPointsGPU(const T *gpu_x, int num_x, 
 #endif // Tasmanian_ENABLE_CUDA
 
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
-    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
+    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setAnisotropicRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
     setAnisotropicRefinement(type, min_growth, output, Utils::copyArray(level_limits, getNumDimensions()));
 }
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){
-    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
+    if (usingDynamicConstruction) throw std::runtime_error("ERROR: setAnisotropicRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
     if (min_growth < 1) throw std::invalid_argument("ERROR: setAnisotropicRefinement() requires positive min_growth");
     int dims = base->getNumDimensions();
@@ -884,8 +884,8 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
     if (outs == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has no outputs");
     if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid with no loaded values");
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid output");
-    if ((!isLocalPolynomial()) && (!isWavelet()))
-        throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a grid that is neither Local Polynomial nor Wavelet");
+    if (isFourier())
+        throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a Fourier grid.");
     if (tolerance < 0.0) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid tolerance (must be non-negative)");
 
     if (level_limits != 0) // can only happen if calling directly with int*, the vector version always passes null for level_limits
@@ -893,8 +893,10 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
 
     if (isLocalPolynomial()){
         get<GridLocalPolynomial>()->setSurplusRefinement(tolerance, criteria, output, llimits, scale_correction);
-    }else{
+    }else if (isWavelet()){
         get<GridWavelet>()->setSurplusRefinement(tolerance, criteria, output, llimits);
+    }else{
+        setSurplusRefinement(tolerance, output, std::vector<int>()); // new level limits are already set above
     }
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
