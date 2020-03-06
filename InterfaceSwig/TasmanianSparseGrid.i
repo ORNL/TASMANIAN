@@ -20,20 +20,26 @@
     double[]
 };
 
+namespace TasGrid {
 // The array-like typemap can't be applied to return values
-%ignore TasGrid::TasmanianSparseGrid::getHierarchicalCoefficients;
-%ignore TasGrid::TasmanianSparseGrid::getLoadedValues;
+%ignore TasmanianSparseGrid::getHierarchicalCoefficients;
+%ignore TasmanianSparseGrid::getLoadedValues;
 
-%ignore TasGrid::TasmanianSparseGrid::setSurplusRefinement(double, int);
-%ignore TasGrid::TasmanianSparseGrid::setSurplusRefinement(double, int, int const*);
+%ignore TasmanianSparseGrid::setSurplusRefinement(double, int);
+%ignore TasmanianSparseGrid::setSurplusRefinement(double, int, int const*);
 
-%ignore TasGrid::TasmanianSparseGrid::getPointsIndexes;
-%ignore TasGrid::TasmanianSparseGrid::getNeededIndexes;
+%ignore TasmanianSparseGrid::getPointsIndexes;
+%ignore TasmanianSparseGrid::getNeededIndexes;
 
-%ignore TasGrid::readGrid(std::string const&);
+%ignore readGrid(std::string const&);
 
-%ignore TasGrid::TasmanianSparseGrid::operator=;
-%ignore TasGrid::TasmanianSparseGrid::operator EvaluateCallable;
+%ignore TasmanianSparseGrid::operator=;
+%ignore TasmanianSparseGrid::operator EvaluateCallable;
+%ignore TasmanianSparseGrid::TasmanianSparseGrid(TasmanianSparseGrid &&);
+%ignore TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *, int, int);
+%ignore TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *, int);
+%ignore TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *);
+}
 
 // Wrap clases/methods found in this file
 %include "TasmanianSparseGrid.hpp"
