@@ -32,5 +32,8 @@
 
 %ignore TasGrid::readGrid(std::string const&);
 
+%ignore TasGrid::TasmanianSparseGrid::operator=;
+%ignore TasGrid::TasmanianSparseGrid::operator EvaluateCallable;
+
 // Wrap clases/methods found in this file
 %include "TasmanianSparseGrid.hpp"
