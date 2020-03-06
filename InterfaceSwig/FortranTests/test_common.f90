@@ -27,18 +27,41 @@
 ! THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
-program FORSWIGTESTER
-    use Tasmanian
-    implicit none
-    type(TasmanianSparseGrid) :: grid
 
-write(*,*)
-write(*,'(a,i1,a,i1)') 'Testing Tasmanian Fortran 2003-SWIG interface: version ', &
-                       grid%getVersionMajor(), ".", grid%getVersionMinor()
-write(*,*)
+! Tests if two matrices with dimension n by m are approximately the same
+! Calls "error stop" if the entries don't match to 1.D-12
+subroutine approx2d(n, m, A, B)
+    integer :: n, m
+    integer :: i, j
+    double precision, dimension(n,m) :: A, B
 
-call test_make_grid()
+    do j = 1, m
+        do i = 1, n
+            if ( abs(A(i, j) - B(i, j)) > 1.D-12 ) then
+                error stop
+            endif
+        enddo
+    enddo
+end subroutine
 
-write(*,*)
+! Same as approx2d() but uses a 1D array
+subroutine approx1d(n, x, y)
+    integer :: n, i
+    double precision, dimension(n) :: x, y
 
-end program FORSWIGTESTER
+    do i = 1, n
+        if ( abs(x(i) - y(i)) > 1.D-12 ) then
+            write(*,*) x(i), y(i)
+            error stop
+        endif
+    enddo
+end subroutine
+
+! similar to cassert, exits with "error stop" if the variable is false
+subroutine tassert(x)
+    logical :: x
+
+    if (.NOT. x) then
+        error stop
+    endif
+end subroutine
