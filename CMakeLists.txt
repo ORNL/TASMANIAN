@@ -17,6 +17,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""  (stable)
 #    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF     (mostly stable)
 #    -D Tasmanian_ENABLE_MPI:BOOL=OFF         (mostly stable)
+#    -D Tasmanian_ENABLE_SWIG:BOOL=OFF        (mostly stable)
 #    -D Tasmanian_ENABLE_HIP:BOOL=OFF         (placeholder only, do not use)
 #
 # Additional options: (if default test behavior is not desired)
@@ -86,6 +87,7 @@ option(Tasmanian_ENABLE_CUDA        "Enable Nvidia CUDA kernels and libraries wi
 option(Tasmanian_ENABLE_MAGMA       "Enable acceleration using UTK Magma library within Tasmanian (stable)" OFF)
 option(Tasmanian_ENABLE_FORTRAN     "Enable Fortran interface for Tasmanian (mostly stable)" OFF)
 option(Tasmanian_ENABLE_MPI         "Enable MPI support for Tasmanian (mostly stable)"       OFF)
+option(Tasmanian_ENABLE_SWIG        "Regenerate Fortran 2003 bindings with SWIG"       OFF)
 option(Tasmanian_ENABLE_HIP         "<placeholder only, do not use ... yet>"    OFF)
 option(Tasmanian_ENABLE_DOXYGEN     "Enable Dogygen documentation for Tasmanian (close to complete)" OFF)
 
@@ -138,6 +140,8 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Addons"      "${CMAKE_CURRENT_BINA
 
 if (Tasmanian_ENABLE_FORTRAN)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceFortran"  "${CMAKE_CURRENT_BINARY_DIR}/Fortran")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceSwig"
+      "${CMAKE_CURRENT_BINARY_DIR}/Fortran03")
 endif()
 
 if (Tasmanian_ENABLE_PYTHON)
