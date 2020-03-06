@@ -2,14 +2,15 @@
 # Testing: post install, make test_install
 # checks if the executables run and if the examples compile and run
 ########################################################################
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Testing/test_post_install.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh")
+set(Tasmanian_compilers  "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
 if (Tasmanian_ENABLE_FORTRAN)
-    add_custom_target(test_install COMMAND "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh"
-                                           "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}")
-else()
-    add_custom_target(test_install COMMAND "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh"
-                                           "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+    set(Tasmanian_compilers  "${Tasmanian_compilers} -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}")
 endif()
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Testing/test_post_install.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh")
+add_custom_target(test_install COMMAND "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh"
+        DESTINATION "share/Tasmanian/"
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 ########################################################################
 # Install exports, package-config files, and examples cmake file
