@@ -16,6 +16,7 @@ if (USE_XSDK_DEFAULTS)
     set(Tasmanian_ENABLE_MPI         OFF)
     set(Tasmanian_ENABLE_PYTHON      OFF)
     set(Tasmanian_ENABLE_FORTRAN     OFF)
+    set(Tasmanian_ENABLE_SWIG        OFF)
     set(Tasmanian_ENABLE_CUDA        OFF)
     set(Tasmanian_ENABLE_MAGMA       OFF)
     if (DEFINED XSDK_ENABLE_OPENMP)
@@ -67,6 +68,16 @@ endif()
 # check for Fortran, note that enable_language always gives FATAL_ERROR if the compiler is missing
 if (Tasmanian_ENABLE_FORTRAN)
     enable_language(Fortran)
+endif()
+
+# swig requires Fortran and cannot handle both types of libs
+if (Tasmanian_ENABLE_SWIG)
+    if (NOT Tasmanian_ENABLE_FORTRAN)
+        message(FATAL_ERROR "Tasmanian_ENABLE_SWIG=ON requires Tasmanian_ENABLE_FORTRAN=ON")
+    endif()
+    if ("${BUILD_SHARED_LIBS}" STREQUAL "")
+        message(FATAL_ERROR "Tasmanian_ENABLE_SWIG=ON requires BUILD_SHARED_LIBS to be defined (ON or OFF)")
+    endif()
 endif()
 
 # OpenMP setup

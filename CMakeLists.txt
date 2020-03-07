@@ -26,7 +26,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #
 # Extra options: (allow for workarounds of bugs and exotic systems)
 #    -D Tasmanian_EXTRA_LIBRARIES:STRING="appends more link libraries"
-#    -D Tasmanian_EXTRA_INCLUDE_DIRS:PATH="appends more include paths"
+#    -D Tasmanian_EXTRA_INCLUDE_DIRS:LIST="appends more include paths"
 #    -D Tasmanian_EXTRA_LINK_DIRS:PATH="appends more link paths"
 #
 # xSDK options: (USE_XSDK_DEFAULTS must be ON to use the other XSDK options)
@@ -45,6 +45,9 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #     -D MPI_CXX_COMPILER
 #     -D MPI_Fortran_COMPILER (must be compatible with the MPI_CXX_COMPILER)
 #     -D MPIEXEC_EXECUTABLE   (must be compatible with the MPI_CXX_COMPILER)
+#     -D SWIG_DIR         (path to swig-fortran install)
+#     -D SWIG_EXECUTABLE  (path to swigfortran)
+#     (note: swig may require extra includes, use Tasmanian_EXTRA_INCLUDE_DIRS)
 #
 # Directly specifying libraries and bypassing find_package()
 #     -D BLAS_LIBRARIES
