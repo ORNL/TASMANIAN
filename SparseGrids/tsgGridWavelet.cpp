@@ -96,7 +96,7 @@ GridWavelet::GridWavelet(GridWavelet const *wav, int ibegin, int iend) :
 }
 
 GridWavelet::GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals) :
-    BaseCanonicalGrid(pset.getNumDimensions(), cnum_outputs, std::forward<MultiIndexSet>(pset),
+    BaseCanonicalGrid(static_cast<int>(pset.getNumDimensions()), cnum_outputs, std::forward<MultiIndexSet>(pset),
                       MultiIndexSet(), StorageSet()),
     rule1D(corder, 10),
     order(corder)

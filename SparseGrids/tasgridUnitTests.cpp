@@ -547,7 +547,7 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
         [](void)->void{
             auto grid = makeGlobalGrid(2, 1, 1, type_level, rule_clenshawcurtis);
             grid.loadNeededPoints({0.33, 0.22, 0.22, 0.22, 0.33});
-            std::vector<float> y, x = {0.44, 0.44};
+            std::vector<float> y, x = {0.44f, 0.44f};
             grid.evaluateBatch(x, y); // either CUDA not enabled or not available at all
         },
         [](void)->void{
