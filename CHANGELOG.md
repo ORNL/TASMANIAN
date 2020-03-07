@@ -1,6 +1,8 @@
 Changelog for version 7.1
 --------------
 
+* added Swig generated Fortran 2003 interface
+    * naming conventions and objects mimic C++, similar to python
 * split the Tasmanian::Tasmanian and Tasmanian::Fortran targets
     * also added Tasmanian::Fortran::shared and Tasmanian::Fortran::static
 * added mixed-precision templates for
