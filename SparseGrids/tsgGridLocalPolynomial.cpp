@@ -56,7 +56,7 @@ template<bool iomode> void GridLocalPolynomial::write(std::ostream &os) const{
     IO::writeFlag<iomode, IO::pad_auto>((parents.getNumStrips() != 0), os);
     if (!parents.empty()) parents.writeVector<iomode, IO::pad_line>(os);
 
-    IO::writeNumbers<iomode, IO::pad_rspace>(os, (int) roots.size());
+    IO::writeNumbers<iomode, IO::pad_rspace>(os, static_cast<int>(roots.size()));
     if (roots.size() > 0){ // the tree is empty, can happend when using dynamic construction
         IO::writeVector<iomode, IO::pad_line>(roots, os);
         IO::writeVector<iomode, IO::pad_line>(pntr, os);

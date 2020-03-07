@@ -38,10 +38,10 @@ namespace TasGrid{
 template<bool iomode>
 void MultiIndexSet::write(std::ostream &os) const{
     if (cache_num_indexes > 0){
-        IO::writeNumbers<iomode, IO::pad_rspace>(os, (int) num_dimensions, cache_num_indexes);
+        IO::writeNumbers<iomode, IO::pad_rspace>(os, static_cast<int>(num_dimensions), cache_num_indexes);
         IO::writeVector<iomode, IO::pad_line>(indexes, os);
     }else{
-        IO::writeNumbers<iomode, IO::pad_line>(os, (int) num_dimensions, cache_num_indexes);
+        IO::writeNumbers<iomode, IO::pad_line>(os, static_cast<int>(num_dimensions), cache_num_indexes);
     }
 }
 
@@ -211,14 +211,14 @@ MultiIndexSet MultiIndexSet::operator -(const MultiIndexSet &substract) const{
 void MultiIndexSet::removeIndex(const std::vector<int> &p){
     int slot = getSlot(p);
     if (slot > -1){
-        indexes.erase(indexes.begin() + ((size_t) slot) * num_dimensions, indexes.begin() + ((size_t) slot) * num_dimensions + num_dimensions);
+        indexes.erase(indexes.begin() + static_cast<size_t>(slot) * num_dimensions, indexes.begin() + static_cast<size_t>(slot) * num_dimensions + num_dimensions);
         cache_num_indexes--;
     }
 }
 
 template<bool iomode>
 void StorageSet::write(std::ostream &os) const{
-    IO::writeNumbers<iomode, IO::pad_rspace>(os, (int) num_outputs, (int) num_values);
+    IO::writeNumbers<iomode, IO::pad_rspace>(os, static_cast<int>(num_outputs), static_cast<int>(num_values));
     IO::writeFlag<iomode, IO::pad_auto>((values.size() != 0), os);
     if (values.size() != 0)
         IO::writeVector<iomode, IO::pad_line>(values, os);

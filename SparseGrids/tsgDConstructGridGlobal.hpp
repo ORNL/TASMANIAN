@@ -135,7 +135,7 @@ void writeNodeDataList(const std::forward_list<NodeData> &data, std::ostream &os
 
     auto data_refs = makeReverseReferenceVector(data);
 
-    IO::writeNumbers<use_ascii, IO::pad_line>(os, (int) data_refs.size());
+    IO::writeNumbers<use_ascii, IO::pad_line>(os, static_cast<int>(data_refs.size()));
     for(auto d : data_refs){
         IO::writeVector<use_ascii, IO::pad_rspace>(d->point, os);
         IO::writeVector<use_ascii, IO::pad_line>(d->value, os);

@@ -751,8 +751,8 @@ bool TasgridWrapper::getEvalHierarchyDense(){
 }
 template<bool iomode>
 void writeSparseMatrix(int cols, std::vector<int> const &pntr, std::vector<int> const &indx, std::vector<double> const &vals, std::ostream &os){
-    int nnz = (int) indx.size();
-    int rows = (int) (pntr.size() - 1);
+    int nnz = static_cast<int>(indx.size());
+    int rows = static_cast<int>(pntr.size() - 1);
     IO::writeNumbers<iomode, IO::pad_line>(os, rows, cols, nnz);
     IO::writeVector<iomode, IO::pad_line>(pntr, os);
     IO::writeVector<iomode, IO::pad_line>(indx, os);

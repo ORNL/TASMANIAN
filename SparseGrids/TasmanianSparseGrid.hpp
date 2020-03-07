@@ -1858,7 +1858,7 @@ public:
      * Casts the internal unique_ptr to \b T and returns the result.
      * \endinternal
      */
-    template<class T> inline T* get(){ return (T*) base.get(); }
+    template<class T> inline T* get(){ return dynamic_cast<T*>(base.get()); }
     /*!
      * \internal
      * \brief Overload using const.

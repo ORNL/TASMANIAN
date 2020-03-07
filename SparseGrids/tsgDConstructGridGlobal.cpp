@@ -39,7 +39,7 @@ template<bool use_ascii> void DynamicConstructorDataGlobal::write(std::ostream &
     if (use_ascii == mode_ascii){ os << std::scientific; os.precision(17); }
     auto tensor_refs =  makeReverseReferenceVector(tensors);
 
-    IO::writeNumbers<use_ascii, IO::pad_line, int>(os, (int) tensor_refs.size());
+    IO::writeNumbers<use_ascii, IO::pad_line, int>(os, static_cast<int>(tensor_refs.size()));
     for(auto d : tensor_refs){
         IO::writeNumbers<use_ascii, IO::pad_rspace, double>(os, d->weight);
         IO::writeVector<use_ascii, IO::pad_line>(d->tensor, os);
