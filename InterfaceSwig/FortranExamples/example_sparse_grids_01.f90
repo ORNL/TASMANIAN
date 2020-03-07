@@ -1,40 +1,63 @@
-!==================================================================================================================================================================================
-! Copyright (c) 2018, Miroslav Stoyanov
-!
-! This file is part of
-! Toolkit for Adaptive Stochastic Modeling And Non-Intrusive ApproximatioN: TASMANIAN
-!
-! Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-!
-! 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-!
-! 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions
-!    and the following disclaimer in the documentation and/or other materials provided with the distribution.
-!
-! 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse
-!    or promote products derived from this software without specific prior written permission.
-!
-! THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-! INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-! IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-! OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-! OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-! OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-!
-! UT-BATTELLE, LLC AND THE UNITED STATES GOVERNMENT MAKE NO REPRESENTATIONS AND DISCLAIM ALL WARRANTIES, BOTH EXPRESSED AND IMPLIED.
-! THERE ARE NO EXPRESS OR IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY PATENT,
-! COPYRIGHT, TRADEMARK, OR OTHER PROPRIETARY RIGHTS, OR THAT THE SOFTWARE WILL ACCOMPLISH THE INTENDED RESULTS OR THAT THE SOFTWARE OR ITS USE WILL NOT RESULT IN INJURY OR DAMAGE.
-! THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
-! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
-!==================================================================================================================================================================================
 
 subroutine example_sparse_grid_01()
     use Tasmanian
     use, intrinsic :: iso_c_binding
     type(TasmanianSparseGrid) :: grid
+    integer :: dimension = 2, level = 6
+    integer :: i, num_points
+    real(C_DOUBLE), dimension(:), allocatable :: weights
+    real(C_DOUBLE), dimension(:,:), allocatable :: points
+    double precision :: exact = 2.513723354063905D+0;
+    double precision :: integral, err
+
+    write(*,*)
+    write(*,*) "-------------------------------------------------------------------------------------------------"
+    write(*,*) "Example 1:  integrate f(x,y) = exp(-x^2) * cos(y)"
+    write(*,*) "            using clenshaw-curtis nodes and grid of type level"
 
     grid = TasmanianSparseGrid()
-    write(*,*) "Example 1: version", grid%getVersionMajor()
+    call grid%makeGlobalGrid(dimension, 0, level, tsg_type_level, tsg_rule_clenshawcurtis)
+    num_points = grid%getNumPoints()
 
+    allocate(weights(num_points))
+    call grid%getQuadratureWeights(weights)
+    allocate(points(dimension, num_points))
+    call grid%getPoints(points(:,1))
+
+    integral = 0.0D-0
+    do i = 1, num_points
+        integral = integral + weights(i) * exp( -points(1,i)**2 ) * cos( points(2,i) )
+    enddo
+    err = abs(integral - exact)
+
+    write(*,*) "     at level:     ", level
+    write(*,*) "     the grid has: ", num_points
+    write(*,*) "     integral: ", integral
+    write(*,*) "     error:    ", err
+    write(*,*)
+    deallocate(weights, points)
+
+    level = 7
+    call grid%makeGlobalGrid(dimension, 0, level, tsg_type_level, tsg_rule_clenshawcurtis)
+    num_points = grid%getNumPoints()
+
+    allocate(weights(num_points))
+    call grid%getQuadratureWeights(weights)
+    allocate(points(dimension, num_points))
+    call grid%getPoints(points(:,1))
+
+    integral = 0.0D-0
+    do i = 1, num_points
+        integral = integral + weights(i) * exp( -points(1,i)**2 ) * cos( points(2,i) )
+    enddo
+    err = abs(integral - exact)
+
+    write(*,*) "     at level:     ", level
+    write(*,*) "     the grid has: ", num_points
+    write(*,*) "     integral: ", integral
+    write(*,*) "     error:    ", err
+    write(*,*)
+
+    deallocate(weights, points)
     call grid%release()
 end subroutine
