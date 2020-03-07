@@ -61,6 +61,7 @@ target_link_libraries(example_dream         Tasmanian::Tasmanian)
 # can also use "if (TARGET Tasmanian::Fortran)"
 if (Tasmanian_FORTRAN_FOUND)
     add_executable(example_sparse_grids_fortran  example_sparse_grids_01.f90
+                                                 example_sparse_grids_02.f90
                                                  example_sparse_grids.f90)
     target_link_libraries(example_sparse_grids_fortran  Tasmanian::Fortran)
     # note that as of 7.1 Tasmanian::Fortran is not equivalent to Tasmanian::Tasmanian

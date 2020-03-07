@@ -36,6 +36,7 @@ if (Tasmanian_ENABLE_FORTRAN)
     # adding the Fortran 2003 examples
     add_executable(Tasmanian_example_sparse_grids_fortran InterfaceSwig/FortranExamples/example_sparse_grids.f90
                                                           InterfaceSwig/FortranExamples/example_sparse_grids_01.f90
+                                                          InterfaceSwig/FortranExamples/example_sparse_grids_02.f90
                                                           )
     set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES
                             OUTPUT_NAME "example_sparse_grids_fortran"
