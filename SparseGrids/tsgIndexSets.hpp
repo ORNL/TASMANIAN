@@ -107,15 +107,16 @@ public:
     Data2D() : stride(0), num_strips(0){}
     //! \brief Create data-structure with given \b stride and number of \b strips.
     template<typename IntTypeA, typename IntTypeB>
-    Data2D(IntTypeA new_stride, IntTypeB new_num_strips) : stride((size_t) new_stride), num_strips((size_t) new_num_strips),
+    Data2D(IntTypeA new_stride, IntTypeB new_num_strips) : stride(static_cast<size_t>(new_stride)), num_strips(static_cast<size_t>(new_num_strips)),
                                                            vec(Utils::size_mult(stride, num_strips)){}
     //! \brief Create data-structure with given \b stride and number of \b strips and initializes with \b val.
     template<typename IntTypeA, typename IntTypeB>
-    Data2D(IntTypeA new_stride, IntTypeB new_num_strips, T val) : stride((size_t) new_stride), num_strips((size_t) new_num_strips),
+    Data2D(IntTypeA new_stride, IntTypeB new_num_strips, T val) : stride(static_cast<size_t>(new_stride)),
+                                                                  num_strips(static_cast<size_t>(new_num_strips)),
                                                                   vec(Utils::size_mult(stride, num_strips), val){}
     //! \brief Create data-structure with given \b stride and number of \b strips and moves \b data into the internal vector.
     template<typename IntTypeA, typename IntTypeB>
-    Data2D(IntTypeA new_stride, IntTypeB new_num_strips, std::vector<T> &&data) : stride((size_t) new_stride), num_strips((size_t) new_num_strips),
+    Data2D(IntTypeA new_stride, IntTypeB new_num_strips, std::vector<T> &&data) : stride(static_cast<size_t>(new_stride)), num_strips(static_cast<size_t>(new_num_strips)),
         vec(std::forward<std::vector<T>>(data)){}
     //! \brief Default destructor.
     ~Data2D() = default;
@@ -182,7 +183,7 @@ public:
 
     //! \brief Uses std::vector::insert to append a strip \b x to the existing data at position \b pos, assumes \b x.size() is one stride.
     void appendStrip(int pos, const std::vector<T> &x){
-        vec.insert(vec.begin() + (((size_t) pos) * stride), x.begin(), x.end());
+        vec.insert(vec.begin() + static_cast<size_t>(pos) * stride, x.begin(), x.end());
         num_strips++;
     }
 
@@ -279,11 +280,11 @@ public:
     inline bool missing(const std::vector<int> &p) const{ return (getSlot(p.data()) == -1); }
 
     //! \brief Returns the **i**-th index of the set, useful to loop over all indexes or to cross reference with values
-    inline const int *getIndex(int i) const{ return &(indexes[((size_t) i) * num_dimensions]); }
+    inline const int *getIndex(int i) const{ return &(indexes[static_cast<size_t>(i) * num_dimensions]); }
 
     //! \brief Returns a copy of the \b i-th index of the set.
     inline std::vector<int> copyIndex(int i) const{
-        return std::vector<int>(&indexes[((size_t) i) * num_dimensions], &indexes[((size_t) i) * num_dimensions] + num_dimensions);
+        return std::vector<int>(&indexes[static_cast<size_t>(i) * num_dimensions], &indexes[static_cast<size_t>(i) * num_dimensions] + num_dimensions);
     }
 
     /*! \brief Return a new multi-index set that holds the indexed present in this set, but missing in \b substract.

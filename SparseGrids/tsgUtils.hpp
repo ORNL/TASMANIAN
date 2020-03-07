@@ -69,7 +69,7 @@ namespace Utils{
  * \endinternal
  */
 template<typename IntA, typename IntB>
-inline size_t size_mult(IntA a, IntB b){ return ((size_t) a) * ((size_t) b); }
+inline size_t size_mult(IntA a, IntB b){ return static_cast<size_t>(a) * static_cast<size_t>(b); }
 
 /*!
  * \internal
@@ -81,7 +81,7 @@ inline size_t size_mult(IntA a, IntB b){ return ((size_t) a) * ((size_t) b); }
 template<typename T, typename I>
 std::vector<typename std::remove_const<T>::type> copyArray(T* x, I size){
     return (x == nullptr) ? std::vector<typename std::remove_const<T>::type>() :
-        std::vector<typename std::remove_const<T>::type>(x, x + ((size_t) size));
+        std::vector<typename std::remove_const<T>::type>(x, x + static_cast<size_t>(size));
 }
 
 /*!
