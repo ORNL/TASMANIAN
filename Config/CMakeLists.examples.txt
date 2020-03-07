@@ -60,10 +60,12 @@ target_link_libraries(example_dream         Tasmanian::Tasmanian)
 # if the Fortran component was found
 # can also use "if (TARGET Tasmanian::Fortran)"
 if (Tasmanian_FORTRAN_FOUND)
-    add_executable(example_sparse_grids_f90  example_sparse_grids.f90)
-    target_link_libraries(example_sparse_grids_f90  Tasmanian::Fortran)
+    add_executable(example_sparse_grids_fortran  example_sparse_grids_01.f90
+                                                 example_sparse_grids_02.f90
+                                                 example_sparse_grids.f90)
+    target_link_libraries(example_sparse_grids_fortran  Tasmanian::Fortran)
     # note that as of 7.1 Tasmanian::Fortran is not equivalent to Tasmanian::Tasmanian
-    set_property(TARGET example_sparse_grids_f90 PROPERTY LINKER_LANGUAGE Fortran)
+    set_property(TARGET example_sparse_grids_fortran PROPERTY LINKER_LANGUAGE Fortran)
     # the LINKER_LANGUAGE property is required by some compilers, e.g., Intel ifort
 endif()
 

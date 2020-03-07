@@ -7,6 +7,7 @@ classes with near identical interface.
 The C++ vectors are replaced by 1D and 2D `numpy.ndarray` structures,
 the enumerated types are replaced by strings,
 and the C++ `std::function` and `lambda` expressions by Python callable objects and lambdas.
+See the Fortran 2003 comments about the row major matrix format.
 
 
 ### Requirements

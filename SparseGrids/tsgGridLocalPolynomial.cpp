@@ -111,7 +111,7 @@ GridLocalPolynomial::GridLocalPolynomial(GridLocalPolynomial const *pwpoly, int 
 GridLocalPolynomial::GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule,
                                          std::vector<int> &&pnts, std::vector<double> &&vals, std::vector<double> &&surps)
     : BaseCanonicalGrid(cnum_dimensions, cnum_outputs, MultiIndexSet(cnum_dimensions, std::move(pnts)), MultiIndexSet(),
-                        StorageSet(cnum_outputs, vals.size() / cnum_outputs, std::move(vals))),
+                        StorageSet(cnum_outputs, static_cast<int>(vals.size() / cnum_outputs), std::move(vals))),
     order(corder),
     surpluses(Data2D<double>(cnum_outputs, points.getNumIndexes(), std::move(surps))),
     rule(makeRuleLocalPolynomial(crule, corder)),

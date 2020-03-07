@@ -20,6 +20,7 @@ The Matlab or Octave interface to **tasgrid** consists of several functions that
     * **l** stands for list
     * **v** stands for vector, i.e., row or column matrix
     * **m** stands for matrix, i.e., two dimensional array
+* See the notes about the Fortran 2003 interface regarding the row-major matrix format
 
 
 ### List of Matlab functions and corresponding C++ API

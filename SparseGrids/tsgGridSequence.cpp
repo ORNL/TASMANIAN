@@ -84,7 +84,7 @@ GridSequence::GridSequence(int cnum_dimensions, int depth, TypeDepth type, TypeO
     prepareSequence(0);
 }
 GridSequence::GridSequence(MultiIndexSet &&pset, int cnum_outputs, TypeOneDRule crule)
-    : BaseCanonicalGrid(pset.getNumDimensions(), cnum_outputs,
+    : BaseCanonicalGrid(static_cast<int>(pset.getNumDimensions()), cnum_outputs,
                         (cnum_outputs == 0) ? std::move(pset) : MultiIndexSet(),
                         (cnum_outputs == 0) ? MultiIndexSet() : std::move(pset),
                         StorageSet()),

@@ -1103,7 +1103,7 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
         int num_points = base->getNumPoints();
         Data2D<double> dense_vals(num_points, num_x);
         get<GridWavelet>()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.data());
-        return dense_vals.getTotalEntries() - std::count(dense_vals.begin(), dense_vals.end(), 0.0);
+        return static_cast<int>(dense_vals.getTotalEntries() - std::count(dense_vals.begin(), dense_vals.end(), 0.0));
     }else if (empty()){
         return 0;
     }else{

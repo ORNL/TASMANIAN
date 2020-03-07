@@ -32,4 +32,14 @@ if (Tasmanian_ENABLE_FORTRAN)
                             OUTPUT_NAME "example_sparse_grids_f90"
                             LINKER_LANGUAGE Fortran)
     target_link_libraries(Tasmanian_example_sparse_grids_f90 Tasmanian_libfortran90_${Tasmanian_lib_default})
+
+    # adding the Fortran 2003 examples
+    add_executable(Tasmanian_example_sparse_grids_fortran InterfaceSwig/FortranExamples/example_sparse_grids.f90
+                                                          InterfaceSwig/FortranExamples/example_sparse_grids_01.f90
+                                                          InterfaceSwig/FortranExamples/example_sparse_grids_02.f90
+                                                          )
+    set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES
+                            OUTPUT_NAME "example_sparse_grids_fortran"
+                            LINKER_LANGUAGE Fortran)
+    target_link_libraries(Tasmanian_example_sparse_grids_fortran Tasmanian_libfortran03_${Tasmanian_lib_default})
 endif()

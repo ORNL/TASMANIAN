@@ -105,6 +105,8 @@ if (Tasmanian_ENABLE_SWIG)
     tasmanian_add_swig_module(tasmanian)
 
     target_link_libraries(Tasmanian_fortran_swig_tester  tasmanian)
+
+    add_library(Tasmanian_libfortran03_${Tasmanian_lib_default} ALIAS tasmanian)
 else()
     # build the currently generated interface
     foreach(_tsglibtype ${Tasmanian_libs_type})
@@ -135,3 +137,7 @@ endif()
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tasmanian.mod"
         DESTINATION include
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/FortranExamples/"
+        DESTINATION "share/Tasmanian/examples/"
+        FILES_MATCHING PATTERN "*.f90"
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
