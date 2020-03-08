@@ -26,9 +26,13 @@ echo "--------------------------------------------------------------------------
 echo " Test 2: compile and run the C++ examples"
 echo "--------------------------------------------------------------------------------"
 echo 'Building  "cmake @Tasmanian_final_install_path@/share/Tasmanian/examples"'
-@CMAKE_COMMAND@ @Tasmanian_compilers@ "@Tasmanian_final_install_path@/share/Tasmanian/examples" || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
+if [[ -z $1 ]]; then
+    @CMAKE_COMMAND@ @Tasmanian_compilers@ "@Tasmanian_final_install_path@/share/Tasmanian/examples" || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
+else
+    @CMAKE_COMMAND@ $1 "@Tasmanian_final_install_path@/share/Tasmanian/examples" || { echo "ERROR: Could not cmake the C++ examples"; exit 1; }
+fi
 echo 'Compiling "make"'
-make || { echo "ERROR: Could not compile the C++ examples"; exit 1; }
+make -j3 || { echo "ERROR: Could not compile the C++ examples"; exit 1; }
 echo 'Executing "./example_sparse_grids"'
 ./example_sparse_grids -fast >/dev/null || { echo "ERROR: Could not run the C++ Sparse Grid example"; exit 1; }
 if [ -f "@Tasmanian_final_install_path@"/share/Tasmanian/examples/example_sparse_grids.f90 ]; then
