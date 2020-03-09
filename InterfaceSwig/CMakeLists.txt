@@ -93,7 +93,7 @@ endmacro()
 # Fortran librareis and command line tools
 ########################################################################
 
-add_executable(Tasmanian_fortran_swig_tester ${CMAKE_CURRENT_SOURCE_DIR}/fortranswigtester.f90
+add_executable(Tasmanian_fortran_swig_tester ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/fortranswigtester.f90
                                              ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_common.f90
                                              ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_make_grid.f90
                                              )
